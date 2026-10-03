@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * `@shenron/pipeline/ai/wire` — zod mirrors of the private Shenron workload boundary
- * served by `aphrody-ai-http` (`aphrody-ai/crates/aphrody-mcp/src/http_rest.rs`).
+ * served by `aphrody-ai-http` (`crates/ai/mcp/src/http_rest.rs`).
  *
  * Runtime class: `pure`. Request schemas mirror the Rust `Deserialize`
  * structs (field names after serde renaming); response schemas mirror the

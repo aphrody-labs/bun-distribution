@@ -1,5 +1,5 @@
 {
-  "$comment": "Dragon Ball corpus crawl plan, consumed by `bxc corpus` (aphrody-web/apps/bxc). Every registry source in sources.json is referenced by at least one target; disabled targets record why. Politeness: honest User-Agent, one request in flight per registrable domain, per-host delay, conditional revisits, dedupe, text/metadata/links only (no media binaries), no stealth or challenge solving (hard blocks are recorded in the manifest). robots.txt gating is an explicit option (respectRobots), off for this corpus by operator decision (2026-09-26). Fandom targets use the MediaWiki api.php path (mode: mediawiki), not HTML crawling.",
+  "$comment": "Dragon Ball corpus crawl plan, consumed by `bxc corpus` (external bxc). Every registry source in sources.json is referenced by at least one target; disabled targets record why. Politeness: honest User-Agent, one request in flight per registrable domain, per-host delay, conditional revisits, dedupe, text/metadata/links only (no media binaries), no stealth or challenge solving (hard blocks are recorded in the manifest). robots.txt gating is an explicit option (respectRobots), off for this corpus by operator decision (2026-09-26). Fandom targets use the MediaWiki api.php path (mode: mediawiki), not HTML crawling.",
   "version": 1,
   "registry": "sources.json",
   "respectRobots": false,

@@ -266,11 +266,11 @@
         "height": 1440
       },
       "color_mode": "RGBA",
-      "description": "Vue principale de Claude Desktop en thème clair chaleureux (#FBFBF9). Affiche la barre latérale avec recherche, raccourcis (+ Nouveau, Projets, Artéfacts, Personnaliser) et l'arborescence des dépôts de code ('aphrody', 'aphrody-src', 'nie', 'shenron'). En bas à gauche, le menu profil utilisateur est déployé (Paramètres avec raccourci Ctrl+,, Utilisation, Langue, Réabonnement Max, Clés API). En bas de page, une bannière d'alerte sur le quota hebdomadaire s'affiche au-dessus du champ de prompt avec sélecteur de modèle Opus 5.5 Extra.",
+      "description": "Vue principale de Claude Desktop en thème clair chaleureux (#FBFBF9). Affiche la barre latérale avec recherche, raccourcis (+ Nouveau, Projets, Artéfacts, Personnaliser) et l'arborescence des dépôts de code ('aphrody', 'aphrody', 'nie', 'shenron'). En bas à gauche, le menu profil utilisateur est déployé (Paramètres avec raccourci Ctrl+,, Utilisation, Langue, Réabonnement Max, Clés API). En bas de page, une bannière d'alerte sur le quota hebdomadaire s'affiche au-dessus du champ de prompt avec sélecteur de modèle Opus 5.5 Extra.",
       "ux_ui_highlights": [
         "Palette lumineuse douce et chaleureuse évitant la fatigue oculaire lors des longues sessions de revue de code",
-        "Organisation des espaces de travail sous forme d'arborescence de dossiers multi-dépôts (aphrody, aphrody-src, nie, shenron) avec boutons '+' et filtre rapides",
-        "Pill d'en-tête dynamique indiquant le workspace actif lié à la session en cours ('aphrody-src')",
+        "Organisation des espaces de travail sous forme d'arborescence de dossiers multi-dépôts (aphrody, aphrody, nie, shenron) avec boutons '+' et filtre rapides",
+        "Pill d'en-tête dynamique indiquant le workspace actif lié à la session en cours ('aphrody')",
         "Menu utilisateur flottant complet avec accès direct aux préférences, à la consommation de tokens et aux clés API",
         "Bannière d'alerte proactive d'épuisement de quota hebdomadaire avec CTA 'Mettre à niveau' et bouton de fermeture",
         "Contrôle 'Ignorer les permissions' pour l'exécution fluide et autonome des commandes par l'agent"
@@ -290,7 +290,7 @@
             "y2": 60
           },
           "category": "header",
-          "label": "En-tête Claude Desktop avec menu session, badge de workspace 'aphrody-src' et actions d'export"
+          "label": "En-tête Claude Desktop avec menu session, badge de workspace 'aphrody' et actions d'export"
         },
         {
           "filename": "crop_sidebar_claude_workspaces.png",

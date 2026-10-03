@@ -1172,7 +1172,6 @@ export async function runConsolidation(args: string[]): Promise<number> {
     targets: {
       aphrody: aphrodyRoot,
       python: pythonRoot,
-      infraController: "src/aphrody-infra/packages/aphrody-workspace",
     },
     roots,
     totals: {

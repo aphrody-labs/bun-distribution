@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- Configuration ---
-PROJECT_ROOT="/Users/jamespine/Projects/spacedrive/core"
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 INSTALL_DIR="/usr/local/bin"
 BINARY_NAME="spacedrive"
 

@@ -101,7 +101,7 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
   {
     rule: "user-home",
     pattern:
-      /\/home\/(?!ubuntu\b)[\w.-]+(?=\/)|\/Users\/[\w.-]+(?=\/)|[A-Za-z]:(?:\\\\|\\|\/)Users(?:\\\\|\\|\/)[\w.-]+/g,
+      /(?<![\w.-])\/home\/(?!ubuntu\b)[\w.-]+(?=\/)|\/Users\/[\w.-]+(?=\/)|[A-Za-z]:(?:\\\\|\\|\/)Users(?:\\\\|\\|\/)[\w.-]+/g,
     rewrite: (match) => (match.startsWith("/") ? "~" : "%USERPROFILE%"),
   },
   { rule: "vps-home", pattern: /\/home\/ubuntu\b/g, rewrite: () => "~" },
@@ -154,6 +154,8 @@ export function hostPathArea(path: string): HostPathArea {
     )
   )
     return "host";
+  if (/^scripts\/(atomic-deploy-|rg\/assemble-vps|ops\/provision|shenron\/install-)/.test(path))
+    return "host";
   if (/^scripts\/(migration|audit\/live-candidates|test-atomic-)/.test(path)) return "host";
   if (/(^|\/)(tests?|__tests__)\/|\.(test|spec)\.[a-z]+$|_tests?\.rs$|\/tests\.rs$/.test(path))
     return "test";
@@ -198,6 +200,13 @@ export function scanHostPaths(text: string, area: HostPathArea, rust = false): H
         if (claimed.some(([a, b]) => start < b && end > a)) continue;
         claimed.push([start, end]);
         if (area === "test" || ALLOWED[area]?.includes(rule)) continue;
+        // Prose and records naming a retired repository are provenance, not a machine dependency.
+        if (
+          rule === "legacy-layout" &&
+          ["docs", "record", "data"].includes(area) &&
+          rewrite?.(match[0]) === match[0]
+        )
+          continue;
         findings.push({
           line: index + 1,
           rule,

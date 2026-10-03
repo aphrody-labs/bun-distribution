@@ -1084,7 +1084,8 @@ impl TerminalCommand for GoogleCommand {
         let google_bin = std::env::var_os("APHRODY_GOOGLE_BIN")
             .map(PathBuf::from)
             .or_else(|| {
-                let p = PathBuf::from("/home/aphro/.local/bin/aphrody-google");
+                // Installed next to this binary (the per-user bin directory), never at a fixed account.
+                let p = std::env::current_exe().ok()?.parent()?.join(if cfg!(windows) { "aphrody-google.exe" } else { "aphrody-google" });
                 if p.is_file() { Some(p) } else { None }
             })
             .or_else(|| which::which("aphrody-google").ok());

@@ -34,9 +34,7 @@ Les ports distants ne sont pas écrits ici : `local-env.ts` les lit dans le cata
 cherché dans cet ordre :
 
 1. `APHRODY_INFRA_DIR` ;
-2. le dépôt frère `../aphrody-infra` ;
-3. dans WSL, le dépôt frère côté Windows, `/mnt/c/Users/<utilisateur>/src/aphrody-infra`
-   (tous les profils Windows sont essayés : le nom d'utilisateur Linux peut différer).
+2. le premier dépôt englobant qui contient `config/service-catalog.json` (le monorepo).
 
 Règle : **port local = port distant + 10 000**. Le décalage évite toute collision avec un
 service qui tourne déjà sur le poste : PostgreSQL local, Redis de WSL, ou le tunnel

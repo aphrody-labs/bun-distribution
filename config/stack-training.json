@@ -168,7 +168,7 @@
       "name": "@aphrody/bun",
       "value": "high",
       "role": "bun:ffi wrapper over the bun_rs native library (M3 tokens, icons, SVG)",
-      "source": "local: aphrody-ui/packages/bun (crate crates/ui/bun)",
+      "source": "local: packages/bun",
       "policy": "single-native-bun-bridge"
     }
   ],
