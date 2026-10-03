@@ -21,7 +21,7 @@
   },
   "managedServices": {
     "aphrody-managed-llama": {
-      "owner": "aphrody-ai/crates/aphrody-llama-server",
+      "owner": "crates/ai/llama-server",
       "daemon": "aphrody-llama-daemon",
       "runtime": "llama.cpp llama-server (upstream release binaries, driven not linked)",
       "ports": "dynamic",

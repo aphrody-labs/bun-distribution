@@ -69,7 +69,7 @@ Rules enforced on critical Bun packages:
 - n2b audit before any migration, `--fix` only on first-party files, never `--migrate` on an
   imported tree.
 
-The n2b scan of `aphrody-ai/packages/google` reports no error; the only remaining warning is
+The n2b scan of `packages/google/google` reports no error; the only remaining warning is
 `Bun.spawn`, already used natively by its CLI launcher. Known issue: `aphrody n2b audit` panics
 with `Cannot start a runtime from within a runtime` because `aphrody-ai`
 (`crates/infra/aphrody-command/src/commands.rs`, `N2bCommand`) calls the synchronous `aphrody_n2b::run_from`

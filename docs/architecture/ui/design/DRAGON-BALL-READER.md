@@ -13,4 +13,4 @@
 
 The reader theme retains the 12.3° slanted badge, ink borders, tactile button press, dark reading surface, and orange scrollbar from Shenron's prior readers. The original palette and its measurements remain documented in Shenron's `docs/reference/shenron/couverture-analyse-visuelle.md`; no new Toriyama illustration or unmeasured palette is claimed. Reader text uses at least 18 px, keyboard focus is visible, and the databook lightbox traps and restores focus.
 
-The local Shenron dependency currently uses `file:../aphrody-ui/packages/m3-reader`. Publishing the package and replacing that path with a registry version are still required before an isolated Shenron checkout or deployment can install it. CSS and TypeScript checks do not prove the final browser appearance; inspect the real site after release.
+The local Shenron dependency currently uses `file:../packages/ui/m3-reader`. Publishing the package and replacing that path with a registry version are still required before an isolated Shenron checkout or deployment can install it. CSS and TypeScript checks do not prove the final browser appearance; inspect the real site after release.

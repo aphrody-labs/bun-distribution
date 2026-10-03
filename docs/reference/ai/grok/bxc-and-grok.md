@@ -9,9 +9,9 @@ aphrody-web's `@aphrody/x` for `XTools`.
 
 | Component | Twitter/X | xAI Grok |
 | --- | --- | --- |
-| `aphrody-web/packages/x` | x.com GraphQL, `XTools` function tools | — |
+| `packages/web/x` | x.com GraphQL, `XTools` function tools | — |
 | `aphrody-web/apps/bxc/src/integrations/xai.ts` | — | `api.x.ai/v1` (OpenAI-compatible) |
-| `aphrody-ai/packages/xai` | — | Chat SDK, agent loop (`runGrokXResearch`) |
+| `packages/ai/xai` | — | Chat SDK, agent loop (`runGrokXResearch`) |
 | `bxc grok` CLI | — | `whoami`, `models`, `chat`, `tts`, `stt`, `raw` |
 | `bxc-mcp` | `bxc_x_client`, `bxc_xcom_profile` | `bxc_grok_chat`, `bxc_grok_models`, `bxc_grok_whoami` + browser tools |
 

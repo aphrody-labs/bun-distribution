@@ -48,7 +48,7 @@ Embedded `bun:sqlite` stores for crawl, inference and scraping logs.
 
 ### A. `x-store.sqlite` (X crawling and RAG)
 
-- Path: `$HOME/.aphrody/x-store.sqlite` (resolved by `aphrody-web/packages/x/src/db/store.ts`).
+- Path: `$HOME/.aphrody/x-store.sqlite` (resolved by `packages/web/x/src/db/store.ts`).
 - WAL journal with `synchronous = NORMAL` for concurrent readers.
 - Tables: `tweets` (id, username, text, created_at, like/retweet/reply counts, conversation_id,
   raw JSON), `users`, `edges` (`authored`, `liked`, `bookmarked`, `timeline`, `mention`),

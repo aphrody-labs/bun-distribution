@@ -27,7 +27,7 @@
       "capabilities": ["ask", "chat", "scrape"]
     },
     "gemini-oauth": {
-      "owner": "aphrody-ai/crates/aphrody-antigravity",
+      "owner": "crates/google/antigravity",
       "credentialStore": "platform-native",
       "capabilities": ["models", "chat", "agent-tools"]
     }

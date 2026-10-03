@@ -40,25 +40,31 @@ export interface HostPathFile {
 }
 
 /** Retired sibling repositories map to their location inside the monorepo. */
-let crateDirs = new Map<string, string>();
+let monorepoDirs = new Map<string, string>();
 
-/** Crate name (without the aphrody- prefix) to its monorepo directory; ambiguous names are dropped. */
-function indexCrates(root: string): void {
+/** Crate, package and app names to their monorepo directory; names that exist twice are dropped. */
+function indexMonorepo(root: string): void {
   const seen = new Map<string, string | null>();
-  for (const file of git(root, ["ls-files", "crates/*/Cargo.toml"]).split("\n")) {
+  const add = (key: string, dir: string) => seen.set(key, seen.has(key) ? null : dir);
+  for (const file of git(root, [
+    "ls-files",
+    "crates/*/Cargo.toml",
+    "packages/*/package.json",
+    "apps/*/package.json",
+  ]).split("\n")) {
     const parts = file.split("/");
     if (parts.length !== 4) continue;
-    const name = parts[2]!.replace(/^aphrody-/, "");
-    seen.set(name, seen.has(name) ? null : `crates/${parts[1]}/${parts[2]}`);
+    const kind = parts[0] === "crates" ? "crates" : parts[0];
+    add(`${kind}/${parts[2]!.replace(/^aphrody-/, "")}`, `${parts[0]}/${parts[1]}/${parts[2]}`);
   }
-  crateDirs = new Map([...seen].filter((entry): entry is [string, string] => entry[1] !== null));
+  monorepoDirs = new Map([...seen].filter((entry): entry is [string, string] => entry[1] !== null));
 }
 
 function legacyRewrite(match: string): string {
-  const crate = /^aphrody-[a-z]+\/crates\/aphrody-([\w-]+)$/.exec(match)?.[1];
-  if (crate !== undefined) return crateDirs.get(crate) ?? match;
   if (match.startsWith("aphrody-infra/")) return match.slice("aphrody-infra/".length);
   if (match === "aphrody-contracts/docs") return "docs/apis/contracts";
+  const named = /^aphrody-[a-z]+\/(crates|packages|apps)\/([\w@.-]+)$/.exec(match);
+  if (named) return monorepoDirs.get(`${named[1]}/${named[2]!.replace(/^aphrody-/, "")}`) ?? match;
   return match;
 }
 
@@ -103,12 +109,18 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
   {
     rule: "legacy-layout",
     pattern:
-      /\baphrody-src\b|\baphrody-(?:infra|ai|web|ui|os|compat|contracts|shell|native)\/(?:scripts|crates|systemd|nginx|packages|apps|config|docs)\b(?:\/aphrody-[\w-]+)?/g,
+      /\baphrody-src\b|\baphrody-(?:infra|ai|web|ui|os|compat|contracts|shell|native)\/(?:scripts|crates|systemd|nginx|packages|apps|config|docs)\b(?:\/[\w@.-]+)?/g,
     rewrite: legacyRewrite,
   },
 ];
 const PREFILTER = String.raw`/home/|/Users/|[A-Za-z]:[\\/]+Users|/mnt/[a-z]/|/source([/"'\x60[:space:])]|$)|aphrody-src|aphrody-(infra|ai|web|ui|os|compat|contracts|shell|native)/`;
-const REWRITABLE: HostPathArea[] = ["docs", "record", "data", "unit", "code"];
+const REWRITABLE: HostPathArea[] = ["docs", "record", "data", "unit", "code", "config"];
+/** Config files only take the retired-layout mapping; other rules need a reviewed edit. */
+const CONFIG_REWRITES: HostPathRule[] = ["legacy-layout"];
+const canRewrite = (area: HostPathArea, rule: HostPathRule, line: string): boolean =>
+  REWRITABLE.includes(area) &&
+  (area !== "code" || COMMENT_LINE.test(line)) &&
+  (area !== "config" || CONFIG_REWRITES.includes(rule));
 const COMMENT_LINE = /^\s*(\/\/|\/\*|\*|#(?!!)|<!--|--\s)/;
 /** Rules a zone legitimately carries: fixtures and the declared VPS catalog name hosts on purpose. */
 const ALLOWED: Partial<Record<HostPathArea, HostPathRule[]>> = {
@@ -205,7 +217,6 @@ export function rewriteHostPaths(text: string, area: HostPathArea): string {
   return text
     .split("\n")
     .map((line) => {
-      if (area === "code" && !COMMENT_LINE.test(line)) return line;
       const claimed: [number, number, string][] = [];
       for (const { rule, pattern, rewrite } of RULES)
         for (const match of line.matchAll(pattern)) {
@@ -215,7 +226,9 @@ export function rewriteHostPaths(text: string, area: HostPathArea): string {
           claimed.push([
             start,
             end,
-            rewrite ? rewriteFor(area, rule, match[0], rewrite) : match[0],
+            rewrite && canRewrite(area, rule, line)
+              ? rewriteFor(area, rule, match[0], rewrite)
+              : match[0],
           ]);
         }
       let output = "";
@@ -237,7 +250,7 @@ function git(root: string, args: string[], allowEmpty = false): string {
 }
 
 export async function collectHostPaths(root: string): Promise<HostPathFile[]> {
-  indexCrates(root);
+  indexMonorepo(root);
   const candidates = git(root, ["grep", "-l", "-z", "-I", "-E", PREFILTER], true)
     .split("\0")
     .filter((path) => path && !OWN_FILES.has(path) && existsSync(join(root, path)));

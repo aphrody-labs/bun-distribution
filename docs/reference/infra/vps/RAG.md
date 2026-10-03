@@ -40,7 +40,7 @@ the pipelines. Restored from the retired `aphrody` monolith (`docs/reference/inf
 
 The crawling agents of the former autopilot combined semantic and lexical retrieval over
 `x-store.sqlite` (schema in [DATABASES.md](./DATABASES.md), store code in
-`aphrody-web/packages/x/src/db/store.ts`). The scoring recorded in the monolith was:
+`packages/web/x/src/db/store.ts`). The scoring recorded in the monolith was:
 
 - **Embeddings**: Gemini API `gemini-embedding-001`, 768 dimensions. Without an API key the
   offline test mode produced normalised random vectors so runs did not abort; such vectors are
