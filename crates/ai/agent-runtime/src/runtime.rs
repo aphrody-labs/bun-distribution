@@ -9,7 +9,7 @@ use aphrody_agent_proto::{Event, InputItem};
 use aphrody_engine::{EventSink, Session, SessionHandle, TurnOutcome, run_turn, spawn_session};
 use aphrody_model_client::{ChatMessage, ModelClient};
 use aphrody_rollout::RolloutRecorder;
-use aphrody_toolcall::ToolRegistry;
+use aphrody_toolcall::{ToolExecutor, ToolRegistry};
 
 use crate::{
     config::RuntimeConfig,
@@ -198,9 +198,19 @@ pub struct AgentRuntimeBuilder {
     session_id: Option<String>,
     forked_from: Option<String>,
     resume_path: Option<PathBuf>,
+    additional_tools: ToolRegistry,
 }
 
 impl AgentRuntimeBuilder {
+    /// Add a caller-owned executor to the canonical registry. Duplicate names
+    /// are rejected both here and against built-ins during assembly.
+    ///
+    /// # Errors
+    /// Returns a registration error for a duplicate caller tool.
+    pub fn tool(mut self, tool: Arc<dyn ToolExecutor>) -> Result<Self, RuntimeError> {
+        self.additional_tools.register(tool)?;
+        Ok(self)
+    }
     /// Restore model-visible conversation history before the next user turn.
     #[must_use]
     pub fn history(mut self, history: Vec<ChatMessage>) -> Self {
@@ -295,6 +305,14 @@ impl AgentRuntimeBuilder {
         let model = self.model.ok_or_else(|| {
             RuntimeError::Config("a ModelChoice is required after validation".to_owned())
         })?;
+        if !self.additional_tools.is_empty() {
+            let registry = Arc::make_mut(&mut tools);
+            for definition in self.additional_tools.definitions() {
+                if let Some(tool) = self.additional_tools.get(&definition.name) {
+                    registry.register(tool)?;
+                }
+            }
+        }
         if let Some(path) = &config.rag_db {
             #[cfg(not(feature = "rag"))]
             {

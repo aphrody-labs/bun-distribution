@@ -132,7 +132,9 @@ impl Transport for StdioTransport {
     }
 
     async fn shutdown(&mut self) -> Result<()> {
-        let _ = self.child.start_kill();
+        if self.child.try_wait()?.is_none() {
+            self.child.kill().await?;
+        }
         Ok(())
     }
 }

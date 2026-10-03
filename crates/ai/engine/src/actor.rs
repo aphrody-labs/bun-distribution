@@ -36,9 +36,18 @@ pub struct SessionHandle {
     submissions: mpsc::UnboundedSender<Submission>,
     events: Option<mpsc::UnboundedReceiver<Event>>,
     task: JoinHandle<Session>,
+    tool_updates: tokio::sync::watch::Sender<Arc<ToolRegistry>>,
 }
 
 impl SessionHandle {
+    /// Replace the tool surface before the next submitted turn. Hosts must
+    /// enforce their idle-session policy before invoking this method.
+    ///
+    /// # Errors
+    /// Returns the registry if the session actor stopped.
+    pub fn replace_tools(&self, tools: Arc<ToolRegistry>) -> Result<(), Arc<ToolRegistry>> {
+        self.tool_updates.send(tools).map_err(|error| error.0)
+    }
     /// Submit an op to the actor.
     ///
     /// # Errors
@@ -76,6 +85,7 @@ pub fn spawn_session(
 ) -> SessionHandle {
     let (sub_tx, mut sub_rx) = mpsc::unbounded_channel::<Submission>();
     let (event_sink, event_rx) = EventSink::unbounded();
+    let (tool_updates, mut tool_rx) = tokio::sync::watch::channel(tools.clone());
 
     let task = tokio::spawn(async move {
         let gated = session.config().autonomy == AutonomyMode::Gated;
@@ -85,6 +95,7 @@ pub fn spawn_session(
         let (approval_tx, mut gate) = ApprovalGate::channel();
 
         while let Some(submission) = sub_rx.recv().await {
+            let tools = tool_rx.borrow_and_update().clone();
             match submission.op {
                 Op::UserInput { items } => {
                     let interrupt = InterruptFlag::new();
@@ -156,7 +167,7 @@ pub fn spawn_session(
         session
     });
 
-    SessionHandle { submissions: sub_tx, events: Some(event_rx), task }
+    SessionHandle { submissions: sub_tx, events: Some(event_rx), task, tool_updates }
 }
 
 /// The outcome of [`drive_turn`]: the turn's result plus whether a shutdown
@@ -235,10 +246,12 @@ async fn drive_turn(
                         op @ (Op::ExecApproval { .. } | Op::PatchApproval { .. }) => {
                             let _ = approval_tx.send(op);
                         }
-                        // Buffering a new UserInput mid-turn is out of scope;
-                        // it is dropped with a trace so the turn can finish.
+                        // Match RPC's active-turn refusal. An accepted submission
+                        // must never disappear without a client-visible result.
                         Op::UserInput { .. } => {
-                            tracing::warn!("ignoring UserInput received mid-turn");
+                            events.emit(aphrody_agent_proto::EventMsg::Error {
+                                message: format!("submission {} rejected: turn already active; use Steer", sub.id),
+                            });
                         }
                         Op::Compact => {
                             compact = true;

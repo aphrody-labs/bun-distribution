@@ -23,6 +23,9 @@
 
 #![forbid(unsafe_code)]
 
+mod goal;
+pub use goal::{GoalState, GoalStatus, MAX_GOAL_CONDITION_CHARS};
+
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};

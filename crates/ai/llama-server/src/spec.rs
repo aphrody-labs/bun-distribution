@@ -111,6 +111,41 @@ pub struct LlamaServerSpec {
 }
 
 impl LlamaServerSpec {
+    /// Refuse explicit features the selected binary cannot honor. Call this
+    /// before launching; `to_args` alone is a compatibility formatter.
+    ///
+    /// # Errors
+    /// Names the unsupported feature without exposing model paths or arguments.
+    pub fn validate_capabilities(&self, caps: &ServerCapabilities) -> Result<(), &'static str> {
+        if self.draft_model.is_some() && !caps.model_draft {
+            return Err("speculative decoding requires --model-draft");
+        }
+        if self.mmproj.is_some() && !caps.mmproj {
+            return Err("vision projector requires --mmproj");
+        }
+        if self.jinja && !caps.jinja {
+            return Err("native tool templates require --jinja");
+        }
+        if self.kv != KvQuant::F16 && !caps.kv_cache_types {
+            return Err("quantized KV cache requires cache-type flags");
+        }
+        if matches!(self.placement, Placement::Auto { .. }) && !caps.fit {
+            return Err("automatic placement requires --fit");
+        }
+        if matches!(self.placement, Placement::Planned { n_cpu_moe: Some(_), .. })
+            && !caps.n_cpu_moe
+        {
+            return Err("CPU expert placement requires --n-cpu-moe");
+        }
+        if self.role == Role::Embed && caps.embedding_flag.is_none() {
+            return Err("embedding role requires an embedding flag");
+        }
+        if self.role == Role::Rerank && caps.rerank_flag.is_none() {
+            return Err("reranking role requires a rerank flag");
+        }
+        Ok(())
+    }
+
     /// A stable fingerprint of the spec (FNV-1a over its canonical JSON): the
     /// same across processes and builds, so independent aphrody processes
     /// agree on whether a running server is the one they need.
@@ -251,6 +286,40 @@ mod tests {
             mmproj: true,
             model_draft: true,
         }
+    }
+
+    #[test]
+    fn explicit_optional_features_are_refused_before_launch() {
+        let caps = modern();
+        let mut spec = chat_spec();
+        assert!(spec.validate_capabilities(&caps).is_ok());
+        spec.draft_model = Some(PathBuf::from("fixture-draft.gguf"));
+        let mut absent = caps.clone();
+        absent.model_draft = false;
+        assert_eq!(
+            spec.validate_capabilities(&absent),
+            Err("speculative decoding requires --model-draft")
+        );
+        spec.draft_model = None;
+        spec.mmproj = Some(PathBuf::from("fixture-mmproj.gguf"));
+        absent = caps.clone();
+        absent.mmproj = false;
+        assert_eq!(spec.validate_capabilities(&absent), Err("vision projector requires --mmproj"));
+        spec.mmproj = None;
+        spec.role = Role::Embed;
+        absent = caps.clone();
+        absent.embedding_flag = None;
+        assert_eq!(
+            spec.validate_capabilities(&absent),
+            Err("embedding role requires an embedding flag")
+        );
+        spec.role = Role::Rerank;
+        absent = caps;
+        absent.rerank_flag = None;
+        assert_eq!(
+            spec.validate_capabilities(&absent),
+            Err("reranking role requires a rerank flag")
+        );
     }
 
     fn legacy() -> ServerCapabilities {

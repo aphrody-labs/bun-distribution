@@ -16,12 +16,13 @@ workspace = true
 
 [features]
 default = []
-rag = ["dep:aphrody-rag", "dep:aphrody-toolcall", "aphrody-agent-runtime/rag"]
+rag = ["dep:aphrody-rag", "aphrody-agent-runtime/rag"]
 # Managed local models run inside the host process (no re-executed daemon).
 in-process = ["aphrody-agent-runtime/in-process"]
 
 [dependencies]
 axum = { workspace = true }
+async-trait = { workspace = true }
 futures = { workspace = true }
 aphrody-agent-runtime = { workspace = true }
 aphrody-agent-proto = { workspace = true }
@@ -32,12 +33,13 @@ aphrody-model-client = { workspace = true }
 aphrody-models = { workspace = true }
 aphrody-rollout = { workspace = true }
 aphrody-rag = { workspace = true, optional = true }
-aphrody-toolcall = { workspace = true, optional = true }
+aphrody-toolcall = { workspace = true }
 chrono = { workspace = true }
 aphrody-engine = { workspace = true }
 aphrody-agent-home = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+jsonschema = { workspace = true }
 thiserror = { workspace = true }
 toml = { workspace = true }
 tokio = { workspace = true, features = ["io-util", "macros", "rt", "sync", "time"] }

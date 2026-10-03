@@ -77,9 +77,8 @@ pub fn resolve_header_placeholders(
 ///
 /// For a streamable HTTP server the `${NAME}` placeholders of `http_headers` are expanded and the
 /// variable named by `bearer_token_env_var` must be set and non-empty. Stdio entries are returned
-/// unchanged. [`crate::McpClient::from_config`] is deliberately lenient (it warns and connects
-/// without the header); an explicit, user-driven connection calls this first so a missing secret
-/// stops the command instead of reaching the server unauthenticated.
+/// unchanged. [`crate::McpClient::from_config`] also uses this helper so a missing
+/// credential stops every configured connection before reaching the server.
 ///
 /// # Errors
 ///

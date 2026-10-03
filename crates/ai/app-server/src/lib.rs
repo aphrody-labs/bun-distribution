@@ -9,6 +9,7 @@
 #![forbid(unsafe_code)]
 
 mod config;
+mod host_tools;
 pub mod web;
 
 use std::{
@@ -284,9 +285,77 @@ struct ThreadState {
     /// A tool call is only reported as an item once it ends, so begin/end
     /// must be correlated across two events.
     open_tool_calls: HashMap<String, (String, String)>,
+    host_tools: host_tools::HostTools,
+    tools: Arc<aphrody_toolcall::ToolRegistry>,
 }
 
 impl AppServer {
+    fn dispatch_host_tools(
+        &mut self,
+        method: &str,
+        params: &Value,
+    ) -> Result<Value, AppServerError> {
+        let thread_id = params
+            .get("threadId")
+            .and_then(Value::as_str)
+            .ok_or_else(|| AppServerError::InvalidRequest("threadId is required".into()))?;
+        let thread = self
+            .threads
+            .get_mut(thread_id)
+            .ok_or_else(|| AppServerError::InvalidRequest("unknown thread".into()))?;
+        match method {
+            "tool/respond" | "permission/respond" => {
+                let request_id =
+                    params.get("requestId").and_then(Value::as_str).ok_or_else(|| {
+                        AppServerError::InvalidRequest("requestId is required".into())
+                    })?;
+                thread.host_tools.respond(request_id, params)?;
+                Ok(json!({"accepted":true}))
+            },
+            "thread/tools/get" => thread.host_tools.view(),
+            "thread/tools/set" => {
+                if thread.active_turn.is_some() {
+                    return Err(AppServerError::InvalidRequest(
+                        "host tools cannot change during a turn".into(),
+                    ));
+                }
+                let next = host_tools::HostTools::declare(thread_id, params.get("tools"))?
+                    .with_host_permission(thread.host_tools.host_owns_gate());
+                let prior_names: BTreeSet<_> = thread
+                    .host_tools
+                    .executors()?
+                    .iter()
+                    .map(|tool| tool.definition().name.clone())
+                    .collect();
+                let mut registry = aphrody_toolcall::ToolRegistry::new();
+                for definition in thread.tools.definitions() {
+                    if !prior_names.contains(&definition.name)
+                        && let Some(tool) = thread.tools.get(&definition.name)
+                    {
+                        registry
+                            .register(tool)
+                            .map_err(|error| AppServerError::InvalidRequest(error.to_string()))?;
+                    }
+                }
+                for tool in next.executors()? {
+                    registry
+                        .register(tool)
+                        .map_err(|error| AppServerError::InvalidRequest(error.to_string()))?;
+                }
+                let registry = Arc::new(registry);
+                thread
+                    .handle
+                    .replace_tools(registry.clone())
+                    .map_err(|_| AppServerError::Runtime("session actor stopped".into()))?;
+                thread.host_tools.cancel_all();
+                thread.host_tools = next;
+                thread.tools = registry;
+                thread.host_tools.view()
+            },
+            _ => Err(AppServerError::MethodNotFound(method.into())),
+        }
+    }
+
     fn read_account(&self, params: &Value) -> Result<Value, AppServerError> {
         if !params.is_null() && !params.as_object().is_some_and(serde_json::Map::is_empty) {
             return Err(AppServerError::InvalidRequest(
@@ -440,6 +509,7 @@ impl AppServer {
     pub async fn shutdown(&mut self) -> Result<(), AppServerError> {
         let threads = std::mem::take(&mut self.threads);
         for thread in threads.values() {
+            thread.host_tools.cancel_all();
             let _ = thread.handle.submit(Op::Shutdown);
         }
         let mut failure = None;
@@ -504,6 +574,11 @@ impl AppServer {
             })
             .transpose()?
             .unwrap_or(false);
+        // Validate host options before any managed inference process is started.
+        // Invalid declarations must not consume a model lease or launch hardware.
+        config::validate_session_options(&params)?;
+        // Validate declarations before managed inference acquisition as well.
+        host_tools::HostTools::declare("validation", params.get("tools"))?;
         let provider_lease =
             prepare_managed_provider_in(&mut resolved, &cwd, self.models_dir.as_deref())
                 .await
@@ -542,6 +617,15 @@ impl AppServer {
             .config(runtime_config)
             .model(ModelChoice::from_client(model))
             .session_id(id.clone());
+        let host_tools = host_tools::HostTools::declare(&id, params.get("tools"))?
+            .with_host_permission(
+                params.get("permissions").and_then(Value::as_str) == Some("host"),
+            );
+        for executor in host_tools.executors()? {
+            builder = builder
+                .tool(executor)
+                .map_err(|error| AppServerError::Runtime(error.to_string()))?;
+        }
         if let Some(session) = restored {
             let saved = thread_from_session(&session).await;
             if forked_from.is_none() {
@@ -571,6 +655,7 @@ impl AppServer {
         }
         let runtime = if profiled_tools { builder.build_profiled().await } else { builder.build() }
             .map_err(|error| AppServerError::Runtime(error.to_string()))?;
+        let tools = runtime.tools().clone();
         let mut handle =
             runtime.spawn().await.map_err(|error| AppServerError::Runtime(error.to_string()))?;
         let events = handle
@@ -588,6 +673,8 @@ impl AppServer {
                 interrupt_requested: false,
                 message_started: false,
                 open_tool_calls: HashMap::new(),
+                host_tools,
+                tools,
             },
         );
         Ok(thread_response(&info))
@@ -654,6 +741,7 @@ impl AppServer {
     /// waiting for a running turn to finish.
     pub fn drain_notifications(&mut self) -> Vec<Value> {
         for thread in self.threads.values_mut() {
+            self.notifications.extend(thread.host_tools.drain());
             while let Ok(event) = thread.events.try_recv() {
                 self.notifications.extend(thread.observe(&event));
             }
@@ -663,6 +751,25 @@ impl AppServer {
 
     /// Handle one JSON-RPC request. Notifications produce no response.
     pub async fn handle(&mut self, line: &str) -> Result<Option<String>, AppServerError> {
+        // Replies to caller-owned tool requests are not client requests. Route
+        // correlation before decoding the method-bearing request contract.
+        if let Ok(value) = serde_json::from_str::<Value>(line)
+            && value.get("method").is_none()
+            && (value.get("result").is_some() || value.get("error").is_some())
+        {
+            if let Some(id) = value.get("id").and_then(Value::as_str) {
+                for thread in self.threads.values() {
+                    if thread.host_tools.contains(id) {
+                        let result = value.get("result").cloned().unwrap_or_else(
+                            || json!({"content":"host callback failed","isError":true,"decision":"deny"}),
+                        );
+                        thread.host_tools.respond(id, &result)?;
+                        return Ok(None);
+                    }
+                }
+            }
+            return Err(AppServerError::InvalidRequest("unknown host callback response".into()));
+        }
         let mut request: RpcRequest = match serde_json::from_str(line) {
             Ok(request) => request,
             Err(error) => {
@@ -691,9 +798,16 @@ impl AppServer {
             }
             return Ok(None);
         };
-        let result = match parse_client_request(id.clone(), &request.method, &request.params) {
-            Ok(client_request) => self.dispatch(client_request, request.params).await,
-            Err(error) => Err(error),
+        let result = if matches!(
+            request.method.as_str(),
+            "tool/respond" | "permission/respond" | "thread/tools/get" | "thread/tools/set"
+        ) {
+            self.dispatch_host_tools(&request.method, &request.params)
+        } else {
+            match parse_client_request(id.clone(), &request.method, &request.params) {
+                Ok(client_request) => self.dispatch(client_request, request.params).await,
+                Err(error) => Err(error),
+            }
         };
         Ok(Some(match result {
             Ok(value) => serde_json::to_string(&JSONRPCResponse::new(id, value))?,
@@ -736,7 +850,7 @@ impl AppServer {
                     "platformFamily": std::env::consts::FAMILY,
                     "platformOs": std::env::consts::OS,
                     "serverInfo": {"name": "aphrody", "version": env!("CARGO_PKG_VERSION")},
-                    "capabilities": {"threads": true, "turns": true, "localModels": true, "interrupt": true, "aphrody": cfg!(feature = "rag")},
+                    "capabilities": {"threads": true, "turns": true, "localModels": true, "interrupt": true, "hostTools":true, "aphrody": cfg!(feature = "rag")},
                     "authentication": {"required": false}
                 }))
             },
@@ -920,6 +1034,13 @@ impl AppServer {
             // (same resolution path as `thread/start`), so the raw value is
             // kept for config resolution.
             ClientRequest::ToolsList { .. } => {
+                if let Some(thread_id) = params.get("threadId").and_then(Value::as_str) {
+                    let thread = self
+                        .threads
+                        .get(thread_id)
+                        .ok_or_else(|| AppServerError::InvalidRequest("unknown thread".into()))?;
+                    return Ok(json!({"data":thread.tools.openai_functions()}));
+                }
                 let resolved = config::resolve_with_profile(
                     &self.base_home,
                     &params,
@@ -1035,6 +1156,7 @@ impl AppServer {
                     .submit(Op::Interrupt)
                     .map_err(|_| AppServerError::Runtime("session actor stopped".into()))?;
                 thread.interrupt_requested = true;
+                thread.host_tools.cancel_all();
                 Ok(json!({ "threadId": thread_id, "status": "interrupt_requested" }))
             },
             ClientRequest::TurnSteer { .. } => {
@@ -1067,6 +1189,7 @@ impl AppServer {
                 let thread = self.threads.remove(&thread_id).ok_or_else(|| {
                     AppServerError::InvalidRequest(format!("unknown thread: {thread_id}"))
                 })?;
+                thread.host_tools.cancel_all();
                 let _ = thread.handle.submit(Op::Shutdown);
                 let _ = thread.handle.join().await;
                 Ok(serde_json::to_value(ThreadCloseResponse {
@@ -1084,6 +1207,16 @@ impl AppServer {
                 let thread = self.threads.get_mut(thread_id).ok_or_else(|| {
                     AppServerError::InvalidRequest(format!("unknown thread: {thread_id}"))
                 })?;
+                let wait = params
+                    .get("waitForCompletion")
+                    .and_then(Value::as_bool)
+                    .unwrap_or_else(|| params.get("input").is_some_and(Value::is_string));
+                if wait && !thread.host_tools.is_empty() {
+                    return Err(AppServerError::InvalidRequest(
+                        "host callbacks require asynchronous turn/start (waitForCompletion=false)"
+                            .into(),
+                    ));
+                }
                 for (key, expected) in [("model", &thread.info.model), ("cwd", &thread.info.cwd)] {
                     if params
                         .get(key)
@@ -1121,11 +1254,6 @@ impl AppServer {
                     "turn/started",
                     json!({"threadId": thread_id, "turn": turn}),
                 ));
-                let legacy_input = params.get("input").is_some_and(Value::is_string);
-                let wait = params
-                    .get("waitForCompletion")
-                    .and_then(Value::as_bool)
-                    .unwrap_or(legacy_input);
                 if !wait {
                     return Ok(json!({
                         "turn": turn,
@@ -1871,6 +1999,29 @@ wire_api = "chat"
         server.handle(r#"{"id":0,"method":"initialize"}"#).await.unwrap();
         server.handle(r#"{"method":"initialized"}"#).await.unwrap();
         server
+    }
+
+    #[test]
+    fn ephemeral_host_prompt_and_empty_tool_surface_use_canonical_runtime() {
+        let home = tempfile::tempdir().unwrap();
+        let params = json!({"ephemeral":true,"systemPrompt":" exact host prompt \n","builtins":false,"subagents":false});
+        let resolved = config::resolve(home.path(), &json!({})).unwrap();
+        let runtime = config::runtime(&resolved, home.path(), home.path(), &params).unwrap();
+        assert_eq!(runtime.system_prompt.as_deref(), Some(" exact host prompt \n"));
+        assert!(runtime.live_agent_home_workspace.is_none());
+        assert!(runtime.rag_db.is_none());
+        let registry = build_tool_registry(&runtime).unwrap();
+        assert!(registry.definitions().is_empty());
+        for unsupported in [
+            json!({"systemPrompt":"host"}),
+            json!({"builtins":false}),
+            json!({"tools":[{"name":""}]}),
+            json!({"subagents":true}),
+            json!({"permissions":"invalid-owner"}),
+            json!({"ephemeral":true,"systemPrompt":" \n"}),
+        ] {
+            assert!(config::runtime(&resolved, home.path(), home.path(), &unsupported).is_err());
+        }
     }
 
     #[test]

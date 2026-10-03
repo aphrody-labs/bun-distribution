@@ -243,6 +243,9 @@ async fn launch_and_supervise(dirs: &StateDirs, role: Role) -> Result<ExitReason
         )));
     }
 
+    let caps = ServerCapabilities::probe(&request.binary)?;
+    request.spec.validate_capabilities(&caps).map_err(|message| request_error(message.into()))?;
+
     // A CPU-only instance occupies no VRAM and needs no lease.
     let _lease = if request.spec.placement == Placement::Cpu {
         None
@@ -256,7 +259,6 @@ async fn launch_and_supervise(dirs: &StateDirs, role: Role) -> Result<ExitReason
         )?)
     };
 
-    let caps = ServerCapabilities::probe(&request.binary)?;
     let outcome = serve(dirs, &request, &caps).await;
     unpublish(dirs, role);
     outcome

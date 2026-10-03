@@ -51,6 +51,7 @@ mod approval;
 mod compaction;
 mod config;
 mod error;
+mod goal;
 mod session;
 mod sink;
 mod turn;
@@ -63,6 +64,7 @@ pub use compaction::{
 };
 pub use config::{AutonomyMode, DEFAULT_MAX_TOOL_ITERATIONS, EngineConfig};
 pub use error::EngineError;
+pub use goal::{GoalRunOutcome, ROLLOUT_GOAL_STATE, restore_goal, run_goal};
 pub use session::Session;
 pub use sink::EventSink;
 pub use turn::{

@@ -850,6 +850,144 @@ async fn actor_drives_user_input_to_completion() {
 }
 
 #[tokio::test]
+async fn goal_continues_then_persists_achievement_without_evaluator_tokens() {
+    use crate::{GoalRunOutcome, restore_goal, run_goal};
+    use aphrody_agent_proto::{GoalState, GoalStatus};
+    let client = MockModelClient::looping(vec![
+        ModelStreamEvent::TextDelta("work evidence".into()),
+        ModelStreamEvent::Completed { usage: None, finish_reason: None },
+    ]);
+    let evaluator = MockModelClient::scripted(vec![
+        vec![
+            ModelStreamEvent::TextDelta(r#"{"met":false,"reason":"missing check"}"#.into()),
+            ModelStreamEvent::Completed { usage: None, finish_reason: None },
+        ],
+        vec![
+            ModelStreamEvent::TextDelta(r#"{"met":true,"reason":"check observed"}"#.into()),
+            ModelStreamEvent::Completed { usage: None, finish_reason: None },
+        ],
+    ]);
+    let temp = tempfile::tempdir().unwrap();
+    let recorder = RolloutRecorder::new(temp.path(), Some("goal-test".into())).await.unwrap();
+    let path = recorder.path().to_path_buf();
+    let mut session = Session::new(EngineConfig::new("mock-model"));
+    let mut goal = GoalState::new("prove behavior", 42).unwrap();
+    let (sink, mut rx) = EventSink::unbounded();
+    let result = run_goal(
+        &mut session,
+        &mut goal,
+        &client,
+        &evaluator,
+        &ToolRegistry::new(),
+        Some(&recorder),
+        &sink,
+        None,
+        &InterruptFlag::new(),
+        &SteerQueue::new(),
+        3,
+    )
+    .await
+    .unwrap();
+    assert_eq!(result, GoalRunOutcome::Achieved);
+    assert_eq!(goal.status, GoalStatus::Achieved);
+    assert_eq!(goal.turns, 2);
+    assert_eq!(client.call_count(), 2);
+    assert_eq!(evaluator.call_count(), 2);
+    assert_eq!(session.len(), 4, "evaluator messages must not enter session history");
+    let emitted = drain(&mut rx);
+    assert!(
+        !emitted.iter().any(
+            |msg| matches!(msg, EventMsg::AgentMessageDelta { delta } if delta.contains("met"))
+        )
+    );
+    recorder.shutdown().await.unwrap();
+    let lines = aphrody_rollout::resume(&path).await.unwrap();
+    assert_eq!(restore_goal(&lines).unwrap(), Some(goal));
+}
+
+#[tokio::test]
+async fn goal_invalid_verdict_budget_and_interrupt_never_claim_completion() {
+    use crate::{GoalRunOutcome, run_goal};
+    use aphrody_agent_proto::{GoalState, GoalStatus};
+    let client = MockModelClient::looping(vec![ModelStreamEvent::Completed {
+        usage: None,
+        finish_reason: None,
+    }]);
+    let bad = MockModelClient::scripted(vec![vec![
+        ModelStreamEvent::TextDelta("yes, goal met".into()),
+        ModelStreamEvent::Completed { usage: None, finish_reason: None },
+    ]]);
+    let (sink, _) = EventSink::unbounded();
+    let tools = ToolRegistry::new();
+    let steer = SteerQueue::new();
+    let mut session = Session::new(EngineConfig::new("mock-model"));
+    let mut goal = GoalState::new("test", 0).unwrap();
+    assert!(matches!(
+        run_goal(
+            &mut session,
+            &mut goal,
+            &client,
+            &bad,
+            &tools,
+            None,
+            &sink,
+            None,
+            &InterruptFlag::new(),
+            &steer,
+            1
+        )
+        .await,
+        Err(crate::EngineError::Goal(_))
+    ));
+    assert_eq!(goal.status, GoalStatus::Active);
+    let negative = MockModelClient::looping(vec![
+        ModelStreamEvent::TextDelta(r#"{"met":false,"reason":"need evidence"}"#.into()),
+        ModelStreamEvent::Completed { usage: None, finish_reason: None },
+    ]);
+    assert_eq!(
+        run_goal(
+            &mut session,
+            &mut goal,
+            &client,
+            &negative,
+            &tools,
+            None,
+            &sink,
+            None,
+            &InterruptFlag::new(),
+            &steer,
+            1
+        )
+        .await
+        .unwrap(),
+        GoalRunOutcome::TurnBudgetReached
+    );
+    assert_eq!(goal.status, GoalStatus::Active);
+    let calls = client.call_count();
+    let interrupt = InterruptFlag::new();
+    interrupt.trip();
+    assert_eq!(
+        run_goal(
+            &mut session,
+            &mut goal,
+            &client,
+            &negative,
+            &tools,
+            None,
+            &sink,
+            None,
+            &interrupt,
+            &steer,
+            0
+        )
+        .await
+        .unwrap(),
+        GoalRunOutcome::Interrupted
+    );
+    assert_eq!(client.call_count(), calls);
+}
+
+#[tokio::test]
 async fn steer_seeded_before_turn_injects_user_message() {
     // Guidance queued before the turn runs is folded in before the first model
     // call, as a second user message, and surfaced as SteerApplied.

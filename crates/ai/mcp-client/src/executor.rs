@@ -128,6 +128,9 @@ impl ToolExecutor for McpToolExecutor {
 
         let mut text_parts = Vec::new();
         let mut images = Vec::new();
+        if let Some(structured) = &result.structured_content {
+            text_parts.push(structured.to_string());
+        }
 
         for item in result.content {
             match item {

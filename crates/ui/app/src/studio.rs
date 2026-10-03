@@ -74,9 +74,9 @@ pub async fn studio_native_chat(
     max_tokens: Option<u32>,
 ) -> Result<Value, String> {
     use aphrody_llama_server::{Role, discover_running};
-    let state = discover_running(Role::Chat)
-        .filter(|state| state.ready)
-        .ok_or_else(|| "aucun modèle de chat local prêt : en charger un depuis Modèles".to_string())?;
+    let state = discover_running(Role::Chat).filter(|state| state.ready).ok_or_else(|| {
+        "aucun modèle de chat local prêt : en charger un depuis Modèles".to_string()
+    })?;
     let body = serde_json::json!({
         "model": state.alias,
         "messages": messages,
@@ -91,8 +91,13 @@ pub async fn studio_native_chat(
         .await
         .map_err(|error| format!("modèle local injoignable : {error}"))?;
     let status = response.status();
-    let value: Value = response.json().await.map_err(|error| format!("réponse invalide : {error}"))?;
-    if status.is_success() { Ok(value) } else { Err(format!("modèle local : HTTP {status} {value}")) }
+    let value: Value =
+        response.json().await.map_err(|error| format!("réponse invalide : {error}"))?;
+    if status.is_success() {
+        Ok(value)
+    } else {
+        Err(format!("modèle local : HTTP {status} {value}"))
+    }
 }
 
 /// Bridge injected into the Shenron admin window: the page calls the desktop's local models
@@ -128,7 +133,8 @@ pub async fn studio_open_shenron_admin(
     let target = url
         .or_else(|| std::env::var("SHENRON_ADMIN_URL").ok())
         .unwrap_or_else(|| DEFAULT_ADMIN_URL.to_string());
-    let parsed: tauri::Url = target.parse().map_err(|error| format!("URL admin invalide : {error}"))?;
+    let parsed: tauri::Url =
+        target.parse().map_err(|error| format!("URL admin invalide : {error}"))?;
     if !matches!(parsed.scheme(), "http" | "https") {
         return Err("seules les URL http(s) ouvrent l'administration".into());
     }
@@ -173,10 +179,17 @@ pub async fn studio_shenron_train_start(
     let allow_cpu = allow_cpu.unwrap_or(false);
     let _ = app.emit("studio://train", serde_json::json!({"state": "started", "kind": kind, "steps": steps, "baseModel": base_model}));
     tauri::async_runtime::spawn(async move {
-        let result = aphrody_command::shenron_cmd::train_candidate(&kind, None, steps, base_model, allow_cpu).await;
+        let result = aphrody_command::shenron_cmd::train_candidate(
+            &kind, None, steps, base_model, allow_cpu,
+        )
+        .await;
         let payload = match result {
-            Ok(output) => serde_json::json!({"state": "finished", "kind": kind, "output": output.display().to_string()}),
-            Err(error) => serde_json::json!({"state": "failed", "kind": kind, "error": format!("{error:?}")}),
+            Ok(output) => {
+                serde_json::json!({"state": "finished", "kind": kind, "output": output.display().to_string()})
+            },
+            Err(error) => {
+                serde_json::json!({"state": "failed", "kind": kind, "error": format!("{error:?}")})
+            },
         };
         TRAINING.store(false, Ordering::SeqCst);
         let _ = app.emit("studio://train", payload);
@@ -187,8 +200,11 @@ pub async fn studio_shenron_train_start(
 /// The offline Shenron corpus (wiki, databooks, manga, lore) owned by `aphrody-rag::dragonball`,
 /// loaded once per process.
 fn corpus() -> &'static aphrody_rag::dragonball::LocalCorpus {
-    static CORPUS: std::sync::OnceLock<aphrody_rag::dragonball::LocalCorpus> = std::sync::OnceLock::new();
-    CORPUS.get_or_init(|| aphrody_rag::dragonball::LocalCorpus::load_with(&aphrody_rag::dragonball::process_env))
+    static CORPUS: std::sync::OnceLock<aphrody_rag::dragonball::LocalCorpus> =
+        std::sync::OnceLock::new();
+    CORPUS.get_or_init(|| {
+        aphrody_rag::dragonball::LocalCorpus::load_with(&aphrody_rag::dragonball::process_env)
+    })
 }
 
 /// Size of the local Shenron corpus.
@@ -232,7 +248,10 @@ pub async fn studio_corpus_ask(question: String) -> Value {
 /// tokens are kept in the private store (`drive-oauth-token.json`, mode 0600) and returned so the
 /// Drive daemon can mount the folder (`volumes.add_cloud`, OpenDAL `gdrive`).
 #[tauri::command]
-pub async fn studio_google_drive_authorize(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<Value, String> {
+pub async fn studio_google_drive_authorize(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+) -> Result<Value, String> {
     use tauri_plugin_opener::OpenerExt;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     main_window_only(&window)?;
@@ -245,14 +264,25 @@ pub async fn studio_google_drive_authorize(app: tauri::AppHandle, window: tauri:
     .map_err(|error| format!("client OAuth illisible : {error}"))?;
     let installed = &client["installed"];
     let field = |name: &str| {
-        installed[name].as_str().map(str::to_owned).ok_or_else(|| format!("client OAuth : `{name}` absent"))
+        installed[name]
+            .as_str()
+            .map(str::to_owned)
+            .ok_or_else(|| format!("client OAuth : `{name}` absent"))
     };
     let (client_id, client_secret) = (field("client_id")?, field("client_secret")?);
     let (auth_uri, token_uri) = (field("auth_uri")?, field("token_uri")?);
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.map_err(|error| error.to_string())?;
-    let redirect = format!("http://localhost:{}", listener.local_addr().map_err(|e| e.to_string())?.port());
-    let state = format!("{:x}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_nanos());
+    let listener =
+        tokio::net::TcpListener::bind("127.0.0.1:0").await.map_err(|error| error.to_string())?;
+    let redirect =
+        format!("http://localhost:{}", listener.local_addr().map_err(|e| e.to_string())?.port());
+    let state = format!(
+        "{:x}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|e| e.to_string())?
+            .as_nanos()
+    );
     let mut consent = reqwest::Url::parse(&auth_uri).map_err(|error| error.to_string())?;
     consent
         .query_pairs_mut()
@@ -280,7 +310,8 @@ pub async fn studio_google_drive_authorize(app: tauri::AppHandle, window: tauri:
     let target = tokio::time::timeout(std::time::Duration::from_secs(300), accept)
         .await
         .map_err(|_| "délai d'autorisation Google dépassé (5 min)".to_string())??;
-    let url = reqwest::Url::parse(&format!("{redirect}{target}")).map_err(|error| error.to_string())?;
+    let url =
+        reqwest::Url::parse(&format!("{redirect}{target}")).map_err(|error| error.to_string())?;
     let query: std::collections::HashMap<String, String> = url.query_pairs().into_owned().collect();
     if query.get("state") != Some(&state) {
         return Err("réponse OAuth refusée : état inattendu".into());
@@ -304,8 +335,11 @@ pub async fn studio_google_drive_authorize(app: tauri::AppHandle, window: tauri:
         .json()
         .await
         .map_err(|error| format!("réponse de jeton invalide : {error}"))?;
-    let access_token = tokens["access_token"].as_str().ok_or_else(|| format!("jeton absent : {tokens}"))?;
-    let refresh_token = tokens["refresh_token"].as_str().ok_or("refresh_token absent (consentement hors ligne refusé)")?;
+    let access_token =
+        tokens["access_token"].as_str().ok_or_else(|| format!("jeton absent : {tokens}"))?;
+    let refresh_token = tokens["refresh_token"]
+        .as_str()
+        .ok_or("refresh_token absent (consentement hors ligne refusé)")?;
     let stored = serde_json::json!({
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -313,11 +347,13 @@ pub async fn studio_google_drive_authorize(app: tauri::AppHandle, window: tauri:
         "obtained_at": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_secs(),
     });
     let path = private.join("drive-oauth-token.json");
-    std::fs::write(&path, serde_json::to_vec_pretty(&stored).map_err(|e| e.to_string())?).map_err(|error| error.to_string())?;
+    std::fs::write(&path, serde_json::to_vec_pretty(&stored).map_err(|e| e.to_string())?)
+        .map_err(|error| error.to_string())?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).map_err(|error| error.to_string())?;
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))
+            .map_err(|error| error.to_string())?;
     }
     Ok(serde_json::json!({
         "access_token": access_token,
@@ -442,40 +478,73 @@ pub async fn studio_a2a_send_envelope(envelope: Value) -> Result<Value, String> 
     Ok(serde_json::json!({ "sent": true, "path": target.to_string_lossy(), "envelope": envelope }))
 }
 
-/// List available MCP tools and their generative UI capabilities.
+/// List the canonical app-server tools; no generative UI capability is implied.
 #[tauri::command]
-pub async fn studio_mcp_tools_list() -> Result<Value, String> {
-    let tools = serde_json::json!([
-        {
-            "name": "chart_generator",
-            "description": "Visualisation de métriques de streaming d'agent et de tokens/sec.",
-            "ui": {
-                "resourceUri": "ui://mcp.aphrody.local/metrics-chart.html"
-            }
-        },
-        {
-            "name": "color_scheme_explorer",
-            "description": "Générateur dynamique de thèmes et palettes Material Design 3.",
-            "ui": {
-                "resourceUri": "ui://mcp.aphrody.local/m3-palette.html"
-            }
-        },
-        {
-            "name": "a2a_dispatch",
-            "description": "Délégation de tâche à un agent pair via le protocole A2A 1.0.",
-            "ui": null
-        },
-        {
-            "name": "rag_search",
-            "description": "Recherche hybride vectorielle et textuelle dans le corpus documentaire.",
-            "ui": null
-        }
-    ]);
+pub async fn studio_mcp_tools_list(
+    window: tauri::WebviewWindow,
+    broker: tauri::State<'_, crate::broker::AppServerBroker>,
+) -> Result<Value, String> {
+    main_window_only(&window)?;
+    let response =
+        broker.call(serde_json::json!({"id": 0, "method": "tools/list", "params": {}})).await?;
+    tools_inventory_from_response(&response)
+}
 
+fn tools_inventory_from_response(response: &Value) -> Result<Value, String> {
+    if let Some(error) = response.get("error") {
+        return Err(error
+            .get("message")
+            .and_then(Value::as_str)
+            .unwrap_or("Tool inventory unavailable")
+            .to_owned());
+    }
+    let data = response
+        .get("result")
+        .and_then(|result| result.get("data"))
+        .and_then(Value::as_array)
+        .ok_or("Invalid app-server tool inventory")?;
+    let tools = data
+        .iter()
+        .map(|tool| {
+            let name = tool.get("name").and_then(Value::as_str).ok_or("Invalid tool name")?;
+            let description = tool.get("description").and_then(Value::as_str).unwrap_or("");
+            Ok(serde_json::json!({"name": name, "description": description, "ui": null}))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
     Ok(serde_json::json!({
         "tools": tools,
-        "protocol": "MCP-UI / SEP-1724",
-        "m3Parity": true
+        "source": "aphrody-app-server/tools/list",
+        "protocol": "JSON-RPC 2.0",
+        "m3Parity": false
     }))
 }
 
+#[cfg(test)]
+mod tool_inventory_tests {
+    use super::tools_inventory_from_response;
+    use serde_json::json;
+
+    #[test]
+    fn lists_only_tools_returned_by_the_owner_without_fabricated_ui_support() {
+        let inventory = tools_inventory_from_response(&json!({"result": {"data": [
+            {"type": "function", "name": "synthetic_tool", "description": "Synthetic fixture", "parameters": {}}
+        ]}})).unwrap();
+        assert_eq!(inventory["tools"].as_array().unwrap().len(), 1);
+        assert_eq!(inventory["tools"][0]["name"], "synthetic_tool");
+        assert!(inventory["tools"][0]["ui"].is_null());
+        assert_eq!(inventory["m3Parity"], false);
+        assert!(!inventory.to_string().contains("chart_generator"));
+    }
+
+    #[test]
+    fn errors_and_malformed_responses_never_appear_as_successful_empty_registry() {
+        assert_eq!(
+            tools_inventory_from_response(&json!({"error": {"message": "fixture unavailable"}}))
+                .unwrap_err(),
+            "fixture unavailable"
+        );
+        assert!(tools_inventory_from_response(&json!({})).is_err());
+        assert!(tools_inventory_from_response(&json!({"result": {"data": [{}]}})).is_err());
+        assert!(tools_inventory_from_response(&json!({"result": {"data": []}})).is_ok());
+    }
+}

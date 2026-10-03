@@ -8,6 +8,9 @@ use aphrody_toolcall::ToolError;
 /// Errors that can abort a [`run_turn`](crate::run_turn) call.
 #[derive(Debug, thiserror::Error)]
 pub enum EngineError {
+    /// Invalid goal state or evaluator output. Never interpreted as completion.
+    #[error("goal error: {0}")]
+    Goal(String),
     /// The underlying [`ModelClient`](aphrody_model_client::ModelClient) failed
     /// while opening or draining the stream.
     #[error("model error: {0}")]

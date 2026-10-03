@@ -158,12 +158,41 @@ pub(crate) fn optional_string(
         .transpose()
 }
 
+pub(crate) fn validate_session_options(params: &Value) -> Result<(), AppServerError> {
+    let custom_prompt = optional_string(params, "systemPrompt")?;
+    if custom_prompt.as_deref().is_some_and(|prompt| prompt.trim().is_empty()) {
+        return Err(invalid("systemPrompt must not be blank; omit it to use the default"));
+    }
+    let builtins = optional_bool(params, "builtins")?.unwrap_or(true);
+    let subagents = optional_bool(params, "subagents")?;
+    crate::host_tools::HostTools::declare("validation", params.get("tools"))?;
+    if subagents == Some(true) {
+        return Err(invalid("subagent delegation is unsupported on this surface"));
+    }
+    if let Some(owner) = optional_string(params, "permissions")?
+        && !matches!(owner.as_str(), "aphrody" | "jan" | "host")
+    {
+        return Err(invalid("permissions must be aphrody, jan, or host"));
+    }
+    if (custom_prompt.is_some() || !builtins)
+        && !optional_bool(params, "ephemeral")?.unwrap_or(false)
+    {
+        return Err(invalid(
+            "systemPrompt and builtins overrides currently require ephemeral=true; durable runtime-option replay is not implemented",
+        ));
+    }
+    Ok(())
+}
+
 pub(crate) fn runtime(
     config: &Config,
     home: &Path,
     cwd: &Path,
     params: &Value,
 ) -> Result<RuntimeConfig, AppServerError> {
+    validate_session_options(params)?;
+    let custom_prompt = optional_string(params, "systemPrompt")?;
+    let builtins = optional_bool(params, "builtins")?.unwrap_or(true);
     let mut instructions = vec![crate::system_prompt()];
     instructions.extend(config.instructions.iter().cloned());
     instructions.extend(config.developer_instructions.iter().cloned());
@@ -200,6 +229,19 @@ pub(crate) fn runtime(
         .map_err(|error| invalid(format!("cannot resolve tool profile: {error}")))?
     {
         runtime = runtime.with_tool_profile(tool_profile);
+    }
+    if let Some(prompt) = custom_prompt {
+        runtime.system_prompt = Some(prompt);
+        runtime.live_agent_home_workspace = None;
+    }
+    if !builtins {
+        // Reuse the runtime's exact allow-list. An empty profile removes all
+        // built-ins, skills, plugins and MCP contributions, including RAG.
+        runtime.tool_profile = Some(aphrody_agent_runtime::ToolProfileSpec {
+            builtin_tools: Some(Default::default()),
+            ..Default::default()
+        });
+        runtime.rag_db = None;
     }
     Ok(runtime)
 }

@@ -151,6 +151,12 @@ pub struct CallToolResult {
     /// Whether the tool execution resulted in an error.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub is_error: Option<bool>,
+    /// Structured result retained independently of display text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub structured_content: Option<JsonValue>,
+    /// Opaque result metadata for callers forwarding upstream output.
+    #[serde(rename = "_meta", default, skip_serializing_if = "Option::is_none")]
+    pub meta: Option<JsonValue>,
 }
 
 impl CallToolResult {
@@ -255,6 +261,28 @@ pub fn parse_server_info(result: &JsonValue) -> Result<ServerInfo> {
 
 /// Parse a `tools/call` result into [`CallToolResult`].
 pub fn parse_call_tool_result(result: &JsonValue) -> Result<CallToolResult> {
+    // MCP embeds resource data under `resource`, whereas older callers used
+    // the flattened shape. Normalize text resources; binary resources must
+    // use the raw API rather than silently disappearing from the answer.
+    let mut normalized = result.clone();
+    if let Some(items) = normalized.get_mut("content").and_then(JsonValue::as_array_mut) {
+        for item in items {
+            if item.get("type").and_then(JsonValue::as_str) == Some("resource")
+                && let Some(resource) = item.get("resource")
+            {
+                if resource.get("blob").is_some() {
+                    return Err(McpClientError::Malformed(
+                        "binary resource requires call_tool_raw".to_owned(),
+                    ));
+                }
+                let uri = resource.get("uri").and_then(JsonValue::as_str).ok_or_else(|| {
+                    McpClientError::Malformed("embedded resource is missing uri".to_owned())
+                })?;
+                *item = serde_json::json!({"type":"resource","uri":uri,"text":resource.get("text"),"mimeType":resource.get("mimeType")});
+            }
+        }
+    }
+    let result = &normalized;
     // If the result already matches CallToolResult schema:
     if let Ok(res) = serde_json::from_value::<CallToolResult>(result.clone())
         && (!res.content.is_empty() || res.is_error.is_some())
@@ -270,13 +298,23 @@ pub fn parse_call_tool_result(result: &JsonValue) -> Result<CallToolResult> {
                 content.push(c);
             } else if let Some(s) = item.as_str() {
                 content.push(McpContent::Text { text: s.to_owned() });
+            } else {
+                return Err(McpClientError::Malformed(
+                    "unsupported or malformed MCP content block; use call_tool_raw to preserve it"
+                        .to_owned(),
+                ));
             }
         }
         let is_error = result.get("isError").and_then(JsonValue::as_bool);
-        return Ok(CallToolResult { content, is_error });
+        return Ok(CallToolResult {
+            content,
+            is_error,
+            structured_content: result.get("structuredContent").cloned(),
+            meta: result.get("_meta").cloned(),
+        });
     }
 
     // Fallback: raw JSON value as a single text item:
     let text = if let Some(s) = result.as_str() { s.to_owned() } else { result.to_string() };
-    Ok(CallToolResult { content: vec![McpContent::Text { text }], is_error: None })
+    Ok(CallToolResult { content: vec![McpContent::Text { text }], ..CallToolResult::default() })
 }

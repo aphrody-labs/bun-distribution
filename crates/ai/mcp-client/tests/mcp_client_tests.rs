@@ -113,6 +113,22 @@ fn test_parse_call_tool_result_content() {
 }
 
 #[test]
+fn structured_results_survive_and_unsupported_blocks_fail_explicitly() {
+    let result = parse_call_tool_result(
+        &json!({"content":[],"structuredContent":{"answer":42},"_meta":{"trace":"fixture"}}),
+    )
+    .unwrap();
+    assert_eq!(result.structured_content, Some(json!({"answer":42})));
+    assert_eq!(result.meta, Some(json!({"trace":"fixture"})));
+    assert!(
+        parse_call_tool_result(
+            &json!({"content":[{"type":"audio","data":"AA==","mimeType":"audio/wav"}]})
+        )
+        .is_err()
+    );
+}
+
+#[test]
 fn test_schema_conversion_resilience() {
     let raw = json!({
         "type": "object",
