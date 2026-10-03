@@ -23,13 +23,7 @@
     "frozenLockfile": true
   },
   "local": {
-    "allowed": [
-      "help",
-      "plan",
-      "inventory",
-      "source-edit",
-      "scoped-static-check"
-    ],
+    "allowed": ["help", "plan", "inventory", "source-edit", "scoped-static-check"],
     "heavyExecution": "remote"
   },
   "transport": {
@@ -59,5 +53,12 @@
     "aphrody": "/srv/aphrody-build/workspaces/aphrody",
     "iecode": "/srv/aphrody-build/workspaces/iecode",
     "aphrody-py": "/srv/aphrody-build/workspaces/aphrody-py"
+  },
+  "next": {
+    "image": "node:22-bookworm-slim",
+    "pull": "never",
+    "cpus": 6,
+    "memoryMiB": 16384,
+    "maxOldSpaceSizeMiB": 8192
   }
 }

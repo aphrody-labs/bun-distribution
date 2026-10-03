@@ -201,3 +201,52 @@ and client DNS checks converge and old-IP traffic has drained, remove only the
 temporary dedicated file through Infra, retain its backups and validate/reload
 Nginx. `restore BACKUP` restores the old configuration for coordinated runtime
 rollback; it does not restart application services.
+
+## Isolated Bun runtime dependencies
+
+Monorepo assembly and activation require Next under the site owner:
+`apps/shenron/site/node_modules/next/dist/bin/next`. Generated site units use
+that same path before sealing; only legacy artifacts retain the root fallback.
+The source payload includes compiled first-party directories selected by the
+existing Workspace dependency build plan for site and bot. Owner manifests
+determine `dist`/`build` roots; missing outputs or tracked-source collisions fail
+packaging. The observed plan selects Discord Kit, M3 Motion and M3 Primitives.
+Their generated files are sealed inside the source archive and their owners
+recorded in `firstPartyArtifacts`; DBFR does not rebuild those dependencies.
+
+## Backup ownership after cutover
+
+Read-only DBFR observation found both PostgreSQL and SQLite backup timers
+active/enabled with successful jobs on 2026-10-03. Existing PG archives used
+242 MiB and SQLite archives 380 MiB. The new active `bot.db` measured
+286,408,704 bytes. Site/media assets are excluded from this database backup.
+
+Retarget the existing `shenron-sqlite-replica-backup.service` to the active
+`/srv/shenron/shared/bot/data/bot.db`; keep its timer and existing destination
+for the Windows offsite acknowledgement contract. The source VPS backup timer
+is disabled at cutover, not duplicated on DBFR. Export/install the committed
+small adapter package with `--backup-owner` to include the canonical libexec
+script and service. Reload units separately; do not disable existing DBFR
+PostgreSQL or SQLite timers.
+
+SQLite backup uses read-only VACUUM INTO, private files, a 2 GiB archive budget
+and 4 GiB free-space floor with conservative temporary-space accounting.
+Capacity failures preserve existing backups; age retention still requires
+verified offsite acknowledgements. No media is recursively archived.
+
+Final shared-state transfer requires inactive runtime writers on both hosts.
+Source checkpoint removal of SQLite WAL/SHM is handled by quarantining stale
+target sidecars only for matching source main databases. Relative paths,
+checksums and file metadata are retained outside protected stores; no broad
+`--delete` or deletion of protected database files is used.
+
+## Observed compiler boundary
+
+The first real Shenron build under Bun 1.4.2/Next 16.3.8 remained idle in
+compile: thirty sleeping threads, no child process or TCP connection and no
+output progress for over four minutes. It was stopped after 393 seconds; these
+observations do not identify the missing callback. Shenron now reuses the
+existing immutable Next boundary from the RG assembler: cached Node 22 Docker
+image, inspected full image ID, no pull, six CPU quota, 16 GiB container memory
+and 8 GiB Node heap. Bun retains dependency preparation, packaging and runtime.
+Compiler image identity and resource limits are sealed with successful artifacts.

@@ -23,7 +23,11 @@
     "dbfrDiskAvailableGiB": 51,
     "privateEnvironments": "transferred-directly-with-0600-permissions",
     "privatePostgresqlConnection": "SELECT 1 passed on DBFR",
-    "sharedStateTransfer": "prepass-running"
+    "sharedStateTransfer": "prepass passed; final checksums pending",
+    "prepassTotalFileBytes": 33820000000,
+    "prepassTransferredBytes": 31010000000,
+    "prepassByteCounts": "rounded rsync human-readable counters",
+    "prepassMegabytesPerSecond": 52.02
   },
   "rg": {
     "applicationState": "stopped",
@@ -42,7 +46,8 @@
       "rg-realtime.service"
     ],
     "protectedDataPreserved": true,
-    "hostSwapUnitPreserved": "rg-zram-swap.service"
+    "hostSwapUnitPreserved": "rg-zram-swap.service",
+    "runningDockerContainers": 0
   },
   "validation": {
     "workerCargoBuilds": 0,
@@ -52,6 +57,12 @@
     "workspaceTypecheck": "passed",
     "shenronAdapterFixtures": "passed",
     "realFactoryBuild": "native qualification running on VPS",
-    "dbfrActivation": "pending"
+    "dbfrActivation": "pending",
+    "infraColdCheckSeconds": 101.65,
+    "infraWarmCheckSeconds": 2.95,
+    "infraClippyAllTargets": "passed",
+    "infraNativeBinary": "built on VPS, hash-qualified and installed on WSL with backup",
+    "pythonUvLock": "passed offline with pinned uv 0.12.22 and CPython 3.12.13",
+    "shenronBotCompileSeconds": 2.19
   }
 }

@@ -7,9 +7,9 @@
  * les unités et les sondes restent côté infra (aucun SSH ni déploiement ici).
  */
 import { existsSync } from "node:fs";
-import { rm } from "node:fs/promises";
+import { mkdir, realpath, rm } from "node:fs/promises";
 import { connect } from "node:net";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { createRequire } from "node:module";
 import { buildDependencies } from "../../../../../packages/infra/workspace/src/bun-dependency-builds.ts";
 
@@ -108,26 +108,102 @@ delete buildEnv.HTTPS_PROXY;
 delete buildEnv.all_proxy;
 delete buildEnv.ALL_PROXY;
 
-const buildProc = Bun.spawn([process.execPath, nextBin, "build", "--turbopack"], {
-  cwd: siteDir,
-  env: {
-    ...buildEnv,
-    NODE_ENV: "production",
-    NEXT_TELEMETRY_DISABLED: "1",
-    NEXT_DEPLOYMENT_ID: sha,
-    NEXT_DIST_DIR: ".next-build",
-    DATABASE_URL: databaseUrl,
-    TURBOPACK: "1",
-    TURBO_ENGINE_GC: "1",
-    TURBO_ENGINE_EVICT_MIN_BYTES: "33554432",
-    BUN_JSC_forceRAMSize: "8589934592",
-    BUN_GARBAGE_COLLECTOR_LEVEL: "1",
-    BUILD_CPUS: process.env.BUILD_CPUS ?? "4",
-    BUILD_STATIC_CONCURRENCY: process.env.BUILD_STATIC_CONCURRENCY ?? "6",
-  },
-  stdout: "inherit",
-  stderr: "inherit",
+// Match the existing immutable RG compiler boundary: Node 22 compiles Next;
+// Bun owns installs, package preparation, packaging and the final site runtime.
+const factory = await Bun.file(join(repo, "config/build-factory.json")).json();
+const nodeImage = factory.next?.image ?? "node:22-bookworm-slim";
+const memoryMiB = factory.next?.maxOldSpaceSizeMiB ?? 8192;
+const containerMemoryMiB = factory.next?.memoryMiB ?? 16384;
+const cpus = factory.next?.cpus ?? 6;
+if (typeof nodeImage !== "string" || !/^[a-z0-9][a-zA-Z0-9._/:@-]*$/.test(nodeImage))
+  throw new Error("Invalid factory Next compiler image");
+if (!Number.isSafeInteger(memoryMiB) || memoryMiB < 512 || memoryMiB > 65536)
+  throw new Error("Invalid factory Next compiler memory limit");
+if (
+  !Number.isSafeInteger(containerMemoryMiB) ||
+  containerMemoryMiB < 1024 ||
+  containerMemoryMiB > 32768 ||
+  memoryMiB >= containerMemoryMiB
+)
+  throw new Error("Invalid factory Next container memory limit");
+if (!Number.isSafeInteger(cpus) || cpus < 1 || cpus > 6)
+  throw new Error("Invalid factory Next compiler CPU limit");
+if (factory.next?.pull && factory.next.pull !== "never")
+  throw new Error("Next compiler requires an already cached immutable image");
+const inspect = Bun.spawnSync(["docker", "image", "inspect", "--format", "{{.Id}}", nodeImage], {
+  cwd: repo,
+  stdout: "pipe",
+  stderr: "pipe",
 });
+if (inspect.exitCode !== 0) throw new Error("Cached Node 22 compiler image is unavailable");
+const imageId = inspect.stdout.toString().trim();
+if (!/^sha256:[a-f0-9]{64}$/.test(imageId))
+  throw new Error("Invalid cached Node compiler image ID");
+const resolvedNext = await realpath(nextBin);
+const compilerPath = relative(repo, resolvedNext);
+if (compilerPath === ".." || compilerPath.startsWith("../"))
+  throw new Error("Site-owned Next compiler must remain inside the repository bind mount");
+const home = join(repo, ".cache", "next-build", "home");
+const temporary = join(repo, ".cache", "next-build", "tmp");
+await mkdir(home, { recursive: true, mode: 0o700 });
+await mkdir(temporary, { recursive: true, mode: 0o700 });
+const compilerEnvironment = {
+  ...buildEnv,
+  NODE_ENV: "production",
+  NEXT_TELEMETRY_DISABLED: "1",
+  NEXT_DEPLOYMENT_ID: sha,
+  NEXT_DIST_DIR: ".next-build",
+  DATABASE_URL: databaseUrl,
+  TURBOPACK: "1",
+  TURBO_ENGINE_GC: "1",
+  TURBO_ENGINE_EVICT_MIN_BYTES: "33554432",
+  NODE_OPTIONS: `--max-old-space-size=${memoryMiB}`,
+  HOME: home,
+  TMPDIR: temporary,
+  BUILD_CPUS: process.env.BUILD_CPUS ?? "4",
+  BUILD_STATIC_CONCURRENCY: process.env.BUILD_STATIC_CONCURRENCY ?? "6",
+};
+const dockerEnvironment = Object.keys(compilerEnvironment).flatMap((name) =>
+  /^[A-Za-z_][A-Za-z0-9_]*$/.test(name) && name !== "PATH" ? ["--env", name] : [],
+);
+const uid = process.getuid?.();
+const gid = process.getgid?.();
+if (uid === undefined || gid === undefined)
+  throw new Error("Next factory compiler requires a Linux owner");
+console.log(`▶ Cached Next compiler: ${nodeImage} ${imageId}`);
+const buildProc = Bun.spawn(
+  [
+    "docker",
+    "run",
+    "--rm",
+    "--pull=never",
+    "--network",
+    "host",
+    "--cpus",
+    String(cpus),
+    "--memory",
+    `${containerMemoryMiB}m`,
+    "--user",
+    `${uid}:${gid}`,
+    "--volume",
+    `${repo}:${repo}`,
+    "--workdir",
+    siteDir,
+    ...dockerEnvironment,
+    imageId,
+    "node",
+    resolvedNext,
+    "build",
+    "--turbopack",
+  ],
+  {
+    cwd: siteDir,
+    // --env receives names only. Secret values stay in the child's memory, never argv/files.
+    env: compilerEnvironment,
+    stdout: "inherit",
+    stderr: "inherit",
+  },
+);
 
 const exitCode = await buildProc.exited;
 if (exitCode !== 0) {
@@ -137,6 +213,22 @@ if (exitCode !== 0) {
 
 const elapsed = Math.round((Date.now() - startedAt) / 1000);
 console.log(`✓ Build Next.js terminé en ${elapsed}s`);
+await Bun.write(
+  join(buildDir, "compiler-provenance.json"),
+  `${JSON.stringify(
+    {
+      schema: "aphrody-next-compiler/v1",
+      sourceRevision: sha,
+      image: nodeImage,
+      imageId,
+      runtime: "node22",
+      bundler: "turbopack",
+      limits: { cpus, memoryMiB: containerMemoryMiB, maxOldSpaceSizeMiB: memoryMiB },
+    },
+    null,
+    2,
+  )}\n`,
+);
 
 // Vérifier la présence des artefacts obligatoires
 for (const req of ["BUILD_ID", "prerender-manifest.json", "routes-manifest.json"]) {
