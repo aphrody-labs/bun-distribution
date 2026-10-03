@@ -5,7 +5,7 @@
 //! - `config/service-catalog.json` (systemd services, runtimes, proxy links)
 //! - `config/nginx-routes.json` (public domain mappings and upstreams)
 //! - `config/application-contracts.json` (inter-app architecture constraints)
-//! - `inventory/targets.json` (cross-host infrastructure matrix)
+//! - `config/infra/inventory/targets.json` (cross-host infrastructure matrix)
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -159,7 +159,7 @@ pub fn load_service_catalog(root: &Path) -> Result<ServiceCatalog> {
 }
 
 pub fn load_target_matrix(root: &Path) -> Result<TargetMatrix> {
-    let path = root.join("inventory/targets.json");
+    let path = root.join("config/infra/inventory/targets.json");
     let content =
         fs::read_to_string(&path).with_context(|| format!("lecture de {}", path.display()))?;
     serde_json::from_str(&content).with_context(|| format!("désérialisation de {}", path.display()))

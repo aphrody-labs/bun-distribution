@@ -1066,7 +1066,7 @@ restent dans les applications ; les éléments visuels Toriyama sont dans le paq
 | `apps/shenron/site` (serveur, `bun --bun next`) | oui | `.`, `./postgres-js`, `./schema`, `./bot-schema`, `./guards`, `./repos/*`, `./constants` | tout sauf `./hono` | `.`, `./a2a` ; jamais `./cli` | oui (serveur) | `./contract`, `./client`, `./server`, `./next` | oui |
 | `apps/shenron/site` (client) | `./net` | `./constants`, `./types` | `./client`, `./policy`, `./staff` | non | non | `./contract` | composants, `./lib/*`, `./styles.css` |
 | `apps/shenron/bot` (Bun) | oui | `./bun-sql`, `./sql`, `./redis`, `./constants`, `./repos/*`, `./types` | tout sauf `./next`, `./client` | `.` ; jamais `./cli` | oui | `./contract`, `./http`, `./server` | `./lib/utils`, `./styles.css` |
-| `packages/shenron/pipeline`, `scripts/**`, `bin/shenron/shenron.ts` | oui | `./sql`, `./bun-sql`, `./env`, `./guards` | non | `.`, `./web`, `./cli` | oui | `./client` | non |
+| `packages/shenron/pipeline`, `scripts/**`, `scripts/tools/shenron/cli.ts` | oui | `./sql`, `./bun-sql`, `./env`, `./guards` | non | `.`, `./web`, `./cli` | oui | `./client` | non |
 | `aphrody-ai/crates/aphrody-mcp` (`dragonball.*`) | — | — | — | — | — | client des routes Shenron ; catalogue MCP propre à Aphrody AI | — |
 
 Arêtes interdites contrôlées : paquet → `apps/*` ; module `"use client"` →
@@ -1154,7 +1154,7 @@ Phase 1.
 | `apps/shenron/site/src/lib/databooks-freeze.ts` (+ ≈ 13 scripts) | `createDatabooksFreezeGate` ; `DATABOOKS_FREEZE_FILE` via `resolveDataPath` ; S11 | V3 | F (mêmes exports) |
 | `apps/shenron/site/drizzle.config.bot.ts` | refuse `push`/`migrate` avant toute connexion | V3 | — |
 | `apps/shenron/site/package.json` `db:push` | refus explicite (orchestrateur) | préparation | — |
-| `bin/shenron/shenron.ts` | `loadDatabaseUrl` ; `db migrate site` refuse `push` et renvoie au runbook ; `db sync` mort supprimé ; chemin personnel absolu supprimé | V3 | — |
+| `scripts/tools/shenron/cli.ts` | `loadDatabaseUrl` ; `db migrate site` refuse `push` et renvoie au runbook ; `db sync` mort supprimé ; chemin personnel absolu supprimé | V3 | — |
 | `apps/bot/src/services/{EpisodesService,BxcBridgeService}.ts` | `PgService` (`apps/shenron/bot/src/db/pg.ts`, paresseux, nullable, un seul pool `createBunDb` partagé entre Drizzle et SQL brut) — B2 | V3 | — |
 | `apps/shenron/bot/src/workers/indexer.ts` | `createResilientRedis` — B8 | V3 | — |
 | `apps/site/scripts/_databooks-base.ts urlBase` (40 importateurs, `sql.json`) | `loadDatabaseUrl` (mêmes fichiers de repli, même ordre) + `createSql` | V3 | F (nom conservé) |
@@ -1291,7 +1291,7 @@ liens d'espace de travail : aucune résolution neuve.
 | | `ai` | config, miroirs, client, embeddings (D10), chat, fournisseur, prompts, génération, évaluation | corps de requête exacts, parité des métriques |
 | | `aphrody` | source seule, racine réduite, `./cli`, notificateur injecté, sous-chemin A2A pour le site (simulations repointées) ; B16 | racine sans `bun:ffi` |
 | | `ui` | 10 wrappers et correctifs 1.8 ; B15 | tests de sélecteurs |
-| **3 — bascules** | `db` | façades du site, gel S11, garde `drizzle.config.bot.ts`, `bin/shenron/shenron.ts`, audit des migrations, `PgService` (B2), Redis de l'indexeur, résolveurs partagés (B1) | le bot démarre sans PostgreSQL |
+| **3 — bascules** | `db` | façades du site, gel S11, garde `drizzle.config.bot.ts`, `scripts/tools/shenron/cli.ts`, audit des migrations, `PgService` (B2), Redis de l'indexeur, résolveurs partagés (B1) | le bot démarre sans PostgreSQL |
 | | `auth` | façades site et bot, preset Discord (B10), S7 côté bot, S8, conformance des ports | instantanés et vecteurs verts |
 | | `ai` | façades de calcul, consommateurs du bot, du site et du pipeline (B3, B4, B5, B7, B8, B17, B18) | `rag.ts` n'importe plus `llm.ts` |
 | | `api` | contrat, client, http, serveur, adaptateur Next, OpenAPI généré | conformance `satisfies WikiReadPort` |

@@ -41,8 +41,8 @@ const INFRA_HOTE = Bun.env.APHRODY_INFRA_ROOT ?? resolve(import.meta.dir, "../..
 const INFRA_SYSTEMD = `${INFRA_HOTE}/systemd`;
 const INFRA_NGINX = `${INFRA_HOTE}/nginx/rg`;
 const HOTE_SYSTEMD = INFRA_SYSTEMD;
-const INFRA_SYSCTL = `${INFRA_HOTE}/host/sysctl`;
-const INFRA_LOGROTATE = `${INFRA_HOTE}/host/logrotate`;
+const INFRA_SYSCTL = `${INFRA_HOTE}/config/infra/host/sysctl`;
+const INFRA_LOGROTATE = `${INFRA_HOTE}/config/infra/host/logrotate`;
 // Les services du jeu et les vhosts Aphrody ont migré dans le dépôt `niers`.
 // Les recopier ici recréerait deux sources de vérité qui divergent. Le contrôle
 // suit donc leur source canonique là où elle vit réellement.

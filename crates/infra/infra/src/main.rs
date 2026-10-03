@@ -484,9 +484,9 @@ fn command(root: &Path, program: &str, args: &[&str]) -> Result<String> {
 }
 
 fn load_matrix(root: &Path) -> Result<Matrix> {
-    let path = root.join("inventory/targets.json");
+    let path = root.join("config/infra/inventory/targets.json");
     let bytes = fs::read(&path).with_context(|| format!("manifest absent: {}", path.display()))?;
-    serde_json::from_slice(&bytes).context("inventory/targets.json invalide")
+    serde_json::from_slice(&bytes).context("config/infra/inventory/targets.json invalide")
 }
 
 fn selected<'a>(matrix: &'a Matrix, id: Option<&str>) -> Result<Vec<&'a Target>> {

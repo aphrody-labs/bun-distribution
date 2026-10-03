@@ -75,7 +75,7 @@ services:
   storage:
     build:
       context: ${RG_ROOT:-../../../rg}
-      dockerfile: ../aphrody-infra/docker/rg-vps-replica/Dockerfile.bun
+      dockerfile: ../aphrody-infra/config/infra/docker/rg-vps-replica/Dockerfile.bun
     image: vps-replica-bun-services:local
     container_name: vps-replica-storage
     restart: unless-stopped

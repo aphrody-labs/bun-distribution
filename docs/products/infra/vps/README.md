@@ -11,9 +11,9 @@ catalogs of this repository.
 | Workloads, units, health URLs, loopback ports, source repositories | [`config/service-catalog.json`](../../../../config/service-catalog.json) |
 | Public hosts, Nginx upstreams and internal routes | [`config/nginx-routes.json`](../../../../config/nginx-routes.json) |
 | Host roles, priorities, public and loopback-only ports | [`config/production-topology.json`](../../../../config/production-topology.json), [`docs/products/infra/PRODUCTION-ALLOCATION.md`](../PRODUCTION-ALLOCATION.md) |
-| Targets and SSH aliases | [`inventory/targets.json`](../../../../inventory/targets.json) |
-| Last dated observation of the host | [`inventory/vps-source.json`](../../../../inventory/vps-source.json) (evidence, never live state) |
-| Kernel, sysctl and journald tuning | [`host/aphrody-os/VPS-TUNING.md`](../../../../host/aphrody-os/VPS-TUNING.md) (legacy owner path), [`host/sysctl/`](../../../../host/sysctl/) |
+| Targets and SSH aliases | [`config/infra/inventory/targets.json`](../../../../config/infra/inventory/targets.json) |
+| Last dated observation of the host | [`config/infra/inventory/vps-source.json`](../../../../config/infra/inventory/vps-source.json) (evidence, never live state) |
+| Kernel, sysctl and journald tuning | [`config/infra/host/aphrody-os/VPS-TUNING.md`](../../../../config/infra/host/aphrody-os/VPS-TUNING.md) (legacy owner path), [`config/infra/host/sysctl/`](../../../../config/infra/host/sysctl/) |
 | Release layout and activation | [`docs/operations/infra/IMMUTABLE-RELEASES.md`](../../../operations/infra/IMMUTABLE-RELEASES.md), [`docs/operations/infra/RG-IMMUTABLE-RELEASES.md`](../../../operations/infra/RG-IMMUTABLE-RELEASES.md) |
 
 The 2026-10-02 [VPS observation](../../../operations/infra/VPS-STATUS-2026-10-02.md)

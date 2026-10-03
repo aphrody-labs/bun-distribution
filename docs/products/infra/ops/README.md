@@ -10,9 +10,9 @@ The Bun modules that serve multiple repositories are documented in
 
 | Path | Purpose | Formerly in |
 | --- | --- | --- |
-| `host/sysctl/99-zzz-rg-memoire.conf` | Kernel memory tuning (`/etc/sysctl.d`) | `rg/infra/sysctl` |
-| `host/logrotate/rsyslog` | Daily system log rotation (`/etc/logrotate.d`) | `rg/infra/logrotate` |
-| `host/privoxy/shenron-media.conf` + `scripts/shenron/install-media-vpn-proxy.sh` | Mullvad HTTP bridge (`:8119` -> `10.8.0.1:1080`) | `shenron/deploy/privoxy/` |
+| `config/infra/host/sysctl/99-zzz-rg-memoire.conf` | Kernel memory tuning (`/etc/sysctl.d`) | `rg/infra/sysctl` |
+| `config/infra/host/logrotate/rsyslog` | Daily system log rotation (`/etc/logrotate.d`) | `rg/infra/logrotate` |
+| `config/infra/host/privoxy/shenron-media.conf` + `scripts/shenron/install-media-vpn-proxy.sh` | Mullvad HTTP bridge (`:8119` -> `10.8.0.1:1080`) | `shenron/deploy/privoxy/` |
 | `systemd/rg-zram-swap.service` | Compressed zram swap, main VPS | `rg/infra/systemd` |
 | `systemd/nginx.service.d/*.conf` | nginx restart policy and CPU/IO priority | `rg/infra/systemd` |
 | `systemd/privoxy.service.d/*.conf` | Privoxy restart & WireGuard dependency drop-in | `shenron/deploy/privoxy/` |

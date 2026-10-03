@@ -261,7 +261,7 @@ seules sources de vérité ; ce dépôt ne publie plus de table de ports.
 | --- | --- |
 | `infra/systemd/*` | `systemd/rg-*.service` (units finales `/srv/rg/current`, env `/etc`) |
 | `infra/nginx/*` | `nginx/rg/` (`rg-production.conf` → release `nginx/rg.conf`) |
-| `infra/docker/vps-replica`, `infra/cloud` | `docker/rg-vps-replica/`, `cloud/rg-website/` |
+| `infra/docker/vps-replica`, `infra/cloud` | `config/infra/docker/rg-vps-replica/`, `config/infra/cloud/rg-website/` |
 | `scripts/ops/{sauvegarde,infra,invalidate-cdn,vercel-failover}.ts`, `provision-vps-env.py` | `scripts/rg/` |
 
 - Le build lit `systemd/rg-*.service` et `nginx/rg/rg-production.conf` depuis

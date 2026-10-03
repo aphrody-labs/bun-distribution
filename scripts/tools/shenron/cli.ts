@@ -26,8 +26,8 @@ const c = {
 	cyan: "\x1b[36m",
 };
 
-/** Racine du dépôt (ce fichier vit dans `bin/`), jamais un chemin absolu codé en dur. */
-const ROOT = join(import.meta.dir, "..");
+/** Racine du dépôt (ce fichier vit dans `scripts/tools/shenron/`), jamais un chemin absolu codé en dur. */
+const ROOT = join(import.meta.dir, "../../..");
 
 // Nettoyer les codes ANSI pour calculer la longueur réelle du texte
 function cleanAnsi(text: string): string {

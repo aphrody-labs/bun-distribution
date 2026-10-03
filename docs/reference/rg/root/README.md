@@ -15,7 +15,7 @@ et l'espace compétitif Achilléa.
 | `packages/achillea-*` | Contrats, règles métier et client HTTP Achilléa. |
 | `packages/rg/assets`, `packages/ui`, `packages/rg/app-shell` | Assets, design system et navigation communs. |
 | `packages/rg/auth`, `packages/rg/db`, `packages/rg/cron` | Authentification, données et tâches récurrentes. |
-| `../aphrody-infra` | Unités systemd, nginx, Docker et Cloud Run de RG (`systemd/rg-*`, `nginx/rg/`, `docker/rg-vps-replica/`, `cloud/rg-website/`). |
+| `../aphrody-infra` | Unités systemd, nginx, Docker et Cloud Run de RG (`systemd/rg-*`, `nginx/rg/`, `config/infra/docker/rg-vps-replica/`, `config/infra/cloud/rg-website/`). |
 
 L’ancien frontend Angular Achilléa et le frontend Azalée autonome sont retirés.
 

@@ -251,7 +251,7 @@ actifs, aucun import vers une ancienne implantation déplacée.
 
 - FAIT : trois destinations de runbooks Infra corrigées vers les fichiers
   existants `config/shell-runtime.json` et
-  `inventory/aphrody-discord-dev-2026-09-29.md`. Le contrôle ne relève plus
+  `config/infra/inventory/aphrody-discord-dev-2026-09-29.md`. Le contrôle ne relève plus
   de destination manquante dans `docs/operations/infra/`.
 - [Rapport de revue](docs/migration/document-links-review-2026-10-01.json) :
   1 930 destinations non résolues réparties sur 501 documents ; chaque

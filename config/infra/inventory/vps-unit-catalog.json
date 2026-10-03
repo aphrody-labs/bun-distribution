@@ -2,8 +2,8 @@
   "captured_at": "2026-09-24",
   "target_alias": "vps",
   "scope": "unit files matching shenron* and aphrody-* only; other applications not re-captured",
-  "supersededBy": "inventory/vps-source.json#last_retirement_observation (2026-09-25T18:06:18Z)",
-  "supersededNote": "This snapshot predates the 2026-09-25 retirement of the Aphrody six-service stack and shenron-mcp from vps (see config/service-catalog.json status:retired entries and inventory/vps-source.json). unit_file_state.enabled below reflects the pre-retirement host, not current state.",
+  "supersededBy": "config/infra/inventory/vps-source.json#last_retirement_observation (2026-09-25T18:06:18Z)",
+  "supersededNote": "This snapshot predates the 2026-09-25 retirement of the Aphrody six-service stack and shenron-mcp from vps (see config/service-catalog.json status:retired entries and config/infra/inventory/vps-source.json). unit_file_state.enabled below reflects the pre-retirement host, not current state.",
   "unit_file_state": {
     "enabled": [
       "aphrody-a2a.service",

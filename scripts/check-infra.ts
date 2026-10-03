@@ -70,7 +70,7 @@ async function main(): Promise<void> {
 
   const required = [
     "README.md",
-    "inventory/vps-source.json",
+    "config/infra/inventory/vps-source.json",
     "docs/reference/infra/TOPOLOGY.md",
     "docs/reference/infra/MIGRATION-GUARDRAILS.md",
     "systemd/aphrody-site.service.example",
@@ -91,7 +91,7 @@ async function main(): Promise<void> {
     }
   }
 
-  await readJson<JsonObject>("inventory/vps-source.json");
+  await readJson<JsonObject>("config/infra/inventory/vps-source.json");
   const a2a = await readJson<{
     peers: A2aPeer[];
     protocol: { rpcPath: string; agentCardPath: string };

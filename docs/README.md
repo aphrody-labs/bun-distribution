@@ -180,7 +180,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | _root (outside the category layout) | [(files)](_root/) | 1 | - |
 | (root) (outside the category layout) | [(files)]((root)/) | 2 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
-| migration (outside the category layout) | [(files)](migration/) | 121 | [Migration records](migration/README.md) |
+| migration (outside the category layout) | [(files)](migration/) | 122 | [Migration records](migration/README.md) |
 | migration (outside the category layout) | [a2a-os-move-2026-10-01](migration/a2a-os-move-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-clean-clone-2026-10-01](migration/contracts-clean-clone-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-qualification-2026-10-01](migration/contracts-qualification-2026-10-01/) | 6 | - |
@@ -191,4 +191,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 10 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 5189 files.
+Total: 5190 files.

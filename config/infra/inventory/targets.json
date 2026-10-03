@@ -73,7 +73,7 @@
       ],
       "authority": "immutable-release-runtime",
       "lifecycle": "rg-and-shenron-live; aphrody-redeployed-through-the-all-in-one-bundle",
-      "state": "inventory/vps-source.json"
+      "state": "config/infra/inventory/vps-source.json"
     },
     {
       "id": "dbfr",

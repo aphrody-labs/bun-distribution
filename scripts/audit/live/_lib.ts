@@ -1,5 +1,5 @@
 /**
- * Shared helpers for the live production E2E suite (`bun test tests/live`).
+ * Shared helpers for the live production E2E suite (`bun test scripts/audit/live`).
  *
  * Pages are loaded through Aphrody Web (`@aphrody/bxc-test`, profile `static`):
  * the server-rendered DOM of a Next.js page is parsed by bxc's native CDP DOM
@@ -21,7 +21,7 @@ import {
 	collectPageDiagnostics,
 	TestPage,
 	type PageDiagnostics,
-} from "../../../aphrody-web/packages/bxc-test/src/index.ts";
+} from "../../../packages/web/aphrody-web-test/src/index.ts";
 
 export { TestPage };
 

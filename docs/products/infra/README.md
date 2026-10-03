@@ -8,7 +8,7 @@ Application repositories retain business logic and data schemas.
 | --- | --- |
 | `config/service-catalog.json`, `nginx-routes.json` | Workloads and routing |
 | `config/production-topology.json`, `scheduler-policy.json` | Placement and timers |
-| `inventory/targets.json`, dated inventory files | Targets and sanitized observations |
+| `config/infra/inventory/targets.json`, dated inventory files | Targets and sanitized observations |
 | `config/application-contracts.json`, `local-ai.json` | Shared application/AI integration |
 | `config/pipeline.json` | Cross-repository delivery stages |
 | `systemd/`, `nginx/`, `host/` | Reviewable host templates and policy |

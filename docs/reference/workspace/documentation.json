@@ -446,8 +446,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan du monorepo Aphrody — 2026-10-01",
-      "sha256": "0e68741100a4f8193c824d979909bfb3f6f33d898685f661385db631315cba01",
-      "bytes": 143035,
+      "sha256": "1917033a420df389cd252fa63e456443b36143687fb10a1ecf2be8c355e205f7",
+      "bytes": 143048,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -574,6 +574,46 @@
       "canonical": "apps/shenron/site/public/sfx/README.md"
     },
     {
+      "path": "config/infra/docker/rg-vps-replica/README.md",
+      "title": "Réplique Docker du VPS",
+      "sha256": "c00cc949c57485890c3caf62f2296454c0061408ef43cd30c4ec7cb9fe9d2ab7",
+      "bytes": 3315,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "config/infra/docker/rg-vps-replica/README.md"
+    },
+    {
+      "path": "config/infra/host/aphrody-os/VPS-TUNING.md",
+      "title": "Linux VPS performance tuning (reference)",
+      "sha256": "8af2fe5f984ecda33e040a4acafa324a11547ad707c145f6e6ae7cacd5b31348",
+      "bytes": 8416,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "config/infra/host/aphrody-os/VPS-TUNING.md"
+    },
+    {
+      "path": "config/infra/host/privoxy/README.md",
+      "title": "Privoxy & WireGuard Mullvad HTTP Bridge",
+      "sha256": "4df43b33ecb438e16cdd0b119aa28d5e5c0b2ce983fda1359facf15428d44a8d",
+      "bytes": 845,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "config/infra/host/privoxy/README.md"
+    },
+    {
+      "path": "config/infra/inventory/aphrody-discord-dev-2026-09-29.md",
+      "title": "Aphrody Discord development endpoint — 2026-09-29 08:50 UTC",
+      "sha256": "15e5eff55968fe57c197f949f45f58f9594268919f3cee4f73ae975f516a9684",
+      "bytes": 1580,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "config/infra/inventory/aphrody-discord-dev-2026-09-29.md"
+    },
+    {
       "path": "config/rg/CHANGELOG.md",
       "title": "Changelog",
       "sha256": "3b4c2149a4676f36e8291529fbfba6699838e45182403efa48019c69b920fc40",
@@ -586,8 +626,8 @@
     {
       "path": "config/rg/PLAN.md",
       "title": "PLAN — Source Ultime de Vérité & Architecture Unifiée Rose Griffon",
-      "sha256": "74f4ab8f3bc56de273f498763e169008f25e8e2870c0a308860ef10bc925cbe5",
-      "bytes": 19311,
+      "sha256": "9e50fd4d2271fb878807c426e4308599aa0ee13289ab5e81acdd09e347498251",
+      "bytes": 19337,
       "domain": "rg",
       "status": "canonical",
       "visibility": "private",
@@ -596,8 +636,8 @@
     {
       "path": "config/rg/README.md",
       "title": "Rose Griffon",
-      "sha256": "0ba5627a9e8a5dbce73b47c6863b6530b347054439e47eb6869ee2900097308a",
-      "bytes": 2792,
+      "sha256": "99b4fc52499c7bf331e37942f41670547af090de609c3e3a926d2ac694b083e4",
+      "bytes": 2818,
       "domain": "rg",
       "status": "canonical",
       "visibility": "private",
@@ -1854,19 +1894,9 @@
       "canonical": "crates/web/web-index/README.md"
     },
     {
-      "path": "docker/rg-vps-replica/README.md",
-      "title": "Réplique Docker du VPS",
-      "sha256": "c00cc949c57485890c3caf62f2296454c0061408ef43cd30c4ec7cb9fe9d2ab7",
-      "bytes": 3315,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docker/rg-vps-replica/README.md"
-    },
-    {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "4f5893929f24ff71ae892715ef5bf593f53242e8dddf805d778896543e8a251f",
+      "sha256": "8b15491daabcc909466c9e3dd3618f18cb96c0b6efcd4d6e7f46c903e6a5cf4a",
       "bytes": 15045,
       "domain": "",
       "status": "generated",
@@ -3906,8 +3936,8 @@
     {
       "path": "docs/architecture/shenron/APHRODY-ECOSYSTEM.md",
       "title": "Écosystème Aphrody pour Shenron",
-      "sha256": "e56d05e1f67294649ebebb01c0f48907c66b6762aef7cd9725c27ff356b4fafe",
-      "bytes": 76883,
+      "sha256": "e74163a4040f7f273d8e8d372170857cf21dbfe399d27f2bfdaf1939384a06eb",
+      "bytes": 76896,
       "domain": "shenron",
       "status": "historical",
       "visibility": "private",
@@ -3936,8 +3966,8 @@
     {
       "path": "docs/architecture/shenron/STACK.md",
       "title": "Pile unifiée Shenron (@shenron/)",
-      "sha256": "29c763b611653ceb87a7a4be4ae87e0354ef004b4f6caf0baf213ba449291e77",
-      "bytes": 122939,
+      "sha256": "f22a3144541716c4c53a4c0fd21278b654c7ecbb77ed9a5a463262f76fec842e",
+      "bytes": 122957,
       "domain": "shenron",
       "status": "canonical",
       "visibility": "private",
@@ -4676,8 +4706,8 @@
     {
       "path": "docs/architecture/web/ARCHITECTURE.md",
       "title": "Aphrody Web layer: architecture, owners, consumers and gaps",
-      "sha256": "53067b82dcc6bb2a1749b77920d51e5387d6dcbf769be37238cf5444b3d31a0e",
-      "bytes": 19045,
+      "sha256": "fd16786ad363d0a79dea8424601097a3ee5d20ed4620d48861d833d02f91e6a2",
+      "bytes": 19061,
       "domain": "web",
       "status": "historical",
       "visibility": "private",
@@ -8556,8 +8586,8 @@
     {
       "path": "docs/operations/infra/BUILD-FACTORY.md",
       "title": "VPS build factory and DBFR Shenron runtime",
-      "sha256": "9736f70945a104ab8d6d43c33c79964995ff5e6aa9714d9cfb6df983be036db2",
-      "bytes": 11623,
+      "sha256": "0773cd6288bc2728409a58320849fe4b3cd955688d1d073ea599cfee98b7c263",
+      "bytes": 15627,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -8596,8 +8626,8 @@
     {
       "path": "docs/operations/infra/IMMUTABLE-RELEASES.md",
       "title": "Immutable release workflow",
-      "sha256": "c6b1dd923740003c499a3c72ad085b6d05a198ee22c4674fd065bdaa61339660",
-      "bytes": 23572,
+      "sha256": "74a7d96cac11e1f91ab605daab1039797753c26f9400af9d88c2040f7bb47871",
+      "bytes": 23611,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -8626,8 +8656,8 @@
     {
       "path": "docs/operations/infra/INFRA-UNIFICATION.md",
       "title": "Unification & Centralisation de l'Infrastructure Aphrody",
-      "sha256": "9e552e93b504221e514d0be524aeea6e38aae7a234913c3f7b765d8ad72bf7d1",
-      "bytes": 9714,
+      "sha256": "62417ac69769a21c1fcbb842fb300caf3fc5181d5df99d412206005567c709fa",
+      "bytes": 9753,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -8776,8 +8806,8 @@
     {
       "path": "docs/operations/infra/VPS-STATUS-2026-10-02.md",
       "title": "VPS observation — 2026-10-02",
-      "sha256": "0748eb7eefd7d8b4a90e087336a4fbc4b2d1ba973e9e54a3d59ed4ac72dd545b",
-      "bytes": 3460,
+      "sha256": "a835ecca5c0a9ba7eef5699e19ff0771503c7e89d9e4f1f557921db5d5abf1b0",
+      "bytes": 3473,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -9636,8 +9666,8 @@
     {
       "path": "docs/plans/infra/PLAN.md",
       "title": "Aphrody Infra plan",
-      "sha256": "0433d7b5a0f823a5326f34027f26cad738be85a0649acf9506989a6dca0d2c86",
-      "bytes": 29451,
+      "sha256": "c75fd98ed22ef19e3eddc36a810eda5021e55568c733f95760a1865b56852237",
+      "bytes": 29516,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -10756,8 +10786,8 @@
     {
       "path": "docs/products/infra/README.md",
       "title": "Aphrody Infra",
-      "sha256": "8da9539e23eee052aef49b0e695d4cce4324df52e3dce2c58e220c8bf47ac5c5",
-      "bytes": 7839,
+      "sha256": "7bee83bb774062e380c69d891d72655e83675c8024fe1b464247965e8d1742f4",
+      "bytes": 7852,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -10776,8 +10806,8 @@
     {
       "path": "docs/products/infra/ops/README.md",
       "title": "Host-wide operations",
-      "sha256": "8476a5cf9daecf1782256d9ed6ab382fd37246dcd3b28cacded754ae4e685b97",
-      "bytes": 3180,
+      "sha256": "7e6f27b74082da0c58b8f38a4c19e151b5b2c7f8cee9f2e1a3996715e63463a7",
+      "bytes": 3219,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -10786,8 +10816,8 @@
     {
       "path": "docs/products/infra/ovh/README.md",
       "title": "OVHcloud operations",
-      "sha256": "765d474c8b575fa28d48a6a0036c961f16f757811301d612bd94b8b4039b2e30",
-      "bytes": 5860,
+      "sha256": "d297ec42678f5414c4ef6efbbb899ce6d4c120fc264624837169ed67db2c6681",
+      "bytes": 5899,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -10796,8 +10826,8 @@
     {
       "path": "docs/products/infra/vps/README.md",
       "title": "VPS architecture and topology",
-      "sha256": "455b314f77a6138dc46eca174f66409e7d3d5cb425d3e1728fadb738e4f50f59",
-      "bytes": 5446,
+      "sha256": "05b13290989cd350c5066a8e08b2bb1d3cf917aea2923e25a9d76409fa9b6e07",
+      "bytes": 5550,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -17066,8 +17096,8 @@
     {
       "path": "docs/reference/infra/TOPOLOGY.md",
       "title": "Aphrody topology — historical architecture snapshot",
-      "sha256": "ceb15c55e698bf4c371317d3a08816d8ec114c59bdf836b54bd75614ea2b4e7a",
-      "bytes": 4368,
+      "sha256": "1c8cc201bcc5907360c143c1d8710a116d9a86552f6df70ed4e733971c6fe40d",
+      "bytes": 4381,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -17116,8 +17146,8 @@
     {
       "path": "docs/reference/infra/ops/ASSET-CDN.md",
       "title": "Shared asset CDN — cdn.aphrody.com",
-      "sha256": "263c677e9b0d704a524a965687186ff466e722f868e40613b28e81f0cd3b4493",
-      "bytes": 3111,
+      "sha256": "4094b87b9c04c43df056aad0f06a17d1a34acbc5ea96f8ad8fb0253eba5a26ea",
+      "bytes": 3124,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -17616,8 +17646,8 @@
     {
       "path": "docs/reference/rg/root/README.md",
       "title": "Rose Griffon",
-      "sha256": "c996dc8faac68ee4aa9e3e381ecd1328e2525d11034d088ce9be71086ac85014",
-      "bytes": 2951,
+      "sha256": "5cfb08ebc4b84e9320be84845ffbcc706b2e3b59d570c42690ec22689d8fc83f",
+      "bytes": 2977,
       "domain": "rg",
       "status": "canonical",
       "visibility": "private",
@@ -45836,8 +45866,8 @@
     {
       "path": "docs/reference/workspace/environment.md",
       "title": "Variables d’environnement et fichiers .env",
-      "sha256": "c800fcde1ecebeaf86e18f1acf2d6a5f7e7d9f07487e8ed61adeb9100211cf2d",
-      "bytes": 5854,
+      "sha256": "facb5fa118cc47467afce6199d203aaf2a290f5badb275c113182d2ee27501f8",
+      "bytes": 5867,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
@@ -46982,36 +47012,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/research/workspace/documentation-practices.md"
-    },
-    {
-      "path": "host/aphrody-os/VPS-TUNING.md",
-      "title": "Linux VPS performance tuning (reference)",
-      "sha256": "636834c5e4ea7274b5eea894614a08ea6748ce33c2ab60a3c05392c56be45f05",
-      "bytes": 8403,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "host/aphrody-os/VPS-TUNING.md"
-    },
-    {
-      "path": "host/privoxy/README.md",
-      "title": "Privoxy & WireGuard Mullvad HTTP Bridge",
-      "sha256": "4df43b33ecb438e16cdd0b119aa28d5e5c0b2ce983fda1359facf15428d44a8d",
-      "bytes": 845,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "host/privoxy/README.md"
-    },
-    {
-      "path": "inventory/aphrody-discord-dev-2026-09-29.md",
-      "title": "Aphrody Discord development endpoint — 2026-09-29 08:50 UTC",
-      "sha256": "15e5eff55968fe57c197f949f45f58f9594268919f3cee4f73ae975f516a9684",
-      "bytes": 1580,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "inventory/aphrody-discord-dev-2026-09-29.md"
     },
     {
       "path": "nginx/rg/generated/README.md",
