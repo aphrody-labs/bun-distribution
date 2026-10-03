@@ -4,6 +4,22 @@
   "upstreamRevision": "14a720628f9592c8e60f7e081ef733076db8a6a9",
   "implementationCommit": "ceed0d4ef8c02a044c5abbb71413746bc098de44",
   "fullyAbsorbed": false,
+  "latestComparisonReview": {
+    "date": "2026-10-03",
+    "groups": 13,
+    "command": "bun packages/infra/workspace/src/jan-absorption.ts --root . --summary",
+    "status": "passed",
+    "durationMs": 518.099104,
+    "missingEvidencePaths": 0,
+    "semanticCorrection": "Provider model/context/pricing metadata is distinct from the local artifact catalog; pricing behavior is missing, not absorbed.",
+    "inventorySnapshot": "sources.json remains the earlier twelve-group tracked-source snapshot; refresh after concurrent batches settle.",
+    "scopedChecks": {
+      "tests": 2,
+      "assertions": 11,
+      "workspaceTypecheck": "passed",
+      "strictOxlint": "passed"
+    }
+  },
   "latestUiTypecheck": "passed after official typed Bun build import and local M3 declaration build; previous failures below are historical observations",
   "checks": [
     {
@@ -56,7 +72,7 @@
   "limits": [
     "Source inventories and lexical declarations are not proof of semantic parity.",
     "Search behavior has unit coverage and UI typecheck passes; rendered UI and full desktop packaging remain unqualified.",
-    "Complete absorption across the twelve mapped capability groups remains pending.",
+    "Complete absorption across the thirteen current mapped capability groups remains pending; earlier inventories contain twelve groups.",
     "Private Jan repository exists; source push and private submodule registration were still pending when this receipt was recorded."
   ]
 }

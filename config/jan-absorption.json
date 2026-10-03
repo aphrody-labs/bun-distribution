@@ -16,13 +16,23 @@
     },
     {
       "id": "model-catalog-and-store",
-      "upstream": ["src-tauri/src/core/cli/model_catalog.rs"],
+      "upstream": [
+        "src-tauri/src/core/downloads/models.rs",
+        "src-tauri/src/core/downloads/commands.rs"
+      ],
       "aphrody": [
         "crates/ai/models/src/catalog.rs",
         "crates/ai/models/src/store.rs",
         "crates/ai/models/src/fetch.rs"
       ],
       "status": "owner_found_parity_pending"
+    },
+    {
+      "id": "provider-model-metadata-and-pricing",
+      "upstream": ["src-tauri/src/core/cli/model_catalog.rs"],
+      "aphrody": ["crates/ai/config/src/provider.rs", "crates/ai/model-client/src/lib.rs"],
+      "status": "provider_metadata_pricing_behavior_missing",
+      "note": "Jan model_catalog is provider listing/context/token pricing metadata. Aphrody models/catalog.rs is a pinned artifact catalog and does not establish equivalent behavior."
     },
     {
       "id": "managed-local-inference",

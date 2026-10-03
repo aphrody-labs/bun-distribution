@@ -134,7 +134,7 @@ export async function inventorySources(root: string, prefixes: string[]) {
 }
 
 export async function runJanAbsorption(args: string[]): Promise<number> {
-  const options = { root: process.cwd(), pythonRoot: "", janRoot: "", out: "" };
+  const options = { root: process.cwd(), pythonRoot: "", janRoot: "", out: "", summary: false };
   for (let index = 0; index < args.length; index++) {
     const flag = args[index];
     if (flag === "--help" || flag === "-h") {
@@ -142,12 +142,16 @@ export async function runJanAbsorption(args: string[]): Promise<number> {
         JSON.stringify({
           schema: "aphrody.jan-absorption/1",
           usage:
-            "jan-absorption.ts [--root aphrody] [--python-root aphrody-py] [--jan-root vendor/jan] [--out root-relative-directory]",
+            "jan-absorption.ts [--root aphrody] [--python-root aphrody-py] [--jan-root vendor/jan] [--out root-relative-directory] [--summary]",
           scope:
             "Tracked source hashes, lexical declarations and explicit comparison queue; no semantic parity inferred",
         }),
       );
       return 0;
+    }
+    if (flag === "--summary") {
+      options.summary = true;
+      continue;
     }
     const value = args[++index];
     if (!value || value.startsWith("--")) throw new Error("Missing option value");
@@ -260,7 +264,8 @@ export async function runJanAbsorption(args: string[]): Promise<number> {
         )}\n\n${comparisons.comparisons.length} comparison groups; ${findings.length} missing evidence paths. Full absorption is **unproven**. Presence in a catalog is not a parity test. Macro/dynamic entrypoints and non-source assets require further review.\n`,
     );
     console.log(JSON.stringify(summary, null, 2));
-  } else
+  } else if (options.summary) console.log(JSON.stringify(summary, null, 2));
+  else
     console.log(
       JSON.stringify(
         { ...summary, repositories: roots, comparisons: comparisons.comparisons },
