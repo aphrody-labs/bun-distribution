@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-03",
+  "operation": "Wire @aphrody/runtime-sdk into packages/web/agent-browser/src/engine.ts per PLAN.md R2 next tranche (Yolo CONSUMERS.md R2, decision D10)",
+  "source": {
+    "sdkArchive": ".cache/yolo-packages/aphrody-runtime-sdk-0.1.0-a353d251.tgz",
+    "sha256": "a353d251313f6ad09d2580e417391ad0c7a0a331bc399790348693090616b28b",
+    "yoloRevision": "f2935969e4b964d3defa99dd9f79b0152989e7fe",
+    "patch": "/home/aphro/yolo/patches/agent-browser-engine-runtime.patch",
+    "installedArtifact": "~/.yolo/runtime/x86_64-unknown-linux-gnu/current (pre-existing on this host)"
+  },
+  "retiredMechanisms": [
+    "hand-written Bun.spawn + stdout-endpoint parsing + /json/version polling loop",
+    "manual SIGTERM -> Bun.sleep(grace) -> SIGKILL stop sequence",
+    "process.kill(engine.pid, ...) on a process not in its own group"
+  ],
+  "replacement": "Runtime.load() + Runtime.spawn({ stdio: \"capture\" }) with ManagedProcess.waitForStdoutLine/waitForHttp/stopAsync/stderrTail/release from @aphrody/runtime-sdk; engine now runs in its own process group (process.kill(-pid, ...) on cleanup)",
+  "publicSurfaceUnchanged": [
+    "startEngine", "Engine", "withEngine", "ensureTestEngine", "stopAllEngines", "installEngineCleanup"
+  ],
+  "dependencyWiring": {
+    "rootCatalog": "package.json workspaces.catalog.@aphrody/runtime-sdk -> file:.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-a353d251.tgz",
+    "consumer": "packages/web/agent-browser/package.json dependencies.@aphrody/runtime-sdk -> catalog:",
+    "lockfile": "bun.lock updated by `bun install` (6 lines added, 1 package installed)"
+  },
+  "validation": {
+    "typecheck": "tsc --noEmit clean",
+    "oxlint": "scoped exit 0; pre-existing no-await-in-loop warnings in client.ts/service.ts/test files unchanged by this patch",
+    "tests": "bun test test/: 35 pass, 0 fail, 121 expect() calls (documented evidence before this wiring was 33 pass; package has since grown by 2 tests, unrelated to this change)",
+    "processLeftover": "no aphrody-web/obscura process left running after the test run"
+  },
+  "limits": [
+    "service.ts still spawns the aphrody-web binary directly with Bun.spawn for fetch/scrape/crawl; that is a later migration (per CONSUMERS.md scope limit D11), not covered here.",
+    "Not run on macOS or Windows; only Linux x64 with the pre-installed runtime artifact exercised.",
+    "Shenron, RG, fut and aphrody-web-test (downstream consumers of this package) were not re-run as part of this scoped change.",
+    ".cache/yolo-packages/ is not reproduced by an automated prepare script yet (unlike .cache/iecode-packages/ via `bun run iecode:prepare`); the archive was copied manually from /home/aphro/yolo/dist/sdk and verified by SHA-256. A follow-up should add an equivalent `yolo:prepare` step if more consumers adopt the SDK.",
+    "No Cargo build, no runtime artifact rebuild, no activation of R4 (Obscura/aphrody-web itself) performed or claimed."
+  ]
+}
