@@ -371,11 +371,20 @@ Propriétaires : `crates/interop/ffi`, `packages/interop/native`, `apps/cli`.
   (52 sources déplacées, façade `apps/cli` conservée) ; la FFI n’en dépend plus
   de l’application. 247 tests Rust, 15 Bun natifs ; check/clippy Linux
   all-targets et WASM verts ; catalogue 63 CLI / 1280 commandes conservé.
-- [ ] Unifier découverte, chargement et durée de vie de la bibliothèque native.
-- [ ] Faire consommer ce chargeur par Shenron ; retirer les chemins legacy du
-  pipeline après vérification Linux/Windows et mode développement.
-- [ ] Définir installation/version/ABI des artefacts ; aucun lancement ne doit
-  déclencher une compilation implicite dans un daemon de production.
+- [x] Unifier découverte, chargement et durée de vie de la bibliothèque native.
+  `packages/interop/native/src/library.ts` est l'unique résolveur/chargeur,
+  garde une poignée partagée et protège fermeture/rechargement ; tests du
+  package natif et de l'adaptateur Shenron ci-dessous.
+- [~] Faire consommer ce chargeur par Shenron ; retirer les chemins legacy du
+  pipeline après vérification Linux/Windows et mode développement. Le pipeline
+  délègue à `@aphrody/bun/shenron` ; release Linux x86_64 testée avec mode dev
+  activé et désactivé. Windows reste à qualifier ; les alias d'environnement
+  legacy sont conservés comme compatibilité.
+- [~] Définir installation/version/ABI des artefacts ; aucun lancement ne doit
+  déclencher une compilation implicite dans un daemon de production. Le
+  manifeste cible/triple/libc, version package/crate, hash et ABI est défini ;
+  l'installation isolée Linux et le smoke `APHRODY_FFI_DEV=0` passent. La
+  distribution durable et les autres plateformes restent ouvertes.
 
 Critères : tests FFI réels avec artefact qualifié, erreurs sans artefact,
 compatibilité symboles/types, installation utilisable sans dossier `target`.
@@ -1652,6 +1661,16 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   critères et n’est pas réconcilié ici.
 
 ### Artefact natif réel et routage doctor Shenron — 2026-10-01
+
+- Requalification des contrats de résolution/manifestes au HEAD courant
+  (sources du chargeur inchangées depuis le clone qualifié) : `bun test
+  --isolate packages/interop/native/test-library.test.ts
+  packages/interop/native/test-native-artifact.test.ts
+  packages/shenron/pipeline/test/aphrody/native-contract.test.ts
+  packages/shenron/pipeline/test/aphrody/native.test.ts` : 10 réussis, 6
+  ignorés, aucun échec. Les 6 tests qui exigent un artefact installé sont
+  ignorés faute d'artefact dans le checkout courant ; le smoke réel release
+  reste prouvé par le clone propre décrit ci-dessous.
 
 - FAIT : la FFI Shenron ajoute déjà son namespace. L’adaptateur n’envoie plus
   `shenron doctor` à cette ABI, mais `doctor --json` ; l’erreur de sous-commande
