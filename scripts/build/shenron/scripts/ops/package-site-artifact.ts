@@ -4,14 +4,11 @@ import { existsSync } from "node:fs";
 import { mkdir, rm, readdir, lstat, readlink, unlink, cp } from "node:fs/promises";
 import { join, relative as relativePath } from "node:path";
 
+import { artifactStore, artifactPath } from "./site-artifact-paths.ts";
+
 const repo = join(import.meta.dir, "..", "..", "..", "..", "..");
 const build = join(repo, "apps", "shenron", "site", ".next-build");
 const outputArg = process.argv[2] ?? "artifacts/site-build.tar.gz";
-if (outputArg.startsWith("/") || outputArg.split("/").includes("..")) {
-  throw new Error("chemin de sortie absolu ou traversant refusé");
-}
-const output = join(repo, outputArg);
-const stage = join(repo, ".site-artifact-stage");
 const run = (cmd: string[]) => Bun.spawnSync(cmd, { cwd: repo, stdout: "pipe", stderr: "pipe" });
 
 for (const name of [
@@ -25,6 +22,10 @@ for (const name of [
 const shaResult = run(["git", "rev-parse", "HEAD"]);
 if (shaResult.exitCode !== 0) throw new Error(shaResult.stderr.toString());
 const commit = shaResult.stdout.toString().trim();
+const store = await artifactStore(repo, process.env, commit);
+const output = await artifactPath(store, outputArg);
+const outputChecksum = await artifactPath(store, `${outputArg}.sha256`);
+const stage = await artifactPath(store, ".site-artifact-stage");
 const buildId = (await Bun.file(join(build, "BUILD_ID")).text()).trim();
 
 await rm(stage, { recursive: true, force: true });
@@ -50,7 +51,7 @@ try {
   const digest = run(["sha256sum", output]);
   if (digest.exitCode !== 0) throw new Error(digest.stderr.toString());
   const hash = digest.stdout.toString().trim().split(/\s+/)[0];
-  await Bun.write(`${output}.sha256`, `${hash}  ${outputArg}\n`);
+  await Bun.write(outputChecksum, `${hash}  ${outputArg}\n`);
   console.log(
     JSON.stringify({ status: "FAIT", artifact: outputArg, commit, buildId, sha256: hash }),
   );
@@ -66,14 +67,15 @@ if (process.argv[3] === "--release-dir") {
   if (!releaseArg || releaseArg.startsWith("/") || releaseArg.split("/").includes("..")) {
     throw new Error("release directory must be relative to the owner checkout");
   }
-  const releaseDir = join(repo, releaseArg);
+  if (!releaseArg) throw new Error("release directory argument required");
+  const releaseDir = await artifactPath(store, releaseArg);
   if (existsSync(releaseDir)) throw new Error("release directory already exists");
   const dirty = run(["git", "status", "--porcelain", "--untracked-files=no"]);
   if (dirty.exitCode || dirty.stdout.toString().trim())
     throw new Error("release source must be committed and clean");
   const botBinary = join(repo, "apps/shenron/bot/dist/shenron");
   if (!existsSync(botBinary)) throw new Error("compile the Shenron bot owner before packaging");
-  const payloadStage = `${releaseDir}.staging`;
+  const payloadStage = await artifactPath(store, `${releaseArg}.staging`);
   if (existsSync(payloadStage)) throw new Error("release staging directory already exists");
   await mkdir(join(payloadStage, "systemd"), { recursive: true });
   await mkdir(join(payloadStage, "nginx"), { recursive: true });

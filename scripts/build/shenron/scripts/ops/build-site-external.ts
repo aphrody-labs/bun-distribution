@@ -13,6 +13,13 @@ import { join, relative } from "node:path";
 import { createRequire } from "node:module";
 import { buildDependencies } from "../../../../../packages/infra/workspace/src/bun-dependency-builds.ts";
 
+import { artifactStore, artifactPath } from "./site-artifact-paths.ts";
+
+const releaseArgs = process.argv.slice(2);
+if (releaseArgs.length && (releaseArgs.length !== 2 || releaseArgs[0] !== "--release-dir")) {
+  throw new Error("usage: build-site-external.ts [--release-dir RELATIVE_DIRECTORY]");
+}
+
 const repo = join(import.meta.dir, "..", "..", "..", "..", "..");
 const siteDir = join(repo, "apps", "shenron", "site");
 const buildDir = join(siteDir, ".next-build");
@@ -82,6 +89,10 @@ if (shaProc.exitCode !== 0) {
   process.exit(1);
 }
 const sha = shaProc.stdout.toString().trim();
+const store = await artifactStore(repo, process.env, sha);
+const outputArg = "artifacts/site-build.tar.gz";
+const output = await artifactPath(store, outputArg);
+if (releaseArgs.length) await artifactPath(store, releaseArgs[1]!);
 console.log(`▶ Démarrage du build Next.js Turbopack pour commit ${sha}...`);
 
 // A frozen install links workspace owners but does not produce their dist exports.
@@ -241,11 +252,7 @@ for (const req of ["BUILD_ID", "prerender-manifest.json", "routes-manifest.json"
 // Emballage de l'artefact
 console.log("▶ Emballage de l'artefact via package-site-artifact.ts...");
 const pkgProc = Bun.spawnSync(
-  [
-    process.execPath,
-    join(import.meta.dir, "package-site-artifact.ts"),
-    "artifacts/site-build.tar.gz",
-  ],
+  [process.execPath, join(import.meta.dir, "package-site-artifact.ts"), outputArg, ...releaseArgs],
   { cwd: repo, stdout: "inherit", stderr: "inherit" },
 );
 
@@ -255,8 +262,8 @@ if (pkgProc.exitCode !== 0) {
 }
 
 // Vérification de la somme de contrôle
-const checkProc = Bun.spawnSync(["sha256sum", "--check", "artifacts/site-build.tar.gz.sha256"], {
-  cwd: repo,
+const checkProc = Bun.spawnSync(["sha256sum", "--check", `${output}.sha256`], {
+  cwd: store,
   stdout: "inherit",
   stderr: "inherit",
 });
@@ -266,4 +273,4 @@ if (checkProc.exitCode !== 0) {
   process.exit(1);
 }
 
-console.log("✓ Artefact prêt et vérifié : artifacts/site-build.tar.gz");
+console.log(`✓ Artefact prêt et vérifié : ${output}`);
