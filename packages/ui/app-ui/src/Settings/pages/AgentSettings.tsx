@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
 import { Icon, Button, Card, toast } from "@aphrody/m3-primitives";
-import { pickDirectory, pickFile, getRagStats, runRagIndex, type RagStats } from "../../tauri-bridge";
+import {
+  pickDirectory,
+  pickFile,
+  getRagStats,
+  runRagIndex,
+  type RagStats,
+} from "../../tauri-bridge";
 import { hydratePreferences, updatePreferences, setDefaultModelSetting } from "../../preferences";
 import { useChatStore } from "../../stores/chat-store";
+import { AgentToolsSettings } from "./AgentToolsSettings";
 
 export function AgentSettings() {
   const [defaultModel, setDefaultModel] = useState("gpt-6-luna");
@@ -10,19 +17,23 @@ export function AgentSettings() {
   const [accessMode, setAccessMode] = useState("dangerously-bypass");
   const [trustedFolders, setTrustedFolders] = useState<string[]>([]);
   const [binaryPath, setBinaryPath] = useState("aphrody");
-  const [binaryFound, setBinaryFound] = useState(true);
   const [ragStats, setRagStats] = useState<RagStats>({ documents: 0, chunks: 0 });
   const [isIndexing, setIsIndexing] = useState(false);
 
   useEffect(() => {
-    void hydratePreferences().then((prefs) => {
-      setDefaultModel(prefs.defaultModel);
-      setReasoningEffort(prefs.defaultEffort);
-      setAccessMode(prefs.accessMode);
-      setTrustedFolders(prefs.trustedFolders);
-      setBinaryPath(prefs.agentBinary);
-    });
-    void getRagStats().then(setRagStats);
+    void hydratePreferences()
+      .then((prefs) => {
+        setDefaultModel(prefs.defaultModel);
+        setReasoningEffort(prefs.defaultEffort);
+        setAccessMode(prefs.accessMode);
+        setTrustedFolders(prefs.trustedFolders);
+        setBinaryPath(prefs.agentBinary);
+        return undefined;
+      })
+      .catch(() => toast.error("Préférences de l'agent indisponibles."));
+    void getRagStats()
+      .then(setRagStats)
+      .catch(() => toast.error("Statistiques RAG indisponibles."));
   }, []);
 
   const handleModelChange = (model: string) => {
@@ -70,10 +81,9 @@ export function AgentSettings() {
     try {
       const selected = await pickFile("Sélectionner l'exécutable aphrody");
       if (selected) {
+        await updatePreferences({ agentBinary: selected });
         setBinaryPath(selected);
-        setBinaryFound(true);
-        void updatePreferences({ agentBinary: selected });
-        toast.success("Binaire de l'agent localisé");
+        toast.success("Chemin de l'agent enregistré ; exécution non vérifiée.");
       }
     } catch {
       toast.error("Échec de la localisation");
@@ -131,7 +141,9 @@ export function AgentSettings() {
 
           <div className="border-t border-outline-variant/30 pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-title-medium font-medium text-on-surface">Effort de raisonnement</h3>
+              <h3 className="text-title-medium font-medium text-on-surface">
+                Effort de raisonnement
+              </h3>
               <p className="text-body-large text-on-surface-variant mt-1">
                 Profondeur de réflexion allouée aux problèmes de code complexes.
               </p>
@@ -150,7 +162,9 @@ export function AgentSettings() {
 
           <div className="border-t border-outline-variant/30 pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-title-medium font-medium text-on-surface">Mode d'accès par défaut</h3>
+              <h3 className="text-title-medium font-medium text-on-surface">
+                Mode d'accès par défaut
+              </h3>
               <p className="text-body-large text-on-surface-variant mt-1">
                 Politique de bac à sable appliquée pour l'exécution des outils.
               </p>
@@ -171,9 +185,12 @@ export function AgentSettings() {
         <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-title-medium font-medium text-on-surface">Dossiers de confiance</h3>
+              <h3 className="text-title-medium font-medium text-on-surface">
+                Dossiers de confiance
+              </h3>
               <p className="text-body-large text-on-surface-variant mt-1">
-                Répertoires de travail autorisés sans sollicitation d'approbation manuelle répétitive.
+                Répertoires de travail autorisés sans sollicitation d'approbation manuelle
+                répétitive.
               </p>
             </div>
             <Button
@@ -194,7 +211,9 @@ export function AgentSettings() {
               >
                 <div className="flex items-center gap-3 overflow-hidden">
                   <Icon name="folder" size={22} className="text-primary shrink-0" />
-                  <span className="font-mono text-body-large text-on-surface truncate">{folder}</span>
+                  <span className="font-mono text-body-large text-on-surface truncate">
+                    {folder}
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -214,7 +233,9 @@ export function AgentSettings() {
         <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-title-medium font-medium text-on-surface">Base de connaissances locale (RAG)</h3>
+              <h3 className="text-title-medium font-medium text-on-surface">
+                Base de connaissances locale (RAG)
+              </h3>
               <p className="text-body-large text-on-surface-variant mt-1">
                 Indexation sémantique et vectorielle locale sans connexion réseau externe.
               </p>
@@ -233,14 +254,20 @@ export function AgentSettings() {
           <div className="grid grid-cols-2 gap-3 pt-2">
             <div className="p-3 rounded-medium bg-surface-container border border-outline-variant/30 text-center">
               <div className="text-headline-small font-bold text-primary">{ragStats.documents}</div>
-              <div className="text-label-small text-on-surface-variant mt-0.5">Documents indexés</div>
+              <div className="text-label-small text-on-surface-variant mt-0.5">
+                Documents indexés
+              </div>
             </div>
             <div className="p-3 rounded-medium bg-surface-container border border-outline-variant/30 text-center">
               <div className="text-headline-small font-bold text-primary">{ragStats.chunks}</div>
-              <div className="text-label-small text-on-surface-variant mt-0.5">Fragments de code</div>
+              <div className="text-label-small text-on-surface-variant mt-0.5">
+                Fragments de code
+              </div>
             </div>
           </div>
         </Card>
+
+        <AgentToolsSettings />
 
         {/* Binaire de l'agent */}
         <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
@@ -248,9 +275,8 @@ export function AgentSettings() {
             <div>
               <h3 className="text-title-medium font-medium text-on-surface">Binaire de l'agent</h3>
               <div className="flex items-center gap-2 mt-1">
-                <span className={binaryFound ? "size-2.5 rounded-full bg-primary" : "size-2.5 rounded-full bg-error"} />
                 <span className="text-body-large text-on-surface-variant">
-                  {binaryFound ? "Opérationnel dans le PATH" : "Binaire non détecté"}
+                  Chemin configuré · exécution non vérifiée
                 </span>
                 <span className="font-mono text-body-large text-on-surface">({binaryPath})</span>
               </div>

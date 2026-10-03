@@ -4,22 +4,38 @@
 // hard delete, so archived threads leave the list but stay on disk).
 import { Button, Icon, Input } from "@aphrody/m3-primitives";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { filterThreads, groupByDate, normalizeThreads, type ThreadSummary, transcript } from "./history";
+import {
+  filterThreads,
+  groupByDate,
+  normalizeThreads,
+  type ThreadSummary,
+  transcript,
+} from "./history";
 import { copyToNativeClipboard } from "./tauri-bridge";
 
-export type Rpc = (method: string, params?: Record<string, unknown>) => Promise<Record<string, unknown>>;
+export type Rpc = (
+  method: string,
+  params?: Record<string, unknown>,
+) => Promise<Record<string, unknown>>;
 
 /** Load every page of `thread/list` (bounded, so a huge store cannot hang the bar). */
-export async function listAllThreads(rpc: Rpc, maxPages = 10): Promise<ThreadSummary[]> {
+export async function listAllThreads(
+  rpc: Rpc,
+  maxPages = 10,
+  archived = false,
+): Promise<ThreadSummary[]> {
   const all: ThreadSummary[] = [];
   let cursor: string | undefined;
   for (let page = 0; page < maxPages; page++) {
-    // oxlint-disable-next-line no-await-in-loop -- each page needs the previous cursor
-    const { threads, nextCursor } = normalizeThreads(await rpc("thread/list", cursor ? { cursor, limit: 100 } : { limit: 100 }));
+    const { threads, nextCursor } = normalizeThreads(
+      // oxlint-disable-next-line no-await-in-loop -- each page needs the previous cursor
+      await rpc("thread/list", { ...(cursor ? { cursor } : {}), limit: 100, archived }),
+    );
     all.push(...threads);
     if (!nextCursor || nextCursor === cursor) break;
     cursor = nextCursor;
   }
+  // oxlint-disable-next-line unicorn/no-array-sort -- this fresh local array is owned here; ES2022 consumer targets lack toSorted
   return all.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
@@ -42,18 +58,19 @@ export function HistoryPanel({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [archived, setArchived] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      setThreads(await listAllThreads(rpc));
+      setThreads(await listAllThreads(rpc, 10, archived));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, [rpc]);
+  }, [rpc, archived]);
 
   useEffect(() => {
     void refresh();
@@ -63,8 +80,14 @@ export function HistoryPanel({
 
   const share = async (thread: ThreadSummary) => {
     try {
-      const text = transcript(await rpc("thread/read", { threadId: thread.id, includeTurns: true }));
-      setNotice((await copyToNativeClipboard(text)) ? "Transcript copied to the clipboard." : "Clipboard unavailable.");
+      const text = transcript(
+        await rpc("thread/read", { threadId: thread.id, includeTurns: true }),
+      );
+      setNotice(
+        (await copyToNativeClipboard(text))
+          ? "Transcript copied to the clipboard."
+          : "Clipboard unavailable.",
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -75,14 +98,27 @@ export function HistoryPanel({
     try {
       await rpc("thread/archive", { threadId: thread.id });
       setThreads((items) => items.filter((item) => item.id !== thread.id));
-      setNotice("Thread removed from history.");
+      setNotice("Thread archived. Its saved history is retained.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const restore = async (thread: ThreadSummary) => {
+    try {
+      await rpc("thread/unarchive", { threadId: thread.id });
+      setThreads((items) => items.filter((item) => item.id !== thread.id));
+      setNotice("Thread restored to history.");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
 
   return (
-    <section aria-label="History" className="mt-2 flex max-h-96 flex-col gap-2 rounded-2xl bg-surface-container p-3">
+    <section
+      aria-label="History"
+      className="mt-2 flex max-h-96 flex-col gap-2 rounded-2xl bg-surface-container p-3"
+    >
       <div className="flex items-center gap-2">
         <Input
           variant="outlined"
@@ -102,14 +138,36 @@ export function HistoryPanel({
         </Button>
       </div>
 
-      {error && <p role="alert" className="m-0 text-body-medium text-error">{error}</p>}
-      {notice && <p aria-live="polite" className="m-0 text-body-medium text-on-surface-variant">{notice}</p>}
+      {error && (
+        <p role="alert" className="m-0 text-body-medium text-error">
+          {error}
+        </p>
+      )}
+      {notice && (
+        <p aria-live="polite" className="m-0 text-body-medium text-on-surface-variant">
+          {notice}
+        </p>
+      )}
+      <Button
+        variant="tonal"
+        aria-pressed={archived}
+        onClick={() => {
+          setArchived(!archived);
+          setConfirming(null);
+        }}
+      >
+        {archived ? "Show active history" : "Show archived history"}
+      </Button>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
           <p className="m-0 p-2 text-body-medium text-on-surface-variant">Loading threads...</p>
         ) : groups.length === 0 ? (
-          <p className="m-0 p-2 text-body-medium text-on-surface-variant">{query ? "No thread matches: edit the search." : "No threads: send a message to start one."}</p>
+          <p className="m-0 p-2 text-body-medium text-on-surface-variant">
+            {query
+              ? "No thread matches: edit the search."
+              : "No threads: send a message to start one."}
+          </p>
         ) : (
           groups.map((group) => (
             <div key={group.key} className="mb-2">
@@ -123,14 +181,23 @@ export function HistoryPanel({
                     <button
                       type="button"
                       onClick={() => onOpen(thread)}
+                      disabled={archived}
                       className="min-h-12 flex-1 truncate text-left text-body-large focus-visible:outline-2 focus-visible:outline-primary"
                     >
                       {thread.title}
                     </button>
-                    {confirming === thread.id ? (
+                    {archived ? (
+                      <Button variant="tonal" onClick={() => void restore(thread)}>
+                        Restore
+                      </Button>
+                    ) : confirming === thread.id ? (
                       <>
-                        <Button variant="text" onClick={() => setConfirming(null)}>Cancel</Button>
-                        <Button variant="colored" className="bg-error text-on-error" onClick={() => void remove(thread)}>Delete</Button>
+                        <Button variant="text" onClick={() => setConfirming(null)}>
+                          Cancel
+                        </Button>
+                        <Button variant="tonal" onClick={() => void remove(thread)}>
+                          Archive
+                        </Button>
                       </>
                     ) : (
                       <>
@@ -144,7 +211,7 @@ export function HistoryPanel({
                         </button>
                         <button
                           type="button"
-                          aria-label={`Delete ${thread.title}`}
+                          aria-label={`Archive ${thread.title}`}
                           onClick={() => setConfirming(thread.id)}
                           className="inline-flex size-12 items-center justify-center rounded-full text-on-surface-variant hover:bg-on-surface/8 focus-visible:outline-2 focus-visible:outline-primary"
                         >

@@ -37,48 +37,10 @@ export interface ChatStoreState {
 }
 
 export const useChatStore = create<ChatStoreState>((set) => ({
-  threads: [
-    {
-      id: "thread-default-1",
-      name: "Nettoyer le code mort",
-      preview: "Nettoyer le code mort",
-      createdAt: Date.now() - 3600000,
-      updatedAt: Date.now() - 3600000,
-      cwd: "workspace/aphrody",
-    },
-    {
-      id: "thread-default-2",
-      name: "Corriger le dépôt",
-      preview: "Corriger le dépôt",
-      createdAt: Date.now() - 7200000,
-      updatedAt: Date.now() - 7200000,
-      cwd: "workspace/aphrody",
-    },
-    {
-      id: "thread-default-3",
-      name: "Inspect google.rs",
-      preview: "Inspect google.rs",
-      createdAt: Date.now() - 14400000,
-      updatedAt: Date.now() - 14400000,
-      cwd: "workspace/shenron",
-    },
-    {
-      id: "thread-default-4",
-      name: "Installer agy",
-      preview: "Installer agy",
-      createdAt: Date.now() - 28800000,
-      updatedAt: Date.now() - 28800000,
-      cwd: "workspace/shenron",
-    },
-  ],
-  activeThreadId: "thread-default-1",
-  unreadThreadIds: {
-    "thread-default-4": true,
-  },
-  expandedProjects: {
-    aphrody: true,
-    shenron: false,
-  },
+  threads: [],
+  activeThreadId: null,
+  unreadThreadIds: {},
+  expandedProjects: {},
   newSessionRequested: false,
   sessionTitle: undefined,
   model: "GPT-6 Luna",
@@ -86,31 +48,23 @@ export const useChatStore = create<ChatStoreState>((set) => ({
   accessMode: "full",
   cwd: "",
 
-  setThreads: (threads) =>
-    set(() => ({ threads })),
+  setThreads: (threads) => set(() => ({ threads })),
 
   setActiveThreadId: (id) =>
     set((state) => ({
       activeThreadId: id,
-      unreadThreadIds: id
-        ? { ...state.unreadThreadIds, [id]: false }
-        : state.unreadThreadIds,
+      unreadThreadIds: id ? { ...state.unreadThreadIds, [id]: false } : state.unreadThreadIds,
     })),
 
-  setSessionTitle: (title) =>
-    set(() => ({ sessionTitle: title })),
+  setSessionTitle: (title) => set(() => ({ sessionTitle: title })),
 
-  setModel: (model) =>
-    set(() => ({ model })),
+  setModel: (model) => set(() => ({ model })),
 
-  setEffort: (effort) =>
-    set(() => ({ effort })),
+  setEffort: (effort) => set(() => ({ effort })),
 
-  setAccessMode: (accessMode) =>
-    set(() => ({ accessMode })),
+  setAccessMode: (accessMode) => set(() => ({ accessMode })),
 
-  setCwd: (cwd) =>
-    set(() => ({ cwd })),
+  setCwd: (cwd) => set(() => ({ cwd })),
 
   markThreadRead: (id) =>
     set((state) => ({
@@ -143,10 +97,7 @@ export const useChatStore = create<ChatStoreState>((set) => ({
     }),
 }));
 
-export function getProjectGroups(
-  threads: ThreadItem[],
-  expandedProjects: Record<string, boolean>
-) {
+export function getProjectGroups(threads: ThreadItem[], expandedProjects: Record<string, boolean>) {
   const groups: Record<string, ThreadItem[]> = {};
 
   for (const t of threads) {
@@ -160,10 +111,6 @@ export function getProjectGroups(
     }
     groups[projName].push(t);
   }
-
-  // Ensure default canonical projects
-  if (!groups["aphrody"]) groups["aphrody"] = [];
-  if (!groups["shenron"]) groups["shenron"] = [];
 
   return Object.keys(groups).map((name) => ({
     name,

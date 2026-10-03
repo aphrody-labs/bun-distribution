@@ -3,6 +3,7 @@
 // All typography strictly obeys LOW_VISION floor (>= 18px). No hardware dumps or slop.
 import {
   Badge,
+  AlertDialog,
   Button,
   Card,
   CircularProgress,
@@ -14,6 +15,7 @@ import {
 } from "@aphrody/m3-primitives";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { isChatModel, loadModelInventories, stopModelDownload } from "./models-hub-actions";
 import {
   applyProgress,
   type DownloadState,
@@ -40,10 +42,22 @@ import {
   getDefaultModelSetting,
   setActiveModelSetting,
   setDefaultModelSetting,
+  readSetting,
+  writeSetting,
 } from "./preferences";
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+async function handleVerify(id: string, title: string) {
+  try {
+    const report = await verifyModel(id);
+    if (report.intact) toast.success(`${title} : intégrité SHA-256 vérifiée`);
+    else toast.error(`${title} : échec de vérification SHA-256`);
+  } catch (error) {
+    toast.error(message(error));
+  }
 }
 
 const TASK_FILTERS: Array<[string, string]> = [
@@ -66,17 +80,20 @@ export function ModelsHub() {
   const [downloads, setDownloads] = useState<Record<string, DownloadState>>({});
   const [activeModel, setActiveModel] = useState<string | null>(null);
   const [defaultModel, setDefaultModel] = useState<string | null>(null);
+  const [removal, setRemoval] = useState<{ id: string; title: string } | null>(null);
+  const [stopping, setStopping] = useState<Record<string, boolean>>({});
+  const [pulling, setPulling] = useState<Record<string, boolean>>({});
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
 
   const refreshStore = useCallback(async () => {
     setLoading(true);
     try {
-      const [entries, list] = await Promise.all([
-        fetchModelCatalog().catch(() => ({ count: 0, entries: [] })),
-        fetchInstalledModels().catch(() => ({ root: "", count: 0, total_bytes: 0, models: [] })),
-      ]);
-      setCatalog(entries.entries);
-      setInstalled(list);
-      setLoadError("");
+      const result = await loadModelInventories(fetchModelCatalog, fetchInstalledModels);
+      if (result.catalog) setCatalog(result.catalog);
+      if (result.installed) setInstalled(result.installed);
+      setLoadError(result.error);
     } catch (error) {
       setLoadError(message(error));
     } finally {
@@ -88,6 +105,13 @@ export function ModelsHub() {
     void refreshStore();
     void getActiveModelSetting().then(setActiveModel);
     void getDefaultModelSetting().then(setDefaultModel);
+    void readSetting<unknown>("favoriteModels")
+      .then((value) => {
+        if (Array.isArray(value))
+          setFavorites(value.filter((id): id is string => typeof id === "string"));
+        return undefined;
+      })
+      .catch(() => setLoadError("Favoris indisponibles."));
 
     let stop: (() => void) | undefined;
     let active = true;
@@ -132,7 +156,20 @@ export function ModelsHub() {
     toast.success(`Modèle par défaut défini : ${modelId}`);
   };
 
+  const toggleFavorite = async (id: string) => {
+    const next = favorites.includes(id)
+      ? favorites.filter((item) => item !== id)
+      : [...favorites, id];
+    try {
+      await writeSetting("favoriteModels", next);
+      setFavorites(next);
+    } catch {
+      toast.error("Impossible d'enregistrer les favoris.");
+    }
+  };
+
   const handleInstall = async (entry: CatalogEntry) => {
+    setPulling((current) => ({ ...current, [entry.id]: true }));
     const resumed = downloads[entry.id] ?? null;
     setDownloads((current) => ({
       ...current,
@@ -162,21 +199,35 @@ export function ModelsHub() {
           },
         };
       });
+    } finally {
+      setPulling((current) => ({ ...current, [entry.id]: false }));
     }
   };
 
   const handleStopDownload = async (id: string) => {
-    setDownloads((current) => {
-      const state = current[id];
-      return state
-        ? { ...current, [id]: { ...state, status: "stopped", speedBps: null, etaSeconds: null } }
-        : current;
-    });
+    setStopping((current) => ({ ...current, [id]: true }));
     try {
-      await cancelModelPull(id);
+      await stopModelDownload(id, cancelModelPull);
+      setDownloads((current) => {
+        const state = current[id];
+        return state
+          ? {
+              ...current,
+              [id]: {
+                ...state,
+                status: "stopped",
+                error: undefined,
+                speedBps: null,
+                etaSeconds: null,
+              },
+            }
+          : current;
+      });
       toast.info("Téléchargement arrêté");
     } catch (error) {
       toast.error(message(error));
+    } finally {
+      setStopping((current) => ({ ...current, [id]: false }));
     }
   };
 
@@ -190,38 +241,54 @@ export function ModelsHub() {
     }
   };
 
-  const handleVerify = async (id: string, title: string) => {
-    try {
-      const report = await verifyModel(id);
-      if (report.intact) {
-        toast.success(`${title} : intégrité SHA-256 vérifiée`);
-      } else {
-        toast.error(`${title} : échec de vérification SHA-256`);
-      }
-    } catch (error) {
-      toast.error(message(error));
-    }
-  };
-
   const visibleCatalog = useMemo(() => {
     const entries =
       filterKind === "all"
         ? catalog
         : catalog.filter((entry) => normalizeModelKind(entry.task) === filterKind);
-    return searchModelCatalog(entries, searchQuery);
-  }, [catalog, filterKind, searchQuery]);
+    return searchModelCatalog(entries, searchQuery).filter(
+      (entry) => !favoritesOnly || favorites.includes(entry.id),
+    );
+  }, [catalog, filterKind, searchQuery, favoritesOnly, favorites]);
 
   const visibleInstalled = useMemo(() => {
-    if (filterKind === "all") return installedModelsList;
     return installedModelsList.filter((m) => {
       const entry = catalog.find((c) => c.id === m.catalog_id || c.id === m.ref);
       const kind = normalizeModelKind(entry?.task ?? m.ref);
-      return kind === filterKind;
+      return (
+        (filterKind === "all" || kind === filterKind) &&
+        (!favoritesOnly || favorites.includes(m.catalog_id || m.ref)) &&
+        searchModelCatalog(
+          [
+            {
+              id: m.catalog_id || m.ref,
+              title: entry?.title || m.ref,
+              summary: entry?.summary || "",
+              files: entry?.files || [{ role: "model", ref: m.ref }],
+            },
+          ],
+          searchQuery,
+        ).length > 0
+      );
     });
-  }, [installedModelsList, catalog, filterKind]);
+  }, [installedModelsList, catalog, filterKind, favoritesOnly, favorites, searchQuery]);
 
   return (
     <section className="flex h-full flex-col gap-6 overflow-auto p-6">
+      <AlertDialog
+        open={removal !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoval(null);
+        }}
+        title={`Supprimer ${removal?.title ?? "le modèle"} ?`}
+        description="Les fichiers de ce modèle seront supprimés du stockage Aphrody."
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        destructive
+        onConfirm={() => {
+          if (removal) void handleRemove(removal.id, removal.title);
+        }}
+      />
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -300,20 +367,27 @@ export function ModelsHub() {
         </div>
 
         {/* Kind Filters */}
-        {activeTab === "catalog" && (
+        {
           <SearchBar
             value={searchQuery}
             onChange={setSearchQuery}
             type="search"
-            aria-label="Rechercher un modèle dans le catalogue"
+            aria-label="Rechercher un modèle"
             placeholder="Nom, identifiant ou URL Hugging Face"
           />
-        )}
+        }
         <div
           className="flex flex-wrap items-center gap-2"
           role="group"
           aria-label="Filtres par type"
         >
+          <Button
+            variant={favoritesOnly ? "filled" : "tonal"}
+            aria-pressed={favoritesOnly}
+            onClick={() => setFavoritesOnly(!favoritesOnly)}
+          >
+            Favoris
+          </Button>
           {TASK_FILTERS.map(([key, label]) => (
             <Button
               key={key}
@@ -418,6 +492,13 @@ export function ModelsHub() {
                   )}
 
                   <Divider />
+                  <Button
+                    variant="tonal"
+                    aria-pressed={favorites.includes(modelId)}
+                    onClick={() => void toggleFavorite(modelId)}
+                  >
+                    {favorites.includes(modelId) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                  </Button>
 
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -425,6 +506,7 @@ export function ModelsHub() {
                         variant="filled"
                         className="min-h-[48px] px-4 text-[18px]"
                         onClick={() => void handleUseInChat(modelId)}
+                        disabled={!isChatModel(catalogEntry)}
                       >
                         <Icon name="chat" size={20} />
                         <span>Utiliser dans le chat</span>
@@ -435,6 +517,7 @@ export function ModelsHub() {
                           variant="tonal"
                           className="min-h-[48px] px-4 text-[18px]"
                           onClick={() => void handleSetDefault(modelId)}
+                          disabled={!isChatModel(catalogEntry)}
                         >
                           <Icon name="star" size={20} />
                           <span>Définir par défaut</span>
@@ -457,7 +540,7 @@ export function ModelsHub() {
                       <Button
                         variant="outlined"
                         className="min-h-[48px] px-4 text-[18px] text-error hover:bg-error/10 border-error/40"
-                        onClick={() => void handleRemove(modelId, title)}
+                        onClick={() => setRemoval({ id: modelId, title })}
                       >
                         <Icon name="delete" size={20} />
                         <span>Supprimer</span>
@@ -533,6 +616,36 @@ export function ModelsHub() {
                   </div>
 
                   <p className="m-0 text-[18px] text-on-surface-variant">{entry.summary}</p>
+                  <p className="m-0 text-[18px] text-on-surface-variant">
+                    Licence : {entry.license.spdx}
+                  </p>
+                  <Button
+                    variant="tonal"
+                    aria-expanded={detailsId === entry.id}
+                    onClick={() => setDetailsId(detailsId === entry.id ? null : entry.id)}
+                  >
+                    Détails des fichiers
+                  </Button>
+                  {detailsId === entry.id && (
+                    <ul
+                      aria-label={`Fichiers de ${entry.title}`}
+                      className="space-y-2 break-all text-body-large"
+                    >
+                      {entry.files.map((file) => (
+                        <li key={`${file.role}:${file.ref}`}>
+                          {file.role} · {file.ref} ·{" "}
+                          {file.bytes === undefined ? "Taille inconnue" : formatBytes(file.bytes)}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Button
+                    variant="tonal"
+                    aria-pressed={favorites.includes(entry.id)}
+                    onClick={() => void toggleFavorite(entry.id)}
+                  >
+                    {favorites.includes(entry.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                  </Button>
 
                   <div className="flex flex-wrap gap-4 text-[18px] text-on-surface">
                     <span>
@@ -594,6 +707,7 @@ export function ModelsHub() {
                           variant="filled"
                           className="min-h-[48px] px-4 text-[18px]"
                           onClick={() => void handleUseInChat(entry.id)}
+                          disabled={!isChatModel(entry)}
                         >
                           <Icon name="chat" size={20} />
                           <span>Utiliser dans le chat</span>
@@ -604,6 +718,7 @@ export function ModelsHub() {
                             variant="tonal"
                             className="min-h-[48px] px-4 text-[18px]"
                             onClick={() => void handleSetDefault(entry.id)}
+                            disabled={!isChatModel(entry)}
                           >
                             <Icon name="star" size={20} />
                             <span>Par défaut</span>
@@ -624,7 +739,7 @@ export function ModelsHub() {
                         <Button
                           variant="outlined"
                           className="min-h-[48px] px-4 text-[18px] text-error hover:bg-error/10 border-error/40"
-                          onClick={() => void handleRemove(entry.id, entry.title)}
+                          onClick={() => setRemoval({ id: entry.id, title: entry.title })}
                         >
                           <Icon name="delete" size={20} />
                           <span>Supprimer</span>
@@ -636,15 +751,17 @@ export function ModelsHub() {
                       variant="tonal"
                       className="min-h-[48px] px-5 text-[18px]"
                       onClick={() => void handleStopDownload(entry.id)}
+                      disabled={stopping[entry.id]}
                     >
                       <Icon name="pause" size={20} />
-                      <span>Arrêter</span>
+                      <span>{stopping[entry.id] ? "Arrêt…" : "Arrêter"}</span>
                     </Button>
                   ) : (
                     <Button
                       variant="filled"
                       className="min-h-[48px] px-5 text-[18px]"
                       onClick={() => void handleInstall(entry)}
+                      disabled={stopping[entry.id] || pulling[entry.id]}
                     >
                       <Icon name={download ? "play_arrow" : "download"} size={20} />
                       <span>

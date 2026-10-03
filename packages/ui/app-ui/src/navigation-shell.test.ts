@@ -58,7 +58,9 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
     expect(sidebarCode).toContain("model_training");
 
     // 48dp row height and label-large 18px text
-    expect(sidebarCode).toContain("h-12 w-full items-center gap-3 rounded-full px-3 text-label-large");
+    expect(sidebarCode).toContain(
+      "h-12 w-full items-center gap-3 rounded-full px-3 text-label-large",
+    );
   });
 
   it("dynamically changes groups based on active area without modal drawers", () => {
@@ -97,7 +99,7 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
     expect(sidebarCode).toContain("<JobsButton");
     expect(sidebarCode).toContain("<SyncButton");
     expect(sidebarCode).toContain("GearSix");
-    expect(sidebarCode).toContain("title=\"Paramètres\"");
+    expect(sidebarCode).toContain('title="Paramètres"');
   });
 
   it("exposes the consumer Settings sections", () => {
@@ -128,8 +130,8 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
     expect(generalCode).not.toContain("Device Slug");
     expect(generalCode).not.toContain("core.reset");
 
-    // Clean version displayed only in update card
-    expect(generalCode).toContain("Aphrody 2.0");
+    // The updater supplies the actual installed version; never fabricate one.
+    expect(generalCode).not.toContain("Aphrody 2.0");
   });
 
   it("conforms to LOW_VISION accessibility profile with text >= 18px", () => {

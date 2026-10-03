@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
-import { Icon, Switch, Button, Card, toast } from "@aphrody/m3-primitives";
-import { checkForAppUpdate, isTauri, tauriInvoke } from "../../tauri-bridge";
+import { AlertDialog, Icon, Switch, Button, Card, toast } from "@aphrody/m3-primitives";
+import {
+  checkForAppUpdate,
+  installAppUpdate,
+  isTauri,
+  tauriInvoke,
+  type UpdateMetadata,
+} from "../../tauri-bridge";
 import { hydratePreferences, updatePreferences } from "../../preferences";
 
 export function GeneralSettings() {
@@ -12,14 +18,20 @@ export function GeneralSettings() {
   // App updater state
   const [checking, setChecking] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+  const [update, setUpdate] = useState<UpdateMetadata | null>(null);
+  const [installing, setInstalling] = useState(false);
+  const [confirmUpdate, setConfirmUpdate] = useState(false);
 
   useEffect(() => {
-    void hydratePreferences().then((prefs) => {
-      setLanguage(prefs.language);
-      setStartWithSystem(prefs.startWithSystem);
-      setKeepInTray(prefs.keepInTray);
-      setOpenWithDefault(prefs.openWithDefault);
-    });
+    void hydratePreferences()
+      .then((prefs) => {
+        setLanguage(prefs.language);
+        setStartWithSystem(prefs.startWithSystem);
+        setKeepInTray(prefs.keepInTray);
+        setOpenWithDefault(prefs.openWithDefault);
+        return undefined;
+      })
+      .catch(() => setUpdateStatus("Préférences indisponibles."));
   }, []);
 
   const handleLanguageChange = (val: string) => {
@@ -50,22 +62,55 @@ export function GeneralSettings() {
   const handleCheckUpdate = async () => {
     setChecking(true);
     setUpdateStatus(null);
+    setUpdate(null);
     try {
-      const update = await checkForAppUpdate();
-      if (update) {
-        setUpdateStatus("Nouvelle version disponible");
+      const available = await checkForAppUpdate();
+      if (available) {
+        setUpdate(available);
+        setUpdateStatus(`Version ${available.version} disponible`);
       } else {
         setUpdateStatus("Votre application est à jour.");
       }
     } catch {
-      setUpdateStatus("Votre application est à jour.");
+      setUpdateStatus(
+        "Vérification impossible. Réessayez lorsque le service de mises à jour est accessible.",
+      );
     } finally {
       setChecking(false);
     }
   };
 
+  const handleInstallUpdate = async () => {
+    if (!update || installing) return;
+    setInstalling(true);
+    try {
+      await installAppUpdate(update, (received, total) => {
+        setUpdateStatus(
+          total
+            ? `Téléchargement : ${Math.min(100, Math.round((received / total) * 100))}%`
+            : `Téléchargement : ${received} octets`,
+        );
+      });
+      setUpdateStatus("Mise à jour installée ; redémarrage demandé.");
+      setUpdate(null);
+    } catch {
+      setUpdateStatus("Installation ou redémarrage impossible. Aucun succès confirmé.");
+    } finally {
+      setInstalling(false);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-3xl">
+      <AlertDialog
+        open={confirmUpdate}
+        onOpenChange={setConfirmUpdate}
+        title={`Installer la version ${update?.version ?? ""} ?`}
+        description="L'application redémarrera après vérification et installation. Terminez vos opérations en cours."
+        confirmLabel="Installer et redémarrer"
+        cancelLabel="Annuler"
+        onConfirm={() => void handleInstallUpdate()}
+      />
       <div>
         <h2 className="text-headline-small font-bold text-on-surface">Général</h2>
         <p className="text-body-large text-on-surface-variant mt-1">
@@ -78,7 +123,9 @@ export function GeneralSettings() {
         <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-title-medium font-medium text-on-surface">Langue de l'interface</h3>
+              <h3 className="text-title-medium font-medium text-on-surface">
+                Langue de l'interface
+              </h3>
               <p className="text-body-large text-on-surface-variant mt-1">
                 Choisissez la langue d'affichage des menus et commandes.
               </p>
@@ -99,7 +146,9 @@ export function GeneralSettings() {
         <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-title-medium font-medium text-on-surface">Lancer avec le système</h3>
+              <h3 className="text-title-medium font-medium text-on-surface">
+                Lancer avec le système
+              </h3>
               <p className="text-body-large text-on-surface-variant mt-1">
                 Démarrer Aphrody en tâche de fond à l'ouverture de votre session.
               </p>
@@ -113,7 +162,9 @@ export function GeneralSettings() {
 
           <div className="border-t border-outline-variant/30 pt-6 flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-title-medium font-medium text-on-surface">Conserver dans la zone de notification</h3>
+              <h3 className="text-title-medium font-medium text-on-surface">
+                Conserver dans la zone de notification
+              </h3>
               <p className="text-body-large text-on-surface-variant mt-1">
                 Laisser l'icône active dans la barre des tâches lors de la fermeture de la fenêtre.
               </p>
@@ -144,13 +195,20 @@ export function GeneralSettings() {
         <Card variant="elevated" className="p-6 border border-outline-variant/30 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-title-medium font-medium text-on-surface">Mise à jour de l'application</h3>
-              <p className="text-body-large text-on-surface-variant mt-1">
-                Version actuelle : <span className="font-semibold text-on-surface">Aphrody 2.0</span>
-              </p>
+              <h3 className="text-title-medium font-medium text-on-surface">
+                Mise à jour de l'application
+              </h3>
+              {update && (
+                <p className="text-body-large text-on-surface-variant mt-1">
+                  Version actuelle :{" "}
+                  <span className="font-semibold text-on-surface">{update.currentVersion}</span>
+                </p>
+              )}
               {updateStatus && (
-                <p className="text-body-large text-primary mt-2 flex items-center gap-2">
-                  <Icon name="check_circle" size={20} />
+                <p
+                  role="status"
+                  className="text-body-large text-on-surface-variant mt-2 flex items-center gap-2"
+                >
                   <span>{updateStatus}</span>
                 </p>
               )}
@@ -158,12 +216,17 @@ export function GeneralSettings() {
             <Button
               variant="tonal"
               onClick={() => void handleCheckUpdate()}
-              disabled={checking}
+              disabled={checking || installing}
               className="h-12 px-6 rounded-medium text-label-large font-medium shrink-0 flex items-center gap-2"
             >
               <Icon name="sync" size={20} className={checking ? "animate-spin" : ""} />
               <span>{checking ? "Vérification..." : "Vérifier les mises à jour"}</span>
             </Button>
+            {update && (
+              <Button variant="filled" disabled={installing} onClick={() => setConfirmUpdate(true)}>
+                {installing ? "Installation…" : "Installer et redémarrer"}
+              </Button>
+            )}
           </div>
         </Card>
       </div>
