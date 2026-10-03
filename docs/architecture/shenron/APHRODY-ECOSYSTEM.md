@@ -93,10 +93,10 @@ commit de ces dépôts ne le prouve pas.
 > `aphrody/docs/{PLAN.md, RAG.md, training.md, CLI.md}`, `aphrody-os/crates/{aphrody-translate, aphrody-web-embed}` → `aphrody-ai` ;
 > `aphrody/crates/aphrody-a2a-*` → `aphrody-contracts` ; `aphrody-os/apps/bxc`,
 > `aphrody-os/crates/{aphrody-site, aphrody-obscura, aphrody-web-engine, aphrody-web-ffi, aphrody-web-render}`,
-> `aphrody-os/docs/WEB-RUNTIME.md` → `aphrody-web` ; `aphrody-os/crates/aphrody-render`,
+> `aphrody-os/docs/WEB-RUNTIME.md` → `aphrody-web` ; `crates/ui/render`,
 > `aphrody-os/packages/{canvas, m3, m3-next}`, `aphrody-os/docs/{PUBLISHING.md, CANVAS-UPSTREAM.md}` → `aphrody-ui` ;
-> `aphrody-os/crates/aphrody-bun`, `aphrody-os/packages/bun` → `aphrody-compat` ;
-> `aphrody-os/crates/aphrody-winclean`, `aphrody-os/packages/os`, `aphrody-ai/plugins/aphrody`
+> `crates/ui/bun`, `aphrody-os/packages/bun` → `aphrody-compat` ;
+> `crates/os/winclean`, `aphrody-os/packages/os`, `aphrody-ai/plugins/aphrody`
 > restent dans `aphrody-os`.
 
 **Convention.** Ce document ne contient ni hôte, ni IP, ni port. Un service
@@ -539,7 +539,7 @@ Service `aphrody-site` : `APHRODY_SITE_WEB_UPSTREAM`,
 12. **Traduction** : ajouter un mode JSON à `aphrody translate` (aujourd'hui
     sortie humaine seulement, `crates/infra/aphrody-command/src/lib.rs:378-394`) et une route
     `/api/v1/shenron/translate` (`aphrody-translate` ou le LLM). Le glossaire
-    doit venir de Shenron : `aphrody-os/crates/aphrody-translate/src/shenron.rs:283`
+    doit venir de Shenron : `crates/ai/translate/src/shenron.rs:283`
     (`default_canon_lexique()`) duplique en dur le lexique canonique Shenron.
 13. **Aphrody Web** :
     - publier la correction d'indexation (`chunks=0`) ;

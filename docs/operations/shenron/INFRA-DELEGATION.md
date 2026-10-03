@@ -8,8 +8,8 @@
 > [`TOPOLOGY-OBSERVATION-2026-10-02.md`](../infra/TOPOLOGY-OBSERVATION-2026-10-02.md)
 > et [`VPS-STATUS-2026-10-02.md`](../infra/VPS-STATUS-2026-10-02.md).
 
-Depuis la migration décrite dans `aphrody-infra/docs/SHENRON-MIGRATION.md` et
-`aphrody-infra/docs/PRODUCTION-ALLOCATION.md`, l'exploitation de Shenron n'est
+Depuis la migration décrite dans `docs/SHENRON-MIGRATION.md` et
+`docs/PRODUCTION-ALLOCATION.md`, l'exploitation de Shenron n'est
 plus pilotée depuis ce dépôt. Ce document fixe la frontière : qui possède
 quoi, ce qui reste ici, et la liste des fichiers à supprimer une fois leur
 équivalent confirmé côté de l'Infra du monorepo.

@@ -71,9 +71,9 @@ répertoires ; son total ne prouve pas la couverture complète de `src`.
 | --- | --- |
 | `aphrody-ui/packages/bun/package.json`, `crates/ui/bun/Cargo.toml` | `@aphrody/bun` 3.3.3, crate `aphrody-bun` 1.0.0-canary, bibliothèque `bun_rs`, cdylib + rlib. Les versions ne sont pas un contrat ABI commun. |
 | `aphrody-ui/packages/bun/src/`, `packages/svg/src/` (not in repo) | Plusieurs chargements du même `bun_rs`, recherche de `target/`, appels natifs dès l'import du module principal. M3, Sass, icônes, SVG, rendu et reproduction doivent tous être conservés. |
-| `aphrody-ai/crates/aphrody-ffi/src/lib.rs` | ABI Aphrody v1, exports CLI, Shenron/RAG/persona et manga, runtime Tokio persistant, capture stdio. Le seul wrapper `bun/index.ts` ne couvre pas toute cette surface. |
+| `crates/interop/ffi/src/lib.rs` | ABI Aphrody v1, exports CLI, Shenron/RAG/persona et manga, runtime Tokio persistant, capture stdio. Le seul wrapper `bun/index.ts` ne couvre pas toute cette surface. |
 | `bun/src/js/bun/aphrody.ts` | Le module **`bun:aphrody`** charge séparément `aphrody_ffi` ABI 1, N2B ABI 2 et Oxc ABI 1. Il expose `runCaptured`, scan, format, minify et lint. Ce n'est pas encore une liaison Rust statique au moteur. |
-| `aphrody-compat/crates/aphrody-n2b-native`, `oxc/apps/aphrody-oxc` | Sources natives spécifiques déjà présentes ; comparer leur graphe Oxc, leurs fonctions et leurs features avant fusion. |
+| `crates/compat/n2b-native`, `oxc/apps/aphrody-oxc` | Sources natives spécifiques déjà présentes ; comparer leur graphe Oxc, leurs fonctions et leurs features avant fusion. |
 | `aphrody-web/Cargo.toml` | Web est déjà une famille de crates : moteur, bridge, FFI, render, extract, index, service, Chromium et Obscura ; sa simple façade ne supprime pas leurs duplications. |
 | `iecode/crates/ffi`, `nie/crates/engine/nie-ffi`, `iecode/packages/nie` | ABI/bindings du domaine en migration. Une présence dans deux dépôts n'est pas une raison suffisante pour supprimer un côté. |
 | `aphrody-ai/py/aphrody/Cargo.toml` | Extension PyO3 `aphrody-rust`, cdylib indépendante : destination Rust dans `aphrody`, packaging Python dans `aphrody-py`. |

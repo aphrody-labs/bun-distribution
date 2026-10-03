@@ -160,7 +160,7 @@ Les facades provisoires ont des usages mesurés et une échéance de retrait.
    Vérifier installation depuis le registre, transitifs et provenance; pinner
    chaque consommateur sur version publiée ou SHA immuable.
 2. Bâtir la release Discord depuis un SHA figé avec
-   `aphrody-infra/scripts/build-aphrody-discord-release.sh`. Respecter les
+   `scripts/build-aphrody-discord-release.sh`. Respecter les
    préconditions de l'adaptateur Infra : checksums, secrets hors release,
    rollback. Tester d'abord la guilde de développement, puis santé Gateway,
    interactions signées, commandes, OAuth, renouvellement TLS et journaux.
@@ -207,7 +207,7 @@ bun run test:ci
 Ajouter en CI les nouveaux tests OAuth, signatures, REST et exports. Pour
 chaque release joindre SHA source, lockfile, version Bun, codes retour, sondes
 et SHA actif après activation. Suivre le runbook
-`../aphrody-infra/docs/IMMUTABLE-RELEASES.md` en vigueur; ne pas exécuter un
+`../docs/IMMUTABLE-RELEASES.md` en vigueur; ne pas exécuter un
 script de déploiement depuis un chemin ou un état supposé.
 
 ## Définition de terminé
