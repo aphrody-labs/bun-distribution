@@ -167,16 +167,25 @@ m.update(repository='aphrody-labs/aphrody', sourceLayout='monorepo', target='dbf
 p.write_text(json.dumps(m) + '\n')
 PYMANIFEST
 sed -i '/^\[Service\]/i [Unit]\nAfter=network-online.target shenron-pg-tunnel.service\nWants=network-online.target shenron-pg-tunnel.service' "$fixture/bundles/third/systemd/"*.service
+sed -i 's|ExecStart=/usr/bin/true|ExecStart=/home/ubuntu/.bun/bin/bun --bun /srv/shenron/current/node_modules/next/dist/bin/next start|' "$fixture/bundles/third/systemd/shenron-site.service"
 (cd "$fixture/bundles/third" && find . -type f ! -name SHA256SUMS -printf '%P\0' | sort -z | xargs -0 sha256sum > SHA256SUMS)
+# The isolated monorepo install puts Next under the site owner, not root.
+python3 - "$fixture/bin/bun" <<'PYISOLATED'
+import pathlib,sys
+p=pathlib.Path(sys.argv[1]);s=p.read_text().replace('node_modules/next/dist/bin', 'apps/shenron/site/node_modules/next/dist/bin');p.write_text(s)
+PYISOLATED
 if bash "$script" assemble "$fixture/bundles/third" >"$fixture/out" 2>&1; then echo 'accepted DBFR nonlocal PostgreSQL' >&2; exit 1; fi
 grep -q 'host-local PostgreSQL' "$fixture/out"
 printf 'DATABASE_URL=postgresql://fixture:fixture@127.0.0.1:5432/shenron_site\n' > "$fixture/etc/shenron-site.env"
+
 bash "$script" assemble "$fixture/bundles/third" >"$fixture/out" 2>&1
 third="$fixture/shenron/releases/$third_sha"
 [[ -L "$third/apps/shenron/bot/data" && -f "$third/apps/shenron/site/.next-build/BUILD_ID" ]]
+grep -q 'ExecStart=.*current/apps/shenron/site/node_modules/next/dist/bin/next' "$third/systemd/shenron-site.service"
 grep -q 'WorkingDirectory=/srv/shenron/current/apps/shenron/site' "$third/systemd/shenron-site.service"
 if grep -q 'shenron-pg-tunnel.service' "$third/systemd/"*.service; then echo 'DBFR retains tunnel dependency' >&2; exit 1; fi
 bash "$script" activate "$third" >"$fixture/out" 2>&1
 [[ "$(readlink -f "$fixture/shenron/current")" = "$third" ]]
+[[ -f "$third/apps/shenron/site/node_modules/next/dist/bin/next" && ! -e "$third/node_modules/next/dist/bin/next" ]]
 echo 'Shenron monorepo DBFR mapping and local PostgreSQL preflight: ok'
 echo 'Shenron adapter assemble, preflight, activation, rollback and restore: ok'

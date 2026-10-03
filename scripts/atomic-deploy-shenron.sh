@@ -76,6 +76,15 @@ PYLAYOUT
   )
 }
 
+resolve_next_path() {
+  local release_path="$1"
+  next_path="$site_path/node_modules/next/dist/bin/next"
+  if [[ "$site_path" = apps/site && ! -f "$release_path/$next_path" ]]; then
+    next_path=node_modules/next/dist/bin/next
+  fi
+  [[ -f "$release_path/$next_path" ]] || { echo 'Bun install did not provide Next for site owner' >&2; exit 2; }
+}
+
 assemble() {
   local source="$1" commit dest stage link rel
   source="$(realpath -e -- "$source")"
@@ -138,7 +147,7 @@ PY
   rm -rf -- "$stage/.artifact"
   chown -R "$run_as:$run_as" "$stage"
   (cd "$stage" && runuser -u "$run_as" -- env HOME="$(getent passwd "$run_as" | cut -d: -f6)" "$bun" install --frozen-lockfile)
-  [[ -f "$stage/node_modules/next/dist/bin/next" ]] || { echo 'bun install did not provide next' >&2; exit 2; }
+  resolve_next_path "$stage"
   # Mutable directories become links into shared/; their tracked content is
   # kept as the seed refreshed at activation.
   for link in "${shared_links[@]}"; do
@@ -152,16 +161,17 @@ PY
   done
   install -d "$stage/systemd" "$stage/nginx"
   cp -- "$source"/systemd/*.service "$stage/systemd/"
-  python3 - "$source/release.json" "$stage/systemd" "$env_root" "$site_path" "$bot_path" <<'PYUNITS'
+  python3 - "$source/release.json" "$stage/systemd" "$env_root" "$site_path" "$bot_path" "$next_path" <<'PYUNITS'
 import json, pathlib, shlex, sys
 from urllib.parse import urlsplit
 manifest = json.load(open(sys.argv[1]))
 units, env_root = pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
-site, bot = sys.argv[4:6]
+site, bot, next_path = sys.argv[4:7]
 for unit in units.glob('*.service'):
     content = unit.read_text()
     if manifest.get('sourceLayout') == 'monorepo':
         content = content.replace('/apps/site', '/' + site).replace('/apps/bot', '/' + bot)
+    content = content.replace('/srv/shenron/current/node_modules/next/dist/bin/next', '/srv/shenron/current/' + next_path)
     if manifest.get('target', 'vps') == 'dbfr':
         values = {}
         for line in content.splitlines():
@@ -273,9 +283,10 @@ esac
 for file in "$catalog" "$routes" "$contract"; do [[ -r "$file" ]] || { echo "installed catalog missing: $file" >&2; exit 2; }; done
 release="$(realpath -e -- "$target")"
 configure_layout "$release/release.json"
+resolve_next_path "$release"
 release_root="$(realpath -m -- "$releases")"
 [[ "$release" = "$release_root/"* ]] || { echo 'release must be under the Shenron release root' >&2; exit 2; }
-for file in release.json RELEASE_SHA SHA256SUMS nginx/shenron.conf site-artifact-manifest.json "$site_path/.next-build/BUILD_ID" node_modules/next/dist/bin/next; do
+for file in release.json RELEASE_SHA SHA256SUMS nginx/shenron.conf site-artifact-manifest.json "$site_path/.next-build/BUILD_ID" "$next_path"; do
   [[ -e "$release/$file" ]] || { echo "release lacks $file" >&2; exit 2; }
 done
 
