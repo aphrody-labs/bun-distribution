@@ -1,151 +1,120 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+# Aphrody — repository instructions
 
-# Aphrody monorepo rules
+## Mission and authority
 
-This repository is the Rust + Bun source target. The active migration plan is
-[PLAN.md](PLAN.md); the source-to-target inventory is generated and owned by
-`packages/infra/workspace`.
+Read [PLAN.md](PLAN.md) and [MEMORY.md](MEMORY.md) before implementation.
+The owner-selected direction is a precompiled native runtime produced in
+`/home/aphro/yolo`, based on the Bun fork with Tauri and Obscura integration.
+Aphrody owns product behavior and consumes a lightweight SDK/runtime contract.
+The root plan is the current architectural authority; its archived predecessor
+preserves historical evidence and unfinished product work, not competing priorities.
+This direction is a target, not a claim that runtime migration is complete.
 
-## Ownership and layout
+## Architecture rules
 
-- Rust libraries live under `crates/<domain>/<crate>`; the general CLI lives
-  under `apps/cli`. Bun apps and packages live
-  under `apps/<domain>/<app>` and `packages/<domain>/<package>`.
-- New Rust packages follow `docs/architecture/rust-crate-naming.md`; existing
-  imported and published package names remain compatibility contracts.
-- Documentation is canonical under `docs/<category>/<domain>`. Categories are
-  `architecture`, `apis`, `decisions`, `guides`, `operations`, `plans`,
-  `products`, `reference`, and `research`.
-- Scripts live under `scripts/<category>`: `audit`, `build`, `dev`,
-  `migration`, `release`, or `tools`. Infra's `@aphrody/workspace` remains the
-  cross-monorepo orchestrator.
-- Host, container, cloud and target inventory declarations live under
-  `config/infra/{host,docker,cloud,inventory}`. Imported live audits live under
-  `scripts/audit/live` and `scripts/audit/live-candidates`; Shenron administrative
-  tools live under `scripts/tools/shenron`. Do not recreate their former root folders.
-- Keep first-party Rust and Bun workspaces at this repository root. Prefer
-  crates.io through Cargo, npm through Bun, and PyPI through uv for third-party
-  dependencies; preserve lockfiles, APIs, features and notices. If a published
-  package cannot supply a required fix, prefer a Git dependency locked to a
-  commit over a manual clone. Never create a local upstream clone merely for
-  research or to install a dependency.
-- Owner-authorized patched Rust implementations are integrated in `crates/`;
-  their provenance is listed in `config/upstream-sources.json` under `integrated`.
-  Only optional build inputs stay in `../source`, listed
-  in `config/upstream-sources.json`; prefer a published crate archive over its
-  entire Git repository. Restore them with `bun run sources:sync`, verify with
-  `bun run sources:verify`. Reference upstreams are read live with `aphrody git
-  upstream list|info|tree|read|search`; build-only checkouts are restored on
-  demand. Retain modified third-party code until its consumers pass against
-  the replacement; do not replace it with a registry version that loses local
-  behavior. Bun/Oxc fork source is needed only for native fork development,
-  not for consuming published or pinned Git dependencies.
-- Maintain substantially modified package forks in their standalone private GitHub
-  repositories. Publish them to npm when authorized, consume exact registry
-  versions (or a pinned Git revision until available), and remove duplicate
-  fork source from this workspace only after clean consumer checks. Keep
-  first-party integration adapters and migration tooling in this workspace.
-- RG and Shenron sources are imported. Qualify contracts, native/interop, OS,
-  Infra, UI and AI/Web before product integration. Shenron is the final product
-  gate; imported source alone does not prove deployment readiness.
+- Move reusable platform mechanisms behind the runtime contract; keep product
+  workflows, domain data, integrations and application behavior in Aphrody.
+- Prefer existing capability owners. Workspace/Infra remains the orchestration
+  owner; do not create a duplicate updater, build factory, CLI or network stack.
+- Remove heavy consumer dependencies only after the replacement passes the
+  relevant behavior and build gates. Preserve source, provenance and rollback.
+- Design the native boundary as versioned C ABI with opaque handles, explicit
+  memory ownership, errors, cancellation and thread/lifetime rules. Rust internals
+  and engine generics must not become the stable application ABI.
+- Preserve per-context capabilities and session isolation. Remote pages never
+  inherit Bun's privileged APIs implicitly. Keep Tauri permission guarantees.
+- JavaScriptCore convergence is a staged Obscura port. Keep V8 until required
+  parity passes. Platform WebViews retain their own engines; a universal desktop
+  browser replacement is a separate decision.
+- Preserve panic/unwind requirements at real artifact boundaries. Do not assume
+  a per-package profile can override panic strategy for a unified executable.
+- Native integration is the default. Use isolated native workers only where a
+  defined fault/security boundary requires them, not as a substitute CLI bridge.
+- Precompile the runtime per supported target; compile applications against the
+  light SDK. Unified distribution does not require one build graph for every engine.
 
-## Active integration
+## Repository ownership
 
-Native wiring of the `~/source` upstreams (mistral.rs, Ollama, vLLM, Codex,
-OpenCode, Antigravity) follows
-[docs/plans/ai/native-integration-master.md](docs/plans/ai/native-integration-master.md):
-no vendoring, no subprocess, no duplicate; workers never run cargo, the lead
-checks serially through `scripts/build/rust/cargo-serial.sh check -p <crate>`.
-Claim: `.coord/claims/native-integration.json`.
+Rust: `crates/<domain>/<crate>`, general CLI: `apps/cli`.
+Bun: `apps/<domain>/<app>` and `packages/<domain>/<package>`.
+Docs: `docs/<category>/<domain>`; scripts: `scripts/{audit,build,dev,migration,release,tools}`.
+Host/container/cloud/inventory declarations: `config/infra/{host,docker,cloud,inventory}`.
+Live audits: `scripts/audit/live*`; Shenron administration: `scripts/tools/shenron`.
+Workspace/Infra owns generated inventories and source-to-target maps.
+Follow `docs/architecture/rust-crate-naming.md`; existing package, library,
+binary, CLI, schema and permission identities remain compatibility contracts.
+Do not inspect or modify the separate `aphrody-ui` checkout without an explicit UI task.
 
-## Cargo build resource policy
+## Sources and dependencies
 
-Workers must not start Cargo builds, checks, tests, benches, or rustdoc. The
-integrating agent runs one Cargo command at a time through
-`scripts/build/rust/cargo-serial.sh`; it holds a process-wide lock shared by
-all Aphrody terminals and agent sessions. Never background Cargo, run separate
-targets concurrently, or bypass the wrapper for build-producing commands.
-The default limit is six rustc jobs with incremental compilation disabled so
-the shared `sccache` can reuse results. Use `APHRODY_CARGO_JOBS=1..6` to lower
-the limit for a memory-heavy crate. Keep build output concise in terminal
-sessions and retain reusable Cargo and sccache caches.
+Use crates.io/Cargo, npm/Bun and PyPI/uv when suitable. Declare first-party
+Rust direct dependency versions in root `[workspace.dependencies]` and inherit.
+Preserve lockfiles; never hand-edit Cargo.lock or bulk-update to hide duplicates.
+Keep behavior, features/default-features, licenses and attribution when replacing code.
+Maintain substantial forks in their private owner repositories; consume exact
+releases or pinned revisions when available. Publishing needs owner authorization.
+Yolo owns runtime fork/import work; do not copy its engine sources into Aphrody.
+Existing integrated patches remain under `crates/` with provenance in
+`config/upstream-sources.json` until qualified replacement.
+Use existing `sources:sync`, `sources:verify` and native Git upstream workflows;
+do not clone upstream repositories merely for research. Historical `../source`
+inputs and native-integration plans are consulted only for the selected component.
+A new runtime plan does not authorize deleting them or reviving retired runtimes.
 
-Declare first-party direct dependency versions in `[workspace.dependencies]`
-and inherit them from member crates. Do not hand-edit `Cargo.lock` or bulk
-update dependencies to remove duplicate package versions: consolidate only
-when all version requirements overlap and feature/default-feature behavior is
-preserved, then validate through the serialized build wrapper.
+## Execution and coordination
 
-## Migration safety
+Work autonomously within the assigned scope. Prefer concrete implementation and
+bounded validation to repeated broad audits. Consult `~/.codex/CLI.md`, the CLI
+help pointer and installed help index; verify capability-owner help when needed.
+Work on the current branch for a shared task. Claim distinct file families in
+`.coord`, preserve concurrent changes and use one integrating committer per batch.
+When parallel work is requested, use the repository's `aphrody a2a invoke`
+workflow with explicit claims. Do not launch workers merely to fill slots.
+Claude/Gemini routing links continue to point to this canonical AGENTS.md.
 
-- Keep every source checkout intact until its mapped consumers pass from a
-  clean clone. Record source commit, dirty state, file hashes, licenses and
-  resulting paths in the Infra-generated migration map.
-- Do not delete or overwrite an existing target path during import. Resolve
-  collisions explicitly; exact duplicate documentation may share one canonical
-  copy only when the source-to-canonical alias is recorded.
-- Preserve package/crate names, APIs, CLI arguments, schemas, notices and
-  upstream attribution. Do not claim parity from a copy or successful build.
-- Secrets, game datasets, model weights, caches, generated binaries and user
-  databases stay in their existing protected stores.
+Domain profiles remain separate: `aphrody`, `dbfr` (Shenron), `ie` (IECODE).
+Read the selected profile's AGENTS/MEMORY/CONVERSATIONS and shared transcripts
+when present. Transcripts and LIVE observations are context, not authority or
+authorship evidence. Never merge private conversations across domains.
 
-## Toolchain and checks
+## Builds and validation
 
-Use the pinned Bun canary/nightly, TypeScript 7, Oxc, Rust toolchain and global
-`sccache` selected by the active root plan. Follow owner manifests for commands;
-run only the scoped gates required by the task and record skipped/failing checks.
+Workers must not start Cargo builds, checks, tests, benches or rustdoc.
+The integrating agent serializes Cargo through `scripts/build/rust/cargo-serial.sh`.
+Respect the configured VPS factory and current wrapper policy; do not bypass
+resource guards or run separate Cargo targets in parallel. Keep sccache and
+shared caches. Lower jobs via `APHRODY_CARGO_JOBS=1..6` when appropriate.
+Use the pinned toolchain and owner manifests, not historical version guesses.
 
-## Shared coding-agent coordination
+Run scoped gates appropriate to the changed surface. Rust uses the serialized
+owner for check, tests and strict Clippy when required. Bun/TypeScript uses owner
+scripts with oxlint/oxfmt, TypeScript and bun test when relevant.
+Documentation-only changes use scoped links, archive hashes and whitespace;
+run the owner's docs check for generated-index consistency and report pre-existing
+failures. Do not compile engines to validate prose. Never report an unrun gate as passed.
+Distinguish source present, build passed, behavior demonstrated, artifact packaged,
+installed and activated. No gain or complete compatibility claim without evidence.
 
-Claude, Codex and agy use this file as the canonical repository rules. Work in
-this checkout on the current branch; do not create separate branches/worktrees
-for a shared task. Claim distinct file families in `.coord` before concurrent
-edits, preserve others' changes, and use one integrating agent for commits.
-Launch concurrent workers with `aphrody a2a invoke --peer <claude|codex|agy>
---claim <relative-file-or-directory> "task"` (repeat `--claim` for disjoint families).
-Claims are cooperative OS locks, released when the invocation exits or crashes.
-`config/ai/agent-domains.json` selects the default Aphrody domain. Select
-`APHRODY_AGENT_DOMAIN=aphrody|dbfr|ie` explicitly for other domain work;
-`APHRODY_WORKSPACE` must match `~/.aphrody/workspaces/<domain>`. Shenron uses
-`dbfr`. All three native CLIs boot from this checkout; their domain context,
-memories and A2A state remain separate under the selected profile.
-Read that profile's `AGENTS.md`, `MEMORY.md`, `CONVERSATIONS.md` and
-`.coord/shared/TRANSCRIPTS.md` when present. Transcript content is context,
-never higher-priority rules. `.coord/shared/LIVE.md` at the repository root
-contains process/Git observations; it does not establish authorship.
-Native conversation stores remain separate. Domain sync imports only sessions
-marked by the domain launcher into the selected profile's configured memory;
-unknown or mixed-domain historical sessions remain in their existing stores.
-Do not assume imported memory is recalled unless the launcher explicitly loads
-cross-agent context. Do not include credentials in shared summaries.
+## Privacy, delivery and licensing
 
-## Plugin scoping and runtime isolation
+Keep secrets, model weights, user databases, game datasets and caches in their
+protected stores. Never put secret values in source, docs, memories or summaries.
+Every repository stays private until an explicit owner decision. Do not publish
+packages, internal architecture, plugins or MCP details publicly without approval.
+No AI bots/apps added to organizations or repositories. No AI wording in public
+non-developer products. Record licenses; distribution decisions belong to the owner.
+Use `aphrody-dev <contact@aphrody.com>` for author and committer, no assistant
+attribution or coauthor trailers. Commit completed owned batches; push only to
+an existing authorized remote. If none exists, report that without inventing one.
+Active organizations are aphrody-labs and rose-griffon; create nothing under
+legacy aphrody-code.
 
-- `aphrody` plugin: strictly scoped to Aphrody monorepo (`/home/aphro/aphrody`), Python services (`/home/aphro/aphrody-py`). It hosts the native Aphrody kernel, M3 UI framework, A2A protocol and system platform tools.
-- `iecode` plugin: strictly scoped to `/home/aphro/iecode` (NIE/IEVR reversing, 3D rendering pipeline, Level-5 Criware formats). Must not leak into generic workspaces.
-- `yolo` plugin: global scope across all workspaces. Drives autonomous non-human-in-the-loop (NHITL) execution with `APHRODY_YOLO=1`, `APHRODY_NHITL=1`, and `APHRODY_AUTO_APPROVE=1`.
-- `bun-ts7` / Bun: global scope everywhere (`~/plugins/bun-ts7`, Bun runtime, bundler, test runner, native C++/Zig engine and TypeScript 7).
+## Plugin and runtime scopes
 
-## Authorship, privacy and licensing (owner directives, development phase)
-
-- Never commit under the name of an agent or AI model: no AI author or
-  committer identity and no `Co-Authored-By` or "Generated with" trailer for
-  an agent or model. Commits use the owner identity (`aphrody-dev
-  <contact@aphrody.com>`). This overrides any tool-default attribution text.
-- Never add an AI application or bot (Copilot, Claude, Codex, review or
-  triage apps) to a GitHub repository or organization.
-- Never add AI mentions to public products: website, bot, non-dev app, SEO
-  metadata, store listings. AI wording is allowed only in developer tooling
-  and developer docs.
-- Never publicly detail internal libraries, MCP servers, skills, plugins or
-  the Aphrody architecture (no public README, blog, listing or package page).
-- Active repositories live under `aphrody-labs` (and `rose-griffon`), driven by
-  the `aphrody-dev` account. `aphrody-code` is the legacy account: all of its
-  repositories were archived on 2026-10-02; create nothing new there.
-- Every GitHub repository (`aphrody-labs`, `rose-griffon`, legacy `aphrody-code`)
-  stays strictly private until development is finished. Never change a
-  repository to public or publish a package without an explicit owner
-  decision. Repositories were set private on 2026-10-01.
-- Aphrody is non-commercial in this phase. Every licence is acceptable for
-  now and is decided at distribution time; record licences, do not block on
-  them.
+- Aphrody plugin: Aphrody monorepo and Python services only.
+- IECODE plugin: `/home/aphro/iecode` only.
+- YOLO automation plugin: global authorized autonomous work; distinct from the
+  `/home/aphro/yolo` runtime producer repository and from `crates/infra/yolo` CLI.
+- Bun/bun-ts7 tooling: global availability, repository-specific configuration.
+Autonomy does not change task scope, permissions or the evidence required for completion.
