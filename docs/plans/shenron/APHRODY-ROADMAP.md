@@ -284,5 +284,5 @@ retour arrière exercé par Aphrody Infra.
   [Bun TypeScript](https://bun.sh/docs/typescript) — APIs natives et types
   recommandés.
 - [Aphrody Infra Shenron runbook](../../migration/SHENRON-WORKSPACE-LAYOUT.md)
-  et checkout autoritaire `aphrody-infra/docs/SHENRON-MIGRATION.md` — limites
+  et checkout autoritaire `docs/SHENRON-MIGRATION.md` — limites
   du runtime/deploy et commandes existantes.

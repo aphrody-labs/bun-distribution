@@ -2,7 +2,7 @@
 
 **Date** : 7 septembre 2026 · **Aphrody Web mesuré** : 0.9.4 (binaire), `rust-bridge` 0.2.1
 **Appelant** : `crates/web/web-bridge` (à l'époque dans le monorepo aphrody ; aujourd'hui dans
-`aphrody-web`, consommé par `aphrody-ai` via `../aphrody-web/crates/aphrody-web-bridge`)
+`aphrody-web`, consommé par `aphrody-ai` via `../crates/web/web-bridge`)
 **Registre** : ce document prolonge [`RAPPORT-DEFAUTS-2026-09-05.md`](../../../operations/workspace/HISTORY.md)
 et son fil rouge — *Aphrody Web échoue en silence avec un code de sortie 0*. Tout ce qui suit
 a été mesuré par exécution, avec son code de sortie.

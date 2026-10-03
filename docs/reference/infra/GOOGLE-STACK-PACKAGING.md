@@ -74,7 +74,7 @@ import of the `google-antigravity` SDK, and the `aphrody` pytest suite. Last ful
 ## Legacy manifest
 
 `config/google-gemini-pipeline.json` still names retired split repositories
-and paths such as `aphrody-ai/crates/aphrody-antigravity`,
+and paths such as `crates/google/antigravity`,
 `packages/google`, and `aphrody-web/apps/bxc`. Treat it as historical until it
 is migrated or removed by its owner. Use
 [`google-stack-release.json`](../../../config/google-stack-release.json) for

@@ -33,6 +33,6 @@ mismatch: `config/system-packages.json` requires uv `0.12.21`, while
 claimed until these manifests are aligned and the verifier completes.
 
 The old manifest's BXC cookie routing, split-repository ownership and
-`aphrody-ai/crates/aphrody-antigravity` references are retained only as
+`crates/google/antigravity` references are retained only as
 historical design context. They are not evidence that those providers or
 paths are current runtime capabilities.

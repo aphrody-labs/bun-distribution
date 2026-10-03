@@ -49,7 +49,7 @@ dans `.gitignore`.
 | [bot-administration.md](bot-administration.md) | Surface web du bot : contrat de types partagé, serveur d'administration en boucle locale, API et pages `/admin/bot` + `/admin/cron`. |
 | [campagnes-hashtag.md](campagnes-hashtag.md) | Campagnes à hashtag : récolte X + Discord, tolérance aux fautes de frappe, relais vers le salon de suivi. |
 | [insta.md](insta.md) | Instagram : pourquoi aucune récolte automatique n'est possible, la vérification oEmbed, le dépôt manuel et la table dédiée. |
-| `aphrody-infra/docs/ops/stockage-secondaire.md` (dépôt aphrody-infra) | Archive froide sur le second VPS : pourquoi elle a existé, ce qui en est revenu le 21/8/2026, et ce qui ne doit jamais être déporté. |
+| `docs/ops/stockage-secondaire.md` (dépôt aphrody-infra) | Archive froide sur le second VPS : pourquoi elle a existé, ce qui en est revenu le 21/8/2026, et ce qui ne doit jamais être déporté. |
 | [achillea-services.md](../../architecture/rg/achillea-services.md) | Topologie, secrets hors Git, ports, sondes et contrat d'upload Supabase d'Achillea. |
 | [achillea-storage-migration.md](../../plans/rg/achillea-storage-migration.md) | Runbook sûr et reprenable pour migrer les octets Storage Cloud d'Achillea vers sa pile locale isolée. |
 | [achillea-modulaire.md](../../architecture/rg/achillea-modulaire.md) | Architecture portable d'Achilléa : contrat, métier, client isomorphe, export Rust/Swift/Kotlin — et ce qu'il reste à faire pour migrer le front. |

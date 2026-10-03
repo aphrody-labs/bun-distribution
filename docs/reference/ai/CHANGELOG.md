@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `nie-mcp` child over stdio (`NIE_MCP_BIN`), because `repo-layering.ts` gives
   `nie` no layer and aphrody-ai must not link its game crates. nie has no AI
   layer to converge (no LLM client, embedding or RAG code; see
-  `aphrody-infra/config/local-ai.json`).
+  `config/local-ai.json`).
 
 ### One embedding crate: aphrody-embed (2026-09-26)
 
@@ -145,13 +145,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The password must be rotated and purged from history by the operator.
 - Deleted the legacy Python `:8082` deploy path: `py/aphrody/deploy/`,
   `scripts/vps-rebuild.sh`, `aphrody/serve.py`, its test and the `aphrody serve` CLI verb.
-- Host-ops scripts moved to `aphrody-infra/scripts/aphrody/`: `vps-setup-all.sh`,
+- Host-ops scripts moved to `scripts/aphrody/`: `vps-setup-all.sh`,
   `vps-sync-agent-stack.sh`, `fetch-ai-llms.sh`, `gcp-enable-all.sh`,
   `gcp-sa-setup.{sh,ps1}`, `proxy-status.sh` (paths now come from `APHRODY_ROOT`,
   `BXC_DATA_DIR`, `PROXY_LISTEN`/`PROXY_EXIT`). `scripts/aphrody/setup-app-proxies.ps1`
   stays here because `aphrody vpn app setup` invokes it.
 - `ai-collaboration.json` deleted; `ai.json` drops its embedded peer list, points to
-  `aphrody-infra/config/a2a-peers.json` and advertises `https://aphrody.com/api/v1/a2a`.
+  `config/a2a-peers.json` and advertises `https://aphrody.com/api/v1/a2a`.
   `PeerRegistry` now reads the infra catalog's `endpoint`/`transport` fields.
 - `package.json`: removed `infra:*`, `yolo*`, `bxc*` proxy scripts and `engines.node`.
   `uv` pinned to 0.12.17 in `mise.toml`, `python.yml` and `aphrody-reusable-ci.yml`.
@@ -159,8 +159,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed (ops boundary)
 
 - **Stack monitor and public vhosts moved to `aphrody-infra`.** `scripts/ops/stack.ts`
-  is now `aphrody-infra/scripts/infra-status.ts`; `deploy/nginx/*` is now
-  `aphrody-infra/nginx/aphrody/`. `bun run infra:*` calls `../aphrody-infra`. This repo
+  is now `scripts/infra-status.ts`; `deploy/nginx/*` is now
+  `nginx/aphrody/`. `bun run infra:*` calls `../aphrody-infra`. This repo
   keeps the AI layer only; host operations are owned by `aphrody-infra`
   (`docs/ops/README.md` there).
 

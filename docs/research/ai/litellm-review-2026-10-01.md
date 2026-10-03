@@ -6,7 +6,7 @@ claim or code port.
 
 ## Source reviewed
 
-- Checkout: `../source/litellm` (outside the Aphrody repository).
+- Checkout: `.cache/upstream/litellm` (outside the Aphrody repository).
 - Upstream: <https://github.com/BerriAI/litellm>
 - Branch and observed revision: `main`, `b4bb2a77a20231860d91220376a1ec2691481b8b`.
 - Clone contains full Git history (not shallow); working tree was clean.

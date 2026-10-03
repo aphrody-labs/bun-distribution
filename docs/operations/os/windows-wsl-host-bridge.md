@@ -99,8 +99,8 @@ USB requires a real USB/IP exporter/attachment; a generic RPC is not a USB trans
   `result_large_err` warning. The first CLI check hit concurrently edited RAG code;
   the subsequent CLI check passed after its owner corrected it.
 
-Source audits live in `/home/aphro/source/audits/{wsl-boot,hardware-access}.md`.
-Official clones are under `/home/aphro/source/{WSL,wslg,WSL2-Linux-Kernel,terminal}`.
+Source audits live in `.cache/upstream/audits/{wsl-boot,hardware-access}.md`.
+Official clones are under `.cache/upstream/{WSL,wslg,WSL2-Linux-Kernel,terminal}`.
 Audited commits: WSL `c34e75aea8dcc50c0c2f9e76b2de9b26a58e8b67`, WSLg
 `6942bb534b537302a7a22617261d9274db3cfa37`, kernel
 `14794180686c2fb6307fbe359c359bec765249f3`, Terminal

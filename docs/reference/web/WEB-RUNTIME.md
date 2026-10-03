@@ -140,7 +140,7 @@ lane above.
 | Extraction | HTML, contenu principal, métadonnées/canonical, Markdown, blocs, chunks, SimHash/déduplication | `aphrody-web-extract` |
 | ABI compatibilité | pages persistantes, navigation, évaluation, cookies, headers, blocage de ressources, délais et réseau privé | `aphrody-web-render`; conservé tant que chaque contrat ABI n'est pas migré et testé |
 | Browser OS | navigation, snapshot, formulaire, extraction, capture, PDF, cookies, onglets et scripts via les outils `browser_*` | `aphrody-browser` via `aphrody-web-service` |
-| N2B | analyse AST OXC, scanners, règles/codemods, registry, rapports, GitHub audit, prompt, app/win32/linux/wasm/bin/rust/bunpp/llmstxt | `aphrody-compat/crates/aphrody-n2b*` ; façades Bun dans `aphrody-compat/packages/n2b*` |
+| N2B | analyse AST OXC, scanners, règles/codemods, registry, rapports, GitHub audit, prompt, app/win32/linux/wasm/bin/rust/bunpp/llmstxt | `crates/compat/n2b*` ; façades Bun dans `aphrody-compat/packages/n2b*` |
 | Bun | installation, workspaces, build, test, scripts et FFI native | Fork `bun/` (JavaScriptCore) ; `bun:aphrody` est sur la branche `claude/aphrody-native-module`. Le crate UI `aphrody-bun` reste dans `aphrody-ui`. Voir la [carte Infra](../infra/APHRODY-BUN-PLATFORM.md). |
 | Deno | cible de génération N2B, pas un runtime de produit Aphrody | N2B ; `deno_core` reste limité à l'ABI web de compatibilité |
 

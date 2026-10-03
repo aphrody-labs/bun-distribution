@@ -284,7 +284,7 @@ actifs, aucun import vers une ancienne implantation déplacée.
 
 ### Amont, forks et bumps structurés — 2026-10-02
 
-- FAIT : `~/source` ne garde que les quatre checkouts nécessaires au build (`mcp-server-tauri`, `simdutf-rio`,
+- FAIT : `.cache/upstream` ne garde que les quatre checkouts nécessaires au build (`mcp-server-tauri`, `simdutf-rio`,
   `tauri-plugin-dialog`, `serde-saphyr`) : 23 Go avant, 11 Mo après. Les 17 autres amonts sont des entrées `reference`
   de `config/upstream-sources.json`, lues en direct : `aphrody git upstream list|info|tree|read|search`, outils MCP
   `upstream_*`, skill `upstreams`, `aphrody-update upstream`. Vue générée : `docs/reference/infra/UPSTREAMS.md`.
@@ -306,7 +306,7 @@ actifs, aucun import vers une ancienne implantation déplacée.
   consommé dans le clone. Contrôle du consommateur Linux réussi, lock Cargo inchangé.
 - Les quatre sources restaurées automatiquement sont des archives crates.io
   patchées : zéro clone Git requis par `sources:sync`. L'ancien clone est conservé
-  dans un backup privé hors de `../source` jusqu'aux gates depuis un clone propre.
+  dans un backup privé hors de `.cache/upstream` jusqu'aux gates depuis un clone propre.
 - Python : retrait de l'override Git `langextract` dans la configuration imbriquée ;
   lock uv racine PyPI vérifié. Le SDK Antigravity local reste une exception explicite,
   car les extensions `voice` consommées ne figurent pas dans la roue publiée.
@@ -777,7 +777,7 @@ migration non entreprise). Détails : `docs/operations/ui/tauri-upstream.md`.
 - DÉFAUT AMONT contourné : `tauri-plugin-dialog` 3.0.0-alpha.2 (publié) ne compile
   pas contre `tauri` 3.0.0-alpha.3 (`run_on_main_thread` déplacé vers `Manager`) ;
   HEAD de la branche `v3` des plugins aussi. Copie crates.io + une ligne dans
-  `../source/tauri-plugin-dialog` (`[patch.crates-io]`, patch
+  `.cache/upstream/tauri-plugin-dialog` (`[patch.crates-io]`, patch
   `patches/tauri-plugin-dialog-3.0.0-alpha.2.patch`).
 - FAIT : forks inventoriés. `aphrody-code/tauri` 89499afc : seul changement
   `no_redirection_bitmap`, déjà présent dans Tauri 3 → retiré.

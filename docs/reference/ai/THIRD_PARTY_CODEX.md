@@ -23,7 +23,7 @@ provenance of existing ports or fixtures.
 
 | aphrody path | Upstream path | Notes |
 |---|---|---|
-| `../aphrody-contracts/crates/aphrody-app-protocol/tests/fixtures/upstream/*.json` | `codex-rs/app-server-protocol/schema/json/` | JSON Schema fixtures used as the contract-test oracle. Revision pinned in `FIXTURES_REV`. Unmodified. |
+| `../crates/contracts/app-protocol/tests/fixtures/upstream/*.json` | `codex-rs/app-server-protocol/schema/json/` | JSON Schema fixtures used as the contract-test oracle. Revision pinned in `FIXTURES_REV`. Unmodified. |
 
 ## Adapted source
 

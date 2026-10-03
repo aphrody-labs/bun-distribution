@@ -60,8 +60,8 @@ two-repository cycle. `aphrody-kernel -> aphrody-bun-docs` is a valid layer-2-de
 edge and was kept; `aphrody-n2b -> aphrody-toolchains` was the layer violation (layer 1
 depending on layer 2). `aphrody-toolchains` has no dependency on the rest of `aphrody-os` (only
 `serde_json`, `thiserror`, `toml`) and `aphrody-n2b` was already its heaviest consumer, so the
-crate moved from `aphrody-os/crates/aphrody-toolchains` to
-`aphrody-compat/crates/aphrody-toolchains`; `aphrody-os`, `aphrody-ui` and `aphrody-ai` now
+crate moved from `crates/compat/toolchains` to
+`crates/compat/toolchains`; `aphrody-os`, `aphrody-ui` and `aphrody-ai` now
 consume it as a sibling, the same way they already consume `aphrody-bun-docs`.
 
 ## Shared application integration repositories

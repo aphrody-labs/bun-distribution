@@ -297,7 +297,7 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
    removes the retired site-only `aphrody-infra-deploy`.
 8. **RG release.** `git -C ../rg fetch && git -C ../rg
    checkout --detach RG_SHA`, then as `ubuntu`
-   `bash ~/aphrody-infra/scripts/rg/assemble-vps-release.sh RG_SHA`
+   `bash ~/scripts/rg/assemble-vps-release.sh RG_SHA`
    (builds `/srv/rg/releases/RG_SHA`; retired catalog services are skipped).
 
 ### Ordered commands (historical; do not execute without reactivation gates)

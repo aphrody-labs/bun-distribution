@@ -53,8 +53,8 @@ No Discord SDK or WebSocket/Gateway client is a dependency of this module. Cargo
 
 ## Useful source references
 
-- Shared contract and types: `aphrody-ai/crates/aphrody-messaging/src/channels/mod.rs`
-- Discord adapter: `aphrody-ai/crates/aphrody-messaging/src/channels/discord.rs`
+- Shared contract and types: `crates/ai/messaging/src/channels/mod.rs`
+- Discord adapter: `crates/ai/messaging/src/channels/discord.rs`
 - CLI command declarations/dispatch: `aphrody-ai/crates/aphrody/src/lib.rs`
 - Notify implementation: `aphrody-ai/crates/aphrody/src/commands.rs`
 - Hermes channel runtime: `aphrody-ai/crates/aphrody/src/agent_cmd.rs`

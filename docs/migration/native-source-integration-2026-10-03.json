@@ -682,7 +682,7 @@
     "nativeCommandTests": "Factory VPS at 80357f7c9: source::tests 2 pass; upstream::tests 4 pass",
     "terminalConsumerCheck": "Factory VPS at 80357f7c9: aphrody-terminal-core all-target check passes",
     "nativeGitClippy": "Factory VPS at 315e0547a264d500fc3d10513cabac5a520e801b: cargo clippy --locked -p aphrody-git --all-targets -- -D warnings passes; both changed native source files match the local SHA-256 hashes",
-    "postRemovalCargoMetadata": "Locked offline Cargo metadata passes after /home/aphro/source is removed"
+    "postRemovalCargoMetadata": "Locked offline Cargo metadata passes after .cache/upstream is removed"
   },
   "originalArchive": {
     "path": "~/.local/share/aphrody/archive/native-source-integration-20261003.tar.gz",

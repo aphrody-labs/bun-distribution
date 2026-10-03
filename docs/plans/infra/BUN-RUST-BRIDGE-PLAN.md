@@ -118,7 +118,7 @@ structurée si l’artefact est absent.
 
 | Surface Bun | Crate / artefact Rust | État actuel | Action du plan |
 | --- | --- | --- | --- |
-| `aphrody-ai/crates/aphrody-ffi/bun` | `aphrody-ffi` / `libaphrody_ffi` | ABI v1, chargeur cible `target/{triple}` et capture de CLI en mémoire | Adopter le chargeur unique, publier le manifeste ABI et séparer les commandes externes de la logique Rust. |
+| `crates/interop/ffi/bun` | `aphrody-ffi` / `libaphrody_ffi` | ABI v1, chargeur cible `target/{triple}` et capture de CLI en mémoire | Adopter le chargeur unique, publier le manifeste ABI et séparer les commandes externes de la logique Rust. |
 | `aphrody-ui/packages/bun` (`@aphrody/bun`) | `aphrody-bun` / `libbun_rs` | C ABI direct: M3, icônes, Sass, SVG, rendu, validation; chemins `target/` codés dans le package | Premier pilote: manifest d’artefact, vérification de version, types générés et suppression des chemins `target/` du package. |
 | `aphrody-ui/packages/svg` | `aphrody-bun` → `aphrody-svg` | Second wrapper `bun:ffi` vers le même `bun_rs` | Absorber dans le chargeur et le contrat de `@aphrody/bun`; conserver le package SVG comme façade typée. |
 | `iecode/packages/iecode-ffi` | `iecode-ffi` | `IecodeBytes { ptr,len,cap }` et destructeur déjà explicite | Réutiliser cette discipline de propriété dans `aphrody-native-abi`. |

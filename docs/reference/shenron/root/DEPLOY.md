@@ -1,8 +1,8 @@
 # Déploiement de Shenron
 
 > **Exploitation déléguée.** Depuis la migration décrite dans
-> `aphrody-infra/docs/SHENRON-MIGRATION.md` et
-> `aphrody-infra/docs/PRODUCTION-ALLOCATION.md`, la production (VPS, systemd,
+> `docs/SHENRON-MIGRATION.md` et
+> `docs/PRODUCTION-ALLOCATION.md`, la production (VPS, systemd,
 > Nginx, blue/green, backups, rollback) n'est plus pilotée depuis ce dépôt
 > mais depuis Infra du monorepo (`config/service-catalog.json`,
 > `config/nginx-routes.json`, `config/application-contracts.json`). Voir
@@ -133,8 +133,8 @@ pour éviter qu'elles soient exécutées par erreur.
 Pour l'état courant de l'exploitation (units systemd, routes Nginx, backups,
 rollback, blue/green), se référer à :
 
-- `aphrody-infra/docs/SHENRON-MIGRATION.md`
-- `aphrody-infra/docs/PRODUCTION-ALLOCATION.md`
+- `docs/SHENRON-MIGRATION.md`
+- `docs/PRODUCTION-ALLOCATION.md`
 - `config/service-catalog.json`
 - `config/nginx-routes.json`
 - [`docs/operations/shenron/INFRA-DELEGATION.md`](../../../operations/shenron/INFRA-DELEGATION.md) (frontière et liste

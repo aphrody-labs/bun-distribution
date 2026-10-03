@@ -32,9 +32,9 @@
       " M packages/tauri-plugin-mcp-bridge/src/websocket.rs"
     ],
     "license": "MIT",
-    "sourcePath": "/home/aphro/source/mcp-server-tauri",
+    "sourcePath": ".cache/upstream/mcp-server-tauri",
     "retainedBackup": "~/.local/share/aphrody/source-backups/mcp-server-tauri-registry-20261003",
-    "resultPath": "/home/aphro/source/tauri-plugin-mcp-bridge",
+    "resultPath": ".cache/upstream/tauri-plugin-mcp-bridge",
     "registryVersion": "0.13.0",
     "archiveSha256": "db0e3b2116693ae3ea616e041d83d8d95898ee2393629b2d1b8ee1d80f2eedb0",
     "files": [

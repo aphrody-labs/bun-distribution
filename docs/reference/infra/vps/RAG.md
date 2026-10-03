@@ -18,7 +18,7 @@ the pipelines. Restored from the retired `aphrody` monolith (`docs/reference/inf
 
 ## 1. Platform RAG (`aphrody-ai`)
 
-- Engine: `aphrody-ai/crates/aphrody-rag` (indexer, PostgreSQL and SQLite stores, embedders,
+- Engine: `crates/ai/rag` (indexer, PostgreSQL and SQLite stores, embedders,
   rerankers), served by `aphrody-ai-http` and the `aphrody rag` CLI.
 - Store: PostgreSQL database `aphrody` through `APHRODY_MCP_DATABASE_URL`; an explicit `--db`
   selects a local SQLite index instead ([DATABASES.md](./DATABASES.md)).

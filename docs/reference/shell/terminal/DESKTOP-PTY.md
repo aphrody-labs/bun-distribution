@@ -37,7 +37,7 @@ state is described in [ENGINE-SELECTION.md](./ENGINE-SELECTION.md).
 | Rio (`teletypewriter`, `sugarloaf`, `rio-vt`) | Rejected | `teletypewriter` 2.0.1 runs on `corcovado` 0.0.1 (mio fork) and `windows-sys` 0.48, not tokio; `sugarloaf` draws to a native wgpu surface, not a webview pane |
 | WezTerm crates beyond `portable-pty` | Rejected | `wezterm-term` is not on crates.io and duplicates the web renderer; `termwiz` duplicates `aphrody-tui`; `wezterm-ssh` 0.4.0 is from 2022 |
 | Starship | Nothing to link | Binary hooked by the user's shell config. The PTY launches `nu` and `pwsh` with their user config (no `--no-config-file`, no `-NoProfile`), so an installed Starship prompt appears as it does in any terminal. aphrody ships no `starship.toml` |
-| Nushell binary | `aphrody-toolchains` `Toolchain::Nu` | `aphrody-compat/crates/aphrody-toolchains/src/lib.rs:85` |
+| Nushell binary | `aphrody-toolchains` `Toolchain::Nu` | `crates/compat/toolchains/src/lib.rs:85` |
 
 ## Target architecture
 

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # uv/Rust integration contract
 
-`aphrody-compat/crates/aphrody-toolchains` owns the stable Rust-side route to
+`crates/compat/toolchains` owns the stable Rust-side route to
 the installed uv runtime. The crate invokes the configured executable directly
 and does not merge uv's upstream Cargo workspace into Aphrody OS. The upstream
 uv source is optional and is not checked out in this repository.

@@ -237,7 +237,7 @@ Si une source échoue, confirmer d’abord que le fichier existe :
 
 La tentative d’ingestion du dépôt `nushell/awesome-nu` avec le CLI Aphrody n’a
 pas abouti : Cargo s’est arrêté avant d’exécuter la commande, car la dépendance
-locale `aphrody-web/crates/aphrody-obscura/vendor/taffy/Cargo.toml` est absente.
+locale `crates/web/obscura/vendor/taffy/Cargo.toml` est absente.
 Le dépôt a été cloné et consulté directement comme solution de repli. Cela ne
 signifie pas que l’ingestion a été effectuée. Relancer `git ingest` une fois le
 checkout/vendor corrigé, puis documenter ici son résultat réel.

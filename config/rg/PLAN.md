@@ -182,20 +182,20 @@ Les anciens documents temporaires, obsolètes ou contradictoires de `docs/` ont 
 ## Migration de l'exploitation transverse vers `aphrody-infra` — 23/09/2026
 
 Ce qui concernait tout le VPS ou plusieurs dépôts a quitté `rg` pour `aphrody-infra`
-(index : `../aphrody-infra/docs/ops/README.md`). Noms d'units inchangés.
+(index : `../docs/ops/README.md`). Noms d'units inchangés.
 
 | Élément | Nouvel emplacement |
 |---|---|
 | `infra/sysctl/`, `infra/logrotate/` | `aphrody-infra/host/` |
-| `rg-zram-swap`, drop-ins `nginx.service.d` | `aphrody-infra/systemd/` |
-| `rg-watchdog@` + `scripts/rg-watchdog.sh` | `aphrody-infra/systemd/`, `scripts/ops/rg-watchdog.sh` |
-| `rg-infra-monitor` + `scripts/ops/stack.ts` (doublon) | `aphrody-infra/scripts/infra-status.ts` |
-| `rg-repo-sync` + `scripts/ops/repo-sync.ts`, `docs/REPO-SYNC.md` | `aphrody-infra/scripts/ops/`, `docs/ops/` |
-| `scripts/ops/archive-froid.ts`, `docs/stockage-secondaire.md` | `aphrody-infra/scripts/ops/`, `docs/ops/` |
+| `rg-zram-swap`, drop-ins `nginx.service.d` | `systemd/` |
+| `rg-watchdog@` + `scripts/rg-watchdog.sh` | `systemd/`, `scripts/ops/rg-watchdog.sh` |
+| `rg-infra-monitor` + `scripts/ops/stack.ts` (doublon) | `scripts/infra-status.ts` |
+| `rg-repo-sync` + `scripts/ops/repo-sync.ts`, `docs/REPO-SYNC.md` | `scripts/ops/`, `docs/ops/` |
+| `scripts/ops/archive-froid.ts`, `docs/stockage-secondaire.md` | `scripts/ops/`, `docs/ops/` |
 
 Restent dans `rg` : units applicatives, crons du bot et du site, et le script
 d'assemblage de release (`scripts/ops/assemble-vps-release.sh`). Les scripts d'exploitation
-(`sauvegarde.ts`, `infra.ts`, etc.) sont portés par `aphrody-infra/scripts/rg/`. `bun run infra:*`
+(`sauvegarde.ts`, `infra.ts`, etc.) sont portés par `scripts/rg/`. `bun run infra:*`
 et `ops:sync*` appellent `../aphrody-infra`.
 
 **Reste à faire (opérateur)** : réinstaller ces units depuis `aphrody-infra` sur le VPS
@@ -254,7 +254,7 @@ release repasse par `scripts/ops/assemble-vps-release.sh`.
 
 `rg` ne garde que le code applicatif et le script de construction de release
 (`scripts/ops/assemble-vps-release.sh`). Ports, unités, hôtes et routes :
-`../aphrody-infra/config/service-catalog.json` et `config/nginx-routes.json`,
+`../config/service-catalog.json` et `config/nginx-routes.json`,
 seules sources de vérité ; ce dépôt ne publie plus de table de ports.
 
 | Ancien emplacement (`rg`) | Nouvel emplacement (`aphrody-infra`) |

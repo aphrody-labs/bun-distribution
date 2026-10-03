@@ -82,7 +82,7 @@ Le système fonctionne désormais avec un seul bot unifié :
 - **Mode YOLO** : le bot adopte par défaut le persona canonique **Akira Toriyama** (Tori-bot), bienveillant, modeste, passionné et autorité suprême sur le manga original.
 - **Mode User** : au premier démarrage, l'utilisateur a la liberté de définir son persona personnalisé (enregistré dans `~/.aphrody/persona.json`), avec repli naturel sur Akira Toriyama.
 - **Recherche documentaire locale** : interroge l'index natif Aphrody (`aphrody rag search`) ou le corpus local (`corpus-databooks.json`) avec scoring par pertinence lexicale et boost d'entités.
-- **Modèles locaux** : `rag_ask` utilise le modèle de chat local résolu par le contrat `APHRODY_AI_*` (`APHRODY_AI_CHAT_BASE_URL`, défini dans `aphrody-infra/config/local-ai.json`) pour rédiger la réponse dans la voix du persona actif. Si les modèles locaux ne sont pas démarrés, une synthèse naïve grounded des passages est produite sans hallucination.
+- **Modèles locaux** : `rag_ask` utilise le modèle de chat local résolu par le contrat `APHRODY_AI_*` (`APHRODY_AI_CHAT_BASE_URL`, défini dans `config/local-ai.json`) pour rédiger la réponse dans la voix du persona actif. Si les modèles locaux ne sont pas démarrés, une synthèse naïve grounded des passages est produite sans hallucination.
 
 ## Écriture et administration
 

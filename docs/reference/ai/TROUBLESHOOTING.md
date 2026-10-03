@@ -79,7 +79,7 @@ using `packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml`.
 
 ## 9. `a2a-pb` build fails with "build scripts must only write to $OUT_DIR"
 
-- **Cause**: `../aphrody-os/crates/aphrody-a2a-pb/src/gen/` (the crate lives in
+- **Cause**: `../crates/os/a2a-pb/src/gen/` (the crate lives in
   the system layer) is the authoritative pre-generated source for crates.io publish. The codegen path
   (`tonic_prost_build`) writes outside `$OUT_DIR`, which crates.io rejects;
   it is therefore gated behind the env var `A2A_PB_REGEN=1`.

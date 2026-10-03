@@ -73,7 +73,7 @@ Prerequisite: the BXC Rust bridge. Either set
 From `aphrody-web/apps/bxc`:
 
 ```sh
-CFG=../../../aphrody-ai/crates/aphrody-rag-eval/datasets/dragonball/crawl.config.json
+CFG=../../../crates/ai/rag-eval/datasets/dragonball/crawl.config.json
 
 # Targets and their status
 bun src/cli/index.ts corpus list --config "$CFG"

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Adapted from aphrody-ui/crates/aphrody-svg/src/raster.rs for the OS-owned
+// Adapted from crates/ui/svg/src/raster.rs for the OS-owned
 // sd-images crate. Keep the same resvg 0.47 size, font and alpha behavior.
 
 use std::sync::{Arc, OnceLock};

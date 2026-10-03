@@ -40,7 +40,23 @@ export interface HostPathFile {
 }
 
 /** Retired sibling repositories map to their location inside the monorepo. */
+let crateDirs = new Map<string, string>();
+
+/** Crate name (without the aphrody- prefix) to its monorepo directory; ambiguous names are dropped. */
+function indexCrates(root: string): void {
+  const seen = new Map<string, string | null>();
+  for (const file of git(root, ["ls-files", "crates/*/Cargo.toml"]).split("\n")) {
+    const parts = file.split("/");
+    if (parts.length !== 4) continue;
+    const name = parts[2]!.replace(/^aphrody-/, "");
+    seen.set(name, seen.has(name) ? null : `crates/${parts[1]}/${parts[2]}`);
+  }
+  crateDirs = new Map([...seen].filter((entry): entry is [string, string] => entry[1] !== null));
+}
+
 function legacyRewrite(match: string): string {
+  const crate = /^aphrody-[a-z]+\/crates\/aphrody-([\w-]+)$/.exec(match)?.[1];
+  if (crate !== undefined) return crateDirs.get(crate) ?? match;
   if (match.startsWith("aphrody-infra/")) return match.slice("aphrody-infra/".length);
   if (match === "aphrody-contracts/docs") return "docs/apis/contracts";
   return match;
@@ -69,6 +85,7 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
       String.raw`(?:/home/[\w.-]+|~|\$HOME|\$\{HOME\})/source${END}|(?<![\w.-])\.\./source${END}`,
       "g",
     ),
+    rewrite: () => ".cache/upstream",
   },
   {
     rule: "vps-shenron-checkout",
@@ -86,7 +103,7 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
   {
     rule: "legacy-layout",
     pattern:
-      /\baphrody-src\b|\baphrody-(?:infra|ai|web|ui|os|compat|contracts|shell|native)\/(?:scripts|crates|systemd|nginx|packages|apps|config|docs)\b/g,
+      /\baphrody-src\b|\baphrody-(?:infra|ai|web|ui|os|compat|contracts|shell|native)\/(?:scripts|crates|systemd|nginx|packages|apps|config|docs)\b(?:\/aphrody-[\w-]+)?/g,
     rewrite: legacyRewrite,
   },
 ];
@@ -145,7 +162,6 @@ function rewriteFor(
   match: string,
   rewrite: (match: string) => string,
 ): string {
-  if (rule === "legacy-layout" && area !== "code") return match;
   if (area !== "unit") return rewrite(match);
   if (rule === "repo-absolute") return match.endsWith("/") ? "%h/aphrody/" : "%h/aphrody";
   if (rule === "user-home") return "%h";
@@ -219,6 +235,7 @@ function git(root: string, args: string[], allowEmpty = false): string {
 }
 
 export async function collectHostPaths(root: string): Promise<HostPathFile[]> {
+  indexCrates(root);
   const candidates = git(root, ["grep", "-l", "-z", "-I", "-E", PREFILTER], true)
     .split("\0")
     .filter((path) => path && !OWN_FILES.has(path) && existsSync(join(root, path)));
