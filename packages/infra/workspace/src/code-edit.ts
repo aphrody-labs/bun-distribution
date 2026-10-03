@@ -1,16 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
+import { userHome } from "@aphrody/paths";
 import { spawnSync } from "@aphrody/bun/spawn-sync";
 import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 
-const help = `Usage: aphrody-workspace code-edit <search|replace|add-before|add-after|remove> [options]
-  --engine text|regex|ast|codemod  Default: text
+const help = `Usage: aphrody-workspace code-edit <search|replace|add-before|add-after|remove|rename|restore> [options]
+  --engine text|regex|ast|codemod|yolo  Default: text (rename/restore: yolo)
   --root PATH                    Default: current directory
   --glob PATTERN                  Repeatable file filters (ripgrep syntax)
   --find PATTERN                  Literal, regex or AST pattern
   --with TEXT                     Replacement or insertion (empty is allowed)
   --lang LANG                     AST language, e.g. ts, tsx, rust
   --transform FILE                Existing jscodeshift codemod
+  --paths                         YOLO: rename file paths too
+  --journal FILE                  YOLO: restore a rename journal
+  --yolo-root PATH                APHRODY_YOLO_ROOT or ~/yolo
   --apply                         Write files; default previews only
   --help                          Show help
 
@@ -28,14 +32,19 @@ export type EditOptions = {
   lang?: string;
   transform?: string;
   apply: boolean;
+  paths: boolean;
+  yoloRoot: string;
+  journal?: string;
 };
 export function parseCodeEdit(argv: string[]): EditOptions {
   const options: EditOptions = {
     operation: argv[0] ?? "help",
-    engine: "text",
+    engine: ["rename", "restore"].includes(argv[0] ?? "") ? "yolo" : "text",
     root: process.cwd(),
     globs: [],
     apply: false,
+    paths: false,
+    yoloRoot: resolve(process.env.APHRODY_YOLO_ROOT ?? `${userHome()}/yolo`),
   };
   if (argv.includes("--help") || argv.includes("-h")) return { ...options, operation: "help" };
   for (let i = 1; i < argv.length; i++) {
@@ -44,9 +53,19 @@ export function parseCodeEdit(argv: string[]): EditOptions {
       options.apply = true;
       continue;
     }
+    if (flag === "--paths") {
+      options.paths = true;
+      continue;
+    }
     const value = argv[++i];
     if (value === undefined) throw new Error(`Missing value for ${flag}`);
     switch (flag) {
+      case "--yolo-root":
+        options.yoloRoot = resolve(value);
+        break;
+      case "--journal":
+        options.journal = resolve(value);
+        break;
       case "--root":
         options.root = resolve(value);
         break;
@@ -72,11 +91,24 @@ export function parseCodeEdit(argv: string[]): EditOptions {
         throw new Error(`Unknown option: ${flag}`);
     }
   }
-  if (!["search", "replace", "add-before", "add-after", "remove"].includes(options.operation))
+  if (
+    !["search", "replace", "add-before", "add-after", "remove", "rename", "restore"].includes(
+      options.operation,
+    )
+  )
     throw new Error("Unknown operation");
-  if (!["text", "regex", "ast", "codemod"].includes(options.engine))
+  if (!["text", "regex", "ast", "codemod", "yolo"].includes(options.engine))
     throw new Error("Unknown engine");
-  if (options.engine === "codemod") {
+  if (options.engine === "yolo") {
+    if (!["rename", "restore"].includes(options.operation))
+      throw new Error("YOLO supports rename/restore");
+    if (options.operation === "restore" && !options.journal)
+      throw new Error("Restore requires --journal FILE");
+    if (options.operation === "rename" && (!options.find || options.replacement === undefined))
+      throw new Error("Rename requires --find and --with");
+  } else if (["rename", "restore"].includes(options.operation)) {
+    throw new Error("Rename/restore require the yolo engine");
+  } else if (options.engine === "codemod") {
     if (options.operation !== "replace" || !options.transform || !existsSync(options.transform))
       throw new Error("Codemod requires replace --transform FILE");
   } else {
@@ -90,9 +122,32 @@ export function parseCodeEdit(argv: string[]): EditOptions {
     if (options.engine === "ast" && (!options.lang || options.operation.startsWith("add-")))
       throw new Error("AST requires --lang; use replace with a rewrite template for insertion");
   }
+  if (options.paths && options.operation !== "rename") throw new Error("--paths requires rename");
+  if (options.journal && options.operation !== "restore")
+    throw new Error("--journal requires restore");
   return options;
 }
 export function editCommand(options: EditOptions, paths: string[]): string[] {
+  if (options.engine === "yolo")
+    return [
+      process.execPath,
+      resolve(options.yoloRoot, "apps/cli/src/index.ts"),
+      "rename",
+      ...(options.operation === "restore"
+        ? ["--restore", options.journal!]
+        : [
+            "--from",
+            options.find!,
+            "--to",
+            options.replacement!,
+            ...options.globs.flatMap((glob) =>
+              glob.startsWith("!") ? ["--exclude", glob.slice(1)] : ["--include", glob],
+            ),
+            ...(options.paths ? ["--paths"] : []),
+            options.root,
+          ]),
+      ...(options.apply ? ["--apply"] : []),
+    ];
   if (options.engine === "codemod")
     return [
       "bunx",
@@ -168,6 +223,14 @@ export function runCodeEdit(argv: string[]): number {
     if (options.operation === "help") {
       console.log(help);
       return 0;
+    }
+    if (options.engine === "yolo") {
+      const entry = resolve(options.yoloRoot, "apps/cli/src/index.ts");
+      if (!existsSync(entry)) throw new Error("YOLO CLI missing; set --yolo-root to its checkout");
+      const result = execute(editCommand(options, []), options.yoloRoot);
+      process.stdout.write(result.stdout);
+      process.stderr.write(result.stderr);
+      return result.status;
     }
     const root = realpathSync(options.root);
     const selected = execute(

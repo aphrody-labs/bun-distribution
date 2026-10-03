@@ -58,3 +58,38 @@ test("regex insertion escapes dollars and retains the full match", () => {
   ]);
   expect(editCommand(options, ["code.ts"])).toContain("$0$$1");
 });
+
+test("YOLO rename delegates path selection and literal rules to the owner CLI", () => {
+  const options = parseCodeEdit([
+    "rename",
+    "--root",
+    "/tmp/source repo",
+    "--find",
+    "@old/",
+    "--with",
+    "@new/",
+    "--paths",
+    "--glob",
+    "**/*.ts",
+    "--glob",
+    "!**/*.test.ts",
+    "--yolo-root",
+    "/tmp/yolo",
+  ]);
+  const command = editCommand(options, []);
+  expect(command).toContain("/tmp/yolo/apps/cli/src/index.ts");
+  expect(command).toContain("/tmp/source repo");
+  expect(command).toContain("--exclude");
+  expect(command).toContain("**/*.test.ts");
+  expect(command).toContain("--paths");
+  expect(command).not.toContain("--apply");
+});
+test("YOLO restore requires a journal and previews by default", () => {
+  expect(() => parseCodeEdit(["restore"])).toThrow("--journal");
+  const options = parseCodeEdit(["restore", "--journal", "/tmp/rename.jsonl"]);
+  expect(editCommand(options, [])).toContain("--restore");
+  expect(editCommand(options, [])).not.toContain("--apply");
+  expect(() => parseCodeEdit(["replace", "--find", "a", "--with", "b", "--paths"])).toThrow(
+    "--paths",
+  );
+});
