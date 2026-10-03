@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-03",
+  "operation": "Extract TS source path audit from paths library into Workspace capability owner",
+  "owner": "packages/infra/workspace/src/path-audit.ts",
+  "compatibility": [
+    "Root paths:audit and paths:fix scripts delegate to Workspace path-audit operation.",
+    "packages/infra/paths/src/cli.ts remains a forwarding entrypoint; package paths:audit and paths:fix command names retained.",
+    "Public @aphrody/paths export and source functions unchanged.",
+    "Paths production build now emits the library only; source audit is a developer operation."
+  ],
+  "dependencyChange": {
+    "pathsRuntimeDependenciesBefore": ["ts-morph catalog:"],
+    "pathsRuntimeDependenciesAfter": [],
+    "workspaceToolDependency": "ts-morph catalog:",
+    "pathsDeveloperDependency": "@aphrody/workspace workspace:*"
+  },
+  "validation": {
+    "pathsTests": "2 pass, 3 assertions",
+    "auditTests": "2 pass, 13 assertions; dry-run, apply, excluded dependency directory, JSX and host-path preservation, idempotence, both entrypoints help",
+    "typecheck": "paths and Workspace passed",
+    "oxlint": "scoped passed with no diagnostics",
+    "oxfmt": "scoped passed",
+    "whitespace": "passed",
+    "productionBuild": "index.js 4.26 KB; one bundled module",
+    "isolatedProductionInstall": "packed paths archive, offline production consumer installs one package; tempPath import succeeds; no ts-morph or Workspace installed",
+    "lockfile": "Bun-generated; frozen prefer-offline installation passed",
+    "docsCheck": "exit 1: stale docs/reference/workspace/STATE.md, docs/README.md and docs/reference/workspace/documentation.json; concurrent documentation left intact"
+  },
+  "limits": [
+    "No Rust engine compilation or removal and no registry publication.",
+    "Development commands require Workspace; the isolated production package supports its documented public path library export.",
+    "Offline lockfile refresh initially failed on unavailable cache metadata; prefer-offline refresh succeeded without lockfile version changes.",
+    "No packed Git-history size or timing improvement claimed."
+  ]
+}

@@ -571,8 +571,8 @@
     "packages/infra/paths": {
       "name": "@aphrody/paths",
       "version": "0.1.0",
-      "dependencies": {
-        "ts-morph": "catalog:",
+      "devDependencies": {
+        "@aphrody/workspace": "workspace:*",
       },
     },
     "packages/infra/sql": {
@@ -612,6 +612,7 @@
         "@aphrody/bun": "workspace:*",
         "@aphrody/paths": "workspace:*",
         "@typescript/typescript6": "^6.0.2",
+        "ts-morph": "catalog:",
       },
     },
     "packages/interop/native": {
