@@ -1,8 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Qualifier un consommateur du runtime Yolo
 
-Ce parcours applique le [plan directeur](../../../PLAN.md), sections 6, 12
-et 14. Yolo produit le runtime et `@aphrody/runtime-sdk` ; Aphrody possède
+Ce parcours applique les contrats et critères du [plan directeur](../../../PLAN.md). Yolo produit le runtime et `@aphrody/runtime-sdk` ; Aphrody possède
 le raccordement permanent et les contrats produit. Les détails d’archive et
 d’installation viennent de `/home/aphro/yolo/docs/CONSUMERS.md` et `/home/aphro/yolo/docs/DISTRIBUTION.md` chez
 le producteur, accessibles depuis le plan racine. Vérifier leur version pour
