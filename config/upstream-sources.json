@@ -21,9 +21,7 @@
       "kind": "git",
       "url": "https://github.com/tauri-apps/tauri",
       "ref": "v3",
-      "sparse": [
-        "crates/tauri-driver"
-      ],
+      "sparse": ["crates/tauri-driver"],
       "license": "Apache-2.0 OR MIT",
       "tier": "reference",
       "purpose": "Tauri 3 branch; only crates/tauri-driver is read (primary Tauri 3 WebDriver proxy).",
@@ -96,11 +94,12 @@
       "id": "jan",
       "kind": "git",
       "url": "https://github.com/janhq/jan.git",
-      "ref": "main",
+      "ref": "14a720628f9592c8e60f7e081ef733076db8a6a9",
       "tier": "reference",
-      "purpose": "Jan desktop app; local-LLM UX reference.",
-      "consumers": "docs/research/ai",
-      "observedCommit": "e0c62f863a1b930ed625085979a3d62c947635d9"
+      "purpose": "Pinned Jan source for owner-authorized absorption; existing Aphrody capability owners remain canonical. Initial model-hub search adapted with Fuse.js 7.1.0; full parity pending.",
+      "consumers": "packages/ui/app-ui/src/models-hub-state.ts; config/jan-absorption.json; docs/migration/jan-absorption",
+      "note": "Pinned checkout: ../aphrody-py/vendor/jan. Root LICENSE Apache-2.0, Menlo Research 2025; selected search adaptation retains attribution. Python/JS ADK manifests declare AGPL-3.0; do not assume a uniform repository license.",
+      "observedCommit": "14a720628f9592c8e60f7e081ef733076db8a6a9"
     },
     {
       "id": "llama_index",
