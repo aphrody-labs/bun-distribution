@@ -1239,7 +1239,7 @@ Gemini et les catalogues historiques ne constituent pas l’état courant.
 - [x] Centraliser règles, mémoire et conversations par les propriétaires existants.
 - [x] Configurer les trois agents pour travailler simultanément dans le même
   checkout et la même branche, avec attribution des fichiers et coordination.
-- [ ] Vérifier les launchers, imports de sessions et échanges réels ; distinguer
+- [~] Vérifier les launchers, imports de sessions et échanges réels ; distinguer
   configuration, dry-run et exécution concurrente prouvée.
 
 Le sous-agent `a2a_audit` a terminé l’audit en lecture seule. Les formats natifs
@@ -1290,6 +1290,19 @@ Preuve native simultanée : Claude, Codex et agy lancés par le CLI installé,
 claims distincts, exits 0 en 9,61 / 11,17 / 18,10 s. Chaque agent confirme
 le cwd, main et les propriétaires des autres dans TRANSCRIPTS. Vérification
 en lecture seule ; aucune édition de code concurrente n’est revendiquée.
+
+Requalification live 2026-10-03 : le service de miroir `aphrody-agent-session-sync`
+était activé mais arrêté ; relancé, il tourne sans redémarrage et a actualisé
+87 fichiers du miroir privé. Il est configuré `--no-memory` : cela prouve
+l'import dans le miroir, pas l'alimentation de la mémoire d'un profil.
+`aphrody-agent-live` est également actif ; snapshot `.coord/shared/LIVE.json`
+du 2026-10-03 02:18:18Z : 5 processus, 99 sessions du workspace, 37 enveloppes
+A2A bornées, zéro problème de collecte. Les 32 enveloppes horodatées couvrent
+le 2026-09-30 18:54Z au 2026-10-03 02:00Z. Les associations PID/session restent
+heuristiques ; les échanges concurrents prouvés restent ceux du rapport daté
+ci-dessus. Les services `aphrody-agent-domain-sync@*` sont arrêtés et
+`TRANSCRIPTS.md` date du 2026-10-02 00:34:51Z : le rappel profilé courant reste
+à vérifier avant de clore cet item.
 
 ### Enveloppes A2A : propriétaire des valeurs sortantes
 
