@@ -1,5 +1,0 @@
-{
-  "name": "aphrody",
-  "description": "Aphrody monorepo and system toolkit: Rust crates, Bun packages, aphrody-kernel MCP, M3 UI framework, A2A protocol and native platforms.",
-  "version": "1.7.0"
-}

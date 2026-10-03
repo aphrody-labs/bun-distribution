@@ -107,6 +107,20 @@ Preuve et hashes : [migration des packages](docs/migration/package-registry-2026
 Guide : [gestion documentaire](docs/guides/workspace/documentation.md).
 Recherche : [pratiques documentaires](docs/research/workspace/documentation-practices.md).
 
+## Plugins agents — 2026-10-03
+
+- [x] À la demande du propriétaire, désinstaller les plugins Aphrody de Codex
+  et agy ; Claude n'en avait plus d'installés. Retirer les marketplaces du
+  dépôt, l'activation Codex locale et l'inscription MCP agy issue du plugin.
+- [x] Déplacer les huit plugins propres vers `/home/aphro/plugins`, avec les
+  doublons, caches et inscriptions dans `_copies` et `_registrations`.
+  Les 39 déplacements sont vérifiés par hashes dans le rapport local
+  `/home/aphro/plugins/relocation-2026-10-03.json`. Les autres plugins restent
+  installés ; aucun plugin propre trouvé dans les profils Windows inspectés.
+- Validation : contrôles Git et intégrité réussis. `bun run docs:check` reste
+  en échec sur les catalogues ecosystem et documentation périmés ; aucune
+  compilation Rust requise pour ce déplacement de fichiers de plugins.
+
 ## 0. Structure et hygiène
 
 - [x] Séparer CLI, interop, clients OS et UI par propriétaires.
