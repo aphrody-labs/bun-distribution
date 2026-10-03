@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Yolo consumer interface requalification
 
 Producer HEAD at observation: `b828a06` (2026-10-03). The working tree was
