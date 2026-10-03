@@ -2106,8 +2106,8 @@
     {
       "path": "docs/apis/generated/python-google.md",
       "title": "Source reference: python-google",
-      "sha256": "50855c6ff24cf80a25d0b792ec5fa15deda85aceb79eb3b97feb8a5ff7a06938",
-      "bytes": 731,
+      "sha256": "9edababc60c4b02d984443000914ff5b3b2ddc5c8aac6e8fdac49a76e859e309",
+      "bytes": 729,
       "domain": "generated",
       "status": "generated",
       "visibility": "private",
@@ -51265,7 +51265,7 @@
       "id": "python-google",
       "language": "python",
       "paths": [
-        "packages/ai/py/aphrody/aphrody/google.py"
+        "packages/aphrody/src/aphrody/google.py"
       ]
     }
   ],
