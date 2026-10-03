@@ -1226,16 +1226,42 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
             serde_json::to_value(filesystem::get_file_info(path("path")?).map_err(failed)?)
                 .map_err(failed)
         },
-        "list_directory" => serde_json::to_value(
-            filesystem::list_directory(
-                path("path")?,
-                arguments.get("pattern").and_then(Value::as_str),
-                arguments.get("recursive").and_then(Value::as_bool).unwrap_or(false),
-                arguments.get("showHidden").and_then(Value::as_bool).unwrap_or(false),
+        "list_directory" => {
+            let exclude = match arguments.get("exclude") {
+                None => Vec::new(),
+                Some(Value::Array(patterns)) => patterns
+                    .iter()
+                    .map(|pattern| {
+                        pattern
+                            .as_str()
+                            .filter(|pattern| !pattern.is_empty())
+                            .map(str::to_owned)
+                            .ok_or_else(|| {
+                                SubsystemError::InvalidArguments(
+                                    "list_directory exclude entries must be non-empty strings"
+                                        .into(),
+                                )
+                            })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?,
+                Some(_) => {
+                    return Err(SubsystemError::InvalidArguments(
+                        "list_directory exclude must be an array of strings".into(),
+                    ));
+                },
+            };
+            serde_json::to_value(
+                filesystem::list_directory_excluding(
+                    path("path")?,
+                    arguments.get("pattern").and_then(Value::as_str),
+                    arguments.get("recursive").and_then(Value::as_bool).unwrap_or(false),
+                    arguments.get("showHidden").and_then(Value::as_bool).unwrap_or(false),
+                    &exclude,
+                )
+                .map_err(failed)?,
             )
-            .map_err(failed)?,
-        )
-        .map_err(failed),
+            .map_err(failed)
+        },
         "search_files" => {
             let p = path("path")?;
             let pattern = path("pattern")?;

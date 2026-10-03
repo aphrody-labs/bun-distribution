@@ -1018,6 +1018,11 @@ export interface ListDirectoryArgs {
    * @default false
    */
   showHidden?: boolean;
+  /**
+   * Glob patterns matching entry names to omit. Matching directories are not traversed.
+   * @default []
+   */
+  exclude?: string[];
 }
 
 /** Arguments for `list_listening_ports`. */
