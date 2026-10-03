@@ -39,6 +39,19 @@ pub struct Config {
     pub mirror: String,
     pub sources: Vec<Source>,
 }
+/// Windows executable `relative` to System32: on PATH when interop exposes it, else located with `wslpath`.
+pub fn windows_executable(relative: &str) -> PathBuf {
+    let name = Path::new(relative).file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from(relative));
+    let on_path = std::env::var_os("PATH").is_some_and(|paths| std::env::split_paths(&paths).any(|dir| dir.join(&name).is_file()));
+    if cfg!(windows) || on_path {
+        return name;
+    }
+    match std::process::Command::new("wslpath").args(["-u", r"C:\Windows\System32"]).output() {
+        Ok(out) if out.status.success() => PathBuf::from(String::from_utf8_lossy(&out.stdout).trim()).join(relative),
+        _ => name,
+    }
+}
+
 impl Config {
     pub fn read(path: &Path) -> Result<Self> {
         // <workspace>/config/os/wsl-build.json: the checkout is three levels above the file.
@@ -163,7 +176,7 @@ pub fn import(config:&Config,install_dir:&Path)->Result<()> {
         if !out.status.success(){return Err(Error::Invalid("wslpath failed".into()));}
         Ok(String::from_utf8_lossy(&out.stdout).trim().into())
     };
-    let executable=PathBuf::from("wsl.exe"); // resolved through PATH: WSL interop appends the Windows directories
+    let executable=windows_executable("wsl.exe");
     let status=Command::new(executable).args(["--import",&config.distribution,&windows_path(install_dir)?,&windows_path(&image)?,"--version","2"]).status()?;
     if !status.success(){return Err(Error::Invalid("WSL import failed; existing distributions are never unregistered".into()));}
     Ok(())
