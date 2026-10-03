@@ -4,6 +4,7 @@ import { copyFile, cp, mkdir, mkdtemp, rename, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
 import { tmpdir } from "node:os";
+import { pathToFileURL } from "node:url";
 import { suffix } from "bun:ffi";
 import { spawn, spawnSync } from "node:child_process";
 
@@ -82,6 +83,25 @@ async function sha256(path: string): Promise<string> {
   return hash.digest("hex");
 }
 
+/** Native verification must import the selected consumer, independent of host package resolution. */
+export function renderNativeConsumerImports(packageRoot: string): string {
+  const modules = {
+    m3: "index",
+    oxc: "oxc",
+    n2b: "n2b",
+    cli: "cli",
+    web: "web",
+    manga: "manga",
+    shenron: "shenron",
+  };
+  return Object.entries(modules)
+    .map(
+      ([name, file]) =>
+        `const ${name} = await import(${JSON.stringify(pathToFileURL(join(packageRoot, "src", `${file}.ts`)).href)});`,
+    )
+    .join("\n");
+}
+
 async function smoke(
   packageRoot: string,
   artifact: string,
@@ -95,6 +115,7 @@ async function smoke(
     import { dlopen } from "bun:ffi";
     import { mkdtemp, rm } from "node:fs/promises";
     import { tmpdir } from "node:os";
+import { pathToFileURL } from "node:url";
     import { join } from "node:path";
     const { NATIVE_ABI_VERSIONS: expected } = await import(${JSON.stringify(join(packageRoot, "src/native-artifact.ts"))});
     const abi = dlopen(${JSON.stringify(artifact)}, Object.fromEntries(
@@ -106,13 +127,7 @@ async function smoke(
     const binding = await import(${JSON.stringify(join(packageRoot, "src/library.ts"))});
     const root = await mkdtemp(join(tmpdir(), "aphrody-native-stage-"));
     try {
-      const m3 = await import("@aphrody/bun");
-      const oxc = await import("@aphrody/bun/oxc");
-      const n2b = await import("@aphrody/bun/n2b");
-      const cli = await import("@aphrody/bun/cli");
-      const web = await import("@aphrody/bun/web");
-      const manga = await import("@aphrody/bun/manga");
-      const shenron = await import("@aphrody/bun/shenron");
+      ${renderNativeConsumerImports(packageRoot)}
       assert.equal(m3.add(2, 3), 5);
       assert.equal(cli.getAphrodyAbiVersion(), expected.aphrody_abi_version);
       const captured = cli.runAphrodyCaptured(["--version"]);
