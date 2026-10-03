@@ -7,8 +7,14 @@ import { relative, resolve } from "node:path";
 import { findWorkspaceRoot } from "@aphrody/paths";
 
 export async function runPathAudit(args: string[]): Promise<number> {
+  if (args.includes("--repository"))
+    return (await import("./host-paths.ts")).runHostPaths(
+      args.filter((arg) => arg !== "--repository"),
+    );
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: aphrody-ops path-audit [--root path] [--apply]");
+    console.log(
+      "Usage: aphrody-ops path-audit [--root path] [--apply]\n       aphrody-ops path-audit --repository --help",
+    );
     return 0;
   }
   const rootIndex = args.indexOf("--root");

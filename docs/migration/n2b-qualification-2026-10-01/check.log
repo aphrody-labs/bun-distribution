@@ -1,22 +1,22 @@
     Blocking waiting for file lock on build directory
-    Checking aphrody-n2b-types v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-types)
+    Checking aphrody-n2b-types v0.6.2 (crates/compat/n2b-types)
    Compiling cargo_metadata v0.23.1
     Checking crossbeam-epoch v0.9.21
    Compiling mime_guess v2.0.5
     Checking jsonwebtoken v10.4.0
     Checking globset v0.4.20
-    Checking aphrody-n2b-ai v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-ai)
-    Checking aphrody-toolchains v1.0.0-canary (/home/aphro/aphrody/crates/compat/toolchains)
+    Checking aphrody-n2b-ai v0.6.2 (crates/compat/n2b-ai)
+    Checking aphrody-toolchains v1.0.0-canary (crates/compat/toolchains)
     Checking reqwest v0.13.5
     Checking crossbeam-deque v0.8.8
     Checking ignore v0.4.33
    Compiling octocrab v0.50.0
-    Checking aphrody-n2b-util v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-util)
-    Checking aphrody-n2b-registry v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-registry)
-    Checking aphrody-n2b-report v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-report)
-    Checking aphrody-n2b-rules v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-rules)
-    Checking aphrody-n2b-scanners v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-scanners)
-    Checking aphrody-n2b-github v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-github)
-    Checking aphrody-n2b-core v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-core)
-    Checking aphrody-n2b v0.6.2 (/home/aphro/aphrody/crates/compat/n2b)
+    Checking aphrody-n2b-util v0.6.2 (crates/compat/n2b-util)
+    Checking aphrody-n2b-registry v0.6.2 (crates/compat/n2b-registry)
+    Checking aphrody-n2b-report v0.6.2 (crates/compat/n2b-report)
+    Checking aphrody-n2b-rules v0.6.2 (crates/compat/n2b-rules)
+    Checking aphrody-n2b-scanners v0.6.2 (crates/compat/n2b-scanners)
+    Checking aphrody-n2b-github v0.6.2 (crates/compat/n2b-github)
+    Checking aphrody-n2b-core v0.6.2 (crates/compat/n2b-core)
+    Checking aphrody-n2b v0.6.2 (crates/compat/n2b)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 21.04s

@@ -28,7 +28,7 @@ User indexed their system volume (registered as `/System/Volumes/Data`), then br
 
 ## Root Cause: macOS Symlink + Exact Path Lookup
 
-On macOS with APFS, `/Users` is a symlink to `/System/Volumes/Data/Users`. The volume indexer walks from the real mount point `/System/Volumes/Data`, so the arena stores all paths under `/System/Volumes/Data/Users/jamespine/...`.
+On macOS with APFS, `/Users` is a symlink to `/System/Volumes/Data/Users`. The volume indexer walks from the real mount point `/System/Volumes/Data`, so the arena stores all paths under `/System/Volumes/Data~/...`.
 
 When the Explorer browses `/Users/jamespine`, the chain of events:
 

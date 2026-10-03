@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Source sync and WSL qualification — 2026-10-02
 
-The active source sync scope is `/home/aphro/aphrody`,
-`/home/aphro/aphrody-py`, and `/home/aphro/iecode`. The script's default
+The active source sync scope is `<repo>`,
+`../aphrody-py`, and `../iecode`. The script's default
 selection is this same set, and `--repo aphrody-ui` exits with an error before
 writing a report or contacting a remote. The user service explicitly lists the
 same three repositories.

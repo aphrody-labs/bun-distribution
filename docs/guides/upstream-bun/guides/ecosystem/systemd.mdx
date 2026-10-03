@@ -36,10 +36,10 @@ Type=simple
 # which user to use when starting the app
 User=YOUR_USER
 # path to your application's root directory
-WorkingDirectory=/home/YOUR_USER/path/to/my-app
+WorkingDirectory=~/path/to/my-app
 # the command to start the app
 # requires absolute paths
-ExecStart=/home/YOUR_USER/.bun/bin/bun run index.ts
+ExecStart=~/.bun/bin/bun run index.ts
 # restart policy
 # one of {no|on-success|on-failure|on-abnormal|on-watchdog|on-abort|always}
 Restart=always
@@ -54,7 +54,7 @@ WantedBy=multi-user.target
 If your application starts a webserver, non-`root` users cannot listen on ports 80 or 443 by default. To allow Bun to listen on these ports when run by a non-`root` user, use the following command. The command requires `sudo` permissions. This step isn't necessary when running as `root`.
 
 ```bash terminal icon="terminal"
-setcap CAP_NET_BIND_SERVICE=+eip /home/YOUR_USER/.bun/bin/bun
+setcap CAP_NET_BIND_SERVICE=+eip ~/.bun/bin/bun
 ```
 
 The command attaches the capability to the `bun` binary itself. Replacing the binary, for example with `bun upgrade`, removes the capability. Re-run the command after upgrading. Alternatively, add `AmbientCapabilities=CAP_NET_BIND_SERVICE` to the `[Service]` section of the service file instead.
@@ -92,7 +92,7 @@ systemctl status my-app
      Memory: 40.9M
         CPU: 1.093s
      CGroup: /system.slice/my-app.service
-             └─309641 /home/YOUR_USER/.bun/bin/bun run index.ts
+             └─309641 ~/.bun/bin/bun run index.ts
 ```
 
 ---

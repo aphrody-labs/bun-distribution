@@ -22,8 +22,8 @@ Implement conflict resolution for shared resources using Hybrid Logical Clock (H
 ### 1. No Conflict (Device-Owned Data)
 
 ```
-Device A: Creates location "/Users/jamie/Photos"
-Device B: Creates location "/home/jamie/Documents"
+Device A: Creates location "~/Photos"
+Device B: Creates location "~/Documents"
 
 Resolution: No conflict! Different devices own different data
 Strategy: Both apply (state-based)

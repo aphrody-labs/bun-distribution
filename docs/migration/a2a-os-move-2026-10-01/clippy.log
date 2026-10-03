@@ -1,7 +1,7 @@
-   Compiling aphrody-a2a-pb v0.1.8 (/home/aphro/aphrody/crates/contracts/a2a-pb)
-    Checking aphrody-a2a v0.3.0 (/home/aphro/aphrody/crates/contracts/a2a)
-    Checking aphrody-a2a-server v0.3.0 (/home/aphro/aphrody/crates/os/a2a-server)
-    Checking aphrody-a2a-client v0.1.16 (/home/aphro/aphrody/crates/os/a2a-client)
-    Checking aphrody-a2a-coord v1.0.0-canary (/home/aphro/aphrody/crates/os/a2a-coord)
-    Checking aphrody-a2a-grpc v0.2.2 (/home/aphro/aphrody/crates/os/a2a-grpc)
+   Compiling aphrody-a2a-pb v0.1.8 (crates/contracts/a2a-pb)
+    Checking aphrody-a2a v0.3.0 (crates/contracts/a2a)
+    Checking aphrody-a2a-server v0.3.0 (crates/os/a2a-server)
+    Checking aphrody-a2a-client v0.1.16 (crates/os/a2a-client)
+    Checking aphrody-a2a-coord v1.0.0-canary (crates/os/a2a-coord)
+    Checking aphrody-a2a-grpc v0.2.2 (crates/os/a2a-grpc)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.75s

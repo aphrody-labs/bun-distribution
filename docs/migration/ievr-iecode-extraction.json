@@ -2,7 +2,7 @@
   "date": "2026-09-29",
   "status": "copied-and-compiled",
   "source": {
-    "repository": "/home/aphro/iecode",
+    "repository": "../iecode",
     "head": "550066b66181c4aeffb90b4067e8af742b0c112b",
     "workingTreeDirty": false,
     "dirtyPathCount": 0,
@@ -10,12 +10,12 @@
     "migrationNote": "docs/IEVR-DATA-MIGRATION.md"
   },
   "origin": {
-    "repository": "/home/aphro/src/nie",
+    "repository": "~/src/nie",
     "head": "94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c",
     "path": "crates/engine/nie-data"
   },
   "target": {
-    "repository": "/home/aphro/aphrody",
+    "repository": ".",
     "path": "crates/iecode/ievr-data",
     "cargoPackage": "iecode-ievr-data",
     "rustLibrary": "nie_data"
@@ -33,7 +33,7 @@
   ],
   "license": "Private/unpublished; source has a documented commercial-license boundary. No redistribution permission is inferred by this copy.",
   "latestObservedSource": {
-    "repository": "/home/aphro/iecode",
+    "repository": "../iecode",
     "head": "8fdab4b96014f70972c2855878cab49510ffe876",
     "workingTreeDirty": true,
     "dirtyPathCount": 2,

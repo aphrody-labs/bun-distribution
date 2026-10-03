@@ -1,5 +1,5 @@
 {
-  "sourceRepository": "/home/aphro/src/aphrody-contracts",
+  "sourceRepository": "~/src/aphrody-contracts",
   "sourceCommit": "96d1453c056c16963fc7cad0c271f251a6798815",
   "upstreamRepository": "https://github.com/openai/codex",
   "upstreamRevision": "78245b47af2a7aafcabe025828ceecca69db4df1",

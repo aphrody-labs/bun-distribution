@@ -67,7 +67,7 @@
       "factoryRevision": "98a728a9fe31c76526e566341d752ec9bcad942c",
       "command": "scripts/build/rust/cargo-serial.sh build -p aphrody-infra --bin aphrody-infra --locked --release",
       "binarySha256": "3a07557ba62a2c92a84b67ac92c0fdf6650f81597092dcab8d38d21b0eb59ef8",
-      "installed": "/home/aphro/.local/bin/aphrody-infra",
+      "installed": "~/.local/bin/aphrody-infra",
       "runtime": "status --target vps --json and sync plan succeed with relocated target matrix",
       "transport": "Initial transport was interrupted; generated executable downloaded, hash verified and runtime qualified."
     }

@@ -32,7 +32,7 @@ consecutive focused runs and the final workspace run. The isolated network flake
 test reliability risk.
 
 A `--release` kernel build passed, and the binary was installed to
-`C:\Users\aphro\.cargo\bin\aphrody-kernel.exe`. `--help` confirms `--exec-policy` support,
+`%USERPROFILE%\.cargo\bin\aphrody-kernel.exe`. `--help` confirms `--exec-policy` support,
 and live IPC probes answered `tools/list` and `get_os_info` with all 166 WinClean tools verified.
 
 Historical check: `third_party/bun` and `third_party/uv` were initialised at

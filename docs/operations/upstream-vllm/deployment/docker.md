@@ -65,13 +65,13 @@ docker run --rm --gpus all \
 
 When mounting model or cache volumes for a non-root container, mount writable
 paths under `/home/vllm` instead of `/root`. For example, mount the Hugging
-Face cache at `/home/vllm/.cache/huggingface` and make the mounted directory
+Face cache at `~/.cache/huggingface` and make the mounted directory
 writable by group 0.
 
 ```bash
 docker run --rm --gpus all \
     --user 2000:0 \
-    -v ~/.cache/huggingface:/home/vllm/.cache/huggingface \
+    -v ~/.cache/huggingface:~/.cache/huggingface \
     -p 8000:8000 \
     vllm/vllm-openai:latest \
     meta-llama/Llama-3.1-8B-Instruct

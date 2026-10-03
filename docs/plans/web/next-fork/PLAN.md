@@ -8,7 +8,7 @@ Import/fork : [Yolo VENDORING](../../../../../yolo/docs/VENDORING.md).
 
 ## État vérifié
 
-Checkout existant : `/home/aphro/yolo/vendor/next`, branche `yolo`.
+Checkout existant : `../yolo/vendor/next`, branche `yolo`.
 Pins source : vendor manifest/lock Yolo. Scaffold : `templates/stack.toml`
 et `apps/cli/src/create.ts` côté Yolo. Le parser actuel accepte les variantes
 framework Hono/Elysia ; Next reste une proposition, pas un flag livré.

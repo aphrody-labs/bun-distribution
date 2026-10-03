@@ -24,13 +24,13 @@
     Checking pbjson v0.9.0
    Compiling tonic-prost-build v0.14.6
    Compiling pbjson-types v0.9.0
-    Checking aphrody-app-protocol v1.0.0-canary (/home/aphro/aphrody/crates/contracts/app-protocol)
-    Checking aphrody-agent-proto v1.0.0-canary (/home/aphro/aphrody/crates/contracts/agent-proto)
-   Compiling aphrody-a2a-pb v0.1.8 (/home/aphro/aphrody/crates/contracts/a2a-pb)
-    Checking aphrody-a2a v0.3.0 (/home/aphro/aphrody/crates/contracts/a2a)
+    Checking aphrody-app-protocol v1.0.0-canary (crates/contracts/app-protocol)
+    Checking aphrody-agent-proto v1.0.0-canary (crates/contracts/agent-proto)
+   Compiling aphrody-a2a-pb v0.1.8 (crates/contracts/a2a-pb)
+    Checking aphrody-a2a v0.3.0 (crates/contracts/a2a)
     Checking tokio-util v0.7.19
     Checking tokio-stream v0.1.19
-    Checking aphrody-subsystem v1.0.0-canary (/home/aphro/aphrody/crates/contracts/subsystem)
+    Checking aphrody-subsystem v1.0.0-canary (crates/contracts/subsystem)
     Checking h2 v0.4.19
     Checking tower v0.5.3
     Checking axum v0.8.9

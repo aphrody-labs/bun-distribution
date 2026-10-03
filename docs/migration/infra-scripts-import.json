@@ -1,8 +1,8 @@
 {
   "observedAt": "2026-09-29T10:57:52.562Z",
   "sourceHead": "8fee5b97b45f7bf07410321f444eff7b4214b0f5",
-  "sourcePath": "/home/aphro/src/aphrody-infra",
-  "targetPath": "/home/aphro/aphrody",
+  "sourcePath": "~/src/aphrody-infra",
+  "targetPath": ".",
   "fileCount": 6,
   "copied": 0,
   "identical": 6,

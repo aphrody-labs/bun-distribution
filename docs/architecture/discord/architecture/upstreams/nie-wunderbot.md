@@ -2,7 +2,7 @@
 
 ## Scope and evidence
 
-The requested local path `/home/aphro/src/nie` is not a populated Git checkout: it contains no source files outside its `.git` directory, and Git reports that `.git` is not a repository. I did not modify it. This report therefore separates the current NIE upstream tree from the last published Wonderbot package; the latter is historical evidence, not proof of a current maintained Discord service.
+The requested local path `~/src/nie` is not a populated Git checkout: it contains no source files outside its `.git` directory, and Git reports that `.git` is not a repository. I did not modify it. This report therefore separates the current NIE upstream tree from the last published Wonderbot package; the latter is historical evidence, not proof of a current maintained Discord service.
 
 | Evidence | Provenance |
 |---|---|

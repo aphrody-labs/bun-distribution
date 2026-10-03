@@ -41,7 +41,7 @@ player.stop();
 You can create [audio resources](./audio-resources) and then play them on an audio player.
 
 ```js
-const resource = createAudioResource('/home/user/voice/track.mp3');
+const resource = createAudioResource('~/voice/track.mp3');
 player.play(resource);
 
 // Play "track.mp3" across two voice connections
@@ -104,7 +104,7 @@ In this example, the audio player will only move on to playing the next audio re
 ```js
 const { createAudioResource } = require('@discordjs/voice');
 
-const resource = createAudioResource('/home/user/voice/music.mp3', {
+const resource = createAudioResource('~/voice/music.mp3', {
 	metadata: {
 		title: 'A good song!',
 	},
@@ -125,7 +125,7 @@ In this example, the error event is used only for logging purposes. The audio pl
 ```js
 const { createAudioResource } = require('@discordjs/voice');
 
-const resource = createAudioResource('/home/user/voice/music.mp3', {
+const resource = createAudioResource('~/voice/music.mp3', {
 	metadata: {
 		title: 'A good song!',
 	},

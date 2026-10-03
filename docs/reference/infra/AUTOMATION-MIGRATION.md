@@ -21,7 +21,7 @@ appelle `aphrody-ops`.
 | `python-quality`, `powershell-syntax`, `runtime-versions` | Gates de runtime et langage |
 | `workspace-clean`, `workspace-deps`, `workspace-repair`, `gitignored-audit` | Hygiène de checkout, références et dépendances |
 | `agent-home`, `agent-plugin-sync`, `git-attribution` | Contexte, plugin et historique de poste |
-| `automation-inventory`, `repository-health` | Mesure et contrôle de santé des scripts sous `/home/aphro/src` |
+| `automation-inventory`, `repository-health` | Mesure et contrôle de santé des scripts sous `~/src` |
 
 ## Frontière
 
@@ -33,12 +33,12 @@ migration.
 Exécuter l’inventaire courant :
 
 ```sh
-aphrody-ops automation-inventory --root /home/aphro/src --json
+aphrody-ops automation-inventory --root ~/src --json
 ```
 
 ## Périmètre contrôlé
 
-L’inventaire `aphrody-ops automation-inventory --root /home/aphro/src --json`
+L’inventaire `aphrody-ops automation-inventory --root ~/src --json`
 est relu après chaque migration. Les surfaces restantes ont la frontière suivante :
 
 | Surface | Raison de conserver les scripts locaux |

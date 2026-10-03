@@ -1,6 +1,6 @@
 {
   "sourceHead": "92c441983975c627f4935090e55895af44b4d541",
-  "cloneCommand": "git clone --shared --no-hardlinks /home/aphro/aphrody /tmp/aphrody-clean-contracts-20261001",
+  "cloneCommand": "git clone --shared --no-hardlinks . /tmp/aphrody-clean-contracts-20261001",
   "clonePath": "/tmp/aphrody-clean-contracts-20261001",
   "gitStatusBefore": "",
   "gitStatusAfter": "",
@@ -18,7 +18,7 @@
     "aphrody-a2a-coord"
   ],
   "environment": {
-    "CARGO_TARGET_DIR": "/home/aphro/aphrody/target",
+    "CARGO_TARGET_DIR": "target",
     "note": "Shared compilation artifacts and existing Cargo registry cache; clean source checkout, not a cold-cache build."
   },
   "commands": [

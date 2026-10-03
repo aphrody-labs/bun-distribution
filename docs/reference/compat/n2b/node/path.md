@@ -179,9 +179,9 @@ changes:
 * Returns: {string}
 
 The `path.extname()` method returns the extension of the `path`, from the last
-occurrence of the `.` (period) character to end of string in the last portion of
-the `path`. If there is no `.` in the last portion of the `path`, or if
-there are no `.` characters other than the first character of
+occurrence of the `<repo>` (period) character to end of string in the last portion of
+the `path`. If there is no `<repo>` in the last portion of the `path`, or if
+there are no `<repo>` characters other than the first character of
 the basename of `path` (see `path.basename()`) , an empty string is returned.
 
 ```js
@@ -241,10 +241,10 @@ For example, on POSIX:
 // will be returned. `root` is ignored.
 path.format({
   root: '/ignored',
-  dir: '/home/user/dir',
+  dir: '~/dir',
   base: 'file.txt',
 });
-// Returns: '/home/user/dir/file.txt'
+// Returns: '~/dir/file.txt'
 
 // `root` will be used if `dir` is not specified.
 // If only `root` is provided or `dir` is equal to `root` then the
@@ -450,10 +450,10 @@ The returned object will have the following properties:
 For example, on POSIX:
 
 ```js
-path.parse('/home/user/dir/file.txt');
+path.parse('~/dir/file.txt');
 // Returns:
 // { root: '/',
-//   dir: '/home/user/dir',
+//   dir: '~/dir',
 //   base: 'file.txt',
 //   ext: '.txt',
 //   name: 'file' }
@@ -585,8 +585,8 @@ path.resolve('/foo/bar', '/tmp/file/');
 // Returns: '/tmp/file'
 
 path.resolve('wwwroot', 'static_files/png/', '../gif/image.gif');
-// If the current working directory is /home/myself/node,
-// this returns '/home/myself/node/wwwroot/static_files/gif/image.gif'
+// If the current working directory is ~/node,
+// this returns '~/node/wwwroot/static_files/gif/image.gif'
 ```
 
 A [`TypeError`][] is thrown if any of the arguments is not a string.

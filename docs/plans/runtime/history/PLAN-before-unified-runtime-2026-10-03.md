@@ -9,7 +9,7 @@ observé et les travaux restant à exécuter ; une commande planifiée ne consti
 pas un résultat de validation.
 
 Racines actives : `aphrody`, `aphrody-py`, `iecode` sous `/home/aphro`.
-`/home/aphro/src` est une archive legacy. Le checkout séparé `aphrody-ui` reste
+`~/src` est une archive legacy. Le checkout séparé `aphrody-ui` reste
 sous la responsabilité de son agent. Les anciens plans importés sont des
 preuves historiques : [ancien plan](docs/migration/PLAN-before-reorganization-2026-10-01.md)
 (conserver la base racine pour ses anciens liens).
@@ -112,10 +112,10 @@ Recherche : [pratiques documentaires](docs/research/workspace/documentation-prac
 - [x] À la demande du propriétaire, désinstaller les plugins Aphrody de Codex
   et agy ; Claude n'en avait plus d'installés. Retirer les marketplaces du
   dépôt, l'activation Codex locale et l'inscription MCP agy issue du plugin.
-- [x] Déplacer les huit plugins propres vers `/home/aphro/plugins`, avec les
+- [x] Déplacer les huit plugins propres vers `~/plugins`, avec les
   doublons, caches et inscriptions dans `_copies` et `_registrations`.
   Les 39 déplacements sont vérifiés par hashes dans le rapport local
-  `/home/aphro/plugins/relocation-2026-10-03.json`. Les autres plugins restent
+  `~/plugins/relocation-2026-10-03.json`. Les autres plugins restent
   installés ; aucun plugin propre trouvé dans les profils Windows inspectés.
 - Validation : contrôles Git et intégrité réussis. `bun run docs:check` reste
   en échec sur les catalogues ecosystem et documentation périmés ; aucune
@@ -537,7 +537,7 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
 ### Bridge Bun limité au monorepo actif — 2026-10-01
 
 - FAIT : la découverte des workspaces Bun par Infra utilise uniquement la
-  racine fournie (par défaut `/home/aphro/aphrody`). Elle ne parcourt plus les
+  racine fournie (par défaut `<repo>`). Elle ne parcourt plus les
   checkouts frères, les remotes Git ou le catalogue historique pour ajouter
   des racines. La forme publique du catalogue est conservée.
 - Le test crée une racine relocalisée et des frères legacy/UI : seule la racine
@@ -610,7 +610,7 @@ Propriétaire : `packages/ui`, `crates/ui`.
   aucun binding Bun natif dans le chemin d’un composant `use client`.
   Vérifié 2026-10-03 : 828 fichiers `"use client"` du dépôt (hors `upstream/`)
   bundlés (809 en cible bun) ; seul `m3-icons/src/react.tsx` atteignait
-  `bun:ffi` : directive retirée (composant serveur, export `.` server-only ;
+  `bun:ffi` : directive retirée (composant serveur, export `<repo>` server-only ;
   client = `./browser`), tests 13/13, typecheck vert. Constat hors UI : en
   cible navigateur, 77 composants client RG et 17 Shenron tirent des builtins
   Node (`util/types`, `child_process`, `tls`, `node:crypto`) : à qualifier par
@@ -1409,7 +1409,7 @@ et le filtre n'ingère que les sessions dont les tours portent exclusivement le
 marqueur `APHRODY_AGENT_DOMAIN=aphrody`. Elle reste active, sans redémarrage ;
 l'état du miroir a 5 sources, le transcript profilé a été régénéré à 02:20:53Z.
 Lecture SQLite strictement agrégée : 13 entrées mémoire sont associées à
-`/home/aphro/aphrody` (10 Claude, 3 Codex), aucun texte n'a été extrait.
+`<repo>` (10 Claude, 3 Codex), aucun texte n'a été extrait.
 Limites : cette observation clôt le flux profil Aphrody seulement ; les profils
 dbfr/ie, les plateformes A2A publiques et l'attribution exacte PID/session
 restent hors preuve.
@@ -1877,7 +1877,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - 2026-10-03: integrating validation of the repaired IECODE publication adapter:
   `APHRODY_LOCAL_CARGO=1 APHRODY_CARGO_JOBS=2
   CARGO_TARGET_DIR=/tmp/iecode-publisher-config-target
-  IECODE_ROOT=/home/aphro/iecode scripts/iecode/publish-rust-crates.sh --dry-run`
+  IECODE_ROOT=../iecode scripts/iecode/publish-rust-crates.sh --dry-run`
   passes scoped check/test/strict Clippy and both package verification builds.
   Twenty-two unit tests pass; zero doctests are not additional coverage.
   Cargo explicitly aborts both uploads in dry-run mode. The local override was

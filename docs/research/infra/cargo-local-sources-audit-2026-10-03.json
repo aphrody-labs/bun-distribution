@@ -2,9 +2,9 @@
   "date": "2026-10-03",
   "scope": [
     "/home/aphro/source",
-    "/home/aphro/aphrody",
-    "/home/aphro/iecode",
-    "/home/aphro/aphrody-py"
+    ".",
+    "../iecode",
+    "../aphrody-py"
   ],
   "summary": {
     "localSourceCount": 4,

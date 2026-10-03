@@ -9,7 +9,7 @@
 
 ## 1. Vision & Architecture du Réseau
 
-Le monorepo `rg` (`/home/ubuntu/rg`) unifie l'ensemble des services web, données et bots de l'écosystème Rose Griffon sur une infrastructure VPS auto-hébergée (PostgreSQL 18 local, PostgREST :8809, Storage :8810, Realtime :8812, CDN :8804/:8805, API :8807).
+Le monorepo `rg` (`../rg`) unifie l'ensemble des services web, données et bots de l'écosystème Rose Griffon sur une infrastructure VPS auto-hébergée (PostgreSQL 18 local, PostgREST :8809, Storage :8810, Realtime :8812, CDN :8804/:8805, API :8807).
 
 ### 1.1 — Les Trois Piliers Unifiés sous `rosegriffon.fr` (`apps/website`)
 

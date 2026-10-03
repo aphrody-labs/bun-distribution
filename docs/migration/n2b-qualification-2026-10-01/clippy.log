@@ -168,7 +168,7 @@
     Checking toml_parser v1.1.3+spec-1.1.0
     Checking url v2.5.8
     Checking primeorder v0.13.6
-    Checking aphrody-n2b-types v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-types)
+    Checking aphrody-n2b-types v0.6.2 (crates/compat/n2b-types)
    Compiling thiserror v2.0.21
     Checking oxc_ast v0.152.0 (https://github.com/aphrody-code/oxc.git?rev=31d5266e150ff17af52f0c2fc798cc27dc9a5a59#31d5266e)
     Checking serde_spanned v1.1.1
@@ -191,7 +191,7 @@
     Checking pem v3.0.6
     Checking simple_asn1 v0.6.4
    Compiling mime_guess v2.0.5
-    Checking aphrody-n2b-util v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-util)
+    Checking aphrody-n2b-util v0.6.2 (crates/compat/n2b-util)
     Checking rsa v0.9.10
     Checking p384 v0.13.1
     Checking p256 v0.13.2
@@ -208,7 +208,7 @@
     Checking publicsuffix v2.3.0
     Checking jsonwebtoken v10.4.0
     Checking snafu v0.8.9
-    Checking aphrody-n2b-registry v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-registry)
+    Checking aphrody-n2b-registry v0.6.2 (crates/compat/n2b-registry)
     Checking cookie v0.18.2
     Checking crossbeam-epoch v0.9.21
     Checking serde_path_to_error v0.1.20
@@ -233,7 +233,7 @@
     Checking rustls-platform-verifier v0.6.2
     Checking globset v0.4.20
     Checking anyhow v1.0.104
-    Checking aphrody-n2b-ai v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-ai)
+    Checking aphrody-n2b-ai v0.6.2 (crates/compat/n2b-ai)
     Checking yaml_serde v0.10.7
     Checking bit-vec v0.8.0
     Checking anstyle v1.0.14
@@ -246,7 +246,7 @@
     Checking bit-set v0.8.0
     Checking utf8parse v0.2.2
     Checking colorchoice v1.0.5
-    Checking aphrody-n2b-report v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-report)
+    Checking aphrody-n2b-report v0.6.2 (crates/compat/n2b-report)
     Checking anstyle-parse v1.0.0
     Checking is_terminal_polyfill v1.70.2
     Checking anstyle-query v1.1.5
@@ -266,7 +266,7 @@
     Checking hashbrown v0.16.1
     Checking ahash v0.8.12
     Checking fluent-uri v0.4.1
-    Checking aphrody-toolchains v1.0.0-canary (/home/aphro/aphrody/crates/compat/toolchains)
+    Checking aphrody-toolchains v1.0.0-canary (crates/compat/toolchains)
     Checking rustix v1.1.5
     Checking termtree v0.5.1
     Checking similar v3.2.0
@@ -299,12 +299,12 @@
     Checking proptest v1.11.0
     Checking hyper v1.11.1
     Checking hyper-util v0.1.21
-    Checking aphrody-n2b-rules v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-rules)
-    Checking aphrody-n2b-scanners v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-scanners)
+    Checking aphrody-n2b-rules v0.6.2 (crates/compat/n2b-rules)
+    Checking aphrody-n2b-scanners v0.6.2 (crates/compat/n2b-scanners)
     Checking hyper-rustls v0.27.10
     Checking hyper-timeout v0.5.2
     Checking reqwest v0.13.5
-    Checking aphrody-n2b-github v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-github)
-    Checking aphrody-n2b-core v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-core)
-    Checking aphrody-n2b v0.6.2 (/home/aphro/aphrody/crates/compat/n2b)
+    Checking aphrody-n2b-github v0.6.2 (crates/compat/n2b-github)
+    Checking aphrody-n2b-core v0.6.2 (crates/compat/n2b-core)
+    Checking aphrody-n2b v0.6.2 (crates/compat/n2b)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 19.57s

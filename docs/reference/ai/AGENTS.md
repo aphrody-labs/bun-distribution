@@ -48,5 +48,5 @@ Layout and entry points: [README](../../products/ai/README.md). Reuse the
 
 `bun run ecosystem:check`, `bun run ecosystem:sync` et `bun run runtime:check` délèguent à `aphrody-ops` du paquet `@aphrody/workspace`. Conserver cette entrée locale lors de toute évolution du module central.
 
-`bun run agents:sync` actualise le contexte agent depuis `/home/aphro/src` avec `aphrody-ops agent-home`.
+`bun run agents:sync` actualise le contexte agent depuis `~/src` avec `aphrody-ops agent-home`.
 `bun run plugins:sync` centralise la synchronisation du plugin Aphrody via `aphrody-ops agent-plugin-sync`.

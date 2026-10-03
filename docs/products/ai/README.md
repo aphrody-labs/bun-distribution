@@ -17,7 +17,7 @@ that process boundary. Siblings never acquire a reverse dependency on AI.
 Use the root [Cargo workspace](../../../Cargo.toml) and
 [Bun workspace](../../../package.json) with their pinned toolchains.
 Rust sources live under `crates/ai` and the CLI under `apps/cli`; Python work
-belongs to `/home/aphro/aphrody-py`. Follow the [active root plan](../../../PLAN.md)
+belongs to `../aphrody-py`. Follow the [active root plan](../../../PLAN.md)
 and [repository rules](../../../AGENTS.md) for qualification and ownership.
 Run the following commands deliberately from the repository root to build
 and exercise source; installed consumers follow their artifact contracts.

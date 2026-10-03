@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Workspace architecture
 
-This is the active Rust + Bun monorepo at `/home/aphro/aphrody`.
+This is the active Rust + Bun monorepo at `<repo>`.
 The root [plan](../../../PLAN.md) defines qualification order and remaining
 acceptance gates. [Repository rules](../../../AGENTS.md) define placement,
 ownership and migration safety. Source presence does not establish runtime,
@@ -14,8 +14,8 @@ layout; they are not current checkout instructions.
 
 ## Active roots and workspaces
 
-`/home/aphro/aphrody-py` owns Python implementation. `/home/aphro/iecode`
-owns game-domain implementation. `/home/aphro/src` is a legacy source archive,
+`../aphrody-py` owns Python implementation. `../iecode`
+owns game-domain implementation. `~/src` is a legacy source archive,
 kept intact while migration consumers are qualified. The separate `aphrody-ui`
 checkout belongs to its designated agent and is outside cross-repository work
 unless UI work is explicitly assigned.

@@ -3561,7 +3561,7 @@ import { tmpdir } from 'node:os';
 mkdtemp(join(tmpdir(), 'foo-'), (err, directory) => {
   if (err) throw err;
   console.log(directory);
-  // Prints: /tmp/foo-itXde2 or C:\Users\...\AppData\Local\Temp\foo-itXde2
+  // Prints: /tmp/foo-itXde2 or %USERPROFILE%\AppData\Local\Temp\foo-itXde2
 });
 ```
 
@@ -4180,7 +4180,7 @@ changes:
   * `err` {Error}
   * `resolvedPath` {string|Buffer}
 
-Asynchronously computes the canonical pathname by resolving `.`, `..`, and
+Asynchronously computes the canonical pathname by resolving `<repo>`, `..`, and
 symbolic links.
 
 A canonical pathname is not necessarily unique. Hard links and bind mounts can

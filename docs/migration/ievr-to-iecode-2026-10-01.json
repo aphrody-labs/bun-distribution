@@ -4,18 +4,18 @@
  "task": "IEVR to IECODE: IECODE is the exclusive owner of pure IEVR code, data tooling and documentation; Aphrody and aphrody-py consume it.",
  "repositories": {
   "aphrody": {
-   "path": "/home/aphro/aphrody",
+   "path": ".",
    "head": "36d361b46b990ec896022c301f13c28941c44918",
    "note": "working tree shared with other agents; changes uncommitted, integrated by the lead"
   },
   "iecode": {
-   "path": "/home/aphro/iecode",
+   "path": "../iecode",
    "baseline": "0938eae5",
    "head": "6e94b067553d312e026fd939d55721d2327248e7",
    "note": "6e94b067 (Codex audit fixes) touched no file of this migration"
   },
   "aphrody-py": {
-   "path": "/home/aphro/aphrody-py",
+   "path": "../aphrody-py",
    "head": "f4ad42d3212280b74fccf47e6ebea4407dd5ecf0"
   }
  },
@@ -4059,7 +4059,7 @@
     "iecodeCounterpart": "packages/inagle/src/zukan/scripts/parse-and-refresh-videos.ts",
     "iecodeSha256": "fccb0d13bce6f592922150943eb623fc8a0a303db71b450ff73e7f080b8599bf",
     "iecodeEditedByThisMigration": true,
-    "notes": "Ported: host path /home/ubuntu/rg/... replaced by package-relative data/zukan.",
+    "notes": "Ported: host path ../rg/... replaced by package-relative data/zukan.",
     "classification": "aphrody-newer (ported)",
     "action": "deleted-from-aphrody"
    },

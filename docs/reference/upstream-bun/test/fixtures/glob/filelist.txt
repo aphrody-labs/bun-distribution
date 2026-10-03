@@ -1747,7 +1747,7 @@ extensions/terminal-suggest/src/helpers/os.ts
 extensions/terminal-suggest/src/media/icon.png
 extensions/terminal-suggest/src/terminalSuggestMain.ts
 extensions/terminal-suggest/src/test/terminalSuggestMain.test.ts
-extensions/terminal-suggest/testWorkspace/parent/home/child/.keep
+extensions/terminal-suggest/testWorkspace/parent~/.keep
 extensions/terminal-suggest/ThirdPartyNotices.txt
 extensions/terminal-suggest/tsconfig.json
 extensions/theme-abyss/.vscodeignore

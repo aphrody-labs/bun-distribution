@@ -31,8 +31,8 @@ ceux hors catalogue, reçoivent une destination ou une justification vérifiée.
 Le C/C++, Zig, C#, assets, modèles et archives sont répertoriés avec leur
 propriétaire ; ils ne sont pas supprimés par le tri en trois langages.
 
-L'extraction locale commence dans `/home/aphro/aphrody` et
-`/home/aphro/aphrody-py`, créés à côté de `src`. `rg` et `shenron` restent
+L'extraction locale commence dans `<repo>` et
+`../aphrody-py`, créés à côté de `src`. `rg` et `shenron` restent
 entièrement dans `src` jusqu'à stabilité démontrée des deux cibles, fermeture
 du plan et validation de tous leurs consommateurs. Aucun gitlink, remote,
 service ou source de ces deux dépôts ne change avant cette barrière.
@@ -98,7 +98,7 @@ Cette passe n'a ni compilé le futur pont ni mesuré son débit.
 Infra `@aphrody/workspace` fournit maintenant `consolidation inventory`,
 `consolidation docs-import` et `consolidation scripts-import`. Le relevé courant
 du 2026-09-29 porte sur 19 worktrees directs, 77 859 chemins suivis/non ignorés
-et 7 040 documents candidats. La cible `/home/aphro/aphrody` indexe 6 538
+et 7 040 documents candidats. La cible `<repo>` indexe 6 538
 documents importables, dont 202 alias de documents identiques. 454 scripts
 classés ont été copiés. Le rapport `docs/migration/document-import.json`
 compte 1 297 liens locaux non résolus (notamment code, assets, chemins exclus ou
@@ -493,7 +493,7 @@ la preuve de son exécution.
 
 | Lot | Dépendances | Livrable obligatoire | Gate de sortie |
 | --- | --- | --- | --- |
-| P0 — Graphe complet | Aucune | Inventaire récursif via `@aphrody/workspace` des dépôts de `src`, `/home/aphro/iecode`, forks upstream, workspaces, plans, docs, scripts, apps/packages, crates, ABI/call-sites/commandes, changements locaux et matrice ancien → nouveau | 100 % des sources candidates affectées ; `rg`/`shenron` marqués en attente ; autres exclusions justifiées ; aucun dossier masqué par profondeur du scanner |
+| P0 — Graphe complet | Aucune | Inventaire récursif via `@aphrody/workspace` des dépôts de `src`, `../iecode`, forks upstream, workspaces, plans, docs, scripts, apps/packages, crates, ABI/call-sites/commandes, changements locaux et matrice ancien → nouveau | 100 % des sources candidates affectées ; `rg`/`shenron` marqués en attente ; autres exclusions justifiées ; aucun dossier masqué par profondeur du scanner |
 | P1 — Baseline | P0 | Corpus par capacité, résultats anciens, source closure, données restaurables, benchmarks contrôlés | Échecs existants enregistrés, sorties et scénarios de référence disponibles |
 | P2 — Fondation et extraction docs | P0–P1 | Git local des cibles, manifestes source→SHA/path/status, `docs/` catégorisé, doublons exacts dédupliqués avec registre d'alias, liens corrigés et scripts migrés par catégories | Couverture exhaustive des docs/scripts inclus ; liens valides ; aucun original supprimé |
 | P3 — Workspaces et extraction Rust/Bun | P2 | Un Cargo et un Bun workspace dans `aphrody`; crates sous `crates/<domain>/<name>`, apps/packages sous `apps/<domain>`/`packages/<domain>` ; Infra garde `@aphrody/workspace` | Graphe packages→crates/features/apps complet, imports/exports/licences résolus et provenance conservée |

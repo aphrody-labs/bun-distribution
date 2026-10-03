@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-10-01T13:59:31.091Z",
   "sourceMap": "docs/migration/source-map.json",
-  "target": "/home/aphro/aphrody",
+  "target": ".",
   "copied": 0,
   "updatedImportedDocs": 0,
   "identical": 10653,

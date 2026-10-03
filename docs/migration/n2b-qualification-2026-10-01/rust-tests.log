@@ -90,18 +90,18 @@
    Compiling regex v1.13.1
    Compiling bstr v1.13.1
    Compiling fancy-regex v0.16.2
-   Compiling aphrody-n2b-registry v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-registry)
+   Compiling aphrody-n2b-registry v0.6.2 (crates/compat/n2b-registry)
    Compiling globset v0.4.20
    Compiling jsonschema v0.35.0
    Compiling ignore v0.4.33
    Compiling oxc_ecmascript v0.152.0 (https://github.com/aphrody-code/oxc.git?rev=31d5266e150ff17af52f0c2fc798cc27dc9a5a59#31d5266e)
    Compiling oxc_ast_visit v0.152.0 (https://github.com/aphrody-code/oxc.git?rev=31d5266e150ff17af52f0c2fc798cc27dc9a5a59#31d5266e)
    Compiling oxc_parser v0.152.0 (https://github.com/aphrody-code/oxc.git?rev=31d5266e150ff17af52f0c2fc798cc27dc9a5a59#31d5266e)
-   Compiling aphrody-n2b-rules v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-rules)
-   Compiling aphrody-n2b-scanners v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-scanners)
-   Compiling aphrody-n2b-github v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-github)
-   Compiling aphrody-n2b-core v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-core)
-   Compiling aphrody-n2b v0.6.2 (/home/aphro/aphrody/crates/compat/n2b)
+   Compiling aphrody-n2b-rules v0.6.2 (crates/compat/n2b-rules)
+   Compiling aphrody-n2b-scanners v0.6.2 (crates/compat/n2b-scanners)
+   Compiling aphrody-n2b-github v0.6.2 (crates/compat/n2b-github)
+   Compiling aphrody-n2b-core v0.6.2 (crates/compat/n2b-core)
+   Compiling aphrody-n2b v0.6.2 (crates/compat/n2b)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 53.61s
      Running unittests src/lib.rs (target/debug/deps/aphrody_n2b-734aa6b080f50f70)
 

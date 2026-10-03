@@ -1,7 +1,7 @@
 {
   "observedAt": "2026-09-29T06:02:15.281Z",
-  "sourceRoot": "/home/aphro/src",
-  "targetRoot": "/home/aphro/aphrody",
+  "sourceRoot": "~/src",
+  "targetRoot": ".",
   "sourceFileCount": 16,
   "canonicalFileCount": 10,
   "copied": 0,

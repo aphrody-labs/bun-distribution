@@ -32,7 +32,7 @@ CREATE TABLE entry_closure (
 
 #### Example Hierarchy
 
-For `/home/user/docs/report.pdf`:
+For `~/docs/report.pdf`:
 
 ```
 home/ (id=1)
@@ -85,7 +85,7 @@ WHERE ancestor_id = 1 AND depth = 1;
 When moving a subtree, rebuild closures for entire moved branch:
 
 ```rust
-// Moving /home/user/docs to /home/archive/docs
+// Moving ~/docs to ~/docs
 // Affects thousands of rows for large directories
 async fn rebuild_closure_for_subtree(entry_id: i32, db: &DatabaseConnection) -> Result<()> {
     // 1. Delete old closures for moved subtree
@@ -113,7 +113,7 @@ CREATE TABLE directory_paths (
 INSERT INTO directory_paths VALUES
   (1, '/home'),
   (2, '/home/user'),
-  (3, '/home/user/docs');
+  (3, '~/docs');
 ```
 
 #### Benefits

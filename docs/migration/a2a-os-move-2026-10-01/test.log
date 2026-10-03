@@ -5,12 +5,12 @@
    Compiling pbjson-types v0.9.0
    Compiling tower-http v0.6.11
    Compiling cookie_store v0.22.1
-   Compiling aphrody-a2a-pb v0.1.8 (/home/aphro/aphrody/crates/contracts/a2a-pb)
+   Compiling aphrody-a2a-pb v0.1.8 (crates/contracts/a2a-pb)
    Compiling reqwest v0.13.5
-   Compiling aphrody-a2a-server v0.3.0 (/home/aphro/aphrody/crates/os/a2a-server)
-   Compiling aphrody-a2a-client v0.1.16 (/home/aphro/aphrody/crates/os/a2a-client)
-   Compiling aphrody-a2a-coord v1.0.0-canary (/home/aphro/aphrody/crates/os/a2a-coord)
-   Compiling aphrody-a2a-grpc v0.2.2 (/home/aphro/aphrody/crates/os/a2a-grpc)
+   Compiling aphrody-a2a-server v0.3.0 (crates/os/a2a-server)
+   Compiling aphrody-a2a-client v0.1.16 (crates/os/a2a-client)
+   Compiling aphrody-a2a-coord v1.0.0-canary (crates/os/a2a-coord)
+   Compiling aphrody-a2a-grpc v0.2.2 (crates/os/a2a-grpc)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 3.65s
      Running unittests src/lib.rs (target/debug/deps/aphrody_a2a_client-33a8d307b54d26c2)
 

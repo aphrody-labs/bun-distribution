@@ -4,7 +4,7 @@
 Archived on 2026-10-03 at the owner’s request. Copies are byte-for-byte originals.
 The current authority is [the root plan](../../../../PLAN.md).
 Historical relative links inside these exact copies retain their original repository-root base;
-resolve them from `/home/aphro/aphrody`, not from this archive directory.
+resolve them from `<repo>`, not from this archive directory.
 
 | Original | Archive | Bytes | SHA-256 |
 | --- | --- | ---: | --- |

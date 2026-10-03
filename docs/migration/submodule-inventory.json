@@ -277,17 +277,17 @@
   "missingRoots": [
     {
       "key": "bevy",
-      "path": "/home/aphro/src/bevy",
+      "path": "~/src/bevy",
       "state": "checkout-not-on-disk"
     },
     {
       "key": "dust",
-      "path": "/home/aphro/src/dust",
+      "path": "~/src/dust",
       "state": "checkout-not-on-disk"
     },
     {
       "key": "emu.nintendo.wii.gecko",
-      "path": "/home/aphro/src/emu.nintendo.wii.gecko",
+      "path": "~/src/emu.nintendo.wii.gecko",
       "state": "checkout-not-on-disk"
     }
   ],

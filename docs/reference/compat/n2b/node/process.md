@@ -957,7 +957,7 @@ Would generate the output:
 
 ```text
 0: /usr/local/bin/node
-1: /Users/mjr/work/node/process-args.js
+1: ~/work/node/process-args.js
 2: one
 3: two=three
 4: four

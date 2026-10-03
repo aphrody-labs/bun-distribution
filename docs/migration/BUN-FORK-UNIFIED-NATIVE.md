@@ -31,7 +31,7 @@ this is not a worker-lifecycle coordination mechanism.
 
 The companion aggregate source and package bindings are committed at monorepo
 revision `9fa127cb`. The native artifact tested at
-`/home/aphro/aphrody/target/debug/libaphrody_ffi.so` was built using
+`target/debug/libaphrody_ffi.so` was built using
 `cargo build --offline --locked -p aphrody-ffi`. Its recorded SHA-256 is
 `d7ae091c4fef2b54370b56ffa114c093a5fdb45bdbac7df298fe7cdf14c8786f`
 and its debug size is 1,915,401,880 bytes. This size is not a release size or
@@ -39,7 +39,7 @@ memory-use measurement.
 
 ## Verified gates
 
-From `/home/aphro/src/bun`:
+From `~/src/bun`:
 
 | Gate | Result |
 | --- | --- |
@@ -76,17 +76,17 @@ passed all 8 tests with 58 assertions and no skips. The
 reproducible host command, after both current artifacts are built, is:
 
 ```sh
-cd /home/aphro/src/bun
-APHRODY_FFI_LIB=/home/aphro/aphrody/target/debug/libaphrody_ffi.so \
-APHRODY_OXC_REFERENCE_LIB=/home/aphro/src/oxc/target/debug/libaphrody_oxc_bridge.so \
-APHRODY_N2B_REFERENCE_LIB=/home/aphro/src/aphrody-compat/target/debug/libaphrody_n2b_native.so \
-APHRODY_BUN_FORK_BIN=/home/aphro/src/bun/build/debug/bun-debug \
-bun bd test /home/aphro/aphrody/packages/bun/aphrody/test-native.test.ts
+cd ~/src/bun
+APHRODY_FFI_LIB=target/debug/libaphrody_ffi.so \
+APHRODY_OXC_REFERENCE_LIB=~/src/oxc/target/debug/libaphrody_oxc_bridge.so \
+APHRODY_N2B_REFERENCE_LIB=~/src/aphrody-compat/target/debug/libaphrody_n2b_native.so \
+APHRODY_BUN_FORK_BIN=~/src/bun/build/debug/bun-debug \
+bun bd test packages/bun/aphrody/test-native.test.ts
 ```
 
 An additional Linux `/proc/self/maps` check after builtin-first loading and
 package expansion found exactly one mapped artifact in the Aphrody/N2B/Oxc
-native library families: `/home/aphro/aphrody/target/debug/libaphrody_ffi.so`.
+native library families: `target/debug/libaphrody_ffi.so`.
 This verifies the mapped artifact count, not duplicated code bytes or RSS.
 
 ## Remaining qualification

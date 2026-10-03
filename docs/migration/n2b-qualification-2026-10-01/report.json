@@ -33,7 +33,7 @@
       "exitCode": 0
     },
     {
-      "command": "N2B_BIN=/home/aphro/aphrody/target/debug/n2b bun test packages/compat/n2b-client/test",
+      "command": "N2B_BIN=target/debug/n2b bun test packages/compat/n2b-client/test",
       "exitCode": 0,
       "passed": 15
     }

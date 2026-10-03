@@ -120,7 +120,7 @@
         0,
         0
       ],
-      "workspace": "/home/aphro/aphrody",
+      "workspace": ".",
       "branch": "main",
       "otherAgentContextRead": true,
       "distinctClaims": true,

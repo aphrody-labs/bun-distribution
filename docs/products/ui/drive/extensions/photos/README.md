@@ -81,7 +81,7 @@ PhotosMind {
 
 1. Install extension from Spacedrive Extension Store
 2. Grant permissions to specific photo locations:
-   - `/Users/alice/Photos`
+   - `~/Photos`
    - `/Volumes/External/Family Photos`
 3. Extension downloads AI models (~107MB total)
 4. User initiates analysis: "Analyze for Faces" button

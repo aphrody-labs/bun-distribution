@@ -31,7 +31,7 @@
           "sha256": "f380b8ad8f2a0da398cb48b18c2b9643cc247cbfc7f04195e68755a4b02b58c2"
         },
         {
-          "path": "/home/aphro/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/repository/mod.rs",
+          "path": "~/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/repository/mod.rs",
           "line": 1139,
           "symbol": "pub fn list_models",
           "sha256": "4e678000ca32db986fcbd6d520a6d19a51db56a6370cae70cc470ade4d1ebdfd"
@@ -100,7 +100,7 @@
           "sha256": "f380b8ad8f2a0da398cb48b18c2b9643cc247cbfc7f04195e68755a4b02b58c2"
         },
         {
-          "path": "/home/aphro/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/spaces.rs",
+          "path": "~/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/spaces.rs",
           "line": 126,
           "symbol": "pub async fn runtime",
           "sha256": "8d4b2efb059438834a76f2e0b76c0c95a7def6ca3ef5521208fa8df270b38856"
@@ -127,7 +127,7 @@
           "sha256": "7dda2320299309c3e83ad3faed132eb90157c40eeea01490598369a099f2bc33"
         },
         {
-          "path": "/home/aphro/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/repository/mod.rs",
+          "path": "~/.cargo/git/checkouts/hf-hub-3c7263c594854a05/473de94/hf-hub/src/repository/mod.rs",
           "line": 152,
           "symbol": "pub struct InferenceProviderMapping",
           "sha256": "4e678000ca32db986fcbd6d520a6d19a51db56a6370cae70cc470ade4d1ebdfd"

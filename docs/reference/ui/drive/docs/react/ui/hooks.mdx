@@ -201,7 +201,7 @@ function CreateLibraryButton() {
 ```tsx
 // Create library
 const createLib = useCoreMutation('libraries.create');
-createLib.mutate({ name: 'Photos', path: '/Users/me/Photos' });
+createLib.mutate({ name: 'Photos', path: '~/Photos' });
 
 // Delete library
 const deleteLib = useCoreMutation('libraries.delete');
@@ -253,7 +253,7 @@ function ApplyTagsButton({ fileIds, tagIds }: { fileIds: number[], tagIds: strin
 ```tsx
 // Create location
 const createLocation = useLibraryMutation('locations.create');
-createLocation.mutate({ path: '/Users/me/Photos', index_mode: 'deep' });
+createLocation.mutate({ path: '~/Photos', index_mode: 'deep' });
 
 // Delete files
 const deleteFiles = useLibraryMutation('files.delete');

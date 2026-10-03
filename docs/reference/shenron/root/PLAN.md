@@ -165,7 +165,7 @@ viennent du registre au lieu du checkout `aphrody-discord`. Le contrôle
 `@aphrody/*` et les workspaces `../aphrody-*` ; les clients Aphrody consomment
 les contrats Shenron.
 Le code propriétaire Aphrody Discord a pour cible le monorepo
-`/home/aphro/aphrody/` selon son `PLAN.md` ; Shenron ne l'intègre pas dans
+`` selon son `PLAN.md` ; Shenron ne l'intègre pas dans
 son workspace. Les bibliothèques Discordx publiées restent des dépendances
 tierces du bot.
 

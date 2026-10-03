@@ -20,10 +20,10 @@
       "sha256": "9cd67f275638e07dfdb0f74cb9e0319935d68131ad5d8b5e2219acae4fc5f148"
     }
   ],
-  "private_artifact_directory": "/home/aphro/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh",
+  "private_artifact_directory": "~/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh",
   "sql_snapshot": {
-    "directory": "/home/aphro/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh",
-    "source": "/home/aphro/.aphrody/private/backups/aphrody-unique/2026-10-01/postgres/shenron_site-20261001T180157Z.dump",
+    "directory": "~/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh",
+    "source": "~/.aphrody/private/backups/aphrody-unique/2026-10-01/postgres/shenron_site-20261001T180157Z.dump",
     "sha256": "cd89f3dcd9e8525df9354966e8ad6296a3b44a26322e8bd630a910822c262fe2",
     "state": "restored",
     "port": 15434
@@ -468,7 +468,7 @@
   },
   "model": {
     "configured_base": "qwen3-4b-instruct-2507-q4km",
-    "adapter": "/home/aphro/.aphrody/private/training/shenron/runs/shenron-chat-v2/adapter.gguf",
+    "adapter": "~/.aphrody/private/training/shenron/runs/shenron-chat-v2/adapter.gguf",
     "adapter_bytes": 132155648,
     "local_generation_probe": {
       "status": null,

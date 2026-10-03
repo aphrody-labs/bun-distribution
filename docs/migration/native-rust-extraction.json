@@ -4,7 +4,7 @@
   "sources": [
     {
       "repository": "aphrody-contracts",
-      "path": "/home/aphro/src/aphrody-contracts",
+      "path": "~/src/aphrody-contracts",
       "head": "4a22afb12b086573e6890e49a3bfbde7a96380ea",
       "workingTreeDirty": false,
       "dirtyPathCount": 0,
@@ -77,7 +77,7 @@
     },
     {
       "repository": "aphrody-os",
-      "path": "/home/aphro/src/aphrody-os",
+      "path": "~/src/aphrody-os",
       "head": "5988533a5fe6088aba61389bd488f035ab61aa08",
       "workingTreeDirty": false,
       "dirtyPathCount": 0,
@@ -255,7 +255,7 @@
     },
     {
       "repository": "aphrody-shell",
-      "path": "/home/aphro/src/aphrody-shell",
+      "path": "~/src/aphrody-shell",
       "head": "2a829cd7be12a7de67e8e6c5ba65b4292f11c650",
       "workingTreeDirty": false,
       "dirtyPathCount": 0,
@@ -293,7 +293,7 @@
     },
     {
       "repository": "aphrody-compat",
-      "path": "/home/aphro/src/aphrody-compat",
+      "path": "~/src/aphrody-compat",
       "head": "5c7bd3e1176f8709a8d91ebfc989bb2aba38b773",
       "workingTreeDirty": false,
       "dirtyPathCount": 0,
@@ -394,7 +394,7 @@
     },
     {
       "repository": "aphrody-native",
-      "path": "/home/aphro/src/aphrody-native",
+      "path": "~/src/aphrody-native",
       "head": "1acd62e5f4b0f519754a0b3c33021896d4e590c1",
       "workingTreeDirty": false,
       "dirtyPathCount": 0,
@@ -4509,7 +4509,7 @@
     }
   ],
   "target": {
-    "repository": "/home/aphro/aphrody",
+    "repository": ".",
     "workspaceMembers": 144,
     "resolvedPackages": 1521,
     "remainingCargoPathsOutsideMonorepo": [

@@ -3,7 +3,7 @@
   "status": "copied-and-integrated",
   "source": {
     "repository": "aphrody-compat",
-    "path": "/home/aphro/src/aphrody-compat",
+    "path": "~/src/aphrody-compat",
     "head": "5c7bd3e1176f8709a8d91ebfc989bb2aba38b773",
     "workingTreeDirty": false,
     "scopedStatus": [],
@@ -55,7 +55,7 @@
     ]
   },
   "target": {
-    "repository": "/home/aphro/aphrody",
+    "repository": ".",
     "packagePaths": [
       "packages/compat/n2b",
       "packages/compat/n2b-plugin",

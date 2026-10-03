@@ -2,8 +2,8 @@
    Compiling hyper-rustls v0.27.10
    Compiling axum v0.8.9
    Compiling reqwest v0.13.5
-   Compiling aphrody-model-client v1.0.0 (/home/aphro/aphrody/crates/ai/model-client)
-   Compiling aphrody-engine-mistralrs v1.0.0 (/home/aphro/aphrody/crates/ai/engine-mistralrs)
+   Compiling aphrody-model-client v1.0.0 (crates/ai/model-client)
+   Compiling aphrody-engine-mistralrs v1.0.0 (crates/ai/engine-mistralrs)
 warning: struct `RawChunk` is never constructed
   --> crates/ai/engine-mistralrs/src/events.rs:22:19
    |

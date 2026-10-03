@@ -328,7 +328,7 @@
   "forkRepository": "https://github.com/aphrody-labs/taffy",
   "forkCommit": "ed38f5bb36affbc6bfa35b01f0fc866585f0c37d",
   "standaloneRepository": "https://github.com/aphrody-labs/taffy",
-  "retainedBackup": "/home/aphro/.local/share/aphrody/source-backups/taffy-20261003",
+  "retainedBackup": "~/.local/share/aphrody/source-backups/taffy-20261003",
   "dependency": "[patch.crates-io].taffy",
   "git": "ssh://git@github-dev/aphrody-labs/taffy.git",
   "consumer": "obscura-render",

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "generatedAt": "2026-09-30T19:51:45.505445+00:00",
-  "sourceRoot": "/home/aphro/src/aphrody-ai",
+  "sourceRoot": "~/src/aphrody-ai",
   "sourceCommit": "4a9e529fb721d5fb7a0ba87313a98928c2ab47a5",
   "sourceDirty": false,
-  "targetRoot": "/home/aphro/aphrody",
+  "targetRoot": ".",
   "resourceRoot": "config/ai/plugins/aphrody",
   "scope": "Native aphrody-yolo plan/check required manifest, schema, agent definitions, skill entry files and source license/notice; supporting skill resources and full plugin packaging remain in the intact source checkout.",
   "licenses": [

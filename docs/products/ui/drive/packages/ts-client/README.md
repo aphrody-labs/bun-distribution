@@ -35,7 +35,7 @@ const jobs = await client.getJobs('running');
 console.log('Running jobs:', jobs);
 
 // Create a new library
-const newLibrary = await client.createLibrary('My Photos', '/Users/me/Photos');
+const newLibrary = await client.createLibrary('My Photos', '~/Photos');
 console.log('Created library:', newLibrary);
 ```
 

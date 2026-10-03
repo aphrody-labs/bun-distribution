@@ -61,20 +61,20 @@ and the FFI/data/licence and consumer-parity gates are resolved.
 
 | Checkout                            | Revision                                   | Observed state                      |
 | ----------------------------------- | ------------------------------------------ | ----------------------------------- |
-| Source `/home/aphro/src/aphrody-ai` | `3aa88791f49b963a00f073cb206677ea9d1957e1` | clean `main...origin/main`          |
+| Source `~/src/aphrody-ai` | `3aa88791f49b963a00f073cb206677ea9d1957e1` | clean `main...origin/main`          |
 | NIE submodule Gitlink                | `94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c` | working tree absent; commit available locally |
-| IECODE `/home/aphro/iecode`         | `8fdab4b96014f70972c2855878cab49510ffe876` | clean `main...origin/main`          |
-| Target `/home/aphro/aphrody`        | local extraction worktree                  | broad migration batch remains dirty |
+| IECODE `../iecode`         | `8fdab4b96014f70972c2855878cab49510ffe876` | clean `main...origin/main`          |
+| Target `<repo>`        | local extraction worktree                  | broad migration batch remains dirty |
 
-On 2026-09-29 the referenced NIE checkout `/home/aphro/src/nie` was absent, but
+On 2026-09-29 the referenced NIE checkout `~/src/nie` was absent, but
 the superproject's exact gitlink commit remained in its local submodule object
 database and was inspected read-only through a temporary detached checkout at
-`/home/aphro/tmp/nie-mcp-audit`. This verified the current 67-name router and
+`~/tmp/nie-mcp-audit`. This verified the current 67-name router and
 direct request DTO attributes. The clean audit checkout and isolated bridge
-harness remain under `/home/aphro/tmp`. The real source MCP
+harness remain under `~/tmp`. The real source MCP
 test could not be run: Cargo workspace loading fails before compilation because
 the NIE manifest points at source directories such as
-`/home/aphro/iecode/crates/re`, which are absent in the current IECODE checkout.
+`../iecode/crates/re`, which are absent in the current IECODE checkout.
 The mock fixture is therefore schema parity evidence from the matching DTOs and
 SDK schema generator, not a live child-runtime test.
 

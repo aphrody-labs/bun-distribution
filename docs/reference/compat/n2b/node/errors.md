@@ -319,10 +319,10 @@ the `Error` was instantiated.
 
 ```console
 Error: Things keep happening!
-   at /home/gbusey/file.js:525:2
-   at Frobnicator.refrobulate (/home/gbusey/business-logic.js:424:21)
-   at Actor.<anonymous> (/home/gbusey/actors.js:400:8)
-   at increaseSynergy (/home/gbusey/actors.js:701:6)
+   at ~/file.js:525:2
+   at Frobnicator.refrobulate (~/business-logic.js:424:21)
+   at Actor.<anonymous> (~/actors.js:400:8)
+   at increaseSynergy (~/actors.js:701:6)
 ```
 
 The first line is formatted as `<error class name>: <error message>`, and
@@ -352,13 +352,13 @@ function makeFaster() {
 
 makeFaster();
 // will throw:
-//   /home/gbusey/file.js:6
+//   ~/file.js:6
 //       throw new Error('oh no!');
 //           ^
 //   Error: oh no!
-//       at speedy (/home/gbusey/file.js:6:11)
-//       at makeFaster (/home/gbusey/file.js:5:3)
-//       at Object.<anonymous> (/home/gbusey/file.js:10:1)
+//       at speedy (~/file.js:6:11)
+//       at makeFaster (~/file.js:5:3)
+//       at Object.<anonymous> (~/file.js:10:1)
 //       at Module._compile (module.js:456:26)
 //       at Object.Module._extensions..js (module.js:474:10)
 //       at Module.load (module.js:356:32)

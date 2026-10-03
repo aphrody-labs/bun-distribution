@@ -240,7 +240,7 @@
     },
     {
       "source": "crates/ui/softraster, crates/ui/sprite-sheet",
-      "reason": "Consumed by the sibling checkout /home/aphro/iecode by path (iecode/Cargo.toml:559-560); merging them would break it and weigh down the wasm/no_std crates nie-render3d and nie-formats.",
+      "reason": "Consumed by the sibling checkout ../iecode by path (iecode/Cargo.toml:559-560); merging them would break it and weigh down the wasm/no_std crates nie-render3d and nie-formats.",
       "fragment": "render-merge.json"
     }
   ],

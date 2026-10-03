@@ -60,7 +60,7 @@ Error: Access to this API has been restricted
     at node:internal/main/run_main_module:23:47 {
   code: 'ERR_ACCESS_DENIED',
   permission: 'FileSystemRead',
-  resource: '/home/user/index.js'
+  resource: '~/index.js'
 }
 ```
 
@@ -82,10 +82,10 @@ API call to check permissions at runtime ([`permission.has()`][])
 
 ```js
 process.permission.has('fs.write'); // true
-process.permission.has('fs.write', '/home/rafaelgss/protected-folder'); // true
+process.permission.has('fs.write', '~/protected-folder'); // true
 
 process.permission.has('fs.read'); // true
-process.permission.has('fs.read', '/home/rafaelgss/protected-folder'); // false
+process.permission.has('fs.read', '~/protected-folder'); // false
 ```
 
 #### File System Permissions
@@ -138,16 +138,16 @@ Example:
 Wildcards are supported too:
 
 * `--allow-fs-read=/home/test*` will allow read access to everything
-  that matches the wildcard. e.g: `/home/test/file1` or `/home/test2`
+  that matches the wildcard. e.g: `~/file1` or `/home/test2`
 
 After passing a wildcard character (`*`) all subsequent characters will
 be ignored. For example: `/home/*.js` will work similar to `/home/*`.
 
 When the permission model is initialized, it will automatically add a wildcard
-(\*) if the specified directory exists. For example, if `/home/test/files`
-exists, it will be treated as `/home/test/files/*`. However, if the directory
+(\*) if the specified directory exists. For example, if `~/files`
+exists, it will be treated as `~/files/*`. However, if the directory
 does not exist, the wildcard will not be added, and access will be limited to
-`/home/test/files`. If you want to allow access to a folder that does not exist
+`~/files`. If you want to allow access to a folder that does not exist
 yet, make sure to explicitly include the wildcard:
 `/my-path/folder-do-not-exist/*`.
 

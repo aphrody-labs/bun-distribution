@@ -7,7 +7,7 @@ peuvent consommer `@shenron/*` et les contrats HTTP Shenron. Le workspace
 Shenron n'importe aucun paquet de code `@aphrody/*` ni checkout frère
 `../aphrody-*`. Le catalogue de l'Infra du monorepo reste la source opérationnelle
 des ports et services pour les tunnels locaux.
-Le code Aphrody Discord appartient au monorepo `/home/aphro/aphrody/`, pas
+Le code Aphrody Discord appartient au monorepo ``, pas
 au workspace Shenron ; le bot consomme les paquets Discordx publiés.
 
 Document d'architecture de référence pour l'unification des surfaces base de
@@ -508,7 +508,7 @@ privé à `apps/shenron/bot` (contrat d'infra « SQLite = cache local borné »)
 
 | Sous-chemin | Contenu | Classe |
 | --- | --- | --- |
-| `.` (héritage) | réexporte `./postgres-js`, `./config` et `schema`, à l'identique | server |
+| `<repo>` (héritage) | réexporte `./postgres-js`, `./config` et `schema`, à l'identique | server |
 | `./schema`, `./bot-schema` | inchangés (`AGENT_SCOPES` réexporté depuis `./constants`) | pure |
 | `./full-schema` | `{ ...schema, ...botSchema }` et le type `FullSchema` | pure |
 | `./constants` | zéro dépendance : `AGENT_SCOPES`, `FEEDBACK_STATUSES`, `GOAL_PRIORITIES`, `WIKI_CATEGORIES` | pure |
@@ -610,7 +610,7 @@ renvoyant un principal, adaptateurs minces.
 
 | Sous-chemin | Contenu | Classe |
 | --- | --- | --- |
-| `.` (héritage) | `AUTH_BASE_PATH`, `SHENRON_CANONICAL_URL`, `normalizeBaseUrl`, `resolveBetterAuthSecret`, `sharedAdvancedOptions`, `mapDiscordProfileEmail`, `handleAuthRequest`, `getSessionSafe`, `AuthLike`, `BaseSession`, constantes d'origines dépréciées (valeurs de production, S2) | server |
+| `<repo>` (héritage) | `AUTH_BASE_PATH`, `SHENRON_CANONICAL_URL`, `normalizeBaseUrl`, `resolveBetterAuthSecret`, `sharedAdvancedOptions`, `mapDiscordProfileEmail`, `handleAuthRequest`, `getSessionSafe`, `AuthLike`, `BaseSession`, constantes d'origines dépréciées (valeurs de production, S2) | server |
 | `./origins` | politique d'hôtes et d'origines par application | pure |
 | `./a2a` | décision de garde A2A (D14) | server |
 | `./crypto` | comparaison à temps constant, Bearer, SHA-256, HMAC | server |
@@ -731,7 +731,7 @@ lourd reste chez Aphrody.
 
 | Sous-chemin | Contenu | Classe |
 | --- | --- | --- |
-| `.` | constantes et types (`SHENRON_E5`, `PROMPT_VERSION`) | pure |
+| `<repo>` | constantes et types (`SHENRON_E5`, `PROMPT_VERSION`) | pure |
 | `./config` | `resolveAiConfig` | pure |
 | `./wire` | miroirs zod de `aphrody-ai/crates/aphrody-mcp/src/http_rest.rs` et `APHRODY_LIMITS` | pure |
 | `./aphrody` | `createAphrodyCompute` | pure |
@@ -852,7 +852,7 @@ de la vague 3), client Web (`aphrody-web-api`), hub A2A, lancement de la CLI.
 
 | Sous-chemin | Contenu | Classe | Importateurs autorisés |
 | --- | --- | --- | --- |
-| `.` | `AphrodyComputeClient`, `ShenronEmbeddingsClient`, `SHENRON_EMBED_MODEL`, `SHENRON_EMBED_DIMENSIONS`, `AphrodyWebClient` et leurs types | server | tous (héritage) |
+| `<repo>` | `AphrodyComputeClient`, `ShenronEmbeddingsClient`, `SHENRON_EMBED_MODEL`, `SHENRON_EMBED_DIMENSIONS`, `AphrodyWebClient` et leurs types | server | tous (héritage) |
 | `./compute`, `./embeddings` | mêmes classes ; façades sur `@shenron/pipeline/ai` : exceptions, signatures, option `fetcher`, défaut d'URL hérité (retiré par INFRA-3), `fetch` résolu à l'appel | server | héritage |
 | `./web` | `AphrodyWebClient` | server | scripts, site |
 | `./a2a` | `ShenronA2AHub`, sondes | server (Bun via global, sans import statique) | routes A2A du site |
@@ -886,7 +886,7 @@ du hub TypeScript (ticket SH-A2A).
 
 **Rôle.** Contrat HTTP (zod), client typé sans exception, aides HTTP pures et
 fabrique d'application OpenAPIHono à ports injectés, montée dans `shenron-bot`
-et `shenron-site`. Pas de racine `.` : un import côté navigateur ne peut pas
+et `shenron-site`. Pas de racine `<repo>` : un import côté navigateur ne peut pas
 tirer le serveur.
 
 | Sous-chemin | Contenu | Importe hono ? | Classe |
@@ -983,7 +983,7 @@ entrées publiques et les adaptateurs.
 
 | Sous-chemin | Contenu | Classe | Vague |
 | --- | --- | --- | --- |
-| `.` | barrel sûr côté serveur : `cn`, `pageWindow`, constantes de jetons, aucun composant | pure | 1 |
+| `<repo>` | barrel sûr côté serveur : `cn`, `pageWindow`, constantes de jetons, aucun composant | pure | 1 |
 | `./lib/utils` | `cn` seul | pure | 1 |
 | `./lib/page-window` | `pageWindow` (+ alias `pagesVisibles`, `pagerWindow`) | pure | 1 |
 | `./styles.css` | blocs `@theme inline`, miroirs `:root` (sans `--shell-*`), `.cible-44`, `.card/.btn/.input/.badge` en `@layer components` | css | 1 |
@@ -1063,10 +1063,10 @@ restent dans les applications ; les éléments visuels Toriyama sont dans le paq
 
 | Consommateur | config | db | auth | aphrody | ai | api | ui |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `apps/shenron/site` (serveur, `bun --bun next`) | oui | `.`, `./postgres-js`, `./schema`, `./bot-schema`, `./guards`, `./repos/*`, `./constants` | tout sauf `./hono` | `.`, `./a2a` ; jamais `./cli` | oui (serveur) | `./contract`, `./client`, `./server`, `./next` | oui |
+| `apps/shenron/site` (serveur, `bun --bun next`) | oui | `<repo>`, `./postgres-js`, `./schema`, `./bot-schema`, `./guards`, `./repos/*`, `./constants` | tout sauf `./hono` | `<repo>`, `./a2a` ; jamais `./cli` | oui (serveur) | `./contract`, `./client`, `./server`, `./next` | oui |
 | `apps/shenron/site` (client) | `./net` | `./constants`, `./types` | `./client`, `./policy`, `./staff` | non | non | `./contract` | composants, `./lib/*`, `./styles.css` |
-| `apps/shenron/bot` (Bun) | oui | `./bun-sql`, `./sql`, `./redis`, `./constants`, `./repos/*`, `./types` | tout sauf `./next`, `./client` | `.` ; jamais `./cli` | oui | `./contract`, `./http`, `./server` | `./lib/utils`, `./styles.css` |
-| `packages/shenron/pipeline`, `scripts/**`, `scripts/tools/shenron/cli.ts` | oui | `./sql`, `./bun-sql`, `./env`, `./guards` | non | `.`, `./web`, `./cli` | oui | `./client` | non |
+| `apps/shenron/bot` (Bun) | oui | `./bun-sql`, `./sql`, `./redis`, `./constants`, `./repos/*`, `./types` | tout sauf `./next`, `./client` | `<repo>` ; jamais `./cli` | oui | `./contract`, `./http`, `./server` | `./lib/utils`, `./styles.css` |
+| `packages/shenron/pipeline`, `scripts/**`, `scripts/tools/shenron/cli.ts` | oui | `./sql`, `./bun-sql`, `./env`, `./guards` | non | `<repo>`, `./web`, `./cli` | oui | `./client` | non |
 | `aphrody-ai/crates/aphrody-mcp` (`dragonball.*`) | — | — | — | — | — | client des routes Shenron ; catalogue MCP propre à Aphrody AI | — |
 
 Arêtes interdites contrôlées : paquet → `apps/*` ; module `"use client"` →

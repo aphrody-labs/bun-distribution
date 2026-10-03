@@ -92,5 +92,5 @@
     "Actual compute-mode host rollback",
     "Systematic model quality, reranker, training promotion and cold readiness"
   ],
-  "privateEvidenceDirectory": "/home/aphro/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh"
+  "privateEvidenceDirectory": "~/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh"
 }

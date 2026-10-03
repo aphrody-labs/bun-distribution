@@ -87,7 +87,7 @@ bash run_cluster.sh \
                 vllm/vllm-openai \
                 <HEAD_NODE_IP> \
                 --head \
-                /path/to/the/huggingface/home/in/this/node \
+                /path/to/the/huggingface~/this/node \
                 -e VLLM_HOST_IP=<HEAD_NODE_IP>
 ```
 
@@ -98,7 +98,7 @@ bash run_cluster.sh \
                 vllm/vllm-openai \
                 <HEAD_NODE_IP> \
                 --worker \
-                /path/to/the/huggingface/home/in/this/node \
+                /path/to/the/huggingface~/this/node \
                 -e VLLM_HOST_IP=<WORKER_NODE_IP>
 ```
 

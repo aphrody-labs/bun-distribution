@@ -15,7 +15,7 @@
       "note": "Subset rerun; reported 225-test full suite and 2.54x speedup not independently remeasured"
     },
     {
-      "command": "bun scripts/audit/yolo-agent-interfaces.ts /home/aphro/yolo",
+      "command": "bun scripts/audit/yolo-agent-interfaces.ts ../yolo",
       "status": "findings",
       "exitCode": 1,
       "httpStatus": 200,

@@ -74,7 +74,7 @@ bun packages/infra/workspace/src/ops.ts infra quality fix --repo aphrody-ui --ru
 
 `imports-exports`, `monorepo-audit`, `bun-workspace`, `bun-docs` and `ui-verify` are reusable Bun modules. They centralize the UI AST inventory, audit dispatcher, Bun workspace contract, embedded official Bun documentation, and UI gate runner. The UI exposes them through its existing package scripts, with `aphrody-ops` resolved from the Aphrody workstation command directory.
 
-`automation-inventory --root /home/aphro/src --json` emits the current cross-repository automation catalogue and classification.
+`automation-inventory --root ~/src --json` emits the current cross-repository automation catalogue and classification.
 
 `automation-inventory --inline` lists inline Python, Bun and Node invocations (eval flags, stdin heredocs and spawn arrays) in tracked and non-ignored new files, outside Markdown and `docs/`. JSON is the default; `--markdown` renders the same report as a table. `--check` fails when a file is absent from `config/inline-interpreters.baseline.json` or exceeds its recorded count. `--write-baseline` rewrites the counts and keeps the scope and reason recorded for each file. `monorepo-gate` runs the check whenever that baseline exists, including in no-build mode, and `.github/workflows/inline-interpreters.yml` runs it on every push and pull request without installing dependencies. Shell callers read decisions from the owning modules: `build-factory status [--route]` for Cargo routing and `iecode-packages.ts source --config <file> [--field <name>] [--github-output]` for the pinned IECODE contract.
 
@@ -106,15 +106,15 @@ bun packages/infra/workspace/src/ops.ts shenron service catalog
 ```
 
 ```bash
-bun packages/infra/workspace/src/ops.ts consolidation inventory --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
-bun packages/infra/workspace/src/ops.ts consolidation submodules-inventory --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
-bun packages/infra/workspace/src/ops.ts consolidation infra-config-import --source-root /home/aphro/src --aphrody-root /home/aphro/aphrody
-bun packages/infra/workspace/src/ops.ts consolidation infra-scripts-import --source-root /home/aphro/src --aphrody-root /home/aphro/aphrody
-bun packages/infra/workspace/src/ops.ts consolidation source-licenses-import --source-root /home/aphro/src --aphrody-root /home/aphro/aphrody
-bun packages/infra/workspace/src/ops.ts consolidation docs-import --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
+bun packages/infra/workspace/src/ops.ts consolidation inventory --source-root ~/src --iecode-root ../iecode --aphrody-root . --python-root ../aphrody-py
+bun packages/infra/workspace/src/ops.ts consolidation submodules-inventory --source-root ~/src --iecode-root ../iecode --aphrody-root . --python-root ../aphrody-py
+bun packages/infra/workspace/src/ops.ts consolidation infra-config-import --source-root ~/src --aphrody-root .
+bun packages/infra/workspace/src/ops.ts consolidation infra-scripts-import --source-root ~/src --aphrody-root .
+bun packages/infra/workspace/src/ops.ts consolidation source-licenses-import --source-root ~/src --aphrody-root .
+bun packages/infra/workspace/src/ops.ts consolidation docs-import --source-root ~/src --iecode-root ../iecode --aphrody-root . --python-root ../aphrody-py
 bun packages/infra/workspace/src/ops.ts consolidation inventory --source-root ~/src --upstreams-root ~/source --iecode-root ~/iecode --aphrody-root ~/aphrody --python-root ~/aphrody-py --upstreams-only true
 bun packages/infra/workspace/src/ops.ts consolidation docs-import --source-root ~/src --upstreams-root ~/source --iecode-root ~/iecode --aphrody-root ~/aphrody --python-root ~/aphrody-py --upstreams-only true
-bun packages/infra/workspace/src/ops.ts consolidation scripts-import --source-root /home/aphro/src --iecode-root /home/aphro/iecode --aphrody-root /home/aphro/aphrody --python-root /home/aphro/aphrody-py
+bun packages/infra/workspace/src/ops.ts consolidation scripts-import --source-root ~/src --iecode-root ../iecode --aphrody-root . --python-root ../aphrody-py
 ```
 
 ## Infrastructure audit without application builds

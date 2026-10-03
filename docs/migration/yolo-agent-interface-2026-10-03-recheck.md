@@ -8,7 +8,7 @@ dirty: another session was extracting the HTTP/MCP implementations into
 installed release or the final extraction commit.
 
 [Measured receipt](yolo-agent-interface-2026-10-03-recheck.json) comes from
-`bun scripts/audit/yolo-agent-interfaces.ts /home/aphro/yolo` with synthetic
+`bun scripts/audit/yolo-agent-interfaces.ts ../yolo` with synthetic
 files and an ephemeral loopback HTTP server. The command exits 1 because
 two probes still fail. No credentials or protected files were read.
 

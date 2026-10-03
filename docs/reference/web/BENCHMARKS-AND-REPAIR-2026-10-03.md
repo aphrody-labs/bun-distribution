@@ -33,7 +33,7 @@ Conformément à la directive d'autonomie et aux règles de l'Agent Home :
 
 ### C. Déploiement du binaire canary
 - Compilation sérialisée sous `scripts/build/rust/cargo-serial.sh build --bin aphrody`.
-- Déploiement atomique dans `/home/aphro/.local/lib/aphrody/installed-20261002b/aphrody` relié au symlink `/home/aphro/.local/bin/aphrody`.
+- Déploiement atomique dans `~/.local/lib/aphrody/installed-20261002b/aphrody` relié au symlink `~/.local/bin/aphrody`.
 
 ---
 

@@ -60,7 +60,7 @@
     Finished `test` profile [unoptimized + debuginfo] target(s) in 45.59s
 warning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1
 note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
-     Running unittests src/lib.rs (/home/aphro/aphrody/target/debug/deps/aphrody_kernel-6be1451df9654d1c)
+     Running unittests src/lib.rs (target/debug/deps/aphrody_kernel-6be1451df9654d1c)
 
 running 78 tests
 test cloud::tests::gcp_status_returns_structured_payload ... ok
@@ -149,7 +149,7 @@ test admin::tests::system_inventory_tools_are_served_by_the_rust_owner ... ok
 
 test result: ok. 77 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 1.22s
 
-     Running unittests src/main.rs (/home/aphro/aphrody/target/debug/deps/aphrody_kernel-25cc5fca5540ca65)
+     Running unittests src/main.rs (target/debug/deps/aphrody_kernel-25cc5fca5540ca65)
 
 running 2 tests
 test tests::cli_parse_subcommands ... ok

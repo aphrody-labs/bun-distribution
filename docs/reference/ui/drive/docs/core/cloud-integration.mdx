@@ -276,7 +276,7 @@ let backup_volume = volume_manager
 
 // Create backup job
 let src = SdPath::from_uri_with_context(
-    "local://macbook/Users/james/Documents/important/",
+    "local://macbook~/Documents/important/",
     &context
 ).await?;
 
@@ -316,7 +316,7 @@ Combine local and cloud storage:
 ```rust
 // Move old projects to cloud archive
 let src = SdPath::from_uri_with_context(
-    "local://macbook/Users/james/projects/MyVideoProject",
+    "local://macbook~/projects/MyVideoProject",
     &context
 ).await?;
 

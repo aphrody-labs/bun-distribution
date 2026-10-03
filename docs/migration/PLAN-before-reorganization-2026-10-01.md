@@ -37,7 +37,7 @@ inventories and orchestration commands.
 
 ## IEVR ownership decision — 2026-09-30
 
-All IEVR/NIE/IECODE-specific code is owned exclusively by `/home/aphro/iecode`.
+All IEVR/NIE/IECODE-specific code is owned exclusively by `../iecode`.
 No active game implementation, format parser, game data adapter, or NIE service
 may remain in this Aphrody workspace. Confirmed duplicate Rust crates, the NIE
 MCP relay and the IEVR inventory tool have been removed from this checkout.
@@ -94,7 +94,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       Frozen Bun install, package typecheck, nine tests and build pass. A root
       Bun patch preserves REST cancellation behavior; standalone consumer
       qualification remains open because that patch is scoped to this root.
-- [x] Created the local worktree at `/home/aphro/aphrody` and initialized Git.
+- [x] Created the local worktree at `<repo>` and initialized Git.
 - [x] Recorded a local extraction baseline at `d406f11` with the root manifests,
       staged first-party code, Infra catalogs, six service scripts and migration
       evidence. A fresh local clone passed frozen offline Bun install,
@@ -411,7 +411,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       inventory module. They remain in their local protected paths, are excluded
       from document import/index generation, and are ignored by Git. Explanatory
       Markdown remains eligible for documentation import.
-- [x] Regenerated the Infra ecosystem catalog from the active `/home/aphro/src`
+- [x] Regenerated the Infra ecosystem catalog from the active `~/src`
       checkouts: 10 repositories, 126 crates, 55 binaries, 59 Bun packages,
       5 Python packages, 49 CLI binaries, 443 CLI commands, 401 MCP registrations
       and 383 unique MCP names. The catalog check remains red: `aphrody-ai` and
@@ -426,7 +426,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       Native, 25 Koharu and 10 IECODE packages (93 total). The 64 AI and 21 Web
       members are outside this extraction tally.
 - [ ] Make the Rust workspace self-contained and qualify a clean clone. The
-      current root manifest has two paths into `/home/aphro/src`, both UI crates
+      current root manifest has two paths into `~/src`, both UI crates
       reserved to the UI owner. Native, Compat/N2B, Koharu and IECODE's data/FFI
       Rust sources are now members. Infra's current source workspace has six
       members and all six are integrated. NIE engine crates, UI Rust, remaining
@@ -483,9 +483,9 @@ explicitly requested; they do not close these gates or authorize cutover.
       tree paths; use the per-link report to distinguish intentional upstream
       routes from missing local files. The docs overlap scan was not used to
       delete content; fixture similarity is not proof of duplicate documentation.
-- [ ] Reinventory the missing source checkouts: `/home/aphro/src/aphrody-web`
-      and `/home/aphro/src/aphrody-discord` are absent as reported by the user;
-      `/home/aphro/src/rg`, `/home/aphro/src/shenron`, `bevy`, `dust`, and
+- [ ] Reinventory the missing source checkouts: `~/src/aphrody-web`
+      and `~/src/aphrody-discord` are absent as reported by the user;
+      `~/src/rg`, `~/src/shenron`, `bevy`, `dust`, and
       `emu.nintendo.wii.gecko` are also absent. Their source closures, licenses,
       consumer mappings, and clean-clone parity remain open.
 - [ ] Keep the consolidated agent work transitional until the gates above pass.
@@ -504,7 +504,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       are recorded in [`ui-m3-extraction.json`](ui-m3-extraction.json).
       The source checkout remains intact.
 - [x] Register `crates/ui/*`, move the root `aphrody-m3-tokens` dependency off
-      `/home/aphro/src`, and link M3 Bun packages to the local token/config
+      `~/src`, and link M3 Bun packages to the local token/config
       packages. Cargo metadata passes offline with the lockfile held fixed after
       recording 49 new locked packages. The M3 token package now extends the
       imported `@aphrody/m3-config` preset.

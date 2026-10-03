@@ -46,7 +46,7 @@ pas de la fusion des processus (voir §3 et §6).
 | `aphrody-ai-http`, `aphrody-shenron-embed` | services Aphrody | aphrody | Dérive du port de l'embedder : 8794 dans l'unité, 8790 dans `docs/plans/infra/PLAN.md:37`. |
 | `shenron-backup.timer` (VPS) | oneshot + timer | Infra du monorepo | Le rapport historique le disait non installé ; il a été vu actif le 2026-10-02. Le succès des sauvegardes n'a pas été vérifié. |
 | `shenron-pg-backup`, `shenron-sqlite-replica-backup` (dbfr) | timers | Infra du monorepo | Vus actifs le 2026-10-02 ; validité et restaurabilité des sauvegardes non vérifiées. |
-| `relecture-ocr` | démon Python dans le workspace partagé | `/home/aphro/aphrody-py/packages/shenron/relecture-ocr` | **Non supervisé**, aucune unité. Lancer avec `uv run --project /home/aphro/aphrody-py --package shenron-relecture-ocr relecture-ocr`. |
+| `relecture-ocr` | démon Python dans le workspace partagé | `../aphrody-py/packages/shenron/relecture-ocr` | **Non supervisé**, aucune unité. Lancer avec `uv run --project ../aphrody-py --package shenron-relecture-ocr relecture-ocr`. |
 | Boucles `scripts/ops/*`, `packages/pipeline/scripts/*` | lots lancés à la main | shenron | Hors runtime. La règle 9 interdit `rag:build` en prod. |
 | `shenron-zswap.service` | fichier resté en place | Infra du monorepo | Déjà retiré (`service-catalog.json:224`). C'est `rg-zram-swap` qui gère le swap. |
 | Plan de release | `/srv/shenron/releases/<sha>` + `current` | Infra du monorepo | Le lien courant a été observé le 2026-10-02 ; consulter le rapport VPS daté avant opération. |

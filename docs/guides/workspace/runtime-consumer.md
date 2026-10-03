@@ -3,7 +3,7 @@
 
 Ce parcours applique les contrats et critères du [plan directeur](../../../PLAN.md). Yolo produit le runtime et `@aphrody/runtime-sdk` ; Aphrody possède
 le raccordement permanent et les contrats produit. Les détails d’archive et
-d’installation viennent de `/home/aphro/yolo/docs/CONSUMERS.md` et `/home/aphro/yolo/docs/DISTRIBUTION.md` chez
+d’installation viennent de `../yolo/docs/CONSUMERS.md` et `../yolo/docs/DISTRIBUTION.md` chez
 le producteur, accessibles depuis le plan racine. Vérifier leur version pour
 le lot sélectionné avant d’écrire une commande d’installation.
 

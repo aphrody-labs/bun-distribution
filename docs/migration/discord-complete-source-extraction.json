@@ -1,5 +1,5 @@
 {
-  "source_repository": "/home/aphro/src/aphrody-discord",
+  "source_repository": "~/src/aphrody-discord",
   "source_head": "959abfab4d026eed23aa038c7a78d97fc2837fac",
   "source_status": "clean",
   "target_root": "upstream/discord",

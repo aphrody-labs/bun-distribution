@@ -1,4 +1,4 @@
-   Compiling aphrody-app-protocol v1.0.0-canary (/home/aphro/aphrody/crates/contracts/app-protocol)
+   Compiling aphrody-app-protocol v1.0.0-canary (crates/contracts/app-protocol)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 2.82s
      Running tests/upstream_fixtures_test.rs (target/debug/deps/upstream_fixtures_test-5455137144c307c4)
 

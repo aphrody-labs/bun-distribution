@@ -1,5 +1,5 @@
 {
-  "root": "/home/aphro/aphrody",
+  "root": ".",
   "apply": true,
   "removed": [
     {

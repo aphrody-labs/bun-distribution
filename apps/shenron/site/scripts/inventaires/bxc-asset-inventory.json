@@ -596,7 +596,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/11/screenshot.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/11/screenshot.png",
 			"path": "public/dbz/bxc/screenshot.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -606,7 +606,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/03/DBS-trailer-screenshot.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/03/DBS-trailer-screenshot.png",
 			"path": "public/dbz/bxc/DBS-trailer-screenshot.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -616,7 +616,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/03/OP-trailer-screenshot.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/03/OP-trailer-screenshot.png",
 			"path": "public/dbz/bxc/OP-trailer-screenshot.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -626,7 +626,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/03/SM-trailer-screenshot.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/03/SM-trailer-screenshot.png",
 			"path": "public/dbz/bxc/SM-trailer-screenshot.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -636,7 +636,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/03/DBZ-trailer-screenshot-1.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/03/DBZ-trailer-screenshot-1.png",
 			"path": "public/dbz/bxc/DBZ-trailer-screenshot-1.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -646,7 +646,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-1-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-1-350x220.png",
 			"path": "public/dbz/bxc/Thumbnail-530x333-1-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -656,7 +656,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-2-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-2-184x116.png",
 			"path": "public/dbz/bxc/Thumbnail-530x333-2-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -666,7 +666,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-1-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-1-184x116.png",
 			"path": "public/dbz/bxc/Thumbnail-530x333-1-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -676,7 +676,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-image-530x333-1-530x333.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-image-530x333-1-530x333.png",
 			"path": "public/dbz/bxc/Thumbnail-image-530x333-1-530x333.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -686,7 +686,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/530x333-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/530x333-350x220.png",
 			"path": "public/dbz/bxc/530x333-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -696,7 +696,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-image-530x333-1-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-image-530x333-1-184x116.png",
 			"path": "public/dbz/bxc/Thumbnail-image-530x333-1-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -706,7 +706,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-2-530x333.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-2-530x333.png",
 			"path": "public/dbz/bxc/Thumbnail-530x333-2-530x333.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -716,7 +716,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-image-530x333-1-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-image-530x333-1-350x220.png",
 			"path": "public/dbz/bxc/Thumbnail-image-530x333-1-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -726,7 +726,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/530x333-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/530x333-184x116.png",
 			"path": "public/dbz/bxc/530x333-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -736,7 +736,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-2-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-2-350x220.png",
 			"path": "public/dbz/bxc/Thumbnail-530x333-2-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -746,7 +746,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-1-530x333.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/Thumbnail-530x333-1-530x333.png",
 			"path": "public/dbz/bxc/Thumbnail-530x333-1-530x333.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -756,7 +756,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/530x333-530x333.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/06/530x333-530x333.png",
 			"path": "public/dbz/bxc/530x333-530x333.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -766,7 +766,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/10/magic_NYCC_main.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/10/magic_NYCC_main.png",
 			"path": "public/dbz/bxc/magic_NYCC_main.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -776,7 +776,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/09/ZTD-Thumbnail-530x333-1-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/09/ZTD-Thumbnail-530x333-1-184x116.png",
 			"path": "public/dbz/bxc/ZTD-Thumbnail-530x333-1-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -786,7 +786,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/09/ZTD-Thumbnail-530x333-1-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/09/ZTD-Thumbnail-530x333-1-350x220.png",
 			"path": "public/dbz/bxc/ZTD-Thumbnail-530x333-1-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -796,7 +796,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/09/ZTD-Thumbnail-530x333-1-530x333.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/09/ZTD-Thumbnail-530x333-1-530x333.png",
 			"path": "public/dbz/bxc/ZTD-Thumbnail-530x333-1-530x333.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -806,7 +806,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/featured-image-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/featured-image-350x220.png",
 			"path": "public/dbz/bxc/featured-image-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -816,7 +816,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/thumbnail-image-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/thumbnail-image-530x333.jpg",
 			"path": "public/dbz/bxc/thumbnail-image-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -826,7 +826,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/featured-image-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/featured-image-184x116.png",
 			"path": "public/dbz/bxc/featured-image-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -836,7 +836,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/thumbnail-image-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/thumbnail-image-350x220.jpg",
 			"path": "public/dbz/bxc/thumbnail-image-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -846,7 +846,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/thumbnail-image-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/thumbnail-image-184x116.jpg",
 			"path": "public/dbz/bxc/thumbnail-image-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -856,7 +856,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/featured-image-530x333.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2023/04/featured-image-530x333.png",
 			"path": "public/dbz/bxc/featured-image-530x333.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -866,7 +866,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2024/11/MV5BODRlYzdmZjYtYmJiNy00Zjc2LWIyYzgtMjVkMGYyMDNkYmYzXkEyXkFqcGc@._V1_-1-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2024/11/MV5BODRlYzdmZjYtYmJiNy00Zjc2LWIyYzgtMjVkMGYyMDNkYmYzXkEyXkFqcGc@._V1_-1-530x333.jpg",
 			"path": "public/dbz/bxc/MV5BODRlYzdmZjYtYmJiNy00Zjc2LWIyYzgtMjVkMGYyMDNkYmYzXkEyXkFqcGc_._V1_-1-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -876,7 +876,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2024/11/MV5BODRlYzdmZjYtYmJiNy00Zjc2LWIyYzgtMjVkMGYyMDNkYmYzXkEyXkFqcGc@._V1_-1-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2024/11/MV5BODRlYzdmZjYtYmJiNy00Zjc2LWIyYzgtMjVkMGYyMDNkYmYzXkEyXkFqcGc@._V1_-1-184x116.jpg",
 			"path": "public/dbz/bxc/MV5BODRlYzdmZjYtYmJiNy00Zjc2LWIyYzgtMjVkMGYyMDNkYmYzXkEyXkFqcGc_._V1_-1-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -886,7 +886,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2024/11/MV5BODRlYzdmZjYtYmJiNy00Zjc2LWIyYzgtMjVkMGYyMDNkYmYzXkEyXkFqcGc@._V1_-1-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2024/11/MV5BODRlYzdmZjYtYmJiNy00Zjc2LWIyYzgtMjVkMGYyMDNkYmYzXkEyXkFqcGc@._V1_-1-350x220.jpg",
 			"path": "public/dbz/bxc/MV5BODRlYzdmZjYtYmJiNy00Zjc2LWIyYzgtMjVkMGYyMDNkYmYzXkEyXkFqcGc_._V1_-1-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -896,7 +896,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2026/05/1_X3.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2026/05/1_X3.png",
 			"path": "public/dbz/bxc/1_X3.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -906,7 +906,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/11/DBSZ-Switch.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/11/DBSZ-Switch.png",
 			"path": "public/dbz/bxc/DBSZ-Switch.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -916,7 +916,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/09/TEMPLATE_RS_16-9-3.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/09/TEMPLATE_RS_16-9-3.png",
 			"path": "public/dbz/bxc/TEMPLATE_RS_16-9-3.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -926,7 +926,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/01/magic_NYCC_sub08-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/01/magic_NYCC_sub08-184x116.png",
 			"path": "public/dbz/bxc/magic_NYCC_sub08-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -936,7 +936,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/01/magic_NYCC_sub08-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/01/magic_NYCC_sub08-350x220.png",
 			"path": "public/dbz/bxc/magic_NYCC_sub08-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -946,7 +946,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/01/magic_NYCC_sub08.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/01/magic_NYCC_sub08.png",
 			"path": "public/dbz/bxc/magic_NYCC_sub08.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -956,7 +956,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/01/magic_NYCC_sub08-530x333.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2025/01/magic_NYCC_sub08-530x333.png",
 			"path": "public/dbz/bxc/magic_NYCC_sub08-530x333.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -966,7 +966,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/06/Dai-miniature-website-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/06/Dai-miniature-website-350x220.png",
 			"path": "public/dbz/bxc/Dai-miniature-website-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -976,7 +976,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/06/Dai-miniature-website-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/06/Dai-miniature-website-184x116.png",
 			"path": "public/dbz/bxc/Dai-miniature-website-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -986,7 +986,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/06/Dai-miniature-website.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/06/Dai-miniature-website.png",
 			"path": "public/dbz/bxc/Dai-miniature-website.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -996,7 +996,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/06/DAI-TEASER-DEF-CLEAN-VER-HQ-1_Moment.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/06/DAI-TEASER-DEF-CLEAN-VER-HQ-1_Moment.jpg",
 			"path": "public/dbz/bxc/DAI-TEASER-DEF-CLEAN-VER-HQ-1_Moment.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1006,7 +1006,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/07/digimon_adventure_thumbnail.jpeg-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/07/digimon_adventure_thumbnail.jpeg-184x116.png",
 			"path": "public/dbz/bxc/digimon_adventure_thumbnail.jpeg-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1016,7 +1016,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/07/digimon_adventure_thumbnail.jpeg-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/07/digimon_adventure_thumbnail.jpeg-350x220.png",
 			"path": "public/dbz/bxc/digimon_adventure_thumbnail.jpeg-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1026,7 +1026,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/07/digimon_adventure_thumbnail.jpeg.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2020/07/digimon_adventure_thumbnail.jpeg.png",
 			"path": "public/dbz/bxc/digimon_adventure_thumbnail.jpeg.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1036,7 +1036,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2018/12/logo-footer.svg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2018/12/logo-footer.svg",
 			"path": "public/dbz/bxc/logo-footer.svg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1046,7 +1046,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/03/logo.svg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/03/logo.svg",
 			"path": "public/dbz/bxc/logo.svg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1056,7 +1056,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/04/bg-about.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/04/bg-about.png",
 			"path": "public/dbz/bxc/bg-about.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1066,7 +1066,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/05/mosaique-catalog-1.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/05/mosaique-catalog-1.jpg",
 			"path": "public/dbz/bxc/mosaique-catalog-1.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1076,7 +1076,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/05/mosaique-catalog-1-1024x254.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/05/mosaique-catalog-1-1024x254.jpg",
 			"path": "public/dbz/bxc/mosaique-catalog-1-1024x254.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1086,7 +1086,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/05/mosaique-catalog-1-768x191.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/05/mosaique-catalog-1-768x191.jpg",
 			"path": "public/dbz/bxc/mosaique-catalog-1-768x191.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1096,7 +1096,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/05/mosaique-catalog-1-376x93.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/05/mosaique-catalog-1-376x93.jpg",
 			"path": "public/dbz/bxc/mosaique-catalog-1-376x93.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1106,7 +1106,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gu_gu_ganmo_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gu_gu_ganmo_product-350x220.jpg",
 			"path": "public/dbz/bxc/gu_gu_ganmo_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1116,7 +1116,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/argumented_reality_girls_trinary_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/argumented_reality_girls_trinary_product-184x116.jpg",
 			"path": "public/dbz/bxc/argumented_reality_girls_trinary_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1126,7 +1126,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/pretty_cure_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/pretty_cure_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/pretty_cure_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1136,7 +1136,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_g_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_g_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/getta_robot_g_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1146,7 +1146,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_you_may_like.jpg",
 			"path": "public/dbz/bxc/dragon_ball_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1156,7 +1156,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_omega_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_omega_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/saint_seiya_omega_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1166,7 +1166,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_taluluto_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_taluluto_product-530x333.jpg",
 			"path": "public/dbz/bxc/magical_taluluto_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1176,7 +1176,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_flash_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_flash_product-184x116.jpg",
 			"path": "public/dbz/bxc/cutey_honey_flash_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1186,7 +1186,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_appmonsters_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_appmonsters_you_may_like.jpg",
 			"path": "public/dbz/bxc/digimon_appmonsters_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1196,7 +1196,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/azumi_mamma_mia_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/azumi_mamma_mia_product-350x220.jpg",
 			"path": "public/dbz/bxc/azumi_mamma_mia_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1206,7 +1206,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/im_hani_taro_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/im_hani_taro_product-530x333.jpg",
 			"path": "public/dbz/bxc/im_hani_taro_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1216,7 +1216,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/marmalade_boy_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/marmalade_boy_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/marmalade_boy_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1226,7 +1226,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/kariage_kun_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/kariage_kun_product-184x116.jpg",
 			"path": "public/dbz/bxc/kariage_kun_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1236,7 +1236,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/im_hani_taro_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/im_hani_taro_product-184x116.jpg",
 			"path": "public/dbz/bxc/im_hani_taro_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1246,7 +1246,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/asataro_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/asataro_product-350x220.jpg",
 			"path": "public/dbz/bxc/asataro_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1256,7 +1256,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/dragon_ball_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1266,7 +1266,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/toriko_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/toriko_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/toriko_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1276,7 +1276,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ikkyu_san_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ikkyu_san_product-530x333.jpg",
 			"path": "public/dbz/bxc/ikkyu_san_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1286,7 +1286,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/maple_town_story-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/maple_town_story-350x220.jpg",
 			"path": "public/dbz/bxc/maple_town_story-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1296,7 +1296,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/toriko_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/toriko_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/toriko_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1306,7 +1306,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/flat_broke_sisters-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/flat_broke_sisters-530x333.jpg",
 			"path": "public/dbz/bxc/flat_broke_sisters-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1316,7 +1316,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/flat_broke_sisters-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/flat_broke_sisters-184x116.jpg",
 			"path": "public/dbz/bxc/flat_broke_sisters-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1326,7 +1326,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/keihin_kazoku_product-184x116.jpeg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/keihin_kazoku_product-184x116.jpeg",
 			"path": "public/dbz/bxc/keihin_kazoku_product-184x116.jpeg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1336,7 +1336,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/goldfish_forecast_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/goldfish_forecast_product-530x333.jpg",
 			"path": "public/dbz/bxc/goldfish_forecast_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1346,7 +1346,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/getta_robot_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1356,7 +1356,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/chappie_the_witch_product-1.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/chappie_the_witch_product-1.jpg",
 			"path": "public/dbz/bxc/chappie_the_witch_product-1.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1366,7 +1366,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/mazinger_z_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/mazinger_z_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/mazinger_z_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1376,7 +1376,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/azumi_mamma_mia_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/azumi_mamma_mia_product-530x333.jpg",
 			"path": "public/dbz/bxc/azumi_mamma_mia_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1386,7 +1386,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/digimon_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1396,7 +1396,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/little_memole_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/little_memole_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/little_memole_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1406,7 +1406,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_product-350x220.jpg",
 			"path": "public/dbz/bxc/cutey_honey_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1416,7 +1416,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_soul_of_gold_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_soul_of_gold_you_may_like.jpg",
 			"path": "public/dbz/bxc/saint_seiya_soul_of_gold_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1426,7 +1426,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_doremi_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_doremi_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/magical_doremi_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1436,7 +1436,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/asataro_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/asataro_product-530x333.jpg",
 			"path": "public/dbz/bxc/asataro_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1446,7 +1446,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/great_mazinger_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/great_mazinger_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/great_mazinger_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1456,7 +1456,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ikkyu_san_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ikkyu_san_product-350x220.jpg",
 			"path": "public/dbz/bxc/ikkyu_san_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1466,7 +1466,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_gt_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_gt_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/dragon_ball_gt_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1476,7 +1476,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_kai_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_kai_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/dragon_ball_z_kai_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1486,7 +1486,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gu_gu_ganmo_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gu_gu_ganmo_product-184x116.jpg",
 			"path": "public/dbz/bxc/gu_gu_ganmo_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1496,7 +1496,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_harlock_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_harlock_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/captain_harlock_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1506,7 +1506,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/akane_chan_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/akane_chan_product-350x220.jpg",
 			"path": "public/dbz/bxc/akane_chan_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1516,7 +1516,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_saintia_sho_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_saintia_sho_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/saint_seiya_saintia_sho_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1526,7 +1526,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/furious_ataro_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/furious_ataro_product-530x333.jpg",
 			"path": "public/dbz/bxc/furious_ataro_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1536,7 +1536,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/akane_chan_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/akane_chan_product-530x333.jpg",
 			"path": "public/dbz/bxc/akane_chan_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1546,7 +1546,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/furious_ataro_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/furious_ataro_product-350x220.jpg",
 			"path": "public/dbz/bxc/furious_ataro_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1556,7 +1556,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/toriko_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/toriko_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/toriko_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1566,7 +1566,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ken_the_great_bear_fist-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ken_the_great_bear_fist-350x220.jpg",
 			"path": "public/dbz/bxc/ken_the_great_bear_fist-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1576,7 +1576,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hanayori_dango_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hanayori_dango_product-184x116.jpg",
 			"path": "public/dbz/bxc/hanayori_dango_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1586,7 +1586,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/butt_detective_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/butt_detective_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/butt_detective_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1596,7 +1596,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_g_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_g_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/getta_robot_g_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1606,7 +1606,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_appmonsters_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_appmonsters_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/digimon_appmonsters_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1616,7 +1616,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/keihin_kazoku_product.jpeg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/keihin_kazoku_product.jpeg",
 			"path": "public/dbz/bxc/keihin_kazoku_product.jpeg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1626,7 +1626,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/butt_detective_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/butt_detective_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/butt_detective_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1636,7 +1636,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/akane_chan_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/akane_chan_product-184x116.jpg",
 			"path": "public/dbz/bxc/akane_chan_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1646,7 +1646,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/sailor_moon_crystal_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/sailor_moon_crystal_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/sailor_moon_crystal_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1656,7 +1656,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bakutsuri_barcode_hunter_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bakutsuri_barcode_hunter_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/bakutsuri_barcode_hunter_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1666,7 +1666,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_saintia_sho_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_saintia_sho_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/saint_seiya_saintia_sho_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1676,7 +1676,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/SM_%EF%BC%8301_52B-530x333.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/SM_%EF%BC%8301_52B-530x333.png",
 			"path": "public/dbz/bxc/SM__EF_BC_8301_52B-530x333.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1686,7 +1686,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bakutsuri_barcode_hunter_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bakutsuri_barcode_hunter_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/bakutsuri_barcode_hunter_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1696,7 +1696,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/mazinger_z_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/mazinger_z_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/mazinger_z_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1706,7 +1706,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/starzinger_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/starzinger_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/starzinger_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1716,7 +1716,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_future_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_future_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/captain_future_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1726,7 +1726,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_soul_of_gold_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_soul_of_gold_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/saint_seiya_soul_of_gold_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1736,7 +1736,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_g_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_g_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/getta_robot_g_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1746,7 +1746,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bakutsuri_barcode_hunter_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bakutsuri_barcode_hunter_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/bakutsuri_barcode_hunter_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1756,7 +1756,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_product-184x116.jpg",
 			"path": "public/dbz/bxc/cutey_honey_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1766,7 +1766,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ken_the_great_bear_fist-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ken_the_great_bear_fist-184x116.jpg",
 			"path": "public/dbz/bxc/ken_the_great_bear_fist-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1776,7 +1776,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/mazinger_z_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/mazinger_z_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/mazinger_z_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1786,7 +1786,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gegege_no_kitaro_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gegege_no_kitaro_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/gegege_no_kitaro_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1796,7 +1796,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/argumented_reality_girls_trinary_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/argumented_reality_girls_trinary_product-350x220.jpg",
 			"path": "public/dbz/bxc/argumented_reality_girls_trinary_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1806,7 +1806,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/marmalade_boy_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/marmalade_boy_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/marmalade_boy_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1816,7 +1816,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/digimon_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1826,7 +1826,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/OP_17FI_Group_24-530x333.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/OP_17FI_Group_24-530x333.png",
 			"path": "public/dbz/bxc/OP_17FI_Group_24-530x333.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1836,7 +1836,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_you_may_like.jpg",
 			"path": "public/dbz/bxc/saint_seiya_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1846,7 +1846,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_you_may_like.jpg",
 			"path": "public/dbz/bxc/digimon_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1856,7 +1856,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/fun_fun_pharmacy_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/fun_fun_pharmacy_product-350x220.jpg",
 			"path": "public/dbz/bxc/fun_fun_pharmacy_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1866,7 +1866,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/maple_town_story-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/maple_town_story-530x333.jpg",
 			"path": "public/dbz/bxc/maple_town_story-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1876,7 +1876,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/fun_fun_pharmacy_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/fun_fun_pharmacy_product-530x333.jpg",
 			"path": "public/dbz/bxc/fun_fun_pharmacy_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1886,7 +1886,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_gt_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_gt_you_may_like.jpg",
 			"path": "public/dbz/bxc/dragon_ball_gt_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1896,7 +1896,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hustle_punch_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hustle_punch_product-350x220.jpg",
 			"path": "public/dbz/bxc/hustle_punch_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1906,7 +1906,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_product.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_product.jpg",
 			"path": "public/dbz/bxc/dragon_ball_product.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1916,7 +1916,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dr_slump_arale_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dr_slump_arale_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/dr_slump_arale_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1926,7 +1926,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ikkyu_san_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ikkyu_san_product-184x116.jpg",
 			"path": "public/dbz/bxc/ikkyu_san_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1936,7 +1936,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/love_in_rocknroll_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/love_in_rocknroll_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/love_in_rocknroll_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1946,7 +1946,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hustle_punch_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hustle_punch_product-530x333.jpg",
 			"path": "public/dbz/bxc/hustle_punch_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1956,7 +1956,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ken_the_great_bear_fist.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/ken_the_great_bear_fist.jpg",
 			"path": "public/dbz/bxc/ken_the_great_bear_fist.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1966,7 +1966,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/sailor_moon_crystal_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/sailor_moon_crystal_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/sailor_moon_crystal_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1976,7 +1976,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_flash_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_flash_product-530x333.jpg",
 			"path": "public/dbz/bxc/cutey_honey_flash_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1986,7 +1986,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/flat_broke_sisters-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/flat_broke_sisters-350x220.jpg",
 			"path": "public/dbz/bxc/flat_broke_sisters-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -1996,7 +1996,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/sailor_moon_crystal_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/sailor_moon_crystal_you_may_like.jpg",
 			"path": "public/dbz/bxc/sailor_moon_crystal_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2006,7 +2006,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hanayori_dango_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hanayori_dango_product-530x333.jpg",
 			"path": "public/dbz/bxc/hanayori_dango_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2016,7 +2016,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bobobo_bo_bo_bobo_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bobobo_bo_bo_bobo_product-350x220.jpg",
 			"path": "public/dbz/bxc/bobobo_bo_bo_bobo_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2026,7 +2026,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/butt_detective_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/butt_detective_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/butt_detective_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2036,7 +2036,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/SM_%EF%BC%8301_52B-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/SM_%EF%BC%8301_52B-184x116.png",
 			"path": "public/dbz/bxc/SM__EF_BC_8301_52B-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2046,7 +2046,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_kai_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_kai_you_may_like.jpg",
 			"path": "public/dbz/bxc/dragon_ball_z_kai_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2056,7 +2056,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_appmonsters_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/digimon_appmonsters_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/digimon_appmonsters_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2066,7 +2066,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/starzinger_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/starzinger_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/starzinger_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2076,7 +2076,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/love_in_rocknroll_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/love_in_rocknroll_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/love_in_rocknroll_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2086,7 +2086,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gegege_no_kitaro_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gegege_no_kitaro_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/gegege_no_kitaro_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2096,7 +2096,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/great_mazinger_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/great_mazinger_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/great_mazinger_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2106,7 +2106,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/pretty_cure_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/pretty_cure_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/pretty_cure_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2116,7 +2116,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_future_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_future_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/captain_future_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2126,7 +2126,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dr_slump_arale_product.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dr_slump_arale_product.jpg",
 			"path": "public/dbz/bxc/dr_slump_arale_product.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2136,7 +2136,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_harlock_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_harlock_you_may_like.jpg",
 			"path": "public/dbz/bxc/captain_harlock_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2146,7 +2146,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_saintia_sho_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_saintia_sho_you_may_like.jpg",
 			"path": "public/dbz/bxc/saint_seiya_saintia_sho_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2156,7 +2156,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/azumi_mamma_mia_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/azumi_mamma_mia_product-184x116.jpg",
 			"path": "public/dbz/bxc/azumi_mamma_mia_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2166,7 +2166,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_kai_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_kai_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/dragon_ball_z_kai_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2176,7 +2176,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/starzinger_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/starzinger_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/starzinger_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2186,7 +2186,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_soul_of_gold_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_soul_of_gold_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/saint_seiya_soul_of_gold_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2196,7 +2196,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_taluluto_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_taluluto_product-184x116.jpg",
 			"path": "public/dbz/bxc/magical_taluluto_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2206,7 +2206,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_flash_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_flash_product-350x220.jpg",
 			"path": "public/dbz/bxc/cutey_honey_flash_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2216,7 +2216,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/kariage_kun_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/kariage_kun_product-530x333.jpg",
 			"path": "public/dbz/bxc/kariage_kun_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2226,7 +2226,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dr_slump_arale_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dr_slump_arale_you_may_like.jpg",
 			"path": "public/dbz/bxc/dr_slump_arale_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2236,7 +2236,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/saint_seiya_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2246,7 +2246,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/DBS05_group_12-530x333.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/DBS05_group_12-530x333.png",
 			"path": "public/dbz/bxc/DBS05_group_12-530x333.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2256,7 +2256,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hustle_punch_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hustle_punch_product-184x116.jpg",
 			"path": "public/dbz/bxc/hustle_punch_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2266,7 +2266,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/keihin_kazoku_product-350x220.jpeg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/keihin_kazoku_product-350x220.jpeg",
 			"path": "public/dbz/bxc/keihin_kazoku_product-350x220.jpeg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2276,7 +2276,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/asataro_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/asataro_product-184x116.jpg",
 			"path": "public/dbz/bxc/asataro_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2286,7 +2286,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/goldfish_forecast_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/goldfish_forecast_product-350x220.jpg",
 			"path": "public/dbz/bxc/goldfish_forecast_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2296,7 +2296,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/dragon_ball_z_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2306,7 +2306,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_omega_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_omega_you_may_like.jpg",
 			"path": "public/dbz/bxc/saint_seiya_omega_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2316,7 +2316,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/im_hani_taro_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/im_hani_taro_product-350x220.jpg",
 			"path": "public/dbz/bxc/im_hani_taro_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2326,7 +2326,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_doremi_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_doremi_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/magical_doremi_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2336,7 +2336,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gegege_no_kitaro_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gegege_no_kitaro_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/gegege_no_kitaro_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2346,7 +2346,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/getta_robot_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2356,7 +2356,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_taluluto_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_taluluto_product-350x220.jpg",
 			"path": "public/dbz/bxc/magical_taluluto_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2366,7 +2366,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/great_mazinger_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/great_mazinger_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/great_mazinger_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2376,7 +2376,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/little_memole_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/little_memole_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/little_memole_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2386,7 +2386,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/little_memole_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/little_memole_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/little_memole_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2396,7 +2396,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/pretty_cure_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/pretty_cure_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/pretty_cure_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2406,7 +2406,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_you_may_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_you_may_like.jpg",
 			"path": "public/dbz/bxc/dragon_ball_z_you_may_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2416,7 +2416,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/OP_17FI_Group_24-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/OP_17FI_Group_24-350x220.png",
 			"path": "public/dbz/bxc/OP_17FI_Group_24-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2426,7 +2426,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/cutey_honey_product-530x333.jpg",
 			"path": "public/dbz/bxc/cutey_honey_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2436,7 +2436,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hanayori_dango_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/hanayori_dango_product-350x220.jpg",
 			"path": "public/dbz/bxc/hanayori_dango_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2446,7 +2446,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/argumented_reality_girls_trinary_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/argumented_reality_girls_trinary_product-530x333.jpg",
 			"path": "public/dbz/bxc/argumented_reality_girls_trinary_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2456,7 +2456,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/crayon_kingdom-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/crayon_kingdom-530x333.jpg",
 			"path": "public/dbz/bxc/crayon_kingdom-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2466,7 +2466,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dr_slump_arale_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dr_slump_arale_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/dr_slump_arale_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2476,7 +2476,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_omega_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_omega_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/saint_seiya_omega_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2486,7 +2486,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/OP_17FI_Group_24-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/OP_17FI_Group_24-184x116.png",
 			"path": "public/dbz/bxc/OP_17FI_Group_24-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2496,7 +2496,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/saint_seiya_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/saint_seiya_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2506,7 +2506,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bobobo_bo_bo_bobo_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bobobo_bo_bo_bobo_product-184x116.jpg",
 			"path": "public/dbz/bxc/bobobo_bo_bo_bobo_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2516,7 +2516,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/furious_ataro_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/furious_ataro_product-184x116.jpg",
 			"path": "public/dbz/bxc/furious_ataro_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2526,7 +2526,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/crayon_kingdom-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/crayon_kingdom-184x116.jpg",
 			"path": "public/dbz/bxc/crayon_kingdom-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2536,7 +2536,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/getta_robot_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/getta_robot_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2546,7 +2546,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bobobo_bo_bo_bobo_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/bobobo_bo_bo_bobo_product-530x333.jpg",
 			"path": "public/dbz/bxc/bobobo_bo_bo_bobo_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2556,7 +2556,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/chappie_the_witch_product-1-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/chappie_the_witch_product-1-350x220.jpg",
 			"path": "public/dbz/bxc/chappie_the_witch_product-1-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2566,7 +2566,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/crayon_kingdom-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/crayon_kingdom-350x220.jpg",
 			"path": "public/dbz/bxc/crayon_kingdom-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2576,7 +2576,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/love_in_rocknroll_you_may_also_like.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/love_in_rocknroll_you_may_also_like.jpg",
 			"path": "public/dbz/bxc/love_in_rocknroll_you_may_also_like.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2586,7 +2586,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/chappie_the_witch_product-1-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/chappie_the_witch_product-1-184x116.jpg",
 			"path": "public/dbz/bxc/chappie_the_witch_product-1-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2596,7 +2596,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/DBS05_group_12-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/DBS05_group_12-350x220.png",
 			"path": "public/dbz/bxc/DBS05_group_12-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2606,7 +2606,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_z_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/dragon_ball_z_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2616,7 +2616,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/DBS05_group_12-184x116.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/DBS05_group_12-184x116.png",
 			"path": "public/dbz/bxc/DBS05_group_12-184x116.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2626,7 +2626,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/marmalade_boy_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/marmalade_boy_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/marmalade_boy_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2636,7 +2636,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_doremi_you_may_also_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/magical_doremi_you_may_also_like-350x220.jpg",
 			"path": "public/dbz/bxc/magical_doremi_you_may_also_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2646,7 +2646,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/fun_fun_pharmacy_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/fun_fun_pharmacy_product-184x116.jpg",
 			"path": "public/dbz/bxc/fun_fun_pharmacy_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2656,7 +2656,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/SM_%EF%BC%8301_52B-350x220.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/SM_%EF%BC%8301_52B-350x220.png",
 			"path": "public/dbz/bxc/SM__EF_BC_8301_52B-350x220.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2666,7 +2666,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gu_gu_ganmo_product-530x333.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/gu_gu_ganmo_product-530x333.jpg",
 			"path": "public/dbz/bxc/gu_gu_ganmo_product-530x333.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2676,7 +2676,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/goldfish_forecast_product-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/goldfish_forecast_product-184x116.jpg",
 			"path": "public/dbz/bxc/goldfish_forecast_product-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2686,7 +2686,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/dragon_ball_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2696,7 +2696,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/maple_town_story-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/maple_town_story-184x116.jpg",
 			"path": "public/dbz/bxc/maple_town_story-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2706,7 +2706,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_future_you_may_also_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_future_you_may_also_like-184x116.jpg",
 			"path": "public/dbz/bxc/captain_future_you_may_also_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2716,7 +2716,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_harlock_you_may_like-184x116.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/captain_harlock_you_may_like-184x116.jpg",
 			"path": "public/dbz/bxc/captain_harlock_you_may_like-184x116.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2726,7 +2726,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_gt_you_may_like-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/dragon_ball_gt_you_may_like-350x220.jpg",
 			"path": "public/dbz/bxc/dragon_ball_gt_you_may_like-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2736,7 +2736,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/kariage_kun_product-350x220.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/02/kariage_kun_product-350x220.jpg",
 			"path": "public/dbz/bxc/kariage_kun_product-350x220.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2746,7 +2746,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/01/contact-img.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/uploads/2019/01/contact-img.jpg",
 			"path": "public/dbz/bxc/contact-img.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2756,7 +2756,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/bg-sidebar.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/bg-sidebar.png",
 			"path": "public/dbz/bxc/bg-sidebar.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2766,7 +2766,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/newsletter.svg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/newsletter.svg",
 			"path": "public/dbz/bxc/newsletter.svg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2776,7 +2776,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/pin.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/pin.png",
 			"path": "public/dbz/bxc/pin.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2786,7 +2786,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/world-map.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/world-map.jpg",
 			"path": "public/dbz/bxc/world-map.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2796,7 +2796,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/ajax-loader.gif",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/ajax-loader.gif",
 			"path": "public/dbz/bxc/ajax-loader.gif",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2806,7 +2806,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/icons/touch.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/icons/touch.png",
 			"path": "public/dbz/bxc/touch.png",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2816,7 +2816,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/seigaiha-blue.jpg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/img/seigaiha-blue.jpg",
 			"path": "public/dbz/bxc/seigaiha-blue.jpg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -2826,7 +2826,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/fonts/icons/toeicon__qjwtdlo.svg",
+			"url": "file://apps/shenron/site/public/bxc-mirror/toei-catalog/www.toei-animation.com/wp-content/themes/toei/fonts/icons/toeicon__qjwtdlo.svg",
 			"path": "public/dbz/bxc/toeicon__qjwtdlo.svg",
 			"kind": "image",
 			"fromPage": "https://www.toei-animation.com/catalog/dragon-ball/",
@@ -4166,7 +4166,7 @@
 			"error": "HTTP 429"
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-152x152.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-152x152.png",
 			"path": "public/dbz/bxc/apple-icon-152x152.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4176,7 +4176,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/favicon-32x32.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/favicon-32x32.png",
 			"path": "public/dbz/bxc/favicon-32x32.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4186,7 +4186,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-144x144.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-144x144.png",
 			"path": "public/dbz/bxc/apple-icon-144x144.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4196,7 +4196,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/favicon-96x96.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/favicon-96x96.png",
 			"path": "public/dbz/bxc/favicon-96x96.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4206,7 +4206,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-180x180.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-180x180.png",
 			"path": "public/dbz/bxc/apple-icon-180x180.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4216,7 +4216,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-60x60.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-60x60.png",
 			"path": "public/dbz/bxc/apple-icon-60x60.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4226,7 +4226,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/android-icon-192x192.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/android-icon-192x192.png",
 			"path": "public/dbz/bxc/android-icon-192x192.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4236,7 +4236,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-120x120.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-120x120.png",
 			"path": "public/dbz/bxc/apple-icon-120x120.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4246,7 +4246,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/favicon-16x16.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/favicon-16x16.png",
 			"path": "public/dbz/bxc/favicon-16x16.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4256,7 +4256,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-72x72.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-72x72.png",
 			"path": "public/dbz/bxc/apple-icon-72x72.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4266,7 +4266,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-76x76.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-76x76.png",
 			"path": "public/dbz/bxc/apple-icon-76x76.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4276,7 +4276,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-57x57.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-57x57.png",
 			"path": "public/dbz/bxc/apple-icon-57x57.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",
@@ -4286,7 +4286,7 @@
 			"error": null
 		},
 		{
-			"url": "file:///home/ubuntu/shenron/apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-114x114.png",
+			"url": "file://apps/shenron/site/public/bxc-mirror/dragonball-api/web.dragonball-api.com/icons/apple-icon-114x114.png",
 			"path": "public/dbz/bxc/apple-icon-114x114.png",
 			"kind": "image",
 			"fromPage": "https://web.dragonball-api.com/",

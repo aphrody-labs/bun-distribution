@@ -3,7 +3,7 @@
   "status": "source-copied-and-integrated",
   "source": {
     "repository": "aphrody-koharu",
-    "path": "/home/aphro/src/aphrody-koharu",
+    "path": "~/src/aphrody-koharu",
     "head": "83ab7fde8d4d73c84f4e1746fc79ce3fa0a4486b",
     "workingTreeDirty": false,
     "dirtyPathCount": 0,
@@ -193,7 +193,7 @@
     ]
   },
   "target": {
-    "repository": "/home/aphro/aphrody",
+    "repository": ".",
     "workspaceMembers": 169,
     "resolvedPackages": 2014,
     "remainingCargoPathsOutsideMonorepo": "UI only (two references; UI owner scope excluded)"

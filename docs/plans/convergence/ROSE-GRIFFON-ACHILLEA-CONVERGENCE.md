@@ -25,7 +25,7 @@ Ce document constitue la feuille de route canonique de consolidation définitive
    - Suppression définitive des applications doublons `apps/rg/cdn` (not in repo), `apps/rg/realtime` (not in repo), `apps/rg/storage` (not in repo), `apps/rg/api` (not in repo), `apps/rg/achillea-bot` (not in repo), `apps/rg/azalee` (not in repo).
    - Intégration de l'ensemble de la couche API REST ElysiaJS (153 routes), WebSockets natifs et moteur Colyseus Ranked au sein de `apps/rg/bot/src/api`.
    - Build de production Next.js 16 (Turbopack) validé à 100% pour `apps/rg/website`.
-   - Transfert des bibliothèques de jeu Inazuma (`azalee`, `inagle`, `inagle-cross`) dans le monorepo `iecode` (`/home/aphro/iecode/packages/`).
+   - Transfert des bibliothèques de jeu Inazuma (`azalee`, `inagle`, `inagle-cross`) dans le monorepo `iecode` (`../iecode/packages/`).
    - Packaging et publication autonome de `patreon-bun` sur GitHub (`rose-griffon/patreon-bun`).
 
 ---
@@ -41,7 +41,7 @@ Ce document constitue la feuille de route canonique de consolidation définitive
 | **Moteur Ranked** | Colyseus subprocess managé par `achillea-bot` | Colyseus Engine intégré (`apps/rg/bot/src/api/ranked`) | **Actif** |
 | **ORM & Base SQL** | MikroORM 7 + Kysely (dual-stack) | **Kysely** + SQL typesafe unifié (`@rosegriffon/db`) | **Actif** |
 | **Stockage, Realtime & CDN** | 3 apps autonomes (`storage`, `realtime`, `cdn`) | Absorbés in-process dans `apps/rg/bot/src/api/services` | **Actif** |
-| **Libs Inazuma (Jeu)** | `packages/rg/{azalee,inagle,inagle-cross}` | Transférées vers `iecode` (`/home/aphro/iecode/packages/`) | **Actif** |
+| **Libs Inazuma (Jeu)** | `packages/rg/{azalee,inagle,inagle-cross}` | Transférées vers `iecode` (`../iecode/packages/`) | **Actif** |
 | **Application Web** | `apps/rg/website` | `apps/rg/website` (Next.js 16 Turbopack validé) | **Actif** |
 
 ---

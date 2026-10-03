@@ -9,11 +9,11 @@ le gestionnaire conserve le résultat de chaque probe et son chemin de binaire.
 
 ## Sources locales
 
-- [Plugins](/home/aphro/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/plugins.md)
-- [Skills](/home/aphro/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/skills.md)
-- [Enregistrements JSON](/home/aphro/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/json_configs.md)
-- [MCP](/home/aphro/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/mcp_servers.md)
-- [Hooks](/home/aphro/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/hooks.md)
+- [Plugins](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/plugins.md)
+- [Skills](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/skills.md)
+- [Enregistrements JSON](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/json_configs.md)
+- [MCP](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/mcp_servers.md)
+- [Hooks](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/hooks.md)
 
 ## Commandes observées
 
@@ -50,7 +50,7 @@ niveau; `include_only` filtre les noms de sous-dossiers.
 
 ```json
 {
-  "entries": [{ "path": "/home/aphro/plugins", "include_only": ["aphrody"] }]
+  "entries": [{ "path": "~/plugins", "include_only": ["aphrody"] }]
 }
 ```
 

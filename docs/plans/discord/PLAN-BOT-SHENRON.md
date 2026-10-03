@@ -9,7 +9,7 @@
 ## Mandat et résultat attendu
 
 Brancher `shenron/apps/bot` sur les packages Discord maintenus dans
-`/home/aphro/src/aphrody-discord`, puis supprimer de Shenron les copies
+`~/src/aphrody-discord`, puis supprimer de Shenron les copies
 redondantes qui les fournissent déjà. Shenron reste propriétaire du bot, de ses
 commandes, événements, données, services et APIs. Aphrody Discord devient la
 source commune du framework et des clients Discord.
@@ -280,7 +280,7 @@ catalogue/workspaces, builds/tests bot et checks repo pertinents réussis.
    télécharger silencieusement `main`.
 2. S’assurer que le checkout existant du monorepo documente/installe Aphrody Discord
    sous un chemin relatif stable. Pour CI, checkout au SHA exact; aucun chemin
-   `/home/aphro/...` codé en dur dans manifestes ou scripts.
+   `~/...` codé en dur dans manifestes ou scripts.
 3. Vérifier le comportement Bun de `discord.js` malgré son champ `engines.node`
    upstream. Typecheck n’est pas une preuve runtime : ajouter un smoke test Bun
    isolé (imports SDK, Gateway non connecté, REST de mock) et enregistrer les

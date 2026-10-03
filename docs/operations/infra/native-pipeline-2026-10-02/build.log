@@ -1,3 +1,3 @@
 $ scripts/build/rust/cargo-serial.sh build -p aphrody-infra --bin aphrody-infra --locked
-   Compiling aphrody-infra v0.1.0 (/home/aphro/aphrody/crates/infra/infra)
+   Compiling aphrody-infra v0.1.0 (crates/infra/infra)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.42s

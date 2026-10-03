@@ -1,5 +1,5 @@
 {
-  "source_repository": "/home/aphro/src/aphrody-os",
+  "source_repository": "~/src/aphrody-os",
   "source_head": "5988533a5fe6088aba61389bd488f035ab61aa08",
   "source_worktree_clean": true,
   "target_workspace": [

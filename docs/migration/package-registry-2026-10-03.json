@@ -8,7 +8,7 @@
       "version": "1.0.1",
       "sourcePath": "packages/ui/ag-ui/core",
       "registry": "https://registry.npmjs.org/@ag-ui/core",
-      "retainedBackup": "/home/aphro/.local/share/aphrody/source-backups/ag-ui-packages-20261003/core",
+      "retainedBackup": "~/.local/share/aphrody/source-backups/ag-ui-packages-20261003/core",
       "license": "MIT",
       "files": [
         {
@@ -290,7 +290,7 @@
       "version": "1.0.1",
       "sourcePath": "packages/ui/ag-ui/encoder",
       "registry": "https://registry.npmjs.org/@ag-ui/encoder",
-      "retainedBackup": "/home/aphro/.local/share/aphrody/source-backups/ag-ui-packages-20261003/encoder",
+      "retainedBackup": "~/.local/share/aphrody/source-backups/ag-ui-packages-20261003/encoder",
       "license": "MIT",
       "files": [
         {
@@ -386,7 +386,7 @@
       "version": "1.0.1",
       "sourcePath": "packages/ui/ag-ui/proto",
       "registry": "https://registry.npmjs.org/@ag-ui/proto",
-      "retainedBackup": "/home/aphro/.local/share/aphrody/source-backups/ag-ui-packages-20261003/proto",
+      "retainedBackup": "~/.local/share/aphrody/source-backups/ag-ui-packages-20261003/proto",
       "license": "MIT",
       "files": [
         {
@@ -1190,7 +1190,7 @@
       "version": "0.0.4",
       "sourcePath": "packages/ui/ag-ui/a2ui",
       "registry": "https://registry.npmjs.org/@ag-ui/a2ui-toolkit",
-      "retainedBackup": "/home/aphro/.local/share/aphrody/source-backups/ag-ui-packages-20261003/a2ui",
+      "retainedBackup": "~/.local/share/aphrody/source-backups/ag-ui-packages-20261003/a2ui",
       "license": "MIT",
       "files": [
         {
@@ -1280,7 +1280,7 @@
       "version": "1.0.3",
       "sourcePath": "packages/rg/patreon-bun",
       "registry": "https://registry.npmjs.org/@rosegriffon/patreon-bun",
-      "retainedBackup": "/home/aphro/.local/share/aphrody/source-backups/patreon-bun-20261003",
+      "retainedBackup": "~/.local/share/aphrody/source-backups/patreon-bun-20261003",
       "license": "MIT",
       "files": [
         {
@@ -2827,7 +2827,7 @@
       "version": "1.0.1-aphrody.1",
       "sourcePath": "packages/ui/ag-ui/client",
       "registry": "https://registry.npmjs.org/@aphrody/ag-ui-client",
-      "retainedBackup": "/home/aphro/.local/share/aphrody/source-backups/ag-ui-client-20261003",
+      "retainedBackup": "~/.local/share/aphrody/source-backups/ag-ui-client-20261003",
       "license": "MIT",
       "sourceCommit": "d4e033dbbb2a5a9c54db6f9ca9c4141d7c9baa78",
       "sourceDirty": true,
@@ -3869,7 +3869,7 @@
       "version": "7.1.1-aphrody.1",
       "sourcePath": "packages/ui/mcp-ui",
       "registry": "https://registry.npmjs.org/@aphrody/mcp-ui",
-      "retainedBackup": "/home/aphro/.local/share/aphrody/source-backups/mcp-ui-20261003",
+      "retainedBackup": "~/.local/share/aphrody/source-backups/mcp-ui-20261003",
       "license": "Apache-2.0",
       "sourceCommit": "d4e033dbbb2a5a9c54db6f9ca9c4141d7c9baa78",
       "sourceDirty": false,
@@ -4064,7 +4064,7 @@
       "version": "3.3.3",
       "sourcePath": "packages/ui/material-web",
       "registry": "https://registry.npmjs.org/@aphrody/material-web",
-      "retainedBackup": "/home/aphro/.local/share/aphrody/source-backups/material-web-20261003",
+      "retainedBackup": "~/.local/share/aphrody/source-backups/material-web-20261003",
       "license": "Apache-2.0",
       "sourceCommit": "d4e033dbbb2a5a9c54db6f9ca9c4141d7c9baa78",
       "sourceDirty": false,

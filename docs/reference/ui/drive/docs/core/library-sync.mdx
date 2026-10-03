@@ -42,7 +42,7 @@ Spacedrive recognizes that some data naturally belongs to specific devices.
 
 Only the device with physical access can modify:
 
-- **Locations**: Filesystem paths like `/Users/alice/Photos`
+- **Locations**: Filesystem paths like `~/Photos`
 - **Entries**: Files and folders within those locations
 - **Volumes**: Physical drives and mount points
 
@@ -606,7 +606,7 @@ The tracker maintains a map of `missing_uuid → Vec<waiting_updates>`. When a r
 
 <Steps>
 <Step title="Device A Creates Location">
-User adds `/Users/alice/Documents`:
+User adds `~/Documents`:
 - Insert into local database
 - Call `library.sync_model(&location)`
 - Send `StateChange` message to connected peers via unidirectional stream
@@ -1567,7 +1567,7 @@ Configuration can also be set via environment variables or a TOML file. The load
 
 ## Summary
 
-Library Sync is not traditional multi-leader replication. While multi-leader systems treat all nodes as equal for all data, Spacedrive recognizes a fundamental truth: `/Users/alice/Photos` can only be modified by Alice's laptop. This ownership model eliminates the entire class of filesystem conflicts that plague distributed systems.
+Library Sync is not traditional multi-leader replication. While multi-leader systems treat all nodes as equal for all data, Spacedrive recognizes a fundamental truth: `~/Photos` can only be modified by Alice's laptop. This ownership model eliminates the entire class of filesystem conflicts that plague distributed systems.
 
 **Hybrid ownership** splits the problem in two. Device-owned data (files, folders, volumes) uses single-leader-per-resource semantics. No CRDTs, no version vectors, no conflict resolution needed. The owner's state is authoritative. Shared resources (tags, collections) use multi-leader semantics with HLC-based ordering. Only this small subset of data requires conflict resolution, and last-write-wins is sufficient.
 

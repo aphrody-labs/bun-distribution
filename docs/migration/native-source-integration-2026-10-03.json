@@ -685,7 +685,7 @@
     "postRemovalCargoMetadata": "Locked offline Cargo metadata passes after /home/aphro/source is removed"
   },
   "originalArchive": {
-    "path": "/home/aphro/.local/share/aphrody/archive/native-source-integration-20261003.tar.gz",
+    "path": "~/.local/share/aphrody/archive/native-source-integration-20261003.tar.gz",
     "sha256": "20b2978633cd02c04a742e2b2681d6490d30f715d5fa7aa1b0a49c184caf9791",
     "allInputFileHashesVerified": true
   },

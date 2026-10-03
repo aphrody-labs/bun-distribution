@@ -237,10 +237,10 @@ consulte la page.
 ### Variables d'environnement
 
 ```bash
-# /home/ubuntu/rg/.env.local — lu par rg-bot.service
+# ../rg/.env.local — lu par rg-bot.service
 BOT_ADMIN_TOKEN=<64 caractères hexadécimaux>
 
-# /home/ubuntu/rg/apps/website/.env — lu par website-web.service
+# ../rg/apps/website/.env — lu par website-web.service
 BOT_ADMIN_TOKEN=<la MÊME valeur>
 CRON_SECRET=<la même que celle de .env.local>
 ```

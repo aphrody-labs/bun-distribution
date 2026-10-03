@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "at": "2026-09-30T23:49:46.817Z",
-  "root": "/home/aphro/aphrody",
+  "root": ".",
   "git": {
     "head": "3266a031d20132a0acf185536d16fd5d85bd61b5",
     "branch": "main",
@@ -25844,7 +25844,7 @@
     }
   ],
   "cleanup": {
-    "root": "/home/aphro/aphrody",
+    "root": ".",
     "apply": false,
     "removed": [],
     "protected": [

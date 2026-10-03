@@ -1,7 +1,7 @@
 {
   "module": "rg",
   "generatedAt": "2026-10-01T04:52:24.453Z",
-  "monorepoRoot": "/home/aphro/aphrody",
+  "monorepoRoot": ".",
   "totalPackages": 33,
   "bySubDomain": {
     "achillea": 5,
@@ -18,7 +18,7 @@
       "private": true,
       "description": "Achillea Backend — Bot Discord + API REST + WebSocket pour la plateforme Achillea (Bun + Ts.ED + PostgreSQL/Kysely)",
       "path": "apps/rg/achillea-bot",
-      "absolutePath": "/home/aphro/aphrody/apps/rg/achillea-bot",
+      "absolutePath": "apps/rg/achillea-bot",
       "type": "commonjs",
       "main": "build/main.js",
       "engines": {
@@ -459,7 +459,7 @@
       "private": true,
       "description": "Versioned HTTP client and runtime contracts for the Achillea guild API",
       "path": "packages/rg/achillea-client",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/achillea-client",
+      "absolutePath": "packages/rg/achillea-client",
       "type": "module",
       "main": "./src/index.ts",
       "types": "./src/index.ts",
@@ -508,7 +508,7 @@
       "private": true,
       "description": "Contrat Achilléa exporté en JSON Schema et en types natifs (Rust, Swift, Kotlin) — la brique qui rend le domaine portable hors TypeScript",
       "path": "packages/rg/achillea-contract",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/achillea-contract",
+      "absolutePath": "packages/rg/achillea-contract",
       "type": "module",
       "main": "./src/index.ts",
       "types": "./src/index.ts",
@@ -558,7 +558,7 @@
       "private": true,
       "description": "Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI.",
       "path": "packages/rg/achillea-core",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/achillea-core",
+      "absolutePath": "packages/rg/achillea-core",
       "type": "module",
       "main": "./src/index.ts",
       "types": "./src/index.ts",
@@ -642,7 +642,7 @@
       "private": true,
       "description": "Contrats d'API partagés (DTO + enums) — source unique pour le bot et le web",
       "path": "packages/rg/achillea-types",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/achillea-types",
+      "absolutePath": "packages/rg/achillea-types",
       "type": "module",
       "main": "./src/index.ts",
       "types": "./src/index.ts",
@@ -690,7 +690,7 @@
       "private": false,
       "description": "API unique et unifiée Rose Griffon (ElysiaJS + Kysely + Bun)",
       "path": "apps/rg/api",
-      "absolutePath": "/home/aphro/aphrody/apps/rg/api",
+      "absolutePath": "apps/rg/api",
       "type": "module",
       "main": "src/index.ts",
       "types": "src/index.ts",
@@ -755,7 +755,7 @@
       "private": true,
       "description": "Chrome applicatif partagé de website (navigation, barre latérale, barre supérieure, pied de page)",
       "path": "packages/rg/app-shell",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/app-shell",
+      "absolutePath": "packages/rg/app-shell",
       "type": "module",
       "exports": {
         ".": "./src/index.ts",
@@ -826,7 +826,7 @@
       "private": false,
       "description": "Shared static assets for Rose Griffon apps",
       "path": "packages/rg/assets",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/assets",
+      "absolutePath": "packages/rg/assets",
       "type": "module",
       "exports": {
         ".": "./src/index.ts",
@@ -848,7 +848,7 @@
       "private": false,
       "description": "Shared authentication logic and guards for Rose Griffon apps",
       "path": "packages/rg/auth",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/auth",
+      "absolutePath": "packages/rg/auth",
       "type": "module",
       "main": "./src/index.ts",
       "types": "./src/index.ts",
@@ -937,7 +937,7 @@
       "private": false,
       "description": "Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI.",
       "path": "packages/rg/azalee",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/azalee",
+      "absolutePath": "packages/rg/azalee",
       "type": "module",
       "main": "./src/index.ts",
       "types": "./src/index.ts",
@@ -1033,7 +1033,7 @@
       "private": true,
       "description": "Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards",
       "path": "apps/rg/bot",
-      "absolutePath": "/home/aphro/aphrody/apps/rg/bot",
+      "absolutePath": "apps/rg/bot",
       "type": "module",
       "engines": {
         "bun": ">=1.4.2"
@@ -1102,7 +1102,7 @@
       "private": true,
       "description": "",
       "path": "apps/rg/cdn",
-      "absolutePath": "/home/aphro/aphrody/apps/rg/cdn",
+      "absolutePath": "apps/rg/cdn",
       "type": "module",
       "main": "server.ts",
       "engines": {
@@ -1138,7 +1138,7 @@
       "private": false,
       "description": "Configs partagées : tsconfig, eslint, oxlint, tailwind preset",
       "path": "packages/rg/config",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/config",
+      "absolutePath": "packages/rg/config",
       "type": "module",
       "exports": {
         "./tsconfig-base.json": "./tsconfig-base.json",
@@ -1165,7 +1165,7 @@
       "private": true,
       "description": "Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API",
       "path": "packages/rg/cron",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/cron",
+      "absolutePath": "packages/rg/cron",
       "type": "module",
       "main": "./src/index.ts",
       "exports": {
@@ -1230,7 +1230,7 @@
       "private": false,
       "description": "Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot)",
       "path": "packages/rg/db",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/db",
+      "absolutePath": "packages/rg/db",
       "type": "module",
       "exports": {
         ".": "./src/index.ts",
@@ -1308,7 +1308,7 @@
       "private": true,
       "description": "",
       "path": "packages/rg/discord-sync",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/discord-sync",
+      "absolutePath": "packages/rg/discord-sync",
       "type": "module",
       "main": "./src/index.ts",
       "types": "./src/index.ts",
@@ -1336,7 +1336,7 @@
       "private": true,
       "description": "Noyau i18n pur Rose Griffon : locales BCP-47, négociation, replis et formatage Intl",
       "path": "packages/rg/i18n",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/i18n",
+      "absolutePath": "packages/rg/i18n",
       "type": "module",
       "exports": {
         ".": {
@@ -1365,7 +1365,7 @@
       "private": true,
       "description": "Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa)",
       "path": "packages/rg/identity",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/identity",
+      "absolutePath": "packages/rg/identity",
       "type": "module",
       "exports": {
         ".": {
@@ -1394,7 +1394,7 @@
       "private": false,
       "description": "Universal Game Data API for Inazuma Eleven: Victory Road — parsers, types, and tools for IEVR game data",
       "path": "packages/rg/inagle",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/inagle",
+      "absolutePath": "packages/rg/inagle",
       "type": "module",
       "main": "./dist/index.js",
       "types": "./dist/index.d.ts",
@@ -1506,7 +1506,7 @@
       "private": false,
       "description": "API de données et de rétro-conception pour Inazuma Eleven Cross — types, schémas, et analyseurs d'assets",
       "path": "packages/rg/inagle-cross",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/inagle-cross",
+      "absolutePath": "packages/rg/inagle-cross",
       "type": "module",
       "main": "./src/index.ts",
       "exports": {
@@ -1546,7 +1546,7 @@
       "private": false,
       "description": "Bun-only TypeScript library for the V2 Patreon API. Fork of patreon-api.ts (ghostrider-05) for Rose Griffon.",
       "path": "packages/rg/patreon-bun",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/patreon-bun",
+      "absolutePath": "packages/rg/patreon-bun",
       "type": "module",
       "types": "./dist/index.d.ts",
       "exports": {
@@ -1601,7 +1601,7 @@
       "private": true,
       "description": "",
       "path": "packages/rg/patreon-bun/examples/bun-esm",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/patreon-bun/examples/bun-esm",
+      "absolutePath": "packages/rg/patreon-bun/examples/bun-esm",
       "type": "module",
       "main": "./index.js",
       "engines": {
@@ -1625,7 +1625,7 @@
       "private": true,
       "description": "",
       "path": "packages/rg/patreon-bun/examples/bun-webhook",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/patreon-bun/examples/bun-webhook",
+      "absolutePath": "packages/rg/patreon-bun/examples/bun-webhook",
       "type": "module",
       "engines": {
         "bun": ">=1.4.2"
@@ -1658,7 +1658,7 @@
       "private": true,
       "description": "",
       "path": "packages/rg/patreon-bun/examples/cloudflare-webhook",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/patreon-bun/examples/cloudflare-webhook",
+      "absolutePath": "packages/rg/patreon-bun/examples/cloudflare-webhook",
       "type": "module",
       "main": "index.js",
       "engines": {
@@ -1691,7 +1691,7 @@
       "private": true,
       "description": "The documentation site for the @rosegriffon/patreon-bun",
       "path": "packages/rg/patreon-bun/docs",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/patreon-bun/docs",
+      "absolutePath": "packages/rg/patreon-bun/docs",
       "type": "module",
       "engines": {
         "bun": ">=1.4.2"
@@ -1750,7 +1750,7 @@
       "private": true,
       "description": "",
       "path": "packages/rg/patreon-bun/apps/worker-docs",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/patreon-bun/apps/worker-docs",
+      "absolutePath": "packages/rg/patreon-bun/apps/worker-docs",
       "type": "module",
       "engines": {
         "bun": ">=1.4.2"
@@ -1789,7 +1789,7 @@
       "private": false,
       "description": "Pure cross-runtime resolution of Rose Griffon presentation preferences",
       "path": "packages/rg/preferences",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/preferences",
+      "absolutePath": "packages/rg/preferences",
       "type": "module",
       "exports": {
         ".": {
@@ -1818,7 +1818,7 @@
       "private": true,
       "description": "",
       "path": "apps/rg/realtime",
-      "absolutePath": "/home/aphro/aphrody/apps/rg/realtime",
+      "absolutePath": "apps/rg/realtime",
       "type": "module",
       "main": "server.ts",
       "engines": {
@@ -1854,7 +1854,7 @@
       "private": true,
       "description": "Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa",
       "path": "packages/rg/search",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/search",
+      "absolutePath": "packages/rg/search",
       "type": "module",
       "exports": {
         ".": "./src/index.ts"
@@ -1880,7 +1880,7 @@
       "private": true,
       "description": "",
       "path": "apps/rg/storage",
-      "absolutePath": "/home/aphro/aphrody/apps/rg/storage",
+      "absolutePath": "apps/rg/storage",
       "type": "module",
       "main": "server.ts",
       "engines": {
@@ -1916,7 +1916,7 @@
       "private": false,
       "description": "Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website",
       "path": "packages/rg/types",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/types",
+      "absolutePath": "packages/rg/types",
       "type": "module",
       "exports": {
         ".": "./src/index.ts",
@@ -1976,7 +1976,7 @@
       "private": false,
       "description": "Composants shadcn/ui partagés (new-york style, Tailwind v4)",
       "path": "packages/rg/ui",
-      "absolutePath": "/home/aphro/aphrody/packages/rg/ui",
+      "absolutePath": "packages/rg/ui",
       "type": "module",
       "exports": {
         ".": "./src/index.ts",
@@ -2219,7 +2219,7 @@
       "private": true,
       "description": "",
       "path": "apps/rg/website",
-      "absolutePath": "/home/aphro/aphrody/apps/rg/website",
+      "absolutePath": "apps/rg/website",
       "type": "commonjs",
       "engines": {
         "bun": ">=1.4.2"

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # URL, slug and SEO conventions — the public Aphrody web surfaces
 
-Scope: every public-facing website across `C:\Users\aphro\src` — `aphrody-web`
+Scope: every public-facing website across `%USERPROFILE%\src` — `aphrody-web`
 (`docs/products/web/crates/aphrody-site`), `nie` (`apps/nie-web` (not in repo) + `crates/tools/nie-site` (not in repo)), `rg`
 (`apps/rg/website`) and `shenron` (`apps/shenron/site`). This is the single reference for
 how a URL is shaped, how a page announces itself to crawlers, and how an old

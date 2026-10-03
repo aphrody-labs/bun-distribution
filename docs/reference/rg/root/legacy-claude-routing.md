@@ -7,4 +7,4 @@
 # CLAUDE.md — Rose Griffon
 
 Follow `AGENTS.md` in this directory for the local execution contract, Next.js architecture, Better Auth boundary, and Bun toolchain rules.
-Read `C:\Users\aphro\.agents\SHARED-AGENT-CONTEXT.md` for cross-repository routing and YOLO/NHITL rules.
+Read `%USERPROFILE%\.agents\SHARED-AGENT-CONTEXT.md` for cross-repository routing and YOLO/NHITL rules.

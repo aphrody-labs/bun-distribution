@@ -52,13 +52,13 @@ relevé décrit WSL/Linux, pas les installations Windows ou distantes.
 
 ## Démarrage des agents et contextes
 
-Démarrer depuis `/home/aphro/aphrody`. Les règles communes sont dans
+Démarrer depuis `<repo>`. Les règles communes sont dans
 [AGENTS.md](../../../AGENTS.md) ; Claude et agy y accèdent par les liens
 `CLAUDE.md` et `GEMINI.md`. Les trois agents travaillent sur la branche courante
 et réclament des familles de fichiers distinctes avant leurs modifications.
 
 ```bash
-cd /home/aphro/aphrody
+cd <repo>
 aphrody a2a invoke --peer codex --claim crates/ai/example "tâche"
 aphrody a2a invoke --peer claude --claim docs/operations/example "tâche"
 aphrody a2a invoke --peer agy --claim packages/infra/example "tâche"
@@ -77,7 +77,7 @@ Le défaut de configuration est `aphrody`. Pour DBFR/Shenron :
 
 ```bash
 APHRODY_AGENT_DOMAIN=dbfr APHRODY_PROFILE=dbfr \
-APHRODY_WORKSPACE=/home/aphro/.aphrody/workspaces/dbfr \
+APHRODY_WORKSPACE=~/.aphrody/workspaces/dbfr \
 aphrody a2a invoke --peer codex --claim crates/ai/shenron "tâche DBFR"
 ```
 
@@ -90,7 +90,7 @@ booter depuis ce checkout ; leurs stores et conversations sont filtrés par prof
 | --- | --- |
 | Agents et familles de fichiers | `aphrody a2a invoke --help` |
 | Routage des pairs | `aphrody a2a peers` |
-| Import incrémental des sessions | `aphrody ai sync-sessions --json --shared-workspace /home/aphro/aphrody` |
+| Import incrémental des sessions | `aphrody ai sync-sessions --json --shared-workspace <repo>` |
 | Projection sans import mémoire | `aphrody ai sync-sessions --json --no-memory` |
 | Propriétaire natif de l’import par domaine | `bun packages/infra/workspace/src/ops.ts agent-sync --help` |
 | État live PID/session/workspace/Git | `bun packages/infra/workspace/src/ops.ts agent-live --json` |
@@ -148,77 +148,77 @@ Sources : [manifest développeur](../../../config/developer-cli-tools.json),
 
 | Commande | Version observée | Chemin réel |
 | --- | --- | --- |
-| `agy` | 1.2.14 | `/home/aphro/.local/bin/agy` |
-| `aphrody` | aphrody 1.0.0-canary | `/home/aphro/.local/bin/aphrody` |
-| `aphrody-kernel` | aphrody-kernel 1.0.0-canary | `/home/aphro/.local/bin/aphrody-kernel` |
-| `aphrody-mcp` | aphrody-mcp 1.0.0 | `/home/aphro/.local/bin/aphrody-mcp` |
-| `atuin` | atuin 18.23.0 (78366dca8c4941731e06a2f81c0980cc2ccc3836) | `/home/aphro/.cargo/bin/atuin` |
-| `bat` | bat 0.26.1 (979ba22) | `/home/aphro/.cargo/bin/bat` |
-| `btm` | bottom 0.14.9 | `/home/aphro/.cargo/bin/btm` |
-| `bun` | 1.4.2 | `/home/aphro/.bun/bin/bun` |
-| `bunx` | 1.4.2 | `/home/aphro/.bun/bin/bunx` |
-| `bxc` | bxc 0.9.15 | `/home/aphro/.bun/bin/bxc` |
+| `agy` | 1.2.14 | `~/.local/bin/agy` |
+| `aphrody` | aphrody 1.0.0-canary | `~/.local/bin/aphrody` |
+| `aphrody-kernel` | aphrody-kernel 1.0.0-canary | `~/.local/bin/aphrody-kernel` |
+| `aphrody-mcp` | aphrody-mcp 1.0.0 | `~/.local/bin/aphrody-mcp` |
+| `atuin` | atuin 18.23.0 (78366dca8c4941731e06a2f81c0980cc2ccc3836) | `~/.cargo/bin/atuin` |
+| `bat` | bat 0.26.1 (979ba22) | `~/.cargo/bin/bat` |
+| `btm` | bottom 0.14.9 | `~/.cargo/bin/btm` |
+| `bun` | 1.4.2 | `~/.bun/bin/bun` |
+| `bunx` | 1.4.2 | `~/.bun/bin/bunx` |
+| `bxc` | bxc 0.9.15 | `~/.bun/bin/bxc` |
 | `carapace` | carapace-bin 1.8.0 | `/usr/bin/carapace` |
-| `cargo` | cargo 1.98.1 (797e8a9bc 2026-08-05) | `/home/aphro/.cargo/bin/cargo` |
-| `choose` | choose 1.3.7 | `/home/aphro/.cargo/bin/choose` |
-| `cl.exe` | Microsoft C/C++ 19.44.35229 | `/home/aphro/.local/bin/cl.exe` |
-| `claude` | 2.1.286 (Claude Code) | `/home/aphro/.nvm/versions/node/v24.20.0/bin/claude` |
-| `codex` | codex-cli 0.158.0 | `/home/aphro/.local/bin/codex` |
-| `coreutils` | coreutils 0.12.0 (multi-call binary) | `/home/aphro/.cargo/bin/coreutils` |
+| `cargo` | cargo 1.98.1 (797e8a9bc 2026-08-05) | `~/.cargo/bin/cargo` |
+| `choose` | choose 1.3.7 | `~/.cargo/bin/choose` |
+| `cl.exe` | Microsoft C/C++ 19.44.35229 | `~/.local/bin/cl.exe` |
+| `claude` | 2.1.286 (Claude Code) | `~/.nvm/versions/node/v24.20.0/bin/claude` |
+| `codex` | codex-cli 0.158.0 | `~/.local/bin/codex` |
+| `coreutils` | coreutils 0.12.0 (multi-call binary) | `~/.cargo/bin/coreutils` |
 | `curl` | curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openss | `/usr/bin/curl` |
-| `delta` | delta 0.19.2 | `/home/aphro/.cargo/bin/delta` |
-| `dust` | Dust 1.2.6 | `/home/aphro/.cargo/bin/dust` |
-| `dysk` | dysk 3.7.1 | `/home/aphro/.cargo/bin/dysk` |
-| `erd` | erdtree 3.1.2 | `/home/aphro/.cargo/bin/erd` |
+| `delta` | delta 0.19.2 | `~/.cargo/bin/delta` |
+| `dust` | Dust 1.2.6 | `~/.cargo/bin/dust` |
+| `dysk` | dysk 3.7.1 | `~/.cargo/bin/dysk` |
+| `erd` | erdtree 3.1.2 | `~/.cargo/bin/erd` |
 | `eza` | eza - A modern, maintained replacement for ls | `/usr/bin/eza` |
-| `fd` | fd 10.5.0 | `/home/aphro/.cargo/bin/fd` |
+| `fd` | fd 10.5.0 | `~/.cargo/bin/fd` |
 | `ffmpeg` | non établie | `/usr/bin/ffmpeg` |
 | `gcloud` | Google Cloud SDK 587.0.0 | `/usr/bin/gcloud` |
 | `gh` | gh version 2.45.0 (2025-07-18 Ubuntu 2.45.0-1ubuntu0.3) | `/usr/bin/gh` |
 | `git` | git version 2.43.0 | `/usr/bin/git` |
-| `gitui` | gitui 0.28.1-nightly 2026-03-25 () | `/home/aphro/.cargo/bin/gitui` |
-| `hx` | helix 25.07.1 (079a789e) | `/home/aphro/.cargo/bin/hx` |
-| `just` | just 1.58.0 | `/home/aphro/.cargo/bin/just` |
-| `lib.exe` | MSVC 14.44.35207 | `/home/aphro/.local/bin/lib.exe` |
-| `link.exe` | MSVC 14.44.35207 | `/home/aphro/.local/bin/link.exe` |
-| `llama-server` | non établie | `/home/aphro/.local/bin/llama-server` |
-| `ml64.exe` | Microsoft MASM 14.44.35207 | `/home/aphro/.local/bin/ml64.exe` |
-| `n2b` | n2b 0.6.2 | `/home/aphro/.local/bin/n2b` |
-| `nu` | 0.115.1 | `/home/aphro/.cargo/bin/nu` |
-| `nu_plugin_bigquery` | plugin chargé | `/home/aphro/.cargo/bin/nu_plugin_bigquery` |
-| `nu_plugin_formats` | plugin chargé | `/home/aphro/.cargo/bin/nu_plugin_formats` |
-| `nu_plugin_gstat` | plugin chargé | `/home/aphro/.cargo/bin/nu_plugin_gstat` |
-| `nu_plugin_highlight` | plugin chargé | `/home/aphro/.cargo/bin/nu_plugin_highlight` |
-| `nu_plugin_inc` | plugin chargé | `/home/aphro/.cargo/bin/nu_plugin_inc` |
-| `nu_plugin_json_path` | plugin chargé | `/home/aphro/.cargo/bin/nu_plugin_json_path` |
-| `nu_plugin_polars` | plugin chargé | `/home/aphro/.cargo/bin/nu_plugin_polars` |
-| `nu_plugin_query` | plugin chargé | `/home/aphro/.cargo/bin/nu_plugin_query` |
-| `nu_plugin_skim` | plugin chargé | `/home/aphro/.cargo/bin/nu_plugin_skim` |
-| `nu_plugin_zstdsep` | plugin chargé | `/home/aphro/.cargo/bin/nu_plugin_zstdsep` |
-| `oxfmt` | Version: 0.70.0 | `/home/aphro/.bun/bin/oxfmt` |
-| `oxlint` | Version: 1.85.0 | `/home/aphro/.bun/bin/oxlint` |
-| `procs` | procs 0.14.12 | `/home/aphro/.cargo/bin/procs` |
+| `gitui` | gitui 0.28.1-nightly 2026-03-25 () | `~/.cargo/bin/gitui` |
+| `hx` | helix 25.07.1 (079a789e) | `~/.cargo/bin/hx` |
+| `just` | just 1.58.0 | `~/.cargo/bin/just` |
+| `lib.exe` | MSVC 14.44.35207 | `~/.local/bin/lib.exe` |
+| `link.exe` | MSVC 14.44.35207 | `~/.local/bin/link.exe` |
+| `llama-server` | non établie | `~/.local/bin/llama-server` |
+| `ml64.exe` | Microsoft MASM 14.44.35207 | `~/.local/bin/ml64.exe` |
+| `n2b` | n2b 0.6.2 | `~/.local/bin/n2b` |
+| `nu` | 0.115.1 | `~/.cargo/bin/nu` |
+| `nu_plugin_bigquery` | plugin chargé | `~/.cargo/bin/nu_plugin_bigquery` |
+| `nu_plugin_formats` | plugin chargé | `~/.cargo/bin/nu_plugin_formats` |
+| `nu_plugin_gstat` | plugin chargé | `~/.cargo/bin/nu_plugin_gstat` |
+| `nu_plugin_highlight` | plugin chargé | `~/.cargo/bin/nu_plugin_highlight` |
+| `nu_plugin_inc` | plugin chargé | `~/.cargo/bin/nu_plugin_inc` |
+| `nu_plugin_json_path` | plugin chargé | `~/.cargo/bin/nu_plugin_json_path` |
+| `nu_plugin_polars` | plugin chargé | `~/.cargo/bin/nu_plugin_polars` |
+| `nu_plugin_query` | plugin chargé | `~/.cargo/bin/nu_plugin_query` |
+| `nu_plugin_skim` | plugin chargé | `~/.cargo/bin/nu_plugin_skim` |
+| `nu_plugin_zstdsep` | plugin chargé | `~/.cargo/bin/nu_plugin_zstdsep` |
+| `oxfmt` | Version: 0.70.0 | `~/.bun/bin/oxfmt` |
+| `oxlint` | Version: 1.85.0 | `~/.bun/bin/oxlint` |
+| `procs` | procs 0.14.12 | `~/.cargo/bin/procs` |
 | `pwsh` | PowerShell 7.6.6 | `/usr/bin/pwsh` |
 | `python3` | Python 3.12.3 | `/usr/bin/python3` |
-| `rclone` | rclone v1.75.1 | `/home/aphro/.local/bin/rclone` |
-| `rg` | ripgrep 15.2.0 (rev e89fff89ac) | `/home/aphro/.codex/packages/app-server-daemon/releases/0.159.3-x86_64-unknown-linux-musl/codex-path/rg` |
-| `rustc` | rustc 1.98.1 (48a229cea 2026-09-01) | `/home/aphro/.cargo/bin/rustc` |
-| `rustup` | rustup 1.29.1 (d95a37b6a 2026-08-13) | `/home/aphro/.cargo/bin/rustup` |
-| `sccache` | sccache 0.18.0 | `/home/aphro/.cargo/bin/sccache` |
-| `sd` | sd 1.0.0 | `/home/aphro/.cargo/bin/sd` |
+| `rclone` | rclone v1.75.1 | `~/.local/bin/rclone` |
+| `rg` | ripgrep 15.2.0 (rev e89fff89ac) | `~/.codex/packages/app-server-daemon/releases/0.159.3-x86_64-unknown-linux-musl/codex-path/rg` |
+| `rustc` | rustc 1.98.1 (48a229cea 2026-09-01) | `~/.cargo/bin/rustc` |
+| `rustup` | rustup 1.29.1 (d95a37b6a 2026-08-13) | `~/.cargo/bin/rustup` |
+| `sccache` | sccache 0.18.0 | `~/.cargo/bin/sccache` |
+| `sd` | sd 1.0.0 | `~/.cargo/bin/sd` |
 | `ssh` | non établie | `/usr/bin/ssh` |
-| `starship` | starship 1.26.0 | `/home/aphro/.cargo/bin/starship` |
-| `tldr` | tealdeer 1.9.0 | `/home/aphro/.cargo/bin/tldr` |
-| `tsc` | Version 7.0.2 | `/home/aphro/.bun/bin/tsc` |
-| `tsgo` | Version 7.0.0-dev.20260707.2 | `/home/aphro/.bun/bin/tsgo` |
-| `uv` | uv 0.12.22 (x86_64-unknown-linux-gnu) | `/home/aphro/.local/bin/uv` |
-| `uvx` | uvx 0.12.22 (x86_64-unknown-linux-gnu) | `/home/aphro/.local/bin/uvx` |
-| `xh` | xh 0.26.2 | `/home/aphro/.cargo/bin/xh` |
-| `ya` | Ya 26.5.6 (aa52643 2026-05-05) | `/home/aphro/.cargo/bin/ya` |
-| `yazi` | Yazi 26.5.6 (aa52643 2026-05-05) | `/home/aphro/.cargo/bin/yazi` |
-| `zellij` | zellij 0.45.1 | `/home/aphro/.cargo/bin/zellij` |
-| `zig` | 0.16.0 | `/home/aphro/.local/bin/zig` |
-| `zoxide` | zoxide 0.10.0 | `/home/aphro/.cargo/bin/zoxide` |
+| `starship` | starship 1.26.0 | `~/.cargo/bin/starship` |
+| `tldr` | tealdeer 1.9.0 | `~/.cargo/bin/tldr` |
+| `tsc` | Version 7.0.2 | `~/.bun/bin/tsc` |
+| `tsgo` | Version 7.0.0-dev.20260707.2 | `~/.bun/bin/tsgo` |
+| `uv` | uv 0.12.22 (x86_64-unknown-linux-gnu) | `~/.local/bin/uv` |
+| `uvx` | uvx 0.12.22 (x86_64-unknown-linux-gnu) | `~/.local/bin/uvx` |
+| `xh` | xh 0.26.2 | `~/.cargo/bin/xh` |
+| `ya` | Ya 26.5.6 (aa52643 2026-05-05) | `~/.cargo/bin/ya` |
+| `yazi` | Yazi 26.5.6 (aa52643 2026-05-05) | `~/.cargo/bin/yazi` |
+| `zellij` | zellij 0.45.1 | `~/.cargo/bin/zellij` |
+| `zig` | 0.16.0 | `~/.local/bin/zig` |
+| `zoxide` | zoxide 0.10.0 | `~/.cargo/bin/zoxide` |
 
 ## Rafraîchissement et propriétaires
 

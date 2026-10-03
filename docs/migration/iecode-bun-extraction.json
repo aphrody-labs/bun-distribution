@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "observed_at": "2026-09-29",
-  "source_repository": "/home/aphro/iecode",
+  "source_repository": "../iecode",
   "source_head": "8fdab4b96014f70972c2855878cab49510ffe876",
   "source_worktree_clean": false,
-  "target_repository": "/home/aphro/aphrody",
+  "target_repository": ".",
   "entries": [
     {
       "source": "packages/nie",

@@ -63,7 +63,7 @@ contrôles configurés et packages retenus.
 - Scanner statique des exports déclarés et des imports `@rosegriffon/*` dans
   les sources actives RG: aucun sous-chemin absent.
 - `bun packages/infra/aphrody-workspace/src/ops.ts docs-links --root
-  /home/aphro/aphrody --docs docs/rg --scope docs` (historique; `docs/rg` (not in repo) est désormais réparti sous `docs/<catégorie>/rg`): 90 liens locaux vérifiés,
+  . --docs docs/rg --scope docs` (historique; `docs/rg` (not in repo) est désormais réparti sous `docs/<catégorie>/rg`): 90 liens locaux vérifiés,
   zéro lien cassé.
 - Les tests browser ont été portés vers Aphrody Web CDP; les tests navigateur
   sont sautés explicitement si le serveur local est absent. Un test du helper

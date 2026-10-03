@@ -10,7 +10,7 @@ for the centralized manager, not an installation request.
 
 | Probe                                  | Observed result                                                                           |
 | -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `codex --version`                      | `codex-cli 0.158.0`; executable `/home/aphro/.local/bin/codex`                            |
+| `codex --version`                      | `codex-cli 0.158.0`; executable `~/.local/bin/codex`                            |
 | `codex --strict-config doctor --json`  | Exit 0, `overallStatus: ok`, configuration loaded; reports running app-server **0.160.0** |
 | `codex plugin marketplace list --json` | `{"marketplaces":[]}`; no local/configured marketplace in scope                           |
 | `codex plugin list --json`             | Six remote installations; no owner plugin installed                                       |
@@ -21,7 +21,7 @@ Remote installations from `openai-curated-remote`: `github` **0.1.12-5f7cd798dc9
 `plugin-management` **0.1.0**, `work-pets` **0.1.6**. The other five are enabled.
 The empty marketplace result does not exclude the remote catalog.
 
-Owner sources now live under `/home/aphro/plugins`. Preparation synchronizes
+Owner sources now live under `~/plugins`. Preparation synchronizes
 portable and compatibility versions; detached caches were cleaned with unique
 contents retained in `_recovered`. The historical relocation report remains
 unchanged. The central marketplace is `aphrody-user`; old `aphrody-ai` Git
@@ -83,8 +83,8 @@ Submission has its own requirements and automated review; it is not a local
 validation command. See the official
 [manifest fields and import rules](https://developers.openai.com/plugins/deploy/submission#automatically-provide-submission-and-review-information).
 
-For a future local catalog rooted at `/home/aphro/plugins`, the entry would be
-in `/home/aphro/plugins/.agents/plugins/marketplace.json`:
+For a future local catalog rooted at `~/plugins`, the entry would be
+in `~/plugins/.agents/plugins/marketplace.json`:
 
 ```json
 {
@@ -104,19 +104,19 @@ in `/home/aphro/plugins/.agents/plugins/marketplace.json`:
 `source.path` is relative to the **marketplace root**, not its `.agents/plugins`
 directory. This example is a proposed catalog, not a created registration.
 The installed CLI supports the future sequence `codex plugin marketplace add
-/home/aphro/plugins --json`, then `codex plugin add aphrody@owner-local --json`.
+~/plugins --json`, then `codex plugin add aphrody@owner-local --json`.
 Neither command was run. Discovery roots and cache behavior are documented in
 [local marketplace setup](https://developers.openai.com/plugins/build/plugins#install-a-local-plugin-manually).
 The documented installed copy lives at
 `~/.codex/plugins/cache/MARKETPLACE/PLUGIN/VERSION/` (`VERSION=local` for local
-plugins). Treat `/home/aphro/plugins` as source storage and provider caches as
+plugins). Treat `~/plugins` as source storage and provider caches as
 derived state; preserve their distinct identities and versions.
 
 ## Skills and scope preservation
 
 Standalone discovery scans `.agents/skills` from CWD to repository root,
 `~/.agents/skills`, `/etc/codex/skills`, and bundled system skills; symlinked
-folders are supported. `/home/aphro/plugins` alone is not a standalone discovery
+folders are supported. `~/plugins` alone is not a standalone discovery
 root. At audit time neither user nor monorepo `.agents/skills` exists;
 `~/.codex/skills` exists. Preserve that existing legacy/system store.
 
@@ -131,8 +131,8 @@ The manager must retain this owner scope independently of manifests:
 
 | Plugin            | Allowed scope                                           |
 | ----------------- | ------------------------------------------------------- |
-| `aphrody`         | `/home/aphro/aphrody` and `/home/aphro/aphrody-py` only |
-| `iecode`          | `/home/aphro/iecode` only                               |
+| `aphrody`         | `<repo>` and `../aphrody-py` only |
+| `iecode`          | `../iecode` only                               |
 | `yolo`, `bun-ts7` | Global, as authorized by root rules                     |
 
 The archived Aphrody description says “any project”; that does not override
@@ -184,7 +184,7 @@ checks passed for this provider document; repository-wide generation and
 code gates are outside this documentation-only change.
 
 Workspace gate: `bun packages/infra/workspace/src/ops.ts docs links --root
-/home/aphro/aphrody --docs docs/research/ai/plugin-providers --exclude-file
+. --docs docs/research/ai/plugin-providers --exclude-file
 docs/research/ai/plugin-providers/agy.md --exclude-file
 docs/research/ai/plugin-providers/claude.md --json` exits 0 (zero broken links
 or dead paths). The initial directory run failed on those concurrent provider

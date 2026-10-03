@@ -1256,15 +1256,15 @@ The JSON with every field present looks like this:
 ```json customLanguage="json"
 {
   "schema_version": 1,
-  "cwd": "/home/user/project",
+  "cwd": "~/project",
   "session_id": "019fa651-6d59-7c83-a4f3-5a391e6901a1",
   "session_name": "add status line",
   "prompt_id": "97135ed2-71a5-4581-b959-3341bbd03e5f",
-  "transcript_path": "/home/user/sessions/019fa651/updates.jsonl",
+  "transcript_path": "~/sessions/019fa651/updates.jsonl",
   "model": { "id": "grok-4.5", "display_name": "Grok 4.5" },
   "workspace": {
-    "current_dir": "/home/user/project",
-    "repo_root": "/home/user/project",
+    "current_dir": "~/project",
+    "repo_root": "~/project",
     "branch": "main",
     "git_worktree": "feature-x",
     "repo": { "host": "github.com", "owner": "owner", "name": "repo" }
@@ -1294,9 +1294,9 @@ The JSON with every field present looks like this:
   "turn": { "started_at_ms": 1730000000000 },
   "worktree": {
     "name": "feature-x",
-    "path": "/home/user/wt/feature-x",
+    "path": "~/wt/feature-x",
     "branch": "feature-x",
-    "main_worktree_root": "/home/user/project"
+    "main_worktree_root": "~/project"
   },
   "trigger": "refresh_interval"
 }
@@ -18945,7 +18945,7 @@ When using the `pattern` keyword on a string field, we support a practical subse
 **Supported:**
 
 * Literals and character classes (`[abc]`, `[a-z]`, `[^abc]`)
-* `.` (matches any Unicode codepoint, including newlines)
+* `<repo>` (matches any Unicode codepoint, including newlines)
 * Alternation `|`, grouping `(...)`, and non-capturing groups `(?:...)`
 * Quantifiers `*`, `+`, `?` and repetition ranges `{n}`, `{n,}`, `{n,m}`
 * Shorthand classes `\d`, `\w`, `\s` (and their negations `\D`, `\W`, `\S`)
@@ -18962,7 +18962,7 @@ When using the `pattern` keyword on a string field, we support a practical subse
 
 **Semantic differences from standard JavaScript RegExp:**
 
-* `.` matches newlines
+* `<repo>` matches newlines
 * `^` and `$` are *implicit*—the pattern always matches the *entire string* (no need to add them)
 * Capturing groups `(...)` have no semantic effect (they behave like non-capturing groups)
 * The regex is evaluated with Unicode support

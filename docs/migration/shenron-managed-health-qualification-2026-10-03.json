@@ -3,9 +3,9 @@
   "recordedAt": "2026-10-03T01:12:25.736432+00:00",
   "sourceHead": "bfd09ca3b42d8857cc83a8f56b446310964971b2",
   "scope": "Actual local Shenron SQL, Redis, E5 index and managed Qwen plus existing Shenron adapter; public production probed separately.",
-  "privateEvidenceDirectory": "/home/aphro/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh",
+  "privateEvidenceDirectory": "~/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh",
   "mcpConfigProbe": {
-    "command": "/home/aphro/.local/bin/aphrody-kernel",
+    "command": "~/.local/bin/aphrody-kernel",
     "args": ["mcp"],
     "protocolVersion": "2025-03-26",
     "initializeSucceeded": true,
@@ -63,7 +63,7 @@
     "liveVisibleUniqueTitleUrlPairs": 18795,
     "casesWithExpectedSource": 140,
     "casesWithoutExpectedSource": 32,
-    "fullMissingCasesReport": "/home/aphro/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh/live-source-coverage.json",
+    "fullMissingCasesReport": "~/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh/live-source-coverage.json",
     "observedHiddenSources": [
       {
         "source": "bot.db_battles",
@@ -109,7 +109,7 @@
       "cause": "Not established",
       "lastLoggedConfirmed": 100,
       "totalRequired": 10030,
-      "terminalReport": "/home/aphro/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh/manga-sync-after-write-deadline.log"
+      "terminalReport": "~/.aphrody/private/shenron/qualification/sql-corpus-20261003-2oxp5skh/manga-sync-after-write-deadline.log"
     },
     "currentCanonicalService": {
       "name": "shenron-rag-sync.service",

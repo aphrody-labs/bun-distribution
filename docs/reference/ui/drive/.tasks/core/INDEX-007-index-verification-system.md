@@ -249,7 +249,7 @@ spacedrive verify ~/Videos --json > report.json
 ```
 Index Verification Report
 =========================
-Path: /Users/jamie/Documents
+Path: ~/Documents
 Scanned: 15,234 files
 Database: 15,180 entries
 
@@ -262,19 +262,19 @@ Metadata mismatches: 8 files
 Details:
 --------
 Missing from index:
-  /Users/jamie/Documents/new_file.txt (created 2025-10-14)
-  /Users/jamie/Documents/another.pdf (created 2025-10-14)
+  ~/Documents/new_file.txt (created 2025-10-14)
+  ~/Documents/another.pdf (created 2025-10-14)
   ...
 
 Stale in index:
-  /Users/jamie/Documents/deleted.txt (last seen 2025-10-01)
-  /Users/jamie/Documents/old.doc (last seen 2025-09-15)
+  ~/Documents/deleted.txt (last seen 2025-10-01)
+  ~/Documents/old.doc (last seen 2025-09-15)
   ...
 
 Metadata mismatches:
-  /Users/jamie/Documents/modified.txt
+  ~/Documents/modified.txt
     - Size: DB=1024, FS=2048
-  /Users/jamie/Documents/touched.pdf
+  ~/Documents/touched.pdf
     - Modified: DB=2025-10-01 12:00:00, FS=2025-10-14 14:30:00
   ...
 
@@ -285,7 +285,7 @@ Recommendation: Run reindex to fix issues
 
 ```json
 {
-  "path": "/Users/jamie/Documents",
+  "path": "~/Documents",
   "summary": {
     "total_files_in_db": 15180,
     "total_files_on_fs": 15234,
@@ -295,21 +295,21 @@ Recommendation: Run reindex to fix issues
   },
   "missing_from_index": [
     {
-      "path": "/Users/jamie/Documents/new_file.txt",
+      "path": "~/Documents/new_file.txt",
       "size": 2048,
       "modified": "2025-10-14T10:30:00Z"
     }
   ],
   "stale_in_index": [
     {
-      "path": "/Users/jamie/Documents/deleted.txt",
+      "path": "~/Documents/deleted.txt",
       "entry_id": 12345,
       "last_indexed": "2025-10-01T08:00:00Z"
     }
   ],
   "metadata_mismatches": [
     {
-      "path": "/Users/jamie/Documents/modified.txt",
+      "path": "~/Documents/modified.txt",
       "entry_id": 12346,
       "issue": {
         "kind": "SizeMismatch",

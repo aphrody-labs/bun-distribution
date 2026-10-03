@@ -3,7 +3,7 @@
   "status": "copied-and-integrated",
   "source": {
     "repository": "iecode",
-    "path": "/home/aphro/iecode",
+    "path": "../iecode",
     "head": "8fdab4b96014f70972c2855878cab49510ffe876",
     "branch": "main",
     "workingTreeDirtyPathsInImportedPackages": [
@@ -122,7 +122,7 @@
     ]
   },
   "target": {
-    "repository": "/home/aphro/aphrody",
+    "repository": ".",
     "membersAdded": 9,
     "cargoWorkspaceMembers": 178,
     "resolvedPackages": 2029,

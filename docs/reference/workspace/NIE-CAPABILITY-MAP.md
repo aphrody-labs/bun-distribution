@@ -9,7 +9,7 @@ This matrix records that historical source shape. The 2026-10-01 source
 transfer is recorded in the IECODE
 [migration map](../../../../iecode/docs/migrations/ievr-to-iecode-2026-10-01.json).
 The old NIE checkout paths below are historical. The active owner is the
-`/home/aphro/iecode` workspace ([rules](../../../../iecode/AGENTS.md),
+`../iecode` workspace ([rules](../../../../iecode/AGENTS.md),
 [plan](../../../../iecode/PLAN.md)); source presence or a historical UI/Web copy
 does not establish current parity.
 
@@ -18,8 +18,8 @@ does not establish current parity.
 This map is a historical inventory of the prior split, not a live consolidation
 plan. Current ownership is defined by the IECODE
 [rules](../../../../iecode/AGENTS.md) and [plan](../../../../iecode/PLAN.md). The active
-source copies and integrations formerly present under `/home/aphro/src`,
-`/home/aphro/aphrody`, and `/home/aphro/aphrody-py` were removed where the
+source copies and integrations formerly present under `~/src`,
+`<repo>`, and `../aphrody-py` were removed where the
 IECODE owner already exists, as recorded in the
 [transfer report](../../../../iecode/docs/migrations/IEVR-TO-IECODE-2026-10-01.md).
 Do not use the remaining split-repository paths in this snapshot as live links.

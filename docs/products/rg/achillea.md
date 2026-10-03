@@ -514,7 +514,7 @@ locale ou IP de VPS dans l'artefact prod, et aucun secret dans le bundle.
 
 ### 8.10 Critères d'acceptation finaux
 
-- chaque workspace Achillea est ciblable indépendamment par Bun/Turbo depuis `/home/ubuntu/rg` ;
+- chaque workspace Achillea est ciblable indépendamment par Bun/Turbo depuis `../rg` ;
 - `bun install --frozen-lockfile` et les gates ciblées passent dans un checkout propre ;
 - les tests RG existants restent verts et les tests Achillea restent exécutables sans secrets
   de production ;

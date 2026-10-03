@@ -3,9 +3,9 @@
 
 Audit date: 2026-09-29
 
-Source checkout: `/home/aphro/iecode` at `8fdab4b96014f70972c2855878cab49510ffe876` (`Route IECODE gates through new Aphrody workspace`)
+Source checkout: `../iecode` at `8fdab4b96014f70972c2855878cab49510ffe876` (`Route IECODE gates through new Aphrody workspace`)
 
-Target checkout: `/home/aphro/aphrody`
+Target checkout: `<repo>`
 
 This is a read-only assessment of the current IECODE Rust manifests and public
 crate boundaries. It does not import code or change either Cargo workspace.
@@ -26,7 +26,7 @@ that facade, so it also pulls the entire graph and a stable C ABI boundary.
 
 ## Measured compilation evidence
 
-All commands below ran from `/home/aphro/iecode` with a temporary target
+All commands below ran from `../iecode` with a temporary target
 folder, so no source or Cargo manifest was changed.
 
 ```text
@@ -90,7 +90,7 @@ target workspace supplies that metadata and dependency declaration.
 The target already supplies compatible resolver, edition, Rust version, lints,
 `serde`, and `thiserror` workspace entries. Before an actual import, preserve
 the source path and commit in the generated migration map, then copy the
-crate rather than registering `/home/aphro/iecode` as a permanent path
+crate rather than registering `../iecode` as a permanent path
 member. A source-external path member would keep the target build dependent on
 the developer checkout and would not satisfy the target repository's
 self-contained workspace rule.

@@ -1,6 +1,6 @@
 {
   "formatVersion": 1,
-  "sourceRepository": "/home/aphro/src/shenron",
+  "sourceRepository": "~/src/shenron",
   "sourceCommit": "58e03b40e466809ccbb610b0b59fdf52d365598b",
   "sourceClean": true,
   "sourceTrackedFiles": 3472,

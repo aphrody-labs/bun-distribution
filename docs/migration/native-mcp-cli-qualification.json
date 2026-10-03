@@ -149,6 +149,6 @@
     "root_identification": "Unique per-process IO delta during configured root-thread tool call",
     "daemon_preserved": true,
     "rollback_artifacts_retained": true,
-    "private_activation_evidence": "/home/aphro/.local/state/aphrody/kernel-qualifications/active-root-qualified.json"
+    "private_activation_evidence": "~/.local/state/aphrody/kernel-qualifications/active-root-qualified.json"
   }
 }

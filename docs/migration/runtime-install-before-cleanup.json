@@ -1,338 +1,338 @@
 {
-  "installed": "/home/aphro/.local/lib/aphrody/installed-20261001",
+  "installed": "~/.local/lib/aphrody/installed-20261001",
   "artifacts": [
     {
-      "link": "/home/aphro/.local/bin/lama",
-      "source": "/home/aphro/aphrody/target/release/lama",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/lama",
+      "link": "~/.local/bin/lama",
+      "source": "target/release/lama",
+      "installed": "~/.local/lib/aphrody/installed-20261001/lama",
       "bytes": 35245800
     },
     {
-      "link": "/home/aphro/.local/bin/speech_bubble_yolov8m",
-      "source": "/home/aphro/aphrody/target/release/speech_bubble_yolov8m",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/speech_bubble_yolov8m",
+      "link": "~/.local/bin/speech_bubble_yolov8m",
+      "source": "target/release/speech_bubble_yolov8m",
+      "installed": "~/.local/lib/aphrody/installed-20261001/speech_bubble_yolov8m",
       "bytes": 33980984
     },
     {
-      "link": "/home/aphro/.local/bin/rorem_mixed",
-      "source": "/home/aphro/aphrody/target/release/rorem_mixed",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/rorem_mixed",
+      "link": "~/.local/bin/rorem_mixed",
+      "source": "target/release/rorem_mixed",
+      "installed": "~/.local/lib/aphrody/installed-20261001/rorem_mixed",
       "bytes": 34623408
     },
     {
-      "link": "/home/aphro/.local/bin/translate",
-      "source": "/home/aphro/aphrody/target/release/translate",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/translate",
+      "link": "~/.local/bin/translate",
+      "source": "target/release/translate",
+      "installed": "~/.local/lib/aphrody/installed-20261001/translate",
       "bytes": 32182560
     },
     {
-      "link": "/home/aphro/.local/bin/paint_file",
-      "source": "/home/aphro/aphrody/target/release/paint_file",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/paint_file",
+      "link": "~/.local/bin/paint_file",
+      "source": "target/release/paint_file",
+      "installed": "~/.local/lib/aphrody/installed-20261001/paint_file",
       "bytes": 31378760
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-gemini-web",
-      "source": "/home/aphro/aphrody/target/release/aphrody-gemini-web",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-gemini-web",
+      "link": "~/.local/bin/aphrody-gemini-web",
+      "source": "target/release/aphrody-gemini-web",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-gemini-web",
       "bytes": 12593552
     },
     {
-      "link": "/home/aphro/.local/bin/koharu_layout_rfdetr_seg_2xl",
-      "source": "/home/aphro/aphrody/target/release/koharu_layout_rfdetr_seg_2xl",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/koharu_layout_rfdetr_seg_2xl",
+      "link": "~/.local/bin/koharu_layout_rfdetr_seg_2xl",
+      "source": "target/release/koharu_layout_rfdetr_seg_2xl",
+      "installed": "~/.local/lib/aphrody/installed-20261001/koharu_layout_rfdetr_seg_2xl",
       "bytes": 32523584
     },
     {
-      "link": "/home/aphro/.local/bin/x-cli",
-      "source": "/home/aphro/aphrody/target/release/x-cli",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/x-cli",
+      "link": "~/.local/bin/x-cli",
+      "source": "target/release/x-cli",
+      "installed": "~/.local/lib/aphrody/installed-20261001/x-cli",
       "bytes": 18838392
     },
     {
-      "link": "/home/aphro/.local/bin/comic_text_detector",
-      "source": "/home/aphro/aphrody/target/release/comic_text_detector",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/comic_text_detector",
+      "link": "~/.local/bin/comic_text_detector",
+      "source": "target/release/comic_text_detector",
+      "installed": "~/.local/lib/aphrody/installed-20261001/comic_text_detector",
       "bytes": 35401400
     },
     {
-      "link": "/home/aphro/.local/bin/generate",
-      "source": "/home/aphro/aphrody/target/release/generate",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/generate",
+      "link": "~/.local/bin/generate",
+      "source": "target/release/generate",
+      "installed": "~/.local/lib/aphrody/installed-20261001/generate",
       "bytes": 96849952
     },
     {
-      "link": "/home/aphro/.local/bin/flux2_klein",
-      "source": "/home/aphro/aphrody/target/release/flux2_klein",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/flux2_klein",
+      "link": "~/.local/bin/flux2_klein",
+      "source": "target/release/flux2_klein",
+      "installed": "~/.local/lib/aphrody/installed-20261001/flux2_klein",
       "bytes": 34727448
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-mcp",
-      "source": "/home/aphro/aphrody/target/release/aphrody-mcp",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-mcp",
+      "link": "~/.local/bin/aphrody-mcp",
+      "source": "target/release/aphrody-mcp",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-mcp",
       "bytes": 149787376
     },
     {
-      "link": "/home/aphro/.local/bin/n2b",
-      "source": "/home/aphro/aphrody/target/release/n2b",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/n2b",
+      "link": "~/.local/bin/n2b",
+      "source": "target/release/n2b",
+      "installed": "~/.local/lib/aphrody/installed-20261001/n2b",
       "bytes": 22016976
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-kernel",
-      "source": "/home/aphro/aphrody/target/release/aphrody-kernel",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-kernel",
+      "link": "~/.local/bin/aphrody-kernel",
+      "source": "target/release/aphrody-kernel",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-kernel",
       "bytes": 83922536
     },
     {
-      "link": "/home/aphro/.local/bin/comic_text_bubble_detector",
-      "source": "/home/aphro/aphrody/target/release/comic_text_bubble_detector",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/comic_text_bubble_detector",
+      "link": "~/.local/bin/comic_text_bubble_detector",
+      "source": "target/release/comic_text_bubble_detector",
+      "installed": "~/.local/lib/aphrody/installed-20261001/comic_text_bubble_detector",
       "bytes": 40776144
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-jev",
-      "source": "/home/aphro/aphrody/target/release/aphrody-jev",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-jev",
+      "link": "~/.local/bin/aphrody-jev",
+      "source": "target/release/aphrody-jev",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-jev",
       "bytes": 9043472
     },
     {
-      "link": "/home/aphro/.local/bin/manga_text_mask",
-      "source": "/home/aphro/aphrody/target/release/manga_text_mask",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/manga_text_mask",
+      "link": "~/.local/bin/manga_text_mask",
+      "source": "target/release/manga_text_mask",
+      "installed": "~/.local/lib/aphrody/installed-20261001/manga_text_mask",
       "bytes": 33834192
     },
     {
-      "link": "/home/aphro/.local/bin/hayai_ocr",
-      "source": "/home/aphro/aphrody/target/release/hayai_ocr",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/hayai_ocr",
+      "link": "~/.local/bin/hayai_ocr",
+      "source": "target/release/hayai_ocr",
+      "installed": "~/.local/lib/aphrody/installed-20261001/hayai_ocr",
       "bytes": 31197504
     },
     {
-      "link": "/home/aphro/.local/bin/manga_ocr",
-      "source": "/home/aphro/aphrody/target/release/manga_ocr",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/manga_ocr",
+      "link": "~/.local/bin/manga_ocr",
+      "source": "target/release/manga_ocr",
+      "installed": "~/.local/lib/aphrody/installed-20261001/manga_ocr",
       "bytes": 28990624
     },
     {
-      "link": "/home/aphro/.local/bin/speech_bubble_yolo11n",
-      "source": "/home/aphro/aphrody/target/release/speech_bubble_yolo11n",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/speech_bubble_yolo11n",
+      "link": "~/.local/bin/speech_bubble_yolo11n",
+      "source": "target/release/speech_bubble_yolo11n",
+      "installed": "~/.local/lib/aphrody/installed-20261001/speech_bubble_yolo11n",
       "bytes": 33996544
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-agent-train",
-      "source": "/home/aphro/aphrody/target/release/aphrody-agent-train",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-agent-train",
+      "link": "~/.local/bin/aphrody-agent-train",
+      "source": "target/release/aphrody-agent-train",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-agent-train",
       "bytes": 2993520
     },
     {
-      "link": "/home/aphro/.local/bin/a2a-duel-loop",
-      "source": "/home/aphro/aphrody/target/release/a2a-duel-loop",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/a2a-duel-loop",
+      "link": "~/.local/bin/a2a-duel-loop",
+      "source": "target/release/a2a-duel-loop",
+      "installed": "~/.local/lib/aphrody/installed-20261001/a2a-duel-loop",
       "bytes": 10886560
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-infra",
-      "source": "/home/aphro/aphrody/target/release/aphrody-infra",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-infra",
+      "link": "~/.local/bin/aphrody-infra",
+      "source": "target/release/aphrody-infra",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-infra",
       "bytes": 35980688
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-web-worker",
-      "source": "/home/aphro/aphrody/target/release/aphrody-web-worker",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-web-worker",
+      "link": "~/.local/bin/aphrody-web-worker",
+      "source": "target/release/aphrody-web-worker",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-web-worker",
       "bytes": 113752304
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-backend",
-      "source": "/home/aphro/aphrody/target/release/aphrody-backend",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-backend",
+      "link": "~/.local/bin/aphrody-backend",
+      "source": "target/release/aphrody-backend",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-backend",
       "bytes": 11475032
     },
     {
-      "link": "/home/aphro/.local/bin/comic_layout_yolo26s",
-      "source": "/home/aphro/aphrody/target/release/comic_layout_yolo26s",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/comic_layout_yolo26s",
+      "link": "~/.local/bin/comic_layout_yolo26s",
+      "source": "target/release/comic_layout_yolo26s",
+      "installed": "~/.local/lib/aphrody/installed-20261001/comic_layout_yolo26s",
       "bytes": 34167680
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-ssh",
-      "source": "/home/aphro/aphrody/target/release/aphrody-ssh",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-ssh",
+      "link": "~/.local/bin/aphrody-ssh",
+      "source": "target/release/aphrody-ssh",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-ssh",
       "bytes": 16981032
     },
     {
-      "link": "/home/aphro/.local/bin/baberu_ocr",
-      "source": "/home/aphro/aphrody/target/release/baberu_ocr",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/baberu_ocr",
+      "link": "~/.local/bin/baberu_ocr",
+      "source": "target/release/baberu_ocr",
+      "installed": "~/.local/lib/aphrody/installed-20261001/baberu_ocr",
       "bytes": 29143408
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-llama-daemon",
-      "source": "/home/aphro/aphrody/target/release/aphrody-llama-daemon",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-llama-daemon",
+      "link": "~/.local/bin/aphrody-llama-daemon",
+      "source": "target/release/aphrody-llama-daemon",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-llama-daemon",
       "bytes": 10949304
     },
     {
-      "link": "/home/aphro/.local/bin/export_formations",
-      "source": "/home/aphro/aphrody/target/release/export_formations",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/export_formations",
+      "link": "~/.local/bin/export_formations",
+      "source": "target/release/export_formations",
+      "installed": "~/.local/lib/aphrody/installed-20261001/export_formations",
       "bytes": 822696
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-summary",
-      "source": "/home/aphro/aphrody/target/release/aphrody-summary",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-summary",
+      "link": "~/.local/bin/aphrody-summary",
+      "source": "target/release/aphrody-summary",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-summary",
       "bytes": 655008
     },
     {
-      "link": "/home/aphro/.local/bin/ievr-tools",
-      "source": "/home/aphro/aphrody/target/release/ievr-tools",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/ievr-tools",
+      "link": "~/.local/bin/ievr-tools",
+      "source": "target/release/ievr-tools",
+      "installed": "~/.local/lib/aphrody/installed-20261001/ievr-tools",
       "bytes": 1350992
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-web",
-      "source": "/home/aphro/aphrody/target/release/aphrody-web",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-web",
+      "link": "~/.local/bin/aphrody-web",
+      "source": "target/release/aphrody-web",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-web",
       "bytes": 125560320
     },
     {
-      "link": "/home/aphro/.local/bin/export_passives",
-      "source": "/home/aphro/aphrody/target/release/export_passives",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/export_passives",
+      "link": "~/.local/bin/export_passives",
+      "source": "target/release/export_passives",
+      "installed": "~/.local/lib/aphrody/installed-20261001/export_passives",
       "bytes": 961696
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody",
-      "source": "/home/aphro/aphrody/target/release/aphrody",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody",
+      "link": "~/.local/bin/aphrody",
+      "source": "target/release/aphrody",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody",
       "bytes": 194018144
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-google",
-      "source": "/home/aphro/aphrody/target/release/aphrody-google",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-google",
+      "link": "~/.local/bin/aphrody-google",
+      "source": "target/release/aphrody-google",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-google",
       "bytes": 72301344
     },
     {
-      "link": "/home/aphro/.local/bin/aot_inpainting",
-      "source": "/home/aphro/aphrody/target/release/aot_inpainting",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aot_inpainting",
+      "link": "~/.local/bin/aot_inpainting",
+      "source": "target/release/aot_inpainting",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aot_inpainting",
       "bytes": 35195544
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-mcp-smoke",
-      "source": "/home/aphro/aphrody/target/release/aphrody-mcp-smoke",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-mcp-smoke",
+      "link": "~/.local/bin/aphrody-mcp-smoke",
+      "source": "target/release/aphrody-mcp-smoke",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-mcp-smoke",
       "bytes": 2289792
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-yolo",
-      "source": "/home/aphro/aphrody/target/release/aphrody-yolo",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-yolo",
+      "link": "~/.local/bin/aphrody-yolo",
+      "source": "target/release/aphrody-yolo",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-yolo",
       "bytes": 7288016
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-rag-eval",
-      "source": "/home/aphro/aphrody/target/release/aphrody-rag-eval",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-rag-eval",
+      "link": "~/.local/bin/aphrody-rag-eval",
+      "source": "target/release/aphrody-rag-eval",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-rag-eval",
       "bytes": 17089408
     },
     {
-      "link": "/home/aphro/.local/bin/koharu-bindgen",
-      "source": "/home/aphro/aphrody/target/release/koharu-bindgen",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/koharu-bindgen",
+      "link": "~/.local/bin/koharu-bindgen",
+      "source": "target/release/koharu-bindgen",
+      "installed": "~/.local/lib/aphrody/installed-20261001/koharu-bindgen",
       "bytes": 10384904
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-agent-home-memory",
-      "source": "/home/aphro/aphrody/target/release/aphrody-agent-home-memory",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-agent-home-memory",
+      "link": "~/.local/bin/aphrody-agent-home-memory",
+      "source": "target/release/aphrody-agent-home-memory",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-agent-home-memory",
       "bytes": 4674536
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-translate",
-      "source": "/home/aphro/aphrody/target/release/aphrody-translate",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-translate",
+      "link": "~/.local/bin/aphrody-translate",
+      "source": "target/release/aphrody-translate",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-translate",
       "bytes": 15150152
     },
     {
-      "link": "/home/aphro/.local/bin/koharu",
-      "source": "/home/aphro/aphrody/target/release/koharu",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/koharu",
+      "link": "~/.local/bin/koharu",
+      "source": "target/release/koharu",
+      "installed": "~/.local/lib/aphrody/installed-20261001/koharu",
       "bytes": 112247248
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-skills",
-      "source": "/home/aphro/aphrody/target/release/aphrody-skills",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-skills",
+      "link": "~/.local/bin/aphrody-skills",
+      "source": "target/release/aphrody-skills",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-skills",
       "bytes": 2737168
     },
     {
-      "link": "/home/aphro/.local/bin/pp_ocr_v6",
-      "source": "/home/aphro/aphrody/target/release/pp_ocr_v6",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/pp_ocr_v6",
+      "link": "~/.local/bin/pp_ocr_v6",
+      "source": "target/release/pp_ocr_v6",
+      "installed": "~/.local/lib/aphrody/installed-20261001/pp_ocr_v6",
       "bytes": 32345112
     },
     {
-      "link": "/home/aphro/.local/bin/aphrody-embed",
-      "source": "/home/aphro/aphrody/target/release/aphrody-embed",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/aphrody-embed",
+      "link": "~/.local/bin/aphrody-embed",
+      "source": "target/release/aphrody-embed",
+      "installed": "~/.local/lib/aphrody/installed-20261001/aphrody-embed",
       "bytes": 12531632
     },
     {
-      "link": "/home/aphro/.local/bin/koharu-sdk",
-      "source": "/home/aphro/aphrody/target/release/koharu-sdk",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/koharu-sdk",
+      "link": "~/.local/bin/koharu-sdk",
+      "source": "target/release/koharu-sdk",
+      "installed": "~/.local/lib/aphrody/installed-20261001/koharu-sdk",
       "bytes": 89256232
     },
     {
-      "link": "/home/aphro/.local/bin/comic_onomatopoeia",
-      "source": "/home/aphro/aphrody/target/release/comic_onomatopoeia",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/comic_onomatopoeia",
+      "link": "~/.local/bin/comic_onomatopoeia",
+      "source": "target/release/comic_onomatopoeia",
+      "installed": "~/.local/lib/aphrody/installed-20261001/comic_onomatopoeia",
       "bytes": 34319480
     },
     {
-      "link": "/home/aphro/.local/bin/paddle_ocr_vl",
-      "source": "/home/aphro/aphrody/target/release/paddle_ocr_vl",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/paddle_ocr_vl",
+      "link": "~/.local/bin/paddle_ocr_vl",
+      "source": "target/release/paddle_ocr_vl",
+      "installed": "~/.local/lib/aphrody/installed-20261001/paddle_ocr_vl",
       "bytes": 30082760
     },
     {
-      "link": "/home/aphro/.local/bin/pp_doclayout_v3",
-      "source": "/home/aphro/aphrody/target/release/pp_doclayout_v3",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/pp_doclayout_v3",
+      "link": "~/.local/bin/pp_doclayout_v3",
+      "source": "target/release/pp_doclayout_v3",
+      "installed": "~/.local/lib/aphrody/installed-20261001/pp_doclayout_v3",
       "bytes": 33964504
     },
     {
-      "link": "/home/aphro/.local/bin/export_skills",
-      "source": "/home/aphro/aphrody/target/release/export_skills",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/export_skills",
+      "link": "~/.local/bin/export_skills",
+      "source": "target/release/export_skills",
+      "installed": "~/.local/lib/aphrody/installed-20261001/export_skills",
       "bytes": 820800
     },
     {
-      "link": "/home/aphro/.local/bin/font_detector",
-      "source": "/home/aphro/aphrody/target/release/font_detector",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/font_detector",
+      "link": "~/.local/bin/font_detector",
+      "source": "target/release/font_detector",
+      "installed": "~/.local/lib/aphrody/installed-20261001/font_detector",
       "bytes": 27144344
     },
     {
-      "link": "/home/aphro/.local/bin/run",
-      "source": "/home/aphro/aphrody/target/release/run",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/run",
+      "link": "~/.local/bin/run",
+      "source": "target/release/run",
+      "installed": "~/.local/lib/aphrody/installed-20261001/run",
       "bytes": 81166264
     },
     {
-      "source": "/home/aphro/aphrody/target/debug/aphrody-agent-home-memory",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/daemon/aphrody-agent-home-memory",
+      "source": "target/debug/aphrody-agent-home-memory",
+      "installed": "~/.local/lib/aphrody/installed-20261001/daemon/aphrody-agent-home-memory",
       "bytes": 107758416
     },
     {
-      "source": "/home/aphro/aphrody/target/debug/aphrody-agent-train",
-      "installed": "/home/aphro/.local/lib/aphrody/installed-20261001/daemon/aphrody-agent-train",
+      "source": "target/debug/aphrody-agent-train",
+      "installed": "~/.local/lib/aphrody/installed-20261001/daemon/aphrody-agent-train",
       "bytes": 110385336
     }
   ]

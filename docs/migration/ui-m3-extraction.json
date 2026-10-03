@@ -3,7 +3,7 @@
   "observedAt": "2026-09-29",
   "source": {
     "repository": "aphrody-ui",
-    "path": "/home/aphro/src/aphrody-ui",
+    "path": "~/src/aphrody-ui",
     "head": "b9dc9e91ed8231254a4a4746b316bb0418ff6f15",
     "branch": "main",
     "worktreeClean": true,

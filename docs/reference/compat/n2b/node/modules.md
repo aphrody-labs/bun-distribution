@@ -620,8 +620,8 @@ the [Determining module system][] section to understand what parse goal will be
 used.
 
 A required module prefixed with `'/'` is an absolute path to the file. For
-example, `require('/home/marco/foo.js')` will load the file at
-`/home/marco/foo.js`.
+example, `require('~/foo.js')` will load the file at
+`~/foo.js`.
 
 A required module prefixed with `'./'` is relative to the file calling
 `require()`. That is, `circle.js` must be in the same directory as `foo.js` for
@@ -690,13 +690,13 @@ Node.js will not append `node_modules` to a path already ending in
 If it is not found there, then it moves to the parent directory, and so
 on, until the root of the file system is reached.
 
-For example, if the file at `'/home/ry/projects/foo.js'` called
+For example, if the file at `'~/projects/foo.js'` called
 `require('bar.js')`, then Node.js would look in the following locations, in
 this order:
 
-* `/home/ry/projects/node_modules/bar.js`
-* `/home/ry/node_modules/bar.js`
-* `/home/node_modules/bar.js`
+* `~/projects/node_modules/bar.js`
+* `~/node_modules/bar.js`
+* `~/bar.js`
 * `/node_modules/bar.js`
 
 This allows programs to localize their dependencies, so that they do not
@@ -810,7 +810,7 @@ Running `node example.js` from `/Users/mjr`
 
 ```js
 console.log(__filename);
-// Prints: /Users/mjr/example.js
+// Prints: ~/example.js
 console.log(__dirname);
 // Prints: /Users/mjr
 ```
@@ -818,12 +818,12 @@ console.log(__dirname);
 Given two modules: `a` and `b`, where `b` is a dependency of
 `a` and there is a directory structure of:
 
-* `/Users/mjr/app/a.js`
-* `/Users/mjr/app/node_modules/b/b.js`
+* `~/app/a.js`
+* `~/app/node_modules/b/b.js`
 
 References to `__filename` within `b.js` will return
-`/Users/mjr/app/node_modules/b/b.js` while references to `__filename` within
-`a.js` will return `/Users/mjr/app/a.js`.
+`~/app/node_modules/b/b.js` while references to `__filename` within
+`a.js` will return `~/app/a.js`.
 
 ### `exports`
 

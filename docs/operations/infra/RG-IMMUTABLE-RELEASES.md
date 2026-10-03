@@ -3,7 +3,7 @@
 The control plane activates RG from one directory directly below
 `/srv/rg/releases/` and switches `/srv/rg/current` (live since 2026-09-25:
 release `5691ba4b`). RG is assembled on the VPS itself by
-`scripts/rg/assemble-vps-release.sh FULL_SHA` (from `/home/ubuntu/rg` checked
+`scripts/rg/assemble-vps-release.sh FULL_SHA` (from `../rg` checked
 out at that commit, with the Next standalone build under Node 22 in Docker and
 the host-only `/etc` build environment); the all-in-one bundle only pins the RG
 commit (`rg/release.json`). The VPS adapters are installed from this
@@ -36,7 +36,7 @@ example is the roster of 2026-09-26. The release SHA must equal `commit`. RG
 units must run from `/srv/rg/current`; the native PostgREST unit is exempt from
 that path. Every other unit must declare at least one external
 `EnvironmentFile` under `/etc`, already provisioned with mode `0600`. The
-adapter rejects references to `/home/ubuntu/rg`.
+adapter rejects references to `../rg`.
 
 The packaged Nginx file must include a `server_name` for every cataloged,
 non-retired RG public host. Set `probePath` on a route when its public path

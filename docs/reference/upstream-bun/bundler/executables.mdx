@@ -694,10 +694,10 @@ import db from "./my.db" with { type: "sqlite" };
 console.log(db.query("select * from users LIMIT 1").get());
 ```
 
-That means if the executable is at `/usr/bin/hello` and the user's terminal is in `/home/me/Desktop`, Bun looks for `/home/me/Desktop/my.db`.
+That means if the executable is at `/usr/bin/hello` and the user's terminal is in `~/Desktop`, Bun looks for `~/Desktop/my.db`.
 
 ```bash terminal icon="terminal"
-cd /home/me/Desktop
+cd ~/Desktop
 ./hello
 ```
 

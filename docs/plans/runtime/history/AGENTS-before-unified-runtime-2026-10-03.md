@@ -121,8 +121,8 @@ cross-agent context. Do not include credentials in shared summaries.
 
 ## Plugin scoping and runtime isolation
 
-- `aphrody` plugin: strictly scoped to Aphrody monorepo (`/home/aphro/aphrody`), Python services (`/home/aphro/aphrody-py`). It hosts the native Aphrody kernel, M3 UI framework, A2A protocol and system platform tools.
-- `iecode` plugin: strictly scoped to `/home/aphro/iecode` (NIE/IEVR reversing, 3D rendering pipeline, Level-5 Criware formats). Must not leak into generic workspaces.
+- `aphrody` plugin: strictly scoped to Aphrody monorepo (`<repo>`), Python services (`../aphrody-py`). It hosts the native Aphrody kernel, M3 UI framework, A2A protocol and system platform tools.
+- `iecode` plugin: strictly scoped to `../iecode` (NIE/IEVR reversing, 3D rendering pipeline, Level-5 Criware formats). Must not leak into generic workspaces.
 - `yolo` plugin: global scope across all workspaces. Drives autonomous non-human-in-the-loop (NHITL) execution with `APHRODY_YOLO=1`, `APHRODY_NHITL=1`, and `APHRODY_AUTO_APPROVE=1`.
 - `bun-ts7` / Bun: global scope everywhere (`~/plugins/bun-ts7`, Bun runtime, bundler, test runner, native C++/Zig engine and TypeScript 7).
 

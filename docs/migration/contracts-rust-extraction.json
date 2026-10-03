@@ -2,13 +2,13 @@
   "date": "2026-09-29",
   "status": "integrated-and-checked",
   "source": {
-    "repository": "/home/aphro/src/aphrody-contracts",
+    "repository": "~/src/aphrody-contracts",
     "head": "4a22afb12b086573e6890e49a3bfbde7a96380ea",
     "workingTreeDirty": false,
     "dirtyPathCount": 0
   },
   "target": {
-    "repository": "/home/aphro/aphrody",
+    "repository": ".",
     "rootCargoMembers": 10,
     "importedCrateCount": 9,
     "existingCrate": "crates/contracts/aphrody-kernel-client",

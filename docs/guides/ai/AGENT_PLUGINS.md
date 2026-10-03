@@ -61,7 +61,7 @@ Un verrou coopératif sérialise les mutations.
 ## Installer une capacité
 
 ```sh
-# Depuis /home/aphro/aphrody : détection automatique des CLI installés.
+# Depuis . : détection automatique des CLI installés.
 aphrody-workspace plugins install --name aphrody --apply
 
 # Un seul fournisseur.

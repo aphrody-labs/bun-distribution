@@ -207,7 +207,7 @@ Releases are built on Linux x86_64 from a clean clone of the superproject
 because every submodule is checked out at its gitlink.
 
 ```bash
-# SOURCE: git@github.com:aphrody-code/aphrody-src.git, /mnt/c/Users/aphro/src or a git bundle
+# SOURCE: git@github.com:aphrody-code/aphrody-src.git, /mnt/c~/src or a git bundle
 bash scripts/prepare-release-workspace.sh SOURCE SUPERPROJECT_SHA ~/aphrody-release/aphrody-src
 cd ~/aphrody-release/aphrody-src/aphrody-infra
 SITE_BUILD_DATABASE_URL=postgresql://…@127.0.0.1:15433/shenron_site \
@@ -314,7 +314,7 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
    `aphrody-infra` pin), then `sudo bash scripts/install-vps-adapter.sh`: it
    installs the four adapters, the catalog snapshots and `ADAPTER.json`, and
    removes the retired site-only `aphrody-infra-deploy`.
-8. **RG release.** `git -C /home/ubuntu/rg fetch && git -C /home/ubuntu/rg
+8. **RG release.** `git -C ../rg fetch && git -C ../rg
    checkout --detach RG_SHA`, then as `ubuntu`
    `bash /home/ubuntu/aphrody-infra/scripts/rg/assemble-vps-release.sh RG_SHA`
    (builds `/srv/rg/releases/RG_SHA`; retired catalog services are skipped).

@@ -1,6 +1,6 @@
 {
   "formatVersion": 1,
-  "sourceRepository": "/home/aphro/src/rg",
+  "sourceRepository": "~/src/rg",
   "sourceCommit": "14be66e6cf4dbb7350b0021cc7f83fe28f144583",
   "sourceTrackedFiles": 4241,
   "privateTrackedPaths": [

@@ -18,7 +18,7 @@ Install a versioned release, switch the `current` link atomically, reload the ex
 
 ## Retirement
 
-Only after the observation window succeeds: disable named legacy units one at a time, re-read health after each change, and remove obsolete files only from an explicitly recorded allowlist. Do not remove `/home/ubuntu/aphrody`, databases or credentials until retention and restore evidence are recorded.
+Only after the observation window succeeds: disable named legacy units one at a time, re-read health after each change, and remove obsolete files only from an explicitly recorded allowlist. Do not remove `<repo>`, databases or credentials until retention and restore evidence are recorded.
 
 ## Rollback
 

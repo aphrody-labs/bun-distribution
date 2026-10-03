@@ -138,13 +138,13 @@ use sd_core::infra::event::SubscriptionFilter;
 // Subscribe to changes in a specific directory
 let filter = SubscriptionFilter::PathScoped {
     resource_type: "file".to_string(),
-    path_scope: SdPath::physical(device_slug, "/Users/james/Photos"),
+    path_scope: SdPath::physical(device_slug, "~/Photos"),
 };
 
 let mut subscriber = event_bus.subscribe_filtered(vec![filter]);
 
 while let Ok(event) = subscriber.recv().await {
-    // Only receives events affecting /Users/james/Photos
+    // Only receives events affecting ~/Photos
     println!("Event: {:?}", event);
 }
 ```

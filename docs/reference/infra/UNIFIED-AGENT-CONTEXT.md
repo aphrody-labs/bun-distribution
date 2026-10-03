@@ -2,7 +2,7 @@
 # Unified agent context
 
 > **Historical split-repository guide.** Its ownership examples below predate
-> consolidation into the active `/home/aphro/aphrody` monorepo and must not be
+> consolidation into the active `<repo>` monorepo and must not be
 > used to choose current source paths. Start from root [`AGENTS.md`](../../../AGENTS.md),
 > [`PLAN.md`](../../../PLAN.md), the package owner in this checkout, and the
 > sibling `aphrody-py` / `iecode` rules where relevant. The root `config/`

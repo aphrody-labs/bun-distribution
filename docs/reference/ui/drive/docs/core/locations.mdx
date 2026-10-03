@@ -34,7 +34,7 @@ Location {
     // ... other fields
 }
 
-// Root entry for "/Users/alice/Documents"
+// Root entry for "~/Documents"
 Entry {
     id: 123,
     name: "Documents",
@@ -48,8 +48,8 @@ Entry {
 
 This design enables **nested locations without duplicating the file tree**. If you have:
 
-1. Location A: `/Users/alice/Documents` (entry_id: 123)
-2. Location B: `/Users/alice/Documents/Work` (entry_id: 124)
+1. Location A: `~/Documents` (entry_id: 123)
+2. Location B: `~/Documents/Work` (entry_id: 124)
 
 The entries table contains a single unified tree:
 
@@ -96,9 +96,9 @@ Directory paths are stored separately for performance:
 -- directory_paths table
 entry_id | path
 ---------|---------------------------
-123      | /Users/alice/Documents
-124      | /Users/alice/Documents/Work
-126      | /Users/alice/Documents/Photos
+123      | ~/Documents
+124      | ~/Documents/Work
+126      | ~/Documents/Photos
 ```
 
 This avoids storing redundant path information on every file entry and makes path-based lookups significantly faster. Only directories are stored in this table, not individual files.
@@ -210,7 +210,7 @@ spacedrive location list
 let (location_id, job_id) = location_manager
     .add_location(
         library,
-        PathBuf::from("/Users/alice/Desktop"),
+        PathBuf::from("~/Desktop"),
         Some("Desktop".to_string()),
         device_id,
         IndexMode::Content,

@@ -738,7 +738,7 @@
    Compiling pest_meta v2.9.2
    Compiling v_frame v0.3.9
    Compiling lmdb-master-sys v0.2.6
-   Compiling aphrody-subsystem v1.0.0-canary (/home/aphro/aphrody/crates/contracts/subsystem)
+   Compiling aphrody-subsystem v1.0.0-canary (crates/contracts/subsystem)
    Compiling url v2.5.8
    Compiling gix-filter v0.30.0
    Compiling rustls-webpki v0.103.15
@@ -854,7 +854,7 @@
    Compiling phf_shared v0.12.1
    Compiling dirs-sys v0.4.1
    Compiling globset v0.4.20
-   Compiling simdutf v0.7.0 (/home/aphro/aphrody/upstream/simdutf-rio)
+   Compiling simdutf v0.7.0 (upstream/simdutf-rio)
    Compiling termios v0.2.2
    Compiling ioctl-rs v0.1.6
    Compiling page_size v0.6.0
@@ -1043,51 +1043,51 @@
    Compiling tokio-tungstenite v0.24.0
    Compiling nu-std v0.115.1
    Compiling gix-transport v0.57.2
-   Compiling aphrody-agent-proto v1.0.0-canary (/home/aphro/aphrody/crates/contracts/agent-proto)
+   Compiling aphrody-agent-proto v1.0.0-canary (crates/contracts/agent-proto)
    Compiling gix-config v0.56.0
    Compiling gix-worktree-stream v0.32.0
    Compiling gix-prompt v0.15.1
    Compiling iced-x86 v1.21.0
    Compiling gix-shallow v0.12.1
-   Compiling aphrody-kernel-client v1.0.0-canary (/home/aphro/aphrody/crates/os/kernel-client)
+   Compiling aphrody-kernel-client v1.0.0-canary (crates/os/kernel-client)
    Compiling tokio-stream v0.1.19
    Compiling sha2 v0.10.9
    Compiling io-close v0.3.7
-   Compiling aphrody-n2b-types v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-types)
+   Compiling aphrody-n2b-types v0.6.2 (crates/compat/n2b-types)
    Compiling maybe-async v0.2.11
    Compiling gix-archive v0.32.0
-   Compiling aphrody-n2b-registry v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-registry)
+   Compiling aphrody-n2b-registry v0.6.2 (crates/compat/n2b-registry)
    Compiling gix-worktree-state v0.30.0
    Compiling gix-odb v0.80.0
    Compiling gix-credentials v0.38.2
-   Compiling aphrody-tui v1.0.0-canary (/home/aphro/aphrody/crates/shell/tui)
-   Compiling aphrody-terminal-backend v1.0.0-canary (/home/aphro/aphrody/crates/shell/terminal-backend)
+   Compiling aphrody-tui v1.0.0-canary (crates/shell/tui)
+   Compiling aphrody-terminal-backend v1.0.0-canary (crates/shell/terminal-backend)
    Compiling gix-protocol v0.61.0
    Compiling reqwest v0.13.5
    Compiling gix-status v0.30.0
    Compiling gix-blame v0.13.0
-   Compiling aphrody-fsindex v1.0.0-canary (/home/aphro/aphrody/crates/os/fsindex)
+   Compiling aphrody-fsindex v1.0.0-canary (crates/os/fsindex)
    Compiling gix-negotiate v0.31.0
-   Compiling aphrody-proc v1.0.0-canary (/home/aphro/aphrody/crates/os/proc)
+   Compiling aphrody-proc v1.0.0-canary (crates/os/proc)
    Compiling gix-mailmap v0.33.2
    Compiling shlex v1.3.0
-   Compiling aphrody-kernel v1.0.0-canary (/home/aphro/aphrody/crates/os/kernel)
-   Compiling aphrody-bun-docs v1.0.0-canary (/home/aphro/aphrody/crates/compat/bun-docs)
-   Compiling aphrody-toolchains v1.0.0-canary (/home/aphro/aphrody/crates/compat/toolchains)
-   Compiling aphrody-systemd v1.0.0-canary (/home/aphro/aphrody/crates/os/systemd)
-   Compiling aphrody-compat v1.0.0-canary (/home/aphro/aphrody/crates/os/compat)
-   Compiling aphrody-execpolicy v1.0.0-canary (/home/aphro/aphrody/crates/os/execpolicy)
-   Compiling aphrody-coreutils v1.0.0-canary (/home/aphro/aphrody/crates/os/coreutils)
-   Compiling aphrody-events v1.0.0-canary (/home/aphro/aphrody/crates/os/events)
+   Compiling aphrody-kernel v1.0.0-canary (crates/os/kernel)
+   Compiling aphrody-bun-docs v1.0.0-canary (crates/compat/bun-docs)
+   Compiling aphrody-toolchains v1.0.0-canary (crates/compat/toolchains)
+   Compiling aphrody-systemd v1.0.0-canary (crates/os/systemd)
+   Compiling aphrody-compat v1.0.0-canary (crates/os/compat)
+   Compiling aphrody-execpolicy v1.0.0-canary (crates/os/execpolicy)
+   Compiling aphrody-coreutils v1.0.0-canary (crates/os/coreutils)
+   Compiling aphrody-events v1.0.0-canary (crates/os/events)
    Compiling gix-submodule v0.30.0
    Compiling gix v0.83.0
-   Compiling aphrody-capture v1.0.0-canary (/home/aphro/aphrody/crates/os/capture)
+   Compiling aphrody-capture v1.0.0-canary (crates/os/capture)
    Compiling git2 v0.21.0
-   Compiling aphrody-re v1.0.0-canary (/home/aphro/aphrody/crates/os/re)
-   Compiling aphrody-winclean v1.0.0-canary (/home/aphro/aphrody/crates/os/winclean)
+   Compiling aphrody-re v1.0.0-canary (crates/os/re)
+   Compiling aphrody-winclean v1.0.0-canary (crates/os/winclean)
    Compiling nu-command v0.115.1
-   Compiling aphrody-nu v1.0.0-canary (/home/aphro/aphrody/crates/shell/nu)
-   Compiling aphrody-shell v1.0.0-canary (/home/aphro/aphrody/crates/shell/shell)
+   Compiling aphrody-nu v1.0.0-canary (crates/shell/nu)
+   Compiling aphrody-shell v1.0.0-canary (crates/shell/shell)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 17s
 warning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1
 note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`

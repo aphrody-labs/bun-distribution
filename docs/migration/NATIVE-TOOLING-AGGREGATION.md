@@ -79,9 +79,9 @@ Reproduce the complete Bun consumer test from the target repository:
 
 ```sh
 APHRODY_FFI_LIB="$PWD/target/debug/libaphrody_ffi.so" \
-APHRODY_OXC_REFERENCE_LIB=/home/aphro/src/oxc/target/debug/libaphrody_oxc_bridge.so \
-APHRODY_N2B_REFERENCE_LIB=/home/aphro/src/aphrody-compat/target/debug/libaphrody_n2b_native.so \
-APHRODY_BUN_FORK_BIN=/home/aphro/src/bun/build/debug/bun-debug \
+APHRODY_OXC_REFERENCE_LIB=~/src/oxc/target/debug/libaphrody_oxc_bridge.so \
+APHRODY_N2B_REFERENCE_LIB=~/src/aphrody-compat/target/debug/libaphrody_n2b_native.so \
+APHRODY_BUN_FORK_BIN=~/src/bun/build/debug/bun-debug \
 bun test packages/bun/aphrody/test-native.test.ts packages/bun/aphrody/test-library.test.ts
 ```
 

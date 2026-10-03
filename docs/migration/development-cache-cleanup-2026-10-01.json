@@ -1,34 +1,34 @@
 [
   {
-    "path": "/home/aphro/.cache/sccache",
+    "path": "~/.cache/sccache",
     "bytes": 7053844621
   },
   {
-    "path": "/home/aphro/.cache/ccache",
+    "path": "~/.cache/ccache",
     "bytes": 340775021
   },
   {
-    "path": "/home/aphro/.cache/typescript",
+    "path": "~/.cache/typescript",
     "bytes": 6063765
   },
   {
-    "path": "/home/aphro/.cache/pip",
+    "path": "~/.cache/pip",
     "bytes": 318799
   },
   {
-    "path": "/home/aphro/.cache/uv",
+    "path": "~/.cache/uv",
     "bytes": 819998138
   },
   {
-    "path": "/home/aphro/.bun/install/cache",
+    "path": "~/.bun/install/cache",
     "bytes": 1164784764
   },
   {
-    "path": "/home/aphro/.npm/_cacache",
+    "path": "~/.npm/_cacache",
     "bytes": 443732593
   },
   {
-    "path": "/home/aphro/.cargo/registry/cache",
+    "path": "~/.cargo/registry/cache",
     "bytes": 507208321
   }
 ]

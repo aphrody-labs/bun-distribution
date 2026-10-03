@@ -27,15 +27,15 @@ The design intent is for locations to be **virtual organizational concepts** tha
 
 ```
 Filesystem:
-/Users/jamespine/Documents/
+~/Documents/
 ├── Work/
 │   ├── project.txt
 │   └── notes.md
 └── Personal/
 
 User actions:
-1. sd location add "/Users/jamespine/Documents"
-2. sd location add "/Users/jamespine/Documents/Work"
+1. sd location add "~/Documents"
+2. sd location add "~/Documents/Work"
 
 Database result (BROKEN):
 entries:
@@ -813,10 +813,10 @@ The flexibility is already built in!
 **Location list view**:
 
 ```
-Documents (/Users/jamespine/Documents)
-  └─ Work (/Users/jamespine/Documents/Work) [nested]
+Documents (~/Documents)
+  └─ Work (~/Documents/Work) [nested]
 
-Photos (/Users/jamespine/Pictures)
+Photos (~/Pictures)
 ```
 
 **Considerations**:

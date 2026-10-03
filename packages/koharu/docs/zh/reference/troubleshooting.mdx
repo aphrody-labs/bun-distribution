@@ -64,7 +64,7 @@ icon: 'circle-question'
         在开始菜单搜索 **PowerShell**，打开 **Windows PowerShell**。Windows Terminal 的 PowerShell 标签也可以。不要在命令提示符中运行这些命令。
       </Step>
       <Step title="启动 Koharu">
-        使用 `Ctrl+V` 或右键粘贴，然后按 Enter。不要复制窗口中的 `PS C:\Users\YourName>` 提示符。
+        使用 `Ctrl+V` 或右键粘贴，然后按 Enter。不要复制窗口中的 `PS %USERPROFILE%>` 提示符。
 
         ```powershell
         $env:RUST_LOG="debug"; koharu.exe

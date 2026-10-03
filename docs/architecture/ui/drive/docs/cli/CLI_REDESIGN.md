@@ -78,10 +78,10 @@ sd info <path|uri>                # Show file metadata
 
 ```bash
 # Traditional paths
-sd cp /Users/me/file.txt /backup/
+sd cp ~/file.txt /backup/
 
 # SdPath URIs
-sd cp local://macbook/Users/me/file.txt s3://my-bucket/backup/
+sd cp local://macbook~/file.txt s3://my-bucket/backup/
 sd info content://550e8400-e29b-41d4-a716-446655440000
 ```
 
@@ -298,7 +298,7 @@ sd logs follow                    # Follow logs in real-time
 
 1. Create URI parser that accepts both formats
 2. Update file operations (ls, cp, mv, rm, info, browse):
-   - Parse traditional paths: `/Users/me/file.txt`
+   - Parse traditional paths: `~/file.txt`
    - Parse SdPath URIs: `local://device/path`, `s3://bucket/key`, `content://uuid`
    - Support shortcut flags: `--device`, `--cloud`
 

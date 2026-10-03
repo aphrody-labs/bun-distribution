@@ -81,7 +81,7 @@ bun packages/infra/aphrody-workspace/src/ops.ts shenron dev-env --target wsl-ubu
 bun packages/infra/aphrody-workspace/src/ops.ts shenron deploy --target vps --release <release-path>
 ```
 
-`migrate inventory` construit l’inventaire commun à partir de `/home/aphro/src`.
+`migrate inventory` construit l’inventaire commun à partir de `~/src`.
 Les imports `docs` et `scripts` sélectionnent ensuite le propriétaire Shenron,
 vérifient les empreintes, respectent les cibles existantes et gardent les
 conflits traçables. L’import `scripts` a copié 483 scripts Shenron vers
@@ -267,7 +267,7 @@ arrière documenté.
    confirmé. La migration de code ne déclenche jamais un déploiement implicite.
 
 **Sortie :** source map fermée, qualification propre et reproductible, aucune
-dépendance runtime aux chemins `/home/aphro/src/shenron`, runbook de bascule et
+dépendance runtime aux chemins `~/src/shenron`, runbook de bascule et
 retour arrière exercé par Aphrody Infra.
 
 ## Références de plateforme

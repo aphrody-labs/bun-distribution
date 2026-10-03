@@ -2,7 +2,7 @@
 
 # Rose Griffon source staging
 
-RG source remains authoritative at `/home/aphro/src/rg`. The staged copy in this
+RG source remains authoritative at `~/src/rg`. The staged copy in this
 repository is source preservation, not a runnable or deployable RG workspace.
 The source revision and the SHA-256 of every tracked file are recorded in
 [`rg-staging.json`](rg-staging.json). The audit verified 4,241 tracked files.

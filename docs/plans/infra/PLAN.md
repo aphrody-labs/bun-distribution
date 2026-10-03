@@ -243,13 +243,13 @@ results apply to their named revisions and dates, not current host health.
   copied into the new Cargo workspace, hash-compared with its source and
   checked via `cargo check --all-targets --locked --offline`. Its provenance
   and license boundary are recorded in
-  `/home/aphro/aphrody/docs/migration/ievr-iecode-extraction.json`. The Bun
+  `docs/migration/ievr-iecode-extraction.json`. The Bun
   binding/plugin and the NIE MCP child-process bridge remain unintegrated; no
   API parity is claimed. Nested submodules and missing checkouts remain open.
   The workspace package now resolves compiler TypeScript 7.0.2 and the explicit
   compiler API compatibility package `@typescript/typescript6` 6.0.2. Bun frozen
   install, package typecheck, oxlint and oxfmt check passed at this source state.
-  Targets: `/home/aphro/aphrody` and `/home/aphro/aphrody-py`.
+  Targets: `<repo>` and `../aphrody-py`.
 
 
 The pre-cleanup ledger is retained at [revision 917cb93c0afd](https://github.com/aphrody-labs/aphrody/blob/917cb93c0afd7b8883ad1dd5ee6397365609af10/docs/PLAN.md).
@@ -479,7 +479,7 @@ sections current and store operational detail in its existing runbook.
   revision that implements this entry.
 - **2026-09-28:** local RAG/model review found the dedicated SQLite/BM25/vector/hybrid crates and
   model catalog already exist in AI. The local catalog contains 17 model entries; its runtime
-  store is separate from source synchronization. The Bun fork at `/home/aphro/src/bun` was clean
+  store is separate from source synchronization. The Bun fork at `~/src/bun` was clean
   and matched `upstream/main`, so no Bun-specific delta exists in this checkout to learn from.
   AI's LoRA worker is full-precision and QLoRA is explicitly unimplemented; train-on-Bun remains
   AI owner work requiring a curated/evaluated dataset and a QLoRA-capable path for larger code

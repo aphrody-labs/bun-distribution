@@ -273,7 +273,7 @@
    Compiling lmdb-master-sys v0.2.6
     Checking v_frame v0.3.9
    Compiling pest_meta v2.9.2
-    Checking aphrody-subsystem v1.0.0-canary (/home/aphro/aphrody/crates/contracts/subsystem)
+    Checking aphrody-subsystem v1.0.0-canary (crates/contracts/subsystem)
     Checking url v2.5.8
    Compiling darling v0.24.1
     Checking nu-engine v0.115.1
@@ -380,7 +380,7 @@
     Checking dirs-sys v0.4.1
     Checking gix-url v0.36.2
     Checking wayland-protocols-wlr v0.3.12
-   Compiling simdutf v0.7.0 (/home/aphro/aphrody/upstream/simdutf-rio)
+   Compiling simdutf v0.7.0 (upstream/simdutf-rio)
     Checking globset v0.4.20
     Checking socks v0.3.4
     Checking ioctl-rs v0.1.6
@@ -570,52 +570,52 @@
     Checking tokio-tungstenite v0.24.0
     Checking gix-transport v0.57.2
     Checking nu-std v0.115.1
-    Checking aphrody-agent-proto v1.0.0-canary (/home/aphro/aphrody/crates/contracts/agent-proto)
+    Checking aphrody-agent-proto v1.0.0-canary (crates/contracts/agent-proto)
     Checking gix-config v0.56.0
     Checking gix-worktree-stream v0.32.0
     Checking gix-prompt v0.15.1
     Checking iced-x86 v1.21.0
     Checking gix-shallow v0.12.1
-    Checking aphrody-kernel-client v1.0.0-canary (/home/aphro/aphrody/crates/os/kernel-client)
+    Checking aphrody-kernel-client v1.0.0-canary (crates/os/kernel-client)
     Checking tokio-stream v0.1.19
     Checking sha2 v0.10.9
     Checking io-close v0.3.7
-    Checking aphrody-n2b-types v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-types)
+    Checking aphrody-n2b-types v0.6.2 (crates/compat/n2b-types)
     Checking gix-protocol v0.61.0
     Checking gix-odb v0.80.0
-    Checking aphrody-tui v1.0.0-canary (/home/aphro/aphrody/crates/shell/tui)
+    Checking aphrody-tui v1.0.0-canary (crates/shell/tui)
     Checking gix-submodule v0.30.0
     Checking gix-worktree-state v0.30.0
     Checking gix-archive v0.32.0
-    Checking aphrody-n2b-registry v0.6.2 (/home/aphro/aphrody/crates/compat/n2b-registry)
+    Checking aphrody-n2b-registry v0.6.2 (crates/compat/n2b-registry)
     Checking gix-credentials v0.38.2
     Checking reqwest v0.13.5
     Checking gix-status v0.30.0
     Checking gix-blame v0.13.0
    Compiling nu-cmd-extra v0.115.1
-    Checking aphrody-fsindex v1.0.0-canary (/home/aphro/aphrody/crates/os/fsindex)
+    Checking aphrody-fsindex v1.0.0-canary (crates/os/fsindex)
     Checking gix-negotiate v0.31.0
-    Checking aphrody-proc v1.0.0-canary (/home/aphro/aphrody/crates/os/proc)
+    Checking aphrody-proc v1.0.0-canary (crates/os/proc)
     Checking gix-mailmap v0.33.2
-   Compiling aphrody-kernel v1.0.0-canary (/home/aphro/aphrody/crates/os/kernel)
-    Checking aphrody-capture v1.0.0-canary (/home/aphro/aphrody/crates/os/capture)
+   Compiling aphrody-kernel v1.0.0-canary (crates/os/kernel)
+    Checking aphrody-capture v1.0.0-canary (crates/os/capture)
     Checking shlex v1.3.0
-    Checking aphrody-bun-docs v1.0.0-canary (/home/aphro/aphrody/crates/compat/bun-docs)
-    Checking aphrody-toolchains v1.0.0-canary (/home/aphro/aphrody/crates/compat/toolchains)
-    Checking aphrody-systemd v1.0.0-canary (/home/aphro/aphrody/crates/os/systemd)
-    Checking aphrody-compat v1.0.0-canary (/home/aphro/aphrody/crates/os/compat)
-    Checking aphrody-coreutils v1.0.0-canary (/home/aphro/aphrody/crates/os/coreutils)
-    Checking aphrody-terminal-backend v1.0.0-canary (/home/aphro/aphrody/crates/shell/terminal-backend)
+    Checking aphrody-bun-docs v1.0.0-canary (crates/compat/bun-docs)
+    Checking aphrody-toolchains v1.0.0-canary (crates/compat/toolchains)
+    Checking aphrody-systemd v1.0.0-canary (crates/os/systemd)
+    Checking aphrody-compat v1.0.0-canary (crates/os/compat)
+    Checking aphrody-coreutils v1.0.0-canary (crates/os/coreutils)
+    Checking aphrody-terminal-backend v1.0.0-canary (crates/shell/terminal-backend)
     Checking gix v0.83.0
-    Checking aphrody-execpolicy v1.0.0-canary (/home/aphro/aphrody/crates/os/execpolicy)
-    Checking aphrody-events v1.0.0-canary (/home/aphro/aphrody/crates/os/events)
-    Checking aphrody-re v1.0.0-canary (/home/aphro/aphrody/crates/os/re)
+    Checking aphrody-execpolicy v1.0.0-canary (crates/os/execpolicy)
+    Checking aphrody-events v1.0.0-canary (crates/os/events)
+    Checking aphrody-re v1.0.0-canary (crates/os/re)
     Checking git2 v0.21.0
-    Checking aphrody-winclean v1.0.0-canary (/home/aphro/aphrody/crates/os/winclean)
+    Checking aphrody-winclean v1.0.0-canary (crates/os/winclean)
     Checking fff-search v0.10.3
     Checking nu-command v0.115.1
-    Checking aphrody-nu v1.0.0-canary (/home/aphro/aphrody/crates/shell/nu)
-    Checking aphrody-shell v1.0.0-canary (/home/aphro/aphrody/crates/shell/shell)
+    Checking aphrody-nu v1.0.0-canary (crates/shell/nu)
+    Checking aphrody-shell v1.0.0-canary (crates/shell/shell)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 03s
 warning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1
 note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`

@@ -86,7 +86,7 @@ test tests::drive_cli_routes_mounts_and_ls ... ok
 
 test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-   Compiling aphrody-infra v0.1.0 (/home/aphro/aphrody/crates/infra/infra)
+   Compiling aphrody-infra v0.1.0 (crates/infra/infra)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 3.39s
      Running unittests src/lib.rs (target/debug/deps/aphrody_infra-8650622603bb0c6e)
      Running unittests src/main.rs (target/debug/deps/aphrody_infra-dba6abc7ebec1efb)

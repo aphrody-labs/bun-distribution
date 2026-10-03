@@ -7,13 +7,13 @@ game data were opened.
 
 | Repository | HEAD | Worktree |
 | --- | --- | --- |
-| NIE submodule object DB at `/home/aphro/src/.git/modules/nie` | `94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c` (superproject gitlink) | source worktree absent; tree readable from local Git objects |
-| `/home/aphro/iecode` | `8fdab4b96014f70972c2855878cab49510ffe876` | clean, `main...origin/main` |
+| NIE submodule object DB at `~/src/.git/modules/nie` | `94d88bc3993e7dabddf44ce9804d5b41ee5d4c4c` (superproject gitlink) | source worktree absent; tree readable from local Git objects |
+| `../iecode` | `8fdab4b96014f70972c2855878cab49510ffe876` | clean, `main...origin/main` |
 
 At current NIE HEAD, `packages/` contains only `README.md`; the package source
 described by NIE's package docs is absent from that checkout. Its tracked copy
-is now `/home/aphro/iecode/packages/nie-plugin` and its binding is
-`/home/aphro/iecode/packages/nie`. NIE's `PLAN.md` still assigns these packages
+is now `../iecode/packages/nie-plugin` and its binding is
+`../iecode/packages/nie`. NIE's `PLAN.md` still assigns these packages
 to IECODE. `docs/nie/CONTEXT.md` and `PLUGIN-AUDIT.md` in IECODE cite the prior
 NIE revision `34c55fa`; those snapshots are stale for MCP tool names/count and
 must not be treated as current API evidence.
@@ -94,7 +94,7 @@ At IECODE HEAD, `@nie/plugin` is a private ESM Bun workspace package at
 `packages/nie-plugin` (version `1.0.0`). Its runtime dependencies are
 `@aphrody/nie` (`workspace:*`) and `@happy-dom/global-registrator` (`catalog:`);
 `@types/bun` and `typescript` are dev dependencies. It has no MCP dependency.
-Exports are `.`, `./register`, and `./happydom`. Bun preloads registration for
+Exports are `<repo>`, `./register`, and `./happydom`. Bun preloads registration for
 game-format bundling and happy-dom for tests; this is a library-loader/test
 plugin, not an MCP server or MCP tool registry.
 

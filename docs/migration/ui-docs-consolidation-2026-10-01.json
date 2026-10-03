@@ -150,7 +150,7 @@
       "note": "global run before the change only (about 7 minutes under load); scoped runs compare the UI/Koharu/Tauri/GPU folders. New hub files are untracked and not counted."
     },
     "docsIndex": {
-      "command": "bun packages/infra/workspace/src/ops.ts consolidation docs-index --aphrody-root /home/aphro/aphrody",
+      "command": "bun packages/infra/workspace/src/ops.ts consolidation docs-index --aphrody-root .",
       "before": {
         "indexed": 5994,
         "missingTargets": 216

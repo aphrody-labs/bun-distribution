@@ -1,9 +1,9 @@
 $ scripts/build/rust/cargo-serial.sh check -p aphrody-infra --all-targets --locked
-    Checking aphrody-git v0.1.0 (/home/aphro/aphrody/crates/infra/git)
-    Checking aphrody-kernel-client v1.0.0-canary (/home/aphro/aphrody/crates/os/kernel-client)
-    Checking aphrody-vpn v0.1.0 (/home/aphro/aphrody/crates/infra/vpn)
-    Checking aphrody-ssh v0.1.0 (/home/aphro/aphrody/crates/infra/ssh)
-    Checking aphrody-ovh v0.1.0 (/home/aphro/aphrody/crates/infra/ovh)
-    Checking aphrody-yolo v0.1.0 (/home/aphro/aphrody/crates/infra/yolo)
-    Checking aphrody-infra v0.1.0 (/home/aphro/aphrody/crates/infra/infra)
+    Checking aphrody-git v0.1.0 (crates/infra/git)
+    Checking aphrody-kernel-client v1.0.0-canary (crates/os/kernel-client)
+    Checking aphrody-vpn v0.1.0 (crates/infra/vpn)
+    Checking aphrody-ssh v0.1.0 (crates/infra/ssh)
+    Checking aphrody-ovh v0.1.0 (crates/infra/ovh)
+    Checking aphrody-yolo v0.1.0 (crates/infra/yolo)
+    Checking aphrody-infra v0.1.0 (crates/infra/infra)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.86s

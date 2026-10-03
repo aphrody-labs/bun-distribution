@@ -8,7 +8,7 @@ Research input for the centralized plugin/skill/MCP manager. Captured 2026-10-03
   (the generated `TOOLS.md` still lists 2.1.286).
 - Verified by `claude <cmd> --help` and read-only `claude plugin validate`/`list`/`marketplace list`/`mcp list`.
   Nothing was installed, removed or reconfigured.
-- Plugin sources now live in `/home/aphro/plugins` (`aphrody`, `bxc`, `iecode`, `shenron`, `yolo`, `google-gemini`,
+- Plugin sources now live in `~/plugins` (`aphrody`, `bxc`, `iecode`, `shenron`, `yolo`, `google-gemini`,
   `rose-griffon`; `_registrations` and `_copies` hold load links; move log `relocation-2026-10-03.json`).
 
 ## Primary sources
@@ -78,12 +78,12 @@ Component path rules:
   `headersHelper`.
 - `CLAUDE.md` at the plugin root is not loaded (validate warns).
 
-Local example: `/home/aphro/plugins/aphrody/.claude-plugin/plugin.json` declares `"mcpServers": "./.mcp.json"` and
+Local example: `~/plugins/aphrody/.claude-plugin/plugin.json` declares `"mcpServers": "./.mcp.json"` and
 `"skills": "./skills/"`. Its `.mcp.json` defines stdio server `aphrody` running `aphrody-kernel mcp`.
 
 ## Manifest: `.claude-plugin/marketplace.json`
 
-Required: `name` (letters, digits, `.`, `_`, `-`), `owner{name}`, `plugins[]`. Optional: `$schema`, `description`,
+Required: `name` (letters, digits, `<repo>`, `_`, `-`), `owner{name}`, `plugins[]`. Optional: `$schema`, `description`,
 `version`, `metadata{description,version,pluginRoot}`, `forceRemoveDeletedPlugins`,
 `allowCrossMarketplaceDependenciesOn`, `renames`.
 
@@ -106,7 +106,7 @@ Rules that matter for a manager:
   resolve for a `url` marketplace).
 - `claude plugin validate` does not catch a missing relative source dir or any remote fetch error. Those fail at
   install. Test with a real `marketplace add` plus `install`.
-- Local example: `/home/aphro/plugins/aphrody/.claude-plugin/marketplace.json`, marketplace `aphrody-local`, plugin
+- Local example: `~/plugins/aphrody/.claude-plugin/marketplace.json`, marketplace `aphrody-local`, plugin
   `aphrody`, `source: "./"`. Local directory marketplaces are read in place, so edits apply on the next session or
   `/reload-plugins` with no version bump.
 
@@ -118,8 +118,8 @@ Registered now: marketplaces `anthropic-plugin-directory` (built in), `claude-pl
 
 Local install flow (not executed):
 
-1. `claude plugin validate /home/aphro/plugins/<plugin> --strict`
-2. `claude plugin marketplace add /home/aphro/plugins/<plugin> --scope user` (reads `.claude-plugin/marketplace.json`)
+1. `claude plugin validate ~/plugins/<plugin> --strict`
+2. `claude plugin marketplace add ~/plugins/<plugin> --scope user` (reads `.claude-plugin/marketplace.json`)
 3. `claude plugin install <plugin>@<marketplace> --scope <scope>`
 4. `claude plugin list --json`, `claude plugin details <plugin>`, then `/reload-plugins` in a live session.
 
@@ -144,7 +144,7 @@ Plugin install scopes (`enabledPlugins`):
 - `enable`/`disable` act on the most specific scope that already lists the plugin. `install`/`uninstall` default to user.
 - Marketplace declarations follow `--scope` the same way (`extraKnownMarketplaces` in the matching settings file).
 - Removing a marketplace uninstalls its plugins and removes their `enabledPlugins` entries. Do not call it from a sync.
-- `iecode` is scoped to `/home/aphro/iecode` and `aphrody` to the monorepo and `aphrody-py` (repo `AGENTS.md`):
+- `iecode` is scoped to `../iecode` and `aphrody` to the monorepo and `aphrody-py` (repo `AGENTS.md`):
   install `iecode` with `--scope local` (or project) from that repo, never user. `yolo` and `bun-ts7` may be user scope.
 - Skills: personal `~/.claude/skills/<n>/SKILL.md`, project `.claude/skills/<n>/SKILL.md`, nested
   `<sub>/.claude/skills/…`, plugin `<plugin>/skills/<n>/SKILL.md` (namespaced `plugin:skill`, no conflict with

@@ -153,7 +153,7 @@ ctx = 32768
 
 [train]
 # The shared Aphrody Python workspace; also settable with APHRODY_PY_ROOT.
-# python_project = "/home/aphro/aphrody-py"
+# python_project = "../aphrody-py"
 
 # Directory where trained artifacts (ONNX, GGUF, event logs) are written.
 # output_dir = "~/.aphrody/train/output"

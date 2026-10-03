@@ -190,7 +190,7 @@
 			"nom": "lexique des requêtes",
 			"role": "PostgreSQL + lexique canonique → data/rag/lexique-requetes.json",
 			"statut": "ok",
-			"detail": "✓ 902 groupes d'équivalence → /home/ubuntu/shenron/apps/shenron/bot/data/rag/lexique-requetes.json",
+			"detail": "✓ 902 groupes d'équivalence → apps/shenron/bot/data/rag/lexique-requetes.json",
 			"duree_ms": 217
 		},
 		{

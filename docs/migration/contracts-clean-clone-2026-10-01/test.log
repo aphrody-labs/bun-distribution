@@ -8,7 +8,7 @@
    Compiling aphrody-a2a-coord v1.0.0-canary (/tmp/aphrody-clean-contracts-20261001/crates/os/a2a-coord)
    Compiling aphrody-a2a-grpc v0.2.2 (/tmp/aphrody-clean-contracts-20261001/crates/os/a2a-grpc)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 9.57s
-     Running unittests src/lib.rs (/home/aphro/aphrody/target/debug/deps/aphrody_a2a-39e10684d1e34c93)
+     Running unittests src/lib.rs (target/debug/deps/aphrody_a2a-39e10684d1e34c93)
 
 running 90 tests
 test agent_card::tests::test_agent_capabilities_default ... ok
@@ -104,7 +104,7 @@ test types::tests::test_role_serde ... ok
 
 test result: ok. 90 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (/home/aphro/aphrody/target/debug/deps/aphrody_a2a_client-33a8d307b54d26c2)
+     Running unittests src/lib.rs (target/debug/deps/aphrody_a2a_client-33a8d307b54d26c2)
 
 running 98 tests
 test auth::tests::test_in_memory_credentials_store_new ... ok
@@ -208,13 +208,13 @@ test factory::tests::test_builder_with_interceptor ... ok
 
 test result: ok. 98 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
 
-     Running unittests src/bin/a2a_duel_loop.rs (/home/aphro/aphrody/target/debug/deps/a2a_duel_loop-00236369a7b8ca43)
+     Running unittests src/bin/a2a_duel_loop.rs (target/debug/deps/a2a_duel_loop-00236369a7b8ca43)
 
 running 0 tests
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/transport_kind.rs (/home/aphro/aphrody/target/debug/deps/transport_kind-ebc260509f953641)
+     Running tests/transport_kind.rs (target/debug/deps/transport_kind-ebc260509f953641)
 
 running 4 tests
 test default_transport_kind_is_in_range ... ok
@@ -224,7 +224,7 @@ test jsonrpc_transport_advertises_protocol_name ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
 
-     Running unittests src/lib.rs (/home/aphro/aphrody/target/debug/deps/aphrody_a2a_coord-baf267e707793d51)
+     Running unittests src/lib.rs (target/debug/deps/aphrody_a2a_coord-baf267e707793d51)
 
 running 17 tests
 test bridge::tests::handle_rejects_bad_method_and_params ... ok
@@ -247,7 +247,7 @@ test proxy::tests::poll_holds_back_partial_line_until_terminated ... ok
 
 test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/coord_proxy.rs (/home/aphro/aphrody/target/debug/deps/coord_proxy-531633e0d63e0e40)
+     Running tests/coord_proxy.rs (target/debug/deps/coord_proxy-531633e0d63e0e40)
 
 running 7 tests
 test coord_proxy_defaults ... ok
@@ -260,7 +260,7 @@ test coord_proxy_tail_stream_waits_for_missing_file ... ok
 
 test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
 
-     Running tests/http_e2e.rs (/home/aphro/aphrody/target/debug/deps/http_e2e-d5fbecf6ce76c3db)
+     Running tests/http_e2e.rs (target/debug/deps/http_e2e-d5fbecf6ce76c3db)
 
 running 3 tests
 test ping_agent_card_and_msg_roundtrip ... ok
@@ -269,7 +269,7 @@ test coord_route_serves_mailbox_as_ndjson_and_sse ... ok
 
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (/home/aphro/aphrody/target/debug/deps/aphrody_a2a_grpc-014a82014fba4bb7)
+     Running unittests src/lib.rs (target/debug/deps/aphrody_a2a_grpc-014a82014fba4bb7)
 
 running 18 tests
 test client::tests::test_grpc_transport_factory_default ... ok
@@ -293,7 +293,7 @@ test client::tests::test_grpc_transport_connect_failure ... ok
 
 test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/e2e.rs (/home/aphro/aphrody/target/debug/deps/e2e-94b81a048ca9c39b)
+     Running tests/e2e.rs (target/debug/deps/e2e-94b81a048ca9c39b)
 
 running 4 tests
 test grpc_transport_accepts_bare_host_port_endpoints ... ok
@@ -303,7 +303,7 @@ test grpc_transport_treats_zero_page_size_as_unset ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
 
-     Running unittests src/lib.rs (/home/aphro/aphrody/target/debug/deps/aphrody_a2a_pb-1f4933ab61ba00e8)
+     Running unittests src/lib.rs (target/debug/deps/aphrody_a2a_pb-1f4933ab61ba00e8)
 
 running 63 tests
 test pbconv::tests::test_agent_capabilities_with_extensions ... ok
@@ -372,7 +372,7 @@ test pbconv::tests::test_task_state_roundtrip ... ok
 
 test result: ok. 63 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/protojson.rs (/home/aphro/aphrody/target/debug/deps/protojson-aa278bde5f930855)
+     Running tests/protojson.rs (target/debug/deps/protojson-aa278bde5f930855)
 
 running 4 tests
 test agent_card_protojson_deserializes_null_skills_as_empty ... ok
@@ -382,7 +382,7 @@ test stream_response_protojson_roundtrip_serializes_oneof_payloads ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (/home/aphro/aphrody/target/debug/deps/aphrody_a2a_server-14ec2f78b463d03d)
+     Running unittests src/lib.rs (target/debug/deps/aphrody_a2a_server-14ec2f78b463d03d)
 
 running 141 tests
 test agent_card::tests::test_well_known_path ... ok
@@ -529,7 +529,7 @@ test rest::tests::test_delete_push_config_with_store_returns_ok ... ok
 
 test result: ok. 141 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
 
-     Running unittests src/lib.rs (/home/aphro/aphrody/target/debug/deps/aphrody_agent_proto-661f5a37c6e1d18f)
+     Running unittests src/lib.rs (target/debug/deps/aphrody_agent_proto-661f5a37c6e1d18f)
 
 running 10 tests
 test tests::decode_events_multiline_with_blank_lines ... ok
@@ -545,7 +545,7 @@ test tests::submission_new_generates_uuid ... ok
 
 test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (/home/aphro/aphrody/target/debug/deps/aphrody_app_protocol-58d591e6554e31a7)
+     Running unittests src/lib.rs (target/debug/deps/aphrody_app_protocol-58d591e6554e31a7)
 
 running 4 tests
 test rpc::tests::request_id_display_and_equality ... ok
@@ -555,7 +555,7 @@ test rpc::tests::serde_tolerates_jsonrpc_on_input ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/tier1_contract.rs (/home/aphro/aphrody/target/debug/deps/tier1_contract-5a667cac2600281c)
+     Running tests/tier1_contract.rs (target/debug/deps/tier1_contract-5a667cac2600281c)
 
 running 11 tests
 test test_initialize_contract ... ok
@@ -572,7 +572,7 @@ test test_wire_jsonrpc_invariants ... ok
 
 test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/upstream_fixtures_test.rs (/home/aphro/aphrody/target/debug/deps/upstream_fixtures_test-ca1d31c0141c7085)
+     Running tests/upstream_fixtures_test.rs (target/debug/deps/upstream_fixtures_test-ca1d31c0141c7085)
 
 running 2 tests
 test test_fixtures_rev_matches_checkout ... ok
@@ -580,7 +580,7 @@ test test_upstream_json_schemas_parse_valid ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
-     Running unittests src/lib.rs (/home/aphro/aphrody/target/debug/deps/aphrody_subsystem-61ed618a63495a71)
+     Running unittests src/lib.rs (target/debug/deps/aphrody_subsystem-61ed618a63495a71)
 
 running 4 tests
 test tests::missing_parameter_and_unknown_placeholder_are_rejected ... ok

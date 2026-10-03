@@ -5,7 +5,7 @@
     "sdkArchive": ".cache/yolo-packages/aphrody-runtime-sdk-0.1.0-a353d251.tgz",
     "sha256": "a353d251313f6ad09d2580e417391ad0c7a0a331bc399790348693090616b28b",
     "yoloRevision": "f2935969e4b964d3defa99dd9f79b0152989e7fe",
-    "patch": "/home/aphro/yolo/patches/agent-browser-engine-runtime.patch",
+    "patch": "../yolo/patches/agent-browser-engine-runtime.patch",
     "installedArtifact": "~/.yolo/runtime/x86_64-unknown-linux-gnu/current (pre-existing on this host)"
   },
   "retiredMechanisms": [
@@ -38,7 +38,7 @@
   "limits": [
     "service.ts still spawns the aphrody-web binary directly with Bun.spawn for fetch/scrape/crawl; that is a later migration (per CONSUMERS.md scope limit D11), not covered here.",
     "Not run on macOS or Windows; only Linux x64 with the pre-installed runtime artifact exercised.",
-    ".cache/yolo-packages/ is not reproduced by an automated prepare script yet (unlike .cache/iecode-packages/ via `bun run iecode:prepare`); the archive was copied manually from /home/aphro/yolo/dist/sdk and verified by SHA-256. A follow-up should add an equivalent `yolo:prepare` step if more consumers adopt the SDK.",
+    ".cache/yolo-packages/ is not reproduced by an automated prepare script yet (unlike .cache/iecode-packages/ via `bun run iecode:prepare`); the archive was copied manually from ../yolo/dist/sdk and verified by SHA-256. A follow-up should add an equivalent `yolo:prepare` step if more consumers adopt the SDK.",
     "No Cargo build, no runtime artifact rebuild, no activation of R4 (Obscura/aphrody-web itself) performed or claimed.",
     "Downstream qualification above re-runs existing test suites against the new engine.ts; it does not add new test coverage for the runtime-sdk code path itself."
   ]

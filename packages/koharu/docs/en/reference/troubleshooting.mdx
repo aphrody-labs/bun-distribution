@@ -82,7 +82,7 @@ Start Koharu from a terminal to enable logging for that process. A terminal runs
         Open Start, search for **PowerShell**, and launch **Windows PowerShell**. Windows Terminal also works with a PowerShell tab. Use PowerShell rather than Command Prompt.
       </Step>
       <Step title="Start Koharu">
-        Paste the command with `Ctrl+V` or right-click, then press Enter. Do not paste the `PS C:\Users\YourName>` prompt.
+        Paste the command with `Ctrl+V` or right-click, then press Enter. Do not paste the `PS %USERPROFILE%>` prompt.
 
         ```powershell
         $env:RUST_LOG="debug"; koharu.exe

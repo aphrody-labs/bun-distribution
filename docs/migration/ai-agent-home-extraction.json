@@ -1,5 +1,5 @@
 {
-  "source_repository": "/home/aphro/src/aphrody-ai",
+  "source_repository": "~/src/aphrody-ai",
   "source_head": "3aa88791f49b963a00f073cb206677ea9d1957e1",
   "source_worktree_status": "clean for imported crate paths",
   "target_repository_head_before_import": "7d6327226788a87fc78cc9c2780a81e2e71c8996",

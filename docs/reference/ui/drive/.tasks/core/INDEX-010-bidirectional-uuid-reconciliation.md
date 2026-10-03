@@ -325,7 +325,7 @@ Users expect ephemeral browsing to feel instant. Reconciliation involves databas
 
 ### Overlap Detection
 
-A persistent location at `/Users/james/Documents` overlaps with an ephemeral scan of `/Users/james` (the ephemeral path is a parent). The reconciliation needs to check both directions: persistent roots that are children of the scanned path, and persistent roots that are parents of the scanned path.
+A persistent location at `~/Documents` overlaps with an ephemeral scan of `/Users/james` (the ephemeral path is a parent). The reconciliation needs to check both directions: persistent roots that are children of the scanned path, and persistent roots that are parents of the scanned path.
 
 ### Multiple Loaded Libraries
 

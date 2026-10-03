@@ -92,7 +92,7 @@ EOF
 
 `azalee-bot.service` charge ce fichier en dernier (`EnvironmentFile=-` : son
 absence n'empêche pas le démarrage, elle empêche seulement le bot de se
-connecter). À défaut, la même variable posée dans `/home/ubuntu/rg/.env.local`
+connecter). À défaut, la même variable posée dans `../rg/.env.local`
 fait l'affaire — ce fichier est gitignoré (`.gitignore:114`, règle
 `.env*.local`), comme l'est tout `*.env` réel (`.gitignore:151`).
 
@@ -162,7 +162,7 @@ Griffon, et le drain le signale explicitement dans le journal.
 ## 5. Installer et démarrer le service
 
 ```bash
-sudo cp /home/ubuntu/rg/infra/systemd/azalee-bot.service /etc/systemd/system/
+sudo cp ../rg/infra/systemd/azalee-bot.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now azalee-bot.service
 ```
@@ -171,7 +171,7 @@ Le fichier est un calque de `rg-bot.service` : `RG_PROFIL_BOT=azalee`,
 `SyslogIdentifier=azalee-bot`, un `EnvironmentFile` supplémentaire pour le
 jeton, et **aucune** cible publique posée en dur (le profil porte déjà
 `https://azalee.rosegriffon.fr`). Le `WorkingDirectory` reste
-`/home/ubuntu/rg/apps/bot` — le **même** que pour rg-bot : Bun lit le
+`../rg/apps/bot` — le **même** que pour rg-bot : Bun lit le
 `tsconfig.json` du répertoire courant, et c'est celui-là qui porte
 `experimentalDecorators` + `emitDecoratorMetadata`. Lancé d'ailleurs, discordx
 meurt immédiatement sur « TypeError: undefined is not an object (evaluating

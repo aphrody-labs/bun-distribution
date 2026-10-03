@@ -70,7 +70,7 @@ icon: 'circle-question'
         スタートで **PowerShell** を検索し、**Windows PowerShell** を開きます。Windows Terminal の PowerShell タブでも構いません。コマンドプロンプトでは実行しません。
       </Step>
       <Step title="Koharu を起動する">
-        `Ctrl+V` または右クリックで貼り付け、Enter を押します。`PS C:\Users\YourName>` の表示はコピーしません。
+        `Ctrl+V` または右クリックで貼り付け、Enter を押します。`PS %USERPROFILE%>` の表示はコピーしません。
 
         ```powershell
         $env:RUST_LOG="debug"; koharu.exe
