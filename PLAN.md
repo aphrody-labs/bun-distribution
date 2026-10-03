@@ -1639,6 +1639,11 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   empreinte Cargo.lock `879c5bddc4e34da10f94679769ae3a988b75806f74ec4879b80d7b7428564dd3`.
 - Gates : deux typechecks, Oxc strict, format et diff réussis. Suite pipeline :
   230 pass, quatre ignorés, un échec live MediaWiki (HTTP 403 terraria.wiki.gg).
+- Le staging a exercé la copie vers une installation temporaire isolée
+  `node_modules/@aphrody/bun`, sans cible Cargo exploitable ni override de
+  bibliothèque ; le smoke release réussit aussi avec `APHRODY_FFI_DEV=0`.
+  Cela qualifie l'installation temporaire Linux x86_64 GNU depuis ce clone,
+  pas une distribution durable ni son activation dans un service.
 - INCOMPLET : autres plateformes non qualifiées. Features GPU compilées sans preuve
   d’exécution matérielle GPU.
   Doctor dégradé et recherche éventuellement vide ne prouvent pas un produit prêt.

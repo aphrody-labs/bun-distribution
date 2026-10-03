@@ -35,6 +35,10 @@ public bindings remains lazy. Runtime ABI calls still validate the loaded librar
   not a current rerun. Installed active consumer smoke and builder evidence are
   recorded separately by the Infra owner.
 
-Release staging from a clean published commit, platform artifacts, fresh-clone
-installation and distribution remain open under [the root plan](../../PLAN.md).
+Linux x86_64 GNU release staging from a clean clone is requalified on
+2026-10-03: commit `7d927b1fa82213df38d68f2dd9bad4433eb116ef`, release + GPU,
+isolated consumer smoke passed with development mode enabled and disabled.
+Artifact SHA-256: `4fdc85087208baf2005130193adcc945734431190837c6ca499e9205b718bd79`;
+the manifest and limits are recorded in [the root plan](../../PLAN.md).
+Other platforms, a durable installed distribution and publication remain open.
 The target repository currently has no configured Git remote.
