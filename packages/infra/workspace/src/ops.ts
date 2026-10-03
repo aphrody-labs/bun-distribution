@@ -202,6 +202,9 @@ if (operation === "runtime-gate") {
 if (operation === "automation-inventory") {
   process.exit(await (await import("./automation-inventory.ts")).runAutomationInventory(rest));
 }
+if (operation === "workspace-subsystem") {
+  process.exit(await (await import("./workspace-subsystem.ts")).runWorkspaceSubsystem(rest));
+}
 if (operation === "cargo-boundaries") {
   process.exit(await (await import("./cargo-boundaries.ts")).runCargoBoundaries(rest));
 }

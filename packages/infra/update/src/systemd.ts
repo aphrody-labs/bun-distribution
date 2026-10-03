@@ -2,7 +2,7 @@
 /**
  * Dev-env module: user systemd units (config/systemd/user -> ~/.config/systemd/user) and /etc/wsl.conf.
  *   check    drift between repo units and installed units, live-only units, wsl.conf keys
- *   install  link every repo unit (differing copies are kept as *.pre-update), daemon-reload   [--apply]
+ *   install  link every repo unit, or only the named ones (differing copies are kept as *.pre-update), daemon-reload   [unit...] [--apply]
  *   restart  try-restart units that run a given binary (default: units mentioning bun or aphrody)  [--apply]
  */
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, renameSync, symlinkSync, unlinkSync } from "node:fs";
@@ -72,11 +72,14 @@ export function check(c: Ctx): number {
   return bad ? 1 : 0;
 }
 
-export function install(c: Ctx): number {
+export function install(c: Ctx, only: string[] = []): number {
+  const units = repoUnits(c);
+  const unknown = only.filter((u) => !units.includes(u));
+  if (unknown.length) { console.error(`unknown repo unit: ${unknown.join(", ")}`); return 2; }
   const dir = unitDir();
   mkdirSync(dir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
-  for (const u of repoUnits(c)) {
+  for (const u of only.length ? only : units) {
     const st = stateOf(c, u);
     if (st === "linked") continue;
     console.log(`${c.apply ? "link  " : "would "} ${u} (${st})`);
@@ -107,8 +110,8 @@ export function restart(c: Ctx, needles: string[]): number {
 export function runSystemd(c: Ctx, args: string[]): number {
   switch (args[0] ?? "check") {
     case "check": return check(c);
-    case "install": return install(c);
+    case "install": return install(c, args.slice(1).filter((a) => !a.startsWith("-")));
     case "restart": return restart(c, args.slice(1).filter((a) => !a.startsWith("-")).length ? args.slice(1).filter((a) => !a.startsWith("-")) : [".bun/bin/bun", "aphrody-kernel", "aphrody"]);
-    default: console.error("usage: systemd [check|install|restart [needle...]]"); return 2;
+    default: console.error("usage: systemd [check|install [unit...]|restart [needle...]]"); return 2;
   }
 }

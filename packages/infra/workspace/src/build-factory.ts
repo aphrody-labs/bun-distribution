@@ -105,7 +105,7 @@ export interface BuildFactoryStatus {
   reason: string;
 }
 
-async function readFactoryConfig(root: string): Promise<BuildFactoryConfig | null> {
+export async function readFactoryConfig(root: string): Promise<BuildFactoryConfig | null> {
   const file = Bun.file(join(root, "config/build-factory.json"));
   return (await file.exists()) ? ((await file.json()) as BuildFactoryConfig) : null;
 }
