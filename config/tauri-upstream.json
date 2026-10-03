@@ -145,7 +145,7 @@
     "owner": "packages/web / crates/web",
     "survey": "docs/research/web/tauri-debugging-survey-2026-10-01.md",
     "surveyedAt": "2026-10-01",
-    "policy": "Only mcp-server-tauri keeps a checkout under ../source (Cargo path dependency, config/upstream-sources.json `sources`). The other debuggers are `reference` entries of that manifest: not cloned, read live with `aphrody git upstream read|tree|search <id>` or fetched with `aphrody-update upstream fetch <id>` (2026-10-02). Forks under aphrody-code are placeholders for upstreamable patches; nothing has been pushed to them. Only mcp-server-tauri is wired in (path dependency of aphrody-tauri-wrap); the others are reading/patch bases.",
+    "policy": "Bridge build input is a patched crates.io archive in ../source/tauri-plugin-mcp-bridge. Debugger repositories are reference entries read live; no debugger Git clone is required. Archived fork metadata records provenance only.",
     "forks": [
       {
         "name": "mcp-server-tauri",
@@ -155,33 +155,33 @@
         "forkStatus": "created 2026-10-01 with gh repo fork --clone=false; nothing pushed",
         "license": "MIT",
         "licenseFiles": [
-          "../source/mcp-server-tauri/LICENSE",
-          "../source/mcp-server-tauri/packages/mcp-server/LICENSE",
-          "../source/mcp-server-tauri/packages/tauri-plugin-mcp-bridge/LICENSE"
+          "../source/tauri-plugin-mcp-bridge/LICENSE"
         ],
         "licenseSha256": "35bb5aef685437b8aee0199e86a12c6dec2163d173fa153f48ff76267e47fca3",
         "pinnedCommit": "4451b2b1d1eb3a817674f60957e148224c24d3a8",
         "pinnedAt": "2026-10-01",
         "commitDate": "2026-08-28",
         "treeSha256": "a2fecff981973b0c4e6ece61d822cfd3b1c5b2384b2a846a2093ba6082d1c7e8",
-        "localPath": "../source/mcp-server-tauri",
+        "localPath": "../source/tauri-plugin-mcp-bridge",
         "role": "mcp-bridge",
         "tauriSupport": "Tauri 2 only. tauri-plugin-mcp-bridge 0.13.0 depends on tauri = \"2\" and tauri-plugin = \"2\"; no v3 branch, no Tauri 3 issue. Same revision that docs/research/ui/integrations/tauri-mcp-parity.md already uses as the tool-name reference.",
         "notes": "Rust bridge plugin (packages/tauri-plugin-mcp-bridge: WebSocket on 0.0.0.0:9223-9322 by default, no auth, no Origin check - upstream issue #36) plus a Node MCP server (packages/mcp-server, @hypothesi/tauri-mcp-server) whose DOM/a11y scripts are plain JS reusable from a Rust MCP. Harden before use: bind 127.0.0.1, per-process token, Origin check, cfg(debug_assertions) + cargo-feature gate. Patch list for Tauri 3 is in the survey.",
         "patches": [
           {
             "id": "tauri-plugin-mcp-bridge-tauri3",
-            "patchFile": "patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch",
-            "patchSha256": "52d6fcb7cd43abd4e4c1817a3b6d420cb80d1fa39acaf878fc75e2f05f7d70e3",
-            "appliesTo": "../source/mcp-server-tauri/packages/tauri-plugin-mcp-bridge",
+            "patchFile": "patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch",
+            "patchSha256": "2bc296ad729254e01b8eb58c2e24cb0db47c59620abb25ef50a9657ae93d5cfa",
+            "appliesTo": "../source/tauri-plugin-mcp-bridge",
             "appliedMarker": "Aphrody patch",
-            "wiredIn": "crates/ui/tauri-wrap (aphrody-tauri-wrap, module debug, feature debug-bridge) via [workspace.dependencies] tauri-plugin-mcp-bridge path dependency; the path is listed in [workspace] exclude",
+            "wiredIn": "crates/ui/tauri-wrap (aphrody-tauri-wrap, module debug, feature debug-bridge) via workspace path dependency to the patched registry archive outside the repository.",
             "covers": "Survey patches P1 (Cargo.toml pins), P3 (initialization_script), P4 (downcast_ref to tauri_runtime_wry::Webview; Windows and macOS call sites unverified), P6 (eval_with_callback polling instead of the __script_result IPC round trip), P7 (no committed command permission files needed), P8 (loopback default, Host/Origin checks, per-process token, ephemeral port with an on_listen hook). IPC trace events are kept in a page-side ring buffer, so no capability or permission is needed in the host app.",
             "notStarted": "P5 (CEF in-process CDP): CEF apps attach over CDP directly (RemoteDebugging::Port), see docs/guides/web/TAURI-DEBUG.md",
-            "status": "UNCOMPILED on the integrator side: the pre-patch scratch check (survey) compiled with two fixes; the final tree has not been built or run. Verify with cargo check -p aphrody-tauri-wrap --no-default-features --features debug-bridge and cargo test -p tauri-plugin-mcp-bridge --lib (security tests in websocket.rs).",
-            "regenerate": "diff -ruN a b over the pinned tree; apply with: patch -p1 < patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch (from the repository root, against the pristine pin)"
+            "status": "Linux consumer check passed 2026-10-03 with the freshly restored crates.io archive: cargo check -p aphrody-tauri-wrap --no-default-features --features debug-bridge --locked. Windows/macOS and runtime behavior remain unverified.",
+            "regenerate": "Diff pristine crates.io 0.13.0 archive against the patched package; apply patch -p1 in the extracted package."
           }
-        ]
+        ],
+        "access": "Build input: patched crates.io tauri-plugin-mcp-bridge 0.13.0 archive. Upstream repository read live, never cloned by source sync.",
+        "archiveSha256": "db0e3b2116693ae3ea616e041d83d8d95898ee2393629b2d1b8ee1d80f2eedb0"
       },
       {
         "name": "tauri-driver",

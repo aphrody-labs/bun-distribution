@@ -37,6 +37,6 @@ reqwest = { workspace = true, optional = true }
 rustls = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true }
-# Pinned upstream (hypothesi/mcp-server-tauri, MIT) carrying the Aphrody Tauri 3 patch set,
-# see patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch. Never copied into crates/.
+# Published crates.io package (MIT), restored with the Tauri 3/security patch set.
+# See patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch; no Git clone required.
 tauri-plugin-mcp-bridge = { workspace = true, optional = true }

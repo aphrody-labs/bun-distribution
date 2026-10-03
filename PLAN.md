@@ -220,6 +220,25 @@ actifs, aucun import vers une ancienne implantation déplacée.
 - OUVERT (décision du propriétaire) : 28 dépôts `aphrody-code` non référencés (`docs/research/infra/github-mirrors-audit-2026-10-02.md`) ;
   archivage ou suppression non effectués. Fork Oxc : l'amont a avancé, fusion couplée au bump Cargo.
 
+### Dépendances via registres et Git direct — 2026-10-03
+
+- Préférence propriétaire : Cargo/crates.io, Bun/npm et uv/PyPI ; Git épinglé
+  lorsqu'une version publiée ne couvre pas le besoin ; aucun clone pour installer
+  une dépendance ou lire une référence.
+- Le bridge MCP utilise maintenant l'archive crates.io `tauri-plugin-mcp-bridge`
+  0.13.0 avec les patches Tauri 3 et de sécurité existants. Les fichiers Rust/JS,
+  `build.rs`, manifeste patché et licence sont identiques au package auparavant
+  consommé dans le clone. Contrôle du consommateur Linux réussi, lock Cargo inchangé.
+- Les quatre sources restaurées automatiquement sont des archives crates.io
+  patchées : zéro clone Git requis par `sources:sync`. L'ancien clone est conservé
+  dans un backup privé hors de `../source` jusqu'aux gates depuis un clone propre.
+- Python : retrait de l'override Git `langextract` dans la configuration imbriquée ;
+  lock uv racine PyPI vérifié. Le SDK Antigravity local reste une exception explicite,
+  car les extensions `voice` consommées ne figurent pas dans la roue publiée.
+- Preuves et empreintes : [rapport](docs/migration/registry-preference-2026-10-03.json).
+  Pas de revendication de parité Windows/macOS, de validation runtime ou de
+  remplacement automatique des paquets tiers modifiés.
+
 ## 1. Contrats, cœur et compatibilité
 
 Propriétaires : `crates/contracts`, `crates/native`, `crates/compat`,

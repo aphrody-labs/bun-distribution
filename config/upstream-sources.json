@@ -1,31 +1,31 @@
 {
   "schemaVersion": 1,
-  "description": "Upstream source of truth. `sources`: the only checkouts kept under the source root (Cargo path dependencies with local patches). `reference`: upstream repositories that are never cloned by default; read them live with `aphrody git upstream` (CLI), the `upstream_*` MCP tools or `aphrody-update upstream`; tier `build` ones are restored on demand for the WSL build.",
+  "description": "Registry-first dependencies: prefer Cargo/npm/PyPI via uv, then locked Git dependencies. sources contains only published crate archives requiring local patches; reference entries are read live without cloning. Restore build-only clones on demand.",
   "root": "../source",
   "rootNote": "Resolved from the repository root; APHRODY_SOURCE_ROOT overrides it. Cargo path dependencies are written relative to the repository, so a clone that builds needs <parent>/aphrody next to <parent>/source, or the same override applied to both.",
   "sources": [
     {
-      "id": "mcp-server-tauri",
-      "kind": "git",
-      "url": "https://github.com/hypothesi/mcp-server-tauri",
-      "ref": "main",
-      "commit": "4451b2b1d1eb3a817674f60957e148224c24d3a8",
+      "id": "tauri-plugin-mcp-bridge",
+      "kind": "crate",
+      "crate": "tauri-plugin-mcp-bridge",
+      "version": "0.13.0",
+      "upstreamUrl": "https://github.com/hypothesi/mcp-server-tauri",
       "pinned": true,
       "role": "dependency",
       "license": "MIT",
-      "cargoPathDep": "packages/tauri-plugin-mcp-bridge",
+      "cargoPathDep": "",
       "patches": [
         {
           "id": "tauri-plugin-mcp-bridge-tauri3",
-          "file": "patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch",
-          "strip": 3,
+          "file": "patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch",
+          "strip": 1,
           "marker": {
-            "file": "packages/tauri-plugin-mcp-bridge/Cargo.toml",
+            "file": "Cargo.toml",
             "contains": "rust-version = \"1.97\""
           }
         }
       ],
-      "note": "Bridge plugin behind aphrody-tauri-wrap feature debug-bridge. Detail: config/tauri-upstream.json debuggers."
+      "note": "Registry archive, not a Git clone. Preserve Tauri 3/security patches until an equivalent upstream release. Rust/JS/build/license files match the previous pinned Git tree before patching."
     },
     {
       "id": "simdutf-rio",
@@ -101,6 +101,17 @@
     }
   ],
   "reference": [
+    {
+      "id": "mcp-server-tauri",
+      "kind": "git",
+      "url": "https://github.com/hypothesi/mcp-server-tauri",
+      "ref": "main",
+      "observedCommit": "4451b2b1d1eb3a817674f60957e148224c24d3a8",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Bridge upstream reference; the build consumes only its patched crates.io package.",
+      "consumers": "Cargo.toml tauri-plugin-mcp-bridge; config/tauri-upstream.json"
+    },
     {
       "id": "tauri",
       "kind": "git",

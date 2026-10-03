@@ -19,18 +19,21 @@ This repository is the Rust + Bun source target. The active migration plan is
 - Scripts live under `scripts/<category>`: `audit`, `build`, `dev`,
   `migration`, `release`, or `tools`. Infra's `@aphrody/workspace` remains the
   cross-monorepo orchestrator.
-- Keep the first-party Rust and Bun workspaces at this repository root. Keep
-  Bun, Oxc and other upstream forks in `upstream/` with pinned revisions and
-  their upstream workspaces/history. Other upstream clones and crate extracts
-  live outside the repo in `../source` (`~/source`), listed with URL, pinned
-  commit and local patches in `config/upstream-sources.json`. Only the
-  build-required checkouts (Cargo path dependencies with local patches) stay in
-  `../source`; check or restore them with `bun run sources`, `bun run
-  sources:sync` or `aphrody git source status|verify|sync`. Every other upstream
-  is a `reference` entry that is never cloned: read it live with `aphrody git
-  upstream list|info|tree|read|search <id>`, the `upstream_*` MCP tools or
-  `docs/reference/infra/UPSTREAMS.md`; Cargo path dependencies point at
-  `../source/<id>`.
+- Keep first-party Rust and Bun workspaces at this repository root. Prefer
+  crates.io through Cargo, npm through Bun, and PyPI through uv for third-party
+  dependencies; preserve lockfiles, APIs, features and notices. If a published
+  package cannot supply a required fix, prefer a Git dependency locked to a
+  commit over a manual clone. Never create a local upstream clone merely for
+  research or to install a dependency.
+- Only sources requiring unpublished local patches stay in `../source`, listed
+  in `config/upstream-sources.json`; prefer a published crate archive over its
+  entire Git repository. Restore them with `bun run sources:sync`, verify with
+  `bun run sources:verify`. Reference upstreams are read live with `aphrody git
+  upstream list|info|tree|read|search`; build-only checkouts are restored on
+  demand. Retain modified third-party code until its consumers pass against
+  the replacement; do not replace it with a registry version that loses local
+  behavior. Bun/Oxc fork source is needed only for native fork development,
+  not for consuming published or pinned Git dependencies.
 - RG and Shenron sources are imported. Qualify contracts, native/interop, OS,
   Infra, UI and AI/Web before product integration. Shenron is the final product
   gate; imported source alone does not prove deployment readiness.

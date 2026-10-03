@@ -31,7 +31,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | architecture | [rg](architecture/rg/) | 6 | - |
 | architecture | [shell](architecture/shell/) | 1 | [Shell and terminal layers](architecture/shell/README.md) |
 | architecture | [shenron](architecture/shenron/) | 11 | - |
-| architecture | [ui](architecture/ui/) | 55 | [UI, GUI, wgpu, Tauri, Google design and M3 / M3D: documentation map](architecture/ui/README.md) |
+| architecture | [ui](architecture/ui/) | 49 | [UI, GUI, wgpu, Tauri, Google design and M3 / M3D: documentation map](architecture/ui/README.md) |
 | architecture | [upstream-bun](architecture/upstream-bun/) vendored upstream copy | 2 | - |
 | architecture | [upstream-oxc](architecture/upstream-oxc/) vendored upstream copy | 3 | - |
 | architecture | [upstream-victauri](architecture/upstream-victauri/) vendored upstream copy | 1 | - |
@@ -75,13 +75,13 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [upstream-WSL](guides/upstream-WSL/) vendored upstream copy | 1 | - |
 | guides | [web](guides/web/) | 5 | - |
 | guides | [workspace](guides/workspace/) | 1 | - |
-| operations | [ai](operations/ai/) | 8 | - |
+| operations | [ai](operations/ai/) | 9 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
 | operations | [infra](operations/infra/) | 99 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [rg](operations/rg/) | 10 | - |
-| operations | [shenron](operations/shenron/) | 12 | - |
-| operations | [ui](operations/ui/) | 11 | - |
+| operations | [shenron](operations/shenron/) | 13 | - |
+| operations | [ui](operations/ui/) | 10 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
 | operations | [upstream-litellm](operations/upstream-litellm/) vendored upstream copy | 1 | - |
 | operations | [upstream-vllm](operations/upstream-vllm/) vendored upstream copy | 5 | - |
@@ -98,7 +98,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [rg](plans/rg/) | 5 | - |
 | plans | [shell](plans/shell/) | 1 | - |
 | plans | [shenron](plans/shenron/) | 3 | - |
-| plans | [ui](plans/ui/) | 9 | [UI plans](plans/ui/README.md) |
+| plans | [ui](plans/ui/) | 8 | [UI plans](plans/ui/README.md) |
 | plans | [upstream-bun](plans/upstream-bun/) vendored upstream copy | 1 | - |
 | plans | [upstream-oxc](plans/upstream-oxc/) vendored upstream copy | 1 | - |
 | plans | [web](plans/web/) | 5 | - |
@@ -114,7 +114,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [rg](products/rg/) | 62 | [Documentation — monorepo Rose Griffon](products/rg/README.md) |
 | products | [shell](products/shell/) | 4 | [Aphrody Shell](products/shell/README.md) |
 | products | [shenron](products/shenron/) | 10 | - |
-| products | [ui](products/ui/) | 56 | [Aphrody UI](products/ui/README.md) |
+| products | [ui](products/ui/) | 40 | [Aphrody UI](products/ui/README.md) |
 | products | [upstream-antigravity-sdk-python](products/upstream-antigravity-sdk-python/) vendored upstream copy | 1 | [Google Antigravity SDK](products/upstream-antigravity-sdk-python/README.md) |
 | products | [upstream-bun](products/upstream-bun/) vendored upstream copy | 65 | [with install script (recommended)](products/upstream-bun/README.md) |
 | products | [upstream-codex](products/upstream-codex/) vendored upstream copy | 1 | [Install using npm](products/upstream-codex/README.md) |
@@ -131,7 +131,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [upstream-vllm](products/upstream-vllm/) vendored upstream copy | 14 | - |
 | products | [upstream-WSL](products/upstream-WSL/) vendored upstream copy | 1 | [Welcome to the Windows Subsystem for Linux (WSL) repository](products/upstream-WSL/README.md) |
 | products | [upstream-wslg](products/upstream-wslg/) vendored upstream copy | 1 | [Welcome to WSLg](products/upstream-wslg/README.md) |
-| products | [web](products/web/) | 12 | [Aphrody Web](products/web/README.md) |
+| products | [web](products/web/) | 11 | [Aphrody Web](products/web/README.md) |
 | products | [workspace](products/workspace/) | 1 | [Aphrody source workspace](products/workspace/README.md) |
 | reference | [ai](reference/ai/) | 240 | - |
 | reference | [compat](reference/compat/) | 102 | - |
@@ -145,7 +145,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [rg](reference/rg/) | 23 | - |
 | reference | [shell](reference/shell/) | 10 | - |
 | reference | [shenron](reference/shenron/) | 16 | - |
-| reference | [ui](reference/ui/) | 230 | [UI reference documents](reference/ui/README.md) |
+| reference | [ui](reference/ui/) | 220 | [UI reference documents](reference/ui/README.md) |
 | reference | [upstream-antigravity-sdk-python](reference/upstream-antigravity-sdk-python/) vendored upstream copy | 5 | - |
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 2045 | - |
 | reference | [upstream-codex](reference/upstream-codex/) vendored upstream copy | 4 | - |
@@ -176,7 +176,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | research | [web](research/web/) | 117 | - |
 | research | [workspace](research/workspace/) | 2 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
-| migration (outside the category layout) | [(files)](migration/) | 109 | [Migration records](migration/README.md) |
+| migration (outside the category layout) | [(files)](migration/) | 116 | [Migration records](migration/README.md) |
 | migration (outside the category layout) | [a2a-os-move-2026-10-01](migration/a2a-os-move-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-clean-clone-2026-10-01](migration/contracts-clean-clone-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-qualification-2026-10-01](migration/contracts-qualification-2026-10-01/) | 6 | - |
@@ -187,4 +187,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 10 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 5197 files.
+Total: 5171 files.

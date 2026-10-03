@@ -11,15 +11,16 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 
 | Id | Origin | Why it stays | Patches |
 | --- | --- | --- | --- |
-| `mcp-server-tauri` | https://github.com/hypothesi/mcp-server-tauri `main` | Cargo path dependency | `patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch` |
+| `tauri-plugin-mcp-bridge` | crates.io `tauri-plugin-mcp-bridge` 0.13.0 | Cargo path dependency | `patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch` |
 | `simdutf-rio` | crates.io `simdutf` 0.7.0 | Cargo path dependency | `patches/simdutf-rio-0.7.0.patch` |
 | `tauri-plugin-dialog` | crates.io `tauri-plugin-dialog` 3.0.0-alpha.2 | Cargo path dependency | `patches/tauri-plugin-dialog-3.0.0-alpha.2.patch` |
 | `serde-saphyr` | crates.io `serde-saphyr` 0.0.16 | Cargo path dependency (held: mistral.rs requires serde-saphyr = "0.0.16" (0.0.x caret is exact); a 0.0.29 or 1.x bump needs a mistral.rs API port first) | `patches/serde-saphyr-0.0.16-regex.patch` |
 
-## Reference upstreams (13, never cloned by default)
+## Reference upstreams (14, never cloned by default)
 
 | Id | Repository | Ref | Observed | What it is for | Used by |
 | --- | --- | --- | --- | --- | --- |
+| `mcp-server-tauri` | [hypothesi/mcp-server-tauri](https://github.com/hypothesi/mcp-server-tauri) | `main` | 4451b2b1d1 | Bridge upstream reference; the build consumes only its patched crates.io package. | Cargo.toml tauri-plugin-mcp-bridge; config/tauri-upstream.json |
 | `tauri` | [tauri-apps/tauri](https://github.com/tauri-apps/tauri) | `v3` | a8703ee487 | Tauri 3 branch; only crates/tauri-driver is read (primary Tauri 3 WebDriver proxy). | config/tauri-upstream.json debuggers; docs/guides/web/TAURI-DEBUG.md |
 | `tauri-plugin-webdriver` | [Choochmeque/tauri-plugin-webdriver](https://github.com/Choochmeque/tauri-plugin-webdriver) | `main` | 007d18ece8 | In-process W3C WebDriver server for Tauri 2; reading base for the Tauri 3 downcast_ref patch. | config/tauri-upstream.json debuggers |
 | `victauri` | [4DA-Systems/Victauri](https://github.com/4DA-Systems/Victauri) | `main` | bb17a65296 | Rust-native Tauri MCP; read for its hardening and tool surface. | config/tauri-upstream.json debuggers; aphrody-tauri-mcp design |

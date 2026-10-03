@@ -445,8 +445,8 @@ tauri-plugin-global-shortcut = "=3.0.0-alpha.2"
 tauri-plugin-autostart = "=3.0.0-alpha.2"
 tauri-plugin-deep-link = "=3.0.0-alpha.2"
 tauri-plugin-fs = "=3.0.0-alpha.2"
-# Debug bridge: hypothesi bridge checked out under ../source (config/upstream-sources.json) with patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch.
-tauri-plugin-mcp-bridge = { path = "../source/mcp-server-tauri/packages/tauri-plugin-mcp-bridge", version = "0.13.0" }
+# Debug bridge: patched crates.io archive (Tauri 3/security), restored by sources:sync.
+tauri-plugin-mcp-bridge = { path = "../source/tauri-plugin-mcp-bridge", version = "0.13.0" }
 tauri-specta = { version = "2.0.0-rc.25", git = "https://github.com/koharu-rs/tauri-specta", tag = "v2.0.0-rc.25-koharu.1", features = ["derive", "typescript"] }
 atomicwrites = "0.4.4"
 fs4 = "1.1.0"
