@@ -32,7 +32,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | architecture | [runtime-native](architecture/runtime-native/) | 2 | [Frontière runtime Yolo / produit Aphrody](architecture/runtime-native/README.md) |
 | architecture | [shell](architecture/shell/) | 1 | [Shell and terminal layers](architecture/shell/README.md) |
 | architecture | [shenron](architecture/shenron/) | 11 | - |
-| architecture | [ui](architecture/ui/) | 49 | [UI, GUI, wgpu, Tauri, Google design and M3 / M3D: documentation map](architecture/ui/README.md) |
+| architecture | [ui](architecture/ui/) | 48 | [UI, GUI, wgpu, Tauri, Google design and M3 / M3D: documentation map](architecture/ui/README.md) |
 | architecture | [upstream-bun](architecture/upstream-bun/) vendored upstream copy | 2 | - |
 | architecture | [upstream-oxc](architecture/upstream-oxc/) vendored upstream copy | 3 | - |
 | architecture | [upstream-victauri](architecture/upstream-victauri/) vendored upstream copy | 1 | - |
@@ -107,18 +107,18 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [upstream-oxc](plans/upstream-oxc/) vendored upstream copy | 1 | - |
 | plans | [web](plans/web/) | 6 | - |
 | plans | [workspace](plans/workspace/) | 1 | [Aphrody — FFI unique et consolidation Rust, Python, Bun](plans/workspace/PLAN.md) |
-| products | [ai](products/ai/) | 37 | [Aphrody AI](products/ai/README.md) |
+| products | [ai](products/ai/) | 32 | [Aphrody AI](products/ai/README.md) |
 | products | [compat](products/compat/) | 5 | [Aphrody Compat](products/compat/README.md) |
-| products | [contracts](products/contracts/) | 6 | [Aphrody Contracts](products/contracts/README.md) |
+| products | [contracts](products/contracts/) | 5 | [Aphrody Contracts](products/contracts/README.md) |
 | products | [discord](products/discord/) | 36 | [Aphrody Discord Ecosystem](products/discord/README.md) |
 | products | [infra](products/infra/) | 6 | [Aphrody Infra](products/infra/README.md) |
 | products | [koharu](products/koharu/) | 2 | [Aphrody Koharu](products/koharu/README.md) |
 | products | [native](products/native/) | 1 | [Aphrody Native](products/native/README.md) |
-| products | [os](products/os/) | 10 | [Aphrody OS](products/os/README.md) |
+| products | [os](products/os/) | 5 | [Aphrody OS](products/os/README.md) |
 | products | [rg](products/rg/) | 62 | [Documentation — monorepo Rose Griffon](products/rg/README.md) |
 | products | [shell](products/shell/) | 4 | [Aphrody Shell](products/shell/README.md) |
 | products | [shenron](products/shenron/) | 10 | - |
-| products | [ui](products/ui/) | 40 | [Aphrody UI](products/ui/README.md) |
+| products | [ui](products/ui/) | 35 | [Aphrody UI](products/ui/README.md) |
 | products | [upstream-antigravity-sdk-python](products/upstream-antigravity-sdk-python/) vendored upstream copy | 1 | [Google Antigravity SDK](products/upstream-antigravity-sdk-python/README.md) |
 | products | [upstream-bun](products/upstream-bun/) vendored upstream copy | 65 | [with install script (recommended)](products/upstream-bun/README.md) |
 | products | [upstream-codex](products/upstream-codex/) vendored upstream copy | 1 | [Install using npm](products/upstream-codex/README.md) |
@@ -135,7 +135,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [upstream-vllm](products/upstream-vllm/) vendored upstream copy | 14 | - |
 | products | [upstream-WSL](products/upstream-WSL/) vendored upstream copy | 1 | [Welcome to the Windows Subsystem for Linux (WSL) repository](products/upstream-WSL/README.md) |
 | products | [upstream-wslg](products/upstream-wslg/) vendored upstream copy | 1 | [Welcome to WSLg](products/upstream-wslg/README.md) |
-| products | [web](products/web/) | 11 | [Aphrody Web](products/web/README.md) |
+| products | [web](products/web/) | 10 | [Aphrody Web](products/web/README.md) |
 | products | [workspace](products/workspace/) | 1 | [Aphrody source workspace](products/workspace/README.md) |
 | reference | [ai](reference/ai/) | 240 | - |
 | reference | [compat](reference/compat/) | 102 | - |
@@ -146,10 +146,10 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [koharu](reference/koharu/) | 5 | - |
 | reference | [native](reference/native/) | 2 | - |
 | reference | [os](reference/os/) | 31 | - |
-| reference | [rg](reference/rg/) | 23 | - |
+| reference | [rg](reference/rg/) | 19 | - |
 | reference | [shell](reference/shell/) | 10 | - |
-| reference | [shenron](reference/shenron/) | 16 | - |
-| reference | [ui](reference/ui/) | 220 | [UI reference documents](reference/ui/README.md) |
+| reference | [shenron](reference/shenron/) | 15 | - |
+| reference | [ui](reference/ui/) | 219 | [UI reference documents](reference/ui/README.md) |
 | reference | [upstream-antigravity-sdk-python](reference/upstream-antigravity-sdk-python/) vendored upstream copy | 5 | - |
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 2045 | - |
 | reference | [upstream-codex](reference/upstream-codex/) vendored upstream copy | 4 | - |
@@ -193,4 +193,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 10 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 5218 files.
+Total: 5194 files.

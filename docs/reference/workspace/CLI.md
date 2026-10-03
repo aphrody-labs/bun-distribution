@@ -126,9 +126,9 @@ La qualification des outils MSVC est enregistrée séparément dans le rapport
 [setup toolchain](../../../docs/migration/toolchain-setup-2026-10-01.json).
 
 ```bash
-cargo check -p <crate> --all-targets
-cargo clippy -p <crate> --all-targets -- -D warnings
-cargo test -p <crate>
+scripts/build/rust/cargo-serial.sh check -p <crate> --all-targets
+scripts/build/rust/cargo-serial.sh clippy -p <crate> --all-targets -- -D warnings
+scripts/build/rust/cargo-serial.sh test -p <crate>
 oxlint <fichiers>
 oxfmt --check <fichiers>
 tsc --noEmit --project <tsconfig>

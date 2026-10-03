@@ -38,7 +38,7 @@ The legacy `chat` path does not qualify the desktop runtime.
 | --- | --- |
 | Work remaining and release proof | [Active root plan](../../../PLAN.md), [imported AI requirements](../../plans/ai/PLAN.md) |
 | Processes and capability owners | [Architecture](../../architecture/ai/ARCHITECTURE.md), [source of truth](../../reference/ai/SOURCE_OF_TRUTH.md) |
-| Wire subset and handshake | [App-server](./crates/aphrody-app-server/README.md) |
+| Wire subset and handshake | [App-server](../../../crates/ai/app-server/README.md) |
 | Setup, models and configuration | [Install](../../guides/ai/INSTALL.md), [local models](../../reference/ai/LOCAL-AI-MODELS.md), [config](../../reference/ai/config.md) |
 | AI/LLM agent skills | [Unified Aphrody plugin](../../../plugins/aphrody/README.md) |
 | All guides | [Index](./_source/README.md) |

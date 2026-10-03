@@ -1,59 +1,10 @@
-# Native integration: resume plan
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Reprise de l'intégration AI
 
-Status at 2026-10-01 (session closed at the usage limit). Master plan:
-[native-integration-master.md](native-integration-master.md). All 22 wave-1
-agents were stopped mid-edit; their files are committed as-is
-(`9c7889ff`, `c00f2674` and the closing commit). **Nothing from wave 1 has been
-compiled.** Expect an error-fix loop.
+Queue canonique : [plan AI](native-integration-master.md).
+Gates et workflow : [PLAN racine](../../../PLAN.md), [AGENTS.md](../../../AGENTS.md).
 
-## Resume order (lead, serial, `nice -n 19`, `-j 6`, agents never run cargo)
-
-1. `git status`, then `git log -3`. Re-read the master plan, section 7.
-2. Fix known diagnostics first:
-   - `crates/os/kernel`: `crate::paths` (module now declared; check its API
-     against `infra.rs`, `mcp_proxy.rs`), `rustls` missing in
-     `http_transport.rs` (add to the crate manifest or gate the code).
-   - `crates/ai/tools/src/builtin/read_file.rs`: `read_capped` visibility.
-   - `crates/ui/app`: `broker::aphrody_command`, `broker::resolve_aphrody_bin`
-     (T3 stopped while editing `Meta`/`aphrody_meta`).
-   - `crates/infra/git/src/source.rs`: borrow fix applied, uncompiled.
-3. Root `Cargo.toml`: add `aphrody-engine-mistralrs` and `aphrody-local-ai`
-   workspace entries and any dependency a crate manifest requests
-   (`cargo check` names them). mistral.rs only as optional git dep at rev
-   `3f2515e9`, feature `engine`, off by default (D1).
-4. Check in this order, one `-p` set at a time, fixing before the next:
-   `aphrody-git`, `aphrody-models` (+ `--target wasm32-unknown-unknown`),
-   `aphrody-model-client`, `aphrody-llama-server`, `aphrody-rag`
-   (`--features native`), `aphrody-kernel`, `aphrody-kernel-client`,
-   `aphrody-tools`, `aphrody-mcp-client`, `aphrody-app`, `aphrody-app-server`,
-   `aphrody-marketplace`, `aphrody-engine-mistralrs`, `aphrody-gateway`,
-   then `-p aphrody --bin aphrody`. Then `cargo test` on the same set.
-5. `plugins/aphrody/scripts/validate-plugin.sh`; scoped bun checks for
-   `packages/ui/m3-ai`.
-
-## Per-track state (what was in flight when stopped)
-
-| Track | State | To finish |
-|---|---|---|
-| T1 RAG | W1 `EmbedBackend::Native` wired in CLI and MCP (e42205f2d, cargo-checked); `rag-core` fusion kernels started; W2–W7 unverified | rerun worker on `rag-native-integration.md` |
-| T2a | `in_process` module parked in `git stash` (does not compile with `in-process`: `ModelCapabilities` fields, `stream` signature) | fix, then retire supervisor/daemon/caps |
-| T2b | NDJSON decoder, Ollama/vLLM/HF request helpers in progress | finish `http.rs`, native Ollama/vLLM clients |
-| T2c | read router/gateway; engine crate scaffold only | build `aphrody-engine-mistralrs`, rebuild gateway over `ModelClient`, grep-prove router removal |
-| T3 | `broker::aphrody_command`/`resolve_aphrody_bin` restored (781ed9a38, `aphrody-app` checks); W2/W3/W5/W7/W8 otherwise unverified | finish, W4 and W6 after T2 |
-| T4 | `plugins/aphrody/opencode.json` rewritten to the OpenCode schema (31a92782c) | `marketplace` generator, `.codex/` |
-| T5 | `mcp_config.rs` canonical loader, `call_tool_raw` in progress | dedup MCP clients |
-| T6 | docs edited (agy hooks: `Stop` not `AfterAgent`) | A2A peers, conformance tests |
-| T7, T8 | skill path fixes committed (38873cfb3); agents not rerun | rerun, then validator |
-| T9 | no file written | cross-tool reference docs |
-| T10 | `paths.rs`, kernel-client endpoint resolver in progress | finish, remove hardcoded paths |
-| T11 | `web_fetch.rs` mid-edit | subprocess sweep |
-
-Research agents (Claude, Codex, OpenCode, agy formats) were stopped; their
-outputs are under the session task directory and may be lost. Re-run only if
-T4/T6/T9 need them.
-
-## Rules that still apply
-
-No branch or worktree; exact-match edits; only the lead edits the root
-`Cargo.toml`; D1 to D8 in the master plan; claim:
-`.coord/claims/native-integration.json`.
+À la reprise : Git/claims → propriétaire et contrat sélectionnés → correction
+reproduite → gates sérialisés → livraison du lot. Ne pas relancer les anciennes
+équipes, appliquer des diagnostics datés comme actuels ou restaurer un stash
+sans inspecter son contenu. Aucun clone, copie de travail ou seconde checklist.

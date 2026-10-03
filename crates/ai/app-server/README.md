@@ -14,12 +14,12 @@ That revision remains the provenance for the original contract comparison and
 fixtures. The current audit checkout is [`thirdparty/codex`](../../thirdparty/codex),
 pinned at `a6bd19261c30ce0a0225fe90e646822d29916f11`; it does not change the
 provenance of existing ports or establish conformance to the newer revision.
-See [third-party provenance](../../docs/THIRD_PARTY_CODEX.md).
+See [third-party provenance](../../../docs/reference/ai/THIRD_PARTY_CODEX.md).
 This is a partial implementation, not complete Codex desktop compatibility.
 
 The product integration target and delivery order are maintained in the
-[AI plan](../../docs/PLAN.md) and the owning
-[UI specification](../../../aphrody-ui/docs/GUI.md). The first complete desktop
+[AI plan](../../../docs/plans/ai/PLAN.md) and the owning
+[UI specification](../../../docs/reference/ui/GUI.md). The first complete desktop
 slice uses explicitly selected full access while restricted policies remain
 rejected. OS isolation is a later release gate for advertising restricted modes.
 

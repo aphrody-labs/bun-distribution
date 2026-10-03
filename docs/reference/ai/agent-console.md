@@ -71,7 +71,7 @@ aphrody app-server --http --addr 127.0.0.1:8765
 
 Stdio supplies request/response frames and streaming notifications. HTTP serves
 the console at `/` and JSON-RPC at `/rpc`; the console polls turn events. See
-the [protocol and lifecycle](../../products/ai/crates/aphrody-app-server/README.md) for the
+the [protocol and lifecycle](../../../crates/ai/app-server/README.md) for the
 initialization handshake and supported methods.
 
 The API accepts the same managed open-weight selection as the CLI. For example,
@@ -122,7 +122,7 @@ from a successful Rust compilation.
 Client examples and executable integration tests:
 
 - [Python client](./py/aphrody/docs/agent.md)
-- [Bun client](../../products/ai/crates/aphrody-ffi/bun/README-agent.md)
+- [Bun client](../../../crates/interop/ffi/bun/README-agent.md)
 - Real binary tests
 
 The implementation status and outstanding parity work remain tracked in the

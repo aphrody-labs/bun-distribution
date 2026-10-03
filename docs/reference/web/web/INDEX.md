@@ -36,7 +36,7 @@ Welcome to the Aphrody Web core documentation. Aphrody Web is a high-performance
 
 - [Koharu capability map](./KOHARU.md) - Source-pinned comparison of Koharu translation, image import and Web transport/browser capabilities; documents possible reuse without implying integration.
 - [Repository layout](../../../products/web/README.md) - Crates, Bun workspace packages and sibling dependencies of `aphrody-web`.
-- [`@aphrody/x`](../../../products/web/packages/x/README.md) - Headless X/Twitter client, `x-algorithm` ranking implementation and X function tools (`XTools`) for model tool calling.
+- [`@aphrody/x`](../../../../packages/web/x/README.md) - Headless X/Twitter client, `x-algorithm` ranking implementation and X function tools (`XTools`) for model tool calling.
 - xAI / Grok: bxc calls the xAI REST API through its own client (`apps/bxc/src/integrations/xai.ts` (not in repo)). The full `@aphrody/xai` SDK is AI-layer code in the sibling `aphrody-ai` repository, which consumes `@aphrody/x` from here; this repository never depends on it.
 - [`@aphrody/bxc-test`](../../../products/web/packages/bxc-test/README.md) - Playwright-compatible test runner, Next.js instant navigation (`@aphrody/bxc-test/next`), and canonical site presets (`@aphrody/bxc-test/sites`).
 

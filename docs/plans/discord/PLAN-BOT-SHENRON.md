@@ -158,8 +158,8 @@ de sa branche `main` pendant le build. Aucune version locale de Discord.js ne
 doit se glisser dans ce graphe du bot.
 
 Préserver l’identité et le flux actuels des deux dépôts. Vérifier les remotes,
-branches et changements non commités dans les deux worktrees avant l’exécution;
-ne jamais écraser le travail d’un agent ni commit/push depuis ce plan.
+branches et changements non commités dans les checkouts existants avant l’exécution;
+préserver les changements concurrents ; livrer les lots autorisés selon AGENTS.md.
 
 ## Plan d’exécution en vagues
 
@@ -276,9 +276,9 @@ catalogue/workspaces, builds/tests bot et checks repo pertinents réussis.
 ### Vague 4 — Reproductibilité, CI et verrouillage amont
 
 1. Ajouter une vérification automatique du SHA attendu du dépôt source et des
-   packages requis; l’échec doit expliquer comment synchroniser le clone, sans
+   packages requis; l’échec doit expliquer comment synchroniser les sources déclarées, sans
    télécharger silencieusement `main`.
-2. S’assurer qu’un clone neuf du monorepo documente/installe Aphrody Discord
+2. S’assurer que le checkout existant du monorepo documente/installe Aphrody Discord
    sous un chemin relatif stable. Pour CI, checkout au SHA exact; aucun chemin
    `/home/aphro/...` codé en dur dans manifestes ou scripts.
 3. Vérifier le comportement Bun de `discord.js` malgré son champ `engines.node`
@@ -350,7 +350,7 @@ tests/build, et vérifier le diff généré.
 
 La migration est terminée uniquement quand le bot résout un seul checkout
 épinglé de Discord.js/DiscordX, les doublons du monorepo Shenron ont été retirés
-après parité vérifiée, le lock est reproductible depuis un clone neuf, et les
+après parité vérifiée, le lock est reproductible avec une installation gelée dans le checkout existant, et les
 gates build/typecheck/lint/tests/smoke sont observées vertes. Le commit doit
 contenir les références exactes amont et les checks réellement exécutés; ne
 pas publier ni déployer dans la même étape.

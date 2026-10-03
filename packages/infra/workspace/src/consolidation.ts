@@ -364,49 +364,23 @@ export function renderDocumentationIndex(
   entries: readonly DocumentationIndexEntry[],
   aphrodyRoot: string,
 ): string {
-  const indexPath = join(aphrodyRoot, "docs/migration/IMPORTED-DOCS-INDEX.md");
-  const groups = new Map<string, DocumentationIndexEntry[]>();
   for (const entry of entries) {
     const destination = entry.importedTarget ?? entry.target;
     if (entry.kind !== "documentation" || !destination?.startsWith("docs/")) continue;
     if (!resolve(aphrodyRoot, destination).startsWith(`${resolve(aphrodyRoot)}/docs/`))
       throw new Error(`documentation destination escaped docs: ${destination}`);
-    const category = destination.split("/")[1] ?? "reference";
-    const group = groups.get(category) ?? [];
-    group.push(entry);
-    groups.set(category, group);
   }
-  const lines = [
+  return [
     DOCUMENTATION_INDEX_MARKER,
-    "# Documentation index",
+    "# Documentation importée — références canoniques",
     "",
-    "Source documents are copied with provenance. Verified local file links are rewritten where their imported targets exist; see [document-import.json](document-import.json) for unresolved references.",
+    "Navigation courante : [llms.txt](../llms.txt).",
+    "Inventaire unique : [documentation.json](../reference/workspace/documentation.json).",
+    "Provenance des imports : [source-map.json](source-map.json).",
     "",
-  ];
-  for (const [category, documents] of [...groups].sort(([a], [b]) => a.localeCompare(b))) {
-    lines.push(`## ${category}`, "");
-    for (const entry of documents.toSorted((a, b) =>
-      (a.importedTarget ?? a.target!).localeCompare(b.importedTarget ?? b.target!),
-    )) {
-      const destination = entry.importedTarget ?? entry.target!;
-      const label = destination.split("/").slice(3).join("/") || basename(destination);
-      const href = relative(dirname(indexPath), join(aphrodyRoot, destination)).replaceAll(
-        "\\",
-        "/",
-      );
-      const encodedHref = href
-        .split("/")
-        .map((segment) => encodeURIComponent(segment))
-        .join("/")
-        .replace(/\(/g, "%28")
-        .replace(/\)/g, "%29");
-      lines.push(
-        `- [${label.replaceAll("[", "\\[").replaceAll("]", "\\]")}](${encodedHref}) — ${entry.source}`,
-      );
-    }
-    lines.push("");
-  }
-  return `${lines.join("\n")}\n`;
+    "Les chemins d'import historiques ne sont pas un second catalogue courant.",
+    "",
+  ].join("\n");
 }
 
 async function writeDocumentationIndex(

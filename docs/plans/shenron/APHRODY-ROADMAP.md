@@ -5,7 +5,7 @@
 Date de l’inventaire : 2026-09-29. Ce plan décrit le code présent dans le
 workspace Aphrody, ses chemins de migration, les frontières de production et
 les critères pour fermer la migration. Le checkout historique Shenron reste
-intact jusqu’à la qualification d’un clone propre et du cycle release/rollback.
+intact jusqu’à la qualification de l’installation gelée et du cycle release/rollback.
 
 ## État vérifié
 
@@ -187,7 +187,7 @@ compatibilité officiel sert à cet usage.
    erreurs à la source plutôt que d’ajouter des casts ou d’assouplir le
    compilateur.
 4. Ajouter le typecheck de tous les workspaces au gate Aphrody et vérifier les
-   consommateurs externes des exports `@shenron/*` depuis un clone propre.
+   consommateurs externes des exports `@shenron/*` avec installation gelée dans le checkout existant.
 
 **Sortie :** tous les fichiers source actifs typecheckent sous la version
 TypeScript 7 stable du catalogue ; seule l’API TS6 requise par un outil est
@@ -251,10 +251,10 @@ arrière documenté.
 
 ### S6 — Fermeture du checkout et intégration de production
 
-1. Régénérer les maps depuis des checkouts propres ; résoudre collisions,
+1. Régénérer les maps depuis les checkouts existants ; résoudre collisions,
    liens documentaires, licences, scripts et secrets ignorés. Ne pas inclure
    `.env`, bases locales, index/caches générés ou jeux de données protégés.
-2. Qualifier un clone propre Aphrody : install Bun gelé, scripts déclarés,
+2. Qualifier le checkout Aphrody existant : install Bun gelé, scripts déclarés,
    format/lint/typecheck, tests appropriés, builds site/bot, import OpenAPI,
    codegen et assets. Vérifier les configurations locales par
    `aphrody-infra dev-env` et ses tunnels, sans secrets dans les manifests.

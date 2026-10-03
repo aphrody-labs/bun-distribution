@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { renderDocumentationIndex, runConsolidation } from "../src/consolidation.ts";
 
-test("recorded-map indexing resolves links from the migration directory without source checkouts", async () => {
+test("recorded-map indexing uses one canonical catalog without duplicating import paths", async () => {
   const root = await mkdtemp(join(tmpdir(), "docs-index-"));
   try {
     const entries = [
@@ -27,7 +27,9 @@ test("recorded-map indexing resolves links from the migration directory without 
     await mkdir(migration, { recursive: true });
     const map = JSON.stringify({ entries });
     await writeFile(join(migration, "source-map.json"), map);
-    await writeFile(join(migration, "document-import.json"), "{}");
+    await mkdir(join(root, "docs/reference/workspace"), { recursive: true });
+    await writeFile(join(root, "docs/reference/workspace/documentation.json"), "{}");
+    await writeFile(join(root, "docs/llms.txt"), "# Index\n");
     for (const entry of entries.slice(0, 2)) {
       const path = join(root, entry.importedTarget ?? entry.target!);
       await mkdir(dirname(path), { recursive: true });
@@ -44,8 +46,9 @@ test("recorded-map indexing resolves links from the migration directory without 
     ).toBe(0);
     const index = join(migration, "IMPORTED-DOCS-INDEX.md");
     const content = await readFile(index, "utf8");
-    expect(content).toContain("Guide%20%28draft%29.md");
-    expect(content).toContain("../products/owner/_source/README.md");
+    expect(content).toContain("../reference/workspace/documentation.json");
+    expect(content).not.toContain("Guide%20%28draft%29.md");
+    expect(content).not.toContain("../products/owner/_source/README.md");
     expect(content).not.toContain("crates/owner/lib.rs");
     const links = [...content.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)].map((match) => match[1]!);
     expect(links).toHaveLength(3);
@@ -96,7 +99,7 @@ test("docs-index reports missing destinations instead of silently omitting them"
     );
     expect(await runConsolidation(["docs-index", "--aphrody-root", root])).toBe(1);
     expect(await readFile(join(migration, "IMPORTED-DOCS-INDEX.md"), "utf8")).toContain(
-      "../guides/owner/missing.md",
+      "../reference/workspace/documentation.json",
     );
   } finally {
     await rm(root, { recursive: true, force: true });

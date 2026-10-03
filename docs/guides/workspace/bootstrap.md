@@ -99,7 +99,7 @@ Lire [AGENTS.md](../../../AGENTS.md), [PLAN.md](../../../PLAN.md) et
 écriture. Ne pas relancer ce bootstrap comme validation documentaire ou depuis
 un worker sans autorisation de la fabrique : il modifie le poste et peut lancer
 Cargo. Pour un lot documentaire, suivre les
-[gates de documentation](documentation.md#validation-dun-lot-partagé).
+[gates de documentation](documentation.md#livraison-autonome).
 
 La livraison SDK/runtime, son installation et les gates consommateurs suivent
 le [parcours de qualification](runtime-consumer.md). Les commandes ci-dessus

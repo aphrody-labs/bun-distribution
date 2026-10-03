@@ -2,7 +2,7 @@
 # SVG convergence: `aphrody-svg`
 
 One owner for SVG across the workspace: the Rust crate
-[`crates/ui/svg`](../../products/ui/crates/aphrody-svg/README.md), its `bun:ffi` surface
+[`crates/ui/svg`](../../../crates/ui/svg/README.md), its `bun:ffi` surface
 (`bun_rs_svg` in `crates/ui/bun/src/svg.rs`) and the thin Bun package
 `@aphrody/svg`. The owner is `aphrody-ui`: it is the 2D rendering layer and
 already hosted the icon, identity and sprite crates the other repos consume by relative path.

@@ -1,147 +1,66 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Local-AI GUI: native integration of Jan's design
+# GUI local AI — plan propriétaire
 
-Status: FAIT (fully integrated in-process). Scope: the desktop GUI for local inference and model management.
-Jan (Apache-2.0, Tauri) is a design reference only: nothing from it is vendored, copied or
-linked. Aphrody keeps one implementation per capability and reaches it in process.
+Architecture : [PLAN racine](../../../PLAN.md).
+Décisions AI : [plan AI](../ai/native-integration-master.md).
+Jan fournit les concepts de hub local, sans code importé.
+La GUI reste un client des owners AI, pas une seconde implémentation métier.
 
-## 1. Inventory of existing GUI surfaces
+## Owners
 
-| Surface | Path | Role |
-| --- | --- | --- |
-| Desktop shell (Tauri `=3.0.0-alpha.3`) | `crates/ui/app` (`aphrody-app`) | Windows, tray, pet, widget, deep links, updater, app-server broker, models hub commands |
-| Toolkit-neutral GUI traits | `crates/ui/gui-core` | `WindowHost`, `SurfaceProvider`, `ThemeProvider`, `KernelBridge`; no toolkit types |
-| New: local-AI hub | `crates/ui/local-ai` (`aphrody-local-ai`) | Toolkit-free model hub (catalog, store, recommend, verify, remove, pull, hardware) |
-| Web-to-Tauri wrapper | `crates/ui/tauri-wrap` | `remote`, `bundle` and `sidecar` modes, debug bridge |
-| Tauri MCP bridge | `crates/ui/tauri-mcp` | Debug/automation bridge, not product UI |
-| Drive explorer | `crates/ui/drive` | File explorer (its own sidecar files are data, not processes) |
-| A2A viewer (WASM) | `crates/ui/a2a-ui` | `.coord` mailbox view |
-| Design system | `packages/ui/m3*`, `m3-ai` (chat composer, message bubble, model selector, tool call, markdown, tasks), `m3-react`, `material-web` | M3 components; `m3-ai` is the chat UI kit |
-| Scaffolder | `packages/ui/scaffold`, `packages/ui/web-to-tauri` | One scaffolder (`@aphrody/scaffold`) |
-| Other web UIs | `apps/koharu/editor`, `packages/koharu/*`, `apps/rg/*`, `apps/shenron/*` | Product UIs, out of scope |
+| Surface | Source |
+| --- | --- |
+| Desktop et broker | `crates/ui/app`, app-server propriétaire AI |
+| Traits toolkit-neutral | `crates/ui/gui-core` |
+| Hub modèles et view models | `crates/ui/local-ai` |
+| UI applicative | `packages/ui/app-ui`, composants `packages/ui/m3-ai` |
+| Scaffolding | `packages/ui/scaffold`, `web-to-tauri` |
+| Wrapper sites tiers | `tauri-wrap` ; sidecar conserve ce rôle produit |
+| Debug/automation | `tauri-mcp`, pas façade métier |
+| Explorer/A2A | `ui/drive`, `ui/a2a-ui`, selon leurs contrats |
 
-The webview front end consumed by `aphrody-app` is the bundled `ui-dist` (`@aphrody/app-ui`); its source
-is not under `packages/ui` in this checkout (unverified owner, see section 8).
+AI fournit inférence/providers/gateway, threads/session/rollout, tools/skills,
+assistants/prompts, MCP et RAG. Web search reste chez Web. Updater/tray/deep-links,
+préférences et shortcuts restent chez app/integration et plugins retenus.
 
-### Duplicates found
+## API toolkit-neutral
 
-1. Model management logic existed twice: the CLI (`crates/infra/aphrody-command/src/model_cmd.rs`, which builds the JSON
-   documents) and the desktop, which re-ran the CLI as a child process and re-parsed its output
-   (`crates/ui/app/src/models.rs`). The desktop copy of the process plumbing is removed (section 4).
-   Remaining duplication: the CLI still shapes the same JSON by itself; it should call
-   `aphrody-local-ai` (work item W3, CLI owner).
-2. `crates/ui/tauri-wrap/src/sidecar.rs` is a generic sidecar mode for wrapped third-party sites. It is
-   a product feature of the wrapper, not Aphrody's own inference path; keep, never use it for Aphrody AI.
-3. `m3-ai` (UI kit) and any ad hoc chat view in `ui-dist` must be one component set: chat rendering
-   belongs to `m3-ai`.
+`ModelHub::new/with_root`, `store_root`, `catalog`, `installed`,
+`recommend`, `hardware`, `verify`, `remove`, `pull`.
+Conserver les JSON CLI, les erreurs Model/Invalid/Cancelled, progress/cancellation,
+le store choisi et le contrat de reprise `.part`. Travail bloquant sur pool dédié.
 
-## 2. Jan design extracted, mapped to Aphrody owners
+Adapters Tauri : commandes historiques, événement `aphrody://model-pull`,
+map Pulls/cancel et argument names inchangés. Modèle corrompu :
+`intact:false` ; recommend sans candidat : erreur.
 
-| Jan feature (design) | Jan mechanism | Aphrody canonical owner | Status |
-| --- | --- | --- | --- |
-| Local inference engine | `tauri-plugin-llamacpp` spawns a `llama-server` sidecar, reads GGUF facts, plans launch | `crates/ai/llama-server` (`ServerClient`, plan, facts, supervisor), `crates/ai/infer`, `crates/ai/engine` | Owner exists; GUI must call it through a typed handle (W4) |
-| Second engine (MLX) | `tauri-plugin-mlx` | Out of scope (macOS best effort) | Gap, deferred |
-| Hardware detection | `tauri-plugin-hardware` | `aphrody-models::accel::probe` (NVML in process) plus `aphrody-native` topology | Done, in process |
-| Model hub (browse, download, resume) | download extension, hub route | `aphrody-models` catalog, `Downloader`, `ModelStore`; GUI facade `aphrody-local-ai::ModelHub` | Done, in process |
-| Hugging Face search/import | hub route | `aphrody-models` `ModelRef` (HF pinned refs) | Partial: no free-text HF search; gap W6 |
-| Import external stores | none | `models::aphrody_model_scan_external` (Ollama, LM Studio, HF cache) | Done (scan only; adopt via `ModelStore::adopt_local`) |
-| Threads and messages storage | conversational extension, `core/threads` | `crates/ai/session`, `crates/ai/rollout`, `aphrody-app-server` thread/turn protocol | Owner exists |
-| Chat loop, tools, subagents, skills, plans | `core/agent/*` | `aphrody-chat`, `aphrody-agent-runtime`, `aphrody-tools`, `aphrody-skills`, `aphrody-supervisor` | Owner exists, reached through app-server protocol |
-| Assistants (system prompt presets) | assistant extension | `aphrody-prompts`, `aphrody-agent-home`, skills | Owner exists; GUI list view is a gap (W5) |
-| MCP servers manager | settings/mcp-servers, `core/mcp` | `aphrody-mcp`, `aphrody-mcp-client`, `aphrody-mcp-oauth` | Owner exists; GUI settings view gap (W5) |
-| RAG and attachments | rag extension, vector-db plugin | `aphrody-rag` (store, indexer, hybrid search, reranker), `aphrody-embed` | Owner exists; no GUI view model yet (W5) |
-| Web search | websearch plugin | `aphrody-web` (Obscura / Aphrody Web MCP) | Owner exists |
-| Local OpenAI-compatible API server | `core/server`, settings/local-api-server | `aphrody-gateway` (`router`, `serve_gateway`, loopback `127.0.0.1:8795`, origin allow-list) | Owner exists; GUI toggles it in process (W4) |
-| Providers (remote keys) | settings/providers | `aphrody-providers`, `aphrody-model-client`, gateway adapters | Owner exists |
-| Settings, shortcuts, privacy, proxy | settings routes | `tauri-plugin-store` preferences + `tauri-plugin-global-shortcut` already in `aphrody-app` | Done |
-| System monitor | route | `aphrody-native` topology (telemetry command) | Done |
-| Updater, tray, deep links | `core/updater` | `aphrody-app::integration` | Done |
-| opencode / openfox web UIs | HTTP server + web client | Not adopted: Aphrody's web client is the M3 UI over the same app-server/gateway protocol | Decision: no import |
+## Jalons et qualification
 
-Principle: the GUI is a thin client. Inference, threads, tools, RAG and MCP stay in `crates/ai/**`; the
-GUI never contains a second copy of that logic.
+| Travail rapporté W1–W8 | Preuve à conserver ou compléter |
+| --- | --- |
+| W1 hub et commandes modèles en processus | Parité catalog/install/recommend/verify/remove/pull |
+| W2 broker app-server en processus | Duplex tokio, task restart, id rewriting, replay, event routing, arrêt joint/rollout flush |
+| W3 CLI/desktop même owner | JSON identiques, aucun nouveau shaping concurrent |
+| W4 serveur local/view model | Gateway loopback 127.0.0.1:8795, lifecycle/cancellation/refus origine |
+| W5 assistants/MCP/RAG view models et M3 | Schémas typés, composants partagés, parcours rendu |
+| W6 hub/catalog search | Références modèles épinglées ; distinguer catalog search et recherche HF live |
+| W7 appels kernel natifs | Env/host/capture via owners ; retirer sidecars propres après parité |
+| W8 neutralité toolkit | Core sans toolkit/IPC ; tests et consommateur indépendant |
 
-## 3. Toolkit-agnostic core API surface
+Le précédent document marquait ces jalons FAIT tout en indiquant qu'aucun
+build n'avait été exécuté. Ces marqueurs ne qualifient pas les gates ci-dessus.
+Vérifier source, tests, UI rendue, artefact installé et shutdown séparément.
 
-`aphrody-local-ai` (new, `crates/ui/local-ai`, no toolkit, IPC or runtime types in its API):
+## Contraintes
 
-```text
-ModelHub::new() / ModelHub::with_root(path)
-  .store_root()                       -> PathBuf
-  .catalog(task?)                     -> serde_json::Value   (CLI-identical schema)
-  .installed(task?)                   -> Value
-  .recommend(task, prefer)            -> Value
-  .hardware()                         -> aphrody_models::HardwareProfile
-  .verify(spec) / .remove(spec)       -> Value               (blocking; run on a blocking pool)
-  .pull(spec, force, cancel: Future<Output=()>, on_progress: FnMut(PullProgress)) -> Value
-HubError { Model, Invalid, Cancelled }
-```
+Passer models-dir comme option explicite à AppServer ; ne pas muter l'env du
+processus multithread. Closing duplex déclenche join/flush. Qualifier le contrat
+du daemon géré au host qui embarque app-server, selon le owner inférence.
 
-Adapters translate only: Tauri (`crates/ui/app/src/models.rs`: commands, `aphrody://model-pull`
-event, `Pulls` cancel map), and later COSMIC/egui/web adapters in their own crates over the same type.
-The JSON documents keep the CLI `--json` schema, so `@aphrody/app-ui` is unchanged. Next layer
-(W4/W5) adds typed (non-JSON) view models in the same crate: `ChatThreadSummary`, `McpServerEntry`,
-`RagSourceEntry`, `LocalServerState`, each a plain serde struct built from the owning crate.
+Les modes sidecar tiers et OS shell integrations restent distincts des hops
+AI à supprimer. Retirer externalBin/APHRODY_BIN après migration des consommateurs.
+M3-ai possède les composants chat communs ; produit et données restent chez
+leurs propriétaires. MLX macOS reste un écart, pas un backend qualifié.
 
-## 4. Subprocess and sidecar inventory
-
-| Spawn | Where | Disposition |
-| --- | --- | --- |
-| `aphrody model <catalog,list,recommend,verify,rm,path,accel>` (one-shot) | `crates/ui/app/src/models.rs` | Removed: in process via `aphrody-local-ai` |
-| `aphrody model pull --json` (long-running, stderr progress parsing, kill on cancel) | same | Removed: in-process `pull_spec`, progress callback, cancel by dropping the transfer (resume via `.part`) |
-| `aphrody model accel` for GPU names | same | Removed: `aphrody-models::accel::probe` (NVML via dlopen) |
-| `aphrody app-server` over stdio JSON-RPC | `crates/ui/app/src/broker.rs` | Remaining, W2: run `aphrody_app_server::serve_stdio` in process over `tokio::io::duplex`; keep the broker's id rewriting, replay and event routing unchanged |
-| `aphrody …` one-shot commands (`ai env`, windows host, capture) | `crates/ui/app/src/desktop.rs` (file currently modified by another agent) | Remaining, W7: replace each with the owning crate call (`aphrody-kernel`, `aphrody-capture`) |
-| `externalBin` `aphrody` and `sd-daemon` binaries | `crates/ui/app/binaries`, resolved by `resolve_aphrody_bin` | Remaining until W2 and W7 land; then drop `externalBin` and `APHRODY_BIN` |
-| `llama-server` (llama.cpp) | `crates/ai/llama-server` | Remaining by design: llama.cpp is a native engine driven as an external binary, never linked (owner: inference agent). Target (W4): GUI uses its supervisor library API, no shell/CLI hop; a linked engine (`mistral.rs`, via `aphrody-engine`/`aphrody-infer`) removes it later |
-| `tauri-wrap` sidecar mode | `crates/ui/tauri-wrap/src/sidecar.rs` | Keep: wraps third-party web projects only |
-| `xdg-open` / `explorer` / `open -R` | `crates/ui/drive/src/files.rs` | Keep (OS shell integration; `tauri-plugin-opener` could replace, low priority) |
-| `nvidia-smi` | none (NVML used) | Not present |
-
-Note: the models-dir preference is still exported to the app-server child as `APHRODY_MODELS_DIR`; once
-the broker is in process this must become an explicit `AppServer` option, because mutating the process
-environment is `unsafe` in edition 2024 and is not acceptable.
-
-## 5. Dependency lines the lead must add
-
-The new crate is picked up by the existing `members = ["crates/ui/*", ...]` glob, and `aphrody-app`
-depends on it by path, so no root edit is required to build. Optional, for other consumers:
-
-```toml
-# root Cargo.toml [workspace.dependencies]
-aphrody-local-ai = { path = "crates/ui/local-ai", version = "1.0.0-canary" }
-```
-
-All other dependencies used (`aphrody-models`, `futures-util`, `serde_json`, `thiserror`, `tempfile`,
-`tokio`) are already workspace dependencies. `Cargo.lock` will gain the `aphrody-local-ai` package and a
-new edge from `aphrody-app`; the lead regenerates it. For W2 `aphrody-app` additionally needs
-`aphrody-app-server = { workspace = true }` (already declared at the root).
-
-## 6. Ordered work items
- 
-1. W1 (`FAIT`): `aphrody-local-ai` crate and in-process Models hub commands in the Tauri adapter (`crates/ui/app/src/models.rs`).
-2. W2 (`FAIT`): in-process app-server broker (`serve_stdio` over `tokio::io::duplex`, task supervision with restart, `AppServerBroker` in `crates/ui/app/src/broker.rs`), zero subprocess spawn.
-3. W3 (`FAIT`): CLI and desktop unification calling `aphrody-local-ai` for canonical JSON catalog, installed models, and telemetry documents.
-4. W4 (`FAIT`): `LocalServerState` view model, in-process gateway/supervisor commands and loopback `127.0.0.1:8795` integration.
-5. W5 (`FAIT`): typed view models for assistants, MCP servers, and RAG sources over owning crates; M3 screens in `packages/ui/m3-ai`.
-6. W6 (`FAIT`): model hub and catalog search with pinned references in `aphrody-models` and M3 catalog UI.
-7. W7 (`FAIT`): native commands in `crates/ui/app/src/lib.rs` and `desktop.rs` mapped directly to kernel and crate calls (`aphrody-kernel`, `aphrody-systemd`, `aphrody-coreutils`, `aphrody-compat`).
-8. W8 (`FAIT`): toolkit-independent core API in `crates/ui/local-ai` verified with zero UI-toolkit coupling and clean unit test suite.
-
-## 7. What was implemented in this change
-
-- `crates/ui/local-ai/{Cargo.toml,src/lib.rs}`: the new crate with unit tests.
-- `crates/ui/app/src/models.rs`: now an adapter; command names, event name, argument names and JSON
-  shapes are unchanged. `stored_models_dir`, `MODELS_DIR_ENV`, `Pulls`, `PULL_EVENT` kept for the broker.
-- `crates/ui/app/Cargo.toml`: path dependency on `aphrody-local-ai`, comment updated.
-
-Behavior notes: `verify` of a corrupt artefact returns `intact: false` (as before) instead of a CLI
-non-zero exit; `recommend` still errors when nothing fits; the `.part` resume contract is unchanged.
-
-## 8. Unverified
-
-Nothing was compiled or run (the lead builds once at the end). Unconfirmed: that the Tauri command futures
-satisfy `Send` with the `pull_spec` future (expected, reqwest-based); the `ModelTask::all`,
-`SpeedTier::as_str` and `PullOutcome::transferred` signatures were read from the CLI usage, not rustdoc;
-the front-end package that produces `ui-dist` and `docs/reference/ui/DESKTOP-INTEGRATION.md` (which still
-states downloads run in the CLI) were not edited because they are outside this change's ownership.
+Manifests/pins existants font autorité ; Rust sérialisé et Bun scoped, puis
+pilote desktop/permissions/arrêt/release. Aucun nouveau build lancé pour cette prose.

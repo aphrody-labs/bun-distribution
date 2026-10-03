@@ -6,7 +6,7 @@ limits and production exit conditions.
 
 ## Drive ownership and migration
 
-The [nested Drive workspace](../../products/os/drive/README.md) is an additive FSL-licensed
+The [nested Drive workspace](../../../crates/os/drive/README.md) is an additive FSL-licensed
 source import for the local filesystem backend, daemon, CLI, indexing, sync,
 archive adapters and their native build patches. Its `Cargo.toml` is excluded
 from the Apache-2.0 OS workspace so licensing and Cargo dependency resolution
@@ -16,7 +16,7 @@ installed runtime and data parity still require qualification. The HTTP site
 belongs to `aphrody-web/crates/aphrody-site`, while presentation and the
 TypeScript client remain in `aphrody-ui`.
 
-The imported archive safety model is a [stub](../../products/os/drive/README.md#known-safety-gap)
+The imported archive safety model is a [stub](../../../crates/os/drive/README.md#known-safety-gap)
 that returns safe verdicts; its “model loaded” log is not evidence of active
 prompt-injection screening. AI model implementation belongs to `aphrody-ai`
 behind a process contract, with OS enforcing the resulting filesystem policy.

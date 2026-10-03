@@ -41,4 +41,4 @@ records safe. Therefore active prompt-injection screening is **not** proven
 and must not be advertised as protection. Resolve this with the AI-owned
 model service and an explicit contract before claiming that capability.
 
-See the [OS architecture](../docs/ARCHITECTURE.md) for repository ownership.
+See the [OS architecture](../../../docs/architecture/os/ARCHITECTURE.md) for repository ownership.

@@ -1,159 +1,63 @@
-# CLI native integration plan (Codex, OpenCode, Antigravity, Ollama)
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# CLI AI native — plan propriétaire
 
-Scope: `apps/cli` and the agent-runtime crates under `crates/ai/`
-(`exec-events`, `app-server`, `config`, `agent-runtime`, `agent-tools`,
-`session`, `rollout`, `mcp`, `mcp-client`, `mcp-oauth`, `marketplace`,
-`skills`, `skills-forge`, `sdk`, `supervisor`, `toolcall`, `toolcall-repair`,
-`patch`, `project-doc`, `prompts`). Inference crates (engine, infer,
-llama-server, gateway) and RAG are owned elsewhere; this plan only calls
-their public API.
+Décisions communes : [plan AI](native-integration-master.md).
+Portée : CLI/aphrody-command, agent-runtime, config, MCP, skills, session,
+rollout, tools, patch et project-doc. Inférence et RAG restent chez leurs owners.
+Inventaire initial 2026-10-01 ; APIs et disponibilité à requalifier par lot.
 
-Upstream references are read-only checkouts of codex, opencode,
-antigravity-sdk-python, openfox, ollama, vllm, mistral.rs, jan, llama_index.
-Nothing is copied into this repository. Status: inventory verified by
-reading the source; nothing here was compiled or run (lead builds once).
+## Owners uniques
 
-## 1. Forwarder and subprocess inventory
+| Capacité | Owner | Migration |
+| --- | --- | --- |
+| Client MCP | `mcp-client` | `mcp/client_cmd` et Gemini délèguent |
+| Modèle MCP/config | `config` | Un modèle typé ; adapters TOML/JSON par outil |
+| Manifest/plugin | `marketplace` | Une source portable ; sorties provider générées/checkées |
+| Skills | `skills` discovery, `skills-forge` authoring | SDK réexporte |
+| Hooks | `skills::hooks` | Mapping par provider ; agy Stop/PostInvocation, pas AfterAgent |
+| Shell/search | `agent-tools` | SDK délègue ; qualifier search en processus |
+| AGENTS | `project-doc` | Pas second loader |
 
-Forwarders in `crates/infra/aphrody-command/src/commands.rs`, dispatched from `crates/infra/aphrody-command/src/lib.rs`:
+## Produits externes et compatibilité
 
-| Command | Spawns | Decision | Reason |
-|---|---|---|---|
-| `codex` | `codex` binary (`CodexCommand`) | REPLACE, phased | Codex is Rust and Apache-2.0. `exec/resume/fork/app-server/config` already exist in-process. Remaining surface (TUI, login, cloud, apply) moves to the `codex-native` feature (section 4). Until then the forward stays as a fallback, optional, absent = clear message. |
-| `agy` | `agy` binary + VPN proxy env | KEEP (optional) | Antigravity CLI is a closed, non-Rust product that cannot be linked. In-process alternative already exists: `aphrody antigravity` (token + RPC) and `agy_backend.rs`. Keep the forward only for the interactive TUI. |
-| `gemini` | `gemini` or falls back to `agy` | KEEP, deprecated | Already deprecated; delete after one release. |
-| `bxc`, `google` | Aphrody Web binary, Bun fallback | REPLACE (not in this scope) | The web bridge crate owns resolution; target is an in-process call to the Rust Aphrody Web API. Tracked by the Web owner. |
-| `nie` | `niers` binary | KEEP (optional) | Separate product with its own release; graceful absence already implemented via `package install nie`. |
-| `ssh` | `ssh -G` and `APHRODY_SSH_BIN` override, else in-process `aphrody_ssh` | KEEP | Only the OpenSSH config probe spawns. Default path is in-process. |
-| `cros` (gn/ninja via `cmd`), `ide_cmd`, `runtime_cmd` (`uv`), `package_cmd`, `self_cmd`, `vpn_cmd`, `re_auto`, `auto_command` | external tools | KEEP | Wrapping genuine external toolchains (build, package managers). Not duplicates of an Aphrody capability. |
+Codex : préférer les contrats Aphrody `exec/resume/fork/app-server/config` et
+fixtures JSONL/JSON-RPC. Les anciennes propositions `codex-native`/dépendances
+`codex-*` ne remplacent pas la décision protocole du plan AI.
 
-Subprocess spawns inside the agent crates (all legitimate, listed so they stay
-audited): `agent-tools/shell.rs` (the agent shell tool), `agent-tools/search_text.rs`
-(`rg`; candidate to replace with `grep-searcher`/`ignore` in-process),
-`sdk/shell.rs` (duplicate of agent-tools shell, see section 2),
-`skills/hooks.rs` (hook commands, the Codex hook contract is a command),
-`mcp-client/transport/stdio.rs` (MCP stdio servers, protocol-mandated),
-`skills/runtime/cache.rs` (git), `mcp/client_cmd.rs`.
+Conserver les transports nécessaires : MCP stdio, hooks commandés, git,
+shell agent, OpenSSH config probe, toolchains externes et TUI vendor optionnels.
+BXC/Web appartient au owner Web ; NIE reste un produit distinct.
+Gemini déprécié : retrait après fenêtre de compatibilité qualifiée.
 
-## 2. Duplicates and canonical owner
+Préserver noms de commandes, trailing args, flags, schémas, exit codes et
+overrides `APHRODY_CODEX_BIN`, `APHRODY_AGY_BIN`, `BXC_BIN`, `NIE_BIN`,
+`APHRODY_SSH_BIN` selon leurs consommateurs. Retirer un forwarder après
+parité, sans garder un deuxième chemin inutilisé dans le build promu.
 
-| Capability | Copies found | Canonical owner | Action |
-|---|---|---|---|
-| MCP client | `mcp-client` (registry, transports, executor); `mcp/src/client_cmd.rs`; `gemini-runtime/src/mcp_client.rs` | `aphrody-mcp-client` | Make `client_cmd` and gemini-runtime thin callers. |
-| MCP server config | `crates/ai/config/src/mcp.rs` `McpServerConfig`; `gemini-runtime/src/mcp_config.rs`; hand-rolled TOML/JSON upserts in `crates/infra/aphrody-command/src/codex_provision.rs` and `agy_provision.rs` | `aphrody-config` | One typed model, serialized by per-tool adapters (section 3). |
-| Config loader | `aphrody-config` (layers, profiles, policy) and `crates/infra/aphrody-command/src/config_cmd.rs` | `aphrody-config` | CLI only renders. |
-| Skills discovery | `skills/src/runtime/discover.rs`; `skills-forge/src/registry.rs`; `sdk/src/skills.rs` | `aphrody-skills` (discovery), `skills-forge` (authoring) | `sdk/skills.rs` re-exports discovery. |
-| Plugin / marketplace | `marketplace` (index, semver, sha256); `skills/runtime/lockfile.rs`; manifests hand-maintained under `plugins/aphrody` | `aphrody-marketplace` | Add a single `PluginManifest` source (section 3). |
-| Hooks | `skills/src/hooks.rs`; hook entries in `plugins/aphrody/hooks.json` | `aphrody-skills::hooks` | Event names normalized per tool by adapter. |
-| Shell tool | `agent-tools/shell.rs`; `sdk/shell.rs` | `aphrody-agent-tools` | `sdk` delegates. |
-| AGENTS.md discovery | `project-doc` | `aphrody-project-doc` | Already single. |
+## Queue
 
-## 3. One source, per-tool adapters
+1. Qualifier les alias `model list/ls`, `info/show`, `rm/remove`, `ps` rapportés.
+   `pull` et gateway existants ; `run` dépend de l'API inférence ; cp/create non prévus.
+2. Un modèle `McpServerConfig` vers Codex TOML, agy/OpenCode JSON et Claude MCP ;
+   remplacer les editors provision dédiés.
+3. Génération marketplace/manifests/agents depuis le owner plugin actuel,
+   avec mode check ; ne pas reprendre les anciens chemins plugin comme actuels.
+4. Qualifier les hooks agy Stop/PostInvocation contre types du provider.
+5. Fusionner clients MCP et shell SDK vers leurs owners.
+6. Tests de conformité Codex puis migration des forwards nécessaires.
+7. `model run` sur l'API inférence stable.
+8. Search natif au owner, sans deuxième implémentation de découverte.
+9. Adapter OpenCode et valider son schéma.
+10. Retirer Gemini après qualification de ses consommateurs.
 
-Authoritative source: `plugins/aphrody/plugin.json` (portable manifest,
-`$schema` agent-plugins.org). Generated outputs, never hand-edited:
+## Qualification
 
-| Tool | Reads | Adapter output |
-|---|---|---|
-| Claude Code | `.claude-plugin/plugin.json` (not in repo), `.mcp.json`, `hooks/hooks.json`, `agents/`, `skills/` | manifest, MCP, hooks |
-| Codex | `plugin.json` or `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`, `.agents/skills` (not in repo), `hooks.json` (needs `features.hooks`), `.codex/agents/*.toml`, `config.toml` `[mcp_servers]` | manifest, marketplace entry, agents TOML, MCP table |
-| Antigravity (agy) | `plugin.json`, `.agents/{plugins,skills,agents,rules}`, `.agents/hooks.json` (not in repo), `.agents/mcp_config.json` (not in repo) | hooks restricted to PreToolUse, PostToolUse, PreInvocation, PostInvocation, Stop; MCP file |
-| OpenCode | `opencode.json` (`mcp`, `plugin`, `instructions`, `agent`, `command`), `.opencode/{plugins,skills,agents,commands}`; also reads `.claude/shenron/skills` and `.agents/skills` (not in repo) | `opencode.json` fragment. Skills need no copy since OpenCode reads the shared dirs. |
+Valider manifest, MCP/hooks et paths contre les providers installés.
+Les quatre adaptations restent distinctes : Claude manifest/MCP/hooks ;
+Codex marketplace/agents/config ; agy hooks/MCP ; OpenCode config/instructions/
+skills/agents/commands. Réutiliser les dossiers partagés, sans copie de skills.
 
-Home placement (`$CODEX_HOME`, `~/.gemini`) currently done by
-`codex_provision.rs` / `agy_provision.rs` becomes adapter output written by the
-same code path, which removes the two hand-rolled editors.
-
-Known contract bug to fix: `aphrody agy-loop` is documented as driven by an
-`AfterAgent` hook, but agy has no such event. The loop driver must be wired to
-`Stop` (and `PostInvocation` for per-turn accounting). Event mapping lives in
-the agy adapter; verify against `antigravity-sdk-python` hook types before
-changing `agy_loop.rs`.
-
-## 4. Codex in-process (`codex-native`)
-
-Codex workspace crates relevant to link instead of fork: `codex-hooks`,
-`codex-core-plugins`, `codex-config`, `codex-app-server-protocol`,
-`codex-exec`, `apply-patch`, `execpolicy`, `skills`. Not published to
-crates.io as a set; consumed as git dependencies pinned to a revision. License
-Apache-2.0, compatible with this repository.
-
-Rules:
-- Optional feature `codex-native` on `apps/cli`; default build unaffected.
-- Prefer protocol/types crates (`app-server-protocol`, hooks, config schema)
-  over `codex-core` to keep the dependency closure small. Evaluate closure size
-  and duplicate versions with `cargo tree -d` before enabling by default.
-- Where Aphrody already implements the contract (`exec-events`,
-  `app-server`, `project-doc`, `patch`), keep ours and add conformance tests
-  against Codex JSONL/JSON-RPC fixtures instead of adding a second dependency.
-- Failing that, implement the contract natively. No vendoring, ever.
-
-## 5. Ollama-style model UX (implemented subset)
-
-Delegating to `aphrody-models` and `aphrody-llama-server`, no inference here:
-
-| Ollama | Aphrody | State |
-|---|---|---|
-| `ollama list` | `aphrody model list` / `ls` | alias added |
-| `ollama show` | `aphrody model info` / `show` | alias added |
-| `ollama rm` | `aphrody model rm` / `remove` | alias added |
-| `ollama ps` | `aphrody model ps` | new, read-only via `discover_running` |
-| `ollama pull` | `aphrody model pull` | existing |
-| `ollama run` | planned `aphrody model run <spec>` | needs engine API from inference owner (`ManagedLlamaServer`) |
-| `ollama serve` | existing `aphrody gateway` (OpenAI-compatible, 8795) | existing |
-| `ollama cp/create` | not planned | no registry equivalent |
-
-JSON output follows the existing `--format/--json/--out` contract.
-
-## 6. Dependency lines for the lead (root Cargo.toml untouched by this work)
-
-No new dependency is required by the code changed so far
-(`aphrody-llama-server` is already a dependency of `apps/cli`).
-For work item 6 below, under `[workspace.dependencies]`, optional:
-
-```toml
-codex-app-server-protocol = { git = "https://github.com/openai/codex", rev = "<pinned>", package = "codex-app-server-protocol" }
-codex-hooks               = { git = "https://github.com/openai/codex", rev = "<pinned>", package = "codex-hooks" }
-codex-core-plugins        = { git = "https://github.com/openai/codex", rev = "<pinned>", package = "codex-core-plugins" }
-```
-
-and in `apps/cli/Cargo.toml`: `codex-native = ["dep:codex-app-server-protocol", "dep:codex-hooks"]`.
-Crate package names and the codex-rs workspace layout are unverified against
-the pinned revision; confirm before adding. Optional: `ignore`, `grep-searcher`
-for in-process text search (work item 8).
-
-## 7. CLI compatibility contract
-
-Preserved: every existing command name, flag and JSON schema, including
-`codex/agy/bxc/nie` trailing args, `exec/resume/fork/app-server/config`
-Codex-compatible flags, `model *` output formats and exit codes, env
-overrides (`APHRODY_CODEX_BIN`, `APHRODY_AGY_BIN`, `BXC_BIN`, `NIE_BIN`,
-`APHRODY_SSH_BIN`). Only additive changes: new aliases and `model ps`.
-A forwarder is only removed when its in-process replacement passes a fixture
-parity test; the forward stays behind the env override for one release.
-
-## 8. Ordered work items
-
-1. Done: Ollama aliases and `model ps` (`crates/infra/aphrody-command/src/model_cmd.rs`).
-2. Single MCP server model: `aphrody-config` `McpServerConfig` serialized to
-   Codex TOML, agy JSON, OpenCode JSON, Claude `.mcp.json`; replace the editors
-   in `codex_provision.rs` / `agy_provision.rs`.
-3. Manifest generator in `aphrody-marketplace` (portable `plugin.json` to the
-   four tool layouts, plus `.codex/agents/*.toml`); add a `--check` mode for CI.
-4. Fix `agy-loop` event mapping (`Stop`), add the agy hook adapter.
-5. Collapse MCP client copies onto `aphrody-mcp-client`; `sdk/shell.rs` onto
-   `agent-tools`.
-6. Codex conformance tests (JSONL events, JSON-RPC), then optional
-   `codex-native` feature, then drop the `codex` forward by default.
-7. `aphrody model run` once the inference owner exposes a stable launch API.
-8. Replace the `rg` subprocess in `agent-tools/search_text.rs` with in-process
-   search.
-9. OpenCode: emit `opencode.json` fragment; conformance-check against its
-   config schema in the opencode checkout.
-10. Delete `gemini` command after deprecation window.
-
-## 9. Unverified
-
-Nothing compiled or executed. Codex crate names and revisions, agy hook
-mapping and the exact openfox/jan contract were not exercised. Items 2-10 are
-design only.
+Les layouts provider, licences et versions se vérifient au moment du lot.
+Aucune dépendance placeholder `rev=<pinned>` à ajouter depuis ce plan.
+Gates : contrats CLI, conformance, plugin validator, Bun scoped et Rust sérialisé.
+Les inventaires du 2026-10-01 ne qualifient pas les APIs actuelles.
