@@ -3,18 +3,18 @@
 Description=Shenron dbfr read-only native Markdown Drive projection and memory reconciliation
 After=network-online.target
 Wants=network-online.target
-ConditionPathExists=/home/aphro/.aphrody/workspaces/dbfr
-ConditionPathExists=/home/aphro/aphrody/.env
+ConditionPathExists=%h/.aphrody/workspaces/dbfr
+ConditionPathExists=%h/aphrody/.env
 
 [Service]
 Type=simple
-WorkingDirectory=/home/aphro/aphrody
-Environment=APHRODY_ROOT=/home/aphro/aphrody
+WorkingDirectory=%h/aphrody
+Environment=APHRODY_ROOT=%h/aphrody
 Environment=APHRODY_AGENT_DOMAIN=dbfr
-Environment=APHRODY_WORKSPACE=/home/aphro/.aphrody/workspaces/dbfr
-Environment=APHRODY_AGENT_HOME=/home/aphro/.aphrody/workspaces/dbfr
-Environment=PATH=/home/aphro/.local/bin:/home/aphro/.bun/bin:/home/aphro/.cargo/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/aphro/.bun/bin/bun packages/infra/workspace/src/agent-home-drive-sync.ts daemon
+Environment=APHRODY_WORKSPACE=%h/.aphrody/workspaces/dbfr
+Environment=APHRODY_AGENT_HOME=%h/.aphrody/workspaces/dbfr
+Environment=PATH=%h/.local/bin:%h/.bun/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.bun/bin/bun packages/infra/workspace/src/agent-home-drive-sync.ts daemon
 Restart=on-failure
 RestartSec=30s
 UMask=0077

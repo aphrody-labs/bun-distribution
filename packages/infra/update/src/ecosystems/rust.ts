@@ -4,7 +4,7 @@
  *
  *   rust status                      toolchain channel vs latest stable/nightly, direct crates behind the crates.io
  *                                    sparse index (in manifest range and beyond), OSV advisories not covered by
- *                                    config/deps/advisory-holds.json, Cargo git remotes and ~/source pins that moved
+ *                                    config/deps/advisory-holds.json, Cargo git remotes and source pins that moved
  *   rust plan                        what `apply` would do; majors are listed separately with the consumers to change
  *   rust apply [--majors a,b+c]      (--keep leaves a failing major in place to fix forward) in-range lock refresh, `cargo update -p name@ver --precise X` for stragglers, then
  *                                    `cargo check` of the touched consumers; every --majors crate is a transaction
@@ -15,7 +15,7 @@
  * Global flags (same as cli.ts): --root <repo>, --json. Every cargo command goes through
  * scripts/build/rust/cargo-serial.sh, one at a time, never in the background. Cargo.lock is only ever changed by cargo.
  * Reuses cargo.ts (lock refresh and diff), deps/inventory.ts (sparse index, OSV, Cargo.lock parser), sources/drift.ts
- * (git remotes and ~/source pins) and context.ts. The CLI wiring lives in cli.ts (owned by the lead).
+ * (git remotes and source pins) and context.ts. The CLI wiring lives in cli.ts (owned by the lead).
  */
 import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";

@@ -3,9 +3,9 @@
  * Profile management & multi-account credential resolution for OVHcloud.
  *
  * Reconciles the three segregated accounts and domain sets on the Aphrody infrastructure:
- *  - aphrody.com: aphrody.com (/home/ubuntu/.bash_secrets, env vars)
- *  - rosegriffon.fr: rosegriffon.fr (/home/ubuntu/.ovh.conf, ~/.ovh.conf)
- *  - dragonballfr.com: dragonballfr.com (/home/ubuntu/.config/ovh/dbfr.conf)
+ *  - aphrody.com: aphrody.com (host secret file, env vars)
+ *  - rosegriffon.fr: rosegriffon.fr (~/.ovh.conf)
+ *  - dragonballfr.com: dragonballfr.com (~/.config/ovh/dbfr.conf)
  *
  * `rpbey.fr` was reported sold (operator decision, docs/PLAN.md) and is intentionally excluded
  * from the managed profile. A 2026-09-29 read-only zone-list call still showed it on the account;

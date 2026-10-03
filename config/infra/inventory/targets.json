@@ -28,9 +28,7 @@
       "kind": "reference-build-host",
       "os": "Ubuntu-24.04 / WSL2",
       "releaseWorkspace": {
-        "superproject": "$APHRODY_RELEASE_ROOT/source",
-        "prepare": "aphrody-infra/scripts/prepare-release-workspace.sh SOURCE SUPERPROJECT_SHA; SOURCE is a superproject checkout or Git bundle, with gitlinks checked out at their pinned revisions",
-        "build": "aphrody-infra/scripts/build-aphrody-stack-release.sh inside that clone",
+        "build": "scripts/build-aphrody-stack-release.sh --compute-only MONOREPO COMMIT",
         "bundles": "$APHRODY_RELEASE_ROOT/bundles",
         "cargoTarget": "$APHRODY_RELEASE_ROOT/target",
         "forbidden": [

@@ -5,8 +5,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/aphro/aphrody
-ExecStart=/home/aphro/.local/bin/aphrody-ssh tunnel --services shenron-pg-tunnel,shenron-redis
+WorkingDirectory=%h/aphrody
+ExecStart=%h/.local/bin/aphrody-ssh tunnel --services shenron-pg-tunnel,shenron-redis
 Restart=on-failure
 RestartSec=5
 UMask=0077

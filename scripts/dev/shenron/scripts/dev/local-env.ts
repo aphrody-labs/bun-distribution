@@ -14,25 +14,19 @@
  *
  * The generated `.env.local` files are git-ignored. Secrets are copied, never printed.
  */
-import { existsSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dir, "..", "..");
-/** aphrody-infra checkout: APHRODY_INFRA_DIR, the sibling checkout, or (WSL) the Windows sibling. */
+/** Service catalog: APHRODY_INFRA_DIR, or the first enclosing checkout that carries config/service-catalog.json. */
 function catalogPath(): string {
-	const candidates = [
-		Bun.env.APHRODY_INFRA_DIR,
-		resolve(ROOT, "..", "aphrody-infra"),
-		...windowsSiblings(),
-	].filter((dir): dir is string => Boolean(dir));
-	const found = candidates.map((dir) => join(dir, "config", "service-catalog.json")).find(existsSync);
-	return found ?? join(candidates[0] ?? ROOT, "config", "service-catalog.json");
-}
-/** WSL only: `/mnt/c/Users/<any>/src/aphrody-infra` (the Linux and Windows user names may differ). */
-function windowsSiblings(): string[] {
-	if (process.platform !== "linux" || !existsSync("/mnt/c/Users")) return [];
-	const users = [Bun.env.USER ?? "", ...readdirSync("/mnt/c/Users")].filter(Boolean);
-	return [...new Set(users)].map((user) => `/mnt/c/Users/${user}/src/aphrody-infra`);
+	const env = Bun.env.APHRODY_INFRA_DIR;
+	if (env) return join(env, "config", "service-catalog.json");
+	for (let dir = ROOT; ; dir = dirname(dir)) {
+		const candidate = join(dir, "config", "service-catalog.json");
+		if (existsSync(candidate)) return candidate;
+		if (dirname(dir) === dir) return join(ROOT, "config", "service-catalog.json");
+	}
 }
 const CATALOG = catalogPath();
 const LOCAL_OFFSET = 10_000;

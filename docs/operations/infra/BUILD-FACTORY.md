@@ -25,9 +25,9 @@ Read their current help before running. Source transfer uses
 `aphrody-infra ssh sync --host vps --source <clean-owner-checkout> --destination <repository-root>`;
 review the dry run before adding `--apply`. Generated build trees and `.git/**` are excluded. Bootstrap each remote
 first-party checkout through its private Git remote or a verified Git bundle
-before source sync; sync alone cannot create revision provenance. The existing
-`scripts/prepare-release-workspace.sh SOURCE FULL_SHA DEST` supports current
-first-party monorepos without submodules as well as historical source layouts. Preserve
+before source sync; sync alone cannot create revision provenance. The factory
+works from the monorepo checkout only; the former superproject preparation script was
+retired. Preserve
 that remote Git metadata and require it to match the requested source revision.
 The factory verifies a full requested Git revision and clean tracked source
 before execution. Do not synchronize credentials, protected data, model weights

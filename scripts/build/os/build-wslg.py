@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Rebuild the audited official WSLg recipe without modifying upstream files."""
 import argparse
+import os
 import hashlib
 import json
 import pathlib
@@ -28,9 +29,9 @@ def logged(args, log, cwd=None, env=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--source', type=pathlib.Path, default=pathlib.Path('/home/aphro/source/wslg'),
-                        help='restore first: aphrody-update sources sync --only wslg --apply')
-    parser.add_argument('--output', type=pathlib.Path, default=pathlib.Path('/home/aphro/.local/share/aphrody/wsl-artifacts/wslg'))
+    parser.add_argument('--source', type=pathlib.Path, required=True,
+                        help='wslg checkout; restore first: aphrody-update sources sync --only wslg --apply')
+    parser.add_argument('--output', type=pathlib.Path, default=pathlib.Path(os.environ.get('XDG_DATA_HOME') or pathlib.Path.home() / '.local' / 'share') / 'aphrody' / 'wsl-artifacts' / 'wslg')
     parser.add_argument('--engine', default='podman', choices=('podman', 'docker'))
     parser.add_argument('--version', default='dev')
     args = parser.parse_args()

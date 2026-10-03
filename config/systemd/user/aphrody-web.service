@@ -1,15 +1,15 @@
 [Unit]
 Description=Aphrody Web CDP engine (Obscura, loopback only)
-Documentation=file:///home/aphro/aphrody/docs/operations/web/AUTOMATION.md
+Documentation=file://%h/aphrody/docs/operations/web/AUTOMATION.md
 
 [Service]
 Type=simple
-WorkingDirectory=/home/aphro/aphrody
+WorkingDirectory=%h/aphrody
 # Loopback only. Clients attach through APHRODY_BROWSER_CDP_URL=ws://127.0.0.1:9222/devtools/browser.
 # Local fixtures need OBSCURA_ALLOW_PRIVATE_NETWORK=1, which is deliberately NOT set here.
-ExecStart=/home/aphro/.local/bin/aphrody-web launch --host 127.0.0.1 --port 9222
+ExecStart=%h/.local/bin/aphrody-web launch --host 127.0.0.1 --port 9222
 # Optional, outside the repository: OBSCURA_CDP_TOKEN, OBSCURA_PROXY and other secrets.
-EnvironmentFile=-/home/aphro/.config/aphrody/web.env
+EnvironmentFile=-%h/.config/aphrody/web.env
 Restart=on-failure
 RestartSec=5
 UMask=0077

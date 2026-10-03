@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 [Unit]
 Description=Claude Codex agy %i domain session and memory ingestion
-ConditionPathExists=/home/aphro/.aphrody/workspaces/%i/AGENTS.md
+ConditionPathExists=%h/.aphrody/workspaces/%i/AGENTS.md
 
 [Service]
 Type=simple
-WorkingDirectory=/home/aphro/aphrody
+WorkingDirectory=%h/aphrody
 Environment=APHRODY_AGENT_DOMAIN=%i
 Environment=APHRODY_PROFILE=%i
-Environment=APHRODY_WORKSPACE=/home/aphro/.aphrody/workspaces/%i
-ExecStart=/home/aphro/.local/bin/aphrody ai sync-sessions --watch --interval-secs 30 --json --shared-workspace /home/aphro/aphrody
+Environment=APHRODY_WORKSPACE=%h/.aphrody/workspaces/%i
+ExecStart=%h/.local/bin/aphrody ai sync-sessions --watch --interval-secs 30 --json --shared-workspace %h/aphrody
 Restart=on-failure
 RestartSec=10
 UMask=0077

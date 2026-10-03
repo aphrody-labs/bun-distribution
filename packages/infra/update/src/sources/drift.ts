@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Sources module: the single place for ~/source checkouts, upstream pins, forks and git state.
+ * Sources module: the single place for upstream source checkouts, upstream pins, forks and git state.
  *
  *   status|sync|verify   restore and inspect checkouts (./restore.ts, the former `upstream-sources` op)
  *   drift                remote head / newest tag / crates.io version vs every pin in config/upstream-sources.json,
@@ -129,7 +129,7 @@ export type GitRemote = {
 };
 
 /** Cargo git dependencies of Cargo.lock. Only `rev`/`branch` pins declared in the root Cargo.toml can be "moved"; tag pins
- *  are exact by definition and transitive ones belong to the ~/source consumer that declares them. */
+ *  are exact by definition and transitive ones belong to the source consumer that declares them. */
 export function cargoGitRemotes(c: Ctx): GitRemote[] {
   const root = c.read("Cargo.toml");
   const repos = gitSources(parseCargoLock(c.read("Cargo.lock")));

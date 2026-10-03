@@ -4,7 +4,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/home/aphro/.local/bin/aphrody-embed serve --host 127.0.0.1 --port 8085 --threads 4
+ExecStart=%h/.local/bin/aphrody-embed serve --host 127.0.0.1 --port 8085 --threads 4
 Restart=on-failure
 RestartSec=5
 UMask=0077

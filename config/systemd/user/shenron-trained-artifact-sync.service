@@ -3,16 +3,16 @@
 Description=Verified resumable backup of dbfr Shenron trained models and datasets
 After=network-online.target
 Wants=network-online.target
-ConditionPathExists=/home/aphro/aphrody/.env
-ConditionPathExists=/home/aphro/.aphrody/private/shenron/home/models
+ConditionPathExists=%h/aphrody/.env
+ConditionPathExists=%h/.aphrody/private/shenron/home/models
 StartLimitIntervalSec=900
 StartLimitBurst=5
 
 [Service]
 Type=oneshot
-WorkingDirectory=/home/aphro/aphrody
-Environment=PATH=/home/aphro/.local/bin:/home/aphro/.bun/bin:/home/aphro/.cargo/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/aphro/.bun/bin/bun --env-file=/home/aphro/aphrody/.env packages/google/google/src/drive-model-sync.ts
+WorkingDirectory=%h/aphrody
+Environment=PATH=%h/.local/bin:%h/.bun/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.bun/bin/bun --env-file=%h/aphrody/.env packages/google/google/src/drive-model-sync.ts
 TimeoutStartSec=12h
 Restart=on-failure
 RestartSec=60s

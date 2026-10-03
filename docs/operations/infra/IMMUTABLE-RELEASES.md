@@ -201,33 +201,14 @@ The commands here build the retired Aphrody bundle and are not a current
 production release recipe. Do not execute them while the catalog marks its
 services retired.
 
-Releases are built on Linux x86_64 from a clean clone of the superproject
-`aphrody-src` on the native filesystem — never on `/mnt/c` (9p/drvfs) nor in
-`~/src`, which holds the retired monolith. Sibling path dependencies resolve
-because every submodule is checked out at its gitlink.
+Releases are built on Linux x86_64 from
+the monorepo commit on a native filesystem. The superproject and
+submodule layout (`aphrody-src`, `prepare-release-workspace.sh`) was retired; the
+compute release is built from one monorepo commit:
 
 ```bash
-# SOURCE: git@github.com:aphrody-code/aphrody-src.git, /mnt/c~/src or a git bundle
-bash scripts/prepare-release-workspace.sh SOURCE SUPERPROJECT_SHA ~/aphrody-release/aphrody-src
-cd ~/aphrody-release/aphrody-src/aphrody-infra
-SITE_BUILD_DATABASE_URL=postgresql://…@127.0.0.1:15433/shenron_site \
-  bash scripts/build-aphrody-stack-release.sh ~/aphrody-release/aphrody-src SUPERPROJECT_SHA
+bash scripts/build-aphrody-stack-release.sh --compute-only "$PWD" "$(git rev-parse HEAD)"
 ```
-
-For a local-path source, submodule objects come from the sibling checkouts, so
-the superproject commit (with its submodule bumps) must exist there first. The
-build script refuses a dirty superproject, a submodule off its gitlink or
-dirty, or a script not run from the clone's own `aphrody-infra`. It builds with
-`--locked` and `--target x86_64-unknown-linux-gnu`, using the host's global
-Cargo wrapper/cache and job limit, into `APHRODY_RELEASE_TARGET_DIR`
-(`~/aphrody-release/target`), checks `ldd`, installs the E5 files into
-`APHRODY_EMBED_MODEL_DIR` (`~/aphrody-release/e5-native`) with the packaged
-`aphrody-embed install`, runs `scripts/smoke-aphrody-stack-local.py … --attest`
-(five services with disposable tokens, E5 known vector, `dragonball.*` tools,
-Web auth/ingest/render, A2A, models) and writes `aphrody/SMOKE.json`. Shenron
-needs `SITE_BUILD_DATABASE_URL` (a tunnel to `shenron_site` on dbfr) and, for
-the inlined `NEXT_PUBLIC_*` values, `shenron/apps/site/.env`. The output is
-`~/aphrody-release/bundles/<UTC>-<super8>/` plus `.tar.gz` and `.sha256`:
 
 ```
 BUNDLE.json      superproject + 13 submodule SHAs, component pins, builder

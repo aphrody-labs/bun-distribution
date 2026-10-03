@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [Unit]
 Description=Aphrody self-hosted Supabase stack (docker compose, WSL dev)
-Documentation=file:///home/aphro/aphrody/docs/operations/infra/supabase-wsl-docker.md
+Documentation=file://%h/aphrody/docs/operations/infra/supabase-wsl-docker.md
 After=default.target
 
 [Service]

@@ -9,7 +9,7 @@
  *   aphrody-update cargo [--apply]           Cargo.lock refresh within manifest ranges (dry run by default)
  *   aphrody-update deps <sub> [...]          dependency pipeline: plan|apply|facts|fix|changelog|memory|inventory|baseline|run
  *   aphrody-update systemd [check|install|restart]
- *   aphrody-update sources [status|sync|verify|drift|forks|repo|bump]   ~/source checkouts, upstream pins, forks, git state
+ *   aphrody-update sources [status|sync|verify|drift|forks|repo|bump]   upstream source checkouts, upstream pins, forks, git state
  *   aphrody-update rust|bun|uv <status|plan|apply|verify>   per-ecosystem structured bump (docs/operations/infra/update/{RUST,BUN,UV}.md)
  *   aphrody-update upstream [list|drift|refresh|fetch|prune|docs]   reference upstreams: catalogue, live drift, disposable fetch
  *   aphrody-update run [--apply]             tools, cargo, deps, systemd restart, then the gates (report only without --apply)

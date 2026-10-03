@@ -16,7 +16,16 @@ export type HostPathRule =
   | "vps-home"
   | "wsl-mount"
   | "legacy-layout";
-export type HostPathArea = "code" | "config" | "docs" | "record" | "data";
+/** `host` is the declared VPS catalog, `unit` a systemd user unit, `test` fixture data. */
+export type HostPathArea =
+  | "code"
+  | "config"
+  | "unit"
+  | "host"
+  | "test"
+  | "docs"
+  | "record"
+  | "data";
 export interface HostPathFinding {
   line: number;
   rule: HostPathRule;
@@ -73,6 +82,12 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
   },
 ];
 const PREFILTER = String.raw`/home/|/Users/|[A-Za-z]:[\\/]+Users|/mnt/[a-z]/|/source([/"'\x60[:space:])]|$)|aphrody-src|aphrody-(infra|ai|web|ui|os|compat|contracts|shell|native)/`;
+const REWRITABLE: HostPathArea[] = ["docs", "record", "data", "unit"];
+/** Rules a zone legitimately carries: fixtures and the declared VPS catalog name hosts on purpose. */
+const ALLOWED: Partial<Record<HostPathArea, HostPathRule[]>> = {
+  host: ["vps-home", "legacy-layout", "vps-shenron-checkout"],
+};
+
 const OWN_FILES = new Set([
   "packages/infra/workspace/src/host-paths.ts",
   "packages/infra/workspace/test/host-paths.test.ts",
@@ -81,6 +96,10 @@ const OWN_FILES = new Set([
 
 export function hostPathArea(path: string): HostPathArea {
   const name = path.split("/").at(-1) ?? "";
+  if (path.startsWith("config/systemd/user/")) return "unit";
+  if (/^(systemd|nginx|config\/infra)\//.test(path)) return "host";
+  if (/(^|\/)(tests?|__tests__)\/|\.(test|spec)\.[a-z]+$|_tests?\.rs$|\/tests\.rs$/.test(path))
+    return "test";
   if (/(^|\/)data\//.test(path) || name.endsWith(".jsonl") || /\/inventaires\//.test(path))
     return "data";
   if (/\.(md|mdx|txt|rst|html)$/.test(name)) return "docs";
@@ -91,6 +110,19 @@ export function hostPathArea(path: string): HostPathArea {
   )
     return "config";
   return "code";
+}
+
+/** systemd user units resolve the home directory with the portable `%h` specifier. */
+function rewriteFor(
+  area: HostPathArea,
+  rule: HostPathRule,
+  match: string,
+  rewrite: (match: string) => string,
+): string {
+  if (area !== "unit") return rewrite(match);
+  if (rule === "repo-absolute") return match.endsWith("/") ? "%h/aphrody/" : "%h/aphrody";
+  if (rule === "user-home") return "%h";
+  return rewrite(match);
 }
 
 /** Findings for one text; rewrites are offered for prose, records and data only. */
@@ -104,6 +136,7 @@ export function scanHostPaths(text: string, area: HostPathArea): HostPathFinding
         const end = start + match[0].length;
         if (claimed.some(([a, b]) => start < b && end > a)) continue;
         claimed.push([start, end]);
+        if (area === "test" || ALLOWED[area]?.includes(rule)) continue;
         findings.push({
           line: index + 1,
           rule,
@@ -119,17 +152,21 @@ export function scanHostPaths(text: string, area: HostPathArea): HostPathFinding
 
 /** Apply the offered rewrites, rule by rule in RULES order, to prose, records and data. */
 export function rewriteHostPaths(text: string, area: HostPathArea): string {
-  if (area === "code" || area === "config") return text;
+  if (!REWRITABLE.includes(area)) return text;
   return text
     .split("\n")
     .map((line) => {
       const claimed: [number, number, string][] = [];
-      for (const { pattern, rewrite } of RULES)
+      for (const { rule, pattern, rewrite } of RULES)
         for (const match of line.matchAll(pattern)) {
           const start = match.index;
           const end = start + match[0].length;
           if (claimed.some(([a, b]) => start < b && end > a)) continue;
-          claimed.push([start, end, rewrite ? rewrite(match[0]) : match[0]]);
+          claimed.push([
+            start,
+            end,
+            rewrite ? rewriteFor(area, rule, match[0], rewrite) : match[0],
+          ]);
         }
       let output = "";
       let cursor = 0;
