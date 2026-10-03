@@ -251,7 +251,7 @@ async function manga(): Promise<void> {
 		"sudo systemd-run --wait --collect --pipe",
 		`-p EnvironmentFile=${remoteHome()}/.shenron-neon.env`,
 		`-p Environment=PATH=${remotePath()}`,
-		`--working-directory=${remoteHome()}/shenron/apps/bot`,
+		`--working-directory=${remoteHome()}/shenron/packages/shenron/pipeline`,
 		`${remoteBun()} scripts/reconstruct-manga-pages-from-disk.ts`,
 	];
 	const dry = await run(["ssh", sshHost(), `${remote.join(" ")} --dry-run`], {
