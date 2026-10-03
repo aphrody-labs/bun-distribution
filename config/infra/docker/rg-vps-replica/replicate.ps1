@@ -4,7 +4,7 @@ param()
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..\..')).Path
 $composeFile = Join-Path $PSScriptRoot 'compose.yaml'
 $composeArgs = @('compose', '-f', $composeFile)
 $volumeNames = @(

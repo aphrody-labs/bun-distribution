@@ -57,8 +57,11 @@
     "layout": "85 packages, no layout violation",
     "sources": "4 integrated crates verified",
     "infra": "check-infra passes",
-    "tests": "17 focused Infra/consolidation tests pass",
+    "tests": "25 focused Infra/consolidation/documentation/factory tests pass",
     "python": "OCR source syntax parsed",
-    "secrets": "existing private files and data retained"
+    "secrets": "existing private files and data retained",
+    "typecheck": "Workspace owner passes",
+    "oxc": "scoped lint has zero errors; three existing warnings; formatting passes",
+    "docs": "generated documentation check passes"
   }
 }

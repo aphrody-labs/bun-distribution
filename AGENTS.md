@@ -19,6 +19,10 @@ This repository is the Rust + Bun source target. The active migration plan is
 - Scripts live under `scripts/<category>`: `audit`, `build`, `dev`,
   `migration`, `release`, or `tools`. Infra's `@aphrody/workspace` remains the
   cross-monorepo orchestrator.
+- Host, container, cloud and target inventory declarations live under
+  `config/infra/{host,docker,cloud,inventory}`. Imported live audits live under
+  `scripts/audit/live` and `scripts/audit/live-candidates`; Shenron administrative
+  tools live under `scripts/tools/shenron`. Do not recreate their former root folders.
 - Keep first-party Rust and Bun workspaces at this repository root. Prefer
   crates.io through Cargo, npm through Bun, and PyPI through uv for third-party
   dependencies; preserve lockfiles, APIs, features and notices. If a published
