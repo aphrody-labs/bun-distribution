@@ -1239,7 +1239,7 @@ Gemini et les catalogues historiques ne constituent pas l’état courant.
 - [x] Centraliser règles, mémoire et conversations par les propriétaires existants.
 - [x] Configurer les trois agents pour travailler simultanément dans le même
   checkout et la même branche, avec attribution des fichiers et coordination.
-- [~] Vérifier les launchers, imports de sessions et échanges réels ; distinguer
+- [x] Vérifier les launchers, imports de sessions et échanges réels ; distinguer
   configuration, dry-run et exécution concurrente prouvée.
 
 Le sous-agent `a2a_audit` a terminé l’audit en lecture seule. Les formats natifs
@@ -1300,9 +1300,16 @@ du 2026-10-03 02:18:18Z : 5 processus, 99 sessions du workspace, 37 enveloppes
 A2A bornées, zéro problème de collecte. Les 32 enveloppes horodatées couvrent
 le 2026-09-30 18:54Z au 2026-10-03 02:00Z. Les associations PID/session restent
 heuristiques ; les échanges concurrents prouvés restent ceux du rapport daté
-ci-dessus. Les services `aphrody-agent-domain-sync@*` sont arrêtés et
-`TRANSCRIPTS.md` date du 2026-10-02 00:34:51Z : le rappel profilé courant reste
-à vérifier avant de clore cet item.
+ci-dessus. Initialement arrêté, `aphrody-agent-domain-sync@aphrody` a été lancé
+après lecture des instructions de ce profil. L'unité impose le workspace canonique
+et le filtre n'ingère que les sessions dont les tours portent exclusivement le
+marqueur `APHRODY_AGENT_DOMAIN=aphrody`. Elle reste active, sans redémarrage ;
+l'état du miroir a 5 sources, le transcript profilé a été régénéré à 02:20:53Z.
+Lecture SQLite strictement agrégée : 13 entrées mémoire sont associées à
+`/home/aphro/aphrody` (10 Claude, 3 Codex), aucun texte n'a été extrait.
+Limites : cette observation clôt le flux profil Aphrody seulement ; les profils
+dbfr/ie, les plateformes A2A publiques et l'attribution exacte PID/session
+restent hors preuve.
 
 ### Enveloppes A2A : propriétaire des valeurs sortantes
 
