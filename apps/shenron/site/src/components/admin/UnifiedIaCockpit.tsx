@@ -1,9 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { NativeAiPanel } from "./NativeAiPanel";
+import {
+	type CockpitFailure,
+	type IaCockpitTab,
+	bytesToBase64,
+	describeHttpFailure,
+	describeNetworkFailure,
+	ocrProbeFileError,
+	parseCockpitTab,
+	splitMarkedExcerpt,
+} from "./ia-cockpit-view";
 import {
 	Brain,
 	Shield,
@@ -27,6 +37,7 @@ import {
 	Users,
 	Server,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import CanonEditor from "@/app/admin/canon/CanonEditor";
 import type { CanonConfig } from "@/lib/canon-engine";
 import type {
@@ -75,7 +86,7 @@ interface TestPromptResult {
 type Notice = { kind: "ok" | "info" | "error"; text: string };
 
 interface Props {
-	initialTab?: "overview" | "training" | "canon" | "corpus" | "agents";
+	initialTab?: IaCockpitTab;
 }
 
 // ── Formatting ───────────────────────────────────────────────────────────────
@@ -170,6 +181,14 @@ function SourceError({ report }: { report: SourceReport<unknown> | undefined }) 
 	);
 }
 
+const TABS: Array<{ key: IaCockpitTab; label: string; icon: LucideIcon }> = [
+	{ key: "overview", label: "Supervision & Test Direct", icon: Activity },
+	{ key: "training", label: "Entraînement RAG & Évaluations", icon: Award },
+	{ key: "canon", label: "Doctrine de Canonicité & Toriyama", icon: Scale },
+	{ key: "corpus", label: "Corpus manga, databooks & OCR", icon: BookOpen },
+	{ key: "agents", label: "Agents Autonomes & Objectifs", icon: Users },
+];
+
 const HEADER_SOURCES: Array<{ key: IaSourceKey; name: string }> = [
 	{ key: "aphrodyHealth", name: "Aphrody AI" },
 	{ key: "aphrodyWeb", name: "Aphrody Web" },
@@ -181,17 +200,19 @@ export function UnifiedIaCockpit({ initialTab = "overview" }: Props) {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 
-	const activeTab = (searchParams.get("tab") as any) || initialTab;
+	const activeTab = parseCockpitTab(searchParams.get("tab"), initialTab);
 
-	const setTab = (tab: string) => {
+	const setTab = (tab: IaCockpitTab) => {
 		const params = new URLSearchParams(searchParams.toString());
 		params.set("tab", tab);
-		router.push(`/admin/ia?${params.toString()}`);
+		router.push(`/admin/ia?${params.toString()}`, { scroll: false });
 	};
 
 	// ── Données et rafraîchissement en direct ─────────────────────────────────
 	const [data, setData] = useState<IaDashboardData | null>(null);
-	const [loadError, setLoadError] = useState<string | null>(null);
+	const [loadFailure, setLoadFailure] = useState<CockpitFailure | null>(null);
+	// Auto-refresh can overlap a manual refresh; only the latest request may write state.
+	const latestFetch = useRef(0);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [autoRefreshInterval, setAutoRefreshInterval] = useState<number>(15000);
 	const [notice, setNotice] = useState<Notice | null>(null);
@@ -200,20 +221,22 @@ export function UnifiedIaCockpit({ initialTab = "overview" }: Props) {
 	const [ocrBusy, setOcrBusy] = useState(false);
 
 	const fetchData = async (silent = false) => {
+		const ticket = ++latestFetch.current;
 		if (!silent) setIsRefreshing(true);
 		try {
 			const res = await fetch("/api/admin/ia", { cache: "no-store" });
 			const json = await res.json().catch(() => null);
+			if (ticket !== latestFetch.current) return;
 			if (!res.ok) {
-				setLoadError(`HTTP ${res.status} : ${json?.error ?? "réponse illisible"}`);
+				setLoadFailure(describeHttpFailure(res.status, json?.error));
 				return;
 			}
 			setData(json as IaDashboardData);
-			setLoadError(null);
+			setLoadFailure(null);
 		} catch (err) {
-			setLoadError(err instanceof Error ? err.message : String(err));
+			if (ticket === latestFetch.current) setLoadFailure(describeNetworkFailure(err));
 		} finally {
-			setIsRefreshing(false);
+			if (ticket === latestFetch.current) setIsRefreshing(false);
 		}
 	};
 
@@ -487,85 +510,65 @@ export function UnifiedIaCockpit({ initialTab = "overview" }: Props) {
 				</div>
 
 				{/* Bandeau d'onglets */}
-				<nav className="mt-5 flex flex-wrap gap-1 border-t border-dbz-border/50 pt-4">
-					<button
-						onClick={() => setTab("overview")}
-						className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
-							activeTab === "overview"
-								? "bg-dbz-orange text-black shadow-lg shadow-dbz-orange/30"
-								: "text-white/70 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<Activity className="h-4 w-4" />
-						Supervision &amp; Test Direct
-					</button>
-
-					<button
-						onClick={() => setTab("training")}
-						className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
-							activeTab === "training"
-								? "bg-dbz-orange text-black shadow-lg shadow-dbz-orange/30"
-								: "text-white/70 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<Award className="h-4 w-4" />
-						Entraînement RAG &amp; Évaluations
-						{summary?.pendingFeedbacks ? (
-							<span className="rounded-full bg-red-500 px-1.5 py-0.2 text-[10px] text-white font-mono font-bold">
-								{summary.pendingFeedbacks}
-							</span>
-						) : null}
-					</button>
-
-					<button
-						onClick={() => setTab("canon")}
-						className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
-							activeTab === "canon"
-								? "bg-dbz-orange text-black shadow-lg shadow-dbz-orange/30"
-								: "text-white/70 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<Scale className="h-4 w-4" />
-						Doctrine de Canonicité &amp; Toriyama
-					</button>
-
-					<button
-						onClick={() => setTab("corpus")}
-						className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
-							activeTab === "corpus"
-								? "bg-dbz-orange text-black shadow-lg shadow-dbz-orange/30"
-								: "text-white/70 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<BookOpen className="h-4 w-4" />
-						Corpus manga, databooks &amp; OCR
-					</button>
-
-					<button
-						onClick={() => setTab("agents")}
-						className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
-							activeTab === "agents"
-								? "bg-dbz-orange text-black shadow-lg shadow-dbz-orange/30"
-								: "text-white/70 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<Users className="h-4 w-4" />
-						Agents Autonomes &amp; Objectifs
-						{summary?.activeGoals ? (
-							<span className="rounded-full bg-blue-500 px-1.5 py-0.2 text-[10px] text-white font-mono font-bold">
-								{summary.activeGoals}
-							</span>
-						) : null}
-					</button>
+				<nav aria-label="Sections du cockpit IA" className="mt-5 flex flex-wrap gap-1 border-t border-dbz-border/50 pt-4">
+					{TABS.map(({ key, label, icon: Icon }) => {
+						const badge = key === "training" ? summary?.pendingFeedbacks : key === "agents" ? summary?.activeGoals : 0;
+						return (
+							<button
+								key={key}
+								type="button"
+								onClick={() => setTab(key)}
+								aria-current={activeTab === key ? "page" : undefined}
+								className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
+									activeTab === key
+										? "bg-dbz-orange text-black shadow-lg shadow-dbz-orange/30"
+										: "text-white/70 hover:bg-white/5 hover:text-white"
+								}`}
+							>
+								<Icon className="h-4 w-4" />
+								{label}
+								{badge ? (
+									<span
+										className={`rounded-full px-1.5 py-0.2 text-[10px] text-white font-mono font-bold ${
+											key === "training" ? "bg-red-500" : "bg-blue-500"
+										}`}
+									>
+										{badge}
+									</span>
+								) : null}
+							</button>
+						);
+					})}
 				</nav>
 			</header>
 
 			<NativeAiPanel />
 
-			{loadError && (
-				<div className={`rounded-xl border px-4 py-3 text-xs ${STATUS_CLASS.unavailable}`}>
-					Cockpit non actualisé — /api/admin/ia : {loadError}
-					{data ? ` (dernières données : ${fmtDate(data.timestamp)})` : ""}
+			{!data && !loadFailure && (
+				<div role="status" className="flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-xs text-blue-300">
+					<RefreshCw className="h-3.5 w-3.5 animate-spin" />
+					Chargement du cockpit : les sources IA répondent une à une, les indicateurs restent à « — » d'ici là.
+				</div>
+			)}
+
+			{loadFailure && (
+				<div role="alert" className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 text-xs ${STATUS_CLASS.unavailable}`}>
+					<span>
+						Cockpit non actualisé — /api/admin/ia : {loadFailure.text}
+						{data ? ` (dernières données : ${fmtDate(data.timestamp)})` : ""}
+					</span>
+					{loadFailure.kind === "unauthenticated" || loadFailure.kind === "forbidden" ? (
+						<Link
+							href={`/signin?callbackURL=${encodeURIComponent(`/admin/ia?tab=${activeTab}`)}`}
+							className="font-semibold underline"
+						>
+							Se reconnecter
+						</Link>
+					) : (
+						<button type="button" onClick={() => fetchData()} disabled={isRefreshing} className="font-semibold underline disabled:opacity-50">
+							Réessayer
+						</button>
+					)}
 				</div>
 			)}
 
@@ -607,11 +610,15 @@ export function UnifiedIaCockpit({ initialTab = "overview" }: Props) {
 									className="text-sm text-white/70 file:mr-3 file:rounded-lg file:border-0 file:bg-dbz-orange file:px-3 file:py-2 file:font-semibold file:text-black"
 									onChange={async (event) => {
 										const file = event.target.files?.[0];
-										if (!file || file.size > 6_000_000) { setOcrImage(null); return; }
-										const buffer = await file.arrayBuffer();
-										let binary = "";
-										for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte);
-										setOcrImage(btoa(binary));
+										setOcrResult(null);
+										if (!file) { setOcrImage(null); return; }
+										const rejection = ocrProbeFileError(file);
+										if (rejection) {
+											setOcrImage(null);
+											setNotice({ kind: "error", text: rejection });
+											return;
+										}
+										setOcrImage(bytesToBase64(new Uint8Array(await file.arrayBuffer())));
 									}}
 								/>
 								<button type="button" onClick={handleOcrProbe} disabled={!ocrImage || ocrBusy} className="btn bg-dbz-orange px-4 py-2 text-sm font-bold text-black disabled:opacity-40">
@@ -802,11 +809,13 @@ export function UnifiedIaCockpit({ initialTab = "overview" }: Props) {
 								].map((preset) => (
 									<button
 										key={preset}
+										type="button"
+										disabled={isTestingQuery}
 										onClick={() => {
 											setTestQuery(preset);
 											handleRunTest(preset);
 										}}
-										className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+										className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/70 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
 									>
 										{preset}
 									</button>
@@ -943,10 +952,11 @@ export function UnifiedIaCockpit({ initialTab = "overview" }: Props) {
 															<span className="text-emerald-400 font-bold">{m.series.toUpperCase()} {m.tome} — Planche {m.planche}</span>
 															<span className="font-mono text-[10px] text-white/40">Score: {m.score.toFixed(1)}</span>
 														</div>
-														<p
-															className="text-[11px] text-white/70 line-clamp-3 leading-relaxed [&>mark]:bg-dbz-orange/40 [&>mark]:text-white [&>mark]:px-0.5 rounded"
-															dangerouslySetInnerHTML={{ __html: m.extrait }}
-														/>
+														<p className="text-[11px] text-white/70 line-clamp-3 leading-relaxed [&>mark]:bg-dbz-orange/40 [&>mark]:text-white [&>mark]:px-0.5 rounded">
+															{splitMarkedExcerpt(m.extrait).map((part, i) =>
+																part.marked ? <mark key={i}>{part.text}</mark> : part.text
+															)}
+														</p>
 													</div>
 												))
 											) : (
@@ -1281,6 +1291,11 @@ export function UnifiedIaCockpit({ initialTab = "overview" }: Props) {
 					<CanonEditor initial={data.canonConfig} defaults={data.canonDefaults} />
 				</div>
 			)}
+			{activeTab === "canon" && !data?.canonConfig && loadFailure && (
+				<p className="rounded-xl border border-white/10 bg-black/30 px-4 py-6 text-center text-xs text-white/50">
+					La doctrine n'a pas pu être chargée : voir l'erreur ci-dessus. L'éditeur reste masqué plutôt que de proposer des valeurs par défaut à écraser.
+				</p>
+			)}
 
 			{/* ════════════════════════════════════════════════════════════════════════
 			    ONGLET 4 : AGENTS AUTONOMES, CLÉS D'ACCÈS & OBJECTIFS DE SESSION
@@ -1447,27 +1462,64 @@ function CorpusLink({ href, title, text }: { href: string; title: string; text: 
 	);
 }
 
+interface CorpusTranscription {
+	databooks?: { transcribedPages?: number; defectivePages?: number };
+	manga?: { ocrPages?: number; ocrWithText?: number };
+}
+
+interface CorpusPipeline {
+	databooks?: { etat?: string };
+	manga?: { etat?: string };
+}
+
+interface CorpusLive {
+	transcription: CorpusTranscription | null;
+	pipeline: CorpusPipeline | null;
+	errors: string[];
+	loading: boolean;
+}
+
+/** GET a private admin route; a non-2xx answer throws its readable cause instead of parsing as data. */
+async function readAdminJson<T>(url: string): Promise<T> {
+	const res = await fetch(url, { cache: "no-store" });
+	const json = await res.json().catch(() => null);
+	if (!res.ok) throw new Error(describeHttpFailure(res.status, json?.error).text);
+	return json as T;
+}
+
 function CorpusLiveStatus() {
-	const [state, setState] = useState<{ transcription: { databooks?: { transcribedPages?: number; defectivePages?: number }; manga?: { ocrPages?: number; ocrWithText?: number } } | null; pipeline: { databooks?: { etat?: string }; manga?: { etat?: string } } | null; error: string | null }>({ transcription: null, pipeline: null, error: null });
+	const [state, setState] = useState<CorpusLive>({ transcription: null, pipeline: null, errors: [], loading: true });
 
 	useEffect(() => {
 		let alive = true;
-		Promise.all([
-			fetch("/api/admin/transcriptions?mode=overview", { cache: "no-store" }).then((r) => r.json()),
-			fetch("/api/admin/databooks/status", { cache: "no-store" }).then((r) => r.json()),
-		])
-			.then(([transcription, pipeline]) => alive && setState({ transcription, pipeline: pipeline.local ?? null, error: null }))
-			.catch((error) => alive && setState({ transcription: null, pipeline: null, error: error instanceof Error ? error.message : "Erreur de lecture" }));
+		const load = async () => {
+			const [transcription, pipeline] = await Promise.allSettled([
+				readAdminJson<CorpusTranscription>("/api/admin/transcriptions?mode=overview"),
+				readAdminJson<{ local?: CorpusPipeline }>("/api/admin/databooks/status"),
+			]);
+			if (!alive) return;
+			const errors: string[] = [];
+			if (transcription.status === "rejected") errors.push(`Transcriptions : ${describeNetworkFailure(transcription.reason).text}`);
+			if (pipeline.status === "rejected") errors.push(`Pipeline OCR : ${describeNetworkFailure(pipeline.reason).text}`);
+			setState({
+				transcription: transcription.status === "fulfilled" ? transcription.value : null,
+				pipeline: pipeline.status === "fulfilled" ? (pipeline.value.local ?? null) : null,
+				errors,
+				loading: false,
+			});
+		};
+		void load();
 		return () => { alive = false; };
 	}, []);
 
-	const transcription = state.transcription;
-	const pipeline = state.pipeline;
+	const { transcription, pipeline, errors, loading } = state;
 	return (
 		<Card className="border-dbz-border bg-dbz-card md:col-span-2 xl:col-span-4">
 			<CardHeader><CardTitle className="text-base text-white">État live du corpus</CardTitle></CardHeader>
-			<CardContent>
-				{state.error ? <p className="text-sm text-red-300">{state.error}</p> : (
+			<CardContent className="space-y-3">
+				{loading ? <p role="status" className="text-sm text-white/50">Mesure en cours…</p> : null}
+				{errors.map((message) => <p key={message} role="alert" className="text-sm text-red-300">{message}</p>)}
+				{!loading && (
 					<div className="grid gap-3 sm:grid-cols-3">
 						<LiveMetric label="Pages databooks transcrites" value={transcription?.databooks?.transcribedPages ?? "—"} />
 						<LiveMetric label="Pages manga OCR" value={transcription?.manga?.ocrWithText ?? transcription?.manga?.ocrPages ?? "—"} />

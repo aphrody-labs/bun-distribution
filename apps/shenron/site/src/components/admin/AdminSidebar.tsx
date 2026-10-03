@@ -15,7 +15,6 @@ import {
 	Clock,
 	Server,
 	Radio,
-	ScrollText,
 	ScanText,
 	BarChart2,
 	Activity,
@@ -46,7 +45,6 @@ import {
 	Landmark,
 	Trophy,
 	Shield,
-	ClipboardList,
 	BookMarked,
 	Crown,
 	Key,
@@ -176,13 +174,6 @@ const ADMIN_LINKS: AdminLink[] = [
 		label: "En direct",
 		description: "Activité en temps réel",
 		icon: <Radio className="h-4 w-4" />,
-		section: "systeme",
-	},
-	{
-		href: "/admin/logs",
-		label: "Journaux",
-		description: "Logs d'activité du bot",
-		icon: <ScrollText className="h-4 w-4" />,
 		section: "systeme",
 	},
 	{
@@ -505,13 +496,6 @@ const ADMIN_LINKS: AdminLink[] = [
 		label: "Commentaires du site",
 		description: "File unique des commentaires, toutes surfaces confondues",
 		icon: <MessageSquare className="h-4 w-4" />,
-		section: "securite",
-	},
-	{
-		href: "/admin/audit",
-		label: "Journal de modération",
-		description: "Historique des actions de modération",
-		icon: <ClipboardList className="h-4 w-4" />,
 		section: "securite",
 	},
 	{

@@ -22,7 +22,7 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync, appendFileSync } from "node:fs";
 import { join, dirname, basename, extname } from "node:path";
 import { createHash } from "node:crypto";
-import { aphrodyWebRecon, aphrodyWebScrape } from "@shenron/pipeline/aphrody";
+import { aphrodyWebMirror, aphrodyWebRecon, aphrodyWebScrape } from "@shenron/pipeline/aphrody";
 import { BOT_HOST, CDN_ORIGIN, SITE_URL } from "../src/lib/config";
 
 // BXC monorepo contract compatibility references (execBxc migrated to Aphrody Web)

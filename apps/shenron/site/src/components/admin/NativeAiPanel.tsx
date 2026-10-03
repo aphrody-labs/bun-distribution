@@ -4,6 +4,7 @@
 // (injected by crates/ui/app/src/studio.rs) gives direct IPC access to the local models and the
 // Shenron RAG. The answer is grounded on retrieved passages and cites them.
 import { useEffect, useState } from "react";
+import { EMPTY_RETRIEVAL_NOTICE, formatRagContext } from "./ia-cockpit-view";
 
 interface NativeStatus {
 	chat: { ready: boolean; model?: string };
@@ -63,15 +64,18 @@ export function NativeAiPanel() {
 		setBusy(true);
 		setError(null);
 		setAnswer(null);
+		setSources([]);
 		try {
 			const { results } = await native.ragSearch(question.trim(), 8);
 			setSources(results);
-			const context = results
-				.map((hit, index) => `[${index + 1}] ${hit.title ?? "Sans titre"} — ${hit.snippet ?? ""}`)
-				.join("\n");
+			// Without passages the model would answer from its own memory: say so instead.
+			if (results.length === 0) {
+				setError(EMPTY_RETRIEVAL_NOTICE);
+				return;
+			}
 			const reply = await native.chat([
 				{ role: "system", content: SYSTEM },
-				{ role: "user", content: `Passages :\n${context}\n\nQuestion : ${question.trim()}` },
+				{ role: "user", content: `Passages :\n${formatRagContext(results)}\n\nQuestion : ${question.trim()}` },
 			]);
 			setAnswer(reply.choices?.[0]?.message?.content ?? "(réponse vide)");
 		} catch (cause) {
