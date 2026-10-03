@@ -9,7 +9,6 @@ function run(check: Check, root: string): boolean {
     cwd: root,
     stdout: "pipe",
     stderr: "pipe",
-    env: { ...Bun.env, RUSTC_WRAPPER: "" },
   });
   const output =
     `${new TextDecoder().decode(result.stdout)}${new TextDecoder().decode(result.stderr)}`.trim();
@@ -42,7 +41,7 @@ export function runAiReleaseGate(args: string[]): number {
     {
       name: "Rust maintained crate tests",
       command: [
-        "cargo",
+        "scripts/build/rust/cargo-serial.sh",
         "test",
         "-p",
         "aphrody-summary",
@@ -62,7 +61,14 @@ export function runAiReleaseGate(args: string[]): number {
   if (!scoped)
     checks.push({
       name: "Rust complete workspace check",
-      command: ["cargo", "check", "--workspace", "--all-targets", "--locked", "--offline"],
+      command: [
+        "scripts/build/rust/cargo-serial.sh",
+        "check",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--offline",
+      ],
     });
   const failures = checks.filter((check) => !run(check, root)).length;
   console.log(`\nRelease gate: ${failures === 0 ? "PASS" : "FAILED"} (${failures} failure(s))`);

@@ -307,10 +307,13 @@ enum DriveCommand {
     },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, ValueEnum)]
+#[serde(rename_all = "kebab-case")]
 enum DeployStack {
     /// Five-service Aphrody stack (site, Web API, A2A, AI HTTP, E5).
     Aphrody,
+    /// Internal Shenron compute only (AI HTTP, E5, managed llama companion).
+    AphrodyCompute,
     /// Shenron site and bot release plane.
     Shenron,
     /// RG release plane.
@@ -323,7 +326,7 @@ impl DeployStack {
     /// Directory below which the stack's releases (or bundles) live on the VPS.
     fn release_root(self) -> &'static str {
         match self {
-            Self::Aphrody => "/srv/aphrody/releases/",
+            Self::Aphrody | Self::AphrodyCompute => "/srv/aphrody/releases/",
             Self::Shenron => "/srv/shenron/releases/",
             Self::Rg => "/srv/rg/releases/",
             Self::Bundle => "/srv/aphrody-infra/bundles/",
@@ -333,7 +336,7 @@ impl DeployStack {
     /// Adapter installed by `scripts/install-vps-adapter.sh`.
     fn adapter(self) -> &'static str {
         match self {
-            Self::Aphrody => "/usr/local/sbin/aphrody-infra-deploy-aphrody",
+            Self::Aphrody | Self::AphrodyCompute => "/usr/local/sbin/aphrody-infra-deploy-aphrody",
             Self::Shenron => "/usr/local/sbin/aphrody-infra-deploy-shenron",
             Self::Rg => "/usr/local/sbin/aphrody-infra-deploy-rg",
             Self::Bundle => "/usr/local/sbin/aphrody-infra-deploy-bundle",
@@ -343,7 +346,7 @@ impl DeployStack {
     /// Environment variable overriding the adapter path (tests, staging hosts).
     fn adapter_env(self) -> &'static str {
         match self {
-            Self::Aphrody => "APHRODY_REMOTE_DEPLOY_ADAPTER",
+            Self::Aphrody | Self::AphrodyCompute => "APHRODY_REMOTE_DEPLOY_ADAPTER",
             Self::Shenron => "SHENRON_REMOTE_DEPLOY_ADAPTER",
             Self::Rg => "RG_REMOTE_DEPLOY_ADAPTER",
             Self::Bundle => "BUNDLE_REMOTE_DEPLOY_ADAPTER",
@@ -359,6 +362,14 @@ impl DeployStack {
                 "0600 /etc/aphrody env files (provision-aphrody-stack-env.sh)",
                 "preloaded E5 weights, Gemini Web cookie, aphrody.com TLS",
                 "live health proof, rollback to the previous current",
+            ],
+            Self::AphrodyCompute => &[
+                "explicit --apply",
+                "aphrody-compute-smoke/v1 attestation bound to RELEASE_ID and SHA256SUMS",
+                "complete real Dragon Ball corpus, fresh E5 vectors, Recall@5 >= 0.8, zero retrieval errors",
+                "0600 /etc/aphrody/aphrody-ai-http.env, real managed model and readable LoRA",
+                "only aphrody-ai-http and aphrody-shenron-embed; site, Web and A2A inactive",
+                "live private API, embedding and LLM proof; rollback of the selected services",
             ],
             Self::Shenron => &[
                 "explicit --apply",
@@ -1272,6 +1283,19 @@ fn remote_adapter_args<'a>(adapter: &'a str, release: &'a str) -> [&'a str; 7] {
     ["-o", "BatchMode=yes", "vps", "sudo", "-n", adapter, release]
 }
 
+/// Select the existing adapter's compute mode without activating the full stack.
+fn remote_stack_adapter_args<'a>(
+    stack: DeployStack,
+    adapter: &'a str,
+    release: &'a str,
+) -> Vec<&'a str> {
+    let mut args = remote_adapter_args(adapter, release).to_vec();
+    if stack == DeployStack::AphrodyCompute {
+        args.insert(args.len() - 1, "--compute-only");
+    }
+    args
+}
+
 fn deploy(
     root: &Path,
     target: &str,
@@ -1283,7 +1307,7 @@ fn deploy(
     let matrix = load_matrix(root)?;
     let _ = selected(&matrix, Some(target))?;
     let adapter = std::env::var(stack.adapter_env()).unwrap_or_else(|_| stack.adapter().to_owned());
-    let detail = json!({ "target": target, "stack": format!("{stack:?}").to_lowercase(), "release": release, "releaseRoot": stack.release_root(), "mode": if apply { "apply" } else { "plan" }, "adapter": adapter, "requires": stack.requires() });
+    let detail = json!({ "target": target, "stack": stack, "release": release, "releaseRoot": stack.release_root(), "mode": if apply { "apply" } else { "plan" }, "adapter": adapter, "requires": stack.requires() });
     run.action("deploy", if apply { "delegated" } else { "planned" }, detail.clone());
     println!("{}", serde_json::to_string_pretty(&detail)?);
     if apply {
@@ -1301,7 +1325,7 @@ fn deploy(
         // Each adapter re-verifies its preconditions (the Aphrody one its SMOKE.json
         // attestation) and rolls its stack back on failure.
         let output = Command::new("ssh")
-            .args(remote_adapter_args(&adapter, release))
+            .args(remote_stack_adapter_args(stack, &adapter, release))
             .output()
             .context("ssh vps indisponible")?;
         if !output.status.success() {
@@ -2335,8 +2359,11 @@ mod tests {
         assert!(matches!(rg.command, CommandKind::Deploy { stack: DeployStack::Rg, .. }));
         let default = Cli::try_parse_from(["aphrody-infra", "deploy", "--target", "vps"]).unwrap();
         assert!(matches!(default.command, CommandKind::Deploy { stack: DeployStack::Aphrody, .. }));
-        for (name, expected) in [("shenron", DeployStack::Shenron), ("bundle", DeployStack::Bundle)]
-        {
+        for (name, expected) in [
+            ("shenron", DeployStack::Shenron),
+            ("bundle", DeployStack::Bundle),
+            ("aphrody-compute", DeployStack::AphrodyCompute),
+        ] {
             let parsed = Cli::try_parse_from([
                 "aphrody-infra",
                 "deploy",
@@ -2348,6 +2375,38 @@ mod tests {
             .unwrap();
             assert!(
                 matches!(parsed.command, CommandKind::Deploy { stack, .. } if stack == expected)
+            );
+        }
+    }
+
+    #[test]
+    fn compute_deployment_selects_only_the_existing_adapters_compute_mode() {
+        let compute = DeployStack::AphrodyCompute;
+        assert_eq!(serde_json::to_value(compute).unwrap(), "aphrody-compute");
+        let release = "/srv/aphrody/releases/qualified-compute";
+        assert_eq!(compute.adapter(), DeployStack::Aphrody.adapter());
+        assert_eq!(compute.adapter_env(), DeployStack::Aphrody.adapter_env());
+        assert!(release_path_is_valid(release, compute));
+        assert!(!release_path_is_valid("/srv/shenron/releases/a", compute));
+        assert_eq!(
+            remote_stack_adapter_args(compute, compute.adapter(), release),
+            [
+                "-o",
+                "BatchMode=yes",
+                "vps",
+                "sudo",
+                "-n",
+                compute.adapter(),
+                "--compute-only",
+                release,
+            ]
+        );
+        for stack in
+            [DeployStack::Aphrody, DeployStack::Shenron, DeployStack::Rg, DeployStack::Bundle]
+        {
+            assert_eq!(
+                remote_stack_adapter_args(stack, stack.adapter(), release),
+                remote_adapter_args(stack.adapter(), release)
             );
         }
     }

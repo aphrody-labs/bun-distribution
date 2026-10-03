@@ -1432,7 +1432,10 @@
           "bins": [
             "generate"
           ],
-          "features": []
+          "features": [
+            "cef",
+            "default"
+          ]
         },
         {
           "name": "koharu-bindgen",
@@ -1745,6 +1748,42 @@
       ],
       "bunPackages": [
         {
+          "name": "@ag-ui/a2ui-toolkit",
+          "path": "packages/ui/ag-ui/a2ui",
+          "description": "Framework-agnostic helpers for building A2UI subagent tools — op builders, prompt assembly, history walkers, and request/envelope orchestration shared across framework adapters.",
+          "bins": []
+        },
+        {
+          "name": "@ag-ui/client",
+          "path": "packages/ui/ag-ui/client",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@ag-ui/core",
+          "path": "packages/ui/ag-ui/core",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@ag-ui/encoder",
+          "path": "packages/ui/ag-ui/encoder",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@ag-ui/proto",
+          "path": "packages/ui/ag-ui/proto",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/ag-ui",
+          "path": "packages/ui/ag-ui",
+          "description": "Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges.",
+          "bins": []
+        },
+        {
           "name": "@aphrody/agent-browser",
           "path": "packages/web/agent-browser",
           "description": "Aphrody Web Bun client: CDP browser automation (agent-browser), engine lifecycle, web service client (fetch, scrape, crawl, sessions) and config reader, backed by the native aphrody-web engine.",
@@ -1951,6 +1990,12 @@
           "name": "@aphrody/material-web",
           "path": "packages/ui/material-web",
           "description": "Material Design 3 web components (Lit) — MUI + MUI X migration target",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/mcp-ui",
+          "path": "packages/ui/mcp-ui",
+          "description": "Aphrody MCP-UI SDK — Pure Bun & TS 7 client for rendering sandboxed generative MCP interactive apps in Material Design 3 surfaces.",
           "bins": []
         },
         {
@@ -15575,7 +15620,7 @@
     "sharedRepos": 0,
     "crates": 267,
     "binaries": 89,
-    "bunPackages": 102,
+    "bunPackages": 109,
     "pythonPackages": 9,
     "cliBinaries": 63,
     "cliCommands": 1280,

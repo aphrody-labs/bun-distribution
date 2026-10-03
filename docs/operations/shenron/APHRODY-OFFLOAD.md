@@ -8,6 +8,86 @@ MCP unifié `aphrody-mcp` et les outils `dragonball.*` ; l'ancien service
 raccordement actif de `RAG_BACKEND` restent à établir par Aphrody-infra et une
 sonde live : les anciens constats ci-dessous ne prouvent pas leur état actuel.
 
+## Calcul Shenron depuis le monorepo — 2026-10-03
+
+La voie de remise en service est le mode `--compute-only` des constructeurs et
+adaptateurs existants. Elle sélectionne `aphrody-ai-http` et
+`aphrody-shenron-embed`, avec les trois binaires `aphrody-mcp`, `aphrody-embed`
+et `aphrody-llama-daemon`. Le compagnon daemon est construit depuis le même
+commit que le gateway. Le modèle et sa LoRA, les poids E5, les bases, Redis et
+les fichiers privés restent dans leurs stores protégés.
+
+Le contrôle live du 3 octobre confirme le bot et le site actifs sur le VPS,
+les deux unités de calcul inactives et le RAG public en `index_unavailable`.
+La copie locale de production sert de corpus de qualification : PostgreSQL
+éditorial réel, Redis réel, exports Dragon Ball frais et index E5 PostgreSQL.
+Son ingestion est en cours. Le préchargement complet refuse actuellement la
+qualification ; la mesure provisoire précédente (Recall@5 75,58 %) reste
+inférieure au seuil de 80 %. Ces constats ne constituent pas une activation.
+
+Préparer les sources depuis un commit contenant le mode compute, puis construire :
+
+```bash
+bash scripts/build-aphrody-stack-release.sh --compute-only --plan "$PWD" "$(git rev-parse HEAD)"
+bash scripts/build-aphrody-stack-release.sh --compute-only "$PWD" "$(git rev-parse HEAD)"
+```
+
+Le constructeur vérifie les sources externes avec leur propriétaire existant,
+exporte le commit et fige les dépendances de chemin avec leurs empreintes.
+Les trois builds passent successivement par `cargo-serial.sh`, avec sccache et
+deux jobs par défaut. La sortie privée contient `SOURCE.json`, `RELEASE_ID`,
+`RELEASE_SHA`, `SHA256SUMS`, les unités et la migration RAG ; aucun `SMOKE.json`
+n'est produit par un build. Les logs et le snapshot sont conservés si un build
+échoue. Le constructeur ne déploie ni ne redémarre de service.
+
+Servir les binaires candidats avec le profil privé Shenron, puis qualifier :
+
+```bash
+bun scripts/tools/shenron/scripts/ops/eval-aphrody-rag.ts --ci --attest-release /chemin/prive/de/la/release
+```
+
+Cette commande exige le préchargement complet par `requireLiveRag`, vérifie les
+listeners et les empreintes des processus MCP/E5, puis utilise l'intégralité
+du gold du commit de la release. Elle impose Recall@5 ≥ 80 %, p95 < 8 s,
+zéro erreur et un mode hybride. Une question reçoit les passages Dragon Ball
+retrouvés ; le modèle managé doit répondre en moins de 90 s avec une de leurs
+URL. Le daemon doit appartenir à la release et le processus modèle doit avoir
+chargé la LoRA configurée. Le corpus et les binaires sont revérifiés avant
+l'écriture atomique de `SMOKE.json` (`aphrody-compute-smoke/v1`). La preuve
+contient les empreintes du modèle et de la LoRA, sans réponse brute ni secret.
+Cette sonde ne remplace pas une qualification complète du modèle ou du ML.
+
+Le temps de démarrage froid Qwen+LoRA déjà mesuré est de 111 s, supérieur au
+timeout client de 90 s ; la disponibilité avant le raccordement produit reste
+donc à établir. Le reranker et un nouveau cycle d'entraînement ne sont pas
+qualifiés par ces résultats.
+
+Sur le VPS, prévoir un store RAG dérivé dédié : pgvector 0.8.1 y est disponible,
+alors qu'il est absent sur DBFR. DBFR conserve `shenron_site` comme base
+éditoriale primaire. Le DDL canonique est
+[`0001_shenron_postgres.sql`](../../../crates/ai/rag/migrations/0001_shenron_postgres.sql)
+(documents, vecteurs E5 384 et invalidation transactionnelle du cache) ; le
+gateway n'exige pas de table de chunks séparée. Sauvegarde, transfert vérifié,
+provisionnement et raccordement restent à réaliser. Les anciens dumps et les
+59 995 passages historiques ne qualifient pas ce corpus frais.
+
+Après qualification du bundle, des données et du catalogue, la commande Infra
+ci-dessous décrit le déploiement sans mutation :
+
+```bash
+aphrody-infra deploy --target vps --stack aphrody-compute --release /srv/aphrody/releases/ID
+```
+
+`--apply` appelle le même adaptateur avec `--compute-only`. Le préflight exige
+une attestation liée aux checksums, le profil AI privé et les poids disponibles ;
+les unités site/Web/A2A doivent être inactives car elles partagent `current`.
+Les probes après activation portent sur les processus réellement lancés,
+l'authentification, E5, le chat, la santé et le RAG hybride. Le backup conserve
+mode et roster ; `--restore BACKUP` restaure uniquement ce roster et le lien
+`current`. Aucun retour arrière réel de ce mode n'a encore été exécuté sur VPS.
+Le catalogue marque encore le calcul retiré : le réconcilier après les preuves
+requises, avant toute activation, sans réactiver les anciennes routes publiques.
+
 ## Frontières de service
 
 | Fonction | Propriétaire cible | Contrat introduit | État du raccordement Shenron |

@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 267 crates, 89 binaries, 102 Bun packages, 9 uv packages, 1280 CLI commands, 440 MCP tools.
+Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 267 crates, 89 binaries, 109 Bun packages, 9 uv packages, 1280 CLI commands, 440 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -184,7 +184,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-yolo` | crates/infra/yolo | Sovereign autonomous runtime core for Aphrody ecosystem. | `aphrody-yolo` |  |
 | `koharu` | crates/koharu/koharu | Manga translation tools | `koharu` |  |
 | `koharu-agent` | crates/koharu/koharu-agent | OAuth-backed Codex agent orchestration for Koharu. |  |  |
-| `koharu-app` | crates/koharu/koharu-app | Manga translation tools | `generate` |  |
+| `koharu-app` | crates/koharu/koharu-app | Manga translation tools | `generate` | cef, default |
 | `koharu-bindgen` | crates/koharu/koharu-bindgen | Bindgen-based generator for dynamically loaded native-library bindings. | `koharu-bindgen` |  |
 | `koharu-canvas` | crates/koharu/koharu-canvas | Manga translation tools |  |  |
 | `koharu-config` | crates/koharu/koharu-config | Extensible typed configuration storage for Koharu. |  |  |
@@ -217,10 +217,16 @@ Canonical Rust/Bun monorepo
 | `obscura-render` | crates/web/obscura-render | Optional scoped render layer for Obscura: layout (taffy) and, with the paint feature, text and raster output for screenshots. | `paint_file` | default, paint |
 | `taffy` | crates/web/taffy | A flexible UI layout library |  | alloc, block_layout, calc, content_size, debug, default, detailed_layout_info, document-features, flexbox, float_layout, grid, parse, parse_faster, profile, serde, std, strict_provenance, taffy_tree |
 
-### Bun packages (95)
+### Bun packages (102)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
+| `@ag-ui/a2ui-toolkit` | packages/ui/ag-ui/a2ui | Framework-agnostic helpers for building A2UI subagent tools — op builders, prompt assembly, history walkers, and request/envelope orchestration shared across framework adapters. |  |
+| `@ag-ui/client` | packages/ui/ag-ui/client |  |  |
+| `@ag-ui/core` | packages/ui/ag-ui/core |  |  |
+| `@ag-ui/encoder` | packages/ui/ag-ui/encoder |  |  |
+| `@ag-ui/proto` | packages/ui/ag-ui/proto |  |  |
+| `@aphrody/ag-ui` | packages/ui/ag-ui | Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges. |  |
 | `@aphrody/agent-browser` | packages/web/agent-browser | Aphrody Web Bun client: CDP browser automation (agent-browser), engine lifecycle, web service client (fetch, scrape, crawl, sessions) and config reader, backed by the native aphrody-web engine. | `agent-browser` |
 | `@aphrody/app-ui` | packages/ui/app-ui |  |  |
 | `@aphrody/assets` | packages/ui/assets | File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces. |  |
@@ -254,6 +260,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/m3-theme` | packages/ui/m3-theme | Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases). |  |
 | `@aphrody/m3-tokens` | packages/ui/m3-tokens | Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities. |  |
 | `@aphrody/material-web` | packages/ui/material-web | Material Design 3 web components (Lit) — MUI + MUI X migration target |  |
+| `@aphrody/mcp-ui` | packages/ui/mcp-ui | Aphrody MCP-UI SDK — Pure Bun & TS 7 client for rendering sandboxed generative MCP interactive apps in Material Design 3 surfaces. |  |
 | `@aphrody/messaging` | packages/discord/aphrody-messaging | Aphrody messaging channel contracts and Discord REST adapter. |  |
 | `@aphrody/n2b-core` | packages/compat/n2b-client | TypeScript façade thin pour le binaire Rust n2b — wrapper CLI (scan, rules, promptMarkdown) et shims Bun-natifs (./shims: env, fs, path, shell). |  |
 | `@aphrody/n2b-plugin` | packages/compat/n2b-plugin | Plugin Bun (Bun.plugin) pour le scan N2B Rust natif ou CLI. |  |

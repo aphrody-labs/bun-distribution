@@ -1,6 +1,122 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# The monorepo's internal Shenron compute release uses this existing builder,
+# with an immutable source export and no site, Web, A2A or UI build.
+# --plan verifies the real source inputs and prints the selected build commands.
+compute_release() {
+  local plan=false
+  if [[ "${1:-}" = --plan ]]; then plan=true; shift; fi
+  [[ $# -le 2 ]] || { echo 'usage: build-aphrody-stack-release.sh --compute-only [--plan] [MONOREPO [COMMIT]]' >&2; return 2; }
+  local repo pin out target id stage work source_root binary
+  repo="$(realpath -e -- "${1:-$(dirname -- "${BASH_SOURCE[0]}")/..}")"
+  pin="${2:-$(git -C "$repo" rev-parse HEAD)}"
+  [[ "$(uname -s)" = Linux && "$(uname -m)" = x86_64 ]] || { echo 'Linux x86_64 build host required' >&2; return 2; }
+  [[ "$pin" =~ ^[0-9a-f]{40}$ ]] && git -C "$repo" cat-file -e "$pin^{commit}" || { echo 'invalid source commit' >&2; return 2; }
+  for binary in git bun uv tar sha256sum ldd; do command -v "$binary" >/dev/null || { echo "missing $binary" >&2; return 2; }; done
+  for binary in Cargo.toml Cargo.lock scripts/build/rust/cargo-serial.sh crates/ai/rag/migrations/0001_shenron_postgres.sql; do
+    git -C "$repo" cat-file -e "$pin:$binary" || { echo "source commit lacks $binary" >&2; return 2; }
+  done
+  # Use the existing source owner; never restore or modify a checkout here.
+  source_root="$(realpath -e -- "${APHRODY_SOURCE_ROOT:-$repo/../source}")"
+  bun "$repo/packages/infra/update/src/cli.ts" sources verify --root "$repo" --source-root "$source_root"
+  printf 'source=%s\nmode=compute\nservices=aphrody-shenron-embed,aphrody-ai-http\n' "$pin"
+  printf '%s\n' \
+    'cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-mcp --bin aphrody-mcp --no-default-features --features dragonball,managed-llama' \
+    'cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-embed --bin aphrody-embed --no-default-features --features server' \
+    'cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-llama-server --bin aphrody-llama-daemon --no-default-features'
+  [[ "$plan" = false ]] || return 0
+
+  out="$(realpath -m -- "${APHRODY_COMPUTE_OUT:-$HOME/.aphrody/private/releases/shenron-compute}")"
+  target="$(realpath -m -- "${APHRODY_RELEASE_TARGET_DIR:-$HOME/.cache/aphrody/shenron-compute-target}")"
+  id="$(date -u +%Y%m%dT%H%M%SZ)-${pin:0:12}-compute"
+  install -d -m 0700 "$out"
+  [[ ! -e "$out/$id" ]] || { echo 'release already exists' >&2; return 2; }
+  stage="$(mktemp -d "$out/.release.XXXXXXXX")"
+  work="$(mktemp -d "$out/.source.XXXXXXXX")"
+  mkdir -p "$work/aphrody" "$stage/"{bin,systemd,migrations,ops,.logs}
+  git -C "$repo" archive --format=tar "$pin" | tar -xf - -C "$work/aphrody"
+  grep -Fq -- '--compute-only' "$work/aphrody/scripts/atomic-deploy-aphrody-stack.sh" || {
+    echo "source commit lacks the compute adapter; source=$work" >&2; return 2;
+  }
+  bun "$repo/packages/infra/update/src/cli.ts" sources verify --root "$work/aphrody" --source-root "$source_root"
+  # Freeze the external path dependencies too. Their exact bytes, including
+  # canonical local patches, are recorded; shared source directories are never
+  # modified and cannot change underneath the build.
+  uv run --no-project python - "$work/aphrody" "$source_root" "$work/source" "$stage/SOURCE.json" "$pin" <<'PY'
+import hashlib
+import json
+import pathlib
+import shutil
+import sys
+
+repo, original, frozen, report = map(pathlib.Path, sys.argv[1:5])
+manifest = json.loads((repo / 'config/upstream-sources.json').read_text())
+ignored = {'.git', 'target', 'node_modules', '__pycache__'}
+
+def digest(directory):
+    result = hashlib.sha256()
+    for path in sorted(directory.rglob('*')):
+        rel = path.relative_to(directory)
+        if any(part in ignored for part in rel.parts):
+            continue
+        if path.is_symlink():
+            raise SystemExit(f'cannot freeze symlink in external source: {rel}')
+        if path.is_file():
+            result.update(str(rel).encode() + b'\0')
+            result.update(hashlib.sha256(path.read_bytes()).digest())
+    return result.hexdigest()
+
+records = []
+for entry in manifest['sources']:
+    source, dest = original / entry['id'], frozen / entry['id']
+    before = digest(source)
+    shutil.copytree(source, dest, ignore=shutil.ignore_patterns(*ignored))
+    if before != digest(source) or before != digest(dest):
+        raise SystemExit(f'external source changed during snapshot: {entry["id"]}')
+    records.append({'id': entry['id'], 'commit': entry.get('commit'),
+                    'version': entry.get('version'), 'sha256': before})
+report.write_text(json.dumps({'schema': 'aphrody-compute-source/v1',
+                             'repositoryCommit': sys.argv[5],
+                             'externalSources': records}, indent=2) + '\n')
+PY
+  # The archived wrapper shares the process-wide lock and retains sccache.
+  # Two compiler jobs leave headroom for the actual ongoing RAG ingestion.
+  (
+    cd "$work/aphrody"
+    export CARGO_TARGET_DIR="$target" APHRODY_CARGO_JOBS="${APHRODY_CARGO_JOBS:-2}"
+    scripts/build/rust/cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-mcp --bin aphrody-mcp --no-default-features --features dragonball,managed-llama > "$stage/.logs/mcp.log" 2>&1
+    scripts/build/rust/cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-embed --bin aphrody-embed --no-default-features --features server > "$stage/.logs/embed.log" 2>&1
+    scripts/build/rust/cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-llama-server --bin aphrody-llama-daemon --no-default-features > "$stage/.logs/llama-daemon.log" 2>&1
+  ) || { echo "compute build failed; logs=$stage/.logs source=$work" >&2; return 1; }
+  for binary in aphrody-mcp aphrody-embed aphrody-llama-daemon; do
+    install -m 0755 "$target/x86_64-unknown-linux-gnu/release/$binary" "$stage/bin/$binary"
+    ldd "$stage/bin/$binary" > "$stage/.logs/$binary.ldd"
+    ! grep -Fq 'not found' "$stage/.logs/$binary.ldd" || { echo "missing runtime library: $binary" >&2; return 1; }
+  done
+  for binary in aphrody-ai-http aphrody-shenron-embed; do
+    install -m 0644 "$work/aphrody/systemd/$binary.service.example" "$stage/systemd/$binary.service"
+  done
+  # Compute requires a private environment; it must not start with defaults.
+  sed -i 's|EnvironmentFile=-/etc/aphrody/aphrody-ai-http.env|EnvironmentFile=/etc/aphrody/aphrody-ai-http.env|' "$stage/systemd/aphrody-ai-http.service"
+  sed -i 's|bin/aphrody-embed serve$|bin/aphrody-embed serve --threads 4|' "$stage/systemd/aphrody-shenron-embed.service"
+  install -m 0644 "$work/aphrody/crates/ai/rag/migrations/0001_shenron_postgres.sql" "$stage/migrations/0001_shenron_postgres.sql"
+  install -m 0755 "$work/aphrody/scripts/atomic-deploy-aphrody-stack.sh" "$stage/ops/atomic-deploy-aphrody-stack.sh"
+  printf '%s\n' "$id" > "$stage/RELEASE_ID"
+  printf 'aphrody=%s\n' "$pin" > "$stage/RELEASE_SHA"
+  (cd "$stage" && find bin systemd migrations ops -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS && sha256sum RELEASE_ID RELEASE_SHA SOURCE.json >> SHA256SUMS)
+  # A build is not a production qualification. Only a separate real-service
+  # corpus/model evaluation may write SMOKE.json; the adapter refuses it absent.
+  mv -T -- "$stage" "$out/$id"
+  printf 'release=%s\nsourceSnapshot=%s\nqualification=pending (no SMOKE.json)\n' "$out/$id" "$work"
+}
+
+if [[ "${1:-}" = --compute-only ]]; then
+  shift
+  compute_release "$@"
+  exit $?
+fi
+
 # Build the all-in-one VPS bundle from one clean superproject checkout
 # (aphrody-src, every submodule initialized at its gitlink; see
 # prepare-release-workspace.sh). The bundle carries:
