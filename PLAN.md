@@ -231,7 +231,13 @@ Les releases contiennent SDK, runtime, compatibilité, hashes et procédure de
 retour arrière. Négocier la compatibilité runtime/application au chargement,
 refuser un ABI incompatible avant l'appel natif. Qualification, installation
 locale, publication de package et activation produit sont des états distincts.
-Les dépôts restent privés ; aucune publication n'est autorisée par ce plan seul.
+Décision du propriétaire du 2026-10-03 : tout doit être déployable et installable en
+une commande, comme Bun. Le producteur Yolo publie le runtime, le SDK et le CLI
+autonome `yolo` en releases GitHub par tag, avec installeurs `install.sh` et
+`install.ps1` (voir [Yolo PLAN](../yolo/PLAN.md) et `docs/DISTRIBUTION.md` côté
+Yolo) ; les consommateurs Aphrody dépendent du SDK léger et d'artefacts vérifiés.
+Les dépôts restent privés ; la publication sur un registre de paquets (crates.io,
+npm) est faite sur demande explicite du propriétaire, car elle est irréversible.
 
 ## 13. Mesures et observabilité
 
@@ -246,7 +252,7 @@ Aucun pourcentage de gain n'est établi avant comparaison reproductible.
 
 ## 14. Phases et preuves de passage
 
-Toutes les phases d'implémentation ci-dessous sont ouvertes. L'existence des
+Une phase est terminée lorsque sa commande d'acceptation (voir le plan Yolo) réussit ; les phases d'implémentation ci-dessous restent la file de travail. L'existence des
 sources ou d'importations Tauri ne valide aucune phase automatiquement.
 
 | Phase | Livrable | Preuve exigée |
