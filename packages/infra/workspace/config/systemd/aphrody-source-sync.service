@@ -9,7 +9,8 @@ StartLimitBurst=5
 [Service]
 Type=simple
 WorkingDirectory=%h/aphrody
-ExecStart=%h/yolo/bin/yolo ops repo-sync watch --apply --build --json
+ExecStart=%h/.local/bin/aphrody-ops repo-sync watch --apply --build --json
+Environment=APHRODY_ROOT=%h/aphrody
 Environment=PATH=%h/.bun/bin:%h/.local/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin
 UMask=0077
 StandardInput=null
