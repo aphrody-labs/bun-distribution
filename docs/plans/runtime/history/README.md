@@ -9,7 +9,6 @@ resolve them from `<repo>`, not from this archive directory.
 | Original | Archive | Bytes | SHA-256 |
 | --- | --- | ---: | --- |
 | `PLAN.md` | [PLAN-before-unified-runtime-2026-10-03.md](PLAN-before-unified-runtime-2026-10-03.md) | 147626 | `c7dbb19bc3ae0761f6204182f274f5bffcb4df01740f5ed779ab033cb447190b` |
-| `AGENTS.md` | [AGENTS-before-unified-runtime-2026-10-03.md](AGENTS-before-unified-runtime-2026-10-03.md) | 9511 | `482970ba7395f3fcf3f0526a6e1b37c7a92d213b709fb8ea7fff270b9da78fd1` |
 
 ## Transition validation
 

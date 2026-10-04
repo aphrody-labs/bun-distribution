@@ -93,7 +93,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [infra](plans/infra/) | 4 | [Aphrody Infra plan](plans/infra/PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
-| plans | [runtime](plans/runtime/) | 4 | - |
+| plans | [runtime](plans/runtime/) | 3 | - |
 | plans | [shell](plans/shell/) | 1 | - |
 | plans | [shenron](plans/shenron/) | 3 | - |
 | plans | [ui](plans/ui/) | 8 | [UI plans](plans/ui/README.md) |
@@ -174,7 +174,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | _root (outside the category layout) | [(files)](_root/) | 1 | - |
 | (root) (outside the category layout) | [(files)](./) | 2 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
-| migration (outside the category layout) | [(files)](migration/) | 138 | [Migration records](migration/README.md) |
+| migration (outside the category layout) | [(files)](migration/) | 134 | [Migration records](migration/README.md) |
 | migration (outside the category layout) | [a2a-os-move-2026-10-01](migration/a2a-os-move-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-clean-clone-2026-10-01](migration/contracts-clean-clone-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-qualification-2026-10-01](migration/contracts-qualification-2026-10-01/) | 6 | - |
@@ -187,4 +187,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 10 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 5091 files.
+Total: 5086 files.

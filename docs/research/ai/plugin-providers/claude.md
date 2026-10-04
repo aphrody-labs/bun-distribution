@@ -145,7 +145,7 @@ Plugin install scopes (`enabledPlugins`):
 - Marketplace declarations follow `--scope` the same way (`extraKnownMarketplaces` in the matching settings file).
 - Removing a marketplace uninstalls its plugins and removes their `enabledPlugins` entries. Do not call it from a sync.
 - `iecode` is scoped to `../iecode` and `aphrody` to the monorepo and `aphrody-py` (repo `AGENTS.md`):
-  install `iecode` with `--scope local` (or project) from that repo, never user. `yolo` and `bun-ts7` may be user scope.
+  install `iecode` with `--scope local` (or project) from that repo, never user. `yolo` may be user scope.
 - Skills: personal `~/.claude/skills/<n>/SKILL.md`, project `.claude/skills/<n>/SKILL.md`, nested
   `<sub>/.claude/skills/…`, plugin `<plugin>/skills/<n>/SKILL.md` (namespaced `plugin:skill`, no conflict with
   bare names), enterprise via managed settings. Precedence: enterprise, personal, project. Symlinked skill dirs load

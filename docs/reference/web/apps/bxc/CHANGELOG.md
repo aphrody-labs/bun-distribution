@@ -299,7 +299,7 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
 
 ### Fixed
 
-- Le plugin Claude Code `plugins/bxc/` se charge enfin dans Claude Code.
+- Le plugin Claude Code `plugins/aphrody-web/` se charge enfin dans Claude Code.
 
 ---
 

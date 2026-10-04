@@ -1836,7 +1836,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "57e8c116de52ca05146d4f9271c58e79710793539bd0c5984647890a8ae8d633",
+      "sha256": "f7b5e846737934fab15dcc8f81d739c6611bc796a40c473f6b8e83d10a997a6b",
       "bytes": 15158,
       "domain": "",
       "status": "generated",
@@ -1846,8 +1846,8 @@
     {
       "path": "docs/SUMMARY.md",
       "title": "Summary",
-      "sha256": "e24fb220e609976652453cad61a3af6c7b512aee0f33f751059fe9d85ff77037",
-      "bytes": 513513,
+      "sha256": "00da73bc050bb963e08b0cdb4c2b98fc15768456c056c38e24d6b65846294a70",
+      "bytes": 513353,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -4616,8 +4616,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "83bd1d5c31f64a24aa6a0a0f5ac5e7f63f730780dd3e74e2e0eeaad3a2a4eeb8",
-      "bytes": 135995,
+      "sha256": "0de5b10e1a3abb30157cdb30a6e53c1738e79b219e6b1ef7fee315753b0d8b11",
+      "bytes": 103353,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -4626,8 +4626,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "b8441a6ec2b9800874b70bd80a36646c5f16a6a2f52effa2f4fde02bd36d8368",
-      "bytes": 68275,
+      "sha256": "3ffb1ce4dea7811b6a266bbd62cac097c22989dbb2af318186e0c5bbc6ca80b9",
+      "bytes": 50708,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -4636,8 +4636,8 @@
     {
       "path": "docs/ecosystem/MCP-TOOLS.md",
       "title": "MCP tools",
-      "sha256": "7ae02297c380aab195d3fe83d5319f3ddc1e12bd209252579b2dc0d1dd3e007e",
-      "bytes": 73798,
+      "sha256": "f1e27eb5fdca9d45777ae628c9674919f13c80a2131523c3d37bdbef03fdb2f6",
+      "bytes": 70597,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -8244,16 +8244,6 @@
       "canonical": "docs/migration/README.md"
     },
     {
-      "path": "docs/migration/RG-STAGING.md",
-      "title": "Rose Griffon source staging",
-      "sha256": "2040f64332b0fe1afd4fda9c1e49afdf244f5b330c6bec06524b944e841f716e",
-      "bytes": 6259,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/migration/RG-STAGING.md"
-    },
-    {
       "path": "docs/migration/SHENRON-WORKSPACE-LAYOUT.md",
       "title": "Shenron and Discord layout in Aphrody",
       "sha256": "7ef50a8dd5cb4cc2539e76e5425292ae3e92689c3040f9f6ea75b549db090027",
@@ -9466,8 +9456,8 @@
     {
       "path": "docs/plans/infra/sql-convergence-handoff.md",
       "title": "Handoff: GitHub, SQL convergence and data dedup (session 2026-10-01)",
-      "sha256": "19eedc45ffee4e708697bc81e7b0e06346dd6c638b157c9965ce1d572d27cede",
-      "bytes": 14514,
+      "sha256": "88bf99d9271962a62a6086d2b0410c2b334784f872fa72fd9b176ff83e3d764e",
+      "bytes": 14478,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -9494,16 +9484,6 @@
       "canonical": "docs/plans/os/native-runtime-yolo.md"
     },
     {
-      "path": "docs/plans/runtime/history/AGENTS-before-unified-runtime-2026-10-03.md",
-      "title": "Aphrody monorepo rules",
-      "sha256": "32fa63afb4378e3ea573f7f5da1b0ff5064c6fc03cf70cea046047de4ff84e4b",
-      "bytes": 9480,
-      "domain": "runtime",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/plans/runtime/history/AGENTS-before-unified-runtime-2026-10-03.md"
-    },
-    {
       "path": "docs/plans/runtime/history/PLAN-before-unified-runtime-2026-10-03.md",
       "title": "Plan du monorepo Aphrody — 2026-10-01",
       "sha256": "33898f3cf951f344c00e65e2f0191a8979d9b339f4d3fc233eb9d775cc5b4e02",
@@ -9516,8 +9496,8 @@
     {
       "path": "docs/plans/runtime/history/README.md",
       "title": "Documents before the unified runtime plan",
-      "sha256": "6c177121c3b8003faff97cc3abf94c30e9ab2c47d915e4e041ed4af97b72fe21",
-      "bytes": 1919,
+      "sha256": "d36299e011a122e56ab8202ac67c72ae6264ae1bcb2b1877cc6981ea3a5146dc",
+      "bytes": 1734,
       "domain": "runtime",
       "status": "historical",
       "visibility": "private",
@@ -44536,8 +44516,8 @@
     {
       "path": "docs/reference/web/apps/bxc/CHANGELOG.md",
       "title": "Changelog",
-      "sha256": "e5e45cd15820c052e3c2b7951f1df148e5bc97142045bb827e5e1f6a03acd675",
-      "bytes": 42647,
+      "sha256": "09f5dcdc5cdcdc9382924bf33e1fae31fa14df0d0279a24c6f2e34af9228608f",
+      "bytes": 42655,
       "domain": "web",
       "status": "historical",
       "visibility": "private",
@@ -45166,7 +45146,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "326b181fd5354e15f427ce24c3316eb2e93c9636d9921d85fb74db4c5dcc728b",
+      "sha256": "0b429e938184c379feac3a6a32de750894fe8027a811c8c3e79566cbab831b8b",
       "bytes": 39140,
       "domain": "workspace",
       "status": "generated",
@@ -45276,8 +45256,8 @@
     {
       "path": "docs/research/ai/plugin-providers/claude.md",
       "title": "Claude Code provider: plugins, skills, MCP",
-      "sha256": "af2db956fed2b8e78ac0168b8aa6ff2fd716603b5c44865e37542f27f6787aa9",
-      "bytes": 15169,
+      "sha256": "9206a99f5b86a998f9ed728ba62a6d93965c49c51594c34b530500b8e58f346c",
+      "bytes": 15155,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -45286,8 +45266,8 @@
     {
       "path": "docs/research/ai/plugin-providers/codex.md",
       "title": "Codex provider: plugins, skills and MCP",
-      "sha256": "e15e03e7555383e5951e02c05267d8e41f7eeb1f2677795d1fe7600f2e0fd29f",
-      "bytes": 13663,
+      "sha256": "8fe74e7b251d5a44d995c564bf87a074dabdc8ef022be7d767cff4df096a0419",
+      "bytes": 13652,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",

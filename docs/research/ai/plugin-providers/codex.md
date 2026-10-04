@@ -133,7 +133,7 @@ The manager must retain this owner scope independently of manifests:
 | ----------------- | ------------------------------------------------------- |
 | `aphrody`         | `<repo>` and `../aphrody-py` only |
 | `iecode`          | `../iecode` only                               |
-| `yolo`, `bun-ts7` | Global, as authorized by root rules                     |
+| `yolo` | Global, as authorized by root rules                     |
 
 The archived Aphrody description says “any project”; that does not override
 root scope. Do not expose restricted skills via user-wide symlinks or register
