@@ -26,6 +26,7 @@ describe("yolo task plan", () => {
     const steps = plan("test");
     expect(steps[1]!.cmd).toContain("./scripts/check-exports.test.ts");
     expect(steps[2]!.cmd).toContain("*");
+    expect(steps[2]!.cmd).toContain("!@aphrody/app-ui");
     expect(steps.slice(3).map((s) => s.cmd[1])).toEqual(["scripts/check-exports.ts", "scripts/check-assets.ts", "scripts/check-links.ts"]);
   });
   test("YOLO_CLI resolves under YOLO_ROOT", () => {

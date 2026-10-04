@@ -29,6 +29,11 @@ export const yolo = (...args: string[]): Step => ({
   env: { YOLO_HOME: REPO },
 });
 
+/** Test selection: every workspace package. The host-bound packages (excluded from the workspace, installed and
+ * tested by aphrody or iecode) are named explicitly: `--filter "*"` alone still selects them. */
+const HOST_BOUND = ["@aphrody/app-ui", "@rosegriffon/ui", "@shenron/ui", "@aphrody/web-to-tauri"];
+const ALL = ["--filter", "*", ...HOST_BOUND.flatMap((name) => ["--filter", `!${name}`])];
+
 /** Lint scope: m3 packages (not the nested app submodules), apps and scripts. */
 const lintPaths = (): string[] => [
   ...readdirSync(join(REPO, "packages"))
@@ -68,7 +73,7 @@ export function plan(task: string, rest: string[] = []): Step[] {
         ),
         // Package tests do not need each other's results: `--parallel` runs them all at once, where `--filter` alone
         // waits for the workspace dependencies' scripts first (5.3 s -> 2.9 s). A failing package fails the task.
-        bun(REPO, "run", "--parallel", "--no-exit-on-error", "--filter", "*", "--if-present", "test"),
+        bun(REPO, "run", "--parallel", "--no-exit-on-error", ...ALL, "--if-present", "test"),
         // Repository gates: manifests and first-party imports, asset references and app icons, docs links.
         bun(REPO, "scripts/check-exports.ts"),
         bun(REPO, "scripts/check-assets.ts"),
