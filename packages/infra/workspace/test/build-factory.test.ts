@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { chmod, mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   buildFactoryPlan,
+  buildFactoryPreparePlan,
+  factoryRemoteUrl,
   heavyBuildStatus,
   type BuildFactoryConfig,
 } from "../src/build-factory.ts";
@@ -22,6 +24,247 @@ const config: BuildFactoryConfig = {
 };
 const revision = "a".repeat(40);
 
+test("preparation plans restrict source owners, aliases, revisions and sibling workspaces", () => {
+  const declared = {
+    ...config,
+    repositories: {
+      aphrody: "/srv/aphrody-build/workspaces/aphrody",
+      yolo: "/srv/aphrody-build/workspaces/yolo",
+      "aphrody-py": "/srv/aphrody-build/workspaces/aphrody-py",
+    },
+  };
+  for (const repository of ["yolo", "aphrody", "aphrody-py"]) {
+    const source = {
+      path: `/source/${repository}`,
+      remote: repository === "aphrody" ? "workspace" : "origin",
+      url: `git@github-dev:aphrody-labs/${repository}.git`,
+      owners: ["aphrody-labs"],
+    };
+    const plan = buildFactoryPreparePlan(declared, repository, revision, source);
+    expect(plan.operation).toBe("prepare");
+    expect(plan.source.url).toBe(`https://github.com/aphrody-labs/${repository}.git`);
+    expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
+    expect(plan.transport[5]).toContain("flock --close");
+    expect(plan.transport[5]).toContain("--no-overwrite-ignore");
+    expect(plan.transport[5]).toContain("refs/remotes/origin/main");
+    expect(plan.transport[5]).not.toContain("git reset");
+    expect(plan.transport[5]).not.toContain("git clean");
+  }
+  const source = {
+    path: "/source/yolo",
+    remote: "origin",
+    url: "git@github-dev:aphrody-labs/yolo.git",
+    owners: ["aphrody-labs"],
+  };
+  expect(() => buildFactoryPreparePlan(declared, "iecode", revision, source)).toThrow("limited");
+  expect(() => buildFactoryPreparePlan(declared, "yolo", "main", source)).toThrow("pinned");
+  expect(() =>
+    buildFactoryPreparePlan({ ...declared, target: "dbfr" }, "yolo", revision, source),
+  ).toThrow("canonical");
+  expect(() =>
+    buildFactoryPreparePlan(
+      { ...declared, executionOnlyTargets: ["vps"] },
+      "yolo",
+      revision,
+      source,
+    ),
+  ).toThrow("execution-only");
+  expect(() =>
+    buildFactoryPreparePlan(
+      { ...declared, repositories: { ...declared.repositories, yolo: "/srv/unowned/yolo" } },
+      "yolo",
+      revision,
+      source,
+    ),
+  ).toThrow("sibling");
+  for (const url of [
+    "git@wrong-alias:aphrody-labs/yolo.git",
+    "https://unowned.invalid/aphrody-labs/yolo.git",
+    "https://fixture:secret@github.com/aphrody-labs/yolo.git",
+    "git@github-dev:unowned/yolo.git",
+    "git@github-dev:aphrody-labs/other.git",
+  ]) {
+    expect(() => factoryRemoteUrl(url, "yolo", ["aphrody-labs"])).toThrow("declared private");
+  }
+});
+
+async function preparationFixture() {
+  const root = await mkdtemp(join(tmpdir(), "aphrody-factory-prepare-"));
+  const source = join(root, "source");
+  const remote = join(root, "remote.git");
+  const checkout = join(root, "workspaces/yolo");
+  const remoteUrl = "https://github.com/aphrody-labs/yolo.git";
+  const env = {
+    ...process.env,
+    GIT_TERMINAL_PROMPT: "0",
+    GIT_CONFIG_COUNT: "2",
+    GIT_CONFIG_KEY_0: `url.file://${remote}.insteadOf`,
+    GIT_CONFIG_VALUE_0: remoteUrl,
+    GIT_CONFIG_KEY_1: "protocol.file.allow",
+    GIT_CONFIG_VALUE_1: "always",
+  };
+  const git = async (cwd: string, ...args: string[]) => {
+    const child = Bun.spawn(["git", ...args], {
+      cwd,
+      env,
+      stdout: "pipe",
+      stderr: "pipe",
+      timeout: 5_000,
+    });
+    const [output, error, code] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
+    if (code !== 0) throw new Error(`Fixture Git failed: ${error}`);
+    return output.trim();
+  };
+  await git(root, "init", "--bare", "--quiet", "-b", "main", remote);
+  await git(root, "init", "--quiet", "-b", "main", source);
+  await git(source, "config", "user.name", "fixture");
+  await git(source, "config", "user.email", "fixture@localhost");
+  await writeFile(join(source, "source.txt"), "initial source\n");
+  await writeFile(join(source, ".gitignore"), "ignored/\n");
+  await git(source, "add", ".");
+  await git(source, "commit", "--quiet", "-m", "initial");
+  const initial = await git(source, "rev-parse", "HEAD");
+  await git(source, "remote", "add", "origin", remoteUrl);
+  await git(source, "push", "--quiet", "origin", "main");
+  const declared = {
+    ...config,
+    cacheRoot: join(root, "cache"),
+    artifactRoot: join(root, "artifacts"),
+    lockPath: join(root, "locks/heavy.lock"),
+    repositories: {
+      aphrody: join(root, "workspaces/aphrody"),
+      yolo: checkout,
+      "aphrody-py": join(root, "workspaces/aphrody-py"),
+    },
+  };
+  const pin = { path: source, remote: "origin", url: remoteUrl, owners: ["aphrody-labs"] };
+  const prepare = async (pinnedRevision: string) => {
+    const plan = buildFactoryPreparePlan(declared, "yolo", pinnedRevision, pin);
+    // Execute the planned remote body against tiny local Git fixtures; no host or source repository is touched.
+    const child = Bun.spawn(["bash", "-c", plan.transport[5]!], {
+      env,
+      stdout: "pipe",
+      stderr: "pipe",
+      timeout: 10_000,
+    });
+    const [output, error, exitCode] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
+    return { output, error, exitCode };
+  };
+  const commit = async (message: string) => {
+    await git(source, "add", "-A");
+    await git(source, "commit", "--quiet", "-m", message);
+    await git(source, "push", "--quiet", "origin", "main");
+    return git(source, "rev-parse", "HEAD");
+  };
+  return { root, source, remote, checkout, env, git, initial, declared, pin, prepare, commit };
+}
+
+test.skipIf(process.platform === "win32")(
+  "preparation creates an absent declared checkout and reuses it without rewriting auth or directories",
+  async () => {
+    const f = await preparationFixture();
+    try {
+      await mkdir(f.declared.cacheRoot, { mode: 0o700 });
+      const cacheBefore = await stat(f.declared.cacheRoot);
+      expect((await f.prepare(f.initial)).exitCode).toBe(0);
+      expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(f.initial);
+      expect(await f.git(f.checkout, "config", "--get", "remote.origin.url")).toBe(f.pin.url);
+      const gitConfig = await readFile(join(f.checkout, ".git/config"), "utf8");
+      expect(gitConfig).not.toContain("credential");
+      expect(gitConfig).not.toContain("insteadOf");
+      const inode = (await stat(join(f.checkout, ".git"))).ino;
+      await writeFile(join(f.source, "source.txt"), "next source\n");
+      const next = await f.commit("next");
+      expect((await f.prepare(next)).exitCode).toBe(0);
+      expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(next);
+      expect((await stat(join(f.checkout, ".git"))).ino).toBe(inode);
+      const cacheAfter = await stat(f.declared.cacheRoot);
+      expect(cacheAfter.mode).toBe(cacheBefore.mode);
+      expect(cacheAfter.uid).toBe(cacheBefore.uid);
+      expect(cacheAfter.gid).toBe(cacheBefore.gid);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
+test.skipIf(process.platform === "win32")(
+  "preparation refuses dirty, ignored-overwrite, foreign-origin and off-main revisions",
+  async () => {
+    const f = await preparationFixture();
+    try {
+      expect((await f.prepare(f.initial)).exitCode).toBe(0);
+      await writeFile(join(f.checkout, "source.txt"), "concurrent work\n");
+      const dirty = await f.prepare(f.initial);
+      expect(dirty.exitCode).toBe(2);
+      expect(dirty.error).toContain("dirty; preserved");
+      expect(await readFile(join(f.checkout, "source.txt"), "utf8")).toBe("concurrent work\n");
+      await f.git(f.checkout, "restore", "source.txt");
+      await mkdir(join(f.source, "ignored"));
+      await writeFile(join(f.source, "ignored/collision.txt"), "new tracked source\n");
+      await f.git(f.source, "add", "-f", "ignored/collision.txt");
+      const next = await f.commit("tracked ignored collision");
+      await mkdir(join(f.checkout, "ignored"));
+      await writeFile(join(f.checkout, "ignored/collision.txt"), "protected ignored output\n");
+      expect((await f.prepare(next)).exitCode).not.toBe(0);
+      expect(await readFile(join(f.checkout, "ignored/collision.txt"), "utf8")).toBe(
+        "protected ignored output\n",
+      );
+      expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(f.initial);
+      await f.git(f.checkout, "remote", "set-url", "origin", "git@github-dev:unowned/yolo.git");
+      const foreign = await f.prepare(f.initial);
+      expect(foreign.exitCode).toBe(2);
+      expect(foreign.error).toContain("origin differs");
+      await f.git(f.checkout, "remote", "set-url", "origin", f.pin.url);
+      await f.git(f.source, "checkout", "--quiet", "-b", "unpublished");
+      await writeFile(join(f.source, "off-main.txt"), "off main\n");
+      await f.git(f.source, "add", "off-main.txt");
+      await f.git(f.source, "commit", "--quiet", "-m", "off main");
+      const offMain = await f.git(f.source, "rev-parse", "HEAD");
+      await f.git(f.source, "push", "--quiet", "origin", "unpublished");
+      const denied = await f.prepare(offMain);
+      expect(denied.exitCode).toBe(2);
+      expect(denied.error).toContain("not on the declared remote main");
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
+test.skipIf(process.platform === "win32")(
+  "preparation preserves an existing non-Git directory and symlink outside declared paths",
+  async () => {
+    const f = await preparationFixture();
+    try {
+      await mkdir(f.checkout, { recursive: true });
+      await writeFile(join(f.checkout, "unowned.txt"), "preserve me");
+      const rejected = await f.prepare(f.initial);
+      expect(rejected.exitCode).toBe(2);
+      expect(rejected.error).toContain("not a Git checkout; preserved");
+      expect(await readFile(join(f.checkout, "unowned.txt"), "utf8")).toBe("preserve me");
+      await rm(f.checkout, { recursive: true });
+      const outside = join(f.root, "outside");
+      await mkdir(outside);
+      await writeFile(join(outside, "sentinel.txt"), "outside source scope");
+      await symlink(outside, f.checkout, "dir");
+      const symlinked = await f.prepare(f.initial);
+      expect(symlinked.exitCode).toBe(2);
+      expect(symlinked.error).toContain("resolves elsewhere; preserved");
+      expect(await readFile(join(outside, "sentinel.txt"), "utf8")).toBe("outside source scope");
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
 test("execution-only hosts reject plans and never implicitly enable local builds", () => {
   const runtimeOnly = { ...config, executionOnlyTargets: ["vps"] };
   expect(() => buildFactoryPlan(runtimeOnly, "aphrody", revision, ["cargo", "test"])).toThrow(
@@ -35,6 +278,150 @@ test("execution-only hosts reject plans and never implicitly enable local builds
   ).toBe("factory");
   expect(heavyBuildStatus(runtimeOnly, {}).reason).toContain("new factory host");
 });
+
+test.skipIf(process.platform === "win32")(
+  "preparation checks dirty submodules and prevents ignored overwrites at their pinned revisions",
+  async () => {
+    const f = await preparationFixture();
+    try {
+      const childSource = join(f.root, "child-source");
+      const childRemote = join(f.root, "child.git");
+      await f.git(f.root, "init", "--quiet", "-b", "main", childSource);
+      await f.git(f.root, "init", "--bare", "--quiet", "-b", "main", childRemote);
+      await f.git(childSource, "config", "user.name", "fixture");
+      await f.git(childSource, "config", "user.email", "fixture@localhost");
+      await writeFile(join(childSource, "source.txt"), "child source\n");
+      await writeFile(join(childSource, ".gitignore"), "ignored/\n");
+      await f.git(childSource, "add", ".");
+      await f.git(childSource, "commit", "--quiet", "-m", "child initial");
+      await f.git(childSource, "remote", "add", "origin", `file://${childRemote}`);
+      await f.git(childSource, "push", "--quiet", "origin", "main");
+      await f.git(f.source, "submodule", "add", "--quiet", `file://${childRemote}`, "child");
+      const parent = await f.commit("add child");
+      expect((await f.prepare(parent)).exitCode).toBe(0);
+      const childCheckout = join(f.checkout, "child");
+      await f.git(f.checkout, "config", "submodule.child.ignore", "all");
+      await writeFile(join(childCheckout, "source.txt"), "concurrent child work\n");
+      const dirty = await f.prepare(parent);
+      expect(dirty.exitCode).toBe(2);
+      expect(dirty.error).toContain("dirty; preserved");
+      expect(await readFile(join(childCheckout, "source.txt"), "utf8")).toBe(
+        "concurrent child work\n",
+      );
+      await f.git(childCheckout, "restore", "source.txt");
+      await mkdir(join(childSource, "ignored"));
+      await writeFile(join(childSource, "ignored/collision.txt"), "new child source\n");
+      await f.git(childSource, "add", "-f", "ignored/collision.txt");
+      await f.git(childSource, "commit", "--quiet", "-m", "child collision");
+      await f.git(childSource, "push", "--quiet", "origin", "main");
+      const childNext = await f.git(childSource, "rev-parse", "HEAD");
+      await f.git(join(f.source, "child"), "fetch", "origin");
+      await f.git(join(f.source, "child"), "checkout", "--quiet", "--detach", childNext);
+      const next = await f.commit("update child");
+      await mkdir(join(childCheckout, "ignored"));
+      await writeFile(join(childCheckout, "ignored/collision.txt"), "protected child output\n");
+      const collision = await f.prepare(next);
+      expect(collision.exitCode).not.toBe(0);
+      expect(await readFile(join(childCheckout, "ignored/collision.txt"), "utf8")).toBe(
+        "protected child output\n",
+      );
+      expect(await f.git(childCheckout, "rev-parse", "HEAD")).not.toBe(childNext);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
+
+test.skipIf(process.platform === "win32")(
+  "preparation CLI plans first and dispatches apply through the installed Infra owner",
+  async () => {
+    const f = await preparationFixture();
+    try {
+      const root = join(f.root, "owner-config");
+      await mkdir(join(root, "config"), { recursive: true });
+      await writeFile(join(root, "config/build-factory.json"), JSON.stringify(f.declared));
+      await writeFile(
+        join(root, "config/commit-sync.json"),
+        JSON.stringify({
+          schemaVersion: 1,
+          owners: ["aphrody-labs"],
+          pollIntervalMs: 60000,
+          debounceMs: 250,
+          commandTimeoutMs: 30000,
+          repositories: [
+            {
+              id: "yolo",
+              path: f.source,
+              remote: "origin",
+              sourceBranch: "main",
+              destinationBranch: "main",
+            },
+            {
+              id: "aphrody",
+              path: root,
+              remote: "workspace",
+              sourceBranch: "main",
+              destinationBranch: "main",
+            },
+            {
+              id: "aphrody-py",
+              path: join(f.root, "py"),
+              remote: "origin",
+              sourceBranch: "main",
+              destinationBranch: "main",
+            },
+          ],
+        }),
+      );
+      const marker = join(f.root, "infra-call.json");
+      const infra = join(f.root, "infra-fixture");
+      await writeFile(
+        infra,
+        `#!${process.execPath}\nimport { writeFileSync } from "node:fs";\nwriteFileSync(${JSON.stringify(marker)}, JSON.stringify({args: process.argv.slice(2), timeout: process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS}));\nconsole.log("native owner dispatched");\n`,
+      );
+      await chmod(infra, 0o755);
+      const run = async (apply: boolean) => {
+        const child = Bun.spawn(
+          [
+            process.execPath,
+            join(import.meta.dir, "../src/build-factory.ts"),
+            "prepare",
+            "--repo",
+            "yolo",
+            "--revision",
+            f.initial,
+            ...(apply ? ["--apply"] : []),
+          ],
+          {
+            env: { ...f.env, APHRODY_ROOT: root, APHRODY_INFRA_BIN: infra },
+            stdout: "pipe",
+            stderr: "pipe",
+            timeout: 5_000,
+          },
+        );
+        const [output, error, code] = await Promise.all([
+          new Response(child.stdout).text(),
+          new Response(child.stderr).text(),
+          child.exited,
+        ]);
+        if (code !== 0) throw new Error(`Preparation CLI failed: ${output} ${error}`);
+        return JSON.parse(output);
+      };
+      expect((await run(false)).executed).toBe(false);
+      expect(await Bun.file(marker).exists()).toBe(false);
+      const applied = await run(true);
+      expect(applied.executed).toBe(true);
+      expect(applied.success).toBe(true);
+      expect(applied.stdout.trim()).toBe("native owner dispatched");
+      const invocation = JSON.parse(await readFile(marker, "utf8"));
+      expect(invocation.args.slice(2, 6)).toEqual(["ssh", "exec", "--host", "vps"]);
+      expect(invocation.timeout).toBe("21600");
+      expect(invocation.args[7]).toContain("flock --close");
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
 
 test.skipIf(process.platform === "win32")(
   "Infra propagates the factory command timeout per invocation without mutating global environment",

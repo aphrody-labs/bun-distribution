@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "owners": ["aphrody-labs", "aphrody-dev", "yohan971", "rose-griffon"],
+  "pollIntervalMs": 60000,
+  "debounceMs": 250,
+  "commandTimeoutMs": 30000,
+  "repositories": [
+    {
+      "id": "yolo",
+      "path": "../yolo",
+      "remote": "origin",
+      "sourceBranch": "dev",
+      "destinationBranch": "main",
+      "fastForward": false,
+      "buildCommand": ["bash", "scripts/release/factory-current.sh"]
+    },
+    {
+      "id": "aphrody",
+      "path": ".",
+      "remote": "workspace",
+      "sourceBranch": "main",
+      "destinationBranch": "main",
+      "fastForward": true,
+      "buildCommand": [
+        "scripts/build/rust/cargo-serial.sh",
+        "build",
+        "--locked",
+        "--release",
+        "--package",
+        "aphrody",
+        "--bin",
+        "aphrody"
+      ]
+    },
+    {
+      "id": "aphrody-py",
+      "path": "../aphrody-py",
+      "remote": "origin",
+      "sourceBranch": "main",
+      "destinationBranch": "main",
+      "fastForward": true,
+      "buildCommand": [
+        "uv",
+        "build",
+        "--all-packages",
+        "--out-dir",
+        "/srv/aphrody-build/artifacts/aphrody-py/wheels"
+      ]
+    }
+  ]
+}

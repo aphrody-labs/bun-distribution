@@ -20,6 +20,9 @@ if (operation === "plugins" || operation === "agent-plugins") {
 if (operation === "build-factory") {
   process.exit(await (await import("./build-factory.ts")).runBuildFactory(rest));
 }
+if (operation === "repo-sync") {
+  process.exit(await (await import("./repo-sync.ts")).runRepoSync(rest));
+}
 if (operation === "cli-help") {
   process.exit(await (await import("./cli-help.ts")).runCliHelp(rest));
 }
