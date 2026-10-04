@@ -158,6 +158,7 @@ export function GoogleDriveListView({
                 key={item.id}
                 onClick={() => onSelect?.(item)}
                 onDoubleClick={() => onOpen?.(item)}
+                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the card holds block content and nested actions, which a native <button> cannot contain
                 role="button"
                 tabIndex={0}
                 onKeyDown={(event) => {
