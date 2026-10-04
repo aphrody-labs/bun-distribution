@@ -3,7 +3,7 @@
 Native rendering for Aphrody OS: the M3 2D scene, the M3 3D scene graph, a
 deterministic CPU reference for both, and a `wgpu` backend (feature `gpu`) with
 pixel parity against it. Design, benchmarks and validation are in
-[`docs/architecture/ui/design/M3-RENDER.md`](../../../../architecture/ui/design/M3-RENDER.md).
+[`docs/architecture/ui/design/M3-RENDER.md`](../../../architecture/design/M3-RENDER.md).
 
 ## Surfaces and backends
 

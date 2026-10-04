@@ -394,10 +394,10 @@ A: Archive runs as background jobs. Embeddings are generated incrementally. Sear
 
 ## Contributing
 
-See [CONTRIBUTING.md](../../../../../guides/ui/drive/CONTRIBUTING.md) for general guidelines.
+See [CONTRIBUTING.md](../../../../guides/drive/CONTRIBUTING.md) for general guidelines.
 
-For adapter contributions, see [ADAPTERS.md](../ADAPTERS.md).
+For adapter contributions, see ADAPTERS.md.
 
 ## License
 
-FSL-1.1-ALv2 - See [LICENSE](../../LICENSE) for details.
+FSL-1.1-ALv2 - See [LICENSE](../../../../../packages/canvas/vendor/LICENSE) for details.

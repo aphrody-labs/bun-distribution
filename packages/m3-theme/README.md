@@ -5,7 +5,7 @@
 Canonical **Material 3 fusion** tokens — one generated stylesheet
 (`tokens.css`), light and dark, that maps the **shadcn/ui** and **Tailwind v4**
 colour aliases onto the Material 3 system roles (`--md-sys-color-*`) emitted by
-[`@aphrody/material-web`](../material-web). Import it once and style with
+[`@aphrody/material-web`](https://www.npmjs.com/package/@aphrody/material-web). Import it once and style with
 either vocabulary; no app hand-rolls colour values.
 
 ## What's in `tokens.css`

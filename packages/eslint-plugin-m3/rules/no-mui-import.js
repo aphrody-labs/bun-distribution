@@ -7,6 +7,7 @@
  * - @mui/icons-material  -> <md-icon> + Material Symbols (codemod icons.ts)
  * - @mui/x-*             -> md-table / md-*-chart / md-*-picker / md-scheduler
  */
+/** @type {Array<[RegExp, string]>} */
 const SUGGEST = [
   [
     /^@mui\/icons-material(\/|$)/,

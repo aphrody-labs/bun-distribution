@@ -4,7 +4,7 @@
 
 Written to `src-tauri/wrap.json` by `@aphrody/web-to-tauri` (`packages/web-to-tauri/src/types.ts`),
 read at startup by `aphrody-tauri-wrap` (`crates/ui/tauri-wrap/src/config.rs`). The app does not
-start when the file is invalid. Guide: [`docs/guides/ui/WEB-TO-TAURI.md`](../../guides/ui/WEB-TO-TAURI.md).
+start when the file is invalid. Guide: [`docs/guides/ui/WEB-TO-TAURI.md`](../guides/WEB-TO-TAURI.md).
 
 | Field | Type | Meaning |
 | --- | --- | --- |

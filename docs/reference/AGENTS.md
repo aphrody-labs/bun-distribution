@@ -3,7 +3,7 @@
 
 M3 framework, desktop hosts, rendering, Drive presentation and editor components.
 
-Follow the [workspace rules](../workspace/AGENTS.md) and the user's global agent policy.
+Follow the [workspace rules](https://github.com/aphrody-labs/aphrody/blob/main/docs/reference/workspace/AGENTS.md) and the user's global agent policy.
 **NHITL:** execute authorized work without approval prompts or interactive questions;
 choose routine details autonomously and report actual blockers. These local rules
 add repository constraints, not a separate approval workflow.
@@ -11,11 +11,11 @@ add repository constraints, not a separate approval workflow.
 ## Local constraints
 
 - Target: one portable M3 design contract across web, desktop and mobile under the
-  [M3 host plan](../../plans/ui/design/M3-MULTI-HOST-PLAN.md). Tauri is the current desktop host;
+  [M3 host plan](../plans/design/M3-MULTI-HOST-PLAN.md). Tauri is the current desktop host;
   mobile and a replacement native host require separate qualification.
 - AI stays out of the UI dependency graph; use the resident app-server process.
   Contracts owns wire types, OS owns process policy, Infra owns destinations.
-- Follow [UI rules](./UI-RULES.md), [design](../../architecture/ui/UI-DESIGN.md) and
+- Follow [UI rules](./UI-RULES.md), [design](../architecture/UI-DESIGN.md) and
   [GUI contracts](./GUI.md): one product navigation, real actions, accessible M3,
   no placeholders or shell/PTY/terminal views.
 - `aphrody-bun` and `@aphrody/bun` live here; Compat owns `aphrody-toolchains`.
@@ -43,8 +43,8 @@ bun run typecheck && bun run test
 git diff --check
 ```
 
-Layout and entry points: [README](../../products/ui/README.md). Reuse the
-[ecosystem inventory](../../ecosystem/ECOSYSTEM.md) before adding code.
+Layout and entry points: [README](../products/README.md). Reuse the
+[ecosystem inventory](https://github.com/aphrody-labs/aphrody/blob/main/docs/ecosystem/ECOSYSTEM.md) before adding code.
 
 ## Automatisation transversale
 

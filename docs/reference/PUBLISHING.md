@@ -5,7 +5,7 @@ The first-party M3 packages publish to the public npm registry (`registry.npmjs.
 `@aphrody` scope. The publish path is
 `release-m3-packages.yml`, triggered by an
 `m3-v*` tag or `workflow_dispatch`. GitHub Actions is disabled on the `aphrody-code`
-organization (see the root [`README.md`](../../products/ui/README.md)), so the same steps are run locally.
+organization (see the root [`README.md`](../products/README.md)), so the same steps are run locally.
 
 ## Steps
 

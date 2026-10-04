@@ -2,7 +2,7 @@
 # Aphrody Drive vs upstream Spacedrive
 
 `drive/` is vendored from [spacedriveapp/spacedrive](https://github.com/spacedriveapp/spacedrive).
-Integration ownership: [`design/SPACEUI-SPACEDRIVE-MIGRATION.md`](../../architecture/ui/design/SPACEUI-SPACEDRIVE-MIGRATION.md).
+Integration ownership: [`design/SPACEUI-SPACEDRIVE-MIGRATION.md`](../architecture/design/SPACEUI-SPACEDRIVE-MIGRATION.md).
 
 ## Imported revision
 
@@ -38,9 +38,9 @@ are source placement categories, not evidence of runtime parity.
 | --- | --- | --- |
 | Core operations and adapters | At the initial audit, all 476 `core/src/ops/**` and 33 `adapters/**` files were present; 475 operations files and all adapters were byte-identical. Search filters now also differ to support exact content kinds and shared-volume comparison in both retained and OS copies. | Preserve VDFS, search, indexing, cloud volumes, sync, redundancy, sidecars and operation names through the OS migration. Runtime parity remains open. |
 | Rust crates and docs | All upstream crate and documentation paths are present. Eleven crate files and six core service/configuration files differ. | Review changed semantics and build features rather than equating path presence with parity. |
-| UI | The audit found missing Overview, Redundancy, File Kinds, Jobs, Daemon and Spacebot routes. `/file-kinds` and `/redundancy` were still produced by navigation; `/jobs` redirected to Explorer despite an existing screen. The three missing Spacebot pages in upstream's interface are placeholders, not working features. | File Kinds, Jobs and Redundancy routes now use live backend hooks; installed-host behavior is unqualified. Overview remains open; OS/AI ownership needs separate integration evidence. See [route audit](../../architecture/ui/design/DRIVE-ROUTE-PARITY.md). |
+| UI | The audit found missing Overview, Redundancy, File Kinds, Jobs, Daemon and Spacebot routes. `/file-kinds` and `/redundancy` were still produced by navigation; `/jobs` redirected to Explorer despite an existing screen. The three missing Spacebot pages in upstream's interface are placeholders, not working features. | File Kinds, Jobs and Redundancy routes now use live backend hooks; installed-host behavior is unqualified. Overview remains open; OS/AI ownership needs separate integration evidence. See [route audit](../architecture/design/DRIVE-ROUTE-PARITY.md). |
 | CLI | `apps/cli/src/domains/logs/{args.rs,mod.rs}` were absent although `sd-cli` imports and dispatches `LogsCmd`. | Restored the two files from imported revision `60369e9`; their Git blob hashes match upstream. `cargo check -p sd-cli --bin sd-cli` passed. |
-| Mobile | 156 `apps/mobile/**` source files are absent from the Aphrody UI tree. | No Android/iOS Files host is qualified; retain this as a real delivery gap under the [M3 host plan](../../plans/ui/design/M3-MULTI-HOST-PLAN.md). |
+| Mobile | 156 `apps/mobile/**` source files are absent from the Aphrody UI tree. | No Android/iOS Files host is qualified; retain this as a real delivery gap under the [M3 host plan](../plans/design/M3-MULTI-HOST-PLAN.md). |
 | Server | Four upstream `docs/architecture/ui/drive/apps/server` Docker/TrueNAS deployment files and root `build-server.sh` are absent from the UI tree; `sd-server` source is staged in `aphrody-web/drive-server` with the deployment recipes. | `aphrody-web/crates/aphrody-site` owns the HTTP origin and optional Drive gateway. Qualify Drive HTTP routes, auth, SSE, sidecars and offline UI assets before retiring the old binary. |
 | Assets | Of 676 upstream `packages/assets/**` files, 674 paths exist under root `packages/assets/**`; 658 are byte-identical. | Preserve license and check the 16 divergent files by behavior and content. README and old generator are tooling, not runtime assets. |
 | Desktop | Upstream `apps/tauri/**` is replaced by `crates/ui/app` and `crates/ui/drive`. | Verify installed Files workflows; matching source paths are not expected. |

@@ -2,7 +2,7 @@
 # Desktop UX flows
 
 This document defines the public-facing flows in the desktop webview. [UI design](./UI-DESIGN.md)
-owns layout and appearance; [GUI](../../reference/ui/GUI.md) owns runtime boundaries and evidence; [UI rules](../../reference/ui/UI-RULES.md)
+owns layout and appearance; [GUI](../reference/GUI.md) owns runtime boundaries and evidence; [UI rules](../reference/UI-RULES.md)
 own shippable copy and behavior. Keep the webview focused on Chat, Files, Models and Settings.
 
 ## Chat
@@ -32,8 +32,8 @@ owned APIs. Both areas use the same keyboard, focus, loading, empty and error be
 
 ## Product boundaries
 
-The [GUI contract](../../reference/ui/GUI.md) defines excluded webview capabilities and explicit backend actions.
-Any standalone browser or system shell follows the [native packaging policy](../../reference/ui/NATIVE-DESKTOP.md).
+The [GUI contract](../reference/GUI.md) defines excluded webview capabilities and explicit backend actions.
+Any standalone browser or system shell follows the [native packaging policy](../reference/NATIVE-DESKTOP.md).
 
 ## Interaction rules
 

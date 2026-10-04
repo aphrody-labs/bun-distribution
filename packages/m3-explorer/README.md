@@ -8,7 +8,7 @@ fetching, no context. Consumers wire their own state.
 
 This is SpaceUI's `@spacedrive/explorer` rebuilt on Material Design 3. The upstream source lives in
 `packages/aphrody-spaceui/packages/explorer`; the fusion rules are in
-[`docs/design/SPACEUI-M3-FUSION.md`](../../../docs/architecture/ui/design/SPACEUI-M3-FUSION.md).
+[`docs/design/SPACEUI-M3-FUSION.md`](../../docs/architecture/design/SPACEUI-M3-FUSION.md).
 
 ## Install
 
@@ -23,7 +23,7 @@ Peer dependencies: `react` and `react-dom` 18 or 19, `tailwindcss` 4.1+.
 
 The components use the M3 Tailwind utilities. Import the token sheets and let Tailwind scan the
 package, as described in
-[`SPACEUI-M3-FUSION.md` → Integration](../../../docs/architecture/ui/design/SPACEUI-M3-FUSION.md#integration):
+[`SPACEUI-M3-FUSION.md` → Integration](../../docs/architecture/design/SPACEUI-M3-FUSION.md#integration):
 
 ```css
 @import "tailwindcss";

@@ -7,7 +7,7 @@ rendent rien côté serveur (le shadow DOM n'existe qu'au navigateur) et
 s'« upgradent » après l'hydration. Les exemples ci-dessous utilisent Next.js App
 Router (le cas le plus contraint), mais les principes valent pour tout SSR.
 
-L'exemple du monorepo ([`examples/showcase/`](../../examples/showcase)) est
+L'exemple du monorepo ([`examples/showcase/`](../../docs/products/examples/showcase)) est
 bun-natif (pas Next) ; ce guide couvre les spécificités **Next.js App Router**
 côté consommateur. Le package se consomme tel quel dans une app Next.
 

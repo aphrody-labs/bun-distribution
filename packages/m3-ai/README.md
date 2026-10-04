@@ -17,7 +17,7 @@ Peers: `react` and `react-dom` 18 or 19, `tailwindcss` 4.1+.
 
 The components ship Tailwind class names that use the M3 utilities of `@aphrody/m3-theme`. Import
 the tokens, a palette sheet and the M3 utilities, then let Tailwind scan the package output. The
-full recipe is in [`docs/design/SPACEUI-M3-FUSION.md`](../../../docs/architecture/ui/design/SPACEUI-M3-FUSION.md),
+full recipe is in [`docs/design/SPACEUI-M3-FUSION.md`](../../docs/architecture/design/SPACEUI-M3-FUSION.md),
 section "Integration":
 
 ```css

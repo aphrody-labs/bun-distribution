@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from "bun:test";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   transformComponent,
@@ -424,18 +425,20 @@ export async function GET(request: NextRequest) {
   });
 
   describe("Scanner and Full Project Migration", () => {
-    const tempTestDir = join(process.cwd(), "packages/m3-next-migrate/test/__temp_next_app");
-    const tempDestDir = join(process.cwd(), "packages/m3-next-migrate/test/__temp_tauri_app");
-
     it("scans and migrates a complete Next.js 16 app with nested layouts, M3 primitives, and metadata to Tauri v2 (Bun Native)", async () => {
-      // Setup mock Next.js 16 app with nested layouts, metadata, and shadcn UI components
-      await mkdir(join(tempTestDir, "app/dashboard"), { recursive: true });
-      await mkdir(join(tempTestDir, "components/ui"), { recursive: true });
+      // A private temporary tree: independent of the working directory and of concurrent runs.
+      const tempRoot = await mkdtemp(join(tmpdir(), "m3-next-migrate-"));
+      const tempTestDir = join(tempRoot, "next_app");
+      const tempDestDir = join(tempRoot, "tauri_app");
+      try {
+        // Setup mock Next.js 16 app with nested layouts, metadata, and shadcn UI components
+        await mkdir(join(tempTestDir, "app/dashboard"), { recursive: true });
+        await mkdir(join(tempTestDir, "components/ui"), { recursive: true });
 
-      // 1. Root Layout with metadata
-      await writeFile(
-        join(tempTestDir, "app/layout.tsx"),
-        `import type { Metadata } from 'next';
+        // 1. Root Layout with metadata
+        await writeFile(
+          join(tempTestDir, "app/layout.tsx"),
+          `import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Next 16 App',
   description: 'Migration to Tauri',
@@ -450,12 +453,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   );
 }
 `
-      );
+        );
 
-      // 2. Root Page
-      await writeFile(
-        join(tempTestDir, "app/page.tsx"),
-        `'use client';
+        // 2. Root Page
+        await writeFile(
+          join(tempTestDir, "app/page.tsx"),
+          `'use client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -475,12 +478,12 @@ export default function Home() {
   );
 }
 `
-      );
+        );
 
-      // 3. Nested Dashboard Layout
-      await writeFile(
-        join(tempTestDir, "app/dashboard/layout.tsx"),
-        `import { Badge } from '@/components/ui/badge';
+        // 3. Nested Dashboard Layout
+        await writeFile(
+          join(tempTestDir, "app/dashboard/layout.tsx"),
+          `import { Badge } from '@/components/ui/badge';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -494,12 +497,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 }
 `
-      );
+        );
 
-      // 4. Nested Dashboard Page with Card and Collapsible
-      await writeFile(
-        join(tempTestDir, "app/dashboard/page.tsx"),
-        `import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+        // 4. Nested Dashboard Page with Card and Collapsible
+        await writeFile(
+          join(tempTestDir, "app/dashboard/page.tsx"),
+          `import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 export async function generateMetadata() {
@@ -522,84 +525,84 @@ export default function DashboardPage() {
   );
 }
 `
-      );
+        );
 
-      // Scan
-      const scanStats = await scanNextDirectory(tempTestDir);
-      expect(scanStats.totalFiles).toBe(4);
-      expect(scanStats.layouts.length).toBe(2);
-      expect(scanStats.pages.length).toBe(2);
-      expect(scanStats.metadataCount).toBe(1);
-      expect(scanStats.generateMetadataCount).toBe(1);
-      expect(scanStats.m3CandidateCount).toBe(3);
+        // Scan
+        const scanStats = await scanNextDirectory(tempTestDir);
+        expect(scanStats.totalFiles).toBe(4);
+        expect(scanStats.layouts.length).toBe(2);
+        expect(scanStats.pages.length).toBe(2);
+        expect(scanStats.metadataCount).toBe(1);
+        expect(scanStats.generateMetadataCount).toBe(1);
+        expect(scanStats.m3CandidateCount).toBe(3);
 
-      // Migrate with --m3
-      const report = await migrateProject({
-        sourceDir: tempTestDir,
-        targetDir: tempDestDir,
-        target: "tauri",
-        projectName: "test-desktop-m3-app",
-        scaffold: true,
-        modernizeM3: true,
-      });
+        // Migrate with --m3
+        const report = await migrateProject({
+          sourceDir: tempTestDir,
+          targetDir: tempDestDir,
+          target: "tauri",
+          projectName: "test-desktop-m3-app",
+          scaffold: true,
+          modernizeM3: true,
+        });
 
-      expect(report.migratedFiles).toBe(4);
-      expect(report.hierarchy.routes.length).toBe(2);
-      expect(report.hierarchy.layouts.length).toBe(2);
+        expect(report.migratedFiles).toBe(4);
+        expect(report.hierarchy.routes.length).toBe(2);
+        expect(report.hierarchy.layouts.length).toBe(2);
 
-      // Verify destination structure
-      const pkgJsonExists = await Bun.file(join(tempDestDir, "package.json")).exists();
-      const viteConfigExists = await Bun.file(join(tempDestDir, "vite.config.ts")).exists();
-      const tauriConfExists = await Bun.file(join(tempDestDir, "src-tauri/tauri.conf.json")).exists();
-      const cargoTomlExists = await Bun.file(join(tempDestDir, "src-tauri/Cargo.toml")).exists();
-      const mainTsxExists = await Bun.file(join(tempDestDir, "src/main.tsx")).exists();
-      const appTsxExists = await Bun.file(join(tempDestDir, "src/App.tsx")).exists();
-      const serverTsExists = await Bun.file(join(tempDestDir, "src/server.ts")).exists();
+        // Verify destination structure
+        const pkgJsonExists = await Bun.file(join(tempDestDir, "package.json")).exists();
+        const viteConfigExists = await Bun.file(join(tempDestDir, "vite.config.ts")).exists();
+        const tauriConfExists = await Bun.file(join(tempDestDir, "src-tauri/tauri.conf.json")).exists();
+        const cargoTomlExists = await Bun.file(join(tempDestDir, "src-tauri/Cargo.toml")).exists();
+        const mainTsxExists = await Bun.file(join(tempDestDir, "src/main.tsx")).exists();
+        const appTsxExists = await Bun.file(join(tempDestDir, "src/App.tsx")).exists();
+        const serverTsExists = await Bun.file(join(tempDestDir, "src/server.ts")).exists();
 
-      expect(pkgJsonExists).toBe(true);
-      expect(viteConfigExists).toBe(true);
-      expect(tauriConfExists).toBe(true);
-      expect(cargoTomlExists).toBe(true);
-      expect(mainTsxExists).toBe(true);
-      expect(appTsxExists).toBe(true);
-      expect(serverTsExists).toBe(true);
+        expect(pkgJsonExists).toBe(true);
+        expect(viteConfigExists).toBe(true);
+        expect(tauriConfExists).toBe(true);
+        expect(cargoTomlExists).toBe(true);
+        expect(mainTsxExists).toBe(true);
+        expect(appTsxExists).toBe(true);
+        expect(serverTsExists).toBe(true);
 
-      // Check package.json dependencies for M3 packages
-      const pkgJsonContent = await Bun.file(join(tempDestDir, "package.json")).json();
-      expect(pkgJsonContent.dependencies["@aphrody/m3-primitives"]).toBe("workspace:*");
-      expect(pkgJsonContent.dependencies["@aphrody/m3-theme"]).toBe("workspace:*");
+        // Check package.json dependencies for M3 packages
+        const pkgJsonContent = await Bun.file(join(tempDestDir, "package.json")).json();
+        expect(pkgJsonContent.dependencies["@aphrody/m3-primitives"]).toBe("workspace:*");
+        expect(pkgJsonContent.dependencies["@aphrody/m3-theme"]).toBe("workspace:*");
 
-      // Check generated App.tsx router content
-      const appContent = await Bun.file(join(tempDestDir, "src/App.tsx")).text();
-      expect(appContent).toContain("composeLayouts");
-      expect(appContent).toContain("usePathname");
-      expect(appContent).toContain("@aphrody/m3-theme/m3.css");
+        // Check generated App.tsx router content
+        const appContent = await Bun.file(join(tempDestDir, "src/App.tsx")).text();
+        expect(appContent).toContain("composeLayouts");
+        expect(appContent).toContain("usePathname");
+        expect(appContent).toContain("@aphrody/m3-theme/m3.css");
 
-      // Check migrated Root Layout: html/body rewritten
-      const migratedRootLayout = await Bun.file(join(tempDestDir, "src/components/app/layout.tsx")).text();
-      expect(migratedRootLayout).not.toContain("<html");
-      expect(migratedRootLayout).not.toContain("<body");
-      expect(migratedRootLayout).toContain('data-root-layout');
-      expect(migratedRootLayout).toContain('m3-app-body');
-      expect(migratedRootLayout).toContain("useMetadata(metadata)");
+        // Check migrated Root Layout: html/body rewritten
+        const migratedRootLayout = await Bun.file(join(tempDestDir, "src/components/app/layout.tsx")).text();
+        expect(migratedRootLayout).not.toContain("<html");
+        expect(migratedRootLayout).not.toContain("<body");
+        expect(migratedRootLayout).toContain('data-root-layout');
+        expect(migratedRootLayout).toContain('m3-app-body');
+        expect(migratedRootLayout).toContain("useMetadata(metadata)");
 
-      // Check migrated Home Page: M3 Button/Input imported, destructive -> accent
-      const migratedPageContent = await Bun.file(join(tempDestDir, "src/components/app/page.tsx")).text();
-      expect(migratedPageContent).toContain("from '@aphrody/m3-primitives'");
-      expect(migratedPageContent).toContain("variant='accent'");
+        // Check migrated Home Page: M3 Button/Input imported, destructive -> accent
+        const migratedPageContent = await Bun.file(join(tempDestDir, "src/components/app/page.tsx")).text();
+        expect(migratedPageContent).toContain("from '@aphrody/m3-primitives'");
+        expect(migratedPageContent).toContain("variant='accent'");
 
-      // Check migrated Dashboard Layout: M3 Badge imported
-      const migratedDashLayout = await Bun.file(join(tempDestDir, "src/components/app/dashboard/layout.tsx")).text();
-      expect(migratedDashLayout).toContain("from '@aphrody/m3-primitives'");
+        // Check migrated Dashboard Layout: M3 Badge imported
+        const migratedDashLayout = await Bun.file(join(tempDestDir, "src/components/app/dashboard/layout.tsx")).text();
+        expect(migratedDashLayout).toContain("from '@aphrody/m3-primitives'");
 
-      // Check migrated Dashboard Page: M3 Card & Collapsible imported
-      const migratedDashPage = await Bun.file(join(tempDestDir, "src/components/app/dashboard/page.tsx")).text();
-      expect(migratedDashPage).toContain("from '@aphrody/m3-primitives'");
-      expect(migratedDashPage).toContain("useMetadata");
+        // Check migrated Dashboard Page: M3 Card & Collapsible imported
+        const migratedDashPage = await Bun.file(join(tempDestDir, "src/components/app/dashboard/page.tsx")).text();
+        expect(migratedDashPage).toContain("from '@aphrody/m3-primitives'");
+        expect(migratedDashPage).toContain("useMetadata");
 
-      // Clean up
-      await rm(tempTestDir, { recursive: true, force: true });
-      await rm(tempDestDir, { recursive: true, force: true });
+      } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+      }
     });
   });
 });

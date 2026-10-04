@@ -34,5 +34,5 @@ Target surfaces: [`GUI.md`](./GUI.md).
 ## Design
 
 - M3 roles, type, shape and motion from the token owners
-  ([contract](../../architecture/ui/design/APHRODY-M3-CANONICAL-CONTRACT.md)); no hex values or ad-hoc sizes.
+  ([contract](../architecture/design/APHRODY-M3-CANONICAL-CONTRACT.md)); no hex values or ad-hoc sizes.
 - Reuse `@aphrody/m3-*` components; do not add a parallel component set.

@@ -18,6 +18,6 @@ Source : <https://design.google/library/gemini-ai-visual-design>
 
 ## Pour aphrody
 
-- Les gradients de marque sont capturés verbatim dans [`../gemini/theme.css`](../../../../../docs/design/gemini/theme.css) (`--gem-sys-color--brand-*`, transitions blue/orange/pink/purple/red/teal).
+- Les gradients de marque sont capturés verbatim dans `../gemini/theme.css` (`--gem-sys-color--brand-*`, transitions blue/orange/pink/purple/red/teal).
 - Le cercle + coins arrondis ↔ tokens M3 `--md-sys-shape-*` (full/rounded) du framework.
 - La motion directionnelle ↔ module Rust `m3-tokens/motion.rs` (easing/durations) côté peer ; côté JS/TS, animer les wrappers `apps/m3-react` avec ces courbes.

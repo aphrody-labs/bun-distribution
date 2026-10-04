@@ -87,8 +87,12 @@ describe("runCli", () => {
   });
 
   test("workspace discovery and bunfig detection", async () => {
-    expect(findWorkspaceRoot(FIXTURE)).toBe(REPO_ROOT);
     await using tmp = await tempDir();
+    // The workspace root is the nearest package.json declaring `bun:check`, wherever the checkout is.
+    await Bun.write(join(tmp.dir, "package.json"), JSON.stringify({ scripts: { "bun:check": "true" } }));
+    await Bun.write(join(tmp.dir, "apps/app/package.json"), JSON.stringify({ name: "app" }));
+    expect(findWorkspaceRoot(join(tmp.dir, "apps/app"))).toBe(tmp.dir);
+    expect(findWorkspaceRoot(FIXTURE) === undefined || existsSync(join(findWorkspaceRoot(FIXTURE)!, "package.json"))).toBe(true);
     expect(await bunfigHasPlugin(tmp.dir)).toBe(false);
     await Bun.write(join(tmp.dir, "bunfig.toml"), '[serve.static]\nplugins = ["@aphrody/m3/plugin"]\n');
     expect(await bunfigHasPlugin(tmp.dir)).toBe(true);
@@ -109,7 +113,14 @@ describe("runCli", () => {
     expect(await Bun.file(join(project, "m3.config.ts")).text()).toContain('entry: "index.html"');
     expect(await Bun.file(join(project, "index.html")).text()).toContain('./src/main.ts');
     expect(await Bun.file(join(project, "src/main.ts")).text()).toContain('m3:theme.css');
-    const built = await buildM3({ entry: join(project, "index.html"), outdir: join(tmp.dir, "built"), cwd: project });
+    // The scaffold must build; the sheets come from the deterministic generator so this test does not
+    // need the bun_rs native library (the real `m3Css` path is covered by native.test.ts).
+    const built = await buildM3({
+      entry: join(project, "index.html"),
+      outdir: join(tmp.dir, "built"),
+      cwd: project,
+      plugin: { css: fakeCss().css, root: REPO_ROOT },
+    });
     expect(built.outputs.some((output) => output.path === "index.html")).toBe(true);
     await expect(runCli(["new", "my-app"], tmp.dir)).rejects.toThrow();
     await expect(runCli(["new"], tmp.dir)).rejects.toThrow("expected one project directory");

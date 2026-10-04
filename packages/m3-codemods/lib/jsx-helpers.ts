@@ -73,7 +73,7 @@ export function renameElement(el: JSXElement, newName: string): void {
  *
  * Idempotent : ne ré-insère pas un marqueur identique déjà présent juste avant.
  */
-export function addMigrationTodo(j: API["jscodeshift"], path: ASTPath<any>, message: string): void {
+export function addMigrationTodo(_j: API["jscodeshift"], path: ASTPath<any>, message: string): void {
   const text = ` MIGRATION-TODO: ${message} `;
   const parent = path.parent;
   const inJsxChildren =

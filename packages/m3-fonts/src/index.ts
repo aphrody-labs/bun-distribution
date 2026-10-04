@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // @aphrody/m3-fonts: typed manifest of the Aphrody M3 typefaces. Paths are relative to this
-// package root. The variable TrueType sources (fonts/*.ttf, assets/fonts) are subset into WOFF2
-// web fonts under fonts/web by `bun run subset` (fontTools through uv); `src/subsets.json` records
-// the produced files and their unicode-range. Three stylesheets are generated:
+// package root. The variable TrueType sources (fonts/*.ttf, and fonts/upstream/ fetched and
+// hash-checked from fonts.lock.json by `bun scripts/fonts-sync.ts` at the repository root) are subset
+// into WOFF2 web fonts under fonts/web by `bun run subset` (fontTools through uv); `src/subsets.json`
+// records the produced files and their unicode-range. Three stylesheets are generated:
 //   src/fonts.css          Latin core faces + `--aphrody-font-*` stacks (always imported)
 //   src/fonts-jp.css       Japanese faces, chunked by unicode-range (fetched block by block)
 //   src/fonts-symbols.css  Material Symbols icon fonts (opt-in; @aphrody/m3-icons renders SVG)
@@ -88,8 +89,10 @@ export const JAPANESE_BASE_RANGES: [number, number][] = [
 /** Ideographs per Japanese chunk: one page of text pulls a few chunks, not the whole font. */
 export const JAPANESE_CHUNK = 500;
 
-const GS = "../../../assets/fonts";
-const MS = "../../../../crates/ui/bun/icons/material-symbols";
+/** Upstream sources pinned in fonts.lock.json and fetched by scripts/fonts-sync.ts (git-ignored). */
+export const UPSTREAM_DIR = "fonts/upstream";
+const GS = UPSTREAM_DIR;
+const MS = `${UPSTREAM_DIR}/material-symbols`;
 
 export const SUBSET_JOBS: readonly SubsetJob[] = [
   { id: "google-sans-flex", source: `${GS}/google-sans-flex/GoogleSansFlex-Variable.ttf`, out: "fonts/web/GoogleSansFlex-latin.woff2", ranges: LATIN_CORE_RANGES },
@@ -131,9 +134,9 @@ export const FONTS: readonly FontFamily[] = [
     role: "brand",
     script: "latin",
     sheet: "core",
-    source: "assets/fonts/google-sans-flex",
+    source: "github.com/google/fonts ofl/googlesansflex (fork aphrody-labs/fonts, forks/fonts)",
     sourceFile: `${GS}/google-sans-flex/GoogleSansFlex-Variable.ttf`,
-    faces: subsetFaces("google-sans-flex", "Google Sans Flex", `${GS}/google-sans-flex/OFL.txt`, {
+    faces: subsetFaces("google-sans-flex", "Google Sans Flex", "fonts/GoogleSansFlex-OFL.txt", {
       weight: [1, 1000],
       stretch: [25, 151],
       oblique: [-10, 0],
@@ -144,9 +147,9 @@ export const FONTS: readonly FontFamily[] = [
     role: "code",
     script: "latin",
     sheet: "core",
-    source: "assets/fonts/google-sans-code",
+    source: "github.com/google/fonts ofl/googlesanscode (fork aphrody-labs/fonts, forks/fonts)",
     sourceFile: `${GS}/google-sans-code/GoogleSansCode-Variable.ttf`,
-    faces: subsetFaces("google-sans-code", "Google Sans Code", `${GS}/google-sans-code/OFL.txt`, { weight: [300, 800] }),
+    faces: subsetFaces("google-sans-code", "Google Sans Code", "fonts/GoogleSansCode-OFL.txt", { weight: [300, 800] }),
   },
   {
     family: "Roboto Flex",
@@ -194,7 +197,7 @@ export const FONTS: readonly FontFamily[] = [
       role: "icon",
       script: "latin",
       sheet: "symbols",
-      source: "crates/ui/bun/icons/material-symbols",
+      source: "npm material-symbols@0.44.8 (the build aphrody crates/ui/bun/icons/material-symbols renders)",
       sourceFile: file,
       faces: [face(`Material Symbols ${v}`, file, null, { weight: [100, 700], display: "block" })],
     };

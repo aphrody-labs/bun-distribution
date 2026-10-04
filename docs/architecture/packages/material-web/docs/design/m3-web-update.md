@@ -16,15 +16,15 @@
 > `labs/` stables (badge, cards, navigation bar/drawer/tab, segmented button)
 > sont promus via `aphrody-labs.ts`. Tout est branché dans `all.ts` (via
 > `aphrody-components.ts`) + wrappers React dans `apps/m3-react`. Détail :
-> [`packages/material-web/APHRODY-M3.md`](../../../../../../../packages/material-web/docs/material-web/APHRODY-M3.md).
+> `packages/material-web/APHRODY-M3.md`.
 > Validation : `tsc --noEmit` exit 0 sur les 24 custom elements (flags stricts
 > du projet : noUnusedLocals, noImplicitOverride, noImplicitReturns,
 > noPropertyAccessFromIndexSignature).
 
 Consolide le **scrape récursif** de Material Design 3 — index glossaire +
 toutes les pages composants — en un plan d'update concret pour `packages/material-web`
-(le « M3 web »). Référence : [`m3-glossary.md`](../../../../../../../packages/material-web/docs/design/m3-glossary.md),
-[`m3-components-spec.md`](../../../../../../../packages/material-web/docs/design/m3-components-spec.md), [`DESIGN-PACKAGE.md`](../../../../docs/design/DESIGN-PACKAGE.md).
+(le « M3 web »). Référence : `m3-glossary.md`,
+`m3-components-spec.md`, `DESIGN-PACKAGE.md`.
 
 ## Méthode (et statut aphrody-web)
 
@@ -73,7 +73,7 @@ génération vit dans `labs/gb/` (non publié).
 - Au fur et à mesure que les P0/P1 sont ajoutés à material-web, ajouter le wrapper
   correspondant dans `apps/m3-react/src/index.ts`.
 - Thématisation : tokens M3 (`--md-sys-color-*`) via `aphrody design tokens`
-  (fusion shadcn/tailwind) ; cf. [`FUSION-PLAN.md`](../../../../../../plans/ui/design/FUSION-PLAN.md).
+  (fusion shadcn/tailwind) ; cf. [`FUSION-PLAN.md`](../../../../../plans/design/FUSION-PLAN.md).
 
 ## Modernisation lit / material-web (focus JS/TS)
 

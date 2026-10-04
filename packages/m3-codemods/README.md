@@ -3,7 +3,7 @@
 Transforms automatisés pour migrer du code **MUI React** (`@mui/material`) vers les
 wrappers **`@aphrody/m3-react`** (web components `<md-*>` du fork material-web).
 
-> Contrat de référence : [`../00-CONVENTIONS.md`](../00-CONVENTIONS.md).
+> Contrat de référence : `../00-CONVENTIONS.md`.
 > Tout ce kit respecte §2 (nommage des wrappers), §3 (mapping canonique) et §4
 > (règles props/events). **bun uniquement** (§7.1). Aucun élément `md-*` inventé (§7.2).
 

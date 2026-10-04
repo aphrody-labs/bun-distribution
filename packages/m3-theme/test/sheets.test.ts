@@ -4,7 +4,6 @@
 // check the committed files are current.
 
 import { describe, expect, test } from "bun:test";
-import { m3Css } from "@aphrody/bun";
 import {
   customColor,
   DynamicScheme,
@@ -18,6 +17,20 @@ import {
   type DynamicColor,
 } from "@material/material-color-utilities";
 import { join } from "node:path";
+
+// `@aphrody/bun` opens the bun_rs native library when it is imported. Without the library these
+// suites are skipped with the loader's reason; build or link it as described in
+// docs/guides/NATIVE.md (`bun scripts/native.ts link --apply`).
+const native = await import("@aphrody/bun").catch((error: unknown) => error as Error);
+const unavailable =
+  native instanceof Error
+    ? `bun_rs native library unavailable (${String(native.message ?? native).split("\n")[0]}); see docs/guides/NATIVE.md`
+    : "";
+const skip = unavailable !== "";
+if (skip) console.warn(`[@aphrody/m3-theme] native suites skipped: ${unavailable}`);
+const named = (title: string) => (skip ? `${title} [skipped: ${unavailable}]` : title);
+const m3Css = (config: { sheet: "tokens" | "tailwind" | "spaceui" | "scheme"; seed?: string; variant?: string; dark?: boolean }) =>
+  (native as Exclude<typeof native, Error>).m3Css(config);
 
 const dir = join(import.meta.dir, "..");
 const colors = MaterialDynamicColors as unknown as Record<string, DynamicColor | undefined>;
@@ -53,7 +66,7 @@ function expectExtended(block: Map<string, string>, source: number, dark: boolea
   }
 }
 
-describe("sheets match material-color-utilities", () => {
+describe.skipIf(skip)(named("sheets match material-color-utilities"), () => {
   test("tokens.css: tonal spot from the baseline seed, light and dark", () => {
     const css = m3Css({ sheet: "tokens" });
     const source = Hct.fromInt(0xff6750a4);
@@ -107,7 +120,7 @@ describe("sheets match material-color-utilities", () => {
   });
 });
 
-describe("committed sheets are current (bun run generate)", () => {
+describe.skipIf(skip)(named("committed sheets are current (bun run generate)"), () => {
   for (const sheet of ["tokens", "tailwind", "spaceui"] as const) {
     test(`${sheet}.css`, async () => {
       const onDisk = await Bun.file(join(dir, `${sheet}.css`)).text();

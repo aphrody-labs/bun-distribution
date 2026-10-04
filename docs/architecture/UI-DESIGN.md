@@ -2,8 +2,8 @@
 # Desktop UI design
 
 This is the visual authority for the single public desktop webview in
-[`packages/m3`](../../../packages/m3). [GUI](../../reference/ui/GUI.md) owns host and capability
-boundaries; [UX](./UX-DESIGN.md) owns flows; [UI rules](../../reference/ui/UI-RULES.md) bind shipped
+[`packages/m3`](../../packages/m3). [GUI](../reference/GUI.md) owns host and capability
+boundaries; [UX](./UX-DESIGN.md) owns flows; [UI rules](../reference/UI-RULES.md) bind shipped
 content and behavior. Descriptions here are design constraints, not proof that a
 feature is implemented.
 
@@ -19,11 +19,11 @@ One window and one navigation for four areas:
 | Settings | User preferences and application configuration. |
 
 Do not add product areas beyond these four. Host and capability exclusions are defined in
-[GUI](../../reference/ui/GUI.md); standalone GUI packaging is covered by [native desktop](../../reference/ui/NATIVE-DESKTOP.md).
+[GUI](../reference/GUI.md); standalone GUI packaging is covered by [native desktop](../reference/NATIVE-DESKTOP.md).
 
 ## 2. Base and references
 
-The visual references are indexed in [`assets/ui/manifest.json`](../../../assets/ui/manifest.json).
+The visual references are indexed in [`assets/ui/manifest.json`](https://github.com/aphrody-labs/aphrody/blob/main/assets/ui/manifest.json).
 Spacedrive informs the file navigation and explorer; Codex informs Chat and its composer;
 Material 3 owns roles, states and accessibility. These are visual references, not runtime
 requirements or permissions to copy source. Preserve per-file upstream provenance.
@@ -43,7 +43,7 @@ CSS token authority. Lit/material-web remains a distinct package renderer sharin
 
 ## 4. Accessibility and visual behavior
 
-Follow [`ACCESSIBILITY.md`](../../reference/ui/ACCESSIBILITY.md): minimum 18 px text, high contrast, visible
+Follow [`ACCESSIBILITY.md`](../reference/ACCESSIBILITY.md): minimum 18 px text, high contrast, visible
 static focus, keyboard operation, screen-reader labels and reduced motion. Use semantic
 HTML, visible focus return after dialogs, and distinct focus targets for independent actions.
 Prefer stable layouts, concise labels, real loading/error/empty states and user-readable
@@ -52,6 +52,6 @@ recovery. Do not display backend details, raw shell output or simulated data as 
 ## 5. Implementation status
 
 The active implementation lives in `packages/app-ui` (not in repo); route and feature status belongs to
-[GUI.md](../../reference/ui/GUI.md). Historical terminal/browser concepts and obsolete mockups do not override
+[GUI.md](../reference/GUI.md). Historical terminal/browser concepts and obsolete mockups do not override
 this scope. Rust render and M3 crates remain reusable libraries; a standalone native host
 is a packaging decision, not a requirement to rewrite the desktop.

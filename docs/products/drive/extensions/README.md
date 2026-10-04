@@ -224,10 +224,10 @@ cargo build --target wasm32-unknown-unknown --release
 
 ## Documentation
 
-- **[SDK API Vision](../docs/EXTENSION_SDK_API_VISION.md)** - Future API improvements
-- **[Before/After Comparison](./BEFORE_AFTER_COMPARISON.md)** - See the transformation
-- **[WASM Architecture](../docs/core/design/WASM_ARCHITECTURE_FINAL.md)** - Technical details
-- **[Platform Revenue Model](../docs/PLATFORM_REVENUE_MODEL.md)** - Business case
+- **SDK API Vision** - Future API improvements
+- **Before/After Comparison** - See the transformation
+- **WASM Architecture** - Technical details
+- **Platform Revenue Model** - Business case
 
 ---
 

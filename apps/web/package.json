@@ -8,7 +8,8 @@
     "dev": "bun ../../packages/m3/bin/m3.ts dev",
     "build": "bun ../../packages/m3/bin/m3.ts build",
     "compile": "bun ../../packages/m3/bin/m3.ts compile",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "bun ../../scripts/fonts-sync.ts --quiet && bun test"
   },
   "dependencies": {
     "@aphrody/m3": "workspace:*",

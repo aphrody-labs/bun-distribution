@@ -3,13 +3,13 @@
 
 `crates/ui/render` owns the retained M3 scene model and its backends: a deterministic CPU
 rasterizer (default, `#![forbid(unsafe_code)]`) and a headless `wgpu` backend behind the `gpu`
-feature. Pins: [`../WASM/wgpu-webgpu.md`](../../../reference/ui/WASM/wgpu-webgpu.md). Agent guide: the
+feature. Pins: [`../WASM/wgpu-webgpu.md`](../../reference/WASM/wgpu-webgpu.md). Agent guide: the
 `render-pipeline` skill.
 
 Current lanes: the Tauri webview (DOM, M3 components) proves desktop integration;
 canvas, 3D and high-frequency visuals go through `aphrody-render`; tests, exports
 and headless hosts use the CPU backend. The product desktop target is native
-`wgpu` presentation, not the webview; see [`NATIVE-DESKTOP.md`](../../../reference/ui/NATIVE-DESKTOP.md).
+`wgpu` presentation, not the webview; see [`NATIVE-DESKTOP.md`](../../reference/NATIVE-DESKTOP.md).
 
 ## 2D scene (`src/scene.rs`)
 

@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # GUI local AI — plan propriétaire
 
-Architecture : [PLAN racine](../../../PLAN.md).
-Décisions AI : [plan AI](../ai/native-integration-master.md).
+Architecture : [PLAN racine](https://github.com/aphrody-labs/aphrody/blob/main/PLAN.md).
+Décisions AI : [plan AI](https://github.com/aphrody-labs/aphrody/blob/main/docs/plans/ai/native-integration-master.md).
 Jan fournit les concepts de hub local, sans code importé.
 La GUI reste un client des owners AI, pas une seconde implémentation métier.
 

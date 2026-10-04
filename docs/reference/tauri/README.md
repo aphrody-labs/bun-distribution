@@ -4,10 +4,10 @@
 
 Current line: Tauri 3 alpha (`tauri =3.0.0-alpha.3`, runtime `tauri-runtime-wry` by default,
 `tauri-runtime-cef` for Koharu only), pinned in the root `Cargo.toml` and described in
-[`docs/operations/ui/tauri-upstream.md`](../../../operations/ui/tauri-upstream.md) and
-[`config/tauri-apps.json`](../../../../config/tauri-apps.json) (registry of every Tauri project).
+[`docs/operations/ui/tauri-upstream.md`](../../operations/tauri-upstream.md) and
+[`config/tauri-apps.json`](https://github.com/aphrody-labs/aphrody/blob/main/config/tauri-apps.json) (registry of every Tauri project).
 Tauri 2 pages below are kept as historical or compatibility context and carry a banner. Parent map:
-[`../../../architecture/ui/README.md`](../../../architecture/ui/README.md).
+[`../../../architecture/ui/README.md`](../../architecture/README.md).
 
 ## Desktop host (Tauri 3)
 
@@ -23,23 +23,23 @@ Tauri 2 pages below are kept as historical or compatibility context and carry a 
 
 - [`tauri-mcp.md`](../integrations/tauri-mcp.md): ownership, transport and tool list (the upstream
   MIT notice is kept in [`tauri-mcp-upstream.LICENSE`](../integrations/tauri-mcp-upstream.LICENSE)).
-- [`tauri-mcp-parity.md`](../../../research/ui/integrations/tauri-mcp-parity.md): dated parity table
+- [`tauri-mcp-parity.md`](../../research/integrations/tauri-mcp-parity.md): dated parity table
   against the upstream reference revision.
 
 ## Material Web and Tauri
 
-Owner documents in [`packages/material-web/docs/tauri/`](../../../../packages/material-web/docs/tauri/README.md)
+Owner documents in `packages/material-web/docs/tauri/`
 (prerequisites, project setup, desktop and mobile platforms, type safety) and the French guide
-[`tauri-2.0.md`](../../../../packages/material-web/docs/tauri-2.0.md) (Tauri 2.0 and Material Design 3; historical).
+`tauri-2.0.md` (Tauri 2.0 and Material Design 3; historical).
 
 ## Koharu
 
 [`KOHARU.md`](../integrations/KOHARU.md) (integration), the Koharu crates under
-[`crates/koharu`](../../../../crates/koharu/koharu/README.md) and the user docs in
-[`packages/koharu/docs`](../../../../packages/koharu/docs/en/index.mdx). Koharu keeps the CEF runtime.
+[`crates/koharu`](https://github.com/aphrody-labs/aphrody/blob/main/crates/koharu/koharu/README.md) and the user docs in
+[`packages/koharu/docs`](https://github.com/aphrody-labs/aphrody/blob/main/packages/koharu/docs/en/index.mdx). Koharu keeps the CEF runtime.
 
 ## Historical records
 
 - [`iecode/docs/rg/products/azalee-tauri.md`](https://github.com/aphrody-labs/iecode/blob/main/docs/rg/products/azalee-tauri.md): archived Azalee Tauri client (no longer part of the monorepo).
-- [`docs/plans/ai/plans/tauri-app.md`](../../../plans/ai/plans/tauri-app.md): superseded in-process Tauri plan (2026-09-20 snapshot).
-- Agent skill for Tauri 2 (owned by the AI domain): [`plugins/aphrody/skills/tauri-v2`](../../../../plugins/aphrody/skills/tauri-v2/SKILL.md).
+- [`docs/plans/ai/plans/tauri-app.md`](https://github.com/aphrody-labs/aphrody/blob/main/docs/plans/ai/plans/tauri-app.md): superseded in-process Tauri plan (2026-09-20 snapshot).
+- Agent skill for Tauri 2 (owned by the AI domain): [`plugins/aphrody/skills/tauri-v2`](https://github.com/aphrody-labs/plugins/blob/main/aphrody/skills/tauri-v2/SKILL.md).

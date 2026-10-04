@@ -80,7 +80,7 @@ const report = await migrateProject({
 ```
 
 The generated project is written by [`@aphrody/scaffold`](../scaffold) (the `app` template), the single scaffolder of the
-UI stack; `TAURI_3` is re-exported from there. See [`docs/guides/ui/SCAFFOLD.md`](../../../docs/guides/ui/SCAFFOLD.md).
+UI stack; `TAURI_3` is re-exported from there. See [`docs/guides/ui/SCAFFOLD.md`](../../docs/guides/SCAFFOLD.md).
 
 ---
 

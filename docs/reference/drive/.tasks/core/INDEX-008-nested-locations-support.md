@@ -828,8 +828,8 @@ Photos (~/Pictures)
 
 ## References
 
-- [Location Watcher Service](../../core/src/service/watcher/mod.rs)
-- [Location Manager](../../core/src/location/manager.rs)
+- [Location Watcher Service](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/drive/core/src/service/watcher/mod.rs)
+- [Location Manager](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/drive/core/src/location/manager.rs)
 - [Entry-Centric Model](./CORE-001-entry-centric-model.md)
 - [Change Detection System](./INDEX-004-change-detection-system.md) - Related watcher work
 

@@ -20,7 +20,7 @@ described below.
 ### Working-tree update (2026-09-28)
 
 The aphrody monorepo provides the canonical headless Rust
-[`koharu-library`](../../../../crates/koharu/koharu-library/README.md)
+[`koharu-library`](https://github.com/aphrody-labs/aphrody/blob/main/crates/koharu/koharu-library/README.md)
 for page import, the four model stages, typed results, and PNG/PSD export.
 `aphrody-ai` consumes this library through an optional `aphrody-manga` feature;
 `aphrody-ui` now contains the `@aphrody/koharu-ui` source package at

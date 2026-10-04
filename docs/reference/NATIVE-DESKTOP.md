@@ -14,6 +14,6 @@ The app-ui webview does not include browser navigation, shell/PTY/terminal sessi
 consoles or infrastructure diagnostics. Backend web retrieval and OS process/job APIs remain
 with their owners and are exposed only through explicit product actions.
 
-See [M3 host boundaries](../../plans/ui/design/M3-MULTI-HOST-PLAN.md), [GUI contract](./GUI.md) and
+See [M3 host boundaries](../plans/design/M3-MULTI-HOST-PLAN.md), [GUI contract](./GUI.md) and
 [distribution workflow](./DESKTOP-INTEGRATION.md). Any standalone native package needs its own
 installed-bundle, accessibility, update, offline and process-lifecycle evidence.

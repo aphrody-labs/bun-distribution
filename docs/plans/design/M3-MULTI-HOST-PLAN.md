@@ -7,7 +7,7 @@ Build a customizable Material 3 framework whose design contract can be rendered 
 desktop and mobile. Share roles, interaction expectations and adaptive rules; qualify each
 renderer and installed host separately. The Aphrody product currently has one Tauri v2
 desktop webview in `packages/app-ui` (not in repo) for Chat, Files, Models and Settings. Its product scope
-is defined by [GUI](../../../reference/ui/GUI.md). Browser navigation, shell/PTY/terminal sessions and system
+is defined by [GUI](../../reference/GUI.md). Browser navigation, shell/PTY/terminal sessions and system
 administration stay outside that webview.
 
 The framework is a library, not a second product navigation shell. Generic packages must

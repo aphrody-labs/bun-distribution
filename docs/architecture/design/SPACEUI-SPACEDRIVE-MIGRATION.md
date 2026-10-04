@@ -4,7 +4,7 @@
 How the Drive file engine and SpaceUI live inside Aphrody. Drive is the Files area of the same
 consumer application, not a separate product or UI shell. Token and component
 contract: [`SPACEUI-M3-FUSION.md`](./SPACEUI-M3-FUSION.md). Upstream delta:
-[`../DRIVE-UPSTREAM-DIFF.md`](../../../reference/ui/DRIVE-UPSTREAM-DIFF.md). SpaceUI is MIT; `drive/` and code
+[`../DRIVE-UPSTREAM-DIFF.md`](../../reference/DRIVE-UPSTREAM-DIFF.md). SpaceUI is MIT; `drive/` and code
 adopted from Spacedrive stay FSL-1.1-ALv2 with their provenance files.
 
 ## Current integration and target ownership
@@ -40,10 +40,10 @@ adopted from Spacedrive stay FSL-1.1-ALv2 with their provenance files.
 
 The target migration does not change FSL terms or move the public Files UI into the
 server. Preserve the upstream source revision, notices, library schema, file identity and
-offline data across repository moves. The [upstream audit](../../../reference/ui/DRIVE-UPSTREAM-DIFF.md)
+offline data across repository moves. The [upstream audit](../../reference/DRIVE-UPSTREAM-DIFF.md)
 lists the currently observed differences.
 
-The [Drive FSL license](../../../../crates/os/drive/LICENSE) permits internal use but explicitly restricts
+The [Drive FSL license](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/drive/LICENSE) permits internal use but explicitly restricts
 providing this software as a managed cloud or hosted service to third parties, as well as
 third-party cloud storage, synchronization, data management and managed AI services based on
 it. "Cloud oriented" here means connecting a user's own cloud volumes and synchronizing
@@ -83,7 +83,7 @@ not supported: the UI offers these actions only when `Platform` provides them.
 - Drive: daemon Rust tests for actions and migrations, RPC envelope tests, `aphrody-drive` tests,
   test libraries with checksums before and after.
 - Delivery: the built bundle contains `sd-daemon` and starts it without a dev server or network
-  ([`../DESKTOP-INTEGRATION.md`](../../../reference/ui/DESKTOP-INTEGRATION.md) for how to verify a launched app).
+  ([`../DESKTOP-INTEGRATION.md`](../../reference/DESKTOP-INTEGRATION.md) for how to verify a launched app).
 - Server migration: compare `/health`, `/rpc`, `/events`, sidecars, auth, SPA deep links,
   environment flags and Docker/NAS delivery with the old binary before changing deployment.
 - Feature preservation: track every upstream user feature to a current route/command or a

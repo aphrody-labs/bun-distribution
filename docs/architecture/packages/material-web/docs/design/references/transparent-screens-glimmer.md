@@ -16,6 +16,6 @@ Source : <https://design.google/library/transparent-screens>
 
 ## Pour aphrody
 
-- Pertinent pour tout futur thème **dark/ambient** ou surface XR. Confirme le choix dark de Gemini (surfaces sombres, contenu clair) déjà capturé dans [`../gemini/theme.css`](../../../../../docs/design/gemini/theme.css).
-- Le ratio de contraste additif et le seuil 0,6° sont des contraintes d'accessibilité réutilisables (variante de la règle de contraste M3, cf. [`../m3-glossary.md`](../../../../../_source/packages/material-web/docs/design/m3-glossary.md) « Contrast »).
-- L'axe optical-size de Google Sans Flex renforce la note typographie ([`google-sans-family.md`](../../../../../docs/design/references/google-sans-family.md)).
+- Pertinent pour tout futur thème **dark/ambient** ou surface XR. Confirme le choix dark de Gemini (surfaces sombres, contenu clair) déjà capturé dans `../gemini/theme.css`.
+- Le ratio de contraste additif et le seuil 0,6° sont des contraintes d'accessibilité réutilisables (variante de la règle de contraste M3, cf. `../m3-glossary.md` « Contrast »).
+- L'axe optical-size de Google Sans Flex renforce la note typographie (`google-sans-family.md`).

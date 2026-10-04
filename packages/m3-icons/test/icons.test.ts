@@ -6,12 +6,24 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { m3Icon, m3IconNames, M3Icon } from "../src/index.ts";
-import "../src/lit.ts";
-import { generateIcons } from "../src/codegen.ts";
-import { m3IconPlugin } from "../src/plugin.ts";
 
-describe("m3Icon / m3IconNames (via @aphrody/bun -> bun_rs::icons)", () => {
+// Every entry below renders through `@aphrody/bun`, which opens the bun_rs native library when it is
+// imported. Without the library these suites are skipped with the loader's reason; build or link it
+// as described in docs/guides/NATIVE.md (`bun scripts/native.ts link --apply`).
+const unavailable = await import("@aphrody/bun").then(
+  () => "",
+  (error: unknown) =>
+    `bun_rs native library unavailable (${String((error as Error).message ?? error).split("\n")[0]}); see docs/guides/NATIVE.md`,
+);
+const skip = unavailable !== "";
+if (skip) console.warn(`[@aphrody/m3-icons] native suites skipped: ${unavailable}`);
+const named = (title: string) => (skip ? `${title} [skipped: ${unavailable}]` : title);
+const { m3Icon, m3IconNames, M3Icon } = skip ? ({} as typeof import("../src/index.ts")) : await import("../src/index.ts");
+const { generateIcons } = skip ? ({} as typeof import("../src/codegen.ts")) : await import("../src/codegen.ts");
+const { m3IconPlugin } = skip ? ({} as typeof import("../src/plugin.ts")) : await import("../src/plugin.ts");
+if (!skip) await import("../src/lit.ts");
+
+describe.skipIf(skip)(named("m3Icon / m3IconNames (via @aphrody/bun -> bun_rs::icons)"), () => {
   test("renders a known icon as an SVG document", () => {
     const svg = m3Icon({ name: "home" });
     expect(svg).toStartWith("<svg");
@@ -30,7 +42,7 @@ describe("m3Icon / m3IconNames (via @aphrody/bun -> bun_rs::icons)", () => {
   });
 });
 
-describe("<M3Icon> (React)", () => {
+describe.skipIf(skip)(named("<M3Icon> (React)"), () => {
   test("renders inline SVG", () => {
     const markup = renderToString(React.createElement(M3Icon, { name: "favorite", fill: 1 }));
     expect(markup).toContain("<svg");
@@ -44,7 +56,7 @@ describe("<M3Icon> (React)", () => {
   });
 });
 
-describe("<m3-icon> (Lit)", () => {
+describe.skipIf(skip)(named("<m3-icon> (Lit)"), () => {
   test("registers the custom element", () => {
     expect(customElements.get("m3-icon")).toBeDefined();
   });
@@ -59,7 +71,7 @@ describe("<m3-icon> (Lit)", () => {
   });
 });
 
-describe("generateIcons", () => {
+describe.skipIf(skip)(named("generateIcons"), () => {
   test("writes one module per icon plus a barrel", async () => {
     const outDir = await mkdtemp(join(tmpdir(), "m3-icons-codegen-"));
     try {
@@ -75,7 +87,7 @@ describe("generateIcons", () => {
   });
 });
 
-describe("m3IconPlugin", () => {
+describe.skipIf(skip)(named("m3IconPlugin"), () => {
   test("resolves a virtual m3:icon module to an SVG default export", async () => {
     const entryDir = await mkdtemp(join(tmpdir(), "m3-icons-plugin-"));
     try {

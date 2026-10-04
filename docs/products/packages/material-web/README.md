@@ -17,7 +17,7 @@ incremental by component family: keep Lit's static scoped styles while replacing
 glue with native CSS features where parity can be verified. The host stylesheet is the single
 Tailwind compilation point; it is not injected into every shadow root.
 
-The [Next.js example](../../examples/m3-next/app/_components/md-elements.tsx) demonstrates a
+The Next.js example demonstrates a
 Lit button with Tailwind v4 arbitrary CSS properties and a Base UI tooltip from
 `@aphrody/m3-primitives`. Base UI is a React library, so its behavior is composed in the React
 host through `@aphrody/m3-react` wrappers. Lit elements remain usable without React or Base UI.
@@ -35,7 +35,7 @@ References: [Lit shadow styles](https://lit.dev/docs/components/styles/),
 [Tailwind source detection](https://tailwindcss.com/docs/detecting-classes-in-source-files),
 [Base UI composition](https://base-ui.com/react/handbook/composition).
 
-<img src="./docs/images/material-web.gif"
+<img src="https://raw.githubusercontent.com/material-components/material-web/main/docs/images/material-web.gif"
   title="Material web components"
   alt="A collection of Material web components"
   style="border-radius: 32px">

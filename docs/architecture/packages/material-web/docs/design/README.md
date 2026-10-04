@@ -17,30 +17,30 @@ Source : <https://m3.material.io>.
 
 | Doc                                            | Contenu                                                     |
 | ---------------------------------------------- | ----------------------------------------------------------- |
-| [`m3-foundations.md`](../../../../_source/packages/material-web/docs/design/m3-foundations.md)     | Accessibilité, états d'interaction, state layers, principes |
-| [`m3-glossary.md`](../../../../_source/packages/material-web/docs/design/m3-glossary.md)           | Glossaire A–Z des termes M3                                 |
-| [`m3-design-tokens.md`](../../../../_source/packages/material-web/docs/design/m3-design-tokens.md) | Les 3 niveaux de tokens (ref / sys / comp)                  |
-| [`M3-FRAMEWORK.md`](../../../../_source/packages/material-web/docs/design/M3-FRAMEWORK.md)         | Vue d'ensemble architecture M3                              |
+| `m3-foundations.md`     | Accessibilité, états d'interaction, state layers, principes |
+| `m3-glossary.md`           | Glossaire A–Z des termes M3                                 |
+| `m3-design-tokens.md` | Les 3 niveaux de tokens (ref / sys / comp)                  |
+| [`M3-FRAMEWORK.md`](../../../../design/M3-FRAMEWORK.md)         | Vue d'ensemble architecture M3                              |
 
 ## Styles & tokens
 
 | Doc                                                      | Contenu                                                                     |
 | -------------------------------------------------------- | --------------------------------------------------------------------------- |
-| [`m3-styles.md`](../../../../../../../packages/material-web/docs/design/m3-styles.md)                         | Color (HCT), typescale, **shape (10 niveaux)**, elevation, motion, spacing  |
-| [`m3-motion.md`](../../../../_source/packages/material-web/docs/design/m3-motion.md)                         | Courbes d'easing (7) + durées (16) — confronté à `packages/m3-motion`       |
-| [`m3-layout.md`](../../../../../../../packages/material-web/docs/design/m3-layout.md)                         | Window size classes (600/840/1200/1600), panes, navigation adaptive, marges |
-| [`aphrody-m3-tokens.md`](../../../../../../../packages/material-web/docs/design/aphrody-m3-tokens.md)         | Exemple de thème (rôles dark/light dérivés d'un seed HCT)                   |
-| [`aphrody-m3-theme.json`](./aphrody-m3-theme.json)       | Le même thème en JSON (seed + palettes)                                     |
-| [`fusion-tokens.sample.css`](../../../../docs/design/fusion-tokens.sample.css) | Bloc `:root { --md-sys-* }` baseline M3 complet                             |
+| `m3-styles.md`                         | Color (HCT), typescale, **shape (10 niveaux)**, elevation, motion, spacing  |
+| `m3-motion.md`                         | Courbes d'easing (7) + durées (16) — confronté à `packages/m3-motion`       |
+| `m3-layout.md`                         | Window size classes (600/840/1200/1600), panes, navigation adaptive, marges |
+| [`aphrody-m3-tokens.md`](../../../../design/aphrody-m3-tokens.md)         | Exemple de thème (rôles dark/light dérivés d'un seed HCT)                   |
+| [`aphrody-m3-theme.json`](../../../../design/aphrody-m3-theme.json)       | Le même thème en JSON (seed + palettes)                                     |
+| `fusion-tokens.sample.css` | Bloc `:root { --md-sys-* }` baseline M3 complet                             |
 
 ## Composants & couverture
 
 | Doc                                                          | Contenu                                             |
 | ------------------------------------------------------------ | --------------------------------------------------- |
-| [`m3-components-spec.md`](../../../../../../../packages/material-web/docs/design/m3-components-spec.md)           | Audit de couverture M3 × `md-*`                     |
-| [`m3-components.md`](../../../../../../../packages/material-web/docs/design/m3-components.md)                     | Catalogue des composants M3 (heights, radii, rôles) |
-| [`m3-web-update.md`](../../../../_source/packages/material-web/docs/design/m3-web-update.md)                     | Synthèse des 35 composants M3, plan d'update        |
-| [`angular-material-parity.md`](../../../../_source/packages/material-web/docs/design/angular-material-parity.md) | Table de parité Angular Material ↔ `md-*`           |
+| `m3-components-spec.md`           | Audit de couverture M3 × `md-*`                     |
+| `m3-components.md`                     | Catalogue des composants M3 (heights, radii, rôles) |
+| [`m3-web-update.md`](./m3-web-update.md)                     | Synthèse des 35 composants M3, plan d'update        |
+| `angular-material-parity.md` | Table de parité Angular Material ↔ `md-*`           |
 
 ## Références (contexte brand Gemini / Google Sans)
 
@@ -51,10 +51,10 @@ famille Google Sans, transparent screens) **incluant du contexte brand aphrody/G
 | Doc                                                                                        | Contenu                                                   |
 | ------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
 | [`gemini/`](./gemini/)                                                                     | Thème Gemini (tokens dark pixel-exact, mapping de rôles)  |
-| [`google-sans-family.md`](../../../../docs/design/references/google-sans-family.md) | Google Sans / Sans Flex / Sans Code                       |
+| `google-sans-family.md` | Google Sans / Sans Flex / Sans Code                       |
 | [`references/gemini-visual-language.md`](./references/gemini-visual-language.md)           | Langage visuel Gemini (gradients, motion, sparkle)        |
 | [`references/transparent-screens-glimmer.md`](./references/transparent-screens-glimmer.md) | Écrans transparents (Compose Glimmer), a11y, optical size |
-| [`references/reinfurt-true-not-new.md`](../../../../../../../packages/material-web/docs/design/references/reinfurt-true-not-new.md)             | Philosophie design « vrai vs nouveau »                    |
+| `references/reinfurt-true-not-new.md`             | Philosophie design « vrai vs nouveau »                    |
 
 ## Cas d'usage
 

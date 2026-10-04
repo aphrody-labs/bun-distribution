@@ -6,11 +6,11 @@ sur `:root` + `body`) de la page live, via l'automatisation navigateur.
 
 ## Ce qui est capturé ici
 
-- [`theme.css`](../../../../../docs/design/gemini/theme.css) — tokens **vérifiés verbatim** (pixel-perfect) du
+- `theme.css` — tokens **vérifiés verbatim** (pixel-perfect) du
   cœur du thème : surfaces, focus/états, typographie, palette de marque
   `--gem-sys-color-*` (22), couleurs composants `--bard-color-*` (18). Thème
   **sombre** par défaut.
-- [`tokens-system.css`](../../../../../docs/design/gemini/tokens-system.css) — la **couche système complète**
+- `tokens-system.css` — la **couche système complète**
   (175 tokens : `--gem-sys-color--*` rôles M3 + palettes de marque/accent +
   gradients + l'échelle de coins 10-step + `--lumi-sys-color--*` canvas/code),
   routée intégralement via l'extraction par tranches ≤ 1 Ko. C'est le sous-
@@ -39,7 +39,7 @@ L'extraction passe par le pont navigateur MCP, qui **tronque les réponses à
 ~1 Ko** (et bloque base64 / downloads blob). Les **175 tokens système** (le
 thème réel : rôles couleur, marque, gradients, shape, lumi) ont été routés
 intégralement en récupérant la couche système par **tranches ≤ 1 Ko** → voir
-[`tokens-system.css`](../../../../../docs/design/gemini/tokens-system.css). Les ~800 tokens `--mat-*` restants
+`tokens-system.css`. Les ~800 tokens `--mat-*` restants
 sont du plumbing Angular Material **dérivé** de cette couche système (non
 vendorés). Pour un dump exhaustif des 1711 vars, exécuter le snippet ci-dessous
 dans la console DevTools (navigateur de l'utilisateur, sans le filtre MCP).
@@ -78,6 +78,6 @@ Déposer le fichier obtenu dans ce dossier sous `tokens-full.css`.
 ## Intégration aphrody
 
 Les tokens couleur Gemini (`--gem-sys-color-*`) sont thématiquement proches de
-notre fusion M3 (`--md-sys-color-*`, cf. [`../M3-FRAMEWORK.md`](../../../../../../../../packages/material-web/docs/design/M3-FRAMEWORK.md)).
+notre fusion M3 (`--md-sys-color-*`, cf. [`../M3-FRAMEWORK.md`](../../../../../design/M3-FRAMEWORK.md)).
 `theme.css` peut être importé tel quel par `apps/m3-react` ou aliasé vers les
 rôles shadcn comme la fusion `theme-aphrody`.

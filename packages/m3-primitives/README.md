@@ -14,7 +14,7 @@ works; the Radix-era props (`asChild`, `checked="indeterminate"`, `delayDuration
 accepted as well.
 
 Fusion rules, token mapping and the Material Web equivalents of each component:
-[`docs/design/SPACEUI-M3-FUSION.md`](../../../docs/architecture/ui/design/SPACEUI-M3-FUSION.md).
+[`docs/design/SPACEUI-M3-FUSION.md`](../../docs/architecture/design/SPACEUI-M3-FUSION.md).
 
 ## Install
 

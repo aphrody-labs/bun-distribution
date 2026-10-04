@@ -15,7 +15,6 @@
  */
 import type {
   API,
-  Collection,
   FileInfo,
   JSXElement,
   JSXOpeningElement,

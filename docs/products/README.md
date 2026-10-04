@@ -41,16 +41,16 @@ The separate Drive workspace supplies `sd-daemon`; preparation lives in `scripts
 The current Linux Tauri build needs WebKitGTK 4.1, GTK3, Ayatana AppIndicator,
 librsvg, libxdo and OpenSSL development packages. Standalone native applications are
 selected and packaged separately; no replacement shell or browser is a UI workspace
-deliverable. [AGENTS.md](../../reference/ui/AGENTS.md) owns validation gates.
+deliverable. [AGENTS.md](../reference/AGENTS.md) owns validation gates.
 
 ## Documentation
 
-- [Bun workspace policy](../../reference/ui/BUN.md): package-manager boundary, strict installs and catalog use.
-- [Index](./_source/README.md), [GUI contract](../../reference/ui/GUI.md), [design](../../architecture/ui/UI-DESIGN.md), [UX](../../architecture/ui/UX-DESIGN.md)
-- [M3 framework and host plan](../../plans/ui/design/M3-MULTI-HOST-PLAN.md): portable design contract,
+- [Bun workspace policy](../reference/BUN.md): package-manager boundary, strict installs and catalog use.
+- [Index](./_source/README.md), [GUI contract](../reference/GUI.md), [design](../architecture/UI-DESIGN.md), [UX](../architecture/UX-DESIGN.md)
+- [M3 framework and host plan](../plans/design/M3-MULTI-HOST-PLAN.md): portable design contract,
   customization, mobile qualification and optional native GUI packaging.
-- [Shared delivery plan](../../plans/ai/PLAN.md), [desktop packaging](../../reference/ui/DESKTOP-INTEGRATION.md)
-- [Upstream forks](../../reference/ui/UPSTREAM-FORKS.md), [package publication](../../reference/ui/PUBLISHING.md)
+- [Shared delivery plan](https://github.com/aphrody-labs/aphrody/blob/main/docs/plans/ai/PLAN.md), [desktop packaging](../reference/DESKTOP-INTEGRATION.md)
+- [Upstream forks](../reference/UPSTREAM-FORKS.md), [package publication](../reference/PUBLISHING.md)
 
 Apache-2.0 except component-specific licenses, including Drive FSL-1.1-ALv2 and
 Canvas MIT. Preserve copied-source provenance. Full OSS packaging and installed

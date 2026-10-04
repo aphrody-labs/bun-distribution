@@ -17,18 +17,18 @@ standalone Rust GUI is selected for packaging after evaluation, not presumed to 
 host. The desktop has one navigation shell. Product-specific Drive and Koharu behavior stays with
 its product owner; generic presentation and interaction belong to the M3 packages.
 
-[`UI-DESIGN.md`](../../../architecture/ui/UI-DESIGN.md) governs appearance,
-[`UX-DESIGN.md`](../../../architecture/ui/UX-DESIGN.md) governs flows,
-[`UI-RULES.md`](../../../reference/ui/UI-RULES.md) governs shippable views, and
-[`APHRODY-M3-CANONICAL-CONTRACT.md`](../../../architecture/ui/design/APHRODY-M3-CANONICAL-CONTRACT.md) governs tokens. The
+[`UI-DESIGN.md`](../../architecture/UI-DESIGN.md) governs appearance,
+[`UX-DESIGN.md`](../../architecture/UX-DESIGN.md) governs flows,
+[`UI-RULES.md`](../../reference/UI-RULES.md) governs shippable views, and
+[`APHRODY-M3-CANONICAL-CONTRACT.md`](../../architecture/design/APHRODY-M3-CANONICAL-CONTRACT.md) governs tokens. The
 [`multi-host plan`](./M3-MULTI-HOST-PLAN.md) sets host delivery order and the Tailwind CSS/Base UI
 target. Base UI and Tailwind CSS remain maintained M3-adapted forks in the Bun workspace.
-The [`asset catalog`](../../../../assets/ui/manifest.json) supplies visual references, not
+The [`asset catalog`](https://github.com/aphrody-labs/aphrody/blob/main/assets/ui/manifest.json) supplies visual references, not
 functional requirements or reusable user data. The generated
-[`ecosystem catalog`](../../../ecosystem/ECOSYSTEM.md) is the cross-repository
+[`ecosystem catalog`](https://github.com/aphrody-labs/aphrody/blob/main/docs/ecosystem/ECOSYSTEM.md) is the cross-repository
 package inventory; do not hand-edit it.
 
-The [`Drive migration document`](../../../architecture/ui/design/SPACEUI-SPACEDRIVE-MIGRATION.md) records
+The [`Drive migration document`](../../architecture/design/SPACEUI-SPACEDRIVE-MIGRATION.md) records
 `drive/packages/interface` as an archived FSL source tree. Desktop and Drive web import
 `@aphrody/app-ui`; both Bun workspace manifests exclude the archive, and no in-repository source
 imports its former `@aphrody/drive` package. Its package manifest and typecheck configuration are
@@ -37,14 +37,14 @@ matching paths alone do not authorize deleting FSL-derived files.
 
 ## Measured duplication map
 
-The snapshot in [`ui-dedup-baseline.json`](../../../architecture/ui/design/ui-dedup-baseline.json) inventories the active app UI,
+The snapshot in [`ui-dedup-baseline.json`](../../architecture/design/ui-dedup-baseline.json) inventories the active app UI,
 legacy Drive interface, asset/icon trees, and generated UI bundle. Its counts are refreshed from
 the current checkout; hash equality identifies byte-for-byte copies only. It does not measure
 feature parity or prove that a retained reference can be deleted.
 
 | Cluster | Evidence at baseline | Classification | Intended owner and action |
 | --- | --- | --- | --- |
-| `packages/app-ui/src` (not in repo) / `drive/packages/interface/src` | [Source audit](../../../architecture/ui/design/DRIVE-INTERFACE-SOURCE-AUDIT.md): 243 matching paths, 203 byte-identical and 40 divergent; 48 app-only and 32 Drive-only. No in-repo source imports use the old package. | Active desktop/web source plus non-buildable FSL source archive; both workspaces exclude it | Keep `app-ui` as the maintained implementation. Retire the stale package manifest, exports, dependency graph and typecheck config; retain all FSL source pending path-level provenance review. |
+| `packages/app-ui/src` (not in repo) / `drive/packages/interface/src` | [Source audit](../../architecture/design/DRIVE-INTERFACE-SOURCE-AUDIT.md): 243 matching paths, 203 byte-identical and 40 divergent; 48 app-only and 32 Drive-only. No in-repo source imports use the old package. | Active desktop/web source plus non-buildable FSL source archive; both workspaces exclude it | Keep `app-ui` as the maintained implementation. Retire the stale package manifest, exports, dependency graph and typecheck config; retain all FSL source pending path-level provenance review. |
 | `packages/assets` (not in repo) / `packages/aphrody-spaceui/packages/icons` (not in repo) | Retired 619 byte-identical files (11,121,998 bytes); four divergent source/metadata files and two upstream-only archive files remain | Canonical assets plus MIT provenance archive | `@aphrody/assets` is the only production import. `RETIRED-DUPLICATES.json` records each removed source path, hash, size and canonical counterpart; both MIT notices remain. The stale package manifest and TS build config are retired. |
 | `crates/ui/app/ui-dist` / binary & source assets | 236 duplicate binary files (WOFF2 webfonts, PNG icons, MP3/OGG sounds, totaling 21,371,683 bytes) were untracked from Git under `ui-dist/fonts/`. Only `index.html`, `app.js`, `app.css`, and 18 SVGs remain tracked. | Build-staged binaries + tracked frontendDist shell | Deduplication complete: `build.rs` dynamically stages the 236 binary assets from canonical sources (`packages/assets`, `packages/m3-fonts`, `crates/ui/bun/icons`) via `ui-dist.manifest` before Tauri embeds the folder. `cargo check` and `cargo test -p aphrody-app --test ui_dist_assets` verify identical reconstitution. |
 | `docs/products/ui/packages/aphrody-spaceui/examples/showcase` / `examples/m3-spaceui-showcase` | The upstream demo's runnable React source, Vite config and old package graph duplicated a port already recorded in `UPSTREAM.txt` | Migrated example plus provenance pointer | The Bun/M3 example is the sole runnable showcase for this port. The MIT reference directory keeps a redirect and delegates its compatibility scripts to the active example. |
@@ -114,7 +114,7 @@ component source.
   installed host before changing artifact ownership.
 - Run focused checks for each touched cluster. Record failed and unrun gates in the status matrix;
   source scans and green typechecks alone do not establish runtime or accessibility parity.
-- Regenerate [`ui-dedup-baseline.json`](../../../architecture/ui/design/ui-dedup-baseline.json) after changes. It fingerprints
+- Regenerate [`ui-dedup-baseline.json`](../../architecture/design/ui-dedup-baseline.json) after changes. It fingerprints
   the current working tree and is evidence of file overlap, not release proof.
 
 ### Consolidation Status Matrix (2026-10-01)

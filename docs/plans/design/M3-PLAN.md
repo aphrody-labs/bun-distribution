@@ -2,12 +2,12 @@
 # M3 plan: decisions and open items
 
 Decisions of the Material Design 3 layer and what is still open. Framework shape:
-[`M3-FRAMEWORK.md`](../../../architecture/ui/design/M3-FRAMEWORK.md). Bun layer and manifest contract:
-[`../BUN.md`](../../../reference/ui/BUN.md). SpaceUI rebuild: [`SPACEUI-M3-FUSION.md`](../../../architecture/ui/design/SPACEUI-M3-FUSION.md).
+[`M3-FRAMEWORK.md`](../../architecture/design/M3-FRAMEWORK.md). Bun layer and manifest contract:
+[`../BUN.md`](../../reference/BUN.md). SpaceUI rebuild: [`SPACEUI-M3-FUSION.md`](../../architecture/design/SPACEUI-M3-FUSION.md).
 Cross-host delivery: [`M3-MULTI-HOST-PLAN.md`](./M3-MULTI-HOST-PLAN.md).
 The decisions below describe existing web/Tauri components. Tauri v2 is the current
 desktop host; standalone Rust GUIs are evaluated for packaging under the
-[host boundary](./M3-MULTI-HOST-PLAN.md). Execute under [NHITL](../../../reference/ui/AGENTS.md).
+[host boundary](./M3-MULTI-HOST-PLAN.md). Execute under [NHITL](../../reference/AGENTS.md).
 
 ## Ownership
 
@@ -15,7 +15,7 @@ desktop host; standalone Rust GUIs are evaluated for packaging under the
 | --- | --- |
 | `crates/ui/m3-tokens` | Canonical token contract: HCT, tonal palettes, 2021 dynamic schemes (exact port of `@material/material-color-utilities` 0.4.0), roles, typography, shape, state, elevation, motion, adaptive layout, Google Sans Flex/Code. `sheets` renders `tokens.css`, `tailwind.css`, `spaceui.css`, scheme CSS. |
 | `crates/ui/m3-tokens` (`facade` module) | Facade over the tokens (layout, accessibility, icon policy, platform contract); formerly the `aphrody-m3` crate. |
-| `crates/ui/bun/icons` (module `icons` of `aphrody-bun`) | Material Symbols fonts (single font source) and SVG generation ([`M3-ICONS.md`](../../../architecture/ui/design/M3-ICONS.md)). |
+| `crates/ui/bun/icons` (module `icons` of `aphrody-bun`) | Material Symbols fonts (single font source) and SVG generation ([`M3-ICONS.md`](../../architecture/design/M3-ICONS.md)). |
 | `@aphrody/bun` (`packages/bun` + `crates/ui/bun`) | FFI to the Rust crates: `m3Css`, HCT maths, Sass compile, icons, render, reproduce. |
 | `@aphrody/m3` | Dev server, build, plugin, `M3App`, `m3` CLI. |
 | `@aphrody/m3-theme` | Generated sheets, `M3ThemeProvider`, Tauri bridge. |
@@ -57,7 +57,7 @@ Two lineages share only tokens and theme: Lit (`material-web` -> `m3-react`) and
 **Decision: keep M3 in the Aphrody Rust + Bun monorepo; do not create a separate M3
 repository.** Its canonical Rust token crates, Bun FFI, Bun framework packages, React/Lit
 adapters and consuming applications share source changes and release gates. The destination
-is the `aphrody` workspace described in the [root consolidation plan](../../workspace/PLAN.md).
+is the `aphrody` workspace described in the [root consolidation plan](https://github.com/aphrody-labs/aphrody/blob/main/docs/plans/workspace/PLAN.md).
 
 Keep the npm package family (`@aphrody/m3`, `@aphrody/m3-theme`, components and adapters) as
 independently addressable consumer APIs. The existing lockstep `aphrody.m3Version` is the

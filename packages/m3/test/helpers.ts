@@ -4,8 +4,10 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { M3CssConfig } from "../src/native.ts";
 
-/** The Aphrody OS checkout this package lives in. */
-export const REPO_ROOT = resolve(import.meta.dir, "../../../../..");
+/** The aphrody-m3 checkout: `packages/m3-fonts/fonts/upstream` holds the pinned fonts
+ * (`bun scripts/fonts-sync.ts`, run by this package's `test` script), so the suite runs the same in
+ * a standalone, aphrody, yolo or iecode checkout. */
+export const REPO_ROOT = resolve(import.meta.dir, "../../..");
 /** The fixture application. */
 export const FIXTURE = join(import.meta.dir, "fixtures/app");
 

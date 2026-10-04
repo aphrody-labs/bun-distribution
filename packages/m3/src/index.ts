@@ -8,7 +8,16 @@ export type { M3Config, M3TauriConfig, M3ThemeConfig, ResolvedM3Config } from ".
 export { cssRequest, normalizeVariant } from "./native.js";
 export { createM3Project } from "./new.js";
 export type { M3CssConfig, M3CssFn, M3Sheet } from "./native.js";
-export { findRepoRoot, fontPaths, resolveRepoRoot, SANS_FLEX_DIR, SYMBOL_STYLES, SYMBOLS_DIR } from "./paths.js";
+export {
+  findRepoRoot,
+  fontLayout,
+  fontPaths,
+  M3_FONTS_UPSTREAM_DIR,
+  resolveRepoRoot,
+  SANS_FLEX_DIR,
+  SYMBOL_STYLES,
+  SYMBOLS_DIR,
+} from "./paths.js";
 export type { SymbolStyle } from "./paths.js";
 export { fontsCss, M3_MODULES, M3_NAMESPACE, m3Plugin, SHEET_MODULES, SYMBOL_MODULES } from "./plugin.js";
 export type { M3PluginOptions } from "./plugin.js";

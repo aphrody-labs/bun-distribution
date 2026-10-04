@@ -5,7 +5,8 @@
   "description": "Codemods MUI React -> @aphrody/m3-react (jscodeshift + ast-grep)",
   "type": "commonjs",
   "scripts": {
-    "test": "bun run scripts/run-fixtures.ts"
+    "test": "bun run scripts/run-fixtures.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/jscodeshift": "^17.3.0",

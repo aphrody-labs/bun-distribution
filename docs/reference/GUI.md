@@ -36,6 +36,6 @@ A method name, mock, screenshot or source review is not runtime proof. Before re
 verify a real Chat turn and interruption/recovery, Drive-backed Files mutations, truthful
 model lifecycle, keyboard/screen-reader behavior, offline packaging, process cleanup,
 source provenance and license inventory. Tauri evidence does not qualify a future native
-host. See [the M3 host boundary](../../plans/ui/design/M3-MULTI-HOST-PLAN.md), [UI design](../../architecture/ui/UI-DESIGN.md),
-[UX flows](../../architecture/ui/UX-DESIGN.md), [UI rules](./UI-RULES.md) and the cross-repository
-[AI plan](../../plans/ai/PLAN.md).
+host. See [the M3 host boundary](../plans/design/M3-MULTI-HOST-PLAN.md), [UI design](../architecture/UI-DESIGN.md),
+[UX flows](../architecture/UX-DESIGN.md), [UI rules](./UI-RULES.md) and the cross-repository
+[AI plan](https://github.com/aphrody-labs/aphrody/blob/main/docs/plans/ai/PLAN.md).

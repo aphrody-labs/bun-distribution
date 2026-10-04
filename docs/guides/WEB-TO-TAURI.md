@@ -4,7 +4,7 @@
 
 Owner: `packages/web-to-tauri` (probe, plan, generate, parity), `crates/ui/tauri-wrap` (runtime),
 `packages/scaffold` (the Tauri shell, shared with every other generator). Contract of the
-generated `wrap.json`: [`docs/apis/ui/WRAP-CONFIG.md`](../../apis/ui/WRAP-CONFIG.md).
+generated `wrap.json`: [`docs/apis/ui/WRAP-CONFIG.md`](../apis/WRAP-CONFIG.md).
 
 ```sh
 bun run ui:wrap plan    https://example.com            # what would be generated, and the risks
@@ -52,7 +52,7 @@ Cargo feature, on by default. The generator keeps it only for a `bundle` project
 only), so it does not compile the HTTP stack. A build without the feature refuses `mode: bundle`
 at startup ("this build has no bundle server: enable the `bundle` feature"). The `wry` apps also get
 a `debug-bridge` feature that forwards to `aphrody-tauri-wrap/debug-bridge`
-([TAURI-DEBUG](../web/TAURI-DEBUG.md)).
+([TAURI-DEBUG](https://github.com/aphrody-labs/aphrody/blob/main/docs/guides/web/TAURI-DEBUG.md)).
 
 ## Risks that cannot be removed
 
@@ -90,7 +90,7 @@ Pixel-level parity is not checked.
 
 ## Verification status
 
-See the dated section of [`PLAN.md`](../../../PLAN.md). In short: the probe, plan, generator,
+See the dated section of [`PLAN.md`](https://github.com/aphrody-labs/aphrody/blob/main/PLAN.md). In short: the probe, plan, generator,
 policy and parity comparison are covered by tests that run against loopback fixtures; the policy
 table is run by both the TypeScript and the Rust implementation from one fixture file; a real
 window has to be launched to compare snapshots, and Windows, macOS and CEF output are not qualified.

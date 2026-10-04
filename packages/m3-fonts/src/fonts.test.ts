@@ -2,11 +2,43 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { FONT_STACKS, FONTS, renderStylesheet, SHEET_FILES, SUBSET_JOBS, SUBSETS, type FontSheet } from "./index";
+import { createHash } from "node:crypto";
+import { FONT_STACKS, FONTS, renderStylesheet, SHEET_FILES, SUBSET_JOBS, SUBSETS, UPSTREAM_DIR, type FontSheet } from "./index";
 
 const root = join(import.meta.dir, "..");
+const lock = JSON.parse(readFileSync(join(root, "fonts.lock.json"), "utf8")) as {
+  files: { dest: string; sha256: string; bytes: number }[];
+};
+const sha256 = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
+const SYNC_HINT = "run `bun scripts/fonts-sync.ts` at the repository root";
 const WOFF2 = "774f4632";
 const SFNT = ["00010000", "74727565", "4f54544f"]; // TrueType, true, OTTO
+
+describe("@aphrody/m3-fonts upstream sources (fonts.lock.json)", () => {
+  test("every pinned source is synced into fonts/upstream with its sha256", () => {
+    for (const entry of lock.files) {
+      const file = join(root, UPSTREAM_DIR, entry.dest);
+      expect(existsSync(file), `${entry.dest} missing: ${SYNC_HINT}`).toBe(true);
+      expect(statSync(file).size, entry.dest).toBe(entry.bytes);
+      expect(sha256(file), `${entry.dest} differs from fonts.lock.json: ${SYNC_HINT}`).toBe(entry.sha256);
+    }
+  });
+
+  test("every upstream path the manifest uses is pinned in the lock", () => {
+    const pinned = new Set(lock.files.map((e) => `${UPSTREAM_DIR}/${e.dest}`));
+    const used = [...FONTS.map((f) => f.sourceFile), ...FONTS.flatMap((f) => f.faces.map((x) => x.file)), ...SUBSET_JOBS.map((j) => j.source)];
+    for (const path of used.filter((p) => p.startsWith(`${UPSTREAM_DIR}/`))) expect(pinned.has(path), path).toBe(true);
+  });
+
+  test("the tracked OFL texts of the Google Sans subsets are the pinned upstream licences", () => {
+    for (const [tracked, dest] of [
+      ["fonts/GoogleSansFlex-OFL.txt", "google-sans-flex/OFL.txt"],
+      ["fonts/GoogleSansCode-OFL.txt", "google-sans-code/OFL.txt"],
+    ] as const) {
+      expect(sha256(join(root, tracked))).toBe(lock.files.find((e) => e.dest === dest)!.sha256);
+    }
+  });
+});
 
 describe("@aphrody/m3-fonts", () => {
   test("every subset job produced WOFF2 faces with a unicode-range", () => {

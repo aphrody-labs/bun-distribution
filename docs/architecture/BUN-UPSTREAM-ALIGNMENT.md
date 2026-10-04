@@ -154,7 +154,7 @@ Le module `M3UiCache` (`@aphrody/m3-config/cache-db`) fournit une couche de pers
 
 ### 3.3 Serveur Desktop Persistant & Pont Tauri Universel (`Bun.serve`)
 
-Le serveur persistant [`scripts/dev/ui/serve-desktop-ui.ts`](../../../scripts/dev/ui/serve-desktop-ui.ts) écoute sur le port officiel Tauri `1421` :
+Le serveur persistant [`scripts/dev/ui/serve-desktop-ui.ts`](https://github.com/aphrody-labs/aphrody/blob/main/scripts/dev/ui/serve-desktop-ui.ts) écoute sur le port officiel Tauri `1421` :
 - **Pont IPC Tauri Transparent** : injection automatique dans `index.html` de `window.__TAURI_INTERNALS__` et `window.__TAURI__` (core `invoke`, event `listen`/`emit`), permettant à l'application web d'exécuter nativement toutes les commandes Tauri de bureau sans runtime Wry externe.
 - **Dispatching de Commandes Natives (`/api/tauri/invoke`)** : prise en charge complète de `aphrody_meta`, `aphrody_hardware_telemetry`, `aphrody_model_*`, `aphrody_fs_*`, `aphrody_shenron_chat`, `koharu_rpc`, `aphrody_rpc`.
 - **Routage SPA** : redirection transparente de toutes les routes de vues (`/chat`, `/files`, `/models`, `/settings`, `/splash`, `/pet`, etc.) vers `crates/ui/app/ui-dist/index.html`.

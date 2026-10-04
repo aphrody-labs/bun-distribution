@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-// The real `m3Css` of `@aphrody/bun` (Rust, `bun_rs`). Skipped when the native library is not
-// built on this machine (`cargo build --release -p aphrody-bun`).
+// The real `m3Css` of `@aphrody/bun` (Rust, `bun_rs`). Skipped, with the loader's reason, when the
+// native library is not built or linked on this machine (docs/guides/NATIVE.md).
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { cssRequest, loadAphrodyBun, normalizeVariant } from "../src/native.ts";
@@ -8,8 +8,15 @@ import { m3Plugin } from "../src/plugin.ts";
 import { m3Tokens } from "../src/tokens.ts";
 import { REPO_ROOT, tempDir } from "./helpers.ts";
 
-const native = await loadAphrodyBun().catch(() => undefined);
-const hasM3Css = typeof native?.m3Css === "function";
+const native = await loadAphrodyBun().catch((error: unknown) => error as Error);
+const unavailable =
+  native instanceof Error
+    ? `bun_rs native library unavailable (${String(native.message ?? native).split("\n")[0]}); see docs/guides/NATIVE.md`
+    : typeof native.m3Css === "function"
+      ? ""
+      : "this build of @aphrody/bun does not export m3Css; see docs/guides/NATIVE.md";
+const hasM3Css = unavailable === "";
+if (!hasM3Css) console.warn(`[@aphrody/m3] native suite skipped: ${unavailable}`);
 
 describe("variant spelling", () => {
   test("camelCase SchemeVariant names become the Rust kebab-case names", () => {
@@ -21,7 +28,7 @@ describe("variant spelling", () => {
   });
 });
 
-describe.skipIf(!hasM3Css)("m3Css through FFI", () => {
+describe.skipIf(!hasM3Css)(hasM3Css ? "m3Css through FFI" : `m3Css through FFI [skipped: ${unavailable}]`, () => {
   test("m3Tokens renders a dark scheme from a seed", async () => {
     const css = await m3Tokens({ sheet: "scheme", seed: "#6750a4", variant: "tonalSpot", dark: true });
     expect(css).toContain("color-scheme: dark");

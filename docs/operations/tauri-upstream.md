@@ -2,7 +2,7 @@
 
 # Tauri 3 upstream line
 
-Machine-readable source: [`config/tauri-upstream.json`](../../../config/tauri-upstream.json).
+Machine-readable source: [`config/tauri-upstream.json`](https://github.com/aphrody-labs/aphrody/blob/main/config/tauri-upstream.json).
 Sync command: `bun run tauri:sync` (module `packages/infra/workspace/src/tauri-sync.ts` (not in repo)).
 
 ## Which upstream ref is current

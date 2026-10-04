@@ -18,7 +18,7 @@ Shenron's public, read-only grounded chat is available in the existing Chat
 surface with `/shenron <question>`. Its typed `aphrody_shenron_chat` command calls
 only `https://dragonballfr.com/api/chat`; it accepts no arbitrary URL or token.
 It does not represent an authenticated Shenron account or grant admin access.
-See [`../../docs/integrations/SHENRON.md`](../../../../reference/ui/integrations/SHENRON.md)
+See [`../../docs/integrations/SHENRON.md`](../../../reference/integrations/SHENRON.md)
 for the API, FFI, auth, and database ownership decisions.
 
 The main window also exposes `koharu_rpc(method, params)`. Its broker starts the

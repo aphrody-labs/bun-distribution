@@ -142,6 +142,7 @@ export function levenshtein(a, b) {
 
 /** Rôle M3 le plus proche de `name` (distance <= 3), ou null. */
 export function closestColorRole(name) {
+  /** @type {string | null} */
   let best = null;
   let bestD = Infinity;
   for (const role of MD_SYS_COLOR_ROLES) {

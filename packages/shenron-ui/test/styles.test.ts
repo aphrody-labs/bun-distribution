@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-const root = new URL("../../../../", import.meta.url);
+// The package lives at design/aphrody-m3/packages/shenron-ui of the aphrody checkout that hosts the
+// Shenron apps; the package stylesheet is read next to this test.
+const root = new URL("../../../../../", import.meta.url);
 const read = (p: string) => Bun.file(new URL(p, root)).text();
 
-const pkgCss = await read("packages/shenron-ui/src/styles.css");
+const pkgCss = await Bun.file(new URL("../src/styles.css", import.meta.url)).text();
 const siteCss = await read("apps/shenron/site/src/app/globals.css");
 const combined = `${siteCss}\n${pkgCss}`;
 

@@ -8,7 +8,7 @@ the control, then supporting text (or error text) 4dp below it.
 
 This is SpaceUI's `@spacedrive/forms` rebuilt on Material Design 3. The upstream source lives in
 `packages/aphrody-spaceui/packages/forms`; the fusion rules are in
-[`docs/design/SPACEUI-M3-FUSION.md`](../../../docs/architecture/ui/design/SPACEUI-M3-FUSION.md).
+[`docs/design/SPACEUI-M3-FUSION.md`](../../docs/architecture/design/SPACEUI-M3-FUSION.md).
 
 ## Install
 
@@ -23,7 +23,7 @@ Peer dependencies: `react` and `react-dom` 18 or 19, `react-hook-form` 7, `zod` 
 
 The components use the M3 Tailwind utilities (`text-body-small`, `text-error`,
 `bg-surface-container-highest`, …). Import the token sheets and let Tailwind scan the package, as
-described in [`SPACEUI-M3-FUSION.md` → Integration](../../../docs/architecture/ui/design/SPACEUI-M3-FUSION.md#integration):
+described in [`SPACEUI-M3-FUSION.md` → Integration](../../docs/architecture/design/SPACEUI-M3-FUSION.md#integration):
 
 ```css
 @import "tailwindcss";

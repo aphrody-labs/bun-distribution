@@ -3,7 +3,7 @@
 > Historical upstream descriptions below document Spacedrive's origin.
 
 <p align="center">
-  <img src=".github/logo.png" alt="Spacedrive" width="120" height="120" />
+  <img src="https://raw.githubusercontent.com/spacedriveapp/spacedrive/main/.github/logo.png" alt="Spacedrive" width="120" height="120" />
 </p>
 
 <h1 align="center">Spacedrive</h1>
@@ -181,8 +181,8 @@ Optional cloud integration is available for backup and remote access, but it's n
 ## Contributing
 
 - **Join [Discord](https://discord.gg/gTaF2Z44f5)** to chat with developers and community
-- **[Contributing Guide](../../../guides/ui/drive/CONTRIBUTING.md)**
-- **[Adapter Guide](docs/ADAPTERS.md)** — write a data source adapter
+- **[Contributing Guide](../../guides/drive/CONTRIBUTING.md)**
+- **Adapter Guide** — write a data source adapter
 - **[SpaceUI](https://github.com/spacedriveapp/spaceui)** — shared design system (clone alongside Spacedrive to work on UI)
 
 ---

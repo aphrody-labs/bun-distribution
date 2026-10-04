@@ -20,6 +20,9 @@ test("a controlled thumbnail reports load to its host", async () => {
           iconSrc="/icon.png"
           thumbnailSrc="/thumb.png"
           thumbnailLoaded={loaded}
+          // happy-dom fires `error` for image URLs it cannot fetch (no base URL in tests), which
+          // would unmount the uncontrolled thumbnail: the host controls the error state too.
+          thumbnailError={false}
           onThumbnailLoad={() => { loaded = true; }}
         />,
       );

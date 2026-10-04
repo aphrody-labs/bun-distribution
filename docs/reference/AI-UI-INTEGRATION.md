@@ -8,5 +8,5 @@ shell commands.
 
 The supported areas are Chat, Files, Models and Settings. Verify current behavior in
 source and follow the [GUI contract](./GUI.md) and the cross-repository
-[AI plan](../../plans/ai/PLAN.md). Historical integration claims are not release
+[AI plan](https://github.com/aphrody-labs/aphrody/blob/main/docs/plans/ai/PLAN.md). Historical integration claims are not release
 evidence.

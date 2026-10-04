@@ -14,7 +14,7 @@ package is exposed in the Bun workspace.
   the same version in `optionalDependencies`.
 - `bun scripts/vendor-upstream.ts` regenerates the copies; `--check` is the `prepack` gate and
   `vendor.test.ts` fails on drift. `NAPI_RS_NATIVE_LIBRARY_PATH` selects an Aphrody-built addon.
-- Details: [`packages/canvas/README.md`](../../../packages/canvas/README.md).
+- Details: [`packages/canvas/README.md`](../../packages/canvas/README.md).
 
 The upstream source is never mass-rewritten (N2B findings there are upstream CI, Yarn and native
 build scripts); the Aphrody wrapper is N2B-clean and owns the Bun workspace contract.
@@ -22,4 +22,4 @@ build scripts); the Aphrody wrapper is N2B-clean and owns the Bun workspace cont
 ## Role
 
 Canvas is the CPU/native Skia path for images and PDF. WebGPU and `aphrody-render` remain the GPU
-path ([`design/M3-RENDER.md`](../../architecture/ui/design/M3-RENDER.md)); there is no second GUI renderer.
+path ([`design/M3-RENDER.md`](../architecture/design/M3-RENDER.md)); there is no second GUI renderer.

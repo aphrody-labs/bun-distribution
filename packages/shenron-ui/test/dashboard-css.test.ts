@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { analyze } from "../scripts/check-css-equivalence";
 import { judge, PRIMITIVE, total } from "../scripts/check-dashboard-css";
 
-const root = new URL("../../../../", import.meta.url);
+// Host checkout (aphrody): this package is its design/aphrody-m3/packages/shenron-ui.
+const root = new URL("../../../../../", import.meta.url);
 const dashboardCss = await Bun.file(new URL("apps/shenron/bot/src/dashboard/styles.css", root)).text();
 
 const BASE = `
@@ -23,7 +24,7 @@ describe("dashboard styles.css", () => {
 		const ui = dashboardCss.indexOf('@import "@shenron/ui/styles.css";');
 		expect(tw).toBeGreaterThanOrEqual(0);
 		expect(ui).toBeGreaterThan(tw);
-		expect(dashboardCss).toContain('@source "../../../../../packages/shenron-ui/src";');
+		expect(dashboardCss).toContain('@source "../../../../../design/aphrody-m3/packages/shenron-ui/src";');
 	});
 
 	test("keeps the blue palette and square primitives", () => {

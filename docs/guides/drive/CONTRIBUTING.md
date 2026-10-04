@@ -1,8 +1,8 @@
 # Contributing to Aphrody Drive
 
 This tree contains the Spacedrive V2 daemon, typed client and file explorer adopted by Aphrody OS.
-Keep upstream provenance and the FSL-1.1-ALv2 notices intact. See [AGENTS.md](../../../reference/ui/drive/AGENTS.md) for
-backend and type generation rules, and [the Aphrody migration plan](../../../architecture/ui/design/SPACEUI-SPACEDRIVE-MIGRATION.md)
+Keep upstream provenance and the FSL-1.1-ALv2 notices intact. See [AGENTS.md](../../reference/drive/AGENTS.md) for
+backend and type generation rules, and [the Aphrody migration plan](../../architecture/design/SPACEUI-SPACEDRIVE-MIGRATION.md)
 for the current ownership and parity gates.
 
 ## Product targets
