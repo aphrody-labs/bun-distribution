@@ -39,6 +39,9 @@ enabled = true
 [plugins."aphrody@aphrody-user"]
 enabled = true
 
+[plugins."aphrody-google@aphrody-user"]
+enabled = true
+
 [plugins."aphrody-web@aphrody-user"]
 enabled = true
 
