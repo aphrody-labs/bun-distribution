@@ -22,12 +22,12 @@
   "localChanges": [
     "packages/app-ui: crates/aphrody-app -> crates/ui/app paths, tsconfig include ../ui/assets/types.d.ts and build.ts, index.html icon -> crates/ui/identity, @aphrody/m3-tokens catalog: -> workspace:*, catalog:drive -> catalog:, build script m3 build --tauri -> bun run build.ts (adds a resolver for react-selecto undeclared deps), typecheck tsgo -> tsc, src/framework-utils.d.ts added",
     "packages/app-ui and packages/os/drive-client: @aphrody/assets/icons/Drive-{AmazonS3,BackBlaze,Box,Dropbox,GoogleDrive,PCloud}.png -> canonical {AmazonS3,...}.png (aliases recorded in crates/ui/app/ui-dist.manifest)",
-    "packages/ui/identity: crates/aphrody-identity -> crates/ui/identity paths, typecheck tsgo -> tsc",
+    "design/aphrody-m3/packages/identity: crates/aphrody-identity -> crates/ui/identity paths, typecheck tsgo -> tsc",
     "packages/os/drive-client: generate-types manifest path -> crates/os/drive/core/Cargo.toml"
   ],
   "licenses": {
     "packages/app-ui": "unspecified in package.json (aphrody first-party)",
-    "packages/ui/identity": "Apache-2.0",
+    "design/aphrody-m3/packages/identity": "Apache-2.0",
     "packages/os/drive-client": "FSL-1.1-Apache-2.0 (Spacedrive)"
   },
   "packages": [
@@ -2151,109 +2151,109 @@
     },
     {
       "sourcePath": "aphrody-ui/packages/identity",
-      "target": "packages/ui/identity",
+      "target": "design/aphrody-m3/packages/identity",
       "fileCount": 13,
       "sourceMapSha256Mismatches": 0,
       "notInSourceMap": 0,
       "modifiedAfterRestore": [
-        "packages/ui/identity/package.json",
-        "packages/ui/identity/scripts/generate.ts",
-        "packages/ui/identity/src/animations.generated.ts",
-        "packages/ui/identity/src/atlas.ts",
-        "packages/ui/identity/src/brand.ts",
-        "packages/ui/identity/src/compact.ts",
-        "packages/ui/identity/src/pet.test.ts",
-        "packages/ui/identity/src/pet.ts"
+        "design/aphrody-m3/packages/identity/package.json",
+        "design/aphrody-m3/packages/identity/scripts/generate.ts",
+        "design/aphrody-m3/packages/identity/src/animations.generated.ts",
+        "design/aphrody-m3/packages/identity/src/atlas.ts",
+        "design/aphrody-m3/packages/identity/src/brand.ts",
+        "design/aphrody-m3/packages/identity/src/compact.ts",
+        "design/aphrody-m3/packages/identity/src/pet.test.ts",
+        "design/aphrody-m3/packages/identity/src/pet.ts"
       ],
       "files": [
         {
           "source": "aphrody-ui/packages/identity/package.json",
           "sourceSha256": "fb377d09131d6df5ffdaebb85d0c643ac1025c77a2342aaa6d1ae1a5c0a8a4b2",
-          "target": "packages/ui/identity/package.json",
+          "target": "design/aphrody-m3/packages/identity/package.json",
           "targetSha256": "bb7f65d01f4962199f165040039e82f473793fd6029b4fba6cab5e9faf67d920",
           "modified": true
         },
         {
           "source": "aphrody-ui/packages/identity/tsconfig.json",
           "sourceSha256": "847e3045eb93807d26458b55170e6b9da2af4d11d48a3a913561b4d58930868f",
-          "target": "packages/ui/identity/tsconfig.json",
+          "target": "design/aphrody-m3/packages/identity/tsconfig.json",
           "targetSha256": "847e3045eb93807d26458b55170e6b9da2af4d11d48a3a913561b4d58930868f",
           "modified": false
         },
         {
           "source": "aphrody-ui/packages/identity/scripts/generate.ts",
           "sourceSha256": "ced88cb88ae6bd39f65f070cdff8f1708503dd8d8fb5ad18201284bcf0328ea2",
-          "target": "packages/ui/identity/scripts/generate.ts",
+          "target": "design/aphrody-m3/packages/identity/scripts/generate.ts",
           "targetSha256": "60313b9a9c3f412d6791a7136cc4a641796f6e672d3687fb724a11fd085e3a39",
           "modified": true
         },
         {
           "source": "aphrody-ui/packages/identity/src/AphrodyAvatar.tsx",
           "sourceSha256": "79d2235f117d65a4ece8b11607fc435fe72b8c31e0691d02619d91841e86aa9e",
-          "target": "packages/ui/identity/src/AphrodyAvatar.tsx",
+          "target": "design/aphrody-m3/packages/identity/src/AphrodyAvatar.tsx",
           "targetSha256": "79d2235f117d65a4ece8b11607fc435fe72b8c31e0691d02619d91841e86aa9e",
           "modified": false
         },
         {
           "source": "aphrody-ui/packages/identity/src/AphrodyPet.tsx",
           "sourceSha256": "942d50a58e094a949caf4ebe44c67bb47bbe3a89af115679e23a83861a75b5a7",
-          "target": "packages/ui/identity/src/AphrodyPet.tsx",
+          "target": "design/aphrody-m3/packages/identity/src/AphrodyPet.tsx",
           "targetSha256": "942d50a58e094a949caf4ebe44c67bb47bbe3a89af115679e23a83861a75b5a7",
           "modified": false
         },
         {
           "source": "aphrody-ui/packages/identity/src/animations.generated.ts",
           "sourceSha256": "8563baf849c75daca9fad5d4bd78bc02e08c9cbc230aaf40c047b99ecb971345",
-          "target": "packages/ui/identity/src/animations.generated.ts",
+          "target": "design/aphrody-m3/packages/identity/src/animations.generated.ts",
           "targetSha256": "f1b347c723f09d198d7306612113382180a5ff4e6d72b245698ee56b08b5e2d8",
           "modified": true
         },
         {
           "source": "aphrody-ui/packages/identity/src/atlas.ts",
           "sourceSha256": "f61c3b87f63553c50faf2d3b9075f41fb343844e0307ec25e65242fe2c9c6854",
-          "target": "packages/ui/identity/src/atlas.ts",
+          "target": "design/aphrody-m3/packages/identity/src/atlas.ts",
           "targetSha256": "0a65550b21a85ca9200071e6d599812e82a259a89ac92c835e26d7f7f599e693",
           "modified": true
         },
         {
           "source": "aphrody-ui/packages/identity/src/brand.ts",
           "sourceSha256": "445548599e320e1603b2b1d5b4ebd88d87a3586bb1ea851d9dde5915c77d5c50",
-          "target": "packages/ui/identity/src/brand.ts",
+          "target": "design/aphrody-m3/packages/identity/src/brand.ts",
           "targetSha256": "0c3751aac8227f225417937554a55479689e211ffa86aa87384dae3dbe10ad00",
           "modified": true
         },
         {
           "source": "aphrody-ui/packages/identity/src/compact.ts",
           "sourceSha256": "b2dc2881504b9e597eecd286af059c10bfdca2f64de8a8b65e577597b86258d5",
-          "target": "packages/ui/identity/src/compact.ts",
+          "target": "design/aphrody-m3/packages/identity/src/compact.ts",
           "targetSha256": "eabe9c9c25f66fc2c06fc6592f8a1c63943a04e1c34f28f6a4513a709e46f3b7",
           "modified": true
         },
         {
           "source": "aphrody-ui/packages/identity/src/env.d.ts",
           "sourceSha256": "f6c995441c42ca9fdbd00afdaf36a33ceaa9c26620d3d201218485849ad6cf24",
-          "target": "packages/ui/identity/src/env.d.ts",
+          "target": "design/aphrody-m3/packages/identity/src/env.d.ts",
           "targetSha256": "f6c995441c42ca9fdbd00afdaf36a33ceaa9c26620d3d201218485849ad6cf24",
           "modified": false
         },
         {
           "source": "aphrody-ui/packages/identity/src/index.ts",
           "sourceSha256": "645901f2cadf5d3d22aeb0f9e1454c63f95d810264f287d3b579a6efcea3ae2e",
-          "target": "packages/ui/identity/src/index.ts",
+          "target": "design/aphrody-m3/packages/identity/src/index.ts",
           "targetSha256": "645901f2cadf5d3d22aeb0f9e1454c63f95d810264f287d3b579a6efcea3ae2e",
           "modified": false
         },
         {
           "source": "aphrody-ui/packages/identity/src/pet.test.ts",
           "sourceSha256": "0f4b4d778fa327afec29556ea9c901d4882129714fc9b5e93900ea8f3e3ed588",
-          "target": "packages/ui/identity/src/pet.test.ts",
+          "target": "design/aphrody-m3/packages/identity/src/pet.test.ts",
           "targetSha256": "ccff9b1be35c36c4b5653736ef3cb2e3c3d0596b681de53854bd2f810e5c2fa2",
           "modified": true
         },
         {
           "source": "aphrody-ui/packages/identity/src/pet.ts",
           "sourceSha256": "702f658b4c02692ea7c5c78468e44dcf5891f68bdfa5b26ca5a6660e10d9f0b2",
-          "target": "packages/ui/identity/src/pet.ts",
+          "target": "design/aphrody-m3/packages/identity/src/pet.ts",
           "targetSha256": "42ef3692d85f5ae9cfc08cd435ba8f8e45e970d3a3200523a40aff60fed57f7b",
           "modified": true
         }

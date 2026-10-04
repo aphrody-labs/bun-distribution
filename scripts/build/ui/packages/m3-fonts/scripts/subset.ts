@@ -4,7 +4,7 @@
 // src/subsets.json, then regenerates the stylesheets.
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
-import { SUBSET_JOBS } from "../../../../../../packages/ui/m3-fonts/src/index";
+import { SUBSET_JOBS } from "../../../../../../design/aphrody-m3/packages/m3-fonts/src/index";
 
 const root = join(import.meta.dir, "..");
 await rm(join(root, "fonts", "web"), { recursive: true, force: true });

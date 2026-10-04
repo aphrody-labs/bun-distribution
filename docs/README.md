@@ -31,7 +31,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | architecture | [runtime-native](architecture/runtime-native/) | 2 | [Frontière runtime Yolo / produit Aphrody](architecture/runtime-native/README.md) |
 | architecture | [shell](architecture/shell/) | 1 | [Shell and terminal layers](architecture/shell/README.md) |
 | architecture | [shenron](architecture/shenron/) | 11 | - |
-| architecture | [ui](architecture/ui/) | 48 | [UI, GUI, wgpu, Tauri, Google design and M3 / M3D: documentation map](architecture/ui/README.md) |
 | architecture | [upstream-bun](architecture/upstream-bun/) vendored upstream copy | 2 | - |
 | architecture | [upstream-oxc](architecture/upstream-oxc/) vendored upstream copy | 3 | - |
 | architecture | [upstream-victauri](architecture/upstream-victauri/) vendored upstream copy | 1 | - |
@@ -45,7 +44,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | apis | [generated](apis/generated/) | 3 | - |
 | apis | [infra](apis/infra/) | 1 | - |
 | apis | [shell](apis/shell/) | 1 | - |
-| apis | [ui](apis/ui/) | 9 | - |
 | apis | [upstream-bun](apis/upstream-bun/) vendored upstream copy | 29 | - |
 | apis | [upstream-jan](apis/upstream-jan/) vendored upstream copy | 1 | - |
 | apis | [upstream-llama_index](apis/upstream-llama_index/) vendored upstream copy | 1 | - |
@@ -62,7 +60,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [discord](guides/discord/) | 67 | - |
 | guides | [koharu](guides/koharu/) | 1 | - |
 | guides | [shenron](guides/shenron/) | 11 | - |
-| guides | [ui](guides/ui/) | 10 | [UI guides](guides/ui/README.md) |
 | guides | [upstream-bun](guides/upstream-bun/) vendored upstream copy | 203 | - |
 | guides | [upstream-codex](guides/upstream-codex/) vendored upstream copy | 1 | - |
 | guides | [upstream-llama_index](guides/upstream-llama_index/) vendored upstream copy | 7 | - |
@@ -79,7 +76,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | operations | [infra](operations/infra/) | 102 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [shenron](operations/shenron/) | 13 | - |
-| operations | [ui](operations/ui/) | 10 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
 | operations | [upstream-litellm](operations/upstream-litellm/) vendored upstream copy | 1 | - |
 | operations | [upstream-vllm](operations/upstream-vllm/) vendored upstream copy | 5 | - |
@@ -96,7 +92,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [runtime](plans/runtime/) | 3 | - |
 | plans | [shell](plans/shell/) | 1 | - |
 | plans | [shenron](plans/shenron/) | 3 | - |
-| plans | [ui](plans/ui/) | 8 | [UI plans](plans/ui/README.md) |
 | plans | [upstream-bun](plans/upstream-bun/) vendored upstream copy | 1 | - |
 | plans | [upstream-oxc](plans/upstream-oxc/) vendored upstream copy | 1 | - |
 | plans | [web](plans/web/) | 6 | - |
@@ -111,7 +106,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [os](products/os/) | 5 | [Aphrody OS](products/os/README.md) |
 | products | [shell](products/shell/) | 4 | [Aphrody Shell](products/shell/README.md) |
 | products | [shenron](products/shenron/) | 10 | - |
-| products | [ui](products/ui/) | 35 | [Aphrody UI](products/ui/README.md) |
 | products | [upstream-antigravity-sdk-python](products/upstream-antigravity-sdk-python/) vendored upstream copy | 1 | [Google Antigravity SDK](products/upstream-antigravity-sdk-python/README.md) |
 | products | [upstream-bun](products/upstream-bun/) vendored upstream copy | 65 | [with install script (recommended)](products/upstream-bun/README.md) |
 | products | [upstream-codex](products/upstream-codex/) vendored upstream copy | 1 | [Install using npm](products/upstream-codex/README.md) |
@@ -141,7 +135,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [os](reference/os/) | 31 | - |
 | reference | [shell](reference/shell/) | 10 | - |
 | reference | [shenron](reference/shenron/) | 15 | - |
-| reference | [ui](reference/ui/) | 219 | [UI reference documents](reference/ui/README.md) |
 | reference | [upstream-antigravity-sdk-python](reference/upstream-antigravity-sdk-python/) vendored upstream copy | 5 | - |
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 2045 | - |
 | reference | [upstream-codex](reference/upstream-codex/) vendored upstream copy | 4 | - |
@@ -163,7 +156,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | research | [infra](research/infra/) | 2 | - |
 | research | [os](research/os/) | 15 | - |
 | research | [shell](research/shell/) | 4 | - |
-| research | [ui](research/ui/) | 7 | [UI research and audits](research/ui/README.md) |
 | research | [upstream-bun](research/upstream-bun/) vendored upstream copy | 5 | - |
 | research | [upstream-jan](research/upstream-jan/) vendored upstream copy | 11 | - |
 | research | [upstream-oxc](research/upstream-oxc/) vendored upstream copy | 7 | - |
@@ -187,4 +179,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 10 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 5090 files.
+Total: 4744 files.

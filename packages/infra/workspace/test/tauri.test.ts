@@ -29,7 +29,7 @@ test("Tauri check uses only the current app and serialized Cargo wrapper", async
   Bun.env.RUSTC_WRAPPER = "test-sccache-wrapper";
   try {
     const layout = resolveTauriLayout(root);
-    expect(layout.uiDir).toBe(join(root, "packages/ui/app-ui"));
+    expect(layout.uiDir).toBe(join(root, "design/aphrody-m3/packages/app-ui"));
     expect(layout.appDir).toBe(app);
     expect(await runTauri(["check", "--root", root])).toBe(0);
     expect(readFileSync(join(root, "invocation"), "utf8")).toBe("check\n--locked\n");

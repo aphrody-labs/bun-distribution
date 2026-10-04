@@ -5,7 +5,7 @@ manga (tome 1 ch. 4, édition couleur), et dessin d'un Kinto-Un original — ill
 icône carrée, favicons de toutes tailles — à partir de ces seules mesures.
 
 - Géométrie (source unique) : [`apps/shenron/site/src/lib/kinto-un.ts`](../../../apps/shenron/site/src/lib/kinto-un.ts)
-- Illustration : [`apps/shenron/site/public/dbz/kinto-un.svg`](../../../packages/shenron/ui/assets/dbz/kinto-un.svg) · icône : [`kinto-un-icone.svg`](../../../packages/shenron/ui/assets/dbz/kinto-un-icone.svg)
+- Illustration : [`apps/shenron/site/public/dbz/kinto-un.svg`](../../../design/aphrody-m3/packages/shenron-ui/assets/dbz/kinto-un.svg) · icône : [`kinto-un-icone.svg`](../../../design/aphrody-m3/packages/shenron-ui/assets/dbz/kinto-un-icone.svg)
 - Composant : [`apps/shenron/site/src/components/KintoUn.tsx`](../../../apps/shenron/site/src/components/KintoUn.tsx) (`<KintoUn>`, `<KintoUnLoader>`)
 - Générateurs : [`genere-kinto-un.ts`](../../../apps/shenron/site/scripts/genere-kinto-un.ts) (SVG) et [`genere-icones.ts`](../../../apps/shenron/site/scripts/genere-icones.ts) (favicons site + bot)
 - Mesures faites le 2026-09-04.

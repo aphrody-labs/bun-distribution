@@ -68,7 +68,7 @@ job queue is introduced by this architecture.
 
 ## Workstation shell and object actions
 
-`aphrody-ui/packages/ui/app-ui` is the single packaged frontend owner. The user reports
+`aphrody-ui/design/aphrody-m3/packages/app-ui` is the single packaged frontend owner. The user reports
 that Spacedrive shell/explorer components have been consolidated there and
 `drive/packages/interface` excluded from Bun workspaces. Maintain that completed
 consolidation; release evidence still has to identify the built revision/artifact.

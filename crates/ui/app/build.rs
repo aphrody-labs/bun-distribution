@@ -19,7 +19,7 @@ const UI_DIST_MANIFEST: &str = include_str!("ui-dist.manifest");
 fn main() {
     println!("cargo:rerun-if-changed=windows-app-manifest.xml");
     println!("cargo:rerun-if-changed=ui-dist.manifest");
-    // `frontendDist` is generated from `packages/ui/app-ui` (`bun run build`, m3 build --tauri) into
+    // `frontendDist` is generated from `design/aphrody-m3/packages/app-ui` (`bun run build`, m3 build --tauri) into
     // ui-dist. Track the generated entry files (not the staged fonts, which are tracked per source
     // below) so Cargo/Tauri re-embed after a UI rebuild.
     for generated in ["ui-dist/index.html", "ui-dist/app.js", "ui-dist/app.css"] {

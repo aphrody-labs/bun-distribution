@@ -830,7 +830,7 @@
       - [Rpc](products/discord/packages/rpc/README.md)
       - [Scripts](products/discord/packages/scripts/README.md)
       - [Structures](products/discord/packages/structures/README.md)
-      - [Ui](products/discord/packages/ui/README.md)
+      - [Ui](products/discord/design/aphrody-m3/packages/README.md)
       - [Util](products/discord/packages/util/README.md)
       - [Utilities](products/discord/packages/utilities/README.md)
       - [Voice](products/discord/packages/voice/README.md)

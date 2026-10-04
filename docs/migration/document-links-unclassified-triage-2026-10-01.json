@@ -28,7 +28,7 @@
     "link": "../popular-topics/display-components"
    },
    {
-    "file": "docs/apis/ui/drive/docs/core/api.mdx",
+    "file": "design/aphrody-m3/docs/apis/drive/docs/core/api.mdx",
     "link": "../../apps/tauri/DAEMON_SETUP.md"
    },
    {
@@ -60,83 +60,83 @@
     "link": "../_source/ARCHITECTURE.md#data-ownership"
    },
    {
-    "file": "docs/architecture/ui/UI-DESIGN.md",
+    "file": "design/aphrody-m3/docs/architecture/UI-DESIGN.md",
     "link": "../packages/app-ui"
    },
    {
-    "file": "docs/architecture/ui/design/DRIVE-ROUTE-PARITY.md",
+    "file": "design/aphrody-m3/docs/architecture/design/DRIVE-ROUTE-PARITY.md",
     "link": "../../packages/app-ui/src/router.tsx"
    },
    {
-    "file": "docs/architecture/ui/design/DRIVE-ROUTE-PARITY.md",
+    "file": "design/aphrody-m3/docs/architecture/design/DRIVE-ROUTE-PARITY.md",
     "link": "../../drive/packages/interface/src/router.tsx"
    },
    {
-    "file": "docs/architecture/ui/design/DRIVE-ROUTE-PARITY.md",
+    "file": "design/aphrody-m3/docs/architecture/design/DRIVE-ROUTE-PARITY.md",
     "link": "../../drive/packages/interface/src/routes/redundancy"
    },
    {
-    "file": "docs/architecture/ui/drive/apps/server/ARCHITECTURE.md",
+    "file": "design/aphrody-m3/docs/architecture/drive/apps/server/ARCHITECTURE.md",
     "link": "../../docs/core/architecture.md"
    },
    {
-    "file": "docs/architecture/ui/drive/apps/server/ARCHITECTURE.md",
+    "file": "design/aphrody-m3/docs/architecture/drive/apps/server/ARCHITECTURE.md",
     "link": "../tauri/DAEMON_SETUP.md"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/README.md",
     "link": "../../../../docs/design/fusion-tokens.sample.css"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/README.md",
     "link": "../../../../docs/design/references/google-sans-family.md"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/gemini/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/gemini/README.md",
     "link": "../../../../../docs/design/gemini/theme.css"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/gemini/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/gemini/README.md",
     "link": "../../../../../docs/design/gemini/tokens-system.css"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/gemini/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/gemini/README.md",
     "link": "../../../../../docs/design/gemini/tokens-system.css"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/gemini/aphrody-mapping.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/gemini/aphrody-mapping.md",
     "link": "../../../../../docs/design/gemini/tokens-system.css"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/m3-design-tokens.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-design-tokens.md",
     "link": "../../../../crates/aphrody-m3-tokens"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/m3-design-tokens.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-design-tokens.md",
     "link": "../../../../crates/aphrody-m3-tokens"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/m3-foundations.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-foundations.md",
     "link": "../../../../crates/aphrody-m3-tokens/src/state.rs"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/m3-foundations.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-foundations.md",
     "link": "../../../../crates/aphrody-m3-tokens/src/state.rs"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/m3-web-update.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-web-update.md",
     "link": "../../../../docs/design/DESIGN-PACKAGE.md"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/references/gemini-visual-language.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/references/gemini-visual-language.md",
     "link": "../../../../../docs/design/gemini/theme.css"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/references/transparent-screens-glimmer.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/references/transparent-screens-glimmer.md",
     "link": "../../../../../docs/design/gemini/theme.css"
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/references/transparent-screens-glimmer.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/references/transparent-screens-glimmer.md",
     "link": "../../../../../docs/design/references/google-sans-family.md"
    },
    {
@@ -812,51 +812,51 @@
     "link": "../SYNC_TESTS.md"
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/AGENTS.md"
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../plans/ai/_source/PLAN.md"
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ai/_source/ARCHITECTURE.md"
    },
    {
-    "file": "docs/products/ui/drive/README.md",
+    "file": "design/aphrody-m3/docs/products/drive/README.md",
     "link": "docs/ADAPTERS.md"
    },
    {
-    "file": "docs/products/ui/drive/docs/archive/README.md",
+    "file": "design/aphrody-m3/docs/products/drive/docs/archive/README.md",
     "link": "../ADAPTERS.md"
    },
    {
-    "file": "docs/products/ui/drive/extensions/README.md",
+    "file": "design/aphrody-m3/docs/products/drive/extensions/README.md",
     "link": "../docs/EXTENSION_SDK_API_VISION.md"
    },
    {
-    "file": "docs/products/ui/drive/extensions/README.md",
+    "file": "design/aphrody-m3/docs/products/drive/extensions/README.md",
     "link": "./BEFORE_AFTER_COMPARISON.md"
    },
    {
-    "file": "docs/products/ui/drive/extensions/README.md",
+    "file": "design/aphrody-m3/docs/products/drive/extensions/README.md",
     "link": "../docs/core/design/WASM_ARCHITECTURE_FINAL.md"
    },
    {
-    "file": "docs/products/ui/drive/extensions/README.md",
+    "file": "design/aphrody-m3/docs/products/drive/extensions/README.md",
     "link": "../docs/PLATFORM_REVENUE_MODEL.md"
    },
    {
-    "file": "docs/products/ui/packages/aphrody-spaceui/packages/icons/README.md",
+    "file": "design/aphrody-m3/docs/products/packages/aphrody-spaceui/packages/icons/README.md",
     "link": "./RETIRED-DUPLICATES.json"
    },
    {
-    "file": "docs/products/ui/packages/material-web/README.md",
+    "file": "design/aphrody-m3/docs/products/packages/material-web/README.md",
     "link": "../../examples/m3-next/app/_components/md-elements.tsx"
    },
    {
-    "file": "docs/products/ui/packages/material-web/migration/README.md",
+    "file": "design/aphrody-m3/docs/products/packages/material-web/migration/README.md",
     "link": "./scripts/"
    },
    {
@@ -958,7 +958,7 @@
     ]
    },
    {
-    "file": "docs/architecture/ui/UI-DESIGN.md",
+    "file": "design/aphrody-m3/docs/architecture/UI-DESIGN.md",
     "link": "../assets/manifest.json",
     "candidates": [
      "assets/ui/manifest.json",
@@ -967,72 +967,72 @@
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/README.md",
     "link": "../../../../_source/packages/material-web/docs/design/m3-foundations.md",
     "candidates": [
-     "docs/architecture/ui/packages/material-web/docs/design/m3-foundations.md",
-     "packages/ui/material-web/docs/design/m3-foundations.md"
+     "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-foundations.md",
+     "design/aphrody-m3/packages/material-web/docs/design/m3-foundations.md"
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/README.md",
     "link": "../../../../_source/packages/material-web/docs/design/m3-glossary.md",
     "candidates": [
-     "docs/architecture/ui/packages/material-web/docs/design/m3-glossary.md",
-     "packages/ui/material-web/docs/design/m3-glossary.md"
+     "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-glossary.md",
+     "design/aphrody-m3/packages/material-web/docs/design/m3-glossary.md"
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/README.md",
     "link": "../../../../_source/packages/material-web/docs/design/m3-design-tokens.md",
     "candidates": [
-     "docs/architecture/ui/packages/material-web/docs/design/m3-design-tokens.md",
-     "packages/ui/material-web/docs/design/m3-design-tokens.md"
+     "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-design-tokens.md",
+     "design/aphrody-m3/packages/material-web/docs/design/m3-design-tokens.md"
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/README.md",
     "link": "../../../../_source/packages/material-web/docs/design/M3-FRAMEWORK.md",
     "candidates": [
-     "docs/architecture/ui/design/M3-FRAMEWORK.md",
-     "docs/architecture/ui/packages/material-web/docs/design/M3-FRAMEWORK.md",
-     "packages/ui/material-web/docs/design/M3-FRAMEWORK.md"
+     "design/aphrody-m3/docs/architecture/design/M3-FRAMEWORK.md",
+     "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/M3-FRAMEWORK.md",
+     "design/aphrody-m3/packages/material-web/docs/design/M3-FRAMEWORK.md"
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/README.md",
     "link": "../../../../_source/packages/material-web/docs/design/m3-motion.md",
     "candidates": [
-     "docs/architecture/ui/packages/material-web/docs/design/m3-motion.md",
-     "packages/ui/material-web/docs/design/m3-motion.md"
+     "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-motion.md",
+     "design/aphrody-m3/packages/material-web/docs/design/m3-motion.md"
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/README.md",
     "link": "./aphrody-m3-theme.json",
     "candidates": [
-     "docs/architecture/ui/design/aphrody-m3-theme.json",
-     "packages/ui/material-web/docs/design/aphrody-m3-theme.json"
+     "design/aphrody-m3/docs/architecture/design/aphrody-m3-theme.json",
+     "design/aphrody-m3/packages/material-web/docs/design/aphrody-m3-theme.json"
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/README.md",
     "link": "../../../../_source/packages/material-web/docs/design/m3-web-update.md",
     "candidates": [
-     "docs/architecture/ui/packages/material-web/docs/design/m3-web-update.md",
-     "packages/ui/material-web/docs/design/m3-web-update.md"
+     "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-web-update.md",
+     "design/aphrody-m3/packages/material-web/docs/design/m3-web-update.md"
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/README.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/README.md",
     "link": "../../../../_source/packages/material-web/docs/design/angular-material-parity.md",
     "candidates": [
-     "docs/architecture/ui/packages/material-web/docs/design/angular-material-parity.md",
-     "packages/ui/material-web/docs/design/angular-material-parity.md"
+     "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/angular-material-parity.md",
+     "design/aphrody-m3/packages/material-web/docs/design/angular-material-parity.md"
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/gemini/aphrody-mapping.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/gemini/aphrody-mapping.md",
     "link": "../../../../../crates/aphrody-m3-tokens/src/shape.rs",
     "candidates": [
      "crates/koharu/koharu-renderer/src/shape.rs",
@@ -1040,25 +1040,25 @@
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/m3-motion.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-motion.md",
     "link": "../../../../crates/aphrody-m3-tokens/src/motion.rs",
     "candidates": [
      "crates/ui/m3-tokens/src/motion.rs"
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/m3-motion.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-motion.md",
     "link": "../../../../crates/aphrody-m3-tokens/src/motion.rs",
     "candidates": [
      "crates/ui/m3-tokens/src/motion.rs"
     ]
    },
    {
-    "file": "docs/architecture/ui/packages/material-web/docs/design/references/transparent-screens-glimmer.md",
+    "file": "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/references/transparent-screens-glimmer.md",
     "link": "../../../../../_source/packages/material-web/docs/design/m3-glossary.md",
     "candidates": [
-     "docs/architecture/ui/packages/material-web/docs/design/m3-glossary.md",
-     "packages/ui/material-web/docs/design/m3-glossary.md"
+     "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/m3-glossary.md",
+     "design/aphrody-m3/packages/material-web/docs/design/m3-glossary.md"
     ]
    },
    {
@@ -1122,7 +1122,7 @@
     ]
    },
    {
-    "file": "docs/plans/ui/design/UI-DEDUPLICATION-PLAN.md",
+    "file": "design/aphrody-m3/docs/plans/design/UI-DEDUPLICATION-PLAN.md",
     "link": "../../assets/manifest.json",
     "candidates": [
      "assets/ui/manifest.json",
@@ -1134,7 +1134,7 @@
     "file": "docs/products/ai/_source/README.md",
     "link": "../../../reference/ui/_source/GUI.md",
     "candidates": [
-     "docs/reference/ui/GUI.md"
+     "design/aphrody-m3/docs/reference/GUI.md"
     ]
    },
    {
@@ -1255,7 +1255,7 @@
     "link": "../../../reference/compat/_source/BUN.md",
     "candidates": [
      "docs/reference/compat/BUN.md",
-     "docs/reference/ui/BUN.md"
+     "design/aphrody-m3/docs/reference/BUN.md"
     ]
    },
    {
@@ -1491,7 +1491,7 @@
     "link": "../../../reference/os/_source/integrations/KOHARU.md",
     "candidates": [
      "docs/reference/os/integrations/KOHARU.md",
-     "docs/reference/ui/integrations/KOHARU.md",
+     "design/aphrody-m3/docs/reference/integrations/KOHARU.md",
      "docs/reference/web/web/KOHARU.md"
     ]
    },
@@ -1510,190 +1510,190 @@
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/NATIVE-DESKTOP.md",
     "candidates": [
-     "docs/reference/ui/NATIVE-DESKTOP.md"
+     "design/aphrody-m3/docs/reference/NATIVE-DESKTOP.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/INTEGRATION-2026-09-27.md",
     "candidates": [
-     "docs/reference/ui/INTEGRATION-2026-09-27.md"
+     "design/aphrody-m3/docs/reference/INTEGRATION-2026-09-27.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/GUI.md",
     "candidates": [
-     "docs/reference/ui/GUI.md"
+     "design/aphrody-m3/docs/reference/GUI.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/AI-UI-INTEGRATION.md",
     "candidates": [
-     "docs/reference/ui/AI-UI-INTEGRATION.md"
+     "design/aphrody-m3/docs/reference/AI-UI-INTEGRATION.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/integrations/KOHARU.md",
     "candidates": [
      "docs/reference/os/integrations/KOHARU.md",
-     "docs/reference/ui/integrations/KOHARU.md",
+     "design/aphrody-m3/docs/reference/integrations/KOHARU.md",
      "docs/reference/web/web/KOHARU.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ui/_source/UI-DESIGN.md",
     "candidates": [
-     "docs/architecture/ui/UI-DESIGN.md"
+     "design/aphrody-m3/docs/architecture/UI-DESIGN.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ui/_source/UX-DESIGN.md",
     "candidates": [
-     "docs/architecture/ui/UX-DESIGN.md"
+     "design/aphrody-m3/docs/architecture/UX-DESIGN.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/UI-RULES.md",
     "candidates": [
-     "docs/reference/ui/UI-RULES.md"
+     "design/aphrody-m3/docs/reference/UI-RULES.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/tauri/aphrody-integration.md",
     "candidates": [
-     "docs/reference/ui/tauri/aphrody-integration.md"
+     "design/aphrody-m3/docs/reference/tauri/aphrody-integration.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ui/_source/design/APHRODY-M3-CANONICAL-CONTRACT.md",
     "candidates": [
-     "docs/architecture/ui/design/APHRODY-M3-CANONICAL-CONTRACT.md"
+     "design/aphrody-m3/docs/architecture/design/APHRODY-M3-CANONICAL-CONTRACT.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../plans/ui/_source/design/M3-PLAN.md",
     "candidates": [
-     "docs/plans/ui/design/M3-PLAN.md"
+     "design/aphrody-m3/docs/plans/design/M3-PLAN.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../plans/ui/_source/design/M3-MULTI-HOST-PLAN.md",
     "candidates": [
-     "docs/plans/ui/design/M3-MULTI-HOST-PLAN.md"
+     "design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../plans/ui/_source/design/UI-DEDUPLICATION-PLAN.md",
     "candidates": [
-     "docs/plans/ui/design/UI-DEDUPLICATION-PLAN.md"
+     "design/aphrody-m3/docs/plans/design/UI-DEDUPLICATION-PLAN.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ui/_source/design/M3-FRAMEWORK.md",
     "candidates": [
-     "docs/architecture/ui/design/M3-FRAMEWORK.md",
-     "docs/architecture/ui/packages/material-web/docs/design/M3-FRAMEWORK.md",
-     "packages/ui/material-web/docs/design/M3-FRAMEWORK.md"
+     "design/aphrody-m3/docs/architecture/design/M3-FRAMEWORK.md",
+     "design/aphrody-m3/docs/architecture/packages/material-web/docs/design/M3-FRAMEWORK.md",
+     "design/aphrody-m3/packages/material-web/docs/design/M3-FRAMEWORK.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../plans/ui/_source/design/FUSION-PLAN.md",
     "candidates": [
-     "docs/plans/ui/design/FUSION-PLAN.md"
+     "design/aphrody-m3/docs/plans/design/FUSION-PLAN.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ui/_source/design/SPACEUI-M3-FUSION.md",
     "candidates": [
-     "docs/architecture/ui/design/SPACEUI-M3-FUSION.md"
+     "design/aphrody-m3/docs/architecture/design/SPACEUI-M3-FUSION.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ui/_source/design/aphrody-m3-tokens.md",
     "candidates": [
-     "docs/architecture/ui/design/aphrody-m3-tokens.md",
-     "packages/ui/material-web/docs/design/aphrody-m3-tokens.md"
+     "design/aphrody-m3/docs/architecture/design/aphrody-m3-tokens.md",
+     "design/aphrody-m3/packages/material-web/docs/design/aphrody-m3-tokens.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ui/_source/design/TYPOGRAPHY.md",
     "candidates": [
-     "docs/architecture/ui/design/TYPOGRAPHY.md"
+     "design/aphrody-m3/docs/architecture/design/TYPOGRAPHY.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ui/_source/design/FONTS-AND-ICONS.md",
     "candidates": [
-     "docs/architecture/ui/design/FONTS-AND-ICONS.md"
+     "design/aphrody-m3/docs/architecture/design/FONTS-AND-ICONS.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/SVG.md",
     "candidates": [
-     "docs/reference/ui/SVG.md"
+     "design/aphrody-m3/docs/reference/SVG.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/PUBLISHING.md",
     "candidates": [
-     "docs/reference/ui/PUBLISHING.md"
+     "design/aphrody-m3/docs/reference/PUBLISHING.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ui/_source/design/M3-RENDER.md",
     "candidates": [
-     "docs/architecture/ui/design/M3-RENDER.md"
+     "design/aphrody-m3/docs/architecture/design/M3-RENDER.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/CANVAS-UPSTREAM.md",
     "candidates": [
-     "docs/reference/ui/CANVAS-UPSTREAM.md"
+     "design/aphrody-m3/docs/reference/CANVAS-UPSTREAM.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../architecture/ui/_source/design/SPACEUI-SPACEDRIVE-MIGRATION.md",
     "candidates": [
-     "docs/architecture/ui/design/SPACEUI-SPACEDRIVE-MIGRATION.md"
+     "design/aphrody-m3/docs/architecture/design/SPACEUI-SPACEDRIVE-MIGRATION.md"
     ]
    },
    {
-    "file": "docs/products/ui/_source/README.md",
+    "file": "design/aphrody-m3/docs/products/_source/README.md",
     "link": "../../../reference/ui/_source/DRIVE-UPSTREAM-DIFF.md",
     "candidates": [
-     "docs/reference/ui/DRIVE-UPSTREAM-DIFF.md"
+     "design/aphrody-m3/docs/reference/DRIVE-UPSTREAM-DIFF.md"
     ]
    },
    {
-    "file": "docs/products/ui/packages/material-web/migration/README.md",
+    "file": "design/aphrody-m3/docs/products/packages/material-web/migration/README.md",
     "link": "./mui-m3-map.json",
     "candidates": [
-     "packages/ui/material-web/migration/mui-m3-map.json"
+     "design/aphrody-m3/packages/material-web/migration/mui-m3-map.json"
     ]
    },
    {
@@ -1740,7 +1740,7 @@
     "link": "../apps/site/src/lib/kinto-un.ts",
     "candidates": [
      "apps/shenron/site/src/lib/kinto-un.ts",
-     "packages/shenron/ui/src/toriyama-svg/kinto-un.ts"
+     "design/aphrody-m3/packages/shenron-ui/src/toriyama-svg/kinto-un.ts"
     ]
    },
    {
@@ -1748,7 +1748,7 @@
     "link": "../apps/site/src/components/KintoUn.tsx",
     "candidates": [
      "apps/shenron/site/src/components/KintoUn.tsx",
-     "packages/shenron/ui/src/toriyama/KintoUn.tsx"
+     "design/aphrody-m3/packages/shenron-ui/src/toriyama/KintoUn.tsx"
     ]
    },
    {
@@ -1772,7 +1772,7 @@
     "link": "../apps/site/src/lib/kinto-un.ts",
     "candidates": [
      "apps/shenron/site/src/lib/kinto-un.ts",
-     "packages/shenron/ui/src/toriyama-svg/kinto-un.ts"
+     "design/aphrody-m3/packages/shenron-ui/src/toriyama-svg/kinto-un.ts"
     ]
    },
    {
@@ -1780,14 +1780,14 @@
     "link": "../apps/site/src/lib/couverture.ts",
     "candidates": [
      "apps/shenron/site/src/lib/couverture.ts",
-     "packages/shenron/ui/src/toriyama-svg/couverture.ts"
+     "design/aphrody-m3/packages/shenron-ui/src/toriyama-svg/couverture.ts"
     ]
    },
    {
     "file": "docs/shenron/pipeline-svg.md",
-    "link": "../packages/ui/src/icones/geometries.ts",
+    "link": "../design/aphrody-m3/packages/src/icones/geometries.ts",
     "candidates": [
-     "packages/shenron/ui/src/icones/geometries.ts"
+     "design/aphrody-m3/packages/shenron-ui/src/icones/geometries.ts"
     ]
    },
    {
@@ -1795,14 +1795,14 @@
     "link": "../apps/site/src/components/KintoUn.tsx",
     "candidates": [
      "apps/shenron/site/src/components/KintoUn.tsx",
-     "packages/shenron/ui/src/toriyama/KintoUn.tsx"
+     "design/aphrody-m3/packages/shenron-ui/src/toriyama/KintoUn.tsx"
     ]
    },
    {
     "file": "docs/shenron/pipeline-svg.md",
-    "link": "../packages/ui/src/icones/glyphe.tsx",
+    "link": "../design/aphrody-m3/packages/src/icones/glyphe.tsx",
     "candidates": [
-     "packages/shenron/ui/src/icones/glyphe.tsx"
+     "design/aphrody-m3/packages/shenron-ui/src/icones/glyphe.tsx"
     ]
    },
    {
@@ -1810,7 +1810,7 @@
     "link": "../apps/site/src/components/DragonBall.tsx",
     "candidates": [
      "apps/shenron/site/src/components/DragonBall.tsx",
-     "packages/shenron/ui/src/toriyama/DragonBall.tsx"
+     "design/aphrody-m3/packages/shenron-ui/src/toriyama/DragonBall.tsx"
     ]
    },
    {
@@ -1818,7 +1818,7 @@
     "link": "../apps/site/src/components/MotifsCouverture.tsx",
     "candidates": [
      "apps/shenron/site/src/components/MotifsCouverture.tsx",
-     "packages/shenron/ui/src/toriyama/MotifsCouverture.tsx"
+     "design/aphrody-m3/packages/shenron-ui/src/toriyama/MotifsCouverture.tsx"
     ]
    },
    {
@@ -2224,19 +2224,19 @@
     "link": "/zh/development/setup"
    },
    {
-    "file": "docs/architecture/ui/drive/docs/core/architecture.mdx",
+    "file": "design/aphrody-m3/docs/architecture/drive/docs/core/architecture.mdx",
     "link": "/docs/extensions/introduction"
    },
    {
-    "file": "docs/architecture/ui/drive/docs/core/architecture.mdx",
+    "file": "design/aphrody-m3/docs/architecture/drive/docs/core/architecture.mdx",
     "link": "/docs/core/libraries"
    },
    {
-    "file": "docs/architecture/ui/drive/docs/core/architecture.mdx",
+    "file": "design/aphrody-m3/docs/architecture/drive/docs/core/architecture.mdx",
     "link": "/docs/core/networking"
    },
    {
-    "file": "docs/architecture/ui/drive/docs/core/architecture.mdx",
+    "file": "design/aphrody-m3/docs/architecture/drive/docs/core/architecture.mdx",
     "link": "/docs/core/sync"
    },
    {
@@ -2384,21 +2384,21 @@
     "link": "/zh/development/setup"
    },
    {
-    "file": "docs/operations/ui/drive/docs/cli/linux-deployment.mdx",
+    "file": "design/aphrody-m3/docs/operations/drive/docs/cli/linux-deployment.mdx",
     "link": "/core/cli"
    },
    {
-    "file": "docs/operations/ui/drive/docs/cli/linux-deployment.mdx",
+    "file": "design/aphrody-m3/docs/operations/drive/docs/cli/linux-deployment.mdx",
     "link": "/cli/library-sync-setup"
    },
    {
-    "file": "docs/operations/ui/drive/docs/cli/linux-deployment.mdx",
+    "file": "design/aphrody-m3/docs/operations/drive/docs/cli/linux-deployment.mdx",
     "link": "/cli/multi-instance"
    }
   ],
   "asset-or-license-not-imported": [
    {
-    "file": "docs/architecture/ui/design/SPACEUI-SPACEDRIVE-MIGRATION.md",
+    "file": "design/aphrody-m3/docs/architecture/design/SPACEUI-SPACEDRIVE-MIGRATION.md",
     "link": "../../drive/LICENSE"
    },
    {
@@ -2706,15 +2706,15 @@
     "link": "../../LICENSE"
    },
    {
-    "file": "docs/products/ui/drive/docs/archive/README.md",
+    "file": "design/aphrody-m3/docs/products/drive/docs/archive/README.md",
     "link": "../../LICENSE"
    },
    {
-    "file": "docs/products/ui/drive/packages/interface/README.md",
+    "file": "design/aphrody-m3/docs/products/drive/packages/interface/README.md",
     "link": "../../LICENSE"
    },
    {
-    "file": "docs/products/ui/packages/aphrody-spaceui/packages/icons/README.md",
+    "file": "design/aphrody-m3/docs/products/packages/aphrody-spaceui/packages/icons/README.md",
     "link": "../../LICENSE"
    },
    {

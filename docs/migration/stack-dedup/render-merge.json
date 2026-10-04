@@ -48,18 +48,18 @@
         "crates/ui/bun/src/lib.rs: `mod icons;` -> `pub mod icons;` + `mod icons_ffi;`; `pub use icons::{icon_svg_json, bun_rs_icon_names, bun_rs_icon_svg}` -> `pub use icons_ffi::...`",
         "crates/ui/bun/src/icons_ffi.rs: aphrody_icons::{Axes, Style, icon_svg, icon_names} -> crate::icons::...",
         "include_bytes!/include_str! in icons/mod.rs and icons/svg.rs now point to ../../icons/{material-symbols,material-icons,metadata} (all 19 targets checked to exist)",
-        "packages/ui/m3-theme/src/catalog.ts:12 icons: crates/ui/icons/material-symbols -> crates/ui/bun/icons/material-symbols",
-        "packages/ui/m3/src/paths.ts:3,10,14 (SYMBOLS_DIR and comments); packages/ui/m3/src/plugin.ts:6 (comment)",
-        "packages/ui/m3-fonts/src/index.ts:92,197 and packages/ui/m3-fonts/src/fonts-symbols.css:5,13,21",
-        "packages/ui/m3-primitives/src/Icon.tsx:20 (comment)",
+        "design/aphrody-m3/packages/m3-theme/src/catalog.ts:12 icons: crates/ui/icons/material-symbols -> crates/ui/bun/icons/material-symbols",
+        "design/aphrody-m3/packages/m3/src/paths.ts:3,10,14 (SYMBOLS_DIR and comments); design/aphrody-m3/packages/m3/src/plugin.ts:6 (comment)",
+        "design/aphrody-m3/packages/m3-fonts/src/index.ts:92,197 and design/aphrody-m3/packages/m3-fonts/src/fonts-symbols.css:5,13,21",
+        "design/aphrody-m3/packages/m3-primitives/src/Icon.tsx:20 (comment)",
         "crates/ui/svg/src/glyph.rs:5 and crates/ui/svg/README.md:20 (comments naming aphrody-icons)",
-        "docs/architecture/ui/README.md:23, docs/architecture/ui/design/M3-ICONS.md (paths, module name, removed no_std/svg-feature/vendor claims), docs/architecture/ui/design/FONTS-AND-ICONS.md:14"
+        "design/aphrody-m3/docs/architecture/README.md:23, design/aphrody-m3/docs/architecture/design/M3-ICONS.md (paths, module name, removed no_std/svg-feature/vendor claims), design/aphrody-m3/docs/architecture/design/FONTS-AND-ICONS.md:14"
       ],
       "verification": [
-        "rg --no-ignore 'crates/ui/icons' over packages apps scripts config crates bin tests systemd docker nginx .github: only gitignored dist/ build outputs remain (packages/ui/m3/dist, packages/ui/m3-theme/dist, packages/ui/m3-primitives/dist), see leadEdits.rebuild",
+        "rg --no-ignore 'crates/ui/icons' over packages apps scripts config crates bin tests systemd docker nginx .github: only gitignored dist/ build outputs remain (design/aphrody-m3/packages/m3/dist, design/aphrody-m3/packages/m3-theme/dist, design/aphrody-m3/packages/m3-primitives/dist), see leadEdits.rebuild",
         "aphrody-icons has no dependent outside aphrody-bun: cargo-metadata graph, rg Cargo.toml across /home/aphro (iecode, aphrody-py included) and apps/cli, crates/ai, crates/interop, crates/os, crates/shell, crates/koharu, crates/discord, crates/contracts, crates/infra: zero hits",
         "git hash-object of each moved file == index blob for 45 of 51 tracked files; the 6 differing are the 3 edited sources, the edited test, and the 2 LICENSE-NOTICE.txt whose path text changed",
-        "nice -n 19 bun test in packages/ui/m3-fonts: 5 pass; packages/ui/m3 test/plugin.test.ts: 9 pass (it asserts the material-symbols woff2 are emitted, i.e. findRepoRoot finds the new location). packages/ui/m3-theme bun test fails 7/7 for an unrelated pre-existing reason (aphrody-ffi native library not found) and was not affected by the path edit",
+        "nice -n 19 bun test in design/aphrody-m3/packages/m3-fonts: 5 pass; design/aphrody-m3/packages/m3 test/plugin.test.ts: 9 pass (it asserts the material-symbols woff2 are emitted, i.e. findRepoRoot finds the new location). design/aphrody-m3/packages/m3-theme bun test fails 7/7 for an unrelated pre-existing reason (aphrody-ffi native library not found) and was not affected by the path edit",
         "crates/ui/bun/.gitignore and .gitattributes (vendored from the icons tree) are directory-scoped; git check-ignore reports none of the 50 new files as ignored"
       ]
     },
@@ -87,7 +87,7 @@
       ],
       "leadEditsIfMerged": [
         "crates/ui/identity/Cargo.toml:17,19 (comment + `aphrody-sprite-sheet = { workspace = true }`), crates/ui/identity/src/pixel.rs:914-935,1324-1329 and src/bin/pixel.rs:429,435 (`aphrody_sprite_sheet::` -> `aphrody_svg::sprite_sheet::`), crates/ui/app/Cargo.toml:50 and crates/ui/app/src/identity.rs:10,133,302",
-        "docs: docs/reference/ui/SVG.md:46,53; crates/ui/svg/src/sprite.rs:6"
+        "docs: design/aphrody-m3/docs/reference/SVG.md:46,53; crates/ui/svg/src/sprite.rs:6"
       ]
     }
   ],
@@ -107,11 +107,11 @@
       "docs/ecosystem/ecosystem.json:392-393 (aphrody-icons, crates/ui/icons), :2176 (crates/ui/icons/metadata), :2486 (crates/ui/icons/material-symbols); docs/ecosystem/ECOSYSTEM.md:70, :301, :351 -> new paths crates/ui/bun/icons/..., crate entry removed"
     ],
     "rebuild (gitignored generated output, bundler not allowed here)": [
-      "packages/ui/m3/dist and packages/ui/m3-theme/dist still contain the old string `crates/ui/icons/material-symbols` (m3/dist/chunk-7WETJLMX.js:34, paths.d.ts:2; m3-theme/dist/chunk-FFXIJSKW.js:17, catalog.d.ts:12): rebuild both packages (the `bun` export condition uses src/ and is already fixed; only the default/node condition would read the stale dist); packages/ui/m3-primitives/dist/Icon.d.ts is a doc comment only"
+      "design/aphrody-m3/packages/m3/dist and design/aphrody-m3/packages/m3-theme/dist still contain the old string `crates/ui/icons/material-symbols` (m3/dist/chunk-7WETJLMX.js:34, paths.d.ts:2; m3-theme/dist/chunk-FFXIJSKW.js:17, catalog.d.ts:12): rebuild both packages (the `bun` export condition uses src/ and is already fixed; only the default/node condition would read the stale dist); design/aphrody-m3/packages/m3-primitives/dist/Icon.d.ts is a doc comment only"
     ],
     "docs that still mention the former crate name aphrody-icons (historical or comment-only, deliberately untouched)": [
-      "docs/plans/ui/design/M3-PLAN.md:18,42; docs/plans/ui/design/UI-DEDUPLICATION-PLAN.md:59; docs/products/ui/crates/aphrody-svg/README.md:20; docs/reference/ui/SVG.md:40-44 (historical was/now table); docs/reference/ui/crates/aphrody-icons/metadata/codepoints/LICENSE-NOTICE.txt; docs/plans/infra/PLAN.md:295; docs/reference/ai/llms.txt, docs/research/ai/research/openclaw-vs-aphrody.md (old paths already stale); config/ai/plugins/aphrody/skills/m3/SKILL.md:65 and plugins/aphrody/skills/m3/SKILL.md:65 (`crates/aphrody-icons`, stale since before this batch); PLAN.md:459",
-      "comments/error strings naming aphrody-icons: packages/ui/m3/src/plugin.ts:36; packages/ui/m3-icons/{src/react.tsx:29,42, src/lit.ts:10, test/icons.test.ts:14, package.json:4, README.md:4}; packages/interop/native/src/icons.ts:6,39,47,53 (two of them are runtime error messages, left unchanged to preserve behaviour)",
+      "design/aphrody-m3/docs/plans/design/M3-PLAN.md:18,42; design/aphrody-m3/docs/plans/design/UI-DEDUPLICATION-PLAN.md:59; design/aphrody-m3/docs/products/crates/aphrody-svg/README.md:20; design/aphrody-m3/docs/reference/SVG.md:40-44 (historical was/now table); design/aphrody-m3/docs/reference/crates/aphrody-icons/metadata/codepoints/LICENSE-NOTICE.txt; docs/plans/infra/PLAN.md:295; docs/reference/ai/llms.txt, docs/research/ai/research/openclaw-vs-aphrody.md (old paths already stale); config/ai/plugins/aphrody/skills/m3/SKILL.md:65 and plugins/aphrody/skills/m3/SKILL.md:65 (`crates/aphrody-icons`, stale since before this batch); PLAN.md:459",
+      "comments/error strings naming aphrody-icons: design/aphrody-m3/packages/m3/src/plugin.ts:36; design/aphrody-m3/packages/m3-icons/{src/react.tsx:29,42, src/lit.ts:10, test/icons.test.ts:14, package.json:4, README.md:4}; packages/interop/native/src/icons.ts:6,39,47,53 (two of them are runtime error messages, left unchanged to preserve behaviour)",
       "docs/migration/*.json (source-map.json, short-paths-*.json, repository-state-*.json, dependency-graph-review-*.json, ui-docs-consolidation-*.json) are Infra-generated records of the old path crates/ui/icons: regenerate/alias, do not hand-edit"
     ]
   },
@@ -129,6 +129,6 @@
     "The pixel-parity tests and the 4000+ icon-name test were moved, not run.",
     "Whether `icons` leaves aphrody-ffi's cbindgen/ts-rs or bindings generation unchanged is not checked (the C symbols bun_rs_icon_svg/bun_rs_icon_names are defined by the same code under a new file name).",
     "The skipped merges rest on the sibling checkout ../iecode, which is outside this repository: if the lead decides iecode is out of scope (or migrates its path dependencies first), both skipped merges become mechanical.",
-    "Other sessions edit packages/ui/m3, m3-primitives and docs/architecture/ui concurrently; only exact-string replacements were applied there."
+    "Other sessions edit design/aphrody-m3/packages/m3, m3-primitives and design/aphrody-m3/docs/architecture concurrently; only exact-string replacements were applied there."
   ]
 }

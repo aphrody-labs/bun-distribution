@@ -53,7 +53,7 @@ scripts/inventaires/*.log
 # Bridge staging written by aphrody ocr shenron deposit/pipeline (crates/cli/src/ocr_shenron.rs)
 /var/
 
-# Generated from @shenron/ui by `bun run predev|prebuild` (packages/shenron/ui/scripts/sync-assets.ts); the package is the single source.
+# Generated from @shenron/ui by `bun run predev|prebuild` (design/aphrody-m3/packages/shenron-ui/scripts/sync-assets.ts); the package is the single source.
 /public/dbz/marque/banc-nuage.svg
 /public/dbz/kinto-un.svg
 /public/dbz/kinto-un-icone.svg

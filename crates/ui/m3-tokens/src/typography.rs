@@ -218,7 +218,7 @@ pub const NAMES: [&str; 15] = [
 // Compose `TypeScaleTokens` emphasized styles: same size, line height and font as the base style,
 // heavier weight. Display, headline and title-large go to 500; title-medium, title-small and all
 // label sizes to 700; body styles to 500. Tracking is unchanged except body-large (0.15) and
-// body-medium (0.25). Source: docs/research/ui/m3-expressive-gemini-2026.md section 3.
+// body-medium (0.25). Source: design/aphrody-m3/docs/research/m3-expressive-gemini-2026.md section 3.
 
 const fn emphasized(base: TypeStyle, weight: u16) -> TypeStyle {
     TypeStyle { weight, ..base }

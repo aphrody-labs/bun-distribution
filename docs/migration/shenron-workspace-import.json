@@ -2096,1107 +2096,1107 @@
       "target_sha256": "02ff7d5e783282314e30866297e2603fdf2d486585e6e9f925ba6d765f987146"
     },
     {
-      "source": "packages/ui/README.md",
-      "target": "packages/shenron/ui/README.md",
+      "source": "design/aphrody-m3/packages/README.md",
+      "target": "design/aphrody-m3/packages/shenron-ui/README.md",
       "staging": "packages/shenron/_preview/ui/README.md",
       "source_sha256": "f9911465cb4fe575e54402eed8421877b45d299b001ed3c7f22fc141c2fc25d0",
       "target_sha256": "3a56affa5d50a3478b712419fd6b669ec92949a15809bfd739f51c82d98bbb00"
     },
     {
-      "source": "packages/ui/components.json",
-      "target": "packages/shenron/ui/components.json",
+      "source": "design/aphrody-m3/packages/components.json",
+      "target": "design/aphrody-m3/packages/shenron-ui/components.json",
       "staging": "packages/shenron/_preview/ui/components.json",
       "source_sha256": "ba8f70b0a3e5c9777edd64ce1db53d455eb088dcf495c281a4bf2965d7d29895",
       "target_sha256": "ba8f70b0a3e5c9777edd64ce1db53d455eb088dcf495c281a4bf2965d7d29895"
     },
     {
-      "source": "packages/ui/tsconfig.json",
-      "target": "packages/shenron/ui/tsconfig.json",
+      "source": "design/aphrody-m3/packages/tsconfig.json",
+      "target": "design/aphrody-m3/packages/shenron-ui/tsconfig.json",
       "staging": "packages/shenron/_preview/ui/tsconfig.json",
       "source_sha256": "78a341b4ba1f564c9c8cd1d519765108e4ff6cf78340a541b9ebb34ed7dd7404",
       "target_sha256": "78a341b4ba1f564c9c8cd1d519765108e4ff6cf78340a541b9ebb34ed7dd7404"
     },
     {
-      "source": "packages/ui/package.json",
-      "target": "packages/shenron/ui/package.json",
+      "source": "design/aphrody-m3/packages/package.json",
+      "target": "design/aphrody-m3/packages/shenron-ui/package.json",
       "staging": "packages/shenron/_preview/ui/package.json",
       "source_sha256": "fcf5bb8d8b5c5993bfc328d014e8548cb76e34869c6722494cf7ef14662ee46b",
       "target_sha256": "2ee5e470b6ec1eef0858027eb25f4e640b3e39c2e5350f378f05ee76a35c2086"
     },
     {
-      "source": "packages/ui/.npmignore",
-      "target": "packages/shenron/ui/.npmignore",
+      "source": "design/aphrody-m3/packages/.npmignore",
+      "target": "design/aphrody-m3/packages/shenron-ui/.npmignore",
       "staging": "packages/shenron/_preview/ui/.npmignore",
       "source_sha256": "3ae1d5bc1b3b42d59a9caecd0bc0c55ebc6f8f574d0772b0e010f887f1ae7bb5",
       "target_sha256": "3ae1d5bc1b3b42d59a9caecd0bc0c55ebc6f8f574d0772b0e010f887f1ae7bb5"
     },
     {
-      "source": "packages/ui/assets/favicon-32.png",
-      "target": "packages/shenron/ui/assets/favicon-32.png",
+      "source": "design/aphrody-m3/packages/assets/favicon-32.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/favicon-32.png",
       "staging": "packages/shenron/_preview/ui/assets/favicon-32.png",
       "source_sha256": "3b9a58a91f31036d913d82e5e42e2478184b484925b8afbc2f3ce1afddfd481a",
       "target_sha256": "3b9a58a91f31036d913d82e5e42e2478184b484925b8afbc2f3ce1afddfd481a"
     },
     {
-      "source": "packages/ui/assets/icon-192.png",
-      "target": "packages/shenron/ui/assets/icon-192.png",
+      "source": "design/aphrody-m3/packages/assets/icon-192.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/icon-192.png",
       "staging": "packages/shenron/_preview/ui/assets/icon-192.png",
       "source_sha256": "70ddb5cce15fc0cfaea7b64b0ce6e18cbd8d52109d61b525970afda0220d99ad",
       "target_sha256": "70ddb5cce15fc0cfaea7b64b0ce6e18cbd8d52109d61b525970afda0220d99ad"
     },
     {
-      "source": "packages/ui/assets/mstile-150.png",
-      "target": "packages/shenron/ui/assets/mstile-150.png",
+      "source": "design/aphrody-m3/packages/assets/mstile-150.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/mstile-150.png",
       "staging": "packages/shenron/_preview/ui/assets/mstile-150.png",
       "source_sha256": "471a15c49eebd7da70520a612ca37873f8c03b48036c25ac4610b37e5e70600e",
       "target_sha256": "471a15c49eebd7da70520a612ca37873f8c03b48036c25ac4610b37e5e70600e"
     },
     {
-      "source": "packages/ui/assets/favicon.ico",
-      "target": "packages/shenron/ui/assets/favicon.ico",
+      "source": "design/aphrody-m3/packages/assets/favicon.ico",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/favicon.ico",
       "staging": "packages/shenron/_preview/ui/assets/favicon.ico",
       "source_sha256": "38bc78a6b065f3159a4d08922703c2d2dcfbe6026d59d8a0f96ccc6512fccc7b",
       "target_sha256": "38bc78a6b065f3159a4d08922703c2d2dcfbe6026d59d8a0f96ccc6512fccc7b"
     },
     {
-      "source": "packages/ui/assets/favicon-96.png",
-      "target": "packages/shenron/ui/assets/favicon-96.png",
+      "source": "design/aphrody-m3/packages/assets/favicon-96.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/favicon-96.png",
       "staging": "packages/shenron/_preview/ui/assets/favicon-96.png",
       "source_sha256": "382dcea0ab2ecaf850845201b04a85e40f6e56387563735a045f449f939c1c5c",
       "target_sha256": "382dcea0ab2ecaf850845201b04a85e40f6e56387563735a045f449f939c1c5c"
     },
     {
-      "source": "packages/ui/assets/favicon-16.png",
-      "target": "packages/shenron/ui/assets/favicon-16.png",
+      "source": "design/aphrody-m3/packages/assets/favicon-16.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/favicon-16.png",
       "staging": "packages/shenron/_preview/ui/assets/favicon-16.png",
       "source_sha256": "0fcb280a7bfe640b582f7eba94173966e9bf57598e0c28e87c52954e44e3e505",
       "target_sha256": "0fcb280a7bfe640b582f7eba94173966e9bf57598e0c28e87c52954e44e3e505"
     },
     {
-      "source": "packages/ui/assets/safari-pinned-tab.svg",
-      "target": "packages/shenron/ui/assets/safari-pinned-tab.svg",
+      "source": "design/aphrody-m3/packages/assets/safari-pinned-tab.svg",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/safari-pinned-tab.svg",
       "staging": "packages/shenron/_preview/ui/assets/safari-pinned-tab.svg",
       "source_sha256": "02188aee3b497e68d85387413011a1725677a7e7fd964e603d944eeef39e67ae",
       "target_sha256": "02188aee3b497e68d85387413011a1725677a7e7fd964e603d944eeef39e67ae"
     },
     {
-      "source": "packages/ui/assets/favicon-48.png",
-      "target": "packages/shenron/ui/assets/favicon-48.png",
+      "source": "design/aphrody-m3/packages/assets/favicon-48.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/favicon-48.png",
       "staging": "packages/shenron/_preview/ui/assets/favicon-48.png",
       "source_sha256": "ac2d221d54ef48ffc3ca271615c60acac60172ed2ad3b1a9b56acefa375add2f",
       "target_sha256": "ac2d221d54ef48ffc3ca271615c60acac60172ed2ad3b1a9b56acefa375add2f"
     },
     {
-      "source": "packages/ui/assets/icon-512.png",
-      "target": "packages/shenron/ui/assets/icon-512.png",
+      "source": "design/aphrody-m3/packages/assets/icon-512.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/icon-512.png",
       "staging": "packages/shenron/_preview/ui/assets/icon-512.png",
       "source_sha256": "c2d3e5f79df4af7e436eda0e0ce03857ca280891f26c5c467fe2605e2684487f",
       "target_sha256": "c2d3e5f79df4af7e436eda0e0ce03857ca280891f26c5c467fe2605e2684487f"
     },
     {
-      "source": "packages/ui/assets/apple-touch-icon.png",
-      "target": "packages/shenron/ui/assets/apple-touch-icon.png",
+      "source": "design/aphrody-m3/packages/assets/apple-touch-icon.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/apple-touch-icon.png",
       "staging": "packages/shenron/_preview/ui/assets/apple-touch-icon.png",
       "source_sha256": "a9002ae268472f85153fd4dbaefc9defe1856120b1f15c67c3d1c6f80d9ed10a",
       "target_sha256": "a9002ae268472f85153fd4dbaefc9defe1856120b1f15c67c3d1c6f80d9ed10a"
     },
     {
-      "source": "packages/ui/assets/icon-maskable-512.png",
-      "target": "packages/shenron/ui/assets/icon-maskable-512.png",
+      "source": "design/aphrody-m3/packages/assets/icon-maskable-512.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/icon-maskable-512.png",
       "staging": "packages/shenron/_preview/ui/assets/icon-maskable-512.png",
       "source_sha256": "7fd215c6ccdbafced0c9ed9fb9cf69e8420e5f5ae1211cd4e5ad5c0bb805c2dd",
       "target_sha256": "7fd215c6ccdbafced0c9ed9fb9cf69e8420e5f5ae1211cd4e5ad5c0bb805c2dd"
     },
     {
-      "source": "packages/ui/scripts/check-css-equivalence.ts",
-      "target": "packages/shenron/ui/scripts/check-css-equivalence.ts",
+      "source": "design/aphrody-m3/packages/scripts/check-css-equivalence.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/scripts/check-css-equivalence.ts",
       "staging": "packages/shenron/_preview/ui/scripts/check-css-equivalence.ts",
       "source_sha256": "d957e4c7ab62b832463b454d38f5319a069ca4cbee0719a1f2898bb6f3175f24",
       "target_sha256": "6be88f914d272ce926330843ceb7e13ac28859d4fc9c70e1995ab9c67a185d93"
     },
     {
-      "source": "packages/ui/scripts/check-dashboard-css.ts",
-      "target": "packages/shenron/ui/scripts/check-dashboard-css.ts",
+      "source": "design/aphrody-m3/packages/scripts/check-dashboard-css.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/scripts/check-dashboard-css.ts",
       "staging": "packages/shenron/_preview/ui/scripts/check-dashboard-css.ts",
       "source_sha256": "f8277e99cac514eeb4b7a507bacaa6aed6370ddcee25c32bad91ad70a77b1b18",
       "target_sha256": "3915a1e2c6b2be2889bf0fe02764cb32299ceed4c64e78c3ec47c44645ecde6a"
     },
     {
-      "source": "packages/ui/scripts/production-check.ts",
-      "target": "packages/shenron/ui/scripts/production-check.ts",
+      "source": "design/aphrody-m3/packages/scripts/production-check.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/scripts/production-check.ts",
       "staging": "packages/shenron/_preview/ui/scripts/production-check.ts",
       "source_sha256": "035b228effd83a185c8748619650e0d5369418610a5340190830f786cf641681",
       "target_sha256": "035b228effd83a185c8748619650e0d5369418610a5340190830f786cf641681"
     },
     {
-      "source": "packages/ui/scripts/check-portability.ts",
-      "target": "packages/shenron/ui/scripts/check-portability.ts",
+      "source": "design/aphrody-m3/packages/scripts/check-portability.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/scripts/check-portability.ts",
       "staging": "packages/shenron/_preview/ui/scripts/check-portability.ts",
       "source_sha256": "6df22d31897b2d93a1dee8d67a03f236b448af53cea9a44c98b12734d88499dc",
       "target_sha256": "6df22d31897b2d93a1dee8d67a03f236b448af53cea9a44c98b12734d88499dc"
     },
     {
-      "source": "packages/ui/scripts/sync-assets.ts",
-      "target": "packages/shenron/ui/scripts/sync-assets.ts",
+      "source": "design/aphrody-m3/packages/scripts/sync-assets.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/scripts/sync-assets.ts",
       "staging": "packages/shenron/_preview/ui/scripts/sync-assets.ts",
       "source_sha256": "0d2b180fb0013cd18ff6d8b139a6a5911981c7814c976a8cd162fca30e048728",
       "target_sha256": "0d2b180fb0013cd18ff6d8b139a6a5911981c7814c976a8cd162fca30e048728"
     },
     {
-      "source": "packages/ui/scripts/generate-tokens.ts",
-      "target": "packages/shenron/ui/scripts/generate-tokens.ts",
+      "source": "design/aphrody-m3/packages/scripts/generate-tokens.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/scripts/generate-tokens.ts",
       "staging": "packages/shenron/_preview/ui/scripts/generate-tokens.ts",
       "source_sha256": "456fee8d195be37a611523c3e29240aef434a10595f4ff0146236271134dff10",
       "target_sha256": "68b7931e77bd3a6366c9e6baa02c2f74c8a40f42ec34bdd97a8d5ebf16819d03"
     },
     {
-      "source": "packages/ui/src/barre-nav.css",
-      "target": "packages/shenron/ui/src/barre-nav.css",
+      "source": "design/aphrody-m3/packages/src/barre-nav.css",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/barre-nav.css",
       "staging": "packages/shenron/_preview/ui/src/barre-nav.css",
       "source_sha256": "e3f7543b2db1e60098e1ab6cf5313aa24607081ee93fc4f7bbb9a91a0b46a048",
       "target_sha256": "e3f7543b2db1e60098e1ab6cf5313aa24607081ee93fc4f7bbb9a91a0b46a048"
     },
     {
-      "source": "packages/ui/src/client.ts",
-      "target": "packages/shenron/ui/src/client.ts",
+      "source": "design/aphrody-m3/packages/src/client.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/client.ts",
       "staging": "packages/shenron/_preview/ui/src/client.ts",
       "source_sha256": "939e3e87aadda9e7143b4d1b5c685bf9f382912bb5363d70248b75d6f016830c",
       "target_sha256": "939e3e87aadda9e7143b4d1b5c685bf9f382912bb5363d70248b75d6f016830c"
     },
     {
-      "source": "packages/ui/src/api-access.tsx",
-      "target": "packages/shenron/ui/src/api-access.tsx",
+      "source": "design/aphrody-m3/packages/src/api-access.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/api-access.tsx",
       "staging": "packages/shenron/_preview/ui/src/api-access.tsx",
       "source_sha256": "bba23e2170fc7841e7defd842a2718defaf23ae84dc905c1ffa3fd37ce6d8e69",
       "target_sha256": "bba23e2170fc7841e7defd842a2718defaf23ae84dc905c1ffa3fd37ce6d8e69"
     },
     {
-      "source": "packages/ui/src/video-source-summary.tsx",
-      "target": "packages/shenron/ui/src/video-source-summary.tsx",
+      "source": "design/aphrody-m3/packages/src/video-source-summary.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/video-source-summary.tsx",
       "staging": "packages/shenron/_preview/ui/src/video-source-summary.tsx",
       "source_sha256": "bcd65e0e54ea0c4257a6704aa5f639d26c506ded74e22e3730238276cec5269a",
       "target_sha256": "bcd65e0e54ea0c4257a6704aa5f639d26c506ded74e22e3730238276cec5269a"
     },
     {
-      "source": "packages/ui/src/public.ts",
-      "target": "packages/shenron/ui/src/public.ts",
+      "source": "design/aphrody-m3/packages/src/public.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/public.ts",
       "staging": "packages/shenron/_preview/ui/src/public.ts",
       "source_sha256": "00dbfd5f44086b36c2574d051a46e4b841d7a97dd324a9732b3ea5a234e7901e",
       "target_sha256": "00dbfd5f44086b36c2574d051a46e4b841d7a97dd324a9732b3ea5a234e7901e"
     },
     {
-      "source": "packages/ui/src/markdown.tsx",
-      "target": "packages/shenron/ui/src/markdown.tsx",
+      "source": "design/aphrody-m3/packages/src/markdown.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/markdown.tsx",
       "staging": "packages/shenron/_preview/ui/src/markdown.tsx",
       "source_sha256": "4be1ed38ae8ac2f32a50c15d7ecdabb1a882ade68d9cf9b6d5b75cf838a40ab8",
       "target_sha256": "4be1ed38ae8ac2f32a50c15d7ecdabb1a882ade68d9cf9b6d5b75cf838a40ab8"
     },
     {
-      "source": "packages/ui/src/editor.css",
-      "target": "packages/shenron/ui/src/editor.css",
+      "source": "design/aphrody-m3/packages/src/editor.css",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/editor.css",
       "staging": "packages/shenron/_preview/ui/src/editor.css",
       "source_sha256": "9741567de7478a1ab7255bc2723da3a5b456681bb6f32935703dad934fcc1860",
       "target_sha256": "9741567de7478a1ab7255bc2723da3a5b456681bb6f32935703dad934fcc1860"
     },
     {
-      "source": "packages/ui/src/reader-styles.css",
-      "target": "packages/shenron/ui/src/reader-styles.css",
+      "source": "design/aphrody-m3/packages/src/reader-styles.css",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/reader-styles.css",
       "staging": "packages/shenron/_preview/ui/src/reader-styles.css",
       "source_sha256": "079cfd4d46770772b44cf429abc17967bebcd548ad20e81a1b3eaa57541c3ebb",
       "target_sha256": "079cfd4d46770772b44cf429abc17967bebcd548ad20e81a1b3eaa57541c3ebb"
     },
     {
-      "source": "packages/ui/src/site.css",
-      "target": "packages/shenron/ui/src/site.css",
+      "source": "design/aphrody-m3/packages/src/site.css",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/site.css",
       "staging": "packages/shenron/_preview/ui/src/site.css",
       "source_sha256": "68c1a08246c15cb848698ae007b994af8423a866fb5aec36785173ca1ec9eb15",
       "target_sha256": "68c1a08246c15cb848698ae007b994af8423a866fb5aec36785173ca1ec9eb15"
     },
     {
-      "source": "packages/ui/src/index.ts",
-      "target": "packages/shenron/ui/src/index.ts",
+      "source": "design/aphrody-m3/packages/src/index.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/index.ts",
       "staging": "packages/shenron/_preview/ui/src/index.ts",
       "source_sha256": "6d20124f4f89a679f363bdf6e126dba2166e81a79b2bc194f81dbd76f5d92e89",
       "target_sha256": "6d20124f4f89a679f363bdf6e126dba2166e81a79b2bc194f81dbd76f5d92e89"
     },
     {
-      "source": "packages/ui/src/editorial.css",
-      "target": "packages/shenron/ui/src/editorial.css",
+      "source": "design/aphrody-m3/packages/src/editorial.css",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/editorial.css",
       "staging": "packages/shenron/_preview/ui/src/editorial.css",
       "source_sha256": "ce797e0f1259879675d3ffe803c1e818b950fadb9854b687cffe4011cca4fd59",
       "target_sha256": "ce797e0f1259879675d3ffe803c1e818b950fadb9854b687cffe4011cca4fd59"
     },
     {
-      "source": "packages/ui/src/admin.ts",
-      "target": "packages/shenron/ui/src/admin.ts",
+      "source": "design/aphrody-m3/packages/src/admin.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/admin.ts",
       "staging": "packages/shenron/_preview/ui/src/admin.ts",
       "source_sha256": "b80be676ff2a9cec009813b96938697f5015aa0b61ac8f7e649b2a5938045b58",
       "target_sha256": "b80be676ff2a9cec009813b96938697f5015aa0b61ac8f7e649b2a5938045b58"
     },
     {
-      "source": "packages/ui/src/json-ld.tsx",
-      "target": "packages/shenron/ui/src/json-ld.tsx",
+      "source": "design/aphrody-m3/packages/src/json-ld.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/json-ld.tsx",
       "staging": "packages/shenron/_preview/ui/src/json-ld.tsx",
       "source_sha256": "ce9bcae11f4a198d51bcd36fd887dfaafc244e38d757808cdc5eb991f664a4f9",
       "target_sha256": "ce9bcae11f4a198d51bcd36fd887dfaafc244e38d757808cdc5eb991f664a4f9"
     },
     {
-      "source": "packages/ui/src/server.ts",
-      "target": "packages/shenron/ui/src/server.ts",
+      "source": "design/aphrody-m3/packages/src/server.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/server.ts",
       "staging": "packages/shenron/_preview/ui/src/server.ts",
       "source_sha256": "50dc6e426087fdf5c46fac5fbcd7d36ba67e4d60482d927205b43607decbbaec",
       "target_sha256": "50dc6e426087fdf5c46fac5fbcd7d36ba67e4d60482d927205b43607decbbaec"
     },
     {
-      "source": "packages/ui/src/tokens.ts",
-      "target": "packages/shenron/ui/src/tokens.ts",
+      "source": "design/aphrody-m3/packages/src/tokens.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/tokens.ts",
       "staging": "packages/shenron/_preview/ui/src/tokens.ts",
       "source_sha256": "007937ce0ff2ff7232f8acac20a7492076c86628b805a73c939f76c1bc810cf2",
       "target_sha256": "d8a38eacd62a7d232570ab14d967a48d3e97c4c4842501426c66d72cc5a4935d"
     },
     {
-      "source": "packages/ui/src/reader-dragon-ball.css",
-      "target": "packages/shenron/ui/src/reader-dragon-ball.css",
+      "source": "design/aphrody-m3/packages/src/reader-dragon-ball.css",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/reader-dragon-ball.css",
       "staging": "packages/shenron/_preview/ui/src/reader-dragon-ball.css",
       "source_sha256": "2d53775a48e20ac416b8adbf292d71e042a9b92a7def073144a83dad62992adf",
       "target_sha256": "2d53775a48e20ac416b8adbf292d71e042a9b92a7def073144a83dad62992adf"
     },
     {
-      "source": "packages/ui/src/toriyama.css",
-      "target": "packages/shenron/ui/src/toriyama.css",
+      "source": "design/aphrody-m3/packages/src/toriyama.css",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama.css",
       "staging": "packages/shenron/_preview/ui/src/toriyama.css",
       "source_sha256": "432c787b4f696aa8b6de4a8929e54e6994145ed0240710a5405ac2372896c4ae",
       "target_sha256": "432c787b4f696aa8b6de4a8929e54e6994145ed0240710a5405ac2372896c4ae"
     },
     {
-      "source": "packages/ui/src/assets.ts",
-      "target": "packages/shenron/ui/src/assets.ts",
+      "source": "design/aphrody-m3/packages/src/assets.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/assets.ts",
       "staging": "packages/shenron/_preview/ui/src/assets.ts",
       "source_sha256": "15ad84317b8bc98cccfb3592bc1a935c6a2d946f0ef07529911b1bd966eeb954",
       "target_sha256": "15ad84317b8bc98cccfb3592bc1a935c6a2d946f0ef07529911b1bd966eeb954"
     },
     {
-      "source": "packages/ui/src/styles.css",
-      "target": "packages/shenron/ui/src/styles.css",
+      "source": "design/aphrody-m3/packages/src/styles.css",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/styles.css",
       "staging": "packages/shenron/_preview/ui/src/styles.css",
       "source_sha256": "0b0a1a9e8523289d79963c14d047b692734527ed176bb5f230086ad9e9157a2d",
       "target_sha256": "0e04a7f6ddb1ba4f53f194387532fa3cee842fdbe91377e45df0d08cb962291c"
     },
     {
-      "source": "packages/ui/test/tokens.test.ts",
-      "target": "packages/shenron/ui/test/tokens.test.ts",
+      "source": "design/aphrody-m3/packages/test/tokens.test.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/test/tokens.test.ts",
       "staging": "packages/shenron/_preview/ui/test/tokens.test.ts",
       "source_sha256": "f739a1002efc46de52b4a70ad412600b6f888e1ec911c6189aa750c0dcf70279",
       "target_sha256": "f739a1002efc46de52b4a70ad412600b6f888e1ec911c6189aa750c0dcf70279"
     },
     {
-      "source": "packages/ui/test/styles.test.ts",
-      "target": "packages/shenron/ui/test/styles.test.ts",
+      "source": "design/aphrody-m3/packages/test/styles.test.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/test/styles.test.ts",
       "staging": "packages/shenron/_preview/ui/test/styles.test.ts",
       "source_sha256": "ca8dafc71841facf115b6d91d95fa27f457b975f7eea2bf3b7787b36e5687f57",
       "target_sha256": "edd4dd528d78b3571f745902c72a8eb374849bb845212e23abbae698209a339b"
     },
     {
-      "source": "packages/ui/test/portability.test.ts",
-      "target": "packages/shenron/ui/test/portability.test.ts",
+      "source": "design/aphrody-m3/packages/test/portability.test.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/test/portability.test.ts",
       "staging": "packages/shenron/_preview/ui/test/portability.test.ts",
       "source_sha256": "32c8c4a686f3f5e92a0e86287b5f1652acbf05cd200f69b95698560f56afbcce",
       "target_sha256": "32c8c4a686f3f5e92a0e86287b5f1652acbf05cd200f69b95698560f56afbcce"
     },
     {
-      "source": "packages/ui/test/portable-content.test.tsx",
-      "target": "packages/shenron/ui/test/portable-content.test.tsx",
+      "source": "design/aphrody-m3/packages/test/portable-content.test.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/test/portable-content.test.tsx",
       "staging": "packages/shenron/_preview/ui/test/portable-content.test.tsx",
       "source_sha256": "9ec57460fd2b2daa0b669efbfef93c6839c38cf5c42398d52babe7d403ed38bb",
       "target_sha256": "9ec57460fd2b2daa0b669efbfef93c6839c38cf5c42398d52babe7d403ed38bb"
     },
     {
-      "source": "packages/ui/test/selectors.test.ts",
-      "target": "packages/shenron/ui/test/selectors.test.ts",
+      "source": "design/aphrody-m3/packages/test/selectors.test.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/test/selectors.test.ts",
       "staging": "packages/shenron/_preview/ui/test/selectors.test.ts",
       "source_sha256": "a7859413348c0e39646533f02ebd6832937a88fa28e74a8a704309e52ea2ce3b",
       "target_sha256": "793a34fcdbadb543959d921d099597fecd143e42be73bc3c1d57f66bf5eb52e5"
     },
     {
-      "source": "packages/ui/test/dashboard-css.test.ts",
-      "target": "packages/shenron/ui/test/dashboard-css.test.ts",
+      "source": "design/aphrody-m3/packages/test/dashboard-css.test.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/test/dashboard-css.test.ts",
       "staging": "packages/shenron/_preview/ui/test/dashboard-css.test.ts",
       "source_sha256": "661cac6df9cb449e23ac969dc7be6d1a00544533a2802df5e1d1825ddb49e3a6",
       "target_sha256": "5322cb397a02a1b59b486e05ce0189f3fbe5f2769719dc84925a57f37124b6c5"
     },
     {
-      "source": "packages/ui/test/icones.test.ts",
-      "target": "packages/shenron/ui/test/icones.test.ts",
+      "source": "design/aphrody-m3/packages/test/icones.test.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/test/icones.test.ts",
       "staging": "packages/shenron/_preview/ui/test/icones.test.ts",
       "source_sha256": "77dd13ea6d0773f6f1cbba40d5ffb3be21ff5a6263bc5a280e1ef9d5299bfe8e",
       "target_sha256": "bba138a6dc72ea7146d73b83c2745cf9e085df5088a7d3a36e1dfb9d07d1b646"
     },
     {
-      "source": "packages/ui/test/purity.test.ts",
-      "target": "packages/shenron/ui/test/purity.test.ts",
+      "source": "design/aphrody-m3/packages/test/purity.test.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/test/purity.test.ts",
       "staging": "packages/shenron/_preview/ui/test/purity.test.ts",
       "source_sha256": "0375dd7be3007bda455ea07ce19883a5e9afe8cc6cf3894f943be801f0b0eb94",
       "target_sha256": "c9fda568c7df1616bf9fcba4b814a810a1a43e875e385639514c5cd466d154d0"
     },
     {
-      "source": "packages/ui/test/pagination.test.ts",
-      "target": "packages/shenron/ui/test/pagination.test.ts",
+      "source": "design/aphrody-m3/packages/test/pagination.test.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/test/pagination.test.ts",
       "staging": "packages/shenron/_preview/ui/test/pagination.test.ts",
       "source_sha256": "42c5957d6d6dbd51d3fca772e48616938cdcde94b167b374130b6d084d2af040",
       "target_sha256": "0ca16f8f421ef42cd600999985858ee6ac1f3072c9e363ebdd087da1c698aa18"
     },
     {
-      "source": "packages/ui/assets/dbz/kinto-un-icone.svg",
-      "target": "packages/shenron/ui/assets/dbz/kinto-un-icone.svg",
+      "source": "design/aphrody-m3/packages/assets/dbz/kinto-un-icone.svg",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/dbz/kinto-un-icone.svg",
       "staging": "packages/shenron/_preview/ui/assets/dbz/kinto-un-icone.svg",
       "source_sha256": "6db6d31322dba549e64fdf542782d74e0ed8a126bca8c85bcc470761fe3fd929",
       "target_sha256": "6db6d31322dba549e64fdf542782d74e0ed8a126bca8c85bcc470761fe3fd929"
     },
     {
-      "source": "packages/ui/assets/dbz/kinto-un.svg",
-      "target": "packages/shenron/ui/assets/dbz/kinto-un.svg",
+      "source": "design/aphrody-m3/packages/assets/dbz/kinto-un.svg",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/dbz/kinto-un.svg",
       "staging": "packages/shenron/_preview/ui/assets/dbz/kinto-un.svg",
       "source_sha256": "50603789a7c453d5f4f210a57ebda58012c56fcb8c3d5f8810b50d3e1e3dbe5e",
       "target_sha256": "50603789a7c453d5f4f210a57ebda58012c56fcb8c3d5f8810b50d3e1e3dbe5e"
     },
     {
-      "source": "packages/ui/assets/badges/badge-kame.svg",
-      "target": "packages/shenron/ui/assets/badges/badge-kame.svg",
+      "source": "design/aphrody-m3/packages/assets/badges/badge-kame.svg",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/badges/badge-kame.svg",
       "staging": "packages/shenron/_preview/ui/assets/badges/badge-kame.svg",
       "source_sha256": "f4ae208d1435b209814f225d1b2023709d96a6a4f1d3c418b21ca382c3a43341",
       "target_sha256": "f4ae208d1435b209814f225d1b2023709d96a6a4f1d3c418b21ca382c3a43341"
     },
     {
-      "source": "packages/ui/assets/badges/badge-shenron.svg",
-      "target": "packages/shenron/ui/assets/badges/badge-shenron.svg",
+      "source": "design/aphrody-m3/packages/assets/badges/badge-shenron.svg",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/badges/badge-shenron.svg",
       "staging": "packages/shenron/_preview/ui/assets/badges/badge-shenron.svg",
       "source_sha256": "3f03894061330d9015a3e6b24cd06e55dd682ba1c38dbffd9c108b5f716372c6",
       "target_sha256": "3f03894061330d9015a3e6b24cd06e55dd682ba1c38dbffd9c108b5f716372c6"
     },
     {
-      "source": "packages/ui/assets/badges/badge-zeni.svg",
-      "target": "packages/shenron/ui/assets/badges/badge-zeni.svg",
+      "source": "design/aphrody-m3/packages/assets/badges/badge-zeni.svg",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/badges/badge-zeni.svg",
       "staging": "packages/shenron/_preview/ui/assets/badges/badge-zeni.svg",
       "source_sha256": "1c0a70ceead3816fbebdb58986f8f5cc2221c95e561b2ac41985393032155482",
       "target_sha256": "1c0a70ceead3816fbebdb58986f8f5cc2221c95e561b2ac41985393032155482"
     },
     {
-      "source": "packages/ui/assets/badges/badge-kaio.svg",
-      "target": "packages/shenron/ui/assets/badges/badge-kaio.svg",
+      "source": "design/aphrody-m3/packages/assets/badges/badge-kaio.svg",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/badges/badge-kaio.svg",
       "staging": "packages/shenron/_preview/ui/assets/badges/badge-kaio.svg",
       "source_sha256": "467889a073c94a6c0b004a4765da0047704f5ad482654d66a02a8c04d98d3463",
       "target_sha256": "467889a073c94a6c0b004a4765da0047704f5ad482654d66a02a8c04d98d3463"
     },
     {
-      "source": "packages/ui/assets/dbz/marque/banc-nuage.svg",
-      "target": "packages/shenron/ui/assets/dbz/marque/banc-nuage.svg",
+      "source": "design/aphrody-m3/packages/assets/dbz/marque/banc-nuage.svg",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/dbz/marque/banc-nuage.svg",
       "staging": "packages/shenron/_preview/ui/assets/dbz/marque/banc-nuage.svg",
       "source_sha256": "f2446496818076280e07e8c0accba013fdf0cea2807ecf8e045ab08ba185b6a6",
       "target_sha256": "f2446496818076280e07e8c0accba013fdf0cea2807ecf8e045ab08ba185b6a6"
     },
     {
-      "source": "packages/ui/assets/dbz/marque/kinto-un-2048.png",
-      "target": "packages/shenron/ui/assets/dbz/marque/kinto-un-2048.png",
+      "source": "design/aphrody-m3/packages/assets/dbz/marque/kinto-un-2048.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/dbz/marque/kinto-un-2048.png",
       "staging": "packages/shenron/_preview/ui/assets/dbz/marque/kinto-un-2048.png",
       "source_sha256": "0aaaa0d7f415efbf5cf0bb71207b1005f1ce105f97bd2e3a92c05be2d8bda19c",
       "target_sha256": "0aaaa0d7f415efbf5cf0bb71207b1005f1ce105f97bd2e3a92c05be2d8bda19c"
     },
     {
-      "source": "packages/ui/assets/dbz/marque/avatar-1024-transparent.png",
-      "target": "packages/shenron/ui/assets/dbz/marque/avatar-1024-transparent.png",
+      "source": "design/aphrody-m3/packages/assets/dbz/marque/avatar-1024-transparent.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/dbz/marque/avatar-1024-transparent.png",
       "staging": "packages/shenron/_preview/ui/assets/dbz/marque/avatar-1024-transparent.png",
       "source_sha256": "2f639e357cb64d2e56f50483759ec7ef6ccd77e2bfdd02b36a6c368368840057",
       "target_sha256": "2f639e357cb64d2e56f50483759ec7ef6ccd77e2bfdd02b36a6c368368840057"
     },
     {
-      "source": "packages/ui/assets/dbz/marque/banniere-960x540.png",
-      "target": "packages/shenron/ui/assets/dbz/marque/banniere-960x540.png",
+      "source": "design/aphrody-m3/packages/assets/dbz/marque/banniere-960x540.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/dbz/marque/banniere-960x540.png",
       "staging": "packages/shenron/_preview/ui/assets/dbz/marque/banniere-960x540.png",
       "source_sha256": "855292fab689612d35d3e2cd111aabd8b8d6569b79d07a8986f6a85f4891ac36",
       "target_sha256": "855292fab689612d35d3e2cd111aabd8b8d6569b79d07a8986f6a85f4891ac36"
     },
     {
-      "source": "packages/ui/assets/dbz/marque/emoji-128.png",
-      "target": "packages/shenron/ui/assets/dbz/marque/emoji-128.png",
+      "source": "design/aphrody-m3/packages/assets/dbz/marque/emoji-128.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/dbz/marque/emoji-128.png",
       "staging": "packages/shenron/_preview/ui/assets/dbz/marque/emoji-128.png",
       "source_sha256": "7fc714f5aadd0b28bd09c7fc25d3b861b156be9c7f5bbb334db18a0206c25e61",
       "target_sha256": "7fc714f5aadd0b28bd09c7fc25d3b861b156be9c7f5bbb334db18a0206c25e61"
     },
     {
-      "source": "packages/ui/assets/dbz/marque/avatar-1024-fond-sombre.png",
-      "target": "packages/shenron/ui/assets/dbz/marque/avatar-1024-fond-sombre.png",
+      "source": "design/aphrody-m3/packages/assets/dbz/marque/avatar-1024-fond-sombre.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/dbz/marque/avatar-1024-fond-sombre.png",
       "staging": "packages/shenron/_preview/ui/assets/dbz/marque/avatar-1024-fond-sombre.png",
       "source_sha256": "d71e726032086cd0a108f6294bc23cb189f495f7719c66a14ba26645fc95d1bb",
       "target_sha256": "d71e726032086cd0a108f6294bc23cb189f495f7719c66a14ba26645fc95d1bb"
     },
     {
-      "source": "packages/ui/assets/dbz/marque/kinto-un-1024.png",
-      "target": "packages/shenron/ui/assets/dbz/marque/kinto-un-1024.png",
+      "source": "design/aphrody-m3/packages/assets/dbz/marque/kinto-un-1024.png",
+      "target": "design/aphrody-m3/packages/shenron-ui/assets/dbz/marque/kinto-un-1024.png",
       "staging": "packages/shenron/_preview/ui/assets/dbz/marque/kinto-un-1024.png",
       "source_sha256": "38e47f9af0a88813adb9da39cbf9730bcdab272ba1452c106aa3620b46d895a3",
       "target_sha256": "38e47f9af0a88813adb9da39cbf9730bcdab272ba1452c106aa3620b46d895a3"
     },
     {
-      "source": "packages/ui/src/admin/RythmeSparkline.tsx",
-      "target": "packages/shenron/ui/src/admin/RythmeSparkline.tsx",
+      "source": "design/aphrody-m3/packages/src/admin/RythmeSparkline.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/admin/RythmeSparkline.tsx",
       "staging": "packages/shenron/_preview/ui/src/admin/RythmeSparkline.tsx",
       "source_sha256": "6b34fe4411dba991120313cadb4658fa4e7545863d9ce1e061f19618a5ec2829",
       "target_sha256": "6b34fe4411dba991120313cadb4658fa4e7545863d9ce1e061f19618a5ec2829"
     },
     {
-      "source": "packages/ui/src/admin/QueryProvider.tsx",
-      "target": "packages/shenron/ui/src/admin/QueryProvider.tsx",
+      "source": "design/aphrody-m3/packages/src/admin/QueryProvider.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/admin/QueryProvider.tsx",
       "staging": "packages/shenron/_preview/ui/src/admin/QueryProvider.tsx",
       "source_sha256": "f5916c5109664a517007c1c8ab5689239e2b399f1fa49f52eee129754acc0bec",
       "target_sha256": "f5916c5109664a517007c1c8ab5689239e2b399f1fa49f52eee129754acc0bec"
     },
     {
-      "source": "packages/ui/src/admin/AdminSidebarView.tsx",
-      "target": "packages/shenron/ui/src/admin/AdminSidebarView.tsx",
+      "source": "design/aphrody-m3/packages/src/admin/AdminSidebarView.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/admin/AdminSidebarView.tsx",
       "staging": "packages/shenron/_preview/ui/src/admin/AdminSidebarView.tsx",
       "source_sha256": "03ae7b35a021e027eacd18b739916856c02c44ce3eed6f7b9e531c848aa47223",
       "target_sha256": "03ae7b35a021e027eacd18b739916856c02c44ce3eed6f7b9e531c848aa47223"
     },
     {
-      "source": "packages/ui/src/public/StatTiles.tsx",
-      "target": "packages/shenron/ui/src/public/StatTiles.tsx",
+      "source": "design/aphrody-m3/packages/src/public/StatTiles.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/public/StatTiles.tsx",
       "staging": "packages/shenron/_preview/ui/src/public/StatTiles.tsx",
       "source_sha256": "88729a2d0aebc060c31b384653585bb82bca8457a48f74a7ed496ee74f9c157f",
       "target_sha256": "88729a2d0aebc060c31b384653585bb82bca8457a48f74a7ed496ee74f9c157f"
     },
     {
-      "source": "packages/ui/src/public/WikiSkeleton.tsx",
-      "target": "packages/shenron/ui/src/public/WikiSkeleton.tsx",
+      "source": "design/aphrody-m3/packages/src/public/WikiSkeleton.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/public/WikiSkeleton.tsx",
       "staging": "packages/shenron/_preview/ui/src/public/WikiSkeleton.tsx",
       "source_sha256": "8a0759180414159a4b3de35d40ca6ad6e53fc477dc83311e052ffec77e832fef",
       "target_sha256": "8a0759180414159a4b3de35d40ca6ad6e53fc477dc83311e052ffec77e832fef"
     },
     {
-      "source": "packages/ui/src/public/Chip.tsx",
-      "target": "packages/shenron/ui/src/public/Chip.tsx",
+      "source": "design/aphrody-m3/packages/src/public/Chip.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/public/Chip.tsx",
       "staging": "packages/shenron/_preview/ui/src/public/Chip.tsx",
       "source_sha256": "c5f088cff0abbe89aaa7bd15045b2ef04462c87b46a459a5db279e0db1ee8d8f",
       "target_sha256": "c5f088cff0abbe89aaa7bd15045b2ef04462c87b46a459a5db279e0db1ee8d8f"
     },
     {
-      "source": "packages/ui/src/public/Stars.tsx",
-      "target": "packages/shenron/ui/src/public/Stars.tsx",
+      "source": "design/aphrody-m3/packages/src/public/Stars.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/public/Stars.tsx",
       "staging": "packages/shenron/_preview/ui/src/public/Stars.tsx",
       "source_sha256": "ab419b91ab66af94cafafef32e1e3ada5c819195b9f9c01e561d04d97750363f",
       "target_sha256": "ab419b91ab66af94cafafef32e1e3ada5c819195b9f9c01e561d04d97750363f"
     },
     {
-      "source": "packages/ui/src/public/StreamSkeleton.tsx",
-      "target": "packages/shenron/ui/src/public/StreamSkeleton.tsx",
+      "source": "design/aphrody-m3/packages/src/public/StreamSkeleton.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/public/StreamSkeleton.tsx",
       "staging": "packages/shenron/_preview/ui/src/public/StreamSkeleton.tsx",
       "source_sha256": "98e160d3bb4f65dfe43e8d192cb7103770b779204c1b0df06fa60229a59706a5",
       "target_sha256": "98e160d3bb4f65dfe43e8d192cb7103770b779204c1b0df06fa60229a59706a5"
     },
     {
-      "source": "packages/ui/src/public/FilterDropdown.tsx",
-      "target": "packages/shenron/ui/src/public/FilterDropdown.tsx",
+      "source": "design/aphrody-m3/packages/src/public/FilterDropdown.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/public/FilterDropdown.tsx",
       "staging": "packages/shenron/_preview/ui/src/public/FilterDropdown.tsx",
       "source_sha256": "d3b82ea6008cc1617bf1374468eeb4f859b238b31ee1034d8e0782eff697e7ba",
       "target_sha256": "d3b82ea6008cc1617bf1374468eeb4f859b238b31ee1034d8e0782eff697e7ba"
     },
     {
-      "source": "packages/ui/src/public/EmptyState.tsx",
-      "target": "packages/shenron/ui/src/public/EmptyState.tsx",
+      "source": "design/aphrody-m3/packages/src/public/EmptyState.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/public/EmptyState.tsx",
       "staging": "packages/shenron/_preview/ui/src/public/EmptyState.tsx",
       "source_sha256": "d17763cdd3cd35f855980a147c2656c5bb8df0a0a0e1fb4a932bfe34c092abb4",
       "target_sha256": "d17763cdd3cd35f855980a147c2656c5bb8df0a0a0e1fb4a932bfe34c092abb4"
     },
     {
-      "source": "packages/ui/src/public/MangaCard.tsx",
-      "target": "packages/shenron/ui/src/public/MangaCard.tsx",
+      "source": "design/aphrody-m3/packages/src/public/MangaCard.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/public/MangaCard.tsx",
       "staging": "packages/shenron/_preview/ui/src/public/MangaCard.tsx",
       "source_sha256": "cb7b03d77ccfed8d3635dd1b642e96efb9a2ee0f921b1236f6fdc58384595e58",
       "target_sha256": "cb7b03d77ccfed8d3635dd1b642e96efb9a2ee0f921b1236f6fdc58384595e58"
     },
     {
-      "source": "packages/ui/src/toriyama-svg/palette.ts",
-      "target": "packages/shenron/ui/src/toriyama-svg/palette.ts",
+      "source": "design/aphrody-m3/packages/src/toriyama-svg/palette.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama-svg/palette.ts",
       "staging": "packages/shenron/_preview/ui/src/toriyama-svg/palette.ts",
       "source_sha256": "83ee06500d3b4a27603f75d086737712efd5116df8f50fcbe6ca37c0ea68c2da",
       "target_sha256": "83ee06500d3b4a27603f75d086737712efd5116df8f50fcbe6ca37c0ea68c2da"
     },
     {
-      "source": "packages/ui/src/toriyama-svg/couverture.ts",
-      "target": "packages/shenron/ui/src/toriyama-svg/couverture.ts",
+      "source": "design/aphrody-m3/packages/src/toriyama-svg/couverture.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama-svg/couverture.ts",
       "staging": "packages/shenron/_preview/ui/src/toriyama-svg/couverture.ts",
       "source_sha256": "d6d23578417fb84953908f6d9c19420d4b6d3ecfa9eef4e903ec82b8afb4363d",
       "target_sha256": "d6d23578417fb84953908f6d9c19420d4b6d3ecfa9eef4e903ec82b8afb4363d"
     },
     {
-      "source": "packages/ui/src/toriyama-svg/kinto-un.ts",
-      "target": "packages/shenron/ui/src/toriyama-svg/kinto-un.ts",
+      "source": "design/aphrody-m3/packages/src/toriyama-svg/kinto-un.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama-svg/kinto-un.ts",
       "staging": "packages/shenron/_preview/ui/src/toriyama-svg/kinto-un.ts",
       "source_sha256": "d4df44671604a1cfa56dd28862984d9143e1b5ae93de46e8ea613e6cb8d7c0ca",
       "target_sha256": "d4df44671604a1cfa56dd28862984d9143e1b5ae93de46e8ea613e6cb8d7c0ca"
     },
     {
-      "source": "packages/ui/src/toriyama-svg/geometry.ts",
-      "target": "packages/shenron/ui/src/toriyama-svg/geometry.ts",
+      "source": "design/aphrody-m3/packages/src/toriyama-svg/geometry.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama-svg/geometry.ts",
       "staging": "packages/shenron/_preview/ui/src/toriyama-svg/geometry.ts",
       "source_sha256": "0ed6f2f352132634383dd395e0140cb540bb0a85e00135959720b57ee243d17e",
       "target_sha256": "0ed6f2f352132634383dd395e0140cb540bb0a85e00135959720b57ee243d17e"
     },
     {
-      "source": "packages/ui/src/toriyama-svg/index.ts",
-      "target": "packages/shenron/ui/src/toriyama-svg/index.ts",
+      "source": "design/aphrody-m3/packages/src/toriyama-svg/index.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama-svg/index.ts",
       "staging": "packages/shenron/_preview/ui/src/toriyama-svg/index.ts",
       "source_sha256": "c4149a84e9106d65b1097135509b4e3c9868e63f638e7ffaeba6747d5cb96a26",
       "target_sha256": "c4149a84e9106d65b1097135509b4e3c9868e63f638e7ffaeba6747d5cb96a26"
     },
     {
-      "source": "packages/ui/src/toriyama-svg/emblems.ts",
-      "target": "packages/shenron/ui/src/toriyama-svg/emblems.ts",
+      "source": "design/aphrody-m3/packages/src/toriyama-svg/emblems.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama-svg/emblems.ts",
       "staging": "packages/shenron/_preview/ui/src/toriyama-svg/emblems.ts",
       "source_sha256": "62c50cddbdd637f7ae0a633b9090ea2cd3b0a25ad6c687234f38fb9f935987f2",
       "target_sha256": "62c50cddbdd637f7ae0a633b9090ea2cd3b0a25ad6c687234f38fb9f935987f2"
     },
     {
-      "source": "packages/ui/src/lib/page-window.test.ts",
-      "target": "packages/shenron/ui/src/lib/page-window.test.ts",
+      "source": "design/aphrody-m3/packages/src/lib/page-window.test.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/lib/page-window.test.ts",
       "staging": "packages/shenron/_preview/ui/src/lib/page-window.test.ts",
       "source_sha256": "75557fe2c2fe20dbd295a10f7000c592da379ec430fb40385a39b4a5a184557c",
       "target_sha256": "7847d4f7b0475eea080c7f5a1387059bdbecae97cdd01ac6fd100220f726442c"
     },
     {
-      "source": "packages/ui/src/lib/page-window.ts",
-      "target": "packages/shenron/ui/src/lib/page-window.ts",
+      "source": "design/aphrody-m3/packages/src/lib/page-window.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/lib/page-window.ts",
       "staging": "packages/shenron/_preview/ui/src/lib/page-window.ts",
       "source_sha256": "1908cf9b494e9acdc9b299e08e3159a7c4068c8b69995b5ea361783bcc5638eb",
       "target_sha256": "fc8169ca00a5827d92ed66af53139c5c7fe60ec9718132a97940a42fdf5b4aa2"
     },
     {
-      "source": "packages/ui/src/lib/utils.ts",
-      "target": "packages/shenron/ui/src/lib/utils.ts",
+      "source": "design/aphrody-m3/packages/src/lib/utils.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/lib/utils.ts",
       "staging": "packages/shenron/_preview/ui/src/lib/utils.ts",
       "source_sha256": "f02640db2fe153756745aeb56dda17bb4110b864ec6a5fe445a218f42922027d",
       "target_sha256": "f02640db2fe153756745aeb56dda17bb4110b864ec6a5fe445a218f42922027d"
     },
     {
-      "source": "packages/ui/src/lib/utils.test.ts",
-      "target": "packages/shenron/ui/src/lib/utils.test.ts",
+      "source": "design/aphrody-m3/packages/src/lib/utils.test.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/lib/utils.test.ts",
       "staging": "packages/shenron/_preview/ui/src/lib/utils.test.ts",
       "source_sha256": "f55b12e4a069529318950c658d787bb5a100f8a6b73b746a2405a66b27e49925",
       "target_sha256": "f55b12e4a069529318950c658d787bb5a100f8a6b73b746a2405a66b27e49925"
     },
     {
-      "source": "packages/ui/src/navigation/TabNav.tsx",
-      "target": "packages/shenron/ui/src/navigation/TabNav.tsx",
+      "source": "design/aphrody-m3/packages/src/navigation/TabNav.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/navigation/TabNav.tsx",
       "staging": "packages/shenron/_preview/ui/src/navigation/TabNav.tsx",
       "source_sha256": "e0455a8545b7fefe39f994f187b54cc60229d14b94382686de282c506e88e246",
       "target_sha256": "e0455a8545b7fefe39f994f187b54cc60229d14b94382686de282c506e88e246"
     },
     {
-      "source": "packages/ui/src/navigation/FooterFabGuard.tsx",
-      "target": "packages/shenron/ui/src/navigation/FooterFabGuard.tsx",
+      "source": "design/aphrody-m3/packages/src/navigation/FooterFabGuard.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/navigation/FooterFabGuard.tsx",
       "staging": "packages/shenron/_preview/ui/src/navigation/FooterFabGuard.tsx",
       "source_sha256": "6b67c080e3cd71df6917d028d791d88dbae70d27acc2002547d6ac8ac9a1c42d",
       "target_sha256": "6b67c080e3cd71df6917d028d791d88dbae70d27acc2002547d6ac8ac9a1c42d"
     },
     {
-      "source": "packages/ui/src/navigation/NavMega.tsx",
-      "target": "packages/shenron/ui/src/navigation/NavMega.tsx",
+      "source": "design/aphrody-m3/packages/src/navigation/NavMega.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/navigation/NavMega.tsx",
       "staging": "packages/shenron/_preview/ui/src/navigation/NavMega.tsx",
       "source_sha256": "39bbed3ad6f55bbaeb6c0a058ab1944c7c6713bf228046f3014b7821b2503ca6",
       "target_sha256": "39bbed3ad6f55bbaeb6c0a058ab1944c7c6713bf228046f3014b7821b2503ca6"
     },
     {
-      "source": "packages/ui/src/navigation/HeaderFrame.tsx",
-      "target": "packages/shenron/ui/src/navigation/HeaderFrame.tsx",
+      "source": "design/aphrody-m3/packages/src/navigation/HeaderFrame.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/navigation/HeaderFrame.tsx",
       "staging": "packages/shenron/_preview/ui/src/navigation/HeaderFrame.tsx",
       "source_sha256": "fd8450da5f5b7c23e308b1240be8675a9360f9bb568be7e2501ba7645cf713fe",
       "target_sha256": "fd8450da5f5b7c23e308b1240be8675a9360f9bb568be7e2501ba7645cf713fe"
     },
     {
-      "source": "packages/ui/src/navigation/DomainBarView.tsx",
-      "target": "packages/shenron/ui/src/navigation/DomainBarView.tsx",
+      "source": "design/aphrody-m3/packages/src/navigation/DomainBarView.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/navigation/DomainBarView.tsx",
       "staging": "packages/shenron/_preview/ui/src/navigation/DomainBarView.tsx",
       "source_sha256": "057d93f8531cb0918c48aa44dd33e5011bec2567db928c273a411f365cbea0a4",
       "target_sha256": "057d93f8531cb0918c48aa44dd33e5011bec2567db928c273a411f365cbea0a4"
     },
     {
-      "source": "packages/ui/src/navigation/link.ts",
-      "target": "packages/shenron/ui/src/navigation/link.ts",
+      "source": "design/aphrody-m3/packages/src/navigation/link.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/navigation/link.ts",
       "staging": "packages/shenron/_preview/ui/src/navigation/link.ts",
       "source_sha256": "5db29d49a4b33891ecf9cd70b8eb6d940cf537b12e98b461a511eba53b8b0007",
       "target_sha256": "5db29d49a4b33891ecf9cd70b8eb6d940cf537b12e98b461a511eba53b8b0007"
     },
     {
-      "source": "packages/ui/src/navigation/MobileNavFrame.tsx",
-      "target": "packages/shenron/ui/src/navigation/MobileNavFrame.tsx",
+      "source": "design/aphrody-m3/packages/src/navigation/MobileNavFrame.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/navigation/MobileNavFrame.tsx",
       "staging": "packages/shenron/_preview/ui/src/navigation/MobileNavFrame.tsx",
       "source_sha256": "0011d0ace82e515c3159934f4daa1e96ea783f4631303e5afafc9f742c609258",
       "target_sha256": "0011d0ace82e515c3159934f4daa1e96ea783f4631303e5afafc9f742c609258"
     },
     {
-      "source": "packages/ui/src/navigation/FooterFrame.tsx",
-      "target": "packages/shenron/ui/src/navigation/FooterFrame.tsx",
+      "source": "design/aphrody-m3/packages/src/navigation/FooterFrame.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/navigation/FooterFrame.tsx",
       "staging": "packages/shenron/_preview/ui/src/navigation/FooterFrame.tsx",
       "source_sha256": "3bd9f0a9a135cde6dd9936ecb1ee8650cdea890591e9084fd047746c159487bd",
       "target_sha256": "3bd9f0a9a135cde6dd9936ecb1ee8650cdea890591e9084fd047746c159487bd"
     },
     {
-      "source": "packages/ui/src/navigation/LinkPager.tsx",
-      "target": "packages/shenron/ui/src/navigation/LinkPager.tsx",
+      "source": "design/aphrody-m3/packages/src/navigation/LinkPager.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/navigation/LinkPager.tsx",
       "staging": "packages/shenron/_preview/ui/src/navigation/LinkPager.tsx",
       "source_sha256": "a449b2b50b0303ca8459d140c2e20fdd2792f4bc5b07f63c209d3249a1b72425",
       "target_sha256": "a449b2b50b0303ca8459d140c2e20fdd2792f4bc5b07f63c209d3249a1b72425"
     },
     {
-      "source": "packages/ui/src/layout/SectionHeading.tsx",
-      "target": "packages/shenron/ui/src/layout/SectionHeading.tsx",
+      "source": "design/aphrody-m3/packages/src/layout/SectionHeading.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/layout/SectionHeading.tsx",
       "staging": "packages/shenron/_preview/ui/src/layout/SectionHeading.tsx",
       "source_sha256": "7f447d5ff1a0aa1f7082d9224e9361c82d88a73e671b43ced871dc571e5907df",
       "target_sha256": "7f447d5ff1a0aa1f7082d9224e9361c82d88a73e671b43ced871dc571e5907df"
     },
     {
-      "source": "packages/ui/src/layout/HeroTitles.tsx",
-      "target": "packages/shenron/ui/src/layout/HeroTitles.tsx",
+      "source": "design/aphrody-m3/packages/src/layout/HeroTitles.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/layout/HeroTitles.tsx",
       "staging": "packages/shenron/_preview/ui/src/layout/HeroTitles.tsx",
       "source_sha256": "26ea1d7a8999c22b7d2fd2cc8fb30c360bbd8af5c9247d8ed0d34483aa005cd7",
       "target_sha256": "26ea1d7a8999c22b7d2fd2cc8fb30c360bbd8af5c9247d8ed0d34483aa005cd7"
     },
     {
-      "source": "packages/ui/src/layout/AdminFrame.tsx",
-      "target": "packages/shenron/ui/src/layout/AdminFrame.tsx",
+      "source": "design/aphrody-m3/packages/src/layout/AdminFrame.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/layout/AdminFrame.tsx",
       "staging": "packages/shenron/_preview/ui/src/layout/AdminFrame.tsx",
       "source_sha256": "a75b8afe090997631b7b8bc21d2b41e5e4dbbd4112f4c0752591d8c5cc37cd73",
       "target_sha256": "a75b8afe090997631b7b8bc21d2b41e5e4dbbd4112f4c0752591d8c5cc37cd73"
     },
     {
-      "source": "packages/ui/src/layout/PageShell.tsx",
-      "target": "packages/shenron/ui/src/layout/PageShell.tsx",
+      "source": "design/aphrody-m3/packages/src/layout/PageShell.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/layout/PageShell.tsx",
       "staging": "packages/shenron/_preview/ui/src/layout/PageShell.tsx",
       "source_sha256": "a7635104327d19fd1cb4891bb08b6894e14e071b3925da5d1924f8a04d2f422a",
       "target_sha256": "a7635104327d19fd1cb4891bb08b6894e14e071b3925da5d1924f8a04d2f422a"
     },
     {
-      "source": "packages/ui/src/layout/PageHero.tsx",
-      "target": "packages/shenron/ui/src/layout/PageHero.tsx",
+      "source": "design/aphrody-m3/packages/src/layout/PageHero.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/layout/PageHero.tsx",
       "staging": "packages/shenron/_preview/ui/src/layout/PageHero.tsx",
       "source_sha256": "5ad5b5942872d4ab4bc2d7af58ade470d223e96690208a9dd13c04d39708ed3a",
       "target_sha256": "5ad5b5942872d4ab4bc2d7af58ade470d223e96690208a9dd13c04d39708ed3a"
     },
     {
-      "source": "packages/ui/src/layout/PageHeader.tsx",
-      "target": "packages/shenron/ui/src/layout/PageHeader.tsx",
+      "source": "design/aphrody-m3/packages/src/layout/PageHeader.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/layout/PageHeader.tsx",
       "staging": "packages/shenron/_preview/ui/src/layout/PageHeader.tsx",
       "source_sha256": "350768b23718c2e1b75796f07eff83435e0c003954ea4241f8b4951f50d0f10c",
       "target_sha256": "350768b23718c2e1b75796f07eff83435e0c003954ea4241f8b4951f50d0f10c"
     },
     {
-      "source": "packages/ui/src/layout/ViewTransition.tsx",
-      "target": "packages/shenron/ui/src/layout/ViewTransition.tsx",
+      "source": "design/aphrody-m3/packages/src/layout/ViewTransition.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/layout/ViewTransition.tsx",
       "staging": "packages/shenron/_preview/ui/src/layout/ViewTransition.tsx",
       "source_sha256": "7180741c8ca8122f00119c5210cc462c857cc16d8d0ff83c48f7f9f267504ec6",
       "target_sha256": "7180741c8ca8122f00119c5210cc462c857cc16d8d0ff83c48f7f9f267504ec6"
     },
     {
-      "source": "packages/ui/src/cinematic/KiAuraContainer.tsx",
-      "target": "packages/shenron/ui/src/cinematic/KiAuraContainer.tsx",
+      "source": "design/aphrody-m3/packages/src/cinematic/KiAuraContainer.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/cinematic/KiAuraContainer.tsx",
       "staging": "packages/shenron/_preview/ui/src/cinematic/KiAuraContainer.tsx",
       "source_sha256": "73a8967658cd0f6b6eec7e176b07728afea0999dd79237fb0e71fff70f76dfc9",
       "target_sha256": "73a8967658cd0f6b6eec7e176b07728afea0999dd79237fb0e71fff70f76dfc9"
     },
     {
-      "source": "packages/ui/src/cinematic/OfficialMediaCard.tsx",
-      "target": "packages/shenron/ui/src/cinematic/OfficialMediaCard.tsx",
+      "source": "design/aphrody-m3/packages/src/cinematic/OfficialMediaCard.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/cinematic/OfficialMediaCard.tsx",
       "staging": "packages/shenron/_preview/ui/src/cinematic/OfficialMediaCard.tsx",
       "source_sha256": "66cb120120b68e2aeae3c1c005adc22e2464b610a37a77ed71ef1fd5034b6a04",
       "target_sha256": "66cb120120b68e2aeae3c1c005adc22e2464b610a37a77ed71ef1fd5034b6a04"
     },
     {
-      "source": "packages/ui/src/cinematic/KenBurns.tsx",
-      "target": "packages/shenron/ui/src/cinematic/KenBurns.tsx",
+      "source": "design/aphrody-m3/packages/src/cinematic/KenBurns.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/cinematic/KenBurns.tsx",
       "staging": "packages/shenron/_preview/ui/src/cinematic/KenBurns.tsx",
       "source_sha256": "8fec49c70750768577180009cc89be9a52cf393455d6f0ee65ce5e443aa442be",
       "target_sha256": "8fec49c70750768577180009cc89be9a52cf393455d6f0ee65ce5e443aa442be"
     },
     {
-      "source": "packages/ui/src/cinematic/AnimeMomentCard.tsx",
-      "target": "packages/shenron/ui/src/cinematic/AnimeMomentCard.tsx",
+      "source": "design/aphrody-m3/packages/src/cinematic/AnimeMomentCard.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/cinematic/AnimeMomentCard.tsx",
       "staging": "packages/shenron/_preview/ui/src/cinematic/AnimeMomentCard.tsx",
       "source_sha256": "af4ad928298e70a619782d06cb80cf5f445cd966fb51f6cad31bed96611c1fa5",
       "target_sha256": "af4ad928298e70a619782d06cb80cf5f445cd966fb51f6cad31bed96611c1fa5"
     },
     {
-      "source": "packages/ui/src/cinematic/index.ts",
-      "target": "packages/shenron/ui/src/cinematic/index.ts",
+      "source": "design/aphrody-m3/packages/src/cinematic/index.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/cinematic/index.ts",
       "staging": "packages/shenron/_preview/ui/src/cinematic/index.ts",
       "source_sha256": "5b1554f94517eb0f241c7e9ca80042073b7ca8efb43d75e41c7ff2a9474689fc",
       "target_sha256": "5b1554f94517eb0f241c7e9ca80042073b7ca8efb43d75e41c7ff2a9474689fc"
     },
     {
-      "source": "packages/ui/src/cinematic/AuraContainer.tsx",
-      "target": "packages/shenron/ui/src/cinematic/AuraContainer.tsx",
+      "source": "design/aphrody-m3/packages/src/cinematic/AuraContainer.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/cinematic/AuraContainer.tsx",
       "staging": "packages/shenron/_preview/ui/src/cinematic/AuraContainer.tsx",
       "source_sha256": "3188983d9f83dc05e7eeeef2aa38169d82435cf83226b90b73ab677c97caa809",
       "target_sha256": "3188983d9f83dc05e7eeeef2aa38169d82435cf83226b90b73ab677c97caa809"
     },
     {
-      "source": "packages/ui/src/icones/geometries.ts",
-      "target": "packages/shenron/ui/src/icones/geometries.ts",
+      "source": "design/aphrody-m3/packages/src/icones/geometries.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/icones/geometries.ts",
       "staging": "packages/shenron/_preview/ui/src/icones/geometries.ts",
       "source_sha256": "5be1cd584e915018eb733daf49da02f5e0db5b7659b1cc9f16dcf745001cb677",
       "target_sha256": "d26423683f36aa4cd9cccbd15251f0770ce8ff3d6ba75c79f5367a4badf40175"
     },
     {
-      "source": "packages/ui/src/icones/glyphe.tsx",
-      "target": "packages/shenron/ui/src/icones/glyphe.tsx",
+      "source": "design/aphrody-m3/packages/src/icones/glyphe.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/icones/glyphe.tsx",
       "staging": "packages/shenron/_preview/ui/src/icones/glyphe.tsx",
       "source_sha256": "e71f6b214671c0802113e6b9d5aa21748bf5b1d3ab062be059c627fe68e33ea6",
       "target_sha256": "e71f6b214671c0802113e6b9d5aa21748bf5b1d3ab062be059c627fe68e33ea6"
     },
     {
-      "source": "packages/ui/src/icones/index.tsx",
-      "target": "packages/shenron/ui/src/icones/index.tsx",
+      "source": "design/aphrody-m3/packages/src/icones/index.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/icones/index.tsx",
       "staging": "packages/shenron/_preview/ui/src/icones/index.tsx",
       "source_sha256": "20f58f6e375dd22751d81ea971d3919cd912a73db13f87a10261a62c4e74748d",
       "target_sha256": "7617aa8a8be596b4706aaf228ab33f48ae76d9f18ceedb2f12018c30c4f14b72"
     },
     {
-      "source": "packages/ui/src/components/toast.tsx",
-      "target": "packages/shenron/ui/src/components/toast.tsx",
+      "source": "design/aphrody-m3/packages/src/components/toast.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/toast.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/toast.tsx",
       "source_sha256": "d5c1a9340da70e69ea266b497d459945eeaa6d06a17e2f5ff0dba26a546fcfda",
       "target_sha256": "d5c1a9340da70e69ea266b497d459945eeaa6d06a17e2f5ff0dba26a546fcfda"
     },
     {
-      "source": "packages/ui/src/components/pagination.tsx",
-      "target": "packages/shenron/ui/src/components/pagination.tsx",
+      "source": "design/aphrody-m3/packages/src/components/pagination.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/pagination.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/pagination.tsx",
       "source_sha256": "62785528ede664fa309717097ef488131b0451f920042f4a869100e62c03162d",
       "target_sha256": "62785528ede664fa309717097ef488131b0451f920042f4a869100e62c03162d"
     },
     {
-      "source": "packages/ui/src/components/card.tsx",
-      "target": "packages/shenron/ui/src/components/card.tsx",
+      "source": "design/aphrody-m3/packages/src/components/card.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/card.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/card.tsx",
       "source_sha256": "146aecad4f4b420fe7e6d9f45eaa0faa215322a18bb173345c27f541fe956f0d",
       "target_sha256": "146aecad4f4b420fe7e6d9f45eaa0faa215322a18bb173345c27f541fe956f0d"
     },
     {
-      "source": "packages/ui/src/components/dialog.tsx",
-      "target": "packages/shenron/ui/src/components/dialog.tsx",
+      "source": "design/aphrody-m3/packages/src/components/dialog.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/dialog.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/dialog.tsx",
       "source_sha256": "100082c43ba1233f5afefa264ed50b86a9d56468e4a1bae9452d4475d0335269",
       "target_sha256": "100082c43ba1233f5afefa264ed50b86a9d56468e4a1bae9452d4475d0335269"
     },
     {
-      "source": "packages/ui/src/components/toriyama-panel.tsx",
-      "target": "packages/shenron/ui/src/components/toriyama-panel.tsx",
+      "source": "design/aphrody-m3/packages/src/components/toriyama-panel.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/toriyama-panel.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/toriyama-panel.tsx",
       "source_sha256": "78242195047265bb86f859a7de2509bff7d8df0b939e4b675497dcc1978ab942",
       "target_sha256": "78242195047265bb86f859a7de2509bff7d8df0b939e4b675497dcc1978ab942"
     },
     {
-      "source": "packages/ui/src/components/toriyama-slider.tsx",
-      "target": "packages/shenron/ui/src/components/toriyama-slider.tsx",
+      "source": "design/aphrody-m3/packages/src/components/toriyama-slider.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/toriyama-slider.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/toriyama-slider.tsx",
       "source_sha256": "9f1b4e9040b40837dfe6a1f751f995162f60f3020df80847b67e2e9a25aabd05",
       "target_sha256": "9f1b4e9040b40837dfe6a1f751f995162f60f3020df80847b67e2e9a25aabd05"
     },
     {
-      "source": "packages/ui/src/components/tooltip.tsx",
-      "target": "packages/shenron/ui/src/components/tooltip.tsx",
+      "source": "design/aphrody-m3/packages/src/components/tooltip.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/tooltip.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/tooltip.tsx",
       "source_sha256": "9e3a4ef94e84d82f779e15dd448086aa64167e6423aab9bbface31a2713726fe",
       "target_sha256": "9e3a4ef94e84d82f779e15dd448086aa64167e6423aab9bbface31a2713726fe"
     },
     {
-      "source": "packages/ui/src/components/separator.tsx",
-      "target": "packages/shenron/ui/src/components/separator.tsx",
+      "source": "design/aphrody-m3/packages/src/components/separator.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/separator.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/separator.tsx",
       "source_sha256": "153ee6427caab97159a15b4185dc1a360ab418b45fa583b2a95106f7c27074bd",
       "target_sha256": "153ee6427caab97159a15b4185dc1a360ab418b45fa583b2a95106f7c27074bd"
     },
     {
-      "source": "packages/ui/src/components/accordion.tsx",
-      "target": "packages/shenron/ui/src/components/accordion.tsx",
+      "source": "design/aphrody-m3/packages/src/components/accordion.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/accordion.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/accordion.tsx",
       "source_sha256": "322362d4625f67a501292713508189263a59c43e8233a278484b6fa7b688ce5d",
       "target_sha256": "322362d4625f67a501292713508189263a59c43e8233a278484b6fa7b688ce5d"
     },
     {
-      "source": "packages/ui/src/components/button.tsx",
-      "target": "packages/shenron/ui/src/components/button.tsx",
+      "source": "design/aphrody-m3/packages/src/components/button.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/button.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/button.tsx",
       "source_sha256": "af784f4497f1a88e8ddd95cda6d17aff5d5b8db70eb42e36b3c8344efad63ef0",
       "target_sha256": "af784f4497f1a88e8ddd95cda6d17aff5d5b8db70eb42e36b3c8344efad63ef0"
     },
     {
-      "source": "packages/ui/src/components/dropdown-menu.tsx",
-      "target": "packages/shenron/ui/src/components/dropdown-menu.tsx",
+      "source": "design/aphrody-m3/packages/src/components/dropdown-menu.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/dropdown-menu.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/dropdown-menu.tsx",
       "source_sha256": "5f273e68b92ce1a5372c65a18bf64f3de583212a4eef6952be96b3454043f19c",
       "target_sha256": "5f273e68b92ce1a5372c65a18bf64f3de583212a4eef6952be96b3454043f19c"
     },
     {
-      "source": "packages/ui/src/components/badge.tsx",
-      "target": "packages/shenron/ui/src/components/badge.tsx",
+      "source": "design/aphrody-m3/packages/src/components/badge.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/badge.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/badge.tsx",
       "source_sha256": "c2cb788dcaf616706083c170fd9ec3ecf4a2d5310c4506b60f75ffa987836f53",
       "target_sha256": "c2cb788dcaf616706083c170fd9ec3ecf4a2d5310c4506b60f75ffa987836f53"
     },
     {
-      "source": "packages/ui/src/components/checkbox.tsx",
-      "target": "packages/shenron/ui/src/components/checkbox.tsx",
+      "source": "design/aphrody-m3/packages/src/components/checkbox.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/checkbox.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/checkbox.tsx",
       "source_sha256": "7abe156cef39eb2d2949debf8a28817ede5f6c5f30e3e0d1de272a004f1e459c",
       "target_sha256": "7abe156cef39eb2d2949debf8a28817ede5f6c5f30e3e0d1de272a004f1e459c"
     },
     {
-      "source": "packages/ui/src/components/progress.tsx",
-      "target": "packages/shenron/ui/src/components/progress.tsx",
+      "source": "design/aphrody-m3/packages/src/components/progress.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/progress.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/progress.tsx",
       "source_sha256": "3a6841e7223ccd0fb83a1bdf3125d1971c7715ba0a27316310b4fee1b9243dc7",
       "target_sha256": "3a6841e7223ccd0fb83a1bdf3125d1971c7715ba0a27316310b4fee1b9243dc7"
     },
     {
-      "source": "packages/ui/src/components/toriyama-badge.tsx",
-      "target": "packages/shenron/ui/src/components/toriyama-badge.tsx",
+      "source": "design/aphrody-m3/packages/src/components/toriyama-badge.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/toriyama-badge.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/toriyama-badge.tsx",
       "source_sha256": "172674450e0442e92c5773c0ce072b4d0c1f69d9155206e7cdeeaa38734939db",
       "target_sha256": "172674450e0442e92c5773c0ce072b4d0c1f69d9155206e7cdeeaa38734939db"
     },
     {
-      "source": "packages/ui/src/components/toriyama-speech-bubble.tsx",
-      "target": "packages/shenron/ui/src/components/toriyama-speech-bubble.tsx",
+      "source": "design/aphrody-m3/packages/src/components/toriyama-speech-bubble.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/toriyama-speech-bubble.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/toriyama-speech-bubble.tsx",
       "source_sha256": "d507411515960f3541434af2879fd99d8bd9d5cddcde6656016676296f35c8ec",
       "target_sha256": "d507411515960f3541434af2879fd99d8bd9d5cddcde6656016676296f35c8ec"
     },
     {
-      "source": "packages/ui/src/components/popover.tsx",
-      "target": "packages/shenron/ui/src/components/popover.tsx",
+      "source": "design/aphrody-m3/packages/src/components/popover.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/popover.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/popover.tsx",
       "source_sha256": "ccadce4879cf4acc2d0e2c39c2297febf721cc980632c1b909094f0e6ffab9b3",
       "target_sha256": "ccadce4879cf4acc2d0e2c39c2297febf721cc980632c1b909094f0e6ffab9b3"
     },
     {
-      "source": "packages/ui/src/components/radio-group.tsx",
-      "target": "packages/shenron/ui/src/components/radio-group.tsx",
+      "source": "design/aphrody-m3/packages/src/components/radio-group.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/radio-group.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/radio-group.tsx",
       "source_sha256": "1262de9d7e18d40e1e9f09dc28970c4e3f925f0eb808a3a1f9f844563847d35b",
       "target_sha256": "1262de9d7e18d40e1e9f09dc28970c4e3f925f0eb808a3a1f9f844563847d35b"
     },
     {
-      "source": "packages/ui/src/components/input.tsx",
-      "target": "packages/shenron/ui/src/components/input.tsx",
+      "source": "design/aphrody-m3/packages/src/components/input.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/input.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/input.tsx",
       "source_sha256": "f8d3a5066032fa5695138e99b503b41df92914e0345c97f82f4a59fe53e2ee22",
       "target_sha256": "f8d3a5066032fa5695138e99b503b41df92914e0345c97f82f4a59fe53e2ee22"
     },
     {
-      "source": "packages/ui/src/components/select.tsx",
-      "target": "packages/shenron/ui/src/components/select.tsx",
+      "source": "design/aphrody-m3/packages/src/components/select.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/select.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/select.tsx",
       "source_sha256": "8b474d77048173aeae18046d1e608ae4a9178865928ed17871044b5d71e5215f",
       "target_sha256": "8b474d77048173aeae18046d1e608ae4a9178865928ed17871044b5d71e5215f"
     },
     {
-      "source": "packages/ui/src/components/collapsible.tsx",
-      "target": "packages/shenron/ui/src/components/collapsible.tsx",
+      "source": "design/aphrody-m3/packages/src/components/collapsible.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/collapsible.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/collapsible.tsx",
       "source_sha256": "1ba9349cbf1847a66abca73ffb4881f349f45ecca2f8e49bca03676862319bd3",
       "target_sha256": "1ba9349cbf1847a66abca73ffb4881f349f45ecca2f8e49bca03676862319bd3"
     },
     {
-      "source": "packages/ui/src/components/textarea.tsx",
-      "target": "packages/shenron/ui/src/components/textarea.tsx",
+      "source": "design/aphrody-m3/packages/src/components/textarea.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/textarea.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/textarea.tsx",
       "source_sha256": "69a45ff47c4e1777b807bdb00f8e7722cd44e28022494562eafcc7c4b6b136e0",
       "target_sha256": "69a45ff47c4e1777b807bdb00f8e7722cd44e28022494562eafcc7c4b6b136e0"
     },
     {
-      "source": "packages/ui/src/components/alert-dialog.tsx",
-      "target": "packages/shenron/ui/src/components/alert-dialog.tsx",
+      "source": "design/aphrody-m3/packages/src/components/alert-dialog.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/alert-dialog.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/alert-dialog.tsx",
       "source_sha256": "47c3d341c7eab4a3f0f12a33e76f478777d98184b65617cb2698dba2e84facf5",
       "target_sha256": "47c3d341c7eab4a3f0f12a33e76f478777d98184b65617cb2698dba2e84facf5"
     },
     {
-      "source": "packages/ui/src/components/toggle.tsx",
-      "target": "packages/shenron/ui/src/components/toggle.tsx",
+      "source": "design/aphrody-m3/packages/src/components/toggle.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/toggle.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/toggle.tsx",
       "source_sha256": "fdca93cbf0c7fc6f6ae8b2f19a75abf9f4078ab4b2db4398127e34460ac95c54",
       "target_sha256": "fdca93cbf0c7fc6f6ae8b2f19a75abf9f4078ab4b2db4398127e34460ac95c54"
     },
     {
-      "source": "packages/ui/src/components/slider.tsx",
-      "target": "packages/shenron/ui/src/components/slider.tsx",
+      "source": "design/aphrody-m3/packages/src/components/slider.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/slider.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/slider.tsx",
       "source_sha256": "b364711f3be813b6593fac4bf0cf4a105926d877b1492c614ec8575aad219428",
       "target_sha256": "b364711f3be813b6593fac4bf0cf4a105926d877b1492c614ec8575aad219428"
     },
     {
-      "source": "packages/ui/src/components/switch.tsx",
-      "target": "packages/shenron/ui/src/components/switch.tsx",
+      "source": "design/aphrody-m3/packages/src/components/switch.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/switch.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/switch.tsx",
       "source_sha256": "7f56dfed2ec01ee40a6d0d8e13e5b28cb3b30b6980f0b4f59216768e4e457201",
       "target_sha256": "7f56dfed2ec01ee40a6d0d8e13e5b28cb3b30b6980f0b4f59216768e4e457201"
     },
     {
-      "source": "packages/ui/src/components/label.tsx",
-      "target": "packages/shenron/ui/src/components/label.tsx",
+      "source": "design/aphrody-m3/packages/src/components/label.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/label.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/label.tsx",
       "source_sha256": "cc0f1d82ec93b8318fe2eec7f27e53d4556ef601634655c993cffe001ac0c31f",
       "target_sha256": "cc0f1d82ec93b8318fe2eec7f27e53d4556ef601634655c993cffe001ac0c31f"
     },
     {
-      "source": "packages/ui/src/components/avatar.tsx",
-      "target": "packages/shenron/ui/src/components/avatar.tsx",
+      "source": "design/aphrody-m3/packages/src/components/avatar.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/avatar.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/avatar.tsx",
       "source_sha256": "c35449072c2dd223c60927b56f6b0a862383a78c16d00a2dcdfa59aceff41792",
       "target_sha256": "c35449072c2dd223c60927b56f6b0a862383a78c16d00a2dcdfa59aceff41792"
     },
     {
-      "source": "packages/ui/src/components/toriyama-progress.tsx",
-      "target": "packages/shenron/ui/src/components/toriyama-progress.tsx",
+      "source": "design/aphrody-m3/packages/src/components/toriyama-progress.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/toriyama-progress.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/toriyama-progress.tsx",
       "source_sha256": "34480660747c1c5009e25a3d1e0f215571fa3b9e8cfe6c5b8ced9f9a9635cd11",
       "target_sha256": "34480660747c1c5009e25a3d1e0f215571fa3b9e8cfe6c5b8ced9f9a9635cd11"
     },
     {
-      "source": "packages/ui/src/components/tabs.tsx",
-      "target": "packages/shenron/ui/src/components/tabs.tsx",
+      "source": "design/aphrody-m3/packages/src/components/tabs.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/components/tabs.tsx",
       "staging": "packages/shenron/_preview/ui/src/components/tabs.tsx",
       "source_sha256": "633bc968a4dce6f60816c724017435835446e8c19d65aaff4c58364c166f2ccc",
       "target_sha256": "633bc968a4dce6f60816c724017435835446e8c19d65aaff4c58364c166f2ccc"
     },
     {
-      "source": "packages/ui/src/toriyama/SenzuBean.tsx",
-      "target": "packages/shenron/ui/src/toriyama/SenzuBean.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/SenzuBean.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/SenzuBean.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/SenzuBean.tsx",
       "source_sha256": "ffc79039ebb28c2125bc91ceb9f2ecdf47438731a23df93dcd228112eacad456",
       "target_sha256": "ffc79039ebb28c2125bc91ceb9f2ecdf47438731a23df93dcd228112eacad456"
     },
     {
-      "source": "packages/ui/src/toriyama/DragonRadarDisplay.tsx",
-      "target": "packages/shenron/ui/src/toriyama/DragonRadarDisplay.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/DragonRadarDisplay.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/DragonRadarDisplay.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/DragonRadarDisplay.tsx",
       "source_sha256": "2ce2551a30d6ca6c73d75fd363e2ce764a489e26a2704941717849f160af4f00",
       "target_sha256": "2ce2551a30d6ca6c73d75fd363e2ce764a489e26a2704941717849f160af4f00"
     },
     {
-      "source": "packages/ui/src/toriyama/KiAura.tsx",
-      "target": "packages/shenron/ui/src/toriyama/KiAura.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/KiAura.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/KiAura.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/KiAura.tsx",
       "source_sha256": "9053cbdaf10cb2d8ebe1bb284baeefd93f8275f4ccc3f6314fbfd876b5f85067",
       "target_sha256": "9053cbdaf10cb2d8ebe1bb284baeefd93f8275f4ccc3f6314fbfd876b5f85067"
     },
     {
-      "source": "packages/ui/src/toriyama/KintoUnCloud.tsx",
-      "target": "packages/shenron/ui/src/toriyama/KintoUnCloud.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/KintoUnCloud.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/KintoUnCloud.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/KintoUnCloud.tsx",
       "source_sha256": "f9546b3d48da95b151b6e7a98aee89c8b36234d0aaa12586b5e61c9fb16721ef",
       "target_sha256": "f9546b3d48da95b151b6e7a98aee89c8b36234d0aaa12586b5e61c9fb16721ef"
     },
     {
-      "source": "packages/ui/src/toriyama/ScouterHudOverlay.tsx",
-      "target": "packages/shenron/ui/src/toriyama/ScouterHudOverlay.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/ScouterHudOverlay.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/ScouterHudOverlay.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/ScouterHudOverlay.tsx",
       "source_sha256": "3c0969de562ebcc8c2aaaf799cc4e892a5df60510c34fbf9a99b0b5714fcab97",
       "target_sha256": "3c0969de562ebcc8c2aaaf799cc4e892a5df60510c34fbf9a99b0b5714fcab97"
     },
     {
-      "source": "packages/ui/src/toriyama/MotifsCouverture.tsx",
-      "target": "packages/shenron/ui/src/toriyama/MotifsCouverture.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/MotifsCouverture.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/MotifsCouverture.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/MotifsCouverture.tsx",
       "source_sha256": "90ff8277de6e858fa85afab5aeef2c32d69870b27dfc74b7277a049009ad4eae",
       "target_sha256": "90ff8277de6e858fa85afab5aeef2c32d69870b27dfc74b7277a049009ad4eae"
     },
     {
-      "source": "packages/ui/src/toriyama/DragonBallSphere.tsx",
-      "target": "packages/shenron/ui/src/toriyama/DragonBallSphere.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/DragonBallSphere.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/DragonBallSphere.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/DragonBallSphere.tsx",
       "source_sha256": "e220162072fa27b91ee790dd9ad6ef85c1fd63df996fd24e50b7237219759a2d",
       "target_sha256": "e220162072fa27b91ee790dd9ad6ef85c1fd63df996fd24e50b7237219759a2d"
     },
     {
-      "source": "packages/ui/src/toriyama/ToriyamaEmblem.tsx",
-      "target": "packages/shenron/ui/src/toriyama/ToriyamaEmblem.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/ToriyamaEmblem.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/ToriyamaEmblem.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/ToriyamaEmblem.tsx",
       "source_sha256": "59e20949630cd33773572a01c6d4c49500d5f2f64e11b6f372dc2c4e8ae8a74f",
       "target_sha256": "59e20949630cd33773572a01c6d4c49500d5f2f64e11b6f372dc2c4e8ae8a74f"
     },
     {
-      "source": "packages/ui/src/toriyama/index.ts",
-      "target": "packages/shenron/ui/src/toriyama/index.ts",
+      "source": "design/aphrody-m3/packages/src/toriyama/index.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/index.ts",
       "staging": "packages/shenron/_preview/ui/src/toriyama/index.ts",
       "source_sha256": "d876388d04a75394dcf3d848ec5bb5b284e05462fa609ce9413c77a3cd1babca",
       "target_sha256": "d876388d04a75394dcf3d848ec5bb5b284e05462fa609ce9413c77a3cd1babca"
     },
     {
-      "source": "packages/ui/src/toriyama/PotaraEarrings.tsx",
-      "target": "packages/shenron/ui/src/toriyama/PotaraEarrings.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/PotaraEarrings.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/PotaraEarrings.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/PotaraEarrings.tsx",
       "source_sha256": "0a87e9c2c798eb72fb3368163fb5d692742f33808da74dd918839ce5ca2b3fea",
       "target_sha256": "0a87e9c2c798eb72fb3368163fb5d692742f33808da74dd918839ce5ca2b3fea"
     },
     {
-      "source": "packages/ui/src/toriyama/MotManga.tsx",
-      "target": "packages/shenron/ui/src/toriyama/MotManga.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/MotManga.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/MotManga.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/MotManga.tsx",
       "source_sha256": "735cd5b32cd16d1a83fd3357d9ea448203af256100f17fddd4735464feac6cea",
       "target_sha256": "735cd5b32cd16d1a83fd3357d9ea448203af256100f17fddd4735464feac6cea"
     },
     {
-      "source": "packages/ui/src/toriyama/ShenronSilhouette.tsx",
-      "target": "packages/shenron/ui/src/toriyama/ShenronSilhouette.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/ShenronSilhouette.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/ShenronSilhouette.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/ShenronSilhouette.tsx",
       "source_sha256": "cb821655eca2b551a44d6f50285c6af2ab3a3bb89cdde45b4fc47e9c7fd6c41b",
       "target_sha256": "cb821655eca2b551a44d6f50285c6af2ab3a3bb89cdde45b4fc47e9c7fd6c41b"
     },
     {
-      "source": "packages/ui/src/toriyama/KintoUn.tsx",
-      "target": "packages/shenron/ui/src/toriyama/KintoUn.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/KintoUn.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/KintoUn.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/KintoUn.tsx",
       "source_sha256": "7009ef437c73bb494a46b7991ac80a1d4d92ea4df67c383704c629dbd519870d",
       "target_sha256": "7009ef437c73bb494a46b7991ac80a1d4d92ea4df67c383704c629dbd519870d"
     },
     {
-      "source": "packages/ui/src/toriyama/DragonBall.tsx",
-      "target": "packages/shenron/ui/src/toriyama/DragonBall.tsx",
+      "source": "design/aphrody-m3/packages/src/toriyama/DragonBall.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/toriyama/DragonBall.tsx",
       "staging": "packages/shenron/_preview/ui/src/toriyama/DragonBall.tsx",
       "source_sha256": "6022ac74c6ff3febce56879a967aa513d36e38fb39fc89cc3621fef8f5c2d0e2",
       "target_sha256": "6022ac74c6ff3febce56879a967aa513d36e38fb39fc89cc3621fef8f5c2d0e2"
     },
     {
-      "source": "packages/ui/src/reader/MangaReader.tsx",
-      "target": "packages/shenron/ui/src/reader/MangaReader.tsx",
+      "source": "design/aphrody-m3/packages/src/reader/MangaReader.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/reader/MangaReader.tsx",
       "staging": "packages/shenron/_preview/ui/src/reader/MangaReader.tsx",
       "source_sha256": "15ec3383cf929ab346536ef356f1268c120407b1696356180dd07da95f00a959",
       "target_sha256": "15ec3383cf929ab346536ef356f1268c120407b1696356180dd07da95f00a959"
     },
     {
-      "source": "packages/ui/src/reader/CollectionReader.tsx",
-      "target": "packages/shenron/ui/src/reader/CollectionReader.tsx",
+      "source": "design/aphrody-m3/packages/src/reader/CollectionReader.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/reader/CollectionReader.tsx",
       "staging": "packages/shenron/_preview/ui/src/reader/CollectionReader.tsx",
       "source_sha256": "89cc3fb452b28253ae41029acb04573e84979ed974f4ddf53667585f07b213c2",
       "target_sha256": "89cc3fb452b28253ae41029acb04573e84979ed974f4ddf53667585f07b213c2"
     },
     {
-      "source": "packages/ui/src/reader/DatabookReader.tsx",
-      "target": "packages/shenron/ui/src/reader/DatabookReader.tsx",
+      "source": "design/aphrody-m3/packages/src/reader/DatabookReader.tsx",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/reader/DatabookReader.tsx",
       "staging": "packages/shenron/_preview/ui/src/reader/DatabookReader.tsx",
       "source_sha256": "15499df71c2fbb661abfa85e9339576e53f8a06cb9eb0d197c355cf3ceda81fa",
       "target_sha256": "15499df71c2fbb661abfa85e9339576e53f8a06cb9eb0d197c355cf3ceda81fa"
     },
     {
-      "source": "packages/ui/src/reader/use-focus-trap.ts",
-      "target": "packages/shenron/ui/src/reader/use-focus-trap.ts",
+      "source": "design/aphrody-m3/packages/src/reader/use-focus-trap.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/reader/use-focus-trap.ts",
       "staging": "packages/shenron/_preview/ui/src/reader/use-focus-trap.ts",
       "source_sha256": "2b665eb98c929e78d7f1af2d3afea6d2d163ab404b50dce0e6d58227995490ba",
       "target_sha256": "2b665eb98c929e78d7f1af2d3afea6d2d163ab404b50dce0e6d58227995490ba"
     },
     {
-      "source": "packages/ui/src/reader/index.ts",
-      "target": "packages/shenron/ui/src/reader/index.ts",
+      "source": "design/aphrody-m3/packages/src/reader/index.ts",
+      "target": "design/aphrody-m3/packages/shenron-ui/src/reader/index.ts",
       "staging": "packages/shenron/_preview/ui/src/reader/index.ts",
       "source_sha256": "e47f8f8bda46b8b1e4a32ba20ca1ad256737978b101ae7f2d659910444b944e5",
       "target_sha256": "e47f8f8bda46b8b1e4a32ba20ca1ad256737978b101ae7f2d659910444b944e5"

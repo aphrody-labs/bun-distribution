@@ -4,9 +4,9 @@
    its own identity — blue palette, square corners, pixel shadow — through the
    override below, which restores every value the shared layer would change.
    Equivalence with the previous stylesheet is proven by
-   `bun packages/shenron/ui/scripts/check-dashboard-css.ts`. */
+   `bun design/aphrody-m3/packages/shenron-ui/scripts/check-dashboard-css.ts`. */
 @import "@shenron/ui/styles.css";
-@source "../../../../../packages/shenron/ui/src";
+@source "../../../../../design/aphrody-m3/packages/shenron-ui/src";
 
 /* Google Sans Flex — variable (axes opsz+wght). Une seule copie, celle du site
    (`public/fonts`) : le bundler la résout et l'embarque, le bot n'en garde pas. */

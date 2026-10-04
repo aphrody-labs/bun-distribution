@@ -35,10 +35,10 @@
         "crates/ui/render/src/{model,gpu,fixtures,raster3d,raster,scene,scene3d,geometry,lib}.rs (28 paths, long signatures reflowed to the 100 column rustfmt width; 3 stale doc paths corrected: aphrody_m3::motion::shape::CornerRadius -> aphrody_m3_tokens::shape::CornerRadius, aphrody_m3::motion::state -> aphrody_m3_tokens::state, aphrody_m3::motion::elevation::dp -> aphrody_m3_tokens::elevation::dp)",
         "crates/ui/tauri-3d/Cargo.toml:24 aphrody-m3 -> aphrody-m3-tokens",
         "crates/ui/tauri-3d/src/lib.rs:96",
-        "packages/interop/native/src/scene-types.ts and packages/ui/canvas/scene-types.d.ts (doc comments only: aphrody_m3::color::Role/Variant::name() -> aphrody_m3_tokens::scheme::Role/Variant::name())",
+        "packages/interop/native/src/scene-types.ts and design/aphrody-m3/packages/canvas/scene-types.d.ts (doc comments only: aphrody_m3::color::Role/Variant::name() -> aphrody_m3_tokens::scheme::Role/Variant::name())",
         "config/ai/plugins/aphrody/skills/render-pipeline/SKILL.md:20",
-        "docs/architecture/ui/design/APHRODY-M3-CANONICAL-CONTRACT.md (ownership chain + invariants table, aphrody_m3::X -> aphrody_m3_tokens::facade::X)",
-        "docs/architecture/ui/design/TYPOGRAPHY.md:12"
+        "design/aphrody-m3/docs/architecture/design/APHRODY-M3-CANONICAL-CONTRACT.md (ownership chain + invariants table, aphrody_m3::X -> aphrody_m3_tokens::facade::X)",
+        "design/aphrody-m3/docs/architecture/design/TYPOGRAPHY.md:12"
       ],
       "verification": [
         "rg 'aphrody[-_]m3([^-_A-Za-z0-9]|$)' over the tree: only lead edits (root Cargo.toml workspace dependency), generated catalogs (docs/ecosystem/*), historical plans (docs/plans/**), the untracked legacy plugin copy plugins/aphrody/ and the intentional 'formerly aphrody-m3' notes remain",
@@ -99,10 +99,10 @@
     "no edit needed in apps/cli for aphrody-m3": "apps/cli depends on aphrody-m3-tokens only (Cargo.toml:191); no aphrody_m3:: path exists in apps/, crates/ai, crates/os, crates/interop, crates/koharu, crates/shell",
     "regenerate": "`bun scripts/ecosystem.ts` regenerates docs/ecosystem/ECOSYSTEM.md, ecosystem.json, CLI.md (they still list aphrody-m3 at crates/ui/m3 and aphrody-logo at crates/ui/logo)",
     "docs left as historical (not edited)": [
-      "docs/plans/ui/design/M3-PLAN.md:17 and :99 (`cargo test -p aphrody-m3-tokens -p aphrody-m3` is now `cargo test -p aphrody-m3-tokens`)",
-      "docs/plans/ui/design/M3-MULTI-HOST-PLAN.md:26, docs/plans/nie/PLAN.md:98",
-      "docs/products/ui/README.md:18 and docs/products/ui/_source/README.md.8c1fe132fe5c:18 (`aphrody-m3*` glob, still true as a prefix)",
-      "docs/research/shell/research/animate-tui-motion.md, docs/research/ai/research/openclaw-vs-aphrody.md, docs/reference/ai/llms.txt, docs/reference/ui/SVG.md:47, docs/architecture/rust-crate-gpu-window-ownership.md:25 (mentions of aphrody-logo, historical or about the former external aphrody-ui workspace)",
+      "design/aphrody-m3/docs/plans/design/M3-PLAN.md:17 and :99 (`cargo test -p aphrody-m3-tokens -p aphrody-m3` is now `cargo test -p aphrody-m3-tokens`)",
+      "design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md:26, docs/plans/nie/PLAN.md:98",
+      "design/aphrody-m3/docs/products/README.md:18 and design/aphrody-m3/docs/products/_source/README.md.8c1fe132fe5c:18 (`aphrody-m3*` glob, still true as a prefix)",
+      "docs/research/shell/research/animate-tui-motion.md, docs/research/ai/research/openclaw-vs-aphrody.md, docs/reference/ai/llms.txt, design/aphrody-m3/docs/reference/SVG.md:47, docs/architecture/rust-crate-gpu-window-ownership.md:25 (mentions of aphrody-logo, historical or about the former external aphrody-ui workspace)",
       "plugins/aphrody/skills/render-pipeline/SKILL.md:20 (untracked legacy copy of the plugin; the tracked canonical copy config/ai/plugins/aphrody/... was updated)"
     ]
   },

@@ -24,7 +24,7 @@ preuves historiques : [ancien plan](docs/migration/PLAN-before-reorganization-20
 - CLI : `apps/cli` ; bindings : `crates/interop/ffi`,
   `packages/interop/native` ; Infra : `packages/infra/workspace`.
 - Clients kernel : `crates/os/kernel-client`, `packages/os/kernel-client`.
-  UI regroupée sous `packages/ui`. Adaptateur Python : `crates/ai/rag-python`.
+  UI regroupée sous `design/aphrody-m3/packages`. Adaptateur Python : `crates/ai/rag-python`.
 - 45 dossiers générés supprimés, 525 971 639 842 octets de fichiers mesurés.
   Caches de développement supprimés : 10 336 726 022 octets supplémentaires.
   Les sources suivies et les exécutables installés ont été préservés.
@@ -58,7 +58,7 @@ routes de sites, exemples et snapshots historiques demandent une classification.
 - [x] Consommer les forks publiés et Patreon 1.0.3 depuis npm ; retirer les
   copies du workspace. Sources intégrales conservées dans les sauvegardes
   privées et les dépôts autonomes. Codemods propres déplacés vers
-  `packages/ui/m3-codemods` ; leurs cinq fixtures passent.
+  `design/aphrody-m3/packages/m3-codemods` ; leurs cinq fixtures passent.
 - [x] Installations des clones autonomes, builds et contrôles de types réussis ;
   132 tests consommateurs, puis 15/74/19 tests ciblés des clones réussis.
   API AG-UI : 80 exports conservés ; Patreon : 36 exports conservés.
@@ -157,7 +157,7 @@ Recherche : [pratiques documentaires](docs/research/workspace/documentation-prac
   de leur paquet propriétaire, supprimées (liste dans
   [SCRIPTS-INVENTORY.md](docs/reference/workspace/SCRIPTS-INVENTORY.md)) ;
   `crates/ui/app/ui-dist/fonts` : 226 copies identiques à leurs sources
-  canoniques (`packages/ui/assets`, `packages/ui/m3-fonts`, `crates/ui/bun`),
+  canoniques (`design/aphrody-m3/packages/assets`, `design/aphrody-m3/packages/m3-fonts`, `crates/ui/bun`),
   déjà ignorées par `.gitignore` et recopiées par `build.rs` depuis
   `ui-dist.manifest` avant l’embarquement Tauri : retirées de l’index (≈ 20 Mo),
   fichiers conservés sur disque. Chaque groupe restant est qualifié dans
@@ -602,7 +602,7 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
 
 ## 4. UI et bibliothèques navigateur
 
-Propriétaire : `packages/ui`, `crates/ui`.
+Propriétaire : `design/aphrody-m3/packages`, `crates/ui`.
 
 - [x] Retirer du point d’entrée de M3 Design tout serveur ou `process.exit()` à
   l’import ; placer démarrage/configuration dans une application.
@@ -622,7 +622,7 @@ Propriétaire : `packages/ui`, `crates/ui`.
   est le propriétaire unique du rendu. READMEs render, M3-RENDER et description
   softraster alignés ; le catalogue régénéré ne référence plus de chemin mort.
 - [x] Requalifier tokens, composants, SSR/hydratation et exports navigateur.
-  Requalification 2026-10-03 : `bun test` des 24 paquets `packages/ui` avec
+  Requalification 2026-10-03 : `bun test` des 24 paquets `design/aphrody-m3/packages` avec
   tests — tous verts (m3-icons, m3-theme, m3, material-web exigent
   `APHRODY_FFI_DEV=1` ou le paquet natif installé, sinon « native library not
   found ») ; `bun run typecheck` vert sur 23 paquets. Gate navigateur
@@ -667,9 +667,9 @@ tests de composants et rendu. Les échecs historiques Gemini sont à reproduire.
 - Défauts réels corrigés : `@aphrody/m3-tokens` ne déclarait pas
   `@aphrody/m3-config` (build impossible) ; deux regex tronquées dans
   `m3-next-migrate/src/layout.ts` (build impossible) ; chemins périmés de
-  `m3-fonts` (`GS`, `MS`) après le déplacement sous `packages/ui` et le
+  `m3-fonts` (`GS`, `MS`) après le déplacement sous `design/aphrody-m3/packages` et le
   renommage `aphrody-icons` → `icons`.
-- Gates : `turbo run build --filter='./packages/ui/*'` : 15 sur 15 réussis.
+- Gates : `turbo run build --filter='./design/aphrody-m3/packages/*'` : 15 sur 15 réussis.
   Typecheck réussi pour tous les packages UI exécutés. Tests : m3-ai, m3-explorer,
   m3-fonts, m3-forms, m3-next, m3-next-migrate, m3-primitives, m3-tokens
   réussis sans FFI ; m3-icons (12), m3-theme (7), m3 (45), material-web (20),
@@ -743,7 +743,7 @@ tests de composants et rendu. Les échecs historiques Gemini sont à reproduire.
 ### Ligne Tauri 3 centralisée et migration d'`aphrody-app` — 2026-10-01
 
 Remplace les deux derniers constats de la section précédente (runtime absent,
-migration non entreprise). Détails : `docs/operations/ui/tauri-upstream.md`.
+migration non entreprise). Détails : `design/aphrody-m3/docs/operations/tauri-upstream.md`.
 
 - FAIT : ligne amont établie. `tauri-apps/tauri` `v3` (70541fe2, 2026-09-30) est la
   ligne Tauri 3 (`tauri` 3.0.0-alpha.3, tag `tauri-v3.0.0-alpha.3`) ; `dev`
@@ -829,7 +829,7 @@ migration non entreprise). Détails : `docs/operations/ui/tauri-upstream.md`.
   (`test/tauri-sync-apply.test.ts`, 3 tests) ; `tauri-apps.test.ts` : 12 tests.
 - INCOMPLET : les confs Koharu par plateforme répètent la fenêtre `main` et l'identifiant
   (Tauri remplace les tableaux lors de la fusion) ; les docs et skills Tauri 2 dupliqués
-  (`docs/reference/ui/tauri`, `tauri-v2` sous `config/ai/plugins` et `plugins/aphrody`)
+  (`design/aphrody-m3/docs/reference/tauri`, `tauri-v2` sous `config/ai/plugins` et `plugins/aphrody`)
   relèvent de l'agent docs.
 
 ### Consolidation de la documentation UI/GUI/wgpu/Tauri/M3 — 2026-10-01
@@ -849,19 +849,19 @@ migration non entreprise). Détails : `docs/operations/ui/tauri-upstream.md`.
 
 ### Scaffold unique et conversion web vers Tauri 3 — 2026-10-01
 
-- FAIT : `@aphrody/scaffold` (`packages/ui/scaffold`) est l'unique scaffold UI : coque Tauri 3
+- FAIT : `@aphrody/scaffold` (`design/aphrody-m3/packages/scaffold`) est l'unique scaffold UI : coque Tauri 3
   (`tauriShell` : épingles, runtime wry/CEF explicite, capability, icône), gabarits `web`
   (`m3 new`, sortie byte-identique à l'ancienne), `app` (`next-migrate`) et `example` (l'exemple
   canonique), écriture sans écrasement. `TAURI_3`, l'encodeur PNG, les dérivations de noms et la
   config Tauri n'existent plus qu'une fois ; le miroir tauri-sync est unique
-  (`packages/ui/scaffold/src/pins.ts`). Quatre README d'exemples hérités, dont le code n'existe
-  plus, sont marqués historiques vers l'exemple unique. Doc : `docs/guides/ui/SCAFFOLD.md`.
+  (`design/aphrody-m3/packages/scaffold/src/pins.ts`). Quatre README d'exemples hérités, dont le code n'existe
+  plus, sont marqués historiques vers l'exemple unique. Doc : `design/aphrody-m3/docs/guides/SCAFFOLD.md`.
 - FAIT : `@aphrody/web-to-tauri` (sonde, plan, génération, parité) et la crate
   `aphrody-tauri-wrap` (runtime) convertissent un site, une web app ou un bundle en app Tauri 3.
   Modes `remote` (URL : page, API et backend inchangés), `sidecar` (serveur du projet en
   processus fils) et `bundle` (assets embarqués + proxy du backend). Politique de navigation,
   popups avec opener, téléchargements, iframes tierces, fournisseurs de connexion, registre des
-  risques résiduels. Docs : `docs/guides/ui/WEB-TO-TAURI.md`, `docs/apis/ui/WRAP-CONFIG.md`.
+  risques résiduels. Docs : `design/aphrody-m3/docs/guides/WEB-TO-TAURI.md`, `design/aphrody-m3/docs/apis/WRAP-CONFIG.md`.
   Commandes : `bun run ui:wrap`, `bun run ui:scaffold`.
 - Vérifié : tests Bun scaffold 19, web-to-tauri 118, m3-next-migrate 28 ; typecheck des quatre
   paquets ; `ui:browser-audit` 60 ok / 0 échec ; `tauri:apps:check`, `tauri:sync:check` (dérive 0) ;
@@ -935,7 +935,7 @@ empreintes par lot dans les sept fragments voisins). Mesure reproductible : `bun
   sémantique de `selectors` 0.38 (hôte sans caractéristiques, `:not()` imbriqués) est couverte par les tests
   d'`obscura-dom` mais pas validée sur de vraies pages ; `ureq` 3 (`proxy(None)`, 5 redirections) non
   exercé réseau ; `cargo test` non lancé sur `aphrody`, `aphrody-ffi`, `aphrody-mcp`, `aphrody-web-*` (check
-  seulement). `packages/ui/assets` n'est pas suivi par git alors que `bun.lock` le déclare : l'ajouter au
+  seulement). `design/aphrody-m3/packages/assets` n'est pas suivi par git alors que `bun.lock` le déclare : l'ajouter au
   même commit que la suppression de `ui-dist/fonts`, sinon un clone propre perd 211 fichiers. Le
   `rerun-if-changed=../../packages/app-ui` de `crates/ui/app/build.rs` vise un dossier inexistant
   (antérieur). Rien n'est commité.
@@ -1170,7 +1170,7 @@ smoke documenté. Une mise en production est une opération distincte.
 - Décision du propriétaire : l'app Aphrody (`crates/ui/app`) devient l'outil unique
   d'administration Shenron, de manga/traduction Koharu, de databooks,
   d'entraînement et du Drive dbfr ; plan détaillé
-  [aphrody-app-studio.md](docs/plans/ui/aphrody-app-studio.md). Lève la réserve
+  [aphrody-app-studio.md](design/aphrody-m3/docs/plans/aphrody-app-studio.md). Lève la réserve
   de `GEMINI.md` ; la mise en production site/bot reste distincte.
 - FAIT (124fe0570) : destination `/studio` ; onglet Shenron natif (`@shenron/ui`)
   sur l'API publique extraite de `aphrody-command::shenron_cmd` ; dashboard admin
@@ -1688,12 +1688,12 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 
 ### Effets d’import M3 Design et frontière `use client` — 2026-10-01
 
-- FAIT : `packages/ui/m3-design/src/index.ts` n’exporte que types, parser, hct,
+- FAIT : `design/aphrody-m3/packages/m3-design/src/index.ts` n’exporte que types, parser, hct,
   prompts, generator et handlers ; le serveur et `process.exit` vivent dans
   `src/server.ts`, lancé explicitement. `import("./src/index.ts")` sous Bun
   réussit sans serveur ni sortie (10 exports). Aucun correctif nécessaire : le
   critère était déjà satisfait ; `node.ts` n’est importé que par un test.
-- Analyse statique des 73 fichiers `use client` de `packages/ui` suivis par leurs
+- Analyse statique des 73 fichiers `use client` de `design/aphrody-m3/packages` suivis par leurs
   imports relatifs : aucun import de `bun:*`, `bun` ou `@aphrody/native`.
   Seules `m3-config/tsup.ts` et `m3-next-migrate/src/scanner.ts` (outillage) et
   des tests importent `node:fs`.
@@ -1708,7 +1708,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   conservé (`docs/migration/stack-dedup/render-merge.json`) ; l’auteur de la
   suppression n’est pas établi (`.coord/shared/LIVE.md` ne l’établit pas).
 - Liens actifs vers ce chemin, donc cassés tant que la suppression tient :
-  `docs/architecture/ui/README.md:25-26`, `docs/ecosystem/ECOSYSTEM.md:125`,
+  `design/aphrody-m3/docs/architecture/README.md:25-26`, `docs/ecosystem/ECOSYSTEM.md:125`,
   `crates/ui/render/README.md:39`. Seuls les symboles `bun_rs_render3d_png` de
   `aphrody-bun` subsistent ; aucun autre propriétaire des outils `render3d_*`.
 - Rien restauré ni modifié : identité publique `aphrody-render3d` à décider.

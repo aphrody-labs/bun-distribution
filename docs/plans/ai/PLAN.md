@@ -306,7 +306,7 @@ P1: define task, goal, memory and schedule DTOs and error/event envelopes in
 [`aphrody-contracts`](../../../crates/contracts/app-protocol/src/lib.rs),
 then implement those handlers in the resident app-server using AI libraries and
 OS cron/jobs/policy. P2: connect channel adapters and skill capture to that same
-lifecycle. [`aphrody-ui`](../../../packages/ui/m3/src/index.ts) owns
+lifecycle. [`aphrody-ui`](../../../design/aphrody-m3/packages/m3/src/index.ts) owns
 M3 presentation through the host broker and typed contracts; it has no Cargo
 dependency on AI and does not embed a second Spacebot server or navigation shell.
 

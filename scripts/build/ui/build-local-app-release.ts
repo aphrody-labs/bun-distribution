@@ -85,9 +85,9 @@ const library = join(
 Bun.env.APHRODY_FFI_LIB = library;
 if (await buildDependencies(source, ["@aphrody/app-ui"]))
   throw new Error("UI dependency build failed");
-await run(["bun", "run", "typecheck"], join(source, "packages/ui/app-ui"));
-await run(["bun", "test", "src"], join(source, "packages/ui/app-ui"));
-await run(["bun", "run", "build"], join(source, "packages/ui/app-ui"), {
+await run(["bun", "run", "typecheck"], join(source, "design/aphrody-m3/packages/app-ui"));
+await run(["bun", "test", "src"], join(source, "design/aphrody-m3/packages/app-ui"));
+await run(["bun", "run", "build"], join(source, "design/aphrody-m3/packages/app-ui"), {
   APHRODY_FFI_LIB: library,
 });
 const ui = join(source, "crates/ui/app/ui-dist");

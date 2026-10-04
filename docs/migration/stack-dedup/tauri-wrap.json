@@ -2,7 +2,7 @@
   "batch": "tauri-wrap",
   "date": "2026-10-01",
   "baseCommit": "3eb5e66a1ec9f3d8af0aa08c64cb4be94f20c1d3",
-  "proofLevel": "P1 (static: rg, diff of the moved code, bun test + typecheck of packages/ui/scaffold and packages/ui/web-to-tauri; no cargo, nothing Rust compiled)",
+  "proofLevel": "P1 (static: rg, diff of the moved code, bun test + typecheck of design/aphrody-m3/packages/scaffold and design/aphrody-m3/packages/web-to-tauri; no cargo, nothing Rust compiled)",
   "entries": [
     {
       "kind": "crate",
@@ -20,8 +20,8 @@
       "consumersUpdated": [
         "crates/ui/model-view/Cargo.toml (dependency aphrody-tauri-debug -> aphrody-tauri-wrap = { workspace = true, default-features = false }; feature debug-bridge = [\"aphrody-tauri-wrap/debug-bridge\"])",
         "crates/ui/model-view/src/main.rs (aphrody_tauri_debug::init() -> aphrody_tauri_wrap::debug::init())",
-        "packages/ui/scaffold/src/tauri.ts (generated Cargo.toml / main.rs)",
-        "packages/ui/web-to-tauri/src/generate.ts (no more tauri-debug sibling crate lookup)",
+        "design/aphrody-m3/packages/scaffold/src/tauri.ts (generated Cargo.toml / main.rs)",
+        "design/aphrody-m3/packages/web-to-tauri/src/generate.ts (no more tauri-debug sibling crate lookup)",
         "docs/guides/web/TAURI-DEBUG.md, docs/operations/web/AUTOMATION.md, docs/architecture/web/ARCHITECTURE.md",
         "packages/web/agent-browser/src/tauri.ts (comments; DISCOVERY_SCHEMA string unchanged)",
         "config/web.json (tauriDebug.plugin = aphrody-tauri-wrap, tauriDebug.module added)"
@@ -36,15 +36,15 @@
       "kind": "feature",
       "source": "aphrody-tauri-wrap unconditional dependencies axum, http, reqwest, rustls, tokio",
       "target": "aphrody-tauri-wrap feature `bundle` (default) = [dep:axum, dep:http, dep:reqwest, dep:rustls, dep:tokio]; serve.rs and proxy.rs gated with #[cfg(feature = \"bundle\")]",
-      "reason": "A remote-only, sidecar-only or debug-only app no longer compiles the HTTP stack. Users per rg: serve.rs uses axum, reqwest, rustls (ring provider), tokio (net::TcpListener) and http; proxy.rs uses http. sidecar.rs is std plus tauri only, so it needs no feature (the design's `sidecar` feature was not created, written reason). url, serde, serde_json, open, tauri stay unconditional (config, policy, window). Without the feature, a wrap.json with mode `bundle` is refused in the plugin setup (synchronous, before any window or thread) with: \"this build has no bundle server: enable the `bundle` feature\"; WrapConfig still parses a bundle section (Bundle carries allow(dead_code) when the feature is off). Tests of proxy.rs (7) and serve.rs (1) live in the gated modules; the shared policy test reads packages/ui/web-to-tauri/fixtures/policy-cases.json and does not depend on the feature. Unit tests: 23 existing + 5 moved from tauri-debug = 28 under default features; 15 + 5 = 20 with --no-default-features.",
+      "reason": "A remote-only, sidecar-only or debug-only app no longer compiles the HTTP stack. Users per rg: serve.rs uses axum, reqwest, rustls (ring provider), tokio (net::TcpListener) and http; proxy.rs uses http. sidecar.rs is std plus tauri only, so it needs no feature (the design's `sidecar` feature was not created, written reason). url, serde, serde_json, open, tauri stay unconditional (config, policy, window). Without the feature, a wrap.json with mode `bundle` is refused in the plugin setup (synchronous, before any window or thread) with: \"this build has no bundle server: enable the `bundle` feature\"; WrapConfig still parses a bundle section (Bundle carries allow(dead_code) when the feature is off). Tests of proxy.rs (7) and serve.rs (1) live in the gated modules; the shared policy test reads design/aphrody-m3/packages/web-to-tauri/fixtures/policy-cases.json and does not depend on the feature. Unit tests: 23 existing + 5 moved from tauri-debug = 28 under default features; 15 + 5 = 20 with --no-default-features.",
       "consumersUpdated": [
-        "packages/ui/scaffold/src/tauri.ts (runtimePlugin.features)",
-        "packages/ui/web-to-tauri/src/generate.ts (features undefined for mode bundle, [] for remote and sidecar)",
+        "design/aphrody-m3/packages/scaffold/src/tauri.ts (runtimePlugin.features)",
+        "design/aphrody-m3/packages/web-to-tauri/src/generate.ts (features undefined for mode bundle, [] for remote and sidecar)",
         "crates/ui/model-view/Cargo.toml (default-features = false)",
-        "docs/guides/ui/WEB-TO-TAURI.md, docs/apis/ui/WRAP-CONFIG.md, crates/ui/tauri-wrap/README.md"
+        "design/aphrody-m3/docs/guides/WEB-TO-TAURI.md, design/aphrody-m3/docs/apis/WRAP-CONFIG.md, crates/ui/tauri-wrap/README.md"
       ],
       "verification": [
-        "bun test packages/ui/scaffold: 21 pass; bun test packages/ui/web-to-tauri: 118 pass; typecheck (tsgo) of both: clean",
+        "bun test design/aphrody-m3/packages/scaffold: 21 pass; bun test design/aphrody-m3/packages/web-to-tauri: 118 pass; typecheck (tsgo) of both: clean",
         "NOT run: any cargo command"
       ]
     },
@@ -62,16 +62,16 @@
     },
     {
       "kind": "generator-option",
-      "source": "packages/ui/scaffold/src/tauri.ts TauriShellOptions.debugBridge?: { path: string } (optional dependency aphrody-tauri-debug, feature debug-bridge = [\"dep:aphrody-tauri-debug\", \"aphrody-tauri-debug/debug-bridge\"], main.rs aphrody_tauri_debug::init())",
+      "source": "design/aphrody-m3/packages/scaffold/src/tauri.ts TauriShellOptions.debugBridge?: { path: string } (optional dependency aphrody-tauri-debug, feature debug-bridge = [\"dep:aphrody-tauri-debug\", \"aphrody-tauri-debug/debug-bridge\"], main.rs aphrody_tauri_debug::init())",
       "target": "debugBridge?: boolean | { path: string }; with the aphrody-tauri-wrap runtimePlugin the app feature is debug-bridge = [\"aphrody-tauri-wrap/debug-bridge\"] and main.rs calls aphrody_tauri_wrap::debug::init(); { path } (the wrap crate dir) adds the optional dependency aphrody-tauri-wrap (default-features = false) when the shell has no wrap runtimePlugin; `true` without that runtime plugin throws. New option runtimePlugin.features?: string[] (absent = crate defaults; array = default-features = false plus the listed features).",
       "reason": "Follows the crate merge. Generated projects depend on ONE crate. web-to-tauri passes features undefined for mode bundle and [] for remote and sidecar (no bundle server compiled), debugBridge: true for engine wry (the old sibling-crate existence check is gone).",
       "consumersUpdated": [
-        "packages/ui/scaffold/test/scaffold.test.ts (+2 tests)",
-        "packages/ui/web-to-tauri/test/generate.test.ts",
-        "packages/ui/web-to-tauri/src/generate.ts (README of non-bundle projects explains how to re-enable bundle)"
+        "design/aphrody-m3/packages/scaffold/test/scaffold.test.ts (+2 tests)",
+        "design/aphrody-m3/packages/web-to-tauri/test/generate.test.ts",
+        "design/aphrody-m3/packages/web-to-tauri/src/generate.ts (README of non-bundle projects explains how to re-enable bundle)"
       ],
       "verification": [
-        "bun test packages/ui/scaffold packages/ui/web-to-tauri: 139 pass, 0 fail",
+        "bun test design/aphrody-m3/packages/scaffold design/aphrody-m3/packages/web-to-tauri: 139 pass, 0 fail",
         "tsgo typecheck of both packages: clean",
         "NOT proven: a generated remote/bundle/sidecar project actually compiles (lead)"
       ]

@@ -3,7 +3,7 @@
 # aphrody-app: the Aphrody OS desktop (Tauri 3), GUI and window manager.
 # The agent runs in this process: src/broker.rs serves `aphrody-app-server` over in-memory pipes
 # (no `aphrody app-server` child, no `aphrody` sidecar; see
-# docs/plans/ui/local-ai-gui-native-integration.md). Model management is in process through
+# design/aphrody-m3/docs/plans/local-ai-gui-native-integration.md). Model management is in process through
 # aphrody-local-ai. Local models run in this process (feature `in-process`, on by default); the
 # executable still answers `__llama-daemon` (src/llama_daemon.rs) only for the spawn fallback.
 

@@ -24,7 +24,7 @@ and supplies no invented UI resources. No second connection or registry exists.
 
 ## Evidence and parent gates
 
-From `packages/ui/app-ui`, `bun test --preload ../../bun/test-dom/src/index.ts src`
+From `design/aphrody-m3/packages/app-ui`, `bun test --preload ../../bun/test-dom/src/index.ts src`
 passed **153 tests, 675 assertions, 19 files, 622 ms**. `bun run typecheck` passed.
 Scoped oxlint with `--deny-warnings` passed on all 11 touched TS/TSX files;
 oxfmt passed. The canonical DOM preload is necessary before Base UI evaluates

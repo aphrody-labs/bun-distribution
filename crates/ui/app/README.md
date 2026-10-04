@@ -18,7 +18,7 @@ Shenron's public, read-only grounded chat is available in the existing Chat
 surface with `/shenron <question>`. Its typed `aphrody_shenron_chat` command calls
 only `https://dragonballfr.com/api/chat`; it accepts no arbitrary URL or token.
 It does not represent an authenticated Shenron account or grant admin access.
-See [`../../docs/integrations/SHENRON.md`](../../../docs/reference/ui/integrations/SHENRON.md)
+See [`../../docs/integrations/SHENRON.md`](../../../design/aphrody-m3/docs/reference/integrations/SHENRON.md)
 for the API, FFI, auth, and database ownership decisions.
 
 The main window also exposes `koharu_rpc(method, params)`. The Koharu engine is
@@ -69,7 +69,7 @@ Plugin rationale: `docs/tauri/plugins.md`. Integration design:
 
 ## Build, run and package on Windows
 
-`../../packages/ui/app-ui/` is the sole frontend source package. Bun builds it to ignored
+`../../design/aphrody-m3/packages/app-ui/` is the sole frontend source package. Bun builds it to ignored
 `ui-dist/` before Tauri packages the Wry shell. It reuses the canonical
 `@aphrody/m3-theme/spaceui.css`, `@aphrody/m3-ai` and
 `@aphrody/m3-primitives` surfaces. Material Symbols are copied from the one
@@ -77,8 +77,8 @@ local canonical font during this build.
 
 `ui-dist/index.html`, `app.js`, `app.css` and the SVGs under `ui-dist/fonts/` are committed.
 The binary assets of `ui-dist/fonts/` (webfonts, file-kind icons, sounds) are not: `build.rs`
-copies them from their single canonical packages (`packages/ui/m3-fonts`,
-`crates/ui/bun/icons/material-symbols`, `packages/ui/assets`) into `ui-dist/fonts/` before
+copies them from their single canonical packages (`design/aphrody-m3/packages/m3-fonts`,
+`crates/ui/bun/icons/material-symbols`, `design/aphrody-m3/packages/assets`) into `ui-dist/fonts/` before
 `tauri::generate_context!()` embeds the directory, as listed in `ui-dist.manifest`. A clean
 clone therefore builds with no staging command; `cargo test -p aphrody-app --test
 ui_dist_assets` checks that every listed file is staged byte-for-byte and that every font
@@ -94,7 +94,7 @@ file actions through `aphrody-drive`; React Native/iOS/Android are outside this 
 
 ```pwsh
 bun install --frozen-lockfile
-bun run --cwd packages/ui/app-ui build
+bun run --cwd design/aphrody-m3/packages/app-ui build
 pwsh scripts/tauri.ps1 -Action check
 pwsh scripts/tauri.ps1 -Action run
 pwsh scripts/tauri.ps1 -Action bundle         # Windows: NSIS setup executable

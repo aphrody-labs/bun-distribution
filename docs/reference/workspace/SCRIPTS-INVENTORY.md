@@ -62,7 +62,7 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/build/ui/apps/nie-web/scripts/public-entry-bundle.ts` (not in repo)
 - `scripts/build/ui/drive/scripts/bundle-libheif.sh`
 - `scripts/build/ui/packages/bun/scripts/generate-symbols.ts`
-- scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts (supprimé : doublon exact de `packages/ui/material-web/scripts/component-custom-elements.ts`)
+- scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts (supprimé : doublon exact de `design/aphrody-m3/packages/material-web/scripts/component-custom-elements.ts`)
 - scripts/build/web/apps/bxc/scripts/build-demo-index.ts (supprimé)
 - `scripts/build/web/apps/bxc/scripts/build-serverless.ts`
 - scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts (supprimé)
@@ -325,15 +325,15 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 
 - scripts/audit/compat/test/fixture/scripts/install.sh → `crates/compat/n2b/tests/fixtures/node-project/scripts/install.sh`
 - scripts/audit/os/drive/core/scripts/test_daemon.sh → `crates/os/drive/core/scripts/test_daemon.sh`
-- scripts/audit/ui/packages/eslint-plugin-m3/scripts/sync-symbol-names.ts → `packages/ui/eslint-plugin-m3/scripts/sync-symbol-names.ts`
+- scripts/audit/ui/packages/eslint-plugin-m3/scripts/sync-symbol-names.ts → `design/aphrody-m3/packages/eslint-plugin-m3/scripts/sync-symbol-names.ts`
 - scripts/build/koharu/packages/bridge/scripts/prepare-wasm.ts → `packages/koharu/bridge/scripts/prepare-wasm.ts`
-- scripts/build/ui/packages/material-web/scripts/build.ts → `packages/ui/material-web/scripts/build.ts`
-- scripts/build/ui/packages/material-web/scripts/compile-sass.ts → `packages/ui/material-web/scripts/compile-sass.ts`
-- scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts → `packages/ui/material-web/scripts/component-custom-elements.ts`
-- scripts/build/ui/packages/material-web/scripts/css-to-ts.ts → `packages/ui/material-web/scripts/css-to-ts.ts`
-- scripts/build/ui/packages/material-web/scripts/generate-sass-token-meta.ts → `packages/ui/material-web/scripts/generate-sass-token-meta.ts`
-- scripts/migration/ui/packages/material-web/migration/codemods/scripts/run-fixtures.ts → `packages/ui/material-web/migration/codemods/scripts/run-fixtures.ts`
-- scripts/migration/ui/packages/material-web/migration/scripts/theme-to-tokens.ts → `packages/ui/material-web/migration/scripts/theme-to-tokens.ts`
+- scripts/build/ui/packages/material-web/scripts/build.ts → `design/aphrody-m3/packages/material-web/scripts/build.ts`
+- scripts/build/ui/packages/material-web/scripts/compile-sass.ts → `design/aphrody-m3/packages/material-web/scripts/compile-sass.ts`
+- scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts → `design/aphrody-m3/packages/material-web/scripts/component-custom-elements.ts`
+- scripts/build/ui/packages/material-web/scripts/css-to-ts.ts → `design/aphrody-m3/packages/material-web/scripts/css-to-ts.ts`
+- scripts/build/ui/packages/material-web/scripts/generate-sass-token-meta.ts → `design/aphrody-m3/packages/material-web/scripts/generate-sass-token-meta.ts`
+- scripts/migration/ui/packages/material-web/migration/codemods/scripts/run-fixtures.ts → `design/aphrody-m3/packages/material-web/migration/codemods/scripts/run-fixtures.ts`
+- scripts/migration/ui/packages/material-web/migration/scripts/theme-to-tokens.ts → `design/aphrody-m3/packages/material-web/migration/scripts/theme-to-tokens.ts`
 - scripts/tools/os/drive/core/scripts/combine.sh → `crates/os/drive/core/scripts/combine.sh`
 - scripts/tools/os/drive/core/scripts/update_spacedrive.sh → `crates/os/drive/core/scripts/update_spacedrive.sh`
 

@@ -57,7 +57,7 @@ import {
   TabsTrigger,
   TextArea,
   ToggleGroup,
-} from "../../packages/ui/m3-primitives/src/index.ts";
+} from "../../design/aphrody-m3/packages/m3-primitives/src/index.ts";
 import {
   CheckboxField,
   Form,
@@ -66,20 +66,20 @@ import {
   SelectField,
   SwitchField,
   TextAreaField,
-} from "../../packages/ui/m3-forms/src/index.ts";
+} from "../../design/aphrody-m3/packages/m3-forms/src/index.ts";
 import {
   FileThumb,
   GridItem,
   RenameInput,
   TagPill,
-} from "../../packages/ui/m3-explorer/src/index.ts";
+} from "../../design/aphrody-m3/packages/m3-explorer/src/index.ts";
 import {
   CollectionReader,
   DatabookReader,
   MangaReader,
-} from "../../packages/ui/m3-reader/src/index.ts";
-import { M3Document, m3SchemeCss } from "../../packages/ui/m3-next/src/server.tsx";
-import { m3JsonLd } from "../../packages/ui/m3-next/src/crawl.ts";
+} from "../../design/aphrody-m3/packages/m3-reader/src/index.ts";
+import { M3Document, m3SchemeCss } from "../../design/aphrody-m3/packages/m3-next/src/server.tsx";
+import { m3JsonLd } from "../../design/aphrody-m3/packages/m3-next/src/crawl.ts";
 import type { PageKind, SitePage } from "./web-crawlability.ts";
 
 interface PageSpec {

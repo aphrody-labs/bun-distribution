@@ -160,7 +160,7 @@
   "validation": {
     "bunTests": {
       "command": "bun test --preload ../../bun/test-dom/src/index.ts src",
-      "cwd": "packages/ui/app-ui",
+      "cwd": "design/aphrody-m3/packages/app-ui",
       "passed": 153,
       "failed": 0,
       "assertions": 675,
@@ -169,7 +169,7 @@
     },
     "typescript": {
       "command": "bun run typecheck",
-      "cwd": "packages/ui/app-ui",
+      "cwd": "design/aphrody-m3/packages/app-ui",
       "result": "passed"
     },
     "oxlint": {

@@ -32,7 +32,7 @@
     "packages/fut/fut": "tsc --noEmit clean; bun test: 148 pass, 27 skip (pre-existing: missing local sqlite fixture, unrelated), 0 fail",
     "packages/rg/cron": "bun test src: 174 pass, 1 skip (pre-existing: no live CDP server in this environment, unrelated), 0 fail",
     "packages/web/aphrody-web-test": "tsc --noEmit clean; bun test test/: 41 pass, 0 fail",
-    "packages/ui/web-to-tauri": "not re-run: imports only @aphrody/agent-browser/cdp and /tauri (WebCdpPage, TauriBridge), neither touches engine.ts; unaffected by this change",
+    "design/aphrody-m3/packages/web-to-tauri": "not re-run: imports only @aphrody/agent-browser/cdp and /tauri (WebCdpPage, TauriBridge), neither touches engine.ts; unaffected by this change",
     "Shenron (apps/shenron, packages/shenron)": "no dependency on @aphrody/agent-browser found (package.json/import scan); PLAN.md's R7 mention does not map to a direct consumer of this package"
   },
   "limits": [

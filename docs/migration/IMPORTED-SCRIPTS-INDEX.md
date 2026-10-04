@@ -139,7 +139,7 @@ Scripts retain their source-relative paths below category and owner. Relocated c
 - `audit` — `aphrody-ui/packages/eslint-plugin-m3/scripts/sync-symbol-names.ts` → `scripts/audit/ui/packages/eslint-plugin-m3/scripts/sync-symbol-names.ts` (sha256 `61f52bb99a65bf7e5253bd91a85c9c5e41eba54bc7ff1a690347711af9e4c472`)
 - `build` — `aphrody-ui/packages/identity/scripts/generate.ts` → `scripts/build/ui/packages/identity/scripts/generate.ts` (sha256 `ced88cb88ae6bd39f65f070cdff8f1708503dd8d8fb5ad18201284bcf0328ea2`)
 - `build` — `aphrody-ui/packages/m3-fonts/scripts/generate.ts` → `scripts/build/ui/packages/m3-fonts/scripts/generate.ts` (sha256 `10f54a332550eed03148322bd9229ffc8aed37845dcfcfcab417501187caf075`)
-- `build` — `aphrody-ui/packages/m3-fonts/scripts/subset.py` → `../aphrody-py/packages/ui/packages/m3-fonts/scripts/subset.py` (sha256 `5d3f5ab44065cf97d64128082a9f33ab155a5dfe46b6becda236281788f166cd`)
+- `build` — `aphrody-ui/packages/m3-fonts/scripts/subset.py` → `../aphrody-py/design/aphrody-m3/packages/packages/m3-fonts/scripts/subset.py` (sha256 `5d3f5ab44065cf97d64128082a9f33ab155a5dfe46b6becda236281788f166cd`)
 - `build` — `aphrody-ui/packages/m3-fonts/scripts/subset.ts` → `scripts/build/ui/packages/m3-fonts/scripts/subset.ts` (sha256 `8484f15eb49f1c0b136fd41728f72b6e3309faa4983a91c9f0040862ca536671`)
 - `build` — `aphrody-ui/packages/m3-theme/scripts/mcu-fixture.ts` → `scripts/build/ui/packages/m3-theme/scripts/mcu-fixture.ts` (sha256 `bf895a7f44de38ecd7913597f5436d664cc9fdfce7a721c17bf8b48a65f746e9`)
 - `build` — `aphrody-ui/packages/m3-theme/scripts/mcu-image-fixture.ts` → `scripts/build/ui/packages/m3-theme/scripts/mcu-image-fixture.ts` (sha256 `f258f5573af75b819eba286d62e441dbc9fad7f5352c1f576ade5f1830cc76c6`)

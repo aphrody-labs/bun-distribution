@@ -23,7 +23,7 @@
   "latestUiTypecheck": "passed after official typed Bun build import and local M3 declaration build; previous failures below are historical observations",
   "checks": [
     {
-      "command": "bun test packages/infra/workspace/test/jan-absorption.test.ts packages/ui/app-ui/src/models-hub.test.ts",
+      "command": "bun test packages/infra/workspace/test/jan-absorption.test.ts design/aphrody-m3/packages/app-ui/src/models-hub.test.ts",
       "status": "passed",
       "tests": 20,
       "assertions": 79
@@ -31,13 +31,13 @@
     { "command": "bun run typecheck", "cwd": "packages/infra/workspace", "status": "passed" },
     {
       "command": "bun run typecheck",
-      "cwd": "packages/ui/app-ui",
+      "cwd": "design/aphrody-m3/packages/app-ui",
       "status": "failed",
       "reason": "M3 exports reference unavailable dist declarations for build and config"
     },
     {
       "command": "bun run typecheck --customConditions bun --types bun,@react-three/fiber",
-      "cwd": "packages/ui/app-ui",
+      "cwd": "design/aphrody-m3/packages/app-ui",
       "status": "failed",
       "reason": "M3 source build.ts callbacks at lines 139 and 146 have implicit any types"
     },
@@ -51,23 +51,23 @@
     },
     {
       "command": "bun run build",
-      "cwd": "packages/ui/m3",
+      "cwd": "design/aphrody-m3/packages/m3",
       "status": "passed",
       "note": "tsup and native TypeScript declaration emission; ignored dist artifacts remain local"
     },
     {
       "command": "bun run typecheck",
-      "cwd": "packages/ui/app-ui",
+      "cwd": "design/aphrody-m3/packages/app-ui",
       "status": "passed",
       "phase": "after M3 correction and declaration build"
     },
     {
-      "command": "bun test packages/ui/m3/test/build.test.ts",
+      "command": "bun test design/aphrody-m3/packages/m3/test/build.test.ts",
       "status": "passed",
       "tests": 5,
       "assertions": 187
     },
-    { "command": "bunx oxlint --deny-warnings packages/ui/m3/src/build.ts", "status": "passed" }
+    { "command": "bunx oxlint --deny-warnings design/aphrody-m3/packages/m3/src/build.ts", "status": "passed" }
   ],
   "limits": [
     "Source inventories and lexical declarations are not proof of semantic parity.",

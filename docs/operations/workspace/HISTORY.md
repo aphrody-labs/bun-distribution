@@ -43,7 +43,7 @@ Current state is generated: see [STATE.md](../../reference/workspace/STATE.md).
 | `docs/plans/2026-09-29-convergence-previous.md` | 1 | 4c97c1060 2026-10-01 |
 | `docs/plans/workspace/plans/2026-09-29-consolidation-snapshot.json` | 1 | 004540e1b 2026-09-29 |
 | `docs/plans/workspace/plans/2026-09-29-convergence-previous.md` | 1 | 004540e1b 2026-09-29 |
-| `docs/reference/ui/INTEGRATION-2026-09-27.md` | 1 | 004540e1b 2026-09-29 |
+| `design/aphrody-m3/docs/reference/INTEGRATION-2026-09-27.md` | 1 | 004540e1b 2026-09-29 |
 | `docs/reference/web/web/RAPPORT-DEFAUTS-2026-09-05.md` | 1 | 3ef7bcec4 2026-09-29 |
 | `docs/research/os/LIBAPHRODY-LOW-LEVEL-AUDIT-2026-10-01.md` | 1 | 4c97c1060 2026-10-01 |
 | `docs/research/os/low-level-audit-2026-10-01` | 158 | 02171cbc1 2026-10-02 |

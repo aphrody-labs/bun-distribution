@@ -37,7 +37,7 @@ history under `upstream/`.
 | CLI | [apps/cli](../../../apps/cli): argument handling, configuration and invocation of owner libraries |
 | OS and Shell | `crates/os`, `packages/os`, `crates/shell`: system capabilities, kernel, process supervision, jobs and shell facilities |
 | Infra | `crates/infra`, [workspace orchestrator](../../../packages/infra/workspace): inventories, topology, qualification and operations |
-| UI | `crates/ui`, `packages/ui`: rendering, tokens, components and presentation |
+| UI | `crates/ui`, `design/aphrody-m3/packages`: rendering, tokens, components and presentation |
 | AI and Web | `crates/ai`, `packages/ai`, `crates/web`, `packages/web`: model clients, inference, RAG and web capabilities |
 | Koharu and Discord | Domain libraries; applications own startup, credentials and product behavior |
 | RG and Shenron | `iecode/packages/rg`, `iecode/apps/rg`, `packages/shenron`, `apps/shenron`: domain rules, application contracts and product consumers |

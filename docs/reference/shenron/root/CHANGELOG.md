@@ -8,13 +8,13 @@ Versionnement : date + courte description.
 
 ### Changed
 
-- **Pile `@shenron/*` source-first branchée partout** : bot, site et pipeline consomment `@shenron/{config,db,auth,ai,api,ui,images,aphrody}` (vague 3) ; carte des paquets dans [`packages/ui/material-web/docs/STACK.md`](../../../../packages/ui/material-web/docs/STACK.md).
+- **Pile `@shenron/*` source-first branchée partout** : bot, site et pipeline consomment `@shenron/{config,db,auth,ai,api,ui,images,aphrody}` (vague 3) ; carte des paquets dans [`design/aphrody-m3/packages/material-web/docs/STACK.md`](../../../../design/aphrody-m3/packages/material-web/docs/STACK.md).
 - **Origines publiques centralisées** (`85ad0857`) : `@shenron/config/public-urls` résout site, API et assets (`SHENRON_PUBLIC_SITE_URL`, `SHENRON_PUBLIC_API_URL`, `SHENRON_PUBLIC_ASSETS_URL`, noms historiques en repli) ; `remotePatterns` Next, CORS du bot et URL Discord en dérivent.
 - **Services internes centralisés** (`9691bba6`) : `@shenron/config/services` pour Redis, site interne, API bot, LibreTranslate et sidecar OCR.
 - **Dédup des assets bot/site** (`11683117`) : manifeste `packages/shenron/images/src/asset-aliases.json`, résolution disque `apps/shenron/bot/src/lib/asset-files.ts`, redirections Next pour les anciennes URL.
 - **Client OCR distant** déplacé dans `@shenron/pipeline/aphrody/remote-ocr` (`0788f82c`) ; scripts du pipeline importent via les sous-chemins exportés `@shenron/site` et `@shenron/bot` (`1a37c65c`).
 - **Développement local** : `scripts/dev/shenron/scripts/dev/local-env.ts` génère un `.env.local` par app et ouvre les tunnels depuis le catalogue `aphrody-infra` (port local = distant + 10 000), délégation à `aphrody ssh tunnel` ; Next dev/build dans WSL. Voir `docs/operations/shenron/DEV-LOCAL.md`.
-- **Documentation** : référence unique des variables d'environnement `docs/operations/shenron/ENV.md` ; `CODEX.md` réduit à un renvoi vers `AGENTS.md` ; prompts et inventaires datés de la racine (`PROMPT.md`, `cdn.md`, `db-crawl.md`, `NEED.md`) déplacés sous `docs/products/ui/drive/docs/archive/` ; hôtes, IP, ports et chemins machine retirés des docs de référence.
+- **Documentation** : référence unique des variables d'environnement `docs/operations/shenron/ENV.md` ; `CODEX.md` réduit à un renvoi vers `AGENTS.md` ; prompts et inventaires datés de la racine (`PROMPT.md`, `cdn.md`, `db-crawl.md`, `NEED.md`) déplacés sous `design/aphrody-m3/docs/products/drive/docs/archive/` ; hôtes, IP, ports et chemins machine retirés des docs de référence.
 
 ### Fixed
 

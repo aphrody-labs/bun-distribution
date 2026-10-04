@@ -18,7 +18,7 @@
  */
 import { existsSync } from "node:fs";
 import { join, resolve, extname } from "node:path";
-import { getSharedUiCache } from "../../../packages/ui/m3-config/cache-db.ts";
+import { getSharedUiCache } from "../../../design/aphrody-m3/packages/m3-config/cache-db.ts";
 
 const REPO_ROOT = resolve(import.meta.dir, "../../..");
 const UI_DIST = join(REPO_ROOT, "crates", "ui", "app", "ui-dist");
@@ -943,7 +943,7 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
             designSystemId?: string;
           };
           const { DesignCompiler } =
-            await import("../../../packages/ui/m3-design/src/generator.ts");
+            await import("../../../design/aphrody-m3/packages/m3-design/src/generator.ts");
           const compiler = new DesignCompiler();
           const result = compiler.compile(
             body.prompt || "Modern dashboard",

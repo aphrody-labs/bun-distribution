@@ -9,8 +9,8 @@
       "id": "model-hub-search",
       "upstream": ["web-app/src/routes/hub/-searchRanking.ts", "web-app/src/routes/hub/index.tsx"],
       "aphrody": [
-        "packages/ui/app-ui/src/models-hub.tsx",
-        "packages/ui/app-ui/src/models-hub-state.ts"
+        "design/aphrody-m3/packages/app-ui/src/models-hub.tsx",
+        "design/aphrody-m3/packages/app-ui/src/models-hub-state.ts"
       ],
       "status": "source_migrated_unit_tests_pass_ui_activation_pending"
     },
@@ -86,7 +86,7 @@
     {
       "id": "desktop-and-web-ui",
       "upstream": ["src-tauri/src/lib.rs", "web-app/src/routes/__root.tsx"],
-      "aphrody": ["crates/ui/app/src/lib.rs", "packages/ui/app-ui/src/app.tsx"],
+      "aphrody": ["crates/ui/app/src/lib.rs", "design/aphrody-m3/packages/app-ui/src/app.tsx"],
       "status": "owner_found_parity_pending"
     },
     {

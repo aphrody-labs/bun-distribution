@@ -1763,30 +1763,12 @@
       ],
       "bunPackages": [
         {
-          "name": "@aphrody/ag-ui",
-          "path": "packages/ui/ag-ui",
-          "description": "Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/agent-browser",
           "path": "packages/web/agent-browser",
           "description": "Aphrody Web Bun client: CDP browser automation (agent-browser), engine lifecycle, web service client (fetch, scrape, crawl, sessions) and config reader, backed by the native aphrody-web engine.",
           "bins": [
             "agent-browser"
           ]
-        },
-        {
-          "name": "@aphrody/app-ui",
-          "path": "packages/ui/app-ui",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/assets",
-          "path": "packages/ui/assets",
-          "description": "File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces.",
-          "bins": []
         },
         {
           "name": "@aphrody/bun",
@@ -1798,12 +1780,6 @@
           "name": "@aphrody/bun-test-dom",
           "path": "packages/bun/test-dom",
           "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/canvas",
-          "path": "packages/ui/canvas",
-          "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
           "bins": []
         },
         {
@@ -1827,12 +1803,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/eslint-plugin-m3",
-          "path": "packages/ui/eslint-plugin-m3",
-          "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/fut",
           "path": "packages/fut/fut",
           "description": "High-Performance EA SPORTS FC & FIFA Ultimate Team Intelligence Suite: Scraping, Crawling, Market Valuation, AI Squad Builder, Mathematical SBC Solver, Early Leaks Radar, Live Chrome MV3 Extension, and Remote MCP Bridge.",
@@ -1847,12 +1817,6 @@
           ]
         },
         {
-          "name": "@aphrody/identity",
-          "path": "packages/ui/identity",
-          "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, and the animated pet sprite (atlas, timed tracks, 16-way gaze) drawn from crates/ui/identity.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/koharu-editor-example",
           "path": "apps/koharu/editor",
           "description": "",
@@ -1862,113 +1826,6 @@
           "name": "@aphrody/koharu-ui",
           "path": "packages/koharu/ui",
           "description": "Koharu editor, controls, preferences, resources and canvas UI for Aphrody hosts",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3",
-          "path": "packages/ui/m3",
-          "description": "The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), M3App and the m3 CLI.",
-          "bins": [
-            "m3"
-          ]
-        },
-        {
-          "name": "@aphrody/m3-ai",
-          "path": "packages/ui/m3-ai",
-          "description": "Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-codemods",
-          "path": "packages/ui/m3-codemods",
-          "description": "Codemods MUI React -> @aphrody/m3-react (jscodeshift + ast-grep)",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-config",
-          "path": "packages/ui/m3-config",
-          "description": "Shared build, typecheck and test presets for the @aphrody Material Design 3 packages: tsconfig, tsup preset and the happy-dom test preload.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-design",
-          "path": "packages/ui/m3-design",
-          "description": "Automated design engine for Material Design 3 and Google Design",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-explorer",
-          "path": "packages/ui/m3-explorer",
-          "description": "Material Design 3 file-management components (tag pill, inline rename, file thumb, grid item): the SpaceUI (@spacedrive/explorer) set rebuilt on @aphrody/m3-primitives.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-fonts",
-          "path": "packages/ui/m3-fonts",
-          "description": "Aphrody M3 typefaces: Google Sans Flex, Google Sans Code, Roboto Flex, Roboto Mono and Material Symbols with Japanese fallbacks (Noto Sans JP, M PLUS 1 Code) as @font-face CSS and a typed manifest.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-forms",
-          "path": "packages/ui/m3-forms",
-          "description": "Material Design 3 form fields (react-hook-form) on @aphrody/m3-primitives: the SpaceUI (@spacedrive/forms) set, M3-styled.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-icons",
-          "path": "packages/ui/m3-icons",
-          "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-bun icons module (variable fonts), no icon font shipped at runtime.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-motion",
-          "path": "packages/ui/m3-motion",
-          "description": "Material 3 animation plugin powered by Motion (formerly Framer Motion)",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-next",
-          "path": "packages/ui/m3-next",
-          "description": "Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config, M3Html/M3Root server components (color-scheme, dark class from cookie or system, SSR scheme variables), a 'use client' M3ThemeProvider bridge, metadata/viewport helpers and the m3Css server helper.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-next-migrate",
-          "path": "packages/ui/m3-next-migrate",
-          "description": "Migration engine, AST codemod and runtime shims to migrate Next.js 16 UI and React components to Tauri v2 desktop apps or Bun/Vite web SPAs",
-          "bins": [
-            "m3-next-migrate",
-            "next-migrate"
-          ]
-        },
-        {
-          "name": "@aphrody/m3-primitives",
-          "path": "packages/ui/m3-primitives",
-          "description": "Material Design 3 React primitives: the SpaceUI (@spacedrive/primitives) component set rebuilt on the M3 roles, shape, typescale, state layers and motion of the aphrody design system.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-react",
-          "path": "packages/ui/m3-react",
-          "description": "React wrappers (@lit/react createComponent) for every <md-*> element of the @aphrody/material-web fork.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-reader",
-          "path": "packages/ui/m3-reader",
-          "description": "Material 3 manga and illustrated book readers for React",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-theme",
-          "path": "packages/ui/m3-theme",
-          "description": "Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases).",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-tokens",
-          "path": "packages/ui/m3-tokens",
-          "description": "Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities.",
           "bins": []
         },
         {
@@ -2022,14 +1879,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/scaffold",
-          "path": "packages/ui/scaffold",
-          "description": "The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web-to-tauri.",
-          "bins": [
-            "aphrody-scaffold"
-          ]
-        },
-        {
           "name": "@aphrody/shell-web",
           "path": "packages/shell/web",
           "description": "Aphrody shell for browsers and Tauri webviews: WASM VT core, local shell and WebSocket/Tauri transports.",
@@ -2054,14 +1903,6 @@
           "path": "packages/web/aphrody-web-test",
           "description": "Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server.",
           "bins": []
-        },
-        {
-          "name": "@aphrody/web-to-tauri",
-          "path": "packages/ui/web-to-tauri",
-          "description": "Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original.",
-          "bins": [
-            "web-to-tauri"
-          ]
         },
         {
           "name": "@aphrody/winclean",
@@ -2168,12 +2009,6 @@
         {
           "name": "@shenron/site",
           "path": "apps/shenron/site",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@shenron/ui",
-          "path": "packages/shenron/ui",
           "description": "",
           "bins": []
         },
@@ -11918,7 +11753,7 @@
     "sharedRepos": 0,
     "crates": 196,
     "binaries": 62,
-    "bunPackages": 70,
+    "bunPackages": 44,
     "pythonPackages": 8,
     "cliBinaries": 44,
     "cliCommands": 937,

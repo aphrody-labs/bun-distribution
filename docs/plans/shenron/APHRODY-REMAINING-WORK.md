@@ -62,7 +62,7 @@ recomptabiliser avant toute reprise.
 ### 1. Fermer et livrer le changement documentaire et plugin
 
 - [ ] Relire le diff complet, notamment les références historiques dans
-  `packages/ui/material-web/docs/STACK.md`, `docs/architecture/shenron/APHRODY-ECOSYSTEM.md` et le plugin, pour qu'aucun ancien
+  `design/aphrody-m3/packages/material-web/docs/STACK.md`, `docs/architecture/shenron/APHRODY-ECOSYSTEM.md` et le plugin, pour qu'aucun ancien
   MCP public ou paquet supprimé ne soit présenté comme actif.
 - [ ] Exécuter les contrôles locaux ciblés du dépôt et vérifier les liens,
   manifestes JSON et contrats MCP.

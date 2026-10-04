@@ -7,7 +7,7 @@
     {
       "kind": "asset-staged-from-canonical",
       "source": "crates/ui/app/ui-dist/fonts/*.woff2 (25 files: GoogleSansFlex-latin, RobotoFlex-latin, NotoSansJP-00,02..13, MPLUS1Code-01..10)",
-      "target": "packages/ui/m3-fonts/fonts/web/ (canonical, tracked)",
+      "target": "design/aphrody-m3/packages/m3-fonts/fonts/web/ (canonical, tracked)",
       "fragment": "assets.json"
     },
     {
@@ -19,13 +19,13 @@
     {
       "kind": "asset-staged-from-canonical",
       "source": "crates/ui/app/ui-dist/fonts/*.png (198 files: file-kind icons incl. the Drive-*/Text/TextAlt/Executable name aliases)",
-      "target": "packages/ui/assets/icons/ (197) and packages/ui/assets/images/BallBlue.png (1) (@aphrody/assets, canonical)",
+      "target": "design/aphrody-m3/packages/assets/icons/ (197) and design/aphrody-m3/packages/assets/images/BallBlue.png (1) (@aphrody/assets, canonical)",
       "fragment": "assets.json"
     },
     {
       "kind": "asset-staged-from-canonical",
       "source": "crates/ui/app/ui-dist/fonts/*.mp3, *.ogg (12 files: copy, job-done, pairing, splat, splat-trigger, startup)",
-      "target": "packages/ui/assets/sounds/ (canonical)",
+      "target": "design/aphrody-m3/packages/assets/sounds/ (canonical)",
       "fragment": "assets.json"
     },
     {
@@ -55,12 +55,12 @@
     {
       "kind": "retained-duplicate",
       "source": "scripts/build/ui/packages/material-web/scripts/compile-sass.ts and scripts/migration/ui/packages/material-web/migration/**/{theme-to-tokens,export-map-json,run-fixtures}.ts",
-      "target": "packages/ui/material-web/{scripts,migration}/ (originals)",
+      "target": "design/aphrody-m3/packages/material-web/{scripts,migration}/ (originals)",
       "fragment": "assets.json"
     },
     {
       "kind": "retained-duplicate",
-      "source": "packages/ui/assets/icons/{Text,TextAlt,Box,Drive-Box,...} (9 byte-identical pairs, 0.43 MB)",
+      "source": "design/aphrody-m3/packages/assets/icons/{Text,TextAlt,Box,Drive-Box,...} (9 byte-identical pairs, 0.43 MB)",
       "target": "same package",
       "fragment": "assets.json"
     },
@@ -198,7 +198,7 @@
     },
     {
       "kind": "generator-option",
-      "source": "packages/ui/scaffold/src/tauri.ts TauriShellOptions.debugBridge?: { path: string } (optional dependency aphrody-tauri-debug, feature debug-bridge = [\"dep:aphrody-tauri-debug\", \"aphrody-tauri-debug/debug-bridge\"], main.rs aphrody_tauri_debug::init())",
+      "source": "design/aphrody-m3/packages/scaffold/src/tauri.ts TauriShellOptions.debugBridge?: { path: string } (optional dependency aphrody-tauri-debug, feature debug-bridge = [\"dep:aphrody-tauri-debug\", \"aphrody-tauri-debug/debug-bridge\"], main.rs aphrody_tauri_debug::init())",
       "target": "debugBridge?: boolean | { path: string }; with the aphrody-tauri-wrap runtimePlugin the app feature is debug-bridge = [\"aphrody-tauri-wrap/debug-bridge\"] and main.rs calls aphrody_tauri_wrap::debug::init(); { path } (the wrap crate dir) adds the optional dependency aphrody-tauri-wrap (default-features = false) when the shell has no wrap runtimePlugin; `true` without that runtime plugin throws. New option runtimePlugin.features?: string[] (absent = crate defaults; array = default-features = false plus the listed features).",
       "fragment": "tauri-wrap.json"
     },

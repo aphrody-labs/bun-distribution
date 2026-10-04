@@ -16095,288 +16095,288 @@
       "target_sha256": "0214dcc60be653a4b911112a0b3e0a508dffc32aa5366d26831681a58567f146"
     },
     {
-      "source": "packages/ui/.cliff-jumperrc.json",
-      "target": "upstream/discord/packages/ui/.cliff-jumperrc.json",
+      "source": "design/aphrody-m3/packages/.cliff-jumperrc.json",
+      "target": "upstream/discord/design/aphrody-m3/packages/.cliff-jumperrc.json",
       "mode": "100644",
       "git_blob": "70b2118df93ce3e63ecf2d9004e0448851e60f6c",
       "source_sha256": "0391d872d1745d0c2754b64d31c95f02c99b4b87e3133475c72c1b8a81ade185",
       "target_sha256": "0391d872d1745d0c2754b64d31c95f02c99b4b87e3133475c72c1b8a81ade185"
     },
     {
-      "source": "packages/ui/.gitignore",
-      "target": "upstream/discord/packages/ui/.gitignore",
+      "source": "design/aphrody-m3/packages/.gitignore",
+      "target": "upstream/discord/design/aphrody-m3/packages/.gitignore",
       "mode": "100644",
       "git_blob": "9c4c6802a5d81c5d3871d7f2872f190194bad238",
       "source_sha256": "c454b26bcc1f7967703b14afcb42ac9b99afb5fea423885e1d72c4be2239ed5b",
       "target_sha256": "c454b26bcc1f7967703b14afcb42ac9b99afb5fea423885e1d72c4be2239ed5b"
     },
     {
-      "source": "packages/ui/.lintstagedrc.cjs",
-      "target": "upstream/discord/packages/ui/.lintstagedrc.cjs",
+      "source": "design/aphrody-m3/packages/.lintstagedrc.cjs",
+      "target": "upstream/discord/design/aphrody-m3/packages/.lintstagedrc.cjs",
       "mode": "100644",
       "git_blob": "c46f610c8b77d4e64839a8b00c9df94512833a8f",
       "source_sha256": "b7cf86da9e47ec03dc0dcca178cb9fc2ca2a676936e31e519d5df263097eb6fc",
       "target_sha256": "b7cf86da9e47ec03dc0dcca178cb9fc2ca2a676936e31e519d5df263097eb6fc"
     },
     {
-      "source": "packages/ui/.prettierignore",
-      "target": "upstream/discord/packages/ui/.prettierignore",
+      "source": "design/aphrody-m3/packages/.prettierignore",
+      "target": "upstream/discord/design/aphrody-m3/packages/.prettierignore",
       "mode": "100644",
       "git_blob": "561f0c10abad7fce60903f90fae5e5c0ab0e09af",
       "source_sha256": "ef6ac5c73f44689ed307719dd3355e166755e1db7b55d7ca835af135ae745456",
       "target_sha256": "ef6ac5c73f44689ed307719dd3355e166755e1db7b55d7ca835af135ae745456"
     },
     {
-      "source": "packages/ui/.prettierrc.cjs",
-      "target": "upstream/discord/packages/ui/.prettierrc.cjs",
+      "source": "design/aphrody-m3/packages/.prettierrc.cjs",
+      "target": "upstream/discord/design/aphrody-m3/packages/.prettierrc.cjs",
       "mode": "100644",
       "git_blob": "f723230a05d4d1657b2ba774477372d0b9f67585",
       "source_sha256": "b8a8676953c1f19ff74521143eaab38b1e8f85065bc3c1083888185a6fb1e64f",
       "target_sha256": "b8a8676953c1f19ff74521143eaab38b1e8f85065bc3c1083888185a6fb1e64f"
     },
     {
-      "source": "packages/ui/.storybook/main.ts",
-      "target": "upstream/discord/packages/ui/.storybook/main.ts",
+      "source": "design/aphrody-m3/packages/.storybook/main.ts",
+      "target": "upstream/discord/design/aphrody-m3/packages/.storybook/main.ts",
       "mode": "100644",
       "git_blob": "26ca8b8a8903d3d8be165378825b73d5e9368fa5",
       "source_sha256": "43b4ed1d66de5436c4e6abe3690cbfac1c2b6113b2fc03e5b8e7a91cf5f26521",
       "target_sha256": "43b4ed1d66de5436c4e6abe3690cbfac1c2b6113b2fc03e5b8e7a91cf5f26521"
     },
     {
-      "source": "packages/ui/.storybook/preview.css",
-      "target": "upstream/discord/packages/ui/.storybook/preview.css",
+      "source": "design/aphrody-m3/packages/.storybook/preview.css",
+      "target": "upstream/discord/design/aphrody-m3/packages/.storybook/preview.css",
       "mode": "100644",
       "git_blob": "1c99f07dfdf199bf1a0ae55e9a8db94f83eb1b1a",
       "source_sha256": "4e5a21c50c69006468dde87c1d27c26ed81ae2a5a4bebd11f9028130eaf959d6",
       "target_sha256": "4e5a21c50c69006468dde87c1d27c26ed81ae2a5a4bebd11f9028130eaf959d6"
     },
     {
-      "source": "packages/ui/.storybook/preview.ts",
-      "target": "upstream/discord/packages/ui/.storybook/preview.ts",
+      "source": "design/aphrody-m3/packages/.storybook/preview.ts",
+      "target": "upstream/discord/design/aphrody-m3/packages/.storybook/preview.ts",
       "mode": "100644",
       "git_blob": "f5760c10cb9a255336005a4d47b723a562db2027",
       "source_sha256": "c4fd315b9e2ea20ed53acf503819fb2fea15c13e7ad5359fe365aa0fa958b1b7",
       "target_sha256": "c4fd315b9e2ea20ed53acf503819fb2fea15c13e7ad5359fe365aa0fa958b1b7"
     },
     {
-      "source": "packages/ui/LICENSE",
-      "target": "upstream/discord/packages/ui/LICENSE",
+      "source": "design/aphrody-m3/packages/LICENSE",
+      "target": "upstream/discord/design/aphrody-m3/packages/LICENSE",
       "mode": "100644",
       "git_blob": "e633a147b210d418c48d793965f4d4d3be5e6d82",
       "source_sha256": "4534e268bc50d35b1272461ba82979cac2cf90c0ac3cc8bf97b91fcba1b40747",
       "target_sha256": "4534e268bc50d35b1272461ba82979cac2cf90c0ac3cc8bf97b91fcba1b40747"
     },
     {
-      "source": "packages/ui/README.md",
-      "target": "upstream/discord/packages/ui/README.md",
+      "source": "design/aphrody-m3/packages/README.md",
+      "target": "upstream/discord/design/aphrody-m3/packages/README.md",
       "mode": "100644",
       "git_blob": "22d2decee424d93adcda016c599c29c4e2204efa",
       "source_sha256": "da6c59bf17866b79c6ee47aaad4b29f9a7ff756a28e63004a66500159d956eba",
       "target_sha256": "da6c59bf17866b79c6ee47aaad4b29f9a7ff756a28e63004a66500159d956eba"
     },
     {
-      "source": "packages/ui/cliff.toml",
-      "target": "upstream/discord/packages/ui/cliff.toml",
+      "source": "design/aphrody-m3/packages/cliff.toml",
+      "target": "upstream/discord/design/aphrody-m3/packages/cliff.toml",
       "mode": "100644",
       "git_blob": "61cf82eef96ffdbcf68b0e8f4eebd6233fdb4a69",
       "source_sha256": "8cf3d339ed7696f850483dc9354b9f33b767803e9e24110e386a3fc1c84483f7",
       "target_sha256": "8cf3d339ed7696f850483dc9354b9f33b767803e9e24110e386a3fc1c84483f7"
     },
     {
-      "source": "packages/ui/package.json",
-      "target": "upstream/discord/packages/ui/package.json",
+      "source": "design/aphrody-m3/packages/package.json",
+      "target": "upstream/discord/design/aphrody-m3/packages/package.json",
       "mode": "100644",
       "git_blob": "901ef342029a9a3e4a3bf1e01cc68dee910727a5",
       "source_sha256": "7d8b4800b43970ea586e452ee9e14fd5142f4d8c6815d904218cc2f84e9890df",
       "target_sha256": "7d8b4800b43970ea586e452ee9e14fd5142f4d8c6815d904218cc2f84e9890df"
     },
     {
-      "source": "packages/ui/src/lib/components/Alert.stories.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/Alert.stories.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/Alert.stories.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/Alert.stories.tsx",
       "mode": "100644",
       "git_blob": "d32196fc9e85d60a98e401cb97bbac0d970fa726",
       "source_sha256": "da97cdcfbdcc618e10f8d60d18cf94bd1d80a8c7f877f6b7bca7e6913bcb54b0",
       "target_sha256": "da97cdcfbdcc618e10f8d60d18cf94bd1d80a8c7f877f6b7bca7e6913bcb54b0"
     },
     {
-      "source": "packages/ui/src/lib/components/Alert.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/Alert.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/Alert.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/Alert.tsx",
       "mode": "100644",
       "git_blob": "88a730ec34b92b0c25bb3ea5812b50a7da97ad57",
       "source_sha256": "3e6c6cb8aeb13af074b278b4b00da7ba8f3d6663a2ed8f96f4cb454a02b3675c",
       "target_sha256": "3e6c6cb8aeb13af074b278b4b00da7ba8f3d6663a2ed8f96f4cb454a02b3675c"
     },
     {
-      "source": "packages/ui/src/lib/components/Section.stories.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/Section.stories.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/Section.stories.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/Section.stories.tsx",
       "mode": "100644",
       "git_blob": "af472d3f9c22a4bbdd5e77079683c588b14a3c8d",
       "source_sha256": "e59566cdc5f95b98928fa1dbeacebd3b246dd6d746625e93360d4d5dad4398f3",
       "target_sha256": "e59566cdc5f95b98928fa1dbeacebd3b246dd6d746625e93360d4d5dad4398f3"
     },
     {
-      "source": "packages/ui/src/lib/components/Section.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/Section.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/Section.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/Section.tsx",
       "mode": "100644",
       "git_blob": "fce99e900eaeeac3af6727ec2f6e7fcd01f518ef",
       "source_sha256": "0ca6854ec84187b82356319b1eaf0d16c2454f4455f589902c8716b65074d1d7",
       "target_sha256": "0ca6854ec84187b82356319b1eaf0d16c2454f4455f589902c8716b65074d1d7"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/DiscordMessages.stories.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/DiscordMessages.stories.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/DiscordMessages.stories.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/DiscordMessages.stories.tsx",
       "mode": "100644",
       "git_blob": "68564200f012b26be673a72104f2e915c4b24390",
       "source_sha256": "ba28b0ee9c6db599749cdffa4a2ef5f93439f8d096f6d197dc8d22b43425b2c4",
       "target_sha256": "ba28b0ee9c6db599749cdffa4a2ef5f93439f8d096f6d197dc8d22b43425b2c4"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/Message.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/Message.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/Message.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/Message.tsx",
       "mode": "100644",
       "git_blob": "84c6485c700c2beba5a3abeb2f53b33efd679cc0",
       "source_sha256": "08d1550de3d2363645c1f30c6d81c7881cc5a83a8fbfb493970df6a521689053",
       "target_sha256": "08d1550de3d2363645c1f30c6d81c7881cc5a83a8fbfb493970df6a521689053"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageAuthor.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageAuthor.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageAuthor.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageAuthor.tsx",
       "mode": "100644",
       "git_blob": "991c3e74d1b2111fae58436503880ab8bc28115a",
       "source_sha256": "0fcabace1da4254dbb1004855564617a8238dae9ac65cc4944cdcb36d830e7e8",
       "target_sha256": "0fcabace1da4254dbb1004855564617a8238dae9ac65cc4944cdcb36d830e7e8"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageAuthorReply.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageAuthorReply.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageAuthorReply.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageAuthorReply.tsx",
       "mode": "100644",
       "git_blob": "cee8bb077ae144b042591a1dc1c95b722c1ded8c",
       "source_sha256": "a63124de61f033312f9f7b7009d8d5e1f1ddd5f727f77f8c52a8deaa870fc15a",
       "target_sha256": "a63124de61f033312f9f7b7009d8d5e1f1ddd5f727f77f8c52a8deaa870fc15a"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageBaseReply.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageBaseReply.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageBaseReply.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageBaseReply.tsx",
       "mode": "100644",
       "git_blob": "ee3c2921846ee33017807881fd7e5a387222fee7",
       "source_sha256": "7300866086bb2266c0b243baccf111915e900823787ba8f403948ef16b8b99bb",
       "target_sha256": "7300866086bb2266c0b243baccf111915e900823787ba8f403948ef16b8b99bb"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageEmbed.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageEmbed.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageEmbed.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageEmbed.tsx",
       "mode": "100644",
       "git_blob": "92efac55e9b7214452e39f02a262c64b2619e271",
       "source_sha256": "f5c939829468975e879c2ad8ef36c0be93fec8e331e348b8d9038108aa588987",
       "target_sha256": "f5c939829468975e879c2ad8ef36c0be93fec8e331e348b8d9038108aa588987"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageEmbedAuthor.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageEmbedAuthor.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedAuthor.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedAuthor.tsx",
       "mode": "100644",
       "git_blob": "0d235c65d8642bb8cc356b3be87533947ed5dbfe",
       "source_sha256": "9e58e54f823c85414c819c8c1628dee6f795ecd0fcd5a276bf70e28ef2997c17",
       "target_sha256": "9e58e54f823c85414c819c8c1628dee6f795ecd0fcd5a276bf70e28ef2997c17"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageEmbedField.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageEmbedField.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedField.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedField.tsx",
       "mode": "100644",
       "git_blob": "e723e6b9dd036efcb6cacdb840f78df2eb3dffa9",
       "source_sha256": "c9dd89f6545c70fe3050d583b8b007ee74df0290a0478bf1607ab132f7144cf3",
       "target_sha256": "c9dd89f6545c70fe3050d583b8b007ee74df0290a0478bf1607ab132f7144cf3"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageEmbedFields.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageEmbedFields.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedFields.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedFields.tsx",
       "mode": "100644",
       "git_blob": "524d730a26074d478ade921256d4c6a604b3e48d",
       "source_sha256": "abbd12e9bf8fcb07401b097e6004d56103fab80b818542df53f1c4acea279b21",
       "target_sha256": "abbd12e9bf8fcb07401b097e6004d56103fab80b818542df53f1c4acea279b21"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageEmbedFooter.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageEmbedFooter.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedFooter.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedFooter.tsx",
       "mode": "100644",
       "git_blob": "2b267b6cdffd2e600f0b6737a29d55626e2df938",
       "source_sha256": "2c8d806968332cc8253d60ab8e3e1a2adb7b9e2bcf5276104b27b67c86db4d7e",
       "target_sha256": "2c8d806968332cc8253d60ab8e3e1a2adb7b9e2bcf5276104b27b67c86db4d7e"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageEmbedImage.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageEmbedImage.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedImage.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedImage.tsx",
       "mode": "100644",
       "git_blob": "79408bb54d881be54cf5acc706d43ba30f4a61f4",
       "source_sha256": "48a27a8e85e2c546baf05b2ad1710166d5158f9a518e9abf8cb5c9bf78322edf",
       "target_sha256": "48a27a8e85e2c546baf05b2ad1710166d5158f9a518e9abf8cb5c9bf78322edf"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageEmbedThumbnail.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageEmbedThumbnail.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedThumbnail.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedThumbnail.tsx",
       "mode": "100644",
       "git_blob": "03a9e3fc7fae14f900c72bfc0df825d6963db50d",
       "source_sha256": "3976509cbc4c5e8dbf533d3e10bfb58d2853b7b1a2b63c64edb1005dcc0f176f",
       "target_sha256": "3976509cbc4c5e8dbf533d3e10bfb58d2853b7b1a2b63c64edb1005dcc0f176f"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageEmbedTitle.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageEmbedTitle.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedTitle.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageEmbedTitle.tsx",
       "mode": "100644",
       "git_blob": "402ffc275c7d68a67d9596bee8121258eabeff45",
       "source_sha256": "4609d78b80a09c339651cf85f8b678c8fa5c33df4667be8274a5976d516a1af0",
       "target_sha256": "4609d78b80a09c339651cf85f8b678c8fa5c33df4667be8274a5976d516a1af0"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageInteraction.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageInteraction.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageInteraction.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageInteraction.tsx",
       "mode": "100644",
       "git_blob": "c20539c75599d945fcfc8b2ba72e2010b3b594bb",
       "source_sha256": "84c2fd3d0ba0472346301a7204953e9f07873453bab9cbd26b528e1f4ec3f006",
       "target_sha256": "84c2fd3d0ba0472346301a7204953e9f07873453bab9cbd26b528e1f4ec3f006"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/MessageReply.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/MessageReply.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/MessageReply.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/MessageReply.tsx",
       "mode": "100644",
       "git_blob": "ff50b03c5bb3d073a8588d4fbce5da2a4f70a1d5",
       "source_sha256": "40a204472dc6c0f93881de71f653b102a7366322aa2a959eef554cccb066648c",
       "target_sha256": "40a204472dc6c0f93881de71f653b102a7366322aa2a959eef554cccb066648c"
     },
     {
-      "source": "packages/ui/src/lib/components/discord/Messages.tsx",
-      "target": "upstream/discord/packages/ui/src/lib/components/discord/Messages.tsx",
+      "source": "design/aphrody-m3/packages/src/lib/components/discord/Messages.tsx",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/components/discord/Messages.tsx",
       "mode": "100644",
       "git_blob": "c5fe62e0df44c9d18d755aac5a0b9e19d8123af2",
       "source_sha256": "0de469f24aa9091243005e6e690d52f94bb53483e6e162d50174f8ab4e8268bf",
       "target_sha256": "0de469f24aa9091243005e6e690d52f94bb53483e6e162d50174f8ab4e8268bf"
     },
     {
-      "source": "packages/ui/src/lib/index.ts",
-      "target": "upstream/discord/packages/ui/src/lib/index.ts",
+      "source": "design/aphrody-m3/packages/src/lib/index.ts",
+      "target": "upstream/discord/design/aphrody-m3/packages/src/lib/index.ts",
       "mode": "100644",
       "git_blob": "37c8b3fc39c06df8bb9bdb2c6e4c62896c7f766a",
       "source_sha256": "b61040ad0d7dd267a843ead4ddedecfb6fee4a6a79eeb7fca98736a0a161a38c",
       "target_sha256": "b61040ad0d7dd267a843ead4ddedecfb6fee4a6a79eeb7fca98736a0a161a38c"
     },
     {
-      "source": "packages/ui/tsconfig.eslint.json",
-      "target": "upstream/discord/packages/ui/tsconfig.eslint.json",
+      "source": "design/aphrody-m3/packages/tsconfig.eslint.json",
+      "target": "upstream/discord/design/aphrody-m3/packages/tsconfig.eslint.json",
       "mode": "100644",
       "git_blob": "d92a16e5008c0e8fdab975ea56d92be6a82b338a",
       "source_sha256": "4b9c6ec5dc817461baa90f556375917bf5822856ba0b66dd0165012540d65de4",
       "target_sha256": "4b9c6ec5dc817461baa90f556375917bf5822856ba0b66dd0165012540d65de4"
     },
     {
-      "source": "packages/ui/tsconfig.json",
-      "target": "upstream/discord/packages/ui/tsconfig.json",
+      "source": "design/aphrody-m3/packages/tsconfig.json",
+      "target": "upstream/discord/design/aphrody-m3/packages/tsconfig.json",
       "mode": "100644",
       "git_blob": "0cdb5364a79c58de9ecca92a1c2db1f5f8c169ca",
       "source_sha256": "8534a83e290ba535cf0d97ecc6cae545a743b77b31844f88d1897adaccc32f2c",
       "target_sha256": "8534a83e290ba535cf0d97ecc6cae545a743b77b31844f88d1897adaccc32f2c"
     },
     {
-      "source": "packages/ui/vite.config.ts",
-      "target": "upstream/discord/packages/ui/vite.config.ts",
+      "source": "design/aphrody-m3/packages/vite.config.ts",
+      "target": "upstream/discord/design/aphrody-m3/packages/vite.config.ts",
       "mode": "100644",
       "git_blob": "05b3bfc6a16c9f23e5786d11b4fddb8f8f80264a",
       "source_sha256": "d62d067de7030429c680992fc93291316c0fcc3b32bafde64d940d1405e3077a",

@@ -12,7 +12,7 @@
  */
 import { Glob } from "bun";
 import { resolve, join } from "node:path";
-import { m3BunBuild } from "../../../packages/ui/m3-config/bun-build.ts";
+import { m3BunBuild } from "../../../design/aphrody-m3/packages/m3-config/bun-build.ts";
 
 const REPO_ROOT = resolve(import.meta.dir, "../../..");
 const UI_ROOT = join(REPO_ROOT, "packages", "ui");

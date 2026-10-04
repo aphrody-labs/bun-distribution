@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Bit-exact parity with `@material/material-color-utilities` 0.4.0.
 //!
-//! `tests/fixtures/mcu.json` is produced by `packages/ui/m3-theme/scripts/mcu-fixture.ts`
+//! `tests/fixtures/mcu.json` is produced by `design/aphrody-m3/packages/m3-theme/scripts/mcu-fixture.ts`
 //! (`bun run fixture:mcu`) from the reference implementation.
 
 use aphrody_m3_tokens::{

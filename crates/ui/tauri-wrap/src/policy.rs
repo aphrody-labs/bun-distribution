@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Navigation policy: which URLs stay in the window, which go to the system browser, which are
-//! blocked. Same table as `packages/ui/web-to-tauri/src/policy.ts`; both run
-//! `packages/ui/web-to-tauri/fixtures/policy-cases.json`.
+//! blocked. Same table as `design/aphrody-m3/packages/web-to-tauri/src/policy.ts`; both run
+//! `design/aphrody-m3/packages/web-to-tauri/fixtures/policy-cases.json`.
 
 use url::Url;
 
@@ -202,7 +202,7 @@ mod tests {
     use super::*;
 
     const CASES: &str =
-        include_str!("../../../../packages/ui/web-to-tauri/fixtures/policy-cases.json");
+        include_str!("../../../../design/aphrody-m3/packages/web-to-tauri/fixtures/policy-cases.json");
 
     fn strings(value: &Value) -> Vec<String> {
         value.as_array().unwrap().iter().map(|item| item.as_str().unwrap().to_string()).collect()

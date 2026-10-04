@@ -144,7 +144,7 @@
       "tsc_error_counts_unchanged_across_58_tsconfig_dirs": true
     },
     "blocked": {
-      "app_ui_build": "needs Cargo (aphrody-ffi): aphrody-ops build-factory run --repo aphrody --revision <sha> -- scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi; then bun run build in packages/ui/app-ui",
+      "app_ui_build": "needs Cargo (aphrody-ffi): aphrody-ops build-factory run --repo aphrody --revision <sha> -- scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi; then bun run build in design/aphrody-m3/packages/app-ui",
       "ffi_aphrody": "aphrody-ffi native library not shipped; measured IECODE.Ffi.so read-only"
     }
   }

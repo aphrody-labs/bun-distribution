@@ -85,7 +85,7 @@ signale ni intégration ni transfert de données.
 Le plan des contrôles et tâches restant à réaliser est dans
 [`docs/plans/shenron/APHRODY-REMAINING-WORK.md`](../../../plans/shenron/APHRODY-REMAINING-WORK.md).
 
-`packages/*` : bibliothèques partagées source-first (`@shenron/*`, `@aphrody/*`, `@aphrody/*`) — carte détaillée dans [`packages/ui/material-web/docs/STACK.md`](../../../architecture/shenron/STACK.md) §3.
+`packages/*` : bibliothèques partagées source-first (`@shenron/*`, `@aphrody/*`, `@aphrody/*`) — carte détaillée dans [`design/aphrody-m3/packages/material-web/docs/STACK.md`](../../../architecture/shenron/STACK.md) §3.
 
 Le bot n'a **qu'un seul client Gateway** (`shenron`). Les identifiants
 historiques `beerus`, `whis`, `grandPretre`, `enma`, `kaio` restent des alias
@@ -358,7 +358,7 @@ scripts/        dev/local-env.ts, ops/, test-all.ts
 | --- | --- |
 | diagnostiquer | `../pieges.md` — faits mesurés, jamais des hypothèses |
 | configurer l'environnement | [`docs/operations/shenron/ENV.md`](../../../operations/shenron/ENV.md), [`docs/operations/shenron/DEV-LOCAL.md`](../../../operations/shenron/DEV-LOCAL.md) |
-| comprendre les paquets | [`packages/ui/material-web/docs/STACK.md`](../../../architecture/shenron/STACK.md) |
+| comprendre les paquets | [`design/aphrody-m3/packages/material-web/docs/STACK.md`](../../../architecture/shenron/STACK.md) |
 | toucher l'infra ou la sync | [`docs/operations/shenron/INFRA-DELEGATION.md`](../../../operations/shenron/INFRA-DELEGATION.md), [`DEPLOY.md`](DEPLOY.md) |
 | écrire dans le wiki | `docs/products/shenron/wiki-editorial.md` |
 | travailler les databooks | `docs/reference/shenron/databooks-doctrine.md`, `docs/guides/shenron/databooks-transcription.md` |

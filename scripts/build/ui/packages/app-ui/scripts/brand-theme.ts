@@ -10,7 +10,7 @@
 //   bun run brand -- '#17335C'    # explicit seed, no cargo
 
 import { join } from "node:path";
-import { brandCss } from "../../../../../../packages/ui/app-ui/src/brand-theme";
+import { brandCss } from "../../../../../../design/aphrody-m3/packages/app-ui/src/brand-theme";
 
 const repo = join(import.meta.dir, "..", "..", "..");
 

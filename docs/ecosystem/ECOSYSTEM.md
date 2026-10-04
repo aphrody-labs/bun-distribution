@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 196 crates, 62 binaries, 70 Bun packages, 8 uv packages, 937 CLI commands, 423 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 196 crates, 62 binaries, 44 Bun packages, 8 uv packages, 937 CLI commands, 423 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -219,43 +219,20 @@ Canonical Rust/Bun monorepo
 | `tauri-plugin-dialog` | crates/ui/tauri-plugin-dialog | Native system dialogs for opening and saving files along with message dialogs on your Tauri application. |  | default, gtk3, xdg-portal |
 | `tauri-plugin-mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge | MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection |  |  |
 
-### Bun packages (69)
+### Bun packages (43)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
-| `@aphrody/ag-ui` | packages/ui/ag-ui | Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges. |  |
 | `@aphrody/agent-browser` | packages/web/agent-browser | Aphrody Web Bun client: CDP browser automation (agent-browser), engine lifecycle, web service client (fetch, scrape, crawl, sessions) and config reader, backed by the native aphrody-web engine. | `agent-browser` |
-| `@aphrody/app-ui` | packages/ui/app-ui |  |  |
-| `@aphrody/assets` | packages/ui/assets | File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces. |  |
 | `@aphrody/bun` | packages/interop/native | Native Rust FFI wrappers for Bun. |  |
 | `@aphrody/bun-test-dom` | packages/bun/test-dom |  |  |
-| `@aphrody/canvas` | packages/ui/canvas | Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime |  |
 | `@aphrody/discord-kit` | packages/discord/kit | Unified Discord bot core kit: pre-flight intent negotiation, memory-bounded caching, resilient interaction dispatching, lifecycle management and guards for Bun. |  |
 | `@aphrody/doc-ai` | packages/ai/doc-ai | AI-first documentation and automatic translation system | `doc-ai` |
 | `@aphrody/drive-client` | packages/os/drive-client | Type-safe TypeScript client for Spacedrive daemon |  |
-| `@aphrody/eslint-plugin-m3` | packages/ui/eslint-plugin-m3 | Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint. |  |
 | `@aphrody/fut` | packages/fut/fut | High-Performance EA SPORTS FC & FIFA Ultimate Team Intelligence Suite: Scraping, Crawling, Market Valuation, AI Squad Builder, Mathematical SBC Solver, Early Leaks Radar, Live Chrome MV3 Extension, and Remote MCP Bridge. |  |
 | `@aphrody/google` | packages/google/google | Canonical Bun facade for Aphrody Google Cloud and Gemini. | `aphrody-google` |
-| `@aphrody/identity` | packages/ui/identity | Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, and the animated pet sprite (atlas, timed tracks, 16-way gaze) drawn from crates/ui/identity. |  |
 | `@aphrody/koharu-editor-example` | apps/koharu/editor |  |  |
 | `@aphrody/koharu-ui` | packages/koharu/ui | Koharu editor, controls, preferences, resources and canvas UI for Aphrody hosts |  |
-| `@aphrody/m3` | packages/ui/m3 | The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), M3App and the m3 CLI. | `m3` |
-| `@aphrody/m3-ai` | packages/ui/m3-ai | Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives. |  |
-| `@aphrody/m3-codemods` | packages/ui/m3-codemods | Codemods MUI React -> @aphrody/m3-react (jscodeshift + ast-grep) |  |
-| `@aphrody/m3-config` | packages/ui/m3-config | Shared build, typecheck and test presets for the @aphrody Material Design 3 packages: tsconfig, tsup preset and the happy-dom test preload. |  |
-| `@aphrody/m3-design` | packages/ui/m3-design | Automated design engine for Material Design 3 and Google Design |  |
-| `@aphrody/m3-explorer` | packages/ui/m3-explorer | Material Design 3 file-management components (tag pill, inline rename, file thumb, grid item): the SpaceUI (@spacedrive/explorer) set rebuilt on @aphrody/m3-primitives. |  |
-| `@aphrody/m3-fonts` | packages/ui/m3-fonts | Aphrody M3 typefaces: Google Sans Flex, Google Sans Code, Roboto Flex, Roboto Mono and Material Symbols with Japanese fallbacks (Noto Sans JP, M PLUS 1 Code) as @font-face CSS and a typed manifest. |  |
-| `@aphrody/m3-forms` | packages/ui/m3-forms | Material Design 3 form fields (react-hook-form) on @aphrody/m3-primitives: the SpaceUI (@spacedrive/forms) set, M3-styled. |  |
-| `@aphrody/m3-icons` | packages/ui/m3-icons | Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-bun icons module (variable fonts), no icon font shipped at runtime. |  |
-| `@aphrody/m3-motion` | packages/ui/m3-motion | Material 3 animation plugin powered by Motion (formerly Framer Motion) |  |
-| `@aphrody/m3-next` | packages/ui/m3-next | Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config, M3Html/M3Root server components (color-scheme, dark class from cookie or system, SSR scheme variables), a 'use client' M3ThemeProvider bridge, metadata/viewport helpers and the m3Css server helper. |  |
-| `@aphrody/m3-next-migrate` | packages/ui/m3-next-migrate | Migration engine, AST codemod and runtime shims to migrate Next.js 16 UI and React components to Tauri v2 desktop apps or Bun/Vite web SPAs | `m3-next-migrate`, `next-migrate` |
-| `@aphrody/m3-primitives` | packages/ui/m3-primitives | Material Design 3 React primitives: the SpaceUI (@spacedrive/primitives) component set rebuilt on the M3 roles, shape, typescale, state layers and motion of the aphrody design system. |  |
-| `@aphrody/m3-react` | packages/ui/m3-react | React wrappers (@lit/react createComponent) for every <md-*> element of the @aphrody/material-web fork. |  |
-| `@aphrody/m3-reader` | packages/ui/m3-reader | Material 3 manga and illustrated book readers for React |  |
-| `@aphrody/m3-theme` | packages/ui/m3-theme | Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases). |  |
-| `@aphrody/m3-tokens` | packages/ui/m3-tokens | Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities. |  |
 | `@aphrody/messaging` | packages/discord/aphrody-messaging | Aphrody messaging channel contracts and Discord REST adapter. |  |
 | `@aphrody/n2b-core` | packages/compat/n2b-client | TypeScript façade thin pour le binaire Rust n2b — wrapper CLI (scan, rules, promptMarkdown) et shims Bun-natifs (./shims: env, fs, path, shell). |  |
 | `@aphrody/n2b-plugin` | packages/compat/n2b-plugin | Plugin Bun (Bun.plugin) pour le scan N2B Rust natif ou CLI. |  |
@@ -264,12 +241,10 @@ Canonical Rust/Bun monorepo
 | `@aphrody/os` | packages/os/kernel-client | Bun client for the Aphrody OS kernel: join the OS as a subsystem, call any OS tool or skill. |  |
 | `@aphrody/ovh` | packages/infra/ovh | Unified OVH cloud engine for Aphrody Infra: DNS, VPS, Email, and multi-profile operations in pure Bun | `aphrody-ovh` |
 | `@aphrody/paths` | packages/infra/paths | Cross-platform path resolution for Aphrody workspaces and runtime data |  |
-| `@aphrody/scaffold` | packages/ui/scaffold | The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web-to-tauri. | `aphrody-scaffold` |
 | `@aphrody/shell-web` | packages/shell/web | Aphrody shell for browsers and Tauri webviews: WASM VT core, local shell and WebSocket/Tauri transports. |  |
 | `@aphrody/sql` | packages/infra/sql | Shared Bun database mechanics for Aphrody: env/URL resolution, Bun.SQL and Redis factories, bun:sqlite open policy with optional sqlite-vec |  |
 | `@aphrody/update` | packages/infra/update | Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks | `aphrody-update` |
 | `@aphrody/web-test` | packages/web/aphrody-web-test | Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server. |  |
-| `@aphrody/web-to-tauri` | packages/ui/web-to-tauri | Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original. | `web-to-tauri` |
 | `@aphrody/winclean` | packages/os/winclean | Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools). |  |
 | `@aphrody/workspace` | packages/infra/workspace | Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations | `aphrody-ops`, `aphrody-optimize`, `aphrody-workspace` |
 | `@aphrody/x` | packages/web/x | Headless X (Twitter) client in pure TypeScript for Bun. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), full stealth, store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model. |  |
@@ -287,7 +262,6 @@ Canonical Rust/Bun monorepo
 | `@shenron/images` | packages/shenron/images | Image hashing, deduplication, variant selection and sourced illustration picking for Shenron (Bun + sharp) |  |
 | `@shenron/pipeline` | packages/shenron/pipeline | Shenron compute clients and Dragon Ball data pipeline: AI, Aphrody services, BXC and OCR/RAG workflows | `pipeline` |
 | `@shenron/site` | apps/shenron/site |  |  |
-| `@shenron/ui` | packages/shenron/ui |  |  |
 | `@tauri-plugin/mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge/guest-js | Guest bindings for MCP Bridge Tauri plugin |  |
 | `aphrody` | . |  |  |
 | `material-symbols` | crates/ui/bun/icons/material-symbols | Latest variable icon fonts and CSS for Material Symbols. |  |

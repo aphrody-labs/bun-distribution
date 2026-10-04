@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Crawlability gate for the UI layer (`packages/ui`): can the Rust crawler (`aphrody-web crawl`,
+//! Crawlability gate for the UI layer (`design/aphrody-m3/packages`): can the Rust crawler (`aphrody-web crawl`,
 //! static HTTP stack, no JavaScript) and an LLM agent read, navigate and address the markup the
 //! m3 components server-render?
 //!

@@ -1217,7 +1217,7 @@ Phase 1.
 | `apps/shenron/site/src/lib/utils.ts` (35 importateurs) | `export { cn } from "@shenron/ui/lib/utils"` | V1 | F |
 | `apps/shenron/bot/src/dashboard/lib/utils.ts` | réexporte `cn`, **garde** `formatBytes`, `formatDuration`, `formatRelative` | V1 | F |
 | `apps/shenron/site/src/app/globals.css` | `@import "@shenron/ui/styles.css";` après `tailwindcss`, `@source` ; `--shell-*`, `[data-wiki-surface]` et doublons non en couche restent | V1 | — |
-| `apps/shenron/site/tests/site-theme.test.ts` | lit `globals.css` et `packages/shenron/ui/src/styles.css` | V1 | — |
+| `apps/shenron/site/tests/site-theme.test.ts` | lit `globals.css` et `design/aphrody-m3/packages/shenron-ui/src/styles.css` | V1 | — |
 | `components/ui/Pagination.tsx`, `kit/LinkPager.tsx` | alias de `pageWindow` (V1) ; composant à libellés en props (V3) | V1, V3 | F |
 | 10 wrappers (`accordion`, `badge`, `button`, `card`, `input`, `label`, `radio-group`, `switch`, `tabs`, `toggle`) + `index.ts` | réexportations d'une ligne ; B15 | V2 | F |
 | `components/icones/*`, `lib/icones.ts` (102 importateurs), `apps/shenron/site/scripts/rend-icones.ts` | `@shenron/ui/icones` | V3 | F |
@@ -1245,7 +1245,7 @@ site, monolithe `server.ts` (203 `container.resolve`), importateurs externes.
   scripts), `bun.lock`, `bunfig.toml`, tous les `apps/*/package.json`, les blocs
   de dépendances de `packages/*/package.json`,
   `packages/config/tsconfig/*.json` (figés en vague 1), `PLAN.md`,
-  `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`, `packages/ui/material-web/docs/STACK.md`,
+  `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`, `design/aphrody-m3/packages/material-web/docs/STACK.md`,
   `var/stack-research/**`.
 - **Un agent ne doit jamais** : lancer `bun install`/`add`/`remove`, `git add`,
   `commit`, `stash`, `reset`, `checkout -- <chemin>`, `rebase` ; formater tout
@@ -1366,7 +1366,7 @@ d'`aphrody-ui`, OS-4 d'`aphrody-web` (`apps/bxc` (not in repo)), OS-5 d'`aphrody
 
 | Ticket | Contenu |
 | --- | --- |
-| OS-1 | `@aphrody/canvas` : la façade 1.0.9-aphrody.2 est publiée et consommée ; reste à accorder `.gitmodules` avec `docs/reference/ui/CANVAS-UPSTREAM.md` et à garder les versions suivantes sur les mêmes binaires préconstruits (win32-x64-msvc, linux-x64-gnu) |
+| OS-1 | `@aphrody/canvas` : la façade 1.0.9-aphrody.2 est publiée et consommée ; reste à accorder `.gitmodules` avec `design/aphrody-m3/docs/reference/CANVAS-UPSTREAM.md` et à garder les versions suivantes sur les mêmes binaires préconstruits (win32-x64-msvc, linux-x64-gnu) |
 | OS-2 | Service Rust de transformation et d'analyse d'image (redimensionnement, WebP/AVIF, dHash, PSNR, trait), catalogué ; `@shenron/images` devient un client à API inchangée |
 | OS-3 | `aphrody-render` : texte multiligne et CJK, dégradés, 1200 × 630, images compactes, types TS générés |
 | OS-4 | `aphrody-web-api` : état des jobs persisté, correctif `chunks=0` publié, exposition publique réconciliée, surface frames |
@@ -1411,7 +1411,7 @@ bun run lint                                 # oxlint partout
 bun run test:ci                              # scripts/test-all.ts --strict
 bun run audit:architecture && bun run audit:scripts
 bun packages/api/scripts/openapi.ts --check  # à partir de la vague 3
-bun packages/ui/scripts/generate-tokens.ts --check && bun packages/ui/scripts/check-css-equivalence.ts
+bun design/aphrody-m3/packages/scripts/generate-tokens.ts --check && bun design/aphrody-m3/packages/scripts/check-css-equivalence.ts
 bun packages/pipeline/scripts/ai/check-contracts.ts   # ignoré avec raison sans le dépôt voisin
 oxfmt --check <fichiers modifiés>
 git diff --check
@@ -1509,7 +1509,7 @@ qui appelle `checkPackageRuntimes`, `checkNoEscapingImports` et
 | Reprises qui triplent la latence | `maxRetries: 0` sur le chemin chaud, décompte des appels `fetch` dans les tests |
 | `site:migrate` du déploiement qui prendrait des migrations déplacées | rien n'est déplacé en Phase 1 (D5) |
 | `.env` local avec une URL de base vivante | les tests ne lisent jamais `DATABASE_URL` ; sonde d'audit refusée sans `--operator` |
-| Binaire canvas Linux non prouvé (GLIBC, rendu) | shim conservé hors cibles préconstruites ; preuve en CI-2 puis sonde INFRA-9 ; retour arrière d'une ligne de catalogue vers la version `1.0.9-aphrody.x` précédente de `@aphrody/canvas` ; correctif du binaire dans `aphrody-ui/packages/ui/canvas` |
+| Binaire canvas Linux non prouvé (GLIBC, rendu) | shim conservé hors cibles préconstruites ; preuve en CI-2 puis sonde INFRA-9 ; retour arrière d'une ligne de catalogue vers la version `1.0.9-aphrody.x` précédente de `@aphrody/canvas` ; correctif du binaire dans `aphrody-ui/design/aphrody-m3/packages/canvas` |
 | `minimumReleaseAge` | aucune résolution neuve prévue (`@ai-sdk/provider` et `postcss` déjà verrouillés, canvas déjà livré) ; tout ajout au diff de `bun.lock` est refusé |
 | Changement de comportement glissé dans un « refactor » | registre S/B ; instantanés statut/corps, équivalence CSS, instantané OpenAPI et fixtures de parité IA font échouer les gates |
 

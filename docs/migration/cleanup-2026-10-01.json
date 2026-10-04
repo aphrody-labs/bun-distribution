@@ -93,62 +93,62 @@
       "files": 2
     },
     {
-      "path": "packages/ui/m3-primitives/dist",
+      "path": "design/aphrody-m3/packages/m3-primitives/dist",
       "bytes": 707240,
       "files": 110
     },
     {
-      "path": "packages/ui/m3-theme/dist",
+      "path": "design/aphrody-m3/packages/m3-theme/dist",
       "bytes": 45532,
       "files": 18
     },
     {
-      "path": "packages/ui/m3-explorer/dist",
+      "path": "design/aphrody-m3/packages/m3-explorer/dist",
       "bytes": 47147,
       "files": 12
     },
     {
-      "path": "packages/ui/m3-icons/dist",
+      "path": "design/aphrody-m3/packages/m3-icons/dist",
       "bytes": 27414,
       "files": 18
     },
     {
-      "path": "packages/ui/m3-react/dist",
+      "path": "design/aphrody-m3/packages/m3-react/dist",
       "bytes": 272259,
       "files": 418
     },
     {
-      "path": "packages/ui/m3-reader/dist",
+      "path": "design/aphrody-m3/packages/m3-reader/dist",
       "bytes": 184684,
       "files": 12
     },
     {
-      "path": "packages/ui/m3-forms/dist",
+      "path": "design/aphrody-m3/packages/m3-forms/dist",
       "bytes": 50059,
       "files": 18
     },
     {
-      "path": "packages/ui/m3/dist",
+      "path": "design/aphrody-m3/packages/m3/dist",
       "bytes": 177599,
       "files": 54
     },
     {
-      "path": "packages/ui/m3-motion/dist",
+      "path": "design/aphrody-m3/packages/m3-motion/dist",
       "bytes": 124419,
       "files": 26
     },
     {
-      "path": "packages/ui/m3-next-migrate/dist",
+      "path": "design/aphrody-m3/packages/m3-next-migrate/dist",
       "bytes": 502957,
       "files": 64
     },
     {
-      "path": "packages/ui/m3-ai/dist",
+      "path": "design/aphrody-m3/packages/m3-ai/dist",
       "bytes": 322669,
       "files": 34
     },
     {
-      "path": "packages/ui/m3-next/dist",
+      "path": "design/aphrody-m3/packages/m3-next/dist",
       "bytes": 89908,
       "files": 14
     },

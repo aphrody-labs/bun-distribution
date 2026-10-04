@@ -477,7 +477,7 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
 
 ### Fixed
 
-- Résolution d'un bug de double démarrage du serveur CDP sur le port 9222 dans [serve.ts](../../../../../packages/ui/material-web/tests-web/serve.ts#L969-L975) lors de l'import du module par le routeur principal, via l'ajout d'une garde `import.meta.main`.
+- Résolution d'un bug de double démarrage du serveur CDP sur le port 9222 dans [serve.ts](../../../../../design/aphrody-m3/packages/material-web/tests-web/serve.ts#L969-L975) lors de l'import du module par le routeur principal, via l'ajout d'une garde `import.meta.main`.
 - Correction des permissions du dossier `/var/log/bxc/` pour permettre à l'utilisateur `ubuntu` d'écrire dans les logs du service systemd.
 - Vérification complète de la compilation cross-platform sur Linux, Windows MSVC, et WebAssembly (`wasm32-unknown-unknown` sur `bxc-rust-bridge` et `obscura-dom`).
 

@@ -214,7 +214,7 @@ L'intégralité de la vision du méta-système d'exploitation et de son shell de
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        PACKAGES / FRONTEND SHELL                       │
-│  - packages/ui/app-ui         : Shell COSMIC/GNOME (TopBar, Activities,   │
+│  - design/aphrody-m3/packages/app-ui         : Shell COSMIC/GNOME (TopBar, Activities,   │
 │                              Workspaces 1-4, QuickSettings, Systemd)   │
 │  - packages/m3-*           : Design System Material 3 (tokens, motion) │
 │  - drive/packages/interface: Explorateur de fichiers Aphrody Drive     │
@@ -247,5 +247,5 @@ L'intégralité de la vision du méta-système d'exploitation et de son shell de
 
 - **Compilation Rust** : 100 % passée (`cargo check --locked`).
 - **Tests unitaires Rust** : **53/53 tests passés** sans échec.
-- **Vérification Frontend** : `bun run check` dans `packages/ui/app-ui` (not in repo) passe avec 0 erreur.
+- **Vérification Frontend** : `bun run check` dans `design/aphrody-m3/packages/app-ui` (not in repo) passe avec 0 erreur.
 - **Porte documentaire** : `aphrody-ops docs-links --root . --scope repository` passe avec 0 lien rompu sur 190 fichiers scannés.

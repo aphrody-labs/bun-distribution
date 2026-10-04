@@ -122,7 +122,7 @@ describe("source features shipped", () => {
 		).text();
 		if (src.includes("@shenron/ui/reader")) {
 			src = await Bun.file(
-				new URL("../../../../packages/shenron/ui/src/reader/DatabookReader.tsx", import.meta.url)
+				new URL("../../../../design/aphrody-m3/packages/shenron-ui/src/reader/DatabookReader.tsx", import.meta.url)
 			).text();
 		}
 		expect(src).toContain("lightbox");

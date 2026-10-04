@@ -41,7 +41,7 @@ Resolved IPs: `104.18.28.234`, `104.18.29.234` (Cloudflare anycast).
 
 Full JSON and HTML snapshots live under:
 
-`docs/x/reports/grok-com/` (not in repo) (gitignored via `docs/research/ui/reports/`)
+`docs/x/reports/grok-com/` (not in repo) (gitignored via `design/aphrody-m3/docs/research/reports/`)
 
 Files: `detect.json`, `recon.json`, `browser-html-head.txt`, `browser-final-url.txt`, `README.md`.
 

@@ -476,7 +476,7 @@ pub fn embedded_index() -> MarketplaceIndex {
             description: "Baseline M3 design tokens — colour, typography, elevation, motion."
                 .to_string(),
             kind: ExtensionKind::Theme,
-            source_url: "https://github.com/aphrody-labs/aphrody/tree/main/packages/ui/m3-tokens"
+            source_url: "https://github.com/aphrody-labs/aphrody/tree/main/design/aphrody-m3/packages/m3-tokens"
                 .to_string(),
             sha256: "0000000000000000000000000000000000000000000000000000000000000008".to_string(),
             author: "aphrody-code".to_string(),

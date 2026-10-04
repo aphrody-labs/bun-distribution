@@ -17,7 +17,7 @@
 /ui-dist/fonts/*.partial-*
 /ui-dist/fonts/icon.svg
 
-# Staged by build.rs from ui-dist.manifest (canonical sources: packages/ui/assets, packages/ui/m3-fonts); never committed twice.
+# Staged by build.rs from ui-dist.manifest (canonical sources: design/aphrody-m3/packages/assets, design/aphrody-m3/packages/m3-fonts); never committed twice.
 /ui-dist/fonts/Album-20.png
 /ui-dist/fonts/Album.png
 /ui-dist/fonts/Album_Light.png
@@ -253,7 +253,7 @@
 /ui-dist/fonts/splat.mp3
 /ui-dist/fonts/splat.ogg
 /ui-dist/fonts/startup.mp3
-/ui-dist/fonts/startup.ogg# SVG assets staged by build.rs from ui-dist.manifest (canonical: packages/ui/assets/svgs).
+/ui-dist/fonts/startup.ogg# SVG assets staged by build.rs from ui-dist.manifest (canonical: design/aphrody-m3/packages/assets/svgs).
 /ui-dist/fonts/ace.svg
 /ui-dist/fonts/acemanifest.svg
 /ui-dist/fonts/adoc.svg
