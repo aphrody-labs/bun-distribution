@@ -41,6 +41,39 @@ log uv
 if command -v uv >/dev/null; then uv self update >/dev/null 2>&1 || true; else curl -LsSf https://astral.sh/uv/install.sh | UV_NO_MODIFY_PATH=1 sh >/dev/null 2>&1; fi
 uv python install "$(j .versions.python)" 2>&1 | tail -1
 
+log uv-tools
+uv python install 3.13 2>&1 | tail -1
+for t in $(j '.uvTools|map(.package+"|"+.from+"|"+.python)|join(" ")'); do
+  IFS='|' read -r pkg from py <<<"$t"
+  uv tool install -p "$py" --from "$from" "$pkg" 2>&1 | tail -1
+done
+
+log agent-code-intel
+RTK=$(j .versions.rtk)
+if ! rtk --version 2>/dev/null | grep -q "$RTK"; then
+  tmp=$(mktemp -d)
+  curl -fsSL "https://github.com/rtk-ai/rtk/releases/download/v$RTK/rtk-x86_64-unknown-linux-musl.tar.gz" | tar -xz -C "$tmp" rtk && install -m 755 "$tmp/rtk" "$HOME/.local/bin/rtk"
+  rm -rf "$tmp"
+fi
+[ -f "$HOME/.serena/serena_config.yml" ] || serena init >/dev/null 2>&1
+sed -i 's/^web_dashboard: true/web_dashboard: false/' "$HOME/.serena/serena_config.yml" 2>/dev/null
+if command -v codex >/dev/null; then
+  codex mcp get serena >/dev/null 2>&1 || codex mcp add serena -- serena start-mcp-server --context codex --project-from-cwd --open-web-dashboard false
+  codex mcp get ast-grep >/dev/null 2>&1 || codex mcp add ast-grep -- ast-grep-server
+  codex mcp get context-mode >/dev/null 2>&1 || codex mcp add context-mode -- context-mode
+  grep -qs rtk "$HOME/.codex/hooks.json" || rtk init -g --codex </dev/null 2>&1 | tail -1
+fi
+if command -v agy >/dev/null; then
+  agy mcp list 2>/dev/null | grep -q 'serena' || agy mcp add serena serena -- start-mcp-server --context antigravity --project-from-cwd --open-web-dashboard false
+  agy mcp list 2>/dev/null | grep -q 'ast-grep' || agy mcp add ast-grep ast-grep-server
+  agy mcp list 2>/dev/null | grep -q 'context-mode' || agy mcp add context-mode context-mode
+  [ -d "$HOME/.gemini/config/plugins/rtk" ] || rtk init -g --agent antigravity </dev/null 2>&1 | tail -1
+fi
+if command -v claude >/dev/null; then
+  grep -qs 'rtk hook claude' "$HOME/.claude/settings.json" || rtk init -g --hook-only --auto-patch 2>&1 | tail -1
+  claude plugin install aphrody-code-intel@aphrody-user >/dev/null 2>&1 || true
+fi
+
 log release-binaries
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 OV=$(j .versions.ovhcloud)

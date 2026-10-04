@@ -43,3 +43,15 @@ exists. It never rewrites a lockfile or a shared tree and never restarts a servi
 stay owned by `aphrody-update pins` and `aphrody-update bun`; bump the pin there, then re-run the
 sync scripts. Logs: `~/.local/state/aphrody/log/bun-hygiene.log` (Windows
 `%LOCALAPPDATA%\aphrody\log`).
+
+## Code intelligence and context reduction (2026-10-04)
+
+`config/infra/toolchain.json` (`codeIntel`, `uvTools`, `versions.rtk`, `bunGlobal`) installs, per user on
+every host: `rust-analyzer` (rustup component), the TypeScript 7 native language server
+(`tsc --lsp --stdio`, bun global `typescript@7`; `typescript-language-server` 6.x exits on TypeScript 7
+workspaces because it needs `tsserver.js`, so it is not installed), `rtk` (release binary), `serena` and
+`ast-grep-server` (uv tools), `context-mode` and `repomix` (bun globals). The `agent-code-intel`
+step of `toolchain-sync.sh` / `.ps1` wires Codex (`codex mcp add`, `rtk init -g --codex`), agy
+(`agy mcp add`, `rtk init -g --agent antigravity`) and Claude (`rtk` PreToolUse hook, plugin
+`aphrody-code-intel@aphrody-user` from the plugins marketplace, which declares the LSP and MCP servers).
+Serena runs with `--project-from-cwd` and the web dashboard disabled; add `.serena/` to project ignores.

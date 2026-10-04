@@ -72,6 +72,39 @@ bun add -g @($m.bunGlobal) 2>&1 | Select-Object -Last 2
 Log uv
 uv python install $m.versions.python 2>&1 | Select-Object -Last 1
 
+Log uv-tools
+uv python install 3.13 2>&1 | Select-Object -Last 1
+foreach ($t in $m.uvTools) { uv tool install -p $t.python --from $t.from $t.package 2>&1 | Select-Object -Last 1 }
+
+Log agent-code-intel
+$rtkv = $m.versions.rtk
+if (-not ((& rtk --version 2>$null | Out-String) -match [regex]::Escape($rtkv))) {
+  $zip = Join-Path $env:TEMP 'rtk.zip'
+  Invoke-WebRequest "https://github.com/rtk-ai/rtk/releases/download/v$rtkv/rtk-x86_64-pc-windows-msvc.zip" -OutFile $zip
+  Expand-Archive $zip "$env:TEMP\rtk" -Force
+  Copy-Item "$env:TEMP\rtk\rtk.exe" "$home_\.local\bin\rtk.exe" -Force
+  Remove-Item $zip, "$env:TEMP\rtk" -Recurse -Force
+}
+if (-not (Test-Path "$home_\.serena\serena_config.yml")) { serena init 2>&1 | Select-Object -Last 1 }
+if (Test-Path "$home_\.serena\serena_config.yml") { (Get-Content "$home_\.serena\serena_config.yml") -replace '^web_dashboard: true', 'web_dashboard: false' | Set-Content "$home_\.serena\serena_config.yml" }
+if (Get-Command codex -ErrorAction SilentlyContinue) {
+  if (-not ((codex mcp list 2>&1 | Out-String) -match 'serena')) { codex mcp add serena -- serena start-mcp-server --context codex --project-from-cwd --open-web-dashboard false }
+  if (-not ((codex mcp list 2>&1 | Out-String) -match 'ast-grep')) { codex mcp add ast-grep -- ast-grep-server }
+  if (-not ((codex mcp list 2>&1 | Out-String) -match 'context-mode')) { codex mcp add context-mode -- context-mode }
+  if (-not (Select-String -Path "$home_\.codex\hooks.json" -Pattern rtk -Quiet -ErrorAction SilentlyContinue)) { rtk init -g --codex 2>&1 | Select-Object -Last 1 }
+}
+if (Get-Command agy -ErrorAction SilentlyContinue) {
+  $al = (agy mcp list 2>&1 | Out-String)
+  if ($al -notmatch 'serena') { agy mcp add serena serena -- start-mcp-server --context antigravity --project-from-cwd --open-web-dashboard false }
+  if ($al -notmatch 'ast-grep') { agy mcp add ast-grep ast-grep-server }
+  if ($al -notmatch 'context-mode') { agy mcp add context-mode context-mode }
+  if (-not (Test-Path "$home_\.gemini\config\plugins\rtk")) { rtk init -g --agent antigravity 2>&1 | Select-Object -Last 1 }
+}
+if (Get-Command claude -ErrorAction SilentlyContinue) {
+  if (-not (Select-String -Path "$home_\.claude\settings.json" -Pattern 'rtk hook claude' -Quiet -ErrorAction SilentlyContinue)) { rtk init -g --hook-only --auto-patch 2>&1 | Select-Object -Last 1 }
+  claude plugin install aphrody-code-intel@aphrody-user 2>&1 | Select-Object -Last 1
+}
+
 Log ovhcloud
 $ov = $m.versions.ovhcloud
 $have = (& ovhcloud version 2>$null | Out-String)

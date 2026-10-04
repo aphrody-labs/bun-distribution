@@ -120,3 +120,4 @@ Thumbs.db
 
 # Per-machine plugin store written by aphrody-ops plugins (absolute local path)
 /.agents/plugins.json
+.serena/

@@ -39,7 +39,10 @@
     "rsync": "3.5.1",
     "pigz": "2.8",
     "zellij": "0.45.1",
-    "opensshPreview": "10.0.0.0p2-Preview"
+    "opensshPreview": "10.0.0.0p2-Preview",
+    "rtk": "0.51.0",
+    "serena": "main",
+    "python313": "3.13"
   },
   "rustToolchain": {
     "components": [
@@ -113,7 +116,9 @@
     "sharp-cli",
     "@tauri-apps/cli@3.0.0-alpha.4",
     "@material-design-icons/scripts",
-    "wasm-pack@0.15.0"
+    "wasm-pack@0.15.0",
+    "context-mode",
+    "repomix"
   ],
   "bunxScanSources": [
     "aphrody",
@@ -127,7 +132,8 @@
     "carapace": "https://github.com/carapace-sh/carapace-bin/releases/download/v{version}/carapace-bin_{version}_linux_amd64.tar.gz",
     "pwsh": "https://github.com/PowerShell/PowerShell/releases/download/v{version}/powershell-{version}-linux-x64.tar.gz",
     "gh": "https://github.com/cli/cli/releases/download/v{version}/gh_{version}_linux_amd64.tar.gz",
-    "jq": "https://github.com/jqlang/jq/releases/download/jq-{version}/jq-linux-amd64 (WSL only)"
+    "jq": "https://github.com/jqlang/jq/releases/download/jq-{version}/jq-linux-amd64 (WSL only)",
+    "rtk": "https://github.com/rtk-ai/rtk/releases/download/v{version}/rtk-x86_64-unknown-linux-musl.tar.gz (Windows: rtk-x86_64-pc-windows-msvc.zip)"
   },
   "aphrodyArtifacts": {
     "linuxPrebuilt": [
@@ -201,5 +207,54 @@
       "~/.local/bin/aphrody-ops -> packages/infra/workspace/src/ops.ts",
       "~/.local/bin/aphrody-workspace -> packages/infra/workspace/src/cli.ts"
     ]
+  },
+  "uvTools": [
+    {
+      "command": "serena",
+      "package": "serena-agent",
+      "from": "git+https://github.com/oraios/serena",
+      "python": "3.12"
+    },
+    {
+      "command": "ast-grep-server",
+      "package": "sg-mcp",
+      "from": "git+https://github.com/ast-grep/ast-grep-mcp",
+      "python": "3.13"
+    }
+  ],
+  "codeIntel": {
+    "lsp": {
+      "rust": {
+        "server": "rust-analyzer",
+        "install": "rustup component (rustToolchain.components)",
+        "start": [
+          "rust-analyzer"
+        ]
+      },
+      "typescript": {
+        "server": "TypeScript 7 native language server",
+        "install": "bun global typescript@7 (tsc); @typescript/native-preview (tsgo) kept for m3 typecheck",
+        "start": [
+          "tsc",
+          "--lsp",
+          "--stdio"
+        ],
+        "note": "typescript-language-server 6.x requires tsserver.js and exits on TypeScript 7 workspaces; not installed"
+      }
+    },
+    "contextTools": {
+      "rtk": "shell output compressor (rtk-ai/rtk, Claude PreToolUse hook, Codex hooks, agy plugin)",
+      "context-mode": "sandbox + FTS5 MCP (mksglu/context-mode)",
+      "serena": "LSP-backed symbol MCP (oraios/serena); contexts claude-code, codex, antigravity",
+      "ast-grep": "structural search/rewrite CLI (@ast-grep/cli) and MCP (ast-grep-server)",
+      "repomix": "repository packer for bounded external review (yamadashy/repomix)"
+    },
+    "wiring": {
+      "claude": "plugin aphrody-code-intel@aphrody-user (lspServers + MCP) and rtk hook in aphrody-claude user/settings.json",
+      "codex": "codex mcp add serena|ast-grep|context-mode; rtk init -g --codex",
+      "agy": "agy mcp add serena|ast-grep|context-mode; rtk init -g --agent antigravity",
+      "script": "scripts/tools/toolchain-sync.sh (agent-code-intel step), toolchain-sync.ps1"
+    },
+    "evidence": "2026-10-04 GitHub stars: rtk 82k, headroom 74k (proxy, not adopted: separate runtime), serena 30k, context-mode 25k, repomix 29k, ast-grep 16k"
   }
 }
