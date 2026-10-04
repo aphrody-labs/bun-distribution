@@ -3,7 +3,7 @@
 // and grounded answers from the desktop's local chat model, rendered with @shenron/ui.
 import { useEffect, useState } from "react";
 import { Button, Card } from "@aphrody/m3-primitives";
-import { PageHeader } from "@shenron/ui/layout/PageHeader";
+import { StudioHeader } from "./StudioHeader";
 import { SectionHeading } from "@shenron/ui/layout/SectionHeading";
 import { isTauri } from "../../tauri-bridge";
 import { corpus, type CorpusHit } from "../../studio-bridge";
@@ -16,7 +16,8 @@ const KINDS: Array<[string, string]> = [
 ];
 
 const buttonClass = "min-h-12 px-5 text-[18px]";
-const fieldClass = "min-h-12 rounded-xl border border-outline bg-surface-container px-4 text-[18px]";
+const fieldClass =
+  "min-h-12 rounded-xl border border-outline bg-surface-container px-4 text-[18px]";
 
 function HitList({ hits }: { hits: CorpusHit[] }) {
   return (
@@ -42,16 +43,26 @@ export function DatabooksStudio() {
   const [kind, setKind] = useState("databook");
   const [hits, setHits] = useState<CorpusHit[]>([]);
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<{ text: string; model?: string; hits: CorpusHit[] } | null>(null);
+  const [answer, setAnswer] = useState<{ text: string; model?: string; hits: CorpusHit[] } | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (isTauri()) corpus.info().then((info) => setDocuments(info.documents), (cause: unknown) => setError(String(cause)));
+    if (isTauri())
+      corpus.info().then(
+        (info) => setDocuments(info.documents),
+        (cause: unknown) => setError(String(cause)),
+      );
   }, []);
 
   if (!isTauri()) {
-    return <p className="text-[18px] text-on-surface-variant">Les databooks nécessitent l’application Aphrody.</p>;
+    return (
+      <p className="text-[18px] text-on-surface-variant">
+        Les databooks nécessitent l’application Aphrody.
+      </p>
+    );
   }
 
   const guard = async (task: () => Promise<void>) => {
@@ -84,7 +95,7 @@ export function DatabooksStudio() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader
+      <StudioHeader
         eyebrow="Shenron"
         title="Databooks & corpus"
         subtitle={documents === null ? "Chargement du corpus…" : `${documents} documents en local`}
@@ -104,7 +115,12 @@ export function DatabooksStudio() {
             if (query.trim().length >= 2) void search();
           }}
         >
-          <select aria-label="Type de document" className={fieldClass} value={kind} onChange={(event) => setKind(event.target.value)}>
+          <select
+            aria-label="Type de document"
+            className={fieldClass}
+            value={kind}
+            onChange={(event) => setKind(event.target.value)}
+          >
             {KINDS.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -126,7 +142,11 @@ export function DatabooksStudio() {
       </section>
 
       <section className="flex flex-col gap-4">
-        <SectionHeading level={2} title="Question sourcée" standfirst="Réponse du modèle local à partir des passages du corpus" />
+        <SectionHeading
+          level={2}
+          title="Question sourcée"
+          standfirst="Réponse du modèle local à partir des passages du corpus"
+        />
         <form
           className="flex gap-3"
           onSubmit={(event) => {
@@ -141,14 +161,20 @@ export function DatabooksStudio() {
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
           />
-          <Button className={buttonClass} type="submit" disabled={busy || question.trim().length < 2}>
+          <Button
+            className={buttonClass}
+            type="submit"
+            disabled={busy || question.trim().length < 2}
+          >
             Demander
           </Button>
         </form>
         {answer ? (
           <Card className="flex flex-col gap-3 p-6">
             <p className="whitespace-pre-wrap text-[18px]">{answer.text}</p>
-            {answer.model ? <p className="text-[14px] text-on-surface-variant">Modèle : {answer.model}</p> : null}
+            {answer.model ? (
+              <p className="text-[14px] text-on-surface-variant">Modèle : {answer.model}</p>
+            ) : null}
             <HitList hits={answer.hits} />
           </Card>
         ) : null}

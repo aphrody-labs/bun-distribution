@@ -8,6 +8,7 @@ import { JobsScreen } from "./components/JobManager";
 import { CodexChatRoute } from "./codex-chat";
 import { ModelsHub } from "./models-hub";
 import { StudioRoute } from "./routes/studio";
+import { studioPath } from "./routes/studio/navigation";
 import { ExplorerView } from "./routes/explorer";
 import { RecentsView } from "./routes/explorer/views/RecentsView";
 import { FileKindsView, FileKindResultsView } from "./routes/file-kinds";
@@ -55,6 +56,10 @@ export const explorerRoutes = [
         path: "studio",
         element: <StudioRoute />,
       },
+      { path: "koharu", element: <Navigate to={studioPath("manga")} replace /> },
+      { path: "manga", element: <Navigate to={studioPath("manga")} replace /> },
+      { path: "shenron", element: <Navigate to={studioPath("shenron")} replace /> },
+      { path: "admin", element: <Navigate to={studioPath("admin")} replace /> },
       {
         path: "favorites",
         element: <Navigate to={legacyRouteRedirects.favorites} replace />,

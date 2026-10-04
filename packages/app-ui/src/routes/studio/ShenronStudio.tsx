@@ -3,7 +3,7 @@
 // layout components over the typed Studio commands (logic owned by aphrody-command::shenron_cmd).
 import { useCallback, useEffect, useState } from "react";
 import { Button, Card } from "@aphrody/m3-primitives";
-import { PageHeader } from "@shenron/ui/layout/PageHeader";
+import { StudioHeader } from "./StudioHeader";
 import { SectionHeading } from "@shenron/ui/layout/SectionHeading";
 import { isTauri } from "../../tauri-bridge";
 import {
@@ -40,7 +40,10 @@ function ProbeRow({ name, probe }: { name: string; probe: ShenronProbe }) {
   return (
     <li className="flex items-center justify-between gap-3 rounded-xl bg-surface-container p-3 text-[18px]">
       <span>{name}</span>
-      <StatusPill ok={ok} label={probe.configured === false ? "non configuré" : ok ? "joignable" : "injoignable"} />
+      <StatusPill
+        ok={ok}
+        label={probe.configured === false ? "non configuré" : ok ? "joignable" : "injoignable"}
+      />
     </li>
   );
 }
@@ -54,17 +57,20 @@ export function ShenronStudio() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
-  const capture = useCallback(async <T,>(key: string, task: () => Promise<T>, apply: (value: T) => void) => {
-    try {
-      apply(await task());
-      setErrors((current) => {
-        const { [key]: _removed, ...rest } = current;
-        return rest;
-      });
-    } catch (cause) {
-      setErrors((current) => ({ ...current, [key]: message(cause) }));
-    }
-  }, []);
+  const capture = useCallback(
+    async <T,>(key: string, task: () => Promise<T>, apply: (value: T) => void) => {
+      try {
+        apply(await task());
+        setErrors((current) => {
+          const { [key]: _removed, ...rest } = current;
+          return rest;
+        });
+      } catch (cause) {
+        setErrors((current) => ({ ...current, [key]: message(cause) }));
+      }
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
     setBusy(true);
@@ -81,21 +87,31 @@ export function ShenronStudio() {
   }, [refresh]);
 
   if (!isTauri()) {
-    return <p className="text-[18px] text-on-surface-variant">Shenron nécessite l’application Aphrody.</p>;
+    return (
+      <p className="text-[18px] text-on-surface-variant">
+        Shenron nécessite l’application Aphrody.
+      </p>
+    );
   }
 
   const search = async () => {
     setBusy(true);
-    await capture("search", () => shenron.ragSearch(query.trim(), 10), (response) => setHits(response.results));
+    await capture(
+      "search",
+      () => shenron.ragSearch(query.trim(), 10),
+      (response) => setHits(response.results),
+    );
     setBusy(false);
   };
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader
+      <StudioHeader
         eyebrow="Shenron"
         title="Pilotage"
-        subtitle={health ? (health.status === "operational" ? "Opérationnel" : "Dégradé") : "Chargement…"}
+        subtitle={
+          health ? (health.status === "operational" ? "Opérationnel" : "Dégradé") : "Chargement…"
+        }
       />
 
       <section className="flex flex-col gap-4">
@@ -103,12 +119,21 @@ export function ShenronStudio() {
           level={2}
           title="Santé"
           actions={
-            <Button className={buttonClass} variant="tonal" disabled={busy} onClick={() => void refresh()}>
+            <Button
+              className={buttonClass}
+              variant="tonal"
+              disabled={busy}
+              onClick={() => void refresh()}
+            >
               Actualiser
             </Button>
           }
         />
-        {errors.health ? <p role="alert" className="text-[18px] text-error">{errors.health}</p> : null}
+        {errors.health ? (
+          <p role="alert" className="text-[18px] text-error">
+            {errors.health}
+          </p>
+        ) : null}
         {health ? (
           <ul className="grid gap-3 md:grid-cols-2">
             <ProbeRow name="Site" probe={health.site} />
@@ -118,7 +143,9 @@ export function ShenronStudio() {
               <span>Agent Home dbfr</span>
               <StatusPill
                 ok={health.agent_home.valid}
-                label={health.agent_home.valid ? `${health.agent_home.files ?? 0} fichiers` : "invalide"}
+                label={
+                  health.agent_home.valid ? `${health.agent_home.files ?? 0} fichiers` : "invalide"
+                }
               />
             </li>
           </ul>
@@ -126,8 +153,16 @@ export function ShenronStudio() {
       </section>
 
       <section className="flex flex-col gap-4">
-        <SectionHeading level={2} title="Corpus RAG" standfirst={health ? `Moteur : ${health.rag_backend}` : undefined} />
-        {errors.stats ? <p role="alert" className="text-[18px] text-error">{errors.stats}</p> : null}
+        <SectionHeading
+          level={2}
+          title="Corpus RAG"
+          standfirst={health ? `Moteur : ${health.rag_backend}` : undefined}
+        />
+        {errors.stats ? (
+          <p role="alert" className="text-[18px] text-error">
+            {errors.stats}
+          </p>
+        ) : null}
         {stats ? (
           <Card className="flex flex-col gap-3 p-6 text-[18px]">
             <p>
@@ -136,7 +171,10 @@ export function ShenronStudio() {
             {stats.sources?.length ? (
               <ul className="grid gap-2 md:grid-cols-2">
                 {stats.sources.map((source) => (
-                  <li key={`${source.kind}:${source.sourceId}`} className="rounded-xl bg-surface-container p-3">
+                  <li
+                    key={`${source.kind}:${source.sourceId}`}
+                    className="rounded-xl bg-surface-container p-3"
+                  >
                     [{source.kind}] {source.sourceId} : {source.count}
                   </li>
                 ))}
@@ -162,15 +200,26 @@ export function ShenronStudio() {
             Rechercher
           </Button>
         </form>
-        {errors.search ? <p role="alert" className="text-[18px] text-error">{errors.search}</p> : null}
+        {errors.search ? (
+          <p role="alert" className="text-[18px] text-error">
+            {errors.search}
+          </p>
+        ) : null}
         <ol className="flex flex-col gap-3">
           {hits.map((hit, index) => (
-            <li key={`${hit.url ?? hit.title}-${index}`} className="rounded-xl bg-surface-container p-4">
+            <li
+              key={`${hit.url ?? hit.title}-${index}`}
+              className="rounded-xl bg-surface-container p-4"
+            >
               <p className="text-[18px] font-semibold">
                 [{hit.kind ?? "document"}] {hit.title ?? "Sans titre"}
               </p>
-              {hit.snippet ? <p className="mt-1 text-[16px] text-on-surface-variant">{hit.snippet}</p> : null}
-              {hit.url ? <p className="mt-1 text-[14px] text-on-surface-variant">{hit.url}</p> : null}
+              {hit.snippet ? (
+                <p className="mt-1 text-[16px] text-on-surface-variant">{hit.snippet}</p>
+              ) : null}
+              {hit.url ? (
+                <p className="mt-1 text-[14px] text-on-surface-variant">{hit.url}</p>
+              ) : null}
             </li>
           ))}
         </ol>
@@ -178,7 +227,11 @@ export function ShenronStudio() {
 
       <section className="flex flex-col gap-4">
         <SectionHeading level={2} title="Entraînement" />
-        {errors.training ? <p role="alert" className="text-[18px] text-error">{errors.training}</p> : null}
+        {errors.training ? (
+          <p role="alert" className="text-[18px] text-error">
+            {errors.training}
+          </p>
+        ) : null}
         {training ? (
           <Card className="flex flex-col gap-2 p-6 text-[18px]">
             <p>GPU détectés : {training.gpu_count}</p>
