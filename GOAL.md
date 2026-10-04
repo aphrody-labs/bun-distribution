@@ -20,6 +20,13 @@ Axes prioritaires :
 
 La surface Python IA/ML vit dans `aphrody-py`, pas dans le code Rust ou Bun d'Aphrody.
 
+Langages (directive du 2026-10-04) :
+
+- **MCP, CLI, UI et API d'Aphrody** : entièrement en Rust (Yolo porte les mêmes surfaces en Bun).
+- **IA, LLM, RAG et agents** : Rust, Bun et Python (uv) uniquement.
+- **.NET, C++, C, Go et autres** : aucune règle ; on choisit le meilleur outil pour le cas d'usage.
+  - Installation, compilation depuis les sources, CLI ou FFI, selon les blocages et limites d'Aphrody et de Yolo.
+
 ## 2. Produit aphrody.com
 
 aphrody.com est le point d'entrée de développement et de déploiement de :
@@ -46,7 +53,30 @@ aphrody.com est le point d'entrée de développement et de déploiement de :
 - Maximiser WASM et FFI (zéro copie), réduire les dépendances externes.
 - Nettoyer automatiquement le code remplacé ; aucune archive ni sauvegarde « par précaution ».
 
-## 5. Build et installation
+## 5. Moteurs commutables et paquets
+
+- **V8, JSC, Tauri, WebGPU** : chaque moteur est un interrupteur (variable d'environnement, configuration, binaire).
+  - Aphrody se compile avec ou sans V8, avec ou sans JSC/WebKit (API directe hors V8), avec ou sans Tauri, avec ou sans WebGPU.
+  - Sans Tauri : interface native de l'OS et pile d'interface Rust (wgpu).
+  - Avec V8 et Tauri : installation optimisée pour un usage humain réel, comme un ChromeOS où Obscura et les crates Rust remplacent Chromium.
+- **Paquets** : Obscura, Turbopack, Tauri et les autres moteurs sont des paquets optionnels et interchangeables au build, au packaging, au lint et aux tests, comme dans un système POSIX.
+  - Le gestionnaire unifié (Bun, uv, Cargo) vit dans le cœur de Yolo.
+
+## 6. Hôtes et hébergement
+
+- **Les deux VPS** sont dédiés à la compilation, aux VFS très lourds, aux bases de données lourdes (Redis, SQL) et à l'IA sur CPU.
+  - Exemple : Gemma 4 E2B via aphrody-py, l'IA Rust d'Aphrody et l'interface IA en Bun.
+  - Les anciens plans, documents et usages RG des VPS sont abandonnés.
+- **RG et Shenron** deviennent entièrement serverless : Vercel, Fly.io, Docker ou Coolify, choisi après benchmark comparatif.
+  - Yolo les transforme, les lint, les formate et les compile (serveur natif et web selon les guides 2026).
+  - Aphrody fournit un « Vercel open source » : nos IA et nos interfaces les gèrent pour l'utilisateur, comme Vercel, Coolify ou Hostinger.
+- **WSL** est purgé progressivement (consommation mémoire instable).
+  - Une fois les objectifs d'Aphrody et de Yolo bouclés : image Docker ou WSL propre, issue d'une distribution Linux minimale préconfigurée pour Aphrody, Yolo et IECODE.
+- **Distribution Linux** : quand Yolo, Aphrody, Windows, WSL et les deux VPS sont prêts, recherche approfondie de la distribution libre la plus adaptée.
+  - Critères : Rust, Bun ou agents ; noyau le plus récent (kernel.org) ; compatibilité avec Aphrody et Yolo.
+  - On la forke pour exploiter son gestionnaire de paquets et combler l'écart entre winclean et la pile Linux (noyau, shell, OS, runtime, computer use, coreutils).
+
+## 7. Build et installation
 
 - **Builds lourds sur les hôtes SSH** :
   - paquets Bun sur `dbfr` ;
@@ -54,27 +84,31 @@ aphrody.com est le point d'entrée de développement et de déploiement de :
   - aucune surcharge sur WSL.
 - **WSL Ubuntu 24.04** : Aphrody complet, binaires, bibliothèques et dépendances installés.
 - **Windows 11** : binaires, bibliothèques et dépendances installés via `aphrody-ops system-packages`.
+  - Blocages (Build Tools 2026, etc.) : documentation Microsoft Learn via le MCP Aphrody, winclean au complet, PATH utilisateur et système, profil pwsh et WSL synchronisés.
+  - Installer le plus de SDK, toolkits et CLI utiles, sans doublon et à jour, sur Windows comme sur les VPS de build.
   - Tests natifs MSVC avec `scripts/dev/windows-cargo.ps1`.
   - Tests Bun avec `scripts/dev/windows-bun-test.ps1`.
 - Les binaires d'Aphrody et de Yolo peuvent être construits dans la même passe.
 
-## 6. Famille IECODE sur Windows
+## 8. Famille IECODE sur Windows
 
+- RG, NIE et IEVR vivent dans le monorepo IECODE (déplacement d'Aphrody du 2026-10-04).
+  - Les dépendances `@aphrody/*` d'IECODE sont des archives épinglées par contenu (`aphrody-ops aphrody-packages`).
 - RG, NIE, IEVR, Inagle et IECODE sont regroupés sous `C:\iecode`.
 - Ils sont installés entièrement, avec les permissions d'administration de Windows 11.
 - Les variables d'environnement sont reconfigurées pour le téléchargement et le chargement.
 - Le VFS IEVR est chargé comme plugin Bun natif, via la bibliothèque partagée Yolo.
 
-## 7. Ordre d'exécution et fin
+## 9. Ordre d'exécution et fin
 
-1. Valider ce GOAL et celui de Yolo (ce fichier).
+1. Valider ce GOAL et celui de [Yolo](../yolo/GOAL.md).
 2. Effectuer un scan complet de `main`, sous-modules compris, sur du code entièrement commité.
 3. Compiler et installer réellement les binaires et dépendances.
 4. Mettre à jour ensuite seulement, une fois vérifiés : README, PLAN, AGENTS.md, docs, scripts, configuration MCP et plugins d'Aphrody et de Yolo.
 
 Une étape n'est close qu'avec sa preuve (révision, commande, résultat) dans [MEMORY.md](MEMORY.md).
 
-## 8. État vérifié (2026-10-04)
+## 10. État vérifié (2026-10-04)
 
 | Élément | Constat | Source |
 | --- | --- | --- |
@@ -87,20 +121,20 @@ Une étape n'est close qu'avec sa preuve (révision, commande, résultat) dans [
 | WSL | Ubuntu 24.04, glibc 2.39, gcc 13.3, clang 18.1.3, cmake 3.28.3, ninja 1.11.1, MinGW gcc 13, zig 0.16.0, cargo-zigbuild 0.23.4, cargo-xwin 0.23.1, uv 0.12.22, TypeScript 7.0.2 | versions des outils |
 | Hôtes | `vps` hôte de production, `dbfr` hôte secondaire, `wsl-ubuntu-24.04` hôte de build de référence | `config/infra/inventory/targets.json` |
 
-## 9. Écarts et préalables
+## 11. Écarts et préalables
 
 - **Usine de compilation** : `vps` est runtime-only depuis le 2026-10-03.
   - Ni toolchains, ni `~/.bun`, ni `/srv/aphrody-build` ; `config/build-factory.json` le désigne pourtant encore.
-  - Il faut réprovisionner une usine (vps ou autre hôte) avant la compilation Rust/C++ sur SSH.
+  - Décision du 2026-10-04 : les deux VPS seront réprovisionnés comme usine ; d'ici là, pas de compilation Rust/C++ sur SSH.
 - **Répartition des moteurs** : [PLAN.md](PLAN.md) attribue encore V8, Obscura et Tauri précompilés à Yolo.
   - Yolo embarque aujourd'hui 47 crates Tauri ainsi que `vendor/tauri`, `wry`, `tao` et `obscura`.
   - La directive donne le focus V8, Tauri et GUI à Aphrody.
   - Le nouveau propriétaire de ces sources reste à trancher avant toute migration.
 - **Authentification** : appareil de confiance, 2FA mobile par QR et jetons agent/code n'existent pas encore.
   - Seuls des clients OAuth existent.
-- **IECODE sous Windows** : `C:\iecode` n'existe pas ; IECODE et RG sont dans le home WSL.
-  - NIE et IEVR n'ont pas de checkout séparé.
+- **IECODE sous Windows** : `C:\iecode` n'existe pas encore ; le checkout IECODE est dans le home WSL.
   - Tout déplacement exige une sauvegarde vérifiée par checksum ([AGENTS.md](AGENTS.md)).
+- **Moteurs commutables** : aucun interrupteur V8/JSC/Tauri/WebGPU n'existe encore au build.
 - **Build Tools 2026** : `vswhere` rapporte `isComplete=0` (installation 1603, réparation sans effet).
   - Le toolset MSVC fonctionne quand même.
 - **MSYS2 et Cygwin** : absents (`C:\msys64`, `C:\cygwin64`) ; la directive vise des équivalents Rust natifs.
