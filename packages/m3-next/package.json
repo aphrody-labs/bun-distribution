@@ -50,8 +50,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup && tsgo -p tsconfig.build.json",
-    "typecheck": "tsgo -p tsconfig.json --noEmit",
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test"
   },
   "dependencies": {
@@ -60,15 +60,7 @@
     "@aphrody/m3-tokens": "workspace:*"
   },
   "devDependencies": {
-    "@aphrody/m3-config": "workspace:*",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "@typescript/native-preview": "catalog:",
-    "next": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:"
+    "next": "catalog:"
   },
   "peerDependencies": {
     "next": ">=16.0.0",

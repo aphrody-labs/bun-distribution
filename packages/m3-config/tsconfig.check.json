@@ -1,4 +1,8 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["tsup.ts", "test/**/*.ts"]
+  "include": [
+    "bun-build.ts",
+    "cache-db.ts",
+    "test/**/*.ts"
+  ]
 }

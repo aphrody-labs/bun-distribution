@@ -8,11 +8,10 @@ Shared presets for the first-party Material Design 3 packages (`packages/m3-*`, 
 | --- | --- |
 | `@aphrody/m3-config/tsconfig.json` | `"extends"` for `tsconfig.json`; the package keeps only `include` and its own overrides. |
 | `@aphrody/m3-config/tsconfig.build.json` | Second entry of `"extends": ["./tsconfig.json", "@aphrody/m3-config/tsconfig.build.json"]` (declaration-only emit); the package sets `outDir`, `rootDir`, `include`. |
-| `@aphrody/m3-config/tsup` | `m3Tsup({ entry, useClient, ... })`: ESM, es2022, externals for React/Lit/motion/Tailwind/`@aphrody/*`, `'use client'` re-injection. |
-| `@aphrody/m3-config/bun-build` | `m3BunBuild({ entry, useClient, ... })`: Native Bun bundler (`Bun.build`), code-splitting, `'use client'` injection via `Bun.Glob` / `Bun.write`. |
+| `@aphrody/m3-config/bun-build` | The one build preset, on `Bun.build`: `m3Package({ entry, target, splitting, external, useClient })` types a package's `build.config.ts`; `scripts/build.ts` at the repository root runs every config (dependency order, content-hash cache, declarations through `tsc`). `m3BunBuild(...)` is the imperative form; `M3_EXTERNAL` and `prependUseClient` (`'use client';` through `Bun.file` / `Bun.write`) are defined once here. |
 | `@aphrody/m3-config/cache-db` | `M3UiCache` / `getSharedUiCache()`: Embedded, zero-overhead SQLite cache using `bun:sqlite` with WAL mode for themes, icons, tokens, sessions. |
 | `@aphrody/m3-config/test/dom` | `bun test` preload: happy-dom + ElementInternals polyfill. |
 
-Tests import workspace dependencies through their built `dist/`: the turbo `test` task depends
-on `^build`, so `bun run test` always builds them first. Bun resolves bare package specifiers
-natively before any runtime plugin sees them, so a preload cannot redirect them to sources.
+Workspace packages resolve to their sources under Bun (`bun` / `import` conditions); `dist/` is built by
+`bun scripts/build.ts` for consumers that need the `default` condition and the declarations. Bun resolves bare
+package specifiers natively before any runtime plugin sees them, so a preload cannot redirect them to sources.

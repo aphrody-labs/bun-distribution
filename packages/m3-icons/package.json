@@ -43,22 +43,15 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json",
-    "typecheck": "tsgo -p tsconfig.json --noEmit",
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test"
   },
   "dependencies": {
     "@aphrody/bun": "^3.3.0"
   },
   "devDependencies": {
-    "@aphrody/m3-config": "workspace:*",
-    "@typescript/native-preview": "catalog:",
-    "@types/react": "catalog:",
-    "lit": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:"
+    "lit": "catalog:"
   },
   "peerDependencies": {
     "lit": ">=3.0.0",

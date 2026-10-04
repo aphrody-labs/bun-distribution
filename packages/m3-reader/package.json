@@ -32,24 +32,15 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json",
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "typecheck:fast": "tsgo --noEmit"
+    "typecheck:fast": "tsc --noEmit"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.13",
     "lucide-react": "^1.48.0",
     "swiper": "^14.3.0"
-  },
-  "devDependencies": {
-    "@aphrody/m3-config": "workspace:*",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "tsup": "^8.5.1",
-    "typescript": "catalog:"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

@@ -32,20 +32,13 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json",
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
     "typecheck": "tsc --noEmit",
-    "typecheck:fast": "tsgo --noEmit",
+    "typecheck:fast": "tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
     "motion": "catalog:"
-  },
-  "devDependencies": {
-    "@aphrody/m3-config": "workspace:*",
-    "@types/react": "catalog:",
-    "react": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:"
   },
   "peerDependencies": {
     "motion": ">=12.0.0",

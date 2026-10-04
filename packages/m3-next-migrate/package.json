@@ -99,20 +99,15 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup && tsgo -p tsconfig.build.json",
-    "typecheck": "tsgo -p tsconfig.json --noEmit",
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test"
   },
   "dependencies": {
     "react": "catalog:"
   },
   "devDependencies": {
-    "@aphrody/m3-config": "workspace:*",
-    "@aphrody/scaffold": "workspace:*",
-    "@types/react": "catalog:",
-    "@typescript/native-preview": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:"
+    "@aphrody/scaffold": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.2"

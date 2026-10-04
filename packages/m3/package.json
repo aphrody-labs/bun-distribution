@@ -83,8 +83,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup && tsgo -p tsconfig.build.json",
-    "typecheck": "tsgo -p tsconfig.json --noEmit",
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test"
   },
   "dependencies": {
@@ -99,16 +99,7 @@
     "motion": "catalog:"
   },
   "devDependencies": {
-    "@aphrody/m3-config": "workspace:*",
-    "@aphrody/scaffold": "workspace:*",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "@typescript/native-preview": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "tailwindcss": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:"
+    "@aphrody/scaffold": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

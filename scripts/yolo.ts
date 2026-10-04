@@ -3,10 +3,10 @@
 // Root task runner: the m3 packages build, serve and compile through the yolo CLI.
 //   bun scripts/yolo.ts <build|serve|compile|test|lint|typecheck|install:theme> [args...]
 // yolo is resolved from $YOLO_ROOT (default $HOME/yolo) and run from source: `bun $YOLO_ROOT/apps/cli/src/index.ts`.
-//   build    yolo web build     -> apps/web `build` (m3 build), then the package builds
+//   build    yolo web build     -> apps/web `build` (cached app build), then scripts/build.ts (packages, cached)
 //   serve    yolo web dev       -> apps/web `dev`   (m3 dev)
 //   compile  yolo tauri build   -> apps/web `build`, then apps/web `compile` (m3 compile, single executable)
-//   test / lint / typecheck     workspace gates, after a yolo preflight (`yolo version --json`)
+//   test / lint / typecheck     workspace gates, after a yolo preflight (`yolo version --json`); typecheck is scripts/build.ts
 //   install:theme               packages/m3-os-themes CLI (dry-run unless --apply)
 // yolo's web|desktop|tauri commands act on $YOLO_HOME/apps/web, so YOLO_HOME is pointed at this repository.
 import { existsSync, readdirSync } from "node:fs";
@@ -46,7 +46,7 @@ export function plan(task: string, rest: string[] = []): Step[] {
     case "build":
       return [
         yolo("web", "build"),
-        bun(REPO, "run", ...M3, "--filter", "!@aphrody/m3-web", "--if-present", "build"),
+        bun(REPO, "scripts/build.ts", "build", "--no-apps"),
       ];
     case "serve":
       return [yolo("web", "dev")];
@@ -61,7 +61,7 @@ export function plan(task: string, rest: string[] = []): Step[] {
     case "lint":
       return [yolo("version", "--json"), bun(REPO, "x", "oxlint", ...lintPaths())];
     case "typecheck":
-      return [yolo("version", "--json"), bun(REPO, "run", ...M3, "--if-present", "typecheck")];
+      return [yolo("version", "--json"), bun(REPO, "scripts/build.ts", "typecheck")];
     case "install:theme":
       return [
         bun(

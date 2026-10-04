@@ -4,6 +4,18 @@
   "workspaces": {
     "": {
       "name": "aphrody-m3",
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+        "@types/bun": "catalog:",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "oxfmt": "catalog:",
+        "oxlint": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "tailwindcss": "catalog:",
+        "typescript": "catalog:",
+      },
     },
     "apps/web": {
       "name": "@aphrody/m3-web",
@@ -105,16 +117,7 @@
         "motion": "catalog:",
       },
       "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
         "@aphrody/scaffold": "workspace:*",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@typescript/native-preview": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "tailwindcss": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -138,15 +141,6 @@
         "react-markdown": "^10.1.0",
         "rehype-raw": "^7.0.0",
         "remark-gfm": "^4.0.1",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -190,11 +184,6 @@
         "@happy-dom/global-registrator": "catalog:",
         "element-internals-polyfill": "catalog:",
       },
-      "devDependencies": {
-        "@typescript/native-preview": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/m3-design": {
       "name": "@aphrody/m3-design",
@@ -203,9 +192,6 @@
         "@aphrody/bun": "^3.3.0",
         "@material/material-color-utilities": "catalog:",
       },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-      },
     },
     "packages/m3-explorer": {
       "name": "@aphrody/m3-explorer",
@@ -213,15 +199,6 @@
       "dependencies": {
         "@aphrody/m3-primitives": "workspace:*",
         "clsx": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -232,10 +209,6 @@
     "packages/m3-fonts": {
       "name": "@aphrody/m3-fonts",
       "version": "3.3.3",
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@typescript/native-preview": "catalog:",
-      },
     },
     "packages/m3-forms": {
       "name": "@aphrody/m3-forms",
@@ -245,14 +218,7 @@
         "clsx": "catalog:",
       },
       "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
         "react-hook-form": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -281,14 +247,7 @@
         "@aphrody/bun": "^3.3.0",
       },
       "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/react": "catalog:",
-        "@typescript/native-preview": "catalog:",
         "lit": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "lit": ">=3.0.0",
@@ -315,13 +274,6 @@
       "dependencies": {
         "motion": "catalog:",
       },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/react": "catalog:",
-        "react": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
-      },
       "peerDependencies": {
         "motion": ">=12.0.0",
         "react": ">=18.0.0",
@@ -336,15 +288,7 @@
         "@aphrody/m3-tokens": "workspace:*",
       },
       "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@typescript/native-preview": "catalog:",
         "next": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "next": ">=16.0.0",
@@ -367,12 +311,7 @@
         "react": "catalog:",
       },
       "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
         "@aphrody/scaffold": "workspace:*",
-        "@types/react": "catalog:",
-        "@typescript/native-preview": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/m3-os-themes": {
@@ -404,15 +343,6 @@
         "sonner": "catalog:",
         "zod": "catalog:",
       },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
-      },
       "peerDependencies": {
         "react": ">=18.0.0",
         "react-dom": ">=18.0.0",
@@ -427,15 +357,6 @@
         "@aphrody/material-web": "catalog:",
         "@lit/react": "catalog:",
       },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
-      },
       "peerDependencies": {
         "react": ">=18.0.0",
         "react-dom": ">=18.0.0",
@@ -448,15 +369,6 @@
         "@tanstack/react-virtual": "^3.14.13",
         "lucide-react": "^1.48.0",
         "swiper": "^14.3.0",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/react": "^19.3.0",
-        "@types/react-dom": "^19.3.0",
-        "react": "^19.3.0",
-        "react-dom": "^19.3.0",
-        "tsup": "^8.5.1",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -489,12 +401,7 @@
       },
       "devDependencies": {
         "@aphrody/bun": "^3.3.0",
-        "@aphrody/m3-config": "workspace:*",
         "@material/material-color-utilities": "catalog:",
-        "@types/react": "catalog:",
-        "react": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -534,10 +441,6 @@
       "version": "1.0.0-canary",
       "bin": {
         "aphrody-scaffold": "./src/cli.ts",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@typescript/native-preview": "catalog:",
       },
     },
   },
@@ -1168,22 +1071,6 @@
     "@types/whatwg-mimetype": ["@types/whatwg-mimetype@3.0.2", "", {}, "sha512-c2AKvDT8ToxLIOUlN51gTiHXflsfIFisS4pO7pDPoKouJCESkhZnEy623gwP9laCy5lnLDAw1vAzu2vM2YLOrA=="],
 
     "@types/ws": ["@types/ws@8.18.2", "", { "dependencies": { "@types/node": "*" } }, "sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w=="],
-
-    "@typescript/native-preview": ["@typescript/native-preview@7.0.0-dev.20260707.2", "", { "optionalDependencies": { "@typescript/native-preview-darwin-arm64": "7.0.0-dev.20260707.2", "@typescript/native-preview-darwin-x64": "7.0.0-dev.20260707.2", "@typescript/native-preview-linux-arm": "7.0.0-dev.20260707.2", "@typescript/native-preview-linux-arm64": "7.0.0-dev.20260707.2", "@typescript/native-preview-linux-x64": "7.0.0-dev.20260707.2", "@typescript/native-preview-win32-arm64": "7.0.0-dev.20260707.2", "@typescript/native-preview-win32-x64": "7.0.0-dev.20260707.2" }, "bin": { "tsgo": "bin/tsgo" } }, "sha512-oUGp+Rep/hqMhPunyinsALUwSlzHINSxitifPiSaeqoKOKD2OlR9NE3TaPqwsl4NlGslsOSUXI1JotWQzpYCPg=="],
-
-    "@typescript/native-preview-darwin-arm64": ["@typescript/native-preview-darwin-arm64@7.0.0-dev.20260707.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-wny2pgKjGbiZtnOIHVa3tXC1UfDqxNEFzyPGmiqybedG8hipG2Nfp0l5UxbaKCjkLacUpH/W5bP2hBOMVhCOzg=="],
-
-    "@typescript/native-preview-darwin-x64": ["@typescript/native-preview-darwin-x64@7.0.0-dev.20260707.2", "", { "os": "darwin", "cpu": "x64" }, "sha512-Afc7M5zOwo+GpfcYwz5Z8HMB2tPVsui7nNIqEuuFB73MPdVqNn/Wmpe4tP4MRri0AtJnJknoHBaTJ/VDAp/Jhw=="],
-
-    "@typescript/native-preview-linux-arm": ["@typescript/native-preview-linux-arm@7.0.0-dev.20260707.2", "", { "os": "linux", "cpu": "arm" }, "sha512-hJm/UOqZTr9FHmR7uNm8VGX4oKtfWk0Jem0zPeJFNC8ckGUfSBueyiEYMZB+XmRc1aG4x1E46y3CplP4CLHvGQ=="],
-
-    "@typescript/native-preview-linux-arm64": ["@typescript/native-preview-linux-arm64@7.0.0-dev.20260707.2", "", { "os": "linux", "cpu": "arm64" }, "sha512-iITBa2WjjTI5N9t5l7Z4KoOSI+2zBlhbvFzsD/f8qX8QoKjz/Y4DPyBDgezYi8nkqjjksbgSOJ3/ykzhwrB9cg=="],
-
-    "@typescript/native-preview-linux-x64": ["@typescript/native-preview-linux-x64@7.0.0-dev.20260707.2", "", { "os": "linux", "cpu": "x64" }, "sha512-du0dzi6y97Po5vDNdPJTyyijHCpaS22JLRnKZEJXBDaO9gCIymOv/5QQokFRuOlQm0bWl3i9PF4OVdGP6uAOQA=="],
-
-    "@typescript/native-preview-win32-arm64": ["@typescript/native-preview-win32-arm64@7.0.0-dev.20260707.2", "", { "os": "win32", "cpu": "arm64" }, "sha512-SsAwfhyHJ1akgBc+99z4+hwdbHsdWaKB8EwCNIMA6JfSLMeUjffrYvxu+vfMyxVtOVOz7RrRXRoiDiu4a2sCtg=="],
-
-    "@typescript/native-preview-win32-x64": ["@typescript/native-preview-win32-x64@7.0.0-dev.20260707.2", "", { "os": "win32", "cpu": "x64" }, "sha512-DL4u27stv0fo71sVhOzHSwE+YMZsbBijVI+kg5dLDLilSH79WFTJ8RSQ46vJrCMt+Gjlv/JOZP1PuLJDfioYeQ=="],
 
     "@typescript/typescript-aix-ppc64": ["@typescript/typescript-aix-ppc64@7.0.2", "", { "os": "aix", "cpu": "ppc64" }, "sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ=="],
 

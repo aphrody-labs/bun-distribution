@@ -25,12 +25,8 @@
   "scripts": {
     "gen": "bun scripts/generate.ts",
     "subset": "bun scripts/subset.ts",
-    "typecheck": "tsgo -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test src"
-  },
-  "devDependencies": {
-    "@aphrody/m3-config": "workspace:*",
-    "@typescript/native-preview": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

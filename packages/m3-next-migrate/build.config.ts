@@ -1,7 +1,6 @@
-// SPDX-License-Identifier: Apache-2.0
-import { m3Tsup } from "@aphrody/m3-config/tsup";
+import { m3Package } from "@aphrody/m3-config/bun-build";
 
-export default m3Tsup({
+export default m3Package({
   entry: [
     "src/index.ts",
     "src/cli.ts",
@@ -18,7 +17,6 @@ export default m3Tsup({
     "src/shims/server.ts",
     "src/layout.ts",
   ],
-  platform: "neutral",
   splitting: false,
   useClient: [
     "shims/navigation.js",
@@ -29,5 +27,5 @@ export default m3Tsup({
     "shims/provider.js",
     "shims/metadata.js",
   ],
-  external: ["react", "react-dom", /^@tauri-apps($|\/)/],
+  external: ["@tauri-apps/*"],
 });

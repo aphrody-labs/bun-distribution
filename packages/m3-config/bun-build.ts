@@ -1,22 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Native Bun build preset for the first-party Material Design 3 packages.
+ * The one build preset of the first-party Material Design 3 packages, on `Bun.build`.
  *
- * Utilizes Bun's built-in fast bundler (`Bun.build`) with zero Node / tsup overhead:
+ * Declarative, per package (`build.config.ts`):
+ *
+ *   import { m3Package } from "@aphrody/m3-config/bun-build";
+ *   export default m3Package({ entry: ["src/index.ts", "src/react.tsx"], useClient: ["react.js"] });
+ *
+ * `scripts/build.ts` at the repository root reads every `build.config.ts`, builds the packages in dependency
+ * order with a content-hash cache and emits the declarations. Imperative, for one-off use:
  *
  *   import { m3BunBuild } from "@aphrody/m3-config/bun-build";
- *   await m3BunBuild({ entry: ["src/index.ts", "src/react.tsx"] });
+ *   await m3BunBuild({ entry: ["src/index.ts"] });   // or: bun packages/m3-config/bun-build.ts --entry src/index.ts
  *
- * Provides:
- * - Native ESM bundling with code-splitting
- * - React client directive injection (`'use client';\n`) via Bun.file / Bun.write
- * - Built-in sourcemaps and tree-shaking
- * - CLI runnable via `bun packages/m3-config/bun-build.ts`
+ * Provides native ESM bundling with code splitting, the React client directive (`'use client';`)
+ * through `Bun.file` / `Bun.write`, external sourcemaps and the shared external list.
  */
-import { Glob, type BunPlugin, type BuildArtifact } from "bun";
-import { resolve, join } from "node:path";
+import { Glob, type BuildArtifact, type BunPlugin } from "bun";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join, resolve, sep } from "node:path";
 
-const USE_CLIENT = "'use client';\n";
+export const USE_CLIENT = "'use client';\n";
 
 /** Everything the M3 packages never bundle: React, Lit, motion, Tailwind and the workspace scope. */
 export const M3_EXTERNAL: string[] = [
@@ -33,28 +37,39 @@ export const M3_EXTERNAL: string[] = [
   "@aphrody/*",
 ];
 
-export interface M3BunBuildOptions {
-  /** Entrypoint(s) to bundle. Defaults to `["src/index.ts"]`. */
+export type M3Target = "browser" | "bun" | "node";
+
+/** What a package declares in `build.config.ts`. Entry paths may be globs, relative to the package. */
+export interface M3PackageConfig {
+  /** Entrypoint(s). Default `["src/index.ts"]`. */
   entry?: string | string[];
+  /** Runtime target (default `browser`). */
+  target?: M3Target;
+  /** Code splitting across entries (default true). */
+  splitting?: boolean;
+  /** Packages left unbundled in addition to {@link M3_EXTERNAL} and the package's own dependencies and peers; wildcards allowed. */
+  external?: string[];
+  /**
+   * `true` (default) marks every emitted JS file with `'use client';`, a list limits that to the
+   * named files (`react.js`, `shims/link.js`), `false` skips it (packages without React code).
+   */
+  useClient?: boolean | readonly string[];
+}
+
+/** Types a `build.config.ts`; the identity otherwise. */
+export function m3Package(config: M3PackageConfig = {}): M3PackageConfig {
+  return config;
+}
+
+export interface M3BunBuildOptions extends M3PackageConfig {
   /** Output directory. Defaults to `"dist"`. */
   outDir?: string;
-  /** Runtime target: `"browser"` (default), `"bun"`, or `"node"`. */
-  target?: "browser" | "bun" | "node";
   /** Module format: `"esm"` (default) or `"cjs"`. */
   format?: "esm" | "cjs";
-  /** Enable code-splitting for multi-entry builds. Defaults to true. */
-  splitting?: boolean;
   /** Sourcemap mode. Defaults to `"external"`. */
   sourcemap?: "external" | "inline" | "none";
   /** Minification. Defaults to false. */
   minify?: boolean | { whitespace?: boolean; syntax?: boolean; identifiers?: boolean };
-  /** Additional external packages to exclude from bundling. */
-  external?: string[];
-  /**
-   * `true` (default) marks every emitted JS file with `'use client';`,
-   * a list limits that to specific file basenames, `false` skips it.
-   */
-  useClient?: boolean | readonly string[];
   /** Additional Bun plugins. */
   plugins?: BunPlugin[];
   /** Compile-time constant defines. */
@@ -71,106 +86,113 @@ export interface M3BunBuildResult {
 }
 
 /**
- * Prepend the React client directive to emitted `.js` files using Bun's native Glob and I/O.
+ * The packages a build leaves unbundled: {@link M3_EXTERNAL}, `node:*`, the `dependencies` and `peerDependencies` of the
+ * package at `cwd` (consumers install them) and `extra`. Anything else a package imports is bundled in.
  */
-export async function prependUseClient(dir: string, only?: readonly string[]): Promise<number> {
-  const glob = new Glob("**/*.js");
-  let modified = 0;
-
-  for await (const relativePath of glob.scan({ cwd: dir, onlyFiles: true })) {
-    const filename = relativePath.split("/").pop() ?? relativePath;
-    if (only && !only.includes(filename) && !only.includes(relativePath)) {
-      continue;
-    }
-
-    const fullPath = join(dir, relativePath);
-    const file = Bun.file(fullPath);
-    const content = await file.text();
-
-    if (!content.startsWith(USE_CLIENT)) {
-      await Bun.write(fullPath, USE_CLIENT + content);
-      modified++;
+export function externals(cwd: string, extra: readonly string[] = []): string[] {
+  const manifest = join(cwd, "package.json");
+  const names = new Set<string>();
+  if (existsSync(manifest)) {
+    const { dependencies, peerDependencies } = JSON.parse(readFileSync(manifest, "utf8")) as {
+      dependencies?: Record<string, string>;
+      peerDependencies?: Record<string, string>;
+    };
+    for (const name of [...Object.keys(dependencies ?? {}), ...Object.keys(peerDependencies ?? {})]) {
+      names.add(name);
+      names.add(`${name}/*`);
     }
   }
+  // `node:*` stays an import in every target: the browser target would otherwise inline Node polyfills.
+  return [...new Set([...M3_EXTERNAL, "node:*", ...names, ...extra])];
+}
 
-  return modified;
+/** Expand glob entries (`wrappers/*.ts`) against `cwd`; plain paths pass through. */
+export function expandEntries(entries: string | string[], cwd: string): string[] {
+  const out: string[] = [];
+  for (const entry of Array.isArray(entries) ? entries : [entries]) {
+    if (/[*?{]/.test(entry)) {
+      const matches = [...new Glob(entry).scanSync({ cwd, onlyFiles: true })].sort();
+      if (matches.length === 0) throw new Error(`m3-config: entry glob matches nothing: ${entry}`);
+      out.push(...matches.map((m) => resolve(cwd, m)));
+    } else out.push(resolve(cwd, entry));
+  }
+  return out;
+}
+
+/** Deepest directory that contains every entry: the base of the output layout (`src/a.ts` -> `dist/a.js`). */
+export function commonDir(files: readonly string[]): string {
+  const [first, ...rest] = files.map((f) => dirname(f).split(sep));
+  let common = first ?? [];
+  for (const parts of rest) {
+    let i = 0;
+    while (i < common.length && i < parts.length && common[i] === parts[i]) i++;
+    common = common.slice(0, i);
+  }
+  return common.join(sep) || sep;
 }
 
 /**
- * Executes a native Bun build for an M3 package.
+ * Prepend the React client directive to emitted `.js` files using Bun's native Glob and I/O.
+ * Returns the number of files changed; a second run changes none.
  */
+export async function prependUseClient(dir: string, only?: readonly string[]): Promise<number> {
+  const files: string[] = [];
+  for await (const path of new Glob("**/*.js").scan({ cwd: dir, onlyFiles: true })) {
+    if (!only || only.includes(path.split("/").pop() ?? path) || only.includes(path)) files.push(path);
+  }
+  const changed = await Promise.all(
+    files.map(async (path) => {
+      const file = join(dir, path);
+      const content = await Bun.file(file).text();
+      if (content.startsWith(USE_CLIENT)) return 0;
+      await Bun.write(file, USE_CLIENT + content);
+      return 1;
+    }),
+  );
+  return changed.reduce<number>((sum, n) => sum + n, 0);
+}
+
+/** Executes a native Bun build for an M3 package. */
 export async function m3BunBuild(options: M3BunBuildOptions = {}): Promise<M3BunBuildResult> {
   const cwd = options.cwd ?? process.cwd();
-  const rawEntries = options.entry ?? ["src/index.ts"];
-  const entrypoints = (Array.isArray(rawEntries) ? rawEntries : [rawEntries]).map((e) =>
-    resolve(cwd, e),
-  );
+  const entrypoints = expandEntries(options.entry ?? ["src/index.ts"], cwd);
   const outdir = resolve(cwd, options.outDir ?? "dist");
-  const target = options.target ?? "browser";
-  const format = options.format ?? "esm";
-  const splitting = options.splitting ?? true;
-  const sourcemap = options.sourcemap ?? "external";
-  const minify = options.minify ?? false;
-  const external = [...M3_EXTERNAL, ...(options.external ?? [])];
   const useClient = options.useClient ?? true;
 
   const result = await Bun.build({
     entrypoints,
+    root: commonDir(entrypoints),
     outdir,
-    target,
-    format,
-    splitting,
-    sourcemap,
-    minify,
-    external,
+    target: options.target ?? "browser",
+    format: options.format ?? "esm",
+    splitting: options.splitting ?? true,
+    sourcemap: options.sourcemap ?? "external",
+    minify: options.minify ?? false,
+    external: externals(cwd, options.external),
     plugins: options.plugins ?? [],
-    define: {
-      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "production"),
-      ...options.define,
-    },
+    define: { "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "production"), ...options.define },
+    throw: false,
   });
 
   if (!result.success) {
-    const logs = result.logs.map((log) => String(log));
-    return {
-      success: false,
-      outDir: outdir,
-      outputs: result.outputs,
-      logs,
-    };
+    return { success: false, outDir: outdir, outputs: result.outputs, logs: result.logs.map((log) => String(log)) };
   }
-
-  // Prepend 'use client' where required
-  if (useClient !== false) {
-    const only = Array.isArray(useClient) ? (useClient as readonly string[]) : undefined;
-    await prependUseClient(outdir, only);
-  }
-
-  return {
-    success: true,
-    outDir: outdir,
-    outputs: result.outputs,
-    logs: [],
-  };
+  if (useClient !== false) await prependUseClient(outdir, Array.isArray(useClient) ? (useClient as readonly string[]) : undefined);
+  return { success: true, outDir: outdir, outputs: result.outputs, logs: [] };
 }
 
-// Direct CLI invocation: `bun packages/m3-config/bun-build.ts`
+// Direct CLI invocation: `bun packages/m3-config/bun-build.ts --entry src/index.ts`
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  let entry = "src/index.ts";
-  let outDir = "dist";
-  let target: "browser" | "bun" | "node" = "browser";
-  let minify = false;
-
+  const options: M3BunBuildOptions = {};
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === "--entry" || arg === "-e") entry = args[++i]!;
-    else if (arg === "--outdir" || arg === "-o") outDir = args[++i]!;
-    else if (arg === "--target" || arg === "-t") target = args[++i] as any;
-    else if (arg === "--minify" || arg === "-m") minify = true;
+    if (arg === "--entry" || arg === "-e") options.entry = args[++i]!;
+    else if (arg === "--outdir" || arg === "-o") options.outDir = args[++i]!;
+    else if (arg === "--target" || arg === "-t") options.target = args[++i] as M3Target;
+    else if (arg === "--minify" || arg === "-m") options.minify = true;
   }
-
-  const res = await m3BunBuild({ entry, outDir, target, minify });
+  const res = await m3BunBuild(options);
   if (!res.success) {
     console.error("[m3-bun-build] Failed to build:", res.logs.join("\n"));
     process.exit(1);

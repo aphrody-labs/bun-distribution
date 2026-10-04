@@ -9,6 +9,10 @@ describe("yolo task plan", () => {
     expect(plan("compile")[0]!.cmd.slice(2)).toEqual(["tauri", "build"]);
     expect(plan("build")[0]!.env).toEqual({ YOLO_HOME: REPO });
   });
+  test("build then runs the cached package pipeline without rebuilding the app; typecheck is the pipeline", () => {
+    expect(plan("build")[1]!.cmd.slice(1)).toEqual(["scripts/build.ts", "build", "--no-apps"]);
+    expect(plan("typecheck")[1]!.cmd.slice(1)).toEqual(["scripts/build.ts", "typecheck"]);
+  });
   test("YOLO_CLI resolves under YOLO_ROOT", () => {
     expect(YOLO_CLI.endsWith("apps/cli/src/index.ts")).toBe(true);
   });

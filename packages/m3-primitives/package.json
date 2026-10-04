@@ -33,9 +33,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json",
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
     "typecheck": "tsc --noEmit",
-    "typecheck:fast": "tsgo --noEmit",
+    "typecheck:fast": "tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
@@ -48,15 +48,6 @@
     "react-resizable-layout": "^0.7.3",
     "sonner": "catalog:",
     "zod": "catalog:"
-  },
-  "devDependencies": {
-    "@aphrody/m3-config": "workspace:*",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "tsup": "catalog:",
-    "typescript": "catalog:"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

@@ -97,6 +97,18 @@
       "zustand": "^5.0.15"
     }
   },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*",
+    "@types/bun": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  },
   "scripts": {
     "build": "bun scripts/yolo.ts build",
     "test": "bun scripts/yolo.ts test",
@@ -105,7 +117,9 @@
     "install:theme": "bun scripts/yolo.ts install:theme",
     "lint": "bun scripts/yolo.ts lint",
     "typecheck": "bun scripts/yolo.ts typecheck",
-    "fmt:check": "oxfmt --check packages",
-    "icons:ico": "bun packages/material-design-icons/scripts/svg-to-ico.ts"
+    "fmt:check": "oxfmt --check packages apps scripts",
+    "icons:ico": "bun packages/material-design-icons/scripts/svg-to-ico.ts",
+    "forks": "bun scripts/forks.ts",
+    "bundle-size": "bun scripts/bundle-size.ts"
   }
 }
