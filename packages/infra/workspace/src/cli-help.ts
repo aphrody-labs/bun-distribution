@@ -126,32 +126,62 @@ export async function runCliHelp(
   args: string[],
   root = resolve(import.meta.dir, "../../../.."),
 ): Promise<number> {
+  const usage = "aphrody-ops cli-help [--out <directory>] [--only <bin[,bin]>] [--no-recursive]";
   if (args.includes("--help")) {
     console.log(
-      "Usage: aphrody-ops cli-help [--out <directory>]\nCapture installed first-party CLI --help recursively; absent binaries are recorded.",
+      `Usage: ${usage}\nCapture installed first-party CLI --help; absent binaries are recorded.\n--only resolves only the named binaries through PATH.\n--no-recursive captures top-level help without invoking advertised subcommands.\nSelected captures default to a separate selected/<bins> directory; --out overrides it.`,
     );
     return 0;
   }
   let out = join(process.env.XDG_DATA_HOME ?? join(homedir(), ".local/share"), "aphrody/cli-help");
+  let explicitOut = false;
+  let only: string[] | undefined;
+  let recursive = true;
   for (let i = 0; i < args.length; i++) {
-    if (args[i] !== "--out" || !args[i + 1]) throw new Error("usage: cli-help [--out <directory>]");
-    out = resolve(args[++i]!);
+    const option = args[i];
+    if (option === "--no-recursive") {
+      recursive = false;
+      continue;
+    }
+    const value = args[i + 1];
+    if ((option !== "--out" && option !== "--only") || !value || value.startsWith("--")) {
+      throw new Error(`usage: ${usage}`);
+    }
+    i++;
+    if (option === "--out") {
+      out = resolve(value);
+      explicitOut = true;
+    } else {
+      if (only) throw new Error("--only may be specified once");
+      const names = value.split(",");
+      if (names.some((name) => !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(name))) {
+        throw new Error("--only requires comma-separated binary names, without paths");
+      }
+      only = [...new Set(names)].toSorted();
+    }
   }
+  if (only && !explicitOut) out = join(out, "selected", only.join(","));
   const catalog = await Bun.file(join(root, "docs/ecosystem/ecosystem.json")).json();
-  const sourceCli = await sourceCliIndex(catalog, root);
-  const binaries = new Set<string>(["aphrody", "bxc", "n2b", "nie", "niers", "inagle", "azalee"]);
-  for (const cli of catalog.cli) binaries.add(cli.binary);
-  for (const repo of catalog.repos) {
-    for (const pkg of repo.bunPackages) for (const name of pkg.bins) binaries.add(name);
-    for (const pkg of repo.pythonPackages) for (const name of pkg.scripts) binaries.add(name);
-  }
-  // Standalone native surfaces can be installed after the source catalog was generated.
-  const pathDirectories = await Promise.allSettled(
-    (process.env.PATH ?? "").split(delimiter).map((dir) => readdir(dir)),
+  const sourceCli = (await sourceCliIndex(catalog, root)).filter(
+    (entry) => !only || only.includes(entry.binary),
   );
-  for (const directory of pathDirectories) {
-    if (directory.status !== "fulfilled") continue;
-    for (const name of directory.value) if (/^aphrody-[a-z\d-]+$/.test(name)) binaries.add(name);
+  const binaries = new Set<string>(
+    only ?? ["aphrody", "bxc", "n2b", "nie", "niers", "inagle", "azalee"],
+  );
+  if (!only) {
+    for (const cli of catalog.cli) binaries.add(cli.binary);
+    for (const repo of catalog.repos) {
+      for (const pkg of repo.bunPackages) for (const name of pkg.bins) binaries.add(name);
+      for (const pkg of repo.pythonPackages) for (const name of pkg.scripts) binaries.add(name);
+    }
+    // Standalone native surfaces can be installed after the source catalog was generated.
+    const pathDirectories = await Promise.allSettled(
+      (process.env.PATH ?? "").split(delimiter).map((dir) => readdir(dir)),
+    );
+    for (const directory of pathDirectories) {
+      if (directory.status !== "fulfilled") continue;
+      for (const name of directory.value) if (/^aphrody-[a-z\d-]+$/.test(name)) binaries.add(name);
+    }
   }
   const installed = [...binaries].toSorted().flatMap((binary) => {
     const executable = Bun.which(binary);
@@ -216,7 +246,7 @@ export async function runCliHelp(
         const file = `${command.join("__")}.txt`;
         await Bun.write(join(snapshot, file), help);
         entries.push({ command, executable, exitCode, timedOut, file });
-        if (timedOut || exitCode !== 0) return;
+        if (timedOut || exitCode !== 0 || !recursive) return;
         const children = helpCommands(help);
         if (command.length >= 12 && children.length) {
           unresolved.push(command);
@@ -235,6 +265,7 @@ export async function runCliHelp(
     capturedAt,
     platform: process.platform,
     sourceCommit: await gitHead(root),
+    capture: { binaries: only ?? null, recursive },
     installed: executableInfo,
     missing,
     unresolved,
@@ -249,9 +280,11 @@ export async function runCliHelp(
     "",
     `${installed.length} installed binaries; ${entries.length} help pages; ${failed.length} failures/timeouts; ${missing.length} absent binaries.`,
     "",
-    "Regenerate: `bun run cli:help`. Source trees: `docs/ecosystem/CLI.md`.",
+    `Regenerate: \`bun run cli:help${only ? ` --only ${only.join(",")}` : ""}${recursive ? "" : " --no-recursive"}\`. Source trees: \`docs/ecosystem/CLI.md\`.`,
     "",
-    "Only advertised subcommands are traversed; every invocation ends with `--help`.",
+    recursive
+      ? "Only advertised subcommands are traversed; every invocation ends with `--help`."
+      : "Only top-level help is captured; advertised subcommands are not invoked.",
     "",
     "## Rust CLI sources (including NIE / IECODE)",
     "",
@@ -312,6 +345,7 @@ export async function runCliHelp(
       unresolved: unresolved.length,
     }),
   );
+  if (only) return missing.length === 0 && failed.length === 0 && unresolved.length === 0 ? 0 : 1;
   return entries.some(
     (entry) => entry.command.length === 1 && entry.command[0] === "aphrody" && entry.exitCode === 0,
   )

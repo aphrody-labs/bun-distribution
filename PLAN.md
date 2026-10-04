@@ -37,9 +37,12 @@ dépôts, avec leurs contrats et stores séparés.
   ne reçoit aucun privilège Bun/host implicite ; cookies et profils restent isolés.
 - Préserver unwind/récupération aux frontières réelles des artefacts.
   Une faute mémoire peut arrêter le processus ; isoler les travaux quand requis.
-- Garder V8 jusqu'à parité Obscura/JSC : DOM, GC, exceptions, promesses,
-  microtasks, modules, workers, timers, interruptions et destruction.
-  Les WebViews système gardent leurs moteurs de plateforme.
+- Directive propriétaire du 2026-10-05 : Bun conserve JSC/WebKit, Obscura apporte
+  le fournisseur V8/headless, Tauri reste un plugin desktop. Qualifier leurs
+  contrats : DOM, GC, exceptions, promesses, microtasks, modules, workers,
+  timers, interruptions et destruction. Le retrait général de V8 n’est plus
+  la cible. La WebView embarquée partagée avec Bun exige un vrai backend Wry ;
+  les WebViews actuelles utilisent encore leurs moteurs de plateforme.
 - Garder les graphes moteurs compatibles et indépendants si nécessaire.
   Préserver noms d'API/CLI/permissions, licences, provenance, features et lockfiles.
   Retirer un chemin remplacé dans le lot qui qualifie son remplacement.
@@ -77,7 +80,7 @@ publique, de destruction de données ou d'action dans un autre domaine.
 | 3 | Intégrer le navigateur R4 fourni par Yolo | Navigation, extraction, capture, isolation, tests produit |
 | 4 | Migrer les produits R7 : Shenron, RG, Koharu et autres consommateurs concernés | Graphe léger, contrats produit et release passent ; chemins remplacés retirés |
 | 5 | Qualifier les variantes serveur/headless/desktop | Santé et récupération, installation sur la matrice réellement supportée |
-| 6 | Valider R5/R6 côté produit, puis R8 | Parité JSC requise, retrait V8 du profil promu, mesures reproductibles |
+| 6 | Valider R5/R6 côté produit, puis R8 | Contrats et coexistence JSC/V8, sélection des fournisseurs, mesures reproductibles |
 
 Supervision Web et bootstrap SDK sont livrés dans la portée de
 [MEMORY.md](MEMORY.md). Les jalons producteur sont suivis uniquement dans Yolo.
