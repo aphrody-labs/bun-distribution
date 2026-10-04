@@ -13,3 +13,6 @@
 [submodule "forks/material-design-icons"]
 	path = forks/material-design-icons
 	url = git@github-dev:aphrody-labs/material-design-icons.git
+[submodule "packages/nie-ui"]
+	path = packages/nie-ui
+	url = git@github-dev:aphrody-labs/nie-ui.git
