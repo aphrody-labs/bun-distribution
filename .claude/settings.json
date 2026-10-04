@@ -1,13 +1,7 @@
 {
   "enabledPlugins": {
-    "plugin-dev@claude-plugins-official": true,
-    "skill-creator@claude-plugins-official": true,
-    "mcp-server-dev@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "supabase@claude-plugins-official": false,
-    "neon@claude-plugins-official": false,
-    "modern-web-guidance@claude-plugins-official": true,
-    "aphrody@aphrody-user": true
+    "aphrody-m3@aphrody-user": true,
+    "aphrody-google@aphrody-user": true,
+    "shenron@aphrody-user": true
   }
 }
