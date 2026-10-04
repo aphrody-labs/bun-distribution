@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { hasSymbol, readSymbolSvg, symbolNames, symbolSvgPath } from "../src/index.ts";
+import {
+  hasSymbol,
+  readSymbolSvg,
+  searchSymbols,
+  symbolNames,
+  symbolSvgPath,
+} from "../src/index.ts";
 
 test("symbolSvgPath follows the fork naming (default, fill, weight)", () => {
   expect(symbolSvgPath("home")).toEndWith("home/materialsymbolsoutlined/home_24px.svg");
@@ -28,3 +34,14 @@ test.skipIf(!materialised)(
     expect(readSymbolSvg("home")).toContain("<path");
   },
 );
+
+test("searchSymbols ignores blank queries", () => {
+  expect(searchSymbols("   ")).toEqual([]);
+});
+
+test.skipIf(!materialised)("searchSymbols ranks exact matches first and honours the limit", () => {
+  const hits = searchSymbols("home", 5);
+  expect(hits[0]).toBe("home");
+  expect(hits.length).toBeLessThanOrEqual(5);
+  expect(searchSymbols("arrow back")).toContain("arrow_back");
+});

@@ -4,7 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
-import { symbolSvgPath } from "@aphrody/material-design-icons";
+import { searchSymbols, symbolNames, symbolSvgPath } from "@aphrody/material-design-icons";
 import { TARGETS, generate, type Target } from "@aphrody/m3-os-themes";
 import {
   ROOT,
@@ -63,7 +63,11 @@ server.tool(
   themeInput,
   async ({ seed, target, name }) => {
     const targets: readonly Target[] = target === "all" ? TARGETS : [target];
-    return text(generate({ name, seed, mode: "auto" }, targets).map((f) => f.path).join("\n"));
+    return text(
+      generate({ name, seed, mode: "auto" }, targets)
+        .map((f) => f.path)
+        .join("\n"),
+    );
   },
 );
 
@@ -75,7 +79,9 @@ server.tool(
     const targets: readonly Target[] = target === "all" ? TARGETS : [target];
     const file = generate({ name, seed, mode: "auto" }, targets).find((f) => f.path === path);
     if (!file) return text(`unknown path ${path}`);
-    return text(typeof file.content === "string" ? file.content : `(binary, ${file.content.length} bytes)`);
+    return text(
+      typeof file.content === "string" ? file.content : `(binary, ${file.content.length} bytes)`,
+    );
   },
 );
 
@@ -115,6 +121,18 @@ server.tool(
   async ({ name, style, weight, filled }) => {
     const p = symbolSvgPath(name, style, weight, filled);
     return existsSync(p) ? text(`${p}\n${readFileSync(p, "utf8")}`) : text(`not found: ${p}`);
+  },
+);
+
+server.tool(
+  "m3_symbol_search",
+  "Search the full Material Symbols catalogue (4150 names) by substring; returns matching symbol names.",
+  { query: z.string(), limit: z.number().int().min(1).max(500).default(50) },
+  async ({ query, limit }) => {
+    const hits = searchSymbols(query, limit);
+    return text(
+      hits.length > 0 ? hits.join("\n") : `no match among ${symbolNames().length} symbols`,
+    );
   },
 );
 

@@ -39,3 +39,14 @@ export function readSymbolSvg(
 ): string {
   return readFileSync(symbolSvgPath(name, style, weight, filled), "utf8");
 }
+
+/** Case-insensitive substring search over symbol names; exact, then prefix, then shorter names first. */
+export function searchSymbols(query: string, limit = 50): string[] {
+  const q = query.trim().toLowerCase().replaceAll(" ", "_");
+  if (!q) return [];
+  const rank = (n: string) => (n === q ? 0 : n.startsWith(q) ? 1 : 2);
+  return symbolNames()
+    .filter((n) => n.includes(q))
+    .toSorted((a, b) => rank(a) - rank(b) || a.length - b.length)
+    .slice(0, limit);
+}
