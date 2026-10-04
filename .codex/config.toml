@@ -1,2 +1,62 @@
+# Aphrody & YOLO configuration; owner directive 2026-10-04.
+# Schema: https://developers.openai.com/codex/config-reference/
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+web_search = "disabled"
+developer_instructions = "Work in /home/aphro/yolo and /home/aphro/aphrody. Read the repository's AGENTS.md, GOAL.md, PLAN.md and MEMORY.md before making changes. Use /home/aphro/yolo/bin/yolo and /home/aphro/.local/bin/aphrody as the primary CLI entry points, and the native yolo and aphrody MCP servers for capabilities. Load skills and references strictly from the aphrody, yolo and aphrody-web plugins under /home/aphro/yolo/plugins. Do not use foreign or legacy plugins (shenron, dragonball, rose-griffon, iecode, bxc). Execute existing Yolo and Aphrody CLI commands directly; inspect live help and source before asserting a capability is absent. If a needed capability is missing, implement the bounded native capability within the authorized task, then qualify it with quality gates. Continue authorized work through implementation, validation and delivery; preserve concurrent work, authentication, protected data and private repositories."
+
+[features]
+apps = false
+hooks = false
+shell_snapshot = false
+skill_mcp_dependency_install = false
+
+[memories]
+generate_memories = false
+use_memories = false
+
+[mcp_servers.yolo]
+command = "/home/aphro/yolo/bin/yolo"
+args = ["mcp"]
+cwd = "/home/aphro/yolo"
+enabled = true
+required = true
+startup_timeout_sec = 20
+tool_timeout_sec = 120
+
+[mcp_servers.aphrody]
+command = "/home/aphro/.local/bin/aphrody-kernel"
+args = ["mcp"]
+cwd = "/home/aphro/aphrody"
+enabled = true
+required = true
+startup_timeout_sec = 20
+tool_timeout_sec = 120
+
+[plugins."yolo@aphrody-user"]
+enabled = true
+
 [plugins."aphrody@aphrody-user"]
-"enabled" = true
+enabled = true
+
+[plugins."aphrody-web@aphrody-user"]
+enabled = true
+
+[skills]
+max_context_tokens = 4000
+
+[[skills.config]]
+path = "/home/aphro/.codex/skills/.system/imagegen"
+enabled = false
+
+[[skills.config]]
+path = "/home/aphro/.codex/skills/.system/openai-docs"
+enabled = false
+
+[[skills.config]]
+path = "/home/aphro/.codex/skills/.system/skill-creator"
+enabled = false
+
+[[skills.config]]
+path = "/home/aphro/.codex/skills/.system/skill-installer"
+enabled = false
