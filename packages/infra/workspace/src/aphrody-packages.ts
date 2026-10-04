@@ -17,7 +17,6 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { existsSync } from "node:fs";
 import { canonicalTar, gzipCanonical, readTar, type TarMember } from "./canonical-tar.ts";
-import { infraRoot } from "./runtime.ts";
 
 export interface AphrodyArchive {
   name: string;
@@ -241,7 +240,10 @@ export async function prepareAphrodyPackages(options: {
   apply?: boolean;
   allowDirty?: boolean;
 }): Promise<AphrodyPackagesManifest> {
-  const root = resolve(options.root ?? infraRoot());
+  // Runtime resolution loads workspace packages; a Windows consumer reading a WSL checkout cannot.
+  const root = resolve(
+    options.root ?? process.env.APHRODY_ROOT ?? (await import("./runtime.ts")).infraRoot(),
+  );
   const { members, external } = await aphrodyClosure(root, options.names);
   const revision = git(root, ["rev-parse", "HEAD"]);
   const dirty = Boolean(
