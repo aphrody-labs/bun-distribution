@@ -12,7 +12,6 @@
 // Every path is relative to the directory of the config file.
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 
 /** Dynamic colour inputs of the `m3:theme.css` sheet. */
 export interface M3ThemeConfig {

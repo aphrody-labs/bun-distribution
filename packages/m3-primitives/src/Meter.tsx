@@ -13,7 +13,7 @@ export type MeterRootProps = MeterPrimitive.Root.Props & {
 };
 
 export const MeterRoot = forwardRef<HTMLDivElement, MeterRootProps>(
-  ({ className, tone = "primary", ...props }, ref) => (
+  ({ className, tone: _tone, ...props }, ref) => (
     <MeterPrimitive.Root
       ref={ref}
       className={withClassName("flex flex-col gap-1.5 w-full", className)}
