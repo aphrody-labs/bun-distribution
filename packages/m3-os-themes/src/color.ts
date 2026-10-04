@@ -16,15 +16,29 @@ export function validate(input: ThemeInput): string {
   return seed.toLowerCase();
 }
 
-/** M3 roles for one mode, keyed by camelCase role name. */
+/** Roles are a pure function of seed, variant and mode, and `generate()` asks for the same few dozens of times. */
+const ROLE_CACHE_SIZE = 32;
+const roleCache = new Map<string, ThemeColors>();
+
+/**
+ * M3 roles for one mode, keyed by camelCase role name. Memoised per (seed, variant, mode): one `generate()` for all four
+ * targets calls this ~17 times for the 2 distinct schemes, and each call costs 0.5 ms. The result is frozen, as it is
+ * shared between callers.
+ */
 export function rolesFor(input: ThemeInput, mode: Mode): ThemeColors {
   const seed = validate(input);
+  const key = `${seed}|${input.variant ?? ""}|${mode}`;
+  const cached = roleCache.get(key);
+  if (cached) return cached;
   const map = schemeFromSeed(seed, { dark: mode === "dark", variant: input.variant });
   const roles: Roles = {};
   for (const [k, v] of Object.entries(map)) {
     roles[camel(k.replace("--md-sys-color-", ""))] = v.toLowerCase();
   }
-  return { mode, roles };
+  const colors: ThemeColors = Object.freeze({ mode, roles: Object.freeze(roles) });
+  if (roleCache.size >= ROLE_CACHE_SIZE) roleCache.delete(roleCache.keys().next().value!);
+  roleCache.set(key, colors);
+  return colors;
 }
 
 export const MODES: readonly Mode[] = ["light", "dark"];
