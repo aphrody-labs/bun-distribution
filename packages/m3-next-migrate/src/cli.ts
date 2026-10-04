@@ -6,6 +6,7 @@ import { buildRouteHierarchy } from "./layout";
 import { migrateProject } from "./migrator";
 import { scanNextDirectory } from "./scanner";
 import { transformComponent } from "./transform";
+import { CODEMOD_HELP, runCodemodCli } from "./codemods/cli";
 
 function printHelp() {
   console.log(`
@@ -42,7 +43,7 @@ EXAMPLES:
 
   # Migrate a single component file in place
   next-migrate ./components/Hero.tsx
-`);
+${CODEMOD_HELP}`);
 }
 
 async function main() {
@@ -52,6 +53,8 @@ async function main() {
     printHelp();
     process.exit(0);
   }
+
+  if (args[0] === "codemod" || args[0] === "pages-hints") process.exit(await runCodemodCli(args));
 
   if (args.includes("-v") || args.includes("--version")) {
     console.log("3.3.0");

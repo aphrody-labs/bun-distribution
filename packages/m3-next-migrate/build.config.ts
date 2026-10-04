@@ -4,6 +4,7 @@ export default m3Package({
   entry: [
     "src/index.ts",
     "src/cli.ts",
+    "src/codemods/index.ts",
     "src/shims/navigation.tsx",
     "src/shims/link.tsx",
     "src/shims/image.tsx",

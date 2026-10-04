@@ -1,7 +1,42 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # @aphrody/m3-next-migrate
 
 High-performance migration engine, AST codemod and runtime shims to migrate **Next.js 16** UI and React components to **Tauri v2** desktop applications or **Bun / Vite** web SPAs.
+
+## Codemods: to the Next 16 + M3 stack
+
+Two directions. The codemods below take an existing Next 14/15, MUI or Tailwind v3 app **to** Next.js 16, Base UI with M3 and
+Tailwind v4 (the stack of `@aphrody/m3-next`, `@aphrody/m3-baseui` and `@aphrody/m3-tailwind`); the rest of this README takes a Next 16
+app out to Tauri or Vite. Without `--apply` nothing is written: you get a report of what would change and what needs a human.
+
+```sh
+next-migrate codemod --list
+next-migrate codemod next16 ./my-app            # report
+next-migrate codemod all ./my-app --apply       # write
+next-migrate pages-hints ./my-app               # Pages Router -> App Router plan, nothing rewritten
+```
+
+| Group     | Codemod                                                            | Does                                                                                                                                                                                                                                                              |
+| --------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| next16    | `next-config`                                                      | `experimental.dynamicIO`, `ppr` -> `cacheComponents`; `experimental.turbo` -> `turbopack`; `typedRoutes`, `reactCompiler`, `serverComponentsExternalPackages` -> `serverExternalPackages`; drops `eslint` and removed flags; `images.domains` -> `remotePatterns` |
+| next16    | `middleware-to-proxy`                                              | `middleware.ts` -> `proxy.ts`, `export function middleware` -> `proxy`, drops `runtime = "edge"`                                                                                                                                                                  |
+| next16    | `async-request-apis`                                               | awaits `cookies()`, `headers()`, `draftMode()` and makes the enclosing top-level function async                                                                                                                                                                   |
+| next16    | `async-route-props`                                                | `params` and `searchParams` are Promises in page, layout, route and metadata files: types, destructuring and uses                                                                                                                                                 |
+| next16    | `revalidate-tag`                                                   | `revalidateTag(tag)` -> `revalidateTag(tag, "max")`                                                                                                                                                                                                               |
+| next16    | `legacy-image`, `next-package-json`                                | `next/legacy/image` -> `next/image`; versions, `next lint`, `--turbo`                                                                                                                                                                                             |
+| mui       | `mui-to-m3`                                                        | Button, Switch, Checkbox, Divider -> `@aphrody/m3-baseui`; Typography, Stack, Box, Paper -> elements with M3 Tailwind classes; the rest is reported                                                                                                               |
+| tailwind4 | `tailwind-css-v4`                                                  | `@tailwind` directives -> `@import "tailwindcss"`; `@layer utilities` -> `@utility`; `theme()`                                                                                                                                                                    |
+| tailwind4 | `tailwind-classes-v4`                                              | `shadow-sm`, `rounded`, `ring`, `outline-none`, ... renamed; `bg-opacity-50` -> `/50`; `!p-4` -> `p-4!`; `bg-[--x]` -> `bg-(--x)`; runs once (a project already on v4 is skipped)                                                                                 |
+| tailwind4 | `tailwind-config-v4`, `postcss-config-v4`, `tailwind-package-json` | `tailwind.config.js` -> `tailwind-theme.css` (`@theme`, `@plugin`, dark variant); PostCSS plugin; dependencies                                                                                                                                                    |
+
+The codemods are pure functions on source text (`import { codemods } from "@aphrody/m3-next-migrate"`, or the subpath
+`@aphrody/m3-next-migrate/codemods`): a small scanner finds strings, comments and matching brackets, so edits never land inside a
+string. A shape a codemod recognises but cannot rewrite safely (a named props type, a callback that needs `await`, a MUI Select) becomes
+a warning, never a guess. `pages-hints` covers `getServerSideProps`, `getStaticProps`, `getStaticPaths`, `next/router`, `next/head`,
+`(req, res)` API handlers, `_app` and `_document`.
+
+---
 
 ## Why Migrate from Next.js 16 to Tauri v2 or Vite?
 
@@ -56,11 +91,7 @@ bun run next-migrate ./components/Hero.tsx ./dist/Hero.tsx
 ## Programmatic API
 
 ```typescript
-import {
-  transformComponent,
-  scanNextDirectory,
-  migrateProject,
-} from "@aphrody/m3-next-migrate";
+import { transformComponent, scanNextDirectory, migrateProject } from "@aphrody/m3-next-migrate";
 
 // Transform component code
 const result = transformComponent(nextSourceCode, {

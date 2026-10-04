@@ -13,6 +13,9 @@ export {
   type RouteHierarchy,
 } from "./layout";
 
+// Codemods: Next 14/15 -> 16, MUI -> M3, Tailwind v3 -> v4, Pages -> App hints
+export * as codemods from "./codemods";
+
 // Runtime Shims
 export { NextMigrateProvider, useNextMigrateContext, type RouterMode, type NextMigrateProviderProps } from "./shims/provider";
 export {
