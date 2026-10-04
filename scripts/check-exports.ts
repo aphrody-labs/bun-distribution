@@ -91,6 +91,9 @@ export function listPackages(root = REPO): Pkg[] {
       const nested = existsSync(join(dir, ".git"));
       const manifest = readJson(file);
       out.push({ dir, rel, manifest, nested, hostBound: !nested && !members.has(rel) });
+      // Workspace members declared below a package (`packages/m3-next/examples/*`).
+      for (const member of [...members].filter((m) => m.startsWith(`${rel}/`)).toSorted())
+        out.push({ dir: join(root, member), rel: member, manifest: readJson(join(root, member, "package.json")) });
       if (nested) {
         for (const sub of expandWorkspaces(dir, workspacePatterns(manifest))) {
           out.push({ dir: join(dir, sub), rel: `${rel}/${sub}`, manifest: readJson(join(dir, sub, "package.json")), nested: true });
@@ -117,12 +120,14 @@ export function hostPackageNames(roots = (process.env["M3_HOST_ROOTS"] ?? `${hom
   return names;
 }
 
-function walk(dir: string, accept: (file: string) => boolean, out: string[] = []): string[] {
+function walk(dir: string, accept: (file: string) => boolean, out: string[] = [], root = dir): string[] {
   if (!existsSync(dir)) return out;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (SKIP_DIRS.has(entry.name)) continue;
     const path = join(dir, entry.name);
-    if (entry.isDirectory()) walk(path, accept, out);
+    // A directory with its own manifest is another package (example apps, nested workspaces).
+    if (entry.isDirectory() && existsSync(join(path, "package.json")) && path !== root) continue;
+    if (entry.isDirectory()) walk(path, accept, out, root);
     else if (entry.isFile() && accept(path)) out.push(path);
   }
   return out;
