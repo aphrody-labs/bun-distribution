@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import type { M3CssConfig } from "../src/native.ts";
 
 /** The Aphrody OS checkout this package lives in. */
-export const REPO_ROOT = resolve(import.meta.dir, "../../../..");
+export const REPO_ROOT = resolve(import.meta.dir, "../../../../..");
 /** The fixture application. */
 export const FIXTURE = join(import.meta.dir, "fixtures/app");
 

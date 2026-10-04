@@ -8,7 +8,7 @@ import { loadM3Config } from "@aphrody/m3/config";
 import { undeclaredDependencies } from "./undeclared-deps";
 
 const here = import.meta.dir;
-const root = resolve(here, "../../..");
+const root = resolve(here, "../../../..");
 
 if (import.meta.main) {
   const isWindows = process.platform === "win32";

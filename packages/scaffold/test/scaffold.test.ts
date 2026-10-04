@@ -25,7 +25,7 @@ import {
   writeFiles,
 } from "../src/index.ts";
 
-const root = resolve(import.meta.dir, "../../../..");
+const root = resolve(import.meta.dir, "../../../../..");
 const text = (value: string | Uint8Array | undefined): string =>
   typeof value === "string" ? value : new TextDecoder().decode(value);
 

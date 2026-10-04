@@ -17,7 +17,7 @@ import { readdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 export const PACKAGE_DIR = resolve(import.meta.dir, "..");
-export const REPO_DIR = resolve(PACKAGE_DIR, "../../..");
+export const REPO_DIR = resolve(PACKAGE_DIR, "../../../..");
 export const UPSTREAM_DIR = join(REPO_DIR, "third_party", "canvas");
 export const SCENE_TYPES_SOURCE = join(REPO_DIR, "packages", "bun", "aphrody", "src", "scene-types.ts");
 export const UPSTREAM_REPOSITORY = "https://github.com/Brooooooklyn/canvas";

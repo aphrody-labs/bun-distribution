@@ -43,7 +43,7 @@ export class GenerateError extends Error {
   }
 }
 
-const REPO_ROOT = resolve(import.meta.dir, "../../../..");
+const REPO_ROOT = resolve(import.meta.dir, "../../../../..");
 
 function iconScore(icon: IconRef): number {
   const size = Math.max(
