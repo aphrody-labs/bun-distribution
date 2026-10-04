@@ -75,14 +75,17 @@ async function main(): Promise<void> {
     "config/infra/inventory/vps-source.json",
     "docs/reference/infra/TOPOLOGY.md",
     "docs/reference/infra/MIGRATION-GUARDRAILS.md",
-    "systemd/aphrody-site.service.example",
-    "systemd/aphrody-web-api.service.example",
-    "systemd/aphrody-a2a.service.example",
-    "systemd/aphrody-shenron-embed.service.example",
-    "systemd/aphrody-ai-http.service.example",
     "config/local-ai.json",
     "config/local-ai.env.example",
   ];
+  const yoloUnits = ["config/host/systemd/aphrody/aphrody-web-api.service", "config/host/catalog.json"];
+  for (const relative of yoloUnits) {
+    try {
+      if (!(await stat(join(yoloRoot, relative))).isFile()) fail(`Missing yolo host file: ${relative}`);
+    } catch {
+      fail(`Missing yolo host file: ${relative}`);
+    }
+  }
   for (const relative of required) {
     const path = join(repo, relative);
     try {
