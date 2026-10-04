@@ -205,6 +205,9 @@ if (operation === "runtime-gate") {
 if (operation === "automation-inventory") {
   process.exit(await (await import("./automation-inventory.ts")).runAutomationInventory(rest));
 }
+if (operation === "aphrody-packages") {
+  process.exit(await (await import("./aphrody-packages.ts")).runAphrodyPackages(rest));
+}
 if (operation === "system-packages") {
   process.exit(await (await import("./system-packages.ts")).runSystemPackages(rest));
 }
