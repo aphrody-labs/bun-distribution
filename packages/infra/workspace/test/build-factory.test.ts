@@ -468,7 +468,7 @@ test("Yolo shares factory caches while preserving its canonical packaging target
   expect(declared.repositories.yolo).toBe("/srv/aphrody-build/workspaces/yolo");
   const plan = buildFactoryPlan(declared, "yolo", revision, ["just", "runtime-package"]);
   expect(plan.repository).toBe("yolo");
-  expect(plan.workspace).toBe(declared.repositories.yolo);
+  expect(plan.workspace).toBe(declared.repositories.yolo!);
   expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
   expect(plan.transport[5]).not.toContain("CARGO_TARGET_DIR=");
   expect(plan.transport[5]).toContain("SCCACHE_DIR=/srv/aphrody-build/cache/sccache");
@@ -602,5 +602,74 @@ test.skipIf(process.platform === "win32")(
     );
     expect((await new Response(child.stdout).text()).trim()).toBe("local");
     expect(await child.exited).toBe(0);
+  },
+);
+
+test("source preparations use disjoint locks and builds also protect their pinned checkout", () => {
+  const source = {
+    path: "/source/aphrody",
+    remote: "workspace",
+    url: "git@github-dev:aphrody-labs/aphrody.git",
+    owners: ["aphrody-labs"],
+  };
+  const first = buildFactoryPreparePlan(config, "aphrody", revision, source, {
+    initializeSubmodules: false,
+  });
+  expect(first.lockPath).toBe("/srv/aphrody-build/locks/aphrody.source.lock");
+  expect(first.transport[5]).toContain("heavy.lock");
+  expect(first.transport[5]).toContain('if [ "$result" -eq 75 ]');
+  expect(first.transport[5]).not.toContain("submodule update --init");
+  expect(first.transport[5]).toContain("submodule foreach --quiet --recursive");
+  expect(first.initializesSubmodules).toBe(false);
+  const otherConfig = {
+    ...config,
+    repositories: { ...config.repositories, yolo: "/srv/aphrody-build/workspaces/yolo" },
+  };
+  const other = buildFactoryPreparePlan(otherConfig, "yolo", revision, {
+    ...source,
+    path: "/source/yolo",
+    remote: "origin",
+    url: "git@github-dev:aphrody-labs/yolo.git",
+  });
+  expect(other.lockPath).not.toBe(first.lockPath);
+  expect(other.initializesSubmodules).toBe(true);
+  const build = buildFactoryPlan(config, "aphrody", revision, [
+    "scripts/build/rust/cargo-serial.sh",
+    "check",
+  ]);
+  expect(build.transport[5]).toContain(
+    "flock --close -- '/srv/aphrody-build/locks/heavy.lock' flock --close -- '/srv/aphrody-build/locks/aphrody.source.lock'",
+  );
+});
+
+test.skipIf(process.platform === "win32")(
+  "source preparation progresses while an unrelated heavy build holds the global lock",
+  async () => {
+    const f = await preparationFixture();
+    await mkdir(join(f.root, "locks"));
+    const held = Bun.spawn(
+      [
+        "flock",
+        "--close",
+        f.declared.lockPath,
+        process.execPath,
+        "-e",
+        "console.log('locked');setInterval(()=>{},1000)",
+      ],
+      { stdout: "pipe", stderr: "pipe" },
+    );
+    const reader = held.stdout.getReader();
+    try {
+      const ready = await reader.read();
+      expect(new TextDecoder().decode(ready.value)).toContain("locked");
+      const prepared = await f.prepare(f.initial);
+      expect(prepared.exitCode).toBe(0);
+      expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(f.initial);
+    } finally {
+      await reader.cancel();
+      held.kill();
+      await held.exited;
+      await rm(f.root, { recursive: true, force: true });
+    }
   },
 );

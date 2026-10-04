@@ -26,7 +26,13 @@ function absolutePath(value: string, field: string): string {
   return value;
 }
 
-/** All heavy work shares Infra's host policy, transport and lock; Cargo retains its owner lock. */
+function sourceLockPath(config: BuildFactoryConfig, repository: string): string {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(repository))
+    throw new Error("Invalid factory repository lock identity");
+  return posix.join(posix.dirname(config.lockPath), `${repository}.source.lock`);
+}
+
+/** Builds share the heavy lock and hold their source lock; Cargo retains its owner lock. */
 export function buildFactoryPlan(
   config: BuildFactoryConfig,
   repository: string,
@@ -88,7 +94,7 @@ export function buildFactoryPlan(
     `exec env ${environment.map(shellQuote).join(" ")} ${command.map(shellQuote).join(" ")}`,
   ].join("\n");
   // The supervisor owns the descriptor; long-lived cache daemons must not inherit it.
-  const remoteCommand = `flock --close -- ${shellQuote(lock)} bash -c ${shellQuote(body)}`;
+  const remoteCommand = `flock --close -- ${shellQuote(lock)} flock --close -- ${shellQuote(sourceLockPath(config, repository))} bash -c ${shellQuote(body)}`;
   return {
     repository,
     revision,
@@ -137,6 +143,7 @@ export function buildFactoryPreparePlan(
   repository: string,
   revision: string,
   source: FactorySource,
+  options: { initializeSubmodules?: boolean } = {},
 ) {
   if (!["yolo", "aphrody", "aphrody-py"].includes(repository)) {
     throw new Error("Factory preparation is limited to yolo, aphrody and aphrody-py");
@@ -202,7 +209,9 @@ export function buildFactoryPreparePlan(
     `git checkout --detach --no-overwrite-ignore ${shellQuote(revision)}`,
     "git submodule sync --recursive",
     `git submodule foreach --quiet --recursive ${shellQuote(guardedSubmodules)}`,
-    "git submodule update --init --recursive --jobs 4 --filter=blob:none",
+    ...(options.initializeSubmodules === false
+      ? []
+      : ["git submodule update --init --recursive --jobs 4 --filter=blob:none"]),
     `test "$(git rev-parse HEAD)" = ${shellQuote(revision)}`,
     clean,
     `git submodule foreach --quiet --recursive ${shellQuote(clean)}`,
@@ -216,10 +225,16 @@ export function buildFactoryPreparePlan(
   ]
     .map(factoryDirectory)
     .join("\n");
-  const lock = shellQuote(config.lockPath);
-  const remoteCommand = `${directoryCommands}\ntest "$(realpath -m -- ${lock})" = ${lock} || { echo 'Factory lock resolves elsewhere; preserved' >&2; exit 2; }\nflock --close -- ${lock} bash -c ${shellQuote(body)}`;
+  const lockPath = sourceLockPath(config, repository);
+  const lock = shellQuote(lockPath);
+  // Existing checkouts also retain the global lock while legacy workers drain.
+  // The fresh-source probe releases the source lock before taking heavy -> source, so lock order stays acyclic.
+  const freshBody = `if [ -e ${shellQuote(validation.workspace)} ]; then exit 75; fi\n${body}`;
+  const remoteCommand = `${directoryCommands}\ntest "$(realpath -m -- ${lock})" = ${lock} || { echo 'Factory lock resolves elsewhere; preserved' >&2; exit 2; }\nflock --close -- ${lock} bash -c ${shellQuote(freshBody)}\nresult=$?\nif [ "$result" -eq 75 ]; then\n  flock --close -- ${shellQuote(config.lockPath)} flock --close -- ${lock} bash -c ${shellQuote(body)}\nelse\n  exit "$result"\nfi`;
   return {
     operation: "prepare" as const,
+    initializesSubmodules: options.initializeSubmodules !== false,
+    lockPath,
     repository,
     revision,
     target: validation.target,
@@ -346,7 +361,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> -- <owner command> [arguments...]\n       aphrody-ops build-factory prepare --repo <aphrody|yolo|aphrody-py> --revision <full-git-sha> [--apply]\n       aphrody-ops build-factory status [--route]\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under the shared heavy lock. It starts no build and preserves dirty, unowned and ignored files.",
+      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> -- <owner command> [arguments...]\n       aphrody-ops build-factory prepare --repo <aphrody|yolo|aphrody-py> --revision <full-git-sha> [--apply] [--no-submodules]\n       aphrody-ops build-factory status [--route]\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.",
     );
     return 0;
   }
@@ -364,8 +379,13 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   let revision = "";
   let command: string[] = [];
   let apply = false;
+  let initializeSubmodules = true;
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
+    if (action === "prepare" && arg === "--no-submodules") {
+      initializeSubmodules = false;
+      continue;
+    }
     if (action === "prepare" && arg === "--apply") {
       apply = true;
       continue;
@@ -387,7 +407,9 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   if (action === "prepare") {
     if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("A full pinned Git revision is required");
     const source = await declaredFactorySource(root, repository, revision);
-    const plan = buildFactoryPreparePlan(config, repository, revision, source);
+    const plan = buildFactoryPreparePlan(config, repository, revision, source, {
+      initializeSubmodules,
+    });
     if (!apply) {
       console.log(JSON.stringify({ executed: false, ...plan }, null, 2));
       return 0;
