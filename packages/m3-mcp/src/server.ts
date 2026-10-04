@@ -4,8 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
-import { searchSymbols, symbolNames, symbolSvgPath } from "@aphrody/material-design-icons";
-import { TARGETS, generate, type Target } from "@aphrody/m3-os-themes";
+import type { Target } from "@aphrody/m3-os-themes";
 import {
   ROOT,
   listPackages,
@@ -15,6 +14,11 @@ import {
   searchDocs,
   validateTokens,
 } from "./catalog";
+
+// The theme generators (16 ms with m3-tokens) and the symbol catalogue are loaded by the tools that use them, not at
+// start-up: the handshake with the client no longer waits for them.
+const osThemes = () => import("@aphrody/m3-os-themes");
+const symbols = () => import("@aphrody/material-design-icons");
 
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t || "(no result)" }] });
 
@@ -62,6 +66,7 @@ server.tool(
   "List the files m3-os-themes would generate for a seed colour and target (nothing is written).",
   themeInput,
   async ({ seed, target, name }) => {
+    const { TARGETS, generate } = await osThemes();
     const targets: readonly Target[] = target === "all" ? TARGETS : [target];
     return text(
       generate({ name, seed, mode: "auto" }, targets)
@@ -76,6 +81,7 @@ server.tool(
   "Return the text content of one generated OS theme file (path from m3_os_themes_list). Never writes to disk or the system.",
   { ...themeInput, path: z.string() },
   async ({ seed, target, name, path }) => {
+    const { TARGETS, generate } = await osThemes();
     const targets: readonly Target[] = target === "all" ? TARGETS : [target];
     const file = generate({ name, seed, mode: "auto" }, targets).find((f) => f.path === path);
     if (!file) return text(`unknown path ${path}`);
@@ -119,6 +125,7 @@ server.tool(
     filled: z.boolean().default(false),
   },
   async ({ name, style, weight, filled }) => {
+    const { symbolSvgPath } = await symbols();
     const p = symbolSvgPath(name, style, weight, filled);
     return existsSync(p) ? text(`${p}\n${readFileSync(p, "utf8")}`) : text(`not found: ${p}`);
   },
@@ -129,6 +136,7 @@ server.tool(
   "Search the full Material Symbols catalogue (4150 names) by substring; returns matching symbol names.",
   { query: z.string(), limit: z.number().int().min(1).max(500).default(50) },
   async ({ query, limit }) => {
+    const { searchSymbols, symbolNames } = await symbols();
     const hits = searchSymbols(query, limit);
     return text(
       hits.length > 0 ? hits.join("\n") : `no match among ${symbolNames().length} symbols`,
