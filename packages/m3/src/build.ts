@@ -34,8 +34,8 @@ export interface BuildM3Options {
   optimizeImports?: string[];
   /** Tauri webview layout into `uiDist`. */
   tauri?: BuildM3Tauri;
-  /** Options of the composed `m3Plugin`. */
-  plugin?: M3PluginOptions;
+  /** Options of the composed `m3Plugin`, or `false` to leave it out (a plugin in `plugins` replaces it, e.g. `@aphrody/m3-bun`). */
+  plugin?: M3PluginOptions | false;
   /** Additional Bun plugins, after `m3Plugin`. */
   plugins?: BunPlugin[];
   /** Remove the output directory first (default true). */
@@ -138,7 +138,7 @@ export async function buildM3(options: BuildM3Options): Promise<BuildM3Result> {
     ...(options.optimizeImports && options.optimizeImports.length > 0
       ? { optimizeImports: options.optimizeImports }
       : {}),
-    plugins: [m3Plugin(options.plugin), ...(options.plugins ?? [])],
+    plugins: [...(options.plugin === false ? [] : [m3Plugin(options.plugin)]), ...(options.plugins ?? [])],
     ...(tauri
       ? {
           naming: {

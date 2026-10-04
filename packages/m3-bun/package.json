@@ -1,0 +1,52 @@
+{
+  "name": "@aphrody/m3-bun",
+  "version": "3.3.3",
+  "private": true,
+  "description": "The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudflare, Coolify, VS Code, Windows, minimal Linux image). One Bun file server serves the UI and the API from one process.",
+  "keywords": [
+    "bun",
+    "material-3",
+    "compile",
+    "deploy"
+  ],
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "directory": "packages/m3-bun"
+  },
+  "bin": {
+    "m3-bun": "./bin/m3-bun.ts"
+  },
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./plugin": "./src/plugin.ts",
+    "./server": "./src/server.ts",
+    "./api": "./src/api.ts",
+    "./config": "./src/config.ts",
+    "./targets": "./src/targets/index.ts",
+    "./runtime": "./src/runtime.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "bin"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "bun test",
+    "m3-bun": "bun bin/m3-bun.ts"
+  },
+  "dependencies": {
+    "@aphrody/m3": "workspace:*",
+    "@aphrody/m3-fonts": "workspace:*",
+    "@aphrody/m3-tokens": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

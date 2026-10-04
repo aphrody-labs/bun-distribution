@@ -169,6 +169,18 @@
         "react-dom": ">=18.0.0",
       },
     },
+    "packages/m3-bun": {
+      "name": "@aphrody/m3-bun",
+      "version": "3.3.3",
+      "bin": {
+        "m3-bun": "./bin/m3-bun.ts",
+      },
+      "dependencies": {
+        "@aphrody/m3": "workspace:*",
+        "@aphrody/m3-fonts": "workspace:*",
+        "@aphrody/m3-tokens": "workspace:*",
+      },
+    },
     "packages/m3-codemods": {
       "name": "@aphrody/m3-codemods",
       "version": "0.1.0",
@@ -557,6 +569,8 @@
     "@aphrody/m3-ai": ["@aphrody/m3-ai@workspace:packages/m3-ai"],
 
     "@aphrody/m3-baseui": ["@aphrody/m3-baseui@workspace:packages/m3-baseui"],
+
+    "@aphrody/m3-bun": ["@aphrody/m3-bun@workspace:packages/m3-bun"],
 
     "@aphrody/m3-codemods": ["@aphrody/m3-codemods@workspace:packages/m3-codemods"],
 
