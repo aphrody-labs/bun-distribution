@@ -5,6 +5,21 @@
     "": {
       "name": "aphrody-m3",
     },
+    "apps/web": {
+      "name": "@aphrody/m3-web",
+      "version": "3.3.3",
+      "dependencies": {
+        "@aphrody/m3": "workspace:*",
+        "@aphrody/m3-front": "workspace:*",
+        "@aphrody/m3-tailwind": "workspace:*",
+        "@aphrody/m3-tokens": "workspace:*",
+        "tailwindcss": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+        "typescript": "catalog:",
+      },
+    },
     "packages/ag-ui": {
       "name": "@aphrody/ag-ui",
       "version": "1.0.1",
@@ -139,6 +154,27 @@
         "tailwindcss": ">=4.1.0",
       },
     },
+    "packages/m3-baseui": {
+      "name": "@aphrody/m3-baseui",
+      "version": "3.3.3",
+      "dependencies": {
+        "@aphrody/m3-tokens": "workspace:*",
+        "@base-ui/react": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/bun": "^3.3.0",
+        "@aphrody/m3-config": "workspace:*",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0",
+      },
+    },
     "packages/m3-codemods": {
       "name": "@aphrody/m3-codemods",
       "version": "0.1.0",
@@ -225,6 +261,19 @@
         "tailwindcss": ">=4.1.0",
       },
     },
+    "packages/m3-front": {
+      "name": "@aphrody/m3-front",
+      "version": "3.3.3",
+      "dependencies": {
+        "@aphrody/m3-tokens": "workspace:*",
+        "@aphrody/material-web": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/bun": "^3.3.0",
+        "@aphrody/m3-config": "workspace:*",
+        "typescript": "catalog:",
+      },
+    },
     "packages/m3-icons": {
       "name": "@aphrody/m3-icons",
       "version": "3.3.3",
@@ -254,6 +303,7 @@
       "name": "@aphrody/m3-mcp",
       "version": "1.0.0",
       "dependencies": {
+        "@aphrody/m3-os-themes": "workspace:*",
         "@aphrody/material-design-icons": "workspace:*",
         "@modelcontextprotocol/sdk": "^1.31.0",
         "zod": "^4.6.5",
@@ -322,6 +372,21 @@
         "@types/react": "catalog:",
         "@typescript/native-preview": "catalog:",
         "tsup": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/m3-os-themes": {
+      "name": "@aphrody/m3-os-themes",
+      "version": "3.3.3",
+      "bin": {
+        "m3-os-themes": "./src/cli.ts",
+      },
+      "dependencies": {
+        "@aphrody/m3-tokens": "workspace:*",
+      },
+      "devDependencies": {
+        "@aphrody/bun": "^3.3.0",
+        "@aphrody/m3-config": "workspace:*",
         "typescript": "catalog:",
       },
     },
@@ -397,6 +462,23 @@
         "react": ">=18.0.0",
         "react-dom": ">=18.0.0",
         "tailwindcss": ">=4.1.0",
+      },
+    },
+    "packages/m3-tailwind": {
+      "name": "@aphrody/m3-tailwind",
+      "version": "3.3.3",
+      "dependencies": {
+        "@aphrody/m3-tokens": "workspace:*",
+      },
+      "devDependencies": {
+        "@aphrody/bun": "^3.3.0",
+        "@aphrody/m3-config": "workspace:*",
+        "@tailwindcss/node": "catalog:",
+        "tailwindcss": "catalog:",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "tailwindcss": "^4.0.0",
       },
     },
     "packages/m3-theme": {
@@ -571,6 +653,8 @@
 
     "@aphrody/m3-ai": ["@aphrody/m3-ai@workspace:packages/m3-ai"],
 
+    "@aphrody/m3-baseui": ["@aphrody/m3-baseui@workspace:packages/m3-baseui"],
+
     "@aphrody/m3-codemods": ["@aphrody/m3-codemods@workspace:packages/m3-codemods"],
 
     "@aphrody/m3-config": ["@aphrody/m3-config@workspace:packages/m3-config"],
@@ -583,6 +667,8 @@
 
     "@aphrody/m3-forms": ["@aphrody/m3-forms@workspace:packages/m3-forms"],
 
+    "@aphrody/m3-front": ["@aphrody/m3-front@workspace:packages/m3-front"],
+
     "@aphrody/m3-icons": ["@aphrody/m3-icons@workspace:packages/m3-icons"],
 
     "@aphrody/m3-mcp": ["@aphrody/m3-mcp@workspace:packages/m3-mcp"],
@@ -593,15 +679,21 @@
 
     "@aphrody/m3-next-migrate": ["@aphrody/m3-next-migrate@workspace:packages/m3-next-migrate"],
 
+    "@aphrody/m3-os-themes": ["@aphrody/m3-os-themes@workspace:packages/m3-os-themes"],
+
     "@aphrody/m3-primitives": ["@aphrody/m3-primitives@workspace:packages/m3-primitives"],
 
     "@aphrody/m3-react": ["@aphrody/m3-react@workspace:packages/m3-react"],
 
     "@aphrody/m3-reader": ["@aphrody/m3-reader@workspace:packages/m3-reader"],
 
+    "@aphrody/m3-tailwind": ["@aphrody/m3-tailwind@workspace:packages/m3-tailwind"],
+
     "@aphrody/m3-theme": ["@aphrody/m3-theme@workspace:packages/m3-theme"],
 
     "@aphrody/m3-tokens": ["@aphrody/m3-tokens@workspace:packages/m3-tokens"],
+
+    "@aphrody/m3-web": ["@aphrody/m3-web@workspace:apps/web"],
 
     "@aphrody/material-design-icons": ["@aphrody/material-design-icons@workspace:packages/material-design-icons"],
 

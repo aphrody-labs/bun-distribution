@@ -5,6 +5,7 @@
   "workspaces": {
     "packages": [
       "packages/*",
+      "apps/*",
       "!packages/app-ui",
       "!packages/rg-ui",
       "!packages/shenron-ui",
@@ -97,9 +98,14 @@
     }
   },
   "scripts": {
-    "lint": "oxlint packages",
+    "build": "bun scripts/yolo.ts build",
+    "test": "bun scripts/yolo.ts test",
+    "serve": "bun scripts/yolo.ts serve",
+    "compile": "bun scripts/yolo.ts compile",
+    "install:theme": "bun scripts/yolo.ts install:theme",
+    "lint": "bun scripts/yolo.ts lint",
+    "typecheck": "bun scripts/yolo.ts typecheck",
     "fmt:check": "oxfmt --check packages",
-    "typecheck": "bun run --filter '*' typecheck",
     "icons:ico": "bun packages/material-design-icons/scripts/svg-to-ico.ts"
   }
 }

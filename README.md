@@ -7,6 +7,12 @@ as `packages/shenron-ui`.
 - `packages/*`: Bun workspace packages (`@aphrody/m3*`, `@aphrody/app-ui`,
   `@shenron/ui`, `@rosegriffon/ui`, `@aphrody/material-design-icons`, ...). Private; consumed
   through workspace globs `design/aphrody-m3/packages/*`, never published.
+- Framework: `docs/guides/FRAMEWORK.md` (package map, yolo orchestration, theme install per OS). Root scripts
+  `build`, `serve`, `compile`, `test`, `lint`, `typecheck`, `install:theme` run through the yolo CLI.
+- Package index: `@aphrody/m3` (CLI, Bun plugin), `m3-tokens`, `m3-theme`, `m3-tailwind` (Tailwind v4 preset),
+  `m3-front` (web components), `m3-react`, `m3-baseui` (Base UI), `m3-os-themes` (Windows, GNOME, COSMIC,
+  Chromium), plus `m3-fonts`, `m3-icons`, `m3-motion`, `m3-primitives`, `m3-forms`, `m3-ai`, `m3-explorer`,
+  `m3-design`, `m3-next`, `m3-mcp`, `material-design-icons`, `scaffold`. `apps/web` is the showcase app.
 - `forks/*`: submodules of aphrody-labs forks: tailwindcss, base-ui, material-web,
   material-design-icons, material-color-utilities.
 - `templates/`, `examples/tauri/`: UI templates and Tauri example apps (copies of the
