@@ -54,7 +54,7 @@ describe("pins", () => {
   it("are mirrored once: tauri-sync tracks this file and no other scaffolder", async () => {
     const config = JSON.parse(await Bun.file(join(root, "config/tauri-upstream.json")).text());
     expect(config.mirrors.map((mirror: { file: string }) => mirror.file)).toEqual([
-      "packages/scaffold/src/pins.ts",
+      "design/aphrody-m3/packages/scaffold/src/pins.ts",
     ]);
   });
 });
