@@ -9,8 +9,8 @@ INFRA_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 YOLO_ROOT="${YOLO_ROOT:-$HOME/yolo}"
 DROPIN="$YOLO_ROOT/config/host/systemd/shenron/privoxy.service.d/shenron-media.conf"
-CONFIG="$INFRA_ROOT/config/infra/host/privoxy/shenron-media.conf"
-ENV_EXAMPLE="$INFRA_ROOT/config/infra/host/privoxy/shenron-media-proxy.env.example"
+CONFIG="$INFRA_ROOT/yolo config/host/privoxy/shenron-media.conf"
+ENV_EXAMPLE="$INFRA_ROOT/yolo config/host/privoxy/shenron-media-proxy.env.example"
 
 if [[ ! -f "$DROPIN" ]]; then
   echo "✗ Systemd drop-in not found: $DROPIN" >&2

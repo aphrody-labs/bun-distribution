@@ -1,7 +1,7 @@
 {
   "enabledPlugins": {
     "aphrody-m3@aphrody-user": true,
-    "aphrody-google@aphrody-user": true,
-    "shenron@aphrody-user": true
+    "aphrody-google@aphrody-user": false,
+    "shenron@aphrody-user": false
   }
 }

@@ -554,24 +554,24 @@
       "canonical": "apps/shenron/site/public/sfx/README.md"
     },
     {
-      "path": "config/infra/host/aphrody-os/VPS-TUNING.md",
+      "path": "yolo config/host/aphrody-os/VPS-TUNING.md",
       "title": "Linux VPS performance tuning (reference)",
       "sha256": "8af2fe5f984ecda33e040a4acafa324a11547ad707c145f6e6ae7cacd5b31348",
       "bytes": 8416,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "config/infra/host/aphrody-os/VPS-TUNING.md"
+      "canonical": "yolo config/host/aphrody-os/VPS-TUNING.md"
     },
     {
-      "path": "config/infra/host/privoxy/README.md",
+      "path": "yolo config/host/privoxy/README.md",
       "title": "Privoxy & WireGuard Mullvad HTTP Bridge",
       "sha256": "4df43b33ecb438e16cdd0b119aa28d5e5c0b2ce983fda1359facf15428d44a8d",
       "bytes": 845,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "config/infra/host/privoxy/README.md"
+      "canonical": "yolo config/host/privoxy/README.md"
     },
     {
       "path": "config/infra/inventory/aphrody-discord-dev-2026-09-29.md",
