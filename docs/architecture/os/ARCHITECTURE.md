@@ -128,7 +128,6 @@ The kernel control plane is built for microsecond-scale tool inspection and sust
 | `compat` | `aphrody-compat` | `compat_runtimes_status`, `compat_wine_detect`, `compat_dotnet_detect`, `compat_pwsh_detect` | — | Cross-platform compatibility runtime bridge (Wine/Proton, .NET 10 NativeAOT, pwsh) |
 | `cloud` | `aphrody-kernel` (native) | `github_status`, `github_branches`, `github_tree`, `gcp_status`, `gcp_storage_list` | — | Native GitHub repository inspection (status, branches, commit DAG/trees) and GCP/Gemini credentials, project status, and GCS storage listing |
 | `infra` | `aphrody-kernel` (native) | `infra_exec`, `infra_sftp_list`, `infra_sftp_read`, `infra_sync`, `infra_git_status` | — | Remote infrastructure control plane (`vps`, `dbfr`): in-process SSH execution, native SFTP navigation, differential sync (`fast-rsync`/`rclone`), remote Git inspection; dynamic runner resolution without hardcoded paths |
-| `render3d` | `aphrody-render3d` | 3D scene rendering, viewport management, model visualization | — | Native 3D rendering subsystem |
 | `shell` | `aphrody-nu` | `nu_eval` (structured JSON result, data passed through `vars` as `$env`, timeout via Nushell signals), `nu_commands`, `nu_help` | `largest_files`, `system_snapshot` | — |
 | `admin` | `aphrody-kernel` + `aphrody-winclean` | All 166 frozen WinClean compatibility tools dispatch to Rust through the kernel. Calls run with the kernel process token. | — | — |
 | `aphrody_web` | `aphrody-browser` + optional Aphrody Web Browser MCP provider | Obscura `browser_*`, rendered `web_fetch`, profile routed `web_browser_fetch`, and noncolliding provider tools | `read_page` | — |
@@ -137,7 +136,7 @@ The kernel control plane is built for microsecond-scale tool inspection and sust
 | `window` | `aphrody-app` | `window_list`, `window_open` (http/https), `window_focus`, `window_close`, `window_set_bounds`, `window_set_state`, `window_set_title`, `desktop_notify`, `clipboard_read`, `clipboard_write` | `open_beside` | full autonomous window authority; agents may control every Aphrody window, including `main`; focus and close are published as `window/focused`, `window/closed` |
 
 Crates of this table that live in sibling category repositories: `aphrody-nu` / `aphrody-shell`
-(`aphrody-shell`), `aphrody-browser` (`aphrody-web`), `aphrody-render3d` and `aphrody-app`
+(`aphrody-shell`), `aphrody-browser` (`aphrody-web`) and `aphrody-app`
 (`aphrody-ui`), `aphrody-bun-docs` (`aphrody-compat`). The kernel links them by relative path; see
 [`README.md`](../../products/os/README.md#sibling-repositories).
 
