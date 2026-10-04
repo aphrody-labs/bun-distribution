@@ -1607,6 +1607,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-inference-ffi"
+version = "1.0.0"
+dependencies = [
+ "aphrody-agent-home",
+ "aphrody-llama-server",
+ "aphrody-model-client",
+ "aphrody-models",
+ "futures",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "aphrody-infra"
 version = "0.1.0"
 dependencies = [

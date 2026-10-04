@@ -568,6 +568,32 @@
         "url": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B",
         "commercial_use": "permitted"
       }
+    },
+    {
+      "id": "gemma-4-e2b-it-q4km",
+      "title": "Gemma 4 E2B IT (GGUF Q4_K_M)",
+      "task": "text-generation",
+      "backend": "llama-cpp",
+      "summary": "Google Gemma 4 E2B instruction model; pinned Unsloth GGUF for native text chat. SOUL context and optional LoRA are separate inputs.",
+      "files": [
+        {
+          "role": "weights",
+          "ref": "hf:unsloth/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf@0314792d7f1f7e229411f620751375812bb9faf2",
+          "bytes": 3106738272,
+          "sha256": "740185b21d22ceb83a11c3aa62ad5842ef32c70f6096d756bbee85a1e4ec34b8"
+        }
+      ],
+      "accel": [
+        "cpu",
+        "cuda"
+      ],
+      "vram_min_bytes": 0,
+      "speed": "fast",
+      "license": {
+        "spdx": "Apache-2.0",
+        "url": "https://ai.google.dev/gemma/docs/gemma_4_license",
+        "commercial_use": "permitted"
+      }
     }
   ]
 }

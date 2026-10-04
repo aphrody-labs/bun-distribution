@@ -98,6 +98,7 @@ aphrody-gpu-backend = { path = "crates/native/gpu-backend", version = "1.0.0-can
 aphrody-guard = { path = "crates/os/guard", version = "1.0.0-canary", features = [] }
 aphrody-http-error = { path = "crates/ai/http-error", version = "1.0.0", features = [] }
 aphrody-infer = { path = "crates/ai/infer", version = "1.0.0", features = ["onnx"] }
+aphrody-inference-ffi = { path = "crates/ai/inference-ffi", version = "1.0.0" }
 aphrody-jev = { path = "crates/ai/jev", version = "1.0.0", features = [] }
 aphrody-jobs = { path = "crates/os/jobs", version = "1.0.0-canary", features = [] }
 aphrody-kernel = { path = "crates/os/kernel", version = "1.0.0-canary", default-features = false, features = [] }
