@@ -14,7 +14,12 @@ import {
   type SyncReport,
   type SyncRepository,
 } from "../../../../scripts/source-sync.ts";
-import { FactoryBuildQueue, runFactoryWorker, type FactoryJob } from "../src/repo-sync.ts";
+import {
+  FactoryBuildQueue,
+  readRepoSyncStatus,
+  runFactoryWorker,
+  type FactoryJob,
+} from "../src/repo-sync.ts";
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -264,41 +269,74 @@ test("factory queue adopts an existing live handle and watcher stop preserves it
   value.repository.buildCommand = ["fixture"];
   const directory = join(value.root, "builds");
   await mkdir(directory);
-  const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(1000)"], {
-    stdout: "ignore",
-    stderr: "ignore",
-  });
   const job: FactoryJob = {
     repo: "fixture",
     revision: "a".repeat(40),
-    pid: child.pid,
+    token: crypto.randomUUID(),
     status: "running",
     phase: "build",
     requestedAt: new Date().toISOString(),
   };
-  await writeFile(join(directory, "fixture.json"), JSON.stringify(job));
+  const path = join(directory, "fixture.json");
+  const entry = join(value.root, "worker-proof.ts");
+  await writeFile(
+    entry,
+    `import { answerFactoryJobProbe } from ${JSON.stringify(join(import.meta.dir, "../src/repo-sync.ts"))};\nconst stop = answerFactoryJobProbe(${JSON.stringify(path)}, ${JSON.stringify(job)});\nawait Bun.sleep(3000);\nstop();\n`,
+  );
+  const child = Bun.spawn([process.execPath, entry], { stdout: "ignore", stderr: "pipe" });
+  job.pid = child.pid;
+  await writeFile(path, JSON.stringify(job));
   let launched = false;
   const queue = new FactoryBuildQueue(value.config, directory, () => {
     launched = true;
     throw new Error("must not replace live worker");
   });
+  const report: SyncReport = {
+    schemaVersion: 3,
+    at: "fixture",
+    mode: "apply",
+    rows: [
+      {
+        repo: "fixture",
+        remote: "origin",
+        sourceBranch: "dev",
+        destinationBranch: "main",
+        status: "current",
+        action: "pushed",
+        sourceHead: "b".repeat(40),
+        destinationHead: "b".repeat(40),
+      },
+    ],
+  };
+  const respond = async () => {
+    const probe = JSON.parse(await readFile(`${path}.probe.json`, "utf8"));
+    // oxlint-disable-next-line no-await-in-loop -- Wait for this specific synthetic worker proof.
+    for (let attempt = 0; attempt < 100; attempt++) {
+      if (
+        existsSync(`${path}.owner.json`) &&
+        JSON.parse(readFileSync(`${path}.owner.json`, "utf8")).nonce === probe.nonce
+      )
+        return;
+      // oxlint-disable-next-line no-await-in-loop -- Bound a live worker readiness check.
+      await Bun.sleep(10);
+    }
+    throw new Error(`Fixture worker proof missing: ${await new Response(child.stderr).text()}`);
+  };
+  let restarted: FactoryBuildQueue | undefined;
   try {
-    queue.enqueue({
-      schemaVersion: 3,
-      at: "fixture",
-      mode: "apply",
-      rows: [
-        {
-          repo: "fixture",
-          remote: "origin",
-          sourceBranch: "dev",
-          destinationBranch: "main",
-          status: "current",
-          action: "pushed",
-          sourceHead: "b".repeat(40),
-          destinationHead: "b".repeat(40),
-        },
-      ],
+    queue.enqueue(report);
+    expect(JSON.parse(await readFile(`${path}.observation.json`, "utf8"))).toMatchObject({
+      status: "running",
+      reconciliationRequired: true,
+    });
+    await respond();
+    queue.enqueue(report);
+    expect(JSON.parse(await readFile(`${path}.observation.json`, "utf8"))).toMatchObject({
+      token: job.token,
+      revision: job.revision,
+      pid: child.pid,
+      status: "running",
+      reconciliationRequired: false,
     });
     expect(launched).toBe(false);
     queue.close();
@@ -306,10 +344,172 @@ test("factory queue adopts an existing live handle and watcher stop preserves it
     expect(JSON.parse(await readFile(join(directory, "pending.json"), "utf8"))).toEqual({
       fixture: "b".repeat(40),
     });
+    restarted = new FactoryBuildQueue(value.config, directory, () => {
+      launched = true;
+      throw new Error("must adopt rather than replace live worker");
+    });
+    restarted.enqueue(report);
+    expect(JSON.parse(await readFile(`${path}.observation.json`, "utf8"))).toMatchObject({
+      status: "running",
+      reconciliationRequired: true,
+    });
+    await respond();
+    restarted.enqueue(report);
+    expect(launched).toBe(false);
+    expect(JSON.parse(await readFile(`${path}.observation.json`, "utf8"))).toMatchObject({
+      status: "running",
+      reconciliationRequired: false,
+    });
   } finally {
     queue.close();
+    restarted?.close();
     child.kill("SIGKILL");
     await child.exited;
+  }
+});
+function factoryReport(repo: string, revision: string): SyncReport {
+  return {
+    schemaVersion: 3,
+    at: new Date().toISOString(),
+    mode: "apply",
+    rows: [
+      {
+        repo,
+        remote: "origin",
+        sourceBranch: "dev",
+        destinationBranch: "main",
+        status: "current",
+        action: "current",
+        sourceHead: revision,
+        destinationHead: revision,
+      },
+    ],
+  };
+}
+test.each(["missing-pid", "legacy-reused-pid", "stale-proof"])(
+  "ambiguous factory %s holds pending across restart without duplicate dispatch",
+  async (kind) => {
+    const value = await fixture();
+    value.repository.buildCommand = ["fixture"];
+    const directory = join(value.root, "builds");
+    await mkdir(directory);
+    const path = join(directory, "fixture.json");
+    const job: FactoryJob = {
+      repo: "fixture",
+      revision: "a".repeat(40),
+      token: kind === "legacy-reused-pid" ? undefined : crypto.randomUUID(),
+      pid: kind === "missing-pid" ? undefined : process.pid,
+      status: kind === "missing-pid" ? "starting" : "running",
+      phase: "prepare",
+      requestedAt: new Date().toISOString(),
+    };
+    await writeFile(path, JSON.stringify(job));
+    if (kind === "stale-proof")
+      await writeFile(`${path}.owner.json`, JSON.stringify({ ...job, nonce: crypto.randomUUID() }));
+    let launches = 0;
+    const launch = () => {
+      launches++;
+      throw new Error("unverified process must not dispatch another SSH job");
+    };
+    const queue = new FactoryBuildQueue(value.config, directory, launch);
+    try {
+      queue.enqueue(factoryReport("fixture", "b".repeat(40)));
+      const held = JSON.parse(await readFile(`${path}.observation.json`, "utf8"));
+      expect(held).toMatchObject({
+        revision: job.revision,
+        reconciliationRequired: true,
+        status: kind === "missing-pid" ? "lost" : "running",
+      });
+      expect(held.token).toBe(job.token);
+    } finally {
+      queue.close();
+    }
+    const restarted = new FactoryBuildQueue(value.config, directory, launch);
+    try {
+      restarted.enqueue(factoryReport("fixture", "c".repeat(40)));
+      restarted.enqueue(factoryReport("fixture", job.revision));
+      expect(launches).toBe(0);
+      expect(JSON.parse(await readFile(join(directory, "pending.json"), "utf8"))).toEqual({
+        fixture: "c".repeat(40),
+      });
+      expect(JSON.parse(await readFile(`${path}.observation.json`, "utf8"))).toMatchObject({
+        revision: job.revision,
+        reconciliationRequired: true,
+      });
+      expect(JSON.parse(await readFile(path, "utf8"))).toEqual(JSON.parse(JSON.stringify(job)));
+    } finally {
+      restarted.close();
+    }
+  },
+);
+test("an old process exit cannot complete a replacement job with the same requested SHA", async () => {
+  const value = await fixture();
+  value.repository.buildCommand = ["fixture"];
+  const directory = join(value.root, "builds");
+  let finish!: (code: number) => void;
+  const queue = new FactoryBuildQueue(value.config, directory, () => ({
+    pid: process.pid,
+    exited: new Promise<number>((resolve) => {
+      finish = resolve;
+    }),
+    unref: () => {},
+  }));
+  try {
+    queue.enqueue(factoryReport("fixture", "a".repeat(40)));
+    const path = join(directory, "fixture.json");
+    const old: FactoryJob = JSON.parse(await readFile(path, "utf8"));
+    const replacement = { ...old, token: crypto.randomUUID(), pid: process.pid };
+    await writeFile(path, JSON.stringify(replacement));
+    finish(0);
+    await Bun.sleep(10);
+    expect(JSON.parse(await readFile(`${path}.observation.json`, "utf8"))).toMatchObject({
+      token: replacement.token,
+      revision: old.revision,
+      status: "starting",
+      reconciliationRequired: true,
+    });
+    expect(JSON.parse(await readFile(path, "utf8"))).toEqual(replacement);
+  } finally {
+    queue.close();
+  }
+});
+test("worker terminal receipt releases a legacy reconciliation hold without watcher overwriting it", async () => {
+  const value = await fixture();
+  value.repository.buildCommand = ["fixture"];
+  const directory = join(value.root, "builds");
+  await mkdir(directory);
+  const path = join(directory, "fixture.json");
+  const job: FactoryJob = {
+    repo: "fixture",
+    revision: "a".repeat(40),
+    pid: process.pid,
+    status: "running",
+    phase: "prepare",
+    requestedAt: new Date().toISOString(),
+  };
+  await writeFile(path, JSON.stringify(job));
+  const launches: FactoryJob[] = [];
+  const queue = new FactoryBuildQueue(value.config, directory, (launchedPath) => {
+    launches.push(JSON.parse(readFileSync(launchedPath, "utf8")));
+    throw new Error("synthetic terminal worker; never reaches SSH");
+  });
+  try {
+    queue.enqueue(factoryReport("fixture", "b".repeat(40)));
+    expect(launches.length).toBe(0);
+    expect(JSON.parse(await readFile(path, "utf8"))).toEqual(job);
+    await writeFile(
+      path,
+      JSON.stringify({ ...job, status: "succeeded", phase: "complete", exitCode: 0 }),
+    );
+    queue.enqueue(factoryReport("fixture", "b".repeat(40)));
+    expect(launches.map((launched) => launched.revision)).toEqual(["b".repeat(40)]);
+    expect(JSON.parse(await readFile(path, "utf8"))).toMatchObject({
+      revision: "b".repeat(40),
+      status: "failed",
+      exitCode: 2,
+    });
+  } finally {
+    queue.close();
   }
 });
 test("native factory worker prepares the exact pin before its declared build and propagates rejection", async () => {
@@ -324,6 +524,7 @@ test("native factory worker prepares the exact pin before its declared build and
   const job: FactoryJob = {
     repo: "yolo",
     revision: "a".repeat(40),
+    token: crypto.randomUUID(),
     status: "starting",
     phase: "prepare",
     requestedAt: "fixture",
@@ -339,6 +540,7 @@ test("native factory worker prepares the exact pin before its declared build and
         return 7;
       },
       state,
+      job.token,
     ),
   ).toBe(7);
   expect(calls).toEqual([["prepare", "--repo", "yolo", "--revision", job.revision, "--apply"]]);
@@ -354,6 +556,7 @@ test("native factory worker prepares the exact pin before its declared build and
         return 0;
       },
       state,
+      job.token,
     ),
   ).toBe(0);
   expect(calls).toEqual([
@@ -363,7 +566,133 @@ test("native factory worker prepares the exact pin before its declared build and
   expect(JSON.parse(await readFile(path, "utf8"))).toMatchObject({
     status: "succeeded",
     exitCode: 0,
+    token: job.token,
+    revision: job.revision,
   });
+  const invoke = async () => {
+    throw new Error(`wrong token must never reach the factory owner for ${job.repo}`);
+  };
+  await expect(
+    runFactoryWorker(path, value.root, invoke, state, crypto.randomUUID()),
+  ).rejects.toThrow("Invalid protected factory job");
+  const replacement = { ...job, token: crypto.randomUUID() };
+  await writeFile(path, JSON.stringify(job));
+  const supersededCalls: string[][] = [];
+  expect(
+    await runFactoryWorker(
+      path,
+      value.root,
+      async (args) => {
+        supersededCalls.push(args);
+        await writeFile(path, JSON.stringify(replacement));
+        return 0;
+      },
+      state,
+      job.token,
+    ),
+  ).toBe(2);
+  expect(supersededCalls.length).toBe(1);
+  expect(JSON.parse(await readFile(path, "utf8"))).toEqual(replacement);
+});
+test("repo-sync status reads live receipts and pending metadata without exposing tokens or changing state", async () => {
+  const value = await fixture();
+  await mkdir(join(value.root, "config"));
+  const config = {
+    ...value.config,
+    repositories: ["yolo", "aphrody", "aphrody-py"].map((id) =>
+      Object.assign({}, value.repository, { id, buildCommand: ["fixture"] }),
+    ),
+  };
+  await writeFile(join(value.root, "config", "commit-sync.json"), JSON.stringify(config));
+  const state = join(value.root, "protected-state");
+  const absent = await readRepoSyncStatus(value.root, state);
+  expect(absent.state).toBe("absent");
+  expect(existsSync(state)).toBe(false);
+  await mkdir(join(state, "builds"), { recursive: true });
+  expect((await readRepoSyncStatus(value.root, state)).state).toBe("idle");
+  const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(3000)"], {
+    stdout: "ignore",
+    stderr: "ignore",
+  });
+  const token = crypto.randomUUID();
+  const sensitive = "FIXTURE_PRIVATE_CREDENTIAL";
+  const files: Record<string, string> = {
+    "owner.lock": JSON.stringify({ pid: process.pid, token, at: new Date().toISOString() }),
+    "builds/yolo.json": JSON.stringify({
+      repo: "yolo",
+      revision: "a".repeat(40),
+      pid: child.pid,
+      token,
+      status: "running",
+      phase: "prepare",
+      requestedAt: new Date().toISOString(),
+      reconciliationRequired: true,
+      credentials: sensitive,
+    }),
+    "builds/pending.json": JSON.stringify({
+      yolo: "b".repeat(40),
+      aphrody: "c".repeat(40),
+      foreign: sensitive,
+    }),
+    "latest.json": JSON.stringify({
+      ...factoryReport("yolo", "b".repeat(40)),
+      credentials: sensitive,
+    }),
+    "builds/yolo.owner.json": JSON.stringify({ token, nonce: sensitive }),
+    "builds/yolo.log": sensitive,
+  };
+  await Promise.all(
+    Object.entries(files).map(([path, data]) =>
+      writeFile(join(state, path), data, { mode: 0o600 }),
+    ),
+  );
+  try {
+    const status = await readRepoSyncStatus(value.root, state);
+    expect(status.state).toBe("watching");
+    expect(status.owner).toMatchObject({ pid: process.pid, live: true });
+    expect(status.repositories.map((repository) => repository.repo)).toEqual([
+      "yolo",
+      "aphrody",
+      "aphrody-py",
+    ]);
+    expect(status.jobs[0]).toMatchObject({
+      pid: child.pid,
+      processAlive: true,
+      status: "running",
+      phase: "prepare",
+      reconciliationRequired: true,
+    });
+    expect(status.pending).toEqual({ yolo: "b".repeat(40), aphrody: "c".repeat(40) });
+    expect(status.latest?.rows[0]).toMatchObject({ sourceHead: "b".repeat(40), status: "current" });
+    const printed = JSON.stringify(status);
+    expect(printed).not.toContain(token);
+    expect(printed).not.toContain(sensitive);
+    expect(printed).not.toContain("nonce");
+    const unchanged = await Promise.all(
+      Object.entries(files).map(
+        async ([path, data]) => (await readFile(join(state, path), "utf8")) === data,
+      ),
+    );
+    expect(unchanged.every(Boolean)).toBe(true);
+    const ownerEntry = join(import.meta.dir, "../src/ops.ts");
+    const cli = Bun.spawn([process.execPath, ownerEntry, "repo-sync", "status", "--json"], {
+      stdout: "pipe",
+      stderr: "pipe",
+      env: {
+        ...process.env,
+        APHRODY_ROOT: value.root,
+        APHRODY_HOME: join(value.root, "absent-home"),
+        PATH: join(value.root, "no-global-commands"),
+      },
+    });
+    const output = await new Response(cli.stdout).text();
+    expect(await cli.exited).toBe(0);
+    expect(JSON.parse(output).state).toBe("absent");
+    expect(existsSync(join(value.root, "absent-home"))).toBe(false);
+  } finally {
+    child.kill("SIGKILL");
+    await child.exited;
+  }
 });
 test.skipIf(process.platform === "win32")(
   "SIGTERM ends CLI watch and releases protected lock",
