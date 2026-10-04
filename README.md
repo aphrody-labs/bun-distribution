@@ -14,7 +14,12 @@ as `packages/shenron-ui`.
   Chromium), plus `m3-fonts`, `m3-icons`, `m3-motion`, `m3-primitives`, `m3-forms`, `m3-ai`, `m3-explorer`,
   `m3-design`, `m3-next`, `m3-mcp`, `material-design-icons`, `scaffold`. `apps/web` is the showcase app.
 - `forks/*`: submodules of aphrody-labs forks: tailwindcss, base-ui, material-web,
-  material-design-icons, material-color-utilities.
+  material-design-icons, material-color-utilities, fonts (`google/fonts`, sparse on the M3 typefaces).
+  `bun scripts/forks.ts` manages them from `.gitmodules`.
+- Gates: `bun scripts/check-exports.ts` (manifests, entries, dependencies, first-party imports),
+  `bun scripts/check-assets.ts` (asset references, app icons), `bun scripts/check-links.ts` (docs
+  links). Fonts: `bun scripts/fonts-sync.ts` (pinned upstream sources of `@aphrody/m3-fonts`). Native
+  library of `@aphrody/bun`: `bun scripts/native.ts` and `docs/guides/NATIVE.md`.
 - `templates/`, `examples/tauri/`: UI templates and Tauri example apps (copies of the
   Yolo-owned originals; the Rust build keeps using the Yolo paths).
 - `docs/`: design docs by category (moved from aphrody `docs/*/ui`), web research in

@@ -27,3 +27,9 @@
 [submodule "packages/nie-ui"]
 	path = packages/nie-ui
 	url = git@github-dev:aphrody-labs/nie-ui.git
+[submodule "forks/fonts"]
+	path = forks/fonts
+	url = git@github-dev:aphrody-labs/fonts.git
+	upstream = https://github.com/google/fonts.git
+	shallow = true
+	sparse = ofl/googlesansflex ofl/googlesanscode ofl/robotoflex ofl/robotomono ofl/notosansjp ofl/mplus1code

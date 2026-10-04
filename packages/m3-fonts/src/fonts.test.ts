@@ -7,8 +7,12 @@ import { FONT_STACKS, FONTS, renderStylesheet, SHEET_FILES, SUBSET_JOBS, SUBSETS
 
 const root = join(import.meta.dir, "..");
 const lock = JSON.parse(readFileSync(join(root, "fonts.lock.json"), "utf8")) as {
+  sources: { "google-fonts": { submodule: string } };
   files: { dest: string; sha256: string; bytes: number }[];
+  tracked: { file: string; path: string; sha256: string; bytes: number }[];
 };
+const fork = join(root, "../..", lock.sources["google-fonts"].submodule);
+const forkMaterialised = existsSync(join(fork, "ofl"));
 const sha256 = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
 const SYNC_HINT = "run `bun scripts/fonts-sync.ts` at the repository root";
 const WOFF2 = "774f4632";
@@ -29,6 +33,20 @@ describe("@aphrody/m3-fonts upstream sources (fonts.lock.json)", () => {
     const used = [...FONTS.map((f) => f.sourceFile), ...FONTS.flatMap((f) => f.faces.map((x) => x.file)), ...SUBSET_JOBS.map((j) => j.source)];
     for (const path of used.filter((p) => p.startsWith(`${UPSTREAM_DIR}/`))) expect(pinned.has(path), path).toBe(true);
   });
+
+  test("the tracked variable sources are the pinned bytes", () => {
+    for (const t of lock.tracked) {
+      expect(statSync(join(root, t.file)).size, t.file).toBe(t.bytes);
+      expect(sha256(join(root, t.file)), t.file).toBe(t.sha256);
+    }
+  });
+
+  test.skipIf(!forkMaterialised)(
+    `the tracked variable sources come from forks/fonts at the pinned commit${forkMaterialised ? "" : " [skipped: forks/fonts not initialised; bun scripts/forks.ts sparse fonts --apply]"}`,
+    () => {
+      for (const t of lock.tracked) expect(sha256(join(fork, t.path)), t.path).toBe(t.sha256);
+    },
+  );
 
   test("the tracked OFL texts of the Google Sans subsets are the pinned upstream licences", () => {
     for (const [tracked, dest] of [

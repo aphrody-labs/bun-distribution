@@ -1,5 +1,5 @@
 {
-  "$comment": "Upstream font sources of @aphrody/m3-fonts, fetched by scripts/fonts-sync.ts into fonts/upstream/ (git-ignored, no LFS). Every file is pinned by sha256 and size. Google fonts come from the aphrody-labs fork of google/fonts (submodule forks/fonts, sparse) at `commit`; Material Symbols from the material-symbols npm package, the same 0.44.8 build the Rust icons module (aphrody crates/ui/bun/icons/material-symbols) renders.",
+  "$comment": "Upstream font sources of @aphrody/m3-fonts, fetched by scripts/fonts-sync.ts into fonts/upstream/ (git-ignored, no LFS). Every file is pinned by sha256 and size. Google fonts come from the aphrody-labs fork of google/fonts (submodule forks/fonts, sparse) at `commit`; Material Symbols from the material-symbols npm package, the same 0.44.8 build the Rust icons module (aphrody crates/ui/bun/icons/material-symbols) renders. `tracked` records the provenance of the variable sources kept in git: the same bytes as the fork at `commit`.",
   "version": 1,
   "sources": {
     "google-fonts": {
@@ -127,6 +127,48 @@
       "sha256": "73690fc209470dcf01e35ec1fcc850a9d3fe2c4f621b92bae17bfdcec1d00b37",
       "bytes": 71134,
       "license": "Apache-2.0"
+    }
+  ],
+  "tracked": [
+    {
+      "file": "fonts/RobotoFlex-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/robotoflex/RobotoFlex[GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght].ttf",
+      "sha256": "9b523f7d82593df0107173849ebb8c817471a1df4b4fb2c3cbf40cfd810c8281",
+      "bytes": 1787292,
+      "license": "OFL-1.1"
+    },
+    {
+      "file": "fonts/RobotoMono-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/robotomono/RobotoMono[wght].ttf",
+      "sha256": "66a80e79d17e4c7cabd162e2916578a4cc08fd19eef6e2a643305eae9c567b2b",
+      "bytes": 183700,
+      "license": "OFL-1.1"
+    },
+    {
+      "file": "fonts/RobotoMono-Italic-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/robotomono/RobotoMono-Italic[wght].ttf",
+      "sha256": "49ac343bb7b070071e53f0a8a501d68d140ed98ebd0a43b6b8fb96cf22f09ff7",
+      "bytes": 196792,
+      "license": "OFL-1.1"
+    },
+    {
+      "file": "fonts/NotoSansJP-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/notosansjp/NotoSansJP[wght].ttf",
+      "sha256": "c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f",
+      "bytes": 9589900,
+      "license": "OFL-1.1"
+    },
+    {
+      "file": "fonts/MPLUS1Code-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/mplus1code/MPLUS1Code[wght].ttf",
+      "sha256": "ff68678c5bd7e9d9d6ab6d57e4355aabe30f6b8f8bff9bd59baf6a7807dcfd36",
+      "bytes": 3933000,
+      "license": "OFL-1.1"
     }
   ]
 }
