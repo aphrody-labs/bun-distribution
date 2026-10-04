@@ -95,7 +95,7 @@ Consumers of `aphrody-oxc-bridge`: `crates/interop/ffi/Cargo.toml:54`
 
 | Package | Declared | Resolved (bun.lock) | Where |
 |---|---|---|---|
-| `oxlint` | root catalog `1.86.0` (`package.json:34`), root devDep `catalog:` (`:357`) | `oxlint@1.86.0` (bun.lock:5760) | `catalog:` in `packages/rg/achillea-{types,client,contract,core}` (not in repo), `packages/shenron/pipeline`, `packages/koharu/bridge`, `apps/rg/{website,bot}` (not in repo), `apps/shenron/bot`, `apps/koharu/editor`; peer `>=1.0.0` in `design/aphrody-m3/packages/eslint-plugin-m3/package.json:46` |
+| `oxlint` | root catalog `1.86.0` (`package.json:34`), root devDep `catalog:` (`:357`) | `oxlint@1.86.0` (bun.lock:5760) | `catalog:` in `packages/rg/achillea-{types,client,contract,core}` (not in repo), `packages/shenron/pipeline`, `packages/koharu/bridge`, `apps/rg/{website,bot}` (not in repo), `apps/shenron/bot`, `apps/koharu/editor`; peer `>=1.0.0` in `m3/packages/eslint-plugin-m3/package.json:46` |
 | `oxfmt` | root catalog `0.71.0` (`package.json:35`), root devDep `catalog:` (`:356`) | `oxfmt@0.71.0` (bun.lock:5758) | root only in the main workspace |
 | `oxc-parser` | not declared by any first-party package.json | `oxc-parser@0.143.0` (bun.lock:5756), transitive, pulled by `@sentry/bundler-plugins@11.1.0` (bun.lock:3440) | - |
 | `@oxc-project/types` | not declared | `0.151.0` (bun.lock:2930), required `=0.151.0` by `rolldown@1.2.11` (bun.lock:6156); `oxc-parser` wants `^0.143.0` | - |
@@ -112,8 +112,8 @@ Pins: `config/update/pins.json` tools `oxlint` (targets `package.json`,
 Config files (30 found outside `node_modules`/`target`/`.next`): root
 `.oxlintrc.json`, `.oxfmtrc.json` (`$schema` from `node_modules/oxlint|oxfmt`);
 `config/rg/.oxlintrc.json` (not in repo), `config/rg/.oxfmtrc.json` (not in repo), `iecode/packages/rg/config/oxlintrc.json`,
-`design/aphrody-m3/packages/eslint-plugin-m3/test/.oxlintrc.json`, and per-package pairs in
-`design/aphrody-m3/packages/{m3-primitives,assets,m3-theme,m3-explorer,m3-forms,canvas,m3-ai,...}`.
+`m3/packages/eslint-plugin-m3/test/.oxlintrc.json`, and per-package pairs in
+`m3/packages/{m3-primitives,assets,m3-theme,m3-explorer,m3-forms,canvas,m3-ai,...}`.
 
 Gates and scripts running them:
 

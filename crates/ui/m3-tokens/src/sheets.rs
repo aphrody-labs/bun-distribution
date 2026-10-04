@@ -10,7 +10,7 @@
 //! | Shape, typescale, motion, elevation, state (no colour) | [`static_css`] | `@aphrody/m3-tokens/m3-tokens.css` |
 //!
 //! `tests/sheets_golden.rs` checks (or, with `APHRODY_UPDATE_TOKENS=1`, rewrites) the two committed
-//! files `design/aphrody-m3/packages/m3-theme/tokens.css` and `design/aphrody-m3/packages/m3-tokens/src/m3-tokens.css`.
+//! files `m3/packages/m3-theme/tokens.css` and `m3/packages/m3-tokens/src/m3-tokens.css`.
 //!
 //! Colours come from [`crate::scheme`], an exact port of material-color-utilities, so the sheets
 //! match Material Theme Builder. `@aphrody/bun` exposes [`render`] through `m3Css()`.

@@ -45,7 +45,7 @@ Better Auth / Postgres / backups pour Shenron (contrats
 il n'existe ni unité `shenron-api` ni vhost `shenron-api` dédiés. Les routes
 publiques de l'API sont servies par les vhosts du bot et du site déclarés dans
 `yolo/config/host/nginx/routes.json`. Contrat, montages et limiteurs :
-[`design/aphrody-m3/packages/material-web/docs/STACK.md`](../../architecture/shenron/STACK.md) (§3.6 `@shenron/api`, ticket INFRA-5 du §7.3).
+[`m3/packages/material-web/docs/STACK.md`](../../architecture/shenron/STACK.md) (§3.6 `@shenron/api`, ticket INFRA-5 du §7.3).
 
 ## Dépendances d'exécution (catalogue de l'Infra du monorepo)
 

@@ -23,7 +23,7 @@ own repositories.
 | Which execution rules apply? | [AGENTS.md](./AGENTS.md), the shared execution contract |
 | What must the workstation deliver next? | [AI delivery plan](../../plans/ai/PLAN.md) |
 | How does Bun model training cross repositories? | [Workspace Bun handoffs](../../plans/workspace/PLAN.md#bun-adapter-handoffs), then the [AI training runbook](../ai/training.md#bun-qwen3-coder-30b-adapter-delivery) |
-| How do the UI and native capabilities connect? | [GUI contract](../../../design/aphrody-m3/docs/reference/GUI.md), [UI design](../../../design/aphrody-m3/docs/architecture/UI-DESIGN.md), [UX design](../../../design/aphrody-m3/docs/architecture/UX-DESIGN.md) |
+| How do the UI and native capabilities connect? | [GUI contract](../../../m3/docs/reference/GUI.md), [UI design](../../../m3/docs/architecture/UI-DESIGN.md), [UX design](../../../m3/docs/architecture/UX-DESIGN.md) |
 | Which crates, packages, commands and tools exist? | Infra [ecosystem](../../ecosystem/ECOSYSTEM.md), [CLI](../../ecosystem/CLI.md), [MCP](../../ecosystem/MCP-TOOLS.md) |
 | What is the protocol/data ownership? | [Architecture contracts](../../architecture/workspace/ARCHITECTURE.md#contracts-and-data-ownership), then the implementation owner |
 | Where are service topology and release decisions? | [Infra documentation](../../products/infra/README.md) and its `config/` / `inventory/` |
@@ -35,8 +35,8 @@ own repositories.
 | --- | --- |
 | AI | [README](../../products/ai/_source/README.md.a7d252bc425b), [index](../../products/ai/_source/README.md), [architecture](../../architecture/ai/ARCHITECTURE.md) |
 | System | [README](../../products/os/_source/README.md.712b5622bf2b) |
-| UI | [README](../../../design/aphrody-m3/docs/products/_source/README.md.8c1fe132fe5c), [index](../../../design/aphrody-m3/docs/products/_source/README.md) |
-| Koharu libraries | [README](../../products/koharu/README.md), [UI integration](../../../design/aphrody-m3/docs/reference/integrations/KOHARU.md) |
+| UI | [README](../../../m3/docs/products/_source/README.md.8c1fe132fe5c), [index](../../../m3/docs/products/_source/README.md) |
+| Koharu libraries | [README](../../products/koharu/README.md), [UI integration](../../../m3/docs/reference/integrations/KOHARU.md) |
 | Manga, OCR and databook review | [Aphrody manga adapter](../../../crates/ai/manga/README.md), Shenron review boundary |
 | Web | [README](../../products/web/README.md) |
 | Contracts | [README](../../products/contracts/README.md), [A2A](../../products/contracts/a2a/README.md) |

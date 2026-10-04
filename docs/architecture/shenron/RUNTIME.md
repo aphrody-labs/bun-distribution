@@ -194,7 +194,7 @@ apps/shenron/bot/src/api/cron-registry.ts  shim de ré-export vers packages/runt
 apps/shenron/site                    processus inchangé ; un seul client Redis partagé
 ```
 
-Intégration avec `design/aphrody-m3/packages/material-web/docs/STACK.md` :
+Intégration avec `m3/packages/material-web/docs/STACK.md` :
 
 - `@shenron/config` fournit le schéma d'env, validé au démarrage, sans jamais journaliser de
   valeur.

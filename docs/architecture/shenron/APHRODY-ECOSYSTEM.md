@@ -239,9 +239,9 @@ conformes sont les services HTTP du catalogue (`aphrody-site`,
 | Capacité | Implémentation | Interface pour Bun | Configuration | Maturité |
 | --- | --- | --- | --- | --- |
 | Tokens et paquets web Material 3 | `crates/ui/m3-tokens` (source Rust unique : HCT, palettes, rôles), `packages/{m3-theme, m3-tokens, material-web, react, m3-motion, m3-design}` | npm CSS/TS (§3). CSS et polices aussi servis par `aphrody-site` sous `/cdn/m3/*` (`crates/aphrody-site/src/assets_api.rs:37` (not in repo)). Les éléments `md-*` se chargent côté client (`ssr:false`) | Aucune | Publiés en 3.2.5/3.2.6, sources en 3.3.0 ; installabilité partielle (§3) |
-| Adaptateur Next `@aphrody/m3-next` | `design/aphrody-m3/packages/m3-next` | `withM3()`, `M3Root`, `m3Css`. Rust par FFI sous `bun --bun`, sinon repli JS (parité testée) | — | Utilisable dans `aphrody-os` ; **non publié** |
+| Adaptateur Next `@aphrody/m3-next` | `m3/packages/m3-next` | `withM3()`, `M3Root`, `m3Css`. Rust par FFI sous `bun --bun`, sinon repli JS (parité testée) | — | Utilisable dans `aphrody-os` ; **non publié** |
 | Façade Rust `@aphrody/bun` | `crates/ui/bun` (cdylib `bun_rs`), `packages/bun/src/render.ts:61,93` | `bun:ffi` : `m3Render`, `m3Render3d`, Sass (grass), HCT, `m3SeedFromImage` | `cargo build` local | Non publié, aucun binaire livré ; **interdit dans le bot** |
-| Canvas Skia `@aphrody/canvas` | `design/aphrody-m3/packages/canvas/index.ts` (façade 1.0.9-aphrody.1), sous-module `third_party/canvas` (napi-rs/canvas 1.0.9, épinglé en `8411071`) | `createCanvas`, `loadImage`, `GlobalFonts`, encodage png/webp/avif/jpeg, `drawM3Scene`/`drawM3Scene3d`, entrée navigateur `/site` | Binaire `skia.<triple>.node` | Façade **non publiable** : elle importe hors du paquet (`index.ts:2,78,153-154`). npm reste en 0.1.99 |
+| Canvas Skia `@aphrody/canvas` | `m3/packages/canvas/index.ts` (façade 1.0.9-aphrody.1), sous-module `third_party/canvas` (napi-rs/canvas 1.0.9, épinglé en `8411071`) | `createCanvas`, `loadImage`, `GlobalFonts`, encodage png/webp/avif/jpeg, `drawM3Scene`/`drawM3Scene3d`, entrée navigateur `/site` | Binaire `skia.<triple>.node` | Façade **non publiable** : elle importe hors du paquet (`index.ts:2,78,153-154`). npm reste en 0.1.99 |
 | Rendu M3 2D (HTTP) | `crates/ui/render` (raster CPU déterministe sans `unsafe`, backend wgpu à parité). Route HTTP : `crates/aphrody-site/src/canvas_api.rs:5-9,33-47`, qui ne désérialise qu'une `Scene` 2D et appelle `raster::render_scene_png` | HTTP `POST /api/v1/canvas/render` : scène JSON 2D (`scene.rs:288-360`, miroir TS écrit à la main dans `packages/interop/native/src/scene-types.ts`), Bearer, réponse `image/png` | Service `aphrody-site`. Jeton `APHRODY_SITE_WEB_API_TOKEN` (alias `APHRODY_BXC_API_TOKEN`) | Production (200 avec jeton, 401 sans). Limites : 1024 × 1024, 64 nœuds, 4 Mio, texte sur une ligne en alphabet latin (`text.rs:41-44`), 2 rendus simultanés (503 `RENDER_BUSY`) |
 | Rendu M3 3D | `crates/ui/render` : `pipeline3d`, glTF/OBJ/export GLB | Aucune route HTTP : crate Rust, `m3Render3d` de `@aphrody/bun` (`bun:ffi`, interdit) ou outils `render3d_*` du kernel | — | Pas de surface serveur pour Shenron |
 | Rendu 3D du kernel | `crates/aphrody-render3d` (not in repo) | Outils MCP `render3d_*` via `@aphrody/os` (pipe nommé ou socket Unix) | `APHRODY_OS_SOCKET` | Poste de travail seulement ; pas de service serveur |
@@ -532,10 +532,10 @@ Service `aphrody-site` : `APHRODY_SITE_WEB_UPSTREAM`,
 10. **Publier `@aphrody/canvas` 1.0.9-aphrody.x** avec une vraie dépendance
     sur `@napi-rs/canvas` et les binaires win32-x64-msvc et linux-x64-gnu.
     Accorder `.gitmodules:10-12` (`rose-griffon/canvas`) avec
-    `design/aphrody-m3/docs/reference/CANVAS-UPSTREAM.md` (Brooooooklyn).
+    `m3/docs/reference/CANVAS-UPSTREAM.md` (Brooooooklyn).
 11. **Assainir npm** : republier ou déprécier les paquets qui contiennent
     `catalog:`/`workspace:` ; aligner M3 sur 3.3.0 ; corriger
-    `design/aphrody-m3/docs/reference/PUBLISHING.md:34`, qui annonce `@aphrody/bun` comme publié.
+    `m3/docs/reference/PUBLISHING.md:34`, qui annonce `@aphrody/bun` comme publié.
 12. **Traduction** : ajouter un mode JSON à `aphrody translate` (aujourd'hui
     sortie humaine seulement, `crates/infra/aphrody-command/src/lib.rs:378-394`) et une route
     `/api/v1/shenron/translate` (`aphrody-translate` ou le LLM). Le glossaire

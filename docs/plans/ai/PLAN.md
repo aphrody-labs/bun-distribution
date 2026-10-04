@@ -2,9 +2,9 @@
 # Delivery plan
 
 Active cross-repository backlog, updated 2026-09-29. [Architecture](../../architecture/ai/ARCHITECTURE.md)
-owns boundaries; [GUI](../../../design/aphrody-m3/docs/reference/GUI.md), [UI design](../../../design/aphrody-m3/docs/architecture/UI-DESIGN.md)
-and [UX](../../../design/aphrody-m3/docs/architecture/UX-DESIGN.md) own product behavior.
-The [M3 host plan](../../../design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md) refines D3/D5/D6:
+owns boundaries; [GUI](../../../m3/docs/reference/GUI.md), [UI design](../../../m3/docs/architecture/UI-DESIGN.md)
+and [UX](../../../m3/docs/architecture/UX-DESIGN.md) own product behavior.
+The [M3 host plan](../../../m3/docs/plans/design/M3-MULTI-HOST-PLAN.md) refines D3/D5/D6:
 Tauri is Aphrody's current and only qualified desktop host. Rust renderers stay reusable
 libraries; no separate winit/wgpu desktop is a delivery target. A GPU host adapter is
 considered only for a measured workflow that Tauri/web cannot meet, and remains part of the
@@ -306,7 +306,7 @@ P1: define task, goal, memory and schedule DTOs and error/event envelopes in
 [`aphrody-contracts`](../../../crates/contracts/app-protocol/src/lib.rs),
 then implement those handlers in the resident app-server using AI libraries and
 OS cron/jobs/policy. P2: connect channel adapters and skill capture to that same
-lifecycle. [`aphrody-ui`](../../../design/aphrody-m3/packages/m3/src/index.ts) owns
+lifecycle. [`aphrody-ui`](../../../m3/packages/m3/src/index.ts) owns
 M3 presentation through the host broker and typed contracts; it has no Cargo
 dependency on AI and does not embed a second Spacebot server or navigation shell.
 

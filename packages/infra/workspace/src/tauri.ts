@@ -37,7 +37,7 @@ function parseArgs(args: string[]): { action: Action; bundles: string; repo: str
 /** Resolve only the active monorepo's desktop owners. */
 export function resolveTauriLayout(repo: string) {
   const appDir = join(repo, "crates", "ui", "app");
-  const uiDir = join(repo, "design", "aphrody-m3", "packages", "app-ui");
+  const uiDir = join(repo, "m3", "packages", "app-ui");
   const cargoSerial = join(repo, "scripts", "build", "rust", "cargo-serial.sh");
   if (!existsSync(join(repo, "Cargo.toml")) || !existsSync(join(appDir, "Cargo.toml"))) {
     throw new Error("--root must be the active Aphrody monorepo with crates/ui/app");

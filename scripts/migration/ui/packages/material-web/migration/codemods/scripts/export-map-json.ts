@@ -20,9 +20,9 @@ import {
   SIMPLE_COMPONENTS,
   SLOTTED_CHILDREN,
   VARIANT_COMPONENTS,
-} from "../../../../../../../../design/aphrody-m3/packages/m3-codemods/lib/mapping";
+} from "../../../../../../../../m3/packages/m3-codemods/lib/mapping";
 
-const ROOT = join(import.meta.dir, "../../../../../../../../design/aphrody-m3/packages/m3-codemods");
+const ROOT = join(import.meta.dir, "../../../../../../../../m3/packages/m3-codemods");
 const MIGRATION = ROOT;
 
 const exceptions = JSON.parse(readFileSync(join(ROOT, "data", "mui-icon-exceptions.json"), "utf8"));

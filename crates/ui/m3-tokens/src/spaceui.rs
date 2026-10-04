@@ -10,8 +10,8 @@
 //! state opacity over a container role), and every SpaceUI theme becomes a
 //! seed (accent + neutral hue/chroma) for an M3 dynamic scheme.
 //!
-//! The same tables are mirrored by `design/aphrody-m3/packages/m3-theme/generate-fusion.ts`,
-//! which renders them to `spaceui.css`; `design/aphrody-m3/packages/m3-theme/test/spaceui.test.ts`
+//! The same tables are mirrored by `m3/packages/m3-theme/generate-fusion.ts`,
+//! which renders them to `spaceui.css`; `m3/packages/m3-theme/test/spaceui.test.ts`
 //! fails when the two copies drift. See `docs/design/SPACEUI-M3-FUSION.md`.
 
 use crate::state;

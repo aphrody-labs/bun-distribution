@@ -11,7 +11,7 @@
 // generator so both sides draw an identical float sequence from an identical seed. See that
 // module's doc comment for the full rationale.
 //
-//   bun run design/aphrody-m3/packages/m3-theme/scripts/mcu-image-fixture.ts
+//   bun run m3/packages/m3-theme/scripts/mcu-image-fixture.ts
 
 import { QuantizerCelebi, Score } from "@material/material-color-utilities";
 import { join } from "node:path";

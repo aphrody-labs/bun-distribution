@@ -147,7 +147,7 @@ describe("jsFindings", () => {
     versionSpecDifferences: { react: { a: "^19", b: ">=18" } },
     packages: [
       {
-        path: "design/aphrody-m3/packages/a",
+        path: "m3/packages/a",
         name: "@x/a",
         sourceFiles: 3,
         imports: [{ packageName: "@x/b" }],
@@ -157,7 +157,7 @@ describe("jsFindings", () => {
         sourceUnmatchedDependencies: ["lodash", "@types/node", "tailwindcss"],
       },
       {
-        path: "design/aphrody-m3/packages/b",
+        path: "m3/packages/b",
         name: "@x/b",
         sourceFiles: 2,
         imports: [],
@@ -167,7 +167,7 @@ describe("jsFindings", () => {
         sourceUnmatchedDependencies: [],
       },
       {
-        path: "design/aphrody-m3/packages/c",
+        path: "m3/packages/c",
         name: "@x/c",
         sourceFiles: 4,
         imports: [],
@@ -181,7 +181,7 @@ describe("jsFindings", () => {
 
   test("reports unimported dependencies but not types or peers", () => {
     expect(jsFindings(summary).unusedDependencies).toEqual([
-      { package: "@x/a", path: "design/aphrody-m3/packages/a", dependencies: ["lodash"] },
+      { package: "@x/a", path: "m3/packages/a", dependencies: ["lodash"] },
     ]);
   });
 

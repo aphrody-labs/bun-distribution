@@ -105,7 +105,7 @@ pub const NAMES: [&str; 10] = [
 // -- Gemini web-only corner tokens (GEM `--gem-sys-shape--corner-*`, observed 2026-10-02) --------
 // Not part of the Material scale: kept out of [`ALL`] / [`NAMES`] so the generated Tailwind
 // sheet and the M3 CSS stay identical to the Material token set.
-// Source: design/aphrody-m3/docs/research/m3-expressive-gemini-2026.md section 2.
+// Source: m3/docs/research/m3-expressive-gemini-2026.md section 2.
 
 /// Gemini `corner-large-max` (24 dp).
 pub const LARGE_MAX: CornerRadius = CornerRadius { dp: 24 };

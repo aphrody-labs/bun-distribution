@@ -74,7 +74,7 @@ installed application proof. Never promise zero latency or infer model
 quality from protocol parity.
 
 Keep hosts, ports, deployment units and topology in infra. Keep UI design in
-[aphrody-ui](../../../design/aphrody-m3/docs/products/_source/README.md). Record licenses and extraction
+[aphrody-ui](../../../m3/docs/products/_source/README.md). Record licenses and extraction
 provenance in [THIRD_PARTY_CODEX.md](./THIRD_PARTY_CODEX.md) and the owning
 component's attribution files. Documentation updates cannot confer OSS status
 on a bundled component or its model weights.

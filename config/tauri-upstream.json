@@ -110,7 +110,7 @@
   ],
   "mirrors": [
     {
-      "file": "design/aphrody-m3/packages/scaffold/src/pins.ts",
+      "file": "m3/packages/scaffold/src/pins.ts",
       "keys": {
         "tauri": "tauri",
         "runtimeWry": "tauri-runtime-wry",
@@ -164,7 +164,7 @@
         "treeSha256": "a2fecff981973b0c4e6ece61d822cfd3b1c5b2384b2a846a2093ba6082d1c7e8",
         "localPath": "crates/ui/tauri-plugin-mcp-bridge",
         "role": "mcp-bridge",
-        "tauriSupport": "Tauri 2 only. tauri-plugin-mcp-bridge 0.13.0 depends on tauri = \"2\" and tauri-plugin = \"2\"; no v3 branch, no Tauri 3 issue. Same revision that design/aphrody-m3/docs/research/integrations/tauri-mcp-parity.md already uses as the tool-name reference.",
+        "tauriSupport": "Tauri 2 only. tauri-plugin-mcp-bridge 0.13.0 depends on tauri = \"2\" and tauri-plugin = \"2\"; no v3 branch, no Tauri 3 issue. Same revision that m3/docs/research/integrations/tauri-mcp-parity.md already uses as the tool-name reference.",
         "notes": "Rust bridge plugin (packages/tauri-plugin-mcp-bridge: WebSocket on 0.0.0.0:9223-9322 by default, no auth, no Origin check - upstream issue #36) plus a Node MCP server (packages/mcp-server, @hypothesi/tauri-mcp-server) whose DOM/a11y scripts are plain JS reusable from a Rust MCP. Harden before use: bind 127.0.0.1, per-process token, Origin check, cfg(debug_assertions) + cargo-feature gate. Patch list for Tauri 3 is in the survey.",
         "patches": [
           {

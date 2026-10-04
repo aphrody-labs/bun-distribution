@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! `wrap.json`, written by `@aphrody/web-to-tauri` (`design/aphrody-m3/packages/web-to-tauri/src/types.ts`).
+//! `wrap.json`, written by `@aphrody/web-to-tauri` (`m3/packages/web-to-tauri/src/types.ts`).
 
 use std::collections::HashMap;
 use std::fmt;

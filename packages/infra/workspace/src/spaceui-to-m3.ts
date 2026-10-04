@@ -3,7 +3,7 @@
 //
 //   bun scripts/spaceui-to-m3.ts <dir>... [--check]
 //
-// Rewrites the Tailwind classes of SpaceUI-derived sources (design/aphrody-m3/packages/m3-primitives, m3-forms,
+// Rewrites the Tailwind classes of SpaceUI-derived sources (m3/packages/m3-primitives, m3-forms,
 // m3-ai, m3-explorer) from the SpaceUI vocabulary to the M3 utilities of
 // @aphrody/m3-theme/tailwind.css. It is the first, deterministic pass of the fusion; component
 // anatomy (heights, shapes, selected indicators, focus rings) is then aligned to the M3 specs by

@@ -2,7 +2,7 @@
 
 # Crawlable UI: running the gate and what it checks
 
-Status 2026-10-01. Goal: the server-rendered HTML of the m3 packages (`design/aphrody-m3/packages`) is easy to
+Status 2026-10-01. Goal: the server-rendered HTML of the m3 packages (`m3/packages`) is easy to
 read, navigate and address for the Rust crawler (`aphrody-web crawl`, static HTTP stack, no
 JavaScript) and for LLM agents. The product sites (`apps/shenron/site`, `iecode/apps/rg/website`) need
 databases, so the gate renders a deterministic fixture site from the component libraries instead.
@@ -29,7 +29,7 @@ the repository is written to only with an explicit `--out`.
 1. `web-crawlability-pages.tsx` server-renders 8 pages (landing, primitives, forms, explorer, three
    readers, a data page) with `renderToString`, inside the `M3Document` shell of `@aphrody/m3-next`.
 2. The pages are served on `127.0.0.1:0` together with `robots.txt`, `sitemap.xml` and `llms.txt`
-   (built by the generators of `design/aphrody-m3/packages/m3-next/src/crawl.ts`).
+   (built by the generators of `m3/packages/m3-next/src/crawl.ts`).
 3. `aphrody-web crawl --allow-private-network --include-html --include-links --include-markdown`
    follows the links from `/` (sitemaps off, so every page must be reachable through `<a href>`).
 4. Each page's HTML is parsed with Bun's HTMLRewriter (no new dependency) and measured.

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Browser-bundle gate for `design/aphrody-m3/packages`: every public entry must bundle for the browser target
+//! Browser-bundle gate for `m3/packages`: every public entry must bundle for the browser target
 //! (no Bun FFI, no Node builtins) unless it is listed as server/tooling-only below.
 //!
 //!   bun scripts/audit/ui-browser-bundles.ts [--json]
@@ -97,7 +97,7 @@ const assetUrlPlugin: import("bun").BunPlugin = {
 };
 
 if (import.meta.main) {
-  const uiRoot = resolve(import.meta.dir, "../../design/aphrody-m3/packages");
+  const uiRoot = resolve(import.meta.dir, "../../m3/packages");
   const json = process.argv.includes("--json");
   const rows: { entry: string; verdict: Verdict; detail?: string }[] = [];
   for (const entry of discoverEntries(uiRoot)) {

@@ -17,8 +17,8 @@
       "packages/os/*",
       "packages/koharu/*",
       "packages/fut/*",
-      "design/aphrody-m3/packages/*",
-      "!design/aphrody-m3/packages/rg-ui",
+      "m3/packages/*",
+      "!m3/packages/rg-ui",
       "packages/interop/*"
     ],
     "catalog": {

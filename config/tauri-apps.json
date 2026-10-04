@@ -99,13 +99,13 @@
     {
       "id": "scaffold",
       "kind": "generator",
-      "path": "design/aphrody-m3/packages/scaffold",
+      "path": "m3/packages/scaffold",
       "note": "@aphrody/scaffold: the single scaffolder (Tauri 3 shell, web/app/example templates, no-overwrite writer). Owns TAURI_3, mirrored from the root pins (config/tauri-upstream.json mirrors); m3 new, m3-next-migrate and web-to-tauri write through it."
     },
     {
       "id": "web-to-tauri",
       "kind": "generator",
-      "path": "design/aphrody-m3/packages/web-to-tauri",
+      "path": "m3/packages/web-to-tauri",
       "note": "@aphrody/web-to-tauri: probes a site or project, plans remote/bundle/sidecar, generates a Tauri 3 project around aphrody-tauri-wrap and checks parity against the original."
     },
     {
@@ -120,13 +120,13 @@
     {
       "id": "m3-next-migrate",
       "kind": "generator",
-      "path": "design/aphrody-m3/packages/m3-next-migrate",
+      "path": "m3/packages/m3-next-migrate",
       "note": "Migrates Next.js projects to Tauri 3 apps. Writes them through @aphrody/scaffold (the single scaffolder); TAURI_3 is re-exported from there."
     },
     {
       "id": "m3",
       "kind": "integration",
-      "path": "design/aphrody-m3/packages/m3",
+      "path": "m3/packages/m3",
       "note": "buildM3 / M3App Tauri webview layout; no Tauri dependency."
     },
     {

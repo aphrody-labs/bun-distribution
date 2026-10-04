@@ -2,10 +2,10 @@
 
 # aphrody-tauri-wrap
 
-Runtime plugin of [`@aphrody/web-to-tauri`](../../../design/aphrody-m3/packages/web-to-tauri): reads
+Runtime plugin of [`@aphrody/web-to-tauri`](../../../m3/packages/web-to-tauri): reads
 `src-tauri/wrap.json` and creates the window with the navigation policy, downloads, loopback
 server (bundle mode, with the backend proxy) and sidecar. Contract:
-[`design/aphrody-m3/docs/apis/WRAP-CONFIG.md`](../../../design/aphrody-m3/docs/apis/WRAP-CONFIG.md).
+[`m3/docs/apis/WRAP-CONFIG.md`](../../../m3/docs/apis/WRAP-CONFIG.md).
 
 The crate also hosts the debug bridge of Tauri 3 apps (`aphrody_tauri_wrap::debug::init()`, the
 former `aphrody-tauri-debug` crate; guide: [`docs/guides/web/TAURI-DEBUG.md`](../../../docs/guides/web/TAURI-DEBUG.md)).

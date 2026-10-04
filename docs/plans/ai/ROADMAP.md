@@ -3,7 +3,7 @@
 
 The current roadmap is [PLAN.md](./PLAN.md#delivery-sequence). It is ordered by
 working product slices and their acceptance evidence, with the native UI
-contract owned by [aphrody-ui](../../../design/aphrody-m3/docs/reference/GUI.md).
+contract owned by [aphrody-ui](../../../m3/docs/reference/GUI.md).
 
 The former calendar, release-date and adoption targets are superseded. They
 remain available in the

@@ -19,7 +19,7 @@ This is a partial implementation, not complete Codex desktop compatibility.
 
 The product integration target and delivery order are maintained in the
 [AI plan](../../../docs/plans/ai/PLAN.md) and the owning
-[UI specification](../../../design/aphrody-m3/docs/reference/GUI.md). The first complete desktop
+[UI specification](../../../m3/docs/reference/GUI.md). The first complete desktop
 slice uses explicitly selected full access while restricted policies remain
 rejected. OS isolation is a later release gate for advertising restricted modes.
 

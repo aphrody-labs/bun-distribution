@@ -31,7 +31,7 @@
       "role": "UI layer: Tauri desktop, Material 3 design system (Rust crates and @aphrody/* packages), renderers, canvas, Aphrody Drive and the bun_rs native library (crate aphrody-bun) behind @aphrody/bun; its tracked crates/aphrody-app/ui-dist is the agent console embedded in the aphrody release binary",
       "source": "https://github.com/aphrody-labs/aphrody",
       "production": true,
-      "monorepoPaths": "crates/ui, design/aphrody-m3/packages",
+      "monorepoPaths": "crates/ui, m3/packages",
       "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
     },
     {

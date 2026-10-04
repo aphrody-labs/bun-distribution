@@ -24,7 +24,7 @@
       "name": "@aphrody/canvas",
       "maxMajor": 0,
       "since": "2026-10-02",
-      "reason": "first-party package (design/aphrody-m3/packages/canvas, 1.0.9-aphrody.2 on the workspace); consumers resolve it through workspace:*, the catalog entry is unused. The registry copy is not a source of truth (publishing is an owner decision)."
+      "reason": "first-party package (m3/packages/canvas, 1.0.9-aphrody.2 on the workspace); consumers resolve it through workspace:*, the catalog entry is unused. The registry copy is not a source of truth (publishing is an owner decision)."
     },
     {
       "name": "jsdom",

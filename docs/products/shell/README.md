@@ -34,7 +34,7 @@ versioned, checksummed images in OPFS. `@aphrody/shell-web` supplies the worker,
 Tauri Channel and local transports behind one interface. `aphrody-shell-tauri` opens native PTY
 sessions for the Tauri path. Nushell and the Ratatui TUI remain native.
 
-The desktop app mounts its terminal panel from `design/aphrody-m3/packages/app-ui`. It uses Tauri Channel
+The desktop app mounts its terminal panel from `m3/packages/app-ui`. It uses Tauri Channel
 for native sessions, the OPFS worker in a browser, and `sandboxTransport` when a hosted page
 provides `window.__APHRODY_SHELL_HOST__ = { websocketUrl, token, sessionId? }` before the app
 bundle loads. Hosted pages must supply their own authenticated endpoint. xterm renders the raw

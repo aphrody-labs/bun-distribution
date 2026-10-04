@@ -17,13 +17,13 @@ const gates: Gate[] = [
   {
     name: "M3 explorer tests",
     command: ["bun", "run", "test"],
-    cwd: "design/aphrody-m3/packages/m3-explorer",
+    cwd: "m3/packages/m3-explorer",
     quick: true,
   },
   {
     name: "Desktop UI tests",
     command: ["bun", "run", "test"],
-    cwd: "design/aphrody-m3/packages/app-ui",
+    cwd: "m3/packages/app-ui",
     quick: true,
   },
   {

@@ -19,7 +19,7 @@ export async function runScriptAudit(repo: string, workspaceRoot?: string): Prom
         "packages/shenron/db/scripts",
         "packages/shenron/images/scripts",
         "packages/shenron/pipeline/scripts",
-        "design/aphrody-m3/packages/shenron-ui/scripts",
+        "m3/packages/shenron-ui/scripts",
       ].filter((path) => existsSync(join(root, path)))
     : ["scripts", "apps/bot/scripts", "apps/site/scripts", "packages/pipeline/scripts"].filter(
         (path) => existsSync(join(root, path)),

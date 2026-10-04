@@ -21,11 +21,11 @@ state is described in [ENGINE-SELECTION.md](./ENGINE-SELECTION.md).
 | --- | --- | --- |
 | PTY driver | `crates/shell/terminal-backend/src/lib.rs` | `portable-pty` 0.8 (ConPTY / `openpty`). Its only public entry is `serve(addr, PtyConfig)`: a TCP WebSocket server, one session per connection |
 | PTY callers | `aphrody-ai` `aphrody term` (`aphrody/src/commands.rs`) | Only caller. The desktop never opens a PTY |
-| Desktop terminal | `aphrody-ui` `design/aphrody-m3/packages/app-ui/src/components/Terminal/TerminalView.tsx` (not in repo) | Line-mode form: every Enter runs one command through `runTerminalEval` / `runShellCommand` (`tauri-bridge.ts`). No interactive programs, no resize, no streaming, no Ctrl+C |
+| Desktop terminal | `aphrody-ui` `m3/packages/app-ui/src/components/Terminal/TerminalView.tsx` (not in repo) | Line-mode form: every Enter runs one command through `runTerminalEval` / `runShellCommand` (`tauri-bridge.ts`). No interactive programs, no resize, no streaming, no Ctrl+C |
 | Nushell path | `aphrody-app/src/desktop.rs` `terminal_eval` | Kernel tool `nu_eval` (embedded `aphrody-nu`), 30 s timeout. Correct for one-shot evaluation |
 | Broken fallbacks | `tauri-bridge.ts` `runTerminalEval`, `runShellCommand` | `aphrody nu -c` (the CLI has no `nu` subcommand); pwsh/cmd go through `aphrody_exec` with no PTY or policy; errors are swallowed by `catch {}` |
 | Presentation claims | `TerminalView.tsx` banner and status bar | Advertises "ConPTY Ready · Zellij Mux" and a hard-coded Nushell version that nothing backs |
-| Renderer | `design/aphrody-m3/packages/app-ui/package.json` (not in repo) | No VT emulator dependency |
+| Renderer | `m3/packages/app-ui/package.json` (not in repo) | No VT emulator dependency |
 
 ## Decisions (fact-checked 2026-09-27)
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Sync or verify every file @aphrody/canvas copies from another tree, so the published package
-// is self-contained (nothing outside `design/aphrody-m3/packages/canvas` is imported at runtime or type-check time):
+// is self-contained (nothing outside `m3/packages/canvas` is imported at runtime or type-check time):
 //
 //   vendor/                  upstream @napi-rs/canvas JS loader + typings + LICENSE, from the
 //                            `third_party/canvas` submodule (never patched: README "Upstream")

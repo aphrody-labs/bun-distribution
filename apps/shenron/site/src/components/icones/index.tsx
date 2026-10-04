@@ -1,6 +1,6 @@
 /**
  * icones — façade. Le jeu de glyphes maison vit dans `@shenron/ui/icones`
- * (`design/aphrody-m3/packages/shenron-ui/src/icones/`) ; ce module garde l'ancien chemin pour les
+ * (`m3/packages/shenron-ui/src/icones/`) ; ce module garde l'ancien chemin pour les
  * importeurs du site. Liste explicite : un glyphe ajouté au paquet doit être
  * exposé ici pour être importable par `@/components/icones`.
  */

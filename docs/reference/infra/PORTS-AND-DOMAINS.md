@@ -220,7 +220,7 @@ commit trailers in each repo for any fix that landed):
   default and `/mcp` mount (`crates/ai/mcp/src/main.rs`), the one MCP HTTP origin this
   ecosystem actually runs locally by convention. `--url` (CLI) still wins over both.
 - **aphrody-ui**: same pattern (env-first, literal only as fallback); nothing trivial to fix. One
-  drift flagged for the owner: `design/aphrody-m3/packages/app-ui/src/shenron-studio.tsx` (not in repo)'s "local model inference"
+  drift flagged for the owner: `m3/packages/app-ui/src/shenron-studio.tsx` (not in repo)'s "local model inference"
   field defaults to `127.0.0.1:8790`, which is actually `nie-model-serve`'s port, not a generic
   local-inference port, and (unlike the sibling `embedUrl` field) isn't persisted — needs a product
   decision on what it should really point at.

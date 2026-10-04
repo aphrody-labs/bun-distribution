@@ -97,7 +97,7 @@
       "ref": "14a720628f9592c8e60f7e081ef733076db8a6a9",
       "tier": "reference",
       "purpose": "Pinned Jan source for owner-authorized absorption; existing Aphrody capability owners remain canonical. Initial model-hub search adapted with Fuse.js 7.1.0; full parity pending.",
-      "consumers": "design/aphrody-m3/packages/app-ui/src/models-hub-state.ts; config/jan-absorption.json; docs/migration/jan-absorption",
+      "consumers": "m3/packages/app-ui/src/models-hub-state.ts; config/jan-absorption.json; docs/migration/jan-absorption",
       "note": "Pinned checkout: ../aphrody-py/vendor/jan. Root LICENSE Apache-2.0, Menlo Research 2025; selected search adaptation retains attribution. Python/JS ADK manifests declare AGPL-3.0; do not assume a uniform repository license.",
       "observedCommit": "14a720628f9592c8e60f7e081ef733076db8a6a9"
     },

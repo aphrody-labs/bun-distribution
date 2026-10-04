@@ -74,7 +74,7 @@ pub const GEMINI_PURPLE: u32 = GEMINI_TITLE_PURPLE;
 pub const GEMINI_PINK: u32 = GEMINI_TITLE_PINK;
 
 // Gemini web-app palette: values observed in the CSS served by `https://gemini.google.com/app` on
-// 2026-10-02 (design/aphrody-m3/docs/research/m3-expressive-gemini-2026.md section 5, source key GEM).
+// 2026-10-02 (m3/docs/research/m3-expressive-gemini-2026.md section 5, source key GEM).
 
 // design.google brand palette: colours read from the editorial article
 // <https://design.google/library/gemini-ai-visual-design>, NOT from served CSS. Kept as a

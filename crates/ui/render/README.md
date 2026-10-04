@@ -3,7 +3,7 @@
 Native rendering for Aphrody OS: the M3 2D scene, the M3 3D scene graph, a
 deterministic CPU reference for both, and a `wgpu` backend (feature `gpu`) with
 pixel parity against it. Design, benchmarks and validation are in
-[`docs/design/M3-RENDER.md`](../../../design/aphrody-m3/docs/architecture/design/M3-RENDER.md).
+[`docs/design/M3-RENDER.md`](../../../m3/docs/architecture/design/M3-RENDER.md).
 
 ## Surfaces and backends
 
@@ -31,8 +31,8 @@ wasm WebGPU, WebGL, CPU); GPU backends are reported only when `gpu` is compiled.
 
 ## Consumers
 
-- Native: `design/aphrody-m3/packages/canvas` and `@aphrody/bun` (`m3Render`, `m3Render3d`).
-- Browser: `design/aphrody-m3/packages/canvas/site` and `design/aphrody-m3/packages/material-web` (`md-3d-scene`,
+- Native: `m3/packages/canvas` and `@aphrody/bun` (`m3Render`, `m3Render3d`).
+- Browser: `m3/packages/canvas/site` and `m3/packages/material-web` (`md-3d-scene`,
   `md-native-3d`).
 - Tauri hosts and agent tools: the former `aphrody-tauri-3d`, `aphrody-model-view`
   and `aphrody-render3d` (`render3d_*` kernel tools) crates were removed; this crate

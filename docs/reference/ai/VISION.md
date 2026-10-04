@@ -7,8 +7,8 @@ sessions, tools and model interaction. Existing AI capabilities feed useful
 user actions through that engine and its persistent backend contracts.
 
 The [current plan](../../plans/ai/PLAN.md) owns delivery decisions. The
-[GUI contract](../../../design/aphrody-m3/docs/reference/GUI.md) and
-[UI design](../../../design/aphrody-m3/docs/architecture/UI-DESIGN.md) own presentation and interaction.
+[GUI contract](../../../m3/docs/reference/GUI.md) and
+[UI design](../../../m3/docs/architecture/UI-DESIGN.md) own presentation and interaction.
 An integrated product means a user can run, steer, stop, inspect and resume
 real work with consistent state across those surfaces.
 

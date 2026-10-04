@@ -39,7 +39,7 @@ chunks length-préfixés — cf. `crates/google/gemini-web/src/boq.rs`), chaque 
 `fade-in-up` à l'arrivée. Cycle au clic d'envoi : composer → anneau gradient
 animé (`input-area-spin`) + shimmer → premier token → reveal streaming → fin.
 
-## Améliorations apportées à `design/aphrody-m3/packages/m3-react` (`interactions.tsx`)
+## Améliorations apportées à `m3/packages/m3-react` (`interactions.tsx`)
 
 Toutes reduced-motion aware, sur APIs plateforme standard (typecheck `tsc` 0) :
 
@@ -65,4 +65,4 @@ return generating
 ## Pointeurs
 - Primitives : `apps/m3-react/src/interactions.tsx` (not in repo).
 - Streaming backend : `crates/gemini-web/src/{boq,client}.rs`.
-- Démos statiques : `design/aphrody-m3/packages/material-web/demos/` (not in repo). Parité : `design/aphrody-m3/packages/material-web/docs/design/angular-material-parity.md`.
+- Démos statiques : `m3/packages/material-web/demos/` (not in repo). Parité : `m3/packages/material-web/docs/design/angular-material-parity.md`.

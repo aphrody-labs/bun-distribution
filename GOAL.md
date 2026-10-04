@@ -15,7 +15,7 @@ Axes prioritaires :
 - **Windows 11** : cible MSVC native (Visual Studio Build Tools 2026), Windows SDK, .NET 10 ;
 - **GUI et Tauri** : applications de bureau et intégration système ;
 - **V8** : moteur JavaScript des surfaces applicatives, conservé jusqu'à la parité Obscura/JSC ;
-- **UI** : `design/aphrody-m3/packages/app-ui` et `crates/ui/*` restent canoniques ;
+- **UI** : `m3/packages/app-ui` et `crates/ui/*` restent canoniques ;
 - **IA** : agents, passerelle compatible OpenAI, MCP, A2A, inférence locale.
 
 La surface Python IA/ML vit dans `aphrody-py`, pas dans le code Rust ou Bun d'Aphrody.

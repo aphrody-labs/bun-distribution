@@ -17,7 +17,7 @@ Registry of pins and patches: the `debuggers` block of
 | Bun client                              | `@aphrody/agent-browser/tauri` (`listTauriApps`, `TauriBridge`)                           | 6 tests pass against a fake bridge; the DOM snapshot script runs in the aphrody-web engine on a fixture page.                 |
 | App wiring                              | `crates/ui/model-view` (not in repo) feature `debug-bridge`                                             | **Not compiled.** Window launch under X11 was seen with a build that predates the plugin (see below).                          |
 
-Note (2026-10-04): the model-view Tauri app now lives in `aphrody-labs/nie-ui` (`apps/tauri/model-view`, submodule `design/aphrody-m3/packages/nie-ui`).
+Note (2026-10-04): the model-view Tauri app now lives in `aphrody-labs/nie-ui` (`apps/tauri/model-view`, submodule `m3/packages/nie-ui`).
 
 No Tauri window has been driven through the debug channel yet. `aphrody-model-view` (built before
 this change) opened under `GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1`: `xwininfo -root -tree`

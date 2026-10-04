@@ -132,41 +132,41 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `@aphrody/ag-ui` | [design/aphrody-m3/packages/ag-ui](../../../design/aphrody-m3/packages/ag-ui) | bun package | 1.0.1 | lib | yes | 0 | uncommitted |
-| `@aphrody/app-ui` | [design/aphrody-m3/packages/app-ui](../../../design/aphrody-m3/packages/app-ui) | bun package | 0.1.0 | lib | yes | 0 | uncommitted |
-| `@aphrody/assets` | [design/aphrody-m3/packages/assets](../../../design/aphrody-m3/packages/assets) | bun package | 0.1.0 | lib | yes | 0 | uncommitted |
-| `@aphrody/canvas` | [design/aphrody-m3/packages/canvas](../../../design/aphrody-m3/packages/canvas) | bun package | 1.0.9-aphrody.2 | lib | yes | 0 | uncommitted |
-| `@aphrody/eslint-plugin-m3` | [design/aphrody-m3/packages/eslint-plugin-m3](../../../design/aphrody-m3/packages/eslint-plugin-m3) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/identity` | [design/aphrody-m3/packages/identity](../../../design/aphrody-m3/packages/identity) | bun package | 0.1.0 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3` | [design/aphrody-m3/packages/m3](../../../design/aphrody-m3/packages/m3) | bun package | 3.3.3 | bin, lib | yes | 0 | uncommitted |
-| `@aphrody/m3-ai` | [design/aphrody-m3/packages/m3-ai](../../../design/aphrody-m3/packages/m3-ai) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-baseui` | [design/aphrody-m3/packages/m3-baseui](../../../design/aphrody-m3/packages/m3-baseui) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-bun` | [design/aphrody-m3/packages/m3-bun](../../../design/aphrody-m3/packages/m3-bun) | bun package | 3.3.3 | bin, lib | yes | 0 | uncommitted |
-| `@aphrody/m3-codemods` | [design/aphrody-m3/packages/m3-codemods](../../../design/aphrody-m3/packages/m3-codemods) | bun package | 0.1.0 | private | yes | 0 | uncommitted |
-| `@aphrody/m3-config` | [design/aphrody-m3/packages/m3-config](../../../design/aphrody-m3/packages/m3-config) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-design` | [design/aphrody-m3/packages/m3-design](../../../design/aphrody-m3/packages/m3-design) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-explorer` | [design/aphrody-m3/packages/m3-explorer](../../../design/aphrody-m3/packages/m3-explorer) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-fonts` | [design/aphrody-m3/packages/m3-fonts](../../../design/aphrody-m3/packages/m3-fonts) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-forms` | [design/aphrody-m3/packages/m3-forms](../../../design/aphrody-m3/packages/m3-forms) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-front` | [design/aphrody-m3/packages/m3-front](../../../design/aphrody-m3/packages/m3-front) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-icons` | [design/aphrody-m3/packages/m3-icons](../../../design/aphrody-m3/packages/m3-icons) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-mcp` | [design/aphrody-m3/packages/m3-mcp](../../../design/aphrody-m3/packages/m3-mcp) | bun package | 1.0.0 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-motion` | [design/aphrody-m3/packages/m3-motion](../../../design/aphrody-m3/packages/m3-motion) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-next` | [design/aphrody-m3/packages/m3-next](../../../design/aphrody-m3/packages/m3-next) | bun package | 3.3.3 | bin, lib | yes | 0 | uncommitted |
-| `@aphrody/m3-next-migrate` | [design/aphrody-m3/packages/m3-next-migrate](../../../design/aphrody-m3/packages/m3-next-migrate) | bun package | 3.3.3 | bin, lib | yes | 0 | uncommitted |
-| `@aphrody/m3-os-themes` | [design/aphrody-m3/packages/m3-os-themes](../../../design/aphrody-m3/packages/m3-os-themes) | bun package | 3.3.3 | bin, lib | yes | 0 | uncommitted |
-| `@aphrody/m3-primitives` | [design/aphrody-m3/packages/m3-primitives](../../../design/aphrody-m3/packages/m3-primitives) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-react` | [design/aphrody-m3/packages/m3-react](../../../design/aphrody-m3/packages/m3-react) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-reader` | [design/aphrody-m3/packages/m3-reader](../../../design/aphrody-m3/packages/m3-reader) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-tailwind` | [design/aphrody-m3/packages/m3-tailwind](../../../design/aphrody-m3/packages/m3-tailwind) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-theme` | [design/aphrody-m3/packages/m3-theme](../../../design/aphrody-m3/packages/m3-theme) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-tokens` | [design/aphrody-m3/packages/m3-tokens](../../../design/aphrody-m3/packages/m3-tokens) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/material-design-icons` | [design/aphrody-m3/packages/material-design-icons](../../../design/aphrody-m3/packages/material-design-icons) | bun package | 1.0.0 | bin, lib | yes | 0 | uncommitted |
-| `@aphrody/nie-ui` | [design/aphrody-m3/packages/nie-ui](../../../design/aphrody-m3/packages/nie-ui) | bun package | 0.1.0 | lib | yes | 0 | uncommitted |
-| `@rosegriffon/ui` | [design/aphrody-m3/packages/rg-ui](../../../design/aphrody-m3/packages/rg-ui) | bun package | 1.0.3 | lib | yes | 0 | uncommitted |
-| `@aphrody/scaffold` | [design/aphrody-m3/packages/scaffold](../../../design/aphrody-m3/packages/scaffold) | bun package | 1.0.0-canary | bin, lib | yes | 0 | uncommitted |
-| `@shenron/ui` | [design/aphrody-m3/packages/shenron-ui](../../../design/aphrody-m3/packages/shenron-ui) | bun package | 0.1.0 | lib | yes | 0 | uncommitted |
-| `@aphrody/web-to-tauri` | [design/aphrody-m3/packages/web-to-tauri](../../../design/aphrody-m3/packages/web-to-tauri) | bun package | 1.0.0-canary | bin, lib | yes | 0 | uncommitted |
+| `@aphrody/ag-ui` | [m3/packages/ag-ui](../../../m3/packages/ag-ui) | bun package | 1.0.1 | lib | yes | 0 | uncommitted |
+| `@aphrody/app-ui` | [m3/packages/app-ui](../../../m3/packages/app-ui) | bun package | 0.1.0 | lib | yes | 0 | uncommitted |
+| `@aphrody/assets` | [m3/packages/assets](../../../m3/packages/assets) | bun package | 0.1.0 | lib | yes | 0 | uncommitted |
+| `@aphrody/canvas` | [m3/packages/canvas](../../../m3/packages/canvas) | bun package | 1.0.9-aphrody.2 | lib | yes | 0 | uncommitted |
+| `@aphrody/eslint-plugin-m3` | [m3/packages/eslint-plugin-m3](../../../m3/packages/eslint-plugin-m3) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/identity` | [m3/packages/identity](../../../m3/packages/identity) | bun package | 0.1.0 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3` | [m3/packages/m3](../../../m3/packages/m3) | bun package | 3.3.3 | bin, lib | yes | 0 | uncommitted |
+| `@aphrody/m3-ai` | [m3/packages/m3-ai](../../../m3/packages/m3-ai) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-baseui` | [m3/packages/m3-baseui](../../../m3/packages/m3-baseui) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-bun` | [m3/packages/m3-bun](../../../m3/packages/m3-bun) | bun package | 3.3.3 | bin, lib | yes | 0 | uncommitted |
+| `@aphrody/m3-codemods` | [m3/packages/m3-codemods](../../../m3/packages/m3-codemods) | bun package | 0.1.0 | private | yes | 0 | uncommitted |
+| `@aphrody/m3-config` | [m3/packages/m3-config](../../../m3/packages/m3-config) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-design` | [m3/packages/m3-design](../../../m3/packages/m3-design) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-explorer` | [m3/packages/m3-explorer](../../../m3/packages/m3-explorer) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-fonts` | [m3/packages/m3-fonts](../../../m3/packages/m3-fonts) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-forms` | [m3/packages/m3-forms](../../../m3/packages/m3-forms) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-front` | [m3/packages/m3-front](../../../m3/packages/m3-front) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-icons` | [m3/packages/m3-icons](../../../m3/packages/m3-icons) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-mcp` | [m3/packages/m3-mcp](../../../m3/packages/m3-mcp) | bun package | 1.0.0 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-motion` | [m3/packages/m3-motion](../../../m3/packages/m3-motion) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-next` | [m3/packages/m3-next](../../../m3/packages/m3-next) | bun package | 3.3.3 | bin, lib | yes | 0 | uncommitted |
+| `@aphrody/m3-next-migrate` | [m3/packages/m3-next-migrate](../../../m3/packages/m3-next-migrate) | bun package | 3.3.3 | bin, lib | yes | 0 | uncommitted |
+| `@aphrody/m3-os-themes` | [m3/packages/m3-os-themes](../../../m3/packages/m3-os-themes) | bun package | 3.3.3 | bin, lib | yes | 0 | uncommitted |
+| `@aphrody/m3-primitives` | [m3/packages/m3-primitives](../../../m3/packages/m3-primitives) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-react` | [m3/packages/m3-react](../../../m3/packages/m3-react) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-reader` | [m3/packages/m3-reader](../../../m3/packages/m3-reader) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-tailwind` | [m3/packages/m3-tailwind](../../../m3/packages/m3-tailwind) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-theme` | [m3/packages/m3-theme](../../../m3/packages/m3-theme) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-tokens` | [m3/packages/m3-tokens](../../../m3/packages/m3-tokens) | bun package | 3.3.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/material-design-icons` | [m3/packages/material-design-icons](../../../m3/packages/material-design-icons) | bun package | 1.0.0 | bin, lib | yes | 0 | uncommitted |
+| `@aphrody/nie-ui` | [m3/packages/nie-ui](../../../m3/packages/nie-ui) | bun package | 0.1.0 | lib | yes | 0 | uncommitted |
+| `@rosegriffon/ui` | [m3/packages/rg-ui](../../../m3/packages/rg-ui) | bun package | 1.0.3 | lib | yes | 0 | uncommitted |
+| `@aphrody/scaffold` | [m3/packages/scaffold](../../../m3/packages/scaffold) | bun package | 1.0.0-canary | bin, lib | yes | 0 | uncommitted |
+| `@shenron/ui` | [m3/packages/shenron-ui](../../../m3/packages/shenron-ui) | bun package | 0.1.0 | lib | yes | 0 | uncommitted |
+| `@aphrody/web-to-tauri` | [m3/packages/web-to-tauri](../../../m3/packages/web-to-tauri) | bun package | 1.0.0-canary | bin, lib | yes | 0 | uncommitted |
 
 ## bun
 

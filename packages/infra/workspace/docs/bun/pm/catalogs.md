@@ -73,7 +73,7 @@ In your workspace packages, use the `catalog:` protocol to reference versions:
 }
 ```
 
-```json design/aphrody-m3/packages/package.json icon="file-json"
+```json m3/packages/package.json icon="file-json"
 {
   "name": "ui",
   "dependencies": {
@@ -198,7 +198,7 @@ A larger example, for a React application:
 }
 ```
 
-```json design/aphrody-m3/packages/package.json icon="file-json"
+```json m3/packages/package.json icon="file-json"
 {
   "name": "@monorepo/ui",
   "dependencies": {

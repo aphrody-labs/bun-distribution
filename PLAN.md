@@ -18,7 +18,9 @@ upgrade et rollback qualifiés. La refonte complète reste ouverte.
 Aphrody conserve workflows, UI, intégrations et données métier. Yolo possède les
 moteurs et fournit des releases épinglées ; aucune source moteur dans Aphrody.
 Workspace/Infra possède orchestration, inventaires, fabriques et déploiement.
-UI : `design/aphrody-m3/packages/app-ui`, `crates/ui/*`. Python et IECODE restent dans leurs
+UI : `m3/packages/app-ui`, `crates/ui/*`. Le sous-module M3 est directement à la
+racine (`m3/`), selon la [décision du 2026-10-05](docs/architecture/workspace/M3-LOCATION.md).
+Python et IECODE restent dans leurs
 dépôts, avec leurs contrats et stores séparés.
 
 ## Contrats d'architecture

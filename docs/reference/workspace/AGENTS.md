@@ -36,8 +36,8 @@ successful result. NHITL does not change the task scope or a product's runtime p
 | Navigation | [Documentation index](../../README.md) |
 | Workstation Nushell setup | [Nushell guide](./nu.md) |
 | Cross-repository delivery | [AI plan](../../plans/ai/PLAN.md) |
-| Desktop behavior and appearance | [GUI](../../../design/aphrody-m3/docs/reference/GUI.md), [UI](../../../design/aphrody-m3/docs/architecture/UI-DESIGN.md), [UX](../../../design/aphrody-m3/docs/architecture/UX-DESIGN.md) |
-| Native desktop/framework migration | [M3 host plan](../../../design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md) |
+| Desktop behavior and appearance | [GUI](../../../m3/docs/reference/GUI.md), [UI](../../../m3/docs/architecture/UI-DESIGN.md), [UX](../../../m3/docs/architecture/UX-DESIGN.md) |
+| Native desktop/framework migration | [M3 host plan](../../../m3/docs/plans/design/M3-MULTI-HOST-PLAN.md) |
 | Hosts, services, routes and releases | Root `config/`, `inventory/` and `crates/infra/` in this monorepo; see [Infra authority](../infra/UNIFIED-AGENT-CONTEXT.md) |
 | Existing crates, commands and tools | [Generated ecosystem](../../ecosystem/ECOSYSTEM.md) |
 

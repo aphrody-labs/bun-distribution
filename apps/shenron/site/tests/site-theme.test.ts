@@ -26,7 +26,7 @@ import {
 // par globals.css : le rendu du site est la concaténation des deux feuilles.
 const css = [
 	await Bun.file(new URL("../src/app/globals.css", import.meta.url)).text(),
-	await Bun.file(new URL("../../../../design/aphrody-m3/packages/shenron-ui/src/styles.css", import.meta.url)).text(),
+	await Bun.file(new URL("../../../../m3/packages/shenron-ui/src/styles.css", import.meta.url)).text(),
 ].join("\n");
 const cles = Object.keys(THEME_COLOR_VARS) as ThemeColorKey[];
 

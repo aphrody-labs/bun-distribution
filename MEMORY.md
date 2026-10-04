@@ -30,3 +30,24 @@ site/MCP/bot non qualifiés comme activés par ce relevé.
 Les scans lexicaux et anciens états Git ne prouvent pas le graphe résolu,
 les profils panic, la release courante ou un gain. Vérifier la surface sélectionnée.
 Mémoire fichier uniquement ; aucune synchronisation de mémoire fournisseur revendiquée.
+
+## M3 and app transport — 2026-10-05
+
+Owner-directed relocation: `m3/` replaces `design/aphrody-m3/`. Git history,
+working edits and the seven nested fork revisions were preserved; manifests,
+imports, build paths and current documentation follow the new location.
+[Architecture and application owners](docs/architecture/workspace/M3-LOCATION.md).
+
+App UI: 216 tests / 991 assertions, TypeScript and scoped strict lint/format pass;
+build produces 641 files / 63,030,159 bytes. Eight transport/proxy tests pass.
+The web server now uses the M3 proxy and actual app-server RPC/SSE instead of
+simulated Tauri commands or invented runtime data. An isolated installed native
+CLI probe acknowledged initialization and ten tools; its RAG extension is
+disabled (`aphrody=false`, method error `-32601`). No inference or private
+conversation/index was used. Browser appearance is qualified at 1280×832 and
+800×560; native Tauri rendering and full domain backend activation remain open.
+
+Normal Bun install succeeds; frozen install still reports lock changes.
+Migration-only parent checks retain pre-existing lint/format debt and a failing
+live RAG preload guard. Serialized Rust gates are routed to the VPS factory,
+so no new Rust build result is claimed. Old workers stopped at the owner's request.

@@ -41,6 +41,6 @@ If you don't understand something in the documentation, you are experiencing pro
 [guide-update]: https://discordjs.guide/legacy/additional-info/changes-in-v14
 [discord]: https://discord.gg/djs
 [discord-developers]: https://discord.gg/discord-developers
-[source]: https://github.com/discordjs/discord.js/tree/main/design/aphrody-m3/packages
+[source]: https://github.com/discordjs/discord.js/tree/main/m3/packages
 [related-libs]: https://docs.discord.com/developers/developer-tools/community-resources#libraries
 [contributing]: https://github.com/discordjs/discord.js/blob/main/.github/CONTRIBUTING.md

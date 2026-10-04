@@ -2,7 +2,7 @@
  * rend-icones — contrôle visuel du jeu de glyphes maison.
  *
  * Rastérise chaque géométrie de `@shenron/ui/icones`
- * (`design/aphrody-m3/packages/shenron-ui/src/icones/geometries.ts`) en PNG à 16, 24 et 32 px
+ * (`m3/packages/shenron-ui/src/icones/geometries.ts`) en PNG à 16, 24 et 32 px
  * (les trois tailles réellement utilisées par l'interface) et compose une
  * planche de contact par taille, pour qu'un défaut se voie à l'œil plutôt que
  * de se deviner dans un `d=`. Une icône au trait qui devient une bouillie à

@@ -23,7 +23,7 @@ Rio's GPU/windowing crates (`sugarloaf`, `rio-window`, `rioterm`) are not
 dependencies and are not copied into this repository. They are not wired into
 the desktop. The current DOM terminal is a Tauri/M3 desktop
 proof surface, not the product GUI target. The target is a native Rust/`wgpu`
-host owned by `aphrody-ui`; see its `design/aphrody-m3/docs/reference/NATIVE-DESKTOP.md`. Rio's `wgpu 30`
+host owned by `aphrody-ui`; see its `m3/docs/reference/NATIVE-DESKTOP.md`. Rio's `wgpu 30`
 cannot share the current Aphrody `wgpu 26` device directly. Its existing DOM
 terminal has native text selection, find and accessibility; replacing it
 requires equivalent native capabilities in the UI owner.

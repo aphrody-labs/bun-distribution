@@ -21,7 +21,7 @@ their engines. Remote pages receive no implicit privileged Bun/host access.
 
 Workspace/Infra owns orchestration, inventories, factories, release and hosts.
 Reuse existing capability owners; no competing stack or copied Yolo engine.
-UI is canonical in `design/aphrody-m3/packages/app-ui` and `crates/ui/*`.
+UI is canonical in `m3/packages/app-ui` and `crates/ui/*`.
 
 ## Ownership map
 

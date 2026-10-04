@@ -32,7 +32,7 @@ impl Pulls {
     }
 }
 
-/// File of the vendored store plugin holding the UI preferences (design/aphrody-m3/packages/app-ui/src/preferences.ts).
+/// File of the vendored store plugin holding the UI preferences (m3/packages/app-ui/src/preferences.ts).
 const PREFERENCES_STORE: &str = "preferences.json";
 
 /// The models folder chosen in onboarding (`preferences.modelsDir`), when one is set.

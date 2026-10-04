@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Golden check of the two committed CSS sheets this crate generates.
 //!
-//! `design/aphrody-m3/packages/m3-theme/tokens.css` (fusion palette) and
-//! `design/aphrody-m3/packages/m3-tokens/src/m3-tokens.css` (shape, typescale, motion, elevation, state) are
+//! `m3/packages/m3-theme/tokens.css` (fusion palette) and
+//! `m3/packages/m3-tokens/src/m3-tokens.css` (shape, typescale, motion, elevation, state) are
 //! rendered by `aphrody_m3_tokens::sheets` and must match byte for byte. Rewrite them with
 //! `APHRODY_UPDATE_TOKENS=1 scripts/build/rust/cargo-serial.sh test -p aphrody-m3-tokens --test
 //! sheets_golden`. The formatter pass of `bun run generate` in `@aphrody/m3-theme` is a no-op on
@@ -35,10 +35,10 @@ fn check(relative: &str, expected: &str) {
 
 #[test]
 fn fusion_tokens_sheet_is_current() {
-    check("design/aphrody-m3/packages/m3-theme/tokens.css", &tokens_css(BASELINE_SEED, Variant::TonalSpot, 0.0));
+    check("m3/packages/m3-theme/tokens.css", &tokens_css(BASELINE_SEED, Variant::TonalSpot, 0.0));
 }
 
 #[test]
 fn static_tokens_sheet_is_current() {
-    check("design/aphrody-m3/packages/m3-tokens/src/m3-tokens.css", &static_css());
+    check("m3/packages/m3-tokens/src/m3-tokens.css", &static_css());
 }

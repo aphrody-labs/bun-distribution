@@ -16,9 +16,9 @@ layout; they are not current checkout instructions.
 
 `../aphrody-py` owns Python implementation. `../iecode`
 owns game-domain implementation. `~/src` is a legacy source archive,
-kept intact while migration consumers are qualified. The separate `aphrody-ui`
-checkout belongs to its designated agent and is outside cross-repository work
-unless UI work is explicitly assigned.
+kept intact while migration consumers are qualified. The canonical UI framework is the [`m3/` submodule](../../../m3/README.md),
+with the product app at `m3/packages/app-ui`. The separate `aphrody-ui`
+checkout is retired. [M3 location](M3-LOCATION.md) defines this boundary.
 
 The root [Cargo manifest](../../../Cargo.toml) and
 [Bun manifest](../../../package.json) define active members. Explicit exclusions
@@ -37,7 +37,7 @@ history under `upstream/`.
 | CLI | [apps/cli](../../../apps/cli): argument handling, configuration and invocation of owner libraries |
 | OS and Shell | `crates/os`, `packages/os`, `crates/shell`: system capabilities, kernel, process supervision, jobs and shell facilities |
 | Infra | `crates/infra`, [workspace orchestrator](../../../packages/infra/workspace): inventories, topology, qualification and operations |
-| UI | `crates/ui`, `design/aphrody-m3/packages`: rendering, tokens, components and presentation |
+| UI | `crates/ui`, `m3/packages`: rendering, tokens, components and presentation |
 | AI and Web | `crates/ai`, `packages/ai`, `crates/web`, `packages/web`: model clients, inference, RAG and web capabilities |
 | Koharu and Discord | Domain libraries; applications own startup, credentials and product behavior |
 | RG and Shenron | `iecode/packages/rg`, `iecode/apps/rg`, `packages/shenron`, `apps/shenron`: domain rules, application contracts and product consumers |

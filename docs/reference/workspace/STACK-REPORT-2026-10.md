@@ -10,7 +10,7 @@ Cross-repository consensus and stack evaluation checked on 2026-10-03 against cr
 | :--- | :--- | :--- |
 | **Rust Full-Stack Framework** | **Dioxus 0.7** (pinned 0.7.x) | Single codebase for web, desktop, and mobile. Server functions compile to standard axum endpoints. Subsecond hot-patching preserves application state. |
 | **Hosting (Cost, Performance, AI)** | **Own EU bare-metal / large VPS** (retain OVHcloud fleet `vps` + `dbfr` with 45 GiB RAM; Hetzner auction for cheap €0.58/GB RAM) behind Cloudflare | After the 2026 RAM price shock (+93-98%), bare metal is ~10× cheaper than PaaS ($6–12.50/GB). Agents already operate these hosts natively via MCP. |
-| **UI Framework for Yolo** | **React 19 + Material 3 Web Components** (`@aphrody/material-web` via `@lit/react`), bundled by Bun | Identical to Aphrody's UI stack (`design/aphrody-m3/packages/m3-*`). Zero extra compiler plugins under Bun, runs identically across Wry system WebViews, largest AI corpus. |
+| **UI Framework for Yolo** | **React 19 + Material 3 Web Components** (`@aphrody/material-web` via `@lit/react`), bundled by Bun | Identical to Aphrody's UI stack (`m3/packages/m3-*`). Zero extra compiler plugins under Bun, runs identically across Wry system WebViews, largest AI corpus. |
 
 ---
 
