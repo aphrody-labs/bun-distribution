@@ -11,15 +11,17 @@ import { cookies } from "next/headers";
 import { M3NextThemeProvider } from "@aphrody/m3-next/client";
 import {
   M3_BASELINE_SEED,
-  M3_COLOR_SCHEME_SCRIPT,
   M3_THEME_COOKIE,
   colorSchemeFor,
+  colorSchemeScript,
   m3SchemeColors,
   m3SchemeStylesheet,
+  m3TypefaceCss,
   parseThemeMode,
   rootDeclarations,
   type M3SchemeOptions,
   type M3ThemeMode,
+  type M3Typefaces,
 } from "./index";
 
 export * from "./index";
@@ -52,7 +54,13 @@ export interface M3CssOptions {
 }
 
 interface BunM3Module {
-  m3Css(request: { sheet: string; seed?: string; variant?: string; dark?: boolean; contrast?: number }): string;
+  m3Css(request: {
+    sheet: string;
+    seed?: string;
+    variant?: string;
+    dark?: boolean;
+    contrast?: number;
+  }): string;
 }
 
 const STATIC_SHEETS: Record<Exclude<M3SheetName, "scheme">, string> = {
@@ -73,7 +81,9 @@ function packageRequire(root?: string): NodeRequire {
   );
   for (const base of bases) {
     try {
-      const manifest = createRequire(join(base, "package.json")).resolve("@aphrody/m3-next/package.json");
+      const manifest = createRequire(join(base, "package.json")).resolve(
+        "@aphrody/m3-next/package.json",
+      );
       return createRequire(manifest);
     } catch {
       // Not installed under this base: try the next one.
@@ -92,7 +102,9 @@ function loadBunModule(root?: string): Promise<BunM3Module | null> {
     try {
       const entry = packageRequire(root).resolve("@aphrody/bun");
       const specifier = pathToFileURL(entry).href;
-      const loaded = (await import(/* turbopackIgnore: true */ /* webpackIgnore: true */ specifier)) as BunM3Module;
+      const loaded = (await import(
+        /* turbopackIgnore: true */ /* webpackIgnore: true */ specifier
+      )) as BunM3Module;
       return typeof loaded.m3Css === "function" ? loaded : null;
     } catch (error) {
       bunModuleError = error;
@@ -127,9 +139,25 @@ function remember(key: string, result: M3CssResult): M3CssResult {
  * pre-generated files of `@aphrody/m3-theme` (baseline seed) and `scheme` is computed in JS with
  * material-color-utilities. Results are cached per request shape.
  */
-export async function m3CssResult(request: M3CssRequest, options: M3CssOptions = {}): Promise<M3CssResult> {
-  const { sheet, seed = M3_BASELINE_SEED, variant = "tonalSpot", contrast = 0, dark = false } = request;
-  const key = JSON.stringify([sheet, seed.toLowerCase(), variant, contrast, dark, options.noFfi === true]);
+export async function m3CssResult(
+  request: M3CssRequest,
+  options: M3CssOptions = {},
+): Promise<M3CssResult> {
+  const {
+    sheet,
+    seed = M3_BASELINE_SEED,
+    variant = "tonalSpot",
+    contrast = 0,
+    dark = false,
+  } = request;
+  const key = JSON.stringify([
+    sheet,
+    seed.toLowerCase(),
+    variant,
+    contrast,
+    dark,
+    options.noFfi === true,
+  ]);
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -162,7 +190,10 @@ export async function m3Css(request: M3CssRequest, options: M3CssOptions = {}): 
  * The inline stylesheet of M3Html: the light and dark roles of one scheme, wired to the
  * `.light` / `.dark` classes and `prefers-color-scheme` (see `m3SchemeStylesheet`).
  */
-export async function m3SchemeCss(scheme: M3SchemeOptions = {}, options: M3CssOptions = {}): Promise<M3CssResult> {
+export async function m3SchemeCss(
+  scheme: M3SchemeOptions = {},
+  options: M3CssOptions = {},
+): Promise<M3CssResult> {
   const [light, dark] = await Promise.all([
     m3CssResult({ ...scheme, sheet: "scheme", dark: false }, options),
     m3CssResult({ ...scheme, sheet: "scheme", dark: true }, options),
@@ -191,6 +222,10 @@ export interface M3DocumentProps {
   bodyClassName?: string;
   /** Inline scheme stylesheet (from {@link m3SchemeCss}); omitted when undefined. */
   schemeCss?: string;
+  /** Inline `:root` rule from {@link m3TypefaceCss}; omitted when undefined or empty. */
+  typefaceCss?: string;
+  /** Cookie the pre-paint script reads in `system` mode (default `m3-theme`). */
+  cookieName?: string;
   /** Extra `<head>` children. */
   head?: ReactNode;
   /** Extra attributes for `<html>`. */
@@ -208,6 +243,8 @@ export function M3Document({
   className,
   bodyClassName,
   schemeCss,
+  typefaceCss,
+  cookieName,
   head,
   htmlProps,
 }: M3DocumentProps) {
@@ -223,8 +260,18 @@ export function M3Document({
       suppressHydrationWarning
     >
       <head>
-        {schemeCss !== undefined ? <style id="m3-scheme" dangerouslySetInnerHTML={{ __html: schemeCss }} /> : null}
-        {mode === "system" ? <script id="m3-color-scheme" dangerouslySetInnerHTML={{ __html: M3_COLOR_SCHEME_SCRIPT }} /> : null}
+        {schemeCss !== undefined ? (
+          <style id="m3-scheme" dangerouslySetInnerHTML={{ __html: schemeCss }} />
+        ) : null}
+        {typefaceCss ? (
+          <style id="m3-typefaces" dangerouslySetInnerHTML={{ __html: typefaceCss }} />
+        ) : null}
+        {mode === "system" ? (
+          <script
+            id="m3-color-scheme"
+            dangerouslySetInnerHTML={{ __html: colorSchemeScript(cookieName) }}
+          />
+        ) : null}
         {head}
       </head>
       <body className={bodyClassName}>{children}</body>
@@ -237,10 +284,18 @@ export interface M3HtmlProps extends Omit<M3DocumentProps, "mode" | "schemeCss">
   mode?: M3ThemeMode;
   /** Mode when the cookie is absent or invalid (default `system`). */
   defaultMode?: M3ThemeMode;
+  /**
+   * Read the theme cookie on the server (default `true`). `false` keeps the shell static, as Cache Components and a
+   * static export require: the pre-paint script and the client provider apply the saved preference in the browser.
+   * Always `false` when `NEXT_PUBLIC_M3_STATIC=1` (`withM3(config, { tauri: true })`).
+   */
+  readCookie?: boolean;
   /** Cookie holding the preference (default `m3-theme`). */
   cookieName?: string;
   /** Inline the scheme roles into `<head>` (default `true`). */
   inlineScheme?: boolean;
+  /** Point the M3 reference typefaces at fonts the app loads (see {@link m3TypefaceCss}). */
+  typefaces?: M3Typefaces;
   /** Options for the sheet renderer. */
   css?: M3CssOptions;
 }
@@ -249,17 +304,23 @@ async function resolveDocument(props: M3HtmlProps): Promise<M3DocumentProps> {
   const {
     mode,
     defaultMode = "system",
+    readCookie = process.env.NEXT_PUBLIC_M3_STATIC !== "1",
     cookieName = M3_THEME_COOKIE,
     inlineScheme = true,
+    typefaces,
     seed,
     variant,
     contrast,
     css,
     ...document
   } = props;
-  const resolved = mode ?? (await readM3ThemeMode(cookieName, defaultMode));
-  const schemeCss = inlineScheme ? (await m3SchemeCss({ seed, variant, contrast }, css)).css : undefined;
-  return { ...document, mode: resolved, schemeCss };
+  const resolved =
+    mode ?? (readCookie ? await readM3ThemeMode(cookieName, defaultMode) : defaultMode);
+  const schemeCss = inlineScheme
+    ? (await m3SchemeCss({ seed, variant, contrast }, css)).css
+    : undefined;
+  const typefaceCss = typefaces ? m3TypefaceCss(typefaces) : undefined;
+  return { ...document, mode: resolved, schemeCss, typefaceCss, cookieName };
 }
 
 /**
@@ -277,7 +338,14 @@ export async function M3Html(props: M3HtmlProps) {
  * preference is written back to the cookie on every change.
  */
 export async function M3Root(props: M3HtmlProps) {
-  const { children, seed, variant, contrast, cookieName = M3_THEME_COOKIE } = props;
+  const {
+    children,
+    seed,
+    variant,
+    contrast,
+    cookieName = M3_THEME_COOKIE,
+    inlineScheme = true,
+  } = props;
   const document = await resolveDocument(props);
   return (
     <M3Document {...document}>
@@ -287,6 +355,7 @@ export async function M3Root(props: M3HtmlProps) {
         variant={variant}
         contrast={contrast}
         cookieName={cookieName}
+        schemeInlined={inlineScheme}
       >
         {children}
       </M3NextThemeProvider>

@@ -15,3 +15,11 @@ export const M3_THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 export function themeCookie(mode: M3ThemeMode, name: string = M3_THEME_COOKIE): string {
   return `${name}=${mode}; path=/; max-age=${M3_THEME_COOKIE_MAX_AGE}; samesite=lax`;
 }
+
+/** Parse a cookie value into a theme mode; anything else yields `fallback`. */
+export function parseThemeMode(
+  value: string | undefined | null,
+  fallback: M3ThemeMode = "system",
+): M3ThemeMode {
+  return value === "light" || value === "dark" || value === "system" ? value : fallback;
+}

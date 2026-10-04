@@ -19,7 +19,14 @@ import {
   themeCookie,
   withM3,
 } from "../src/index";
-import { M3Document, isBunRuntime, m3Css, m3CssResult, m3FfiError, m3SchemeCss } from "../src/server";
+import {
+  M3Document,
+  isBunRuntime,
+  m3Css,
+  m3CssResult,
+  m3FfiError,
+  m3SchemeCss,
+} from "../src/server";
 
 const pkgDir = join(import.meta.dir, "..");
 const require = createRequire(join(pkgDir, "package.json"));
@@ -29,7 +36,11 @@ const nativeLib = ["bun_rs.dll", "libbun_rs.so", "libbun_rs.dylib"].some((name) 
 
 describe("withM3", () => {
   test("adds the M3 packages, keeps user values and strict mode", () => {
-    const config = withM3({ transpilePackages: ["my-lib"], reactStrictMode: false, poweredByHeader: false });
+    const config = withM3({
+      transpilePackages: ["my-lib"],
+      reactStrictMode: false,
+      poweredByHeader: false,
+    });
     expect(config.transpilePackages).toContain("my-lib");
     for (const name of M3_TRANSPILE_PACKAGES) expect(config.transpilePackages).toContain(name);
     expect(config.reactStrictMode).toBe(false);
@@ -39,15 +50,23 @@ describe("withM3", () => {
   });
 
   test("defaults strict mode on, deduplicates and never lists a package twice", () => {
-    const config = withM3({ transpilePackages: ["@aphrody/m3-theme"], serverExternalPackages: ["@aphrody/m3-ai", "sharp"] });
+    const config = withM3({
+      transpilePackages: ["@aphrody/m3-theme"],
+      serverExternalPackages: ["@aphrody/m3-ai", "sharp"],
+    });
     expect(config.reactStrictMode).toBe(true);
-    expect(config.transpilePackages!.filter((name) => name === "@aphrody/m3-theme")).toHaveLength(1);
+    expect(config.transpilePackages!.filter((name) => name === "@aphrody/m3-theme")).toHaveLength(
+      1,
+    );
     // A transpiled package can never be external at the same time (Next rejects the overlap).
     expect(config.serverExternalPackages).toEqual(["sharp", "@aphrody/bun"]);
   });
 
   test("merges Turbopack options and the optional root", () => {
-    const config = withM3({ turbopack: { resolveExtensions: [".tsx", ".ts", ".js"] } }, { turbopackRoot: "/repo" });
+    const config = withM3(
+      { turbopack: { resolveExtensions: [".tsx", ".ts", ".js"] } },
+      { turbopackRoot: "/repo" },
+    );
     expect(config.turbopack).toEqual({ resolveExtensions: [".tsx", ".ts", ".js"], root: "/repo" });
     expect(withM3({}).turbopack).toBeUndefined();
     expect(withM3({}, { optimizePackageImports: false }).experimental).toBeUndefined();
@@ -80,7 +99,12 @@ describe("metadata and viewport", () => {
   });
 
   test("metadata has a title template and merges overrides", () => {
-    const metadata = generateM3Metadata({ name: "M3", description: "d", url: "https://example.test", metadata: { robots: "noindex" } });
+    const metadata = generateM3Metadata({
+      name: "M3",
+      description: "d",
+      url: "https://example.test",
+      metadata: { robots: "noindex" },
+    });
     expect(metadata.title).toEqual({ default: "M3", template: "%s · M3" });
     expect(String(metadata.metadataBase)).toBe("https://example.test/");
     expect(metadata.robots).toBe("noindex");
@@ -91,26 +115,35 @@ describe("m3Css", () => {
   test("static sheets match the files of @aphrody/m3-theme", async () => {
     const result = await m3CssResult({ sheet: "tailwind" }, { noFfi: true });
     expect(result.source).toBe("static");
-    expect(result.css).toBe(readFileSync(require.resolve("@aphrody/m3-theme/tailwind.css"), "utf8"));
+    expect(result.css).toBe(
+      readFileSync(require.resolve("@aphrody/m3-theme/tailwind.css"), "utf8"),
+    );
     expect(await m3Css({ sheet: "tokens" }, { noFfi: true })).toContain("--md-sys-color-primary:");
   });
 
   test("the JS scheme fallback equals material-color-utilities", async () => {
-    const result = await m3CssResult({ sheet: "scheme", seed: "#b3261e", dark: true }, { noFfi: true });
+    const result = await m3CssResult(
+      { sheet: "scheme", seed: "#b3261e", dark: true },
+      { noFfi: true },
+    );
     expect(result.source).toBe("js");
     expect(rootDeclarations(result.css)).toEqual(schemeFromSeed("#b3261e", { dark: true }));
   });
 
-  test.skipIf(!isBunRuntime() || !nativeLib)("under Bun the Rust renderer agrees with the JS scheme", async () => {
-    const result = await m3CssResult({ sheet: "scheme", seed: "#b3261e" });
-    expect(m3FfiError()).toBeUndefined();
-    expect(result.source).toBe("ffi");
-    const rust = rootDeclarations(result.css);
-    for (const [role, value] of Object.entries(schemeFromSeed("#b3261e"))) expect(rust[role]).toBe(value);
-    const tokens = await m3CssResult({ sheet: "tokens" });
-    expect(tokens.source).toBe("ffi");
-    expect(tokens.css).toContain("--md-sys-color-primary:");
-  });
+  test.skipIf(!isBunRuntime() || !nativeLib)(
+    "under Bun the Rust renderer agrees with the JS scheme",
+    async () => {
+      const result = await m3CssResult({ sheet: "scheme", seed: "#b3261e" });
+      expect(m3FfiError()).toBeUndefined();
+      expect(result.source).toBe("ffi");
+      const rust = rootDeclarations(result.css);
+      for (const [role, value] of Object.entries(schemeFromSeed("#b3261e")))
+        expect(rust[role]).toBe(value);
+      const tokens = await m3CssResult({ sheet: "tokens" });
+      expect(tokens.source).toBe("ffi");
+      expect(tokens.css).toContain("--md-sys-color-primary:");
+    },
+  );
 
   test("the inline scheme sheet wires both modes to the classes and the media query", async () => {
     const { css } = await m3SchemeCss({ seed: "#6750a4" }, { noFfi: true });
@@ -119,13 +152,19 @@ describe("m3Css", () => {
     expect(css).toContain(":root.dark {");
     expect(css).toContain(":root.light {");
     expect(css.match(/--md-sys-color-primary:/g)).toHaveLength(4);
-    expect(m3SchemeStylesheet({ "--a": "#000" }, { "--a": "#fff" })).toContain("color-scheme: dark;\n    --a: #fff;");
+    expect(m3SchemeStylesheet({ "--a": "#000" }, { "--a": "#fff" })).toContain(
+      "color-scheme: dark;\n    --a: #fff;",
+    );
   });
 });
 
 describe("M3Document", () => {
   test("a forced mode sets the class and color-scheme, without the pre-paint script", () => {
-    const html = renderToString(<M3Document mode="dark" className="font-plain" schemeCss=":root{--x:1}">hi</M3Document>);
+    const html = renderToString(
+      <M3Document mode="dark" className="font-plain" schemeCss=":root{--x:1}">
+        hi
+      </M3Document>,
+    );
     expect(html).toContain('class="font-plain dark"');
     expect(html).toContain("color-scheme:dark");
     expect(html).toContain('data-m3-theme="dark"');

@@ -6,9 +6,13 @@
 // React Server Components live in `@aphrody/m3-next/server`, the client boundary in
 // `@aphrody/m3-next/client`.
 import type { Metadata, NextConfig, Viewport } from "next";
-import { schemeFromSeed, type ColorRoleMap, type SchemeVariant } from "@aphrody/m3-tokens/dynamic-color";
+import {
+  schemeFromSeed,
+  type ColorRoleMap,
+  type SchemeVariant,
+} from "@aphrody/m3-tokens/dynamic-color";
 
-import { M3_BASELINE_SEED, type M3ThemeMode } from "./constants";
+import { M3_BASELINE_SEED, M3_THEME_COOKIE, type M3ThemeMode } from "./constants";
 
 export type { ColorRoleMap, SchemeVariant };
 export * from "./constants";
@@ -21,6 +25,7 @@ export * from "./crawl";
  */
 export const M3_TRANSPILE_PACKAGES: readonly string[] = [
   "@aphrody/m3-next",
+  "@aphrody/m3-baseui",
   "@aphrody/m3-theme",
   "@aphrody/m3-tokens",
   "@aphrody/m3-motion",
@@ -34,6 +39,8 @@ export const M3_TRANSPILE_PACKAGES: readonly string[] = [
 
 /** Barrel packages whose named imports Next rewrites to direct module imports. */
 export const M3_OPTIMIZE_PACKAGE_IMPORTS: readonly string[] = [
+  "@aphrody/m3-baseui",
+  "@base-ui/react",
   "@aphrody/m3-primitives",
   "@aphrody/m3-forms",
   "@aphrody/m3-ai",
@@ -47,6 +54,14 @@ export const M3_OPTIMIZE_PACKAGE_IMPORTS: readonly string[] = [
  */
 export const M3_SERVER_EXTERNAL_PACKAGES: readonly string[] = ["@aphrody/bun"];
 
+/** Tauri static export (`output: "export"`); see {@link WithM3Options.tauri}. */
+export interface M3TauriOptions {
+  /** Dev server host the webview loads assets from; default `TAURI_DEV_HOST`, else none (desktop uses `localhost`). */
+  devHost?: string;
+  /** Dev server port (default 3000). */
+  devPort?: number;
+}
+
 export interface WithM3Options {
   /** Extra packages to transpile next to {@link M3_TRANSPILE_PACKAGES}. */
   transpilePackages?: readonly string[];
@@ -57,21 +72,45 @@ export interface WithM3Options {
    * outside the app directory (Next otherwise infers it from the nearest lockfile).
    */
   turbopackRoot?: string;
+  /** React Compiler (`reactCompiler`); needs `babel-plugin-react-compiler` installed in the app. */
+  reactCompiler?: boolean;
+  /** Cache Components (`cacheComponents`): `use cache`, `cacheLife`, `cacheTag` and partial prerendering. */
+  cacheComponents?: boolean;
+  /** Typed routes (`typedRoutes`): `Link` hrefs and `redirect` are checked against `app/`. */
+  typedRoutes?: boolean;
+  /**
+   * Static export for a Tauri webview: `output: "export"`, unoptimized images, trailing slashes, no Cache
+   * Components, and `NEXT_PUBLIC_M3_STATIC=1` so `M3Html` / `M3Root` stop reading the request cookie (there is no server).
+   * `true` always, `"auto"` when the Tauri CLI runs the build (`TAURI_ENV_PLATFORM` is set), or the options.
+   * `proxy.ts`, route handlers and `cookies()` do not exist in an export; the theme preference lives in the cookie
+   * the client writes and the pre-paint script reads.
+   */
+  tauri?: boolean | "auto" | M3TauriOptions;
 }
 
 function union(...lists: (readonly string[] | undefined)[]): string[] {
   return [...new Set(lists.flatMap((list) => list ?? []))];
 }
 
+/** `true` when the Tauri CLI drives this process (it sets `TAURI_ENV_PLATFORM` for `beforeBuildCommand` and `beforeDevCommand`). */
+export function isTauriBuild(env: Record<string, string | undefined> = process.env): boolean {
+  return env["TAURI_ENV_PLATFORM"] !== undefined || env["TAURI_ENV_ARCH"] !== undefined;
+}
+
 /**
  * Wrap a Next config for the M3 packages: transpile them, keep `@aphrody/bun` external on the
  * server, optimise barrel imports and enable React strict mode. User values are merged, never
- * dropped; Turbopack (the Next 16 default for dev and build) needs no loader for the M3 sheets
- * because they are plain CSS processed by the app's PostCSS / Tailwind v4 pipeline.
+ * dropped (an option never overrides a key the config sets); Turbopack (the Next 16 default for dev and
+ * build) needs no loader for the M3 sheets because they are plain CSS processed by the app's PostCSS /
+ * Tailwind v4 pipeline.
  */
 export function withM3(config: NextConfig = {}, options: WithM3Options = {}): NextConfig {
   const { optimizePackageImports = true, turbopackRoot } = options;
-  const transpile = union(config.transpilePackages, M3_TRANSPILE_PACKAGES, options.transpilePackages);
+  const transpile = union(
+    config.transpilePackages,
+    M3_TRANSPILE_PACKAGES,
+    options.transpilePackages,
+  );
   const external = union(config.serverExternalPackages, M3_SERVER_EXTERNAL_PACKAGES).filter(
     (name) => !transpile.includes(name),
   );
@@ -84,18 +123,36 @@ export function withM3(config: NextConfig = {}, options: WithM3Options = {}): Ne
   if (optimizePackageImports) {
     next.experimental = {
       ...config.experimental,
-      optimizePackageImports: union(config.experimental?.optimizePackageImports, M3_OPTIMIZE_PACKAGE_IMPORTS),
+      optimizePackageImports: union(
+        config.experimental?.optimizePackageImports,
+        M3_OPTIMIZE_PACKAGE_IMPORTS,
+      ),
     };
   }
   if (turbopackRoot !== undefined || config.turbopack !== undefined) {
-    next.turbopack = { ...config.turbopack, ...(turbopackRoot !== undefined ? { root: turbopackRoot } : {}) };
+    next.turbopack = {
+      ...config.turbopack,
+      ...(turbopackRoot !== undefined ? { root: turbopackRoot } : {}),
+    };
+  }
+  if (options.reactCompiler !== undefined) next.reactCompiler ??= options.reactCompiler;
+  if (options.typedRoutes !== undefined) next.typedRoutes ??= options.typedRoutes;
+  if (options.cacheComponents !== undefined) next.cacheComponents ??= options.cacheComponents;
+
+  const tauri = options.tauri === "auto" ? isTauriBuild() : options.tauri;
+  if (tauri !== undefined && tauri !== false) {
+    const { devHost = process.env["TAURI_DEV_HOST"], devPort = 3000 }: M3TauriOptions =
+      tauri === true ? {} : tauri;
+    next.output ??= "export";
+    next.trailingSlash ??= true;
+    next.images = { unoptimized: true, ...config.images };
+    // A static export has no server to render the shell on demand.
+    if (config.cacheComponents === undefined) next.cacheComponents = false;
+    next.env = { NEXT_PUBLIC_M3_STATIC: "1", ...config.env };
+    if (devHost !== undefined && process.env["NODE_ENV"] !== "production")
+      next.assetPrefix ??= `http://${devHost}:${devPort}`;
   }
   return next;
-}
-
-/** Parse a cookie value into a theme mode; anything else yields `fallback`. */
-export function parseThemeMode(value: string | undefined | null, fallback: M3ThemeMode = "system"): M3ThemeMode {
-  return value === "light" || value === "dark" || value === "system" ? value : fallback;
 }
 
 /** The `color-scheme` value for a mode: `system` lets the UA follow the OS. */
@@ -215,15 +272,57 @@ export function rootDeclarations(css: string): ColorRoleMap {
   const body = /:root\s*\{([^}]*)\}/.exec(css.replace(/\/\*[\s\S]*?\*\//g, ""))?.[1];
   if (body === undefined) throw new Error("rootDeclarations: no :root block in the sheet");
   const vars: ColorRoleMap = {};
-  for (const match of body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) vars[match[1]!] = match[2]!.trim();
+  for (const match of body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g))
+    vars[match[1]!] = match[2]!.trim();
   return vars;
 }
 
 /**
- * Inline script for `system` mode: resolve `prefers-color-scheme` into the `.dark` class and the
- * `color-scheme` property before first paint, so Tailwind `dark:` utilities never flash.
+ * Inline script that applies the theme before first paint, so Tailwind `dark:` utilities and the M3 roles never
+ * flash. It reads the preference cookie (`light`, `dark` or `system`; absent means `system`) and sets the `.dark` /
+ * `.light` classes and `color-scheme` on `<html>`; `system` resolves `prefers-color-scheme`. Because the cookie is
+ * read in the browser, the shell can stay static (Cache Components, Tauri static export) and still honour a saved
+ * preference.
  */
-export const M3_COLOR_SCHEME_SCRIPT =
-  "(function(){try{var d=document.documentElement;if(d.classList.contains('light'))return;" +
-  "var m=window.matchMedia('(prefers-color-scheme: dark)').matches;" +
-  "d.classList.toggle('dark',m);d.style.colorScheme=m?'dark':'light'}catch(e){}})();";
+export function colorSchemeScript(cookieName: string = M3_THEME_COOKIE): string {
+  const name = cookieName.replace(/[^\w-]/g, "");
+  return (
+    "(function(){try{var d=document.documentElement," +
+    `c=document.cookie.match(/(?:^|; )${name}=(light|dark|system)/),m=c?c[1]:"system";` +
+    "if(m==='system'){var s=window.matchMedia('(prefers-color-scheme: dark)').matches;" +
+    "d.classList.remove('light');d.classList.toggle('dark',s);d.style.colorScheme=s?'dark':'light'}" +
+    "else{d.classList.toggle('dark',m==='dark');d.classList.toggle('light',m==='light');d.style.colorScheme=m}" +
+    "}catch(e){}})();"
+  );
+}
+
+/** {@link colorSchemeScript} for the default cookie name. */
+export const M3_COLOR_SCHEME_SCRIPT = colorSchemeScript();
+
+/** Typefaces to map onto the M3 reference typefaces: a CSS `font-family` value or a `var(--font-...)` reference. */
+export interface M3Typefaces {
+  /** `--md-ref-typeface-brand`: display, headline and title-large. */
+  brand?: string;
+  /** `--md-ref-typeface-plain`: title, body and label. */
+  plain?: string;
+  /** `--md-ref-typeface-code`. */
+  code?: string;
+}
+
+/**
+ * The `:root` rule that points the M3 reference typefaces at the fonts an app loads, typically `next/font` variables:
+ *
+ *   const roboto = Roboto_Flex({ subsets: ["latin"], variable: "--font-roboto" });   // module scope, as next/font requires
+ *   <M3Html className={roboto.variable} typefaces={{ brand: "var(--font-roboto)", plain: "var(--font-roboto)" }} />
+ *
+ * Values are CSS-escaped for a `<style>` element; an empty object yields an empty string.
+ */
+export function m3TypefaceCss(typefaces: M3Typefaces): string {
+  const rules = (["brand", "plain", "code"] as const)
+    .filter((role) => typefaces[role] !== undefined)
+    .map((role) => {
+      const value = typefaces[role]!.replace(/[<>{};]/g, "").trim();
+      return `  --md-ref-typeface-${role}: ${value};`;
+    });
+  return rules.length > 0 ? `:root {\n${rules.join("\n")}\n}` : "";
+}
