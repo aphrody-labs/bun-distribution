@@ -30,11 +30,15 @@
     "./config": "./src/config.ts",
     "./targets": "./src/targets/index.ts",
     "./runtime": "./src/runtime.ts",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./client": {
+      "types": "./client.d.ts"
+    }
   },
   "files": [
     "src",
-    "bin"
+    "bin",
+    "client.d.ts"
   ],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",

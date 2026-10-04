@@ -53,6 +53,8 @@ export interface M3BunConfig {
   outdir?: string;
   /** Minification of `m3-bun build`: `none`, `basic` (whitespace and syntax) or `full` (default, with identifiers). */
   minify?: "none" | "basic" | "full";
+  /** Code splitting of the UI build (default true): dynamically imported pages become content-hashed chunks. */
+  splitting?: boolean;
   /** Content-Security-Policy of the file server, or `false` to omit it. */
   csp?: string | false;
   compile?: {
@@ -60,6 +62,8 @@ export interface M3BunConfig {
     target?: CompileTargetName;
     /** Output file (default `<outdir>/<name>`; `.exe` is added for Windows). */
     outfile?: string;
+    /** Embed JavaScriptCore bytecode for a faster start (default true; the executable grows by about 1.5 MB). */
+    bytecode?: boolean;
     /** Windows executable metadata. */
     windows?: { icon?: string; title?: string; publisher?: string; version?: string; description?: string; copyright?: string; hideConsole?: boolean };
   };

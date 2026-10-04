@@ -30,7 +30,7 @@ Root scripts run `scripts/yolo.ts`, which runs the yolo CLI from source (`bun $Y
 | --- | --- |
 | `bun run build` | `yolo web build` (apps/web `build` = `m3 build`), then the `@aphrody/m3*` package builds (tsup + declarations) |
 | `bun run serve` | `yolo web dev` (apps/web `dev` = `m3 dev`, HMR) |
-| `bun run compile` | `yolo tauri build`, then apps/web `compile` (`m3 compile`, one executable). `yolo desktop` is the same command |
+| `bun run compile` | `yolo tauri build`, then apps/web `compile` (`m3 compile`, which runs `@aphrody/m3-bun`: one executable with the UI and API embedded). `yolo desktop` is the same command |
 | `bun run test` | yolo preflight (`yolo version --json`), the task-plan test, `bun test` in every `@aphrody/m3*` package |
 | `bun run lint` | yolo preflight, then `oxlint` over the m3 packages, apps and scripts |
 | `bun run typecheck` | yolo preflight, then each package's `typecheck` |

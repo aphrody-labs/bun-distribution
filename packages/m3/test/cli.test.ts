@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { buildM3 } from "../src/build.ts";
@@ -126,13 +126,38 @@ describe("runCli", () => {
     await expect(runCli(["new"], tmp.dir)).rejects.toThrow("expected one project directory");
   });
 
-  test("m3 compile builds a standalone binary", async () => {
+  test("m3 compile writes an executable, not an HTML file, and the executable serves the built UI", async () => {
     await using tmp = await tempDir();
     const outfile = join(tmp.dir, "test-bin");
-    const exitCode = await runCli(["compile", "--outfile", outfile, "--config", "m3.plain.config.ts"], FIXTURE);
-    expect(exitCode).toBe(0);
+    expect(await runCli(["compile", "--outfile", outfile, "--config", "m3.plain.config.ts"], FIXTURE)).toBe(0);
     expect(existsSync(outfile)).toBe(true);
-  });
+
+    // An executable of this platform (ELF, PE or Mach-O), carrying the Bun runtime: the old output was ~130 KB of HTML.
+    const magic = [...new Uint8Array(await Bun.file(outfile).slice(0, 4).arrayBuffer())];
+    const native = process.platform === "win32" ? [0x4d, 0x5a] : process.platform === "darwin" ? [0xcf, 0xfa, 0xed, 0xfe] : [0x7f, 0x45, 0x4c, 0x46];
+    expect(magic.slice(0, native.length)).toEqual(native);
+    expect(statSync(outfile).size).toBeGreaterThan(10_000_000);
+    if (process.platform !== "win32") expect(statSync(outfile).mode & 0o111).not.toBe(0);
+
+    const probe = Bun.serve({ port: 0, fetch: () => new Response("") });
+    const port = probe.port;
+    await probe.stop(true);
+    const server = Bun.spawn([outfile], { env: { ...process.env, PORT: String(port) }, stdout: "ignore", stderr: "ignore" });
+    try {
+      let page: Response | undefined;
+      for (let i = 0; i < 100 && !page; i++) {
+        page = await fetch(`http://127.0.0.1:${port}/`).catch(() => undefined);
+        if (!page) await Bun.sleep(50);
+      }
+      expect(page?.status).toBe(200);
+      expect(page?.headers.get("content-type")).toStartWith("text/html");
+      expect(await page!.text()).toContain("<title>m3 fixture</title>");
+      expect((await fetch(`http://127.0.0.1:${port}/healthz`)).status).toBe(200);
+    } finally {
+      server.kill();
+      await server.exited;
+    }
+  }, 60_000);
 
   test("m3 desktop requires tauri config and builds webview", async () => {
     await using tmp = await tempDir();

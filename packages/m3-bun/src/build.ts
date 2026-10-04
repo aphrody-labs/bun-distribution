@@ -108,6 +108,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<BuildRepo
     entry: m3.entry,
     outdir,
     production: options.dev !== true,
+    splitting: app.bun.splitting ?? true,
     minify: minifyOptions(minify),
     ...(m3.define ? { define: m3.define } : {}),
     ...(m3.drop ? { drop: m3.drop } : {}),

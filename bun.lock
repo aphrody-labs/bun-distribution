@@ -5,12 +5,14 @@
     "": {
       "name": "aphrody-m3",
       "devDependencies": {
+        "@aphrody/m3-bun": "workspace:*",
         "@aphrody/m3-config": "workspace:*",
         "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "oxfmt": "catalog:",
         "oxlint": "catalog:",
+        "playwright-core": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
         "tailwindcss": "catalog:",
@@ -152,10 +154,12 @@
       "name": "@aphrody/m3-baseui",
       "version": "3.3.3",
       "dependencies": {
+        "@aphrody/m3-bun": "workspace:*",
         "@base-ui/react": "catalog:",
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
+        "@aphrody/m3-bun",
         "@aphrody/m3-tokens": "workspace:*",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
@@ -602,6 +606,7 @@
     "@aphrody/ag-ui": ["@aphrody/ag-ui@workspace:packages/ag-ui"],
 
     "@aphrody/assets": ["@aphrody/assets@workspace:packages/assets"],
+    "playwright-core": "1.63.0",
 
     "@aphrody/bun": ["@aphrody/bun@3.3.0", "", {}, "sha512-c8I7Z46smj/oq3cAVsq9OfogN/uMYgVfskqF9ugAMr1MD0LQdtDevcAAMk7nUSzCvVV0eUtOdErkmk53gyiuVw=="],
 
@@ -1690,6 +1695,8 @@
     "remark-gfm": ["remark-gfm@4.0.1", "", { "dependencies": { "@types/mdast": "^4.0.0", "mdast-util-gfm": "^3.0.0", "micromark-extension-gfm": "^3.0.0", "remark-parse": "^11.0.0", "remark-stringify": "^11.0.0", "unified": "^11.0.0" } }, "sha512-1quofZ2RQ9EWdeN34S79+KExV1764+wCUGop5CPL1WGdD0ocPpu91lzPGbwWMECpEpd42kJGQwzRfyov9j4yNg=="],
 
     "remark-parse": ["remark-parse@11.0.0", "", { "dependencies": { "@types/mdast": "^4.0.0", "mdast-util-from-markdown": "^2.0.0", "micromark-util-types": "^2.0.0", "unified": "^11.0.0" } }, "sha512-FCxlKLNGknS5ba/1lmpYijMUzX2esxW5xQqjWxw2eHFfS2MSdaHVINFmhjo+qN1WhZhNimq0dZATN9pH0IDrpA=="],
+
+    "playwright-core": ["playwright-core@1.63.0", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg=="],
 
     "remark-rehype": ["remark-rehype@11.1.2", "", { "dependencies": { "@types/hast": "^3.0.0", "@types/mdast": "^4.0.0", "mdast-util-to-hast": "^13.0.0", "unified": "^11.0.0", "vfile": "^6.0.0" } }, "sha512-Dh7l57ianaEoIpzbp0PC9UKAdCSVklD8E5Rpw7ETfbTl3FqcOOgq5q2LVDhgGCkaBv7p24JXikPdvhhmHvKMsw=="],
 

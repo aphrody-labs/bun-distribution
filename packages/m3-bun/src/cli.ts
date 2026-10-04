@@ -214,7 +214,7 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       const outfile = str(flags, "outfile");
       const minify = level(flags);
       const report = await compileApp({ app, ...(t ? { target: t } : {}), ...(outfile ? { outfile } : {}), ...(minify ? { minify } : {}), build: !flags.has("no-build") });
-      console.log(`m3-bun compile ${app.name}: ${report.outfile} (${kib(report.bytes)}, ${report.files} embedded files, target ${report.target}) in ${report.ms} ms`);
+      console.log(`m3-bun compile ${app.name}: ${report.outfile} (${kib(report.bytes)}, ${report.files} embedded files, target ${report.target}, ${report.bytecode ? "bytecode" : "no bytecode"}) in ${report.ms} ms`);
       for (const warning of report.warnings) console.warn(`warning: ${warning}`);
       return 0;
     }

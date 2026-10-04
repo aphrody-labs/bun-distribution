@@ -10,13 +10,12 @@
 //
 // `dev` and `build` read `m3.config.ts` from the working directory (see `./config.ts`).
 import { existsSync, readFileSync } from "node:fs";
-import { chmod, mkdir } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { buildM3 } from "./build.js";
 import { loadM3Config } from "./config.js";
 import type { M3Sheet } from "./native.js";
 import { createM3Project } from "./new.js";
-import { m3Plugin } from "./plugin.js";
 import { serveM3 } from "./server.js";
 import { m3Tokens, SHEETS, writeTokenBundle } from "./tokens.js";
 
@@ -42,7 +41,7 @@ export const USAGE = `m3 — the @aphrody Material Design 3 framework CLI
 Usage:
   m3 dev      [--port <n>] [--no-hmr] [--config <file>]
   m3 build    [--tauri [<dir>]] [--outdir <dir>] [--dev] [--config <file>]
-  m3 compile  [--outfile <file>] [--dev] [--config <file>]
+  m3 compile  [--target <t>] [--outfile <file>] [--dev] [--config <file>]
   m3 desktop  [--dev|--build] [--config <file>]
   m3 tokens   [--sheet ${SHEETS.join("|")}] [--seed <hex>] [--variant <name>] [--dark]
               [--contrast <n>] [--out <file>]
@@ -50,7 +49,9 @@ Usage:
   m3 check
   m3 new <dir>
 
-dev, build, compile and desktop read m3.config.ts from the working directory.`;
+dev, build, compile and desktop read m3.config.ts from the working directory.
+compile builds the UI and links it with the Bun runtime into one executable that serves it (and the app's API):
+it runs @aphrody/m3-bun, which must be installed next to this package.`;
 
 /** Parse `argv` (without the runtime and script paths). */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
@@ -158,6 +159,31 @@ async function run(cmd: string[], cwd: string): Promise<number> {
   return proc.exited;
 }
 
+/** What `m3 compile` needs from `@aphrody/m3-bun`. */
+interface M3BunCompiler {
+  compileApp(options: { dir: string; configFile?: string; target?: string; outfile?: string; minify?: "none" | "basic" | "full" }): Promise<{
+    outfile: string;
+    bytes: number;
+    target: string;
+    files: number;
+    ms: number;
+    warnings: string[];
+  }>;
+}
+
+/**
+ * `@aphrody/m3-bun`, imported on demand. It depends on this package, so it is an optional peer here and never a
+ * static import: the specifier sits in a variable to keep bundlers and the type checker from following it.
+ */
+async function loadM3Bun(): Promise<M3BunCompiler> {
+  const specifier = "@aphrody/m3-bun";
+  try {
+    return (await import(specifier)) as M3BunCompiler;
+  } catch (cause) {
+    throw new Error("m3 compile: @aphrody/m3-bun is not installed; it compiles the app into one executable (bun add -d @aphrody/m3-bun)", { cause });
+  }
+}
+
 /** Run the CLI; resolves to the process exit code (long-running `dev` resolves once listening). */
 export async function runCli(argv: readonly string[], cwd: string = process.cwd()): Promise<number> {
   const { command, flags, positionals } = parseArgs(argv);
@@ -253,31 +279,21 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       return 0;
     }
     case "compile": {
-      const config = await loadM3Config(cwd, stringFlag(flags, "config"));
-      const outfile = stringFlag(flags, "outfile") ?? join(config.outdir, "app");
-      const started = performance.now();
-      const entry = resolve(config.dir, config.entry);
-      const plugin = m3Plugin({ theme: config.theme, root: config.root, configDir: config.dir });
-      const result = await Bun.build({
-        entrypoints: [entry],
-        compile: true,
-        minify: flags.dev !== true && (config.minify ?? true),
-        plugins: [plugin],
-        define: config.define,
+      // The executable path is @aphrody/m3-bun: it embeds the built UI in a generated server and compiles that. Compiling
+      // the HTML entry directly (what this command used to do) yields a standalone HTML file, not an executable.
+      const m3Bun = await loadM3Bun();
+      const configFile = stringFlag(flags, "config");
+      const target = stringFlag(flags, "target");
+      const outfile = stringFlag(flags, "outfile");
+      const report = await m3Bun.compileApp({
+        dir: cwd,
+        ...(configFile ? { configFile } : {}),
+        ...(target ? { target } : {}),
+        ...(outfile ? { outfile: resolve(cwd, outfile) } : {}),
+        ...(flags.dev === true ? { minify: "none" } : {}),
       });
-      if (!result.success) {
-        for (const log of result.logs) console.error(log);
-        throw new Error(`m3 compile failed with ${result.logs.length} errors`);
-      }
-      const output = result.outputs[0];
-      if (output) {
-        await Bun.write(outfile, output);
-        if (process.platform !== "win32") {
-          await chmod(outfile, 0o755).catch(() => {});
-        }
-      }
-      const bytes = output ? output.size : (existsSync(outfile) ? Bun.file(outfile).size : 0);
-      console.log(`m3 compile: ${outfile} (${bytes} B) in ${Math.round(performance.now() - started)} ms`);
+      console.log(`m3 compile: ${report.outfile} (${report.bytes} B, ${report.files} embedded files, target ${report.target}) in ${report.ms} ms`);
+      for (const warning of report.warnings) console.warn(`m3 compile: ${warning}`);
       return 0;
     }
     case "desktop": {

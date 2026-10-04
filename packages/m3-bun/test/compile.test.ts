@@ -30,6 +30,14 @@ describe("renderEntry", () => {
     expect(entry).toContain("csp: false,");
     expect(entry).toContain("  api,");
   });
+  test("the entry has no top-level await: bytecode output is CommonJS", () => {
+    expect(entry).not.toMatch(/^await /m);
+    expect(entry).toContain("runApp({");
+    expect(entry).toContain("}).catch((error: unknown) => {");
+    // Parsing it as a CommonJS-compatible script must not trip on await.
+    const transpiled = new Bun.Transpiler({ loader: "ts" }).transformSync(entry);
+    expect(transpiled).not.toMatch(/^await /m);
+  });
   test("without an API or a CSP those lines are absent; strings are JSON-escaped", () => {
     const plain = renderEntry({ runtime: "/r.ts", files: [], name: 'we"ird', version: "1", buildId: "x", port: 1 });
     expect(plain).not.toContain("import api");
@@ -52,6 +60,7 @@ describe("compileApp: one executable that serves the UI and the API", () => {
     const dir = fixtureCopy();
     const report = await compileApp({ dir });
     expect(report.files).toBe(3);
+    expect(report.bytecode).toBe(true);
     expect(existsSync(report.outfile)).toBe(true);
     expect(statSync(report.outfile).mode & 0o111).not.toBe(0);
     expect(report.bytes).toBeGreaterThan(10_000_000);
@@ -93,6 +102,25 @@ describe("compileApp: one executable that serves the UI and the API", () => {
       await server.exited;
     }
     expect(Bun.spawnSync([outfile, "--healthcheck"], { env: { ...process.env, PORT: String(freePort()) } }).exitCode).toBe(1);
+  }, 60_000);
+
+  test("compile.bytecode: false turns bytecode off, and the executable still runs", async () => {
+    const dir = fixtureCopy();
+    await Bun.write(
+      join(dir, "m3.config.ts"),
+      `import { defineM3Config } from "@aphrody/m3/config";
+import { defineM3Bun } from "../../../src/config.ts";
+export default defineM3Config({ entry: "src/index.html", theme: { seed: "#6750a4" } });
+export const bun = defineM3Bun({ api: "src/api.ts", compile: { bytecode: false } });
+`,
+    );
+    const plain = await compileApp({ dir });
+    expect(plain.bytecode).toBe(false);
+    const withBytecode = await compileApp({ dir: fixtureCopy() });
+    expect(withBytecode.bytecode).toBe(true);
+    expect(withBytecode.bytes).toBeGreaterThan(plain.bytes);
+    expect(Bun.spawnSync([plain.outfile, "--version"], { stdout: "pipe" }).stdout.toString()).toContain("hello-m3 1.2.3");
+    expect(Bun.spawnSync([withBytecode.outfile, "--version"], { stdout: "pipe" }).stdout.toString()).toContain("hello-m3 1.2.3");
   }, 60_000);
 
   test("compiling without a build and without --no-build output is an error that says what to run", async () => {

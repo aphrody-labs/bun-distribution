@@ -5,7 +5,10 @@
 //     of `@aphrody/bun` is not there (`css` overrides),
 //   - `m3:fonts.css`, `m3:fonts-jp.css`, `m3:fonts-symbols.css` from `@aphrody/m3-fonts` when no Aphrody OS checkout
 //     holds the fonts,
-//   - `m3:icons/[style/]name[?fill=1&wght=300]`: Material Symbols SVG markup from the forked catalogue.
+//   - `m3:icons/[style/]name[?fill=1&wght=300]`: Material Symbols SVG markup from the forked catalogue,
+//   - `m3:optional/<specifier>`: a module that may not be installed. `import brand, { resolved } from
+//     "m3:optional/@rosegriffon/ui/tokens"` is the module namespace and `resolved: true` when the specifier resolves
+//     from the app, `null` and `resolved: false` when it does not (host-bound packages outside the workspace).
 //
 //   bunfig.toml        [serve.static]  plugins = ["@aphrody/m3-bun/plugin"]
 //   Bun.build / compile                plugins: [m3Bun({ theme: { seed: "#6750a4" } })]
@@ -22,6 +25,7 @@ const FONT_SHEETS: Record<string, string> = {
 };
 
 const ICON_NAMESPACE = "m3-icons";
+const OPTIONAL_NAMESPACE = "m3-optional";
 
 export interface M3BunPluginOptions extends M3PluginOptions {
   /** Directory of the Material Symbols SVG catalogue (default: discovered, `M3_ICONS_ROOT`). */
@@ -37,6 +41,15 @@ export function m3BunExtras(options: Pick<M3BunPluginOptions, "iconsRoot" | "con
       build.onLoad({ filter: /.*/, namespace: ICON_NAMESPACE }, (args) => {
         const svg = readIcon(parseIconSpecifier(args.path), options.iconsRoot ?? iconsRoot(options.configDir ?? process.cwd()) ?? iconsRoot());
         return { contents: `export default ${JSON.stringify(svg)};\n`, loader: "js" };
+      });
+      build.onResolve({ filter: /^m3:optional\// }, (args) => ({ path: args.path.slice("m3:optional/".length), namespace: OPTIONAL_NAMESPACE }));
+      build.onLoad({ filter: /.*/, namespace: OPTIONAL_NAMESPACE }, (args) => {
+        try {
+          const resolved = Bun.resolveSync(args.path, options.configDir ?? process.cwd());
+          return { contents: `import * as namespace from ${JSON.stringify(resolved)};\nexport default namespace;\nexport const resolved = true;\n`, loader: "js" };
+        } catch {
+          return { contents: "export default null;\nexport const resolved = false;\n", loader: "js" };
+        }
       });
       // m3Plugin serves the font sheets from an Aphrody OS checkout; without one, `@aphrody/m3-fonts` does.
       build.onResolve({ filter: /^m3:fonts[-a-z]*\.css$/ }, (args) => {

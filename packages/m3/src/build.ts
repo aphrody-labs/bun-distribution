@@ -38,6 +38,8 @@ export interface BuildM3Options {
   plugin?: M3PluginOptions | false;
   /** Additional Bun plugins, after `m3Plugin`. */
   plugins?: BunPlugin[];
+  /** Code splitting: shared and dynamically imported modules become hashed chunks (default false; the Tauri layout needs one script). */
+  splitting?: boolean;
   /** Remove the output directory first (default true). */
   clean?: boolean;
   /** Base directory for relative paths (default: working directory). */
@@ -129,7 +131,7 @@ export async function buildM3(options: BuildM3Options): Promise<BuildM3Result> {
     target: "browser",
     minify: minifyConfig,
     sourcemap: production ? "none" : "linked",
-    splitting: false,
+    splitting: tauri ? false : (options.splitting ?? false),
     define: {
       "process.env.NODE_ENV": JSON.stringify(production ? "production" : "development"),
       ...options.define,
