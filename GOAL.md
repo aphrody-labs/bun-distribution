@@ -10,6 +10,16 @@ partagée et [aphrody-py](../aphrody-py/GOAL.md) pour la surface Python IA/ML.
 Aphrody est la couche **produits** : IA, interface, applications, web. Il consomme
 Yolo comme bibliothèque partagée native et ne recopie aucun moteur.
 
+Précision propriétaire du 2026-10-05 : décharger la compilation lourde d'Aphrody
+vers **Yolo**. Obscura/V8, Tauri/Wry/Tao, Bun/JSC/WebKit et leurs dépendances
+moteur appartiennent au producteur Yolo. Aphrody conserve le code métier, les
+interfaces et les intégrations produit ; il consomme le runtime précompilé, le
+SDK léger et les plugins Bun versionnés. Le focus GUI ci-dessous désigne le
+produit, pas la propriété des sources des moteurs. Cette directive autorise les
+migrations de sources nécessaires, au-delà du précédent périmètre maintenance.
+Un simple déplacement de dépendances Cargo ne satisfait pas l'objectif : modifier
+le produit ne doit plus reconstruire les moteurs.
+
 Axes prioritaires :
 
 - **Windows 11** : cible MSVC native (Visual Studio Build Tools 2026), Windows SDK, .NET 10 ;
@@ -126,10 +136,17 @@ Une étape n'est close qu'avec sa preuve (révision, commande, résultat) dans [
 - **Usine de compilation** : `vps` est runtime-only depuis le 2026-10-03.
   - Ni toolchains, ni `~/.bun`, ni `/srv/aphrody-build` ; `config/build-factory.json` le désigne pourtant encore.
   - Décision du 2026-10-04 : les deux VPS seront réprovisionnés comme usine ; d'ici là, pas de compilation Rust/C++ sur SSH.
-- **Répartition des moteurs** : [PLAN.md](PLAN.md) attribue encore V8, Obscura et Tauri précompilés à Yolo.
-  - Yolo embarque aujourd'hui 47 crates Tauri ainsi que `vendor/tauri`, `wry`, `tao` et `obscura`.
-  - La directive donne le focus V8, Tauri et GUI à Aphrody.
-  - Le nouveau propriétaire de ces sources reste à trancher avant toute migration.
+- **Répartition des moteurs — arbitrage clos le 2026-10-05, migration ouverte** :
+  Yolo possède les moteurs et leur compilation ; Aphrody possède les produits.
+  - Constat du 2026-10-05 : `aphrody-command` dépend encore directement d'Obscura
+    et `aphrody-web-bridge` active le rendu via `aphrody-web-service`.
+  - `yolo runtime info --json` expose ABI 1.4, `system.stats`, `bench.compute`,
+    `process.supervise`, `http.probe` ; aucune capacité browser/desktop installée.
+  - Qualifier R3/R4, réconcilier les patches Obscura, livrer les artefacts et
+    migrer les consommateurs avant de retirer les moteurs locaux. Préserver les
+    implémentations concurrentes et les contrats produit pendant cette transition.
+  - Mesurer séparément graphe de compilation, durée, taille et mémoire ; aucun
+    gain ni migration complète n'est établi par ce seul arbitrage.
 - **Authentification** : appareil de confiance, 2FA mobile par QR et jetons agent/code n'existent pas encore.
   - Seuls des clients OAuth existent.
 - **IECODE sous Windows** : `C:\iecode` n'existe pas encore ; le checkout IECODE est dans le home WSL.
