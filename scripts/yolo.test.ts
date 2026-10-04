@@ -13,6 +13,15 @@ describe("yolo task plan", () => {
     expect(plan("build")[1]!.cmd.slice(1)).toEqual(["scripts/build.ts", "build", "--no-apps"]);
     expect(plan("typecheck")[1]!.cmd.slice(1)).toEqual(["scripts/build.ts", "typecheck"]);
   });
+  test("test runs the packages concurrently and still fails when one fails", () => {
+    const steps = plan("test");
+    expect(steps[1]!.cmd).toContain("./scripts/bench/lib.test.ts");
+    expect(steps[2]!.cmd.slice(1, 4)).toEqual(["run", "--parallel", "--no-exit-on-error"]);
+  });
+  test("bench and bench:check run the harness, the latter with --check", () => {
+    expect(plan("bench", ["--only", "yolo"])[0]!.cmd.slice(1)).toEqual(["scripts/bench/run.ts", "--only", "yolo"]);
+    expect(plan("bench:check")[0]!.cmd.slice(1)).toEqual(["scripts/bench/run.ts", "--check"]);
+  });
   test("YOLO_CLI resolves under YOLO_ROOT", () => {
     expect(YOLO_CLI.endsWith("apps/cli/src/index.ts")).toBe(true);
   });

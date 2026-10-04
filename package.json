@@ -117,6 +117,8 @@
     "install:theme": "bun scripts/yolo.ts install:theme",
     "lint": "bun scripts/yolo.ts lint",
     "typecheck": "bun scripts/yolo.ts typecheck",
+    "bench": "bun scripts/yolo.ts bench",
+    "bench:check": "bun scripts/yolo.ts bench:check",
     "fmt:check": "oxfmt --check packages apps scripts",
     "icons:ico": "bun packages/material-design-icons/scripts/svg-to-ico.ts",
     "forks": "bun scripts/forks.ts",

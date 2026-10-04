@@ -1,12 +1,14 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 // Root task runner: the m3 packages build, serve and compile through the yolo CLI.
-//   bun scripts/yolo.ts <build|serve|compile|test|lint|typecheck|install:theme> [args...]
+//   bun scripts/yolo.ts <build|serve|compile|test|lint|typecheck|bench|bench:check|install:theme> [args...]
 // yolo is resolved from $YOLO_ROOT (default $HOME/yolo) and run from source: `bun $YOLO_ROOT/apps/cli/src/index.ts`.
 //   build    yolo web build     -> apps/web `build` (cached app build), then scripts/build.ts (packages, cached)
 //   serve    yolo web dev       -> apps/web `dev`   (m3 dev)
 //   compile  yolo tauri build   -> apps/web `build`, then apps/web `compile` (m3 compile, single executable)
 //   test / lint / typecheck     workspace gates, after a yolo preflight (`yolo version --json`); typecheck is scripts/build.ts
+//   bench / bench:check         scripts/bench/run.ts: measure the startup, install, bundle and compile numbers of
+//                               docs/reports/PERF.md; `bench:check` fails past docs/reports/perf-budget.json + 10%
 //   install:theme               packages/m3-os-themes CLI (dry-run unless --apply)
 // yolo's web|desktop|tauri commands act on $YOLO_HOME/apps/web, so YOLO_HOME is pointed at this repository.
 import { existsSync, readdirSync } from "node:fs";
@@ -55,13 +57,19 @@ export function plan(task: string, rest: string[] = []): Step[] {
     case "test":
       return [
         yolo("version", "--json"),
-        bun(REPO, "test", "./scripts/yolo.test.ts"),
-        bun(REPO, "run", ...M3, "--if-present", "test"),
+        bun(REPO, "test", "./scripts/yolo.test.ts", "./scripts/bench/lib.test.ts"),
+        // Package tests do not need each other's results: `--parallel` runs them all at once, where `--filter` alone
+        // waits for the workspace dependencies' scripts first (5.3 s -> 2.9 s). A failing package fails the task.
+        bun(REPO, "run", "--parallel", "--no-exit-on-error", ...M3, "--if-present", "test"),
       ];
     case "lint":
       return [yolo("version", "--json"), bun(REPO, "x", "oxlint", ...lintPaths())];
     case "typecheck":
       return [yolo("version", "--json"), bun(REPO, "scripts/build.ts", "typecheck")];
+    case "bench":
+      return [bun(REPO, "scripts/bench/run.ts", ...rest)];
+    case "bench:check":
+      return [bun(REPO, "scripts/bench/run.ts", "--check", ...rest)];
     case "install:theme":
       return [
         bun(
