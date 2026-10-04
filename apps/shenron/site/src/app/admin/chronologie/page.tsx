@@ -1,14 +1,4 @@
-import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/session";
-import ChronologyEditor from "./ChronologyEditor";
-
+// SPDX-License-Identifier: Apache-2.0
+// Canonical Aphrody M3 administration; this host retains routing and authentication.
+export { default, metadata } from "@aphrody/admin-ui/app/admin/chronologie/page";
 export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-	title: "Chronologie",
-};
-
-export default async function AdminChronologiePage() {
-	await requireAdmin();
-	return <ChronologyEditor />;
-}

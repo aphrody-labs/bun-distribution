@@ -70,7 +70,9 @@
     "./agent-live": "./src/agent-live.ts",
     "./stack-dedup": "./src/stack-dedup.ts",
     "./documentation": "./src/documentation.ts",
-    "./agent-sync": "./src/agent-sync.ts"
+    "./agent-sync": "./src/agent-sync.ts",
+    "./native-runtime": "./src/native-runtime.ts",
+    "./native-desktop": "./src/native-desktop.ts"
   },
   "scripts": {
     "build": "bun build ./src/cli.ts ./src/ops.ts --target=bun --outdir dist --sourcemap=linked",
@@ -83,6 +85,7 @@
   "dependencies": {
     "@aphrody/os": "workspace:*",
     "@aphrody/paths": "workspace:*",
+    "@aphrody/runtime-sdk": "catalog:",
     "@aphrody/update": "workspace:*",
     "@typescript/typescript6": "^6.0.2",
     "ts-morph": "catalog:"

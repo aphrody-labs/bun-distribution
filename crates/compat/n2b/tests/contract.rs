@@ -21,7 +21,7 @@
 //  1. The binary's JSON output deserializes cleanly into the generated
 //     aphrody_n2b_core::schema::N2bReport type.
 //  2. The JSON output conforms to the N2B report schema via the jsonschema crate. The schema is
-//     owned by Contracts (crates/contracts/schema/v2.json).
+//     owned by the Yolo N2B types crate (REPORT_SCHEMA_V2).
 //
 // These tests are the canonical verrou against regression: if either
 // fails, rpb-dashboard (and any other consumer parsing JSON v2) breaks.
@@ -35,11 +35,6 @@ fn fixture() -> PathBuf {
     // Require the real imported corpus; an empty scan cannot qualify the CLI contract.
     assert!(dir.join("src/server.ts").is_file(), "n2b fixture missing: {}", dir.display());
     dir
-}
-
-/// Contracts owns the report schema, now inside the same source workspace.
-fn schema_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/schema/v2.json")
 }
 
 fn run_n2b(args: &[&str]) -> (String, String, i32) {
@@ -73,11 +68,9 @@ fn json_report_deserializes_into_typed_schema() {
 fn json_report_validates_against_schema_v2() {
     let fixture = fixture().display().to_string();
     let (stdout, _stderr, _code) = run_n2b(&[&fixture, "--report=json"]);
-    let schema_text = std::fs::read_to_string(schema_path()).unwrap_or_else(|e| {
-        panic!("{} readable (imported Contracts schema): {e}", schema_path().display())
-    });
+    let schema_text = aphrody_n2b_core::REPORT_SCHEMA_V2;
     let schema_json: serde_json::Value =
-        serde_json::from_str(&schema_text).expect("schema/v2.json is valid JSON");
+        serde_json::from_str(schema_text).expect("schema/v2.json is valid JSON");
     let instance: serde_json::Value =
         serde_json::from_str(&stdout).expect("n2b stdout is valid JSON");
     let validator = jsonschema::validator_for(&schema_json).expect("schema compiles");
@@ -239,10 +232,8 @@ fn finding_without_compat_validates_against_schema() {
             "findings": [finding_json]
         }]
     });
-    let schema_text = std::fs::read_to_string(schema_path()).unwrap_or_else(|e| {
-        panic!("{} readable (imported Contracts schema): {e}", schema_path().display())
-    });
-    let schema_json: serde_json::Value = serde_json::from_str(&schema_text).unwrap();
+    let schema_text = aphrody_n2b_core::REPORT_SCHEMA_V2;
+    let schema_json: serde_json::Value = serde_json::from_str(schema_text).unwrap();
     let validator = jsonschema::validator_for(&schema_json).unwrap();
     let errors: Vec<_> = validator.iter_errors(&report_json).collect();
     assert!(

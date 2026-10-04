@@ -1,7 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Aphrody OS autonomous runtime core.
-
+//! Compatibility exports of the canonical Yolo repository engine.
 #![forbid(unsafe_code)]
-
-pub mod mapper;
-pub mod polyglot;
+pub use yolo_core::{mapper, polyglot};

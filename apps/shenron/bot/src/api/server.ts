@@ -153,9 +153,7 @@ import { AphrodyComputeClient } from "@shenron/pipeline/aphrody";
 import { generateLlmAnswer, isFallbackAnswer } from "~/lib/llm";
 import { graphqlHandler } from "~/api/graphql";
 import { openapiSpec, scalarHtml } from "~/api/openapi";
-// HTML import — Bun.serve bundle automatiquement scripts/CSS référencés.
-// Le HTML doit être au root du package pour que les chunks soient générés à la racine.
-import dashboardHtml from "../../dashboard.html";
+import { ADMIN_ROUTES, dashboardRedirect } from "@shenron/config/admin";
 import { handleBetterAuthRequest, getBetterAuthSession } from "~/lib/better-auth";
 import { EventBusService } from "~/services/EventBusService";
 import { PgService } from "~/db/pg";
@@ -1199,33 +1197,8 @@ export class ApiServer {
 			idleTimeout: 120,
 
 			routes: {
-				// ── Dashboard SPA (HTML imports — Bun bundle scripts/CSS) ─────
-				"/": dashboardHtml,
-				"/login": dashboardHtml,
-				"/profile": dashboardHtml,
-				"/webhooks": dashboardHtml,
-				"/bot": dashboardHtml,
-				"/cron": dashboardHtml,
-				"/services": dashboardHtml,
-				"/database": dashboardHtml,
-				"/database/:table": dashboardHtml,
-				"/database/:table/:id": dashboardHtml,
-				"/stats": dashboardHtml,
-				"/audit": dashboardHtml,
-				"/moderation": dashboardHtml,
-				"/hierarchy": dashboardHtml,
-				"/tickets": dashboardHtml,
-				"/shop": dashboardHtml,
-				"/triggers": dashboardHtml,
-				"/commands": dashboardHtml,
-				"/audit-internal": dashboardHtml,
-				"/levels": dashboardHtml,
-				"/economy": dashboardHtml,
-				"/giveaways": dashboardHtml,
-				"/messages": dashboardHtml,
-				"/canvas": dashboardHtml,
-				"/logs": dashboardHtml,
-				"/settings": dashboardHtml,
+				// Administration is served once by the authenticated Aphrody M3 web host.
+				...Object.fromEntries(Object.keys(ADMIN_ROUTES).map((path) => [path, (request: Request) => dashboardRedirect(request, Bun.env)])),
 
 				// ── Static assets (favicons + manifest) ───────────────────────
 				"/favicon.ico": staticFile("public/favicon.ico", "image/x-icon"),

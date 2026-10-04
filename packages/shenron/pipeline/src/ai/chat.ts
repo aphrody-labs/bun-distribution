@@ -156,7 +156,7 @@ export function chatModelTimeoutMs(
 
 /** `LanguageModelV4` over `llm/chat`. */
 export function createAphrodyChatModel(
-	compute: AphrodyCompute,
+	compute: Pick<AphrodyCompute, "chat">,
 	o: AphrodyChatModelOptions
 ): LanguageModelV4 {
 	const modelId = o.modelId;

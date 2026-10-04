@@ -7,7 +7,7 @@
  * Runs only behind the full `requireLiveRag` gate; there is no bypass.
  */
 import "./setup";
-import { afterEach, beforeAll, describe, expect, test } from "bun:test";
+import { afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { Database } from "bun:sqlite";
 import { INJECTION_GUARD, PERSONAS } from "@shenron/pipeline/ai/prompts";
 import { loadLiveRagEnv, requireLiveRag } from "@shenron/pipeline/testing/live-rag";
@@ -17,6 +17,10 @@ const { generateLlmAnswer } = await import("../src/lib/llm");
 const { hybridSearch } = await import("../src/lib/rag");
 
 const realFetch = globalThis.fetch;
+const savedInference = process.env.APHRODY_SHENRON_INFERENCE;
+beforeEach(() => {
+  process.env.APHRODY_SHENRON_INFERENCE = "http";
+});
 const CHAT_PATH = "/api/v1/shenron/llm/chat";
 
 type ChatBody = { messages: Array<{ role: string; content: string }>; model?: string };
@@ -44,6 +48,8 @@ beforeAll(async () => {
 }, 120_000);
 
 afterEach(() => {
+  if (savedInference === undefined) delete process.env.APHRODY_SHENRON_INFERENCE;
+  else process.env.APHRODY_SHENRON_INFERENCE = savedInference;
   globalThis.fetch = realFetch;
 });
 

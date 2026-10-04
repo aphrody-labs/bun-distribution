@@ -3,12 +3,31 @@
   "yolo": {
     "repository": "https://github.com/aphrody-labs/yolo.git",
     "path": "../yolo",
-    "rev": "ad2ec0d2263e6d3291d068e9794bf05fb4efde3d",
+    "rev": "1e9b76e199b6c07d8ad55aefc4fd080e6ee85911",
     "envOverride": "APHRODY_YOLO_ROOT",
     "sdk": {
       "version": "0.1.0",
-      "archive": "aphrody-runtime-sdk-0.1.0-b2d69b27.tgz",
-      "sha256": "b2d69b2792f61d5ee64fdf70b554d49c8c2b2c8dc1c1d4b0e65363aaa5ca3dd6"
+      "archive": "aphrody-runtime-sdk-0.1.0-155af9d2.tgz",
+      "sha256": "155af9d23135bd6193b3ce1d292d197b61c8a030025d86e0500f0c25deefbb97"
+    },
+    "runtime": {
+      "requiredCapabilities": ["system.stats", "bench.compute", "process.supervise", "http.probe"],
+      "artifacts": [
+        {
+          "target": "x86_64-unknown-linux-gnu",
+          "version": "0.1.0",
+          "abi": "1.4",
+          "revision": "0ade1c71ccb52bcc9d255188a252c28c5b789b48",
+          "manifestSha256": "8f0fb923d7f201d57ed28dd0cfc6b415a60b8cd6ea9ed8cfe75cb1142cffc6f1"
+        },
+        {
+          "target": "x86_64-unknown-linux-gnu",
+          "version": "0.1.0",
+          "abi": "1.4",
+          "revision": "01300fb2f935f7fb85b135212c718131ae640ff5",
+          "manifestSha256": "24166c2e68c623e4b0c4370d9786f824099ccaf2ad031170cbe893906261737f"
+        }
+      ]
     }
   }
 }

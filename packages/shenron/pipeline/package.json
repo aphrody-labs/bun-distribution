@@ -61,7 +61,8 @@
     "./aphrody": "./src/aphrody/index.ts",
     "./bxc": "./src/bxc/index.ts",
     "./aphrody/embeddings": "./src/aphrody/shenron-embeddings.ts",
-    "./testing/live-rag": "./src/testing/live-rag.ts"
+    "./testing/live-rag": "./src/testing/live-rag.ts",
+    "./ai/native": "./src/ai/native.ts"
   },
   "scripts": {
     "pipeline": "bun src/cli.ts",
@@ -85,7 +86,11 @@
     "sharp": "catalog:",
     "sqlite-vec": "^0.1.9",
     "zod": "catalog:",
-    "@aphrody/http": "workspace:*"
+    "@aphrody/runtime-sdk": "catalog:",
+    "@aphrody/http": "workspace:*",
+    "@aphrody/media": "workspace:*",
+    "@koharu/sdk": "workspace:*",
+    "@aphrody/inference": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.2"
@@ -142,7 +147,8 @@
       "./aphrody": "server",
       "./bxc": "bun",
       "./aphrody/embeddings": "server",
-      "./testing/live-rag": "bun"
+      "./testing/live-rag": "bun",
+      "./ai/native": "bun"
     }
   }
 }

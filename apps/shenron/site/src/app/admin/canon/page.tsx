@@ -1,12 +1,4 @@
-import type { Metadata } from "next";
-import { redirectToAdminIa } from "@/components/admin/admin-ia-redirect";
-
+// SPDX-License-Identifier: Apache-2.0
+// Canonical Aphrody M3 administration; this host retains routing and authentication.
+export { default, metadata } from "@aphrody/admin-ui/app/admin/canon/page";
 export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-	title: "Doctrine de Canonicité & Paroles de Toriyama — Cockpit Unifié",
-};
-
-export default function AdminCanonPage() {
-	redirectToAdminIa("canon");
-}

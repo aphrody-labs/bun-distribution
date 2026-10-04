@@ -272,22 +272,6 @@ const SYMBOLS = {
     returns: "u32",
   },
   bun_rs_abi_version: { args: [], returns: FFIType.u32 },
-  node2bun_abi_version: { args: [], returns: FFIType.u32 },
-  node2bun_scan_json: { args: [FFIType.cstring], returns: FFIType.ptr },
-  node2bun_scan_with_options_json: {
-    args: [FFIType.cstring, FFIType.cstring],
-    returns: FFIType.ptr,
-  },
-  node2bun_string_free: { args: [FFIType.ptr], returns: FFIType.void },
-  find_newlines_u16: {
-    args: ["ptr", "usize", "ptr", "usize"],
-    returns: "usize",
-  },
-  aphrody_oxc_abi_version: { args: [], returns: FFIType.u32 },
-  aphrody_oxc_format: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
-  aphrody_oxc_minify: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
-  aphrody_oxc_lint: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
-  aphrody_oxc_free: { args: [FFIType.ptr], returns: FFIType.void },
   aphrody_zerocopy_abi_version: { args: [], returns: FFIType.u32 },
   aphrody_toolcall_repair_json: {
     args: [FFIType.ptr, "usize", FFIType.ptr, "usize"],
@@ -396,8 +380,6 @@ export function loadNativeLibrary(): NativeLibrary {
       ["Shenron", loaded.symbols.shenron_abi_version(), EXPECTED_SHENRON_ABI_VERSION],
       ["Manga", loaded.symbols.manga_abi_version(), EXPECTED_MANGA_ABI_VERSION],
       ["M3", loaded.symbols.bun_rs_abi_version(), EXPECTED_BUN_RS_ABI_VERSION],
-      ["N2B", loaded.symbols.node2bun_abi_version(), EXPECTED_N2B_ABI_VERSION],
-      ["Oxc", loaded.symbols.aphrody_oxc_abi_version(), EXPECTED_OXC_ABI_VERSION],
       ["Zero-copy", loaded.symbols.aphrody_zerocopy_abi_version(), EXPECTED_ZEROCOPY_ABI_VERSION],
     ] as const) {
       if (actual !== expected)

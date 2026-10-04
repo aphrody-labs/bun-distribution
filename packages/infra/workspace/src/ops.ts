@@ -20,6 +20,9 @@ if (operation === "plugins" || operation === "agent-plugins") {
 if (operation === "build-factory") {
   process.exit(await (await import("./build-factory.ts")).runBuildFactory(rest));
 }
+if (operation === "native-runtime") {
+  process.exit(await (await import("./native-runtime.ts")).runNativeRuntime(rest));
+}
 if (operation === "repo-sync") {
   process.exit(await (await import("./repo-sync.ts")).runRepoSync(rest));
 }

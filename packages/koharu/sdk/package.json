@@ -25,13 +25,15 @@
     "./settings": {
       "types": "./src/settings.ts",
       "default": "./src/settings.ts"
-    }
+    },
+    "./media": "./src/media.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@koharu/bridge": "workspace:*"
+    "@koharu/bridge": "workspace:*",
+    "@aphrody/media": "workspace:*"
   },
   "peerDependencies": {
     "@tauri-apps/api": "catalog:"

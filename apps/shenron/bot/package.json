@@ -11,8 +11,6 @@
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
     "build": "bun ../../../packages/infra/workspace/src/ops.ts shenron script @shenron/bot build:owner",
-    "dashboard:css": "bash scripts/build-dashboard-css.sh",
-    "dashboard:watch": "bun node_modules/.bin/tailwindcss --input src/dashboard/styles.css --output src/dashboard/styles.compiled.css --watch",
     "compile": "bun ../../../packages/infra/workspace/src/ops.ts shenron script @shenron/bot compile:owner",
     "type-check": "tsc --noEmit",
     "lint": "oxlint",
@@ -44,8 +42,8 @@
     "db:seed-xv2-char-meta": "bun src/db/seed-xv2-char-meta.ts",
     "db:seed-xv2-all": "bun src/db/seed-xv2-techniques.ts && bun src/db/seed-xv2-characters.ts && bun src/db/seed-xv2-char-meta.ts && bun src/db/seed-xv2-portraits.ts && bun src/db/seed-xv2-transformations.ts && bun src/db/seed-xv2-char-techniques.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build:owner": "bun run dashboard:css && bash scripts/build-bundle.sh",
-    "compile:owner": "bun run dashboard:css && bun build src/entry-standalone.ts --compile --minify --sourcemap --outfile=dist/shenron"
+    "build:owner": "bash scripts/build-bundle.sh",
+    "compile:owner": "bun build src/entry-standalone.ts --compile --minify --sourcemap --outfile=dist/shenron"
   },
   "dependencies": {
     "@aphrody/discord-kit": "workspace:*",
@@ -60,8 +58,6 @@
     "@shenron/db": "workspace:*",
     "@shenron/images": "workspace:*",
     "@shenron/pipeline": "workspace:*",
-    "@shenron/ui": "workspace:*",
-    "@tanstack/react-query": "catalog:",
     "better-auth": "catalog:",
     "dayjs": "^1.11.23",
     "discord.js": "catalog:",
@@ -69,24 +65,18 @@
     "drizzle-orm": "catalog:",
     "graphql": "catalog:",
     "graphql-yoga": "catalog:",
-    "lucide-react": "catalog:",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3",
     "postgres": "^3.4.9",
-    "react": "catalog:",
-    "react-dom": "catalog:",
     "reflect-metadata": "catalog:",
     "sharp": "catalog:",
     "sqlite-vec": "^0.1.9",
     "tsyringe": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@aphrody/media": "workspace:*"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "drizzle-kit": "^0.31.11",
-    "tailwindcss": "catalog:"
+    "drizzle-kit": "^0.31.11"
   },
   "engines": {
     "bun": ">=1.4.2"

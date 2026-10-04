@@ -34,7 +34,8 @@ describe("@shenron/pipeline/ai manifest", () => {
       Object.keys(manifest.exports)
         .filter((key) => key === "./ai" || key.startsWith("./ai/"))
         .toSorted(),
-    ).toEqual(SUBPATHS.toSorted());
+    ).toEqual([...SUBPATHS, "./ai/native"].toSorted());
+    expect(manifest.shenron.runtime["./ai/native"]).toBe("bun");
     // These three load the `ai` runtime, whose @ai-sdk/provider-utils bundle carries a
     // guarded `process.getBuiltinModule("node:module")` string that the browser-purity
     // check rejects. They are server-only targets (Next server, bot, scripts) anyway;

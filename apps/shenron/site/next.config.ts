@@ -80,7 +80,7 @@ const nextConfig: NextConfig = {
 	// validateTurboNextConfig et supporter les builds turbopack sans conflit)
 	// `@shenron/images` est consommé depuis ses sources TypeScript (pas de dist) :
 	// Turbopack doit le transpiler comme du code du site.
-	transpilePackages: ["@shenron/images", "@shenron/db", "@shenron/auth", "@shenron/pipeline", "@shenron/api", "@shenron/ui", "@shenron/config"],
+	transpilePackages: ["@aphrody/admin-ui", "@shenron/images", "@shenron/db", "@shenron/auth", "@shenron/pipeline", "@shenron/api", "@shenron/ui", "@shenron/config"],
 
 	turbopack: {
 		root: monorepoRoot,

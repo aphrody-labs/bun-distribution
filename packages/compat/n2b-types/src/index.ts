@@ -1,6 +1,6 @@
 // @generated — DO NOT EDIT MANUALLY.
-// Regenerate with: bun run n2b:codegen
-// Source of truth: crates/contracts/schema/v2.json
+// Regenerate with: bun scripts/tools/compat/scripts/n2b/generate-schema-types.ts
+// Source of truth: Yolo crates/aphrody-n2b-types/schema/v2.json
 
 /**
  * This interface was referenced by `N2BReport`'s JSON-Schema

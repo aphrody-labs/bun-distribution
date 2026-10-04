@@ -3,9 +3,9 @@ import { fileURLToPath } from "node:url";
 
 const siteRoot = fileURLToPath(new URL("..", import.meta.url));
 const sidebar = await Bun.file(
-	new URL("../src/components/admin/AdminSidebar.tsx", import.meta.url)
+	new URL("../../../../m3/packages/admin-ui/src/components/admin/AdminSidebar.tsx", import.meta.url)
 ).text();
-const adminIndex = await Bun.file(new URL("../src/app/admin/page.tsx", import.meta.url)).text();
+const adminIndex = await Bun.file(new URL("../../../../m3/packages/admin-ui/src/app/admin/page.tsx", import.meta.url)).text();
 const links = [...sidebar.matchAll(/href:\s*"(\/admin[^"]+)"/g)].map((match) => match[1]!);
 const pages = [...new Bun.Glob("src/app/admin/**/page.tsx").scanSync(siteRoot)].map(
 	(file) =>
@@ -34,7 +34,7 @@ describe("navigation administrateur", () => {
 	test("consolide les anciens écrans IA dans le cockpit unique", async () => {
 		const redirects = await Promise.all(
 			consolidatedIaRoutes.map((route) =>
-				Bun.file(new URL(`../src/app${route}/page.tsx`, import.meta.url)).text()
+				Bun.file(new URL(`../../../../m3/packages/admin-ui/src/app${route}/page.tsx`, import.meta.url)).text()
 			)
 		);
 

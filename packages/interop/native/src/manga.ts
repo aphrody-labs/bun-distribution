@@ -131,3 +131,6 @@ export function mangaScanlateChapter(
     "manga_scanlate_chapter",
   );
 }
+
+// Shared parsing of the versioned Rust/Koharu result; no second wire model.
+export * from "@aphrody/media/manga";

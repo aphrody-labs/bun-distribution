@@ -1,0 +1,1844 @@
+{
+  "date": "2026-10-04",
+  "scope": "Bounded current Linux x64 core process supervision only; full R8 remains incomplete",
+  "status": "Measured supervision overhead for one identical disposable workload; no speedup claimed",
+  "sdkPin": {
+    "version": "0.1.0",
+    "revision": "1e9b76e199b6c07d8ad55aefc4fd080e6ee85911",
+    "archive": "aphrody-runtime-sdk-0.1.0-155af9d2.tgz",
+    "sha256": "155af9d23135bd6193b3ce1d292d197b61c8a030025d86e0500f0c25deefbb97"
+  },
+  "nativeSourceRevision": "0ade1c71ccb52bcc9d255188a252c28c5b789b48",
+  "tests": [
+    {
+      "command": "YOLO_BENCH_ARTIFACT=<current artifact> YOLO_BENCH_SDK=<verified extracted pinned SDK> bun test ./packages/core/src/sys/supervisor-benchmark.test.ts",
+      "pass": 2,
+      "fail": 0,
+      "skip": 0,
+      "assertions": 286,
+      "exitCode": 0
+    }
+  ],
+  "gates": [
+    {
+      "command": "Strict scoped tsc --types bun supervisor-benchmark.ts supervisor-benchmark.test.ts",
+      "exitCode": 0
+    },
+    {
+      "command": "oxlint --deny-warnings <owned benchmark source/test>",
+      "exitCode": 0
+    },
+    {
+      "command": "oxfmt --check <owned benchmark source/test>",
+      "exitCode": 0
+    }
+  ],
+  "privacy": "Disposable fixtures only; no protected stores, service workloads, engine builds or cache cleanup",
+  "transport": "Native Aphrody MCP nu_eval and primary /home/aphro/yolo/bin/yolo bench CLI",
+  "schema": "aphrody.native-runtime-supervisor-r8/1",
+  "command": {
+    "argv": [
+      "/home/aphro/yolo/bin/yolo",
+      "bench",
+      "--supervisor",
+      "--artifact",
+      "/home/aphro/.yolo/runtime/x86_64-unknown-linux-gnu/0.1.0-ae14394b",
+      "--sdk-dir",
+      "<verified extraction of pinned 155af9d2 SDK>",
+      "--samples",
+      "30",
+      "--json"
+    ],
+    "exitCode": 0
+  },
+  "source": {
+    "owner": "Yolo sys benchmark",
+    "path": "packages/core/src/sys/supervisor-benchmark.ts",
+    "sha256": "ad498aac621e4afbb8b55fdfa2312fd6433e42ceca8ce3c89d999db3058e7813"
+  },
+  "measurement": {
+    "schema": "yolo.supervisor-benchmark/1",
+    "timestamp": "2026-10-04T21:24:55.817Z",
+    "target": "x86_64-unknown-linux-gnu",
+    "bunVersion": "1.4.2",
+    "bunRevision": "744846f844374847c902b5e7fd59b4342a51ef99",
+    "artifact": {
+      "directory": "/home/aphro/.yolo/runtime/x86_64-unknown-linux-gnu/0.1.0-ae14394b",
+      "manifestSha256": "8f0fb923d7f201d57ed28dd0cfc6b415a60b8cd6ea9ed8cfe75cb1142cffc6f1",
+      "librarySha256": "ae14394bcfb291b9da4a4aa79acdcac2193f30966ae5672f02adf9f6b3ec695e",
+      "libraryBytes": 524520,
+      "build": {
+        "name": "yolo-runtime",
+        "version": "0.1.0",
+        "abi": "1.4",
+        "target": "x86_64-unknown-linux-gnu",
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+        "git_rev": "0ade1c71ccb5",
+        "panic_recovery": true
+      }
+    },
+    "sdk": {
+      "packageVersion": "0.1.0",
+      "indexSha256": "1b1c110aa8dcea1828f3ee75c127a03b5888f85354180ad3c2ff567d7efe3046",
+      "modulesSha256": "c533559e57f292b094e7c2c66232ced0a40a6dfb2da53f1b7cb19570f1f7f791",
+      "artifactSha256": "b30f98e88fff2b00f31b782bdb0156f194cf57a9dc2ebc1e24f47a8fc64b5f12"
+    },
+    "protocol": {
+      "samplesPerModePerPhase": 30,
+      "pairOrder": "Alternating direct/native and native/direct; sequential execution",
+      "cold": "Fresh Bun driver and SDK/native context for each operation; OS page cache retained",
+      "coldDriverMs": "Entire fresh driver process through stdout/stderr collection and exit, including native context unload",
+      "warm": "One driver with one shared native context; three unmeasured pairs before samples; child collect/release included; final shared-context unload excluded",
+      "command": [
+        "/home/aphro/.bun/bin/bun",
+        "-e",
+        "process.stdout.write(Buffer.from(Array.from({length:4096},(_,i)=>i%251)));process.stderr.write(Buffer.from(Array.from({length:2048},(_,i)=>(250-i%251))));"
+      ],
+      "stdio": "Both paths ignore stdin and losslessly capture identical stdout/stderr",
+      "identity": {
+        "exitCode": 0,
+        "stdoutBytes": 4096,
+        "stderrBytes": 2048,
+        "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+        "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5"
+      },
+      "memory": "Cold RSS/maximum RSS describe each fresh driver; warm RSS includes both modes and the shared native context, so it cannot establish separate memory gains",
+      "limit": "10..100 samples; disposable fixtures; no engine build, cache cleanup, protected data or service workload"
+    },
+    "cold": {
+      "summary": {
+        "directMs": {
+          "count": 30,
+          "min": 9.726101,
+          "p50": 11.390753,
+          "p90": 20.179333999999997,
+          "p95": 24.225091000000003,
+          "max": 24.405448,
+          "mean": 13.760575300000001
+        },
+        "nativeMs": {
+          "count": 30,
+          "min": 20.557920000000003,
+          "p50": 26.601077,
+          "p90": 48.232346,
+          "p95": 54.687686,
+          "max": 82.45038199999999,
+          "mean": 31.536120566666664
+        },
+        "pairedNativeMinusDirectMs": {
+          "count": 30,
+          "min": 5.142132000000004,
+          "p50": 15.519578,
+          "p90": 24.007254999999997,
+          "p95": 36.509012,
+          "max": 64.31560699999999,
+          "mean": 17.775545266666665
+        },
+        "pairedNativeOverDirect": {
+          "count": 30,
+          "min": 1.2907684736579406,
+          "p50": 2.2893733535607663,
+          "p90": 2.7303654837240177,
+          "p95": 3.008342962748548,
+          "max": 4.546534599960572,
+          "mean": 2.3218426738878106
+        },
+        "directDriverMs": {
+          "count": 30,
+          "min": 14.352901000000003,
+          "p50": 16.94205599999998,
+          "p90": 30.866161999999804,
+          "p95": 32.621114000000034,
+          "max": 42.594397999999956,
+          "mean": 20.83243879999998
+        },
+        "nativeDriverMs": {
+          "count": 30,
+          "min": 25.61697700000002,
+          "p50": 31.92570699999999,
+          "p90": 64.55665900000008,
+          "p95": 72.26858399999998,
+          "max": 100.82034499999986,
+          "mean": 39.30584723333334
+        }
+      },
+      "pairs": [
+        {
+          "pair": 0,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.296125,
+            "rssBytes": 21254144,
+            "maxRssKiB": 38436,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 15.572714999999999
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.827796,
+            "rssBytes": 33579008,
+            "maxRssKiB": 39588,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 25.644532
+          }
+        },
+        {
+          "pair": 1,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.247122000000001,
+            "rssBytes": 21254144,
+            "maxRssKiB": 39588,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 15.152230000000003
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 21.022932,
+            "rssBytes": 33382400,
+            "maxRssKiB": 39588,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 26.012019999999993
+          }
+        },
+        {
+          "pair": 2,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 9.726101,
+            "rssBytes": 21295104,
+            "maxRssKiB": 39588,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 14.352901000000003
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 26.051624,
+            "rssBytes": 33284096,
+            "maxRssKiB": 40100,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 30.678375999999986
+          }
+        },
+        {
+          "pair": 3,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.320734999999999,
+            "rssBytes": 21254144,
+            "maxRssKiB": 40100,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 15.364052000000015
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 22.258772,
+            "rssBytes": 33349632,
+            "maxRssKiB": 40100,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 26.827068999999995
+          }
+        },
+        {
+          "pair": 4,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.787885,
+            "rssBytes": 21266432,
+            "maxRssKiB": 40100,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 15.653915000000012
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 25.993217,
+            "rssBytes": 33374208,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 30.696992999999992
+          }
+        },
+        {
+          "pair": 5,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 12.411041,
+            "rssBytes": 21151744,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 18.119508999999994
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 26.09658,
+            "rssBytes": 33587200,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 30.903463000000016
+          }
+        },
+        {
+          "pair": 6,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 18.178674,
+            "rssBytes": 21319680,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 23.693501000000026
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 54.687686,
+            "rssBytes": 33325056,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 72.26858399999998
+          }
+        },
+        {
+          "pair": 7,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 14.35674,
+            "rssBytes": 21123072,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 22.584288000000015
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 32.867937999999995,
+            "rssBytes": 33398784,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 45.13259599999998
+          }
+        },
+        {
+          "pair": 8,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 11.519841000000001,
+            "rssBytes": 21254144,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 19.379687000000047
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 31.505288000000004,
+            "rssBytes": 33132544,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 36.927706
+          }
+        },
+        {
+          "pair": 9,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 20.179333999999997,
+            "rssBytes": 21028864,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 27.713997999999947
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 26.601077,
+            "rssBytes": 33583104,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 31.92570699999999
+          }
+        },
+        {
+          "pair": 10,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.881204,
+            "rssBytes": 21262336,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 16.647046000000046
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 26.21071,
+            "rssBytes": 33681408,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 31.15435500000001
+          }
+        },
+        {
+          "pair": 11,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.067042,
+            "rssBytes": 21254144,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 14.991963000000055
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 27.486704000000003,
+            "rssBytes": 33480704,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 32.48670400000003
+          }
+        },
+        {
+          "pair": 12,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.226707,
+            "rssBytes": 21192704,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 15.156848999999966
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.981413,
+            "rssBytes": 32972800,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 25.780981999999995
+          }
+        },
+        {
+          "pair": 13,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.487174,
+            "rssBytes": 21286912,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 15.550093999999945
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 21.278502,
+            "rssBytes": 33284096,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 26.531319000000053
+          }
+        },
+        {
+          "pair": 14,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.286318999999999,
+            "rssBytes": 21262336,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 15.305467000000021
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 26.911688,
+            "rssBytes": 33087488,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 32.603256999999985
+          }
+        },
+        {
+          "pair": 15,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.235727,
+            "rssBytes": 21299200,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 15.245896000000016
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.557920000000003,
+            "rssBytes": 33513472,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 25.61697700000002
+          }
+        },
+        {
+          "pair": 16,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.149936,
+            "rssBytes": 21254144,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 14.974120999999968
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 27.062093,
+            "rssBytes": 33017856,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 32.215552
+          }
+        },
+        {
+          "pair": 17,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 11.390753,
+            "rssBytes": 21270528,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 16.94205599999998
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 27.485417,
+            "rssBytes": 33337344,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 33.472166000000016
+          }
+        },
+        {
+          "pair": 18,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 11.877730000000001,
+            "rssBytes": 21254144,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 17.53248599999995
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 26.464911,
+            "rssBytes": 33349632,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 31.50826600000005
+          }
+        },
+        {
+          "pair": 19,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.407453,
+            "rssBytes": 21295104,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 15.280573000000004
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 27.2731,
+            "rssBytes": 33697792,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 33.48254900000006
+          }
+        },
+        {
+          "pair": 20,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.281102,
+            "rssBytes": 21254144,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 15.662403999999924
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 25.80068,
+            "rssBytes": 33284096,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 30.75551100000007
+          }
+        },
+        {
+          "pair": 21,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 19.289105,
+            "rssBytes": 21278720,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 26.607285000000047
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 25.990997999999998,
+            "rssBytes": 33583104,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 30.75247300000001
+          }
+        },
+        {
+          "pair": 22,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 15.196626000000002,
+            "rssBytes": 21123072,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 26.235266999999794
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 36.315736,
+            "rssBytes": 33054720,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 48.02366700000016
+          }
+        },
+        {
+          "pair": 23,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 17.684627,
+            "rssBytes": 21254144,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 22.994973999999957
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 22.826759000000003,
+            "rssBytes": 33046528,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 29.698966000000155
+          }
+        },
+        {
+          "pair": 24,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 18.134775,
+            "rssBytes": 21159936,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 29.31680099999994
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 82.45038199999999,
+            "rssBytes": 33415168,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 100.82034499999986
+          }
+        },
+        {
+          "pair": 25,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 24.225091000000003,
+            "rssBytes": 21237760,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 31.75287900000012
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 48.232346,
+            "rssBytes": 33284096,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 64.55665900000008
+          }
+        },
+        {
+          "pair": 26,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 24.405448,
+            "rssBytes": 21106688,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 30.866161999999804
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 44.37151,
+            "rssBytes": 33349632,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 58.21083099999987
+          }
+        },
+        {
+          "pair": 27,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 21.172970999999997,
+            "rssBytes": 21188608,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 42.594397999999956
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 53.970007,
+            "rssBytes": 33570816,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 65.11533799999984
+          }
+        },
+        {
+          "pair": 28,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 14.753414,
+            "rssBytes": 20992000,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 32.621114000000034
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 37.441147,
+            "rssBytes": 33472512,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 48.587273000000096
+          }
+        },
+        {
+          "pair": 29,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 13.640456999999998,
+            "rssBytes": 21057536,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 21.108532999999852
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 29.058683999999996,
+            "rssBytes": 33710080,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0,
+            "driverElapsedMs": 40.785180999999966
+          }
+        }
+      ]
+    },
+    "warm": {
+      "summary": {
+        "directMs": {
+          "count": 30,
+          "min": 9.921126999999842,
+          "p50": 10.937817000000024,
+          "p90": 18.200068,
+          "p95": 28.811541000000034,
+          "max": 29.840273000000025,
+          "mean": 13.464265066666655
+        },
+        "nativeMs": {
+          "count": 30,
+          "min": 15.610564000000068,
+          "p50": 20.837391000000025,
+          "p90": 26.68760500000002,
+          "p95": 32.70051599999999,
+          "max": 36.188266000000056,
+          "mean": 20.712653000000007
+        },
+        "pairedNativeMinusDirectMs": {
+          "count": 30,
+          "min": -14.180650000000014,
+          "p50": 8.74813000000006,
+          "p90": 10.535364000000072,
+          "p95": 14.980704000000003,
+          "max": 16.41991500000006,
+          "mean": 7.248387933333356
+        },
+        "pairedNativeOverDirect": {
+          "count": 30,
+          "min": 0.5247814924481421,
+          "p50": 1.6324436373412463,
+          "p90": 1.9681113364689653,
+          "p95": 2.2344955210618846,
+          "max": 2.599182971048028,
+          "mean": 1.6492641707033755
+        }
+      },
+      "pairs": [
+        {
+          "pair": 0,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 18.200068,
+            "rssBytes": 39165952,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 21.147053999999997,
+            "rssBytes": 40083456,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 1,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.686972000000026,
+            "rssBytes": 40738816,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.811502999999988,
+            "rssBytes": 40214528,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 2,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.937817000000024,
+            "rssBytes": 40869888,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.981617,
+            "rssBytes": 40869888,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 3,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 11.654993999999988,
+            "rssBytes": 41132032,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.983273999999994,
+            "rssBytes": 41132032,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 4,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 11.04408699999999,
+            "rssBytes": 41132032,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.85028600000004,
+            "rssBytes": 41263104,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 5,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.683438000000024,
+            "rssBytes": 42311680,
+            "maxRssKiB": 41320,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 15.680254999999988,
+            "rssBytes": 41263104,
+            "maxRssKiB": 40300,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 6,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.26768999999996,
+            "rssBytes": 42311680,
+            "maxRssKiB": 41320,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 26.68760500000002,
+            "rssBytes": 42573824,
+            "maxRssKiB": 41576,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 7,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 28.811541000000034,
+            "rssBytes": 42835968,
+            "maxRssKiB": 41832,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 36.188266000000056,
+            "rssBytes": 42573824,
+            "maxRssKiB": 41576,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 8,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 17.71981199999999,
+            "rssBytes": 42835968,
+            "maxRssKiB": 41832,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 32.70051599999999,
+            "rssBytes": 42835968,
+            "maxRssKiB": 41832,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 9,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 18.19453999999996,
+            "rssBytes": 42835968,
+            "maxRssKiB": 41832,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 27.851474999999994,
+            "rssBytes": 42835968,
+            "maxRssKiB": 41832,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 10,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 13.42799500000001,
+            "rssBytes": 42835968,
+            "maxRssKiB": 41832,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 21.920445000000086,
+            "rssBytes": 42835968,
+            "maxRssKiB": 41832,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 11,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 12.501414999999952,
+            "rssBytes": 42835968,
+            "maxRssKiB": 41832,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 21.249545000000012,
+            "rssBytes": 42835968,
+            "maxRssKiB": 41832,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 12,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 11.402610000000095,
+            "rssBytes": 42835968,
+            "maxRssKiB": 41832,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.901803000000086,
+            "rssBytes": 43360256,
+            "maxRssKiB": 42344,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 13,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.808783999999946,
+            "rssBytes": 43491328,
+            "maxRssKiB": 42472,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.896484999999984,
+            "rssBytes": 43491328,
+            "maxRssKiB": 42472,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 14,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.423842000000036,
+            "rssBytes": 43491328,
+            "maxRssKiB": 42472,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 15.69186000000002,
+            "rssBytes": 43491328,
+            "maxRssKiB": 42472,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 15,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 29.840273000000025,
+            "rssBytes": 43491328,
+            "maxRssKiB": 42472,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 15.65962300000001,
+            "rssBytes": 43491328,
+            "maxRssKiB": 42472,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 16,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 11.380273999999986,
+            "rssBytes": 43622400,
+            "maxRssKiB": 42600,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 21.78924200000006,
+            "rssBytes": 43753472,
+            "maxRssKiB": 42728,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 17,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 11.057085999999913,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42856,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.91947200000004,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42856,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 18,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 11.146391999999992,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42856,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 24.906563000000006,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42856,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 19,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.828454000000079,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42856,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.81785000000002,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42856,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 20,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.581082999999921,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42856,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 15.638328000000001,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42856,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 21,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 21.81180900000004,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 15.979800999999952,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42856,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 22,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 17.843490999999972,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.837391000000025,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 23,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.553091999999992,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.76965999999993,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 24,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.632624999999962,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 16.274553000000083,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 25,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.49993900000004,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 15.616202000000044,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 26,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 9.921126999999842,
+            "rssBytes": 43884544,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 15.642648999999892,
+            "rssBytes": 44015616,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 27,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.205189999999902,
+            "rssBytes": 44015616,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 15.610564000000068,
+            "rssBytes": 44015616,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 28,
+          "order": ["direct", "native"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.66193300000009,
+            "rssBytes": 44015616,
+            "maxRssKiB": 42984,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 15.64076,
+            "rssBytes": 44146688,
+            "maxRssKiB": 43112,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        },
+        {
+          "pair": 29,
+          "order": ["native", "direct"],
+          "direct": {
+            "mode": "direct",
+            "elapsedMs": 10.199578999999858,
+            "rssBytes": 44146688,
+            "maxRssKiB": 43112,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          },
+          "native": {
+            "mode": "native",
+            "elapsedMs": 20.73494299999993,
+            "rssBytes": 44146688,
+            "maxRssKiB": 43112,
+            "stdoutBytes": 4096,
+            "stderrBytes": 2048,
+            "stdoutSha256": "d67c656e01756650d77717b0839985a056ec28ffe174601d690fc407a2ceffca",
+            "stderrSha256": "e01d7b095812bc1f9a0bf9e4520b761fdbe47627fa539ee5abcf9dbd5d8e4ce5",
+            "exitCode": 0
+          }
+        }
+      ]
+    },
+    "limits": [
+      "One current Linux x64 core artifact and one deterministic short-lived process workload only",
+      "Cold means process/context cold, not OS page-cache cold",
+      "No desktop, browser, JSC parity, build-time, bundled-size or cross-platform gains are established",
+      "The comparison measures direct Bun.spawn against native supervision with stronger process-group/capture lifecycle ownership",
+      "Raw paired data is authoritative; no general speedup is inferred"
+    ]
+  },
+  "host": {
+    "name": "Ubuntu",
+    "os_version": "24.04",
+    "kernel_version": "6.18.33.2-microsoft-standard-WSL2"
+  },
+  "conclusion": "For this recorded deterministic workload, native supervision was slower than direct Bun.spawn: cold p50 26.601077 versus 11.390753 ms; warm p50 20.837391 versus 10.937817 ms. No performance gain or full R8 closure is claimed."
+}

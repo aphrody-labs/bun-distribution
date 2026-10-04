@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, expect, test } from "bun:test";
-import { CString, dlopen } from "bun:ffi";
+import { CString, dlopen, type FFIFunction } from "bun:ffi";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { closeNativeLibrary, loadNativeLibrary, nativeLibraryLoaded } from "./src/library";
+import { closeNativeLibrary, loadNativeLibrary, nativeLibraryLoaded, resolveNativeLibraryPath } from "./src/library";
+import { probeNativeTooling } from "@aphrody/runtime-sdk/tooling";
 import { findNewlinesUtf16, scanNodeProject } from "./src/n2b";
 import { runAphrodyCaptured } from "./src/cli";
 import { formatSource, lintSource, minifySource } from "./src/oxc";
@@ -17,7 +18,7 @@ afterAll(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-test("typed native subpaths reject invalid inputs before loading", () => {
+test("typed tooling subpaths reject invalid inputs without loading product FFI", () => {
   closeNativeLibrary();
   expect(() => formatSource("x\0y")).toThrow(TypeError);
   expect(() => scanNodeProject("x\0y")).toThrow(TypeError);
@@ -36,6 +37,18 @@ try {
   if (process.env.APHRODY_FFI_REQUIRE_NATIVE === "1") throw error;
 }
 const native = test.skipIf(!available);
+const toolingProbe = probeNativeTooling();
+if (process.env.YOLO_TOOLING_LIB && !toolingProbe.available)
+  throw new Error(toolingProbe.error ?? "Selected tooling provider is unavailable");
+const tooling = test.skipIf(!toolingProbe.available);
+
+// The legacy C contract is checked explicitly, separately from production SDK bindings.
+function legacyTooling<S extends Record<string, FFIFunction>>(definitions: S) {
+  loadNativeLibrary();
+  const path = resolveNativeLibraryPath();
+  if (!path) throw new Error("Legacy C ABI qualification requires an Aphrody FFI artifact");
+  return dlopen(path, definitions);
+}
 
 native(
   "command library preserves version output and parser errors without exiting the host",
@@ -50,7 +63,7 @@ native(
   },
 );
 
-native("N2B reports findings, respects ignores and previews then applies fixes", () => {
+tooling("N2B reports findings, respects ignores and previews then applies fixes", () => {
   writeFileSync(script, original);
   const report = scanNodeProject(root);
   expect(report.schema_version).toBe(2);
@@ -69,7 +82,7 @@ native("N2B reports findings, respects ignores and previews then applies fixes",
   expect(() => scanNodeProject(join(root, "missing"))).toThrow("not a directory");
 });
 
-native("UTF16 helper preserves astral, lone-surrogate and high-byte newline offsets", () => {
+tooling("UTF16 helper preserves astral, lone-surrogate and high-byte newline offsets", () => {
   const source = "😀\n\u0A00\u000A\uD800x\n";
   const expected = Array.from({ length: source.length }, (_, index) => index).filter(
     (index) => source.charCodeAt(index) === 10,
@@ -78,29 +91,28 @@ native("UTF16 helper preserves astral, lone-surrogate and high-byte newline offs
   expect([...findNewlinesUtf16("")]).toEqual([]);
 });
 
-native("Oxc formats, minifies and returns parse diagnostics through one handle", () => {
-  const handle = loadNativeLibrary();
+tooling("Oxc uses the shared SDK owner independently of product FFI lifetime", () => {
   const source = "const greeting='hello';console.log(greeting)";
   expect(formatSource(source)).toContain('const greeting = "hello";');
   expect(minifySource(source)).toContain("console.log");
   expect(lintSource("const = ;").length).toBeGreaterThan(0);
   expect(() => minifySource("const = ;")).toThrow("Oxc minify:");
-  expect(loadNativeLibrary()).toBe(handle);
   closeNativeLibrary();
   expect(formatSource(source)).toContain("const greeting");
-  expect(loadNativeLibrary()).not.toBe(handle);
+  expect(nativeLibraryLoaded()).toBe(false);
 });
 
 const referencePath = process.env.APHRODY_OXC_REFERENCE_LIB;
 test.skipIf(!referencePath)("aggregate Oxc matches the original fork bridge byte for byte", () => {
-  const reference = dlopen(referencePath!, {
+  const definitions = {
     aphrody_oxc_abi_version: { args: [], returns: "u32" },
     aphrody_oxc_format: { args: ["cstring", "cstring"], returns: "ptr" },
     aphrody_oxc_minify: { args: ["cstring", "cstring"], returns: "ptr" },
     aphrody_oxc_lint: { args: ["cstring", "cstring"], returns: "ptr" },
     aphrody_oxc_free: { args: ["ptr"], returns: "void" },
-  });
-  const aggregate = loadNativeLibrary();
+  } as const;
+  const reference = dlopen(referencePath!, definitions);
+  const aggregate = legacyTooling(definitions);
   try {
     expect(reference.symbols.aphrody_oxc_abi_version()).toBe(
       aggregate.symbols.aphrody_oxc_abi_version(),
@@ -127,6 +139,7 @@ test.skipIf(!referencePath)("aggregate Oxc matches the original fork bridge byte
       }
     }
   } finally {
+    aggregate.close();
     reference.close();
   }
 });
@@ -135,13 +148,14 @@ const n2bReferencePath = process.env.APHRODY_N2B_REFERENCE_LIB;
 test.skipIf(!n2bReferencePath)(
   "aggregate N2B matches the original Compat bridge's full reports and errors",
   () => {
-    const reference = dlopen(n2bReferencePath!, {
+    const definitions = {
       node2bun_abi_version: { args: [], returns: "u32" },
       node2bun_scan_json: { args: ["cstring"], returns: "ptr" },
       node2bun_scan_with_options_json: { args: ["cstring", "cstring"], returns: "ptr" },
       node2bun_string_free: { args: ["ptr"], returns: "void" },
-    });
-    const aggregate = loadNativeLibrary();
+    } as const;
+    const reference = dlopen(n2bReferencePath!, definitions);
+    const aggregate = legacyTooling(definitions);
     writeFileSync(script, original);
     const path = Buffer.from(`${root}\0`);
     try {
@@ -179,6 +193,7 @@ test.skipIf(!n2bReferencePath)(
         aggregate.symbols.node2bun_string_free(actual);
       }
     } finally {
+      aggregate.close();
       reference.close();
     }
   },

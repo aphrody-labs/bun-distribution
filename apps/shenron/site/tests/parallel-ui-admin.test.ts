@@ -16,7 +16,7 @@ import {
 
 const siteRoot = fileURLToPath(new URL("..", import.meta.url));
 const adminSrc = (file: string) =>
-  Bun.file(new URL(`../src/components/admin/${file}`, import.meta.url)).text();
+  Bun.file(new URL(`../../../../m3/packages/admin-ui/src/components/admin/${file}`, import.meta.url)).text();
 
 describe("onglets du cockpit IA", () => {
   test("accepte chaque onglet connu et rejette le reste vers le repli", () => {
@@ -124,7 +124,7 @@ describe("IA locale du bureau", () => {
 describe("frontière d'erreur du cockpit", () => {
   test("une erreur de rendu reste locale à /admin/ia et renvoie au tableau de bord", async () => {
     const boundary = await Bun.file(
-      new URL("../src/app/admin/ia/error.tsx", import.meta.url),
+      new URL("../../../../m3/packages/admin-ui/src/app/admin/ia/error.tsx", import.meta.url),
     ).text();
     expect(boundary).toContain("SectionError");
     expect(boundary).toContain('backHref="/admin/dashboard"');

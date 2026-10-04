@@ -14,6 +14,21 @@ const EXPORT_CRATES = [
   "crates/compat/oxc-bridge/src",
 ];
 
+// These existing C ABI exports remain for compatibility. Their JS consumers
+// now use the SDK's single tooling provider instead of the product FFI table.
+const LEGACY_TOOLING_EXPORTS = new Set([
+  "node2bun_abi_version",
+  "node2bun_scan_json",
+  "node2bun_scan_with_options_json",
+  "node2bun_string_free",
+  "find_newlines_u16",
+  "aphrody_oxc_abi_version",
+  "aphrody_oxc_format",
+  "aphrody_oxc_minify",
+  "aphrody_oxc_lint",
+  "aphrody_oxc_free",
+]);
+
 function rustFiles(dir: string): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -113,8 +128,15 @@ test("scanners find the export surface", () => {
   expect(ts.size).toBeGreaterThan(100);
 });
 
-test("every Rust export has a dlopen definition", () => {
-  expect([...rust.keys()].filter((name) => !ts.has(name)).toSorted()).toEqual([]);
+test("every product Rust export has a dlopen definition", () => {
+  expect(
+    [...rust.keys()].filter((name) => !ts.has(name) && !LEGACY_TOOLING_EXPORTS.has(name)).toSorted(),
+  ).toEqual([]);
+});
+
+test("legacy tooling C exports are preserved without a second JS binding", () => {
+  expect([...LEGACY_TOOLING_EXPORTS].filter((name) => !rust.has(name))).toEqual([]);
+  expect([...LEGACY_TOOLING_EXPORTS].filter((name) => ts.has(name))).toEqual([]);
 });
 
 test("every dlopen definition has a Rust export", () => {

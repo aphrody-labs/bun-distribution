@@ -181,6 +181,12 @@ export function ownImageRemotePatterns(env: PublicUrlEnv): RemoteImagePattern[] 
 }
 
 export type DiscordImageSize = 16 | 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096;
+
+/** Public guild icon, retaining animated Discord hashes. */
+export function discordGuildIcon(guildId: string, hash: string | null | undefined, opts: { size?: DiscordImageSize; fmt?: DiscordStaticFormat } = {}): string | null {
+	if (!hash) return null;
+	return `${DISCORD_CDN}/icons/${guildId}/${hash}.${hash.startsWith("a_") ? "gif" : opts.fmt ?? "webp"}?size=${opts.size ?? 256}`;
+}
 export type DiscordStaticFormat = "webp" | "png" | "jpg";
 
 /** URL of a Discord user avatar (`a_` hashes are animated → gif), or the default avatar. */

@@ -145,7 +145,7 @@
       "@tailwindcss/node": "^4.3.3",
       "@base-ui/react": "^1.8.0",
       "@tauri-apps/plugin-opener": "3.0.0-alpha.1",
-      "@aphrody/runtime-sdk": "file:.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-b2d69b27.tgz",
+      "@aphrody/runtime-sdk": "file:.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-155af9d2.tgz",
       "@ag-ui/core": "1.0.1",
       "@ag-ui/encoder": "1.0.1",
       "@ag-ui/proto": "1.0.1",

@@ -19,3 +19,33 @@ restent à leurs propriétaires et ne sont pas clos par les métadonnées.
 
 La suite globale reste dans [PLAN.md](PLAN.md) et [GOAL.md](GOAL.md).
 Les lots concurrents conservent leurs claims ; leur état n'est pas une preuve de livraison.
+
+## Lot suivant — validation avant installation
+
+- [x] Extraire et qualifier les archives et le runtime natif avant remplacement.
+- [x] Vérifier le maintien de l'installation existante face à un payload invalide.
+- [x] Gates scoped, reçu de preuve, revue et commit des installateurs : `86ef154`.
+
+Portée : `yolo/install.sh`, `yolo/install.ps1`, tests et reçu dédiés ; aucun
+changement dans les répertoires sources exclus ni dans les lots concurrents.
+Preuve : [reçu Yolo](../yolo/docs/installer-validation-2026-10-04.json), 23 tests
+passés, aucun échec ni skip. Installations fraîches et rollback runtime Linux
+vérifiés sur fixtures ; Windows natif et promotion de release restent ouverts.
+
+## Exécution parallèle demandée par le propriétaire
+
+- [ ] Étape 1 : acquisition native du runtime et SDK épinglé (`runtime_acquisition`).
+- [ ] Étape 2 / R3 : desktop, permissions, événements, arrêt (`desktop_r3`).
+- [ ] Étape 3 / R4 : navigation, extraction, capture et isolation (`browser_r4`).
+- [ ] Intégrer les preuves, gates sérialisés, commits et push ; traiter ensuite
+  les étapes dépendantes et conserver leurs exigences complètes dans les plans.
+
+## Media / administration unification — 2026-10-05
+
+- [ ] Share manga/OCR/translation provenance and adapters across the three products.
+- [ ] Qualify consumer contracts, review gates and native boundaries.
+- [ ] Absorb Shenron administration into the Aphrody web surface with authentication.
+- [ ] Keep one Aphrody desktop host and retain all navigation and Koharu editor sections.
+- [ ] Reuse Yolo supervision for Discord binaries; wire native Gemma inference and dbfr Agent Home.
+- [ ] Leave n2b/Oxc/runtime/CLI retirement to the concurrent Yolo owner.
+- [ ] Deliver owned changes and evidence.

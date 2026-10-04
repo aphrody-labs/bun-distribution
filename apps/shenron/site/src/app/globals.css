@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@aphrody/admin-ui/styles.css";
 @import "@shenron/ui/styles.css";
 @import "@shenron/ui/reader-styles.css";
 @import "@shenron/ui/reader-dragon-ball.css";

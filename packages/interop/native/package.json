@@ -39,7 +39,9 @@
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@aphrody/update": "workspace:*"
+    "@aphrody/update": "workspace:*",
+    "@aphrody/media": "workspace:*",
+    "@aphrody/runtime-sdk": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

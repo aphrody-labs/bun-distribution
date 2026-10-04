@@ -99,7 +99,7 @@ async function main() {
     { name: "m3/packages/m3-theme", path: "m3/packages/m3-theme/tsconfig.json" },
     { name: "m3/packages/m3-motion", path: "m3/packages/m3-motion/tsconfig.json" },
     { name: "m3/packages/m3-design", path: "m3/packages/m3-design/tsconfig.json" },
-    { name: "m3/packages/m3-react", path: "m3/packages/m3-react/tsconfig.json" },diff --git a/bun.lock b/bun.lock
+    { name: "m3/packages/m3-react", path: "m3/packages/m3-react/tsconfig.json" },
     { name: "packages/doc-ai", path: "packages/doc-ai/tsconfig.json" },
   ];
 

@@ -1,0 +1,24 @@
+{
+  "name": "@aphrody/media",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    "./manga": "./src/manga.ts",
+    "./ocr": "./src/ocr.ts",
+    "./remote-ocr": "./src/remote-ocr.ts",
+    "./translation-http": "./src/translation-http.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@aphrody/http": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

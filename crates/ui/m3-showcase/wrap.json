@@ -1,0 +1,34 @@
+{
+  "schema": "aphrody-web-to-tauri/1",
+  "name": "Aphrody M3 Showcase",
+  "identifier": "com.aphrody.m3showcase",
+  "mode": "sidecar",
+  "engine": "wry",
+  "start": "/",
+  "origins": {
+    "app": [],
+    "auth": [],
+    "embeds": [],
+    "external": "system"
+  },
+  "window": {
+    "title": "Aphrody M3 Showcase",
+    "width": 1200,
+    "height": 800,
+    "minWidth": 320,
+    "minHeight": 480,
+    "syncTitle": true,
+    "zoomHotkeys": true,
+    "dragDrop": false
+  },
+  "userAgent": null,
+  "bundle": null,
+  "sidecar": {
+    "program": "m3-showcase",
+    "args": [],
+    "port": 0,
+    "readyPath": "/healthz",
+    "readyTimeoutSecs": 30,
+    "env": {}
+  }
+}

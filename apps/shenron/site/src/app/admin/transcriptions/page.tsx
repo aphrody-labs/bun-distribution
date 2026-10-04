@@ -1,19 +1,4 @@
-import { AdminHeader } from "../db-universe/_Header";
-import { TranscriptionsDashboard } from "@/components/admin/TranscriptionsDashboard";
-import { getTranscriptionsOverview } from "@/lib/transcriptions-admin";
-
+// SPDX-License-Identifier: Apache-2.0
+// Canonical Aphrody M3 administration; this host retains routing and authentication.
+export { default } from "@aphrody/admin-ui/app/admin/transcriptions/page";
 export const dynamic = "force-dynamic";
-
-export default async function TranscriptionsPage() {
-	const initialData = await getTranscriptionsOverview();
-
-	return (
-		<div className="mx-auto w-full max-w-[1600px] space-y-6">
-			<AdminHeader
-				title="Transcriptions & Arbitrage"
-				subtitle="Supervision du corpus manga et databooks · Arbitrage des défauts OCR et relecture multi-agents"
-			/>
-			<TranscriptionsDashboard initialData={initialData} />
-		</div>
-	);
-}

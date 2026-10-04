@@ -27,6 +27,22 @@
       "note": "Desktop agent console. Embeds the prebuilt ui-dist bundle until @aphrody/app-ui joins the workspace."
     },
     {
+      "id": "m3-showcase",
+      "kind": "app",
+      "path": "crates/ui/m3-showcase",
+      "package": "aphrody-m3-showcase",
+      "runtime": "wry",
+      "workspace": "member",
+      "confs": [
+        "tauri.conf.json"
+      ],
+      "gate": true,
+      "generated": [
+        "crates/ui/m3-showcase/gen"
+      ],
+      "note": "Canonical adaptive M3 showcase shell. The frontend and Bun API live in m3/apps/showcase; tauri-wrap owns the compiled desktop sidecar and its lifecycle. Mobile entry is retained; production activation requires a qualified native API host adapter."
+    },
+    {
       "id": "koharu",
       "kind": "app",
       "path": "crates/koharu/koharu",

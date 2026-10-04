@@ -26,7 +26,8 @@
     "./slug": "./src/slug.ts",
     "./wiki-slugs": "./src/wiki-slugs.ts",
     "./databooks-defauts": "./src/databooks-defauts.ts",
-    "./aphrody-corpus": "./src/aphrody-corpus.ts"
+    "./aphrody-corpus": "./src/aphrody-corpus.ts",
+    "./admin": "./src/admin.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
@@ -43,6 +44,7 @@
   },
   "shenron": {
     "runtime": {
+      "./admin": "pure",
       "./env": "pure",
       "./net": "pure",
       "./paths": "server",

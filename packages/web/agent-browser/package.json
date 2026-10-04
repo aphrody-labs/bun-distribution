@@ -23,7 +23,8 @@
     "./engine": "./src/engine.ts",
     "./service": "./src/service.ts",
     "./test-preload": "./src/test-preload.ts",
-    "./tauri": "./src/tauri.ts"
+    "./tauri": "./src/tauri.ts",
+    "./runtime": "./src/runtime.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

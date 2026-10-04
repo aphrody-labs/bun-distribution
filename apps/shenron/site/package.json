@@ -98,7 +98,9 @@
     "@shenron/config": "workspace:*",
     "@shenron/pipeline": "workspace:*",
     "ai": "catalog:",
-    "prosemirror-transform": "1.12.2"
+    "prosemirror-transform": "1.12.2",
+    "@aphrody/admin-ui": "workspace:*",
+    "@aphrody/discord-kit": "workspace:*"
   },
   "devDependencies": {
     "@huggingface/transformers": "^4.3.0",
