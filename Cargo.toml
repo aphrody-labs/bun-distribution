@@ -94,6 +94,7 @@ aphrody-git = { path = "crates/infra/git", version = "0.1.0", features = [] }
 aphrody-google = { path = "crates/google/google", version = "1.0.0", features = [] }
 aphrody-google-mcp = { path = "crates/google/mcp", version = "1.0.0", features = [] }
 aphrody-gcs = { path = "crates/google/gcs", version = "1.0.0", features = [] }
+aphrody-gpu-backend = { path = "crates/native/gpu-backend", version = "1.0.0-canary" }
 aphrody-guard = { path = "crates/os/guard", version = "1.0.0-canary", features = [] }
 aphrody-http-error = { path = "crates/ai/http-error", version = "1.0.0", features = [] }
 aphrody-infer = { path = "crates/ai/infer", version = "1.0.0", features = ["onnx"] }

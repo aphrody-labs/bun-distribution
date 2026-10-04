@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-gpu-backend"
+description = "Shared wgpu instance, adapter, device and surface-configuration boundary for Aphrody and IECODE renderers."
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = []
+webgpu = ["wgpu/webgpu"]
+webgl = ["wgpu/webgl"]
+
+[dependencies]
+wgpu.workspace = true

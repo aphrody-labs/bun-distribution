@@ -20,7 +20,7 @@
 
 ## Remaining work
 
-- Extract or relocate `aphrody-gpu-backend` into a neutral `crates/ui/` or `crates/native/` owner, then route `aphrody-render` context creation through it without exposing GPU types in emulator-core APIs.
+- Done 2026-10-04: `aphrody-gpu-backend` now lives at `crates/native/gpu-backend` and IECODE consumes it by path (`../aphrody/crates/native/gpu-backend`). Remaining: route `aphrody-render` context creation through it without exposing GPU types in emulator-core APIs.
 - Add a production NIE window host only when its owner and frame/input boundary are implemented and tested. The current workspace has no active Bevy/winit member.
 - ~~Resolve the `aphrody-logo` workspace path~~ Done 2026-10-01: the crate is merged into `aphrody-identity` (module `logo`, `crates/ui/identity/src/logo.rs`, asset `crates/ui/identity/assets/logo/aphrody.webp`), so no sibling-checkout path dependency remains. Not yet compiled; verify with `cargo check -p aphrody-identity -p aphrody`.
 - Treat `iecode-*`, `nie-*`, `koharu-*`, and `obscura-*` naming as separate compatibility decisions. A bulk package rename would affect Cargo selectors, dependency keys, documentation, and downstream imports; upstream-compatible package identities must not be changed mechanically.

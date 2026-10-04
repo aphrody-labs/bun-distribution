@@ -1539,6 +1539,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-gpu-backend"
+version = "1.0.0-canary"
+dependencies = [
+ "wgpu 30.0.1",
+]
+
+[[package]]
 name = "aphrody-guard"
 version = "1.0.0-canary"
 dependencies = [
