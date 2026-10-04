@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { type Budget, type Metric, compareBudget, formatValue, groupOf, pct, percentile, summarize } from "./lib.ts";
+import {
+  type Budget,
+  type Metric,
+  compareBudget,
+  formatValue,
+  groupOf,
+  pct,
+  percentile,
+  summarize,
+} from "./lib.ts";
 
 describe("statistics", () => {
   test("percentile is nearest-rank", () => {
@@ -21,13 +30,22 @@ describe("budget", () => {
   const budget: Budget = {
     schema: "m3-bench-budget/1",
     tolerance: 0.1,
-    metrics: { "yolo.version": { value: 10, unit: "ms" }, "compile.server_tuned.size": { value: 1000, unit: "B" }, "mcp.cold": { value: 50, unit: "ms" } },
+    metrics: {
+      "yolo.version": { value: 10, unit: "ms" },
+      "compile.server_tuned.size": { value: 1000, unit: "B" },
+      "mcp.cold": { value: 50, unit: "ms" },
+    },
   };
   const measured = (values: Record<string, number>): Record<string, Metric> =>
-    Object.fromEntries(Object.entries(values).map(([k, value]) => [k, { value, unit: "ms" } satisfies Metric]));
+    Object.fromEntries(
+      Object.entries(values).map(([k, value]) => [k, { value, unit: "ms" } satisfies Metric]),
+    );
 
   test("a metric within tolerance passes, beyond it fails", () => {
-    const rows = compareBudget(budget, measured({ "yolo.version": 11, "compile.server_tuned.size": 1101, "mcp.cold": 40 }));
+    const rows = compareBudget(
+      budget,
+      measured({ "yolo.version": 11, "compile.server_tuned.size": 1101, "mcp.cold": 40 }),
+    );
     expect(rows.map((r) => [r.key, r.ok])).toEqual([
       ["yolo.version", true],
       ["compile.server_tuned.size", false],
@@ -36,10 +54,19 @@ describe("budget", () => {
   });
   test("a budgeted metric that was not measured fails", () => {
     const rows = compareBudget(budget, measured({ "yolo.version": 9 }));
-    expect(rows.filter((r) => !r.ok).map((r) => r.key)).toEqual(["compile.server_tuned.size", "mcp.cold"]);
+    expect(rows.filter((r) => !r.ok).map((r) => r.key)).toEqual([
+      "compile.server_tuned.size",
+      "mcp.cold",
+    ]);
   });
   test("the tolerance can be overridden", () => {
-    expect(compareBudget(budget, measured({ "yolo.version": 12, "compile.server_tuned.size": 1000, "mcp.cold": 50 }), 0.25).every((r) => r.ok)).toBe(true);
+    expect(
+      compareBudget(
+        budget,
+        measured({ "yolo.version": 12, "compile.server_tuned.size": 1000, "mcp.cold": 50 }),
+        0.25,
+      ).every((r) => r.ok),
+    ).toBe(true);
   });
 });
 

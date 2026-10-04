@@ -5,7 +5,9 @@ import { join } from "node:path";
 
 const src = join(import.meta.dir, "../../../packages/m3-os-themes/src/index.ts");
 const t0 = performance.now();
-const { generate, TARGETS } = (await import(src)) as typeof import("../../../packages/m3-os-themes/src/index.ts");
+const { generate, TARGETS } = (await import(
+  src
+)) as typeof import("../../../packages/m3-os-themes/src/index.ts");
 const t1 = performance.now();
 const input = { name: "Aphrody", seed: "#6750a4", mode: "auto" } as const;
 const files = generate(input, TARGETS);
@@ -19,4 +21,13 @@ for (const f of files.toSorted((a, b) => a.path.localeCompare(b.path))) {
   digest = Bun.hash.wyhash(f.content, digest);
   bytes += f.content.length;
 }
-console.log(JSON.stringify({ importMs: t1 - t0, firstMs: t2 - t1, warmMs: (t3 - t2) / 20, files: files.length, bytes, digest: digest.toString(16) }));
+console.log(
+  JSON.stringify({
+    importMs: t1 - t0,
+    firstMs: t2 - t1,
+    warmMs: (t3 - t2) / 20,
+    files: files.length,
+    bytes,
+    digest: digest.toString(16),
+  }),
+);

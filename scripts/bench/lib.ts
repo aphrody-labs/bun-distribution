@@ -94,7 +94,11 @@ export function summarize(samples: readonly number[], unit: Unit = "ms"): Metric
 export const exact = (value: number, unit: Unit): Metric => ({ value, unit });
 
 /** Run `fn` `warmup` times unrecorded, then `runs` times; the samples are what `fn` returns (ms). */
-export async function sample(fn: () => Promise<number> | number, runs: number, warmup = 0): Promise<number[]> {
+export async function sample(
+  fn: () => Promise<number> | number,
+  runs: number,
+  warmup = 0,
+): Promise<number[]> {
   for (let i = 0; i < warmup; i++) await fn();
   const out: number[] = [];
   for (let i = 0; i < runs; i++) out.push(await fn());
@@ -108,7 +112,10 @@ export interface Spawned {
 }
 
 /** Spawn synchronously and time it; stdout and stderr are captured (not timed separately). */
-export function spawnTimed(cmd: string[], opts: { cwd?: string; env?: Record<string, string> } = {}): Spawned {
+export function spawnTimed(
+  cmd: string[],
+  opts: { cwd?: string; env?: Record<string, string> } = {},
+): Spawned {
   const started = performance.now();
   const proc = Bun.spawnSync(cmd, {
     cwd: opts.cwd,
@@ -159,14 +166,21 @@ export function dirBytes(dir: string): number {
 }
 
 export function gitHead(dir: string): string {
-  const proc = Bun.spawnSync(["git", "-C", dir, "rev-parse", "--short", "HEAD"], { stdout: "pipe", stderr: "ignore" });
+  const proc = Bun.spawnSync(["git", "-C", dir, "rev-parse", "--short", "HEAD"], {
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   return proc.exitCode === 0 ? proc.stdout.toString().trim() : "unknown";
 }
 
 export async function readEnv(repos: Record<string, string>): Promise<Env> {
-  const info = await Bun.file("/proc/cpuinfo").text().catch(() => "");
+  const info = await Bun.file("/proc/cpuinfo")
+    .text()
+    .catch(() => "");
   const model = /model name\s*:\s*(.+)/.exec(info)?.[1] ?? cpus()[0]?.model ?? "unknown";
-  const version = await Bun.file("/proc/version").text().catch(() => "");
+  const version = await Bun.file("/proc/version")
+    .text()
+    .catch(() => "");
   return {
     date: new Date().toISOString(),
     bun: Bun.version,
@@ -189,8 +203,22 @@ export function compareBudget(
 ): BudgetRow[] {
   return Object.entries(budget.metrics).map(([key, entry]) => {
     const actual = metrics[key]?.value;
-    const ratio = actual === undefined ? undefined : entry.value === 0 ? (actual === 0 ? 1 : Number.POSITIVE_INFINITY) : actual / entry.value;
-    return { key, unit: entry.unit, budget: entry.value, actual, ratio, ok: actual !== undefined && actual <= entry.value * (1 + tolerance) };
+    const ratio =
+      actual === undefined
+        ? undefined
+        : entry.value === 0
+          ? actual === 0
+            ? 1
+            : Number.POSITIVE_INFINITY
+          : actual / entry.value;
+    return {
+      key,
+      unit: entry.unit,
+      budget: entry.value,
+      actual,
+      ratio,
+      ok: actual !== undefined && actual <= entry.value * (1 + tolerance),
+    };
   });
 }
 
@@ -204,7 +232,10 @@ export function formatValue(value: number | undefined, unit: Unit): string {
     if (value >= 1024) return `${(value / 1024).toFixed(1)} KiB`;
     return `${value} B`;
   }
-  if (unit === "ms") return value >= 1000 ? `${(value / 1000).toFixed(2)} s` : `${value.toFixed(value < 10 ? 2 : 1)} ms`;
+  if (unit === "ms")
+    return value >= 1000
+      ? `${(value / 1000).toFixed(2)} s`
+      : `${value.toFixed(value < 10 ? 2 : 1)} ms`;
   return String(value);
 }
 

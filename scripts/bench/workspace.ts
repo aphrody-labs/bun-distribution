@@ -28,7 +28,9 @@ export function workspacePackages(root: string): WorkspacePackage[] {
   const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
     workspaces?: { packages?: string[] } | string[];
   };
-  const globs = Array.isArray(manifest.workspaces) ? manifest.workspaces : (manifest.workspaces?.packages ?? []);
+  const globs = Array.isArray(manifest.workspaces)
+    ? manifest.workspaces
+    : (manifest.workspaces?.packages ?? []);
   const excluded = new Set(globs.filter((g) => g.startsWith("!")).map((g) => g.slice(1)));
   const out: WorkspacePackage[] = [];
   for (const glob of globs.filter((g) => !g.startsWith("!"))) {
@@ -38,7 +40,12 @@ export function workspacePackages(root: string): WorkspacePackage[] {
       const rel = `${base}/${name}`;
       const file = join(root, rel, "package.json");
       if (excluded.has(rel) || !existsSync(file)) continue;
-      out.push({ id: basename(rel), rel, dir: join(root, rel), manifest: JSON.parse(readFileSync(file, "utf8")) as Manifest });
+      out.push({
+        id: basename(rel),
+        rel,
+        dir: join(root, rel),
+        manifest: JSON.parse(readFileSync(file, "utf8")) as Manifest,
+      });
     }
   }
   return out;
@@ -75,7 +82,11 @@ export function packageEntries(dir: string, manifest: Manifest): string[] {
   const files = new Set<string>();
   for (const target of targets) {
     if (target.includes("*")) {
-      for (const match of new Glob(target.replace(/^\.\//, "")).scanSync({ cwd: dir, onlyFiles: true })) files.add(join(dir, match));
+      for (const match of new Glob(target.replace(/^\.\//, "")).scanSync({
+        cwd: dir,
+        onlyFiles: true,
+      }))
+        files.add(join(dir, match));
       continue;
     }
     const file = resolve(dir, target);
@@ -96,7 +107,13 @@ export interface BundleSize {
 /** Bundle every export entry of a package the way a consumer would: browser, ESM, split, minified, bare imports external. */
 export async function bundlePackage(pkg: WorkspacePackage): Promise<BundleSize> {
   const entries = packageEntries(pkg.dir, pkg.manifest);
-  const size: BundleSize = { entries: entries.length, jsBytes: 0, gzipBytes: 0, cssBytes: 0, ms: 0 };
+  const size: BundleSize = {
+    entries: entries.length,
+    jsBytes: 0,
+    gzipBytes: 0,
+    cssBytes: 0,
+    ms: 0,
+  };
   if (entries.length === 0) return size;
   const started = performance.now();
   try {
