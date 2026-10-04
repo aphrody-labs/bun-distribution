@@ -44,11 +44,7 @@ export async function runPathAudit(args: string[]): Promise<number> {
     ];
     for (const node of nodes) {
       const value = node.getLiteralValue();
-      if (
-        absolute === resolve(root, "packages/infra/paths/src/cli.ts") ||
-        absolute === resolve(root, "packages/infra/workspace/src/path-audit.ts")
-      )
-        continue;
+      if (absolute === resolve(root, "packages/infra/workspace/src/path-audit.ts")) continue;
       const isTemp = value.startsWith("/tmp/") && !value.startsWith("/tmp/shenron-");
       const isUserPath = /^\/home\/[^/]+\/|^\/Users\/[^/]+\/|^[A-Za-z]:[\\/]Users[\\/]/.test(value);
       if (!isTemp && !isUserPath) continue;

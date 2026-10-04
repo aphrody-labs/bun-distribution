@@ -31,11 +31,13 @@ test("path audit is read-only by default and rewrites only safe code paths on ap
   }
 });
 
-test("both the Workspace operation and legacy paths entrypoint advertise the owner command", () => {
-  for (const entry of ["../src/ops.ts", "../../paths/src/cli.ts"]) {
-    const args = entry.endsWith("ops.ts") ? ["path-audit", "--help"] : ["--help"];
-    const output = Bun.spawnSync([process.execPath, join(import.meta.dir, entry), ...args]);
-    expect(output.exitCode).toBe(0);
-    expect(output.stdout.toString()).toContain("aphrody-ops path-audit");
-  }
+test("the Workspace operation advertises the path-audit command", () => {
+  const output = Bun.spawnSync([
+    process.execPath,
+    join(import.meta.dir, "../src/ops.ts"),
+    "path-audit",
+    "--help",
+  ]);
+  expect(output.exitCode).toBe(0);
+  expect(output.stdout.toString()).toContain("aphrody-ops path-audit");
 });
