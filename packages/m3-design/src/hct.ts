@@ -4,7 +4,64 @@
 import { Hct } from "@material/material-color-utilities";
 import type { M3Theme, TonalPalette } from "./types.ts";
 
-const toneSteps = [0, 6, 10, 12, 20, 22, 30, 40, 50, 60, 70, 80, 90, 94, 95, 98, 99, 100];
+const toneSteps = [
+  0, 4, 6, 10, 12, 17, 20, 22, 24, 30, 40, 50, 60, 70, 80, 87, 90, 92, 94, 95, 96, 98, 99, 100,
+];
+
+type RoleTone = readonly [palette: string, light: number, dark: number];
+
+/** CorePalette system roles, including the M3 surface levels and fixed accents. */
+function systemRoles(): Record<string, RoleTone> {
+  const roles: Record<string, RoleTone> = {
+    background: ["neutral", 98, 6],
+    "on-background": ["neutral", 10, 90],
+    surface: ["neutral", 98, 6],
+    "surface-dim": ["neutral", 87, 6],
+    "surface-bright": ["neutral", 98, 24],
+    "surface-container-lowest": ["neutral", 100, 4],
+    "surface-container-low": ["neutral", 96, 10],
+    "surface-container": ["neutral", 94, 12],
+    "surface-container-high": ["neutral", 92, 17],
+    "surface-container-highest": ["neutral", 90, 22],
+    "on-surface": ["neutral", 10, 90],
+    "surface-variant": ["neutral-variant", 90, 30],
+    "on-surface-variant": ["neutral-variant", 30, 80],
+    "inverse-surface": ["neutral", 20, 90],
+    "inverse-on-surface": ["neutral", 95, 20],
+    outline: ["neutral-variant", 50, 60],
+    "outline-variant": ["neutral-variant", 80, 30],
+    shadow: ["neutral", 0, 0],
+    scrim: ["neutral", 0, 0],
+    "surface-tint": ["primary", 40, 80],
+    "inverse-primary": ["primary", 80, 40],
+  };
+  for (const palette of ["primary", "secondary", "tertiary", "error"]) {
+    roles[palette] = [palette, 40, 80];
+    roles[`on-${palette}`] = [palette, 100, 20];
+    roles[`${palette}-container`] = [palette, 90, 30];
+    // MCU Scheme.dark uses error tone 80, while the other container foregrounds use 90.
+    roles[`on-${palette}-container`] = [palette, 10, palette === "error" ? 80 : 90];
+    if (palette !== "error") {
+      roles[`${palette}-fixed`] = [palette, 90, 90];
+      roles[`${palette}-fixed-dim`] = [palette, 80, 80];
+      roles[`on-${palette}-fixed`] = [palette, 10, 10];
+      roles[`on-${palette}-fixed-variant`] = [palette, 30, 30];
+    }
+  }
+  return roles;
+}
+
+const SYSTEM_ROLES = systemRoles();
+
+function renderSystemRoles(dark: boolean): string {
+  const indent = dark ? "    " : "  ";
+  return Object.entries(SYSTEM_ROLES)
+    .map(
+      ([role, [palette, lightTone, darkTone]]) =>
+        `${indent}--md-sys-color-${role}: var(--md-ref-palette-${palette}-${dark ? darkTone : lightTone});\n`,
+    )
+    .join("");
+}
 
 function parseSeedArgb(hex: string): number {
   const match = /^#?([\da-f]{3}|[\da-f]{6})$/i.exec(hex.trim());
@@ -57,36 +114,10 @@ export function generateTheme(seedHex: string): M3Theme {
   }
 
   css += `\n  /* System Tokens - Light Mode */\n`;
-  css += `  --md-sys-color-primary: var(--md-ref-palette-primary-40);\n`;
-  css += `  --md-sys-color-on-primary: var(--md-ref-palette-primary-100);\n`;
-  css += `  --md-sys-color-primary-container: var(--md-ref-palette-primary-90);\n`;
-  css += `  --md-sys-color-on-primary-container: var(--md-ref-palette-primary-10);\n`;
-  css += `  --md-sys-color-secondary: var(--md-ref-palette-secondary-40);\n`;
-  css += `  --md-sys-color-on-secondary: var(--md-ref-palette-secondary-100);\n`;
-  css += `  --md-sys-color-secondary-container: var(--md-ref-palette-secondary-90);\n`;
-  css += `  --md-sys-color-on-secondary-container: var(--md-ref-palette-secondary-10);\n`;
-  css += `  --md-sys-color-surface: var(--md-ref-palette-neutral-98);\n`;
-  css += `  --md-sys-color-on-surface: var(--md-ref-palette-neutral-10);\n`;
-  css += `  --md-sys-color-surface-container: var(--md-ref-palette-neutral-94);\n`;
-  css += `  --md-sys-color-surface-container-highest: var(--md-ref-palette-neutral-90);\n`;
-  css += `  --md-sys-color-outline: var(--md-ref-palette-neutral-variant-50);\n`;
-  css += `  --md-sys-color-outline-variant: var(--md-ref-palette-neutral-variant-80);\n`;
+  css += renderSystemRoles(false);
 
   css += `}\n\n@media (prefers-color-scheme: dark) {\n  :root {\n`;
-  css += `    --md-sys-color-primary: var(--md-ref-palette-primary-80);\n`;
-  css += `    --md-sys-color-on-primary: var(--md-ref-palette-primary-20);\n`;
-  css += `    --md-sys-color-primary-container: var(--md-ref-palette-primary-30);\n`;
-  css += `    --md-sys-color-on-primary-container: var(--md-ref-palette-primary-90);\n`;
-  css += `    --md-sys-color-secondary: var(--md-ref-palette-secondary-80);\n`;
-  css += `    --md-sys-color-on-secondary: var(--md-ref-palette-secondary-20);\n`;
-  css += `    --md-sys-color-secondary-container: var(--md-ref-palette-secondary-30);\n`;
-  css += `    --md-sys-color-on-secondary-container: var(--md-ref-palette-secondary-90);\n`;
-  css += `    --md-sys-color-surface: var(--md-ref-palette-neutral-6);\n`;
-  css += `    --md-sys-color-on-surface: var(--md-ref-palette-neutral-90);\n`;
-  css += `    --md-sys-color-surface-container: var(--md-ref-palette-neutral-12);\n`;
-  css += `    --md-sys-color-surface-container-highest: var(--md-ref-palette-neutral-22);\n`;
-  css += `    --md-sys-color-outline: var(--md-ref-palette-neutral-variant-60);\n`;
-  css += `    --md-sys-color-outline-variant: var(--md-ref-palette-neutral-variant-30);\n`;
+  css += renderSystemRoles(true);
   css += `  }\n}\n`;
 
   return {

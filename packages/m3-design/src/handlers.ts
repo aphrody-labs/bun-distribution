@@ -5,53 +5,139 @@
 
 import { DesignCompiler } from "./generator.ts";
 
+type JsonObject = Record<string, unknown>;
+type Protocol = "anthropic" | "openai" | "google";
+
+class InvalidRequest extends Error {}
+
+function isObject(value: unknown): value is JsonObject {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+async function readBody(req: Request): Promise<JsonObject> {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    throw new InvalidRequest("Request body must be valid JSON");
+  }
+  if (!isObject(body)) throw new InvalidRequest("Request body must be a JSON object");
+  return body;
+}
+
+function optionalString(body: JsonObject, field: string): string | undefined {
+  const value = body[field];
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") throw new InvalidRequest(`${field} must be a string`);
+  return value;
+}
+
+function requiredString(body: JsonObject, field: string): string {
+  const value = optionalString(body, field);
+  if (!value?.trim()) throw new InvalidRequest(`${field} must be a non-empty string`);
+  return value;
+}
+
+function nullableString(body: JsonObject, field: string): string | null | undefined {
+  return body[field] === null ? null : optionalString(body, field);
+}
+
+function readArtifact(body: JsonObject): { name: string; body: string } | null | undefined {
+  const value = body.artifact;
+  if (value === undefined || value === null) return value;
+  if (!isObject(value)) throw new InvalidRequest("artifact must be an object with name and body");
+  const name = requiredString(value, "name");
+  const content = optionalString(value, "body");
+  if (content === undefined) throw new InvalidRequest("artifact.body must be a string");
+  return { name, body: content };
+}
+
+function readBaseUrl(body: JsonObject): string | undefined {
+  const value = optionalString(body, "baseUrl");
+  if (value === undefined) return undefined;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new InvalidRequest("baseUrl must be an absolute HTTP(S) URL");
+  }
+  if (
+    !["http:", "https:"].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  ) {
+    throw new InvalidRequest(
+      "baseUrl must be an HTTP(S) URL without credentials, query or fragment",
+    );
+  }
+  return url.href.replace(/\/+$/, "");
+}
+
+function failure(error: unknown): Response {
+  const message = error instanceof Error ? error.message : String(error);
+  return Response.json({ error: message }, { status: error instanceof InvalidRequest ? 400 : 500 });
+}
+
 /** Build the HTTP handler served by the design engine. */
 export function createFetchHandler(compiler: DesignCompiler): (req: Request) => Promise<Response> {
   return async function handle(req: Request): Promise<Response> {
     const url = new URL(req.url);
+    const allowed =
+      url.pathname === "/"
+        ? "GET"
+        : ["/api/generate", "/api/generate/finalize"].includes(url.pathname)
+          ? "POST"
+          : undefined;
+    if (!allowed) return Response.json({ error: "Not found" }, { status: 404 });
+    if (req.method !== allowed) {
+      return Response.json(
+        { error: "Method not allowed" },
+        { status: 405, headers: { allow: allowed } },
+      );
+    }
 
-    if (req.method === "POST" && url.pathname === "/api/generate") {
+    if (url.pathname === "/api/generate") {
       try {
-        const body = await req.json();
-        const { prompt, seedColor, designSystemId } = body;
-
-        if (!prompt) {
-          return Response.json({ error: "Missing prompt field" }, { status: 400 });
+        const body = await readBody(req);
+        const prompt = requiredString(body, "prompt");
+        const seedColor = optionalString(body, "seedColor");
+        const designSystemId = optionalString(body, "designSystemId");
+        if (seedColor !== undefined && !/^#?(?:[\da-f]{3}|[\da-f]{6})$/i.test(seedColor.trim())) {
+          throw new InvalidRequest("seedColor must be a three- or six-digit HEX color");
         }
-
         const result = compiler.compile(prompt, seedColor, designSystemId);
         return Response.json(result);
-      } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : String(e);
-        return Response.json({ error: message }, { status: 500 });
+      } catch (error: unknown) {
+        return failure(error);
       }
     }
 
-    if (req.method === "POST" && url.pathname === "/api/generate/finalize") {
+    if (url.pathname === "/api/generate/finalize") {
       try {
-        const body = await req.json();
-        const {
-          projectId,
-          apiKey,
-          model,
-          protocol = "anthropic",
-          baseUrl,
-          transcriptJsonl = "",
-          transcriptMessageCount = 0,
-          designSystemId,
-          designSystemBody,
-          artifact,
-        } = body;
-
-        if (!projectId) {
-          return Response.json({ error: "Missing projectId field" }, { status: 400 });
+        const body = await readBody(req);
+        const projectId = requiredString(body, "projectId");
+        const apiKey = requiredString(body, "apiKey");
+        const model = requiredString(body, "model");
+        const suppliedProtocol = optionalString(body, "protocol") ?? "anthropic";
+        if (!["anthropic", "openai", "google"].includes(suppliedProtocol)) {
+          throw new InvalidRequest("protocol must be anthropic, openai or google");
         }
-        if (!apiKey) {
-          return Response.json({ error: "Missing apiKey field" }, { status: 400 });
+        const protocol = suppliedProtocol as Protocol;
+        const baseUrl = readBaseUrl(body);
+        const transcriptJsonl = optionalString(body, "transcriptJsonl") ?? "";
+        const transcriptMessageCount = body.transcriptMessageCount ?? 0;
+        if (
+          body.transcriptMessageCount === null ||
+          !Number.isSafeInteger(transcriptMessageCount) ||
+          (transcriptMessageCount as number) < 0
+        ) {
+          throw new InvalidRequest("transcriptMessageCount must be a non-negative safe integer");
         }
-        if (!model) {
-          return Response.json({ error: "Missing model field" }, { status: 400 });
-        }
+        const designSystemId = nullableString(body, "designSystemId");
+        const designSystemBody = nullableString(body, "designSystemBody");
+        const artifact = readArtifact(body);
 
         const defaultBaseUrl =
           protocol === "openai"
@@ -59,106 +145,95 @@ export function createFetchHandler(compiler: DesignCompiler): (req: Request) => 
             : protocol === "google"
               ? "https://generativelanguage.googleapis.com"
               : "https://api.anthropic.com";
-
-        const resolvedBaseUrl = (baseUrl || defaultBaseUrl).replace(/\/+$/, "");
-
+        const resolvedBaseUrl = baseUrl ?? defaultBaseUrl;
         const prompts = buildSynthesisPrompt({
           projectId,
           transcriptJsonl,
-          transcriptMessageCount,
+          transcriptMessageCount: transcriptMessageCount as number,
           designSystemId,
           designSystemBody,
           artifact,
           now: new Date(),
         });
 
-        let response: Response;
-        if (protocol === "anthropic") {
-          const endpoint = resolvedBaseUrl.includes("/v1")
-            ? `${resolvedBaseUrl}/messages`
-            : `${resolvedBaseUrl}/v1/messages`;
-          response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              "x-api-key": apiKey,
-              "anthropic-version": "2023-06-01",
-            },
-            body: JSON.stringify({
-              model,
-              max_tokens: 4000,
-              system: prompts.systemPrompt,
-              messages: [{ role: "user", content: prompts.userPrompt }],
-            }),
-          });
-        } else if (protocol === "openai") {
-          const endpoint = resolvedBaseUrl.includes("/v1")
-            ? `${resolvedBaseUrl}/chat/completions`
-            : `${resolvedBaseUrl}/v1/chat/completions`;
-          response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: prompts.systemPrompt },
-                { role: "user", content: prompts.userPrompt },
-              ],
-              max_tokens: 4000,
-            }),
-          });
-        } else if (protocol === "google") {
-          const endpoint = `${resolvedBaseUrl}/v1beta/models/${model}:generateContent?key=${apiKey}`;
-          response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: "user",
-                  parts: [{ text: prompts.userPrompt }],
-                },
-              ],
-              systemInstruction: {
-                parts: [{ text: prompts.systemPrompt }],
+        try {
+          let response: Response;
+          if (protocol === "anthropic") {
+            const endpoint = resolvedBaseUrl.includes("/v1")
+              ? `${resolvedBaseUrl}/messages`
+              : `${resolvedBaseUrl}/v1/messages`;
+            response = await fetch(endpoint, {
+              method: "POST",
+              signal: req.signal,
+              headers: {
+                "content-type": "application/json",
+                "x-api-key": apiKey,
+                "anthropic-version": "2023-06-01",
               },
-              generationConfig: {
-                maxOutputTokens: 4000,
-              },
-            }),
-          });
-        } else {
-          return Response.json({ error: `Unsupported protocol: ${protocol}` }, { status: 400 });
-        }
+              body: JSON.stringify({
+                model,
+                max_tokens: 4000,
+                system: prompts.systemPrompt,
+                messages: [{ role: "user", content: prompts.userPrompt }],
+              }),
+            });
+          } else if (protocol === "openai") {
+            const endpoint = resolvedBaseUrl.includes("/v1")
+              ? `${resolvedBaseUrl}/chat/completions`
+              : `${resolvedBaseUrl}/v1/chat/completions`;
+            response = await fetch(endpoint, {
+              method: "POST",
+              signal: req.signal,
+              headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+              body: JSON.stringify({
+                model,
+                messages: [
+                  { role: "system", content: prompts.systemPrompt },
+                  { role: "user", content: prompts.userPrompt },
+                ],
+                max_tokens: 4000,
+              }),
+            });
+          } else {
+            const endpoint = `${resolvedBaseUrl}/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            response = await fetch(endpoint, {
+              method: "POST",
+              signal: req.signal,
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: prompts.userPrompt }] }],
+                systemInstruction: { parts: [{ text: prompts.systemPrompt }] },
+                generationConfig: { maxOutputTokens: 4000 },
+              }),
+            });
+          }
 
-        if (!response.ok) {
-          const text = await response.text().catch(() => "");
+          if (!response.ok) {
+            const details = await response.text().catch(() => "");
+            return Response.json(
+              {
+                error: `Upstream ${protocol} call failed with status ${response.status}`,
+                details,
+              },
+              { status: 502 },
+            );
+          }
+
+          const designMd = extractDesignMd(await response.json(), protocol);
+          return Response.json({
+            success: true,
+            designMd,
+            projectId,
+            designSystemId: designSystemId || null,
+          });
+        } catch {
           return Response.json(
-            {
-              error: `Upstream ${protocol} call failed with status ${response.status}`,
-              details: text,
-            },
+            { error: `Upstream ${protocol} request or response failed` },
             { status: 502 },
           );
         }
-
-        const payload = await response.json();
-        const designMd = extractDesignMd(payload, protocol);
-
-        return Response.json({
-          success: true,
-          designMd,
-          projectId,
-          designSystemId: designSystemId || null,
-        });
-      } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : String(e);
-        return Response.json({ error: message }, { status: 500 });
+      } catch (error: unknown) {
+        return failure(error);
       }
     }
 
@@ -376,7 +451,7 @@ export function extractDesignMd(payload: unknown, protocol: string): string {
     }
   }
 
-  if (out.length === 0) {
+  if (out.trim().length === 0) {
     throw new Error(`upstream ${protocol} response contained no text content`);
   }
   return out;

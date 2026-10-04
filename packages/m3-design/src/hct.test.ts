@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test, describe } from "bun:test";
 import { generateTheme } from "./hct.ts";
+import { argbFromHex, hexFromArgb, Scheme } from "@material/material-color-utilities";
 
 describe("HCT palette and CSS variables compiler", () => {
   test("should generate correct tone steps for seed color", () => {
@@ -93,5 +94,66 @@ describe("HCT palette and CSS variables compiler", () => {
 
   test("rejects malformed seed colors", () => {
     expect(() => generateTheme("purple")).toThrow("Invalid seed color: purple");
+  });
+
+  test.each(["#6750A4", "#CE422B", "#0F52BA", "#FFFFFF"])(
+    "tertiary and error roles resolve to the MCU CorePalette reference for %s",
+    (seed) => {
+      const css = generateTheme(seed).cssCustomProperties;
+      const declarations = new Map(
+        [...css.matchAll(/(--md-ref-palette-[\w-]+):\s*(#[\da-f]+);/gi)].map((match) => [
+          match[1]!,
+          match[2]!.toLowerCase(),
+        ]),
+      );
+      const [light, dark] = css.split("@media (prefers-color-scheme: dark)");
+      for (const [block, reference] of [
+        [light!, Scheme.light(argbFromHex(seed)).toJSON()],
+        [dark!, Scheme.dark(argbFromHex(seed)).toJSON()],
+      ] as const) {
+        for (const role of [
+          "tertiary",
+          "onTertiary",
+          "tertiaryContainer",
+          "onTertiaryContainer",
+          "error",
+          "onError",
+          "errorContainer",
+          "onErrorContainer",
+        ] as const) {
+          const name = role.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+          const match = new RegExp(
+            `--md-sys-color-${name}: var\\((--md-ref-palette-[\\w-]+)\\);`,
+          ).exec(block);
+          expect(match).not.toBeNull();
+          expect(declarations.get(match![1]!)).toBe(hexFromArgb(reference[role]));
+        }
+      }
+    },
+  );
+
+  test("both modes declare every M3 color role and reference existing palette values", async () => {
+    const contract = await Bun.file(
+      new URL("../../m3-tokens/src/dynamic-color.ts", import.meta.url),
+    ).text();
+    const roles = [
+      .../export const ROLES = \[([\s\S]*?)\]/.exec(contract)![1]!.matchAll(/"(\w+)"/g),
+    ].map(
+      (match) =>
+        `--md-sys-color-${match[1]!.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`,
+    );
+    expect(roles.length).toBe(49);
+    const css = generateTheme("#6750A4").cssCustomProperties;
+    const paletteNames = new Set(
+      [...css.matchAll(/(--md-ref-palette-[\w-]+):/g)].map((match) => match[1]),
+    );
+    for (const block of css.split("@media (prefers-color-scheme: dark)")) {
+      const actual = [
+        ...block.matchAll(/(--md-sys-color-[\w-]+):\s*var\((--md-ref-palette-[\w-]+)\);/g),
+      ];
+      expect(actual).toHaveLength(roles.length);
+      expect(new Set(actual.map((match) => match[1]))).toEqual(new Set(roles));
+      for (const match of actual) expect(paletteNames.has(match[2])).toBe(true);
+    }
   });
 });

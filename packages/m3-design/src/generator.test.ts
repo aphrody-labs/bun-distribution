@@ -61,7 +61,10 @@ describe("DesignCompiler React code generation", () => {
 
     expect(code).toContain("StreamingText");
     expect(code).toContain("useStreamingText");
-    expect(code).toContain("Simulate stream for StreamingText");
+    expect(code).toContain("useStreamingText(stream)");
+    expect(code).toContain("stream?: AsyncIterable<string>");
+    expect(code).not.toContain("mockStream");
+    expect(code).not.toContain("Bun.sleep");
   });
 
   test("should inject action registry and router", () => {
@@ -69,8 +72,10 @@ describe("DesignCompiler React code generation", () => {
     const code = result.files.find((f) => f.path === "src/index.tsx")?.content || "";
 
     expect(code).toContain("actionRegistry");
-    expect(code).toContain("Action registry dynamically mapped");
-    expect(code).toContain("Delegated view-spec");
+    expect(code).toContain("instance-local actions");
+    expect(code).toContain("onAction?: (action: GeneratedAction) => void");
+    expect(code).not.toContain("console.log");
+    expect(code).not.toContain("document.querySelector");
   });
 
   test("should export W3C tokens.json configuration alongside theme.css", () => {

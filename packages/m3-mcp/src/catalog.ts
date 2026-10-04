@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 
 export const ROOT = join(import.meta.dir, "../../..");
 
@@ -23,25 +24,57 @@ export interface Token {
 
 const kebab = (s: string) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
-/** Every `--md-*` custom property declared by m3-tokens (static CSS, breakpoints, dynamic colour roles). */
+/** Local CSS targets of the token package's exports, including conditional exports and aliases. */
+function exportedSheets(exports: unknown): string[] {
+  if (typeof exports === "string")
+    return exports.startsWith("./") && exports.endsWith(".css") && !exports.includes("*")
+      ? [exports]
+      : [];
+  if (Array.isArray(exports)) return exports.flatMap(exportedSheets);
+  if (exports && typeof exports === "object") return Object.values(exports).flatMap(exportedSheets);
+  return [];
+}
+
+/** Every exported `--md-*` CSS property and dynamic colour role, once per name. */
 export function loadTokens(root = ROOT): Token[] {
-  const src = join(root, "packages/m3-tokens/src");
-  const out: Token[] = [];
-  for (const f of ["m3-tokens.css", "breakpoints.css"]) {
-    for (const m of read(join(src, f)).matchAll(/^\s*(--[\w-]+)\s*:\s*([^;]+);/gm)) {
-      out.push({ name: m[1]!, value: m[2]!.trim(), source: `packages/m3-tokens/src/${f}` });
+  const pkg = join(root, "packages/m3-tokens");
+  const manifest = read(join(pkg, "package.json"));
+  const exports: unknown = manifest
+    ? (JSON.parse(manifest) as { exports?: unknown }).exports
+    : undefined;
+  const out = new Map<string, Token>();
+  const add = (token: Token) => {
+    // The first declaration is representative; theme/direction variants do not create new names.
+    if (!out.has(token.name)) out.set(token.name, token);
+  };
+  for (const target of new Set(exportedSheets(exports))) {
+    const file = resolve(pkg, target);
+    const path = relative(pkg, file).replaceAll("\\", "/");
+    if (
+      isAbsolute(path) ||
+      path === ".." ||
+      path.startsWith("../") ||
+      path.split("/").includes("node_modules")
+    )
+      continue;
+    const css = read(file).replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const m of css.matchAll(/(--md-[\w-]+)\s*:\s*([^;]+);/g)) {
+      add({ name: m[1]!, value: m[2]!.trim(), source: `packages/m3-tokens/${path}` });
     }
   }
-  const dyn = read(join(src, "dynamic-color.ts"));
-  const roles = /export const ROLES = \[([\s\S]*?)\]/.exec(dyn)?.[1] ?? "";
-  for (const m of roles.matchAll(/"(\w+)"/g)) {
-    out.push({
+  const dyn = read(join(pkg, "src/dynamic-color.ts"));
+  const roles = (/export const ROLES = \[([\s\S]*?)\]/.exec(dyn)?.[1] ?? "").replace(
+    /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
+    "",
+  );
+  for (const m of roles.matchAll(/["'](\w+)["']/g)) {
+    add({
       name: `--md-sys-color-${kebab(m[1]!)}`,
       value: "(dynamic colour role)",
       source: "packages/m3-tokens/src/dynamic-color.ts",
     });
   }
-  return out;
+  return [...out.values()];
 }
 
 export function lookupTokens(query: string, limit = 50, root = ROOT): Token[] {

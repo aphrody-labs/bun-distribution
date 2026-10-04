@@ -37,7 +37,7 @@ export interface DesignBrief {
 export interface TonalPalette {
   /** Palette name: primary, secondary, tertiary, error, neutral, neutral-variant */
   name: string;
-  /** 13 tone steps (0, 6, 10, 12, 20, 22, 30, 40, 50, 60, 70, 80, 90, 94, 95, 98, 99, 100) */
+  /** HCT palette colors indexed by tone, including all system-role reference tones. */
   tones: { [tone: number]: string };
 }
 

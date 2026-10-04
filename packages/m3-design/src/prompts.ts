@@ -105,7 +105,7 @@ All components are imported from '@aphrody/m3-react'.
   - *State Layers*: Hover 0.08, Focus 0.12, Pressed 0.12
   - *Shape Scale*: Full (9999dp corner-radius)
 - **Switch** (\`<md-switch>\`)
-  - *Props*: \`checked\`, \`disabled\`, \`icons\`, \`showOnlySelectedIcon\`
+  - *Props*: \`selected\`, \`disabled\`, \`icons\`, \`showOnlySelectedIcon\`
   - *Events*: \`onChange\` ('change')
   - *CSS Custom Properties*: \`--md-switch-selected-handle-color\`, \`--md-switch-selected-track-color\`
   - *Touch Target*: 48dp standard minimum
@@ -166,6 +166,7 @@ All components are imported from '@aphrody/m3-react'.
 ### D. Communication & Progress
 - **Dialog** (\`<md-dialog>\`)
   - *Props*: \`open\`, \`quick\`
+  - *Slots*: \`headline\` for the visible title, \`content\` and \`actions\`
   - *Events*: \`onOpen\` ('open'), \`onClose\` ('close'), \`onCancel\` ('cancel')
   - *CSS Custom Properties*: \`--md-dialog-container-color\`, \`--md-dialog-headline-color\`
   - *Shape Scale*: Medium (12dp corner-radius)
@@ -194,10 +195,12 @@ All components are imported from '@aphrody/m3-react'.
   - *Props*: \`selected\`
   - *State Layers*: Hover 0.08, Focus 0.12, Pressed 0.12
 - **NavigationRail** (\`<md-navigation-rail>\`)
+  - *Props*: \`value\`, \`expanded\`, \`alignment\` ('top' | 'center' | 'bottom')
   - *Events*: \`onChange\` ('navigation-rail:change')
   - *CSS Custom Properties*: \`--md-navigation-rail-container-color\`, \`--md-navigation-rail-active-indicator-color\`
 - **NavigationRailItem** (\`<md-navigation-rail-item>\`)
-  - *Props*: \`active\`, \`label\`, \`icon\`
+  - *Props*: \`value\`, \`label\`, \`selected\`, \`expanded\`, \`href\`
+  - *Slots*: Default slot for the icon, \`active-icon\` for a selected-state icon; give each item a distinct \`value\`.
   - *State Layers*: Hover 0.08, Focus 0.12, Pressed 0.12
   - *Shape Scale*: Extra Large (28dp active indicator background)
 - **TopAppBar** (\`<md-top-app-bar>\`)
@@ -215,7 +218,8 @@ All components are imported from '@aphrody/m3-react'.
 - **List** (\`<md-list>\`)
   - *CSS Custom Properties*: \`--md-list-container-color\`
 - **ListItem** (\`<md-list-item>\`)
-  - *Props*: \`headline\`, \`supportingText\`, \`disabled\`, \`type\` ('link' | 'button' | 'text')
+  - *Props*: \`disabled\`, \`type\` ('link' | 'button' | 'text'), \`href\`
+  - *Slots*: \`headline\`, \`supporting-text\`, \`start\`, \`end\`
   - *State Layers*: Hover 0.08, Focus 0.12, Pressed 0.12, Dragged 0.16
   - *Shape Scale*: Medium (12dp corner-radius for state overlays, 0dp outer bounds)
 - **Divider** (\`<md-divider>\`)
@@ -246,7 +250,8 @@ All components are imported from '@aphrody/m3-react'.
 
 ### H. Angular Parity & Enterprise
 - **Tooltip** (\`<md-tooltip>\`)
-  - *Props*: \`label\`, \`anchor\`
+  - *Props*: \`text\`, \`for\` (anchor element id), \`variant\` ('plain' | 'rich'), \`visible\`
+  - *Slots*: \`trigger\` for a wrapped interactive anchor; rich tooltips also use \`headline\`, default supporting content and \`action\`.
   - *Shape Scale*: Extra Small (4dp corner-radius)
 - **ExpansionPanel** (\`<md-expansion-panel>\`)
   - *Props*: \`expanded\`, \`disabled\`, \`headerText\`
@@ -376,6 +381,7 @@ import {
   MdMenuItem as MenuItem,
   MdList as List,
   MdListItem as ListItem,
+  MdIcon as Icon,
   MdDivider as Divider,
   MdBottomSheet as BottomSheet,
   MdSideSheet as SideSheet,
@@ -398,26 +404,81 @@ import {
   MdTreeItem as TreeItem
 } from '@aphrody/m3-react';
 
-export default function GeneratedArtifact() {
-  // Central action handler
-  const handleInteraction = (e: React.MouseEvent<HTMLDivElement>) => {
-    const actionElement = (e.target as HTMLElement).closest('[data-action]');
-    if (!actionElement) return;
+// GENERATED INTERACTION HELPERS
 
-    const action = actionElement.getAttribute('data-action');
-    const id = actionElement.getAttribute('data-id');
-    console.log(\`[Action Router] Action: \${action}, ID: \${id}\`);
+export type GeneratedAction =
+  | { type: 'toggle-dialog'; open: boolean }
+  | { type: 'view-spec'; id: 'btn-spec' | 'motion-spec' }
+  | { type: 'select-item'; id: 'detail-1' | 'detail-2' }
+  | { type: 'inspect-task'; id: 'task-1' }
+  | { type: 'like-post'; id: '1' | '2' | '3'; liked: boolean };
 
-    // Custom interaction routing
-    if (action === 'toggle-dialog') {
-      const dialog = document.querySelector('md-dialog');
-      if (dialog) (dialog as any).open = !(dialog as any).open;
-    }
+export interface GeneratedArtifactProps {
+  stream?: AsyncIterable<string>;
+  thinking?: boolean;
+  onAction?: (action: GeneratedAction) => void;
+}
+
+// GENERATED ITEM DETAILS
+
+const specifications = {
+  'btn-spec': { title: 'Primary Button Spec', description: '48dp touch target, 40dp state layer' },
+  'motion-spec': { title: 'Spring Motion Physics', description: 'Damping 0.9 spatial, Damping 1.0 effects' }
+} as const;
+
+export default function GeneratedArtifact({ onAction }: GeneratedArtifactProps = {}) {
+  // GENERATED FEATURE HOOKS
+  const rootRef = React.useRef<HTMLDivElement>(null);
+  const dialogRef = React.useRef<React.ElementRef<typeof Dialog>>(null);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [viewedSpec, setViewedSpec] = React.useState<keyof typeof specifications | null>(null);
+  // GENERATED LAYOUT STATE
+
+  // Action Router: instance-local actions and typed consumer notifications
+  const actionRegistry: Record<string, (id: string | null) => GeneratedAction | undefined> = {
+    'toggle-dialog': () => {
+      const open = !(dialogRef.current?.open ?? dialogOpen);
+      setDialogOpen(open);
+      return { type: 'toggle-dialog', open };
+    },
+    'view-spec': (id) => {
+      if (id !== 'btn-spec' && id !== 'motion-spec') return;
+      setViewedSpec(id);
+      setDialogOpen(true);
+      return { type: 'view-spec', id };
+    },
+    // GENERATED LAYOUT ACTIONS
   };
 
+  const handleInteraction = (event: MouseEvent) => {
+    // composedPath includes the hosts of Lit buttons and their shadow descendants.
+    const path = event.composedPath();
+    const rootIndex = path.indexOf(rootRef.current!);
+    if (rootIndex < 0) return;
+    const localPath = path.slice(0, rootIndex);
+    // A nested generated artifact owns its own events.
+    if (localPath.some((node) => node instanceof HTMLElement && node.hasAttribute('data-generated-artifact'))) return;
+    const actionElement = localPath.find((node): node is HTMLElement =>
+      node instanceof HTMLElement && node.hasAttribute('data-action'));
+    if (!actionElement) return;
+    const action = actionElement.getAttribute('data-action');
+    if (!action || !Object.prototype.hasOwnProperty.call(actionRegistry, action)) return;
+    const notification = actionRegistry[action](actionElement.getAttribute('data-id'));
+    if (notification) onAction?.(notification);
+  };
+
+  React.useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    // Native delegation also covers events from descendants inside Lit shadow roots.
+    root.addEventListener('click', handleInteraction);
+    return () => root.removeEventListener('click', handleInteraction);
+  });
+
   return (
-    <div 
-      onClick={handleInteraction}
+    <div
+      ref={rootRef}
+      data-generated-artifact=""
       className="min-h-screen bg-background text-on-surface flex flex-col font-sans transition-colors duration-200"
       style={{
         transitionTimingFunction: 'cubic-bezier(0.34, 0.80, 0.34, 1.00)', // Default Effects Spring
@@ -440,10 +501,10 @@ export default function GeneratedArtifact() {
 
       <div className="flex flex-1">
         {/* NAVIGATION RAIL */}
-        <NavigationRail className="border-r border-border hidden md:flex">
-          <NavigationRailItem label="Dashboard" icon="dashboard" active />
-          <NavigationRailItem label="Components" icon="widgets" />
-          <NavigationRailItem label="Analytics" icon="analytics" />
+        <NavigationRail value="dashboard" className="border-r border-border hidden md:flex">
+          <NavigationRailItem label="Dashboard" value="dashboard"><Icon>dashboard</Icon></NavigationRailItem>
+          <NavigationRailItem label="Components" value="components"><Icon>widgets</Icon></NavigationRailItem>
+          <NavigationRailItem label="Analytics" value="analytics"><Icon>analytics</Icon></NavigationRailItem>
         </NavigationRail>
 
         {/* MAIN LAYOUT SCAFFOLD */}
@@ -454,7 +515,7 @@ export default function GeneratedArtifact() {
             <Divider />
             <div className="flex justify-between items-center">
               <span>Damping Spatial</span>
-              <Switch checked />
+              <Switch selected />
             </div>
             <div className="flex justify-between items-center">
               <span>Adaptive Panes</span>
@@ -476,26 +537,28 @@ export default function GeneratedArtifact() {
             <Divider />
             
             <List className="divide-y divide-border">
-              <ListItem 
-                headline="Primary Button Spec" 
-                supportingText="48dp touch target, 40dp state layer"
+              <ListItem
                 data-action="view-spec"
                 data-id="btn-spec"
                 className="cursor-pointer hover:bg-surface-container-highest transition-colors duration-150"
-              />
-              <ListItem 
-                headline="Spring Motion Physics" 
-                supportingText="Damping 0.9 spatial, Damping 1.0 effects"
+              >
+                <span slot="headline">Primary Button Spec</span>
+                <span slot="supporting-text">48dp touch target, 40dp state layer</span>
+              </ListItem>
+              <ListItem
                 data-action="view-spec"
                 data-id="motion-spec"
                 className="cursor-pointer hover:bg-surface-container-highest transition-colors duration-150"
-              />
+              >
+                <span slot="headline">Spring Motion Physics</span>
+                <span slot="supporting-text">Damping 0.9 spatial, Damping 1.0 effects</span>
+              </ListItem>
             </List>
 
             {/* TOOLTIP DEMONSTRATION */}
             <div className="flex gap-6 items-center mt-4">
-              <Tooltip label="Hovering over primary CTA">
-                <FilledButton>Submit Data</FilledButton>
+              <Tooltip text="Hovering over primary CTA">
+                <FilledButton slot="trigger">Submit Data</FilledButton>
               </Tooltip>
               <CircularProgress indeterminate className="w-8 h-8" />
             </div>
@@ -504,9 +567,10 @@ export default function GeneratedArtifact() {
       </div>
 
       {/* SPEC DIALOG */}
-      <Dialog title="Material Design 3 Fusion Specs">
+      <Dialog ref={dialogRef} open={dialogOpen} onClose={() => { if (dialogOpen) setDialogOpen(false); }}>
+        <div slot="headline">{viewedSpec ? specifications[viewedSpec].title : 'Material Design 3 Fusion Specs'}</div>
         <div slot="content" className="flex flex-col gap-6 text-sm">
-          <p>This layout runs on physical spring transitions with zero-overshoot on color values.</p>
+          <p>{viewedSpec ? specifications[viewedSpec].description : 'This layout runs on physical spring transitions with zero-overshoot on color values.'}</p>
           <div className="bg-surface p-4 rounded-xl border border-border font-mono text-xs">
             { \`--md-sys-color-primary: var(--md-ref-palette-primary-40);\` }
           </div>

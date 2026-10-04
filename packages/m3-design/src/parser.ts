@@ -9,6 +9,8 @@ import type { DesignBrief, OutputKind } from "./types.ts";
  */
 export function parseBrief(rawBrief: string, optionalSeedColor?: string): DesignBrief {
   const lowercase = rawBrief.toLowerCase();
+  const normalized = lowercase.normalize("NFD").replace(/\p{M}/gu, "");
+  const words = new Set(normalized.match(/[\p{L}\p{N}]+/gu) ?? []);
 
   // 1. Detect output kind
   let outputKind: OutputKind = "prototype";
@@ -53,13 +55,14 @@ export function parseBrief(rawBrief: string, optionalSeedColor?: string): Design
 
   // 2. Detect target platforms
   const platforms: string[] = [];
-  if (
-    lowercase.includes("mobile") ||
-    lowercase.includes("phone") ||
-    lowercase.includes("ios") ||
-    lowercase.includes("android")
-  ) {
+  const androidRequested = words.has("android");
+  const iosRequested = words.has("ios") || words.has("iphone") || words.has("ipad");
+  const genericMobileRequested = lowercase.includes("mobile") || lowercase.includes("phone");
+  if (iosRequested || (genericMobileRequested && !androidRequested)) {
     platforms.push("ios");
+  }
+  if (androidRequested) {
+    platforms.push("android");
   }
   if (
     lowercase.includes("desktop") ||
@@ -191,11 +194,20 @@ export function parseBrief(rawBrief: string, optionalSeedColor?: string): Design
     constraintList.push("Strict WCAG AA contrast (HCT delta >= 50)");
   }
   if (
-    lowercase.includes("transparent") ||
-    lowercase.includes("ar") ||
-    lowercase.includes("vr") ||
-    lowercase.includes("xr") ||
-    lowercase.includes("glimmer")
+    [
+      "ar",
+      "vr",
+      "xr",
+      "glimmer",
+      "transparent",
+      "transparente",
+      "transparents",
+      "transparentes",
+      "transparency",
+      "transparence",
+    ].some((word) => words.has(word)) ||
+    /\b(?:augmented|virtual|extended|mixed)[\s-]*reality\b/.test(normalized) ||
+    /\brealite[\s-]*(?:augmentee|virtuelle|etendue|mixte)\b/.test(normalized)
   ) {
     constraintList.push(
       "Transparent screens additive contrast (desaturated colors, no absolute black)",

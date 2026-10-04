@@ -139,21 +139,81 @@ export class DesignCompiler {
     const inlineHelpers: string[] = [];
     if (brief.hasThinkingIndicator) {
       inlineHelpers.push(
-        `function ThinkingIndicator({ label }: { label: string }) {\n  return <span className="animate-pulse text-on-surface-variant">{label}</span>;\n}`,
+        `function ThinkingIndicator({ label }: { label: string }) {\n  return <span data-thinking-indicator="" className="animate-pulse text-on-surface-variant">{label}</span>;\n}`,
       );
     }
     if (brief.hasStreaming) {
       inlineHelpers.push(
-        `function useStreamingText(stream?: AsyncIterable<string>) {\n  const [text, setText] = React.useState("");\n  const [done, setDone] = React.useState(false);\n  React.useEffect(() => {\n    if (!stream) return;\n    let active = true;\n    setText("");\n    setDone(false);\n    (async () => {\n      for await (const chunk of stream) {\n        if (!active) return;\n        setText((prev) => prev + chunk);\n      }\n      if (active) setDone(true);\n    })();\n    return () => {\n      active = false;\n    };\n  }, [stream]);\n  return { text, done };\n}`,
-        `function StreamingText({ text, done }: { text: string; done: boolean }) {\n  return (\n    <span>\n      {text}\n      {!done && <span className="animate-pulse">|</span>}\n    </span>\n  );\n}`,
+        `function useStreamingText(stream?: AsyncIterable<string>) {
+  const [state, setState] = React.useState({
+    source: stream, text: '', done: !stream, error: null as string | null
+  });
+  React.useEffect(() => {
+    let active = true;
+    let finished = false;
+    let released = false;
+    let iterator: AsyncIterator<string> | undefined;
+    const release = () => {
+      if (released || !iterator) return;
+      released = true;
+      try {
+        // Cancellation must not block unmount or create an unhandled rejection.
+        const returned = iterator.return?.();
+        if (returned) void Promise.resolve(returned).catch(() => {});
+      } catch {
+        // A producer's cleanup failure cannot update a removed consumer.
+      }
+    };
+    setState({ source: stream, text: '', done: !stream, error: null });
+    if (stream) {
+      void (async () => {
+        try {
+          iterator = stream[Symbol.asyncIterator]();
+          while (active) {
+            const chunk = await iterator.next();
+            if (!active) return;
+            if (chunk.done) {
+              finished = true;
+              setState((previous) => ({ ...previous, done: true }));
+              return;
+            }
+            setState((previous) => ({ ...previous, text: previous.text + chunk.value }));
+          }
+        } catch (reason) {
+          if (active) setState((previous) => ({
+            ...previous, done: true, error: reason instanceof Error ? reason.message : String(reason)
+          }));
+        } finally {
+          if (!finished) release();
+        }
+      })();
+    }
+    return () => {
+      active = false;
+      if (!finished) release();
+    };
+  }, [stream]);
+  // Hide an old source's text immediately, before the replacement effect runs.
+  return state.source === stream ? state : { source: stream, text: '', done: !stream, error: null };
+}`,
+        `function StreamingText({ text, done, error }: { text: string; done: boolean; error: string | null }) {
+  return (
+    <div data-stream-output="" aria-live="polite" aria-busy={!done}>
+      <span>{text}{!done && <span className="animate-pulse" aria-hidden="true">|</span>}</span>
+      {error !== null && <span role="alert">{error}</span>}
+    </div>
+  );
+}`,
       );
     }
-    if (inlineHelpers.length > 0) {
-      code = code.replace(
-        "export default function GeneratedArtifact() {",
-        `${inlineHelpers.join("\n\n")}\n\nexport default function GeneratedArtifact() {`,
-      );
-    }
+    code = code.replace("// GENERATED INTERACTION HELPERS", inlineHelpers.join("\n\n"));
+    const consumerProps = ["onAction"];
+    if (brief.hasStreaming) consumerProps.unshift("stream");
+    if (brief.hasThinkingIndicator) consumerProps.push("thinking");
+    code = code.replace(
+      "GeneratedArtifact({ onAction }: GeneratedArtifactProps = {})",
+      `GeneratedArtifact({ ${consumerProps.join(", ")} }: GeneratedArtifactProps = {})`,
+    );
 
     // Apply specific title
     const titleMatch =
@@ -172,7 +232,7 @@ export class DesignCompiler {
       code = code.replace("hidden md:flex", "hidden");
       code = code.replace(
         "{/* SPEC DIALOG */}",
-        '{/* MOBILE LAYOUT SCAFFOLD */}\n      <md-bottom-app-bar className="md-hidden" />\n\n      {/* SPEC DIALOG */}',
+        '{/* MOBILE LAYOUT SCAFFOLD */}\n      <BottomAppBar className="md-hidden" />\n\n      {/* SPEC DIALOG */}',
       );
     } else if (brief.outputKind === "deck") {
       // For slides: adapt layout to slide deck presentation
@@ -183,7 +243,21 @@ export class DesignCompiler {
 
     // 2. Dynamic Layout Injections
     let layoutMarkup = "";
+    let itemDetails = "";
+    let layoutState = "";
+    let layoutActions = "";
     if (brief.layoutType === "list-detail") {
+      itemDetails = `const itemDetails = {
+  'detail-1': { id: 'detail-1', title: 'Primary Detail Item', description: 'Primary item: overview and configuration.' },
+  'detail-2': { id: 'detail-2', title: 'Secondary Detail Item', description: 'Secondary item: detailed metrics and parameters.' }
+} as const;`;
+      layoutState =
+        "const [selectedItem, setSelectedItem] = React.useState<(typeof itemDetails)[keyof typeof itemDetails] | null>(null);";
+      layoutActions = `'select-item': (id) => {
+      if (id !== 'detail-1' && id !== 'detail-2') return;
+      setSelectedItem(itemDetails[id]);
+      return { type: 'select-item', id };
+    },`;
       layoutMarkup = `{/* LIST DETAIL LAYOUT */}
         <ListDetail className="flex-1 p-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* LEFT COLUMN: LIST PANE */}
@@ -191,20 +265,24 @@ export class DesignCompiler {
             <TypeText className="text-lg font-medium">List View</TypeText>
             <Divider />
             <List className="divide-y divide-border">
-              <ListItem 
-                headline="Primary Detail Item" 
-                supportingText="Selecting this item shows details"
+              <ListItem
                 data-action="select-item"
                 data-id="detail-1"
+                aria-selected={selectedItem?.id === 'detail-1' ? 'true' : 'false'}
                 className="cursor-pointer hover:bg-surface-container-highest transition-colors duration-150"
-              />
-              <ListItem 
-                headline="Secondary Detail Item" 
-                supportingText="Detailed metrics and parameters"
+              >
+                <span slot="headline">Primary Detail Item</span>
+                <span slot="supporting-text">Selecting this item shows details</span>
+              </ListItem>
+              <ListItem
                 data-action="select-item"
                 data-id="detail-2"
+                aria-selected={selectedItem?.id === 'detail-2' ? 'true' : 'false'}
                 className="cursor-pointer hover:bg-surface-container-highest transition-colors duration-150"
-              />
+              >
+                <span slot="headline">Secondary Detail Item</span>
+                <span slot="supporting-text">Detailed metrics and parameters</span>
+              </ListItem>
             </List>
           </Pane>
 
@@ -213,20 +291,26 @@ export class DesignCompiler {
             <TypeText className="text-lg font-medium">Detail Content</TypeText>
             <Divider />
             <div className="flex flex-col gap-4">
-              <TypeText className="text-md font-semibold text-primary">Detail Title</TypeText>
-              <p className="text-sm">Select an item on the left to see more details here. The layout dynamically compiles and synchronizes based on the designer brief.</p>
+              <TypeText className="text-md font-semibold text-primary">{selectedItem?.title ?? 'Select an item'}</TypeText>
+              <p className="text-sm" data-item-details="">{selectedItem?.description ?? 'Select an item on the left to see its details.'}</p>
             </div>
             
             {/* TOOLTIP DEMONSTRATION */}
             <div className="flex gap-4 items-center mt-4">
-              <Tooltip label="Hovering over primary CTA">
-                <FilledButton>Submit Data</FilledButton>
+              <Tooltip text="Hovering over primary CTA">
+                <FilledButton slot="trigger">Submit Data</FilledButton>
               </Tooltip>
               <CircularProgress indeterminate className="w-8 h-8" />
             </div>
           </Pane>
         </ListDetail>`;
     } else if (brief.layoutType === "supporting-pane") {
+      layoutState = "const [selectedTask, setSelectedTask] = React.useState<string | null>(null);";
+      layoutActions = `'inspect-task': (id) => {
+      if (id !== 'task-1') return;
+      setSelectedTask(id);
+      return { type: 'inspect-task', id };
+    },`;
       layoutMarkup = `{/* SUPPORTING PANE LAYOUT */}
         <SupportingPane className="flex-1 p-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* MAIN FLEXIBLE PANE */}
@@ -236,19 +320,21 @@ export class DesignCompiler {
             <p className="text-sm">This is the main flexible workspace. It adapts to fit the primary task focus, while the supporting pane on the side offers context-sensitive actions and details.</p>
             
             <List className="divide-y divide-border">
-              <ListItem 
-                headline="Primary Task Element" 
-                supportingText="In progress - needs review"
+              <ListItem
                 data-action="inspect-task"
                 data-id="task-1"
+                aria-selected={selectedTask === 'task-1' ? 'true' : 'false'}
                 className="cursor-pointer hover:bg-surface-container-highest transition-colors duration-150"
-              />
+              >
+                <span slot="headline">Primary Task Element</span>
+                <span slot="supporting-text">In progress - needs review</span>
+              </ListItem>
             </List>
 
             {/* TOOLTIP DEMONSTRATION */}
             <div className="flex gap-4 items-center mt-4">
-              <Tooltip label="Hovering over primary CTA">
-                <FilledButton>Submit Data</FilledButton>
+              <Tooltip text="Hovering over primary CTA">
+                <FilledButton slot="trigger">Submit Data</FilledButton>
               </Tooltip>
               <CircularProgress indeterminate className="w-8 h-8" />
             </div>
@@ -259,10 +345,10 @@ export class DesignCompiler {
             <TypeText className="text-lg font-medium">Supporting Details</TypeText>
             <Divider />
             <div className="flex flex-col gap-4 text-sm">
-              <p>This side panel contains static auxiliary parameters and context utilities.</p>
+              <p data-task-details="">{selectedTask ? 'Primary Task Element: in progress, needs review.' : 'Select a task to inspect its status and review requirements.'}</p>
               <div className="flex justify-between items-center">
                 <span>Damping Spatial</span>
-                <Switch checked />
+                <Switch selected />
               </div>
               <div className="flex justify-between items-center">
                 <span>Adaptive Panes</span>
@@ -272,6 +358,14 @@ export class DesignCompiler {
           </Pane>
         </SupportingPane>`;
     } else if (brief.layoutType === "feed") {
+      layoutState =
+        "const [likedPosts, setLikedPosts] = React.useState<Record<string, boolean>>({});";
+      layoutActions = `'like-post': (id) => {
+      if (id !== '1' && id !== '2' && id !== '3') return;
+      const liked = !likedPosts[id];
+      setLikedPosts((previous) => ({ ...previous, [id]: liked }));
+      return { type: 'like-post', id, liked };
+    },`;
       layoutMarkup = `{/* FEED LAYOUT */}
         <Scaffold className="flex-1 p-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* CARD 1 */}
@@ -280,7 +374,7 @@ export class DesignCompiler {
             <Divider />
             <p className="text-sm">Main body content for the first feed card. Displays high level summary data.</p>
             <div className="flex justify-between items-center mt-auto pt-4">
-              <FilledButton data-action="like-post" data-id="1">Like</FilledButton>
+              <FilledButton data-action="like-post" data-id="1" aria-pressed={likedPosts['1'] ? 'true' : 'false'}>{likedPosts['1'] ? 'Unlike' : 'Like'}</FilledButton>
               <span className="text-xs font-mono">12 min ago</span>
             </div>
           </Pane>
@@ -291,7 +385,7 @@ export class DesignCompiler {
             <Divider />
             <p className="text-sm">Main body content for the second feed card. Features metrics and dynamic widgets.</p>
             <div className="flex justify-between items-center mt-auto pt-4">
-              <FilledButton data-action="like-post" data-id="2">Like</FilledButton>
+              <FilledButton data-action="like-post" data-id="2" aria-pressed={likedPosts['2'] ? 'true' : 'false'}>{likedPosts['2'] ? 'Unlike' : 'Like'}</FilledButton>
               <span className="text-xs font-mono">1 hr ago</span>
             </div>
           </Pane>
@@ -302,8 +396,8 @@ export class DesignCompiler {
             <Divider />
             <p className="text-sm">Third card in the card feed, completing the multi-column fluid grid.</p>
             <div className="flex justify-between items-center mt-auto pt-4 flex-row gap-4 items-center">
-              <Tooltip label="Hovering over primary CTA">
-                <FilledButton data-action="like-post" data-id="3">Like</FilledButton>
+              <Tooltip text="Hovering over primary CTA">
+                <FilledButton slot="trigger" data-action="like-post" data-id="3" aria-pressed={likedPosts['3'] ? 'true' : 'false'}>{likedPosts['3'] ? 'Unlike' : 'Like'}</FilledButton>
               </Tooltip>
               <CircularProgress indeterminate className="w-8 h-8" />
               <span className="text-xs font-mono ml-auto">Yesterday</span>
@@ -320,6 +414,9 @@ export class DesignCompiler {
         code = code.substring(0, startIndex) + layoutMarkup + code.substring(startIndex + length);
       }
     }
+    code = code.replace("// GENERATED ITEM DETAILS", itemDetails);
+    code = code.replace("// GENERATED LAYOUT STATE", layoutState);
+    code = code.replace("// GENERATED LAYOUT ACTIONS", layoutActions);
 
     // 3. Density-based visual spacing adjustments
     if (brief.density === "high") {
@@ -336,114 +433,42 @@ export class DesignCompiler {
     if (brief.density === "high") {
       code = code.replace(
         "        transitionDuration: '200ms'\n      }}",
-        "        transitionDuration: '200ms',\n        '--md-sys-density': -2\n      }}",
+        "        transitionDuration: '200ms',\n        '--md-sys-density': -2\n      } as React.CSSProperties & Record<'--md-sys-density', number>}",
       );
     } else if (brief.density === "low") {
       code = code.replace(
         "        transitionDuration: '200ms'\n      }}",
-        "        transitionDuration: '200ms',\n        '--md-sys-density': 1\n      }}",
+        "        transitionDuration: '200ms',\n        '--md-sys-density': 1\n      } as React.CSSProperties & Record<'--md-sys-density', number>}",
       );
     }
 
     // 4. Feature toggles: Thinking Indicator
     if (brief.hasThinkingIndicator) {
+      const thinkingCondition = brief.hasStreaming
+        ? "thinking ?? (!!stream && !streamDone)"
+        : "thinking ?? false";
       code = code.replace(
-        '<CircularProgress indeterminate className="w-8 h-8" />',
-        '<CircularProgress indeterminate className="w-8 h-8" />\n              <ThinkingIndicator label="Reflecting..." />',
+        "{/* TOP NAVIGATION BAR */}",
+        `{/* THINKING ACTIVITY */}\n      {(${thinkingCondition}) && <ThinkingIndicator label="Reflecting..." />}\n      {/* TOP NAVIGATION BAR */}`,
       );
     }
 
     // 5. Feature toggles: Streaming Text
     if (brief.hasStreaming) {
-      const hookInjection = `
-  // Simulate stream for StreamingText
-  const [stream, setStream] = React.useState<AsyncIterable<string> | undefined>(undefined);
-  const { text: streamedText, done: streamDone } = useStreamingText(stream);
-
-  React.useEffect(() => {
-    let active = true;
-    const mockStream: AsyncIterable<string> = {
-      async *[Symbol.asyncIterator]() {
-        const words = "Streaming real-time results from design engine...".split(" ");
-        for (const word of words) {
-          if (!active) break;
-          await Bun.sleep(150);
-          yield word + " ";
-        }
-      }
-    };
-    setStream(mockStream);
-    return () => {
-      active = false;
-    };
-  }, []);
-`;
       code = code.replace(
-        "export default function GeneratedArtifact() {",
-        `export default function GeneratedArtifact() {${hookInjection}`,
+        "// GENERATED FEATURE HOOKS",
+        "const { text: streamedText, done: streamDone, error: streamError } = useStreamingText(stream);",
       );
+      // Every layout, including feeds, exposes the consumer's streaming output.
       code = code.replace(
-        "{/* TOOLTIP DEMONSTRATION */}",
+        "{/* SPEC DIALOG */}",
         `{/* STREAMING TEXT SECTION */}
             <div className="p-4 bg-surface border border-border rounded-xl mb-4 font-mono text-sm">
-              <StreamingText text={streamedText} done={streamDone} />
-            </div>\n            {/* TOOLTIP DEMONSTRATION */}`,
+              <StreamingText text={streamedText} done={streamDone} error={streamError} />
+            </div>\n      {/* SPEC DIALOG */}`,
       );
-    }
-
-    // 6. Action Router / Registry
-    if (brief.hasActionRouter) {
-      const targetHandlerBlock = `  // Central action handler
-  const handleInteraction = (e: React.MouseEvent<HTMLDivElement>) => {
-    const actionElement = (e.target as HTMLElement).closest('[data-action]');
-    if (!actionElement) return;
-
-    const action = actionElement.getAttribute('data-action');
-    const id = actionElement.getAttribute('data-id');
-    console.log(\`[Action Router] Action: \${action}, ID: \${id}\`);
-
-    // Custom interaction routing
-    if (action === 'toggle-dialog') {
-      const dialog = document.querySelector('md-dialog');
-      if (dialog) (dialog as any).open = !(dialog as any).open;
-    }
-  };`;
-
-      const replacementHandlerBlock = `  // Action registry dynamically mapped based on layout actions
-  const actionRegistry: Record<string, (id: string | null) => void> = {
-    'toggle-dialog': () => {
-      const dialog = document.querySelector('md-dialog');
-      if (dialog) (dialog as any).open = !(dialog as any).open;
-    },
-    'view-spec': (id) => {
-      console.log('Delegated view-spec:', id);
-    },
-    'select-item': (id) => {
-      console.log('Delegated select-item:', id);
-    },
-    'inspect-task': (id) => {
-      console.log('Delegated inspect-task:', id);
-    },
-    'like-post': (id) => {
-      console.log('Delegated like-post:', id);
-    }
-  };
-
-  // Central action router
-  const handleInteraction = (e: React.MouseEvent<HTMLDivElement>) => {
-    const actionElement = (e.target as HTMLElement).closest('[data-action]');
-    if (!actionElement) return;
-
-    const action = actionElement.getAttribute('data-action');
-    const id = actionElement.getAttribute('data-id');
-    console.log(\`[Action Router] Action: \${action}, ID: \${id}\`);
-
-    if (action && actionRegistry[action]) {
-      actionRegistry[action](id);
-    }
-  };`;
-
-      code = code.replace(targetHandlerBlock, replacementHandlerBlock);
+    } else {
+      code = code.replace("  // GENERATED FEATURE HOOKS\n", "");
     }
 
     // Apply constraints
@@ -460,6 +485,23 @@ export class DesignCompiler {
 
     if (brief.constraints.includes("Transparent screens")) {
       code = code.replace("#6750A4", "Additive (AR/XR desaturated)");
+    }
+
+    // Keep only wrapper aliases used by JSX or a component type reference.
+    const wrapperImport = /import \{([\s\S]*?)\} from '@aphrody\/m3-react';/;
+    const importBlock = code.match(wrapperImport);
+    if (importBlock) {
+      const componentBody = code.replace(wrapperImport, "");
+      const usedImports = importBlock[1].split(",").filter((entry) => {
+        const alias = entry.trim().match(/^\w+ as (\w+)$/)?.[1];
+        return (
+          alias && new RegExp(`<${alias}(?=[\\s/>])|\\btypeof\\s+${alias}\\b`).test(componentBody)
+        );
+      });
+      code = code.replace(
+        wrapperImport,
+        `import {${usedImports.join(",")}\n} from '@aphrody/m3-react';`,
+      );
     }
 
     return code;

@@ -31,6 +31,62 @@ describe("Design brief semantic parser", () => {
     expect(brief.constraints).toContain("Transparent screens additive contrast");
   });
 
+  test.each([
+    "dashboard",
+    "cards feed",
+    "standard scaffold",
+    "arbitrary layout",
+    "shopping cart",
+    "table of archived records",
+    "navbar with hardware controls",
+    "xray viewer",
+    "nontransparent dashboard",
+  ])("ordinary brief %s does not request immersive transparency", (prompt) => {
+    expect(parseBrief(prompt).constraints).not.toContain("Transparent screens");
+  });
+
+  test.each([
+    "An AR interface",
+    "A VR headset screen",
+    "XR app",
+    "AR/VR/XR prototype",
+    "An augmented reality display",
+    "A virtual reality app",
+    "An extended-reality interface",
+    "A mixed reality display",
+    "virtualreality prototype",
+    "Un écran de réalité augmentée",
+    "Un casque de realite virtuelle",
+    "Une interface de réalité étendue",
+    "Un écran de réalité mixte",
+    "realitéaugmentée prototype",
+    "A transparent display",
+    "Une interface transparente",
+    "Des écrans transparents",
+    "Des interfaces transparentes",
+    "Un écran avec transparence",
+    "A transparency-based display",
+    "A Glimmer interface",
+  ])("explicit brief %s requests immersive transparency", (prompt) => {
+    expect(parseBrief(prompt).constraints).toContain("Transparent screens additive contrast");
+  });
+
+  test.each([
+    ["Android mobile screen", ["android"]],
+    ["An ANDROID phone", ["android"]],
+    ["An Android-native screen", ["android"]],
+    ["An iOS phone", ["ios"]],
+    ["An iPhone screen", ["ios"]],
+    ["An iPad screen", ["ios"]],
+    ["An iOS and Android mobile app", ["ios", "android"]],
+    ["A mobile screen", ["ios"]],
+    ["A phone app", ["ios"]],
+    ["A smartphone app", ["ios"]],
+    ["An androidish prototype", ["responsive-web"]],
+  ])("brief %s preserves the requested mobile platforms", (prompt, platforms) => {
+    expect(parseBrief(prompt).platforms).toEqual(platforms);
+  });
+
   test("should extract all layout types correctly", () => {
     expect(parseBrief("Fais un feed de news").layoutType).toBe("feed");
     expect(parseBrief("Fais une grid de cartes").layoutType).toBe("feed");
