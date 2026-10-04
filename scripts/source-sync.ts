@@ -71,22 +71,45 @@ async function git(
   signal?: AbortSignal,
 ): Promise<GitResult> {
   if (signal?.aborted) throw new Error("Source synchronization aborted");
+  const ownsGroup = process.platform !== "win32";
   const child = Bun.spawn(["git", ...args], {
     cwd: repo,
     stdin: "ignore",
     stdout: "pipe",
     stderr: "ignore",
-    env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+    env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_OPTIONAL_LOCKS: "0" },
+    detached: ownsGroup,
   });
-  const abort = () => child.kill("SIGTERM");
+  const terminate = (kind: "SIGTERM" | "SIGKILL") => {
+    try {
+      if (ownsGroup) process.kill(-child.pid, kind);
+      else child.kill(kind);
+    } catch {
+      /* The owned group or direct Windows child may already have exited. */
+    }
+  };
+  let cancellation: Promise<void> | undefined;
+  const abort = () => {
+    if (cancellation) return;
+    terminate("SIGTERM");
+    cancellation = new Promise<void>((resolveCancellation) => {
+      setTimeout(() => {
+        terminate("SIGKILL");
+        resolveCancellation();
+      }, 1000);
+    });
+  };
   const timer = setTimeout(abort, timeout);
   signal?.addEventListener("abort", abort, { once: true });
+  if (signal?.aborted) abort();
   try {
     const [stdout, code] = await Promise.all([new Response(child.stdout).text(), child.exited]);
     return { code, stdout: stdout.trim() };
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener("abort", abort);
+    // The same group owns Git helpers; wait through escalation even if the leader exits first.
+    await cancellation;
   }
 }
 function must(result: GitResult, label: string): string {
