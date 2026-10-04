@@ -143,6 +143,92 @@ per-package series. The timing budgets were taken under load 9 to 10, so they ar
   of the release command in a scratch directory. No release was published and nothing was deployed.
 - Cold-cache install is one sample per run (network). Linker and backend comparisons beyond the figures above.
 
+## Appendix: per-package figures
+
+Bundles: `Bun.build`, browser target, ESM, split, minified, every `exports` entry of the package, bare imports external, KiB
+(`bundle.pkg.*` in the snapshots). A 0.0 row has no importable JS entry (`codemods`, `web`, the `app` and `tauri` examples) or, for
+`identity`, cannot resolve its `crates/` assets from this mount depth. The differences are mostly other sessions' code; the memoisation in
+`m3-os-themes` and the lazy imports in `m3-mcp` add a few hundred bytes each, not separated from the rest.
+
+| package | min before | min after | gzip before | gzip after | CSS after |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ag-ui | 0.3 | 0.3 | 0.2 | 0.2 | - |
+| app | - | 0.0 | - | 0.0 | - |
+| assets | 213.8 | 213.8 | 78.7 | 78.7 | - |
+| canvas | 27.9 | 27.9 | 9.1 | 9.1 | - |
+| eslint-plugin-m3 | 72.6 | 72.6 | 22.7 | 22.7 | - |
+| identity | 0.0 | 0.0 | 0.0 | 0.0 | - |
+| m3 | 31.9 | 32.2 | 14.7 | 14.9 | - |
+| m3-ai | 81.4 | 81.4 | 21.8 | 21.8 | - |
+| m3-baseui | 0.0 | 30.6 | 0.0 | 18.3 | 124.9 |
+| m3-bun | - | 50.4 | - | 22.0 | - |
+| m3-codemods | 0.0 | 0.0 | 0.0 | 0.0 | - |
+| m3-config | 4.7 | 4.7 | 2.4 | 2.4 | - |
+| m3-design | 52.8 | 52.8 | 13.9 | 13.9 | - |
+| m3-explorer | 11.8 | 11.8 | 3.8 | 3.8 | - |
+| m3-fonts | 84.6 | 84.7 | 31.8 | 31.8 | 812.9 |
+| m3-forms | 7.0 | 7.0 | 2.2 | 2.2 | - |
+| m3-front | 3.2 | 3.2 | 1.9 | 1.9 | - |
+| m3-icons | 5.2 | 5.2 | 2.9 | 2.9 | - |
+| m3-mcp | 5.4 | 5.8 | 2.5 | 2.6 | - |
+| m3-motion | 11.0 | 11.0 | 3.3 | 3.3 | - |
+| m3-next | 18.9 | 24.7 | 8.3 | 10.8 | 0.2 |
+| m3-next-migrate | 70.5 | 70.5 | 26.3 | 26.3 | - |
+| m3-os-themes | 29.7 | 32.1 | 10.4 | 11.0 | - |
+| m3-primitives | 108.1 | 108.1 | 27.9 | 27.9 | - |
+| m3-react | 41.3 | 41.3 | 23.5 | 23.5 | - |
+| m3-reader | 62.8 | 62.8 | 17.2 | 17.2 | 4.6 |
+| m3-tailwind | 8.2 | 8.2 | 3.2 | 3.2 | 36.8 |
+| m3-theme | 8.0 | 8.0 | 3.6 | 3.6 | 37.5 |
+| m3-tokens | 12.5 | 12.5 | 5.2 | 5.2 | 15.5 |
+| material-design-icons | 0.6 | 0.8 | 0.4 | 0.5 | - |
+| nie-ui | 25.0 | 25.0 | 8.7 | 8.7 | - |
+| scaffold | 15.8 | 15.8 | 7.3 | 7.3 | - |
+| tauri | - | 0.0 | - | 0.0 | - |
+| web | 0.0 | 0.0 | 0.0 | 0.0 | - |
+| **total** | 1015.1 | 1105.4 | 353.9 | 397.6 | 1032.4 |
+
+Tests and typecheck: p50 of 3 runs of the package script on a loaded host (`test.pkg.*`, `typecheck.pkg.*`). Differences
+come from tests added or fixed by other sessions (m3-baseui, m3-fonts, m3-next, m3-os-themes) and from load.
+
+| package | `bun run test` before | after | `bun run typecheck` before | after |
+| --- | ---: | ---: | ---: | ---: |
+| ag-ui | 60 ms | 61 ms | 85 ms | 88 ms |
+| app | - | - | - | 164 ms |
+| assets | 12 ms | 12 ms | 60 ms | 58 ms |
+| canvas | 54 ms | 51 ms | 208 ms | 208 ms |
+| eslint-plugin-m3 | 187 ms | 215 ms | - | 83 ms |
+| identity | 7 ms | 7 ms | 58 ms | 57 ms |
+| m3 | 361 ms | 469 ms | 214 ms | 208 ms |
+| m3-ai | 2.66 s | 2.67 s | 543 ms | 543 ms |
+| m3-baseui | 23 ms | 1.11 s | 304 ms | 474 ms |
+| m3-bun | - | 146 ms | - | 105 ms |
+| m3-codemods | 2.03 s | 2.16 s | - | 83 ms |
+| m3-config | 25 ms | 25 ms | 101 ms | 83 ms |
+| m3-design | 24 ms | 24 ms | 102 ms | 85 ms |
+| m3-explorer | 213 ms | 218 ms | 517 ms | 493 ms |
+| m3-fonts | 8 ms | 88 ms | 78 ms | 79 ms |
+| m3-forms | 211 ms | 211 ms | 518 ms | 499 ms |
+| m3-front | 107 ms | 117 ms | 207 ms | 205 ms |
+| m3-icons | 99 ms | 103 ms | 93 ms | 96 ms |
+| m3-mcp | 9 ms | 9 ms | 122 ms | 118 ms |
+| m3-motion | 39 ms | 40 ms | 141 ms | 142 ms |
+| m3-next | 103 ms | 553 ms | 121 ms | 126 ms |
+| m3-next-migrate | 40 ms | 40 ms | 158 ms | 142 ms |
+| m3-os-themes | 206 ms | 425 ms | 97 ms | 86 ms |
+| m3-primitives | 2.45 s | 2.44 s | 571 ms | 573 ms |
+| m3-react | 186 ms | 180 ms | 215 ms | 216 ms |
+| m3-reader | 437 ms | 431 ms | 135 ms | 143 ms |
+| m3-tailwind | 142 ms | 139 ms | 78 ms | 86 ms |
+| m3-theme | 15 ms | 15 ms | 123 ms | 135 ms |
+| m3-tokens | 146 ms | 145 ms | 81 ms | 94 ms |
+| material-design-icons | - | 12 ms | - | 93 ms |
+| nie-ui | - | - | 76 ms | 91 ms |
+| scaffold | 55 ms | 53 ms | 81 ms | 92 ms |
+| tauri | - | - | - | 200 ms |
+| web | - | 154 ms | 111 ms | 125 ms |
+| **sum of p50** | 9.97 s | 13.45 s | 5.27 s | 6.31 s |
+
 ## Reproduce
 
 ```sh
