@@ -1,5 +1,7 @@
 "use client";
+// oxlint-disable-next-line import/no-unassigned-import -- Registers md-icon used by the migrated JSX.
 import "@aphrody/material-web/icon/icon.js";
+
 import { GitHub } from "@mui/icons-material";
 
 export function Demo() {

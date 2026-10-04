@@ -19,6 +19,8 @@ export interface TauriShellOptions {
   /** Cargo package name; derived from `name` by default. */
   crate?: string;
   engine?: TauriEngine;
+  /** Adds the library entry point required by Tauri Android/iOS hosts (wry only). */
+  mobile?: boolean;
   build: {
     frontendDist: string;
     devUrl?: string;
@@ -155,17 +157,26 @@ export function cargoToml(options: TauriShellOptions): string {
     "[workspace]",
     "",
   ];
+  if (options.mobile) {
+    if (engine !== "wry") throw new Error("Tauri mobile requires the wry host");
+    lines.push(
+      "[lib]",
+      `name = "${(options.crate ?? crateName(options.name)).replaceAll("-", "_")}_lib"`,
+      'crate-type = ["staticlib", "cdylib", "rlib"]',
+      "",
+    );
+  }
+  lines.push("[features]", 'custom-protocol = ["tauri/custom-protocol"]');
   if (debug) {
     lines.push(
-      "[features]",
       "# Debug bridge used by the parity check (wry only): APHRODY_TAURI_DEBUG=1 cargo run --features debug-bridge",
       debug.kind === "runtime"
         ? `debug-bridge = ["${DEBUG_HOST_CRATE}/debug-bridge"]`
         : `debug-bridge = ["dep:${DEBUG_HOST_CRATE}", "${DEBUG_HOST_CRATE}/debug-bridge"]`,
-      "",
     );
   }
   lines.push(
+    "",
     "[build-dependencies]",
     `tauri-build = "=${TAURI_3.build}"`,
     "",
@@ -195,6 +206,15 @@ export function cargoToml(options: TauriShellOptions): string {
 }
 
 export function mainRs(options: TauriShellOptions): string {
+  if (options.mobile) {
+    const library = `${(options.crate ?? crateName(options.name)).replaceAll("-", "_")}_lib`;
+    return `// SPDX-License-Identifier: Apache-2.0
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+fn main() {
+    ${library}::run();
+}
+`;
+  }
   const engine = options.engine ?? "wry";
   const plugins = [
     ...(options.openerPlugin ? ["tauri_plugin_opener::init()"] : []),
@@ -263,6 +283,17 @@ export function capability(options: TauriShellOptions): Record<string, unknown> 
   };
 }
 
+/** Mobile and desktop share one lifecycle entry point; binaries call this library. */
+export function libRs(options: TauriShellOptions): string {
+  if ((options.engine ?? "wry") !== "wry") throw new Error("Tauri mobile requires the wry host");
+  return mainRs({ ...options, mobile: false })
+    .replace(
+      /\/\/ Prevents additional console window on Windows in release\n#!\[cfg_attr\(not\(debug_assertions\), windows_subsystem = "windows"\)\]\n/,
+      "// SPDX-License-Identifier: Apache-2.0\n",
+    )
+    .replace("fn main()", "#[cfg_attr(mobile, tauri::mobile_entry_point)]\npub fn run()");
+}
+
 /** `src-tauri/**` files of the shell. Paths are relative to the project root. */
 export function tauriShell(options: TauriShellOptions): FileMap {
   return {
@@ -270,6 +301,7 @@ export function tauriShell(options: TauriShellOptions): FileMap {
     "src-tauri/Cargo.toml": cargoToml(options),
     "src-tauri/build.rs": "fn main() {\n    tauri_build::build()\n}\n",
     "src-tauri/src/main.rs": mainRs(options),
+    ...(options.mobile ? { "src-tauri/src/lib.rs": libRs(options) } : {}),
     "src-tauri/capabilities/default.json": `${JSON.stringify(capability(options), null, 2)}\n`,
     "src-tauri/icons/icon.png": options.icon ?? solidIconPng(),
   };

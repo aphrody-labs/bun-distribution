@@ -37,6 +37,8 @@ export interface GeminiAccountMenuProps {
   className?: string;
 }
 
+const EMPTY_MENU_ITEMS: MenuItem[] = [];
+
 /**
  * Gemini Sidebar Footer Account Menu.
  * Benchmark parity: `assets/ui/gemini-account-menu.png` (manifest item 2).
@@ -49,7 +51,7 @@ export function GeminiAccountMenu({
   avatar,
   open,
   onOpenChange,
-  items = [],
+  items = EMPTY_MENU_ITEMS,
   children,
   className,
 }: GeminiAccountMenuProps) {

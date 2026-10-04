@@ -18,7 +18,15 @@
 // `link` symlinks the verified library into every installed copy of `@aphrody/bun`: a plan unless
 // `--apply`. Build it first (integrator, serialized Cargo):
 //   scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi --features gpu
-import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, symlinkSync, unlinkSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  readlinkSync,
+  symlinkSync,
+  unlinkSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
@@ -27,7 +35,8 @@ export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? join(homedir(), "yolo");
 /** The producer SDK loader (`@aphrody/runtime-sdk/ffi`) inside the yolo checkout. */
 export const RUNTIME_SDK_FFI = join(YOLO_ROOT, "packages/runtime/src/ffi.ts");
 
-export const SUFFIX = process.platform === "win32" ? "dll" : process.platform === "darwin" ? "dylib" : "so";
+export const SUFFIX =
+  process.platform === "win32" ? "dll" : process.platform === "darwin" ? "dylib" : "so";
 export const BUILD_HINT =
   "Build it in aphrody (integrator): scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi --features gpu, then `bun scripts/native.ts link --apply`.";
 
@@ -44,7 +53,11 @@ export interface InstalledCopy {
 export function nativeFileFor(pkgDir: string): string {
   const library = join(pkgDir, "src/library.ts");
   if (existsSync(library) && readFileSync(library, "utf8").includes("aphrody_ffi")) {
-    return join(pkgDir, "native", `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${SUFFIX}`);
+    return join(
+      pkgDir,
+      "native",
+      `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${SUFFIX}`,
+    );
   }
   return join(pkgDir, "native", `bun_rs.${SUFFIX}`);
 }
@@ -54,7 +67,9 @@ export function installedCopies(root = REPO): InstalledCopy[] {
   const dirs = new Set<string>();
   const store = join(root, "node_modules/.bun");
   if (existsSync(store)) {
-    for (const file of new Bun.Glob("@aphrody+bun@*/node_modules/@aphrody/bun/package.json").scanSync({ cwd: store, onlyFiles: true })) {
+    for (const file of new Bun.Glob(
+      "@aphrody+bun@*/node_modules/@aphrody/bun/package.json",
+    ).scanSync({ cwd: store, onlyFiles: true })) {
       dirs.add(join(store, dirname(file)));
     }
   }
@@ -82,17 +97,24 @@ export function aphrodyRoot(start = REPO): string {
 }
 
 /** Directories searched after the explicit and environment paths. */
-export function searchDirs(root = aphrodyRoot()): string[] {
-  const target = process.env["CARGO_TARGET_DIR"] ? resolve(root, process.env["CARGO_TARGET_DIR"]) : join(root, "target");
+export function searchDirs(root = aphrodyRoot(), copies = installedCopies()): string[] {
+  const target = process.env["CARGO_TARGET_DIR"]
+    ? resolve(root, process.env["CARGO_TARGET_DIR"])
+    : join(root, "target");
   const arch = process.arch === "arm64" ? "aarch64" : "x86_64";
   const triple =
-    process.platform === "win32" ? `${arch}-pc-windows-msvc` : process.platform === "darwin" ? `${arch}-apple-darwin` : `${arch}-unknown-linux-gnu`;
+    process.platform === "win32"
+      ? `${arch}-pc-windows-msvc`
+      : process.platform === "darwin"
+        ? `${arch}-apple-darwin`
+        : `${arch}-unknown-linux-gnu`;
   return [
     join(homedir(), ".local/lib/aphrody"),
     join(target, "release"),
     join(target, triple, "release"),
     join(target, "debug"),
     join(target, triple, "debug"),
+    ...copies.map((copy) => dirname(copy.nativeFile)),
   ];
 }
 
@@ -119,10 +141,16 @@ export interface Resolution {
  * Resolve and verify the library through `@aphrody/runtime-sdk/ffi`: the first candidate that
  * dlopens and exports `bun_rs_version`. `fileNames` covers both artifact names.
  */
-export async function resolveLibrary(options: { lib?: string; dirs?: string[]; sdk?: string } = {}): Promise<Resolution> {
+export async function resolveLibrary(
+  options: { lib?: string; dirs?: string[]; sdk?: string } = {},
+): Promise<Resolution> {
   const sdk = options.sdk ?? RUNTIME_SDK_FFI;
   if (!existsSync(sdk)) {
-    return { path: null, error: `@aphrody/runtime-sdk/ffi not found at ${sdk}; set YOLO_ROOT to the yolo checkout`, loader: sdk };
+    return {
+      path: null,
+      error: `@aphrody/runtime-sdk/ffi not found at ${sdk}; set YOLO_ROOT to the yolo checkout`,
+      loader: sdk,
+    };
   }
   const { nativeLibrary } = (await import(sdk)) as RuntimeSdkFfi;
   const prefix = process.platform === "win32" ? "" : "lib";
@@ -155,7 +183,11 @@ export function linkPlan(lib: string, copies: InstalledCopy[]): LinkStep[] {
     let action: LinkStep["action"] = "create";
     try {
       const stat = lstatSync(copy.nativeFile);
-      action = stat.isSymbolicLink() && resolve(dirname(copy.nativeFile), readlinkSync(copy.nativeFile)) === resolve(lib) ? "keep" : "replace";
+      action =
+        stat.isSymbolicLink() &&
+        resolve(dirname(copy.nativeFile), readlinkSync(copy.nativeFile)) === resolve(lib)
+          ? "keep"
+          : "replace";
     } catch {
       action = "create";
     }
@@ -183,13 +215,36 @@ if (import.meta.main) {
   const copies = installedCopies();
   if (command === "status") {
     const resolution = await resolveLibrary({ lib: flag(args, "lib") });
-    const report = { copies, library: resolution, buildHint: resolution.path ? undefined : BUILD_HINT };
+    const verifiedCopies = await Promise.all(
+      copies.map(async (copy) => ({
+        ...copy,
+        library: await resolveLibrary({ lib: copy.nativeFile, dirs: [] }),
+      })),
+    );
+    const report = {
+      copies: verifiedCopies,
+      library: resolution,
+      buildHint: resolution.path ? undefined : BUILD_HINT,
+    };
     if (json) console.log(JSON.stringify(report, null, 2));
     else {
-      for (const c of copies) console.log(`@aphrody/bun@${c.version}  ${c.present ? "native present" : "native MISSING"}  ${c.nativeFile}`);
-      console.log(resolution.path ? `library: ${resolution.path} (verified through ${resolution.loader})` : `library: not found: ${resolution.error}`);
+      for (const c of verifiedCopies)
+        console.log(
+          `@aphrody/bun@${c.version}  ${c.library.path ? "native verified" : `native unavailable: ${c.library.error}`}  ${c.nativeFile}`,
+        );
+      console.log(
+        resolution.path
+          ? `library: ${resolution.path} (verified through ${resolution.loader})`
+          : `library: not found: ${resolution.error}`,
+      );
     }
-    process.exit(copies.length > 0 && copies.every((c) => c.present) ? 0 : 1);
+    process.exit(
+      resolution.path &&
+        verifiedCopies.length > 0 &&
+        verifiedCopies.every((c) => c.present && c.library.path)
+        ? 0
+        : 1,
+    );
   } else if (command === "link") {
     const resolution = await resolveLibrary({ lib: flag(args, "lib") });
     if (!resolution.path) {
@@ -199,9 +254,11 @@ if (import.meta.main) {
     const steps = linkPlan(resolution.path, copies);
     const apply = args.includes("--apply");
     if (apply) applyLink(steps);
-    if (json) console.log(JSON.stringify({ applied: apply, library: resolution.path, steps }, null, 2));
+    if (json)
+      console.log(JSON.stringify({ applied: apply, library: resolution.path, steps }, null, 2));
     else {
-      for (const s of steps) console.log(`${apply ? "" : "plan: "}${s.action} ${s.to} -> ${s.from}`);
+      for (const s of steps)
+        console.log(`${apply ? "" : "plan: "}${s.action} ${s.to} -> ${s.from}`);
       if (!apply) console.log("dry run: pass --apply to link");
     }
   } else {

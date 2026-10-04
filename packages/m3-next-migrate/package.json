@@ -2,7 +2,7 @@
   "name": "@aphrody/m3-next-migrate",
   "version": "3.3.3",
   "private": true,
-  "description": "Migration engine, AST codemod and runtime shims to migrate Next.js 16 UI and React components to Tauri v2 desktop apps or Bun/Vite web SPAs",
+  "description": "Migration analysis, codemods and runtime shims for Next.js 16 components and private-owner native Bun web apps; Tauri 3 source planning requires a registered native host adapter for activation",
   "keywords": [
     "bun",
     "codemod",
@@ -13,8 +13,7 @@
     "nextjs",
     "react-19",
     "tauri",
-    "tauri-v2",
-    "vite"
+    "tauri-3"
   ],
   "homepage": "https://github.com/aphrody-labs/aphrody-m3/tree/main/packages/m3-next-migrate#readme",
   "license": "Apache-2.0",
@@ -105,12 +104,10 @@
   "scripts": {
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "bun test"
+    "test": "bun test ./test/ && bun test --preload @aphrody/m3-config/test/dom ./test-dom/"
   },
   "dependencies": {
-    "react": "catalog:"
-  },
-  "devDependencies": {
+    "react": "catalog:",
     "@aphrody/scaffold": "workspace:*"
   },
   "engines": {

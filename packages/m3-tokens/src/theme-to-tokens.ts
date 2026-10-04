@@ -167,14 +167,15 @@ export function normalizeHex(input: unknown): string | null {
 }
 
 /** Pick black/white text for a background by approximate relative luminance. */
+const linearizeSrgb = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+
 function onColorFor(hex: string): string {
   const n = normalizeHex(hex);
   if (!n) return "#ffffff";
   const r = parseInt(n.slice(1, 3), 16) / 255;
   const g = parseInt(n.slice(3, 5), 16) / 255;
   const b = parseInt(n.slice(5, 7), 16) / 255;
-  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  const L = 0.2126 * linearizeSrgb(r) + 0.7152 * linearizeSrgb(g) + 0.0722 * linearizeSrgb(b);
   return L > 0.5 ? "#000000" : "#ffffff";
 }
 

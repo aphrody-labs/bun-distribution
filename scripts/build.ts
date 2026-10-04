@@ -18,7 +18,13 @@ import { cpus } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { m3BunBuild, type M3PackageConfig } from "../packages/m3-config/bun-build.ts";
-import { REPO, levels, workspaceDeps, workspacePackages, type WorkspacePackage } from "./lib/workspace.ts";
+import {
+  REPO,
+  levels,
+  workspaceDeps,
+  workspacePackages,
+  type WorkspacePackage,
+} from "./lib/workspace.ts";
 
 export type Task = "build" | "typecheck";
 
@@ -31,28 +37,46 @@ export interface Outcome {
 }
 
 const cacheFile = (root: string) => join(root, "node_modules/.cache/m3-build/state.json");
-const SKIP_DIRS = new Set(["node_modules", "dist", "coverage", ".turbo", ".cache", "test", "tests", "__tests__", "docs"]);
+const SKIP_DIRS = new Set([
+  "node_modules",
+  "dist",
+  "coverage",
+  ".turbo",
+  ".cache",
+  "test",
+  "tests",
+  "__tests__",
+  "docs",
+]);
 const SKIP_FILES = /\.(?:test|spec|stories)\.[jt]sx?$|\.tsbuildinfo$|\.md$/;
 
 /** Files that feed a package build, relative to `dir`, sorted. */
-export function sourceFiles(dir: string): string[] {
+export function sourceFiles(dir: string, task: Task = "build"): string[] {
   const out: string[] = [];
   const walk = (sub: string) => {
     for (const entry of readdirSync(join(dir, sub), { withFileTypes: true })) {
       const rel = sub ? `${sub}/${entry.name}` : entry.name;
       if (entry.isDirectory()) {
-        if (!SKIP_DIRS.has(entry.name)) walk(rel);
-      } else if (entry.isFile() && !SKIP_FILES.test(entry.name)) out.push(rel);
+        if (
+          !SKIP_DIRS.has(entry.name) ||
+          (task === "typecheck" && ["test", "tests", "__tests__"].includes(entry.name))
+        )
+          walk(rel);
+      } else if (
+        entry.isFile() &&
+        !(task === "build" ? SKIP_FILES : /\.tsbuildinfo$|\.md$/).test(entry.name)
+      )
+        out.push(rel);
     }
   };
   walk("");
-  return out.sort();
+  return out.toSorted();
 }
 
 /** Content hash of a package's build inputs. */
-export function hashPackage(dir: string): string {
+export function hashPackage(dir: string, task: Task = "build"): string {
   const hasher = new Bun.CryptoHasher("sha1");
-  for (const file of sourceFiles(dir)) {
+  for (const file of sourceFiles(dir, task)) {
     hasher.update(file);
     hasher.update("\0");
     hasher.update(readFileSync(join(dir, file)));
@@ -68,17 +92,25 @@ export function globalSalt(root: string = REPO): string {
   const lock = join(root, "bun.lock");
   hasher.update(existsSync(lock) ? readFileSync(lock) : "no lockfile");
   // The pipeline and the preset it runs: a change to either invalidates every package.
-  for (const file of [import.meta.path, join(REPO, "scripts/lib/workspace.ts"), join(REPO, "packages/m3-config/bun-build.ts")]) {
+  for (const file of [
+    import.meta.path,
+    join(REPO, "scripts/lib/workspace.ts"),
+    join(REPO, "packages/m3-config/bun-build.ts"),
+  ]) {
     hasher.update(readFileSync(file));
   }
   return hasher.digest("hex");
 }
 
 /** Own hash combined with the closure of its workspace dependencies: a dependency edit invalidates dependents. */
-export function closureHashes(packages: readonly WorkspacePackage[], salt: string): Map<string, string> {
+export function closureHashes(
+  packages: readonly WorkspacePackage[],
+  salt: string,
+  task: Task = "build",
+): Map<string, string> {
   const known = new Set(packages.map((p) => p.name));
   const byName = new Map(packages.map((p) => [p.name, p]));
-  const own = new Map(packages.map((p) => [p.name, hashPackage(p.dir)]));
+  const own = new Map(packages.map((p) => [p.name, hashPackage(p.dir, task)]));
   const memo = new Map<string, string>();
   const visit = (name: string, trail: ReadonlySet<string>): string => {
     const cached = memo.get(name);
@@ -115,23 +147,35 @@ async function saveState(root: string, state: State): Promise<void> {
 
 const TSC = (() => {
   const local = join(REPO, "node_modules/.bin/tsc");
-  return existsSync(local) ? [local] : ["bun", "x", "tsc"];
+  return existsSync(local) ? [local] : [Bun.which("tsc") ?? "tsc"];
 })();
 
 async function run(cmd: string[], cwd: string): Promise<{ code: number; text: string }> {
   const proc = Bun.spawn(cmd, { cwd, stdout: "pipe", stderr: "pipe" });
-  const [out, err, code] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]);
+  const [out, err, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
   return { code, text: `${out}${err}`.trim() };
 }
 
 /** Runs async jobs with at most `limit` in flight. */
-export async function pool<T, R>(items: readonly T[], limit: number, job: (item: T) => Promise<R>): Promise<R[]> {
-  const results: R[] = new Array(items.length);
+export async function pool<T, R>(
+  items: readonly T[],
+  limit: number,
+  job: (item: T) => Promise<R>,
+): Promise<R[]> {
+  if (!Number.isInteger(limit) || limit < 1)
+    throw new RangeError("pool limit must be a positive integer");
+  const results: R[] = [];
   let next = 0;
   await Promise.all(
     Array.from({ length: Math.min(limit, items.length) }, async () => {
       while (next < items.length) {
         const i = next++;
+        // Each worker waits for its own job before taking the next item to enforce the concurrency limit.
+        // oxlint-disable-next-line no-await-in-loop
         results[i] = await job(items[i]!);
       }
     }),
@@ -145,7 +189,10 @@ async function loadConfig(pkg: WorkspacePackage): Promise<M3PackageConfig | unde
   return ((await import(pathToFileURL(file).href)) as { default: M3PackageConfig }).default;
 }
 
-async function buildPackage(pkg: WorkspacePackage, config: M3PackageConfig): Promise<{ ok: boolean; detail: string }> {
+async function buildPackage(
+  pkg: WorkspacePackage,
+  config: M3PackageConfig,
+): Promise<{ ok: boolean; detail: string }> {
   rmSync(join(pkg.dir, "dist"), { recursive: true, force: true });
   const started = performance.now();
   const js = await m3BunBuild({ ...config, cwd: pkg.dir });
@@ -170,10 +217,21 @@ export interface PipelineOptions {
 }
 
 /** Default scope: the `@aphrody/m3*` packages and the apps; foreign and host-bound workspace members only on request. */
-const IN_SCOPE = (pkg: WorkspacePackage) => /^@[^/]+\/m3/.test(pkg.name) || pkg.rel.startsWith("apps/");
+const IN_SCOPE = (pkg: WorkspacePackage) =>
+  /^@[^/]+\/m3/.test(pkg.name) || pkg.rel.startsWith("apps/");
+
+const isApp = (pkg: WorkspacePackage) => pkg.rel.startsWith("apps/");
 
 const matches = (pkg: WorkspacePackage, only: string[] | undefined) =>
-  !only ? IN_SCOPE(pkg) : only.some((o) => o === pkg.name || o === pkg.rel || pkg.rel.endsWith(`/${o}`) || pkg.name.endsWith(`/${o}`));
+  !only
+    ? IN_SCOPE(pkg)
+    : only.some(
+        (o) =>
+          o === pkg.name ||
+          o === pkg.rel ||
+          pkg.rel.endsWith(`/${o}`) ||
+          pkg.name.endsWith(`/${o}`),
+      );
 
 /** Run the pipeline; resolves to one outcome per package or app. */
 export async function pipeline(options: PipelineOptions = {}): Promise<Outcome[]> {
@@ -181,13 +239,14 @@ export async function pipeline(options: PipelineOptions = {}): Promise<Outcome[]
   const useCache = options.cache !== false;
   const root = options.root ?? REPO;
   const all = workspacePackages(root);
-  const hashes = closureHashes(all, globalSalt(root));
+  const hashes = closureHashes(all, globalSalt(root), task);
   const state = useCache ? loadState(root) : {};
   const outcomes: Outcome[] = [];
   const limit = Math.max(2, Math.min(cpus().length, 8));
 
-  const isApp = (p: WorkspacePackage) => p.rel.startsWith("apps/");
-  const wanted = all.filter((p) => matches(p, options.only) && (options.apps !== false || !isApp(p)));
+  const wanted = all.filter(
+    (p) => matches(p, options.only) && (options.apps !== false || !isApp(p)),
+  );
 
   const process_ = async (pkg: WorkspacePackage): Promise<Outcome> => {
     const key = `${task}:${pkg.name}`;
@@ -233,10 +292,14 @@ export async function pipeline(options: PipelineOptions = {}): Promise<Outcome[]
   // Packages in dependency levels; apps last (they consume the packages from source, but a failed
   // package should stop the pipeline before the slower app builds).
   const wantedNames = new Set(wanted.map((p) => p.name));
-  const ordered = levels(all).map((level) => level.filter((p) => wantedNames.has(p.name))).filter((l) => l.length > 0);
+  const ordered = levels(all)
+    .map((level) => level.filter((p) => wantedNames.has(p.name)))
+    .filter((l) => l.length > 0);
   const packageLevels = ordered.map((l) => l.filter((p) => !isApp(p))).filter((l) => l.length > 0);
   const appLevel = ordered.flatMap((l) => l.filter(isApp));
   for (const level of [...packageLevels, ...(appLevel.length > 0 ? [appLevel] : [])]) {
+    // Dependency levels must finish before their consumers start.
+    // oxlint-disable-next-line no-await-in-loop
     const results = await pool(level, limit, process_);
     outcomes.push(...results);
     if (results.some((r) => r.status === "failed")) break;
@@ -258,12 +321,17 @@ export function clean(root: string = REPO): number {
   return removed;
 }
 
-function format(outcomes: Outcome[], totalMs: number): string {
+function formatOutcomes(outcomes: Outcome[], totalMs: number): string {
   const rows = outcomes
     .filter((o) => o.status !== "skipped")
-    .map((o) => `${(o.task === "typecheck" && o.status === "built" ? "ok" : o.status).padEnd(6)} ${o.name.padEnd(30)} ${String(o.ms).padStart(5)} ms  ${o.status === "failed" ? "" : (o.detail ?? "")}`);
+    .map(
+      (o) =>
+        `${(o.task === "typecheck" && o.status === "built" ? "ok" : o.status).padEnd(6)} ${o.name.padEnd(30)} ${String(o.ms).padStart(5)} ms  ${o.status === "failed" ? "" : (o.detail ?? "")}`,
+    );
   const count = (s: Outcome["status"]) => outcomes.filter((o) => o.status === s).length;
-  rows.push(`${outcomes[0]?.task ?? "build"}: ${count("built")} run, ${count("cached")} cached, ${count("failed")} failed, ${count("skipped")} skipped in ${totalMs} ms`);
+  rows.push(
+    `${outcomes[0]?.task ?? "build"}: ${count("built")} run, ${count("cached")} cached, ${count("failed")} failed, ${count("skipped")} skipped in ${totalMs} ms`,
+  );
   return rows.join("\n");
 }
 
@@ -284,11 +352,16 @@ if (import.meta.main) {
     process.exit(2);
   }
   const started = performance.now();
-  const outcomes = await pipeline({ task, only: value("only")?.split(","), cache: !flag("no-cache"), apps: !flag("no-apps") });
+  const outcomes = await pipeline({
+    task,
+    only: value("only")?.split(","),
+    cache: !flag("no-cache"),
+    apps: !flag("no-apps"),
+  });
   const totalMs = Math.round(performance.now() - started);
   if (flag("json")) console.log(JSON.stringify({ task, totalMs, outcomes }, null, 2));
-  else console.log(format(outcomes, totalMs));
-  for (const o of outcomes.filter((x) => x.status === "failed")) console.error(`\n${o.name}: ${o.detail}`);
+  else console.log(formatOutcomes(outcomes, totalMs));
+  for (const o of outcomes.filter((x) => x.status === "failed"))
+    console.error(`\n${o.name}: ${o.detail}`);
   process.exit(outcomes.some((o) => o.status === "failed") ? 1 : 0);
 }
-

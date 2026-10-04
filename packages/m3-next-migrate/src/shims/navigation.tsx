@@ -31,7 +31,7 @@ export function useRouter(): AppRouterInstance {
         // No-op in client SPA / Tauri webview
       },
     }),
-    [ctx]
+    [ctx],
   );
 }
 
@@ -45,15 +45,16 @@ export function useSearchParams(): URLSearchParams {
   return ctx.searchParams;
 }
 
-export function useParams<T extends Record<string, string | string[]> = Record<string, string>>(): T {
+export function useParams<
+  T extends Record<string, string | string[]> = Record<string, string>,
+>(): T {
   const ctx = useNextMigrateContext();
   return (ctx.params || {}) as T;
 }
 
 export function useSelectedLayoutSegment(): string | null {
   const pathname = usePathname();
-  const segments = pathname.split("/").filter(Boolean);
-  return segments[0] || null;
+  return pathname.split("/").find(Boolean) ?? null;
 }
 
 export function useSelectedLayoutSegments(): string[] {

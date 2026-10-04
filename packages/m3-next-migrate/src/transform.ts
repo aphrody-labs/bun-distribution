@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+import { matching, skippedSpans } from "./codemods/lex";
+
 export interface TransformOptions {
   /** Target execution environment: 'tauri' desktop or 'vite' web SPA */
   target?: "tauri" | "vite";
@@ -28,7 +30,36 @@ export interface TransformResult {
   warnings: string[];
 }
 
-export function transformComponent(source: string, options: TransformOptions = {}): TransformResult {
+/** Merge JSX classes once while stripping the hydration-only flag and its value. */
+function containerAttributes(attrs: string, className: string): string {
+  let clean = attrs
+    .replace(/\bsuppressHydrationWarning(?:\s*=\s*(?:\{[^}]*\}|["'][^"']*["']))?/g, "")
+    .trim();
+  const match = /\bclassName\s*=\s*/.exec(clean);
+  if (!match) return 'className="' + className + '" ' + clean;
+  const start = match.index + match[0].length;
+  const spans = skippedSpans(clean);
+  const token = spans.find((span) => span.start === start);
+  const end = clean[start] === "{" ? matching(clean, start, spans) + 1 : token?.end;
+  if (!end || end <= start)
+    throw new Error("Cannot preserve the original Root Layout className expression");
+  const expression =
+    clean[start] === "{" ? clean.slice(start + 1, end - 1) : clean.slice(start, end);
+  clean = (clean.slice(0, match.index) + clean.slice(end)).trim();
+  return (
+    "className={[" +
+    JSON.stringify(className) +
+    ", " +
+    expression +
+    '].filter(Boolean).join(" ")} ' +
+    clean
+  );
+}
+
+export function transformComponent(
+  source: string,
+  options: TransformOptions = {},
+): TransformResult {
   const {
     target = "tauri",
     shimModule = "@aphrody/m3-next-migrate/shims",
@@ -54,13 +85,14 @@ export function transformComponent(source: string, options: TransformOptions = {
     }
 
     // Directives: handle 'use server'
-    const useServerFileRegex = /^[\t ]*(['"])use server\1;?[\r\n]*/m;
+    const useServerFileRegex =
+      /^((?:\s|\/\/[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/)*)((?:['"]))use server\2;?[\r\n]*/;
     if (useServerFileRegex.test(code)) {
-      code = code.replace(useServerFileRegex, "");
+      code = code.replace(useServerFileRegex, "$1");
       transformations.push("Converted file-level 'use server' to client module");
-      if (target === "tauri") {
-        warnings.push("File contained 'use server'. Ensure server actions are bridged to Tauri IPC commands.");
-      }
+      warnings.push(
+        `File contained 'use server'. Its backend operations require the ${target} native host adapter before activation.`,
+      );
     }
   }
 
@@ -141,8 +173,12 @@ export function transformComponent(source: string, options: TransformOptions = {
   if (nextMetadataTypeRegex.test(code)) {
     code = code.replace(nextMetadataTypeRegex, (_match, specifiers) => {
       const parts = specifiers.split(",").map((s: string) => s.trim());
-      const metadataParts = parts.filter((s: string) => s === "Metadata" || s === "ResolvingMetadata" || s === "Viewport");
-      const otherParts = parts.filter((s: string) => s !== "Metadata" && s !== "ResolvingMetadata" && s !== "Viewport");
+      const metadataParts = parts.filter(
+        (s: string) => s === "Metadata" || s === "ResolvingMetadata" || s === "Viewport",
+      );
+      const otherParts = parts.filter(
+        (s: string) => s !== "Metadata" && s !== "ResolvingMetadata" && s !== "Viewport",
+      );
 
       let replacement = "";
       if (metadataParts.length > 0) {
@@ -161,7 +197,9 @@ export function transformComponent(source: string, options: TransformOptions = {
   const nextServerRegex = /from\s+['"]next\/server['"]/g;
   if (nextServerRegex.test(code)) {
     code = code.replace(nextServerRegex, `from '${shimModule}/server'`);
-    transformations.push(`Rewrote 'next/server' import to '${shimModule}/server' (Bun Web Standards)`);
+    transformations.push(
+      `Rewrote 'next/server' import to '${shimModule}/server' (Bun Web Standards)`,
+    );
   }
 
   // 2b. Aggressive n2b transformations
@@ -204,7 +242,8 @@ export function transformComponent(source: string, options: TransformOptions = {
     }
 
     // Strip redundant node-fetch and cross-fetch imports (Bun has native global fetch)
-    const nodeFetchRegex = /import\s+(?:fetch,\s*)?\{?[^}]*\}?\s*from\s+['"](?:node-fetch|cross-fetch)['"];?[\r\n]*/g;
+    const nodeFetchRegex =
+      /import\s+(?:fetch,\s*)?\{?[^}]*\}?\s*from\s+['"](?:node-fetch|cross-fetch)['"];?[\r\n]*/g;
     if (nodeFetchRegex.test(code)) {
       code = code.replace(nodeFetchRegex, "");
       transformations.push("Replaced node-fetch/cross-fetch with Bun native fetch");
@@ -307,6 +346,7 @@ export function transformComponent(source: string, options: TransformOptions = {
 
     // Consolidate @aphrody/m3-primitives imports
     if (m3ImportsToAdd.size > 0) {
+      // oxlint-disable-next-line unicorn/no-array-sort -- Sort the owned copy without requiring ES2023 in consumers.
       const sortedImports = Array.from(m3ImportsToAdd).sort();
       const importStatement = `import { ${sortedImports.join(", ")} } from '@aphrody/m3-primitives';\n`;
       code = importStatement + code;
@@ -357,15 +397,13 @@ export function transformComponent(source: string, options: TransformOptions = {
     if (hasHtmlTag || hasBodyTag) {
       // Replace <html ...> and </html>
       code = code.replace(/<html\b([^>]*)>/gi, (_match, attrs) => {
-        const cleanAttrs = attrs.replace(/\bsuppressHydrationWarning\b/g, "").trim();
-        return `<div className="m3-app-root" data-root-layout ${cleanAttrs}>`;
+        return `<div data-root-layout ${containerAttributes(attrs, "m3-app-root")}>`;
       });
       code = code.replace(/<\/html>/gi, "</div>");
 
       // Replace <body ...> and </body>
       code = code.replace(/<body\b([^>]*)>/gi, (_match, attrs) => {
-        const cleanAttrs = attrs.replace(/\bsuppressHydrationWarning\b/g, "").trim();
-        return `<div className="m3-app-body" ${cleanAttrs}>`;
+        return `<div ${containerAttributes(attrs, "m3-app-body")}>`;
       });
       code = code.replace(/<\/body>/gi, "</div>");
 
@@ -393,7 +431,9 @@ export function transformComponent(source: string, options: TransformOptions = {
     const asyncPageFnRegex = /export\s+default\s+async\s+function\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)/;
     if (asyncPageFnRegex.test(code)) {
       code = code.replace(asyncPageFnRegex, "export default function $1($2)");
-      transformations.push("Adapted Next 16 async Page component signature to synchronous client component");
+      transformations.push(
+        "Adapted Next 16 async Page component signature to synchronous client component",
+      );
     }
 
     // Replace `await params` or `await searchParams` with resolved values
@@ -411,13 +451,14 @@ export function transformComponent(source: string, options: TransformOptions = {
   }
 
   // 7. Check for Server Actions inside component: ("use server" inside async function)
-  const inlineServerActionRegex = /async\s+function\s+([A-Za-z0-9_]+)\s*\([^)]*\)\s*\{\s*(['"])use server\2;?/g;
+  const inlineServerActionRegex =
+    /(async\s+function\s+[A-Za-z0-9_]+\s*\([^)]*\)\s*\{)\s*(['"])use server\2;?/g;
   if (inlineServerActionRegex.test(code)) {
-    code = code.replace(inlineServerActionRegex, "async function $1");
+    code = code.replace(inlineServerActionRegex, "$1");
     transformations.push("Removed inline 'use server' inside component function");
-    if (target === "tauri") {
-      warnings.push("Inline Server Action detected. Wire this function to a Tauri command (`invoke`) if it performs backend operations.");
-    }
+    warnings.push(
+      `Inline Server Action detected. Its backend operations require the ${target} native host adapter before activation.`,
+    );
   }
 
   // 8. Metadata synchronization: export const metadata & generateMetadata
@@ -429,27 +470,37 @@ export function transformComponent(source: string, options: TransformOptions = {
       let needsMetadataHookImport = false;
 
       // Inject useMetadata hook into default exported function
-      const defaultExportFnRegex = /(export\s+default\s+function(?:\s+[A-Za-z0-9_]+)?\s*\([^)]*\)\s*\{)/;
+      const defaultExportFnRegex =
+        /(export\s+default\s+function(?:\s+[A-Za-z0-9_]+)?\s*\([^)]*\)\s*\{)/;
       if (defaultExportFnRegex.test(code)) {
         if (hasStaticMetadata) {
           code = code.replace(defaultExportFnRegex, "$1\n  useMetadata(metadata);");
           needsMetadataHookImport = true;
-          transformations.push("Synchronized static metadata with Tauri window title and document.title");
+          transformations.push(
+            "Synchronized static metadata with Tauri window title and document.title",
+          );
         } else if (hasGenerateMetadata) {
-          code = code.replace(defaultExportFnRegex, "$1\n  useMetadata(() => generateMetadata(arguments[0] || ({} as any)), []);");
+          code = code.replace(
+            defaultExportFnRegex,
+            "$1\n  useMetadata(() => generateMetadata(arguments[0] || ({} as any)), []);",
+          );
           needsMetadataHookImport = true;
-          transformations.push("Synchronized dynamic generateMetadata with Tauri window title and document.title");
+          transformations.push(
+            "Synchronized dynamic generateMetadata with Tauri window title and document.title",
+          );
         }
       }
 
-      if (needsMetadataHookImport && !code.includes("useMetadata")) {
+      if (needsMetadataHookImport && !/import\s*\{[^}]*\buseMetadata\s*(?:,|\})/.test(code)) {
         code = `import { useMetadata } from '${shimModule}/metadata';\n` + code;
       }
     }
 
     // Native <title> or <meta> tags in JSX
     if (/<title\b[^>]*>([^<]+)<\/title>/i.test(code) || /<meta\b[^>]*>/i.test(code)) {
-      transformations.push("Observed <title>/<meta> tags for automatic document & Tauri window title sync");
+      transformations.push(
+        "Observed <title>/<meta> tags for automatic document & Tauri window title sync",
+      );
     }
   }
 

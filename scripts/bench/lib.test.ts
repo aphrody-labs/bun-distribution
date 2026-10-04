@@ -26,6 +26,11 @@ describe("statistics", () => {
   });
 });
 
+const measured = (values: Record<string, number>): Record<string, Metric> =>
+  Object.fromEntries(
+    Object.entries(values).map(([k, value]) => [k, { value, unit: "ms" } satisfies Metric]),
+  );
+
 describe("budget", () => {
   const budget: Budget = {
     schema: "m3-bench-budget/1",
@@ -36,10 +41,6 @@ describe("budget", () => {
       "mcp.cold": { value: 50, unit: "ms" },
     },
   };
-  const measured = (values: Record<string, number>): Record<string, Metric> =>
-    Object.fromEntries(
-      Object.entries(values).map(([k, value]) => [k, { value, unit: "ms" } satisfies Metric]),
-    );
 
   test("a metric within tolerance passes, beyond it fails", () => {
     const rows = compareBudget(

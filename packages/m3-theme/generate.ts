@@ -22,7 +22,9 @@ const sheets = {
   "spaceui.css": m3Css({ sheet: "spaceui" }),
 };
 
-for (const [name, css] of Object.entries(sheets)) {
-  await Bun.write(join(import.meta.dir, name), css);
-  console.log(`wrote ${name} (${css.split("\n").length} lines)`);
-}
+await Promise.all(
+  Object.entries(sheets).map(async ([name, css]) => {
+    await Bun.write(join(import.meta.dir, name), css);
+    console.log(`wrote ${name} (${css.split("\n").length} lines)`);
+  }),
+);

@@ -28,7 +28,10 @@ export function dirSource(dir: string): FileSource {
     if (rel.endsWith(".map")) continue;
     const abs = join(dir, rel);
     const stat = statSync(abs);
-    entries.set(`/${rel.replaceAll("\\", "/")}`, { file: Bun.file(abs), etag: `W/"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"` });
+    entries.set(`/${rel.replaceAll("\\", "/")}`, {
+      file: Bun.file(abs),
+      etag: `W/"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`,
+    });
   }
   return sourceOf(entries);
 }
@@ -74,7 +77,8 @@ export interface M3AppOptions {
 export const DEFAULT_CSP =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'";
 
-const COMPRESSIBLE = /^(?:text\/|application\/(?:javascript|json|xml|manifest\+json|wasm)|image\/svg\+xml)/;
+const COMPRESSIBLE =
+  /^(?:text\/|application\/(?:javascript|json|xml|manifest\+json|wasm)|image\/svg\+xml)/;
 const HASHED = /[-.][a-z0-9]{8}\.[a-z0-9]+$/i;
 
 const securityHeaders = (csp: string | false): Record<string, string> => ({
@@ -92,10 +96,17 @@ export function cacheControl(path: string, type: string): string {
 
 /** Best encoding the client accepts for a compressible response. */
 export function pickEncoding(acceptEncoding: string | null): "br" | "gzip" | undefined {
-  const accepted = (acceptEncoding ?? "").toLowerCase();
-  if (/\bbr\b/.test(accepted)) return "br";
-  if (/\bgzip\b/.test(accepted)) return "gzip";
-  return undefined;
+  const qualities = new Map<string, number>();
+  for (const part of (acceptEncoding ?? "").toLowerCase().split(",")) {
+    const [encoding, ...parameters] = part.trim().split(";");
+    if (!encoding) continue;
+    const quality = parameters.find((parameter) => parameter.trim().startsWith("q="));
+    const value = quality === undefined ? 1 : Number(quality.trim().slice(2));
+    qualities.set(encoding, Number.isFinite(value) && value >= 0 && value <= 1 ? value : 0);
+  }
+  const br = qualities.get("br") ?? qualities.get("*") ?? 0;
+  const gzip = qualities.get("gzip") ?? qualities.get("*") ?? 0;
+  return br > 0 && br >= gzip ? "br" : gzip > 0 ? "gzip" : undefined;
 }
 
 export interface M3App {
@@ -106,7 +117,14 @@ export interface M3App {
 
 /** The app as a pure `fetch` handler: API, health, info, static files, SPA fallback. */
 export function createM3App(options: M3AppOptions = {}): M3App {
-  const { name = "m3-app", version = "0.0.0", buildId = "0", files, spa = true, health = "/healthz" } = options;
+  const {
+    name = "m3-app",
+    version = "0.0.0",
+    buildId = "0",
+    files,
+    spa = true,
+    health = "/healthz",
+  } = options;
   const csp = options.csp === undefined ? DEFAULT_CSP : options.csp;
   const base = securityHeaders(csp);
   const api = normalizeApi(options.api);
@@ -114,27 +132,44 @@ export function createM3App(options: M3AppOptions = {}): M3App {
   const started = Date.now();
   const cache = new Map<string, Uint8Array>();
 
-  const json = (body: unknown, status = 200): Response => Response.json(body, { status, headers: { ...base, "Cache-Control": "no-store" } });
+  const json = (body: unknown, status = 200): Response =>
+    Response.json(body, { status, headers: { ...base, "Cache-Control": "no-store" } });
 
   async function serveFile(path: string, request: Request, status = 200): Promise<Response> {
     const source = files!;
     const file = source.file(path);
     const type = file.type || "application/octet-stream";
     const etag = source.etag(path);
-    const headers: Record<string, string> = { ...base, "Content-Type": type, ETag: etag, "Cache-Control": cacheControl(path, type), Vary: "Accept-Encoding" };
-    if (status === 200 && request.headers.get("if-none-match") === etag) return new Response(null, { status: 304, headers });
-    const encoding = COMPRESSIBLE.test(type) && file.size >= 1024 ? pickEncoding(request.headers.get("accept-encoding")) : undefined;
+    const headers: Record<string, string> = {
+      ...base,
+      "Content-Type": type,
+      ETag: etag,
+      "Cache-Control": cacheControl(path, type),
+      Vary: "Accept-Encoding",
+    };
+    if (status === 200 && request.headers.get("if-none-match") === etag)
+      return new Response(null, { status: 304, headers });
+    const encoding =
+      COMPRESSIBLE.test(type) && file.size >= 1024
+        ? pickEncoding(request.headers.get("accept-encoding"))
+        : undefined;
     if (encoding) {
       const key = `${path}|${encoding}|${etag}`;
       let bytes = cache.get(key);
       if (!bytes) {
         const raw = new Uint8Array(await file.arrayBuffer());
-        bytes = encoding === "br" ? brotliCompressSync(raw, { params: { [zlib.BROTLI_PARAM_QUALITY]: 5 } }) : Bun.gzipSync(raw);
+        bytes =
+          encoding === "br"
+            ? brotliCompressSync(raw, { params: { [zlib.BROTLI_PARAM_QUALITY]: 5 } })
+            : Bun.gzipSync(raw);
         cache.set(key, bytes);
       }
       headers["Content-Encoding"] = encoding;
       headers["Content-Length"] = String(bytes.length);
-      return new Response(request.method === "HEAD" ? null : (bytes as unknown as BodyInit), { status, headers });
+      return new Response(request.method === "HEAD" ? null : (bytes as unknown as BodyInit), {
+        status,
+        headers,
+      });
     }
     headers["Content-Length"] = String(file.size);
     return new Response(request.method === "HEAD" ? null : file, { status, headers });
@@ -148,11 +183,26 @@ export function createM3App(options: M3AppOptions = {}): M3App {
     } catch {
       return new Response("Bad Request", { status: 400, headers: base });
     }
-    if (pathname.includes("\0") || pathname.split("/").includes("..")) return new Response("Bad Request", { status: 400, headers: base });
+    if (pathname.includes("\0") || pathname.split("/").includes(".."))
+      return new Response("Bad Request", { status: 400, headers: base });
 
-    if (health && pathname === health) return json({ ok: true, name, version, uptimeSeconds: Math.round((Date.now() - started) / 1000) });
+    if (health && pathname === health)
+      return json({
+        ok: true,
+        name,
+        version,
+        uptimeSeconds: Math.round((Date.now() - started) / 1000),
+      });
     if (pathname === "/api/m3/info") {
-      return json({ name, version, buildId, bun: Bun.version, files: files?.paths().length ?? 0, api: Object.keys(api.routes), ...options.info });
+      return json({
+        name,
+        version,
+        buildId,
+        bun: Bun.version,
+        files: files?.paths().length ?? 0,
+        api: Object.keys(api.routes),
+        ...options.info,
+      });
     }
 
     const fromApi = await apiFetch(request);
@@ -168,7 +218,8 @@ export function createM3App(options: M3AppOptions = {}): M3App {
     if (files.has(path)) return serveFile(path, request);
     if (files.has(`${path}/index.html`)) return serveFile(`${path}/index.html`, request);
     const wantsHtml = (request.headers.get("accept") ?? "").includes("text/html");
-    if (spa && wantsHtml && extname(path) === "" && files.has("/index.html")) return serveFile("/index.html", request);
+    if (spa && wantsHtml && extname(path) === "" && files.has("/index.html"))
+      return serveFile("/index.html", request);
     return new Response("Not Found", { status: 404, headers: base });
   }
 
@@ -188,7 +239,16 @@ export interface M3ServerOptions extends M3AppOptions {
 /** `PORT`, then the option, then 3000. */
 export function resolvePort(option?: number): number {
   const fromEnv = Number(Bun.env.PORT);
-  if (Bun.env.PORT !== undefined && Number.isInteger(fromEnv) && fromEnv >= 0) return fromEnv;
+  if (
+    Bun.env.PORT !== undefined &&
+    Bun.env.PORT.trim() !== "" &&
+    Number.isInteger(fromEnv) &&
+    fromEnv >= 0 &&
+    fromEnv <= 65535
+  )
+    return fromEnv;
+  if (option !== undefined && (!Number.isInteger(option) || option < 0 || option > 65535))
+    throw new RangeError(`m3-bun: invalid port ${option}`);
   return option ?? 3000;
 }
 
@@ -196,7 +256,11 @@ export function resolvePort(option?: number): number {
 export function startM3Server(options: M3ServerOptions = {}): Server<undefined> {
   const app = createM3App(options);
   const port = resolvePort(options.port);
-  const common = { port, ...(options.hostname ? { hostname: options.hostname } : {}), idleTimeout: options.idleTimeout ?? 30 };
+  const common = {
+    port,
+    ...(options.hostname ? { hostname: options.hostname } : {}),
+    idleTimeout: options.idleTimeout ?? 30,
+  };
   const nativeRoutes = app.routes as unknown as Bun.Serve.Routes<undefined, string>;
   if (options.index) {
     const hmr = options.hmr ?? true;

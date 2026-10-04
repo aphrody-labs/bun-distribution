@@ -52,7 +52,7 @@ describe("Google & Gemini Desktop / Web benchmark components", () => {
         onGoogleLens={() => {}}
       />,
     );
-    expect(html).toContain('role="search"');
+    expect(html).toContain('<search aria-label="Google Spotlight Assistant"');
     expect(html).toContain("Alt + Space");
     expect(html).toContain("google-spotlight-capsule");
     expect(html).toContain("Posez une question");
@@ -86,12 +86,8 @@ describe("Google & Gemini Desktop / Web benchmark components", () => {
       <ComposerMoreUploadsMenu
         open={true}
         onOpenChange={() => {}}
-        items={[
-          { id: "upload", label: "Upload files", icon: "upload" },
-        ]}
-        submenuItems={[
-          { id: "drive", label: "Google Drive", icon: "cloud" },
-        ]}
+        items={[{ id: "upload", label: "Upload files", icon: "upload" }]}
+        submenuItems={[{ id: "drive", label: "Google Drive", icon: "cloud" }]}
       >
         <button type="button">+</button>
       </ComposerMoreUploadsMenu>,
@@ -115,4 +111,3 @@ describe("Google & Gemini Desktop / Web benchmark components", () => {
     expect(html).toContain("Save");
   });
 });
-

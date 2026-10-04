@@ -3,8 +3,8 @@
 // bun packages/m3-os-themes/src/cli.ts <install|generate|uninstall> --target windows|gnome|cosmic|chromium|all
 //   --seed <hex> --mode light|dark|auto [--name N] [--out DIR] [--variant V] [--dry-run|--apply]
 // `generate` writes only into --out. `install`/`uninstall` are dry-run unless --apply (then they run the generated scripts).
-import { mkdirSync, writeFileSync, chmodSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { mkdirSync, writeFileSync, chmodSync, lstatSync } from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { generate } from "./generate.ts";
 import { TARGETS, type ActiveMode, type GeneratedFile, type Target } from "./types.ts";
 
@@ -33,7 +33,7 @@ function parse(argv: string[]): { cmd: string; flags: Record<string, string | bo
     if (key === "dry-run" || key === "apply" || key === "help") flags[key] = true;
     else {
       const v = rest[++i];
-      if (v === undefined) throw new Error(`--${key} needs a value`);
+      if (v === undefined || v.startsWith("--")) throw new Error(`--${key} needs a value`);
       flags[key] = v;
     }
   }
@@ -100,6 +100,19 @@ export function installCommand(
 export function writeFiles(files: GeneratedFile[], outDir: string): void {
   for (const f of files) {
     const p = join(outDir, f.path);
+    const inside = relative(resolve(outDir), resolve(p));
+    if (inside === "" || inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside))
+      throw new Error(`m3-os-themes: generated path escapes its directory: ${f.path}`);
+    let ancestor = resolve(outDir);
+    for (const part of inside.split(sep)) {
+      ancestor = join(ancestor, part);
+      try {
+        if (lstatSync(ancestor).isSymbolicLink())
+          throw new Error(`m3-os-themes: generated path contains a symlink: ${f.path}`);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+    }
     mkdirSync(dirname(p), { recursive: true });
     writeFileSync(p, f.content);
     if (f.executable) chmodSync(p, 0o755);

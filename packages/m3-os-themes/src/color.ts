@@ -13,6 +13,21 @@ export function validate(input: ThemeInput): string {
   }
   const seed = normalizeHex(input.seed);
   if (!seed) throw new Error(`invalid seed colour "${input.seed}": expected #rrggbb`);
+  if (!["light", "dark", "auto"].includes(input.mode))
+    throw new Error(`invalid theme mode "${input.mode}"`);
+  if (
+    input.variant !== undefined &&
+    ![
+      "tonalSpot",
+      "content",
+      "fidelity",
+      "expressive",
+      "vibrant",
+      "neutral",
+      "monochrome",
+    ].includes(input.variant)
+  )
+    throw new Error(`invalid theme variant "${input.variant}"`);
   return seed.toLowerCase();
 }
 

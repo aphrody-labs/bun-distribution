@@ -81,7 +81,8 @@ export class M3UiCache {
    * Stores a value in the cache under namespace and key.
    */
   set<T = unknown>(namespace: string, key: string, value: T): void {
-    const serialized = typeof value === "string" ? value : JSON.stringify(value);
+    const serialized = JSON.stringify(value);
+    if (serialized === undefined) throw new TypeError("M3UiCache: value must be JSON serializable");
     const now = Date.now();
 
     this.db
@@ -109,10 +110,8 @@ export class M3UiCache {
    * Clears an entire namespace, or all entries if no namespace specified.
    */
   clear(namespace?: string): number {
-    if (namespace) {
-      const result = this.db
-        .query("DELETE FROM ui_cache WHERE namespace = ?")
-        .run(namespace);
+    if (namespace !== undefined) {
+      const result = this.db.query("DELETE FROM ui_cache WHERE namespace = ?").run(namespace);
       return result.changes;
     }
     const result = this.db.query("DELETE FROM ui_cache").run();
@@ -134,7 +133,7 @@ export class M3UiCache {
       )
       .all();
 
-    const namespaces: Record<string, number> = {};
+    const namespaces: Record<string, number> = Object.create(null);
     for (const r of nsRows) {
       namespaces[r.namespace] = r.count;
     }

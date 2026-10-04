@@ -75,6 +75,13 @@ export function applyDynamicFusionTheme(
       (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   }
 
+  // Derive and validate the whole scheme before changing the target.
+  const vars = schemeFromSeed(seed, {
+    dark: isDark,
+    contrastLevel: options.contrastLevel,
+    variant: options.variant,
+  });
+
   // Sync dark class and color-scheme
   if (isDark) {
     target.classList.add("dark");
@@ -83,14 +90,6 @@ export function applyDynamicFusionTheme(
     target.classList.remove("dark");
     target.style.setProperty("color-scheme", "light");
   }
-
-  // Derive roles from seed color
-  const seedHex = seed.startsWith("#") ? seed : `#${seed}`;
-  const vars = schemeFromSeed(seedHex, {
-    dark: isDark,
-    contrastLevel: options.contrastLevel,
-    variant: options.variant,
-  });
 
   // Apply M3 system colors
   for (const [key, value] of Object.entries(vars)) {

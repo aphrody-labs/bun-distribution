@@ -5,14 +5,7 @@
 
 import { Icon } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
-import {
-  forwardRef,
-  isValidElement,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { forwardRef, isValidElement, useEffect, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
@@ -107,7 +100,10 @@ const LANGUAGE_MAP: Record<string, string> = {
 
 export function detectLanguage(raw?: string): { raw: string; label: string } {
   if (!raw) return { raw: "", label: "Code" };
-  const cleaned = raw.replace(/^language-|^lang-/, "").toLowerCase().trim();
+  const cleaned = raw
+    .replace(/^language-|^lang-/, "")
+    .toLowerCase()
+    .trim();
   if (LANGUAGE_MAP[cleaned]) {
     return { raw: cleaned, label: LANGUAGE_MAP[cleaned] };
   }
@@ -308,21 +304,23 @@ function formatSubSup(text: string): ReactNode {
   );
   if (parts.length === 1) return text;
 
-  return parts.map((part, index) => {
+  const occurrences = new Map<string, number>();
+  return parts.map((part) => {
+    const occurrence = occurrences.get(part) ?? 0;
+    occurrences.set(part, occurrence + 1);
+    const key = `${part}:${occurrence}`;
     if (part.startsWith("^")) {
-      const val =
-        part.startsWith("^{") && part.endsWith("}") ? part.slice(2, -1) : part.slice(1);
+      const val = part.startsWith("^{") && part.endsWith("}") ? part.slice(2, -1) : part.slice(1);
       return (
-        <sup key={index} className="text-[0.75em] leading-none">
+        <sup key={key} className="text-[0.75em] leading-none">
           {val}
         </sup>
       );
     }
     if (part.startsWith("_")) {
-      const val =
-        part.startsWith("_{") && part.endsWith("}") ? part.slice(2, -1) : part.slice(1);
+      const val = part.startsWith("_{") && part.endsWith("}") ? part.slice(2, -1) : part.slice(1);
       return (
-        <sub key={index} className="text-[0.75em] leading-none">
+        <sub key={key} className="text-[0.75em] leading-none">
           {val}
         </sub>
       );
@@ -407,101 +405,103 @@ export function BlockMath({ math, className, ...props }: BlockMathProps) {
 // Remark plugin for recognizing $...$ and $$...$$ expressions
 // ---------------------------------------------------------------------------
 
-export function remarkMathPlugin() {
-  return (tree: any) => {
-    function transformBlocks(parent: any) {
-      if (!parent.children) return;
-      const newChildren: any[] = [];
-      for (const child of parent.children) {
-        if (child.type === "paragraph" && Array.isArray(child.children)) {
-          const hasBlockMath = child.children.some(
-            (c: any) => c.type === "text" && /\$\$[\s\S]+?\$\$/.test(c.value),
-          );
-          if (hasBlockMath) {
-            let currentParagraphChildren: any[] = [];
-            for (const item of child.children) {
-              if (item.type === "text" && /\$\$[\s\S]+?\$\$/.test(item.value)) {
-                const parts = item.value.split(/(\$\$[\s\S]+?\$\$)/g);
-                for (const part of parts) {
-                  if (part.startsWith("$$") && part.endsWith("$$") && part.length >= 4) {
-                    if (currentParagraphChildren.length > 0) {
-                      newChildren.push({
-                        type: "paragraph",
-                        children: currentParagraphChildren,
-                      });
-                      currentParagraphChildren = [];
-                    }
-                    const mathVal = part.slice(2, -2).trim();
-                    newChildren.push({
-                      type: "mathBlock",
-                      data: {
-                        hName: "div",
-                        hProperties: { className: "math-block", "data-math": mathVal },
-                        hChildren: [{ type: "text", value: mathVal }],
-                      },
-                      children: [{ type: "text", value: mathVal }],
-                    });
-                  } else if (part.trim().length > 0) {
-                    currentParagraphChildren.push({ type: "text", value: part });
-                  }
+function transformBlocks(parent: any) {
+  if (!parent.children) return;
+  const newChildren: any[] = [];
+  for (const child of parent.children) {
+    if (child.type === "paragraph" && Array.isArray(child.children)) {
+      const hasBlockMath = child.children.some(
+        (c: any) => c.type === "text" && /\$\$[\s\S]+?\$\$/.test(c.value),
+      );
+      if (hasBlockMath) {
+        let currentParagraphChildren: any[] = [];
+        for (const item of child.children) {
+          if (item.type === "text" && /\$\$[\s\S]+?\$\$/.test(item.value)) {
+            const parts = item.value.split(/(\$\$[\s\S]+?\$\$)/g);
+            for (const part of parts) {
+              if (part.startsWith("$$") && part.endsWith("$$") && part.length >= 4) {
+                if (currentParagraphChildren.length > 0) {
+                  newChildren.push({
+                    type: "paragraph",
+                    children: currentParagraphChildren,
+                  });
+                  currentParagraphChildren = [];
                 }
-              } else {
-                currentParagraphChildren.push(item);
+                const mathVal = part.slice(2, -2).trim();
+                newChildren.push({
+                  type: "mathBlock",
+                  data: {
+                    hName: "div",
+                    hProperties: { className: "math-block", "data-math": mathVal },
+                    hChildren: [{ type: "text", value: mathVal }],
+                  },
+                  children: [{ type: "text", value: mathVal }],
+                });
+              } else if (part.trim().length > 0) {
+                currentParagraphChildren.push({ type: "text", value: part });
               }
             }
-            if (currentParagraphChildren.length > 0) {
-              newChildren.push({
-                type: "paragraph",
-                children: currentParagraphChildren,
-              });
-            }
-            continue;
+          } else {
+            currentParagraphChildren.push(item);
           }
         }
-        transformBlocks(child);
-        newChildren.push(child);
+        if (currentParagraphChildren.length > 0) {
+          newChildren.push({
+            type: "paragraph",
+            children: currentParagraphChildren,
+          });
+        }
+        continue;
       }
-      parent.children = newChildren;
     }
+    transformBlocks(child);
+    newChildren.push(child);
+  }
+  parent.children = newChildren;
+}
 
-    function transformInlines(node: any) {
-      if (!node.children) return;
-      const newChildren: any[] = [];
-      for (const child of node.children) {
-        if (child.type === "text" && typeof child.value === "string" && child.value.includes("$")) {
-          const parts = child.value.split(/((?<!\\)\$(?!\s)[^$\n]+?(?<!\s)\$(?!\d))/g);
-          for (const part of parts) {
-            if (
-              part.startsWith("$") &&
-              part.endsWith("$") &&
-              !part.startsWith("$$") &&
-              part.length > 2
-            ) {
-              const mathVal = part.slice(1, -1).trim();
-              newChildren.push({
-                type: "mathInline",
-                data: {
-                  hName: "span",
-                  hProperties: { className: "math-inline", "data-math": mathVal },
-                  hChildren: [{ type: "text", value: mathVal }],
-                },
-                children: [{ type: "text", value: mathVal }],
-              });
-            } else if (part) {
-              newChildren.push({ type: "text", value: part });
-            }
-          }
-        } else {
-          transformInlines(child);
-          newChildren.push(child);
+function transformInlines(node: any) {
+  if (!node.children) return;
+  const newChildren: any[] = [];
+  for (const child of node.children) {
+    if (child.type === "text" && typeof child.value === "string" && child.value.includes("$")) {
+      const parts = child.value.split(/((?<!\\)\$(?!\s)[^$\n]+?(?<!\s)\$(?!\d))/g);
+      for (const part of parts) {
+        if (
+          part.startsWith("$") &&
+          part.endsWith("$") &&
+          !part.startsWith("$$") &&
+          part.length > 2
+        ) {
+          const mathVal = part.slice(1, -1).trim();
+          newChildren.push({
+            type: "mathInline",
+            data: {
+              hName: "span",
+              hProperties: { className: "math-inline", "data-math": mathVal },
+              hChildren: [{ type: "text", value: mathVal }],
+            },
+            children: [{ type: "text", value: mathVal }],
+          });
+        } else if (part) {
+          newChildren.push({ type: "text", value: part });
         }
       }
-      node.children = newChildren;
+    } else {
+      transformInlines(child);
+      newChildren.push(child);
     }
+  }
+  node.children = newChildren;
+}
 
-    transformBlocks(tree);
-    transformInlines(tree);
-  };
+function transformMathTree(tree: any) {
+  transformBlocks(tree);
+  transformInlines(tree);
+}
+
+export function remarkMathPlugin() {
+  return transformMathTree;
 }
 
 // ---------------------------------------------------------------------------
@@ -653,8 +653,7 @@ function m3Components(size: MarkdownSize): Components {
     ),
     div: ({ node: _node, className, children, ...props }) => {
       if (className?.includes("math-block")) {
-        const math =
-          (props as Record<string, any>)["data-math"] ?? extractText(children);
+        const math = (props as Record<string, any>)["data-math"] ?? extractText(children);
         return <BlockMath math={math} className={className} />;
       }
       return (
@@ -665,8 +664,7 @@ function m3Components(size: MarkdownSize): Components {
     },
     span: ({ node: _node, className, children, ...props }) => {
       if (className?.includes("math-inline")) {
-        const math =
-          (props as Record<string, any>)["data-math"] ?? extractText(children);
+        const math = (props as Record<string, any>)["data-math"] ?? extractText(children);
         return <InlineMath math={math} className={className} />;
       }
       return (

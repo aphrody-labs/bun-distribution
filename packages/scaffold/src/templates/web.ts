@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 /** A minimal Bun + M3 web project (`m3 new`). No install or network access is performed. */
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { PRIVATE_OWNER_ROOT } from "../workspace";
 import type { FileMap } from "../files.ts";
 
 export interface WebTemplateOptions {
@@ -10,12 +13,21 @@ export interface WebTemplateOptions {
 }
 
 export function webFiles({ name, m3Version }: WebTemplateOptions): FileMap {
+  const ownerVersion = (
+    JSON.parse(readFileSync(resolve(PRIVATE_OWNER_ROOT, "packages/m3/package.json"), "utf8")) as {
+      version: string;
+    }
+  ).version;
+  if (m3Version !== ownerVersion)
+    throw new Error(
+      `The private M3 owner version is ${ownerVersion}; source acquisition is required for requested version ${m3Version}`,
+    );
   const manifest = {
     name,
     private: true,
     type: "module",
     scripts: { dev: "m3 dev", build: "m3 build" },
-    dependencies: { "@aphrody/m3": `^${m3Version}` },
+    dependencies: { "@aphrody/m3": "workspace:*" },
   };
   return {
     "package.json": `${JSON.stringify(manifest, null, 2)}\n`,

@@ -10,7 +10,16 @@ import { clsx } from "clsx";
 export interface DriveItem {
   id: string;
   name: string;
-  type: "folder" | "document" | "spreadsheet" | "presentation" | "image" | "pdf" | "code" | "archive" | "file";
+  type:
+    | "folder"
+    | "document"
+    | "spreadsheet"
+    | "presentation"
+    | "image"
+    | "pdf"
+    | "code"
+    | "archive"
+    | "file";
   owner?: string;
   lastModified?: string;
   size?: string;
@@ -108,6 +117,7 @@ export function GoogleDriveListView({
               key={f.key}
               type="button"
               onClick={() => onFilterChange?.(f.key)}
+              aria-pressed={activeFilter === f.key}
               className={clsx(
                 "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-label-large font-medium transition-colors border",
                 activeFilter === f.key
@@ -129,6 +139,7 @@ export function GoogleDriveListView({
               size="sm"
               onClick={() => onViewModeChange("list")}
               aria-label="List view"
+              aria-pressed={viewMode === "list"}
               title="List view"
             >
               <Icon name="view_list" size={18} />
@@ -138,6 +149,7 @@ export function GoogleDriveListView({
               size="sm"
               onClick={() => onViewModeChange("grid")}
               aria-label="Grid view"
+              aria-pressed={viewMode === "grid"}
               title="Grid view"
             >
               <Icon name="grid_view" size={18} />
@@ -160,11 +172,14 @@ export function GoogleDriveListView({
                 onDoubleClick={() => onOpen?.(item)}
                 // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the card holds block content and nested actions, which a native <button> cannot contain
                 role="button"
+                aria-pressed={isSelected}
+                aria-label={item.name}
                 tabIndex={0}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    onSelect?.(item);
+                    if (event.key === "Enter" && onOpen) onOpen(item);
+                    else onSelect?.(item);
                   }
                 }}
                 className={clsx(
@@ -181,12 +196,7 @@ export function GoogleDriveListView({
                     className={clsx("shrink-0", typeMeta.colorClass)}
                   />
                   {item.starred && (
-                    <Icon
-                      name="star"
-                      size={18}
-                      filled
-                      className="text-amber-500 fill-current"
-                    />
+                    <Icon name="star" size={18} filled className="text-amber-500 fill-current" />
                   )}
                 </div>
                 <div className="mt-3">
@@ -223,7 +233,16 @@ export function GoogleDriveListView({
                     key={item.id}
                     onClick={() => onSelect?.(item)}
                     onDoubleClick={() => onOpen?.(item)}
+                    aria-selected={isSelected}
                     tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        if (event.key === "Enter" && onOpen) onOpen(item);
+                        else onSelect?.(item);
+                      }
+                    }}
                     className={clsx(
                       "group cursor-pointer border-b border-outline-variant/15 transition-colors select-none",
                       isSelected
@@ -269,7 +288,7 @@ export function GoogleDriveListView({
 
                     {/* Row Actions */}
                     <td className="py-2.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                         {onToggleStar && (
                           <CircleButton
                             variant="standard"
@@ -309,4 +328,3 @@ export function GoogleDriveListView({
     </section>
   );
 }
-

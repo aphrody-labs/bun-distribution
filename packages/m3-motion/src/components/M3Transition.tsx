@@ -3,6 +3,7 @@ import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { HTMLMotionProps, MotionStyle, Transition, Variants } from "motion/react";
 import { m3Easings, m3Durations } from "../easings.js";
+import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion.js";
 
 export type M3TransitionPattern =
   | "fade"
@@ -178,7 +179,8 @@ export const M3Transition = React.forwardRef<HTMLDivElement, M3TransitionProps>(
     },
     ref,
   ) => {
-    const resolvedVariants = variants ?? buildVariants(pattern, forward);
+    const reduced = useM3ReducedMotion();
+    const resolvedVariants = motionVariants(variants ?? buildVariants(pattern, forward), reduced);
     const baseStyle: MotionStyle =
       pattern === "collapse" ? { overflow: "hidden" } : { willChange: "opacity, transform" };
     const resolvedStyle: MotionStyle = { ...baseStyle, ...style };
@@ -189,7 +191,7 @@ export const M3Transition = React.forwardRef<HTMLDivElement, M3TransitionProps>(
           key={stateKey}
           ref={ref}
           variants={resolvedVariants}
-          initial="initial"
+          initial={reduced ? false : "initial"}
           animate="animate"
           exit="exit"
           style={resolvedStyle}

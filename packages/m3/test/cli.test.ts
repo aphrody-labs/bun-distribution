@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import { existsSync, statSync } from "node:fs";
-import { readdir } from "node:fs/promises";
+import { readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { buildM3 } from "../src/build.ts";
-import { bunfigHasPlugin, findWorkspaceRoot, parseArgs, runCli, sheetFlag, version } from "../src/cli.ts";
+import {
+  bunfigHasPlugin,
+  findWorkspaceRoot,
+  parseArgs,
+  runCli,
+  sheetFlag,
+  version,
+} from "../src/cli.ts";
 import { BUNDLE_FILES, writeTokenBundle } from "../src/tokens.ts";
 import { FIXTURE, fakeCss, REPO_ROOT, tempDir } from "./helpers.ts";
 
@@ -15,13 +22,18 @@ describe("parseArgs", () => {
       flags: { port: "4000", hmr: false },
       positionals: [],
     });
-    expect(parseArgs(["tokens", "--seed=#ff0000", "--dark", "--sheet", "scheme", "-o", "out.css"]).flags).toEqual({
+    expect(
+      parseArgs(["tokens", "--seed=#ff0000", "--dark", "--sheet", "scheme", "-o", "out.css"]).flags,
+    ).toEqual({
       seed: "#ff0000",
       dark: true,
       sheet: "scheme",
       out: "out.css",
     });
-    expect(parseArgs(["tokens", "--bundle", "dir", "--contrast", "-0.5"]).flags).toEqual({ bundle: "dir", contrast: "-0.5" });
+    expect(parseArgs(["tokens", "--bundle", "dir", "--contrast", "-0.5"]).flags).toEqual({
+      bundle: "dir",
+      contrast: "-0.5",
+    });
   });
 
   test("--tauri takes an optional directory", () => {
@@ -69,8 +81,15 @@ describe("runCli", () => {
     await using tmp = await tempDir();
     const uiDist = join(tmp.dir, "ui");
     // m3.plain.config.ts: the fixture without m3:theme.css (the CLI takes no generator injection).
-    expect(await runCli(["build", "--tauri", uiDist, "--config", "m3.plain.config.ts"], FIXTURE)).toBe(0);
-    expect((await readdir(uiDist)).toSorted()).toEqual(["app.css", "app.js", "fonts", "index.html"]);
+    expect(
+      await runCli(["build", "--tauri", uiDist, "--config", "m3.plain.config.ts"], FIXTURE),
+    ).toBe(0);
+    expect((await readdir(uiDist)).toSorted()).toEqual([
+      "app.css",
+      "app.js",
+      "fonts",
+      "index.html",
+    ]);
     // plain.html became index.html.
     expect(await Bun.file(join(uiDist, "index.html")).text()).toContain('src="./app.js"');
   });
@@ -83,58 +102,90 @@ describe("runCli", () => {
 
   test("help and version", async () => {
     expect(await runCli(["help"])).toBe(0);
-    expect(await version()).toBe((await Bun.file(join(import.meta.dir, "../package.json")).json()).version);
+    expect(await version()).toBe(
+      (await Bun.file(join(import.meta.dir, "../package.json")).json()).version,
+    );
   });
 
   test("workspace discovery and bunfig detection", async () => {
     await using tmp = await tempDir();
     // The workspace root is the nearest package.json declaring `bun:check`, wherever the checkout is.
-    await Bun.write(join(tmp.dir, "package.json"), JSON.stringify({ scripts: { "bun:check": "true" } }));
+    await Bun.write(
+      join(tmp.dir, "package.json"),
+      JSON.stringify({ scripts: { "bun:check": "true" } }),
+    );
     await Bun.write(join(tmp.dir, "apps/app/package.json"), JSON.stringify({ name: "app" }));
     expect(findWorkspaceRoot(join(tmp.dir, "apps/app"))).toBe(tmp.dir);
-    expect(findWorkspaceRoot(FIXTURE) === undefined || existsSync(join(findWorkspaceRoot(FIXTURE)!, "package.json"))).toBe(true);
+    expect(
+      findWorkspaceRoot(FIXTURE) === undefined ||
+        existsSync(join(findWorkspaceRoot(FIXTURE)!, "package.json")),
+    ).toBe(true);
     expect(await bunfigHasPlugin(tmp.dir)).toBe(false);
-    await Bun.write(join(tmp.dir, "bunfig.toml"), '[serve.static]\nplugins = ["@aphrody/m3/plugin"]\n');
+    await Bun.write(
+      join(tmp.dir, "bunfig.toml"),
+      '[serve.static]\nplugins = ["@aphrody/m3/plugin"]\n',
+    );
     expect(await bunfigHasPlugin(tmp.dir)).toBe(true);
   });
 
-  test("m3 new scaffolds an M3 app and refuses to overwrite it", async () => {
+  test("m3 new refuses an external project before creating any directory", async () => {
     await using tmp = await tempDir();
-    expect(await runCli(["new", "my-app"], tmp.dir)).toBe(0);
-    const project = join(tmp.dir, "my-app");
-    const manifest = await Bun.file(join(project, "package.json")).json();
-    expect(manifest).toMatchObject({
-      name: "my-app",
-      private: true,
-      scripts: { dev: "m3 dev", build: "m3 build" },
-      dependencies: { "@aphrody/m3": `^${await version()}` },
-    });
-    expect(await Bun.file(join(project, "bunfig.toml")).text()).toContain('"@aphrody/m3/plugin"');
-    expect(await Bun.file(join(project, "m3.config.ts")).text()).toContain('entry: "index.html"');
-    expect(await Bun.file(join(project, "index.html")).text()).toContain('./src/main.ts');
-    expect(await Bun.file(join(project, "src/main.ts")).text()).toContain('m3:theme.css');
-    // The scaffold must build; the sheets come from the deterministic generator so this test does not
-    // need the bun_rs native library (the real `m3Css` path is covered by native.test.ts).
-    const built = await buildM3({
-      entry: join(project, "index.html"),
-      outdir: join(tmp.dir, "built"),
-      cwd: project,
-      plugin: { css: fakeCss().css, root: REPO_ROOT },
-    });
-    expect(built.outputs.some((output) => output.path === "index.html")).toBe(true);
-    await expect(runCli(["new", "my-app"], tmp.dir)).rejects.toThrow();
-    await expect(runCli(["new"], tmp.dir)).rejects.toThrow("expected one project directory");
+    const project = join(tmp.dir, "absent", "my-app");
+    await expect(runCli(["new", project], REPO_ROOT)).rejects.toThrow(
+      "Aphrody/M3 private owner workspace required",
+    );
+    expect(existsSync(join(tmp.dir, "absent"))).toBe(false);
+  });
+
+  test("m3 new scaffolds an M3 app in its private owner and refuses to overwrite it", async () => {
+    const name = `m3-migrate-contract-cli-${crypto.randomUUID()}`;
+    const relativeProject = `apps/${name}`;
+    const project = join(REPO_ROOT, relativeProject);
+    try {
+      expect(await runCli(["new", relativeProject], REPO_ROOT)).toBe(0);
+      const manifest = await Bun.file(join(project, "package.json")).json();
+      expect(manifest).toMatchObject({
+        name,
+        private: true,
+        scripts: { dev: "m3 dev", build: "m3 build" },
+        dependencies: { "@aphrody/m3": "workspace:*" },
+      });
+      expect(await Bun.file(join(project, "bunfig.toml")).text()).toContain('"@aphrody/m3/plugin"');
+      expect(await Bun.file(join(project, "m3.config.ts")).text()).toContain('entry: "index.html"');
+      expect(await Bun.file(join(project, "index.html")).text()).toContain("./src/main.ts");
+      expect(await Bun.file(join(project, "src/main.ts")).text()).toContain("m3:theme.css");
+      // Build the generated app; native FFI parity is separately covered by native.test.ts.
+      const built = await buildM3({
+        entry: join(project, "index.html"),
+        outdir: join(project, "dist"),
+        cwd: project,
+        plugin: { css: fakeCss().css, root: REPO_ROOT },
+      });
+      expect(built.outputs.some((output) => output.path === "index.html")).toBe(true);
+      await expect(runCli(["new", relativeProject], REPO_ROOT)).rejects.toThrow();
+      expect((await Bun.file(join(project, "package.json")).json()).name).toBe(name);
+      await expect(runCli(["new"], REPO_ROOT)).rejects.toThrow("expected one project directory");
+    } finally {
+      await rm(project, { recursive: true, force: true });
+    }
   });
 
   test("m3 compile writes an executable, not an HTML file, and the executable serves the built UI", async () => {
     await using tmp = await tempDir();
     const outfile = join(tmp.dir, "test-bin");
-    expect(await runCli(["compile", "--outfile", outfile, "--config", "m3.plain.config.ts"], FIXTURE)).toBe(0);
+    expect(
+      await runCli(["compile", "--outfile", outfile, "--config", "m3.plain.config.ts"], FIXTURE),
+    ).toBe(0);
     expect(existsSync(outfile)).toBe(true);
 
     // An executable of this platform (ELF, PE or Mach-O), carrying the Bun runtime: the old output was ~130 KB of HTML.
     const magic = [...new Uint8Array(await Bun.file(outfile).slice(0, 4).arrayBuffer())];
-    const native = process.platform === "win32" ? [0x4d, 0x5a] : process.platform === "darwin" ? [0xcf, 0xfa, 0xed, 0xfe] : [0x7f, 0x45, 0x4c, 0x46];
+    const native =
+      process.platform === "win32"
+        ? [0x4d, 0x5a]
+        : process.platform === "darwin"
+          ? [0xcf, 0xfa, 0xed, 0xfe]
+          : [0x7f, 0x45, 0x4c, 0x46];
     expect(magic.slice(0, native.length)).toEqual(native);
     expect(statSync(outfile).size).toBeGreaterThan(10_000_000);
     if (process.platform !== "win32") expect(statSync(outfile).mode & 0o111).not.toBe(0);
@@ -142,13 +193,20 @@ describe("runCli", () => {
     const probe = Bun.serve({ port: 0, fetch: () => new Response("") });
     const port = probe.port;
     await probe.stop(true);
-    const server = Bun.spawn([outfile], { env: { ...process.env, PORT: String(port) }, stdout: "ignore", stderr: "ignore" });
+    const server = Bun.spawn([outfile], {
+      env: { ...process.env, PORT: String(port) },
+      stdout: "ignore",
+      stderr: "ignore",
+    });
     try {
       let page: Response | undefined;
+      // Readiness polling is sequential: each failed probe determines whether another is needed.
+      /* oxlint-disable no-await-in-loop */
       for (let i = 0; i < 100 && !page; i++) {
         page = await fetch(`http://127.0.0.1:${port}/`).catch(() => undefined);
         if (!page) await Bun.sleep(50);
       }
+      /* oxlint-enable no-await-in-loop */
       expect(page?.status).toBe(200);
       expect(page?.headers.get("content-type")).toStartWith("text/html");
       expect(await page!.text()).toContain("<title>m3 fixture</title>");
@@ -167,7 +225,7 @@ describe("runCli", () => {
     const uiDist = join(tmp.dir, "desktop-ui");
     await Bun.write(
       join(tmp.dir, "m3.config.ts"),
-      `export default { entry: "${join(FIXTURE, "plain.html")}", tauri: { uiDist: "${uiDist}" } };\n`
+      `export default { entry: "${join(FIXTURE, "plain.html")}", tauri: { uiDist: "${uiDist}" } };\n`,
     );
     expect(await runCli(["desktop"], tmp.dir)).toBe(0);
     expect(existsSync(join(uiDist, "index.html"))).toBe(true);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/primitives/src/ShinyToggle.tsx), MIT, rebuilt on Material Design 3.
 
-import { m3Durations, m3Easings } from "@aphrody/m3-motion";
+import { m3Durations, m3Easings, useM3ReducedMotion } from "@aphrody/m3-motion";
 import { clsx } from "clsx";
 import { LayoutGroup, motion } from "motion/react";
 import { type ReactNode, useId } from "react";
@@ -36,6 +36,7 @@ export function ShinyToggle<T extends string>({
   ariaLabel = "Options",
 }: ShinyToggleProps<T>) {
   const groupId = useId();
+  const reduced = useM3ReducedMotion();
   const focusValue = options.some((option) => option.value === value) ? value : options[0]?.value;
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -108,10 +109,10 @@ export function ShinyToggle<T extends string>({
             >
               {selected && (
                 <motion.div
-                  layoutId="shinyToggleActive"
+                  layoutId={reduced ? undefined : "shinyToggleActive"}
                   className="absolute inset-0 rounded-full bg-linear-to-br from-primary to-tertiary shadow-[0_0_0.75rem_color-mix(in_srgb,var(--color-primary)_30%,transparent)]"
                   transition={{
-                    duration: m3Durations.medium2,
+                    duration: reduced ? 0 : m3Durations.medium2,
                     ease: m3Easings.emphasized,
                   }}
                 />

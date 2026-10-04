@@ -10,12 +10,8 @@
  */
 
 import React, { useState, useRef, useMemo } from "react";
-import clsx from "clsx";
-import {
-  AppRenderer,
-  type SandboxConfig,
-  type McpUiHostContext,
-} from "@aphrody/mcp-ui";
+import { clsx } from "clsx";
+import { AppRenderer, type SandboxConfig, type McpUiHostContext } from "@aphrody/mcp-ui";
 
 export interface McpAppCardProps {
   toolName: string;
@@ -48,7 +44,8 @@ export const McpAppCard: React.FC<McpAppCardProps> = ({
 
   // Host context with Material Design 3 tokens
   const hostContext: McpUiHostContext = useMemo(() => {
-    const isDark = typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark =
+      typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
     return {
       theme: isDark ? "dark" : "light",
       locale: typeof navigator !== "undefined" ? navigator.language : "en-US",
@@ -58,9 +55,7 @@ export const McpAppCard: React.FC<McpAppCardProps> = ({
 
   // Fallback default sandbox proxy URL
   const resolvedSandbox: SandboxConfig = useMemo(() => {
-    const url = sandboxUrl
-      ? new URL(sandboxUrl)
-      : new URL("https://mcpui.dev/sandbox_proxy.html");
+    const url = sandboxUrl ? new URL(sandboxUrl) : new URL("https://mcpui.dev/sandbox_proxy.html");
     return {
       url,
       permissions: "allow-scripts allow-forms allow-same-origin",
@@ -88,9 +83,7 @@ export const McpAppCard: React.FC<McpAppCardProps> = ({
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-tight">
-                {title || toolName}
-              </span>
+              <span className="text-xs font-semibold tracking-tight">{title || toolName}</span>
               <span className="rounded-full bg-[var(--md-sys-color-surface-container-high,#ece6f0)] px-2 py-0.2 text-[10px] font-mono text-[var(--md-sys-color-on-surface-variant,#49454f)]">
                 mcp-ui
               </span>

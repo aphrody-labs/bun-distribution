@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/eslint-plugin-m3",
-  "private": true,
   "version": "3.3.3",
+  "private": true,
   "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint.",
   "keywords": [
     "eslint",
@@ -25,14 +25,19 @@
   },
   "files": [
     "index.js",
+    "index.d.ts",
     "rules/",
     "data/",
     "README.md"
   ],
   "type": "module",
   "main": "./index.js",
+  "types": "./index.d.ts",
   "exports": {
-    ".": "./index.js",
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {

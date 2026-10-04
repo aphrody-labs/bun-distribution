@@ -13,6 +13,7 @@ import type {
   ObjectTarget,
 } from "motion/react";
 import { m3Easings, m3Durations } from "../easings.js";
+import { useM3ReducedMotion } from "./useM3ReducedMotion.js";
 
 /**
  * Overloaded type for the scoped animate function returned by useM3Animate.
@@ -55,42 +56,36 @@ export interface M3AnimateFn {
  */
 export function useM3Animate<T extends Element = HTMLElement>(): [AnimationScope<T>, M3AnimateFn] {
   const [scope, animate] = useAnimate<T>();
+  const reduced = useM3ReducedMotion();
 
   const m3Animate: M3AnimateFn = (
     elementOrSelector: unknown,
     keyframes?: unknown,
     options?: unknown,
   ) => {
-    if (Array.isArray(elementOrSelector)) {
+    const defaults = { ease: m3Easings.emphasized, duration: m3Durations.medium2 };
+    const immediate = reduced ? { type: "tween", duration: 0, delay: 0, repeat: 0 } : {};
+    if (Array.isArray(elementOrSelector) && elementOrSelector.some(Array.isArray)) {
       // Sequence overload
-      return (animate as CallableFunction)(
-        elementOrSelector,
-        keyframes as SequenceOptions,
-      ) as AnimationPlaybackControlsWithThen;
-    }
-
-    if (
-      typeof elementOrSelector === "string" ||
-      elementOrSelector instanceof Element ||
-      (typeof elementOrSelector === "object" &&
-        elementOrSelector !== null &&
-        "current" in elementOrSelector) ||
-      typeof elementOrSelector === "number" ||
-      (typeof elementOrSelector === "object" &&
-        elementOrSelector !== null &&
-        "get" in elementOrSelector)
-    ) {
-      return (animate as CallableFunction)(elementOrSelector, keyframes, {
-        ease: m3Easings.emphasized,
-        duration: m3Durations.medium2,
-        ...(typeof options === "object" && options !== null ? options : {}),
+      const sequenceOptions =
+        typeof keyframes === "object" && keyframes !== null ? (keyframes as SequenceOptions) : {};
+      const sequence = reduced
+        ? elementOrSelector.map((segment) =>
+            Array.isArray(segment)
+              ? [segment[0], segment[1], { ...segment[2], ...immediate, at: 0 }]
+              : segment,
+          )
+        : elementOrSelector;
+      return (animate as CallableFunction)(sequence, {
+        ...sequenceOptions,
+        defaultTransition: { ...defaults, ...sequenceOptions.defaultTransition, ...immediate },
       }) as AnimationPlaybackControlsWithThen;
     }
 
     return (animate as CallableFunction)(elementOrSelector, keyframes, {
-      ease: m3Easings.emphasized,
-      duration: m3Durations.medium2,
+      ...defaults,
       ...(typeof options === "object" && options !== null ? options : {}),
+      ...immediate,
     }) as AnimationPlaybackControlsWithThen;
   };
 

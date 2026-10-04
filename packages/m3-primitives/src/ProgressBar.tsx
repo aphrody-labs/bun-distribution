@@ -3,7 +3,7 @@
 
 "use client";
 
-import { m3Easings } from "@aphrody/m3-motion";
+import { m3Easings, useM3ReducedMotion } from "@aphrody/m3-motion";
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
@@ -27,6 +27,7 @@ export type ProgressBarProps = {
 const track = "relative h-1 overflow-hidden rounded-full bg-secondary-container";
 
 export const ProgressBar = memo((props: ProgressBarProps) => {
+  const reduced = useM3ReducedMotion();
   const percentage = props.pending
     ? 0
     : "percent" in props
@@ -48,12 +49,12 @@ export const ProgressBar = memo((props: ProgressBarProps) => {
         <ProgressPrimitive.Track className="block h-full">
           <motion.div
             className="indeterminate-progress-bar__progress absolute inset-y-0 left-0 w-2/5 rounded-full bg-primary"
-            initial={{ x: "-100%" }}
-            animate={{ x: "250%" }}
+            initial={reduced ? false : { x: "-100%" }}
+            animate={{ x: reduced ? "0%" : "250%" }}
             transition={{
-              duration: 2,
+              duration: reduced ? 0 : 2,
               ease: m3Easings.standard,
-              repeat: Infinity,
+              repeat: reduced ? 0 : Infinity,
             }}
           />
         </ProgressPrimitive.Track>
@@ -71,7 +72,7 @@ export const ProgressBar = memo((props: ProgressBarProps) => {
       <ProgressPrimitive.Track className="block h-full">
         <ProgressPrimitive.Indicator
           style={{ width: `${clamped}%` }}
-          className="h-full rounded-full bg-primary transition-[width] duration-500 ease-standard"
+          className="h-full rounded-full bg-primary transition-[width] duration-500 ease-standard motion-reduce:transition-none"
         />
       </ProgressPrimitive.Track>
     </ProgressPrimitive.Root>

@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
+// Filesystem traversal and writes are serialized to bound I/O and preserve preflight/order guarantees.
+// oxlint-disable no-await-in-loop
 import { readdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
+
+export function isSourceProjectConfig(name: string): boolean {
+  return /^(?:package\.json|(?:bun|package|yarn|pnpm).*lock.*|tsconfig(?:\..+)?\.json|next-env\.d\.ts|(?:next|postcss|tailwind|vite)\.config\..+)$/.test(
+    name,
+  );
+}
 
 export interface ScanStats {
   totalFiles: number;
@@ -60,7 +68,11 @@ export async function scanNextDirectory(targetPath: string): Promise<ScanStats> 
   async function walk(currentPath: string) {
     const s = await stat(currentPath);
     if (!s.isDirectory()) {
-      if (/\.(tsx|jsx|ts|js)$/.test(currentPath) && !currentPath.includes("node_modules") && !currentPath.includes(".next")) {
+      if (
+        /\.(tsx|jsx|ts|js)$/.test(currentPath) &&
+        !currentPath.includes("node_modules") &&
+        !currentPath.includes(".next")
+      ) {
         await analyzeFile(currentPath);
       }
       return;
@@ -69,7 +81,13 @@ export async function scanNextDirectory(targetPath: string): Promise<ScanStats> 
     const entries = await readdir(currentPath, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = join(currentPath, entry.name);
-      if (entry.name === "node_modules" || entry.name === ".next" || entry.name === "dist" || entry.name === ".git") {
+      if (
+        entry.isSymbolicLink() ||
+        entry.name.startsWith(".") ||
+        entry.name === "node_modules" ||
+        entry.name === "dist" ||
+        isSourceProjectConfig(entry.name)
+      ) {
         continue;
       }
       if (entry.isDirectory()) {
@@ -164,7 +182,9 @@ export async function scanNextDirectory(targetPath: string): Promise<ScanStats> 
     }
 
     // M3 candidate UI components: Button, Input, Card, Badge, Tooltip, Collapsible
-    const m3Matches = content.match(/components\/ui\/(button|input|card|badge|tooltip|collapsible)/g);
+    const m3Matches = content.match(
+      /components\/ui\/(button|input|card|badge|tooltip|collapsible)/g,
+    );
     if (m3Matches) {
       stats.m3CandidateCount++;
       m3Matches.forEach((m) => {

@@ -19,11 +19,23 @@ import { windows } from "./windows.ts";
 
 export type { Target, TargetContext } from "./types.ts";
 
-export const TARGETS: readonly Target[] = [docker, systemd, nginx, vercel, fly, cloudflare, coolify, vscode, windows, linuxImage];
+export const TARGETS: readonly Target[] = [
+  docker,
+  systemd,
+  nginx,
+  vercel,
+  fly,
+  cloudflare,
+  coolify,
+  vscode,
+  windows,
+  linuxImage,
+];
 
 export function getTarget(id: string): Target {
   const target = TARGETS.find((t) => t.id === id);
-  if (!target) throw new Error(`m3-bun: unknown deploy target ${id} (${TARGETS.map((t) => t.id).join(", ")})`);
+  if (!target)
+    throw new Error(`m3-bun: unknown deploy target ${id} (${TARGETS.map((t) => t.id).join(", ")})`);
   return target;
 }
 
@@ -59,12 +71,18 @@ export interface GeneratedTarget {
 }
 
 /** Generate `ids` (or every target) into `<out>/<id>/`. Returns what was written. */
-export async function generateTargets(ids: readonly string[], context: TargetContext, out: string): Promise<GeneratedTarget[]> {
+export async function generateTargets(
+  ids: readonly string[],
+  context: TargetContext,
+  out: string,
+): Promise<GeneratedTarget[]> {
   const targets = ids.length === 0 || ids.includes("all") ? TARGETS : ids.map(getTarget);
   const generated: GeneratedTarget[] = [];
   for (const target of targets) {
+    // oxlint-disable-next-line no-await-in-loop -- Target generators may build artifacts; complete one target before starting the next.
     const files: GeneratedFile[] = await target.generate(context);
     const dir = join(out, target.id);
+    // oxlint-disable-next-line no-await-in-loop -- Persist a target before proceeding so failures cannot leave later targets partially generated.
     generated.push({ id: target.id, dir, files: await writeFiles(dir, files) });
   }
   return generated;

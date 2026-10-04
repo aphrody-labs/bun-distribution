@@ -5,11 +5,12 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { setWindowTitle } from "./metadata";
 
 export type RouterMode = "tauri" | "vite" | "browser";
+export type RouteParams = Record<string, string | string[]>;
 
 export interface NextMigrateContextValue {
   pathname: string;
   searchParams: URLSearchParams;
-  params: Record<string, string>;
+  params: RouteParams;
   mode: RouterMode;
   navigate: (url: string, options?: { replace?: boolean; scroll?: boolean }) => void;
   back: () => void;
@@ -64,8 +65,20 @@ export interface NextMigrateProviderProps {
   initialPath?: string;
   mode?: RouterMode;
   useHashRouting?: boolean;
-  params?: Record<string, string>;
+  params?: RouteParams;
   onNavigate?: (url: string) => void;
+}
+
+const pathParts = (value: string): { pathname: string; search: string } => {
+  const url = new URL(value || "/", "http://m3.invalid");
+  return { pathname: url.pathname || "/", search: url.search };
+};
+
+function back() {
+  if (typeof window !== "undefined") window.history.back();
+}
+function forward() {
+  if (typeof window !== "undefined") window.history.forward();
 }
 
 export function NextMigrateProvider({
@@ -76,37 +89,18 @@ export function NextMigrateProvider({
   params = {},
   onNavigate,
 }: NextMigrateProviderProps) {
-  // Autodetect hash routing if in file:// or specified
   const isHash =
-    useHashRouting ?? (typeof window !== "undefined" && window.location.protocol === "file:");
-
+    useHashRouting ??
+    (mode === "tauri" || (typeof window !== "undefined" && window.location.protocol === "file:"));
   const parseLocation = (): { pathname: string; search: string } => {
-    if (typeof window === "undefined") {
-      const init = initialPath ?? "/";
-      const qIdx = init.indexOf("?");
-      return {
-        pathname: qIdx >= 0 ? init.slice(0, qIdx) : init,
-        search: qIdx >= 0 ? init.slice(qIdx) : "",
-      };
-    }
-
-    if (isHash) {
-      const hash = window.location.hash.replace(/^#/, "");
-      if (!hash) return { pathname: "/", search: "" };
-      const qIdx = hash.indexOf("?");
-      return {
-        pathname: qIdx >= 0 ? hash.slice(0, qIdx) || "/" : hash || "/",
-        search: qIdx >= 0 ? hash.slice(qIdx) : "",
-      };
-    }
-
-    return {
-      pathname: window.location.pathname || "/",
-      search: window.location.search || "",
-    };
+    if (typeof window === "undefined") return pathParts(initialPath ?? "/");
+    if (isHash) return pathParts(window.location.hash.replace(/^#/, ""));
+    return { pathname: window.location.pathname || "/", search: window.location.search || "" };
   };
-
-  const [currentLoc, setCurrentLoc] = useState(parseLocation);
+  // The first browser render must match the explicit server route; adopt the browser after hydration.
+  const [currentLoc, setCurrentLoc] = useState(() =>
+    initialPath !== undefined ? pathParts(initialPath) : parseLocation(),
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -117,6 +111,7 @@ export function NextMigrateProvider({
 
     window.addEventListener("popstate", handleLocationChange);
     window.addEventListener("hashchange", handleLocationChange);
+    handleLocationChange();
 
     // Synchronize document.title to Tauri desktop window
     if (typeof document !== "undefined") {
@@ -160,6 +155,7 @@ export function NextMigrateProvider({
       } else {
         window.location.hash = targetHash;
       }
+      setCurrentLoc(parseLocation());
     } else {
       if (options?.replace) {
         window.history.replaceState({}, "", url);
@@ -174,14 +170,6 @@ export function NextMigrateProvider({
     }
 
     onNavigate?.(url);
-  };
-
-  const back = () => {
-    if (typeof window !== "undefined") window.history.back();
-  };
-
-  const forward = () => {
-    if (typeof window !== "undefined") window.history.forward();
   };
 
   const refresh = () => {
@@ -239,4 +227,20 @@ export function useNextMigrateContext(): NextMigrateContextValue {
     };
   }
   return ctx;
+}
+
+/** Gives pages and their layouts the params matched by the generated router. */
+export function RouteParamsProvider({
+  params,
+  children,
+}: {
+  params: RouteParams;
+  children: ReactNode;
+}) {
+  const context = useNextMigrateContext();
+  return (
+    <NextMigrateContext.Provider value={{ ...context, params }}>
+      {children}
+    </NextMigrateContext.Provider>
+  );
 }

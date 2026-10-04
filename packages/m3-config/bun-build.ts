@@ -42,13 +42,13 @@ export type M3Target = "browser" | "bun" | "node";
 /** What a package declares in `build.config.ts`. Entry paths may be globs, relative to the package. */
 export interface M3PackageConfig {
   /** Entrypoint(s). Default `["src/index.ts"]`. */
-  entry?: string | string[];
+  entry?: string | readonly string[];
   /** Runtime target (default `browser`). */
   target?: M3Target;
   /** Code splitting across entries (default true). */
   splitting?: boolean;
   /** Packages left unbundled in addition to {@link M3_EXTERNAL} and the package's own dependencies and peers; wildcards allowed. */
-  external?: string[];
+  external?: readonly string[];
   /**
    * `true` (default) marks every emitted JS file with `'use client';`, a list limits that to the
    * named files (`react.js`, `shims/link.js`), `false` skips it (packages without React code).
@@ -97,7 +97,10 @@ export function externals(cwd: string, extra: readonly string[] = []): string[] 
       dependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
     };
-    for (const name of [...Object.keys(dependencies ?? {}), ...Object.keys(peerDependencies ?? {})]) {
+    for (const name of [
+      ...Object.keys(dependencies ?? {}),
+      ...Object.keys(peerDependencies ?? {}),
+    ]) {
       names.add(name);
       names.add(`${name}/*`);
     }
@@ -107,10 +110,11 @@ export function externals(cwd: string, extra: readonly string[] = []): string[] 
 }
 
 /** Expand glob entries (`wrappers/*.ts`) against `cwd`; plain paths pass through. */
-export function expandEntries(entries: string | string[], cwd: string): string[] {
+export function expandEntries(entries: string | readonly string[], cwd: string): string[] {
   const out: string[] = [];
-  for (const entry of Array.isArray(entries) ? entries : [entries]) {
+  for (const entry of typeof entries === "string" ? [entries] : entries) {
     if (/[*?{]/.test(entry)) {
+      // eslint-disable-next-line unicorn/no-array-sort -- Sorting a fresh array keeps the shared ES2022 type contract.
       const matches = [...new Glob(entry).scanSync({ cwd, onlyFiles: true })].sort();
       if (matches.length === 0) throw new Error(`m3-config: entry glob matches nothing: ${entry}`);
       out.push(...matches.map((m) => resolve(cwd, m)));
@@ -138,7 +142,8 @@ export function commonDir(files: readonly string[]): string {
 export async function prependUseClient(dir: string, only?: readonly string[]): Promise<number> {
   const files: string[] = [];
   for await (const path of new Glob("**/*.js").scan({ cwd: dir, onlyFiles: true })) {
-    if (!only || only.includes(path.split("/").pop() ?? path) || only.includes(path)) files.push(path);
+    if (!only || only.includes(path.split("/").pop() ?? path) || only.includes(path))
+      files.push(path);
   }
   const changed = await Promise.all(
     files.map(async (path) => {
@@ -170,14 +175,26 @@ export async function m3BunBuild(options: M3BunBuildOptions = {}): Promise<M3Bun
     minify: options.minify ?? false,
     external: externals(cwd, options.external),
     plugins: options.plugins ?? [],
-    define: { "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "production"), ...options.define },
+    define: {
+      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "production"),
+      ...options.define,
+    },
     throw: false,
   });
 
   if (!result.success) {
-    return { success: false, outDir: outdir, outputs: result.outputs, logs: result.logs.map((log) => String(log)) };
+    return {
+      success: false,
+      outDir: outdir,
+      outputs: result.outputs,
+      logs: result.logs.map((log) => String(log)),
+    };
   }
-  if (useClient !== false) await prependUseClient(outdir, Array.isArray(useClient) ? (useClient as readonly string[]) : undefined);
+  if (useClient !== false)
+    await prependUseClient(
+      outdir,
+      Array.isArray(useClient) ? (useClient as readonly string[]) : undefined,
+    );
   return { success: true, outDir: outdir, outputs: result.outputs, logs: [] };
 }
 
@@ -197,5 +214,7 @@ if (import.meta.main) {
     console.error("[m3-bun-build] Failed to build:", res.logs.join("\n"));
     process.exit(1);
   }
-  console.log(`[m3-bun-build] Successfully built ${res.outputs.length} artifact(s) to ${res.outDir}`);
+  console.log(
+    `[m3-bun-build] Successfully built ${res.outputs.length} artifact(s) to ${res.outDir}`,
+  );
 }

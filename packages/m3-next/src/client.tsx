@@ -16,7 +16,13 @@ import {
   type ReactNode,
 } from "react";
 import type { SchemeVariant } from "@aphrody/m3-tokens/dynamic-color";
-import { M3_BASELINE_SEED, M3_THEME_COOKIE, themeCookie, type M3ThemeMode } from "./constants";
+import {
+  M3_BASELINE_SEED,
+  M3_THEME_COOKIE,
+  themeCookie,
+  validateThemeCookieName,
+  type M3ThemeMode,
+} from "./constants";
 
 export type { SchemeVariant };
 /** `light`, `dark`, or `system` (follow the OS). */
@@ -46,10 +52,12 @@ const serverPrefersDark = (): boolean => false;
 
 /** The stored preference, or `undefined` when the cookie is absent or invalid. */
 function readStoredMode(cookieName: string): ThemeMode | undefined {
-  const match = new RegExp(`(?:^|; )${cookieName.replace(/[^\w-]/g, "")}=(light|dark|system)`).exec(
-    document.cookie,
-  );
-  return match?.[1] as ThemeMode | undefined;
+  const prefix = `${validateThemeCookieName(cookieName)}=`;
+  const value = document.cookie
+    .split(/;\s*/)
+    .find((cookie) => cookie.startsWith(prefix))
+    ?.slice(prefix.length);
+  return value === "light" || value === "dark" || value === "system" ? value : undefined;
 }
 
 const M3ThemeContext = createContext<M3ThemeContextType | undefined>(undefined);

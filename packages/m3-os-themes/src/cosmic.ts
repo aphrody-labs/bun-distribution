@@ -73,6 +73,13 @@ BACKUP="$DATA/m3-os-themes/cosmic-${name}"
 ICON_KEY="$CONF/com.system76.CosmicTk/v1/icon_theme"
 run() { if [ "$DRY" = 1 ]; then echo "[dry-run] $*"; else "$@"; fi; }
 
+case "$MODE" in auto|light|dark) ;; *) echo "unknown mode: $MODE" >&2; exit 2 ;; esac
+if [ -n "$ICONS" ] && [ "$UNINSTALL" = 0 ]; then
+  [ -f "$ICONS/index.theme" ] || { echo "--icons: $ICONS has no index.theme" >&2; exit 2; }
+  ICON_NAME="$(basename "$ICONS")"
+  case "$ICON_NAME" in ""|.|..|*[!a-zA-Z0-9_.\\ -]*) echo "invalid icon directory name: $ICON_NAME" >&2; exit 2 ;; esac
+fi
+
 # every generated key: <relative dir>/<key>
 keys() { (cd "$HERE/config" && find . -type f | sed 's|^\\./||' | sort); }
 
@@ -83,13 +90,19 @@ if [ "$UNINSTALL" = 1 ]; then
   done < <(keys)
   if [ -f "$BACKUP/icon_name" ]; then
     if [ -f "$BACKUP/icon_theme.had" ]; then run cp "$BACKUP/icon_theme.had" "$ICON_KEY"; else run rm -f "$ICON_KEY"; fi
-    run rm -rf "$DATA/icons/$(cat "$BACKUP/icon_name")"
+    ICON_NAME="$(cat "$BACKUP/icon_name")"
+    case "$ICON_NAME" in ""|.|..|*[!a-zA-Z0-9_.\\ -]*) echo "invalid icon snapshot name" >&2; exit 2 ;; esac
+    run rm -rf "$DATA/icons/$ICON_NAME"
+    if [ -e "$BACKUP/icon-dir.had" ]; then run cp -a "$BACKUP/icon-dir.had" "$DATA/icons/$ICON_NAME"; fi
   fi
   run rm -rf "$BACKUP"
   echo "M3-${name} removed; previous COSMIC theme restored."
   exit 0
 fi
 
+if [ -n "$ICONS" ] && [ -f "$BACKUP/icon_name" ] && [ "$(cat "$BACKUP/icon_name")" != "$ICON_NAME" ]; then
+  echo "uninstall before changing the installed icon directory" >&2; exit 2
+fi
 if [ ! -d "$BACKUP" ] && [ "$DRY" = 0 ]; then
   mkdir -p "$BACKUP/had"
   while read -r k; do
@@ -104,7 +117,7 @@ while read -r k; do
   if [ "$k" = "${MODE_DIR}/is_dark" ] && [ "$MODE" = auto ]; then continue; fi
   run mkdir -p "$CONF/$(dirname "$k")"
   if [ "$k" = "${MODE_DIR}/is_dark" ]; then
-    if [ "$MODE" = dark ]; then run sh -c "printf true > '$CONF/$k'"; else run sh -c "printf false > '$CONF/$k'"; fi
+    if [ "$DRY" = 1 ]; then echo "[dry-run] write $CONF/$k"; elif [ "$MODE" = dark ]; then printf true > "$CONF/$k"; else printf false > "$CONF/$k"; fi
   else
     run cp "$HERE/config/$k" "$CONF/$k"
   fi
@@ -114,6 +127,7 @@ if [ -n "$ICONS" ]; then
   ICON_NAME="$(basename "$ICONS")"
   if [ ! -f "$BACKUP/icon_name" ] && [ "$DRY" = 0 ]; then
     mkdir -p "$BACKUP"
+    if [ -e "$DATA/icons/$ICON_NAME" ]; then cp -a "$DATA/icons/$ICON_NAME" "$BACKUP/icon-dir.had"; fi
     printf %s "$ICON_NAME" > "$BACKUP/icon_name"
     if [ -f "$ICON_KEY" ]; then cp "$ICON_KEY" "$BACKUP/icon_theme.had"; fi
   fi

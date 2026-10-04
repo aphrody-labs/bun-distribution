@@ -19,7 +19,7 @@
       "@ag-ui/core": "1.0.1",
       "@ag-ui/encoder": "1.0.1",
       "@ag-ui/proto": "1.0.1",
-      "@aphrody/material-web": "3.3.3",
+      "@aphrody/material-web": "file:forks/material-web",
       "@aphrody/mcp-ui": "7.1.1-aphrody.1",
       "@base-ui/react": "^1.8.0",
       "@dnd-kit/core": "^6.3.1",
@@ -101,23 +101,6 @@
       "zustand": "^5.0.15"
     }
   },
-  "devDependencies": {
-    "@aphrody/m3-bun": "workspace:*",
-    "@aphrody/m3-config": "workspace:*",
-    "@types/bun": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "oxfmt": "catalog:",
-    "oxlint": "catalog:",
-    "playwright-core": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "tailwindcss": "catalog:",
-    "typescript": "catalog:"
-  },
-  "patchedDependencies": {
-    "@ag-ui/core@1.0.1": "patches/ag-ui-core-1.0.1.patch"
-  },
   "scripts": {
     "build": "bun scripts/yolo.ts build",
     "test": "bun scripts/yolo.ts test",
@@ -134,6 +117,24 @@
     "bundle-size": "bun scripts/bundle-size.ts",
     "check": "bun scripts/check-exports.ts && bun scripts/check-assets.ts && bun scripts/check-links.ts",
     "fonts:sync": "bun scripts/fonts-sync.ts",
-    "native": "bun scripts/native.ts"
+    "native": "bun scripts/native.ts",
+    "postinstall": "bun forks/material-web/scripts/bootstrap-types.ts --consumer packages/m3-front"
+  },
+  "devDependencies": {
+    "@aphrody/m3-bun": "workspace:*",
+    "@aphrody/m3-config": "workspace:*",
+    "@types/bun": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "playwright-core": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  },
+  "patchedDependencies": {
+    "@ag-ui/core@1.0.1": "patches/ag-ui-core-1.0.1.patch"
   }
 }

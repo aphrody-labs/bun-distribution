@@ -21,7 +21,9 @@ for (let i = 0; i < args.length; i++) {
   const flag = args[i];
   const value = args[++i];
   if ((flag !== "--source" && flag !== "--output") || !value || value.startsWith("--")) {
-    throw new Error("Usage: bun run generate.ts --source /path/to/material-web [--output /tmp/preview]");
+    throw new Error(
+      "Usage: bun run generate.ts --source /path/to/material-web [--output /tmp/preview]",
+    );
   }
   if (flag === "--source") sourceRoot = resolve(value);
   else outputRoot = resolve(value);
@@ -322,7 +324,7 @@ const indexLines = [
   "",
 ];
 // Group elements that share the same import file (e.g. several tags per module is rare; one file = one element here).
-for (const [group, items] of [...groups.entries()].sort()) {
+for (const [group, items] of [...groups.entries()].toSorted()) {
   const fileName = `${group}.ts`;
   const lines = [
     HEADER,
@@ -352,7 +354,7 @@ for (const [group, items] of [...groups.entries()].sort()) {
 
 // index.ts at package root re-exports all groups.
 const idx = [HEADER];
-for (const [group] of [...groups.entries()].sort()) {
+for (const [group] of [...groups.entries()].toSorted()) {
   idx.push(`export * from './wrappers/${group}.js';`);
 }
 idx.push("");
@@ -388,8 +390,7 @@ writeFileSync(
 // the wrapper count + table self-maintaining — never stale after a `generate`.
 const README = join(outputRoot, "README.md");
 const rows = resolved
-  .slice()
-  .sort((a, b) => a.name.localeCompare(b.name))
+  .toSorted((a, b) => a.name.localeCompare(b.name))
   .map((r) => {
     const ev = Object.keys(r.events ?? {}).length || "—";
     return `| \`${r.name}\` | \`${r.tag}\` | \`@aphrody/material-web/${r.file}\` | ${ev} |`;

@@ -89,6 +89,7 @@ export function m3SitemapXml(routes: readonly (string | M3Route)[], origin: stri
       `a sitemap holds at most ${M3_SITEMAP_MAX_URLS} URLs, got ${entries.size}`,
     );
   const urls = [...entries]
+    // oxlint-disable-next-line unicorn/no-array-sort -- Sort the owned copy without requiring ES2023 in consumers.
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([loc, route]) => {
       const lines = [`    <loc>${xmlEscape(loc)}</loc>`];

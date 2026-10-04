@@ -55,16 +55,20 @@ export interface BuildReport {
  */
 export function hoistHtml(html: string, depth: number): string {
   if (depth === 0) return html;
-  return html.replace(/((?:src|href)=["'])((?:\.\.\/)+)/g, (_match, prefix: string, ups: string) => {
-    const remaining = ups.length / 3 - depth;
-    return `${prefix}${remaining > 0 ? "../".repeat(remaining) : "./"}`;
-  });
+  return html.replace(
+    /((?:src|href)=["'])((?:\.\.\/)+)/g,
+    (_match, prefix: string, ups: string) => {
+      const remaining = ups.length / 3 - depth;
+      return `${prefix}${remaining > 0 ? "../".repeat(remaining) : "./"}`;
+    },
+  );
 }
 
 async function walk(dir: string, base = dir): Promise<string[]> {
   const out: string[] = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
+    // oxlint-disable-next-line no-await-in-loop -- Traverse one subtree at a time to bound filesystem work and retained entries.
     if (entry.isDirectory()) out.push(...(await walk(full, base)));
     else out.push(relative(base, full).replaceAll("\\", "/"));
   }
@@ -72,12 +76,21 @@ async function walk(dir: string, base = dir): Promise<string[]> {
 }
 
 /** Every file of a build directory with sizes and hashes; `manifestName` itself is not listed. */
-export async function listBuild(outdir: string, manifestName = "m3-bun.manifest.json"): Promise<BuildFile[]> {
+export async function listBuild(
+  outdir: string,
+  manifestName = "m3-bun.manifest.json",
+): Promise<BuildFile[]> {
   const files: BuildFile[] = [];
   for (const path of await walk(outdir)) {
     if (path === manifestName || path.endsWith(".map")) continue;
+    // oxlint-disable-next-line no-await-in-loop -- Hash and compress one asset at a time so memory is bounded by the largest asset.
     const bytes = new Uint8Array(await Bun.file(join(outdir, path)).arrayBuffer());
-    files.push({ path, bytes: bytes.length, gzipBytes: Bun.gzipSync(bytes).length, sha256: sha256(bytes) });
+    files.push({
+      path,
+      bytes: bytes.length,
+      gzipBytes: Bun.gzipSync(bytes).length,
+      sha256: sha256(bytes),
+    });
   }
   return files;
 }
@@ -99,7 +112,8 @@ export interface BuildAppOptions {
 /** Build the UI of an M3 app into its output directory. */
 export async function buildApp(options: BuildAppOptions = {}): Promise<BuildReport> {
   const started = performance.now();
-  const app = options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
+  const app =
+    options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
   const outdir = resolve(options.outdir ?? app.outdir);
   const minify = options.minify ?? app.minify;
   const { m3 } = app;
@@ -114,7 +128,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<BuildRepo
     ...(m3.drop ? { drop: m3.drop } : {}),
     ...(m3.optimizeImports ? { optimizeImports: m3.optimizeImports } : {}),
     plugin: false,
-    plugins: [m3Bun({ ...(m3.theme ? { theme: m3.theme } : {}), ...(m3.root ? { root: m3.root } : {}), configDir: m3.dir })],
+    plugins: [
+      m3Bun({
+        ...(m3.theme ? { theme: m3.theme } : {}),
+        ...(m3.root ? { root: m3.root } : {}),
+        configDir: m3.dir,
+      }),
+    ],
     cwd: m3.dir,
   });
 
@@ -154,6 +174,7 @@ async function hoistEntry(outdir: string, appDir: string, entry: string): Promis
     await rm(built, { force: true });
     // Drop the now empty source-relative directories.
     for (let dir = dirname(built); dir !== outdir && dir.startsWith(outdir); dir = dirname(dir)) {
+      // oxlint-disable-next-line no-await-in-loop -- Inspect the next parent only after removing its empty child.
       if ((await readdir(dir)).length > 0) break;
       rmSync(dir, { recursive: true, force: true });
     }

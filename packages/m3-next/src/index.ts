@@ -12,7 +12,12 @@ import {
   type SchemeVariant,
 } from "@aphrody/m3-tokens/dynamic-color";
 
-import { M3_BASELINE_SEED, M3_THEME_COOKIE, type M3ThemeMode } from "./constants";
+import {
+  M3_BASELINE_SEED,
+  M3_THEME_COOKIE,
+  validateThemeCookieName,
+  type M3ThemeMode,
+} from "./constants";
 
 export type { ColorRoleMap, SchemeVariant };
 export * from "./constants";
@@ -285,10 +290,10 @@ export function rootDeclarations(css: string): ColorRoleMap {
  * preference.
  */
 export function colorSchemeScript(cookieName: string = M3_THEME_COOKIE): string {
-  const name = cookieName.replace(/[^\w-]/g, "");
+  const name = JSON.stringify(`${validateThemeCookieName(cookieName)}=`);
   return (
     "(function(){try{var d=document.documentElement," +
-    `c=document.cookie.match(/(?:^|; )${name}=(light|dark|system)/),m=c?c[1]:"system";` +
+    `p=${name},c=document.cookie.split(/;\\s*/).find(function(v){return v.indexOf(p)===0}),v=c?c.slice(p.length):"",m=/^(light|dark|system)$/.test(v)?v:"system";` +
     "if(m==='system'){var s=window.matchMedia('(prefers-color-scheme: dark)').matches;" +
     "d.classList.remove('light');d.classList.toggle('dark',s);d.style.colorScheme=s?'dark':'light'}" +
     "else{d.classList.toggle('dark',m==='dark');d.classList.toggle('light',m==='light');d.style.colorScheme=m}" +

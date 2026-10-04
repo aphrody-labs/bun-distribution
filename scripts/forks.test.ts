@@ -3,7 +3,16 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { REPO, git, loadForks, main, parseGitmodules, pinnedSha, planSparse, planSync } from "./forks.ts";
+import {
+  REPO,
+  git,
+  loadForks,
+  main,
+  parseGitmodules,
+  pinnedSha,
+  planSparse,
+  planSync,
+} from "./forks.ts";
 
 const SAMPLE = `
 [submodule "forks/a"]
@@ -34,8 +43,21 @@ describe("parseGitmodules", () => {
       sparse: ["symbols/web", "docs"],
       shallow: true,
     });
-    expect(b).toEqual({ name: "forks/b", path: "forks/b", url: "git@example:org/b.git", sparse: [], shallow: false });
-    expect(c).toEqual({ name: "forks/c", path: "forks/c", url: "git@example:org/c.git", sparseScript: "scripts/own-sparse.ts", sparse: [], shallow: false });
+    expect(b).toEqual({
+      name: "forks/b",
+      path: "forks/b",
+      url: "git@example:org/b.git",
+      sparse: [],
+      shallow: false,
+    });
+    expect(c).toEqual({
+      name: "forks/c",
+      path: "forks/c",
+      url: "git@example:org/c.git",
+      sparseScript: "scripts/own-sparse.ts",
+      sparse: [],
+      shallow: false,
+    });
   });
   test("rejects a submodule without path or url", () => {
     expect(() => parseGitmodules('[submodule "x"]\n\tpath = x\n')).toThrow(/needs path and url/);
@@ -43,7 +65,8 @@ describe("parseGitmodules", () => {
   test("the repository registry lists every submodule once and the forks carry an upstream", () => {
     const forks = loadForks(REPO);
     expect(new Set(forks.map((f) => f.path)).size).toBe(forks.length);
-    for (const fork of forks.filter((f) => f.path.startsWith("forks/"))) expect(fork.upstream).toMatch(/^https:\/\/github\.com\//);
+    for (const fork of forks.filter((f) => f.path.startsWith("forks/")))
+      expect(fork.upstream).toMatch(/^https:\/\/github\.com\//);
     for (const fork of forks) expect(pinnedSha(REPO, fork.path)).toMatch(/^[0-9a-f]{40}$/);
   });
 
@@ -53,7 +76,9 @@ describe("parseGitmodules", () => {
     expect(icons.sparse).toEqual([]);
     expect(existsSync(join(REPO, icons.sparseScript!))).toBe(true);
     // Initialised: exactly the script. Absent: refused, since a submodule checkout of ~2.1M files downloads every blob.
-    expect(planSparse(icons, [], true)).toEqual([{ cwd: ".", bin: "bun", argv: [icons.sparseScript!] }]);
+    expect(planSparse(icons, [], true)).toEqual([
+      { cwd: ".", bin: "bun", argv: [icons.sparseScript!] },
+    ]);
     expect(() => planSparse(icons, [], false)).toThrow(/downloads every blob/);
     expect(() => planSparse(icons, ["symbols/web"], true)).toThrow(/takes no paths/);
     for (const present of [true, false]) {
@@ -82,23 +107,44 @@ describe("plans", () => {
     ]);
   });
   test("a fork that is partial or sparse fetches blobless; a plain one does not", () => {
-    const fetchOf = (f: typeof fork, blobless?: boolean) => planSync(f, { hasUpstreamRemote: true, ...(blobless === undefined ? {} : { blobless }) })[0]!.argv;
-    expect(fetchOf(fork)).toEqual(["fetch", "--depth", "1", "--filter=blob:none", "upstream", "master"]);
-    expect(fetchOf({ ...fork, sparse: [] })).toEqual(["fetch", "--depth", "1", "upstream", "master"]);
+    const fetchOf = (f: typeof fork, blobless?: boolean) =>
+      planSync(f, { hasUpstreamRemote: true, ...(blobless === undefined ? {} : { blobless }) })[0]!
+        .argv;
+    expect(fetchOf(fork)).toEqual([
+      "fetch",
+      "--depth",
+      "1",
+      "--filter=blob:none",
+      "upstream",
+      "master",
+    ]);
+    expect(fetchOf({ ...fork, sparse: [] })).toEqual([
+      "fetch",
+      "--depth",
+      "1",
+      "upstream",
+      "master",
+    ]);
     expect(fetchOf({ ...fork, sparse: [] }, true)).toContain("--filter=blob:none");
     expect(fetchOf({ ...fork, sparse: [], sparseScript: "x.ts" })).toContain("--filter=blob:none");
   });
   test("sparse on a plain present fork disables only a checkout that is sparse", () => {
     const plain = { ...fork, sparse: [] };
     expect(planSparse(plain, [], true, false)).toEqual([]);
-    expect(planSparse(plain, [], true, true).map((s) => s.argv.join(" "))).toEqual(["sparse-checkout disable"]);
+    expect(planSparse(plain, [], true, true).map((s) => s.argv.join(" "))).toEqual([
+      "sparse-checkout disable",
+    ]);
   });
   test("sync without an upstream throws", () => {
     expect(() => planSync(parseGitmodules(SAMPLE)[1]!, {})).toThrow(/no `upstream`/);
   });
   test("a delegated fork syncs, then lets its script materialise what the new commit adds", () => {
     const delegated = { ...fork, sparse: [], sparseScript: "scripts/own-sparse.ts" };
-    expect(planSync(delegated, { stage: true, hasUpstreamRemote: true }).map((s) => `${s.bin ?? "git"} ${s.argv.join(" ")}`)).toEqual([
+    expect(
+      planSync(delegated, { stage: true, hasUpstreamRemote: true }).map(
+        (s) => `${s.bin ?? "git"} ${s.argv.join(" ")}`,
+      ),
+    ).toEqual([
       "git fetch --depth 1 --filter=blob:none upstream master",
       "git merge --ff-only FETCH_HEAD",
       "bun scripts/own-sparse.ts",
@@ -110,9 +156,19 @@ describe("plans", () => {
       "submodule update --init --depth 1 --filter=blob:none -- forks/a",
       "sparse-checkout set --cone symbols/web docs",
     ]);
-    expect(planSparse(fork, ["only"], true).map((s) => s.argv.join(" "))).toEqual(["sparse-checkout set --cone only"]);
+    expect(planSparse(fork, ["only"], true).map((s) => s.argv.join(" "))).toEqual([
+      "sparse-checkout set --cone only",
+    ]);
   });
 });
+
+const commitFixture = (dir: string, file: string, text: string) => {
+  mkdirSync(join(dir, file, ".."), { recursive: true });
+  writeFileSync(join(dir, file), text);
+  git(dir, "add", "-A");
+  expect(git(dir, "commit", "-m", `edit ${file}`).code).toBe(0);
+  return git(dir, "rev-parse", "HEAD").out;
+};
 
 describe("against real temporary repositories", () => {
   let root = "";
@@ -132,14 +188,6 @@ describe("against real temporary repositories", () => {
   };
   const saved: Record<string, string | undefined> = {};
 
-  const commit = (dir: string, file: string, text: string) => {
-    mkdirSync(join(dir, file, ".."), { recursive: true });
-    writeFileSync(join(dir, file), text);
-    git(dir, "add", "-A");
-    expect(git(dir, "commit", "-m", `edit ${file}`).code).toBe(0);
-    return git(dir, "rev-parse", "HEAD").out;
-  };
-
   beforeAll(() => {
     for (const [k, v] of Object.entries(env)) {
       saved[k] = process.env[k];
@@ -153,19 +201,20 @@ describe("against real temporary repositories", () => {
       mkdirSync(dir);
       git(dir, "init", "-q", "-b", "main");
     }
-    commit(upstream, "symbols/web/a.txt", "one");
-    commit(upstream, "other/b.txt", "two");
-    expect(git(root, "clone", "-q", upstream, fork).code).toBe(0);
+    commitFixture(upstream, "symbols/web/a.txt", "one");
+    commitFixture(upstream, "other/b.txt", "two");
+    const cloned = git(root, "clone", "-q", upstream, fork);
+    expect(cloned).toMatchObject({ code: 0, err: "" });
     git(fork, "config", "uploadpack.allowFilter", "true");
     git(fork, "config", "uploadpack.allowAnySHA1InWant", "true");
-    commit(sup, "README.md", "super");
+    commitFixture(sup, "README.md", "super");
     expect(git(sup, "submodule", "add", "-q", fork, "forks/x").code).toBe(0);
     git(sup, "config", "-f", ".gitmodules", "submodule.forks/x.upstream", upstream);
     git(sup, "config", "-f", ".gitmodules", "submodule.forks/x.upstream-branch", "main");
     git(sup, "config", "-f", ".gitmodules", "submodule.forks/x.sparse", "symbols/web");
     git(sup, "add", "-A");
     expect(git(sup, "commit", "-m", "add fork").code).toBe(0);
-  });
+  }, 30_000);
 
   afterAll(() => {
     for (const [k, v] of Object.entries(saved)) {
@@ -184,7 +233,7 @@ describe("against real temporary repositories", () => {
   });
 
   test("status --remote compares fork and upstream tips with ls-remote", async () => {
-    commit(upstream, "later.txt", "upstream moves");
+    commitFixture(upstream, "later.txt", "upstream moves");
     lines.length = 0;
     expect(await main(["status", "x", "--remote", "--json"], sup, out)).toBe(0);
     const [row] = JSON.parse(lines.join("\n"));
@@ -281,11 +330,19 @@ describe("a fork whose sparse set is owned by a script", () => {
     writeFileSync(join(sup, "README.md"), "super");
     git(sup, "add", "-A");
     git(sup, "commit", "-q", "-m", "init");
-    expect(git(sup, "submodule", "add", "-q", fork, "forks/icons").code).toBe(0);
-    git(sup, "config", "-f", ".gitmodules", "submodule.forks/icons.sparse-script", "scripts/own-sparse.ts");
+    const added = git(sup, "submodule", "add", "-q", fork, "forks/icons");
+    expect(added).toMatchObject({ code: 0, err: "" });
+    git(
+      sup,
+      "config",
+      "-f",
+      ".gitmodules",
+      "submodule.forks/icons.sparse-script",
+      "scripts/own-sparse.ts",
+    );
     git(sup, "add", "-A");
     expect(git(sup, "commit", "-q", "-m", "add fork").code).toBe(0);
-  });
+  }, 30_000);
 
   afterAll(() => {
     for (const [k, v] of Object.entries(saved)) {
@@ -295,7 +352,8 @@ describe("a fork whose sparse set is owned by a script", () => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  const log = () => (existsSync(join(sup, "delegate.log")) ? readFileSync(join(sup, "delegate.log"), "utf8") : "");
+  const log = () =>
+    existsSync(join(sup, "delegate.log")) ? readFileSync(join(sup, "delegate.log"), "utf8") : "";
 
   test("sparse without --apply only prints the delegate", async () => {
     lines.length = 0;

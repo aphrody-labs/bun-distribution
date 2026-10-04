@@ -14,38 +14,46 @@ export interface FormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, "ac
 
 export const Form = forwardRef<HTMLFormElement, FormProps>(function Form(
   { action, replace = false, scroll = true, prefetch: _prefetch, onSubmit, children, ...rest },
-  ref
+  ref,
 ) {
   const ctx = useNextMigrateContext();
 
-  const handleSubmit = async (e: any) => {
-    onSubmit?.(e);
-    if (e.defaultPrevented) return;
+  const handleSubmit: NonNullable<FormHTMLAttributes<HTMLFormElement>["onSubmit"]> = (event) => {
+    onSubmit?.(event);
+    if (event.defaultPrevented || typeof action === "function") return;
 
-    if (typeof action === "function") {
-      e.preventDefault();
-      const formData = new FormData(e.currentTarget);
-      await action(formData);
+    const form = event.currentTarget;
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const method = submitter?.getAttribute("formmethod") ?? form.method;
+    const target = submitter?.getAttribute("formtarget") ?? form.target;
+    const encoding = submitter?.getAttribute("formenctype") ?? form.enctype;
+    // Preserve native form semantics for POST, uploads, and another browsing context.
+    if (
+      method.toLowerCase() !== "get" ||
+      (target && target !== "_self") ||
+      (encoding && encoding !== "application/x-www-form-urlencoded")
+    )
       return;
+    const destination = new URL(
+      submitter?.getAttribute("formaction") ?? action,
+      window.location.href,
+    );
+    if (
+      destination.origin !== window.location.origin ||
+      (destination.protocol !== "http:" && destination.protocol !== "https:")
+    )
+      return;
+    destination.search = "";
+    const data = new FormData(form, submitter);
+    for (const [name, value] of data) {
+      destination.searchParams.append(name, typeof value === "string" ? value : value.name);
     }
-
-    if (typeof action === "string") {
-      e.preventDefault();
-      const formData = new FormData(e.currentTarget);
-      const params = new URLSearchParams();
-      formData.forEach((value, key) => {
-        if (typeof value === "string") {
-          params.append(key, value);
-        }
-      });
-      const queryString = params.toString();
-      const targetUrl = queryString ? `${action}?${queryString}` : action;
-      ctx.navigate(targetUrl, { replace, scroll });
-    }
+    event.preventDefault();
+    ctx.navigate(destination.pathname + destination.search + destination.hash, { replace, scroll });
   };
 
   return (
-    <form ref={ref} onSubmit={handleSubmit} {...rest}>
+    <form ref={ref} action={action} onSubmit={handleSubmit} {...rest}>
       {children}
     </form>
   );

@@ -53,6 +53,7 @@ const map = {
   // Gaps réels (pas d'élément md -> transition/tokens/primitive).
   gapComponents: GAP_COMPONENTS,
   // Props retirées avec TODO (pas d'équivalent direct md).
+  // oxlint-disable-next-line unicorn/no-array-sort -- Sort a fresh copy while retaining the codemod's ES2022 API contract.
   propsDroppedWithTodo: [...PROP_DROP_WITH_TODO].sort(),
   // Règles de migration des icônes @mui/icons-material -> Material Symbols.
   icons: {

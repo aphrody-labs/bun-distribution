@@ -11,7 +11,9 @@ USAGE
   aphrody-scaffold example <dir>
   aphrody-scaffold new <web|app> <dir> [--name <text>] [--target tauri|vite] [--m3] [--m3-version <x.y.z>]
 
-The directory must be new or empty; no file is ever overwritten. No install or network access.`;
+The directory must be a new or empty declared member of the Aphrody/M3 private owner workspace.
+--target vite selects the native Bun web host. Tauri activation requires its registered Rust owner and Workspace factory.
+No file is overwritten; no install or network access.`;
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;

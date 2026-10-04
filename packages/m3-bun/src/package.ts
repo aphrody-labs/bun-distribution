@@ -34,7 +34,9 @@ export async function buildRootfs(executable: string, dir: string): Promise<Root
   const ldd = Bun.spawnSync(["ldd", executable], { stdout: "pipe", stderr: "pipe" });
   const text = ldd.stdout.toString();
   if (ldd.exitCode !== 0 && !text.includes("=>")) {
-    throw new Error(`m3-bun: ldd cannot read ${executable} (${ldd.stderr.toString().trim() || "not a dynamic executable for this host"}); build the rootfs on a host with the target's libc`);
+    throw new Error(
+      `m3-bun: ldd cannot read ${executable} (${ldd.stderr.toString().trim() || "not a dynamic executable for this host"}); build the rootfs on a host with the target's libc`,
+    );
   }
   const libraries = parseLdd(text);
   await rm(dir, { recursive: true, force: true });
@@ -44,7 +46,9 @@ export async function buildRootfs(executable: string, dir: string): Promise<Root
   let bytes = Bun.file(executable).size;
   for (const library of libraries) {
     const target = join(dir, library);
+    // oxlint-disable-next-line no-await-in-loop -- Create each library destination before copying and counting its staged bytes.
     await mkdir(dirname(target), { recursive: true });
+    // oxlint-disable-next-line no-await-in-loop -- Stage libraries serially to bound disk work and stop on the first failed copy.
     await cp(library, target, { dereference: true });
     bytes += Bun.file(target).size;
   }
@@ -54,17 +58,33 @@ export async function buildRootfs(executable: string, dir: string): Promise<Root
 export type ArchiveFormat = "tar.gz" | "zip";
 
 /** Archive the contents of `staging` into `archive` with the system tool; modes are preserved. */
-export async function archiveDir(staging: string, archive: string, format: ArchiveFormat): Promise<void> {
+export async function archiveDir(
+  staging: string,
+  archive: string,
+  format: ArchiveFormat,
+): Promise<void> {
   await mkdir(dirname(archive), { recursive: true });
   await rm(archive, { force: true });
   if (format === "zip") {
-    const proc = Bun.spawnSync(["zip", "-q", "-r", "-X", archive, "."], { cwd: staging, stdout: "pipe", stderr: "pipe" });
-    if (proc.exitCode !== 0) throw new Error(`m3-bun: zip failed: ${proc.stderr.toString().trim()}`);
+    const proc = Bun.spawnSync(["zip", "-q", "-r", "-X", archive, "."], {
+      cwd: staging,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    if (proc.exitCode !== 0)
+      throw new Error(`m3-bun: zip failed: ${proc.stderr.toString().trim()}`);
     return;
   }
-  const gnu = Bun.spawnSync(["tar", "--version"], { stdout: "pipe" }).stdout.toString().includes("GNU");
-  const reproducible = gnu ? ["--sort=name", "--mtime=@0", "--owner=0", "--group=0", "--numeric-owner"] : [];
-  const proc = Bun.spawnSync(["tar", ...reproducible, "-czf", archive, "-C", staging, "."], { stdout: "pipe", stderr: "pipe" });
+  const gnu = Bun.spawnSync(["tar", "--version"], { stdout: "pipe" })
+    .stdout.toString()
+    .includes("GNU");
+  const reproducible = gnu
+    ? ["--sort=name", "--mtime=@0", "--owner=0", "--group=0", "--numeric-owner"]
+    : [];
+  const proc = Bun.spawnSync(["tar", ...reproducible, "-czf", archive, "-C", staging, "."], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (proc.exitCode !== 0) throw new Error(`m3-bun: tar failed: ${proc.stderr.toString().trim()}`);
 }
 
@@ -110,7 +130,8 @@ Verify the download with SHA256SUMS. Built with @aphrody/m3-bun; the executable 
 
 /** Compile, stage and archive an app. */
 export async function packageApp(options: PackageOptions = {}): Promise<PackageReport> {
-  const app = options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
+  const app =
+    options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
   const target = options.target ?? app.bun.compile?.target;
   const windows = (target ?? "").startsWith("windows");
   const format = options.format ?? (windows ? "zip" : "tar.gz");
@@ -124,7 +145,11 @@ export async function packageApp(options: PackageOptions = {}): Promise<PackageR
   let compile: CompileReport | undefined;
   let executable = options.executable ? resolve(options.executable) : undefined;
   if (!executable) {
-    compile = await compileApp({ app, ...(target ? { target } : {}), outfile: join(staging, exeName) });
+    compile = await compileApp({
+      app,
+      ...(target ? { target } : {}),
+      outfile: join(staging, exeName),
+    });
     executable = compile.outfile;
   } else {
     await cp(executable, join(staging, exeName));
@@ -134,7 +159,10 @@ export async function packageApp(options: PackageOptions = {}): Promise<PackageR
 
   const manifest = Bun.file(join(app.outdir, "m3-bun.manifest.json"));
   if (await manifest.exists()) await Bun.write(join(staging, "m3-bun.manifest.json"), manifest);
-  await Bun.write(join(staging, "README.txt"), readmeText(app.name, app.version, windows ? exeName : `./${exeName}`, app.port));
+  await Bun.write(
+    join(staging, "README.txt"),
+    readmeText(app.name, app.version, windows ? exeName : `./${exeName}`, app.port),
+  );
   if (options.deploy) await generateTargets(["all"], contextFor(app), join(staging, "deploy"));
   const exeHash = sha256(new Uint8Array(await Bun.file(executable).arrayBuffer()));
   await Bun.write(join(staging, "SHA256SUMS"), `${exeHash}  ${exeName}\n`);
@@ -147,7 +175,17 @@ export async function packageApp(options: PackageOptions = {}): Promise<PackageR
   const archiveHash = sha256(new Uint8Array(await Bun.file(archive).arrayBuffer()));
   const checksumFile = `${archive}.sha256`;
   await Bun.write(checksumFile, `${archiveHash}  ${basename(archive)}\n`);
-  const files = (await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: staging, onlyFiles: true, dot: true }))).toSorted();
+  const files = (
+    await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: staging, onlyFiles: true, dot: true }))
+  ).toSorted();
   await rm(join(out, ".staging"), { recursive: true, force: true });
-  return { archive, bytes: Bun.file(archive).size, sha256: archiveHash, checksumFile, files, ...(compile ? { compile } : {}), ...(rootfs ? { rootfs } : {}) };
+  return {
+    archive,
+    bytes: Bun.file(archive).size,
+    sha256: archiveHash,
+    checksumFile,
+    files,
+    ...(compile ? { compile } : {}),
+    ...(rootfs ? { rootfs } : {}),
+  };
 }

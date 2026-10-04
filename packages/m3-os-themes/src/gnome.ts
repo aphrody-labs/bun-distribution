@@ -23,6 +23,7 @@ export function nearestGnomeAccent(color: string): string {
     const n = Number.parseInt(h.slice(1), 16);
     return [16, 8, 0].reduce((s, sh) => s + (((c >> sh) & 255) - ((n >> sh) & 255)) ** 2, 0);
   };
+  // eslint-disable-next-line unicorn/no-array-sort -- Sorting fresh entries keeps the shared ES2022 type contract.
   return Object.entries(GNOME_ACCENTS).sort((a, b) => d(a[1]) - d(b[1]))[0]![0];
 }
 
@@ -170,27 +171,45 @@ THEME_DIR="$DATA/themes/$NAME"
 STATE="$DATA/m3-os-themes"
 SNAP="$STATE/gnome-$NAME.env"
 ICON_SNAP="$STATE/gnome-$NAME.icons"
+ICON_BACKUP="$STATE/gnome-$NAME.icon-dir"
 GTK4_CSS="$CONF/gtk-4.0/gtk.css"
 MARK="m3-os-themes marker"
 
 run() { if [ "$DRY" = 1 ]; then echo "[dry-run] $*"; else "$@"; fi; }
 gget() { gsettings get "$1" "$2" 2>/dev/null || true; }
-gset() { if gsettings writable "$1" "$2" >/dev/null 2>&1; then run gsettings set "$1" "$2" "$3"; fi; }
+gset() { if [ "$(gsettings writable "$1" "$2" 2>/dev/null)" = true ]; then run gsettings set "$1" "$2" "$3"; fi; }
+
+case "$MODE" in auto|light|dark) ;; *) echo "unknown mode: $MODE" >&2; exit 2 ;; esac
+if [ -n "$ICONS" ] && [ "$UNINSTALL" = 0 ]; then
+  [ -f "$ICONS/index.theme" ] || { echo "--icons: $ICONS has no index.theme" >&2; exit 2; }
+  ICON_NAME="$(basename "$ICONS")"
+  case "$ICON_NAME" in ""|.|..|*[!a-zA-Z0-9_.\\ -]*) echo "invalid icon directory name: $ICON_NAME" >&2; exit 2 ;; esac
+fi
+
 
 if [ "$UNINSTALL" = 1 ]; then
   if [ -f "$SNAP" ]; then
-    # shellcheck disable=SC1090
-    . "$SNAP"
-    [ -n "\${GTK_THEME:-}" ] && gset org.gnome.desktop.interface gtk-theme "$GTK_THEME"
-    [ -n "\${COLOR_SCHEME:-}" ] && gset org.gnome.desktop.interface color-scheme "$COLOR_SCHEME"
-    [ -n "\${ACCENT:-}" ] && gset org.gnome.desktop.interface accent-color "$ACCENT"
-    [ -n "\${SHELL_THEME:-}" ] && gset org.gnome.shell.extensions.user-theme name "$SHELL_THEME"
+    while IFS='=' read -r key value; do
+      case "$key" in
+        GTK_THEME) [ -z "$value" ] || gset org.gnome.desktop.interface gtk-theme "$value" ;;
+        COLOR_SCHEME) [ -z "$value" ] || gset org.gnome.desktop.interface color-scheme "$value" ;;
+        ACCENT) [ -z "$value" ] || gset org.gnome.desktop.interface accent-color "$value" ;;
+        SHELL_THEME) [ -z "$value" ] || gset org.gnome.shell.extensions.user-theme name "$value" ;;
+      esac
+    done < "$SNAP"
   fi
   if [ -f "$ICON_SNAP" ]; then
-    # shellcheck disable=SC1090
-    . "$ICON_SNAP"
-    [ -n "\${ICON_THEME_PREV:-}" ] && gset org.gnome.desktop.interface icon-theme "$ICON_THEME_PREV"
-    [ -n "\${ICON_NAME:-}" ] && run rm -rf "$DATA/icons/$ICON_NAME"
+    while IFS='=' read -r key value; do
+      case "$key" in
+        ICON_THEME_PREV) [ -z "$value" ] || gset org.gnome.desktop.interface icon-theme "$value" ;;
+        ICON_NAME)
+          case "$value" in ""|.|..|*[!a-zA-Z0-9_.\\ -]*) echo "invalid icon snapshot name" >&2; exit 2 ;; esac
+          run rm -rf "$DATA/icons/$value"
+          if [ -e "$ICON_BACKUP" ]; then run cp -a "$ICON_BACKUP" "$DATA/icons/$value"; fi
+          ;;
+      esac
+    done < "$ICON_SNAP"
+    run rm -rf "$ICON_BACKUP"
     run rm -f "$ICON_SNAP"
   fi
   run rm -rf "$THEME_DIR"
@@ -203,6 +222,13 @@ if [ "$UNINSTALL" = 1 ]; then
   exit 0
 fi
 
+if [ -n "$ICONS" ] && [ -f "$ICON_SNAP" ]; then
+  while IFS='=' read -r key value; do
+    if [ "$key" = ICON_NAME ] && [ "$value" != "$ICON_NAME" ]; then
+      echo "uninstall before changing the installed icon directory" >&2; exit 2
+    fi
+  done < "$ICON_SNAP"
+fi
 run mkdir -p "$STATE" "$DATA/themes" "$CONF/gtk-4.0"
 if [ ! -f "$SNAP" ] && [ "$DRY" = 0 ]; then
   {
@@ -227,6 +253,7 @@ if [ -n "$ICONS" ]; then
   [ -f "$ICONS/index.theme" ] || { echo "--icons: $ICONS has no index.theme (bun packages/material-design-icons/scripts/export-theme.ts)" >&2; exit 2; }
   ICON_NAME="$(basename "$ICONS")"
   if [ ! -f "$ICON_SNAP" ] && [ "$DRY" = 0 ]; then
+    if [ -e "$DATA/icons/$ICON_NAME" ]; then cp -a "$DATA/icons/$ICON_NAME" "$ICON_BACKUP"; fi
     { echo "ICON_THEME_PREV=$(gget org.gnome.desktop.interface icon-theme)"; echo "ICON_NAME=$ICON_NAME"; } > "$ICON_SNAP"
   fi
   run mkdir -p "$DATA/icons"
@@ -252,25 +279,23 @@ echo "$NAME applied ($MODE). Restore with: $0 --uninstall"
 `;
 }
 
+function gnomeFile(path: string, content: string, executable = false): GeneratedFile {
+  return { target: "gnome", path, content, executable };
+}
+
 export function generateGnome(input: ThemeInput): GeneratedFile[] {
   const light = rolesFor(input, "light").roles;
   const dark = rolesFor(input, "dark").roles;
   const shellMode: Mode = input.mode === "light" ? "light" : "dark";
   const shell = shellMode === "light" ? light : dark;
   const base = `gnome/themes/M3-${input.name}`;
-  const f = (path: string, content: string, executable = false): GeneratedFile => ({
-    target: "gnome",
-    path,
-    content,
-    executable,
-  });
   return [
-    f(`${base}/index.theme`, indexTheme(input.name)),
-    f(`${base}/gnome-shell/gnome-shell.css`, shellCss(shell, shellMode)),
-    f(`${base}/gtk-3.0/gtk.css`, gtkCss(light, 3)),
-    f(`${base}/gtk-3.0/gtk-dark.css`, gtkCss(dark, 3)),
-    f(`${base}/gtk-4.0/gtk.css`, gtkCss(light, 4)),
-    f(`${base}/gtk-4.0/gtk-dark.css`, gtkCss(dark, 4)),
-    f("gnome/install-gnome.sh", installScript(input), true),
+    gnomeFile(`${base}/index.theme`, indexTheme(input.name)),
+    gnomeFile(`${base}/gnome-shell/gnome-shell.css`, shellCss(shell, shellMode)),
+    gnomeFile(`${base}/gtk-3.0/gtk.css`, gtkCss(light, 3)),
+    gnomeFile(`${base}/gtk-3.0/gtk-dark.css`, gtkCss(dark, 3)),
+    gnomeFile(`${base}/gtk-4.0/gtk.css`, gtkCss(light, 4)),
+    gnomeFile(`${base}/gtk-4.0/gtk-dark.css`, gtkCss(dark, 4)),
+    gnomeFile("gnome/install-gnome.sh", installScript(input), true),
   ];
 }

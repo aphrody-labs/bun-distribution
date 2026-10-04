@@ -44,7 +44,8 @@ export function parseGitmodules(text: string): Fork[] {
   let current: (Partial<Fork> & { name: string }) | undefined;
   const flush = () => {
     if (!current) return;
-    if (!current.path || !current.url) throw new Error(`.gitmodules: submodule "${current.name}" needs path and url`);
+    if (!current.path || !current.url)
+      throw new Error(`.gitmodules: submodule "${current.name}" needs path and url`);
     forks.push({
       name: current.name,
       path: current.path,
@@ -97,7 +98,11 @@ export function git(cwd: string, ...args: string[]): GitResult {
     stdout: "pipe",
     stderr: "pipe",
   });
-  return { code: proc.exitCode ?? 1, out: proc.stdout.toString().trim(), err: proc.stderr.toString().trim() };
+  return {
+    code: proc.exitCode ?? 1,
+    out: proc.stdout.toString().trim(),
+    err: proc.stderr.toString().trim(),
+  };
 }
 
 export function loadForks(repo: string = REPO): Fork[] {
@@ -121,7 +126,11 @@ export async function gitAsync(cwd: string, ...args: string[]): Promise<GitResul
     stdout: "pipe",
     stderr: "pipe",
   });
-  const [out, err, code] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]);
+  const [out, err, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
   return { code, out: out.trim(), err: err.trim() };
 }
 
@@ -134,8 +143,18 @@ export interface RemoteTip {
  * Tip of `branch` (or of the default branch) on a remote without cloning: one `git ls-remote`.
  * Without `branch` the answer names the default branch from the `HEAD` symref.
  */
-export async function remoteTip(url: string, branch?: string, cwd: string = REPO): Promise<RemoteTip> {
-  const res = await gitAsync(cwd, "ls-remote", "--symref", url, branch ? `refs/heads/${branch}` : "HEAD");
+export async function remoteTip(
+  url: string,
+  branch?: string,
+  cwd: string = REPO,
+): Promise<RemoteTip> {
+  const res = await gitAsync(
+    cwd,
+    "ls-remote",
+    "--symref",
+    url,
+    branch ? `refs/heads/${branch}` : "HEAD",
+  );
   if (res.code !== 0 || !res.out) return {};
   const symref = /^ref: refs\/heads\/(\S+)\tHEAD/m.exec(res.out)?.[1];
   const sha = /^([0-9a-f]{40})\t/m.exec(res.out)?.[1];
@@ -144,8 +163,14 @@ export async function remoteTip(url: string, branch?: string, cwd: string = REPO
 }
 
 /** The commit a ref (branch, tag or sha) names on a remote; annotated tags resolve to their commit. */
-export async function remoteSha(url: string, ref: string, cwd: string = REPO): Promise<string | undefined> {
+export async function remoteSha(
+  url: string,
+  ref: string,
+  cwd: string = REPO,
+): Promise<string | undefined> {
   for (const name of [ref, `refs/heads/${ref}`, `refs/tags/${ref}`]) {
+    // Resolve exact refs before branches and tags; stop at the first successful match.
+    // oxlint-disable-next-line no-await-in-loop
     const res = await gitAsync(cwd, "ls-remote", url, name, `${name}^{}`);
     if (res.code !== 0 || !res.out) continue;
     const rows = res.out.split("\n").map((l) => l.split("\t") as [string, string]);
@@ -166,14 +191,27 @@ export interface ForkStatus {
   dirty: number;
   /** Worktree HEAD differs from the pin. */
   moved: boolean;
-  remote?: { fork?: string; upstream?: string; pinIsForkTip?: boolean; forkMirrorsUpstream?: boolean };
+  remote?: {
+    fork?: string;
+    upstream?: string;
+    pinIsForkTip?: boolean;
+    forkMirrorsUpstream?: boolean;
+  };
 }
 
 export async function forkStatus(repo: string, fork: Fork, remote = false): Promise<ForkStatus> {
   const dir = join(repo, fork.path);
   const pinned = pinnedSha(repo, fork.path);
   const present = existsSync(join(dir, ".git"));
-  const status: ForkStatus = { name: fork.name, path: fork.path, pinned, present, sparse: false, dirty: 0, moved: false };
+  const status: ForkStatus = {
+    name: fork.name,
+    path: fork.path,
+    pinned,
+    present,
+    sparse: false,
+    dirty: 0,
+    moved: false,
+  };
   if (present) {
     status.head = git(dir, "rev-parse", "HEAD").out || undefined;
     status.sparse = git(dir, "config", "--get", "core.sparseCheckout").out === "true";
@@ -186,13 +224,17 @@ export async function forkStatus(repo: string, fork: Fork, remote = false): Prom
   if (remote) {
     const [forkTip, upstreamTip] = await Promise.all([
       remoteTip(fork.url, fork.branch, repo),
-      fork.upstream ? remoteTip(fork.upstream, fork.upstreamBranch, repo) : Promise.resolve<RemoteTip>({}),
+      fork.upstream
+        ? remoteTip(fork.upstream, fork.upstreamBranch, repo)
+        : Promise.resolve<RemoteTip>({}),
     ]);
     status.remote = {
       ...(forkTip.sha ? { fork: forkTip.sha } : {}),
       ...(upstreamTip.sha ? { upstream: upstreamTip.sha } : {}),
       ...(forkTip.sha && pinned ? { pinIsForkTip: forkTip.sha === pinned } : {}),
-      ...(forkTip.sha && upstreamTip.sha ? { forkMirrorsUpstream: forkTip.sha === upstreamTip.sha } : {}),
+      ...(forkTip.sha && upstreamTip.sha
+        ? { forkMirrorsUpstream: forkTip.sha === upstreamTip.sha }
+        : {}),
     };
   }
   return status;
@@ -213,25 +255,51 @@ const short = (sha: string | undefined) => (sha ? sha.slice(0, 10) : "-");
 /** The git steps that bring `fork` to its upstream branch, in order. */
 export function planSync(
   fork: Fork,
-  options: { strategy?: Strategy; stage?: boolean; push?: boolean; pushBranch?: string; hasUpstreamRemote?: boolean; blobless?: boolean },
+  options: {
+    strategy?: Strategy;
+    stage?: boolean;
+    push?: boolean;
+    pushBranch?: string;
+    hasUpstreamRemote?: boolean;
+    blobless?: boolean;
+  },
 ): Step[] {
   if (!fork.upstream) throw new Error(`${fork.name}: no \`upstream\` in .gitmodules`);
   const branch = fork.upstreamBranch ?? "HEAD";
   const strategy = options.strategy ?? "ff";
   const steps: Step[] = [];
-  if (!options.hasUpstreamRemote) steps.push({ cwd: fork.path, argv: ["remote", "add", "upstream", fork.upstream] });
+  if (!options.hasUpstreamRemote)
+    steps.push({ cwd: fork.path, argv: ["remote", "add", "upstream", fork.upstream] });
   // A partial or sparse fork never downloads blobs it does not check out: a fetch from a new remote carries no
   // filter of its own, and for the Material Symbols repository that would be every blob (~5 GB).
   const blobless = options.blobless ?? (fork.sparse.length > 0 || fork.sparseScript !== undefined);
-  steps.push({ cwd: fork.path, argv: ["fetch", ...(fork.shallow ? ["--depth", "1"] : []), ...(blobless ? ["--filter=blob:none"] : []), "upstream", branch] });
+  steps.push({
+    cwd: fork.path,
+    argv: [
+      "fetch",
+      ...(fork.shallow ? ["--depth", "1"] : []),
+      ...(blobless ? ["--filter=blob:none"] : []),
+      "upstream",
+      branch,
+    ],
+  });
   const target = "FETCH_HEAD";
   steps.push({
     cwd: fork.path,
-    argv: strategy === "ff" ? ["merge", "--ff-only", target] : strategy === "merge" ? ["merge", "--no-edit", target] : ["rebase", target],
+    argv:
+      strategy === "ff"
+        ? ["merge", "--ff-only", target]
+        : strategy === "merge"
+          ? ["merge", "--no-edit", target]
+          : ["rebase", target],
   });
   // The delegate owns the sparse set: files the new commit adds are materialised by it, not by git here.
   if (fork.sparseScript) steps.push({ cwd: ".", bin: "bun", argv: [fork.sparseScript] });
-  if (options.push) steps.push({ cwd: fork.path, argv: ["push", "origin", `HEAD:${options.pushBranch ?? fork.branch ?? "main"}`] });
+  if (options.push)
+    steps.push({
+      cwd: fork.path,
+      argv: ["push", "origin", `HEAD:${options.pushBranch ?? fork.branch ?? "main"}`],
+    });
   if (options.stage) steps.push({ cwd: ".", argv: ["add", "--", fork.path] });
   return steps;
 }
@@ -242,9 +310,17 @@ export function planSync(
  * `sparse-checkout disable`. Such a fork is not initialised here either: a plain submodule checkout of a
  * multi-million-file tree downloads every blob.
  */
-export function planSparse(fork: Fork, paths: string[], present: boolean, sparseNow = false): Step[] {
+export function planSparse(
+  fork: Fork,
+  paths: string[],
+  present: boolean,
+  sparseNow = false,
+): Step[] {
   if (fork.sparseScript) {
-    if (paths.length > 0) throw new Error(`${fork.name}: its sparse set is owned by ${fork.sparseScript}; it takes no paths`);
+    if (paths.length > 0)
+      throw new Error(
+        `${fork.name}: its sparse set is owned by ${fork.sparseScript}; it takes no paths`,
+      );
     if (!present) {
       throw new Error(
         `${fork.name}: not initialised, and a submodule checkout of it downloads every blob. Initialise it without checking files out ` +
@@ -258,27 +334,48 @@ export function planSparse(fork: Fork, paths: string[], present: boolean, sparse
   if (!present) {
     steps.push({
       cwd: ".",
-      argv: ["submodule", "update", "--init", ...(fork.shallow || cone.length > 0 ? ["--depth", "1"] : []), ...(cone.length > 0 ? ["--filter=blob:none"] : []), "--", fork.path],
+      argv: [
+        "submodule",
+        "update",
+        "--init",
+        ...(fork.shallow || cone.length > 0 ? ["--depth", "1"] : []),
+        ...(cone.length > 0 ? ["--filter=blob:none"] : []),
+        "--",
+        fork.path,
+      ],
     });
   }
-  if (cone.length > 0) steps.push({ cwd: fork.path, argv: ["sparse-checkout", "set", "--cone", ...cone] });
-  else if (present && sparseNow) steps.push({ cwd: fork.path, argv: ["sparse-checkout", "disable"] });
+  if (cone.length > 0)
+    steps.push({ cwd: fork.path, argv: ["sparse-checkout", "set", "--cone", ...cone] });
+  else if (present && sparseNow)
+    steps.push({ cwd: fork.path, argv: ["sparse-checkout", "disable"] });
   return steps;
 }
 
-const render = (steps: Step[]) => steps.map((s) => `  (${s.cwd}) ${s.bin ?? "git"} ${s.argv.join(" ")}`).join("\n");
+const render = (steps: Step[]) =>
+  steps.map((s) => `  (${s.cwd}) ${s.bin ?? "git"} ${s.argv.join(" ")}`).join("\n");
 
 /** Run a program in `cwd`; `bun` is the running Bun. Never prompts, never throws. */
 function exec(cwd: string, bin: string, args: string[]): GitResult {
   if (bin === "git") return git(cwd, ...args);
-  const proc = Bun.spawnSync([bin === "bun" ? process.execPath : bin, ...args], { cwd, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" }, stdout: "pipe", stderr: "pipe" });
-  return { code: proc.exitCode ?? 1, out: proc.stdout.toString().trim(), err: proc.stderr.toString().trim() };
+  const proc = Bun.spawnSync([bin === "bun" ? process.execPath : bin, ...args], {
+    cwd,
+    env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  return {
+    code: proc.exitCode ?? 1,
+    out: proc.stdout.toString().trim(),
+    err: proc.stderr.toString().trim(),
+  };
 }
 
 function runSteps(repo: string, steps: Step[]): GitResult | undefined {
   for (const step of steps) {
     const res = exec(join(repo, step.cwd), step.bin ?? "git", step.argv);
-    if (res.code !== 0) return { ...res, err: `${step.bin ?? "git"} ${step.argv.join(" ")}: ${res.err || res.out}` };
+    if (res.code !== 0)
+      return { ...res, err: `${step.bin ?? "git"} ${step.argv.join(" ")}: ${res.err || res.out}` };
   }
   return undefined;
 }
@@ -287,7 +384,10 @@ function runSteps(repo: string, steps: Step[]): GitResult | undefined {
 function checkSparse(repo: string, fork: Fork): { ok: boolean; message: string } {
   if (fork.sparseScript) {
     const res = exec(repo, "bun", [fork.sparseScript, "--check"]);
-    return { ok: res.code === 0, message: `${fork.sparseScript} --check failed${res.err ? `: ${res.err}` : res.out ? `: ${res.out}` : ""}` };
+    return {
+      ok: res.code === 0,
+      message: `${fork.sparseScript} --check failed${res.err ? `: ${res.err}` : res.out ? `: ${res.out}` : ""}`,
+    };
   }
   if (fork.sparse.length === 0) return { ok: true, message: "" };
   const dir = join(repo, fork.path);
@@ -340,36 +440,57 @@ function select(forks: Fork[], names: string[]): Fork[] {
   if (names.length === 0 || names.includes("all")) return forks;
   return names.map((name) => {
     const fork = findFork(forks, name);
-    if (!fork) throw new Error(`unknown submodule "${name}" (known: ${forks.map((f) => f.name).join(", ")})`);
+    if (!fork)
+      throw new Error(
+        `unknown submodule "${name}" (known: ${forks.map((f) => f.name).join(", ")})`,
+      );
     return fork;
   });
 }
 
 function table(rows: string[][]): string {
   const widths = rows[0]!.map((_, c) => Math.max(...rows.map((r) => r[c]!.length)));
-  return rows.map((r) => r.map((cell, c) => cell.padEnd(widths[c]!)).join("  ").trimEnd()).join("\n");
+  return rows
+    .map((r) =>
+      r
+        .map((cell, c) => cell.padEnd(widths[c]!))
+        .join("  ")
+        .trimEnd(),
+    )
+    .join("\n");
 }
 
 /** Run the CLI; returns the exit code. */
-export async function main(argv: string[], repo: string = REPO, out: (line: string) => void = console.log): Promise<number> {
+export async function main(
+  argv: string[],
+  repo: string = REPO,
+  out: (line: string) => void = console.log,
+): Promise<number> {
   const { command, positionals, flags } = parseArgv(argv);
   const apply = flags.has("apply");
   const json = flags.has("json");
   const forks = loadForks(repo);
   switch (command) {
     case "list": {
-      const rows = (await Promise.all(forks.map((f) => forkStatus(repo, f)))).map((s, i) => ({
-        ...forks[i]!,
-        pinned: s.pinned,
-        present: s.present,
-        sparse: s.sparse,
-      }));
+      const rows = (await Promise.all(forks.map((f) => forkStatus(repo, f)))).map((s, i) =>
+        Object.assign({}, forks[i]!, {
+          pinned: s.pinned,
+          present: s.present,
+          sparse: s.sparse,
+        }),
+      );
       if (json) out(JSON.stringify(rows, null, 2));
       else
         out(
           table([
             ["name", "path", "pin", "state", "upstream"],
-            ...rows.map((r) => [r.name, r.path, short(r.pinned), r.present ? (r.sparse ? "sparse" : "present") : "absent", r.upstream ?? "-"]),
+            ...rows.map((r) => [
+              r.name,
+              r.path,
+              short(r.pinned),
+              r.present ? (r.sparse ? "sparse" : "present") : "absent",
+              r.upstream ?? "-",
+            ]),
           ]),
         );
       return 0;
@@ -383,15 +504,35 @@ export async function main(argv: string[], repo: string = REPO, out: (line: stri
       }
       out(
         table([
-          ["name", "pin", "head", "state", "dirty", ...(flags.has("remote") ? ["fork tip", "upstream tip", "mirrors"] : [])],
-          ...rows.map((s) => [
-            s.name,
-            short(s.pinned),
-            short(s.head),
-            !s.present ? "absent" : s.moved ? "moved" : "pinned",
-            String(s.dirty),
-            ...(s.remote ? [short(s.remote.fork), short(s.remote.upstream), s.remote.forkMirrorsUpstream === undefined ? "?" : s.remote.forkMirrorsUpstream ? "yes" : "no"] : []),
-          ]),
+          [
+            "name",
+            "pin",
+            "head",
+            "state",
+            "dirty",
+            ...(flags.has("remote") ? ["fork tip", "upstream tip", "mirrors"] : []),
+          ],
+          ...rows.map((s) =>
+            [
+              s.name,
+              short(s.pinned),
+              short(s.head),
+              !s.present ? "absent" : s.moved ? "moved" : "pinned",
+              String(s.dirty),
+            ].concat(
+              s.remote
+                ? [
+                    short(s.remote.fork),
+                    short(s.remote.upstream),
+                    s.remote.forkMirrorsUpstream === undefined
+                      ? "?"
+                      : s.remote.forkMirrorsUpstream
+                        ? "yes"
+                        : "no",
+                  ]
+                : [],
+            ),
+          ),
         ]),
       );
       return 0;
@@ -399,12 +540,22 @@ export async function main(argv: string[], repo: string = REPO, out: (line: stri
     case "sync": {
       if (positionals.length === 0) throw new Error("sync: name a submodule or `all`");
       const strategy = (flags.get("strategy") as Strategy | undefined) ?? "ff";
-      if (!["ff", "merge", "rebase"].includes(strategy)) throw new Error(`--strategy must be ff, merge or rebase`);
+      if (!["ff", "merge", "rebase"].includes(strategy))
+        throw new Error(`--strategy must be ff, merge or rebase`);
       let code = 0;
-      for (const fork of select(forks, positionals).filter((f) => !positionals.includes("all") || f.upstream)) {
+      for (const fork of select(forks, positionals).filter(
+        (f) => !positionals.includes("all") || f.upstream,
+      )) {
         const dir = join(repo, fork.path);
-        if (!existsSync(join(dir, ".git"))) throw new Error(`${fork.name}: not initialised; run \`forks.ts sparse ${fork.name} --apply\` first`);
-        const pushBranch = flags.has("push") ? (fork.branch ?? (await remoteTip(fork.url, undefined, repo)).branch) : undefined;
+        if (!existsSync(join(dir, ".git")))
+          throw new Error(
+            `${fork.name}: not initialised; run \`forks.ts sparse ${fork.name} --apply\` first`,
+          );
+        // Complete each fork sync and its optional push before changing the next owned Git checkout.
+        const pushBranch = flags.has("push")
+          // oxlint-disable-next-line no-await-in-loop
+          ? (fork.branch ?? (await remoteTip(fork.url, undefined, repo)).branch)
+          : undefined;
         const steps = planSync(fork, {
           strategy,
           stage: flags.has("stage"),
@@ -417,9 +568,14 @@ export async function main(argv: string[], repo: string = REPO, out: (line: stri
             git(dir, "config", "--get", "remote.origin.promisor").out === "true" ||
             git(dir, "config", "--get", "core.sparseCheckout").out === "true",
         });
-        out(`${fork.name}: ${apply ? "sync" : "plan"} to ${fork.upstream} (${strategy})\n${render(steps)}`);
+        out(
+          `${fork.name}: ${apply ? "sync" : "plan"} to ${fork.upstream} (${strategy})\n${render(steps)}`,
+        );
         if (!apply) continue;
-        const failure = runSteps(repo, steps.filter((s) => s.argv[0] !== "push" && s.argv[0] !== "add"));
+        const failure = runSteps(
+          repo,
+          steps.filter((s) => s.argv[0] !== "push" && s.argv[0] !== "add"),
+        );
         if (failure) {
           out(`${fork.name}: ${failure.err}`);
           code = 1;
@@ -441,7 +597,9 @@ export async function main(argv: string[], repo: string = REPO, out: (line: stri
           }
         }
         if (flags.has("stage")) git(repo, "add", "--", fork.path);
-        out(`${fork.name}: now at ${short(git(dir, "rev-parse", "HEAD").out)}${flags.has("stage") ? " (pointer staged, not committed)" : ""}`);
+        out(
+          `${fork.name}: now at ${short(git(dir, "rev-parse", "HEAD").out)}${flags.has("stage") ? " (pointer staged, not committed)" : ""}`,
+        );
       }
       return code;
     }
@@ -455,22 +613,34 @@ export async function main(argv: string[], repo: string = REPO, out: (line: stri
       if (/^[0-9a-f]{40}$/.test(ref)) sha = ref;
       else if (present) sha = git(dir, "rev-parse", "--verify", `${ref}^{commit}`).out || undefined;
       sha ??= await remoteSha(fork!.url, ref, repo);
-      if (!sha) throw new Error(`${fork!.name}: cannot resolve "${ref}" in ${present ? "the checkout or " : ""}${fork!.url}`);
+      if (!sha)
+        throw new Error(
+          `${fork!.name}: cannot resolve "${ref}" in ${present ? "the checkout or " : ""}${fork!.url}`,
+        );
       const current = pinnedSha(repo, fork!.path);
-      out(`${fork!.name}: pin ${short(current)} -> ${short(sha)}${apply ? "" : " (plan; --apply records it)"}`);
+      out(
+        `${fork!.name}: pin ${short(current)} -> ${short(sha)}${apply ? "" : " (plan; --apply records it)"}`,
+      );
       if (!apply) return 0;
       if (present) {
         const checkout = git(dir, "checkout", "--detach", sha);
         if (checkout.code !== 0) {
           const fetched = git(dir, "fetch", "origin", sha);
           const retry = fetched.code === 0 ? git(dir, "checkout", "--detach", sha) : fetched;
-          if (retry.code !== 0) throw new Error(`${fork!.name}: cannot check out ${sha}: ${retry.err}`);
+          if (retry.code !== 0)
+            throw new Error(`${fork!.name}: cannot check out ${sha}: ${retry.err}`);
         }
         const add = git(repo, "add", "--", fork!.path);
         if (add.code !== 0) throw new Error(add.err);
       } else {
         // Not initialised: write the gitlink directly, no clone needed.
-        const res = git(repo, "update-index", "--add", "--cacheinfo", `160000,${sha},${fork!.path}`);
+        const res = git(
+          repo,
+          "update-index",
+          "--add",
+          "--cacheinfo",
+          `160000,${sha},${fork!.path}`,
+        );
         if (res.code !== 0) throw new Error(res.err);
       }
       out(`${fork!.name}: pin staged (not committed)`);
@@ -492,13 +662,21 @@ export async function main(argv: string[], repo: string = REPO, out: (line: stri
         }
         let steps: Step[];
         try {
-          steps = planSparse(fork, paths, present, present && git(join(repo, fork.path), "config", "--get", "core.sparseCheckout").out === "true");
+          steps = planSparse(
+            fork,
+            paths,
+            present,
+            present &&
+              git(join(repo, fork.path), "config", "--get", "core.sparseCheckout").out === "true",
+          );
         } catch (error) {
           out(`${fork.name}: ${(error as Error).message}`);
           code = 1;
           continue;
         }
-        out(`${fork.name}: ${apply ? "init" : "plan"}${steps.length === 0 ? " (nothing to do)" : `\n${render(steps)}`}`);
+        out(
+          `${fork.name}: ${apply ? "init" : "plan"}${steps.length === 0 ? " (nothing to do)" : `\n${render(steps)}`}`,
+        );
         if (!apply) continue;
         const failure = runSteps(repo, steps);
         if (failure) {

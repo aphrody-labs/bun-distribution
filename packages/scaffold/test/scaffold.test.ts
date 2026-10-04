@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, it } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
+  PRIVATE_OWNER_ROOT,
   appFiles,
   crateName,
   EXAMPLE_NAME,
@@ -102,7 +103,7 @@ describe("app template", () => {
   it("adds no Tauri file for the vite target", () => {
     const files = appFiles({ name: "demo", target: "vite" });
     expect(Object.keys(files).some((path) => path.startsWith("src-tauri/"))).toBe(false);
-    expect(JSON.parse(text(files["package.json"])).scripts.preview).toBe("vite preview");
+    expect(JSON.parse(text(files["package.json"])).scripts.preview).toBe("m3-bun serve");
   });
 
   it("takes the M3 packages and a replacement App.tsx", () => {
@@ -114,7 +115,7 @@ describe("app template", () => {
     expect(JSON.parse(text(files["package.json"])).dependencies["@aphrody/m3-theme"]).toBe(
       "workspace:*",
     );
-    expect(text(files["src/main.tsx"])).toContain("@aphrody/m3-theme/m3.css");
+    expect(text(files["src/main.tsx"])).toContain("m3:theme.css");
     expect(text(files["src/App.tsx"])).toBe("export default () => null;");
   });
 });
@@ -132,7 +133,7 @@ describe("web template", () => {
     ]);
     expect(JSON.parse(text(files["package.json"]))).toMatchObject({
       name: "my-app",
-      dependencies: { "@aphrody/m3": "^3.3.3" },
+      dependencies: { "@aphrody/m3": "workspace:*" },
     });
   });
 });
@@ -207,7 +208,8 @@ describe("tauriShell", () => {
     expect(some).toContain(
       'aphrody-tauri-wrap = { path = "../../crates/ui/tauri-wrap", default-features = false, features = ["bundle"] }',
     );
-    expect(some).not.toContain("[features]");
+    expect(some).toContain('custom-protocol = ["tauri/custom-protocol"]');
+    expect(some).not.toContain("debug-bridge");
   });
 
   it("adds the wrap crate as an optional dependency for a debug bridge without runtime plugin", () => {
@@ -282,15 +284,29 @@ describe("writeFiles", () => {
     await expect(writeFiles(dir, { "/abs.txt": "x" })).rejects.toThrow("unsafe path");
   });
 
-  it("scaffold writes a rendered template", async () => {
-    const dir = join(await fresh(), "proj");
-    await mkdir(join(dir, ".."), { recursive: true });
-    const written = await scaffold(
-      dir,
-      { template: "web", name: "proj", m3Version: "1.0.0" },
-      "new",
+  it("scaffold writes a native Bun template only in its declared private owner workspace", async () => {
+    const outside = join(await fresh(), "proj");
+    await expect(
+      scaffold(outside, { template: "web", name: "proj", m3Version: "3.3.3" }, "new"),
+    ).rejects.toThrow("Aphrody/M3 private owner workspace required");
+    expect(await Bun.file(join(outside, "package.json")).exists()).toBe(false);
+    const dir = join(
+      PRIVATE_OWNER_ROOT,
+      "apps",
+      "m3-migrate-contract-scaffold-" + crypto.randomUUID(),
     );
-    expect(written.length).toBe(6);
+    try {
+      const written = await scaffold(dir, { template: "app", name: "proj", target: "vite" }, "new");
+      expect(written.length).toBe(8);
+      const manifest = await Bun.file(join(dir, "package.json")).json();
+      expect(manifest.scripts.dev).toBe("m3-bun dev");
+      expect(manifest.scripts.build).toBe("m3-bun build");
+      expect(manifest.devDependencies.typescript).toBe("catalog:");
+      expect(manifest.devDependencies.vite).toBeUndefined();
+      expect(await Bun.file(join(dir, "m3.config.ts")).exists()).toBe(true);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });
 

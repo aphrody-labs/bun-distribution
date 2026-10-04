@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import React, { type ComponentType, type ReactElement, type ReactNode } from "react";
+import type { RouteParams } from "./shims/provider";
+
+const rank = (part: string) =>
+  part.endsWith("*?") ? 0 : part.endsWith("*") ? 1 : part.startsWith(":") ? 2 : 3;
 
 export interface RouteDefinition {
-  /** Matched URL path (e.g. "/" or "/dashboard" or "/items/:id") */
+  /** Matched URL path; :id is dynamic, :slug* is catch-all and :slug*? is optional catch-all. */
   routePath: string;
   /** Relative source file for page (e.g. "app/page.tsx" or "app/dashboard/page.tsx") */
   pageFile: string;
@@ -32,9 +36,12 @@ export function buildRouteHierarchy(files: string[]): RouteHierarchy {
   // Identify all layout files
   const layoutFiles = normalizedFiles
     .filter((f) => /(^|\/)layout\.(tsx|jsx|js|ts)$/.test(f))
+    // oxlint-disable-next-line unicorn/no-array-sort -- This filtered array is owned; preserve the ES2022 consumer baseline.
     .sort((a, b) => a.split("/").length - b.split("/").length);
 
-  const rootLayout = layoutFiles.find((f) => f === "app/layout.tsx" || f === "layout.tsx" || f.startsWith("app/layout."));
+  const rootLayout = layoutFiles.find((f) =>
+    /^(?:src\/)?(?:app\/)?layout\.(tsx|jsx|js|ts)$/.test(f),
+  );
 
   // Identify all page files
   const pageFiles = normalizedFiles.filter((f) => /(^|\/)page\.(tsx|jsx|js|ts)$/.test(f));
@@ -44,40 +51,50 @@ export function buildRouteHierarchy(files: string[]): RouteHierarchy {
   for (const pageFile of pageFiles) {
     // Determine route path from page file path
     // Remove "app/" prefix and "/page.tsx" suffix
-    let seg = pageFile.replace(/^app\/?/, "");
+    let seg = pageFile.replace(/^(?:src\/)?app\//, "");
     seg = seg.replace(/\/?page\.(tsx|jsx|js|ts)$/, "");
     if (seg === "" || seg === "/") {
       seg = "";
     }
 
     const segments = seg ? seg.split("/").filter(Boolean) : [];
+    if (segments.some((part) => part.startsWith("_") && !part.startsWith("%5F"))) continue;
+    if (segments.some((part) => part.startsWith("@") || /^\(\.{1,3}\)/.test(part))) {
+      throw new Error(`Parallel and intercepted routes require a host adapter: ${pageFile}`);
+    }
     const params: string[] = [];
 
-    const mappedSegments = segments.map((part) => {
-      // Dynamic route segment [id] -> :id
-      const dynMatch = /^\[([^\]]+)\]$/.exec(part);
-      if (dynMatch) {
-        params.push(dynMatch[1]);
-        return `:${dynMatch[1]}`;
-      }
-      // Catch-all [...slug] -> *
-      const catchAllMatch = /^\[\.\.\.([^\]]+)\]$/.exec(part);
-      if (catchAllMatch) {
-        params.push(catchAllMatch[1]);
-        return "*";
-      }
-      return part;
-    });
+    const mappedSegments = segments
+      .filter((part) => !/^\([^)]*\)$/.test(part))
+      .map((part) => {
+        const optionalMatch = /^\[\[\.\.\.([^\]]+)\]\]$/.exec(part);
+        if (optionalMatch) {
+          params.push(optionalMatch[1]);
+          return `:${optionalMatch[1]}*?`;
+        }
+        const catchAllMatch = /^\[\.\.\.([^\]]+)\]$/.exec(part);
+        if (catchAllMatch) {
+          params.push(catchAllMatch[1]);
+          return `:${catchAllMatch[1]}*`;
+        }
+        // Dynamic route segment [id] -> :id
+        const dynMatch = /^\[([^\]]+)\]$/.exec(part);
+        if (dynMatch) {
+          params.push(dynMatch[1]);
+          return `:${dynMatch[1]}`;
+        }
+        return part;
+      });
 
     const routePath = mappedSegments.length === 0 ? "/" : `/${mappedSegments.join("/")}`;
 
     // Find all layouts that apply to this page:
     // A layout applies if the page directory starts with the layout's directory.
-    const pageDir = pageFile.slice(0, pageFile.lastIndexOf("/"));
+    const pageDir = pageFile.includes("/") ? pageFile.slice(0, pageFile.lastIndexOf("/")) : "";
 
     const applicableLayouts = layoutFiles.filter((layout) => {
-      const layoutDir = layout.slice(0, layout.lastIndexOf("/"));
-      if (!layoutDir || layoutDir === "app") return true; // root layout applies everywhere under app/
+      const layoutDir = layout.includes("/") ? layout.slice(0, layout.lastIndexOf("/")) : "";
+      if (!layoutDir) return true;
       return pageDir === layoutDir || pageDir.startsWith(`${layoutDir}/`);
     });
 
@@ -89,12 +106,15 @@ export function buildRouteHierarchy(files: string[]): RouteHierarchy {
     });
   }
 
-  // Sort routes so exact matches come before wildcard / dynamic params
+  // Compare specificity at each segment, so /posts/new beats /posts/:id and
+  // /:id/settings beats /:id/:tab independently of file discovery order.
   routes.sort((a, b) => {
-    const aDyn = a.routePath.includes(":") || a.routePath.includes("*");
-    const bDyn = b.routePath.includes(":") || b.routePath.includes("*");
-    if (aDyn && !bDyn) return 1;
-    if (!aDyn && bDyn) return -1;
+    const left = a.routePath.split("/").filter(Boolean);
+    const right = b.routePath.split("/").filter(Boolean);
+    for (let index = 0; index < Math.max(left.length, right.length); index++) {
+      const difference = rank(right[index] ?? "") - rank(left[index] ?? "");
+      if (difference) return difference;
+    }
     return a.routePath.localeCompare(b.routePath);
   });
 
@@ -105,6 +125,37 @@ export function buildRouteHierarchy(files: string[]): RouteHierarchy {
   };
 }
 
+/** Matches paths without inserting filesystem names into regular expressions. */
+export function matchRoutePath(routePath: string, pathname: string): RouteParams | null {
+  const pattern = routePath.split("/").filter(Boolean);
+  const segments = pathname.replace(/\/$/, "").split("/").slice(1);
+  if (segments.length === 1 && segments[0] === "") segments.pop();
+  const params: RouteParams = {};
+  let offset = 0;
+  try {
+    for (const part of pattern) {
+      if (part.startsWith(":")) {
+        if (part.endsWith("*?") || part.endsWith("*")) {
+          const optional = part.endsWith("*?");
+          if (offset >= segments.length && !optional) return null;
+          const name = part.slice(1, optional ? -2 : -1);
+          if (offset < segments.length)
+            params[name] = segments.slice(offset).map(decodeURIComponent);
+          offset = segments.length;
+        } else {
+          if (!segments[offset]) return null;
+          params[part.slice(1)] = decodeURIComponent(segments[offset++]!);
+        }
+      } else if (decodeURIComponent(segments[offset++] ?? "") !== decodeURIComponent(part)) {
+        return null;
+      }
+    }
+  } catch {
+    return null;
+  }
+  return offset === segments.length ? params : null;
+}
+
 /**
  * Composes a stack of layouts around a page component.
  * Layouts are applied from outermost (index 0) to innermost (last index).
@@ -112,11 +163,12 @@ export function buildRouteHierarchy(files: string[]): RouteHierarchy {
 export function composeLayouts(
   layouts: Array<ComponentType<{ children: ReactNode }>>,
   Page: ComponentType<any>,
-  pageProps: any = {}
+  pageProps: any = {},
 ): ReactElement {
   return layouts.reduceRight<ReactElement>(
-    (children, Layout) => React.createElement(Layout, null, children),
-    React.createElement(Page, pageProps)
+    (children, Layout) =>
+      React.createElement(Layout, { params: pageProps.params } as any, children),
+    React.createElement(Page, pageProps),
   );
 }
 
@@ -125,7 +177,7 @@ export function composeLayouts(
  */
 export function generateAppRouterCode(
   hierarchy: RouteHierarchy,
-  options: { modernizeM3?: boolean; target?: string } = {}
+  options: { modernizeM3?: boolean; target?: string } = {},
 ): string {
   const { routes, layouts } = hierarchy;
 
@@ -170,23 +222,13 @@ export default function App() {
     const pageVar = pageVarMap.get(route.pageFile)!;
     const layoutVars = route.layouts.map((l) => layoutVarMap.get(l)!).filter(Boolean);
 
-    // Regex or exact match
-    let matchCondition = `cleanPath === '${route.routePath}'`;
-    let paramExtraction = "";
-
-    if (route.params.length > 0) {
-      const regexStr = route.routePath
-        .replace(/:([a-zA-Z0-9_]+)/g, "(?<$1>[^/]+)")
-        .replace(/\*/g, "(?<catchall>.*)");
-      matchCondition = `new RegExp('^${regexStr}$').test(cleanPath)`;
-      paramExtraction = `
-      const match = cleanPath.match(new RegExp('^${regexStr}$'));
-      const routeParams = match?.groups ?? {};
-`;
-    }
-
-    return `    if (${matchCondition}) {${paramExtraction}
-      return composeLayouts([${layoutVars.join(", ")}], ${pageVar}, { params: ${route.params.length > 0 ? "routeParams" : "{}"} });
+    return `    {
+      const routeParams = matchRoutePath(${JSON.stringify(route.routePath)}, cleanPath);
+      if (routeParams) return (
+        <RouteParamsProvider params={routeParams}>
+          {composeLayouts([${layoutVars.join(", ")}], ${pageVar}, { params: routeParams, searchParams })}
+        </RouteParamsProvider>
+      );
     }`;
   });
 
@@ -196,6 +238,9 @@ export default function App() {
 import React from 'react';
 import { usePathname } from '@aphrody/m3-next-migrate/shims/navigation';
 import { composeLayouts } from '@aphrody/m3-next-migrate/layout';
+import { matchRoutePath } from '@aphrody/m3-next-migrate/layout';
+import { RouteParamsProvider } from '@aphrody/m3-next-migrate/shims/provider';
+import { useSearchParams } from '@aphrody/m3-next-migrate/shims/navigation';
 ${m3Import}
 // Layout Components
 ${layoutImports.join("\n")}
@@ -206,6 +251,12 @@ ${pageImports.join("\n")}
 export default function App() {
   const pathname = usePathname();
   const cleanPath = pathname || '/';
+  const query = useSearchParams();
+  const searchParams: Record<string, string | string[]> = {};
+  for (const key of query.keys()) {
+    const values = query.getAll(key);
+    searchParams[key] = values.length === 1 ? values[0]! : values;
+  }
 
 ${routeBranches.join("\n\n")}
 

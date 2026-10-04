@@ -7,8 +7,8 @@
  * - Displays delegation phase, envelope kind, file claims, and execution status.
  */
 
-import React, { useState } from "react";
-import clsx from "clsx";
+import React, { useId, useState } from "react";
+import { clsx } from "clsx";
 import type { CoordEnvelope } from "./AgUiEventStream";
 
 export interface TimelineStep {
@@ -58,9 +58,10 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
   className,
 }) => {
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
+  const timelineId = useId();
 
   const toggleExpand = (id: string) => {
-    setExpandedStepId(expandedStepId === id ? null : id);
+    setExpandedStepId((current) => (current === id ? null : id));
   };
 
   return (
@@ -92,6 +93,9 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
         {steps.map((step) => {
           const isCurrent = step.id === currentStepId;
           const isExpanded = step.id === expandedStepId;
+          const detailsId = `${timelineId}-${encodeURIComponent(step.id)}`;
+          const date = new Date(step.timestamp);
+          const time = Number.isNaN(date.getTime()) ? step.timestamp : date.toLocaleTimeString();
 
           const statusIcon =
             step.status === "completed"
@@ -106,7 +110,7 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
             step.status === "completed"
               ? "text-emerald-500"
               : step.status === "running"
-                ? "text-[var(--md-sys-color-primary,#6750a4)] animate-spin"
+                ? "text-[var(--md-sys-color-primary,#6750a4)] animate-spin motion-reduce:animate-none"
                 : step.status === "error"
                   ? "text-rose-500"
                   : "text-slate-400";
@@ -139,10 +143,6 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
 
               {/* Step details card */}
               <div
-                onClick={() => {
-                  toggleExpand(step.id);
-                  onSelectStep?.(step);
-                }}
                 className={clsx(
                   "flex-1 cursor-pointer rounded-2xl border p-3 text-xs transition-all",
                   "bg-[var(--md-sys-color-surface-container-low,#f7f2fa)] hover:bg-[var(--md-sys-color-surface-container,#f3edf7)]",
@@ -151,36 +151,51 @@ export const A2ATaskTimeline: React.FC<A2ATaskTimelineProps> = ({
                     : "border-[var(--md-sys-color-outline-variant,#cac4d0)]/60",
                 )}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-xs text-[var(--md-sys-color-on-surface,#1d1b20)]">
-                      {step.title}
+                <button
+                  type="button"
+                  aria-expanded={step.envelope ? isExpanded : undefined}
+                  aria-controls={step.envelope ? detailsId : undefined}
+                  onClick={() => {
+                    toggleExpand(step.id);
+                    onSelectStep?.(step);
+                  }}
+                  className="block w-full rounded-medium text-left outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5">
+                      <span className="font-semibold text-xs text-[var(--md-sys-color-on-surface,#1d1b20)]">
+                        {step.title}
+                      </span>
+                      <span className="rounded-md bg-[var(--md-sys-color-surface-container-highest,#e6e0e9)] px-1.5 py-0.2 text-[10px] font-mono text-[var(--md-sys-color-on-surface-variant,#49454f)]">
+                        @{step.from} → @{step.to}
+                      </span>
                     </span>
-                    <span className="rounded-md bg-[var(--md-sys-color-surface-container-highest,#e6e0e9)] px-1.5 py-0.2 text-[10px] font-mono text-[var(--md-sys-color-on-surface-variant,#49454f)]">
-                      @{step.from} → @{step.to}
+                    <span className="text-[10px] font-mono text-[var(--md-sys-color-outline,#79747e)]">
+                      {time}
                     </span>
-                  </div>
-                  <span className="text-[10px] font-mono text-[var(--md-sys-color-outline,#79747e)]">
-                    {new Date(step.timestamp).toLocaleTimeString()}
                   </span>
-                </div>
 
-                {step.description && (
-                  <p className="mt-1 text-xs text-[var(--md-sys-color-on-surface-variant,#49454f)]">
-                    {step.description}
-                  </p>
-                )}
+                  {step.description && (
+                    <span className="mt-1 block text-xs text-[var(--md-sys-color-on-surface-variant,#49454f)]">
+                      {step.description}
+                    </span>
+                  )}
 
-                {step.claim && (
-                  <div className="mt-2 flex items-center gap-1.5 text-[11px] font-mono text-amber-700 dark:text-amber-400">
-                    <span className="material-symbols-outlined text-xs">lock</span>
-                    <span>claim: {step.claim}</span>
-                  </div>
-                )}
+                  {step.claim && (
+                    <span className="mt-2 flex items-center gap-1.5 text-[11px] font-mono text-amber-700 dark:text-amber-400">
+                      <span className="material-symbols-outlined text-xs">lock</span>
+                      <span>claim: {step.claim}</span>
+                    </span>
+                  )}
+                </button>
 
                 {/* Expanded envelope payload view */}
-                {isExpanded && step.envelope && (
-                  <div className="mt-2.5 pt-2 border-t border-[var(--md-sys-color-outline-variant,#cac4d0)]/40 font-mono text-[11px] text-[var(--md-sys-color-on-surface-variant,#49454f)]">
+                {step.envelope && (
+                  <div
+                    id={detailsId}
+                    hidden={!isExpanded}
+                    className="mt-2.5 pt-2 border-t border-[var(--md-sys-color-outline-variant,#cac4d0)]/40 font-mono text-[11px] text-[var(--md-sys-color-on-surface-variant,#49454f)]"
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold">Kind: {step.envelope.kind}</span>
                       <span>·</span>

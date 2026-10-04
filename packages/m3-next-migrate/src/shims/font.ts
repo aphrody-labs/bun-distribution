@@ -19,12 +19,17 @@ export interface NextFont {
   };
 }
 
-function createFontShim(fontName: string, defaultFamily: string): (config?: FontConfig) => NextFont {
+function createFontShim(
+  fontName: string,
+  defaultFamily: string,
+): (config?: FontConfig) => NextFont {
   return (config?: FontConfig) => {
     const slug = fontName.toLowerCase().replace(/[^a-z0-9]/g, "-");
     const variable = config?.variable || `--font-${slug}`;
     const className = `font-${slug}`;
-    const fontFamily = config?.fallback ? `"${fontName}", ${config.fallback.join(", ")}` : defaultFamily;
+    const fontFamily = config?.fallback
+      ? `"${fontName}", ${config.fallback.join(", ")}`
+      : defaultFamily;
 
     return {
       className,

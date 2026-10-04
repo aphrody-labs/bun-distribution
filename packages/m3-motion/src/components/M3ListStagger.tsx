@@ -1,8 +1,9 @@
 "use client";
 import * as React from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useIsPresent } from "motion/react";
 import type { HTMLMotionProps, Variants } from "motion/react";
 import { m3Easings, m3Durations } from "../easings.js";
+import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion.js";
 
 export interface M3ListStaggerProps {
   /**
@@ -70,21 +71,20 @@ const itemVariants: Variants = {
  */
 export const M3ListStagger = React.forwardRef<HTMLDivElement, M3ListStaggerProps>(
   ({ staggerDelay = 0.05, delayChildren = 0, appear = true, children, className, style }, ref) => {
+    const reduced = useM3ReducedMotion();
     return (
-      <AnimatePresence>
-        <motion.div
-          ref={ref}
-          className={className}
-          style={style}
-          variants={containerVariants}
-          initial={appear ? "hidden" : false}
-          animate="visible"
-          exit="exit"
-          custom={{ staggerDelay, delayChildren }}
-        >
-          {children}
-        </motion.div>
-      </AnimatePresence>
+      <motion.div
+        ref={ref}
+        className={className}
+        style={style}
+        variants={motionVariants(containerVariants, reduced)}
+        initial={appear && !reduced ? "hidden" : false}
+        animate="visible"
+        exit="exit"
+        custom={{ staggerDelay, delayChildren }}
+      >
+        <AnimatePresence initial={appear && !reduced}>{children}</AnimatePresence>
+      </motion.div>
     );
   },
 );
@@ -97,12 +97,16 @@ M3ListStagger.displayName = "M3ListStagger";
  */
 export const M3ListStaggerItem = React.forwardRef<HTMLDivElement, M3ListStaggerItemProps>(
   ({ children, style, ...props }, ref) => {
+    const present = useIsPresent();
+    const reduced = useM3ReducedMotion();
     return (
       <motion.div
         ref={ref}
-        variants={itemVariants}
+        variants={motionVariants(itemVariants, reduced)}
         style={{ willChange: "opacity, transform", ...style }}
         {...props}
+        inert={!present || props.inert}
+        aria-hidden={!present || props["aria-hidden"]}
       >
         {children}
       </motion.div>

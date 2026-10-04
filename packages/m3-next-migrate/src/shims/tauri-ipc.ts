@@ -7,14 +7,19 @@ export interface TauriInvokeOptions {
   headers?: Record<string, string>;
 }
 
-export async function tauriInvoke<T = unknown>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+export async function tauriInvoke<T = unknown>(
+  cmd: string,
+  args?: Record<string, unknown>,
+): Promise<T> {
   if (typeof window !== "undefined") {
     const tauri = (window as any).__TAURI__?.core || (window as any).__TAURI_INTERNALS__;
     if (tauri?.invoke) {
       return await tauri.invoke(cmd, args);
     }
   }
-  throw new Error(`Tauri invoke not available for command "${cmd}". Ensure Tauri runtime is initialized.`);
+  throw new Error(
+    `Tauri invoke not available for command "${cmd}". Ensure Tauri runtime is initialized.`,
+  );
 }
 
 /**
@@ -27,14 +32,17 @@ export function createServerActionBridge<TArgs = any, TResult = any>(
     tauriCommand?: string;
     endpoint?: string;
     localFallback?: (args: TArgs) => Promise<TResult>;
-  }
+  },
 ): (args: TArgs) => Promise<TResult> {
   const tauriCmd = options?.tauriCommand || `action_${actionName.replace(/[^a-zA-Z0-9_]/g, "_")}`;
   const endpoint = options?.endpoint || `/api/actions/${actionName}`;
 
   return async (args: TArgs): Promise<TResult> => {
     // 1. Try Tauri native invoke
-    if (typeof window !== "undefined" && ((window as any).__TAURI__ || (window as any).__TAURI_INTERNALS__)) {
+    if (
+      typeof window !== "undefined" &&
+      ((window as any).__TAURI__ || (window as any).__TAURI_INTERNALS__)
+    ) {
       try {
         return await tauriInvoke<TResult>(tauriCmd, { payload: args });
       } catch (err: any) {
@@ -62,6 +70,8 @@ export function createServerActionBridge<TArgs = any, TResult = any>(
       return await options.localFallback(args);
     }
 
-    throw new Error(`Unable to execute Server Action "${actionName}". Neither Tauri IPC nor HTTP endpoint is available.`);
+    throw new Error(
+      `Unable to execute Server Action "${actionName}". Neither Tauri IPC nor HTTP endpoint is available.`,
+    );
   };
 }

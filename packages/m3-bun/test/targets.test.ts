@@ -3,7 +3,13 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadApp } from "../src/config.ts";
-import { generateTargets, getTarget, TARGETS, contextFor, type TargetContext } from "../src/targets/index.ts";
+import {
+  generateTargets,
+  getTarget,
+  TARGETS,
+  contextFor,
+  type TargetContext,
+} from "../src/targets/index.ts";
 import { ROOTFS_SCRIPT } from "../src/targets/docker.ts";
 import { sharedDropin } from "../src/targets/systemd.ts";
 import { cleanup, FIXTURE, freePort, tmp } from "./helpers.ts";
@@ -43,7 +49,18 @@ describe("the context", () => {
 
 describe("registry", () => {
   test("ten targets with unique ids, each with a description; an unknown id lists the known ones", () => {
-    expect(TARGETS.map((t) => t.id)).toEqual(["docker", "systemd", "nginx", "vercel", "fly", "cloudflare", "coolify", "vscode", "windows", "linux-image"]);
+    expect(TARGETS.map((t) => t.id)).toEqual([
+      "docker",
+      "systemd",
+      "nginx",
+      "vercel",
+      "fly",
+      "cloudflare",
+      "coolify",
+      "vscode",
+      "windows",
+      "linux-image",
+    ]);
     for (const t of TARGETS) expect(t.description.length).toBeGreaterThan(20);
     expect(() => getTarget("heroku")).toThrow(/unknown deploy target heroku \(docker, systemd/);
   });
@@ -58,7 +75,9 @@ describe("registry", () => {
 
   test("a generated path that escapes its directory is refused", async () => {
     const { writeFiles } = await import("../src/util.ts");
-    await expect(writeFiles(tmp(), [{ path: "../escape.txt", content: "x" }])).rejects.toThrow(/escapes its directory/);
+    await expect(writeFiles(tmp(), [{ path: "../escape.txt", content: "x" }])).rejects.toThrow(
+      /escapes its directory/,
+    );
   });
 });
 
@@ -70,7 +89,9 @@ describe("docker", () => {
     expect(file).toContain(ROOTFS_SCRIPT);
     expect(file).toContain("FROM scratch");
     expect(file).toContain("COPY --from=build /rootfs/ /");
-    expect(file).toContain('HEALTHCHECK --interval=30s --timeout=4s --start-period=5s --retries=3 CMD ["/app/server", "--healthcheck"]');
+    expect(file).toContain(
+      'HEALTHCHECK --interval=30s --timeout=4s --start-period=5s --retries=3 CMD ["/app/server", "--healthcheck"]',
+    );
     expect(file).toContain('ENTRYPOINT ["/app/server"]');
     expect(file).toContain("USER 10001:10001");
     expect(file).toMatch(/dynamically linked/);
@@ -81,7 +102,9 @@ describe("docker", () => {
   });
   test("Dockerfile.scratch consumes the rootfs of `m3-bun package --rootfs`; compose is read-only with dropped capabilities", () => {
     expect(read("docker", "Dockerfile.scratch")).toContain("COPY rootfs/ /");
-    const compose = Bun.YAML.parse(read("docker", "docker-compose.yml")) as { services: Record<string, any> };
+    const compose = Bun.YAML.parse(read("docker", "docker-compose.yml")) as {
+      services: Record<string, any>;
+    };
     const service = compose.services["hello-m3"];
     expect(service.read_only).toBe(true);
     expect(service.cap_drop).toEqual(["ALL"]);
@@ -110,13 +133,23 @@ describe("systemd", () => {
       expect(unit).toContain(line);
   });
   test("the sandbox is the shared drop-ins, byte for byte from the yolo checkout when it is there", () => {
-    const names = ["sandbox-base.conf", "sandbox-home-ro.conf", "sandbox-kernel.conf", "net-inet-only.conf", "syscall-service.conf"];
+    const names = [
+      "sandbox-base.conf",
+      "sandbox-home-ro.conf",
+      "sandbox-kernel.conf",
+      "net-inet-only.conf",
+      "syscall-service.conf",
+    ];
     names.forEach((name, i) => {
-      expect(read("systemd", `hello-m3.service.d/${String(10 + i * 10).padStart(2, "0")}-${name}`)).toBe(sharedDropin(ctx.yoloRoot, name));
+      expect(
+        read("systemd", `hello-m3.service.d/${String(10 + i * 10).padStart(2, "0")}-${name}`),
+      ).toBe(sharedDropin(ctx.yoloRoot, name));
     });
     expect(sharedDropin("/nonexistent", "sandbox-base.conf")).toContain("ProtectSystem=strict");
     if (existsSync(join(ctx.yoloRoot, "config/host/systemd/shared/sandbox-base.conf"))) {
-      expect(sharedDropin(ctx.yoloRoot, "sandbox-base.conf")).toBe(readFileSync(join(ctx.yoloRoot, "config/host/systemd/shared/sandbox-base.conf"), "utf8"));
+      expect(sharedDropin(ctx.yoloRoot, "sandbox-base.conf")).toBe(
+        readFileSync(join(ctx.yoloRoot, "config/host/systemd/shared/sandbox-base.conf"), "utf8"),
+      );
     }
   });
   test("the catalog entry follows service-catalog.json and the env file holds no secrets", () => {
@@ -136,22 +169,38 @@ describe("systemd", () => {
     });
     expect(read("systemd", "hello-m3.env.example")).toContain("PORT=3456");
   });
-  test.skipIf(!Bun.which("systemd-analyze"))("systemd-analyze verify accepts the unit merged with its drop-ins", () => {
-    const root = tmp("m3-bun-systemd-");
-    const bin = join(root, "current/bin");
-    mkdirSync(bin, { recursive: true });
-    writeFileSync(join(bin, "hello-m3"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
-    // The drop-ins are plain `[Service]` sections: appended in order, they are what systemd merges.
-    const dropins = readdirSync(join(out, "systemd", "hello-m3.service.d")).toSorted().map((f) => readFileSync(join(out, "systemd", "hello-m3.service.d", f), "utf8"));
-    const merged = `${read("systemd", "hello-m3.service").replaceAll("/srv/aphrody/current", join(root, "current")).replace("[Install]", `${dropins.join("\n")}\n[Install]`)}`;
-    const file = join(root, "hello-m3.service");
-    writeFileSync(file, merged);
-    const proc = Bun.spawnSync(["systemd-analyze", "verify", file], { stdout: "pipe", stderr: "pipe" });
-    const text = `${proc.stdout.toString()}${proc.stderr.toString()}`;
-    // The machine running the test may lack the `ubuntu` account, the env file or the targets; no other finding is tolerated.
-    const findings = text.split("\n").filter((l) => l.trim() && !/Failed to resolve (user|group)|User .* not found|Group .* not found|ubuntu/i.test(l));
-    expect(findings).toEqual([]);
-  });
+  test.skipIf(!Bun.which("systemd-analyze"))(
+    "systemd-analyze verify accepts the unit merged with its drop-ins",
+    () => {
+      const root = tmp("m3-bun-systemd-");
+      const bin = join(root, "current/bin");
+      mkdirSync(bin, { recursive: true });
+      writeFileSync(join(bin, "hello-m3"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+      // The drop-ins are plain `[Service]` sections: appended in order, they are what systemd merges.
+      const dropins = readdirSync(join(out, "systemd", "hello-m3.service.d"))
+        .toSorted()
+        .map((f) => readFileSync(join(out, "systemd", "hello-m3.service.d", f), "utf8"));
+      const merged = `${read("systemd", "hello-m3.service")
+        .replaceAll("/srv/aphrody/current", join(root, "current"))
+        .replace("[Install]", `${dropins.join("\n")}\n[Install]`)}`;
+      const file = join(root, "hello-m3.service");
+      writeFileSync(file, merged);
+      const proc = Bun.spawnSync(["systemd-analyze", "verify", file], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const text = `${proc.stdout.toString()}${proc.stderr.toString()}`;
+      // The machine running the test may lack the `ubuntu` account, the env file or the targets; no other finding is tolerated.
+      const findings = text
+        .split("\n")
+        .filter(
+          (l) =>
+            l.trim() &&
+            !/Failed to resolve (user|group)|User .* not found|Group .* not found|ubuntu/i.test(l),
+        );
+      expect(findings).toEqual([]);
+    },
+  );
 });
 
 describe("nginx", () => {
@@ -161,7 +210,9 @@ describe("nginx", () => {
     expect(conf).toContain("server_name hello.example.com;");
     expect(conf).toContain("location ^~ /.well-known/acme-challenge/");
     expect(conf).toContain("return 301 https://hello.example.com$request_uri;");
-    expect(conf).toContain("ssl_certificate /etc/letsencrypt/live/hello.example.com/fullchain.pem;");
+    expect(conf).toContain(
+      "ssl_certificate /etc/letsencrypt/live/hello.example.com/fullchain.pem;",
+    );
     expect(conf).toContain("listen 443 ssl;\n    http2 on;");
     expect(conf).toContain("include snippets/proxy-client-ip.inc;");
     expect(conf).toContain("proxy_pass http://hello_m3;");
@@ -175,42 +226,97 @@ describe("nginx", () => {
     expect(conf).not.toContain("http2 on;");
   });
   test("the routes.json entry matches the catalog shape", () => {
-    expect(json("nginx", "routes.entry.json")).toEqual({ host: "hello.example.com", service: "hello-m3", upstream: "127.0.0.1:3456", probePath: "/healthz", vhost: "nginx/aphrody/hello-m3.conf" });
+    expect(json("nginx", "routes.entry.json")).toEqual({
+      host: "hello.example.com",
+      service: "hello-m3",
+      upstream: "127.0.0.1:3456",
+      probePath: "/healthz",
+      vhost: "nginx/aphrody/hello-m3.conf",
+    });
   });
-  test.skipIf(!Bun.which("nginx"))("nginx -t accepts the TLS vhost (self-signed test certificate) and the HTTP variant", async () => {
-    const dir = tmp("m3-bun-nginx-");
-    mkdirSync(join(dir, "snippets"), { recursive: true });
-    const snippet = join(ctx.yoloRoot, "config/host/nginx/snippets/proxy-client-ip.inc");
-    writeFileSync(join(dir, "snippets/proxy-client-ip.inc"), existsSync(snippet) ? readFileSync(snippet, "utf8") : "proxy_set_header X-Real-IP $remote_addr;\nproxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n");
-    let tls: TargetContext["tls"] = "letsencrypt";
-    if (Bun.which("openssl")) {
-      const cert = join(dir, "c.pem");
-      const key = join(dir, "k.pem");
-      const made = Bun.spawnSync(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", key, "-out", cert, "-subj", "/CN=hello.example.com", "-days", "1"], { stdout: "pipe", stderr: "pipe" });
-      expect(made.exitCode).toBe(0);
-      tls = { cert, key };
-    }
-    const target = join(tmp(), "nginx");
-    // `http2 on;` needs nginx 1.25.1; older servers take the `listen ... http2` form.
-    const version = /nginx\/(\d+)\.(\d+)\.(\d+)/.exec(Bun.spawnSync(["nginx", "-v"], { stderr: "pipe" }).stderr.toString());
-    const modern = version ? [Number(version[1]), Number(version[2]), Number(version[3])] : [0, 0, 0];
-    const supportsDirective = modern[0]! > 1 || (modern[0] === 1 && (modern[1]! > 25 || (modern[1] === 25 && modern[2]! >= 1)));
-    await generateTargets(["nginx"], { ...ctx, tls, http2: supportsDirective ? "directive" : "listen" }, target);
-    const files = tls === "letsencrypt" ? ["hello-m3.http.conf"] : ["hello-m3.conf", "hello-m3.http.conf"];
-    for (const file of files) {
-      // An unprivileged test cannot bind :80 and :443: move the listeners, keep every other line as generated.
-      const generatedPath = join(target, "nginx", file);
-      writeFileSync(generatedPath, readFileSync(generatedPath, "utf8").replace("listen 80;", `listen 127.0.0.1:${freePort()};`).replace("listen 443 ssl", `listen 127.0.0.1:${freePort()} ssl`));
-      const main = join(dir, `${file}.main.conf`);
+  test.skipIf(!Bun.which("nginx"))(
+    "nginx -t accepts the TLS vhost (self-signed test certificate) and the HTTP variant",
+    async () => {
+      const dir = tmp("m3-bun-nginx-");
+      mkdirSync(join(dir, "snippets"), { recursive: true });
+      const snippet = join(ctx.yoloRoot, "config/host/nginx/snippets/proxy-client-ip.inc");
       writeFileSync(
-        main,
-        `pid ${dir}/nginx.pid;\nerror_log ${dir}/error.log;\nevents {}\nhttp {\n  access_log off;\n  client_body_temp_path ${dir}/body;\n  proxy_temp_path ${dir}/proxy;\n  fastcgi_temp_path ${dir}/fcgi;\n  uwsgi_temp_path ${dir}/uwsgi;\n  scgi_temp_path ${dir}/scgi;\n  include ${join(target, "nginx", file)};\n}\n`,
+        join(dir, "snippets/proxy-client-ip.inc"),
+        existsSync(snippet)
+          ? readFileSync(snippet, "utf8")
+          : "proxy_set_header X-Real-IP $remote_addr;\nproxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n",
       );
-      const proc = Bun.spawnSync(["nginx", "-t", "-p", dir, "-c", main], { stdout: "pipe", stderr: "pipe" });
-      const text = `${proc.stdout.toString()}${proc.stderr.toString()}`;
-      expect({ file, ok: proc.exitCode === 0, text: proc.exitCode === 0 ? "" : text }).toEqual({ file, ok: true, text: "" });
-    }
-  });
+      let tls: TargetContext["tls"] = "letsencrypt";
+      if (Bun.which("openssl")) {
+        const cert = join(dir, "c.pem");
+        const key = join(dir, "k.pem");
+        const made = Bun.spawnSync(
+          [
+            "openssl",
+            "req",
+            "-x509",
+            "-newkey",
+            "rsa:2048",
+            "-nodes",
+            "-keyout",
+            key,
+            "-out",
+            cert,
+            "-subj",
+            "/CN=hello.example.com",
+            "-days",
+            "1",
+          ],
+          { stdout: "pipe", stderr: "pipe" },
+        );
+        expect(made.exitCode).toBe(0);
+        tls = { cert, key };
+      }
+      const target = join(tmp(), "nginx");
+      // `http2 on;` needs nginx 1.25.1; older servers take the `listen ... http2` form.
+      const version = /nginx\/(\d+)\.(\d+)\.(\d+)/.exec(
+        Bun.spawnSync(["nginx", "-v"], { stderr: "pipe" }).stderr.toString(),
+      );
+      const modern = version
+        ? [Number(version[1]), Number(version[2]), Number(version[3])]
+        : [0, 0, 0];
+      const supportsDirective =
+        modern[0]! > 1 ||
+        (modern[0] === 1 && (modern[1]! > 25 || (modern[1] === 25 && modern[2]! >= 1)));
+      await generateTargets(
+        ["nginx"],
+        { ...ctx, tls, http2: supportsDirective ? "directive" : "listen" },
+        target,
+      );
+      const files =
+        tls === "letsencrypt" ? ["hello-m3.http.conf"] : ["hello-m3.conf", "hello-m3.http.conf"];
+      for (const file of files) {
+        // An unprivileged test cannot bind :80 and :443: move the listeners, keep every other line as generated.
+        const generatedPath = join(target, "nginx", file);
+        writeFileSync(
+          generatedPath,
+          readFileSync(generatedPath, "utf8")
+            .replace("listen 80;", `listen 127.0.0.1:${freePort()};`)
+            .replace("listen 443 ssl", `listen 127.0.0.1:${freePort()} ssl`),
+        );
+        const main = join(dir, `${file}.main.conf`);
+        writeFileSync(
+          main,
+          `pid ${dir}/nginx.pid;\nerror_log ${dir}/error.log;\nevents {}\nhttp {\n  access_log off;\n  client_body_temp_path ${dir}/body;\n  proxy_temp_path ${dir}/proxy;\n  fastcgi_temp_path ${dir}/fcgi;\n  uwsgi_temp_path ${dir}/uwsgi;\n  scgi_temp_path ${dir}/scgi;\n  include ${join(target, "nginx", file)};\n}\n`,
+        );
+        const proc = Bun.spawnSync(["nginx", "-t", "-p", dir, "-c", main], {
+          stdout: "pipe",
+          stderr: "pipe",
+        });
+        const text = `${proc.stdout.toString()}${proc.stderr.toString()}`;
+        expect({ file, ok: proc.exitCode === 0, text: proc.exitCode === 0 ? "" : text }).toEqual({
+          file,
+          ok: true,
+          text: "",
+        });
+      }
+    },
+  );
 });
 
 describe("vercel", () => {
@@ -220,12 +326,17 @@ describe("vercel", () => {
     expect(v.outputDirectory).toBe("dist");
     expect(v.buildCommand).toBe("bunx --bun m3-bun build");
     expect(v.rewrites[0]).toEqual({ source: "/api/(.*)", destination: "/api" });
-    expect(v.rewrites.at(-1)).toEqual({ source: "/((?!assets/|chunk-|api/).*)", destination: "/index.html" });
+    expect(v.rewrites.at(-1)).toEqual({
+      source: "/((?!assets/|chunk-|api/).*)",
+      destination: "/index.html",
+    });
     const spa = new RegExp(`^${v.rewrites.at(-1).source}$`);
     expect(spa.test("/some/route")).toBe(true);
     expect(spa.test("/chunk-abc.js")).toBe(false);
     expect(spa.test("/api/x")).toBe(false);
-    expect(v.headers.flatMap((h: any) => h.headers.map((x: any) => x.key))).toContain("X-Content-Type-Options");
+    expect(v.headers.flatMap((h: any) => h.headers.map((x: any) => x.key))).toContain(
+      "X-Content-Type-Options",
+    );
   });
   test("api/index.ts adapts the app's routes to one fetch handler", () => {
     const fn = read("vercel", "api/index.ts");
@@ -242,36 +353,57 @@ describe("fly", () => {
     expect(fly.primary_region).toBe("cdg");
     expect(fly.build.dockerfile).toBe("Dockerfile");
     expect(fly.env).toEqual({ PORT: "3456", HOST: "0.0.0.0" });
-    expect(fly.http_service).toMatchObject({ internal_port: 3456, force_https: true, auto_stop_machines: "stop", auto_start_machines: true, min_machines_running: 0 });
+    expect(fly.http_service).toMatchObject({
+      internal_port: 3456,
+      force_https: true,
+      auto_stop_machines: "stop",
+      auto_start_machines: true,
+      min_machines_running: 0,
+    });
     expect(fly.http_service.checks[0]).toMatchObject({ method: "GET", path: "/healthz" });
     expect(fly.vm[0]).toEqual({ size: "shared-cpu-1x", memory: "256mb" });
   });
 });
 
+const stripCommentLines = (text: string) => text.replace(/^\s*\/\/.*$/gm, "");
+
 describe("cloudflare", () => {
-  const strip = (text: string) => text.replace(/^\s*\/\/.*$/gm, "");
   test("wrangler.jsonc: worker, static assets with SPA fallback, worker-first API routes, custom domain", () => {
-    const w = JSON.parse(strip(read("cloudflare", "wrangler.jsonc"))) as Record<string, any>;
+    const w = JSON.parse(stripCommentLines(read("cloudflare", "wrangler.jsonc"))) as Record<
+      string,
+      any
+    >;
     expect(w).toMatchObject({
       name: "hello-m3",
       main: "src/worker.ts",
-      assets: { directory: "./dist", binding: "ASSETS", not_found_handling: "single-page-application", run_worker_first: ["/api/*", "/healthz"] },
+      assets: {
+        directory: "./dist",
+        binding: "ASSETS",
+        not_found_handling: "single-page-application",
+        run_worker_first: ["/api/*", "/healthz"],
+      },
       routes: [{ pattern: "hello.example.com", custom_domain: true }],
     });
     expect(w.compatibility_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
   test("worker and pages function reuse the app's routes; pages has _headers and _redirects", () => {
-    expect(read("cloudflare", "src/worker.ts")).toContain("routesToFetch(normalizeApi(api).routes)");
+    expect(read("cloudflare", "src/worker.ts")).toContain(
+      "routesToFetch(normalizeApi(api).routes)",
+    );
     expect(read("cloudflare", "src/worker.ts")).toContain("env.ASSETS.fetch(request)");
     expect(read("cloudflare", "pages/functions/[[path]].ts")).toContain("export const onRequest");
     expect(read("cloudflare", "pages/_redirects")).toContain("/* /index.html 200");
-    expect(read("cloudflare", "pages/_headers")).toContain("Cache-Control: public, max-age=31536000, immutable");
+    expect(read("cloudflare", "pages/_headers")).toContain(
+      "Cache-Control: public, max-age=31536000, immutable",
+    );
   });
 });
 
 describe("coolify", () => {
   test("compose service with the SERVICE_FQDN routing variable and the executable's health check", () => {
-    const compose = Bun.YAML.parse(read("coolify", "docker-compose.yaml")) as { services: Record<string, any> };
+    const compose = Bun.YAML.parse(read("coolify", "docker-compose.yaml")) as {
+      services: Record<string, any>;
+    };
     const service = compose.services["hello-m3"];
     expect(service.environment).toContain("SERVICE_FQDN_HELLO_M3_3456=https://hello.example.com");
     expect(service.environment).toContain("PORT=3456");
@@ -284,12 +416,28 @@ describe("vscode", () => {
   test("tasks, launch configurations and extension recommendations are valid JSON with the m3-bun commands", () => {
     const tasks = json("vscode", ".vscode/tasks.json");
     const labels = tasks.tasks.map((t: any) => t.label);
-    for (const label of ["m3-bun: dev", "m3-bun: build", "m3-bun: compile", "m3-bun: serve", "m3-bun: deploy (generate all targets)", "m3-bun: package", "m3-bun: smoke (compiled executable)", "m3-bun: test"]) expect(labels).toContain(label);
-    expect(tasks.tasks.find((t: any) => t.label === "m3-bun: build").group).toEqual({ kind: "build", isDefault: true });
+    for (const label of [
+      "m3-bun: dev",
+      "m3-bun: build",
+      "m3-bun: compile",
+      "m3-bun: serve",
+      "m3-bun: deploy (generate all targets)",
+      "m3-bun: package",
+      "m3-bun: smoke (compiled executable)",
+      "m3-bun: test",
+    ])
+      expect(labels).toContain(label);
+    expect(tasks.tasks.find((t: any) => t.label === "m3-bun: build").group).toEqual({
+      kind: "build",
+      isDefault: true,
+    });
     expect(tasks.tasks.find((t: any) => t.label === "m3-bun: dev").isBackground).toBe(true);
     const launch = json("vscode", ".vscode/launch.json");
     expect(launch.configurations.map((c: any) => c.type)).toEqual(["bun", "bun", "bun", "bun"]);
-    expect(json("vscode", ".vscode/extensions.json").recommendations).toEqual(["oven.bun-vscode", "oxc.oxc-vscode"]);
+    expect(json("vscode", ".vscode/extensions.json").recommendations).toEqual([
+      "oven.bun-vscode",
+      "oxc.oxc-vscode",
+    ]);
   });
 });
 
@@ -311,8 +459,15 @@ describe("windows", () => {
   test.skipIf(!Bun.which("pwsh"))("PowerShell parses every script without syntax errors", () => {
     for (const file of ["build-windows.ps1", "install-service.ps1", "uninstall-service.ps1"]) {
       const script = `$e = $null; $t = $null; [System.Management.Automation.Language.Parser]::ParseFile('${join(out, "windows", file)}', [ref]$t, [ref]$e) | Out-Null; if ($e.Count -gt 0) { $e | ForEach-Object { $_.Message }; exit 1 }`;
-      const proc = Bun.spawnSync(["pwsh", "-NoProfile", "-NonInteractive", "-Command", script], { stdout: "pipe", stderr: "pipe" });
-      expect({ file, out: proc.stdout.toString().trim(), code: proc.exitCode }).toEqual({ file, out: "", code: 0 });
+      const proc = Bun.spawnSync(["pwsh", "-NoProfile", "-NonInteractive", "-Command", script], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      expect({ file, out: proc.stdout.toString().trim(), code: proc.exitCode }).toEqual({
+        file,
+        out: "",
+        code: 0,
+      });
     }
   });
 });
@@ -333,8 +488,13 @@ describe("linux-image", () => {
     const cc = Bun.which("cc") ?? Bun.which("gcc");
     if (!cc) return;
     const bin = join(tmp(), "init");
-    const proc = Bun.spawnSync([cc, "-Wall", "-Werror", "-static", "-Os", "-o", bin, join(out, "linux-image", "init.c")], { stdout: "pipe", stderr: "pipe" });
+    const proc = Bun.spawnSync(
+      [cc, "-Wall", "-Werror", "-static", "-Os", "-o", bin, join(out, "linux-image", "init.c")],
+      { stdout: "pipe", stderr: "pipe" },
+    );
     expect({ code: proc.exitCode, err: proc.stderr.toString() }).toEqual({ code: 0, err: "" });
-    expect(Bun.spawnSync(["file", bin], { stdout: "pipe" }).stdout.toString()).toMatch(/statically linked/);
+    expect(Bun.spawnSync(["file", bin], { stdout: "pipe" }).stdout.toString()).toMatch(
+      /statically linked/,
+    );
   });
 });

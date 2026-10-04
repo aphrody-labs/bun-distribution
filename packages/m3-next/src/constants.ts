@@ -11,9 +11,17 @@ export const M3_BASELINE_SEED = "#6750a4";
 /** One year, in seconds: the lifetime of the theme cookie. */
 export const M3_THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
+/** Reject names that cannot be represented by a single HTTP cookie. */
+export function validateThemeCookieName(name: string): string {
+  if (!/^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/.test(name)) {
+    throw new Error("M3 theme cookie name must be an HTTP cookie token");
+  }
+  return name;
+}
+
 /** The `Set-Cookie`-style string the client toggle writes. */
 export function themeCookie(mode: M3ThemeMode, name: string = M3_THEME_COOKIE): string {
-  return `${name}=${mode}; path=/; max-age=${M3_THEME_COOKIE_MAX_AGE}; samesite=lax`;
+  return `${validateThemeCookieName(name)}=${mode}; path=/; max-age=${M3_THEME_COOKIE_MAX_AGE}; samesite=lax`;
 }
 
 /** Parse a cookie value into a theme mode; anything else yields `fallback`. */

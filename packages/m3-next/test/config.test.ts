@@ -164,7 +164,7 @@ describe("the pre-paint script", () => {
       classes: ["light"],
       colorScheme: "light",
     });
-    expect(colorSchemeScript('we"ird;name')).toContain("weirdname=");
+    expect(() => colorSchemeScript('we"ird;name')).toThrow("HTTP cookie token");
   });
 });
 

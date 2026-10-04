@@ -2,6 +2,7 @@
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/primitives/src/CircularProgress.tsx), MIT, rebuilt on Material Design 3.
 // adapted from https://github.com/martyan/react-customizable-progressbar/
 import { clsx } from "clsx";
+import { useM3ReducedMotion } from "@aphrody/m3-motion";
 import React, { type FunctionComponent, useEffect, useState } from "react";
 
 // M3 circular progress: `primary` arc over a `secondary-container` track, 4 dp stroke. The color
@@ -62,18 +63,19 @@ export const CircularProgress: FunctionComponent<CircularProgressProps> = ({
   className = "",
   children,
 }) => {
+  const reduced = useM3ReducedMotion();
   const [animationInitialized, setAnimationInitialized] = useState(false);
 
   useEffect(() => {
-    if (initialAnimation) {
+    if (initialAnimation && !reduced) {
       const timeout = setTimeout(() => setAnimationInitialized(true), initialAnimationDelay);
       return () => clearTimeout(timeout);
     }
-  }, [initialAnimation, initialAnimationDelay]);
+  }, [initialAnimation, initialAnimationDelay, reduced]);
 
-  if (Number.isNaN(progress)) progress = 0;
+  progress = Number.isFinite(progress) ? Math.min(100, Math.max(0, progress)) : 0;
 
-  const getProgress = () => (initialAnimation && !animationInitialized ? 0 : progress);
+  const getProgress = () => (initialAnimation && !animationInitialized && !reduced ? 0 : progress);
 
   const circumference = radius * 2 * Math.PI;
 
@@ -118,7 +120,7 @@ export const CircularProgress: FunctionComponent<CircularProgressProps> = ({
             strokeWidth={trackStrokeWidth}
             strokeDasharray={strokeDasharray}
             strokeLinecap={trackStrokeLinecap}
-            style={{ transition: trackTransition }}
+            style={{ transition: reduced ? "none" : trackTransition }}
             className={clsx("track-stroke", !trackStrokeColor && "stroke-secondary-container")}
           />
         )}
@@ -132,7 +134,7 @@ export const CircularProgress: FunctionComponent<CircularProgressProps> = ({
             strokeWidth={strokeWidth}
             strokeDasharray={strokeDasharray}
             strokeLinecap={strokeLinecap}
-            style={{ transition, strokeDashoffset }}
+            style={{ transition: reduced ? "none" : transition, strokeDashoffset }}
             className={clsx("progress-stroke", !strokeColor && "stroke-primary")}
           />
         )}

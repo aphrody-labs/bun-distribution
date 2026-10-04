@@ -4,13 +4,18 @@
 import { resolve } from "node:path";
 import { buildRouteHierarchy } from "./layout";
 import { migrateProject } from "./migrator";
+import {
+  assertMigrationRequirements,
+  migrationRequirements,
+  type MigrationRequirement,
+} from "./requirements";
 import { scanNextDirectory } from "./scanner";
 import { transformComponent } from "./transform";
 import { CODEMOD_HELP, runCodemodCli } from "./codemods/cli";
 
 function printHelp() {
   console.log(`
-@aphrody/m3-next-migrate — Next.js 16 to Tauri v2 & Bun/Vite Component Migrator
+@aphrody/m3-next-migrate — Next.js 16 components and native Bun web projects; pinned Tauri 3 source inspection
 
 USAGE:
   next-migrate [OPTIONS] <SOURCE_PATH> [TARGET_PATH]
@@ -20,23 +25,23 @@ ARGUMENTS:
   [TARGET_PATH]   Destination directory for the migrated app or component
 
 OPTIONS:
-  -t, --target <tauri|vite>    Target platform (default: tauri)
+  -t, --target <tauri|vite>    Target host (vite is the legacy name for native Bun web; default: tauri)
   --name <string>              Target project name (default: migrated-app)
   --m3                         Modernize UI components to authentic @aphrody/m3-primitives (Button, Input, Card, Badge, Tooltip, Collapsible)
   --n2b                        Apply aggressive Node-to-Bun transforms (default: true)
   --scan-only                  Perform analysis/scan and display detected Next.js features without migrating
   --dry-run                    Preview transformations without writing files to disk
-  --no-scaffold                Only migrate component files, don't generate project structure (tauri.conf.json, vite.config.ts, etc.)
+  --no-scaffold                Only migrate component files; preserve source modules without creating an app owner
   --json                       Output report as JSON
   -h, --help                   Show this help message
   -v, --version                Show version
 
 EXAMPLES:
-  # Migrate a Next.js 16 app to a Tauri v2 desktop application with authentic M3 components
-  next-migrate ./my-next-app ./my-tauri-app --target tauri --m3
+  # Inspect native Tauri source; activation requires a registered Rust owner and Workspace factory
+  next-migrate ./my-next-app ./inspect --target tauri --m3 --dry-run
 
-  # Migrate a Next.js 16 app to a Vite + Bun web SPA
-  next-migrate ./my-next-app ./my-vite-app --target vite --m3
+  # Create a native Bun web app inside the Aphrody/M3 private owner workspace
+  next-migrate ./my-next-app ./apps/my-bun-app --target vite --m3
 
   # Scan a Next.js 16 directory and report Next features & components
   next-migrate ./my-next-app --scan-only
@@ -57,7 +62,10 @@ async function main() {
   if (args[0] === "codemod" || args[0] === "pages-hints") process.exit(await runCodemodCli(args));
 
   if (args.includes("-v") || args.includes("--version")) {
-    console.log("3.3.0");
+    console.log(
+      ((await Bun.file(new URL("../package.json", import.meta.url)).json()) as { version: string })
+        .version,
+    );
     process.exit(0);
   }
 
@@ -75,7 +83,10 @@ async function main() {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "-t" || arg === "--target") {
-      target = args[++i] === "vite" ? "vite" : "tauri";
+      const value = args[++i];
+      if (value !== "vite" && value !== "tauri")
+        throw new Error("--target requires tauri or vite (native Bun web)");
+      target = value;
     } else if (arg === "--name") {
       projectName = args[++i] || projectName;
     } else if (arg === "--m3") {
@@ -113,12 +124,27 @@ async function main() {
 
   if (isSingleFile) {
     const content = await Bun.file(resolvedSource).text();
+    const requirements = migrationRequirements(resolvedSource, content);
     const result = transformComponent(content, { target, modernizeM3, n2b });
 
     if (jsonOutput) {
-      console.log(JSON.stringify(result, null, 2));
+      console.log(JSON.stringify({ ...result, requirements }, null, 2));
       return;
     }
+
+    if (!dryRun && targetPath) {
+      assertMigrationRequirements(requirements);
+      const loader = resolvedSource.endsWith(".tsx")
+        ? "tsx"
+        : resolvedSource.endsWith(".jsx")
+          ? "jsx"
+          : resolvedSource.endsWith(".ts")
+            ? "ts"
+            : "js";
+      new Bun.Transpiler({ loader }).transformSync(result.code);
+    }
+    for (const requirement of requirements)
+      console.warn(`${requirement.file}: ${requirement.capability} — ${requirement.detail}`);
 
     if (dryRun) {
       console.log(`[DRY-RUN] Transformed ${sourcePath}:`);
@@ -137,9 +163,14 @@ async function main() {
   if (scanOnly) {
     const stats = await scanNextDirectory(resolvedSource);
     const hierarchy = buildRouteHierarchy([...stats.layouts, ...stats.pages]);
+    const requirements: MigrationRequirement[] = [];
+    for (const file of stats.files) {
+      // oxlint-disable-next-line no-await-in-loop -- Scan source modules in order with bounded I/O.
+      requirements.push(...migrationRequirements(file.path, await Bun.file(file.path).text()));
+    }
 
     if (jsonOutput) {
-      console.log(JSON.stringify({ stats, hierarchy }, null, 2));
+      console.log(JSON.stringify({ stats, hierarchy, requirements }, null, 2));
       return;
     }
 
@@ -153,7 +184,9 @@ async function main() {
     console.log(`App Router Pages:      ${stats.pages.length}`);
     console.log(`Metadata definitions:  ${stats.metadataCount}`);
     console.log(`generateMetadata uses: ${stats.generateMetadataCount}`);
-    console.log(`M3 candidate UI calls: ${stats.m3CandidateCount} (${stats.m3DetectedComponents.join(", ") || "none"})`);
+    console.log(
+      `M3 candidate UI calls: ${stats.m3CandidateCount} (${stats.m3DetectedComponents.join(", ") || "none"})`,
+    );
     console.log(`next/navigation uses:  ${stats.navigationUsages}`);
     console.log(`next/link uses:        ${stats.linkUsages}`);
     console.log(`next/image uses:       ${stats.imageUsages}`);
@@ -170,7 +203,11 @@ async function main() {
       }
     }
 
-    console.log(`\nReady to migrate with: next-migrate ${sourcePath} <DEST> --target ${target} --m3\n`);
+    for (const requirement of requirements)
+      console.warn(`${requirement.file}: ${requirement.capability} — ${requirement.detail}`);
+    console.log(
+      `\nInspect the migration with: next-migrate ${sourcePath} <DEST> --target ${target} --m3 --dry-run\n`,
+    );
     return;
   }
 
@@ -179,7 +216,8 @@ async function main() {
   }
 
   const resolvedTarget = resolve(process.cwd(), targetPath);
-  console.log(`Starting migration: Next.js 16 -> ${target.toUpperCase()} (${resolvedTarget})...`);
+  if (!jsonOutput)
+    console.log(`Starting migration: Next.js 16 -> ${target.toUpperCase()} (${resolvedTarget})...`);
 
   const report = await migrateProject({
     sourceDir: resolvedSource,
@@ -198,7 +236,7 @@ async function main() {
   }
 
   console.log(`\n=== Migration Report ===`);
-  console.log(`Target Platform:     ${target.toUpperCase()} 2.0 (Bun Native)`);
+  console.log(`Target Platform:     ${target.toUpperCase()} (Bun Native)`);
   console.log(`Files Processed:     ${report.stats.totalFiles}`);
   console.log(`Migrated React:      ${report.migratedFiles}`);
   console.log(`Unmodified:          ${report.unmodifiedFiles}`);
@@ -209,6 +247,8 @@ async function main() {
   console.log(`Layouts Composed:    ${report.hierarchy.layouts.length}`);
   console.log(`Output Directory:    ${resolvedTarget}\n`);
 
+  for (const requirement of report.requirements)
+    console.warn(`${requirement.file}: ${requirement.capability} — ${requirement.detail}`);
   if (report.transformDetails.length > 0) {
     console.log(`Details:`);
     for (const item of report.transformDetails.slice(0, 10)) {
@@ -223,7 +263,7 @@ async function main() {
   console.log(`  cd ${targetPath}`);
   console.log(`  bun install`);
   if (target === "tauri") {
-    console.log(`  bun run tauri:dev   # Desktop GUI with Tauri v2`);
+    console.log(`  bun run tauri:dev   # Desktop GUI with pinned Tauri 3`);
     console.log(`  bun run dev:bun     # Desktop native backend with Bun.serve`);
   } else {
     console.log(`  bun run dev`);

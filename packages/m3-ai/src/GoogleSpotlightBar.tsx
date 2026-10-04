@@ -67,8 +67,7 @@ export function GoogleSpotlightBar({
   };
 
   return (
-    <div
-      role="search"
+    <search
       aria-label="Google Spotlight Assistant"
       className={clsx(
         "google-spotlight-capsule relative mx-auto flex w-full max-w-[840px] items-center gap-3",
@@ -161,6 +160,6 @@ export function GoogleSpotlightBar({
         {/* User avatar if provided */}
         {avatar && <div className="ml-1 shrink-0">{avatar}</div>}
       </div>
-    </div>
+    </search>
   );
 }

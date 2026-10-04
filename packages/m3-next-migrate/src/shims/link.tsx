@@ -25,7 +25,9 @@ export interface LinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>,
 function resolveHrefString(href: string | UrlObject): string {
   if (typeof href === "string") return href;
   const path = href.pathname || "/";
-  const params = href.query ? new URLSearchParams(href.query as Record<string, string>).toString() : "";
+  const params = href.query
+    ? new URLSearchParams(href.query as Record<string, string>).toString()
+    : "";
   const hash = href.hash ? (href.hash.startsWith("#") ? href.hash : `#${href.hash}`) : "";
   const query = params ? `?${params}` : "";
   return `${path}${query}${hash}`;
@@ -50,7 +52,7 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
     rel,
     ...rest
   },
-  ref
+  ref,
 ) {
   const ctx = useNextMigrateContext();
   const hrefString = resolveHrefString(href);

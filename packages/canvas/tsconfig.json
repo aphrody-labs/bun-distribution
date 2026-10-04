@@ -1,11 +1,8 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../m3-config/tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "lib": [
-      "ESNext",
-      "DOM"
-    ]
+    "lib": ["ESNext", "DOM"]
   },
   "include": [
     "index.ts",
@@ -16,7 +13,5 @@
     "native.test.ts",
     "vendor.test.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

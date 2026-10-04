@@ -12,7 +12,10 @@ export type StaticImageData = {
   blurHeight?: number;
 };
 
-export interface ImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "width" | "height" | "loading"> {
+export interface ImageProps extends Omit<
+  ImgHTMLAttributes<HTMLImageElement>,
+  "src" | "width" | "height" | "loading"
+> {
   src: string | StaticImageData;
   alt: string;
   width?: number | `${number}`;

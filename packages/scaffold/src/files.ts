@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
+// Filesystem traversal and writes are serialized to bound I/O and preserve preflight/order guarantees.
+// oxlint-disable no-await-in-loop
 import { existsSync } from "node:fs";
-import { mkdir, readdir, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { lstat, mkdir, readdir, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 /** Relative path to content. Paths use `/`. */
 export type FileMap = Record<string, string | Uint8Array>;
@@ -33,10 +35,42 @@ export async function writeFiles(
     throw new ScaffoldError(`${root} is not empty`);
   }
   const targets = Object.keys(files).map((path) => {
-    if (path.startsWith("/") || path.split("/").includes(".."))
+    if (
+      !path ||
+      path.includes("\\") ||
+      path.includes("\0") ||
+      isAbsolute(path) ||
+      /^[A-Za-z]:/.test(path) ||
+      path.split("/").includes("..")
+    )
       throw new ScaffoldError(`unsafe path in template: ${path}`);
     return { path, full: join(root, path) };
   });
+  // Refuse existing symbolic links before any write, including directory ancestors.
+  // A lexical relative path alone does not keep writes inside the destination.
+  for (const { full } of targets) {
+    let current = full;
+    while (true) {
+      try {
+        const metadata = await lstat(current);
+        if (metadata.isSymbolicLink())
+          throw new ScaffoldError(`refusing symbolic link in output path: ${current}`);
+      } catch (error) {
+        if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
+      }
+      if (current === root) break;
+      const parent = dirname(current);
+      const within = relative(root, parent);
+      if (
+        parent === current ||
+        within === ".." ||
+        within.startsWith(`..${sep}`) ||
+        isAbsolute(within)
+      )
+        break;
+      current = parent;
+    }
+  }
   if (mode === "merge") {
     const clash = targets.find((target) => existsSync(target.full));
     if (clash) throw new ScaffoldError(`refusing to overwrite ${clash.full}`);

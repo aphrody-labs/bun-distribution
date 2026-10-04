@@ -117,21 +117,21 @@ describe("WebTextFieldState (pure logic)", () => {
   });
 });
 
-describe("bindTextFieldState / syncFromElement", () => {
-  function makeElement(
-    value = "",
-  ): SelectionCapableElement & { setSelectionRange(s: number, e: number): void } {
-    return {
-      value,
-      selectionStart: 0,
-      selectionEnd: 0,
-      setSelectionRange(start: number, end: number) {
-        this.selectionStart = start;
-        this.selectionEnd = end;
-      },
-    };
-  }
+function makeElement(
+  value = "",
+): SelectionCapableElement & { setSelectionRange(s: number, e: number): void } {
+  return {
+    value,
+    selectionStart: 0,
+    selectionEnd: 0,
+    setSelectionRange(start: number, end: number) {
+      this.selectionStart = start;
+      this.selectionEnd = end;
+    },
+  };
+}
 
+describe("bindTextFieldState / syncFromElement", () => {
   it("writes value + selection onto the element", () => {
     const state = new WebTextFieldState("hello", { start: 5, end: 5 });
     const el = makeElement();

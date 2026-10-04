@@ -15,16 +15,22 @@ afterAll(cleanup);
 const enabled = Bun.env.M3_BUN_SYSTEM === "1";
 const sh = (cmd: string[], cwd?: string) => {
   const proc = Bun.spawnSync(cmd, { ...(cwd ? { cwd } : {}), stdout: "pipe", stderr: "pipe" });
-  return { code: proc.exitCode ?? 1, out: proc.stdout.toString().trim(), err: proc.stderr.toString().trim() };
+  return {
+    code: proc.exitCode ?? 1,
+    out: proc.stdout.toString().trim(),
+    err: proc.stderr.toString().trim(),
+  };
 };
 
 async function until(url: string, tries = 100): Promise<Response> {
   let last: unknown;
   for (let i = 0; i < tries; i++) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- Polls depend on the previous attempt and must stop at the first ready response.
       return await fetch(url, { signal: AbortSignal.timeout(1500) });
     } catch (error) {
       last = error;
+      // oxlint-disable-next-line no-await-in-loop -- Back off only after the preceding readiness attempt fails.
       await Bun.sleep(200);
     }
   }
@@ -32,57 +38,102 @@ async function until(url: string, tries = 100): Promise<Response> {
 }
 
 describe.skipIf(!enabled)("generated images run", () => {
-  test.skipIf(!Bun.which("docker"))("the scratch image builds from the rootfs, serves UI and API, and passes its own health check", async () => {
-    const dir = fixtureCopy();
-    const app = await loadApp(dir);
-    const { outfile } = await compileApp({ app });
-    const out = join(dir, "release");
-    const report = await packageApp({ app, executable: outfile, out, rootfs: true });
-    expect(report.rootfs?.libraries.length).toBeGreaterThanOrEqual(4);
-    await generateTargets(["docker"], contextFor(app), join(dir, "deploy"));
-    writeFileSync(join(out, "Dockerfile"), await Bun.file(join(dir, "deploy/docker/Dockerfile.scratch")).text());
-    const tag = `m3-bun-system-test/${app.name}:${Date.now()}`;
-    const name = `m3-bun-system-${Date.now()}`;
-    const built = sh(["docker", "build", "-q", "-t", tag, out]);
-    expect(built.code).toBe(0);
-    const port = freePort();
-    try {
-      expect(sh(["docker", "run", "-d", "--name", name, "-p", `127.0.0.1:${port}:${app.port}`, "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", tag]).code).toBe(0);
-      const health = await until(`http://127.0.0.1:${port}/healthz`);
-      expect(health.status).toBe(200);
-      expect(await (await fetch(`http://127.0.0.1:${port}/api/hello/docker`)).json()).toEqual({ hello: "docker" });
-      expect((await fetch(`http://127.0.0.1:${port}/`)).headers.get("content-type")).toStartWith("text/html");
-      expect(sh(["docker", "exec", name, "/app/server", "--healthcheck"]).code).toBe(0);
-      const user = sh(["docker", "inspect", name, "--format", "{{.Config.User}}"]).out;
-      expect(user).toBe("10001:10001");
-    } finally {
-      sh(["docker", "rm", "-f", name]);
-      sh(["docker", "rmi", "-f", tag]);
-    }
-  }, 240_000);
+  test.skipIf(!Bun.which("docker"))(
+    "the scratch image builds from the rootfs, serves UI and API, and passes its own health check",
+    async () => {
+      const dir = fixtureCopy();
+      const app = await loadApp(dir);
+      const { outfile } = await compileApp({ app });
+      const out = join(dir, "release");
+      const report = await packageApp({ app, executable: outfile, out, rootfs: true });
+      expect(report.rootfs?.libraries.length).toBeGreaterThanOrEqual(4);
+      await generateTargets(["docker"], contextFor(app), join(dir, "deploy"));
+      writeFileSync(
+        join(out, "Dockerfile"),
+        await Bun.file(join(dir, "deploy/docker/Dockerfile.scratch")).text(),
+      );
+      const tag = `m3-bun-system-test/${app.name}:${Date.now()}`;
+      const name = `m3-bun-system-${Date.now()}`;
+      const built = sh(["docker", "build", "-q", "-t", tag, out]);
+      expect(built.code).toBe(0);
+      const port = freePort();
+      try {
+        expect(
+          sh([
+            "docker",
+            "run",
+            "-d",
+            "--name",
+            name,
+            "-p",
+            `127.0.0.1:${port}:${app.port}`,
+            "--read-only",
+            "--cap-drop",
+            "ALL",
+            "--security-opt",
+            "no-new-privileges",
+            tag,
+          ]).code,
+        ).toBe(0);
+        const health = await until(`http://127.0.0.1:${port}/healthz`);
+        expect(health.status).toBe(200);
+        expect(await (await fetch(`http://127.0.0.1:${port}/api/hello/docker`)).json()).toEqual({
+          hello: "docker",
+        });
+        expect((await fetch(`http://127.0.0.1:${port}/`)).headers.get("content-type")).toStartWith(
+          "text/html",
+        );
+        expect(sh(["docker", "exec", name, "/app/server", "--healthcheck"]).code).toBe(0);
+        const user = sh(["docker", "inspect", name, "--format", "{{.Config.User}}"]).out;
+        expect(user).toBe("10001:10001");
+      } finally {
+        sh(["docker", "rm", "-f", name]);
+        sh(["docker", "rmi", "-f", tag]);
+      }
+    },
+    240_000,
+  );
 
-  test.skipIf(!Bun.which("qemu-system-x86_64") || !Bun.env.M3_BUN_KERNEL || !existsSync(Bun.env.M3_BUN_KERNEL ?? ""))("the minimal Linux image boots in QEMU and serves over the forwarded port", async () => {
-    const dir = fixtureCopy();
-    const app = await loadApp(dir);
-    const { outfile } = await compileApp({ app });
-    await generateTargets(["linux-image"], contextFor(app), join(dir, "deploy"));
-    const build = sh(["bash", join(dir, "deploy/linux-image/build-image.sh"), outfile, join(dir, "image")]);
-    expect(build.code).toBe(0);
-    const port = freePort();
-    const qemu = Bun.spawn(["bash", join(dir, "deploy/linux-image/run-qemu.sh"), join(dir, "image/initramfs.cpio.gz")], {
-      env: { ...process.env, KERNEL: Bun.env.M3_BUN_KERNEL!, HOST_PORT: String(port) },
-      stdout: "ignore",
-      stderr: "ignore",
-    });
-    try {
-      const health = await until(`http://127.0.0.1:${port}/healthz`, 300);
-      expect(health.status).toBe(200);
-      expect(await (await fetch(`http://127.0.0.1:${port}/api/hello/qemu`)).json()).toEqual({ hello: "qemu" });
-    } finally {
-      qemu.kill();
-      await qemu.exited;
-    }
-  }, 240_000);
+  test.skipIf(
+    !Bun.which("qemu-system-x86_64") ||
+      !Bun.env.M3_BUN_KERNEL ||
+      !existsSync(Bun.env.M3_BUN_KERNEL ?? ""),
+  )(
+    "the minimal Linux image boots in QEMU and serves over the forwarded port",
+    async () => {
+      const dir = fixtureCopy();
+      const app = await loadApp(dir);
+      const { outfile } = await compileApp({ app });
+      await generateTargets(["linux-image"], contextFor(app), join(dir, "deploy"));
+      const build = sh([
+        "bash",
+        join(dir, "deploy/linux-image/build-image.sh"),
+        outfile,
+        join(dir, "image"),
+      ]);
+      expect(build.code).toBe(0);
+      const port = freePort();
+      const qemu = Bun.spawn(
+        ["bash", join(dir, "deploy/linux-image/run-qemu.sh"), join(dir, "image/initramfs.cpio.gz")],
+        {
+          env: { ...process.env, KERNEL: Bun.env.M3_BUN_KERNEL!, HOST_PORT: String(port) },
+          stdout: "ignore",
+          stderr: "ignore",
+        },
+      );
+      try {
+        const health = await until(`http://127.0.0.1:${port}/healthz`, 300);
+        expect(health.status).toBe(200);
+        expect(await (await fetch(`http://127.0.0.1:${port}/api/hello/qemu`)).json()).toEqual({
+          hello: "qemu",
+        });
+      } finally {
+        qemu.kill();
+        await qemu.exited;
+      }
+    },
+    240_000,
+  );
 });
 
 describe.skipIf(!enabled)("cross-compiled executables", () => {
@@ -102,7 +153,8 @@ describe.skipIf(!enabled)("cross-compiled executables", () => {
     expect(elf.out).toContain("libc.musl-x86_64.so.1");
     const glibc = await compileApp({ app, target: "linux-x64", build: false });
     const needed = sh(["readelf", "-d", glibc.outfile]).out;
-    for (const lib of ["libc.so.6", "libm.so.6", "libpthread.so.0", "libdl.so.2"]) expect(needed).toContain(lib);
+    for (const lib of ["libc.so.6", "libm.so.6", "libpthread.so.0", "libdl.so.2"])
+      expect(needed).toContain(lib);
   }, 240_000);
 
   test("Windows metadata is only applied on Windows: elsewhere the report says so instead of pretending", async () => {
@@ -119,7 +171,11 @@ export const bun = defineM3Bun({ api: "src/api.ts", compile: { windows: { title:
     const win = await compileApp({ app, target: "windows-x64" });
     if (process.platform === "win32") expect(win.warnings).toEqual([]);
     else expect(win.warnings.join(" ")).toContain("only applied when compiling on Windows");
-    const plain = await compileApp({ app: await loadApp(fixtureCopy()), target: "linux-x64", build: true });
+    const plain = await compileApp({
+      app: await loadApp(fixtureCopy()),
+      target: "linux-x64",
+      build: true,
+    });
     expect(plain.warnings).toEqual([]);
   }, 240_000);
 });

@@ -10,12 +10,19 @@
 
 export type M3Request = Request & { params: Record<string, string> };
 export type M3Handler = (request: M3Request) => Response | Promise<Response>;
-export type M3Methods = Partial<Record<"GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS", M3Handler>>;
+export type M3Methods = Partial<
+  Record<"GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS", M3Handler>
+>;
 export type M3Route = M3Handler | M3Methods | Response;
 export type M3Routes = Record<string, M3Route>;
 
 /** An API module's default export: routes only, or routes plus a fallback `fetch` that may return undefined to pass. */
-export type M3ApiModule = M3Routes | { routes?: M3Routes; fetch?: (request: Request) => Response | undefined | Promise<Response | undefined> };
+export type M3ApiModule =
+  | M3Routes
+  | {
+      routes?: M3Routes;
+      fetch?: (request: Request) => Response | undefined | Promise<Response | undefined>;
+    };
 
 /** Identity helper that types an API module. */
 export function defineM3Api<T extends M3ApiModule>(api: T): T {
@@ -34,6 +41,17 @@ export function normalizeApi(api: M3ApiModule | undefined): { routes: M3Routes; 
   return { routes: api as M3Routes };
 }
 
+async function respond(handler: M3Handler, request: M3Request): Promise<Response> {
+  const response = await handler(request);
+  if (request.method !== "HEAD") return response;
+  await response.body?.cancel();
+  return new Response(null, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+}
+
 interface Compiled {
   segments: string[];
   wildcard: boolean;
@@ -49,7 +67,10 @@ const compile = (pattern: string, route: M3Route): Compiled => {
 /** Match `path` against a compiled pattern; returns the params or undefined. Static segments outrank params. */
 function match(path: string, route: Compiled): Record<string, string> | undefined {
   const parts = path.split("/").filter(Boolean);
-  if (route.wildcard ? parts.length < route.segments.length : parts.length !== route.segments.length) return undefined;
+  if (
+    route.wildcard ? parts.length < route.segments.length : parts.length !== route.segments.length
+  )
+    return undefined;
   const params: Record<string, string> = {};
   for (let i = 0; i < route.segments.length; i++) {
     const segment = route.segments[i]!;
@@ -59,29 +80,54 @@ function match(path: string, route: Compiled): Record<string, string> | undefine
   return params;
 }
 
-const specificity = (route: Compiled): number => route.segments.reduce((n, s) => n + (s.startsWith(":") ? 1 : 3), 0) + (route.wildcard ? 0 : 1);
+function compareRoutes(a: Compiled, b: Compiled): number {
+  for (let i = 0; i < Math.min(a.segments.length, b.segments.length); i++) {
+    const difference =
+      Number(a.segments[i]!.startsWith(":")) - Number(b.segments[i]!.startsWith(":"));
+    if (difference) return difference;
+  }
+  return b.segments.length - a.segments.length || Number(a.wildcard) - Number(b.wildcard);
+}
 
 /**
  * One `fetch` handler for Bun-style routes: `:param` segments, trailing `/*`, per-method objects and static
  * `Response` values. Unmatched requests resolve to `undefined` so a host can fall through to its assets.
  */
-export function routesToFetch(routes: M3Routes): (request: Request) => Promise<Response | undefined> {
+export function routesToFetch(
+  routes: M3Routes,
+): (request: Request) => Promise<Response | undefined> {
   const compiled = Object.entries(routes)
     .map(([pattern, route]) => compile(pattern, route))
-    .toSorted((a, b) => specificity(b) - specificity(a));
+    .toSorted(compareRoutes);
   return async (request) => {
     const { pathname } = new URL(request.url);
     for (const entry of compiled) {
-      const params = match(pathname, entry);
+      let params: Record<string, string> | undefined;
+      try {
+        params = match(pathname, entry);
+      } catch {
+        return new Response("Bad Request", { status: 400 });
+      }
       if (!params) continue;
       const route = entry.route;
-      const handler = route instanceof Response ? () => route.clone() : typeof route === "function" ? route : route[request.method as keyof M3Methods];
+      const handler =
+        route instanceof Response
+          ? () => route.clone()
+          : typeof route === "function"
+            ? route
+            : route[request.method as keyof M3Methods];
       if (!handler) {
-        const allow = typeof route === "object" && !(route instanceof Response) ? Object.keys(route).join(", ") : "";
-        return new Response("Method Not Allowed", { status: 405, headers: allow ? { Allow: allow } : {} });
+        const allow =
+          typeof route === "object" && !(route instanceof Response)
+            ? Object.keys(route).join(", ")
+            : "";
+        return new Response("Method Not Allowed", {
+          status: 405,
+          headers: allow ? { Allow: allow } : {},
+        });
       }
       const withParams = Object.assign(request, { params }) as M3Request;
-      return handler(withParams);
+      return respond(handler, withParams);
     }
     return undefined;
   };

@@ -6,6 +6,7 @@
 //   import { applyM3Theme, registerM3Components } from "@aphrody/m3/lit";
 //   await registerM3Components({ core: true });   // also the upstream md-* catalog
 //   applyM3Theme("#6750a4", { variant: "tonalSpot" });
+// oxlint-disable-next-line import/no-unassigned-import -- Importing this public entry point registers the Aphrody custom elements.
 import "@aphrody/material-web/aphrody-components.js";
 import { applyDynamicFusionTheme, type ApplyDynamicFusionThemeOptions } from "@aphrody/m3-theme";
 
@@ -18,7 +19,9 @@ export interface RegisterM3ComponentsOptions {
  * Register the element catalogs. The Aphrody extensions are already defined by importing this
  * module; `core` loads the upstream `md-*` elements on demand (a separate chunk).
  */
-export async function registerM3Components(options: RegisterM3ComponentsOptions = {}): Promise<void> {
+export async function registerM3Components(
+  options: RegisterM3ComponentsOptions = {},
+): Promise<void> {
   if (options.core) await import("@aphrody/material-web/all.js");
 }
 

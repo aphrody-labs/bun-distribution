@@ -46,13 +46,15 @@ function SelectField({
           {label && <FormLabel required={required}>{label}</FormLabel>}
           <SelectRoot
             onValueChange={field.onChange}
-            defaultValue={field.value}
-            disabled={disabled}
+            value={field.value ?? ""}
+            disabled={disabled ?? field.disabled}
             name={field.name}
             required={required}
           >
             <FormControl>
               <SelectTrigger
+                ref={field.ref}
+                onBlur={field.onBlur}
                 aria-required={required || undefined}
                 className={fieldState.error ? "border-error text-error" : undefined}
               >

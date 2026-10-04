@@ -64,6 +64,23 @@ export interface UseTransitionStateResult {
   handleTransitionEnd: () => void;
 }
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onChange: () => void): () => void {
+  if (typeof window === "undefined" || !window.matchMedia) return () => {};
+  const media = window.matchMedia(REDUCED_MOTION_QUERY);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+
+function useReducedMotion(): boolean {
+  return React.useSyncExternalStore(
+    subscribeReducedMotion,
+    () => typeof window !== "undefined" && !!window.matchMedia?.(REDUCED_MOTION_QUERY).matches,
+    () => false,
+  );
+}
+
 /**
  * Drives mount/unmount and entering/entered/exiting/exited phases from the
  * boolean `in` prop, using a small internal state machine. No external
@@ -77,6 +94,7 @@ export function useTransitionState(
     unmountOnExit = false,
     enterTimeout,
     exitTimeout,
+    appearTimeout = enterTimeout,
     onEntered,
     onExited,
   }: {
@@ -85,16 +103,21 @@ export function useTransitionState(
     unmountOnExit?: boolean;
     enterTimeout: number;
     exitTimeout: number;
+    appearTimeout?: number;
     onEntered?: () => void;
     onExited?: () => void;
   },
 ): UseTransitionStateResult {
   const firstRender = React.useRef(true);
-  const isAppearing = firstRender.current && inProp && appear;
+  const initialSteady = React.useRef(!inProp || !appear);
+  const initialIn = React.useRef(inProp);
+  const appearing = React.useRef(inProp && appear);
+  const callbacks = React.useRef({ onEntered, onExited });
+  callbacks.current = { onEntered, onExited };
 
   const [phase, setPhase] = React.useState<TransitionPhase>(() => {
     if (inProp) {
-      return appear ? "entering" : "entered";
+      return appear ? "exited" : "entered";
     }
     return "exited";
   });
@@ -103,6 +126,7 @@ export function useTransitionState(
   const [mounted, setMounted] = React.useState(() => inProp || (!mountOnEnter && !unmountOnExit));
 
   const timer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const settlement = React.useRef<(() => void) | undefined>(undefined);
   const clear = () => {
     if (timer.current !== undefined) {
       clearTimeout(timer.current);
@@ -111,47 +135,58 @@ export function useTransitionState(
   };
 
   React.useEffect(() => {
+    const initial = firstRender.current;
     firstRender.current = false;
-    return clear;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  React.useEffect(() => {
-    if (inProp) {
+    // A steady initial state must not start a transition or fire its callback.
+    if (initialIn.current !== inProp) initialSteady.current = false;
+    if ((initial && (!inProp || !appear)) || initialSteady.current) return clear;
+    let cancelled = false;
+    let settled = false;
+    let raf: number | undefined;
+    const duration = inProp ? (appearing.current ? appearTimeout : enterTimeout) : exitTimeout;
+    const settle = () => {
+      if (cancelled || settled) return;
+      settled = true;
       clear();
-      setMounted(true);
-      // Defer to the next frame so the element mounts in its closed state
-      // before transitioning to open (otherwise no transition fires).
-      const raf = requestAnimationFrame(() => {
-        setPhase("entering");
-        timer.current = setTimeout(() => {
-          setPhase("entered");
-          onEntered?.();
-        }, enterTimeout);
-      });
-      return () => {
-        cancelAnimationFrame(raf);
-      };
-    }
-
+      appearing.current = false;
+      setPhase(inProp ? "entered" : "exited");
+      if (!inProp && unmountOnExit) setMounted(false);
+      (inProp ? callbacks.current.onEntered : callbacks.current.onExited)?.();
+    };
+    settlement.current = settle;
     clear();
-    setPhase("exiting");
-    timer.current = setTimeout(() => {
-      setPhase("exited");
-      if (unmountOnExit) {
-        setMounted(false);
+    if (inProp) {
+      setMounted(true);
+      if (duration <= 0) settle();
+      else {
+        // Commit the hidden state before entering so browsers can interpolate.
+        setPhase("exited");
+        raf = requestAnimationFrame(() => {
+          setPhase("entering");
+          timer.current = setTimeout(settle, duration);
+        });
       }
-      onExited?.();
-    }, exitTimeout);
-    return undefined;
+    } else {
+      appearing.current = false;
+      setPhase("exiting");
+      if (duration <= 0) settle();
+      else timer.current = setTimeout(settle, duration);
+    }
+    return () => {
+      cancelled = true;
+      settlement.current = undefined;
+      if (raf !== undefined) cancelAnimationFrame(raf);
+      clear();
+    };
+    // Callbacks are kept current without restarting an animation on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inProp, enterTimeout, exitTimeout, unmountOnExit]);
+  }, [inProp, enterTimeout, exitTimeout, appearTimeout, unmountOnExit]);
 
   const handleTransitionEnd = React.useCallback(() => {
-    // The timeout is the source of truth; this is a best-effort fast-path.
-  }, []);
+    if (phase === "entering" || phase === "exiting") settlement.current?.();
+  }, [phase]);
 
-  return { mounted, phase, isAppearing, handleTransitionEnd };
+  return { mounted, phase, isAppearing: appearing.current, handleTransitionEnd };
 }
 
 /** True while the element should be in its "shown" visual state. */
@@ -168,16 +203,31 @@ export function useTransitionProps(
   enterFallbackMs: number,
   exitFallbackMs: number,
 ) {
-  const { in: inProp, timeout, appear = false, mountOnEnter = false, unmountOnExit = false } = props;
-  const enterMs = resolveTimeout(timeout, "enter", enterFallbackMs);
-  const exitMs = resolveTimeout(timeout, "exit", exitFallbackMs);
-  const { mounted, phase } = useTransitionState(inProp, {
+  const {
+    in: inProp,
+    timeout,
+    appear = false,
+    mountOnEnter = false,
+    unmountOnExit = false,
+  } = props;
+  const reduced = useReducedMotion();
+  const enterMs = reduced ? 0 : resolveTimeout(timeout, "enter", enterFallbackMs);
+  const exitMs = reduced ? 0 : resolveTimeout(timeout, "exit", exitFallbackMs);
+  const appearMs = reduced ? 0 : resolveTimeout(timeout, "appear", enterFallbackMs);
+  const { mounted, phase, isAppearing } = useTransitionState(inProp, {
     appear,
     mountOnEnter,
     unmountOnExit,
     enterTimeout: enterMs,
     exitTimeout: exitMs,
+    appearTimeout: appearMs,
   });
-  const visible = isVisible(phase);
-  return { mounted, phase, visible, durationMs: visible ? enterMs : exitMs };
+  const resolvedPhase = reduced ? (inProp ? "entered" : "exited") : phase;
+  const visible = isVisible(resolvedPhase);
+  return {
+    mounted: reduced ? inProp || (!mountOnEnter && !unmountOnExit) : mounted,
+    phase: resolvedPhase,
+    visible,
+    durationMs: isAppearing ? appearMs : visible ? enterMs : exitMs,
+  };
 }

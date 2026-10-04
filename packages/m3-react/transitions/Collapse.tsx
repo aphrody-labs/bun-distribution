@@ -69,7 +69,11 @@ export function Collapse(props: CollapseProps): React.ReactElement | null {
     : {};
 
   return (
-    <div style={containerStyle}>
+    <div
+      style={containerStyle}
+      inert={!visible && collapsedSize === "0px"}
+      aria-hidden={!visible && collapsedSize === "0px"}
+    >
       <div ref={innerRef} style={innerStyle}>
         {children}
       </div>

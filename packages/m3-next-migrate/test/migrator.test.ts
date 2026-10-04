@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
+import { PRIVATE_OWNER_ROOT } from "@aphrody/scaffold";
 import { describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import {
   transformComponent,
   scanNextDirectory,
@@ -25,6 +26,16 @@ import {
   NextResponse,
 } from "../src/index";
 import React from "react";
+
+function RootLayout({ children }: { children: React.ReactNode }) {
+  return React.createElement("div", { "data-testid": "root" }, children);
+}
+function SubLayout({ children }: { children: React.ReactNode }) {
+  return React.createElement("div", { "data-testid": "sub" }, children);
+}
+function Page() {
+  return React.createElement("span", null, "Page Content");
+}
 
 describe("@aphrody/m3-next-migrate", () => {
   describe("transformComponent", () => {
@@ -193,8 +204,10 @@ export default function Panel() {
       expect(result.code).not.toContain("<body");
       expect(result.code).not.toContain("</body>");
       expect(result.code).not.toContain("suppressHydrationWarning");
-      expect(result.code).toContain('<div className="m3-app-root" data-root-layout lang="en">');
-      expect(result.code).toContain('<div className="m3-app-body" className="font-sans antialiased">');
+      expect(result.code).toContain('<div data-root-layout className="m3-app-root" lang="en">');
+      expect(result.code).toContain(
+        '<div className={["m3-app-body", "font-sans antialiased"].filter(Boolean).join(" ")} >',
+      );
     });
 
     it("supports static metadata and synchronizes with Tauri window title", () => {
@@ -294,16 +307,6 @@ export async function GET(request: NextRequest) {
     });
 
     it("composes layout stack around page component correctly", () => {
-      function RootLayout({ children }: { children: React.ReactNode }) {
-        return React.createElement("div", { "data-testid": "root" }, children);
-      }
-      function SubLayout({ children }: { children: React.ReactNode }) {
-        return React.createElement("div", { "data-testid": "sub" }, children);
-      }
-      function Page() {
-        return React.createElement("span", null, "Page Content");
-      }
-
       const composed = composeLayouts([RootLayout, SubLayout], Page);
       expect(composed.type).toBe(RootLayout);
       expect((composed.props as any).children.type).toBe(SubLayout);
@@ -320,7 +323,9 @@ export async function GET(request: NextRequest) {
       const hierarchy = buildRouteHierarchy(files);
       const code = generateAppRouterCode(hierarchy, { modernizeM3: true });
 
-      expect(code).toContain("import { usePathname } from '@aphrody/m3-next-migrate/shims/navigation'");
+      expect(code).toContain(
+        "import { usePathname } from '@aphrody/m3-next-migrate/shims/navigation'",
+      );
       expect(code).toContain("import { composeLayouts } from '@aphrody/m3-next-migrate/layout'");
       expect(code).toContain("import '@aphrody/m3-theme/m3.css'");
       expect(code).toContain("Layout_0");
@@ -335,7 +340,9 @@ export async function GET(request: NextRequest) {
     it("resolves title strings and templates", () => {
       expect(resolveTitle("Direct Title")).toBe("Direct Title");
       expect(resolveTitle({ default: "Default Title" })).toBe("Default Title");
-      expect(resolveTitle({ default: "App", template: "%s | App" }, "Dashboard")).toBe("Dashboard | App");
+      expect(resolveTitle({ default: "App", template: "%s | App" }, "Dashboard")).toBe(
+        "Dashboard | App",
+      );
       expect(resolveTitle({ absolute: "Exact Title" })).toBe("Exact Title");
     });
 
@@ -425,11 +432,15 @@ export async function GET(request: NextRequest) {
   });
 
   describe("Scanner and Full Project Migration", () => {
-    it("scans and migrates a complete Next.js 16 app with nested layouts, M3 primitives, and metadata to Tauri v2 (Bun Native)", async () => {
+    it("scans and migrates a complete Next.js 16 app with nested layouts, M3 primitives, and metadata to the native Bun web host", async () => {
       // A private temporary tree: independent of the working directory and of concurrent runs.
       const tempRoot = await mkdtemp(join(tmpdir(), "m3-next-migrate-"));
       const tempTestDir = join(tempRoot, "next_app");
-      const tempDestDir = join(tempRoot, "tauri_app");
+      const tempDestDir = join(
+        PRIVATE_OWNER_ROOT,
+        "apps",
+        "m3-migrate-contract-" + basename(tempRoot),
+      );
       try {
         // Setup mock Next.js 16 app with nested layouts, metadata, and shadcn UI components
         await mkdir(join(tempTestDir, "app/dashboard"), { recursive: true });
@@ -452,7 +463,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-`
+`,
         );
 
         // 2. Root Page
@@ -477,7 +488,7 @@ export default function Home() {
     </main>
   );
 }
-`
+`,
         );
 
         // 3. Nested Dashboard Layout
@@ -496,7 +507,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </section>
   );
 }
-`
+`,
         );
 
         // 4. Nested Dashboard Page with Card and Collapsible
@@ -524,7 +535,7 @@ export default function DashboardPage() {
     </Card>
   );
 }
-`
+`,
         );
 
         // Scan
@@ -540,8 +551,8 @@ export default function DashboardPage() {
         const report = await migrateProject({
           sourceDir: tempTestDir,
           targetDir: tempDestDir,
-          target: "tauri",
-          projectName: "test-desktop-m3-app",
+          target: "vite",
+          projectName: "test-native-m3-app",
           scaffold: true,
           modernizeM3: true,
         });
@@ -552,17 +563,19 @@ export default function DashboardPage() {
 
         // Verify destination structure
         const pkgJsonExists = await Bun.file(join(tempDestDir, "package.json")).exists();
-        const viteConfigExists = await Bun.file(join(tempDestDir, "vite.config.ts")).exists();
-        const tauriConfExists = await Bun.file(join(tempDestDir, "src-tauri/tauri.conf.json")).exists();
+        const viteConfigExists = await Bun.file(join(tempDestDir, "m3.config.ts")).exists();
+        const tauriConfExists = await Bun.file(
+          join(tempDestDir, "src-tauri/tauri.conf.json"),
+        ).exists();
         const cargoTomlExists = await Bun.file(join(tempDestDir, "src-tauri/Cargo.toml")).exists();
         const mainTsxExists = await Bun.file(join(tempDestDir, "src/main.tsx")).exists();
         const appTsxExists = await Bun.file(join(tempDestDir, "src/App.tsx")).exists();
-        const serverTsExists = await Bun.file(join(tempDestDir, "src/server.ts")).exists();
+        const serverTsExists = await Bun.file(join(tempDestDir, "bunfig.toml")).exists();
 
         expect(pkgJsonExists).toBe(true);
         expect(viteConfigExists).toBe(true);
-        expect(tauriConfExists).toBe(true);
-        expect(cargoTomlExists).toBe(true);
+        expect(tauriConfExists).toBe(false);
+        expect(cargoTomlExists).toBe(false);
         expect(mainTsxExists).toBe(true);
         expect(appTsxExists).toBe(true);
         expect(serverTsExists).toBe(true);
@@ -579,28 +592,36 @@ export default function DashboardPage() {
         expect(appContent).toContain("@aphrody/m3-theme/m3.css");
 
         // Check migrated Root Layout: html/body rewritten
-        const migratedRootLayout = await Bun.file(join(tempDestDir, "src/components/app/layout.tsx")).text();
+        const migratedRootLayout = await Bun.file(
+          join(tempDestDir, "src/components/app/layout.tsx"),
+        ).text();
         expect(migratedRootLayout).not.toContain("<html");
         expect(migratedRootLayout).not.toContain("<body");
-        expect(migratedRootLayout).toContain('data-root-layout');
-        expect(migratedRootLayout).toContain('m3-app-body');
+        expect(migratedRootLayout).toContain("data-root-layout");
+        expect(migratedRootLayout).toContain("m3-app-body");
         expect(migratedRootLayout).toContain("useMetadata(metadata)");
 
         // Check migrated Home Page: M3 Button/Input imported, destructive -> accent
-        const migratedPageContent = await Bun.file(join(tempDestDir, "src/components/app/page.tsx")).text();
+        const migratedPageContent = await Bun.file(
+          join(tempDestDir, "src/components/app/page.tsx"),
+        ).text();
         expect(migratedPageContent).toContain("from '@aphrody/m3-primitives'");
         expect(migratedPageContent).toContain("variant='accent'");
 
         // Check migrated Dashboard Layout: M3 Badge imported
-        const migratedDashLayout = await Bun.file(join(tempDestDir, "src/components/app/dashboard/layout.tsx")).text();
+        const migratedDashLayout = await Bun.file(
+          join(tempDestDir, "src/components/app/dashboard/layout.tsx"),
+        ).text();
         expect(migratedDashLayout).toContain("from '@aphrody/m3-primitives'");
 
         // Check migrated Dashboard Page: M3 Card & Collapsible imported
-        const migratedDashPage = await Bun.file(join(tempDestDir, "src/components/app/dashboard/page.tsx")).text();
+        const migratedDashPage = await Bun.file(
+          join(tempDestDir, "src/components/app/dashboard/page.tsx"),
+        ).text();
         expect(migratedDashPage).toContain("from '@aphrody/m3-primitives'");
         expect(migratedDashPage).toContain("useMetadata");
-
       } finally {
+        await rm(tempDestDir, { recursive: true, force: true });
         await rm(tempRoot, { recursive: true, force: true });
       }
     });

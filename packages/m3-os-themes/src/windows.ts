@@ -28,7 +28,10 @@ export function accentPalette(roles: Roles): number[] {
     roles["onPrimaryFixedVariant"],
     roles["onPrimaryFixed"],
   ];
-  return swatches.flatMap((c) => [...rgb(c!), 0]);
+  return swatches.flatMap((c) => {
+    const [red, green, blue] = rgb(c!);
+    return [red, green, blue, 0];
+  });
 }
 
 /** Registry values the installer writes for one mode. */

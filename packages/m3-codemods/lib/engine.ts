@@ -13,13 +13,7 @@
  * Les transforms de `transforms/` ne font que paramétrer ce moteur (quels
  * composants traiter) pour rester focalisés (Button, champs, imports, orchestrateur).
  */
-import type {
-  API,
-  FileInfo,
-  JSXElement,
-  JSXOpeningElement,
-  Options,
-} from "jscodeshift";
+import type { API, FileInfo, JSXElement, JSXOpeningElement, Options } from "jscodeshift";
 import {
   GAP_COMPONENTS,
   LAYOUT_COMPONENTS,
@@ -310,11 +304,21 @@ export function runEngine(file: FileInfo, api: API, options: Options & EngineOpt
     const toInsert: any[] = [];
     if (needMdIconImport) {
       // md-icon est utilisé en custom-element brut : import d'effet de bord.
-      toInsert.push(
-        j.importDeclaration([], j.stringLiteral("@aphrody/material-web/icon/icon.js")),
+      const sideEffect = j.importDeclaration(
+        [],
+        j.stringLiteral("@aphrody/material-web/icon/icon.js"),
       );
+      sideEffect.comments = [
+        j.commentLine(
+          " oxlint-disable-next-line import/no-unassigned-import -- Registers md-icon used by the migrated JSX.",
+          true,
+          false,
+        ),
+      ];
+      toInsert.push(sideEffect);
     }
     const specs = [...neededImports]
+      // oxlint-disable-next-line unicorn/no-array-sort -- Sort a fresh copy while retaining the codemod's ES2022 API contract.
       .sort()
       .map((n) => j.importSpecifier(j.jsxIdentifier(n) as any));
     if (specs.length > 0) {

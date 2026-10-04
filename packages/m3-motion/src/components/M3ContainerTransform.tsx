@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import type { HTMLMotionProps, Transition, MotionStyle } from "motion/react";
 import { m3Springs } from "../springs.js";
 import { m3Easings } from "../easings.js";
+import { useM3ReducedMotion } from "../hooks/useM3ReducedMotion.js";
 
 export interface M3ContainerTransformProps extends HTMLMotionProps<"div"> {
   /**
@@ -26,7 +27,8 @@ export interface M3ContainerTransformContextValue {
   speed: "fast" | "default" | "slow";
 }
 
-export const M3ContainerTransformContext = React.createContext<M3ContainerTransformContextValue | null>(null);
+export const M3ContainerTransformContext =
+  React.createContext<M3ContainerTransformContextValue | null>(null);
 
 /**
  * Helper function to generate spec-compliant cross-fade timings.
@@ -54,23 +56,35 @@ function getDefaultTransition(isActive: boolean, speed: "fast" | "default" | "sl
  * Use the same layoutId on both source and target containers to morph them smoothly.
  */
 export const M3ContainerTransform = React.forwardRef<HTMLDivElement, M3ContainerTransformProps>(
-  ({ layoutId, speed = "default", isExpanded = false, children, transition, style, ...props }: M3ContainerTransformProps, ref) => {
+  (
+    {
+      layoutId,
+      speed = "default",
+      isExpanded = false,
+      children,
+      transition,
+      style,
+      ...props
+    }: M3ContainerTransformProps,
+    ref,
+  ) => {
+    const reduced = useM3ReducedMotion();
     // Select the M3 spatial spring configuration based on speed
     const springConfig = m3Springs[speed].spatial;
 
-    const contextValue = React.useMemo(
-      () => ({ isExpanded, speed }),
-      [isExpanded, speed]
-    );
+    const contextValue = React.useMemo(() => ({ isExpanded, speed }), [isExpanded, speed]);
 
     return (
       <M3ContainerTransformContext.Provider value={contextValue}>
         <motion.div
           ref={ref}
-          layoutId={layoutId}
-          layout
-          transition={transition || springConfig}
+          layoutId={reduced ? undefined : layoutId}
+          layout={!reduced}
+          transition={
+            reduced ? { type: "tween", duration: 0, delay: 0 } : transition || springConfig
+          }
           style={{
+            position: "relative",
             willChange: "transform, border-radius",
             overflow: "hidden",
             ...style,
@@ -109,6 +123,7 @@ const ContainerTransformLayer = React.forwardRef<
   HTMLDivElement,
   M3ContainerTransformStartProps & { layer: "start" | "end" }
 >(({ layer, active, children, style, transition, layout = "position", ...props }, ref) => {
+  const reduced = useM3ReducedMotion();
   const context = React.useContext(M3ContainerTransformContext);
   const isActive = active ?? (context ? context.isExpanded === (layer === "end") : true);
   const speed = context?.speed ?? "default";
@@ -129,12 +144,18 @@ const ContainerTransformLayer = React.forwardRef<
   return (
     <motion.div
       ref={ref}
-      layout={layout}
-      {...(layer === "end" ? { initial: { opacity: 0 } } : {})}
+      layout={reduced ? false : layout}
+      {...(layer === "end" ? { initial: reduced ? false : { opacity: 0 } } : {})}
       animate={{ opacity: isActive ? 1 : 0 }}
-      transition={transition || getDefaultTransition(isActive, speed)}
+      transition={
+        reduced
+          ? { type: "tween", duration: 0, delay: 0 }
+          : transition || getDefaultTransition(isActive, speed)
+      }
       style={baseStyle}
       {...props}
+      inert={!isActive || props.inert}
+      aria-hidden={!isActive || props["aria-hidden"]}
     >
       {children}
     </motion.div>
@@ -146,9 +167,10 @@ const ContainerTransformLayer = React.forwardRef<
  * Represents the starting content (e.g., Card content) inside M3ContainerTransform.
  * Prevents aspect ratio distortion and fades out during the container transform morph.
  */
-export const M3ContainerTransformStart = React.forwardRef<HTMLDivElement, M3ContainerTransformStartProps>(
-  (props, ref) => <ContainerTransformLayer layer="start" ref={ref} {...props} />,
-);
+export const M3ContainerTransformStart = React.forwardRef<
+  HTMLDivElement,
+  M3ContainerTransformStartProps
+>((props, ref) => <ContainerTransformLayer layer="start" ref={ref} {...props} />);
 
 M3ContainerTransformStart.displayName = "M3ContainerTransformStart";
 
@@ -157,8 +179,9 @@ M3ContainerTransformStart.displayName = "M3ContainerTransformStart";
  * Represents the target content (e.g., Detail page content) inside M3ContainerTransform.
  * Prevents aspect ratio distortion and fades in during the container transform morph.
  */
-export const M3ContainerTransformEnd = React.forwardRef<HTMLDivElement, M3ContainerTransformEndProps>(
-  (props, ref) => <ContainerTransformLayer layer="end" ref={ref} {...props} />,
-);
+export const M3ContainerTransformEnd = React.forwardRef<
+  HTMLDivElement,
+  M3ContainerTransformEndProps
+>((props, ref) => <ContainerTransformLayer layer="end" ref={ref} {...props} />);
 
 M3ContainerTransformEnd.displayName = "M3ContainerTransformEnd";

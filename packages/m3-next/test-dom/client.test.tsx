@@ -50,6 +50,7 @@ const html = document.documentElement;
 const clearCookie = () => {
   document.cookie = "m3-theme=; path=/; max-age=0";
   document.cookie = "app-theme=; path=/; max-age=0";
+  document.cookie = "app.theme=; path=/; max-age=0";
 };
 
 afterEach(async () => {
@@ -138,6 +139,28 @@ describe("M3ThemeProvider", () => {
     expect(theme.themeMode).toBe("dark");
     expect(document.cookie).toContain("app-theme=dark");
     expect(document.cookie).not.toContain("m3-theme=");
+  });
+
+  test("partial cookie values are ignored and punctuation preserves cookie identity", async () => {
+    document.cookie = "m3-theme=darkened; path=/";
+    await mount(
+      <M3ThemeProvider defaultThemeMode="light">
+        <Probe />
+      </M3ThemeProvider>,
+    );
+    expect(theme.themeMode).toBe("light");
+    await act(async () => root?.unmount());
+    root = undefined;
+    clearCookie();
+    document.cookie = "app.theme=dark; path=/";
+    await mount(
+      <M3ThemeProvider cookieName="app.theme">
+        <Probe />
+      </M3ThemeProvider>,
+    );
+    expect(theme.themeMode).toBe("dark");
+    expect(document.cookie).toContain("app.theme=dark");
+    expect(document.cookie).not.toContain("apptheme=");
   });
 
   test("the inlined scheme costs nothing: no inline roles, no colour engine", async () => {

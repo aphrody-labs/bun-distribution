@@ -3,5 +3,5 @@
   "compilerOptions": {
     "declaration": false
   },
-  "include": ["lib", "transforms", "scripts"]
+  "include": ["lib", "transforms", "scripts", "src", "test"]
 }

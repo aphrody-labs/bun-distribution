@@ -46,7 +46,7 @@ describe("M3 i18n localization contract", () => {
     for (const ns of Object.keys(en) as (keyof typeof en)[]) {
       const enKeys = Object.keys(en[ns]);
       const frKeys = Object.keys(fr[ns]);
-      expect(enKeys.sort()).toEqual(frKeys.sort());
+      expect(enKeys.toSorted()).toEqual(frKeys.toSorted());
 
       for (const key of enKeys) {
         expect((en[ns] as Record<string, string>)[key].length).toBeGreaterThan(0);

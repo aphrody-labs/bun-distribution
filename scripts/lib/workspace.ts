@@ -26,14 +26,18 @@ export interface WorkspacePackage {
 
 /** Workspace members: the root `workspaces` globs minus its `!` exclusions. */
 export function workspacePackages(root: string = REPO): WorkspacePackage[] {
-  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { workspaces?: { packages?: string[] } | string[] };
-  const globs = Array.isArray(manifest.workspaces) ? manifest.workspaces : (manifest.workspaces?.packages ?? []);
+  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+    workspaces?: { packages?: string[] } | string[];
+  };
+  const globs = Array.isArray(manifest.workspaces)
+    ? manifest.workspaces
+    : (manifest.workspaces?.packages ?? []);
   const excluded = new Set(globs.filter((g) => g.startsWith("!")).map((g) => g.slice(1)));
   const result: WorkspacePackage[] = [];
   for (const glob of globs.filter((g) => !g.startsWith("!"))) {
     const base = glob.replace(/\/\*$/, "");
     if (!existsSync(join(root, base))) continue;
-    for (const entry of readdirSync(join(root, base)).sort()) {
+    for (const entry of readdirSync(join(root, base)).toSorted()) {
       const rel = `${base}/${entry}`;
       const file = join(root, rel, "package.json");
       if (excluded.has(rel) || !existsSync(file)) continue;
@@ -47,9 +51,15 @@ export function workspacePackages(root: string = REPO): WorkspacePackage[] {
 /** Workspace dependencies of `pkg` (all dependency kinds), by name. */
 export function workspaceDeps(pkg: WorkspacePackage, known: ReadonlySet<string>): string[] {
   const { dependencies, devDependencies, peerDependencies } = pkg.manifest;
-  return [...new Set([...Object.keys(dependencies ?? {}), ...Object.keys(devDependencies ?? {}), ...Object.keys(peerDependencies ?? {})])]
+  return [
+    ...new Set([
+      ...Object.keys(dependencies ?? {}),
+      ...Object.keys(devDependencies ?? {}),
+      ...Object.keys(peerDependencies ?? {}),
+    ]),
+  ]
     .filter((name) => known.has(name) && name !== pkg.name)
-    .sort();
+    .toSorted();
 }
 
 /** Packages grouped in dependency levels: every package comes after the packages it depends on. */
@@ -59,7 +69,9 @@ export function levels(packages: readonly WorkspacePackage[]): WorkspacePackage[
   const done = new Set<string>();
   const out: WorkspacePackage[][] = [];
   while (remaining.size > 0) {
-    const level = [...remaining.values()].filter((p) => workspaceDeps(p, known).every((d) => done.has(d) || !remaining.has(d)));
+    const level = [...remaining.values()].filter((p) =>
+      workspaceDeps(p, known).every((d) => done.has(d) || !remaining.has(d)),
+    );
     // A cycle among the remaining packages: emit them together rather than looping forever.
     const batch = level.length > 0 ? level : [...remaining.values()];
     for (const p of batch) remaining.delete(p.name);

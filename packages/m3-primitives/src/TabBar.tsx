@@ -3,7 +3,7 @@
 
 "use client";
 
-import { m3Durations, m3Easings } from "@aphrody/m3-motion";
+import { m3Durations, m3Easings, useM3ReducedMotion } from "@aphrody/m3-motion";
 import { clsx } from "clsx";
 import { forwardRef } from "react";
 import { LayoutGroup, motion } from "motion/react";
@@ -112,6 +112,7 @@ export interface TabBarItemProps extends Omit<
  */
 export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
   ({ active, label, onClose, closable, closeIcon, className, ...props }, ref) => {
+    const reduced = useM3ReducedMotion();
     const showClose = closable ?? !!onClose;
 
     return (
@@ -139,11 +140,11 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
           <span className="relative truncate px-6">{label}</span>
           {active && (
             <motion.div
-              layoutId="activeTab"
+              layoutId={reduced ? undefined : "activeTab"}
               className="absolute inset-x-4 bottom-0 h-[3px] rounded-t-full bg-primary"
               initial={false}
               transition={{
-                duration: m3Durations.medium2,
+                duration: reduced ? 0 : m3Durations.medium2,
                 ease: m3Easings.emphasized,
               }}
             />

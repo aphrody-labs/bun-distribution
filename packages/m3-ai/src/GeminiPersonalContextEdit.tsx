@@ -6,7 +6,7 @@
 
 import { Button, DialogClose, DialogContent, DialogRoot, Icon } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export interface GeminiPersonalContextEditProps {
   /** Controls open state of the dialog */
@@ -49,9 +49,12 @@ export function GeminiPersonalContextEdit({
   const [context, setContext] = useState(initialContext);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
+  const [previousInputs, setPreviousInputs] = useState({ initialContext, open });
+  // Reset the draft before committing a changed source or open state, while preserving the editor node and focus.
+  if (previousInputs.initialContext !== initialContext || previousInputs.open !== open) {
+    setPreviousInputs({ initialContext, open });
     setContext(initialContext);
-  }, [initialContext, open]);
+  }
 
   const hasChanged = context.trim() !== initialContext.trim();
   const canSave = context.trim().length > 0 && hasChanged && !isSaving;
@@ -134,12 +137,7 @@ export function GeminiPersonalContextEdit({
               Cancel
             </Button>
           </DialogClose>
-          <Button
-            variant="filled"
-            onClick={handleSave}
-            disabled={!canSave}
-            className="px-6"
-          >
+          <Button variant="filled" onClick={handleSave} disabled={!canSave} className="px-6">
             {isSaving ? "Saving..." : "Save"}
           </Button>
         </div>

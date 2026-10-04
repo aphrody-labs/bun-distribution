@@ -55,7 +55,7 @@ export function groupModelsByProvider(
       acc[model.provider].push(model);
       return acc;
     },
-    {} as Record<string, ModelOption[]>,
+    Object.create(null) as Record<string, ModelOption[]>,
   );
 }
 
@@ -76,11 +76,44 @@ export interface ModelOptionListProps {
  */
 export function ModelOptionList({ grouped, value, onSelect, className }: ModelOptionListProps) {
   const providers = Object.entries(grouped);
+  const models = providers.flatMap(([, providerModels]) => providerModels);
+  const [focusedId, setFocusedId] = useState(value);
+  const focusId = models.some((model) => model.id === focusedId)
+    ? focusedId
+    : (models.find((model) => model.id === value)?.id ?? models[0]?.id);
   return (
     <div
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- M3 menu whose options are rich rows (headers, supporting text, chips); a native <select>/<datalist> cannot render them.
       role="listbox"
       aria-label="Models"
+      tabIndex={-1}
+      onKeyDown={(event) => {
+        if (event.defaultPrevented) return;
+        const options = Array.from(
+          event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="option"]'),
+        );
+        const index = options.indexOf(event.target as HTMLButtonElement);
+        if (index < 0) return;
+        let next: number;
+        switch (event.key) {
+          case "ArrowDown":
+            next = (index + 1) % options.length;
+            break;
+          case "ArrowUp":
+            next = (index - 1 + options.length) % options.length;
+            break;
+          case "Home":
+            next = 0;
+            break;
+          case "End":
+            next = options.length - 1;
+            break;
+          default:
+            return;
+        }
+        event.preventDefault();
+        options[next]!.focus();
+      }}
       className={clsx("flex flex-col", className)}
     >
       {providers.map(([provider, providerModels], groupIndex) => (
@@ -101,6 +134,8 @@ export function ModelOptionList({ grouped, value, onSelect, className }: ModelOp
                 // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- M3 two-line menu item (label, supporting text, capability chips, check icon); a native <option> can only hold text.
                 role="option"
                 aria-selected={selected}
+                tabIndex={model.id === focusId ? 0 : -1}
+                onFocus={() => setFocusedId(model.id)}
                 onClick={() => onSelect(model.id)}
                 className={clsx(
                   "flex min-h-12 w-full items-center gap-3 px-3 py-2 text-left",

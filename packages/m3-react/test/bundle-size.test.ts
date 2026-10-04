@@ -28,11 +28,10 @@ async function gzipBytes(entry: string): Promise<number> {
   if (!result.success) {
     throw new Error(`build failed for ${entry}: ${result.logs.map((l) => l.message).join("; ")}`);
   }
-  let total = 0;
-  for (const output of result.outputs) {
-    total += Bun.gzipSync(Buffer.from(await output.text())).length;
-  }
-  return total;
+  const sizes = await Promise.all(
+    result.outputs.map(async (output) => Bun.gzipSync(Buffer.from(await output.text())).length),
+  );
+  return sizes.reduce((total, size) => total + size, 0);
 }
 
 describe("bundle-size budgets (gzip)", () => {

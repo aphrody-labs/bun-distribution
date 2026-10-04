@@ -152,9 +152,19 @@ function kebab(role: string): string {
 
 /** Resolve the effective contrast level, preferring `contrastLevel` over `contrast`. */
 function resolveContrast(opts: SchemeOptions): number {
-  if (opts.contrastLevel !== undefined) return opts.contrastLevel;
-  if (opts.contrast !== undefined) return opts.contrast;
-  return 0;
+  const contrast = opts.contrastLevel ?? opts.contrast ?? 0;
+  if (!Number.isFinite(contrast) || contrast < -1 || contrast > 1) {
+    throw new RangeError("M3 contrast must be a finite number between -1 and 1");
+  }
+  return contrast;
+}
+
+/** Normalize a CSS hex seed, rejecting malformed colours before calling MCU. */
+export function normalizeSeedHex(seed: string): string {
+  const match = /^#?([\da-f]{3}|[\da-f]{6})$/i.exec(seed.trim());
+  if (!match) throw new TypeError(`Invalid M3 seed color: ${seed}`);
+  const digits = match[1]!;
+  return `#${(digits.length === 3 ? [...digits].map((digit) => digit + digit).join("") : digits).toLowerCase()}`;
 }
 
 /** Build the MCU DynamicScheme for the requested variant. */
@@ -178,8 +188,9 @@ function buildScheme(
     case "monochrome":
       return new SchemeMonochrome(hct, isDark, contrastLevel);
     case "tonalSpot":
-    default:
       return new SchemeTonalSpot(hct, isDark, contrastLevel);
+    default:
+      throw new TypeError(`Unknown M3 scheme variant: ${variant}`);
   }
 }
 
@@ -202,7 +213,7 @@ export function schemeFromSeed(seedHex: string, opts: SchemeOptions = {}): Color
   const contrastLevel = resolveContrast(opts);
   const variant = opts.variant ?? "tonalSpot";
 
-  const hct = Hct.fromInt(argbFromHex(seedHex));
+  const hct = Hct.fromInt(argbFromHex(normalizeSeedHex(seedHex)));
   const scheme = buildScheme(hct, dark, contrastLevel, variant);
 
   const out: ColorRoleMap = {};

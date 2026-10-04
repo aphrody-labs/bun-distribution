@@ -1,4 +1,6 @@
+// oxlint-disable-next-line import/no-unassigned-import -- Registers md-icon used by the migrated JSX.
 import "@aphrody/material-web/icon/icon.js";
+
 import { MdFilledButton, MdOutlinedButton, MdTextButton } from "@aphrody/m3-react";
 import SaveIcon from "@mui/icons-material/Save";
 

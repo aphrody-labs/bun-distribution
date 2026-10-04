@@ -21,3 +21,9 @@ declare module "m3:scheme.css";
 declare module "m3:fonts.css";
 declare module "m3:fonts-jp.css";
 declare module "m3:fonts-symbols.css";
+
+/** Bun file-loader asset imports, including embedded font assets in compiled apps. */
+declare module "*.woff2" {
+  const path: string;
+  export default path;
+}

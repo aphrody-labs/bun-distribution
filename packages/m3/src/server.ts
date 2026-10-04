@@ -52,11 +52,34 @@ export interface ServeM3Options {
 /** Forward a request to `target`, keeping the path below the origin, the query, method, headers and body. */
 export function createProxy(target: string, label = "m3"): (req: Request) => Promise<Response> {
   const upstream = new URL(target);
+  if (upstream.protocol !== "http:" && upstream.protocol !== "https:") {
+    throw new Error(`proxy target must use HTTP or HTTPS: ${target}`);
+  }
   return async (req) => {
     const url = new URL(req.url);
     const base = upstream.pathname.replace(/\/$/, "");
-    const destination = new URL(base + url.pathname + url.search, upstream);
+    // Assign the path rather than resolving a URL: a path starting with // must
+    // never select a different upstream host.
+    const destination = new URL(upstream.href);
+    destination.pathname = base + url.pathname;
+    destination.search = url.search;
+    destination.hash = "";
     const headers = new Headers(req.headers);
+    for (const name of (headers.get("connection") ?? "").split(",")) {
+      if (name.trim()) headers.delete(name.trim());
+    }
+    for (const name of [
+      "connection",
+      "keep-alive",
+      "proxy-authenticate",
+      "proxy-authorization",
+      "te",
+      "trailer",
+      "transfer-encoding",
+      "upgrade",
+    ]) {
+      headers.delete(name);
+    }
     headers.delete("host");
     try {
       return await fetch(destination, {
@@ -64,9 +87,13 @@ export function createProxy(target: string, label = "m3"): (req: Request) => Pro
         headers,
         body: req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer(),
         redirect: "manual",
+        signal: req.signal,
       });
     } catch (error) {
-      return new Response(`${label}: upstream unreachable at ${upstream.origin}: ${String(error)}`, { status: 502 });
+      return new Response(
+        `${label}: upstream unreachable at ${upstream.origin}: ${String(error)}`,
+        { status: 502 },
+      );
     }
   };
 }
@@ -93,9 +120,19 @@ async function importHtml(path: string, cwd: string): Promise<HTMLBundle> {
 
 /** Port from the options, then `PORT`, then 3000. */
 export function resolvePort(port?: number): number {
-  if (port !== undefined) return port;
+  if (port !== undefined) {
+    if (!Number.isInteger(port) || port < 0 || port > 65535)
+      throw new RangeError(`serveM3: invalid port ${port}`);
+    return port;
+  }
   const fromEnv = Number(Bun.env.PORT);
-  return Number.isInteger(fromEnv) && fromEnv >= 0 ? fromEnv : 3000;
+  return Bun.env.PORT !== undefined &&
+    Bun.env.PORT.trim() !== "" &&
+    Number.isInteger(fromEnv) &&
+    fromEnv >= 0 &&
+    fromEnv <= 65535
+    ? fromEnv
+    : 3000;
 }
 
 /** Discover React pages and render each request as a streamed HTML response. */
@@ -106,8 +143,11 @@ export async function fileRoutes(pagesDir: string): Promise<Record<string, M3Rou
   const routes: Record<string, M3RouteValue> = {};
   const files: string[] = [];
   for await (const file of new Bun.Glob("**/*.{tsx,jsx}").scan({ cwd: pagesDir })) files.push(file);
-  for (const file of files.sort()) {
-    const segments = file.replaceAll("\\", "/").replace(/\.(tsx|jsx)$/, "").split("/");
+  for (const file of files.toSorted()) {
+    const segments = file
+      .replaceAll("\\", "/")
+      .replace(/\.(tsx|jsx)$/, "")
+      .split("/");
     if (segments.at(-1) === "index") segments.pop();
     const parts = segments.map((segment) => {
       const param = /^\[([A-Za-z_][A-Za-z0-9_]*)\]$/.exec(segment);
@@ -139,21 +179,26 @@ export async function buildRoutes(options: ServeM3Options): Promise<Record<strin
   const routes: Record<string, M3RouteValue> = { ...proxyRoutes(options.proxy ?? {}) };
   const extra = await Promise.all(
     Object.entries(options.routes ?? {}).map(
-      async ([path, value]) => [path, typeof value === "string" ? await importHtml(value, cwd) : value] as const,
+      async ([path, value]) =>
+        [path, typeof value === "string" ? await importHtml(value, cwd) : value] as const,
     ),
   );
   for (const [path, value] of extra) routes[path] = value;
   if (options.pagesDir) {
-    const pagesDir = isAbsolute(options.pagesDir) ? options.pagesDir : resolve(cwd, options.pagesDir);
+    const pagesDir = isAbsolute(options.pagesDir)
+      ? options.pagesDir
+      : resolve(cwd, options.pagesDir);
     for (const [path, value] of Object.entries(await fileRoutes(pagesDir))) {
-      const covered = Object.keys(routes).some((existing) =>
-        existing === path || (existing.endsWith("/*") && path.startsWith(existing.slice(0, -1)))
+      const covered = Object.keys(routes).some(
+        (existing) =>
+          existing === path || (existing.endsWith("/*") && path.startsWith(existing.slice(0, -1))),
       );
       if (!covered) routes[path] = value;
     }
   }
   if (options.index !== undefined) {
-    routes["/*"] = typeof options.index === "string" ? await importHtml(options.index, cwd) : options.index;
+    routes["/*"] =
+      typeof options.index === "string" ? await importHtml(options.index, cwd) : options.index;
   }
   return routes;
 }
@@ -168,7 +213,9 @@ export async function serveM3(options: ServeM3Options = {}): Promise<Server<unde
     ...(options.hostname ? { hostname: options.hostname } : {}),
     development: { hmr, console: hmr },
     idleTimeout: options.idleTimeout ?? 30,
-    ...(options.maxRequestBodySize !== undefined ? { maxRequestBodySize: options.maxRequestBodySize } : {}),
+    ...(options.maxRequestBodySize !== undefined
+      ? { maxRequestBodySize: options.maxRequestBodySize }
+      : {}),
     routes,
     fetch: fallback,
   });

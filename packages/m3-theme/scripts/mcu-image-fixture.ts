@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+/// <reference lib="es2023.array" />
 // Reference fixture for crates/ui/m3-tokens's image quantization port (quantize_wu,
 // quantize_wsmeans, quantize, score, image): computed by @material/material-color-utilities so
 // `cargo test -p aphrody-m3-tokens` can assert bit-exact results.
@@ -16,8 +17,14 @@
 import { QuantizerCelebi, Score } from "@material/material-color-utilities";
 import { join } from "node:path";
 
-const OUT_JSON = join(import.meta.dir, "../../../../../crates/ui/m3-tokens/tests/fixtures/mcu-image.json");
-const OUT_IMAGES_DIR = join(import.meta.dir, "../../../../../crates/ui/m3-tokens/tests/fixtures/images");
+const OUT_JSON = join(
+  import.meta.dir,
+  "../../../../../crates/ui/m3-tokens/tests/fixtures/mcu-image.json",
+);
+const OUT_IMAGES_DIR = join(
+  import.meta.dir,
+  "../../../../../crates/ui/m3-tokens/tests/fixtures/images",
+);
 
 /** The default seed `quantize::DEFAULT_SEED` in the Rust port uses. */
 const DEFAULT_SEED = 0x6750a4b1;
@@ -141,13 +148,25 @@ function encodePng(width: number, height: number, rgba8: Uint8Array): Uint8Array
 
 // ── Synthetic RGBA8 pixel generators.
 
-function solid(width: number, height: number, r: number, g: number, b: number, a = 255): Uint8Array {
+function solid(
+  width: number,
+  height: number,
+  r: number,
+  g: number,
+  b: number,
+  a = 255,
+): Uint8Array {
   const out = new Uint8Array(width * height * 4);
   for (let i = 0; i < width * height; i++) out.set([r, g, b, a], i * 4);
   return out;
 }
 
-function checkerboard(width: number, height: number, c1: [number, number, number], c2: [number, number, number]): Uint8Array {
+function checkerboard(
+  width: number,
+  height: number,
+  c1: [number, number, number],
+  c2: [number, number, number],
+): Uint8Array {
   const out = new Uint8Array(width * height * 4);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -230,45 +249,58 @@ async function main() {
 
   const cases: Array<{ name: string; width: number; height: number; rgba8: Uint8Array }> = [
     { name: "solid_red_8x8", width: 8, height: 8, rgba8: solid(8, 8, 255, 0, 0) },
-    { name: "solid_seed_purple_16x16", width: 16, height: 16, rgba8: solid(16, 16, 0x67, 0x50, 0xa4) },
-    { name: "checkerboard_32x32", width: 32, height: 32, rgba8: checkerboard(32, 32, [0x1a, 0x73, 0xe8], [0xff, 0xff, 0xff]) },
+    {
+      name: "solid_seed_purple_16x16",
+      width: 16,
+      height: 16,
+      rgba8: solid(16, 16, 0x67, 0x50, 0xa4),
+    },
+    {
+      name: "checkerboard_32x32",
+      width: 32,
+      height: 32,
+      rgba8: checkerboard(32, 32, [0x1a, 0x73, 0xe8], [0xff, 0xff, 0xff]),
+    },
     { name: "gradient_48x48", width: 48, height: 48, rgba8: gradient(48, 48) },
     { name: "brand_palette_40x40", width: 40, height: 40, rgba8: brandPalette(40, 40) },
   ];
 
-  const images: FixtureImage[] = [];
-  for (const { name, width, height, rgba8 } of cases) {
-    const png = encodePng(width, height, rgba8);
-    const pngRelPath = `images/${name}.png`;
-    await Bun.write(join(OUT_IMAGES_DIR, `${name}.png`), png);
-    if (png.length > 200 * 1024) {
-      throw new Error(`${name}.png is ${png.length} bytes, over the 200KB budget`);
-    }
+  const images: FixtureImage[] = await Promise.all(
+    cases.map(async ({ name, width, height, rgba8 }) => {
+      const png = encodePng(width, height, rgba8);
+      const pngRelPath = `images/${name}.png`;
+      await Bun.write(join(OUT_IMAGES_DIR, `${name}.png`), png);
+      if (png.length > 200 * 1024) {
+        throw new Error(`${name}.png is ${png.length} bytes, over the 200KB budget`);
+      }
 
-    const pixels = rgbaToArgbPixels(rgba8);
-    const maxColors = 128;
-    const { quantized, sourceColor, scoreDefault } = withSeededRandom(DEFAULT_SEED, () => {
-      const result = QuantizerCelebi.quantize(pixels, maxColors);
-      const scoreDefault = Score.score(result);
+      const pixels = rgbaToArgbPixels(rgba8);
+      const maxColors = 128;
+      const { quantized, sourceColor, scoreDefault } = withSeededRandom(DEFAULT_SEED, () => {
+        const result = QuantizerCelebi.quantize(pixels, maxColors);
+        const scores = Score.score(result);
+        return {
+          quantized: [...result.entries()].toSorted((a, b) => a[0] - b[0]) as Array<
+            [number, number]
+          >,
+          scoreDefault: scores,
+          sourceColor: scores[0]!,
+        };
+      });
+
       return {
-        quantized: [...result.entries()].sort((a, b) => a[0] - b[0]) as Array<[number, number]>,
+        name,
+        width,
+        height,
+        seed: DEFAULT_SEED,
+        maxColors,
+        quantized,
         scoreDefault,
-        sourceColor: scoreDefault[0]!,
+        sourceColor,
+        pngPath: pngRelPath,
       };
-    });
-
-    images.push({
-      name,
-      width,
-      height,
-      seed: DEFAULT_SEED,
-      maxColors,
-      quantized,
-      scoreDefault,
-      sourceColor,
-      pngPath: pngRelPath,
-    });
-  }
+    }),
+  );
 
   await Bun.write(OUT_JSON, `${JSON.stringify({ images }, null, 2)}\n`);
   console.log(`Wrote ${images.length} image fixtures to ${OUT_JSON}`);

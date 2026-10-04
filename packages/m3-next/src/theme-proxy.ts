@@ -13,6 +13,7 @@ import {
   M3_THEME_COOKIE,
   M3_THEME_COOKIE_MAX_AGE,
   parseThemeMode,
+  validateThemeCookieName,
   type M3ThemeMode,
 } from "./constants";
 
@@ -32,6 +33,7 @@ export function createM3Proxy(
   options: M3ProxyOptions = {},
 ): (request: NextRequest) => NextResponse {
   const { cookieName = M3_THEME_COOKIE, defaultMode = "system" } = options;
+  validateThemeCookieName(cookieName);
   return (request) => {
     const current = request.cookies.get(cookieName)?.value;
     const mode = parseThemeMode(current, defaultMode);

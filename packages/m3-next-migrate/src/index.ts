@@ -9,6 +9,7 @@ export {
   buildRouteHierarchy,
   composeLayouts,
   generateAppRouterCode,
+  matchRoutePath,
   type RouteDefinition,
   type RouteHierarchy,
 } from "./layout";
@@ -17,7 +18,14 @@ export {
 export * as codemods from "./codemods";
 
 // Runtime Shims
-export { NextMigrateProvider, useNextMigrateContext, type RouterMode, type NextMigrateProviderProps } from "./shims/provider";
+export {
+  NextMigrateProvider,
+  RouteParamsProvider,
+  useNextMigrateContext,
+  type RouteParams,
+  type RouterMode,
+  type NextMigrateProviderProps,
+} from "./shims/provider";
 export {
   useRouter,
   usePathname,
@@ -33,8 +41,19 @@ export {
   type AppRouterInstance,
 } from "./shims/navigation";
 export { Link, default as LinkComponent, type LinkProps, type UrlObject } from "./shims/link";
-export { Image, default as ImageComponent, getImageProps, type ImageProps, type StaticImageData } from "./shims/image";
-export { dynamic, default as dynamicComponent, type DynamicOptions, type DynamicComponent } from "./shims/dynamic";
+export {
+  Image,
+  default as ImageComponent,
+  getImageProps,
+  type ImageProps,
+  type StaticImageData,
+} from "./shims/image";
+export {
+  dynamic,
+  default as dynamicComponent,
+  type DynamicOptions,
+  type DynamicComponent,
+} from "./shims/dynamic";
 export { cookies, headers, type RequestCookie, type ReadonlyRequestCookies } from "./shims/headers";
 export { Form, default as FormComponent, type FormProps } from "./shims/form";
 export { tauriInvoke, createServerActionBridge, type TauriInvokeOptions } from "./shims/tauri-ipc";
@@ -71,3 +90,9 @@ export {
   type NextFont,
   type LocalFontConfig,
 } from "./shims/font";
+
+export {
+  migrationRequirements,
+  assertMigrationRequirements,
+  type MigrationRequirement,
+} from "./requirements";

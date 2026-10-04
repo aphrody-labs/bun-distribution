@@ -153,7 +153,15 @@ export default function transformer(file: FileInfo, api: API, _options: Options)
         if (!isDirective) break;
         insertAt++;
       }
-      body.splice(insertAt, 0, j.importDeclaration([], j.stringLiteral(MD_ICON_SIDE_EFFECT)));
+      const sideEffect = j.importDeclaration([], j.stringLiteral(MD_ICON_SIDE_EFFECT));
+      sideEffect.comments = [
+        j.commentLine(
+          " oxlint-disable-next-line import/no-unassigned-import -- Registers md-icon used by the migrated JSX.",
+          true,
+          false,
+        ),
+      ];
+      body.splice(insertAt, 0, sideEffect);
     }
   }
 

@@ -12,6 +12,7 @@ import {
   resolveLibrary,
   RUNTIME_SDK_FFI,
   SUFFIX,
+  searchDirs,
 } from "./native.ts";
 
 const root = mkdtempSync(join(tmpdir(), "m3-native-"));
@@ -27,7 +28,7 @@ describe("installed @aphrody/bun copies", () => {
   const npmCopy = join(root, "node_modules/.bun/@aphrody+bun@3.3.0/node_modules/@aphrody/bun");
   const workspaceCopy = join(root, "node_modules/@aphrody/bun");
   pkg(npmCopy, "3.3.0");
-  pkg(workspaceCopy, "3.3.3", 'const file = `lib aphrody_ffi.${suffix}`;');
+  pkg(workspaceCopy, "3.3.3", "const file = `lib aphrody_ffi.${suffix}`;");
 
   test("the npm build opens native/bun_rs, the workspace build native/libaphrody_ffi", () => {
     expect(nativeFileFor(npmCopy)).toBe(join(npmCopy, "native", `bun_rs.${SUFFIX}`));
@@ -86,8 +87,52 @@ describe("resolution through @aphrody/runtime-sdk/ffi", () => {
 });
 
 // The real library, when this machine has it: loaded and verified through the SDK loader.
-const real = existsSync(RUNTIME_SDK_FFI) ? await resolveLibrary() : { path: null, error: "yolo runtime SDK not found" };
+const real = existsSync(RUNTIME_SDK_FFI)
+  ? await resolveLibrary()
+  : { path: null, error: "yolo runtime SDK not found" };
 if (!real.path) console.warn(`[scripts/native] real-library check skipped: ${real.error}`);
-test.skipIf(!real.path)(`the built library exports bun_rs_version${real.path ? "" : ` [skipped: ${real.error}]`}`, () => {
-  expect(existsSync(real.path!)).toBe(true);
+test.skipIf(!real.path)(
+  `the built library exports bun_rs_version${real.path ? "" : ` [skipped: ${real.error}]`}`,
+  () => {
+    expect(existsSync(real.path!)).toBe(true);
+  },
+);
+
+test("search includes installed package library directories", () => {
+  const copies = installedCopies(root);
+  const dirs = searchDirs(join(root, "aphrody"), copies);
+  for (const copy of copies) expect(dirs).toContain(join(copy.dir, "native"));
 });
+
+test.skipIf(!existsSync(RUNTIME_SDK_FFI))(
+  "status rejects a present but unloadable package library",
+  async () => {
+    const fixture = join(root, "status-fixture");
+    const script = join(fixture, "scripts/native.ts");
+    mkdirSync(join(fixture, "scripts"), { recursive: true });
+    writeFileSync(script, await Bun.file(import.meta.dir + "/native.ts").text());
+    const copy = join(fixture, "node_modules/@aphrody/bun");
+    pkg(copy, "3.3.0");
+    mkdirSync(join(copy, "native"), { recursive: true });
+    writeFileSync(nativeFileFor(copy), "garbage");
+    const proc = Bun.spawn(
+      [process.execPath, script, "status", "--json", ...(real.path ? ["--lib", real.path] : [])],
+      {
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
+    const [out, err, code] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
+    expect(err).toBe("");
+    const status = JSON.parse(out);
+    expect(status.copies).toHaveLength(1);
+    expect(status.copies[0].present).toBe(true);
+    expect(status.copies[0].library.path).toBeNull();
+    expect(status.copies[0].library.error).toContain("Failed to dlopen");
+    expect(code).toBe(1);
+  },
+);

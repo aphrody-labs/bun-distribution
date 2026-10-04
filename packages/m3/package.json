@@ -96,11 +96,10 @@
     "@aphrody/material-web": "catalog:",
     "@tailwindcss/node": "catalog:",
     "@tailwindcss/oxide": "catalog:",
-    "motion": "catalog:"
-  },
-  "devDependencies": {
+    "motion": "catalog:",
     "@aphrody/scaffold": "workspace:*"
   },
+  "devDependencies": {},
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",

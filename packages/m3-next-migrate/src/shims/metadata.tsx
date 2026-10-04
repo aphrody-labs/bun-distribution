@@ -41,7 +41,10 @@ export interface Metadata {
 export type ResolvingMetadata = Promise<Metadata>;
 
 /** Resolve title string given a title definition or template */
-export function resolveTitle(title: string | MetadataTitle | null | undefined, parentTitle?: string): string {
+export function resolveTitle(
+  title: string | MetadataTitle | null | undefined,
+  parentTitle?: string,
+): string {
   if (!title) return parentTitle || "";
   if (typeof title === "string") return title;
   if (title.absolute) return title.absolute;
@@ -153,7 +156,7 @@ export async function syncMetadata(meta: Metadata): Promise<void> {
  */
 export function useMetadata(
   metadataOrFn: Metadata | (() => Metadata | Promise<Metadata>),
-  deps: any[] = []
+  deps: any[] = [],
 ): void {
   useEffect(() => {
     let cancelled = false;

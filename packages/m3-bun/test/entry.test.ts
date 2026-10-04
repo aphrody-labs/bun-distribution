@@ -38,7 +38,8 @@ describe("runApp command line", () => {
       Bun.env.PORT = "70000";
       await expect(runApp(base, [])).rejects.toThrow(/invalid port/);
     } finally {
-      process.exitCode = saved;
+      // Bun ignores an undefined assignment after an exit code has been set.
+      process.exitCode = saved ?? 0;
       if (savedPort === undefined) delete Bun.env.PORT;
       else Bun.env.PORT = savedPort;
     }

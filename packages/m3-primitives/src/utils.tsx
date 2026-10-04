@@ -40,6 +40,7 @@ export const m3StateLayer = [
   "relative",
   "before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:bg-current before:opacity-0",
   "before:transition-opacity before:duration-200 before:ease-standard",
+  "motion-reduce:before:transition-none",
   "hover:before:opacity-8 focus-visible:before:opacity-10 active:before:opacity-10",
   "disabled:before:hidden aria-disabled:before:hidden",
 ].join(" ");

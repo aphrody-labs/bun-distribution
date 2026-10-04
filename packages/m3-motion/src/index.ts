@@ -9,3 +9,4 @@ export * from "./components/M3ContainerTransform.js";
 export * from "./components/M3Transition.js";
 export * from "./components/M3ListStagger.js";
 export * from "./hooks/useM3Animate.js";
+export { useM3ReducedMotion } from "./hooks/useM3ReducedMotion.js";

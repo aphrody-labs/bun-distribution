@@ -146,6 +146,12 @@ async function mcpSession(
   return responses;
 }
 
+const mcpToolCall = (id: number, name: string, args: unknown) => ({
+  id,
+  method: "tools/call",
+  params: { name, arguments: args },
+});
+
 async function mcp(ctx: Ctx): Promise<void> {
   const samples = await sample(
     async () => (await timeToFirstLine(["bun", MCP_SERVER], { stdin: INIT })).ms,
@@ -154,23 +160,24 @@ async function mcp(ctx: Ctx): Promise<void> {
   );
   ctx.metrics["mcp.cold"] = summarize(samples);
   // Gates: the same tools, and the same answers from the tools that load their module on demand.
-  const call = (id: number, name: string, args: unknown) => ({
-    id,
-    method: "tools/call",
-    params: { name, arguments: args },
-  });
+
   const out = await mcpSession(MCP_SERVER, [
     { id: 2, method: "tools/list" },
-    call(3, "m3_os_themes_list", { seed: "#6750a4", target: "all", name: "Aphrody" }),
-    call(4, "m3_os_themes_generate", {
+    mcpToolCall(3, "m3_os_themes_list", { seed: "#6750a4", target: "all", name: "Aphrody" }),
+    mcpToolCall(4, "m3_os_themes_generate", {
       seed: "#6750a4",
       target: "gnome",
       name: "Aphrody",
       path: "gnome/install-gnome.sh",
     }),
-    call(5, "m3_symbol_search", { query: "home", limit: 20 }),
-    call(6, "m3_symbol_svg", { name: "home", style: "outlined", weight: 400, filled: false }),
-    call(7, "m3_token_lookup", { query: "primary", limit: 10 }),
+    mcpToolCall(5, "m3_symbol_search", { query: "home", limit: 20 }),
+    mcpToolCall(6, "m3_symbol_svg", {
+      name: "home",
+      style: "outlined",
+      weight: 400,
+      filled: false,
+    }),
+    mcpToolCall(7, "m3_token_lookup", { query: "primary", limit: 10 }),
   ]);
   const names = (
     (out.get(2) as { result?: { tools?: { name: string }[] } } | undefined)?.result?.tools ?? []

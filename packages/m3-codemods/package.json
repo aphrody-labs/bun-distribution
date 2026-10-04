@@ -4,13 +4,22 @@
   "private": true,
   "description": "Codemods MUI React -> @aphrody/m3-react (jscodeshift + ast-grep)",
   "type": "commonjs",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./transforms/*": "./transforms/*",
+    "./package.json": "./package.json"
+  },
   "scripts": {
-    "test": "bun run scripts/run-fixtures.ts",
+    "test": "bun run scripts/run-fixtures.ts && bun test ./test",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "devDependencies": {
-    "@types/jscodeshift": "^17.3.0",
+  "dependencies": {
     "jscodeshift": "^17.3.0"
+  },
+  "devDependencies": {
+    "@types/jscodeshift": "^17.3.0"
   },
   "engines": {
     "bun": ">=1.4.2"

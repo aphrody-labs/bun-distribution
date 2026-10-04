@@ -2,6 +2,7 @@ import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { HTMLMotionProps, Transition, Variants } from "motion/react";
 import { m3Easings, m3Durations } from "../easings.js";
+import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion.js";
 
 export interface M3SharedAxisProps extends HTMLMotionProps<"div"> {
   /**
@@ -36,7 +37,20 @@ export interface M3SharedAxisProps extends HTMLMotionProps<"div"> {
  * Implements the Material 3 Shared Axis motion pattern (X, Y, Z axes).
  */
 export const M3SharedAxis = React.forwardRef<HTMLDivElement, M3SharedAxisProps>(
-  ({ in: inProp, axis = "x", forward = true, appear = true, transition: customTransition, variants: customVariants, children, ...props }, ref) => {
+  (
+    {
+      in: inProp,
+      axis = "x",
+      forward = true,
+      appear = true,
+      transition: customTransition,
+      variants: customVariants,
+      children,
+      ...props
+    },
+    ref,
+  ) => {
+    const reduced = useM3ReducedMotion();
     // Offset values according to M3 specifications (usually 30px translation or ~8% scale change)
     const translateOffset = 30;
     const scaleOffset = 0.08;
@@ -74,13 +88,13 @@ export const M3SharedAxis = React.forwardRef<HTMLDivElement, M3SharedAxisProps>(
       },
     };
 
-    const resolvedVariants = customVariants || defaultVariants;
+    const resolvedVariants = motionVariants(customVariants ?? defaultVariants, reduced);
 
     const content = (
       <motion.div
         ref={ref}
         variants={resolvedVariants}
-        initial={appear ? "initial" : false}
+        initial={appear && !reduced ? "initial" : false}
         animate="animate"
         exit="exit"
         style={{ willChange: "opacity, transform" }}
@@ -99,4 +113,3 @@ export const M3SharedAxis = React.forwardRef<HTMLDivElement, M3SharedAxisProps>(
 );
 
 M3SharedAxis.displayName = "M3SharedAxis";
-

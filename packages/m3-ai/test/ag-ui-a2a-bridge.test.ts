@@ -13,7 +13,6 @@ import {
 } from "@aphrody/ag-ui";
 import {
   AgUiEventAccumulator,
-  agUiEventsToTranscriptSteps,
   agUiEventsToTranscriptItems,
   coordEnvelopeToAgUiEvent,
   agUiEventToCoordEnvelope,

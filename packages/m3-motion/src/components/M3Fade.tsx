@@ -2,6 +2,7 @@ import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { HTMLMotionProps } from "motion/react";
 import { m3Easings, m3Durations } from "../easings.js";
+import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion.js";
 
 export interface M3FadeProps extends HTMLMotionProps<"div"> {
   /**
@@ -22,7 +23,8 @@ export interface M3FadeProps extends HTMLMotionProps<"div"> {
  * Fades elements in/out using Material 3 standard decelerate/accelerate curves.
  */
 export const M3Fade = React.forwardRef<HTMLDivElement, M3FadeProps>(
-  ({ in: inProp, appear = true, children, ...props }, ref) => {
+  ({ in: inProp, appear = true, children, variants: customVariants, ...props }, ref) => {
+    const reduced = useM3ReducedMotion();
     const variants = {
       initial: { opacity: 0 },
       animate: {
@@ -44,8 +46,8 @@ export const M3Fade = React.forwardRef<HTMLDivElement, M3FadeProps>(
     const content = (
       <motion.div
         ref={ref}
-        variants={variants}
-        initial={appear ? "initial" : false}
+        variants={motionVariants(customVariants ?? variants, reduced)}
+        initial={appear && !reduced ? "initial" : false}
         animate="animate"
         exit="exit"
         style={{ willChange: "opacity" }}

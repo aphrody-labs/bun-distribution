@@ -2,6 +2,7 @@ import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { HTMLMotionProps, Transition, Variants } from "motion/react";
 import { m3Easings } from "../easings.js";
+import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion.js";
 
 export interface M3FadeThroughProps extends HTMLMotionProps<"div"> {
   /**
@@ -19,7 +20,14 @@ export interface M3FadeThroughProps extends HTMLMotionProps<"div"> {
  * Implements the Material 3 Fade Through navigation pattern.
  * The outgoing element fades out over 90ms, followed by the incoming element fading in and scaling up over 210ms.
  */
-export const M3FadeThrough: React.FC<M3FadeThroughProps> = ({ stateKey, transition: customTransition, variants: customVariants, children, ...props }) => {
+export const M3FadeThrough: React.FC<M3FadeThroughProps> = ({
+  stateKey,
+  transition: customTransition,
+  variants: customVariants,
+  children,
+  ...props
+}) => {
+  const reduced = useM3ReducedMotion();
   const defaultVariants: Variants = {
     initial: {
       opacity: 0,
@@ -50,14 +58,14 @@ export const M3FadeThrough: React.FC<M3FadeThroughProps> = ({ stateKey, transiti
     },
   };
 
-  const resolvedVariants = customVariants || defaultVariants;
+  const resolvedVariants = motionVariants(customVariants ?? defaultVariants, reduced);
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
         key={stateKey}
         variants={resolvedVariants}
-        initial="initial"
+        initial={reduced ? false : "initial"}
         animate="animate"
         exit="exit"
         style={{ willChange: "opacity, transform" }}
@@ -70,4 +78,3 @@ export const M3FadeThrough: React.FC<M3FadeThroughProps> = ({ stateKey, transiti
 };
 
 M3FadeThrough.displayName = "M3FadeThrough";
-

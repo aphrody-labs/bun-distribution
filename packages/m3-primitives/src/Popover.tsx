@@ -11,6 +11,7 @@ import {
   type HTMLAttributes,
   type ReactNode,
   useContext,
+  useMemo,
   useState,
 } from "react";
 
@@ -32,8 +33,9 @@ export type PopoverRootProps = PopoverPrimitive.Root.Props;
 
 const Root = (props: PopoverRootProps) => {
   const [anchor, setAnchor] = useState<Element | null>(null);
+  const value = useMemo(() => ({ anchor, setAnchor }), [anchor]);
   return (
-    <AnchorContext.Provider value={{ anchor, setAnchor }}>
+    <AnchorContext.Provider value={value}>
       <PopoverPrimitive.Root {...props} />
     </AnchorContext.Provider>
   );

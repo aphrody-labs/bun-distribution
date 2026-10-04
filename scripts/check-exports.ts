@@ -47,7 +47,19 @@ export interface Pkg {
 }
 
 const SOURCE_EXT = /\.(?:[cm]?[jt]sx?)$/;
-const SKIP_DIRS = new Set(["node_modules", "dist", ".git", ".turbo", ".next", "target", "fixtures", "__fixtures__", "__testfixtures__", "coverage", "out"]);
+const SKIP_DIRS = new Set([
+  "node_modules",
+  "dist",
+  ".git",
+  ".turbo",
+  ".next",
+  "target",
+  "fixtures",
+  "__fixtures__",
+  "__testfixtures__",
+  "coverage",
+  "out",
+]);
 const RESOLVE_EXT = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".d.ts", ".json"];
 
 const readJson = (file: string) => JSON.parse(readFileSync(file, "utf8"));
@@ -62,7 +74,10 @@ export function workspacePatterns(manifest: Record<string, any>): string[] {
 export function expandWorkspaces(root: string, patterns: string[]): string[] {
   const dirs = new Set<string>();
   for (const pattern of patterns.filter((p) => !p.startsWith("!"))) {
-    for (const file of new Bun.Glob(`${pattern.replace(/\/$/, "")}/package.json`).scanSync({ cwd: root, onlyFiles: true })) {
+    for (const file of new Bun.Glob(`${pattern.replace(/\/$/, "")}/package.json`).scanSync({
+      cwd: root,
+      onlyFiles: true,
+    })) {
       if (!file.includes("node_modules")) dirs.add(dirname(file));
     }
   }
@@ -93,10 +108,19 @@ export function listPackages(root = REPO): Pkg[] {
       out.push({ dir, rel, manifest, nested, hostBound: !nested && !members.has(rel) });
       // Workspace members declared below a package (`packages/m3-next/examples/*`).
       for (const member of [...members].filter((m) => m.startsWith(`${rel}/`)).toSorted())
-        out.push({ dir: join(root, member), rel: member, manifest: readJson(join(root, member, "package.json")) });
+        out.push({
+          dir: join(root, member),
+          rel: member,
+          manifest: readJson(join(root, member, "package.json")),
+        });
       if (nested) {
         for (const sub of expandWorkspaces(dir, workspacePatterns(manifest))) {
-          out.push({ dir: join(dir, sub), rel: `${rel}/${sub}`, manifest: readJson(join(dir, sub, "package.json")), nested: true });
+          out.push({
+            dir: join(dir, sub),
+            rel: `${rel}/${sub}`,
+            manifest: readJson(join(dir, sub, "package.json")),
+            nested: true,
+          });
         }
       }
     }
@@ -105,10 +129,15 @@ export function listPackages(root = REPO): Pkg[] {
 }
 
 /** Package names of the host repositories that install the host-bound packages. */
-export function hostPackageNames(roots = (process.env["M3_HOST_ROOTS"] ?? `${homedir()}/aphrody:/mnt/c/iecode`).split(":")): Set<string> {
+export function hostPackageNames(
+  roots = (process.env["M3_HOST_ROOTS"] ?? `${homedir()}/aphrody:/mnt/c/iecode`).split(":"),
+): Set<string> {
   const names = new Set<string>();
   for (const root of roots.filter((r) => r && existsSync(join(r, "package.json")))) {
-    for (const dir of expandWorkspaces(root, workspacePatterns(readJson(join(root, "package.json"))))) {
+    for (const dir of expandWorkspaces(
+      root,
+      workspacePatterns(readJson(join(root, "package.json"))),
+    )) {
       try {
         const name = readJson(join(root, dir, "package.json")).name;
         if (name) names.add(name);
@@ -120,7 +149,12 @@ export function hostPackageNames(roots = (process.env["M3_HOST_ROOTS"] ?? `${hom
   return names;
 }
 
-function walk(dir: string, accept: (file: string) => boolean, out: string[] = [], root = dir): string[] {
+function walk(
+  dir: string,
+  accept: (file: string) => boolean,
+  out: string[] = [],
+  root = dir,
+): string[] {
   if (!existsSync(dir)) return out;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (SKIP_DIRS.has(entry.name)) continue;
@@ -134,14 +168,21 @@ function walk(dir: string, accept: (file: string) => boolean, out: string[] = []
 }
 
 /** Test files of a package (`*.test.*`, `*.spec.*`); a workspace root counts the tests of its members. */
+const acceptTestFile = (file: string) => /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file);
+
 export function testFiles(pkg: Pkg): string[] {
-  const accept = (f: string) => /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(f);
-  if (workspacePatterns(pkg.manifest).length === 0) return walk(pkg.dir, accept);
-  return [pkg.dir, ...expandWorkspaces(pkg.dir, workspacePatterns(pkg.manifest)).map((m) => join(pkg.dir, m))].flatMap((d) => walk(d, accept));
+  if (workspacePatterns(pkg.manifest).length === 0) return walk(pkg.dir, acceptTestFile);
+  return [
+    pkg.dir,
+    ...expandWorkspaces(pkg.dir, workspacePatterns(pkg.manifest)).map((m) => join(pkg.dir, m)),
+  ].flatMap((d) => walk(d, acceptTestFile));
 }
 
 /** Flattened `exports` targets: [subpath, condition path, target]. */
-export function exportTargets(exportsField: unknown, subpath = "."): Array<[string, string, string]> {
+export function exportTargets(
+  exportsField: unknown,
+  subpath = ".",
+): Array<[string, string, string]> {
   if (exportsField == null) return [];
   if (typeof exportsField === "string") return [[subpath, "", exportsField]];
   if (Array.isArray(exportsField)) return exportsField.flatMap((e) => exportTargets(e, subpath));
@@ -150,7 +191,9 @@ export function exportTargets(exportsField: unknown, subpath = "."): Array<[stri
   const isSubpathMap = keys.length > 0 && keys.every((k) => k.startsWith("."));
   if (isSubpathMap) return keys.flatMap((k) => exportTargets(obj[k], k));
   return keys.flatMap((cond) =>
-    exportTargets(obj[cond], subpath).map(([s, c, t]) => [s, c ? `${cond}.${c}` : cond, t] as [string, string, string]),
+    exportTargets(obj[cond], subpath).map(
+      ([s, c, t]) => [s, c ? `${cond}.${c}` : cond, t] as [string, string, string],
+    ),
   );
 }
 
@@ -178,15 +221,20 @@ export function targetStatus(pkg: Pkg, target: string): { ok: boolean; note?: st
   if (target.includes("*")) {
     const prefix = target.slice(0, target.indexOf("*"));
     const dir = join(pkg.dir, prefix.endsWith("/") ? prefix : dirname(prefix));
-    return existsSync(dir) ? { ok: true } : { ok: false, note: `wildcard directory ${relative(pkg.dir, dir) || "."} missing` };
+    return existsSync(dir)
+      ? { ok: true }
+      : { ok: false, note: `wildcard directory ${relative(pkg.dir, dir) || "."} missing` };
   }
   const abs = join(pkg.dir, target);
   // Bun probes extensions on exports targets (`./svgs/*` -> `urls.ts`).
   if ([abs, ...RESOLVE_EXT.map((e) => abs + e)].some((p) => existsSync(p))) return { ok: true };
   if (/^\.?\/?dist\//.test(target)) {
-    if (!pkg.manifest.scripts?.build) return { ok: false, note: "dist target without a build script" };
+    if (!pkg.manifest.scripts?.build)
+      return { ok: false, note: "dist target without a build script" };
     const src = distSource(pkg.dir, target);
-    return src ? { ok: true, note: "build output" } : { ok: false, note: "dist target whose source is missing" };
+    return src
+      ? { ok: true, note: "build output" }
+      : { ok: false, note: "dist target whose source is missing" };
   }
   return { ok: false, note: "file missing" };
 }
@@ -203,19 +251,25 @@ export function scriptTestFiles(pkg: Pkg): string[] {
 
 function manifestChecks(pkg: Pkg, findings: Finding[]) {
   const m = pkg.manifest;
-  const add = (severity: Severity, message: string) => findings.push({ pkg: pkg.rel, check: "manifest", severity, message });
+  const add = (severity: Severity, message: string) =>
+    findings.push({ pkg: pkg.rel, check: "manifest", severity, message });
   if (!m.name) add("error", "package.json has no name");
   if (!m.version) add("error", "package.json has no version");
   if (!existsSync(join(pkg.dir, "README.md"))) add("error", "README.md missing");
   if (!m.scripts?.test) add("error", "no test script");
-  else if (testFiles(pkg).length === 0 && !/run[-.]|fixtures|scripts\//.test(m.scripts.test) && scriptTestFiles(pkg).length === 0)
+  else if (
+    testFiles(pkg).length === 0 &&
+    !/run[-.]|fixtures|scripts\//.test(m.scripts.test) &&
+    scriptTestFiles(pkg).length === 0
+  )
     add("error", "test script but no *.test.* file");
   if (!m.scripts?.typecheck && !m.scripts?.build) add("error", "no typecheck or build script");
 }
 
 function entryChecks(pkg: Pkg, findings: Finding[]) {
   const m = pkg.manifest;
-  const add = (message: string) => findings.push({ pkg: pkg.rel, check: "entries", severity: "error", message });
+  const add = (message: string) =>
+    findings.push({ pkg: pkg.rel, check: "entries", severity: "error", message });
   for (const field of ["main", "module", "types", "typings"]) {
     if (typeof m[field] !== "string") continue;
     const s = targetStatus(pkg, m[field]);
@@ -232,8 +286,19 @@ function entryChecks(pkg: Pkg, findings: Finding[]) {
   }
 }
 
-function depChecks(pkg: Pkg, names: Set<string>, catalog: Record<string, string>, host: () => Set<string>, findings: Finding[]) {
-  for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+function depChecks(
+  pkg: Pkg,
+  names: Set<string>,
+  catalog: Record<string, string>,
+  host: () => Set<string>,
+  findings: Finding[],
+) {
+  for (const field of [
+    "dependencies",
+    "devDependencies",
+    "peerDependencies",
+    "optionalDependencies",
+  ]) {
     for (const [name, spec] of Object.entries(pkg.manifest[field] ?? {}) as [string, string][]) {
       if (spec.startsWith("workspace:") && !names.has(name)) {
         if (pkg.hostBound && host().has(name)) continue;
@@ -245,7 +310,12 @@ function depChecks(pkg: Pkg, names: Set<string>, catalog: Record<string, string>
         });
       }
       if (spec === "catalog:" && !(name in catalog))
-        findings.push({ pkg: pkg.rel, check: "deps", severity: "error", message: `${field} ${name}@catalog: not in the root catalog` });
+        findings.push({
+          pkg: pkg.rel,
+          check: "deps",
+          severity: "error",
+          message: `${field} ${name}@catalog: not in the root catalog`,
+        });
     }
   }
 }
@@ -254,7 +324,11 @@ function depChecks(pkg: Pkg, names: Set<string>, catalog: Record<string, string>
 export function resolveRelative(file: string, spec: string): string | undefined {
   const clean = spec.replace(/[?#].*$/, "");
   const base = resolve(dirname(file), clean);
-  const tries = [base, ...RESOLVE_EXT.map((e) => base + e), ...RESOLVE_EXT.map((e) => join(base, `index${e}`))];
+  const tries = [
+    base,
+    ...RESOLVE_EXT.map((e) => base + e),
+    ...RESOLVE_EXT.map((e) => join(base, `index${e}`)),
+  ];
   // `./x.js` written for a `./x.ts` source (TypeScript NodeNext / Bundler style).
   const js = /\.(m|c)?jsx?$/.exec(clean);
   if (js) {
@@ -268,7 +342,11 @@ export function resolveRelative(file: string, spec: string): string | undefined 
 export function matchExportKey(key: string, subpath: string): string | null {
   if (!key.includes("*")) return key === subpath ? "" : null;
   const [pre, post] = key.split("*") as [string, string];
-  if (subpath.startsWith(pre) && subpath.endsWith(post) && subpath.length >= pre.length + post.length)
+  if (
+    subpath.startsWith(pre) &&
+    subpath.endsWith(post) &&
+    subpath.length >= pre.length + post.length
+  )
     return subpath.slice(pre.length, subpath.length - post.length);
   return null;
 }
@@ -296,7 +374,10 @@ export function scanImports(file: string): string[] {
   } catch {
     // Fallback for files the transpiler rejects (syntax under development): a lexical scan.
     const out: string[] = [];
-    for (const m of code.matchAll(/(?:from\s+|import\s*\(\s*|import\s+|require\s*\(\s*)["']([^"']+)["']/g)) out.push(m[1]!);
+    for (const m of code.matchAll(
+      /(?:from\s+|import\s*\(\s*|import\s+|require\s*\(\s*)["']([^"']+)["']/g,
+    ))
+      out.push(m[1]!);
     return out;
   }
 }
@@ -312,43 +393,88 @@ const declaredDeps = (m: Record<string, any>) =>
 /** Platform-conditional native addons loaded in try/catch by napi-rs bindings. */
 const OPTIONAL_NATIVE = /\.node$|\.wasi(?:-browser)?\.c?js$/;
 
-function importChecks(pkg: Pkg, all: Pkg[], byName: Map<string, Pkg>, rootDeps: Set<string>, findings: Finding[]) {
+function importChecks(
+  pkg: Pkg,
+  all: Pkg[],
+  byName: Map<string, Pkg>,
+  rootDeps: Set<string>,
+  findings: Finding[],
+) {
   // Root manifest dependencies resolve from every member (node resolution walks up to the root).
   const declared = new Set([...declaredDeps(pkg.manifest), ...rootDeps]);
   // Files of a nested package belong to that package, not to this one.
-  const inner = all.filter((p) => p !== pkg && p.dir.startsWith(pkg.dir + "/")).map((p) => p.dir + "/");
-  const files = walk(pkg.dir, (f) => SOURCE_EXT.test(f) && !f.endsWith(".d.ts") && !inner.some((d) => f.startsWith(d)));
+  const inner = all
+    .filter((p) => p !== pkg && p.dir.startsWith(pkg.dir + "/"))
+    .map((p) => p.dir + "/");
+  const files = walk(
+    pkg.dir,
+    (f) => SOURCE_EXT.test(f) && !f.endsWith(".d.ts") && !inner.some((d) => f.startsWith(d)),
+  );
   const severity: Severity = pkg.nested ? "warn" : "error";
-  const push = (f: Finding) => findings.push({ ...f, severity: f.severity === "error" ? severity : f.severity });
+  const push = (f: Finding) =>
+    findings.push({ ...f, severity: f.severity === "error" ? severity : f.severity });
   for (const file of files) {
     const rel = relative(pkg.dir, file);
     for (const spec of scanImports(file)) {
       if (OPTIONAL_NATIVE.test(spec)) continue;
       if (spec.startsWith(".")) {
-        if (/\.(css|scss|sass|svg|png|jpe?g|webp|gif|ico|woff2?|ttf|html|md|txt|wasm)(\?.*)?$/.test(spec)) {
+        if (
+          /\.(css|scss|sass|svg|png|jpe?g|webp|gif|ico|woff2?|ttf|html|md|txt|wasm)(\?.*)?$/.test(
+            spec,
+          )
+        ) {
           if (!resolveRelative(file, spec))
-            push({ pkg: pkg.rel, check: "imports", severity: "error", message: `${rel}: asset import ${spec} does not resolve` });
+            push({
+              pkg: pkg.rel,
+              check: "imports",
+              severity: "error",
+              message: `${rel}: asset import ${spec} does not resolve`,
+            });
           continue;
         }
         if (!resolveRelative(file, spec))
-          push({ pkg: pkg.rel, check: "imports", severity: "error", message: `${rel}: relative import ${spec} does not resolve` });
+          push({
+            pkg: pkg.rel,
+            check: "imports",
+            severity: "error",
+            message: `${rel}: relative import ${spec} does not resolve`,
+          });
         continue;
       }
       const { name, subpath } = splitSpecifier(spec);
       const target = byName.get(name);
       if (!target) continue; // not first-party: resolved by the package manager
       if (target !== pkg && !declared.has(name)) {
-        push({ pkg: pkg.rel, check: "imports", severity: "error", message: `${rel}: imports ${spec} but ${name} is not declared in package.json` });
+        push({
+          pkg: pkg.rel,
+          check: "imports",
+          severity: "error",
+          message: `${rel}: imports ${spec} but ${name} is not declared in package.json`,
+        });
         continue;
       }
       const exp = target.manifest.exports;
       if (exp == null) {
-        if (subpath === "." && !target.manifest.main && !existsSync(join(target.dir, "index.ts")) && !existsSync(join(target.dir, "index.js")))
-          push({ pkg: pkg.rel, check: "imports", severity: "error", message: `${rel}: ${spec}: ${name} has neither exports nor main` });
+        if (
+          subpath === "." &&
+          !target.manifest.main &&
+          !existsSync(join(target.dir, "index.ts")) &&
+          !existsSync(join(target.dir, "index.js"))
+        )
+          push({
+            pkg: pkg.rel,
+            check: "imports",
+            severity: "error",
+            message: `${rel}: ${spec}: ${name} has neither exports nor main`,
+          });
         continue;
       }
       const map: Record<string, unknown> =
-        typeof exp === "string" || Array.isArray(exp) || !Object.keys(exp).every((k) => k.startsWith(".")) ? { ".": exp } : exp;
+        typeof exp === "string" ||
+        Array.isArray(exp) ||
+        !Object.keys(exp).every((k) => k.startsWith("."))
+          ? { ".": exp }
+          : exp;
       let matched = false;
       for (const [key, value] of Object.entries(map)) {
         const capture = matchExportKey(key, subpath);
@@ -356,30 +482,56 @@ function importChecks(pkg: Pkg, all: Pkg[], byName: Map<string, Pkg>, rootDeps: 
         matched = true;
         const targets = exportTargets(value, key).map(([, , t]) => t.replace("*", capture));
         const ok = targets.some((t) => targetStatus(target, t).ok);
-        if (!ok) push({ pkg: pkg.rel, check: "imports", severity: "error", message: `${rel}: ${spec} -> ${targets.join(" | ")} missing in ${target.rel}` });
+        if (!ok)
+          push({
+            pkg: pkg.rel,
+            check: "imports",
+            severity: "error",
+            message: `${rel}: ${spec} -> ${targets.join(" | ")} missing in ${target.rel}`,
+          });
         break;
       }
-      if (!matched) push({ pkg: pkg.rel, check: "imports", severity: "error", message: `${rel}: ${spec} is not exported by ${target.rel}` });
+      if (!matched)
+        push({
+          pkg: pkg.rel,
+          check: "imports",
+          severity: "error",
+          message: `${rel}: ${spec} is not exported by ${target.rel}`,
+        });
     }
   }
 }
 
 /** Catalog of the nested repository that holds `pkg`. */
 function nestedCatalog(pkg: Pkg, all: Pkg[]): Record<string, string> {
-  const owner = all.find((p) => p.nested && p.rel.split("/").length === 2 && (pkg.dir === p.dir || pkg.dir.startsWith(p.dir + "/")));
+  const owner = all.find(
+    (p) =>
+      p.nested &&
+      p.rel.split("/").length === 2 &&
+      (pkg.dir === p.dir || pkg.dir.startsWith(p.dir + "/")),
+  );
   return owner?.manifest.workspaces?.catalog ?? {};
 }
 
-export function checkAll(root = REPO, only: string[] = []): { packages: number; findings: Finding[] } {
+export function checkAll(
+  root = REPO,
+  only: string[] = [],
+): { packages: number; findings: Finding[] } {
   const pkgs = listPackages(root);
   const rootManifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-  const catalog: Record<string, string> = rootManifest.workspaces?.catalog ?? rootManifest.catalog ?? {};
-  const byName = new Map(pkgs.filter((p) => p.manifest.name && !p.nested).map((p) => [p.manifest.name as string, p]));
-  for (const p of pkgs) if (p.nested && p.manifest.name && !byName.has(p.manifest.name)) byName.set(p.manifest.name, p);
+  const catalog: Record<string, string> =
+    rootManifest.workspaces?.catalog ?? rootManifest.catalog ?? {};
+  const byName = new Map(
+    pkgs.filter((p) => p.manifest.name && !p.nested).map((p) => [p.manifest.name as string, p]),
+  );
+  for (const p of pkgs)
+    if (p.nested && p.manifest.name && !byName.has(p.manifest.name)) byName.set(p.manifest.name, p);
   const names = new Set(byName.keys());
   let hostNames: Set<string> | undefined;
   const host = () => (hostNames ??= hostPackageNames());
-  const selected = only.length ? pkgs.filter((p) => only.some((o) => p.rel === o.replace(/\/$/, "") || p.manifest.name === o)) : pkgs;
+  const selected = only.length
+    ? pkgs.filter((p) => only.some((o) => p.rel === o.replace(/\/$/, "") || p.manifest.name === o))
+    : pkgs;
   const findings: Finding[] = [];
   for (const pkg of selected) {
     const before = findings.length;
@@ -389,7 +541,13 @@ export function checkAll(root = REPO, only: string[] = []): { packages: number; 
       manifestChecks(pkg, findings);
       entryChecks(pkg, findings);
     }
-    depChecks(pkg, names, pkg.nested ? { ...catalog, ...nestedCatalog(pkg, pkgs) } : catalog, host, findings);
+    depChecks(
+      pkg,
+      names,
+      pkg.nested ? { ...catalog, ...nestedCatalog(pkg, pkgs) } : catalog,
+      host,
+      findings,
+    );
     importChecks(pkg, pkgs, byName, pkg.nested ? new Set() : declaredDeps(rootManifest), findings);
     if (pkg.nested) for (const f of findings.slice(before)) f.severity = "warn";
   }
@@ -405,8 +563,13 @@ if (import.meta.main) {
   const errors = findings.filter((f) => f.severity === "error");
   if (json) console.log(JSON.stringify({ packages, errors: errors.length, findings }, null, 2));
   else {
-    for (const f of findings) console.log(`${f.severity.toUpperCase().padEnd(5)} ${f.pkg.padEnd(32)} ${f.check.padEnd(8)} ${f.message}`);
-    console.log(`check-exports: ${packages} packages, ${errors.length} errors, ${findings.length - errors.length} warnings`);
+    for (const f of findings)
+      console.log(
+        `${f.severity.toUpperCase().padEnd(5)} ${f.pkg.padEnd(32)} ${f.check.padEnd(8)} ${f.message}`,
+      );
+    console.log(
+      `check-exports: ${packages} packages, ${errors.length} errors, ${findings.length - errors.length} warnings`,
+    );
   }
   process.exit(errors.length && !warnOnly ? 1 : 0);
 }
