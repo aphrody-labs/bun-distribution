@@ -41,7 +41,7 @@ ne sont pas magiquement disponibles à une commande `cargo` lancée séparément
 - `~/.shenron-neon.env` et les fichiers `/etc/aphrody/*.env` ou
   `/etc/rose-griffon/*.env` : configurations opérateur ou systemd. Elles ne
   sont ni importées ni copiées dans le dépôt.
-- `config/*.env.example`, `yolo config/host/privoxy/*.env.example` et les exemples propres
+- `config/*.env.example`, `~/yolo/config/host/privoxy/*.env.example` et les exemples propres
   aux applications sont des modèles; ils ne sont pas chargés globalement par
   défaut.
 
