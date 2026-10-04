@@ -21,7 +21,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "lint": "bunx oxlint -c ../config/oxlintrc.json src",
+    "lint": "oxlint src",
     "type-check": "bun --bun tsc --noEmit",
     "test": "bun test test",
     "tokens": "bun scripts/generer-tokens.ts",
