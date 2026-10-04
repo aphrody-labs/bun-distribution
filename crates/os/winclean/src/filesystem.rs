@@ -8,11 +8,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 const MAX_ENTRIES: usize = 10_000;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileInfo {
     pub path: String,
@@ -24,7 +24,7 @@ pub struct FileInfo {
     pub is_hidden: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DirectoryListing {
     pub root: String,
     pub entries: Vec<FileInfo>,
@@ -199,7 +199,7 @@ mod tests {
                 "exclude": [42]
             }),
         );
-        assert!(matches!(invalid_type, Err(crate::SubsystemError::InvalidArguments(_))));
+        assert!(matches!(invalid_type, Err(aphrody_subsystem::SubsystemError::InvalidArguments(_))));
 
         let empty_pattern = crate::dispatch::call_rust(
             "list_directory",
@@ -208,7 +208,7 @@ mod tests {
                 "exclude": [""]
             }),
         );
-        assert!(matches!(empty_pattern, Err(crate::SubsystemError::InvalidArguments(_))));
+        assert!(matches!(empty_pattern, Err(aphrody_subsystem::SubsystemError::InvalidArguments(_))));
     }
 
     #[test]
@@ -266,7 +266,7 @@ mod tests {
                 "exclude": [42]
             }),
         );
-        assert!(matches!(invalid_type, Err(crate::SubsystemError::InvalidArguments(_))));
+        assert!(matches!(invalid_type, Err(aphrody_subsystem::SubsystemError::InvalidArguments(_))));
 
         let empty_pattern = crate::dispatch::call_rust(
             "search_files",
@@ -276,7 +276,7 @@ mod tests {
                 "exclude": [""]
             }),
         );
-        assert!(matches!(empty_pattern, Err(crate::SubsystemError::InvalidArguments(_))));
+        assert!(matches!(empty_pattern, Err(aphrody_subsystem::SubsystemError::InvalidArguments(_))));
     }
 }
 
