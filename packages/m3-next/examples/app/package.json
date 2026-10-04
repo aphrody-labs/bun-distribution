@@ -9,7 +9,7 @@
     "build": "bun ../../bin/m3-next.ts build",
     "start": "bun ../../bin/m3-next.ts start",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "bun test test/"
+    "test": "bun test ./test/"
   },
   "dependencies": {
     "@aphrody/m3-baseui": "workspace:*",

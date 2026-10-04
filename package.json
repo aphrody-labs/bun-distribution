@@ -8,6 +8,7 @@
       "apps/*",
       "packages/m3-next/examples/*",
       "!packages/app-ui",
+      "!packages/nie-ui",
       "!packages/rg-ui",
       "!packages/shenron-ui",
       "!packages/web-to-tauri"

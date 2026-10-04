@@ -29,10 +29,11 @@ export const yolo = (...args: string[]): Step => ({
   env: { YOLO_HOME: REPO },
 });
 
-/** Test selection: every workspace package. The host-bound packages (excluded from the workspace, installed and
- * tested by aphrody or iecode) are named explicitly: `--filter "*"` alone still selects them. */
-const HOST_BOUND = ["@aphrody/app-ui", "@rosegriffon/ui", "@shenron/ui", "@aphrody/web-to-tauri"];
-const ALL = ["--filter", "*", ...HOST_BOUND.flatMap((name) => ["--filter", `!${name}`])];
+/** Test selection: every workspace package. The packages excluded from the workspace are named explicitly, since
+ * `--filter "*"` alone still selects them: the host-bound ones (installed and tested by aphrody or iecode) and the
+ * nested repository packages/nie-ui (its own workspace, install and `bun test`). */
+const EXCLUDED = ["@aphrody/app-ui", "@rosegriffon/ui", "@shenron/ui", "@aphrody/web-to-tauri", "@aphrody/nie-ui"];
+const ALL = ["--filter", "*", ...EXCLUDED.flatMap((name) => ["--filter", `!${name}`])];
 
 /** Lint scope: m3 packages (not the nested app submodules), apps and scripts. */
 const lintPaths = (): string[] => [

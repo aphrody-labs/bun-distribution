@@ -12,7 +12,9 @@ import "@aphrody/m3-tokens/expressive.css";
 import "@aphrody/m3-baseui/m3-baseui.css"; // or core.css + the sheets you use, below
 import { M3Button, M3Dialog, M3Select, M3Switch } from "@aphrody/m3-baseui";
 
-<M3Button variant="tonal" size="md">Save</M3Button>;
+<M3Button variant="tonal" size="md">
+  Save
+</M3Button>;
 
 <M3Dialog.Root>
   <M3Dialog.Trigger render={<M3Button variant="text" />}>Delete</M3Dialog.Trigger>
@@ -52,22 +54,22 @@ import { M3Button, M3Dialog, M3Select, M3Switch } from "@aphrody/m3-baseui";
 `@aphrody/m3-baseui/css/<name>.css` its sheet. `css/core.css` is required with any of them: type shorthands, the state layer,
 the focus ring, the popup surface and the menu item.
 
-| Components | Sheet |
-| --- | --- |
-| Button | `button.css` |
-| Toggle, ToggleGroup | `toggle.css` |
-| Checkbox, CheckboxGroup | `checkbox.css` (group layout is in `core.css`) |
-| Radio, RadioGroup | `radio.css` |
-| Switch | `switch.css` |
-| Input, Field, Fieldset, Form | `field.css` |
-| NumberField, OtpField | `number-field.css`, `otp-field.css` |
-| Select | `select.css` |
-| Menu, ContextMenu, Menubar | `menu.css` |
-| Combobox, Autocomplete | `combobox.css` |
-| Dialog, AlertDialog | `dialog.css` |
-| Drawer | `drawer.css` |
-| Popover, PreviewCard | `popover.css` |
-| Tooltip | `tooltip.css` |
+| Components                                                                                                              | Sheet                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Button                                                                                                                  | `button.css`                                                                                                                                                                      |
+| Toggle, ToggleGroup                                                                                                     | `toggle.css`                                                                                                                                                                      |
+| Checkbox, CheckboxGroup                                                                                                 | `checkbox.css` (group layout is in `core.css`)                                                                                                                                    |
+| Radio, RadioGroup                                                                                                       | `radio.css`                                                                                                                                                                       |
+| Switch                                                                                                                  | `switch.css`                                                                                                                                                                      |
+| Input, Field, Fieldset, Form                                                                                            | `field.css`                                                                                                                                                                       |
+| NumberField, OtpField                                                                                                   | `number-field.css`, `otp-field.css`                                                                                                                                               |
+| Select                                                                                                                  | `select.css`                                                                                                                                                                      |
+| Menu, ContextMenu, Menubar                                                                                              | `menu.css`                                                                                                                                                                        |
+| Combobox, Autocomplete                                                                                                  | `combobox.css`                                                                                                                                                                    |
+| Dialog, AlertDialog                                                                                                     | `dialog.css`                                                                                                                                                                      |
+| Drawer                                                                                                                  | `drawer.css`                                                                                                                                                                      |
+| Popover, PreviewCard                                                                                                    | `popover.css`                                                                                                                                                                     |
+| Tooltip                                                                                                                 | `tooltip.css`                                                                                                                                                                     |
 | Tabs, Slider, Progress and Meter, Accordion, Collapsible, Avatar, Separator, ScrollArea, Toolbar, NavigationMenu, Toast | `tabs.css`, `slider.css`, `progress.css`, `accordion.css`, `collapsible.css`, `avatar.css`, `separator.css`, `scroll-area.css`, `toolbar.css`, `navigation-menu.css`, `toast.css` |
 
 ## Styling rules

@@ -12,6 +12,7 @@ async function bundle(entry: string): Promise<string> {
   return result.outputs[0]!.text();
 }
 
+/* oxlint-disable eslint/no-await-in-loop -- one bundle at a time keeps the failure message attached to its sheet */
 describe("css pipeline", () => {
   test("the aggregate resolves every @import and keeps everything in the components layer", async () => {
     const out = await bundle(join(pkgDir, "m3-baseui.css"));

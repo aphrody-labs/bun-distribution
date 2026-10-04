@@ -24,7 +24,7 @@
   },
   "scripts": {
     "generate": "bun scripts/generate.ts",
-    "test": "bun test test/",
+    "test": "bun test ./test/",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "oxlint src test scripts"
   },
