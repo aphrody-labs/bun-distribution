@@ -133,9 +133,11 @@ function walk(dir: string, accept: (file: string) => boolean, out: string[] = []
   return out;
 }
 
-/** Test files of a package (`*.test.*`, `*.spec.*`, or files under a `test/` runner such as `test/run.ts`). */
+/** Test files of a package (`*.test.*`, `*.spec.*`); a workspace root counts the tests of its members. */
 export function testFiles(pkg: Pkg): string[] {
-  return walk(pkg.dir, (f) => /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(f));
+  const accept = (f: string) => /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(f);
+  if (workspacePatterns(pkg.manifest).length === 0) return walk(pkg.dir, accept);
+  return [pkg.dir, ...expandWorkspaces(pkg.dir, workspacePatterns(pkg.manifest)).map((m) => join(pkg.dir, m))].flatMap((d) => walk(d, accept));
 }
 
 /** Flattened `exports` targets: [subpath, condition path, target]. */
