@@ -29,7 +29,7 @@ const unavailable =
 const skip = unavailable !== "";
 if (skip) console.warn(`[@aphrody/m3-theme] native suites skipped: ${unavailable}`);
 const named = (title: string) => (skip ? `${title} [skipped: ${unavailable}]` : title);
-const m3Css = (config: { sheet: "tokens" | "tailwind" | "spaceui" | "scheme"; seed?: string; variant?: string; dark?: boolean }) =>
+const m3Css = (config: Parameters<typeof import("@aphrody/bun").m3Css>[0]) =>
   (native as Exclude<typeof native, Error>).m3Css(config);
 
 const dir = join(import.meta.dir, "..");
