@@ -16,6 +16,11 @@ Artifact build IDs identify the measured outputs separately. The delivery
 status is dated 2026-10-05 in Europe/Paris; browser receipt timestamps retain
 their original UTC date of 2026-10-04.
 
+The measured source batch was delivered privately as M3 commit `3043406`.
+The canonical checkout is now `/home/aphro/aphrody/m3`, observed at
+`3d8d4bf` after later owner commits. Those commits keep their own qualification;
+they do not change the earlier source snapshot or measured artifact IDs.
+
 ## Delivery stages
 
 | Stage                   | Final evidence                                                                                                                                                                      | Qualification still required                                                         |
@@ -150,10 +155,26 @@ Clippy, packaging, installation and device qualification remain open.
 
 The [factory owner](../../../packages/infra/workspace/src/build-factory.ts)
 prepared fresh VPS Aphrody sources at
-`d06d00738a8f26857d8c057609a182a1e81e9994`. FFI job `75735`
-is queued behind the serialized heavy lock, last reported held by legacy
-Yolo Git build `3304542`. No ETA is established. Prepared sources and a
-queued plan are not completed artifact evidence.
+`d06d00738a8f26857d8c057609a182a1e81e9994`. Native durable jobs were
+qualified and privately delivered in Aphrody commit `2c541bbd2`:
+36 tests, 363 assertions, TypeScript, strict lint and format passed.
+The [job contract](../../../docs/operations/infra/BUILD-FACTORY-JOBS.md)
+retains the existing locks and source pin.
+
+The old attached SSH client exited with code 255. Its orphaned waiter
+`3305254` was still waiting without children; the integrator verified its
+boot ID, start ticks, exact command and isolated process group, then stopped
+only that owned group. No other session's job was signalled.
+
+Replacement job `m3-ffi-release-d06d007-20261005` was accepted at
+`2026-10-04T22:30:28.512Z`. It runs the existing `bun-native --gpu`
+release owner, including library, provenance manifest and strict consumer
+smoke. A later SSH observation confirmed supervisor `3309655` alive,
+private 0700 directories/0600 files and identical submission returning
+`existing`. Active includes waiting for leases; no terminal receipt or
+new artifact exists at this observation. Yolo source-preparation supervisor
+`3303970` still holds the heavy lock, with Git fetch child `3304542`.
+Its owner was notified through native agent coordination. No ETA is established.
 
 The installed FFI artifact dated 2026-10-01 emits the older
 `crates/ui/aphrody-m3-tokens/src/sheets.rs` provenance. Current source

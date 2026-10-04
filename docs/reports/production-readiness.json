@@ -22,6 +22,13 @@
       "ownerIdentity": "aphrody-dev",
       "pushedExistingPrivateRemote": true,
       "provenance": "Integrating owner verified fetch, ancestor relationship, clean index/diff and normal push to existing origin main."
+    },
+    "durableFactoryJobsCommit": "2c541bbd25e9bd3b19673a96a2b93e4f423f4548",
+    "sourceDelivery": {
+      "m3Commit": "30434065426c6c23e2ceb13e308bea8b023958ee",
+      "currentCanonicalCheckout": "/home/aphro/aphrody/m3",
+      "currentObservedHead": "3d8d4bf1ea3fa60a9119d46888791ef71ebbd164",
+      "note": "Later source commits do not retarget earlier measured build IDs or browser receipts."
     }
   },
   "tools": {
@@ -29,7 +36,13 @@
     "yoloCli": "0.1.0",
     "bun": "1.4.2",
     "chromium": "153.0.8010.12",
-    "installedBunSdk": "3.3.0"
+    "installedBunSdk": "3.3.0",
+    "installedBunSdkScope": "Historical installed SDK observation for the measured receipt; not the current canonical consumer source version.",
+    "currentCanonicalBunSdkSource": {
+      "version": "3.3.3",
+      "entry": "/home/aphro/aphrody/packages/interop/native/src/index.ts",
+      "scope": "Read-only package resolution from the relocated M3 consumer; no new library opened or installed."
+    }
   },
   "stages": {
     "source": {
@@ -325,12 +338,12 @@
       "ownerServerPid": 525521
     },
     "nativeFactory": {
-      "status": "queued_no_artifact",
+      "status": "durable_dispatch_alive_waiting_no_artifact",
       "preparedRevision": "d06d00738a8f26857d8c057609a182a1e81e9994",
-      "lastOwnerReportedJob": "75735",
-      "lastOwnerReportedHeavyLockHolder": "legacy Yolo Git 3304542",
+      "lastOwnerReportedJob": "m3-ffi-release-d06d007-20261005",
+      "lastOwnerReportedHeavyLockHolder": "Yolo source preparation supervisor3303970; Git fetch child3304542",
       "serialized": true,
-      "evidence": ["factoryPlan", "factorySource"],
+      "evidence": ["factoryPlan", "factorySource", "factoryJobsSource", "factoryJobsContract"],
       "limit": "Source preparation and a queued command are not a completed FFI or showcase build.",
       "hostMetadata": {
         "status": "workspace_inventory_passed_no_compilation",
@@ -347,7 +360,48 @@
           "sourceState": "Native host source is uncommitted inventory at this audit, not a versioned release artifact."
         }
       },
-      "queueTiming": "queued; no ETA established"
+      "queueTiming": "active dispatch includes lease wait; no ETA established",
+      "durability": {
+        "sourceCommit": "2c541bbd25e9bd3b19673a96a2b93e4f423f4548",
+        "tests": 36,
+        "assertions": 363,
+        "failures": 0,
+        "typescriptExit": 0,
+        "strictLintExit": 0,
+        "formatExit": 0,
+        "jobId": "m3-ffi-release-d06d007-20261005",
+        "fingerprint": "3131268cf10536d62fbb06a55de03db8125b072c6c7139ffbc1bd685d3e6c5d5",
+        "requestedAt": "2026-10-04T22:30:28.512Z",
+        "supervisor": 3309655,
+        "observedStatus": "active",
+        "processAlive": true,
+        "matchingResubmission": "existing",
+        "directories": "0700",
+        "files": "0600",
+        "ownerCommand": [
+          "bun",
+          "packages/infra/workspace/src/ops.ts",
+          "bun-native",
+          "--root=/srv/aphrody-build/workspaces/aphrody",
+          "--gpu"
+        ],
+        "expectedFeatures": ["gpu"],
+        "terminalReceipt": false
+      },
+      "reconciledLegacy": {
+        "clientExit": 255,
+        "ownedWaiter": 3305254,
+        "identityVerified": [
+          "bootId",
+          "processStartTicks",
+          "exactCommandHash",
+          "isolatedProcessGroup",
+          "waitingWithoutChildren"
+        ],
+        "signal": "SIGTERM",
+        "remainingActiveOwnedGroup": [],
+        "otherJobsSignalled": false
+      }
     }
   },
   "remaining": [
@@ -368,19 +422,21 @@
     "materialIntegration": "../../forks/material-web/test/production-exports.test.ts",
     "controlledHarness": "../../packages/m3-ai/test/production-contract.test.tsx",
     "runtime": "../../apps/showcase/test/runtime-api.test.ts",
-    "factorySource": "../../../../packages/infra/workspace/src/build-factory.ts",
+    "factorySource": "../../../packages/infra/workspace/src/build-factory.ts",
     "aggregateTests": "../../package.json",
     "manifest": "../../scripts/build.ts",
     "bootstrapSource": "../../forks/material-web/scripts/bootstrap-types.ts",
     "rootManifest": "../../package.json",
-    "factoryPlan": "../../../../packages/infra/workspace/src/build-factory.ts",
+    "factoryPlan": "../../../packages/infra/workspace/src/build-factory.ts",
     "historicalFramework": "FRAMEWORK-FINALIZATION.md",
     "nextBundle": "M3-NEXT-BUNDLE.md",
     "sourcePlan": "../plans/design/M3-PLAN.md",
     "hostPlan": "../plans/design/M3-MULTI-HOST-PLAN.md",
     "typecheck": "../../scripts/build.ts",
     "lint": "../../scripts/yolo.ts",
-    "integrity": "../../scripts/check-exports.ts"
+    "integrity": "../../scripts/check-exports.ts",
+    "factoryJobsSource": "../../../packages/infra/workspace/src/build-factory-jobs.ts",
+    "factoryJobsContract": "../../../docs/operations/infra/BUILD-FACTORY-JOBS.md"
   },
   "evidencePolicy": "This versioned receipt contains curated non-secret measurement facts and attributed owner results. Relative evidence links point to source/tests or versioned reports, so no ignored .coord file is needed to read it. Source links identify reproduction owners, not independent proofs that their commands ran. Raw command logs and generated artifacts remain in existing ignored stores and are not staged.",
   "finalIntegrationUpdateRequired": false,
@@ -388,5 +444,6 @@
     "finalDeliveryLocal": "2026-10-05",
     "browserReceiptUtc": "2026-10-04",
     "initialCaptureScope": "2026-10-04"
-  }
+  },
+  "updatedAt": "2026-10-05T00:34:44+02:00"
 }
