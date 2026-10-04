@@ -16,8 +16,8 @@ import {
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
-import { readTar } from "./canonical-tar.ts";
-import { canonicalizePackageArchive, validateArchiveTypes } from "./iecode-packages.ts";
+import { canonicalTar, gzipCanonical, readTar, type TarMember } from "./canonical-tar.ts";
+import { validateArchiveTypes } from "./iecode-packages.ts";
 import { infraRoot } from "./runtime.ts";
 
 export interface AphrodyArchive {
@@ -122,6 +122,45 @@ async function archiveVersion(path: string): Promise<string> {
   return (JSON.parse(new TextDecoder().decode(entry.data)) as { version: string }).version;
 }
 
+/**
+ * Canonical archive whose manifest no longer carries producer-relative `file:` specs: each one is
+ * replaced by the version of the pinned archive it named, which the consumer maps through its overrides.
+ */
+export function portableArchive(entries: TarMember[], pinned: Map<string, string>, name: string) {
+  const encoder = new TextEncoder();
+  return gzipCanonical(
+    canonicalTar(
+      entries.map((entry) => {
+        if (entry.name !== "package/package.json") return entry;
+        const manifest = JSON.parse(new TextDecoder().decode(entry.data)) as Record<
+          string,
+          unknown
+        >;
+        let changed = false;
+        for (const field of [
+          "dependencies",
+          "devDependencies",
+          "peerDependencies",
+          "optionalDependencies",
+        ]) {
+          const specs = manifest[field] as Record<string, string> | undefined;
+          for (const [dependency, spec] of Object.entries(specs ?? {})) {
+            if (!spec.startsWith("file:")) continue;
+            const version = pinned.get(dependency);
+            if (!version)
+              throw new Error(`${name} depends on ${dependency} through unpinned ${spec}`);
+            specs![dependency] = version;
+            changed = true;
+          }
+        }
+        if (!changed) return entry;
+        const data = encoder.encode(`${JSON.stringify(manifest, null, 2)}\n`);
+        return { ...entry, data, size: data.length };
+      }),
+    ),
+  );
+}
+
 /** Pinned archives in `destination` that are missing or differ from the pin. */
 export async function staleArchives(pin: AphrodyPackagesManifest, destination: string) {
   const stale: string[] = [];
@@ -163,6 +202,12 @@ export async function prepareAphrodyPackages(options: {
       await rename(file, join(stage, archive));
       packages.push({ name, version, archive, sha256 });
     };
+    const pinnedVersions = new Map<string, string>();
+    for (const name of external) {
+      const spec = pinnedSpec(name);
+      if (spec?.startsWith("file:"))
+        pinnedVersions.set(name, await archiveVersion(join(root, spec.slice("file:".length))));
+    }
     for (const { name, directory } of members) {
       const manifest = JSON.parse(
         await readFile(join(directory, "package.json"), "utf8"),
@@ -194,12 +239,9 @@ export async function prepareAphrodyPackages(options: {
       const [file] = await readdir(out);
       if (!file) throw new Error(`bun pm pack produced no archive for ${name}`);
       await validateArchiveTypes(file, out);
-      await canonicalizePackageArchive(file, out);
-      const entries = new Set(
-        readTar(Bun.gunzipSync(await readFile(join(out, file)))).map((entry) =>
-          entry.name.replace(/^package\//, ""),
-        ),
-      );
+      const contents = readTar(Bun.gunzipSync(await readFile(join(out, file))));
+      await writeFile(join(out, file), portableArchive(contents, pinnedVersions, name));
+      const entries = new Set(contents.map((entry) => entry.name.replace(/^package\//, "")));
       const missing = exportTargets(manifest).filter((target) => !entries.has(target));
       if (missing.length)
         throw new Error(`${name} archive lacks exported files: ${missing.join(", ")}`);
@@ -216,7 +258,7 @@ export async function prepareAphrodyPackages(options: {
       const source = join(root, spec.slice("file:".length));
       const copy = join(stage, `external-${basename(source)}`);
       await copyFile(source, copy);
-      await add(name, await archiveVersion(copy), copy);
+      await add(name, pinnedVersions.get(name)!, copy);
     }
     const manifest: AphrodyPackagesManifest = {
       schemaVersion: 1,
