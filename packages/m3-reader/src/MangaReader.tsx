@@ -14,6 +14,7 @@
 
 import { type ReactElement, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
+
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
 	BookOpen,
@@ -26,12 +27,20 @@ import {
 	ScrollText,
 	Square,
 } from "lucide-react";
-import { Swiper, SwiperSlide, type SwiperClass } from "swiper/react";
+import { Swiper, SwiperSlide } from "swiper/react";
 import { Keyboard, Mousewheel, Zoom } from "swiper/modules";
 
 import "swiper/css";
 import "swiper/css/zoom";
 
+import {
+	SHOW_STRIP_MAX,
+	type ViewMode,
+	useFullscreen,
+	useSwiperSync,
+	useVerticalScrollSync,
+	virtualRowStyle,
+} from "./use-reader-core";
 
 export type MangaReaderProps = {
 	pages: string[];
@@ -49,14 +58,7 @@ export type MangaReaderProps = {
 	renderChapterLink?: (props: { href: string; children: ReactNode; className: string; ariaLabel: string }) => ReactNode;
 };
 
-type ViewMode = "paged" | "vertical";
-
 const LG_BREAKPOINT = 1024; // Tailwind `lg`
-
-// Au-delà de ce nombre de planches, la bande de vignettes (1 nœud DOM par planche,
-// jusqu'à ~282 sur un tome complet) devient trop lourde : on bascule sur un contrôle
-// compact « Aller à la planche ». Les chapitres courts gardent la bande de miniatures.
-const SHOW_STRIP_MAX = 40;
 
 /** Détecte le passage sous/au-delà du breakpoint `lg` pour la double-page. */
 function useIsLargeScreen(): boolean {
@@ -87,13 +89,13 @@ export function MangaReader({
 	renderChapterLink,
 }: MangaReaderProps): ReactElement {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const swiperRef = useRef<SwiperClass | null>(null);
 
 	const [mode, setMode] = useState<ViewMode>("paged");
 	const [dir, setDir] = useState<"rtl" | "ltr">(direction);
 	const [spread, setSpread] = useState(false);
-	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [current, setCurrent] = useState(() => Math.max(0, Math.min(pages.length - 1, initialPage - 1)));
+	const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef);
+	const { swiperRef, handleSwiper, handleSlideChange } = useSwiperSync(setCurrent);
 
 	const isLarge = useIsLargeScreen();
 	// Double-page seulement effective sur grand écran (lisibilité mobile).
@@ -159,35 +161,6 @@ export function MangaReader({
 		}
 	}, [resolveMirrorUrl]);
 
-	/* ----------------------------- Fullscreen ----------------------------- */
-
-	const toggleFullscreen = useCallback(() => {
-		const el = containerRef.current;
-		if (!el) return;
-		if (document.fullscreenElement) {
-			void document.exitFullscreen();
-		} else {
-			void el.requestFullscreen?.();
-		}
-	}, []);
-
-	useEffect(() => {
-		const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
-		document.addEventListener("fullscreenchange", onChange);
-		return () => document.removeEventListener("fullscreenchange", onChange);
-	}, []);
-
-	/* ------------------------------- Swiper ------------------------------- */
-
-	const handleSwiper = useCallback((sw: SwiperClass) => {
-		swiperRef.current = sw;
-		setCurrent(sw.realIndex ?? sw.activeIndex ?? 0);
-	}, []);
-
-	const handleSlideChange = useCallback((sw: SwiperClass) => {
-		setCurrent(sw.realIndex ?? sw.activeIndex ?? 0);
-	}, []);
-
 	/* ------------------------------ Vertical ------------------------------ */
 
 	const scrollParentRef = useRef<HTMLDivElement>(null);
@@ -200,19 +173,7 @@ export function MangaReader({
 	});
 
 	// Synchronise le compteur en mode vertical sur la page la plus visible.
-	useEffect(() => {
-		if (mode !== "vertical") return;
-		const el = scrollParentRef.current;
-		if (!el) return;
-		const onScroll = () => {
-			const mid = el.scrollTop + el.clientHeight / 2;
-			const item = virtualizer.getVirtualItems().find((vi) => vi.start <= mid && vi.end >= mid);
-			if (item) setCurrent(item.index);
-		};
-		el.addEventListener("scroll", onScroll, { passive: true });
-		onScroll();
-		return () => el.removeEventListener("scroll", onScroll);
-	}, [mode, virtualizer]);
+	useVerticalScrollSync(mode, scrollParentRef, virtualizer, setCurrent);
 
 	useEffect(() => { onPageChange?.(current + 1); }, [current, onPageChange]);
 	const apiPlanche = apiPageHref?.(current + 1) ?? null;
@@ -463,13 +424,7 @@ export function MangaReader({
 									key={`${baseId}-${vi.key}`}
 									data-index={vi.index}
 									ref={virtualizer.measureElement}
-									style={{
-										position: "absolute",
-										top: 0,
-										left: 0,
-										width: "100%",
-										transform: `translateY(${vi.start}px)`,
-									}}
+									style={virtualRowStyle(vi.start)}
 									className="flex justify-center py-2"
 								>
 									<img

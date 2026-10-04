@@ -158,3 +158,26 @@ export function useTransitionState(
 export function isVisible(phase: TransitionPhase): boolean {
   return phase === "entering" || phase === "entered";
 }
+
+/**
+ * What every transition component derives from its props: the resolved enter/exit durations,
+ * the state machine and the current visual state. `durationMs` is the one of the running direction.
+ */
+export function useTransitionProps(
+  props: BaseTransitionProps,
+  enterFallbackMs: number,
+  exitFallbackMs: number,
+) {
+  const { in: inProp, timeout, appear = false, mountOnEnter = false, unmountOnExit = false } = props;
+  const enterMs = resolveTimeout(timeout, "enter", enterFallbackMs);
+  const exitMs = resolveTimeout(timeout, "exit", exitFallbackMs);
+  const { mounted, phase } = useTransitionState(inProp, {
+    appear,
+    mountOnEnter,
+    unmountOnExit,
+    enterTimeout: enterMs,
+    exitTimeout: exitMs,
+  });
+  const visible = isVisible(phase);
+  return { mounted, phase, visible, durationMs: visible ? enterMs : exitMs };
+}

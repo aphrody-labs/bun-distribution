@@ -19,15 +19,32 @@ interface ToolRenderer {
   resultView?(pair: ToolCallPair): React.ReactNode | null;
 }
 
-const toolRenderers: Record<string, ToolRenderer> = {
-  file_read: {
-    summary(pair) {
-      if (pair.title) return pair.title;
-      const path = pair.args?.path;
-      return path ? truncate(String(path), 60) : null;
-    },
+/** The first present argument among `keys` (the tools name the same argument differently). */
+function firstArg(pair: ToolCallPair, keys: readonly string[]): unknown {
+  for (const key of keys) {
+    const value = pair.args?.[key];
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
+}
+
+const pathSummary =
+  (pathKeys: readonly string[]): ToolRenderer["summary"] =>
+  (pair) => {
+    if (pair.title) return pair.title;
+    const path = firstArg(pair, pathKeys);
+    return path ? truncate(String(path), 60) : null;
+  };
+
+const fileResultView = (pair: ToolCallPair) =>
+  pair.resultRaw ? <ResultLine text={truncate(pair.resultRaw, 100)} /> : null;
+
+/** `file_read` and `read`: the path with its optional line window, output in a collapsible block. */
+function fileRead(pathKeys: readonly string[]): ToolRenderer {
+  return {
+    summary: pathSummary(pathKeys),
     argsView(pair) {
-      const path = pair.args?.path;
+      const path = firstArg(pair, pathKeys);
       if (!path) return null;
       const offset = pair.args?.offset;
       const limit = pair.args?.limit;
@@ -45,16 +62,15 @@ const toolRenderers: Record<string, ToolRenderer> = {
       if (!pair.resultRaw) return null;
       return <CollapsiblePre text={pair.resultRaw} maxLines={30} />;
     },
-  },
+  };
+}
 
-  file_write: {
-    summary(pair) {
-      if (pair.title) return pair.title;
-      const path = pair.args?.path;
-      return path ? truncate(String(path), 60) : null;
-    },
+/** `file_write` and `write`: the path and a preview of the content. */
+function fileWrite(pathKeys: readonly string[]): ToolRenderer {
+  return {
+    summary: pathSummary(pathKeys),
     argsView(pair) {
-      const path = pair.args?.path;
+      const path = firstArg(pair, pathKeys);
       const content = pair.args?.content;
       if (!path && !content) return null;
       return (
@@ -70,57 +86,51 @@ const toolRenderers: Record<string, ToolRenderer> = {
         </div>
       );
     },
-    resultView(pair) {
-      if (!pair.resultRaw) return null;
-      return <ResultLine text={truncate(pair.resultRaw, 100)} />;
-    },
-  },
+    resultView: fileResultView,
+  };
+}
 
-  file_edit: {
-    summary(pair) {
-      if (pair.title) return pair.title;
-      const path = pair.args?.path;
-      return path ? truncate(String(path), 60) : null;
-    },
+/** `file_edit` and `edit`: the path and the old / new text. */
+function fileEdit(
+  pathKeys: readonly string[],
+  oldKeys: readonly string[],
+  newKeys: readonly string[],
+): ToolRenderer {
+  // Whole class names, so Tailwind's scanner finds them.
+  const TONE = { error: "text-error", success: "text-success" } as const;
+  const side = (label: string, tone: keyof typeof TONE, text: unknown) =>
+    text ? (
+      <div className="mt-1">
+        <p className={`text-body-small font-medium ${TONE[tone]}`}>{label}</p>
+        <pre className={`max-h-20 overflow-auto font-code text-body-small ${TONE[tone]}`}>
+          {truncate(String(text), 500)}
+        </pre>
+      </div>
+    ) : null;
+  return {
+    summary: pathSummary(pathKeys),
     argsView(pair) {
-      const path = pair.args?.path;
-      const oldStr = pair.args?.old_string;
-      const newStr = pair.args?.new_string;
+      const path = firstArg(pair, pathKeys);
       if (!path) return null;
       return (
         <div className="rounded-small bg-surface-container-highest px-3 py-2">
           <p className="mb-1 font-code text-body-small text-on-surface-variant">{String(path)}</p>
-          {!!oldStr && (
-            <div className="mt-1">
-              <p className="text-body-small font-medium text-error">Old</p>
-              <pre className="max-h-20 overflow-auto font-code text-body-small text-error">
-                {truncate(String(oldStr), 500)}
-              </pre>
-            </div>
-          )}
-          {!!newStr && (
-            <div className="mt-1">
-              <p className="text-body-small font-medium text-success">New</p>
-              <pre className="max-h-20 overflow-auto font-code text-body-small text-success">
-                {truncate(String(newStr), 500)}
-              </pre>
-            </div>
-          )}
+          {side("Old", "error", firstArg(pair, oldKeys))}
+          {side("New", "success", firstArg(pair, newKeys))}
         </div>
       );
     },
-    resultView(pair) {
-      if (!pair.resultRaw) return null;
-      return <ResultLine text={truncate(pair.resultRaw, 100)} />;
-    },
-  },
+    resultView: fileResultView,
+  };
+}
+
+const toolRenderers: Record<string, ToolRenderer> = {
+  file_read: fileRead(["path"]),
+  file_write: fileWrite(["path"]),
+  file_edit: fileEdit(["path"], ["old_string"], ["new_string"]),
 
   file_list: {
-    summary(pair) {
-      if (pair.title) return pair.title;
-      const path = pair.args?.path;
-      return path ? truncate(String(path), 60) : null;
-    },
+    summary: pathSummary(["path"]),
     resultView(pair) {
       if (!pair.resultRaw) return null;
       return <CollapsiblePre text={pair.resultRaw} maxLines={30} />;
@@ -143,104 +153,9 @@ const toolRenderers: Record<string, ToolRenderer> = {
 
   // OpenCode tools
 
-  read: {
-    summary(pair) {
-      if (pair.title) return pair.title;
-      const filePath = pair.args?.filePath ?? pair.args?.file_path;
-      return filePath ? truncate(String(filePath), 60) : null;
-    },
-    argsView(pair) {
-      const filePath = pair.args?.filePath ?? pair.args?.file_path;
-      if (!filePath) return null;
-      const offset = pair.args?.offset;
-      const limit = pair.args?.limit;
-      return (
-        <div className="rounded-small bg-surface-container-highest px-3 py-2">
-          <p className="font-code text-body-small text-on-surface-variant">
-            {String(filePath)}
-            {offset ? ` (from line ${offset})` : ""}
-            {limit ? ` (${limit} lines)` : ""}
-          </p>
-        </div>
-      );
-    },
-    resultView(pair) {
-      if (!pair.resultRaw) return null;
-      return <CollapsiblePre text={pair.resultRaw} maxLines={30} />;
-    },
-  },
-
-  write: {
-    summary(pair) {
-      if (pair.title) return pair.title;
-      const filePath = pair.args?.filePath ?? pair.args?.file_path;
-      return filePath ? truncate(String(filePath), 60) : null;
-    },
-    argsView(pair) {
-      const filePath = pair.args?.filePath ?? pair.args?.file_path;
-      const content = pair.args?.content;
-      if (!filePath && !content) return null;
-      return (
-        <div className="rounded-small bg-surface-container-highest px-3 py-2">
-          {!!filePath && (
-            <p className="mb-1 font-code text-body-small text-on-surface-variant">
-              {String(filePath)}
-            </p>
-          )}
-          {!!content && (
-            <pre className="max-h-40 overflow-auto font-code text-body-small text-outline">
-              {truncate(String(content), 2000)}
-            </pre>
-          )}
-        </div>
-      );
-    },
-    resultView(pair) {
-      if (!pair.resultRaw) return null;
-      return <ResultLine text={truncate(pair.resultRaw, 100)} />;
-    },
-  },
-
-  edit: {
-    summary(pair) {
-      if (pair.title) return pair.title;
-      const filePath = pair.args?.filePath ?? pair.args?.file_path;
-      return filePath ? truncate(String(filePath), 60) : null;
-    },
-    argsView(pair) {
-      const filePath = pair.args?.filePath ?? pair.args?.file_path;
-      const oldStr = pair.args?.oldString ?? pair.args?.old_string;
-      const newStr = pair.args?.newString ?? pair.args?.new_string;
-      if (!filePath) return null;
-      return (
-        <div className="rounded-small bg-surface-container-highest px-3 py-2">
-          <p className="mb-1 font-code text-body-small text-on-surface-variant">
-            {String(filePath)}
-          </p>
-          {!!oldStr && (
-            <div className="mt-1">
-              <p className="text-body-small font-medium text-error">Old</p>
-              <pre className="max-h-20 overflow-auto font-code text-body-small text-error">
-                {truncate(String(oldStr), 500)}
-              </pre>
-            </div>
-          )}
-          {!!newStr && (
-            <div className="mt-1">
-              <p className="text-body-small font-medium text-success">New</p>
-              <pre className="max-h-20 overflow-auto font-code text-body-small text-success">
-                {truncate(String(newStr), 500)}
-              </pre>
-            </div>
-          )}
-        </div>
-      );
-    },
-    resultView(pair) {
-      if (!pair.resultRaw) return null;
-      return <ResultLine text={truncate(pair.resultRaw, 100)} />;
-    },
-  },
+  read: fileRead(["filePath", "file_path"]),
+  write: fileWrite(["filePath", "file_path"]),
+  edit: fileEdit(["filePath", "file_path"], ["oldString", "old_string"], ["newString", "new_string"]),
 
   glob: {
     summary(pair) {

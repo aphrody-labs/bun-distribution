@@ -256,7 +256,29 @@ const FormMessage = ({
   );
 };
 
+/** Label, description and error message, stacked: the text side of an inline (checkbox, switch) field. */
+const FieldText = ({
+  label,
+  description,
+  required,
+}: {
+  label?: string;
+  description?: string;
+  required?: boolean;
+}) => (
+  <div className="flex flex-col gap-1">
+    {label && (
+      <FormLabel variant="inline" required={required}>
+        {label}
+      </FormLabel>
+    )}
+    {description && <FormDescription>{description}</FormDescription>}
+    <FormMessage />
+  </div>
+);
+
 export {
+  FieldText,
   useFormField,
   Form,
   FormItem,

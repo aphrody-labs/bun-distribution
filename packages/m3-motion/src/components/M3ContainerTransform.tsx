@@ -93,49 +93,6 @@ export interface M3ContainerTransformStartProps extends HTMLMotionProps<"div"> {
   active?: boolean;
 }
 
-/**
- * M3ContainerTransformStart component.
- * Represents the starting content (e.g., Card content) inside M3ContainerTransform.
- * Prevents aspect ratio distortion and fades out during the container transform morph.
- */
-export const M3ContainerTransformStart = React.forwardRef<HTMLDivElement, M3ContainerTransformStartProps>(
-  ({ active, children, style, transition, layout = "position", ...props }, ref) => {
-    const context = React.useContext(M3ContainerTransformContext);
-    const isActive = active ?? (context ? !context.isExpanded : true);
-    const speed = context?.speed ?? "default";
-
-    const baseStyle: MotionStyle = {
-      width: "100%",
-      height: "100%",
-      boxSizing: "border-box",
-      pointerEvents: isActive ? "auto" : "none",
-      ...(!isActive && {
-        position: "absolute",
-        top: 0,
-        left: 0,
-      }),
-      ...style,
-    };
-
-    const resolvedTransition = transition || getDefaultTransition(isActive, speed);
-
-    return (
-      <motion.div
-        ref={ref}
-        layout={layout}
-        animate={{ opacity: isActive ? 1 : 0 }}
-        transition={resolvedTransition}
-        style={baseStyle}
-        {...props}
-      >
-        {children}
-      </motion.div>
-    );
-  },
-);
-
-M3ContainerTransformStart.displayName = "M3ContainerTransformStart";
-
 export interface M3ContainerTransformEndProps extends HTMLMotionProps<"div"> {
   /**
    * Overrides the active state. By default, active when isExpanded is true.
@@ -144,45 +101,64 @@ export interface M3ContainerTransformEndProps extends HTMLMotionProps<"div"> {
 }
 
 /**
+ * One cross-fading layer of the container transform. `start` is shown while collapsed, `end` while
+ * expanded; the inactive layer is taken out of the flow and stops receiving pointer events, so the
+ * content never distorts during the morph.
+ */
+const ContainerTransformLayer = React.forwardRef<
+  HTMLDivElement,
+  M3ContainerTransformStartProps & { layer: "start" | "end" }
+>(({ layer, active, children, style, transition, layout = "position", ...props }, ref) => {
+  const context = React.useContext(M3ContainerTransformContext);
+  const isActive = active ?? (context ? context.isExpanded === (layer === "end") : true);
+  const speed = context?.speed ?? "default";
+
+  const baseStyle: MotionStyle = {
+    width: "100%",
+    height: "100%",
+    boxSizing: "border-box",
+    pointerEvents: isActive ? "auto" : "none",
+    ...(!isActive && {
+      position: "absolute",
+      top: 0,
+      left: 0,
+    }),
+    ...style,
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      layout={layout}
+      {...(layer === "end" ? { initial: { opacity: 0 } } : {})}
+      animate={{ opacity: isActive ? 1 : 0 }}
+      transition={transition || getDefaultTransition(isActive, speed)}
+      style={baseStyle}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+});
+
+/**
+ * M3ContainerTransformStart component.
+ * Represents the starting content (e.g., Card content) inside M3ContainerTransform.
+ * Prevents aspect ratio distortion and fades out during the container transform morph.
+ */
+export const M3ContainerTransformStart = React.forwardRef<HTMLDivElement, M3ContainerTransformStartProps>(
+  (props, ref) => <ContainerTransformLayer layer="start" ref={ref} {...props} />,
+);
+
+M3ContainerTransformStart.displayName = "M3ContainerTransformStart";
+
+/**
  * M3ContainerTransformEnd component.
  * Represents the target content (e.g., Detail page content) inside M3ContainerTransform.
  * Prevents aspect ratio distortion and fades in during the container transform morph.
  */
 export const M3ContainerTransformEnd = React.forwardRef<HTMLDivElement, M3ContainerTransformEndProps>(
-  ({ active, children, style, transition, layout = "position", ...props }, ref) => {
-    const context = React.useContext(M3ContainerTransformContext);
-    const isActive = active ?? (context ? context.isExpanded : true);
-    const speed = context?.speed ?? "default";
-
-    const baseStyle: MotionStyle = {
-      width: "100%",
-      height: "100%",
-      boxSizing: "border-box",
-      pointerEvents: isActive ? "auto" : "none",
-      ...(!isActive && {
-        position: "absolute",
-        top: 0,
-        left: 0,
-      }),
-      ...style,
-    };
-
-    const resolvedTransition = transition || getDefaultTransition(isActive, speed);
-
-    return (
-      <motion.div
-        ref={ref}
-        layout={layout}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isActive ? 1 : 0 }}
-        transition={resolvedTransition}
-        style={baseStyle}
-        {...props}
-      >
-        {children}
-      </motion.div>
-    );
-  },
+  (props, ref) => <ContainerTransformLayer layer="end" ref={ref} {...props} />,
 );
 
 M3ContainerTransformEnd.displayName = "M3ContainerTransformEnd";

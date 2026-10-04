@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 AND MIT
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/forms/src/SwitchField.tsx), MIT, rebuilt on Material Design 3.
 import { Switch } from "@aphrody/m3-primitives";
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./Form";
+import { FieldText, FormControl, FormField, FormItem } from "./Form";
 
 export interface SwitchFieldProps {
   name: string;
@@ -23,15 +23,7 @@ function SwitchField({ name, label, description, disabled, required }: SwitchFie
           data-testid={`field-${name}`}
         >
           <div className="flex min-h-14 flex-row items-center justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              {label && (
-                <FormLabel variant="inline" required={required}>
-                  {label}
-                </FormLabel>
-              )}
-              {description && <FormDescription>{description}</FormDescription>}
-              <FormMessage />
-            </div>
+            <FieldText label={label} description={description} required={required} />
             <FormControl>
               <Switch
                 name={field.name}

@@ -28,13 +28,21 @@ import {
 	X,
 	ZoomIn,
 } from "lucide-react";
-import { Swiper, SwiperSlide, type SwiperClass } from "swiper/react";
+import { Swiper, SwiperSlide } from "swiper/react";
 import { Mousewheel, Virtual, Zoom } from "swiper/modules";
 
 import "swiper/css";
 import "swiper/css/zoom";
 import "swiper/css/virtual";
 
+import {
+	SHOW_STRIP_MAX,
+	type ViewMode,
+	useFullscreen,
+	useSwiperSync,
+	useVerticalScrollSync,
+	virtualRowStyle,
+} from "./use-reader-core";
 
 export type DatabookReaderPage = {
 	/** Numéro affiché (auto 1…N, modifiable côté admin). */
@@ -67,8 +75,6 @@ export type DatabookReaderProps = {
     preloadCount?: number;
 };
 
-type ViewMode = "paged" | "vertical";
-
 type ResolvedPage = {
 	/** Numéro affiché (édition admin) — pas forcément = position dans le lecteur. */
 	number: number;
@@ -79,8 +85,6 @@ type ResolvedPage = {
 	/** Transcription acquittée à la main (drapeau porté par la fiche). */
 	verifiee: boolean;
 };
-
-const SHOW_STRIP_MAX = 40;
 
 function pageNumber(p: DatabookReaderPage, fallback: number): number {
 	const raw = p.number as unknown;
@@ -173,7 +177,6 @@ function useTextesPlanches(
 
 export function DatabookReader({ pages, title, resolveAssetUrl = (path) => path, imageSrc = (url) => url, imageSrcSet = () => null, loadTranscriptions, renderTranscription, preloadCount = 4 }: DatabookReaderProps): ReactElement {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const swiperRef = useRef<SwiperClass | null>(null);
 	const lightboxRef = useRef<HTMLDivElement>(null);
 	const baseId = useId();
 
@@ -181,8 +184,9 @@ export function DatabookReader({ pages, title, resolveAssetUrl = (path) => path,
 	const total = items.length;
 
 	const [mode, setMode] = useState<ViewMode>("vertical");
-	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [current, setCurrent] = useState(0);
+	const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef);
+	const { swiperRef, handleSwiper, handleSlideChange } = useSwiperSync(setCurrent);
 	/** Lightbox plein écran sur la planche courante (indépendant du mode). */
 	const [lightbox, setLightbox] = useState(false);
 
@@ -212,13 +216,6 @@ export function DatabookReader({ pages, title, resolveAssetUrl = (path) => path,
 		}
 	}, [current, items, total]);
 
-	const toggleFullscreen = useCallback(() => {
-		const el = containerRef.current;
-		if (!el) return;
-		if (document.fullscreenElement) void document.exitFullscreen();
-		else void el.requestFullscreen?.();
-	}, []);
-
 	// Détection côté client uniquement (`document` absent au rendu serveur).
 	const [fullscreenDispo, setFullscreenDispo] = useState(false);
 	useEffect(() => {
@@ -227,21 +224,6 @@ export function DatabookReader({ pages, title, resolveAssetUrl = (path) => path,
 				document.fullscreenEnabled &&
 				typeof containerRef.current?.requestFullscreen === "function"
 		);
-	}, []);
-
-	useEffect(() => {
-		const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
-		document.addEventListener("fullscreenchange", onChange);
-		return () => document.removeEventListener("fullscreenchange", onChange);
-	}, []);
-
-	const handleSwiper = useCallback((sw: SwiperClass) => {
-		swiperRef.current = sw;
-		setCurrent(sw.realIndex ?? sw.activeIndex ?? 0);
-	}, []);
-
-	const handleSlideChange = useCallback((sw: SwiperClass) => {
-		setCurrent(sw.realIndex ?? sw.activeIndex ?? 0);
 	}, []);
 
 	/* ------------------------------ Vertical ------------------------------ */
@@ -271,19 +253,7 @@ export function DatabookReader({ pages, title, resolveAssetUrl = (path) => path,
 		[mode, total, virtualizer]
 	);
 
-	useEffect(() => {
-		if (mode !== "vertical") return;
-		const el = scrollParentRef.current;
-		if (!el) return;
-		const onScroll = () => {
-			const mid = el.scrollTop + el.clientHeight / 2;
-			const item = virtualizer.getVirtualItems().find((vi) => vi.start <= mid && vi.end >= mid);
-			if (item) setCurrent(item.index);
-		};
-		el.addEventListener("scroll", onScroll, { passive: true });
-		onScroll();
-		return () => el.removeEventListener("scroll", onScroll);
-	}, [mode, virtualizer]);
+	useVerticalScrollSync(mode, scrollParentRef, virtualizer, setCurrent);
 
 	// Navigation clavier des planches.
 	//
@@ -604,13 +574,7 @@ export function DatabookReader({ pages, title, resolveAssetUrl = (path) => path,
 										key={`${baseId}-${vi.key}`}
 										data-index={vi.index}
 										ref={virtualizer.measureElement}
-										style={{
-											position: "absolute",
-											top: 0,
-											left: 0,
-											width: "100%",
-											transform: `translateY(${vi.start}px)`,
-										}}
+										style={virtualRowStyle(vi.start)}
 										className="snap-start snap-always border-b border-white/5 px-2 py-4 sm:px-4 sm:py-6"
 									>
 										<div className="group/planche mx-auto flex w-full max-w-3xl flex-col gap-3">
