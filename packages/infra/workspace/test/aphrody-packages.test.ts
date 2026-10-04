@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readTar } from "../src/canonical-tar.ts";
 import {
   aphrodyClosure,
   archiveName,
+  embedExternalImports,
   exportTargets,
   portableArchive,
   staleArchives,
@@ -83,4 +84,49 @@ test("portable archives replace producer-relative file: specs with the pinned ve
   expect(() => portableArchive(manifest({ other: "file:x.tgz" }), pinned, "@aphrody/a")).toThrow(
     "unpinned",
   );
+});
+
+const sourceEntry = (text: string) => {
+  const data = new TextEncoder().encode(text);
+  return {
+    name: "package/src/config/catalog.ts",
+    type: "file" as const,
+    mode: 0o644,
+    size: data.length,
+    data,
+  };
+};
+
+test("JSON imported from outside the package is embedded and its specifier rewritten", async () => {
+  const repository = await mkdtemp(join(tmpdir(), "aphrody-packages-external-"));
+  try {
+    const packageDirectory = join(repository, "packages/web/x");
+    await mkdir(join(repository, "crates/web/x/data"), { recursive: true });
+    await writeFile(join(repository, "crates/web/x/data/catalog.json"), '{"operations":{}}');
+    const entries = await embedExternalImports(
+      [
+        sourceEntry(
+          'import data from "../../../../../crates/web/x/data/catalog.json";\nimport x from "./x.ts";\n',
+        ),
+      ],
+      packageDirectory,
+      repository,
+    );
+    expect(entries.map((entry) => entry.name)).toEqual([
+      "package/src/config/catalog.ts",
+      "package/.aphrody-external/crates/web/x/data/catalog.json",
+    ]);
+    expect(new TextDecoder().decode(entries[0]!.data)).toBe(
+      'import data from "../../.aphrody-external/crates/web/x/data/catalog.json";\nimport x from "./x.ts";\n',
+    );
+    await expect(
+      embedExternalImports(
+        [sourceEntry('import y from "../../../other/src/y.ts";')],
+        packageDirectory,
+        repository,
+      ),
+    ).rejects.toThrow("outside its package");
+  } finally {
+    await rm(repository, { recursive: true, force: true });
+  }
 });

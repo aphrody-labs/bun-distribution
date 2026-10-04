@@ -14,7 +14,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { existsSync } from "node:fs";
 import { canonicalTar, gzipCanonical, readTar, type TarMember } from "./canonical-tar.ts";
 import { validateArchiveTypes } from "./iecode-packages.ts";
@@ -120,6 +120,52 @@ async function archiveVersion(path: string): Promise<string> {
   );
   if (!entry) throw new Error(`${path} has no package/package.json`);
   return (JSON.parse(new TextDecoder().decode(entry.data)) as { version: string }).version;
+}
+
+const IMPORT_SPECIFIER =
+  /(\bfrom\s+|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)(["'])(\.\.?\/[^"']+)\2/gm;
+const EXTERNAL_DIRECTORY = "package/.aphrody-external";
+
+/**
+ * Archive entries in which every relative import leaving the package directory is resolved: JSON
+ * data owned elsewhere in the producer repository is embedded under `.aphrody-external/` and the
+ * specifier rewritten to it; any other escaping import fails, since the archive could not satisfy it.
+ */
+export async function embedExternalImports(
+  entries: TarMember[],
+  packageDirectory: string,
+  root: string,
+): Promise<TarMember[]> {
+  const result = [...entries];
+  const embedded = new Set(entries.map((entry) => entry.name));
+  const encoder = new TextEncoder();
+  for (const [index, entry] of entries.entries()) {
+    if (entry.type !== "file" || !/\.(?:[cm]?[jt]sx?)$/.test(entry.name)) continue;
+    const source = new TextDecoder().decode(entry.data);
+    const local = entry.name.replace(/^package\//, "");
+    let rewritten = source;
+    for (const [match, prefix, quote, specifier] of source.matchAll(IMPORT_SPECIFIER)) {
+      const target = resolve(packageDirectory, dirname(local), specifier!);
+      if (target === packageDirectory || target.startsWith(packageDirectory + sep)) continue;
+      const repositoryPath = relative(root, target).replaceAll("\\", "/");
+      if (!target.endsWith(".json") || repositoryPath.startsWith(".."))
+        throw new Error(`${local} imports ${specifier} outside its package`);
+      const name = `${EXTERNAL_DIRECTORY}/${repositoryPath}`;
+      if (!embedded.has(name)) {
+        const data = new Uint8Array(await readFile(target));
+        result.push({ name, type: "file", mode: 0o644, size: data.length, data });
+        embedded.add(name);
+      }
+      let replacement = posix.relative(posix.dirname(entry.name), name);
+      if (!replacement.startsWith(".")) replacement = `./${replacement}`;
+      rewritten = rewritten.replace(match, `${prefix}${quote}${replacement}${quote}`);
+    }
+    if (rewritten !== source) {
+      const data = encoder.encode(rewritten);
+      result[index] = { ...entry, data, size: data.length };
+    }
+  }
+  return result;
 }
 
 /**
@@ -239,7 +285,11 @@ export async function prepareAphrodyPackages(options: {
       const [file] = await readdir(out);
       if (!file) throw new Error(`bun pm pack produced no archive for ${name}`);
       await validateArchiveTypes(file, out);
-      const contents = readTar(Bun.gunzipSync(await readFile(join(out, file))));
+      const contents = await embedExternalImports(
+        readTar(Bun.gunzipSync(await readFile(join(out, file)))),
+        directory,
+        root,
+      );
       await writeFile(join(out, file), portableArchive(contents, pinnedVersions, name));
       const entries = new Set(contents.map((entry) => entry.name.replace(/^package\//, "")));
       const missing = exportTargets(manifest).filter((target) => !entries.has(target));
