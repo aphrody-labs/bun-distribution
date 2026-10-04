@@ -191,6 +191,16 @@ export function targetStatus(pkg: Pkg, target: string): { ok: boolean; note?: st
   return { ok: false, note: "file missing" };
 }
 
+/** Test files the `test` script names explicitly (`bun --cwd=../.. test test/x.test.ts`), resolved like Bun does. */
+export function scriptTestFiles(pkg: Pkg): string[] {
+  const script: string = pkg.manifest.scripts?.test ?? "";
+  const cwd = /--cwd[= ](\S+)/.exec(script)?.[1];
+  const base = cwd ? resolve(pkg.dir, cwd) : pkg.dir;
+  return [...script.matchAll(/(\S+\.(?:test|spec)\.[cm]?[jt]sx?)\b/g)]
+    .map((m) => resolve(base, m[1]!))
+    .filter((f) => existsSync(f));
+}
+
 function manifestChecks(pkg: Pkg, findings: Finding[]) {
   const m = pkg.manifest;
   const add = (severity: Severity, message: string) => findings.push({ pkg: pkg.rel, check: "manifest", severity, message });
@@ -198,7 +208,8 @@ function manifestChecks(pkg: Pkg, findings: Finding[]) {
   if (!m.version) add("error", "package.json has no version");
   if (!existsSync(join(pkg.dir, "README.md"))) add("error", "README.md missing");
   if (!m.scripts?.test) add("error", "no test script");
-  else if (testFiles(pkg).length === 0 && !/run[-.]|fixtures|scripts\//.test(m.scripts.test)) add("error", "test script but no *.test.* file");
+  else if (testFiles(pkg).length === 0 && !/run[-.]|fixtures|scripts\//.test(m.scripts.test) && scriptTestFiles(pkg).length === 0)
+    add("error", "test script but no *.test.* file");
   if (!m.scripts?.typecheck && !m.scripts?.build) add("error", "no typecheck or build script");
 }
 
