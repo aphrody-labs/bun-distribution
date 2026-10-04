@@ -29,7 +29,33 @@ export const WINDOW_SIZE_CLASSES: readonly WindowSizeClass[] = [
 ];
 
 /** Recommended navigation affordance per M3 adaptive guidance. */
-export type NavigationKind = "bar" | "rail" | "rail-expanded";
+/** Same names as `Navigation` in crates/ui/m3-tokens/src/adaptive.rs (Bar, RailCollapsed, RailExpanded). */
+export type NavigationKind = "bar" | "rail-collapsed" | "rail-expanded";
+
+/** M3 window height class, classifying a viewport **height** in dp/px. */
+export type WindowHeightClass = "compact" | "medium" | "expanded";
+
+/** Lower-bound height (dp) of each window height class: compact < 480, medium 480-899, expanded >= 900. */
+export const HEIGHT_BREAKPOINTS = {
+  compact: 0,
+  medium: 480,
+  expanded: 900,
+} as const satisfies Record<WindowHeightClass, number>;
+
+/** Height classes ordered smallest to largest. */
+export const WINDOW_HEIGHT_CLASSES: readonly WindowHeightClass[] = ["compact", "medium", "expanded"];
+
+/** Classify a height (dp/px) into its M3 window height class. */
+export function classifyHeight(height: number): WindowHeightClass {
+  if (height < HEIGHT_BREAKPOINTS.medium) return "compact";
+  if (height < HEIGHT_BREAKPOINTS.expanded) return "medium";
+  return "expanded";
+}
+
+/** `(min-height: …px)` media query for a height class's lower bound. */
+export function heightMediaQuery(heightClass: WindowHeightClass): string {
+  return `(min-height: ${HEIGHT_BREAKPOINTS[heightClass]}px)`;
+}
 
 /** Classify a width (dp/px) into its M3 window size class. */
 export function classifyWidth(width: number): WindowSizeClass {
@@ -50,10 +76,10 @@ export function marginFor(sizeClass: WindowSizeClass): number {
   return sizeClass === "compact" ? 16 : 24;
 }
 
-/** Recommended navigation component: bottom bar (compact), rail (medium/expanded), expanded rail (large+). */
+/** Recommended navigation component: bottom bar (compact), collapsed rail (medium/expanded), expanded rail (large+). */
 export function navigationFor(sizeClass: WindowSizeClass): NavigationKind {
   if (sizeClass === "compact") return "bar";
-  if (sizeClass === "medium" || sizeClass === "expanded") return "rail";
+  if (sizeClass === "medium" || sizeClass === "expanded") return "rail-collapsed";
   return "rail-expanded";
 }
 
@@ -76,5 +102,11 @@ export function breakpointsCss(): string {
   const vars = WINDOW_SIZE_CLASSES.map((c) => `  --md-breakpoint-${c}: ${BREAKPOINTS[c]}px;`).join(
     "\n",
   );
-  return `${customMedia}\n\n:root {\n${vars}\n}\n`;
+  const heightMedia = WINDOW_HEIGHT_CLASSES.filter((c) => c !== "compact")
+    .map((c) => `@custom-media --md-height-${c} ${heightMediaQuery(c)};`)
+    .join("\n");
+  const heightVars = WINDOW_HEIGHT_CLASSES.map(
+    (c) => `  --md-breakpoint-height-${c}: ${HEIGHT_BREAKPOINTS[c]}px;`,
+  ).join("\n");
+  return `${customMedia}\n${heightMedia}\n\n:root {\n${vars}\n${heightVars}\n}\n`;
 }

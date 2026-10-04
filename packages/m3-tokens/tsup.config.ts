@@ -3,7 +3,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/theme-to-tokens.ts", "src/dynamic-color.ts", "src/breakpoints.ts", "src/platform-contract.ts"],
+  entry: ["src/theme-to-tokens.ts", "src/dynamic-color.ts", "src/breakpoints.ts", "src/platform-contract.ts", "src/expressive.ts"],
   format: ["esm"],
   target: "es2022",
   platform: "neutral",

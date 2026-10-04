@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import {
   BREAKPOINTS,
   classifyWidth,
@@ -6,6 +7,9 @@ import {
   mediaQuery,
   navigationFor,
   panesFor,
+  classifyHeight,
+  HEIGHT_BREAKPOINTS,
+  heightMediaQuery,
   breakpointsCss,
 } from "../src/breakpoints.js";
 
@@ -33,7 +37,7 @@ describe("M3 breakpoints", () => {
 
   test("adaptive navigation per class", () => {
     expect(navigationFor("compact")).toBe("bar");
-    expect(navigationFor("medium")).toBe("rail");
+    expect(navigationFor("medium")).toBe("rail-collapsed");
     expect(navigationFor("large")).toBe("rail-expanded");
   });
 
@@ -47,5 +51,33 @@ describe("M3 breakpoints", () => {
     const css = breakpointsCss();
     expect(css).toContain("@custom-media --md-expanded (min-width: 840px)");
     expect(css).toContain("--md-breakpoint-large: 1200px");
+  });
+});
+
+describe("M3 window height classes", () => {
+  test.each([
+    [479, "compact"],
+    [480, "medium"],
+    [899, "medium"],
+    [900, "expanded"],
+  ] as const)("classifyHeight(%i) === %s", (h, c) => expect(classifyHeight(h)).toBe(c));
+
+  test("css carries the height breakpoints", () => {
+    expect(HEIGHT_BREAKPOINTS).toEqual({ compact: 0, medium: 480, expanded: 900 });
+    expect(heightMediaQuery("medium")).toBe("(min-height: 480px)");
+    const css = breakpointsCss();
+    expect(css).toContain("@custom-media --md-height-expanded (min-height: 900px)");
+    expect(css).toContain("--md-breakpoint-height-medium: 480px");
+    const file = readFileSync(new URL("../src/breakpoints.css", import.meta.url), "utf8");
+    expect(file).toContain("@custom-media --md-height-medium (min-height: 480px)");
+    expect(file).toContain("--md-breakpoint-height-expanded: 900px");
+  });
+
+  test("navigation kinds match adaptive.rs", () => {
+    expect([navigationFor("compact"), navigationFor("expanded"), navigationFor("large")]).toEqual([
+      "bar",
+      "rail-collapsed",
+      "rail-expanded",
+    ]);
   });
 });

@@ -68,6 +68,6 @@ famille Google Sans, transparent screens) **incluant du contexte brand aphrody/G
 
 - **Couleur** : 47 rôles `--md-sys-color-*` (light+dark) dérivés runtime depuis un seed (`dynamic-color`). Conforme.
 - **Shape** : échelle 10 niveaux exposée en runtime (`m3-tokens.css`), incl. les 3 ajouts M3 Expressive.
-- **Layout** : breakpoints 600/840/1200/1600, marges 16/24, panes 1/1/2/2/3, nav bar→rail→rail-expanded. Conforme (`breakpoints.ts`).
+- **Layout** : breakpoints 600/840/1200/1600, marges 16/24, panes 1/1/2/2/3, nav bar→rail-collapsed→rail-expanded. Conforme (`breakpoints.ts`).
 - **Motion** : 7 courbes + 16 durées exactes (`m3-motion`). Conforme.
 - **Composants** : 35/35 catégories M3 couvertes et wrappées React. Variantes M3 Expressive (tailles boutons/FAB, slider vertical, progress wavy) en attente de stabilisation upstream Google.
