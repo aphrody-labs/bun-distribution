@@ -2,16 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 // forks.ts: the one tool for every submodule of this repository (`forks/*` and `packages/nie-ui`).
 // `.gitmodules` is the only registry. Beyond the git-native keys (`path`, `url`, `branch`, `shallow`)
-// it carries three keys this tool reads and git ignores:
+// it carries four keys this tool reads and git ignores:
 //   upstream         URL of the original project the fork tracks
 //   upstream-branch  branch of the original project (default: its HEAD)
 //   sparse           space-separated cone paths to check out (default: everything)
+//   sparse-script    a script (path relative to the repository) that owns the fork's sparse set; `sparse` and
+//                    `sync` delegate to `bun <script>` and never run `sparse-checkout` themselves for that fork
+//                    (a cone of a huge tree, like the 2.1M-file Material Symbols repository, hangs git)
 //
 //   bun scripts/forks.ts list   [--json]
 //   bun scripts/forks.ts status [name..] [--remote] [--json]
 //   bun scripts/forks.ts sync   <name..|all> [--strategy ff|merge|rebase] [--stage] [--push] [--apply]
 //   bun scripts/forks.ts pin    <name> <ref> [--apply]
-//   bun scripts/forks.ts sparse <name..|all> [path..] [--apply]
+//   bun scripts/forks.ts sparse <name..|all> [path..] [--apply] [--check]
 //
 // Every command that changes anything is a plan unless `--apply` is given. Nothing commits, nothing
 // force-pushes, nothing clones an upstream for research: `status --remote` and `pin` resolve refs with
@@ -30,6 +33,8 @@ export interface Fork {
   upstream?: string;
   upstreamBranch?: string;
   sparse: string[];
+  /** Script that owns the sparse set (repository-relative); `sparse` is then empty. */
+  sparseScript?: string;
   shallow: boolean;
 }
 
@@ -47,6 +52,7 @@ export function parseGitmodules(text: string): Fork[] {
       ...(current.branch ? { branch: current.branch } : {}),
       ...(current.upstream ? { upstream: current.upstream } : {}),
       ...(current.upstreamBranch ? { upstreamBranch: current.upstreamBranch } : {}),
+      ...(current.sparseScript ? { sparseScript: current.sparseScript } : {}),
       sparse: current.sparse ?? [],
       shallow: current.shallow ?? false,
     });
@@ -70,6 +76,7 @@ export function parseGitmodules(text: string): Fork[] {
     else if (key === "upstream") current.upstream = value;
     else if (key === "upstream-branch") current.upstreamBranch = value;
     else if (key === "sparse") current.sparse = value.split(/\s+/).filter(Boolean);
+    else if (key === "sparse-script") current.sparseScript = value;
     else if (key === "shallow") current.shallow = value === "true";
   }
   flush();
@@ -197,30 +204,55 @@ export interface Step {
   /** Working directory of the step, relative to the repository. */
   cwd: string;
   argv: string[];
+  /** Program (default `git`); `bun` runs the current Bun. */
+  bin?: string;
 }
 
 const short = (sha: string | undefined) => (sha ? sha.slice(0, 10) : "-");
 
 /** The git steps that bring `fork` to its upstream branch, in order. */
-export function planSync(fork: Fork, options: { strategy?: Strategy; stage?: boolean; push?: boolean; pushBranch?: string; hasUpstreamRemote?: boolean }): Step[] {
+export function planSync(
+  fork: Fork,
+  options: { strategy?: Strategy; stage?: boolean; push?: boolean; pushBranch?: string; hasUpstreamRemote?: boolean; blobless?: boolean },
+): Step[] {
   if (!fork.upstream) throw new Error(`${fork.name}: no \`upstream\` in .gitmodules`);
   const branch = fork.upstreamBranch ?? "HEAD";
   const strategy = options.strategy ?? "ff";
   const steps: Step[] = [];
   if (!options.hasUpstreamRemote) steps.push({ cwd: fork.path, argv: ["remote", "add", "upstream", fork.upstream] });
-  steps.push({ cwd: fork.path, argv: ["fetch", ...(fork.shallow ? ["--depth", "1"] : []), "upstream", branch] });
+  // A partial or sparse fork never downloads blobs it does not check out: a fetch from a new remote carries no
+  // filter of its own, and for the Material Symbols repository that would be every blob (~5 GB).
+  const blobless = options.blobless ?? (fork.sparse.length > 0 || fork.sparseScript !== undefined);
+  steps.push({ cwd: fork.path, argv: ["fetch", ...(fork.shallow ? ["--depth", "1"] : []), ...(blobless ? ["--filter=blob:none"] : []), "upstream", branch] });
   const target = "FETCH_HEAD";
   steps.push({
     cwd: fork.path,
     argv: strategy === "ff" ? ["merge", "--ff-only", target] : strategy === "merge" ? ["merge", "--no-edit", target] : ["rebase", target],
   });
+  // The delegate owns the sparse set: files the new commit adds are materialised by it, not by git here.
+  if (fork.sparseScript) steps.push({ cwd: ".", bin: "bun", argv: [fork.sparseScript] });
   if (options.push) steps.push({ cwd: fork.path, argv: ["push", "origin", `HEAD:${options.pushBranch ?? fork.branch ?? "main"}`] });
   if (options.stage) steps.push({ cwd: ".", argv: ["add", "--", fork.path] });
   return steps;
 }
 
-/** Steps to initialise `fork` (shallow, blobless) and restrict it to its sparse cone. */
-export function planSparse(fork: Fork, paths: string[], present: boolean): Step[] {
+/**
+ * Steps to initialise `fork` (shallow, blobless) and restrict it to its sparse cone. A fork with a
+ * `sparse-script` is delegated: the plan is that script and nothing else, never a cone and never
+ * `sparse-checkout disable`. Such a fork is not initialised here either: a plain submodule checkout of a
+ * multi-million-file tree downloads every blob.
+ */
+export function planSparse(fork: Fork, paths: string[], present: boolean, sparseNow = false): Step[] {
+  if (fork.sparseScript) {
+    if (paths.length > 0) throw new Error(`${fork.name}: its sparse set is owned by ${fork.sparseScript}; it takes no paths`);
+    if (!present) {
+      throw new Error(
+        `${fork.name}: not initialised, and a submodule checkout of it downloads every blob. Initialise it without checking files out ` +
+          `(git clone --no-checkout --depth 1 --filter=blob:none <url> ${fork.path} && git submodule absorbgitdirs -- ${fork.path}), then run ${fork.sparseScript}`,
+      );
+    }
+    return [{ cwd: ".", bin: "bun", argv: [fork.sparseScript] }];
+  }
   const cone = paths.length > 0 ? paths : fork.sparse;
   const steps: Step[] = [];
   if (!present) {
@@ -230,18 +262,38 @@ export function planSparse(fork: Fork, paths: string[], present: boolean): Step[
     });
   }
   if (cone.length > 0) steps.push({ cwd: fork.path, argv: ["sparse-checkout", "set", "--cone", ...cone] });
-  else if (present) steps.push({ cwd: fork.path, argv: ["sparse-checkout", "disable"] });
+  else if (present && sparseNow) steps.push({ cwd: fork.path, argv: ["sparse-checkout", "disable"] });
   return steps;
 }
 
-const render = (steps: Step[]) => steps.map((s) => `  (${s.cwd}) git ${s.argv.join(" ")}`).join("\n");
+const render = (steps: Step[]) => steps.map((s) => `  (${s.cwd}) ${s.bin ?? "git"} ${s.argv.join(" ")}`).join("\n");
+
+/** Run a program in `cwd`; `bun` is the running Bun. Never prompts, never throws. */
+function exec(cwd: string, bin: string, args: string[]): GitResult {
+  if (bin === "git") return git(cwd, ...args);
+  const proc = Bun.spawnSync([bin === "bun" ? process.execPath : bin, ...args], { cwd, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" }, stdout: "pipe", stderr: "pipe" });
+  return { code: proc.exitCode ?? 1, out: proc.stdout.toString().trim(), err: proc.stderr.toString().trim() };
+}
 
 function runSteps(repo: string, steps: Step[]): GitResult | undefined {
   for (const step of steps) {
-    const res = git(join(repo, step.cwd), ...step.argv);
-    if (res.code !== 0) return { ...res, err: `git ${step.argv.join(" ")}: ${res.err || res.out}` };
+    const res = exec(join(repo, step.cwd), step.bin ?? "git", step.argv);
+    if (res.code !== 0) return { ...res, err: `${step.bin ?? "git"} ${step.argv.join(" ")}: ${res.err || res.out}` };
   }
   return undefined;
+}
+
+/** `sparse --check`: a delegated fork is verified by its script (`--check`), a plain one by its cone. */
+function checkSparse(repo: string, fork: Fork): { ok: boolean; message: string } {
+  if (fork.sparseScript) {
+    const res = exec(repo, "bun", [fork.sparseScript, "--check"]);
+    return { ok: res.code === 0, message: `${fork.sparseScript} --check failed${res.err ? `: ${res.err}` : res.out ? `: ${res.out}` : ""}` };
+  }
+  if (fork.sparse.length === 0) return { ok: true, message: "" };
+  const dir = join(repo, fork.path);
+  const listed = new Set(git(dir, "sparse-checkout", "list").out.split("\n").filter(Boolean));
+  const missing = fork.sparse.filter((p) => !listed.has(p));
+  return { ok: missing.length === 0, message: `sparse set lacks ${missing.join(", ")}` };
 }
 
 const USAGE = `forks.ts: submodule and fork management driven by .gitmodules
@@ -251,7 +303,8 @@ const USAGE = `forks.ts: submodule and fork management driven by .gitmodules
   sync   <name..|all> [--strategy ff|merge|rebase] [--stage] [--push] [--apply]
                                                           fetch upstream into the fork and move the mirror branch
   pin    <name> <ref> [--apply]                           record <ref> (sha, tag or branch of the fork) as the superproject pin
-  sparse <name..|all> [path..] [--apply]                  shallow-init a fork and check out only its cone (.gitmodules \`sparse\`)
+  sparse <name..|all> [path..] [--apply] [--check]        shallow-init a fork and check out only its cone (.gitmodules \`sparse\`);
+                                                          a fork with \`sparse-script\` runs that script instead; --check only verifies
 
 Every change is a plan unless --apply is given. Nothing commits or force-pushes.`;
 
@@ -358,6 +411,11 @@ export async function main(argv: string[], repo: string = REPO, out: (line: stri
           push: flags.has("push"),
           ...(pushBranch ? { pushBranch } : {}),
           hasUpstreamRemote: git(dir, "remote").out.split("\n").includes("upstream"),
+          blobless:
+            fork.sparse.length > 0 ||
+            fork.sparseScript !== undefined ||
+            git(dir, "config", "--get", "remote.origin.promisor").out === "true" ||
+            git(dir, "config", "--get", "core.sparseCheckout").out === "true",
         });
         out(`${fork.name}: ${apply ? "sync" : "plan"} to ${fork.upstream} (${strategy})\n${render(steps)}`);
         if (!apply) continue;
@@ -425,7 +483,21 @@ export async function main(argv: string[], repo: string = REPO, out: (line: stri
       let code = 0;
       for (const fork of select(forks, names)) {
         const present = existsSync(join(repo, fork.path, ".git"));
-        const steps = planSparse(fork, paths, present);
+        if (flags.has("check")) {
+          // Read-only: runs at once. A delegated fork asks its script; a plain one compares the cone.
+          const verdict = present ? checkSparse(repo, fork) : { ok: false, message: "absent" };
+          out(`${fork.name}: ${verdict.ok ? "ok" : verdict.message}`);
+          if (!verdict.ok) code = 1;
+          continue;
+        }
+        let steps: Step[];
+        try {
+          steps = planSparse(fork, paths, present, present && git(join(repo, fork.path), "config", "--get", "core.sparseCheckout").out === "true");
+        } catch (error) {
+          out(`${fork.name}: ${(error as Error).message}`);
+          code = 1;
+          continue;
+        }
         out(`${fork.name}: ${apply ? "init" : "plan"}${steps.length === 0 ? " (nothing to do)" : `\n${render(steps)}`}`);
         if (!apply) continue;
         const failure = runSteps(repo, steps);

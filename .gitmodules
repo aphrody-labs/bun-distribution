@@ -22,8 +22,8 @@
 	path = forks/material-design-icons
 	url = git@github-dev:aphrody-labs/material-design-icons.git
 	upstream = https://github.com/google/material-design-icons.git
-	sparse = symbols/web
 	shallow = true
+	sparse-script = packages/material-design-icons/scripts/sync-catalogue.ts
 [submodule "packages/nie-ui"]
 	path = packages/nie-ui
 	url = git@github-dev:aphrody-labs/nie-ui.git
