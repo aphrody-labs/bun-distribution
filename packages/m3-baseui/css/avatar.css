@@ -1,0 +1,31 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Avatar: 40dp circle, initials on primary-container. */
+@layer components {
+  .m3-bui-avatar {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 40px;
+    block-size: 40px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+    font: var(--m3-bui-font-title-medium);
+    letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+    vertical-align: middle;
+    user-select: none;
+  }
+  .m3-bui-avatar__image {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+  .m3-bui-avatar__fallback {
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+}

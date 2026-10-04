@@ -1,0 +1,39 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Scroll area: slim scrollbars that appear on hover or scroll. */
+@layer components {
+  .m3-bui-scroll {
+    position: relative;
+    overflow: hidden;
+  }
+  .m3-bui-scroll__viewport {
+    inline-size: 100%;
+    block-size: 100%;
+    overscroll-behavior: contain;
+  }
+  .m3-bui-scroll__viewport:focus-visible {
+    outline: 3px solid var(--md-sys-color-secondary);
+    outline-offset: -3px;
+  }
+  .m3-bui-scroll__bar {
+    display: flex;
+    box-sizing: border-box;
+    padding: 2px;
+    opacity: 0;
+    transition: opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-scroll__bar[data-orientation="vertical"] {
+    inline-size: 10px;
+  }
+  .m3-bui-scroll__bar[data-orientation="horizontal"] {
+    block-size: 10px;
+    flex-direction: column;
+  }
+  .m3-bui-scroll__bar:is([data-hovering], [data-scrolling]) {
+    opacity: 1;
+  }
+  .m3-bui-scroll__thumb {
+    flex: 1;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 40%, transparent);
+  }
+}

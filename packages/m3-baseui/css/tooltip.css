@@ -1,0 +1,21 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Plain tooltip: inverse surface, 4dp corners, body-small. */
+@layer components {
+  .m3-bui-tooltip__popup {
+    box-sizing: border-box;
+    min-block-size: 24px;
+    max-inline-size: 300px;
+    padding: 4px 8px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    background: var(--md-sys-color-inverse-surface);
+    color: var(--md-sys-color-inverse-on-surface);
+    font: var(--m3-bui-font-body-small);
+    letter-spacing: var(--md-sys-typescale-body-small-tracking);
+    transform-origin: var(--transform-origin);
+    transition: opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-tooltip__popup[data-starting-style],
+  .m3-bui-tooltip__popup[data-ending-style] {
+    opacity: 0;
+  }
+}

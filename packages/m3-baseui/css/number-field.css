@@ -1,0 +1,66 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Number field: an outlined group of decrement, input and increment. */
+@layer components {
+  .m3-bui-number-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .m3-bui-number-field__group {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 56px;
+    padding: 0 8px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    color: var(--md-sys-color-on-surface);
+    transition: border-color var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-number-field__group:hover {
+    border-color: var(--md-sys-color-on-surface);
+  }
+  .m3-bui-number-field__group:focus-within {
+    border-color: var(--md-sys-color-primary);
+    box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+  }
+  .m3-bui-number-field__input {
+    box-sizing: border-box;
+    flex: 1;
+    min-inline-size: 0;
+    inline-size: 6ch;
+    padding: 0 8px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    caret-color: var(--md-sys-color-primary);
+    font: var(--m3-bui-font-body-large);
+    letter-spacing: var(--md-sys-typescale-body-large-tracking);
+    text-align: center;
+    outline: none;
+  }
+  .m3-bui-number-field__step {
+    --m3-state: var(--md-sys-color-on-surface-variant);
+    box-sizing: border-box;
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    inline-size: 40px;
+    block-size: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--md-sys-color-on-surface-variant);
+    cursor: pointer;
+  }
+  .m3-bui-number-field__step:is(:disabled, [data-disabled]) {
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    cursor: default;
+  }
+  .m3-bui-number-field__scrub {
+    cursor: ew-resize;
+    user-select: none;
+  }
+}
