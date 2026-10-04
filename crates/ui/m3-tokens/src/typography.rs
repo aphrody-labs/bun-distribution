@@ -224,8 +224,9 @@ const fn emphasized(base: TypeStyle, weight: u16) -> TypeStyle {
     TypeStyle { weight, ..base }
 }
 
-/// display-large emphasized (weight 500).
-pub const DISPLAY_LARGE_EMPHASIZED: TypeStyle = emphasized(DISPLAY_LARGE, 500);
+/// display-large emphasized (weight 500); tracking resets to 0 instead of inheriting -0.25.
+pub const DISPLAY_LARGE_EMPHASIZED: TypeStyle =
+    TypeStyle { letter_spacing_dp: 0.0, ..emphasized(DISPLAY_LARGE, 500) };
 
 /// display-medium emphasized (weight 500).
 pub const DISPLAY_MEDIUM_EMPHASIZED: TypeStyle = emphasized(DISPLAY_MEDIUM, 500);
@@ -384,6 +385,7 @@ mod tests {
         assert_eq!(TITLE_MEDIUM_EMPHASIZED.weight, 700);
         assert_eq!(LABEL_SMALL_EMPHASIZED.weight, 700);
         assert_eq!(BODY_SMALL_EMPHASIZED.weight, 500);
+        assert_eq!(DISPLAY_LARGE_EMPHASIZED.letter_spacing_dp, 0.0);
         assert_eq!(BODY_LARGE_EMPHASIZED.letter_spacing_dp, 0.15);
         assert_eq!(BODY_MEDIUM_EMPHASIZED.letter_spacing_dp, 0.25);
     }
