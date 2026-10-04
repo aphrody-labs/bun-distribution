@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { generate, nearestGnomeAccent, registryValues, themeManifest } from "../src/index.ts";
-import { run } from "../src/cli.ts";
+import { installCommand, run } from "../src/cli.ts";
 
 const input = { name: "Test", seed: "#6750a4", mode: "auto" as const };
 const text = (path: string): string => {
@@ -135,4 +143,58 @@ describe("cli", () => {
     expect(run(["generate", "--target", "mac"]).code).toBe(2);
     expect(run(["generate", "--seed", "zz"]).code).toBe(2);
   });
+});
+
+describe("icon theme", () => {
+  it("passes --icons to the GNOME and COSMIC installers on install only", () => {
+    for (const t of ["gnome", "cosmic"] as const) {
+      const on = installCommand(t, "/o", "dark", false, "linux", "/i/Aphrody-M3").cmd;
+      expect(on.slice(-2)).toEqual(["--icons", "/i/Aphrody-M3"]);
+      expect(installCommand(t, "/o", "dark", true, "linux", "/i/Aphrody-M3").cmd).not.toContain(
+        "--icons",
+      );
+    }
+  });
+  it.skipIf(process.platform === "win32")(
+    "installs and restores the icon theme in a sandbox home (GNOME and COSMIC)",
+    () => {
+      const root = mkdtempSync(join(tmpdir(), "m3os-icons-"));
+      try {
+        const out = join(root, "out");
+        expect(run(["generate", "--target", "gnome", "--out", out]).code).toBe(0);
+        expect(run(["generate", "--target", "cosmic", "--out", out]).code).toBe(0);
+        const icons = join(root, "Fixture-Icons");
+        mkdirSync(join(icons, "scalable/material"), { recursive: true });
+        writeFileSync(join(icons, "index.theme"), "[Icon Theme]\nName=Fixture-Icons\n");
+        writeFileSync(join(icons, "scalable/material/home.svg"), "<svg/>");
+        const data = join(root, "data");
+        const conf = join(root, "conf");
+        const key = join(conf, "cosmic/com.system76.CosmicTk/v1/icon_theme");
+        mkdirSync(join(conf, "cosmic/com.system76.CosmicTk/v1"), { recursive: true });
+        writeFileSync(key, '"Cosmic"');
+        const sh = (script: string, ...a: string[]) =>
+          Bun.spawnSync(["bash", join(out, script), ...a], {
+            env: { ...process.env, XDG_DATA_HOME: data, XDG_CONFIG_HOME: conf },
+            stdout: "pipe",
+            stderr: "pipe",
+          });
+
+        expect(sh("gnome/install-gnome.sh", "--mode", "dark", "--icons", icons).exitCode).toBe(0);
+        expect(existsSync(join(data, "icons/Fixture-Icons/scalable/material/home.svg"))).toBe(true);
+        expect(sh("cosmic/install-cosmic.sh", "--mode", "dark", "--icons", icons).exitCode).toBe(0);
+        expect(readFileSync(key, "utf8")).toBe('"Fixture-Icons"');
+
+        expect(sh("cosmic/install-cosmic.sh", "--uninstall").exitCode).toBe(0);
+        expect(readFileSync(key, "utf8")).toBe('"Cosmic"');
+        expect(sh("gnome/install-gnome.sh", "--uninstall").exitCode).toBe(0);
+        expect(existsSync(join(data, "icons/Fixture-Icons"))).toBe(false);
+
+        const bad = sh("gnome/install-gnome.sh", "--icons", join(root, "missing"));
+        expect(bad.exitCode).toBe(2);
+        expect(bad.stderr.toString()).toContain("has no index.theme");
+      } finally {
+        rmSync(root, { recursive: true });
+      }
+    },
+  );
 });

@@ -8,10 +8,15 @@ Generates and installs Material 3 OS themes from a seed colour. Colour roles com
 ```sh
 bun packages/m3-os-themes/src/cli.ts <install|generate|uninstall> \
   --target windows|gnome|cosmic|chromium|all --seed '#6750a4' --mode light|dark|auto \
-  [--name Aphrody] [--variant tonalSpot] [--out dir] [--dry-run] [--apply]
+  [--name Aphrody] [--variant tonalSpot] [--out dir] [--icons dir] [--dry-run] [--apply]
 ```
 
 - `generate` writes only into `--out` (default `./m3-os-themes-out`).
+- `--icons <dir>` (GNOME and COSMIC) also installs a freedesktop icon theme into `~/.local/share/icons` and
+  selects it (gsettings `icon-theme`; COSMIC `com.system76.CosmicTk/v1/icon_theme`); `--uninstall` restores the
+  previous icon theme. Build the full Material Symbols theme with
+  `bun packages/material-design-icons/scripts/export-theme.ts --out dist/icons`, then pass
+  `--icons dist/icons/freedesktop/Aphrody-M3`.
 - `install` and `uninstall` print the plan and change nothing unless `--apply` is given.
   `--apply` generates the files, then runs the target script for the host OS.
 

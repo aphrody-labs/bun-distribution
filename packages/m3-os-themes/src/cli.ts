@@ -17,7 +17,7 @@ export interface CliResult {
 
 const USAGE = `m3-os-themes <install|generate|uninstall> --target windows|gnome|cosmic|chromium|all --seed <hex> --mode light|dark|auto
   [--name <name>] [--variant tonalSpot|content|fidelity|expressive|vibrant|neutral|monochrome] [--out <dir>]
-  [--dry-run] [--apply]
+  [--icons <freedesktop theme dir>] [--dry-run] [--apply]
 install/uninstall only print the plan unless --apply is given. generate writes into --out (default ./m3-os-themes-out).`;
 
 const defaultExec: Exec = (cmd) =>
@@ -47,6 +47,7 @@ export function installCommand(
   mode: ActiveMode,
   uninstall: boolean,
   platform = process.platform,
+  icons?: string,
 ): { cmd: string[]; reason?: string } {
   const dir = join(outDir, target);
   switch (target) {
@@ -75,6 +76,7 @@ export function installCommand(
           join(dir, `install-${target}.sh`),
           "--mode",
           mode,
+          ...(icons && !uninstall ? ["--icons", icons] : []),
           ...(uninstall ? ["--uninstall"] : []),
         ],
       };
@@ -125,6 +127,7 @@ export function run(argv: string[], exec: Exec = defaultExec): CliResult {
     return { code: 2, out: [`unknown mode ${mode}`, USAGE] };
   const outDir = resolve(String(flags["out"] ?? "m3-os-themes-out"));
   const apply = flags["apply"] === true && flags["dry-run"] !== true;
+  const icons = typeof flags["icons"] === "string" ? resolve(flags["icons"]) : undefined;
   let files: GeneratedFile[];
   try {
     files = generate(
@@ -156,7 +159,7 @@ export function run(argv: string[], exec: Exec = defaultExec): CliResult {
   else if (!uninstall) log(`[dry-run] would generate ${files.length} files into ${outDir}`);
   else if (apply) writeFiles(files, outDir);
   for (const t of targets) {
-    const { cmd: c, reason } = installCommand(t, outDir, mode, uninstall);
+    const { cmd: c, reason } = installCommand(t, outDir, mode, uninstall, process.platform, icons);
     if (c.length === 0) {
       log(`${t}: skipped, ${reason}`);
       continue;
