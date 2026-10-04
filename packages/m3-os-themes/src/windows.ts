@@ -197,13 +197,13 @@ if ($Uninstall) {
 New-Item -ItemType Directory -Force -Path $Home3 | Out-Null
 if (-not (Test-Path $Backup)) {
     $all = @($Light) + @($Dark) | Sort-Object { $_.Path + $_.Name } -Unique
-    $values = foreach ($v in $all) {
+    $snapValues = foreach ($v in $all) {
         $cur = Get-Current $v
         [pscustomobject]@{ Path = $v.Path; Name = $v.Name; Type = $v.Type; Value = $cur }
     }
     $wp = (Get-ItemProperty 'HKCU:\\Control Panel\\Desktop').WallPaper
     if ($PSCmdlet.ShouldProcess($Backup, 'write snapshot')) {
-        [pscustomobject]@{ values = @($values); wallpaper = $wp } | ConvertTo-Json -Depth 5 | Set-Content $Backup -Encoding UTF8
+        [pscustomobject]@{ values = @($snapValues); wallpaper = $wp } | ConvertTo-Json -Depth 5 | Set-Content $Backup -Encoding UTF8
     }
 }
 foreach ($v in $Values) {

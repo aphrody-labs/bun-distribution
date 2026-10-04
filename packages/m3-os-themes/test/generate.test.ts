@@ -80,6 +80,15 @@ describe("gnome", () => {
   });
 });
 
+describe("windows installer script", () => {
+  it("never reuses $Values for the snapshot (PowerShell variable names are case-insensitive)", () => {
+    const ps = text("windows/install-windows.ps1");
+    expect(ps.match(/^\s*\$values\s*=/gim)).toHaveLength(1);
+    expect(ps).toContain("$snapValues = foreach");
+    expect(ps).toContain("@($snapValues)");
+  });
+});
+
 describe("cosmic", () => {
   it("writes RON builder keys for both modes", () => {
     expect(text("cosmic/config/com.system76.CosmicTheme.Dark.Builder/v1/accent")).toMatch(
