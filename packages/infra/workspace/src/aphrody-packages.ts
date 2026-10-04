@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 // Packing stays sequential so the archive order and revision provenance are deterministic.
 /* eslint-disable no-await-in-loop */
-/** Revision-pinned archives of @aphrody/* packages for consumers outside this workspace (IECODE). */
+/** Content-addressed archives of @aphrody/* packages for consumers outside this workspace (IECODE). */
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { readTar } from "./canonical-tar.ts";
 import { canonicalizePackageArchive, validateArchiveTypes } from "./iecode-packages.ts";
@@ -23,7 +32,7 @@ export interface AphrodyPackagesManifest {
   revision: string;
   dirty: boolean;
   packages: AphrodyArchive[];
-  /** Workspace dependencies the consumer must supply itself (for example the Yolo runtime SDK). */
+  /** Dependencies the consumer must supply itself (neither a member nor a pinned archive here). */
   external: string[];
 }
 
@@ -48,6 +57,13 @@ export function exportTargets(manifest: PackageJson): string[] {
     if (field) targets.add(field.replace(/^\.\//, ""));
   return [...targets].filter((target) => !target.includes("*"));
 }
+
+/** Archive names carry the content hash, so a pin stays valid across unrelated producer commits. */
+export function archiveName(name: string, sha256: string): string {
+  return `aphrody-${name.replace(/^@aphrody\//, "")}-${sha256.slice(0, 16)}.tgz`;
+}
+
+const sha256Of = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
 function git(root: string, args: string[]): string {
   const result = Bun.spawnSync(["git", "-C", root, ...args], { stdout: "pipe", stderr: "pipe" });
@@ -98,6 +114,24 @@ export async function aphrodyClosure(root: string, names: string[]) {
   };
 }
 
+async function archiveVersion(path: string): Promise<string> {
+  const entry = readTar(Bun.gunzipSync(await readFile(path))).find(
+    (item) => item.name === "package/package.json",
+  );
+  if (!entry) throw new Error(`${path} has no package/package.json`);
+  return (JSON.parse(new TextDecoder().decode(entry.data)) as { version: string }).version;
+}
+
+/** Pinned archives in `destination` that are missing or differ from the pin. */
+export async function staleArchives(pin: AphrodyPackagesManifest, destination: string) {
+  const stale: string[] = [];
+  for (const item of pin.packages) {
+    const path = join(destination, item.archive);
+    if (!existsSync(path) || sha256Of(await readFile(path)) !== item.sha256) stale.push(item.name);
+  }
+  return stale;
+}
+
 export async function prepareAphrodyPackages(options: {
   root?: string;
   names: string[];
@@ -113,9 +147,21 @@ export async function prepareAphrodyPackages(options: {
   );
   if (dirty && !options.allowDirty)
     throw new Error("Packed @aphrody/* sources are dirty; commit them or pass --allow-dirty.");
+  const overrides =
+    (
+      JSON.parse(await readFile(join(root, "package.json"), "utf8")) as {
+        overrides?: Record<string, string>;
+      }
+    ).overrides ?? {};
   const stage = await mkdtemp(join(tmpdir(), "aphrody-packages-"));
   try {
     const packages: AphrodyArchive[] = [];
+    const add = async (name: string, version: string, file: string) => {
+      const sha256 = sha256Of(await readFile(file));
+      const archive = archiveName(name, sha256);
+      await rename(file, join(stage, archive));
+      packages.push({ name, version, archive, sha256 });
+    };
     for (const { name, directory } of members) {
       const manifest = JSON.parse(
         await readFile(join(directory, "package.json"), "utf8"),
@@ -156,25 +202,28 @@ export async function prepareAphrodyPackages(options: {
       const missing = exportTargets(manifest).filter((target) => !entries.has(target));
       if (missing.length)
         throw new Error(`${name} archive lacks exported files: ${missing.join(", ")}`);
-      const { version } = manifest;
-      const archive = `aphrody-${name.slice("@aphrody/".length)}-${revision}.tgz`;
-      await rename(join(out, file), join(stage, archive));
-      packages.push({
-        name,
-        version,
-        archive,
-        sha256: createHash("sha256")
-          .update(await readFile(join(stage, archive)))
-          .digest("hex"),
-      });
+      await add(name, manifest.version, join(out, file));
+    }
+    // External packages this workspace itself consumes as pinned archives (the Yolo runtime SDK) pass through.
+    const unresolved: string[] = [];
+    for (const name of external) {
+      const spec = overrides[name];
+      if (!spec?.startsWith("file:")) {
+        unresolved.push(name);
+        continue;
+      }
+      const source = join(root, spec.slice("file:".length));
+      const copy = join(stage, `external-${basename(source)}`);
+      await copyFile(source, copy);
+      await add(name, await archiveVersion(copy), copy);
     }
     const manifest: AphrodyPackagesManifest = {
       schemaVersion: 1,
       producer: "aphrody",
       revision,
       dirty,
-      packages,
-      external,
+      packages: packages.toSorted((left, right) => left.name.localeCompare(right.name)),
+      external: unresolved,
     };
     if (options.apply) {
       const destination = resolve(options.destination);
@@ -189,37 +238,64 @@ export async function prepareAphrodyPackages(options: {
   }
 }
 
+const usage =
+  "Usage: aphrody-ops aphrody-packages prepare (--package <@aphrody/name>... | --pin <file> [--write-pin]) --destination <dir> [--apply] [--allow-dirty]";
+
 export async function runAphrodyPackages(args: string[]): Promise<number> {
   const [action, ...rest] = args;
   if (action !== "prepare") {
-    console.log(
-      "Usage: aphrody-ops aphrody-packages prepare --package <@aphrody/name>... --destination <dir> [--apply] [--allow-dirty]",
-    );
+    console.log(usage);
     return action === "--help" || action === "-h" ? 0 : 64;
   }
   const names: string[] = [];
   let destination = "";
+  let pinPath = "";
   let apply = false;
   let allowDirty = false;
+  let writePin = false;
   for (let i = 0; i < rest.length; i++) {
     const flag = rest[i];
-    if (flag === "--package" || flag === "--destination") {
+    if (flag === "--package" || flag === "--destination" || flag === "--pin") {
       const value = rest[++i];
       if (!value || value.startsWith("--")) throw new Error(`${flag} requires a value`);
       if (flag === "--package") names.push(value);
+      else if (flag === "--pin") pinPath = value;
       else destination = value;
     } else if (flag === "--apply") apply = true;
     else if (flag === "--allow-dirty") allowDirty = true;
+    else if (flag === "--write-pin") writePin = true;
     else throw new Error(`Unknown argument: ${flag}`);
   }
-  if (!names.length || !destination) throw new Error("--package and --destination are required");
-  console.log(
-    JSON.stringify(
-      await prepareAphrodyPackages({ names, destination, apply, allowDirty }),
-      null,
-      2,
-    ),
-  );
+  if (!destination || (!names.length && !pinPath))
+    throw new Error("--destination and --package or --pin are required");
+  if (writePin && !pinPath) throw new Error("--write-pin requires --pin");
+  const pin =
+    pinPath && existsSync(pinPath)
+      ? (JSON.parse(await readFile(pinPath, "utf8")) as AphrodyPackagesManifest)
+      : undefined;
+  if (pin && !writePin) {
+    // Archives already matching the pin need no producer work at all.
+    if (!(await staleArchives(pin, destination)).length) {
+      console.log(JSON.stringify({ status: "current", pin: pinPath, revision: pin.revision }));
+      return 0;
+    }
+  }
+  if (!names.length)
+    names.push(
+      ...(pin?.packages ?? []).map((item) => item.name).filter((n) => n.startsWith("@aphrody/")),
+    );
+  if (!names.length) throw new Error(`${pinPath} lists no packages; pass --package`);
+  const manifest = await prepareAphrodyPackages({ names, destination, apply, allowDirty });
+  if (pin && !writePin) {
+    const produced = new Map(manifest.packages.map((item) => [item.name, item.sha256]));
+    const drift = pin.packages.filter((item) => produced.get(item.name) !== item.sha256);
+    if (drift.length)
+      throw new Error(
+        `Pin ${pinPath} is stale for ${drift.map((item) => item.name).join(", ")}; rerun with --write-pin and reinstall.`,
+      );
+  }
+  if (writePin) await writeFile(pinPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  console.log(JSON.stringify(manifest, null, 2));
   return 0;
 }
 
