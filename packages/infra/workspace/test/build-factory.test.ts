@@ -36,27 +36,30 @@ test("execution-only hosts reject plans and never implicitly enable local builds
   expect(heavyBuildStatus(runtimeOnly, {}).reason).toContain("new factory host");
 });
 
-test.skipIf(process.platform === "win32")("Infra propagates the factory command timeout per invocation without mutating global environment", async () => {
-  const root = await mkdtemp(join(tmpdir(), "aphrody-infra-env-"));
-  const original = process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS;
-  try {
-    const binary = join(root, "infra-fixture");
-    await writeFile(
-      binary,
-      `#!${process.execPath}\nconsole.log(process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS);\n`,
-    );
-    await chmod(binary, 0o755);
-    const result = await runInfra({
-      args: ["ssh", "exec", "--host", "vps", "--cmd", "fixture"],
-      env: { APHRODY_INFRA_BIN: binary, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "21600" },
-    });
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout.trim()).toBe("21600");
-    expect(process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS).toBe(original);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
+test.skipIf(process.platform === "win32")(
+  "Infra propagates the factory command timeout per invocation without mutating global environment",
+  async () => {
+    const root = await mkdtemp(join(tmpdir(), "aphrody-infra-env-"));
+    const original = process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS;
+    try {
+      const binary = join(root, "infra-fixture");
+      await writeFile(
+        binary,
+        `#!${process.execPath}\nconsole.log(process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS);\n`,
+      );
+      await chmod(binary, 0o755);
+      const result = await runInfra({
+        args: ["ssh", "exec", "--host", "vps", "--cmd", "fixture"],
+        env: { APHRODY_INFRA_BIN: binary, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "21600" },
+      });
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe("21600");
+      expect(process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS).toBe(original);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);
 
 test("factory plans use the existing Infra owner and shared serial lock", () => {
   const plan = buildFactoryPlan(config, "aphrody", revision, ["bun", "run", "build"]);
@@ -93,65 +96,68 @@ test("factory quotes owner arguments without expanding shell expressions", () =>
   expect(() => buildFactoryPlan(config, "aphrody", revision, ["bun", "\0"])).toThrow("NUL");
 });
 
-test.skipIf(process.platform === "win32")("factory preserves literal shell-sensitive arguments and refuses changed source", async () => {
-  const root = await mkdtemp(join(tmpdir(), "aphrody-factory-"));
-  try {
-    const git = async (...args: string[]) => {
-      const child = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "pipe" });
-      const output = await new Response(child.stdout).text();
-      expect(await child.exited).toBe(0);
-      return output.trim();
-    };
-    await git("init", "--quiet");
-    await writeFile(join(root, "source.txt"), "pinned source");
-    await git("add", "source.txt");
-    await git(
-      "-c",
-      "user.name=fixture",
-      "-c",
-      "user.email=fixture@localhost",
-      "commit",
-      "--quiet",
-      "-m",
-      "fixture",
-    );
-    await mkdir(join(root, "locks"));
-    await writeFile(join(root, ".git/info/exclude"), "locks/\n");
-    const fixtureConfig = {
-      ...config,
-      repositories: { aphrody: root },
-      lockPath: join(root, "locks/heavy.lock"),
-    };
-    const literal = "name'$(echo should-not-expand)`echo literal`";
-    const plan = buildFactoryPlan(fixtureConfig, "aphrody", await git("rev-parse", "HEAD"), [
-      "bash",
-      "-c",
-      'printf "%s" "$1"',
-      "--",
-      literal,
-    ]);
-    const run = async () => {
-      const child = Bun.spawn(["bash", "-c", plan.transport[5]!], {
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      const [output, error, exitCode] = await Promise.all([
-        new Response(child.stdout).text(),
-        new Response(child.stderr).text(),
-        child.exited,
+test.skipIf(process.platform === "win32")(
+  "factory preserves literal shell-sensitive arguments and refuses changed source",
+  async () => {
+    const root = await mkdtemp(join(tmpdir(), "aphrody-factory-"));
+    try {
+      const git = async (...args: string[]) => {
+        const child = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "pipe" });
+        const output = await new Response(child.stdout).text();
+        expect(await child.exited).toBe(0);
+        return output.trim();
+      };
+      await git("init", "--quiet");
+      await writeFile(join(root, "source.txt"), "pinned source");
+      await git("add", "source.txt");
+      await git(
+        "-c",
+        "user.name=fixture",
+        "-c",
+        "user.email=fixture@localhost",
+        "commit",
+        "--quiet",
+        "-m",
+        "fixture",
+      );
+      await mkdir(join(root, "locks"));
+      await writeFile(join(root, ".git/info/exclude"), "locks/\n");
+      const fixtureConfig = {
+        ...config,
+        repositories: { aphrody: root },
+        lockPath: join(root, "locks/heavy.lock"),
+      };
+      const literal = "name'$(echo should-not-expand)`echo literal`";
+      const plan = buildFactoryPlan(fixtureConfig, "aphrody", await git("rev-parse", "HEAD"), [
+        "bash",
+        "-c",
+        'printf "%s" "$1"',
+        "--",
+        literal,
       ]);
-      return { output, error, exitCode };
-    };
-    expect(await run()).toEqual({ output: literal, error: "", exitCode: 0 });
-    await writeFile(join(root, "source.txt"), "changed source");
-    const refused = await run();
-    expect(refused.exitCode).toBe(2);
-    expect(refused.error).toContain("source checkout is dirty");
-    expect(refused.output).toBe("");
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
+      const run = async () => {
+        const child = Bun.spawn(["bash", "-c", plan.transport[5]!], {
+          stdout: "pipe",
+          stderr: "pipe",
+        });
+        const [output, error, exitCode] = await Promise.all([
+          new Response(child.stdout).text(),
+          new Response(child.stderr).text(),
+          child.exited,
+        ]);
+        return { output, error, exitCode };
+      };
+      expect(await run()).toEqual({ output: literal, error: "", exitCode: 0 });
+      await writeFile(join(root, "source.txt"), "changed source");
+      const refused = await run();
+      expect(refused.exitCode).toBe(2);
+      expect(refused.error).toContain("source checkout is dirty");
+      expect(refused.output).toBe("");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);
 
 test("heavy build status owns the cargo-serial route decision", () => {
   const route = (
@@ -176,16 +182,20 @@ test("heavy build status owns the cargo-serial route decision", () => {
   });
 });
 
-test("cargo-serial asks the build-factory owner for the route", async () => {
-  const script = await Bun.file(
-    join(import.meta.dir, "../../../../scripts/build/rust/cargo-serial.sh"),
-  ).text();
-  expect(script).toContain('build-factory.ts" status --route');
-  const child = Bun.spawn(
-    [process.execPath, join(import.meta.dir, "../src/build-factory.ts"), "status", "--route"],
-    { env: { ...process.env, APHRODY_BUILD_HOST: "vps" }, stdout: "pipe" },
-  );
-  // The repository currently reserves VPS for execution, including inside the host.
-  expect((await new Response(child.stdout).text()).trim()).toBe("factory");
-  expect(await child.exited).toBe(0);
-});
+// cargo-serial.sh is a POSIX wrapper, and its child bun process needs the workspace links of a Linux install.
+test.skipIf(process.platform === "win32")(
+  "cargo-serial asks the build-factory owner for the route",
+  async () => {
+    const script = await Bun.file(
+      join(import.meta.dir, "../../../../scripts/build/rust/cargo-serial.sh"),
+    ).text();
+    expect(script).toContain('build-factory.ts" status --route');
+    const child = Bun.spawn(
+      [process.execPath, join(import.meta.dir, "../src/build-factory.ts"), "status", "--route"],
+      { env: { ...process.env, APHRODY_BUILD_HOST: "vps" }, stdout: "pipe" },
+    );
+    // The repository currently reserves VPS for execution, including inside the host.
+    expect((await new Response(child.stdout).text()).trim()).toBe("factory");
+    expect(await child.exited).toBe(0);
+  },
+);
