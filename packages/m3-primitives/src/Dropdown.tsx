@@ -76,6 +76,7 @@ export const Item = ({ to, className, icon, children, ...props }: DropdownItemPr
       {content}
     </Menu.LinkItem>
   ) : (
+    // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- name comes from the consumer (aria-label, aria-labelledby or associated label)
     <Menu.Item {...rest} nativeButton render={<button type="button" />} className={classes}>
       {content}
     </Menu.Item>

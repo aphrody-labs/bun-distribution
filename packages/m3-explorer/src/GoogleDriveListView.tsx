@@ -89,8 +89,7 @@ export function GoogleDriveListView({
   className,
 }: GoogleDriveListViewProps) {
   return (
-    <div
-      role="region"
+    <section
       aria-label="Google Drive File List"
       className={clsx("google-drive-explorer flex flex-col w-full text-on-surface", className)}
     >
@@ -159,7 +158,14 @@ export function GoogleDriveListView({
                 key={item.id}
                 onClick={() => onSelect?.(item)}
                 onDoubleClick={() => onOpen?.(item)}
+                role="button"
                 tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSelect?.(item);
+                  }
+                }}
                 className={clsx(
                   "group relative flex flex-col justify-between rounded-medium border border-outline-variant/25 p-3 transition-colors cursor-pointer select-none",
                   isSelected
@@ -299,7 +305,7 @@ export function GoogleDriveListView({
           </table>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

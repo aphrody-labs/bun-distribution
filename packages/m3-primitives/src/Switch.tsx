@@ -91,6 +91,7 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(
   ({ size, className, thumbClassName, icons, ...props }, ref) => (
     <SwitchPrimitive.Root
       nativeButton
+      // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- name comes from the consumer (aria-label, aria-labelledby or associated label)
       render={<button type="button" />}
       data-m3-component="Switch"
       {...props}

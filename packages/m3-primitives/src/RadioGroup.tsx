@@ -57,6 +57,7 @@ export const Item = ({ children, className, ...props }: ItemProps) => {
       <Radio.Root
         id={id}
         nativeButton
+        // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- name comes from the consumer (aria-label, aria-labelledby or associated label)
         render={<button type="button" />}
         className={clsx(
           "peer relative flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-on-surface-variant bg-transparent",

@@ -127,6 +127,7 @@ export const CheckboxRoot = forwardRef<HTMLButtonElement, CheckboxRootProps>(
     <CheckboxPrimitive.Root
       ref={ref}
       nativeButton
+      // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- name comes from the consumer (aria-label, aria-labelledby or associated label)
       render={<button type="button" />}
       aria-invalid={error ? true : undefined}
       data-m3-component="CheckboxRoot"

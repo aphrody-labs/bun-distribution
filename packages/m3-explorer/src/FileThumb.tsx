@@ -2,7 +2,7 @@
 // Derived from SpaceUI (packages/aphrody-spaceui/packages/explorer/src/FileThumb.tsx), MIT, rebuilt on Material Design 3.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { clsx } from "clsx";
 
 /**
@@ -64,10 +64,13 @@ export function FileThumb({
   const resolvedIcon = resolveIconSrc(iconSrc);
   const resolvedThumb = thumbnailSrc ? resolveIconSrc(thumbnailSrc) : null;
 
-  useEffect(() => {
+  // Reset the internal load state when the thumbnail source changes (adjust state during render).
+  const [seenThumb, setSeenThumb] = useState(resolvedThumb);
+  if (seenThumb !== resolvedThumb) {
+    setSeenThumb(resolvedThumb);
     setInternalLoaded(false);
     setInternalError(false);
-  }, [resolvedThumb]);
+  }
 
   const iconSize = size * iconScale;
 

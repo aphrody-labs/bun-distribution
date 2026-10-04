@@ -10,7 +10,7 @@ import type { TableColumn, TableSortCriterion } from '@aphrody/material-web/tabl
 /**
  * Minimal interface representing a TanStack Column Definition.
  */
-export interface TanStackColumnLike<TData = unknown> {
+export interface TanStackColumnLike<_TData = unknown> {
   id?: string;
   accessorKey?: string;
   header?: string | ((...args: unknown[]) => unknown);
