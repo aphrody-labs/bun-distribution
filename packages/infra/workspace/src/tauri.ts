@@ -6,15 +6,11 @@
  * Usage:
  *   bun scripts/tauri.ts [check|build|run|dev|bundle] [--bundles <bundles>]
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { copyFile, mkdir, stat } from "node:fs/promises";
 import { resolve, join } from "node:path";
 
 const VALID_ACTIONS = ["check", "build", "run", "dev", "bundle"] as const;
-// The CLI version is centralized in config/tauri-upstream.json (kept current by `bun run tauri:sync`).
-const TAURI_CLI_VERSION: string = JSON.parse(
-  readFileSync(new URL("../../../../config/tauri-upstream.json", import.meta.url), "utf8"),
-).js.cli.version;
 type Action = (typeof VALID_ACTIONS)[number];
 
 function parseArgs(args: string[]): { action: Action; bundles: string; repo: string } {
@@ -284,9 +280,7 @@ export async function runTauri(args: string[]): Promise<number> {
         console.log(`[tauri] Packaging bundles: ${selectedBundles}...`);
         runSync(
           [
-            "bunx",
-            "--bun",
-            `@tauri-apps/cli@${TAURI_CLI_VERSION}`,
+            "tauri",
             "build",
             "--config",
             "tauri.drive.conf.json",

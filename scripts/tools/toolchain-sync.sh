@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Idempotent per-user toolchain sync for a Linux host, driven by config/infra/toolchain.json.
 # Runs ON the host: ssh <host> 'bash -s' < scripts/tools/toolchain-sync.sh  (needs jq; stdin: manifest path in $MANIFEST_JSON)
-# No Cargo build, no profile edits, no service/nginx/systemd/database access.
+# No Cargo build, only the marked PATH block in ~/.bashrc (above the interactive guard) and ~/.profile, no service/nginx/systemd/database access.
 set -uo pipefail
 M="${MANIFEST_JSON:-$HOME/.cache/aphrody-toolchain.json}"
 export PATH="$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.local/bin:$PATH"
@@ -61,4 +61,12 @@ fi
 GH=$(j .versions.gh)
 gh --version 2>/dev/null | grep -q "$GH" || { curl -fsSL "https://github.com/cli/cli/releases/download/v$GH/gh_${GH}_linux_amd64.tar.gz" | tar -xz -C "$tmp" && install -m 755 "$tmp"/gh_*/bin/gh "$HOME/.local/bin/gh"; }
 if [ "${WITH_JQ_RELEASE:-0}" = 1 ]; then JQ=$(j .versions.jq); jq --version 2>/dev/null | grep -q "$JQ" || { curl -fsSL "https://github.com/jqlang/jq/releases/download/jq-$JQ/jq-linux-amd64" -o "$tmp/jq" && install -m 755 "$tmp/jq" "$HOME/.local/bin/jq"; }; fi
+log path-block
+for f in "$HOME/.bashrc" "$HOME/.profile"; do
+  [ -f "$f" ] || touch "$f"
+  grep -q '# >>> aphrody-infra toolchain >>>' "$f" && continue
+  { printf '%s\n' '# >>> aphrody-infra toolchain >>>' 'export BUN_INSTALL="$HOME/.bun"' \
+      'case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.local/bin:$PATH" ;; esac' \
+      '# <<< aphrody-infra toolchain <<<'; cat "$f"; } > "$f.new" && mv "$f.new" "$f"
+done
 log done

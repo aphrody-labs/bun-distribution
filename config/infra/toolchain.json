@@ -35,7 +35,11 @@
     "wasmPack": "0.15.0",
     "gh": "2.102.0",
     "jq": "1.8.2",
-    "tauriCli": "3.0.0-alpha.4"
+    "tauriCli": "3.0.0-alpha.4",
+    "rsync": "3.5.1",
+    "pigz": "2.8",
+    "zellij": "0.45.1",
+    "opensshPreview": "10.0.0.0p2-Preview"
   },
   "rustToolchain": {
     "components": [
@@ -132,11 +136,15 @@
       "aphrody-kernel"
     ],
     "note": "aphrody-ovh is a library compiled into aphrody-infra; aphrody-ops and aphrody-workspace are Bun scripts under packages/infra/workspace and need a source checkout",
-    "windowsBuild": "scripts/build/rust/cargo-serial.sh build --release --target x86_64-pc-windows-msvc -p aphrody-infra -p aphrody-kernel (integrator only, on the factory)"
+    "windowsBuild": "APHRODY_LOCAL_CARGO=1 scripts/build/rust/cargo-serial.sh xwin build --release --target x86_64-pc-windows-msvc -p aphrody-infra -p aphrody-kernel (integrator; factory route otherwise), installed to %USERPROFILE%\\.local\\bin",
+    "windowsPrebuilt": [
+      "aphrody-infra.exe",
+      "aphrody-kernel.exe"
+    ]
   },
   "perHostExceptions": {
     "wsl": "Ubuntu 24.04 apt is stale: ripgrep and eza via cargo-binstall, apt copies removed; jq/gh release binaries, apt jq removed",
-    "windows": "winget user scope for jq, yq, carapace, zstd, wezterm nightly, gh, uv; binstall for the Rust set plus eza and ripgrep; no native rsync/pigz/zellij/sftp",
+    "windows": "winget user scope for jq, yq, carapace, zstd, wezterm nightly, gh, uv, zellij (Zellij.Zellij); binstall for the Rust set plus eza and ripgrep; rsync from MSYS2 (C:\\msys64\\usr\\bin, shim ~/.local/bin/rsync.cmd puts msys usr/bin first so rsync uses msys ssh; C:\\msys64\\home\\<user>\\.ssh is a junction to the Windows ~/.ssh); pigz 2.8 compiled statically with MSYS2 ucrt64 gcc to ~/.local/bin/pigz.exe; OpenSSH Preview via elevated winget plus sftp.exe and ssh-keyscan.exe from the Win32-OpenSSH release zip into C:\\Program Files\\OpenSSH; ssh-agent service Automatic and running (elevated); claude via native installer (~/.local/bin/claude.exe); ovhcloud release binary plus ~/.ovh.conf copied from WSL; rclone via winget with remotes vps and dbfr (sftp over `ssh <host>`) in %APPDATA%\\rclone\\rclone.conf; user PATH gets ~/.local/bin, ~/.cargo/bin, ~/.bun/bin",
     "vps": "jq stays apt (system scripts, minimal PATH)",
     "dbfr": "jq stays apt; no extra rust targets (12G free on /)"
   },
@@ -165,6 +173,33 @@
       "bun pm -g untrusted",
       "cache report, prune entries unused 30 days above 5 GB",
       "frozen-lockfile dry-run in a temp copy (checkout hosts only)"
+    ]
+  },
+  "windowsTools": {
+    "winget": [
+      "Rclone.Rclone",
+      "Zellij.Zellij",
+      "MSYS2.MSYS2",
+      "gerardog.gsudo"
+    ],
+    "elevated": [
+      "Microsoft.OpenSSH.Preview"
+    ],
+    "msys2Packages": [
+      "rsync"
+    ],
+    "sourceBuilds": {
+      "pigz": "https://github.com/madler/pigz (tag v2.8) with MSYS2 ucrt64 gcc -static"
+    },
+    "knownGap": "ssh key github_aphrody_code is not registered on GitHub account aphrody-code (Permission denied); needs `gh auth refresh -h github.com -s admin:public_key` as aphrody-code then `gh ssh-key add`"
+  },
+  "sourceCheckoutHosts": {
+    "vps": "~/aphrody",
+    "dbfr": "~/aphrody",
+    "remote": "workspace (git@github.com:aphrody-labs/aphrody.git, blobless clone via forwarded agent)",
+    "links": [
+      "~/.local/bin/aphrody-ops -> packages/infra/workspace/src/ops.ts",
+      "~/.local/bin/aphrody-workspace -> packages/infra/workspace/src/cli.ts"
     ]
   }
 }

@@ -32,6 +32,40 @@ foreach ($id in $ids) {
 winget upgrade --id astral-sh.uv --exact --silent --accept-package-agreements --accept-source-agreements 2>&1 | Select-Object -Last 1
 winget upgrade --id Oven-sh.Bun --exact --silent 2>&1 | Select-Object -Last 1
 
+Log windows-extras
+winget install --id Rclone.Rclone --exact --source winget --scope user --silent --accept-package-agreements --accept-source-agreements 2>&1 | Select-Object -Last 1
+winget install --id Zellij.Zellij --exact --source winget --scope user --silent --accept-package-agreements --accept-source-agreements 2>&1 | Select-Object -Last 1
+winget install --id MSYS2.MSYS2 --exact --source winget --silent --accept-package-agreements --accept-source-agreements 2>&1 | Select-Object -Last 1
+$sudo = Get-Command gsudo -ErrorAction SilentlyContinue
+if ($sudo) {
+  gsudo winget install --id Microsoft.OpenSSH.Preview --exact --source winget --silent --accept-package-agreements --accept-source-agreements 2>&1 | Select-Object -Last 1
+  if (-not (Test-Path 'C:\Program Files\OpenSSH\sftp.exe')) {
+    $r = Invoke-RestMethod https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases/latest
+    $zip = Join-Path $env:TEMP 'ossh.zip'
+    Invoke-WebRequest (($r.assets | Where-Object name -eq 'OpenSSH-Win64.zip').browser_download_url) -OutFile $zip
+    Expand-Archive $zip "$env:TEMP\ossh" -Force
+    gsudo { Copy-Item "$env:TEMP\ossh\OpenSSH-Win64\sftp.exe", "$env:TEMP\ossh\OpenSSH-Win64\ssh-keyscan.exe" 'C:\Program Files\OpenSSH\' -Force }
+    Remove-Item $zip, "$env:TEMP\ossh" -Recurse -Force
+  }
+  gsudo { Set-Service ssh-agent -StartupType Automatic; Start-Service ssh-agent }
+}
+$msys = 'C:\msys64\usr\bin\bash.exe'
+if (Test-Path $msys) {
+  & $msys -lc 'pacman -Sy --noconfirm --needed rsync mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-zlib git' 2>&1 | Select-Object -Last 1
+  # msys rsync runs with msys ssh; its home (/home/<user>/.ssh) is a junction to the Windows ~/.ssh.
+  $msysSsh = "C:\msys64\home\$($env:USERNAME)\.ssh"
+  if (-not (Test-Path $msysSsh)) { New-Item -ItemType Junction -Path $msysSsh -Target "$home_\.ssh" | Out-Null }
+  Set-Content "$home_\.local\bin\rsync.cmd" "@echo off`r`nsetlocal`r`nset `"PATH=C:\msys64\usr\bin;%PATH%`"`r`nC:\msys64\usr\bin\rsync.exe %*"
+  if (-not (Test-Path "$home_\.local\bin\pigz.exe")) {
+    & $msys -lc 'export PATH=/ucrt64/bin:/usr/bin; rm -rf /tmp/pigz && git clone -q --depth 1 https://github.com/madler/pigz /tmp/pigz && cd /tmp/pigz && gcc -O3 -static -o pigz.exe pigz.c yarn.c try.c zopfli/src/zopfli/*.c -Izopfli/src/zopfli -lz -lm -lpthread' 2>&1 | Select-Object -Last 2
+    Copy-Item C:\msys64\tmp\pigz\pigz.exe "$home_\.local\bin\pigz.exe" -Force
+  }
+}
+if (-not (Get-Command claude -ErrorAction SilentlyContinue)) { Invoke-RestMethod https://claude.ai/install.ps1 | Invoke-Expression }
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+foreach ($d in @("$home_\.local\bin", "$home_\.cargo\bin", "$home_\.bun\bin")) { if (($userPath -split ';') -notcontains $d) { $userPath = "$d;$userPath" } }
+[Environment]::SetEnvironmentVariable('Path', $userPath, 'User')
+
 Log bun
 bun add -g @($m.bunGlobal) 2>&1 | Select-Object -Last 2
 
@@ -48,4 +82,15 @@ if ($have -notmatch "v$ov") {
   Copy-Item "$env:TEMP\ovh\ovhcloud.exe" "$home_\.local\bin\ovhcloud.exe" -Force
   Remove-Item $zip, "$env:TEMP\ovh" -Recurse -Force
 }
+Log ovh-rclone-config
+# ~/.ovh.conf and the rclone remotes are copied from the WSL home (secrets stay out of the repository).
+$wslHome = "\\wsl.localhost\Ubuntu-24.04\home\$($env:USERNAME)"
+if ((-not (Test-Path "$home_\.ovh.conf")) -and (Test-Path "$wslHome\.ovh.conf")) { Copy-Item "$wslHome\.ovh.conf" "$home_\.ovh.conf" }
+$rc = "$env:APPDATA\rclone\rclone.conf"
+if (-not (Select-String -Path $rc -Pattern '^\[vps\]' -Quiet -ErrorAction SilentlyContinue)) {
+  New-Item -ItemType Directory -Force (Split-Path $rc) | Out-Null
+  Add-Content $rc "[vps]`ntype = sftp`nssh = ssh vps`nshell_type = unix`n`n[dbfr]`ntype = sftp`nssh = ssh dbfr`nshell_type = unix`n"
+}
+rclone lsd vps: 2>&1 | Select-Object -First 1
+rclone lsd dbfr: 2>&1 | Select-Object -First 1
 Log done

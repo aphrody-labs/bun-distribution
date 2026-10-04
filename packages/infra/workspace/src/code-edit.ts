@@ -150,8 +150,6 @@ export function editCommand(options: EditOptions, paths: string[]): string[] {
     ];
   if (options.engine === "codemod")
     return [
-      "bunx",
-      "--bun",
       "jscodeshift",
       "--fail-on-error",
       "-t",
@@ -162,9 +160,6 @@ export function editCommand(options: EditOptions, paths: string[]): string[] {
     ];
   if (options.engine === "ast")
     return [
-      "bunx",
-      "-p",
-      "@ast-grep/cli",
       "ast-grep",
       "run",
       "-p",

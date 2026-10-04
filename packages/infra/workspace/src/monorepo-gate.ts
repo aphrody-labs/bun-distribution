@@ -232,8 +232,8 @@ export function restrictToNoBuild(plan: MonorepoGatePlan): MonorepoGatePlan {
       if (/\b(?:tsc|tsgo)\b/.test(check.script) && !check.command.includes("--noEmit"))
         check.command.push("--noEmit");
       if (check.command[0] === "bunx") {
-        check.command = check.command.filter((arg) => arg !== "--bun");
-        check.command.splice(1, 0, "--no-install", "--bun");
+        // Global tools (oxlint, oxfmt, tsc, tsgo) run directly, never through bunx.
+        check.command = check.command.slice(1).filter((arg) => arg !== "--bun");
       }
     }
   return { ...plan, checks, deferred, noBuild: true };
