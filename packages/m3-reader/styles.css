@@ -1,4 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
+/* Scan the canonical reader utilities in every host, including isolated installs. */
+@source "./src";
+
 /* Readers inherit the host Material 3 scheme; dark fallback keeps scanned pages legible. */
 .m3-reader {
   --reader-surface: var(--md-sys-color-surface, #111318);

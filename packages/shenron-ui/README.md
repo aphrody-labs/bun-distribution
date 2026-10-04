@@ -80,23 +80,28 @@ entry renders React views; it does not provide an HTTP server or Shenron APIs.
 
 ## Checks
 
-From the Shenron workspace root:
+From the Aphrody workspace root:
 
 ```sh
 bun --filter @shenron/ui type-check
 bun --filter @shenron/ui test
 bun --filter @shenron/ui portability:check
-bun packages/shenron-ui/scripts/sync-assets.ts --to apps/shenron/site/public --check
-bun packages/shenron-ui/scripts/check-css-equivalence.ts
-bun run check:packages --strict
+bun m3/packages/shenron-ui/scripts/sync-assets.ts --to apps/shenron/site/public --check
+bun m3/packages/shenron-ui/scripts/check-css-equivalence.ts
+bun run --cwd m3 check
 ```
 
 The tarball has also been installed in a separate Bun project and checked with
 server rendering, client imports, asset reads, and Tailwind compilation. This is
 a source package for Bun and Tailwind v4 consumers. No registry release
-or deployment is implied by the repository checks. The host supplies fonts,
-The reader source was moved from the Apache-2.0 licensed `@aphrody/m3-reader`
-package directly into the unified monorepo.
+or deployment is implied by the repository checks. The host supplies fonts and content media.
+
+Readers and their styles have one owner: `@aphrody/m3-reader`. The existing
+`@shenron/ui/reader`, `reader-styles.css` and `reader-dragon-ball.css` exports
+delegate to that package. The Dragon Ball skin retains the live `--dbz-*`
+variables; route adapters, transcription fetching and editorial rules stay
+in the site. `@shenron/ui/use-focus-trap` shares the M3 modal lifecycle.
+The reader stylesheet registers its own Tailwind sources, including isolated installs.
 
 ## Production build check
 
@@ -104,10 +109,10 @@ package directly into the unified monorepo.
 bun --filter @shenron/ui build:check
 ```
 
-This builds the four public TypeScript entry points in memory with Bun's browser
+This builds the five public TypeScript entry points in memory with Bun's browser
 target, ESM output, dependency externals, tree-shaking, full minification, a
 closed dynamic-import policy, and environment injection disabled. It also
-compiles all six stylesheets through the Tailwind v4 PostCSS plugin with
+compiles all nine stylesheets through the Tailwind v4 PostCSS plugin with
 minification, then reports byte counts. No `dist` is written: this package ships
 source so each host can tree-shake exactly the entry points it consumes. Bun's
 bundler options are documented at [bun.com/docs/bundler](https://bun.com/docs/bundler).

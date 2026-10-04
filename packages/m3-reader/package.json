@@ -26,7 +26,11 @@
       "default": "./src/index.ts"
     },
     "./styles.css": "./styles.css",
-    "./dragon-ball.css": "./dragon-ball.css"
+    "./dragon-ball.css": "./dragon-ball.css",
+    "./use-focus-trap": {
+      "types": "./src/use-focus-trap.ts",
+      "default": "./src/use-focus-trap.ts"
+    }
   },
   "publishConfig": {
     "access": "public"

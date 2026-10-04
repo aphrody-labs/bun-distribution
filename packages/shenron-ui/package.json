@@ -38,7 +38,8 @@
     "./layout/*": "./src/layout/*.tsx",
     "./navigation/*": "./src/navigation/*.tsx",
     "./admin/*": "./src/admin/*.tsx",
-    "./*": "./src/components/*.tsx"
+    "./*": "./src/components/*.tsx",
+    "./use-focus-trap": "./src/reader/use-focus-trap.ts"
   },
   "shenron": {
     "runtime": {
@@ -73,7 +74,8 @@
       "./layout/*": "react",
       "./navigation/*": "react",
       "./admin/*": "react",
-      "./*": "react"
+      "./*": "react",
+      "./use-focus-trap": "react"
     }
   },
   "scripts": {
@@ -92,14 +94,13 @@
   "dependencies": {
     "@base-ui/react": "catalog:",
     "@tanstack/react-query": "catalog:",
-    "@tanstack/react-virtual": "^3.14.13",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "lucide-react": "catalog:",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "catalog:",
-    "swiper": "^14.3.0"
+    "@aphrody/m3-reader": "workspace:*"
   },
   "peerDependencies": {
     "react": "catalog:",
