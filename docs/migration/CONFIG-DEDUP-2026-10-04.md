@@ -16,3 +16,27 @@ Removed:
 - iecode: 7 inactive upstream CI recipes under `.github/upstream` (gecko, lua-src).
 
 Remaining candidates (phase 2, need a generator): systemd service/timer pairs from one catalog, RG/NIE nginx confs from `config/rg/host/nginx-routes.json`, a shared `.github` for issue/PR templates, per-crate rustfmt variants in yolo (59 + 32 files), per-package tsconfig/oxlint pairs (UI packages are owned by another agent and untouched).
+
+## Phase 2 (2026-10-04)
+
+Before -> after, tracked files per repo.
+
+| Item | Before -> after | Mechanism |
+| --- | --- | --- |
+| aphrody `config/systemd/user` units | 28 files (27 user units + drop-in) -> 0 | one catalog, `yolo/packages/core/src/units/catalog.json` (430 lines incl. drop-in), rendered on demand |
+| yolo unit catalog | 0 -> 3 source files (catalog, renderer, CLI) + test | 5 timer units derived from their service entry, `Type=`/`[Install]` implied |
+| iecode RG/NIE nginx | 24 -> 5 tracked nginx-named files (`rg-production.conf` 235 lines -> `scripts/rg/nginx-gen.ts`; 2,949 lines removed net of generator) | `rg.conf` rendered from `config/rg/host/nginx-routes.json`, byte-identical to the previous file |
+| aphrody shared `.github` forms | 6 hand-written yolo/aphrody-py templates -> 1 source (`config/github/templates.json`) + renderer, output byte-identical | `scripts/tools/infra/github-templates.ts [--check]` |
+| yolo rustfmt.toml | 96 -> 93 | 3 files differing from the root only by an `edition` key cargo overrides |
+| yolo Bun FFI | none -> `@aphrody/runtime-sdk/ffi` (`nativeLibrary`, owned-buffer readers, `toCString`) | extracted from iecode `packages/inagle/src/ffi/nie.ts` |
+
+Consumers rewired: `aphrody-update systemd check|install` (renders from yolo, `APHRODY_YOLO_ROOT` or `~/yolo`, writes copies instead of symlinks, keeps differing files as `*.pre-update-<ts>`), `scripts/dev/ui/install-local-app.ts`, `scripts/release/install-linux-host-bridge.sh`, `config/web.json`, `config/infra/toolchain.json`, `scripts/audit/web-verify.ts`; the `unit` area of `host-paths.ts` is gone with the files it classified. iecode: `scripts/rg/assemble-vps-release.sh` builds `nginx/rg.conf` with the generator.
+
+Removed as superseded by `rg-production.conf` (per their own headers, 2026-09-26): the legacy per-host RG vhosts (`rosegriffon`, `api`, `cdn`, `achillea`, `ranked`, `azalee`), `supabase-compat.inc`, `supabase-internal.conf`, the includes only they used, `00-rg-stats.conf`, the blue/green `generated/` fragments (no producer or consumer in the tree) and two orphaned templates (`stack-ip.conf`, `staging-nds.conf`). Git history keeps them; a live host that still has them installed will show them as live-only in `scripts/rg/infra.ts`.
+
+Not done in this phase:
+
+- 59 turbo/next and 32 vendored Tauri `rustfmt.toml` files are real upstream style variants (4-space/import grouping, or default style); they have no shared parent directory, so one hoisted file would change the root-formatted yolo crates. They stay.
+- iecode `packages/inagle/src/ffi/nie.ts` still carries its copy of the library discovery and owned-buffer helpers. Rewiring it needs a new `@aphrody/runtime-sdk` archive: yolo revision, producer pack, then the pin in aphrody `config/sibling-checkouts.json` and the iecode catalog and lockfile.
+- iecode `aphrody-softraster` is byte-identical to `aphrody/crates/ui/softraster` apart from a description; `aphrody-render` has diverged. Replacing the copy needs a Cargo dependency change and a Cargo gate, which workers do not run.
+- aphrody `systemd/` (system units: shenron backups, bot, site, tunnels) and `config/systemd/aphrody-privileged-kernel.service` stay hand-written system-scope units.

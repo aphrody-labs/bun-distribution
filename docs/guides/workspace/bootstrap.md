@@ -71,7 +71,7 @@ les scripts installent aussi des outils via le wrapper Cargo. Le script peut
 paquets évitent les installations redondantes.
 
 Sous Linux avec systemd utilisateur, `bun run update:systemd` vérifie les unités et
-`aphrody-update systemd install --apply` les relie depuis `config/systemd/user`
+`aphrody-update systemd install --apply` les génère depuis le catalogue d’unités yolo (`packages/core/src/units/catalog.json`)
 (dont `aphrody-update.timer`, rapport hebdomadaire sans écriture, et
 `aphrody-rust-update.timer`, rafraîchissement des toolchains `stable`/`nightly` et des
 sous-commandes Cargo). Le bootstrap installe les versions épinglées; les montées de

@@ -147,8 +147,8 @@
       "script": "scripts/tools/bun-hygiene.sh",
       "installedAs": "~/.local/bin/aphrody-bun-hygiene",
       "units": [
-        "config/systemd/user/aphrody-bun-hygiene.service",
-        "config/systemd/user/aphrody-bun-hygiene.timer"
+        "yolo:units/aphrody-bun-hygiene.service",
+        "yolo:units/aphrody-bun-hygiene.timer"
       ],
       "schedule": "daily 05:30 +-30m, user timer, linger enabled on vps and dbfr",
       "log": "~/.local/state/aphrody/log/bun-hygiene.log"

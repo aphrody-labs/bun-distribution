@@ -25,7 +25,7 @@
     "allowPrivateNetwork": false,
     "startupTimeoutMs": 30000,
     "shutdownGraceMs": 5000,
-    "systemdUnit": "config/systemd/user/aphrody-web.service"
+    "systemdUnit": "yolo:units/aphrody-web.service"
   },
   "fetch": {
     "timeoutSecs": 30,

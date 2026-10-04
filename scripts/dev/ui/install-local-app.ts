@@ -148,16 +148,20 @@ await Bun.write(
 await run(["nginx", "-t", "-p", `${state}/`, "-c", configPath]);
 const units = join(homedir(), ".config/systemd/user");
 await mkdir(units, { recursive: true });
-for (const name of [
+const kernelOverride = join(units, "aphrody-kernel.service.d/local-app.conf");
+const previousKernelOverride = await readFile(kernelOverride, "utf8").catch(() => undefined);
+const yoloRoot = process.env.APHRODY_YOLO_ROOT ?? join(homedir(), "yolo");
+await run([
+  "bun",
+  join(yoloRoot, "packages/core/src/units/cli.ts"),
+  "render",
+  "--out",
+  units,
   "aphrody-app-server.service",
   "aphrody-app-ui.service",
   "aphrody-local-mcp.service",
-])
-  await cp(join(root, "config/systemd/user", name), join(units, name));
-const kernelOverride = join(units, "aphrody-kernel.service.d/local-app.conf");
-const previousKernelOverride = await readFile(kernelOverride, "utf8").catch(() => undefined);
-await mkdir(join(units, "aphrody-kernel.service.d"), { recursive: true });
-await cp(join(root, "config/systemd/user/aphrody-kernel.service.d/local-app.conf"), kernelOverride);
+  "aphrody-kernel.service.d",
+]);
 const current = join(state, "current");
 const previous = await readlink(current).catch(() => undefined);
 async function activate(path: string) {

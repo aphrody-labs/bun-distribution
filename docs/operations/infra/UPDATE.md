@@ -12,7 +12,7 @@ dev-env checks. Bun, uv and the Tauri family follow the latest published release
 | tools | `bun run update:tools` (`--apply`) | installed vs pinned vs latest (GitHub, PyPI, npm, crates.io); `--apply` installs the exact version (`uv self update <v>`, bun installer, `rustup toolchain install`, `cargo binstall nu@<v>`) and re-pins |
 | cargo | `bun run update:cargo` (`--apply`) | `cargo update --dry-run`, or the lock refresh inside manifest ranges through `cargo-serial.sh`; snapshot in `target/update/` (not in repo) |
 | deps | `bun run update:deps`, `aphrody-update deps <sub>` | `plan`, `apply` (Tauri family + `bun update -r`), `facts`, `fix`, `baseline`, `changelog`, `memory`, `inventory`, `run` |
-| systemd | `bun run update:systemd`, `aphrody-update systemd install\|restart` | link `config/systemd/user/*` into `~/.config/systemd/user` (differing copies are kept as `*.pre-update-<ts>`), `daemon-reload`, `try-restart` units that run bun or aphrody binaries |
+| systemd | `bun run update:systemd`, `aphrody-update systemd install\|restart` | write the units rendered from the yolo unit catalog (`yolo/packages/core/src/units/catalog.json`, `APHRODY_YOLO_ROOT` or `~/yolo`) into `~/.config/systemd/user` (differing copies are kept as `*.pre-update-<ts>`), `daemon-reload`, `try-restart` units that run bun or aphrody binaries |
 | sources | `bun run sources` (status), `sources:verify`, `sources:sync`, `bun run update:sources` (drift), `aphrody-update sources <sub>` | the one owner of `~/source` checkouts, upstream pins, forks and git state, see below |
 | tauri | `aphrody-ops tauri-sync [--check\|--apply]` (also run by `deps plan\|apply`) | the one owner of the Tauri crates, npm packages, mirrors (`packages/ui/scaffold/src/pins.ts`) and `$schema` URLs; honours `minimumReleaseAge`; its Cargo gate goes through `cargo-serial.sh` |
 | rust | `bun run update:rust`, `aphrody-update rust status\|plan\|apply [--majors a,b]\|verify` | structured Rust bump: toolchain, lock refresh in range, majors one at a time, advisories vs `config/deps/rust-holds.json`; every Cargo call goes through `cargo-serial.sh`. Doc: [update/RUST.md](./update/RUST.md) |
@@ -42,7 +42,7 @@ repository; add a collector in `src/deps/inventory.ts` when one appears.
 
 ## Automation
 
-- `config/systemd/user/aphrody-update.timer` (Mondays 06:00, `Persistent=true`): runs `tools`, `deps facts`, `check`
+- the `aphrody-update.timer` catalog entry (Mondays 06:00, `Persistent=true`): runs `tools`, `deps facts`, `check`
   and never applies. Only the pinned `rust-toolchain.toml` channel is installed (no floating `stable`/`nightly`); it
   moves through `tools --apply`. Cargo tools are installed as prebuilt binaries with `cargo binstall`.
 - `.github/workflows/update.yml`: weekly report-only run on GitHub Actions.

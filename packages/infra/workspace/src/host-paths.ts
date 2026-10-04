@@ -16,12 +16,11 @@ export type HostPathRule =
   | "vps-home"
   | "wsl-mount"
   | "legacy-layout";
-/** `host` is the declared VPS catalog, `platform` a WSL/Windows tool by design, `unit` a systemd user unit, `test` fixture data. */
+/** `host` is the declared VPS catalog, `platform` a WSL/Windows tool by design `test` fixture data. */
 export type HostPathArea =
   | "platform"
   | "code"
   | "config"
-  | "unit"
   | "host"
   | "test"
   | "docs"
@@ -114,7 +113,7 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
   },
 ];
 const PREFILTER = String.raw`/home/|/Users/|[A-Za-z]:[\\/]+Users|/mnt/[a-z]/|/source([/"'\x60[:space:])]|$)|aphrody-src|aphrody-(infra|ai|web|ui|os|compat|contracts|shell|native)/`;
-const REWRITABLE: HostPathArea[] = ["docs", "record", "data", "unit", "code", "config"];
+const REWRITABLE: HostPathArea[] = ["docs", "record", "data", "code", "config"];
 /** Config files only take the retired-layout mapping; other rules need a reviewed edit. */
 const CONFIG_REWRITES: HostPathRule[] = ["legacy-layout"];
 const canRewrite = (area: HostPathArea, rule: HostPathRule, line: string): boolean =>
@@ -136,7 +135,6 @@ const OWN_FILES = new Set([
 
 export function hostPathArea(path: string): HostPathArea {
   const name = path.split("/").at(-1) ?? "";
-  if (path.startsWith("config/systemd/user/")) return "unit";
   if (
     !path.startsWith("docs/") &&
     !/\.(md|mdx|txt|rst|html)$/.test(name) &&
@@ -171,19 +169,6 @@ export function hostPathArea(path: string): HostPathArea {
   return "code";
 }
 
-/** systemd user units resolve the home directory with the portable `%h` specifier. */
-function rewriteFor(
-  area: HostPathArea,
-  rule: HostPathRule,
-  match: string,
-  rewrite: (match: string) => string,
-): string {
-  if (area !== "unit") return rewrite(match);
-  if (rule === "repo-absolute") return match.endsWith("/") ? "%h/aphrody/" : "%h/aphrody";
-  if (rule === "user-home") return "%h";
-  return rewrite(match);
-}
-
 /** Findings for one text; rewrites are offered for prose, records and data only. */
 export function scanHostPaths(text: string, area: HostPathArea, rust = false): HostPathFinding[] {
   const findings: HostPathFinding[] = [];
@@ -212,7 +197,7 @@ export function scanHostPaths(text: string, area: HostPathArea, rust = false): H
           rule,
           match: match[0],
           ...(rewrite && REWRITABLE.includes(area) && (area !== "code" || COMMENT_LINE.test(line))
-            ? { rewrite: rewriteFor(area, rule, match[0], rewrite) }
+            ? { rewrite: rewrite(match[0]) }
             : {}),
         });
       }
@@ -235,9 +220,7 @@ export function rewriteHostPaths(text: string, area: HostPathArea): string {
           claimed.push([
             start,
             end,
-            rewrite && canRewrite(area, rule, line)
-              ? rewriteFor(area, rule, match[0], rewrite)
-              : match[0],
+            rewrite && canRewrite(area, rule, line) ? rewrite(match[0]) : match[0],
           ]);
         }
       let output = "";

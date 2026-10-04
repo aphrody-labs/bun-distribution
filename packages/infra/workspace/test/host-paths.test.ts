@@ -49,7 +49,6 @@ test("rewrites make prose, records and data location-independent, never code", (
 test("areas separate runtime sources from prose, records and data", () => {
   expect(hostPathArea("scripts/a.sh")).toBe("code");
   expect(hostPathArea("config/infra/hosts.json")).toBe("host");
-  expect(hostPathArea("config/systemd/user/a.service")).toBe("unit");
   expect(hostPathArea("crates/os/x/src/tests.rs")).toBe("test");
   expect(hostPathArea("config/rg/package.json")).toBe("config");
   expect(hostPathArea("systemd/x.service")).toBe("host");
@@ -100,11 +99,9 @@ test("apply skips dirty files and the ratchet reports regressions", async () => 
   }
 });
 
-test("user units use %h; the declared VPS catalog and fixtures keep their host names", () => {
-  const line = `WorkingDirectory=${HOME}/aphrody\nExecStart=${HOME}/.bun/bin/bun ${HOME}/aphrody/x.ts`;
-  expect(rewriteHostPaths(line, "unit")).toBe(
-    "WorkingDirectory=%h/aphrody\nExecStart=%h/.bun/bin/bun %h/aphrody/x.ts",
-  );
-  expect(scanHostPaths(`${VPS}/x /mnt/c/x`, "host").map((item) => item.rule)).toEqual(["wsl-mount"]);
+test("the declared VPS catalog and fixtures keep their host names", () => {
+  expect(scanHostPaths(`${VPS}/x /mnt/c/x`, "host").map((item) => item.rule)).toEqual([
+    "wsl-mount",
+  ]);
   expect(scanHostPaths(`${HOME}/x`, "test")).toEqual([]);
 });

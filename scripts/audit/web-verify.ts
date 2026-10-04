@@ -228,8 +228,8 @@ export function checkConfigFile(root: string): string[] {
       problems.push(`docs.${name} points at a missing file: ${String(path)}`);
   }
   const unit = (raw as { engine?: { systemdUnit?: unknown } }).engine?.systemdUnit;
-  if (typeof unit === "string" && !existsSync(join(root, unit)))
-    problems.push(`engine.systemdUnit points at a missing file: ${unit}`);
+  if (typeof unit === "string" && !unit.startsWith("yolo:units/"))
+    problems.push(`engine.systemdUnit must reference the yolo unit catalog: ${unit}`);
   return problems;
 }
 

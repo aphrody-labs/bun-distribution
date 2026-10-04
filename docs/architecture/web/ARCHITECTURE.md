@@ -110,7 +110,7 @@ upstream lint relaxations declared in its manifest.
 | Robots                       | off in `obscura-browser` and `crawl_bounded` by default; on in `aphrody_web_crawl` (MCP) and `config/web.json` |
 | Timeouts                     | fetch 30 s, scrape 60 s, crawl 300 s, MCP call 180 s, HTTP client 30 s, bridge fetch 30 s / 2 MiB          |
 | Storage                      | `~/.aphrody/web` (frontier, reports), `~/.aphrody/x-*` (X session/store); secrets in protected stores only |
-| Service unit                 | `config/systemd/user/aphrody-web.service` (template, not installed)                                         |
+| Service unit                 | yolo unit catalog `aphrody-web.service` (template, not installed)                                         |
 
 ## Who uses aphrody-web today
 
@@ -143,7 +143,7 @@ Resolved in this change set are marked `FIXED`; the rest are open.
 12. OPEN. Undeclared dependencies: `@aphrody/x` imported by `packages/fut/fut` (resolved through tsconfig paths) and by scripts without a manifest; `iecode/scripts/rg/qa/agent-browser-rg.sh` expects the upstream native `agent-browser` CLI that `@aphrody/agent-browser` does not provide.
 13. OPEN. Stale paths to a retired sibling layout: `scripts/audit/live`, `config/live-audit.json`, `config/service-catalog.json` (`aphrody-web-api:3007`, retired), `config/nginx-routes.json`, `config/mcp-google-web.json` (`bxc-mcp`), `systemd/aphrody-web-api.service.example`, `scripts/build-aphrody-stack-release.sh`, `packages/infra/workspace/src/ecosystem-deps.ts`, `plugins/aphrody/hooks` (`apps/bxc`).
 14. OPEN. Docs: `docs/products/web/README.md` and several plans name crates that no longer exist (`crates/aphrody-web-*`, `aphrody-browser`, `aphrody-site`, `apps/bxc`); `docs/guides/web/web/NATIVE-INSTALL.md` documents `aphrody web install`, which the CLI does not have; four broken relative links in `docs/products/web`.
-15. OPEN. Tauri IPC shims and tools that call commands with no Rust handler (`packages/ui/m3-next-migrate/src/shims/tauri-ipc.ts` maps to `action_<name>`; `packages/shenron/pipeline/src/bridge/ipc.ts`; `crates/ui/app/src/desktop.rs` carries ten `#[tauri::command]` functions that are not in `generate_handler!`).
+15. OPEN. Tauri IPC shims and tools that call commands with no Rust handler (`design/aphrody-m3/packages/m3-next-migrate/src/shims/tauri-ipc.ts` maps to `action_<name>`; `packages/shenron/pipeline/src/bridge/ipc.ts`; `crates/ui/app/src/desktop.rs` carries ten `#[tauri::command]` functions that are not in `generate_handler!`).
 16. OPEN. Network-dependent tests are not separated by a gate in every crate; the web gates in `web:verify` run only loopback fixtures.
 
 ## Verification state

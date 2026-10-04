@@ -40,13 +40,13 @@ Secrets, cookies and Chromium profiles are never stored here. `OBSCURA_CDP_TOKEN
 
 ## Service unit
 
-[`config/systemd/user/aphrody-web.service`](../../../config/systemd/user/aphrody-web.service) is a
+The `aphrody-web.service` entry of the yolo unit catalog (`packages/core/src/units/catalog.json`) is a
 template for a resident loopback CDP engine on `127.0.0.1:9222` (clients attach with
 `APHRODY_BROWSER_CDP_URL=ws://127.0.0.1:9222/devtools/browser`). It was checked with
 `systemd-analyze verify` only; it is not installed or started by this repository. To install it:
 
 ```bash
-cp config/systemd/user/aphrody-web.service ~/.config/systemd/user/
+bun ~/yolo/packages/core/src/units/cli.ts render --out ~/.config/systemd/user aphrody-web.service
 systemctl --user daemon-reload
 systemctl --user enable --now aphrody-web.service
 ```

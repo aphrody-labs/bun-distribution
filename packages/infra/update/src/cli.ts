@@ -3,7 +3,7 @@
 /**
  * aphrody-update: one entry point for toolchain pins, dependencies, Cargo lock, user systemd units and dev-env checks.
  *
- *   aphrody-update check                     pins agree + systemd units linked + wsl.conf matches (gate, exit 1 on drift)
+ *   aphrody-update check                     pins agree + systemd units match the yolo catalog + wsl.conf matches (gate, exit 1 on drift)
  *   aphrody-update pins [check|apply <tool> <version>]
  *   aphrody-update tools [<tool>] [--apply]  installed vs pinned vs latest; --apply installs and re-pins
  *   aphrody-update cargo [--apply]           Cargo.lock refresh within manifest ranges (dry run by default)

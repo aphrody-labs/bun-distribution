@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "note": "Shared issue and PR template source for the Aphrody repositories that use the French form layout; rendered by scripts/tools/infra/github-templates.ts. iecode keeps its own English forms.",
+  "repos": {
+    "yolo": {
+      "root": "~/yolo",
+      "product": "YOLO",
+      "bugDescription": "Signaler un dysfonctionnement dans YOLO",
+      "bugIntro": "Merci de remplir ce formulaire pour nous aider à diagnostiquer et résoudre le problème.",
+      "featureDescription": "Suggérer une nouvelle idée ou une amélioration d'optimisation",
+      "featureIntro": "Merci de proposer une amélioration pour l'écosystème YOLO !",
+      "components": [
+        "crates/yolo-core (Cœur Rust)",
+        "crates/yolo-runtime (Export C ABI)",
+        "crates/yolo-pyo3 (Extension PyO3)",
+        "crates/yolo-desktop (Tauri Shell)",
+        "packages/python (Python / uv)",
+        "packages/runtime (TypeScript / Bun FFI)",
+        "packages/core (YOLO Core Library)",
+        "apps/cli (CLI yolo)",
+        "apps/web (Frontend Web)"
+      ],
+      "environment": [
+        "OS: Linux / macOS / Windows",
+        "Rust: 1.95+",
+        "Bun: 1.4.2+",
+        "Python: 3.12+ / uv: 0.12+"
+      ],
+      "environmentDescription": "Version d'OS, Rust, Bun, Python / uv.",
+      "reproductionVerb": "Voir",
+      "prComponents": [
+        "`crates/yolo-core` (Moteur algorithmique Rust)",
+        "`crates/yolo-runtime` (C ABI export)",
+        "`crates/yolo-pyo3` (Extension native PyO3 0.29)",
+        "`crates/yolo-desktop` (Tauri 3 Shell)",
+        "`packages/python` (Package Python / uv)",
+        "`packages/runtime` (SDK Bun FFI)",
+        "`packages/core` (Librairie Core TypeScript)",
+        "`apps/cli` (CLI universelle yolo)",
+        "`apps/web` (Application Web)",
+        "`docs/` (Documentation)"
+      ],
+      "summaryDescription": "Résumé clair et concis de ce qui s'est passé.",
+      "reproductionDescription": "Commandes exactes pour reproduire l'anomalie.",
+      "prValidations": [
+        "`bun apps/cli/src/index.ts verify --json` (Toutes les gates validées)",
+        "`bun run lint` (Oxlint sans erreur)",
+        "`bun run fmt:check` (Code TypeScript formaté sans diff)",
+        "`ruff check .` (Code Python linté et vérifié)",
+        "`bun test test/` (Tests unitaires 100% verts)",
+        "`uv run --directory packages/python pytest` (Tests Python verts)"
+      ]
+    },
+    "aphrody-py": {
+      "root": "~/aphrody-py",
+      "product": "Aphrody Python",
+      "bugDescription": "Signaler un dysfonctionnement dans l'écosystème Aphrody Python",
+      "bugIntro": "Merci de remplir ce formulaire pour nous aider à diagnostiquer et résoudre le problème dans l'écosystème Aphrody Python.",
+      "featureDescription": "Suggérer une nouvelle idée ou une amélioration d'optimisation pour Aphrody Python",
+      "featureIntro": "Merci de proposer une amélioration pour l'écosystème Aphrody Python !",
+      "components": [
+        "packages/aphrody (SDK Python et runtime Aphrody)",
+        "packages/aphrody-train (Entraînement et fine-tuning)",
+        "packages/cli (Interface en ligne de commande Aphrody)",
+        "packages/embedding-fixtures (Fixtures et benchmarks d'embeddings)",
+        "packages/model-tools (Outils et manipulation de modèles Koharu)",
+        "packages/relecture-ocr (Moteur OCR et relecture)",
+        "apps/meetings (Application et services de réunions)",
+        "tools/packaging (Outillage de packaging uv / wheels)",
+        "docs/ (Documentation et guides)"
+      ],
+      "environment": [
+        "OS: Linux / macOS / Windows",
+        "Python: 3.12+ (3.11 / 3.12 / 3.13 / 3.14)",
+        "uv: 0.12+",
+        "Bun: 1.4+"
+      ],
+      "environmentDescription": "Système d'exploitation, versions de Python, uv et Bun.",
+      "reproductionVerb": "Observer",
+      "summaryDescription": "Résumé clair et concis du comportement inattendu rencontré.",
+      "reproductionDescription": "Commandes ou code exacts pour reproduire l'anomalie.",
+      "prComponents": [
+        "`packages/aphrody` (SDK Python et runtime Aphrody)",
+        "`packages/aphrody-train` (Entraînement et fine-tuning)",
+        "`packages/cli` (Interface en ligne de commande)",
+        "`packages/embedding-fixtures` (Fixtures et benchmarks d'embeddings)",
+        "`packages/model-tools` (Outils de modèles Koharu)",
+        "`packages/relecture-ocr` (Moteur OCR et relecture)",
+        "`apps/meetings` (Application de réunions)",
+        "`tools/` (Outillage de packaging, scripts et infra)",
+        "`docs/` (Documentation)"
+      ],
+      "prValidations": [
+        "`bun run lint` (Ruff check / Oxlint sans erreur)",
+        "`bun run fmt -- --check` ou `bun run fmt` (Formatage sans diff)",
+        "`bun run typecheck` (Vérification de types Mypy sans erreur)",
+        "`bun run test` (Tests unitaires pytest 100% verts)",
+        "`python tools/packaging/modernize_workspace.py check` (Validation complète de l'espace de travail)"
+      ]
+    }
+  }
+}

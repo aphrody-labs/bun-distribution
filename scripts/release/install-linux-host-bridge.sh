@@ -27,8 +27,7 @@ done
 for peer in windows desktop; do
     install -m 600 "$windows_dir/linux-$peer.json" "$config_dir/$peer.json"
 done
-install -m 644 "$repo_root/config/systemd/user/aphrody-kernel.service" "$HOME/.config/systemd/user/"
-install -m 644 "$repo_root/config/systemd/user/aphrody-host-bridge@.service" "$HOME/.config/systemd/user/"
+bun "${APHRODY_YOLO_ROOT:-$HOME/yolo}/packages/core/src/units/cli.ts" render --out "$HOME/.config/systemd/user" aphrody-kernel.service 'aphrody-host-bridge@.service'
 sudo install -d -o root -g root -m 755 /usr/local/lib/aphrody/host-bridge
 sudo install -o root -g root -m 755 "$binary_dir/aphrody-kernel" /usr/local/lib/aphrody/host-bridge/aphrody-kernel.new
 sudo mv -f /usr/local/lib/aphrody/host-bridge/aphrody-kernel.new /usr/local/lib/aphrody/host-bridge/aphrody-kernel

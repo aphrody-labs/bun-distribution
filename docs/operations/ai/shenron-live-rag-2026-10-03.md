@@ -10,7 +10,7 @@ aucun corpus, poids ou contenu de base n'est ajouté au dépôt.
 
 La migration appartient à
 [`crates/ai/rag/migrations/0001_shenron_postgres.sql`](../../../crates/ai/rag/migrations/0001_shenron_postgres.sql).
-Les unités sous `config/systemd/user` décrivent le tunnel, le serveur E5 et la
+Les unités du catalogue yolo (`packages/core/src/units/catalog.json`) décrivent le tunnel, le serveur E5 et la
 synchronisation complète. Le timer de synchronisation est activé. Les rapports
 et checkpoints restent sous le profil privé `dbfr`.
 
