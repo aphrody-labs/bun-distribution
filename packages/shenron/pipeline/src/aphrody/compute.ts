@@ -17,70 +17,35 @@
  * most 16 texts per request and rejects any vector that is not 384-dimensional.
  */
 import {
-	type AiFailure,
-	type AiResult,
-	type AphrodyCompute,
-	createAphrodyCompute,
+  type AiFailure,
+  type AiResult,
+  type AphrodyCompute,
+  createAphrodyCompute,
 } from "@shenron/pipeline/ai/aphrody";
 import { requireAiHttpToken, requireAiHttpUrl } from "@shenron/pipeline/ai/config";
 
 /** Private Shenron workload boundary served by the Aphrody AI process. */
 export interface AphrodyComputeOptions {
-	baseUrl?: string;
-	token?: string;
-	fetcher?: typeof fetch;
+  baseUrl?: string;
+  token?: string;
+  fetcher?: typeof fetch;
 }
 
-export interface AphrodyChatMessage {
-	role: "system" | "user" | "assistant";
-	content: string;
-}
+// One wire contract, including the historical facade's differently named document types.
+import type { AphrodyChatWireMessage } from "../ai/chat";
+import type {
+  AphrodyIngestDoc,
+  AphrodyRagDocument as StoredDocument,
+  AphrodyRagHit,
+  AphrodyRagMode,
+  AphrodyRagStats,
+} from "../ai/wire";
+export type AphrodyChatMessage = AphrodyChatWireMessage;
+export type AphrodyRagDocument = AphrodyIngestDoc;
+export type AphrodyRagStoredDocument = StoredDocument;
+export type { AphrodyRagHit, AphrodyRagMode, AphrodyRagStats } from "../ai/wire";
 
-export interface AphrodyRagHit {
-	title: string;
-	url: string;
-	snippet: string;
-	score: number;
-	kind: string;
-	sourceId?: string;
-	originSourceId?: string;
-	entity?: string;
-	lang?: string;
-	content?: string;
-}
-
-export type AphrodyRagMode = "lexical" | "hybrid" | "hybrid+rerank";
-
-export interface AphrodyRagDocument {
-	sourceId: string;
-	title: string;
-	url: string;
-	content: string;
-	kind?: string;
-	lang?: string;
-	originSourceId?: string;
-	entity?: string;
-	syncGeneration?: string;
-}
-
-export interface AphrodyRagStats {
-	chunks: number;
-	vectors: number;
-	vectorsStored?: number;
-	sources: Array<{ sourceId: string; kind: string; count: number; vectors?: number }>;
-}
-
-export interface AphrodyRagStoredDocument {
-	sourceId: string;
-	title: string;
-	url: string;
-	kind: string;
-	snippet: string;
-	entity?: string;
-	originSourceId?: string;
-}
-
-const LOOPBACK_HOSTS = ["127.0.0.1", "[::1]", "localhost"];
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "[::1]", "localhost"]);
 const SOURCE_ID_RE = /^shenron:(?:\d+|pg:[a-z0-9_]{1,64}:[0-9a-f]{24}:\d+)$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -89,158 +54,158 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * the per-method message used for a response that breaks the contract.
  */
 function failureError(failure: AiFailure, invalid: string): Error {
-	switch (failure.kind) {
-		case "http":
-			return new Error(`Aphrody compute HTTP ${failure.status} on ${failure.path}`);
-		case "invalid_response":
-			return new Error(invalid);
-		case "timeout": {
-			const error = new Error(`Aphrody compute ${failure.detail}`);
-			error.name = "TimeoutError";
-			return error;
-		}
-		default:
-			return new Error(`Aphrody compute ${failure.detail}`);
-	}
+  switch (failure.kind) {
+    case "http":
+      return new Error(`Aphrody compute HTTP ${failure.status} on ${failure.path}`);
+    case "invalid_response":
+      return new Error(invalid);
+    case "timeout": {
+      const error = new Error(`Aphrody compute ${failure.detail}`);
+      error.name = "TimeoutError";
+      return error;
+    }
+    default:
+      return new Error(`Aphrody compute ${failure.detail}`);
+  }
 }
 
 function unwrap<T>(result: AiResult<T>, invalid: string): T {
-	if (!result.ok) throw failureError(result, invalid);
-	return result.value;
+  if (!result.ok) throw failureError(result, invalid);
+  return result.value;
 }
 
 export class AphrodyComputeClient {
-	/** Typed client every call is delegated to (`@shenron/pipeline/ai/aphrody`). */
-	readonly compute: AphrodyCompute;
+  /** Typed client every call is delegated to (`@shenron/pipeline/ai/aphrody`). */
+  readonly compute: AphrodyCompute;
 
-	constructor(options: AphrodyComputeOptions = {}) {
-		const baseUrl =
-			options.baseUrl === undefined ? requireAiHttpUrl(process.env) : new URL(options.baseUrl);
-		if (
-			baseUrl.protocol !== "http:" ||
-			!LOOPBACK_HOSTS.includes(baseUrl.hostname) ||
-			baseUrl.username ||
-			baseUrl.password
-		) {
-			throw new Error("Aphrody compute URL must use loopback HTTP");
-		}
-		const token = options.token ?? requireAiHttpToken(process.env);
-		if (!token.trim()) throw new Error("Aphrody compute token is not configured");
-		this.compute = createAphrodyCompute(
-			{ baseUrl, token },
-			options.fetcher ? { fetch: options.fetcher } : {}
-		);
-	}
+  constructor(options: AphrodyComputeOptions = {}) {
+    const baseUrl =
+      options.baseUrl === undefined ? requireAiHttpUrl(process.env) : new URL(options.baseUrl);
+    if (
+      baseUrl.protocol !== "http:" ||
+      !LOOPBACK_HOSTS.has(baseUrl.hostname) ||
+      baseUrl.username ||
+      baseUrl.password
+    ) {
+      throw new Error("Aphrody compute URL must use loopback HTTP");
+    }
+    const token = options.token ?? requireAiHttpToken(process.env);
+    if (!token.trim()) throw new Error("Aphrody compute token is not configured");
+    this.compute = createAphrodyCompute(
+      { baseUrl, token },
+      options.fetcher ? { fetch: options.fetcher } : {},
+    );
+  }
 
-	async health(): Promise<{ rag: boolean; llm: boolean; ocr: boolean }> {
-		return unwrap(await this.compute.health(), "Aphrody compute is unavailable");
-	}
+  async health(): Promise<{ rag: boolean; llm: boolean; ocr: boolean }> {
+    return unwrap(await this.compute.health(), "Aphrody compute is unavailable");
+  }
 
-	async chat(
-		messages: AphrodyChatMessage[],
-		model?: string
-	): Promise<{ answer: string; model: string }> {
-		return unwrap(
-			await this.compute.chat({ messages, ...(model ? { model } : {}) }),
-			"Aphrody returned an empty LLM answer"
-		);
-	}
+  async chat(
+    messages: AphrodyChatMessage[],
+    model?: string,
+  ): Promise<{ answer: string; model: string }> {
+    return unwrap(
+      await this.compute.chat({ messages, ...(model ? { model } : {}) }),
+      "Aphrody returned an empty LLM answer",
+    );
+  }
 
-	async ocr(
-		imageBase64: string,
-		language?: string
-	): Promise<{ text: string; language: string; textless: boolean; suspect: boolean }> {
-		const result = unwrap(
-			await this.compute.ocr({
-				imageBase64,
-				engine: "gemini-web",
-				...(language ? { language } : {}),
-			}),
-			"Aphrody returned an invalid OCR result"
-		);
-		return {
-			text: result.text,
-			language: result.language,
-			textless: result.textless,
-			suspect: result.suspect,
-		};
-	}
+  async ocr(
+    imageBase64: string,
+    language?: string,
+  ): Promise<{ text: string; language: string; textless: boolean; suspect: boolean }> {
+    const result = unwrap(
+      await this.compute.ocr({
+        imageBase64,
+        engine: "gemini-web",
+        ...(language ? { language } : {}),
+      }),
+      "Aphrody returned an invalid OCR result",
+    );
+    return {
+      text: result.text,
+      language: result.language,
+      textless: result.textless,
+      suspect: result.suspect,
+    };
+  }
 
-	async ragSearchWithMode(
-		query: string,
-		limit = 5,
-		filters: { lang?: string; kind?: string; sourceId?: string; entity?: string } = {}
-	): Promise<{ results: AphrodyRagHit[]; mode: AphrodyRagMode }> {
-		return unwrap(
-			await this.compute.ragSearch({ q: query, limit, ...filters }),
-			"Aphrody returned an invalid RAG hit"
-		);
-	}
+  async ragSearchWithMode(
+    query: string,
+    limit = 5,
+    filters: { lang?: string; kind?: string; sourceId?: string; entity?: string } = {},
+  ): Promise<{ results: AphrodyRagHit[]; mode: AphrodyRagMode }> {
+    return unwrap(
+      await this.compute.ragSearch({ q: query, limit, ...filters }),
+      "Aphrody returned an invalid RAG hit",
+    );
+  }
 
-	async ragSearch(
-		query: string,
-		limit = 5,
-		filters: { lang?: string; kind?: string; sourceId?: string; entity?: string } = {}
-	): Promise<AphrodyRagHit[]> {
-		return (await this.ragSearchWithMode(query, limit, filters)).results;
-	}
+  async ragSearch(
+    query: string,
+    limit = 5,
+    filters: { lang?: string; kind?: string; sourceId?: string; entity?: string } = {},
+  ): Promise<AphrodyRagHit[]> {
+    return (await this.ragSearchWithMode(query, limit, filters)).results;
+  }
 
-	async embed(texts: string[], kind: "query" | "passage" = "query"): Promise<number[][]> {
-		if (!texts.length || texts.some((text) => !text.trim())) {
-			throw new Error("Aphrody embedding input is empty");
-		}
-		return unwrap(
-			await this.compute.embed({ texts, kind }),
-			"Aphrody returned invalid embedding vectors"
-		).vectors;
-	}
+  async embed(texts: string[], kind: "query" | "passage" = "query"): Promise<number[][]> {
+    if (!texts.length || texts.some((text) => !text.trim())) {
+      throw new Error("Aphrody embedding input is empty");
+    }
+    return unwrap(
+      await this.compute.embed({ texts, kind }),
+      "Aphrody returned invalid embedding vectors",
+    ).vectors;
+  }
 
-	async ragStats(): Promise<AphrodyRagStats> {
-		return unwrap(await this.compute.ragStats(), "Aphrody returned invalid RAG stats");
-	}
+  async ragStats(): Promise<AphrodyRagStats> {
+    return unwrap(await this.compute.ragStats(), "Aphrody returned invalid RAG stats");
+  }
 
-	async ragDocument(sourceId: string): Promise<AphrodyRagStoredDocument | null> {
-		if (!SOURCE_ID_RE.test(sourceId) || sourceId.length > 255) {
-			throw new Error("Invalid Shenron RAG source ID");
-		}
-		return unwrap(
-			await this.compute.ragDocument(sourceId),
-			"Aphrody returned invalid RAG document"
-		);
-	}
+  async ragDocument(sourceId: string): Promise<AphrodyRagStoredDocument | null> {
+    if (!SOURCE_ID_RE.test(sourceId) || sourceId.length > 255) {
+      throw new Error("Invalid Shenron RAG source ID");
+    }
+    return unwrap(
+      await this.compute.ragDocument(sourceId),
+      "Aphrody returned invalid RAG document",
+    );
+  }
 
-	async ragIngest(
-		ragDocument: AphrodyRagDocument
-	): Promise<{ indexed: boolean; sourceId: string; vectorIndexed: boolean }> {
-		return unwrap(
-			await this.compute.ragIngest(ragDocument),
-			"Aphrody did not confirm RAG ingestion"
-		);
-	}
+  async ragIngest(
+    ragDocument: AphrodyRagDocument,
+  ): Promise<{ indexed: boolean; sourceId: string; vectorIndexed: boolean }> {
+    return unwrap(
+      await this.compute.ragIngest(ragDocument),
+      "Aphrody did not confirm RAG ingestion",
+    );
+  }
 
-	async ragSyncFinish(
-		originSourceId: string,
-		syncGeneration: string,
-		expectedCount: number
-	): Promise<{ retired: number }> {
-		if (
-			!originSourceId.trim() ||
-			!UUID_RE.test(syncGeneration) ||
-			!Number.isSafeInteger(expectedCount) ||
-			expectedCount < 1
-		) {
-			throw new Error("Invalid Aphrody RAG sync completion request");
-		}
-		return unwrap(
-			await this.compute.ragSyncFinish({ originSourceId, syncGeneration, expectedCount }),
-			"Aphrody returned invalid RAG sync result"
-		);
-	}
+  async ragSyncFinish(
+    originSourceId: string,
+    syncGeneration: string,
+    expectedCount: number,
+  ): Promise<{ retired: number }> {
+    if (
+      !originSourceId.trim() ||
+      !UUID_RE.test(syncGeneration) ||
+      !Number.isSafeInteger(expectedCount) ||
+      expectedCount < 1
+    ) {
+      throw new Error("Invalid Aphrody RAG sync completion request");
+    }
+    return unwrap(
+      await this.compute.ragSyncFinish({ originSourceId, syncGeneration, expectedCount }),
+      "Aphrody returned invalid RAG sync result",
+    );
+  }
 }
 
 type ChatFn = (
-	messages: AphrodyChatMessage[],
-	model?: string
+  messages: AphrodyChatMessage[],
+  model?: string,
 ) => Promise<{ answer: string; model: string }>;
 
 /**
@@ -250,26 +215,27 @@ type ChatFn = (
  * (`createAphrodyChatModel`) run over an injected legacy client. Errors thrown
  * by `chat` propagate unchanged.
  */
+const unavailable = async (): Promise<AiFailure> => ({
+  ok: false,
+  kind: "not_configured",
+  detail: "only chat is available on this client",
+});
+
 export function aphrodyComputeFromChat(chat: ChatFn): AphrodyCompute {
-	const unavailable = async (): Promise<AiFailure> => ({
-		ok: false,
-		kind: "not_configured",
-		detail: "only chat is available on this client",
-	});
-	return {
-		async chat(i) {
-			const messages = i.messages.map((m) => ({ role: m.role, content: m.content }));
-			const value = await chat(messages, i.model);
-			return { ok: true, value };
-		},
-		health: unavailable,
-		embed: unavailable,
-		ragSearch: unavailable,
-		ragDocument: unavailable,
-		ragStats: unavailable,
-		ragIngest: unavailable,
-		ragSyncFinish: unavailable,
-		ocr: unavailable,
-		visionStructured: unavailable,
-	};
+  return {
+    async chat(i) {
+      const messages = i.messages.map((m) => ({ role: m.role, content: m.content }));
+      const value = await chat(messages, i.model);
+      return { ok: true, value };
+    },
+    health: unavailable,
+    embed: unavailable,
+    ragSearch: unavailable,
+    ragDocument: unavailable,
+    ragStats: unavailable,
+    ragIngest: unavailable,
+    ragSyncFinish: unavailable,
+    ocr: unavailable,
+    visionStructured: unavailable,
+  };
 }

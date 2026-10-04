@@ -25,7 +25,8 @@
     "@shenron/config": "workspace:*",
     "@shenron/db": "workspace:*",
     "hono": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@aphrody/http": "workspace:*"
   },
   "devDependencies": {
     "drizzle-orm": "catalog:"

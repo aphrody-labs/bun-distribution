@@ -677,15 +677,14 @@
       "name": "@shenron/ui",
       "version": "0.1.0",
       "dependencies": {
+        "@aphrody/m3-reader": "workspace:*",
         "@base-ui/react": "catalog:",
         "@tanstack/react-query": "catalog:",
-        "@tanstack/react-virtual": "^3.14.13",
         "class-variance-authority": "catalog:",
         "clsx": "catalog:",
         "lucide-react": "catalog:",
         "react-markdown": "^10.1.0",
         "remark-gfm": "^4.0.1",
-        "swiper": "^14.3.0",
         "tailwind-merge": "catalog:",
       },
       "devDependencies": {
@@ -997,6 +996,7 @@
       "name": "@shenron/api",
       "version": "0.1.0",
       "dependencies": {
+        "@aphrody/http": "workspace:*",
         "@hono/zod-openapi": "^1.6.3",
         "@shenron/config": "workspace:*",
         "@shenron/db": "workspace:*",
@@ -1071,6 +1071,7 @@
         "@ai-sdk/openai-compatible": "^3.0.59",
         "@ai-sdk/provider": "4.0.19",
         "@aphrody/bun": "workspace:*",
+        "@aphrody/http": "workspace:*",
         "@aphrody/paths": "workspace:*",
         "@shenron/config": "workspace:*",
         "@shenron/db": "workspace:*",
@@ -1119,6 +1120,13 @@
       "version": "0.2.6",
       "dependencies": {
         "@aphrody/agent-browser": "workspace:*",
+      },
+    },
+    "packages/web/http": {
+      "name": "@aphrody/http",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@types/bun": "catalog:",
       },
     },
     "packages/web/x": {
@@ -1353,6 +1361,8 @@
     "@aphrody/fut": ["@aphrody/fut@workspace:packages/fut/fut"],
 
     "@aphrody/google": ["@aphrody/google@workspace:packages/google/google"],
+
+    "@aphrody/http": ["@aphrody/http@workspace:packages/web/http"],
 
     "@aphrody/identity": ["@aphrody/identity@workspace:m3/packages/identity"],
 

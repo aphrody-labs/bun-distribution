@@ -15,6 +15,8 @@
  * checks (B18), and `ocr` defaults to the `ppocr` engine.
  */
 import type { z } from "zod";
+import { JsonTransportError, parseRetryAfter, requestJson } from "@aphrody/http";
+export { parseRetryAfter } from "@aphrody/http";
 import { type AiTimeouts, chatTimeoutMs, DEFAULT_AI_TIMEOUTS, SHENRON_E5 } from "./config";
 import {
   APHRODY_LIMITS,
@@ -136,28 +138,12 @@ function byteLength(text: string): number {
   return encoder.encode(text).length;
 }
 
-/**
- * Seconds from a `Retry-After` header: delta-seconds, or an HTTP date turned
- * into a non-negative delay. `undefined` when absent or unparsable.
- */
-export function parseRetryAfter(
-  value: string | null,
-  now: number = Date.now(),
-): number | undefined {
-  if (value === null) return undefined;
-  const text = value.trim();
-  if (/^\d+$/.test(text)) return Number(text);
-  const date = Date.parse(text);
-  if (Number.isNaN(date)) return undefined;
-  return Math.max(0, Math.ceil((date - now) / 1000));
+function invalidResponse(path: string): AiFailure {
+  return { ok: false, kind: "invalid_response", path, detail: `invalid response ${path}` };
 }
 
 function invalidRequest(path: string, detail: string): AiFailure {
   return { ok: false, kind: "invalid_request", path, detail };
-}
-
-function isTimeout(error: unknown): boolean {
-  return error instanceof Error && error.name === "TimeoutError";
 }
 
 /** Collapses whitespace runs and trims, like the historical E5 client. */
@@ -205,35 +191,44 @@ export function createAphrodyCompute(
     const path = route.path;
     const url = new URL(path, baseUrl);
     if (options.query) url.search = options.query.toString();
-    const fetchImpl = o.fetch ?? globalThis.fetch;
-    const timeout = AbortSignal.timeout(options.timeoutMs);
-    const signal = options.signal ? AbortSignal.any([timeout, options.signal]) : timeout;
     const hasBody = options.body !== undefined;
     let response: Response;
+    let json: unknown;
     try {
-      response = await fetchImpl(url, {
-        method: route.method,
-        headers: {
-          accept: "application/json",
-          authorization: `Bearer ${token}`,
-          ...(hasBody ? { "content-type": "application/json" } : {}),
+      const result = await requestJson(
+        url,
+        {
+          method: route.method,
+          headers: {
+            accept: "application/json",
+            authorization: `Bearer ${token}`,
+            ...(hasBody ? { "content-type": "application/json" } : {}),
+          },
+          ...(hasBody ? { body: JSON.stringify(options.body) } : {}),
+          signal: options.signal,
         },
-        ...(hasBody ? { body: JSON.stringify(options.body) } : {}),
-        redirect: "error",
-        signal,
-      });
+        { fetch: o.fetch, timeoutMs: options.timeoutMs, emptyStatus: options.nullOn },
+      );
+      response = result.response;
+      json = result.value;
     } catch (error) {
-      if (isTimeout(error) || timeout.aborted) {
-        return { ok: false, kind: "timeout", path, detail: `timeout ${path}` };
-      }
-      return { ok: false, kind: "unreachable", path, detail: `unreachable ${path}` };
+      const kind =
+        error instanceof JsonTransportError && error.timedOut
+          ? "timeout"
+          : error instanceof JsonTransportError && error.stage !== "request"
+            ? "invalid_json"
+            : "unreachable";
+      return {
+        ok: false,
+        kind,
+        path,
+        detail: `${kind === "invalid_json" ? "invalid JSON" : kind} ${path}`,
+      };
     }
     if (options.nullOn !== undefined && response.status === options.nullOn) {
-      await response.body?.cancel().catch(() => undefined);
       return { ok: true, value: null, nulled: true };
     }
     if (!response.ok) {
-      await response.body?.cancel().catch(() => undefined);
       const retryAfterSeconds = parseRetryAfter(response.headers.get("retry-after"));
       return {
         ok: false,
@@ -244,24 +239,11 @@ export function createAphrodyCompute(
         ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
       };
     }
-    let json: unknown;
-    try {
-      json = await response.json();
-    } catch (error) {
-      if (isTimeout(error) || timeout.aborted) {
-        return { ok: false, kind: "timeout", path, detail: `timeout ${path}` };
-      }
-      return { ok: false, kind: "invalid_json", path, detail: `invalid JSON ${path}` };
-    }
     const parsed = schema.safeParse(json);
     if (!parsed.success) {
       return { ok: false, kind: "invalid_response", path, detail: `invalid response ${path}` };
     }
     return { ok: true, value: parsed.data as z.infer<S> };
-  }
-
-  function invalidResponse(path: string): AiFailure {
-    return { ok: false, kind: "invalid_response", path, detail: `invalid response ${path}` };
   }
 
   return {
@@ -320,6 +302,7 @@ export function createAphrodyCompute(
       for (let start = 0; start < texts.length; start += APHRODY_LIMITS.embedTexts) {
         const batch = texts.slice(start, start + APHRODY_LIMITS.embedTexts);
         // No client prefix: the server adds `query: ` / `passage: ` (http_rest.rs, D10).
+        // eslint-disable-next-line no-await-in-loop -- The embedding endpoint requires sequential batches of at most 16.
         const r = await call(route, EmbedResponse, {
           body: { texts: batch, kind: i.kind },
           timeoutMs: timeouts.embed,

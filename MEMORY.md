@@ -51,3 +51,12 @@ Normal Bun install succeeds; frozen install still reports lock changes.
 Migration-only parent checks retain pre-existing lint/format debt and a failing
 live RAG preload guard. Serialized Rust gates are routed to the VPS factory,
 so no new Rust build result is claimed. Old workers stopped at the owner's request.
+
+## Shenron / Aphrody shared implementation — 2026-10-05
+
+Readers, their CSS and modal focus now delegate to M3; six desktop/mobile PNGs
+are byte-identical before/after. API, compute and OCR use `@aphrody/http` in process;
+domain policies, stores and personas remain separate. 158 focused tests pass,
+two existing persona-source tests skip. Seven scoped TypeScript projects and UI
+production build pass. Broader API/site/bot checks retain live-RAG, portability
+and missing Discord artefact failures. [Scope and evidence](docs/architecture/workspace/SHENRON-DEDUP.md).

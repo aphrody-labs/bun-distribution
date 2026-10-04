@@ -1,0 +1,20 @@
+{
+  "name": "@aphrody/http",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portable in-process JSON transport shared by Aphrody service clients",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "lint": "oxlint src test"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:"
+  }
+}
