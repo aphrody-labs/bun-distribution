@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import { symbolSvgPath } from "@aphrody/material-design-icons";
+import { TARGETS, generate, type Target } from "@aphrody/m3-os-themes";
 import {
   ROOT,
   listPackages,
@@ -47,6 +48,34 @@ server.tool(
     return text(
       `checked ${r.checked.length}, unknown ${r.unknown.length}${r.unknown.length ? `\n${r.unknown.join("\n")}` : ""}`,
     );
+  },
+);
+
+const themeInput = {
+  seed: z.string().describe("Seed colour #rrggbb"),
+  target: z.enum(["windows", "gnome", "cosmic", "chromium", "all"]).default("all"),
+  name: z.string().default("Aphrody"),
+};
+
+server.tool(
+  "m3_os_themes_list",
+  "List the files m3-os-themes would generate for a seed colour and target (nothing is written).",
+  themeInput,
+  async ({ seed, target, name }) => {
+    const targets: readonly Target[] = target === "all" ? TARGETS : [target];
+    return text(generate({ name, seed, mode: "auto" }, targets).map((f) => f.path).join("\n"));
+  },
+);
+
+server.tool(
+  "m3_os_themes_generate",
+  "Return the text content of one generated OS theme file (path from m3_os_themes_list). Never writes to disk or the system.",
+  { ...themeInput, path: z.string() },
+  async ({ seed, target, name, path }) => {
+    const targets: readonly Target[] = target === "all" ? TARGETS : [target];
+    const file = generate({ name, seed, mode: "auto" }, targets).find((f) => f.path === path);
+    if (!file) return text(`unknown path ${path}`);
+    return text(typeof file.content === "string" ? file.content : `(binary, ${file.content.length} bytes)`);
   },
 );
 
