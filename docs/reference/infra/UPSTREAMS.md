@@ -3,7 +3,7 @@
 # Upstreams
 
 Patched Rust implementations are tracked inside the Aphrody Cargo workspace. Only optional build inputs live under the source root
-(`../source`, override with `APHRODY_SOURCE_ROOT`); everything else is a catalogue entry that is read live.
+(`.cache/upstream`, override with `APHRODY_SOURCE_ROOT`); everything else is a catalogue entry that is read live.
 
 ## Integrated Rust implementations (4)
 
@@ -34,7 +34,7 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 | `victauri` | [4DA-Systems/Victauri](https://github.com/4DA-Systems/Victauri) | `main` | bb17a65296 | Rust-native Tauri MCP; read for its hardening and tool surface. | config/tauri-upstream.json debuggers; aphrody-tauri-mcp design |
 | `antigravity-sdk-python` | [google-antigravity/antigravity-sdk-python](https://github.com/google-antigravity/antigravity-sdk-python) | `main` | 12f9a4c3be | Antigravity SDK; wire format reference for the native integration. | docs/plans/ai/native-integration-master.md |
 | `codex` | [openai/codex](https://github.com/openai/codex) | `main` | cb6da58876 | OpenAI Codex CLI; native integration reference. | docs/plans/ai/native-integration-master.md |
-| `jan` | [janhq/jan](https://github.com/janhq/jan) | `main` | e0c62f863a | Jan desktop app; local-LLM UX reference. | docs/research/ai |
+| `jan` | [janhq/jan](https://github.com/janhq/jan) | `14a720628f9592c8e60f7e081ef733076db8a6a9` | 14a720628f | Pinned Jan source for owner-authorized absorption; existing Aphrody capability owners remain canonical. Initial model-hub search adapted with Fuse.js 7.1.0; full parity pending. Pinned checkout: ../aphrody-py/vendor/jan. Root LICENSE Apache-2.0, Menlo Research 2025; selected search adaptation retains attribution. Python/JS ADK manifests declare AGPL-3.0; do not assume a uniform repository license. | packages/ui/app-ui/src/models-hub-state.ts; config/jan-absorption.json; docs/migration/jan-absorption |
 | `llama_index` | [run-llama/llama_index](https://github.com/run-llama/llama_index) | `main` | 962940ddc0 | LlamaIndex; RAG reference. | docs/research/ai |
 | `litellm` | [BerriAI/litellm](https://github.com/BerriAI/litellm) | `main` | 2b51f2f941 | LiteLLM SDK and gateway, including its beta litellm-rust workspace. License: MIT outside enterprise/; enterprise/ has separate terms. Keep external. | docs/research/ai/litellm-review-2026-10-01.md |
 | `mistral.rs` | [EricLBuehler/mistral.rs](https://github.com/EricLBuehler/mistral.rs) | `master` | 3f2515e9b5 | mistral.rs; Cargo git dependency (mistralrs) plus native integration reference. | Cargo.toml workspace dependency mistralrs; docs/plans/ai/native-integration-master.md |

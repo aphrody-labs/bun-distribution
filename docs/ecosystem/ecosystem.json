@@ -2122,150 +2122,6 @@
           "bins": []
         },
         {
-          "name": "@rose-griffon/monorepo",
-          "path": "config/rg",
-          "description": "Rose Griffon monorepo — site communautaire (wiki IEVR + association + e-sport) sous Bun 1.4.2, Next.js 16.3.7 et React 19.3.",
-          "bins": []
-        },
-        {
-          "name": "@rose-griffon/monorepo",
-          "path": "docs/reference/rg/root",
-          "description": "Rose Griffon monorepo — site communautaire (azalee wiki IEVR + website rosegriffon + bot Discord). Stack Next 16.2 / React 19.2 / Bun 1.3 / Supabase / Turborepo.",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/achillea-client",
-          "path": "packages/rg/achillea-client",
-          "description": "Versioned HTTP client and runtime contracts for the Achillea guild API",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/achillea-contract",
-          "path": "packages/rg/achillea-contract",
-          "description": "Contrat Achilléa exporté en JSON Schema et en types natifs (Rust, Swift, Kotlin) — la brique qui rend le domaine portable hors TypeScript",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/achillea-core",
-          "path": "packages/rg/achillea-core",
-          "description": "Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI.",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/achillea-types",
-          "path": "packages/rg/achillea-types",
-          "description": "Contrats d'API partagés (DTO + enums) — source unique pour le bot et le web",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/app-shell",
-          "path": "packages/rg/app-shell",
-          "description": "Chrome applicatif partagé de website (navigation, barre latérale, barre supérieure, pied de page)",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/assets",
-          "path": "packages/rg/assets",
-          "description": "Shared static assets for Rose Griffon apps",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/auth",
-          "path": "packages/rg/auth",
-          "description": "Shared authentication logic and guards for Rose Griffon apps",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/bot",
-          "path": "apps/rg/bot",
-          "description": "Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/cdn",
-          "path": "packages/rg/cdn",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/config",
-          "path": "packages/rg/config",
-          "description": "Configs partagées : TypeScript, Oxc et Tailwind preset",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/cron",
-          "path": "packages/rg/cron",
-          "description": "Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/db",
-          "path": "packages/rg/db",
-          "description": "Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot)",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/discord-sync",
-          "path": "packages/rg/discord-sync",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/i18n",
-          "path": "packages/rg/i18n",
-          "description": "Noyau i18n pur Rose Griffon : locales BCP-47, négociation, replis et formatage Intl",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/identity",
-          "path": "packages/rg/identity",
-          "description": "Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa)",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/preferences",
-          "path": "packages/rg/preferences",
-          "description": "Pure cross-runtime resolution of Rose Griffon presentation preferences",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/realtime",
-          "path": "packages/rg/realtime",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/search",
-          "path": "packages/rg/search",
-          "description": "Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/storage",
-          "path": "packages/rg/storage",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/types",
-          "path": "packages/rg/types",
-          "description": "Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/ui",
-          "path": "packages/rg/ui",
-          "description": "Composants shadcn/ui partagés (new-york style, Tailwind v4)",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/website",
-          "path": "apps/rg/website",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "@shenron/api",
           "path": "packages/shenron/api",
           "description": "",
@@ -3182,12 +3038,102 @@
           "bins": []
         },
         {
+          "name": "@rosegriffon/achillea-client",
+          "path": "packages/rg/achillea-client",
+          "description": "Versioned HTTP client and runtime contracts for the Achillea guild API",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/achillea-contract",
+          "path": "packages/rg/achillea-contract",
+          "description": "Contrat Achilléa exporté en JSON Schema et en types natifs (Rust, Swift, Kotlin) — la brique qui rend le domaine portable hors TypeScript",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/achillea-core",
+          "path": "packages/rg/achillea-core",
+          "description": "Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI.",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/achillea-types",
+          "path": "packages/rg/achillea-types",
+          "description": "Contrats d'API partagés (DTO + enums) — source unique pour le bot et le web",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/app-shell",
+          "path": "packages/rg/app-shell",
+          "description": "Chrome applicatif partagé de website (navigation, barre latérale, barre supérieure, pied de page)",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/assets",
+          "path": "packages/rg/assets",
+          "description": "Shared static assets for Rose Griffon apps",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/auth",
+          "path": "packages/rg/auth",
+          "description": "Shared authentication logic and guards for Rose Griffon apps",
+          "bins": []
+        },
+        {
           "name": "@rosegriffon/azalee",
           "path": "packages/azalee",
           "description": "Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI.",
           "bins": [
             "azalee"
           ]
+        },
+        {
+          "name": "@rosegriffon/bot",
+          "path": "apps/rg/bot",
+          "description": "Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/cdn",
+          "path": "packages/rg/cdn",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/config",
+          "path": "packages/rg/config",
+          "description": "Configs partagées : TypeScript, Oxc et Tailwind preset",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/cron",
+          "path": "packages/rg/cron",
+          "description": "Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/db",
+          "path": "packages/rg/db",
+          "description": "Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot)",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/discord-sync",
+          "path": "packages/rg/discord-sync",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/i18n",
+          "path": "packages/rg/i18n",
+          "description": "Noyau i18n pur Rose Griffon : locales BCP-47, négociation, replis et formatage Intl",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/identity",
+          "path": "packages/rg/identity",
+          "description": "Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa)",
+          "bins": []
         },
         {
           "name": "@rosegriffon/inagle",
@@ -3201,6 +3147,48 @@
           "name": "@rosegriffon/inagle-cross",
           "path": "packages/inagle-cross",
           "description": "API de données et de rétro-conception pour Inazuma Eleven Cross — types, schémas, et analyseurs d'assets",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/preferences",
+          "path": "packages/rg/preferences",
+          "description": "Pure cross-runtime resolution of Rose Griffon presentation preferences",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/realtime",
+          "path": "packages/rg/realtime",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/search",
+          "path": "packages/rg/search",
+          "description": "Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/storage",
+          "path": "packages/rg/storage",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/types",
+          "path": "packages/rg/types",
+          "description": "Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/ui",
+          "path": "packages/rg/ui",
+          "description": "Composants shadcn/ui partagés (new-york style, Tailwind v4)",
+          "bins": []
+        },
+        {
+          "name": "@rosegriffon/website",
+          "path": "apps/rg/website",
+          "description": "",
           "bins": []
         },
         {
@@ -13359,11 +13347,6 @@
           "file": "packages/infra/workspace/src/workspace-subsystem.ts"
         },
         {
-          "name": "workspace_iecode_source",
-          "description": "Validated pinned IECODE producer contract from config/sibling-checkouts.json (CLI: iecode-packages.ts source).",
-          "file": "packages/infra/workspace/src/workspace-subsystem.ts"
-        },
-        {
           "name": "workspace_inline_inventory",
           "description": "Inline Python/Bun/Node invocations with scope, reason and the ratchet against config/inline-interpreters.baseline.json (CLI: automation-inventory --inline).",
           "file": "packages/infra/workspace/src/workspace-subsystem.ts"
@@ -15725,12 +15708,12 @@
     "sharedRepos": 0,
     "crates": 270,
     "binaries": 90,
-    "bunPackages": 101,
+    "bunPackages": 99,
     "pythonPackages": 10,
     "cliBinaries": 63,
     "cliCommands": 1291,
     "mcpServers": 22,
-    "mcpTools": 447,
-    "mcpUniqueToolNames": 430
+    "mcpTools": 446,
+    "mcpUniqueToolNames": 429
   }
 }

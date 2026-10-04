@@ -4,10 +4,9 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { canonicalTar, gzipCanonical, readTar } from "../src/canonical-tar.ts";
-import { canonicalizePackageArchive, validateArchiveTypes } from "../src/iecode-packages.ts";
 
 // CPython is the oracle: it writes varied source archives, then canonicalises them with the exact
-// tarfile/gzip code that iecode-packages.ts ran before the TypeScript port.
+// tarfile/gzip code the package archive producer ran before the TypeScript port.
 const ORACLE = String.raw`import gzip, io, os, sys, tarfile
 out = sys.argv[1]
 noise = bytes((index * 7919 + (index >> 3)) % 256 for index in range(300_000))
@@ -94,17 +93,12 @@ test.each(["pax", "gnu", "ustar"])(
     expect(Buffer.from(gzipCanonical(canonicalTar(members))).equals(Buffer.from(oracle))).toBe(
       true,
     );
-    await canonicalizePackageArchive(`${label}.tgz`, directory);
-    expect(
-      Buffer.from(await readFile(join(directory, `${label}.tgz`))).equals(Buffer.from(oracle)),
-    ).toBe(true);
   },
 );
 
 test("links are refused before canonicalisation, duplicates during it", async () => {
-  await expect(validateArchiveTypes("symlink.tgz", directory)).rejects.toThrow(
-    "Unsupported archive entry type: package/link",
-  );
+  const linked = readTar(Bun.gunzipSync(await readFile(join(directory, "symlink.tgz"))));
+  expect(() => canonicalTar(linked)).toThrow("Unsupported archive entry type: package/link");
   const [first] = readTar(Bun.gunzipSync(await readFile(join(directory, "pax.tgz"))));
   expect(() => canonicalTar([first!, { ...first! }])).toThrow("Duplicate archive entry");
 });

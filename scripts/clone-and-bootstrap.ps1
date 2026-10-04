@@ -8,10 +8,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Aphrody clone failed' }
 $pythonDestination = Join-Path (Split-Path $Destination -Parent) 'aphrody-py'
 git clone https://github.com/aphrody-labs/aphrody-py.git $pythonDestination
 if ($LASTEXITCODE -ne 0) { throw 'Aphrody Python workspace clone failed' }
-# IECODE is a pinned twin checkout (config/sibling-checkouts.json), never a published package.
-$siblings = Get-Content (Join-Path $Destination 'config/sibling-checkouts.json') -Raw | ConvertFrom-Json
-git clone $siblings.iecode.repository (Join-Path (Split-Path $Destination -Parent) 'iecode')
-if ($LASTEXITCODE -ne 0) { throw 'IECODE twin checkout clone failed' }
 $bootstrap = Join-Path $Destination 'scripts/bootstrap.ps1'
 $bootstrapArgs = @('-NoProfile','-ExecutionPolicy','Bypass','-File',$bootstrap)
 if ($SkipPython) { $bootstrapArgs += '-SkipPython' }

@@ -65,7 +65,6 @@ export {
   auditCargoRelease,
   classifyRequirements,
 } from "./cargo-release-audit.ts";
-export { rgRoots, runRg } from "./rg.ts";
 export { runShenron, shenronRoots } from "./shenron.ts";
 export { getDiscordBotsStatus, runDiscord } from "./discord.ts";
 export type { DiscordBotStatus } from "./discord.ts";

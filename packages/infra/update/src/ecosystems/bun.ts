@@ -628,7 +628,7 @@ export async function collectStatus(
       latest.set(n, await npmLatest(n));
     });
     for (const o2 of Object.keys({ ...repo.root.overrides }))
-      if (!latest.has(o2) && !o2.startsWith("@rosegriffon/")) latest.set(o2, await npmLatest(o2));
+      if (!latest.has(o2)) latest.set(o2, await npmLatest(o2));
     const probe = buildRows({ directs, latest, holds, age });
     await pool(
       behind(probe).filter((r) => !isExcluded(r.name, age)),

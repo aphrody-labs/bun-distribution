@@ -43,10 +43,10 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/audit/shenron/scripts/process-ocr-lots-aphrody.test.ts`
 - `scripts/audit/ui-browser-bundles.test.ts`
 - scripts/audit/ui/apps/nie-web/scripts/build-fingerprint.test.ts (supprimé)
-- `scripts/audit/ui/apps/nie-web/scripts/out-dir.test.ts`
-- `scripts/audit/ui/apps/nie-web/scripts/precompression-targets.test.ts`
-- `scripts/audit/ui/apps/nie-web/scripts/public-entry-bundle.test.ts`
-- `scripts/audit/ui/apps/nie-web/scripts/stage-vfs.test.ts`
+- `scripts/audit/ui/apps/nie-web/scripts/out-dir.test.ts` (not in repo)
+- `scripts/audit/ui/apps/nie-web/scripts/precompression-targets.test.ts` (not in repo)
+- `scripts/audit/ui/apps/nie-web/scripts/public-entry-bundle.test.ts` (not in repo)
+- `scripts/audit/ui/apps/nie-web/scripts/stage-vfs.test.ts` (not in repo)
 - scripts/audit/ui/apps/nie-web/scripts/verify-audio-cross-host.ts (supprimé)
 - scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts (supprimé)
 - `scripts/audit/ui/drive/scripts/test-data.sh`
@@ -58,8 +58,8 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/build/discord/packages/scripts/src/generateIndex.ts`
 - `scripts/build/rust/channel-cargo.sh`
 - `scripts/build/shenron/scripts/ops/wiki-page-builder.ts`
-- `scripts/build/ui/apps/nie-web/scripts/build-viewer-wasm.ts`
-- `scripts/build/ui/apps/nie-web/scripts/public-entry-bundle.ts`
+- `scripts/build/ui/apps/nie-web/scripts/build-viewer-wasm.ts` (not in repo)
+- `scripts/build/ui/apps/nie-web/scripts/public-entry-bundle.ts` (not in repo)
 - `scripts/build/ui/drive/scripts/bundle-libheif.sh`
 - `scripts/build/ui/packages/bun/scripts/generate-symbols.ts`
 - scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts (supprimé : doublon exact de `packages/ui/material-web/scripts/component-custom-elements.ts`)
@@ -111,7 +111,7 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 
 ### nie
 
-- `scripts/nie/sync-main.test.ts`
+- `iecode/scripts/tools/sync-main.test.ts`
 
 ### ops
 
@@ -121,15 +121,15 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 
 ### release
 
-- `scripts/release/ui/apps/nie-web/scripts/stage-vfs.ts`
+- `scripts/release/ui/apps/nie-web/scripts/stage-vfs.ts` (not in repo)
 
 ### rg
 
-- `scripts/rg/achillea/phase0.ts`
-- `scripts/rg/campagnes/affiche-iergday.ts`
-- `scripts/rg/ops/achillea-medias-locaux.ts`
-- `scripts/rg/qa/generate-achillea-matrix.ts`
-- `scripts/rg/seo-bxc-audit.ts`
+- `iecode/scripts/rg/achillea/phase0.ts`
+- `iecode/scripts/rg/campagnes/affiche-iergday.ts`
+- `iecode/scripts/rg/ops/achillea-medias-locaux.ts`
+- `iecode/scripts/rg/qa/generate-achillea-matrix.ts`
+- `iecode/scripts/rg/seo-bxc-audit.ts`
 
 ### smoke-bxc-ffi.ts
 
@@ -235,11 +235,11 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/tools/shenron/scripts/seed-power-scaling-knowledge.ts`
 - `scripts/tools/shenron/scripts/wiki-duplicates-fix.ts`
 - `scripts/tools/shenron/scripts/wiki-grand-nettoyage.ts`
-- `scripts/tools/ui/apps/nie-web/scripts/out-dir.ts`
-- `scripts/tools/ui/apps/nie-web/scripts/precompression-targets.ts`
-- `scripts/tools/ui/apps/nie-web/scripts/wasm-audio-smoke.ts`
-- `scripts/tools/ui/apps/nie-web/src/desktop/components/tools/comparator-state.ts`
-- `scripts/tools/ui/apps/nie-web/src/desktop/components/tools/tool-navigation.ts`
+- `scripts/tools/ui/apps/nie-web/scripts/out-dir.ts` (not in repo)
+- `scripts/tools/ui/apps/nie-web/scripts/precompression-targets.ts` (not in repo)
+- `scripts/tools/ui/apps/nie-web/scripts/wasm-audio-smoke.ts` (not in repo)
+- `scripts/tools/ui/apps/nie-web/src/desktop/components/tools/comparator-state.ts` (not in repo)
+- `scripts/tools/ui/apps/nie-web/src/desktop/components/tools/tool-navigation.ts` (not in repo)
 - `scripts/tools/ui/drive/scripts/combine.sh`
 - `scripts/tools/ui/drive/scripts/fix-deb.sh`
 - `scripts/tools/ui/scripts/launch_app.ps1`
@@ -271,16 +271,16 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 - `scripts/audit/shenron/scripts/ops/wiki-corpus-enricher.test.ts` → ./wiki-corpus-enricher
 - `scripts/audit/shenron/scripts/ops/wiki-page-builder.test.ts` → ./wiki-page-builder
 - scripts/audit/ui/apps/nie-web/scripts/build-fingerprint.test.ts (supprimé) → ../vite.config
-- `scripts/audit/ui/apps/nie-web/scripts/out-dir.test.ts` → ./out-dir
-- `scripts/audit/ui/apps/nie-web/scripts/precompression-targets.test.ts` → ./precompression-targets
-- `scripts/audit/ui/apps/nie-web/scripts/public-entry-bundle.test.ts` → ./public-entry-bundle
-- `scripts/audit/ui/apps/nie-web/scripts/stage-vfs.test.ts` → ./stage-vfs
+- `scripts/audit/ui/apps/nie-web/scripts/out-dir.test.ts` (not in repo) → ./out-dir
+- `scripts/audit/ui/apps/nie-web/scripts/precompression-targets.test.ts` (not in repo) → ./precompression-targets
+- `scripts/audit/ui/apps/nie-web/scripts/public-entry-bundle.test.ts` (not in repo) → ./public-entry-bundle
+- `scripts/audit/ui/apps/nie-web/scripts/stage-vfs.test.ts` (not in repo) → ./stage-vfs
 - scripts/audit/ui/apps/nie-web/scripts/verify-audio-cross-host.ts (supprimé) → ../src/wasm/nie_wasm.js
 - scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts (supprimé) → ../src/wasm/nie_wasm.js
 - scripts/audit/ui/apps/nie-web/scripts/wasm-audio-smoke.test.ts (supprimé) → ./wasm-audio-smoke
 - scripts/build/web/apps/bxc/scripts/build-demo-index.ts (supprimé) → ../src/crawler/MassiveCrawler.ts
 - scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts (supprimé) → ../src/api/browser.ts
-- `scripts/release/ui/apps/nie-web/scripts/stage-vfs.ts` → ./out-dir
+- `scripts/release/ui/apps/nie-web/scripts/stage-vfs.ts` (not in repo) → ./out-dir
 - `scripts/tools/fut/src/scripts/map_fut.ts` → ../futgg.ts
 - `scripts/tools/fut/src/scripts/map_fut.ts` → ../futbin.ts
 - `scripts/tools/shenron/scripts/filter-ocr-results.ts` → ../apps/site/src/lib/databooks-defauts.ts

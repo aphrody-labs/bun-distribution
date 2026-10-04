@@ -18,7 +18,7 @@ want to do.
   proposals, and project mentions. URL:
   `https://github.com/aphrody-code/aphrody/discussions`.
 - **GitHub Issues** — bug reports and feature requests only. Templates live in
-  [`../.github/ISSUE_TEMPLATE/`](../../../packages/rg/patreon-bun/.github/ISSUE_TEMPLATE).
+  `../.github/ISSUE_TEMPLATE/`.
 - **GitHub Security Advisories** — vulnerability reports, handled privately.
   See [`../SECURITY.md`](../../research/ai/SECURITY.md) for the disclosure process and SLAs.
 - **Discord** — _pending — a public Discord invite will land in the v1.0.0
@@ -68,7 +68,7 @@ In order:
 - Verify the symptom is not already covered in
   [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md).
 - Open an issue using
-  [`../.github/ISSUE_TEMPLATE/bug_report.yml`](../../../packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml).
+  `../.github/ISSUE_TEMPLATE/bug_report.yml`.
 - Include `aphrody doctor --json` output (auto-redacted) for environment
   context.
 - Include reproduction steps that fit in a single shell snippet.

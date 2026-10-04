@@ -52,9 +52,6 @@ if (operation === "web-migration") {
 if (operation === "consolidation") {
   process.exit(await (await import("./consolidation.ts")).runConsolidation(rest));
 }
-if (operation === "rg") {
-  process.exit(await (await import("./rg.ts")).runRg(rest));
-}
 if (operation === "shenron") {
   process.exit(await (await import("./shenron.ts")).runShenron(rest));
 }
@@ -78,17 +75,6 @@ if (operation === "bridge") {
       await import("./bridges.ts")
     ).runRustBridge(binary, args, { stdout: "inherit", stderr: "inherit" }),
   );
-}
-if (operation === "iecode-sync") {
-  const entry = new URL("../../../../scripts/nie/sync-main.ts", import.meta.url);
-  const child = Bun.spawn([process.execPath, fileURLToPath(entry), ...rest], {
-    cwd: process.cwd(),
-    env: { ...process.env, IECODE_REPO_ROOT: process.env.IECODE_REPO_ROOT ?? process.cwd() },
-    stdin: "inherit",
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-  process.exit(await child.exited);
 }
 if (operation === "infra") {
   process.exit(

@@ -3,7 +3,7 @@
 - mode : `check`
 - racine : `~/rsbun/wasm/binaryen`
 
-## `.github/rg/workflows/ci.yml`
+## `iecode/.github/rg/workflows/ci.yml`
 
 | ligne | règle | message | remplacement |
 | --- | --- | --- | --- |

@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 270 crates, 90 binaries, 101 Bun packages, 10 uv packages, 1291 CLI commands, 447 MCP tools.
+Totals: 3 repositories (3 aphrody, 0 shared, 0 experiments), 270 crates, 90 binaries, 99 Bun packages, 10 uv packages, 1291 CLI commands, 446 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -220,7 +220,7 @@ Canonical Rust/Bun monorepo
 | `tauri-plugin-dialog` | crates/ui/tauri-plugin-dialog | Native system dialogs for opening and saving files along with message dialogs on your Tauri application. |  | default, gtk3, xdg-portal |
 | `tauri-plugin-mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge | MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection |  |  |
 
-### Bun packages (93)
+### Bun packages (69)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -280,30 +280,6 @@ Canonical Rust/Bun monorepo
 | `@koharu/docs` | packages/koharu/docs |  |  |
 | `@koharu/sdk` | packages/koharu/sdk |  |  |
 | `@material-symbols/metadata` | crates/ui/bun/icons/metadata | Metadata for Material Symbols. |  |
-| `@rose-griffon/monorepo` | config/rg | Rose Griffon monorepo — site communautaire (wiki IEVR + association + e-sport) sous Bun 1.4.2, Next.js 16.3.7 et React 19.3. |  |
-| `@rose-griffon/monorepo` | docs/reference/rg/root | Rose Griffon monorepo — site communautaire (azalee wiki IEVR + website rosegriffon + bot Discord). Stack Next 16.2 / React 19.2 / Bun 1.3 / Supabase / Turborepo. |  |
-| `@rosegriffon/achillea-client` | packages/rg/achillea-client | Versioned HTTP client and runtime contracts for the Achillea guild API |  |
-| `@rosegriffon/achillea-contract` | packages/rg/achillea-contract | Contrat Achilléa exporté en JSON Schema et en types natifs (Rust, Swift, Kotlin) — la brique qui rend le domaine portable hors TypeScript |  |
-| `@rosegriffon/achillea-core` | packages/rg/achillea-core | Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI. |  |
-| `@rosegriffon/achillea-types` | packages/rg/achillea-types | Contrats d'API partagés (DTO + enums) — source unique pour le bot et le web |  |
-| `@rosegriffon/app-shell` | packages/rg/app-shell | Chrome applicatif partagé de website (navigation, barre latérale, barre supérieure, pied de page) |  |
-| `@rosegriffon/assets` | packages/rg/assets | Shared static assets for Rose Griffon apps |  |
-| `@rosegriffon/auth` | packages/rg/auth | Shared authentication logic and guards for Rose Griffon apps |  |
-| `@rosegriffon/bot` | apps/rg/bot | Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards |  |
-| `@rosegriffon/cdn` | packages/rg/cdn |  |  |
-| `@rosegriffon/config` | packages/rg/config | Configs partagées : TypeScript, Oxc et Tailwind preset |  |
-| `@rosegriffon/cron` | packages/rg/cron | Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API |  |
-| `@rosegriffon/db` | packages/rg/db | Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot) |  |
-| `@rosegriffon/discord-sync` | packages/rg/discord-sync |  |  |
-| `@rosegriffon/i18n` | packages/rg/i18n | Noyau i18n pur Rose Griffon : locales BCP-47, négociation, replis et formatage Intl |  |
-| `@rosegriffon/identity` | packages/rg/identity | Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa) |  |
-| `@rosegriffon/preferences` | packages/rg/preferences | Pure cross-runtime resolution of Rose Griffon presentation preferences |  |
-| `@rosegriffon/realtime` | packages/rg/realtime |  |  |
-| `@rosegriffon/search` | packages/rg/search | Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa |  |
-| `@rosegriffon/storage` | packages/rg/storage |  |  |
-| `@rosegriffon/types` | packages/rg/types | Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website |  |
-| `@rosegriffon/ui` | packages/rg/ui | Composants shadcn/ui partagés (new-york style, Tailwind v4) |  |
-| `@rosegriffon/website` | apps/rg/website |  |  |
 | `@shenron/api` | packages/shenron/api |  |  |
 | `@shenron/auth` | packages/shenron/auth | Briques Better Auth partagées (site Next, bot Bun, API) : secret, origines, cookies, fournisseur Discord, handler Request/Response |  |
 | `@shenron/bot` | apps/shenron/bot |  |  |
@@ -424,14 +400,36 @@ Active game-domain workspace
 | `aphrody-wii-runtime` | crates/emu/wii/core | Retained Gecko Wii/GameCube interpreter and device runtime |  | default, fps-counter, gx-stats, hooks, hooks-mut-traps, rendersink-blackbox |
 | `aphrody-wii-web` | apps/web/wii/crate |  |  | debug, default |
 
-### Bun packages (7)
+### Bun packages (29)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
 | `@aphrody/iecode-web` | apps/web |  |  |
+| `@rosegriffon/achillea-client` | packages/rg/achillea-client | Versioned HTTP client and runtime contracts for the Achillea guild API |  |
+| `@rosegriffon/achillea-contract` | packages/rg/achillea-contract | Contrat Achilléa exporté en JSON Schema et en types natifs (Rust, Swift, Kotlin) — la brique qui rend le domaine portable hors TypeScript |  |
+| `@rosegriffon/achillea-core` | packages/rg/achillea-core | Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI. |  |
+| `@rosegriffon/achillea-types` | packages/rg/achillea-types | Contrats d'API partagés (DTO + enums) — source unique pour le bot et le web |  |
+| `@rosegriffon/app-shell` | packages/rg/app-shell | Chrome applicatif partagé de website (navigation, barre latérale, barre supérieure, pied de page) |  |
+| `@rosegriffon/assets` | packages/rg/assets | Shared static assets for Rose Griffon apps |  |
+| `@rosegriffon/auth` | packages/rg/auth | Shared authentication logic and guards for Rose Griffon apps |  |
 | `@rosegriffon/azalee` | packages/azalee | Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI. | `azalee` |
+| `@rosegriffon/bot` | apps/rg/bot | Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards |  |
+| `@rosegriffon/cdn` | packages/rg/cdn |  |  |
+| `@rosegriffon/config` | packages/rg/config | Configs partagées : TypeScript, Oxc et Tailwind preset |  |
+| `@rosegriffon/cron` | packages/rg/cron | Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API |  |
+| `@rosegriffon/db` | packages/rg/db | Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot) |  |
+| `@rosegriffon/discord-sync` | packages/rg/discord-sync |  |  |
+| `@rosegriffon/i18n` | packages/rg/i18n | Noyau i18n pur Rose Griffon : locales BCP-47, négociation, replis et formatage Intl |  |
+| `@rosegriffon/identity` | packages/rg/identity | Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa) |  |
 | `@rosegriffon/inagle` | packages/inagle | Universal Game Data API for Inazuma Eleven: Victory Road — parsers, types, and tools for IEVR game data | `inagle` |
 | `@rosegriffon/inagle-cross` | packages/inagle-cross | API de données et de rétro-conception pour Inazuma Eleven Cross — types, schémas, et analyseurs d'assets |  |
+| `@rosegriffon/preferences` | packages/rg/preferences | Pure cross-runtime resolution of Rose Griffon presentation preferences |  |
+| `@rosegriffon/realtime` | packages/rg/realtime |  |  |
+| `@rosegriffon/search` | packages/rg/search | Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa |  |
+| `@rosegriffon/storage` | packages/rg/storage |  |  |
+| `@rosegriffon/types` | packages/rg/types | Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website |  |
+| `@rosegriffon/ui` | packages/rg/ui | Composants shadcn/ui partagés (new-york style, Tailwind v4) |  |
+| `@rosegriffon/website` | apps/rg/website |  |  |
 | `iecode-homebrew` | packages/iecode-homebrew | Bun commands for the IECODE DS/DSi and 3DS homebrew toolchains | `iecode-homebrew` |
 | `iecode-workspace` | . | Game-format tooling, Inazuma Eleven data libraries and console-emulation components, with Rust, Bun, Python, .NET and C++ interfaces. |  |
 | `ieverse` | packages/ieverse | Canonical Inazuma Eleven media catalogue, source URLs, navigation and player contracts. |  |

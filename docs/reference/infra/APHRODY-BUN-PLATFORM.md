@@ -20,7 +20,7 @@ The [ecosystem catalogue](../../ecosystem/ECOSYSTEM.md) is the generated invento
 | Runtime C ABI | [aphrody-ffi](../../../crates/interop/ffi/) | In-process native calls through an explicit versioned ABI. |
 | Web acquisition | [aphrody-web-crawl](../../../crates/web/web-crawl/), [web service](../../../crates/web/web-service/), [CLI](../../../crates/web/web-engine/) | One native crawl frontier and shared browser/network owners. |
 | Bun web consumers | [WebService](../../../packages/web/agent-browser/src/service.ts) | Thin bindings; no independent fetch fallback, frontier or scraper engine. |
-| RG game packages | [Pinned IECODE contract](../../decisions/rg/ievr-packages-from-iecode.md) | Producer-owned private archives; no copied game package or external Bun workspace member. |
+| RG game packages | [Pinned IECODE contract](https://github.com/aphrody-labs/iecode/blob/main/docs/rg/decisions/ievr-packages-from-iecode.md) | Producer-owned private archives; no copied game package or external Bun workspace member. |
 
 ## Runtime evidence
 

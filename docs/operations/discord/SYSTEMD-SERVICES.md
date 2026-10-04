@@ -15,7 +15,7 @@ Historically, Aphrody Discord bots required:
 
 With the introduction of `aphrody-discord-compiler` and AOT standalone compilation (`bun build --compile`), both bots are compiled into self-contained ELF executable binaries:
 - `apps/shenron/bot/dist/shenron` (~151.6 MB)
-- `apps/rg/bot/dist/rg-bot` (~144.9 MB)
+- `apps/rg/bot/dist/rg-bot` (not in repo) (~144.9 MB)
 
 ### Operational Benefits
 
@@ -28,7 +28,7 @@ With the introduction of `aphrody-discord-compiler` and AOT standalone compilati
 
 ## 2. Updated Systemd Service Units
 
-The systemd units in the repository (`systemd/shenron-bot.service` and `systemd/rg-bot.service`) have been updated to target the autonomous native binaries directly.
+The systemd units in the repository (`systemd/shenron-bot.service` and `iecode/config/rg/host/systemd/rg-bot.service`) have been updated to target the autonomous native binaries directly.
 
 ### 2.1 `systemd/shenron-bot.service`
 
@@ -108,7 +108,7 @@ SyslogIdentifier=shenron-bot
 WantedBy=multi-user.target
 ```
 
-### 2.2 `systemd/rg-bot.service`
+### 2.2 `iecode/config/rg/host/systemd/rg-bot.service`
 
 ```ini
 [Unit]

@@ -79,7 +79,7 @@ La voie historique (`LLM_BACKEND=local` → endpoint OpenAI `:5008`, pour llama.
 `OLLAMA_NUM_PARALLEL` est laissé à **1** : sur 12 Go partagés, chaque slot parallèle ajoute un KV-cache
 (ctx 8192) et ferait sauter le budget VRAM. À monter seulement si la VRAM le permet.
 
-### Configuration (`apps/rg/bot/.env`)
+### Configuration (`iecode/apps/rg/bot/.env`)
 
 ```
 LLM_BACKEND=ollama
@@ -88,7 +88,7 @@ LLM_NUM_CTX=8192
 LLM_KEEP_ALIVE=30m
 ```
 
-> `.env` est gitignored — l'écrire avec `printf` (jamais `echo`). Bun auto-charge `apps/rg/bot/.env` quand on
+> `.env` est gitignored — l'écrire avec `printf` (jamais `echo`). Bun auto-charge `iecode/apps/rg/bot/.env` quand on
 > lance depuis `apps/shenron/bot`, donc ces clés s'appliquent au bot et aux scripts.
 
 ### Vérification

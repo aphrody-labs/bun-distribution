@@ -186,11 +186,9 @@ describe("serve-desktop-ui", () => {
       expect(appIds).toContain("koharu-editor");
       expect(appIds).toContain("cli");
       expect(appIds).toContain("m3-framework");
-      // RG and Shenron are quarantined pending production-readiness qualification
-      expect(appIds).not.toContain("rg-website");
+      // Shenron is quarantined pending production-readiness qualification
       expect(appIds).not.toContain("shenron-site");
       const quarantinedIds = appsData.quarantinedApps.map((a: any) => a.id);
-      expect(quarantinedIds).toContain("rg-website");
       expect(quarantinedIds).toContain("shenron-site");
 
       // 16. M3 Window Controls & Chrome: aphrody_shell_window
@@ -209,7 +207,10 @@ describe("serve-desktop-ui", () => {
       const themeRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cmd: "aphrody_shell_window", args: { action: "set_theme", theme: "light" } }),
+        body: JSON.stringify({
+          cmd: "aphrody_shell_window",
+          args: { action: "set_theme", theme: "light" },
+        }),
       });
       expect(themeRes.status).toBe(200);
       const themeData = (await themeRes.json()) as any;
@@ -241,7 +242,10 @@ describe("serve-desktop-ui", () => {
       const fsTextRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cmd: "aphrody_fs_read_text", args: { path: "crates/ui/app/Cargo.toml" } }),
+        body: JSON.stringify({
+          cmd: "aphrody_fs_read_text",
+          args: { path: "crates/ui/app/Cargo.toml" },
+        }),
       });
       expect(fsTextRes.status).toBe(200);
       const fsTextData = (await fsTextRes.json()) as any;
@@ -300,7 +304,9 @@ describe("serve-desktop-ui", () => {
       });
       expect(shenronGuardedRes.status).toBe(400);
       const shenronGuardedData = await shenronGuardedRes.json();
-      expect(shenronGuardedData.error).toContain("Shenron and RG are kept out of Aphrody UI and App");
+      expect(shenronGuardedData.error).toContain(
+        "Shenron and RG are kept out of Aphrody UI and App",
+      );
 
       // When production-ready qualification is explicitly enabled
       process.env.APHRODY_SHENRON_PRODUCTION_READY = "1";
@@ -347,7 +353,10 @@ describe("serve-desktop-ui", () => {
       const unstreamRes = await fetch(`${baseUrl}/api/tauri/invoke`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cmd: "aphrody_session_unstream", args: { thread_id: "thread-123" } }),
+        body: JSON.stringify({
+          cmd: "aphrody_session_unstream",
+          args: { thread_id: "thread-123" },
+        }),
       });
       expect(unstreamRes.status).toBe(200);
       const unstreamData = (await unstreamRes.json()) as any;

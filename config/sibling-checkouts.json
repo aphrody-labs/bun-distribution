@@ -1,12 +1,5 @@
 {
   "$comment": "Pinned sibling source checkouts. Prepare producer-owned local archives before installing consumers; no registry publication and no cross-repository workspace membership.",
-  "iecode": {
-    "repository": "https://github.com/aphrody-labs/iecode.git",
-    "path": "../iecode",
-    "rev": "c832e6c553a99ccad92cc64e4ff5b952f7c28c42",
-    "envOverride": "APHRODY_IECODE_ROOT",
-    "packages": ["inagle", "inagle-cross", "azalee"]
-  },
   "yolo": {
     "repository": "https://github.com/aphrody-labs/yolo.git",
     "path": "../yolo",

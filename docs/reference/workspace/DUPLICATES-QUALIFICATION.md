@@ -9,9 +9,9 @@ qu'après mise à jour des consommateurs (règle du plan, section 0).
 | --- | --- | --- |
 | `crates/ui/app/ui-dist/fonts` ↔ `packages/ui/assets`, `packages/ui/m3-fonts`, `crates/ui/bun` (226) | `aphrody-app`, recopiés par `build.rs` depuis `ui-dist.manifest` | Retirés de l'index le 2026-10-03 (copie de packaging générée). |
 | Copies `scripts/` de fichiers de paquets (13) | paquet propriétaire | Supprimées le 2026-10-03 ([SCRIPTS-INVENTORY.md](SCRIPTS-INVENTORY.md)). |
-| `apps/rg/website/public/achillea/**` ↔ `public/**` (drapeaux, rangs, ligues, sons, fonds) | URLs publiques servies sous deux chemins | Conservés : supprimer casse des URL publiées ; à fusionner par une redirection RG. |
+| `apps/rg/website/public/achillea/**` (not in repo) ↔ `public/**` (drapeaux, rangs, ligues, sons, fonds) | URLs publiques servies sous deux chemins | Conservés : supprimer casse des URL publiées ; à fusionner par une redirection RG. |
 | `inazuma-cross/reward-imageN` ↔ `-achieve` | deux états d'interface au même rendu actuel | Conservés (assets distincts par rôle). |
-| `packages/rg/assets/public` (police Humane, `noise.svg`, portrait/notfound) | paquet d'assets RG, chemins publics | Conservés (chemins publics). |
+| `iecode/packages/rg/assets/public` (police Humane, `noise.svg`, portrait/notfound) | paquet d'assets RG, chemins publics | Conservés (chemins publics). |
 | Icônes Koharu (`apps/koharu/editor` ↔ `crates/koharu/koharu/icons`, docs) | bundle web et bundle Tauri | Conservés : chaque bundler exige le fichier dans son arbre. |
 | `Gemini.ico` (`assets/ui/chrome-web-apps` ↔ `crates/ui/app/icons`) | icône de l'app Tauri | Conservé (ressource embarquée par Tauri). |
 | Portraits XV2 identiques sous deux codes (Shenron bot) | table code → image du bot | Conservés (clés distinctes). |

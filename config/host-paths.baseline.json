@@ -3,7 +3,6 @@
   "$comment": "Host- and machine-specific path ratchet (aphrody-ops path-audit --repository). Counts may only fall.",
   "files": {
     "config/infra/inventory/vps-source.json": 1,
-    "scripts/atomic-deploy-rg.sh": 1,
-    "scripts/rg/assemble-vps-release.sh": 1
+    "scripts/atomic-deploy-rg.sh": 1
   }
 }

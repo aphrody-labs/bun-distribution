@@ -8,6 +8,7 @@
  * summary and writes the full JSON report outside the repository.
  *
  * Usage: bun scripts/audit/infra/db-compare/compare-rg-shenron.ts [--hosts local,vps,dbfr] [--out <file>]
+ * RG lives in the IECODE monorepo: set IECODE_ROOT to include its local checkout.
  */
 import { homedir } from "node:os";
 import { parseArgs } from "node:util";
@@ -15,6 +16,9 @@ import { probe, type Domain, type PackageCandidate, type ProbeInput, type ProbeO
 
 const repo = new URL("../../../../", import.meta.url).pathname.replace(/\/$/, "");
 const home = homedir();
+const iecode = process.env.IECODE_ROOT?.trim().replace(/\/+$/, "");
+/** Paths in the local IECODE checkout; empty when IECODE_ROOT is not set. */
+const rg = (relative: string): string[] => (iecode ? [`${iecode}/${relative}`] : []);
 const today = new Date().toISOString().slice(0, 10);
 const { values } = parseArgs({
   options: {
@@ -29,8 +33,8 @@ const remote = (relative: string): string[] => (remoteHome ? [relative ? `${remo
 
 const HOSTS: Record<string, Omit<ProbeInput, "host">> = {
   local: {
-    sqliteRoots: [`${repo}/apps/rg`, `${repo}/apps/shenron`, `${home}/.aphrody/private/backups`],
-    packageRoots: [`${repo}/packages/rg`, `${repo}/packages/shenron`],
+    sqliteRoots: [...rg("apps/rg"), `${repo}/apps/shenron`, `${home}/.aphrody/private/backups`],
+    packageRoots: [...rg("packages/rg"), `${repo}/packages/shenron`],
     vecExtensionDirs: [`${repo}/node_modules/sqlite-vec-linux-x64`],
   },
   // Remote hosts: the account home comes from APHRODY_REMOTE_HOME, never from a fixed user name.

@@ -133,8 +133,8 @@ Recherche : [pratiques documentaires](docs/research/workspace/documentation-prac
   caches de développement via `workspace-clean --apply` ; suppression actée des dossiers
   redondants ; vérification du workspace (83 packages déclarés, 0 violation de layout,
   0 manifest orphelin) ; intégration des commits de consolidation.
-- [x] Rose Griffon consolidé strictement sur **deux applications** : `apps/rg/website`
-  (Next.js 16 frontend/web, build de production Turbopack validé à 100%) et `apps/rg/bot`
+- [x] Rose Griffon consolidé strictement sur **deux applications** : `iecode/apps/rg/website`
+  (Next.js 16 frontend/web, build de production Turbopack validé à 100%) et `iecode/apps/rg/bot`
   (démon unifié backend : API ElysiaJS :8800 avec 153 routes, WebSockets natifs, moteur
   Colyseus Ranked, services in-process CDN/Realtime/Storage, et bot Discord multi-profils).
   Suppression complète des dossiers redondants (`cdn`, `realtime`, `storage`, `api`,
@@ -493,7 +493,7 @@ Propriétaires : `crates/os`, `crates/shell`, `crates/infra`,
   doivent encore savoir lire ces archives. Vérifié 2026-10-03 : aucun chemin
   `~/src` ni checkout séparé dans `config`, `crates/{os,shell,infra}`,
   `packages/{os,infra}` ; seules racines actives (`aphrody`, `aphrody-py`,
-  `source`) ; mention `~/vps` restante = historique `config/rg/CHANGELOG.md`.
+  `source`) ; mention `~/vps` restante = historique `config/rg/CHANGELOG.md` (not in repo).
 - [ ] Unifier catalogue, chemins de runtime, commandes et configuration de
   services ; un seul propriétaire par fonction Infra.
 - [ ] Remplacer les anciennes hypothèses de dépôts séparés dans fleet/bridges/
@@ -929,7 +929,7 @@ empreintes par lot dans les sept fragments voisins). Mesure reproductible : `bun
   `tauri:sync:check`, `monorepo:layout`, `pipeline-catalog`, `ui:browser-audit` verts ; catalogue
   `docs/ecosystem/*` régénéré. Références obsolètes réécrites dans les docs, plans, skills du plugin et
   commentaires de paquets Bun ; `docs/migration/*` (provenance) laissé intact.
-- INCOMPLET / NON PROUVÉ : `tsc` du workspace échoue sur `packages/infra/workspace/src/rg.ts:550`
+- INCOMPLET / NON PROUVÉ : `tsc` du workspace échoue sur `packages/infra/workspace/src/rg.ts:550` (not in repo)
   (modification d'une autre session) ; `docs:check-links` signale 2 008 liens cassés, tous dans des documents
   importés (aucun vers une crate supprimée) ; aucune fenêtre lancée pour `bundle` et `sidecar` ; la
   sémantique de `selectors` 0.38 (hôte sans caractéristiques, `:not()` imbriqués) est couverte par les tests
@@ -1027,17 +1027,17 @@ INCOMPLET (non vérifié) :
   fixture (`@lit-labs/ssr` absent de `bun.lock`), options du `Select` en portail
   et chapitres de `CollectionReader` absents du HTML serveur, contenu des
   formulaires absent du Markdown de l’extracteur, `CardTitle` toujours `h3`. Les
-  sites produit (`apps/shenron/site`, `apps/rg/website`, bases de données requises)
+  sites produit (`apps/shenron/site`, `iecode/apps/rg/website`, bases de données requises)
   n’ont pas été servis : le gate mesure la contribution des composants
   (`--seed URL` pour un site réel).
 
 ## 6. Consommateurs RG et autres domaines
 
-Propriétaires : `packages/rg`, `apps/rg`, domaines Discord/Koharu/FUT.
+Propriétaires : `iecode/packages/rg`, `iecode/apps/rg`, domaines Discord/Koharu/FUT.
 
 - [x] Extraire les handlers Storage/Realtime/CDN vers leurs packages ; l’API
   importe les bibliothèques, les apps conservent configuration et démarrage.
-  Fait 2026-10-03 : `packages/rg/{cdn,realtime,storage}` (`@rosegriffon/*`,
+  Fait 2026-10-03 : `packages/rg/{cdn,realtime,storage}` (not in repo) (`@rosegriffon/*`,
   export `./server`), importés par l’API du bot ; démarrage autonome toujours
   sous `import.meta.main` ; le CDN ne crée plus son dossier ni ne lit son
   manifeste à l’import (initialisation à la première requête, sonde d’import
@@ -1046,17 +1046,17 @@ Propriétaires : `packages/rg`, `apps/rg`, domaines Discord/Koharu/FUT.
 - [ ] Sortir le daemon Cron de son package partagé.
 - [x] Donner catalogue boutique et registres communs à un package de domaine ;
   retirer l’import du site depuis le bot. Fait 2026-10-03 : catalogue déplacé
-  vers `@rosegriffon/types/shop` (`packages/rg/types/src/shop.ts`, sans import) ;
+  vers `@rosegriffon/types/shop` (`iecode/packages/rg/types/src/shop.ts`, sans import) ;
   le site le réexporte depuis `src/lib/shop/products.ts`, le bot l’importe du
   paquet ; plus aucun import bot → site. Tests bot boutique 57, types 69 ;
   typecheck bot, site et types verts.
 - [ ] Reprendre les gates historiques de chaque produit effectivement importé.
   Gates déclarés 2026-10-03 (`bun run test` / `typecheck`), tous verts :
-  apps RG bot 1237, website 402 ; 20 paquets `packages/rg` (dont achillea-core
+  apps RG bot 1237, website 402 ; 20 paquets `iecode/packages/rg` (dont achillea-core
   212, cron 173, patreon-bun 174) ; discord aphrody-messaging 9, kit 20
   (typecheck réparé : `skipLibCheck`, `@sapphire/shapeshift@4` incompatible avec
   `@types/node` 26) ; koharu bridge/sdk/ui typecheck, editor ; fut 148. Reste :
-  smoke de chaque application. Prérequis constaté : `apps/rg/website/sql/migrations`
+  smoke de chaque application. Prérequis constaté : `iecode/apps/rg/website/sql/migrations`
   ne contient que des migrations incrémentales (2026-08+), sans schéma de base ;
   la seule base locale est le Supabase auto-hébergé RG (non jetable). Un smoke
   exige un dump de schéma RG à importer dans un Postgres jetable.
@@ -1076,13 +1076,13 @@ smoke de chaque application, packaging autonome des assets partagés.
   - Initialisation sécurisée des commandes avec parsing du `rawError` Discord (`initApplicationCommandsSafe`, `clearGuildCommandsSafe`).
   - Guards partagés (`NotBot`, `createMonoGuildGuard`).
   - Gestion du cycle de vie et arrêt gracieux (`registerGracefulShutdown`).
-- FAIT : alignement et montée en gamme des trois bots (`apps/shenron/bot`, `apps/rg/bot`, `apps/rg/achillea-bot`) qui consomment désormais `@aphrody/discord-kit`.
+- FAIT : alignement et montée en gamme des trois bots (`apps/shenron/bot`, `iecode/apps/rg/bot`, `apps/rg/achillea-bot` (not in repo)) qui consomment désormais `@aphrody/discord-kit`.
 - FAIT : élimination complète de `upstream/discord` (2 232 fichiers, 3,9 Go libérés) et des références legacy.
 - FAIT : `scripts/audit/discord-verify.ts` contrôle désormais l'intégrité du catalog (8 paquets), `@aphrody/discord-kit` (typecheck, 16 tests, build), `@aphrody/messaging` (typecheck, 9 tests, build), `@shenron/bot` (type-check, 412 tests), et `@rosegriffon/bot` (1 228 tests).
 - FAIT : pipeline de compilation native autonome (`bun build --compile`) opérationnel pour les bots Discord via `scripts/build/compile-discord-bot.ts` et `bun run discord:compile [shenron|rg|all] [--smoke]`.
 - FAIT : résolution des verrous de bundling AOT pour DiscordX :
   - Points d'entrée `entry-standalone.ts` garantissant le polyfill `reflect-metadata` avant l'évaluation de `tsyringe`/`discordx`.
-  - Table statique de chargeurs `apps/rg/bot/src/modules.ts` permettant l'empaquetage complet des commandes tout en préservant le chargement dynamique par profil (`rg` vs `azalee`) au runtime.
+  - Table statique de chargeurs `iecode/apps/rg/bot/src/modules.ts` permettant l'empaquetage complet des commandes tout en préservant le chargement dynamique par profil (`rg` vs `azalee`) au runtime.
   - Détection `isCompiledBinary()` et `getBotRuntimeInfo()` dans `@aphrody/discord-kit` pour désactiver les transports threadés (`pino-pretty`) sous binaire autonome.
   - Ajout des arguments CLI standards (`--help`, `--version`, `--dry-run`) permettant d'inspecter les binaires sans ouvrir de socket Discord.
 - Gates validés : 100% passants avec `bun run discord:verify --compile` (16/16 tests kit, 9/9 tests messaging, 412/412 tests shenron, 1 228/1 228 tests rg-bot, compilation autonome et smoke check des deux binaires natifs).

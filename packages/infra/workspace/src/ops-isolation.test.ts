@@ -41,11 +41,11 @@ test("IECODE doctor help loads without other operations or installed dependencie
 test("the selected operation receives arguments and preserves its exit status", async () => {
   await isolatedDispatcher(async (directory) => {
     await writeFile(
-      join(directory, "rg.ts"),
-      "export async function runRg(args: string[]) { console.log(JSON.stringify(args)); return 23; }\n",
+      join(directory, "shenron.ts"),
+      "export async function runShenron(args: string[]) { console.log(JSON.stringify(args)); return 23; }\n",
     );
-    expect((await readdir(directory)).toSorted()).toEqual(["ops.ts", "rg.ts"]);
-    const result = await dispatch(directory, "rg", "literal argument", "--example");
+    expect((await readdir(directory)).toSorted()).toEqual(["ops.ts", "shenron.ts"]);
+    const result = await dispatch(directory, "shenron", "literal argument", "--example");
     expect(result.status).toBe(23);
     expect(result.stderr).toBe("");
     expect(JSON.parse(result.stdout)).toEqual(["literal argument", "--example"]);

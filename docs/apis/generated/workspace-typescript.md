@@ -28,7 +28,7 @@ export function createInfraClient(baseUrl = "http://127.0.0.1:8787"): InfraApiCl
 
 ## Source: packages/infra/workspace/src/index.ts
 
-SHA-256: `3721fc50bf27325ba2bd610946e43ef8d0a7ef75435a739e446255db5f6e21d7`
+SHA-256: `22661d60ac8f4cd84edfa51df8b89a6cbc8b664edca7f6d09b874366bcf58acb`
 
 ### Source line 1
 
@@ -393,46 +393,40 @@ export { runCargoReleaseAudit, auditCargoRelease, classifyRequirements, } from "
 ### Source line 68
 
 ```typescript
-export { rgRoots, runRg } from "./rg.ts";
+export { runShenron, shenronRoots } from "./shenron.ts";
 ```
 
 ### Source line 69
 
 ```typescript
-export { runShenron, shenronRoots } from "./shenron.ts";
+export { getDiscordBotsStatus, runDiscord } from "./discord.ts";
 ```
 
 ### Source line 70
 
 ```typescript
-export { getDiscordBotsStatus, runDiscord } from "./discord.ts";
-```
-
-### Source line 71
-
-```typescript
 export type { DiscordBotStatus } from "./discord.ts";
 ```
 
-### Source line 73
+### Source line 72
 
 ```typescript
 export { pipelineCatalog, runPipelineCatalog } from "./pipeline-catalog.ts";
 ```
 
-### Source line 74
+### Source line 73
 
 ```typescript
 export { collectAgentLive, runAgentLive } from "./agent-live.ts";
 ```
 
-### Source line 75
+### Source line 74
 
 ```typescript
 export { runStackDedup } from "./stack-dedup.ts";
 ```
 
-### Source line 77
+### Source line 76
 
 ```typescript
 export { runDocumentation, buildDocumentationManifest, renderDocumentationAgentIndex, } from "./documentation.ts";

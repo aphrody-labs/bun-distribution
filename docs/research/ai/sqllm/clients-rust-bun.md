@@ -172,4 +172,4 @@ crate needs checked macros across many queries.
 | `crates/os/drive` (separate workspace) | sqlx 0.8 sqlite, sea-orm 1.1, rusqlite 0.32 | SQLite | Imported Spacedrive; isolated graph |
 | `packages/shenron/db` | drizzle-orm 0.45.3 over postgres.js 3.4.9 and `Bun.SQL` (`bun-sql.ts`) | PG | `prepare` already configurable per URL |
 | `packages/shenron/pipeline` | `bun:sqlite` + `sqlite-vec` **^0.1.1** (npm), postgres.js | SQLite (FTS5 `rag_chunks` + `vec0 vec_chunks`) + PG; Neon training registry DDL | sqlite-vec is 8 patch releases behind (0.1.9 reclaims space on DELETE) |
-| `packages/rg/db` | kysely + pg + `@supabase/ssr` | Supabase PG | RG product, Supabase-managed |
+| `iecode/packages/rg/db` | kysely + pg + `@supabase/ssr` | Supabase PG | RG product, Supabase-managed |

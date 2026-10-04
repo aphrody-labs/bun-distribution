@@ -24,7 +24,9 @@ for (const pkg of requiredCatalog) {
     throw new Error(`Discord catalog contract violation: '${pkg}' missing in workspaces.catalog`);
   }
 }
-console.log(`✓ Discord catalog contract: all ${requiredCatalog.length} required packages are catalogued`);
+console.log(
+  `✓ Discord catalog contract: all ${requiredCatalog.length} required packages are catalogued`,
+);
 
 function run(cwd: string, ...args: string[]): void {
   console.log(`\n${cwd}: bun ${args.join(" ")}`);
@@ -50,9 +52,6 @@ if (process.argv.includes("--full")) {
   const shenronBot = resolve(root, "apps/shenron/bot");
   run(shenronBot, "run", "type-check");
   run(shenronBot, "run", "test");
-
-  const rgBot = resolve(root, "apps/rg/bot");
-  run(rgBot, "run", "test");
 }
 
 // 5. Gate native standalone compilation if requested with --compile
@@ -60,4 +59,6 @@ if (process.argv.includes("--compile")) {
   run(root, "run", "packages/infra/workspace/src/ops.ts", "discord", "compile", "all", "--smoke");
 }
 
-console.log("\nAll Discord monorepo gates, shared packages, and bot integrations passed successfully.");
+console.log(
+  "\nAll Discord monorepo gates, shared packages, and bot integrations passed successfully.",
+);

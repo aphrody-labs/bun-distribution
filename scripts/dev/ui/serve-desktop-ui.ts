@@ -110,7 +110,11 @@ const TAURI_BRIDGE_SCRIPT = `
 /**
  * Handle Tauri native commands in standalone web mode by delegating to real Aphrody backends.
  */
-async function handleTauriCommand(cmd: string, args: Record<string, unknown> = {}, repoRoot: string): Promise<unknown> {
+async function handleTauriCommand(
+  cmd: string,
+  args: Record<string, unknown> = {},
+  repoRoot: string,
+): Promise<unknown> {
   switch (cmd) {
     case "aphrody_meta":
       return {
@@ -151,15 +155,48 @@ async function handleTauriCommand(cmd: string, args: Record<string, unknown> = {
 
     case "aphrody_model_catalog":
       return [
-        { id: "mistral-7b-instruct", name: "Mistral 7B Instruct", task: "chat", size: "4.1 GB", quant: "Q4_K_M", recommended: true },
-        { id: "llama-3-8b-instruct", name: "Llama 3 8B Instruct", task: "chat", size: "4.7 GB", quant: "Q4_K_M", recommended: true },
-        { id: "qwen2.5-coder-7b", name: "Qwen 2.5 Coder 7B", task: "code", size: "4.4 GB", quant: "Q4_K_M", recommended: true },
-        { id: "deepseek-coder-6.7b", name: "DeepSeek Coder 6.7B", task: "code", size: "3.8 GB", quant: "Q4_K_M", recommended: false },
+        {
+          id: "mistral-7b-instruct",
+          name: "Mistral 7B Instruct",
+          task: "chat",
+          size: "4.1 GB",
+          quant: "Q4_K_M",
+          recommended: true,
+        },
+        {
+          id: "llama-3-8b-instruct",
+          name: "Llama 3 8B Instruct",
+          task: "chat",
+          size: "4.7 GB",
+          quant: "Q4_K_M",
+          recommended: true,
+        },
+        {
+          id: "qwen2.5-coder-7b",
+          name: "Qwen 2.5 Coder 7B",
+          task: "code",
+          size: "4.4 GB",
+          quant: "Q4_K_M",
+          recommended: true,
+        },
+        {
+          id: "deepseek-coder-6.7b",
+          name: "DeepSeek Coder 6.7B",
+          task: "code",
+          size: "3.8 GB",
+          quant: "Q4_K_M",
+          recommended: false,
+        },
       ];
 
     case "aphrody_model_list":
       return [
-        { id: "mistral-7b-instruct", name: "Mistral 7B Instruct", status: "installed", path: "~/.aphrody/models/mistral-7b-instruct.gguf" },
+        {
+          id: "mistral-7b-instruct",
+          name: "Mistral 7B Instruct",
+          status: "installed",
+          path: "~/.aphrody/models/mistral-7b-instruct.gguf",
+        },
       ];
 
     case "aphrody_model_recommend": {
@@ -520,7 +557,9 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
   const { port = 1421, host = "127.0.0.1" } = options;
 
   if (!existsSync(join(UI_DIST, "index.html"))) {
-    throw new Error(`UI bundle not found at ${UI_DIST}. Run the UI build or verify crates/ui/app/ui-dist.`);
+    throw new Error(
+      `UI bundle not found at ${UI_DIST}. Run the UI build or verify crates/ui/app/ui-dist.`,
+    );
   }
 
   const cache = getSharedUiCache();
@@ -565,7 +604,10 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
       }
 
       // Transparent Tauri IPC invoke endpoint
-      if (req.method === "POST" && (url.pathname === "/api/tauri/invoke" || url.pathname === "/api/invoke")) {
+      if (
+        req.method === "POST" &&
+        (url.pathname === "/api/tauri/invoke" || url.pathname === "/api/invoke")
+      ) {
         try {
           const body = (await req.json()) as { cmd?: string; args?: Record<string, unknown> };
           const cmd = body.cmd || "";
@@ -600,7 +642,14 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
             bun: {
               version: Bun.version,
               revision: Bun.revision,
-              features: ["zero-copy-file", "wyhash-etags", "gzip", "websocket", "sqlite-cache", "tauri-bridge"],
+              features: [
+                "zero-copy-file",
+                "wyhash-etags",
+                "gzip",
+                "websocket",
+                "sqlite-cache",
+                "tauri-bridge",
+              ],
             },
           },
           null,
@@ -645,28 +694,45 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
               type: "cli",
               runtime: "rust-native",
               path: "apps/cli",
-              pillars: ["ai", "contracts", "compat", "os", "infra", "ui", "web", "discord", "shell"],
+              pillars: [
+                "ai",
+                "contracts",
+                "compat",
+                "os",
+                "infra",
+                "ui",
+                "web",
+                "discord",
+                "shell",
+              ],
             },
             {
               id: "m3-framework",
               name: "Aphrody M3 Design System & Framework",
               type: "framework",
               runtime: "bun-rust-ffi",
-              packages: ["m3", "m3-tokens", "m3-theme", "m3-primitives", "m3-react", "material-web", "m3-motion", "m3-ai", "m3-explorer", "m3-reader", "m3-config"],
+              packages: [
+                "m3",
+                "m3-tokens",
+                "m3-theme",
+                "m3-primitives",
+                "m3-react",
+                "material-web",
+                "m3-motion",
+                "m3-ai",
+                "m3-explorer",
+                "m3-reader",
+                "m3-config",
+              ],
             },
           ],
           quarantinedApps: [
             {
-              id: "rg-website",
-              name: "Rose Griffon Platform",
-              status: "quarantined-pending-production-readiness",
-              reason: "Shenron and RG are kept out of Aphrody UI and App pending production readiness qualification and explicit user agreement (see GEMINI.md).",
-            },
-            {
               id: "shenron-site",
               name: "Shenron Grounded RAG Platform",
               status: "quarantined-pending-production-readiness",
-              reason: "Shenron and RG are kept out of Aphrody UI and App pending production readiness qualification and explicit user agreement (see GEMINI.md).",
+              reason:
+                "Shenron and RG are kept out of Aphrody UI and App pending production readiness qualification and explicit user agreement (see GEMINI.md).",
             },
           ],
         };
@@ -688,7 +754,15 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
           colorRoles: 36,
           tonalPalettes: 13,
           elevationLevels: 6,
-          shapeCornerRadii: ["none", "extra-small", "small", "medium", "large", "extra-large", "full"],
+          shapeCornerRadii: [
+            "none",
+            "extra-small",
+            "small",
+            "medium",
+            "large",
+            "extra-large",
+            "full",
+          ],
           motionDurations: [50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
         };
         return Response.json(tokens, {
@@ -704,12 +778,18 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
 
         if (lang === "en" && existsSync(enFile)) {
           return new Response(Bun.file(enFile), {
-            headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" },
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Access-Control-Allow-Origin": "*",
+            },
           });
         }
         if (lang === "fr" && existsSync(frFile)) {
           return new Response(Bun.file(frFile), {
-            headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" },
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Access-Control-Allow-Origin": "*",
+            },
           });
         }
 
@@ -718,8 +798,20 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
             supportedLocales: ["en", "fr"],
             defaultLocale: "en",
             namespaces: [
-              "common", "nav", "chat", "files", "models", "settings",
-              "kernel", "subsystems", "drive", "koharu", "shenron", "shell", "ffi", "errors"
+              "common",
+              "nav",
+              "chat",
+              "files",
+              "models",
+              "settings",
+              "kernel",
+              "subsystems",
+              "drive",
+              "koharu",
+              "shenron",
+              "shell",
+              "ffi",
+              "errors",
             ],
             urls: {
               en: `http://${host}:${port}/api/i18n/en`,
@@ -730,7 +822,10 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
           2,
         );
         return new Response(info, {
-          headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" },
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+          },
         });
       }
 
@@ -753,14 +848,27 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
                 status: "in-process",
                 protocol: "json-rpc-2.0",
                 duplex: true,
-                methods: ["thread/start", "thread/reply", "thread/interrupt", "models/list", "models/pull"],
+                methods: [
+                  "thread/start",
+                  "thread/reply",
+                  "thread/interrupt",
+                  "models/list",
+                  "models/pull",
+                ],
               },
               kernel: {
                 status: "active",
                 endpoint: "ipc://aphrody-kernel.sock",
                 router: "agentic-fabric",
                 subsystems: [
-                  "web", "window", "admin", "systemd", "coreutils", "compat", "infra", "cloud"
+                  "web",
+                  "window",
+                  "admin",
+                  "systemd",
+                  "coreutils",
+                  "compat",
+                  "infra",
+                  "cloud",
                 ],
               },
               drive: {
@@ -801,7 +909,17 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
               },
               cli: {
                 binary: "aphrody",
-                pillars: ["ai", "contracts", "compat", "os", "infra", "ui", "web", "discord", "shell"],
+                pillars: [
+                  "ai",
+                  "contracts",
+                  "compat",
+                  "os",
+                  "infra",
+                  "ui",
+                  "web",
+                  "discord",
+                  "shell",
+                ],
               },
             },
           },
@@ -809,17 +927,29 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
           2,
         );
         return new Response(capabilities, {
-          headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" },
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+          },
         });
       }
 
       // Gemini Web M3 Real-Time Design Compiler endpoint
       if (req.method === "POST" && url.pathname === "/api/m3/design") {
         try {
-          const body = (await req.json()) as { prompt?: string; seedColor?: string; designSystemId?: string };
-          const { DesignCompiler } = await import("../../../packages/ui/m3-design/src/generator.ts");
+          const body = (await req.json()) as {
+            prompt?: string;
+            seedColor?: string;
+            designSystemId?: string;
+          };
+          const { DesignCompiler } =
+            await import("../../../packages/ui/m3-design/src/generator.ts");
           const compiler = new DesignCompiler();
-          const result = compiler.compile(body.prompt || "Modern dashboard", body.seedColor, body.designSystemId);
+          const result = compiler.compile(
+            body.prompt || "Modern dashboard",
+            body.seedColor,
+            body.designSystemId,
+          );
           return Response.json(result, {
             headers: {
               "Content-Type": "application/json; charset=utf-8",
@@ -912,7 +1042,13 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
 
         // Gzip compression for compressible files > 1KB
         const acceptGzip = req.headers.get("accept-encoding")?.includes("gzip");
-        if (acceptGzip && bytes.byteLength > 1024 && (contentType.startsWith("text/") || contentType.includes("javascript") || contentType.includes("json"))) {
+        if (
+          acceptGzip &&
+          bytes.byteLength > 1024 &&
+          (contentType.startsWith("text/") ||
+            contentType.includes("javascript") ||
+            contentType.includes("json"))
+        ) {
           headers["Content-Encoding"] = "gzip";
           const compressed = Bun.gzipSync(new Uint8Array(bytes));
           return new Response(compressed, { headers });
@@ -939,7 +1075,9 @@ export function startDesktopUiServer(options: { port?: number; host?: string } =
     },
   });
 
-  console.log(`[desktop-ui] Unified Tauri UI Web Server running at http://${host}:${port}/ (serving ${UI_DIST})`);
+  console.log(
+    `[desktop-ui] Unified Tauri UI Web Server running at http://${host}:${port}/ (serving ${UI_DIST})`,
+  );
   return server;
 }
 

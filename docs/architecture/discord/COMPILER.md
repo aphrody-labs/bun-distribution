@@ -41,7 +41,7 @@ flowchart TD
 
 - **`BotTarget`**: Enum identifying supported targets:
   - `BotTarget::Shenron`: Root `apps/shenron/bot`, entry `src/entry-standalone.ts`, output `dist/shenron`.
-  - `BotTarget::RoseGriffon`: Root `apps/rg/bot`, entry `src/entry-standalone.ts`, output `dist/rg-bot`.
+  - `BotTarget::RoseGriffon`: Root `iecode/apps/rg/bot`, entry `src/entry-standalone.ts`, output `dist/rg-bot`.
   - `BotTarget::Achillea`: Root `apps/rg/achillea-bot` (not in repo), entry `src/main.ts`, output `dist/achillea`.
   - `BotTarget::Custom(PathBuf)`: Arbitrary external Discord bot.
 - **`CompilerOptions`**:
@@ -136,7 +136,7 @@ In `@rosegriffon/bot`, command modules were historically loaded by reading the f
 When `bun build --compile` analyzes code, it cannot follow dynamic path string concatenations like `import(`./commands/${category}/${file}`)`. As a result, none of the command files were bundled into the binary, resulting in an empty bot.
 
 **The Solution**:
-Introduction of a static module loader registry in `apps/rg/bot/src/modules.ts`:
+Introduction of a static module loader registry in `iecode/apps/rg/bot/src/modules.ts`:
 
 ```typescript
 export const MODULE_LOADERS: Record<string, () => Promise<unknown>> = {
@@ -159,7 +159,7 @@ export const MODULE_LOADERS: Record<string, () => Promise<unknown>> = {
 
 This architecture achieves two vital objectives:
 1. **AOT Bundling Visibility**: Bun's static bundler traces every `() => import(...)` and compiles all 50+ command modules into the binary.
-2. **Dynamic Runtime Profile Dispatch**: At runtime, the bot selectively executes only the loaders matching the configured profile (`rg` vs `azalee`) via `apps/rg/bot/src/index.ts`.
+2. **Dynamic Runtime Profile Dispatch**: At runtime, the bot selectively executes only the loaders matching the configured profile (`rg` vs `azalee`) via `iecode/apps/rg/bot/src/index.ts`.
 
 ### 3.3 Logger Worker Thread Fallback in Standalone Mode
 
@@ -190,7 +190,7 @@ In `apps/shenron/bot/src/lib/logger.ts`, logger initialization checks `isCompile
 
 | Property | Shenron Bot (`dist/shenron`) | Rose Griffon Bot (`dist/rg-bot`) |
 | :--- | :--- | :--- |
-| **Source Directory** | `apps/shenron/bot` | `apps/rg/bot` |
+| **Source Directory** | `apps/shenron/bot` | `iecode/apps/rg/bot` |
 | **Entrypoint** | `src/entry-standalone.ts` | `src/entry-standalone.ts` |
 | **Pre-build Step** | Tailwind CSS generation for web dashboard | None |
 | **Bundled Modules** | 2,470 modules | 959 modules |

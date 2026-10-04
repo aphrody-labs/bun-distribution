@@ -30,12 +30,6 @@ export function getDiscordBotsStatus(root = infraRoot()): DiscordBotStatus[] {
       path: join(root, "apps/shenron/bot"),
       binaryPath: join(root, "apps/shenron/bot/dist/shenron"),
     },
-    {
-      id: "rg",
-      name: "Rose Griffon Discord Bot (RG / Azalée)",
-      path: join(root, "apps/rg/bot"),
-      binaryPath: join(root, "apps/rg/bot/dist/rg-bot"),
-    },
   ];
 
   return bots.map((bot) => {

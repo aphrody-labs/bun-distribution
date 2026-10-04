@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Read-only Workspace commands published to agents as the `workspace` kernel subsystem. */
 import { registerSubsystem, type ToolSpec } from "@aphrody/os";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { collectAutomationInventory } from "./automation-inventory.ts";
 import { discoverAphrodyBinaries } from "./binaries.ts";
 import { loadAphrodyBridgeCatalog } from "./bridges.ts";
 import { loadFleet } from "./fleet.ts";
 import { heavyBuildStatus, readFactoryConfig } from "./build-factory.ts";
-import { readIecodeSource } from "./iecode-packages.ts";
 import { collectInlineInterpreters, renderInlineMarkdown } from "./inline-interpreters.ts";
 import { infraRoot } from "./runtime.ts";
 
@@ -77,14 +76,6 @@ export const WORKSPACE_TOOLS: ToolSpec[] = [
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     readOnly: true,
     handler: () => loadAphrodyBridgeCatalog(),
-  },
-  {
-    name: "workspace_iecode_source",
-    description:
-      "Validated pinned IECODE producer contract from config/sibling-checkouts.json (CLI: iecode-packages.ts source).",
-    inputSchema: { type: "object", properties: { root: ROOT_SCHEMA }, additionalProperties: false },
-    readOnly: true,
-    handler: (args) => readIecodeSource(join(root(args), "config/sibling-checkouts.json")),
   },
 ];
 

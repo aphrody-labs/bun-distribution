@@ -27,10 +27,10 @@ ne sont pas magiquement disponibles à une commande `cargo` lancée séparément
   racine; `scripts/dev/shenron/scripts/dev/local-env.ts` le lit aussi pour
   construire les environnements locaux des applications. Les autres outils
   peuvent charger un fichier explicite.
-- `apps/rg/.env`, `apps/rg/.env.local`, `apps/rg/website/.env`,
-  `apps/rg/website/.env.production.local` et `apps/rg/bot/.env` : configuration
+- `iecode/apps/rg/.env`, `iecode/apps/rg/.env.local`, `iecode/apps/rg/website/.env`,
+  `iecode/apps/rg/website/.env.production.local` et `iecode/apps/rg/bot/.env` : configuration
   locale RG; les commandes Next/Bun les lisent selon leur cwd, mode ou appelant.
-- `packages/rg/cron/.env` : configuration du cron RG lorsque lancé depuis ce
+- `iecode/packages/rg/cron/.env` : configuration du cron RG lorsque lancé depuis ce
   package.
 - `apps/shenron/site/.env` (not in repo) et `apps/shenron/bot/.env` (not in repo) : secrets privés
   facultatifs lus explicitement par plusieurs scripts Shenron. Le dépôt ne

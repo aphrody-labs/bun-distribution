@@ -3,7 +3,7 @@
 
 Scope: every public-facing website across `%USERPROFILE%\src` — `aphrody-web`
 (`docs/products/web/crates/aphrody-site`), `nie` (`apps/nie-web` (not in repo) + `crates/tools/nie-site` (not in repo)), `rg`
-(`apps/rg/website`) and `shenron` (`apps/shenron/site`). This is the single reference for
+(`iecode/apps/rg/website`) and `shenron` (`apps/shenron/site`). This is the single reference for
 how a URL is shaped, how a page announces itself to crawlers, and how an old
 URL is retired without breaking. It does not cover deployment (owned by
 `aphrody-infra`) or content editorial policy (owned by each site).
@@ -16,7 +16,7 @@ hard-code it here, it drifts. As of this audit:
 
 | Site | Host(s) | Status |
 | --- | --- | --- |
-| `rg` `apps/rg/website` | `rosegriffon.fr`, `api.`, `cdn.`, `achillea.`, `ranked.`, `azalee.` | live |
+| `rg` `iecode/apps/rg/website` | `rosegriffon.fr`, `api.`, `cdn.`, `achillea.`, `ranked.`, `azalee.` | live |
 | `shenron` `apps/shenron/site` | `dragonballfr.com`, `bot.`, `cdn.` | live |
 | `aphrody-web` `docs/products/web/crates/aphrody-site` | `aphrody.com` | **retired** 2026-09-25 |
 | `nie` `crates/tools/nie-site` (not in repo) | `nie.aphrody.com` | **retired** 2026-09-25, except the `staticPaths` below |
@@ -53,7 +53,7 @@ literal (see §6 — `aphrody-site` currently hard-codes `https://aphrody.com` i
 - **Locale prefix policy is per-site, not global — do not unify it blindly:**
   - `rg` and `shenron`: **no locale in the URL.** Language is a runtime
     preference (cookie/`Accept-Language`), same URL for every language
-    (`rg` `packages/rg/i18n/src/resolution.ts`, `shenron` `src/i18n/request.ts`).
+    (`rg` `iecode/packages/rg/i18n/src/resolution.ts`, `shenron` `src/i18n/request.ts`).
     This means neither site can emit `hreflang` today (see §4) — that is a
     known, accepted gap given single-URL content, not a bug to silently patch
     with fake alternates.
@@ -68,7 +68,7 @@ literal (see §6 — `aphrody-site` currently hard-codes `https://aphrody.com` i
     (`rg`/`shenron` pattern) and do not fake `hreflang`.
 - **One canonical origin per site**, read from env with a single fallback
   constant — never scattered literals. Pattern (see `rg`
-  `apps/rg/website/src/lib/site-url.ts`, added by this change):
+  `iecode/apps/rg/website/src/lib/site-url.ts`, added by this change):
   ```ts
   export const SITE_URL = (process.env.NEXT_PUBLIC_BASE_URL || "https://<apex>").replace("://www.", "://");
   export function absoluteUrl(path: string) { return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`; }
@@ -104,7 +104,7 @@ literal (see §6 — `aphrody-site` currently hard-codes `https://aphrody.com` i
   - **Fixed by this change**: `rg` `apps/website/src/app/news/[slug]/page.tsx`
     built its canonical as `https://azalee.rosegriffon.fr/news/${slug}` even
     though the route is served at `rosegriffon.fr/news/<slug>` — Azalée's
-    news app was merged into `apps/rg/website` and `azalee.rosegriffon.fr` no
+    news app was merged into `iecode/apps/rg/website` and `azalee.rosegriffon.fr` no
     longer serves `/news` at all. That canonical told Google the real page
     was a duplicate of a page that can't be reached. Now uses `absoluteUrl()`.
 - Do **not** set a blanket `canonical` on a root layout that every child page
@@ -198,7 +198,7 @@ Prefer one `SITE_URL`/`origine` constant read from env (§1) over scattering
 the literal domain. Known remaining drift, left as-is by this change because
 fixing it has no live SEO impact and is disproportionate to this task:
 
-- `rg` `apps/rg/website`: `https://rosegriffon.fr` is hard-coded in ~78 files
+- `rg` `iecode/apps/rg/website`: `https://rosegriffon.fr` is hard-coded in ~78 files
   beyond the sitemap/robots layer, including `StructuredData.tsx` and
   `achillea/metadonnees.ts`. These already resolve to the *correct* value
   (unlike the `news/[slug]` bug this change fixed) — centralizing them is a

@@ -17,7 +17,7 @@ own repositories.
 | How is the workspace organized? | [Architecture](../../architecture/workspace/ARCHITECTURE.md) |
 | How will FFI, Rust/Bun and Python be consolidated under aphrody-labs? | [Root consolidation plan](../../plans/workspace/PLAN.md) |
 | How is Spacedrive absorbed across Aphrody repositories? | [Workspace migration plan](../../plans/workspace/PLAN.md) |
-| How are NIE capabilities absorbed without another repository? | [Workspace convergence plan](../../plans/workspace/PLAN.md#nie-convergence), [capability map](./NIE-CAPABILITY-MAP.md) |
+| How are NIE capabilities absorbed without another repository? | [Workspace convergence plan](../../plans/workspace/PLAN.md#nie-convergence), [capability map](https://github.com/aphrody-labs/iecode/blob/main/docs/nie/NIE-CAPABILITY-MAP.md) |
 | Where are Files/VFS/search duplicates recorded? | [Dated Files surface audit](../../research/workspace/FILE-SURFACE-AUDIT.md) |
 | How is Nushell configured on the Aphrody workstation? | [Nushell setup](./nu.md) |
 | Which execution rules apply? | [AGENTS.md](./AGENTS.md), the shared execution contract |

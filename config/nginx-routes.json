@@ -8,13 +8,6 @@
     { "host": "mcp.aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "paths": ["/mcp"], "vhost": "nginx/aphrody/aphrody-apex.conf", "status": "retired", "retiredAt": "2026-09-25" },
     { "host": "n2b.aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "paths": ["/api/v1/n2b", "/api/v1/n2b/"], "vhost": "nginx/aphrody/aphrody.com.conf", "status": "retired", "retiredAt": "2026-09-25" },
     { "host": "api.aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "paths": ["/healthz", "/health", "/api/v1/openapi.json", "/api/v1/ecosystem", "/llms.txt", "/ai.json", "/api/"], "vhost": "nginx/aphrody/aphrody.com.conf", "status": "retired", "retiredAt": "2026-09-25" },
-    { "host": "nie.aphrody.com", "service": "nie-site", "upstream": "127.0.0.1:8085", "probePath": "/health", "paths": ["/api/", "/f/", "/b", "/health"], "bearerPaths": ["/f/", "/b"], "staticPaths": ["/downloads/inacord/latest.json", "/downloads/channels/stable/latest.json", "/downloads/files/"], "vhost": "nginx/aphrody/aphrody-nie-cdn.conf", "status": "retired", "retiredAt": "2026-09-25" },
-    { "host": "rosegriffon.fr", "service": "rg-website", "upstream": "127.0.0.1:3004", "probePath": "/api/health" },
-    { "host": "api.rosegriffon.fr", "service": "rg-api", "upstream": "127.0.0.1:8800", "probePath": "/health" },
-    { "host": "cdn.rosegriffon.fr", "service": "rg-api", "upstream": "127.0.0.1:8800", "probePath": "/cdn/health" },
-    { "host": "achillea.rosegriffon.fr", "service": "rg-achillea-bot", "upstream": "127.0.0.1:4000", "probePath": "/health/check" },
-    { "host": "ranked.rosegriffon.fr", "service": "rg-achillea-bot", "upstream": "127.0.0.1:4002", "probePath": "/health/check" },
-    { "host": "azalee.rosegriffon.fr", "service": "rg-api", "upstream": "127.0.0.1:8800", "probePath": "/health", "paths": ["/storage/v1/"] },
     { "host": "dragonballfr.com", "service": "shenron-site", "upstream": "127.0.0.1:5011", "probePath": "/api/health", "vhost": "nginx/dragonballfr.com.conf.example" },
     { "host": "bot.dragonballfr.com", "service": "shenron-bot", "upstream": "127.0.0.1:5006", "probePath": "/health", "vhost": "nginx/bot.dragonballfr.com.conf.example" },
     { "host": "cdn.dragonballfr.com", "service": "shenron-site", "upstream": "127.0.0.1:5011", "probePath": "/health", "paths": ["/_next/static/", "/_next/image", "/wiki/", "/assets/", "/health", "/api/health"], "vhost": "nginx/cdn.dragonballfr.com.conf.example" },
@@ -25,11 +18,7 @@
     { "service": "aphrody-ai-http", "upstream": "127.0.0.1:8789", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/v1/models", "/api/v1/rag/query", "/api/v1/rag/stats"], "status": "retired", "retiredAt": "2026-09-25" },
     { "service": "aphrody-a2a", "upstream": "127.0.0.1:8788", "via": "nginx", "publicHost": "api.aphrody.com", "paths": ["/api/v1/a2a", "/.well-known/agent-card.json"], "vhost": "nginx/aphrody/aphrody.com.conf", "status": "retired", "retiredAt": "2026-09-25" },
     { "service": "aphrody-ai-http", "upstream": "127.0.0.1:8789", "via": "nginx", "publicHost": "api.aphrody.com", "paths": ["/api/v1/models", "/api/v1/rag/query", "/api/v1/rag/stats"], "vhost": "nginx/aphrody/aphrody.com.conf", "status": "retired", "retiredAt": "2026-09-25" },
-    { "service": "aphrody-web-api", "upstream": "127.0.0.1:3007", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/v1/web/"], "status": "retired", "retiredAt": "2026-09-25" },
-    { "service": "nie-model-serve", "upstream": "127.0.0.1:8790", "via": "nginx", "publicHost": "nie.aphrody.com", "paths": ["/cdn/"], "denyPaths": ["/cdn/raw/", "/cdn/vfs/", "/cdn/depot/"], "exportQueryAllowlist": "/cdn/export/", "vhost": "nginx/aphrody/aphrody-nie-cdn.conf", "status": "retired", "retiredAt": "2026-09-25" },
-    { "service": "nie-model-serve", "upstream": "127.0.0.1:8790", "via": "nginx", "publicHost": "cdn.rosegriffon.fr", "paths": ["/cfg/", "/typed/", "/tex/", "/tex-info/", "/audio/", "/audio-info/", "/video/", "/lip/", "/menu-render/", "/model-full/", "/model-chr/", "/model-edit/", "/model-avatar/", "/model-map/", "/avatar/", "/icons/", "/ui/", "/export/", "/g4tx/", "/dx11/", "/menu-tree", "/story-scene", "/vfs/"], "denyPaths": ["/raw/", "/depot/"], "hostOnlyPaths": ["/vfs/"], "exportQueryAllowlist": "/export/", "vhost": "nginx/rg/rg-production.conf", "status": "retired", "retiredAt": "2026-09-25" },
-    { "service": "nie-site", "upstream": "127.0.0.1:8085", "via": "nginx", "publicHost": "cdn.rosegriffon.fr", "paths": ["/model/"], "vhost": "nginx/rg/rg-production.conf", "status": "retired", "retiredAt": "2026-09-25" },
-    { "service": "rg-api", "upstream": "127.0.0.1:8800", "via": "nginx", "publicHost": "rosegriffon.fr", "paths": ["/realtime/v1/", "/storage/v1/"] }
+    { "service": "aphrody-web-api", "upstream": "127.0.0.1:3007", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/v1/web/"], "status": "retired", "retiredAt": "2026-09-25" }
   ],
   "policy": "one-nginx-instance-one-route-per-public-service"
 }

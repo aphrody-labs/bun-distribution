@@ -21,14 +21,13 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 
 | Category | Domain | Files | Entry |
 | --- | --- | ---: | --- |
-| architecture | [(files)](architecture/) | 3 | - |
+| architecture | [(files)](architecture/) | 2 | - |
 | architecture | [ai](architecture/ai/) | 7 | - |
 | architecture | [compat](architecture/compat/) | 1 | - |
 | architecture | [convergence](architecture/convergence/) | 1 | - |
-| architecture | [discord](architecture/discord/) | 6 | [Aphrody Discord Architecture](architecture/discord/README.md) |
+| architecture | [discord](architecture/discord/) | 4 | [Aphrody Discord Architecture](architecture/discord/README.md) |
 | architecture | [interop](architecture/interop/) | 1 | - |
 | architecture | [os](architecture/os/) | 4 | - |
-| architecture | [rg](architecture/rg/) | 6 | - |
 | architecture | [runtime-native](architecture/runtime-native/) | 2 | [Frontière runtime Yolo / produit Aphrody](architecture/runtime-native/README.md) |
 | architecture | [shell](architecture/shell/) | 1 | [Shell and terminal layers](architecture/shell/README.md) |
 | architecture | [shenron](architecture/shenron/) | 11 | - |
@@ -45,7 +44,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | apis | [discord](apis/discord/) | 10 | - |
 | apis | [generated](apis/generated/) | 3 | - |
 | apis | [infra](apis/infra/) | 1 | - |
-| apis | [rg](apis/rg/) | 6 | - |
 | apis | [shell](apis/shell/) | 1 | - |
 | apis | [ui](apis/ui/) | 9 | - |
 | apis | [upstream-bun](apis/upstream-bun/) vendored upstream copy | 29 | - |
@@ -58,13 +56,11 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | apis | [web](apis/web/) | 3 | - |
 | decisions | [ai](decisions/ai/) | 1 | - |
 | decisions | [infra](decisions/infra/) | 2 | - |
-| decisions | [rg](decisions/rg/) | 2 | - |
 | decisions | [shell](decisions/shell/) | 2 | - |
 | guides | [ai](guides/ai/) | 9 | - |
 | guides | [compat](guides/compat/) | 5 | - |
 | guides | [discord](guides/discord/) | 67 | - |
 | guides | [koharu](guides/koharu/) | 1 | - |
-| guides | [rg](guides/rg/) | 1 | - |
 | guides | [shenron](guides/shenron/) | 11 | - |
 | guides | [ui](guides/ui/) | 10 | [UI guides](guides/ui/README.md) |
 | guides | [upstream-bun](guides/upstream-bun/) vendored upstream copy | 203 | - |
@@ -80,9 +76,8 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [workspace](guides/workspace/) | 4 | [Parcours Workspace Aphrody](guides/workspace/README.md) |
 | operations | [ai](operations/ai/) | 9 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
-| operations | [infra](operations/infra/) | 102 | - |
+| operations | [infra](operations/infra/) | 101 | - |
 | operations | [os](operations/os/) | 1 | - |
-| operations | [rg](operations/rg/) | 10 | - |
 | operations | [shenron](operations/shenron/) | 13 | - |
 | operations | [ui](operations/ui/) | 10 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
@@ -98,7 +93,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [infra](plans/infra/) | 4 | [Aphrody Infra plan](plans/infra/PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
-| plans | [rg](plans/rg/) | 5 | - |
 | plans | [runtime](plans/runtime/) | 4 | - |
 | plans | [shell](plans/shell/) | 1 | - |
 | plans | [shenron](plans/shenron/) | 3 | - |
@@ -111,11 +105,10 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [compat](products/compat/) | 5 | [Aphrody Compat](products/compat/README.md) |
 | products | [contracts](products/contracts/) | 5 | [Aphrody Contracts](products/contracts/README.md) |
 | products | [discord](products/discord/) | 36 | [Aphrody Discord Ecosystem](products/discord/README.md) |
-| products | [infra](products/infra/) | 6 | [Aphrody Infra](products/infra/README.md) |
+| products | [infra](products/infra/) | 5 | [Aphrody Infra](products/infra/README.md) |
 | products | [koharu](products/koharu/) | 2 | [Aphrody Koharu](products/koharu/README.md) |
 | products | [native](products/native/) | 1 | [Aphrody Native](products/native/README.md) |
 | products | [os](products/os/) | 5 | [Aphrody OS](products/os/README.md) |
-| products | [rg](products/rg/) | 62 | [Documentation — monorepo Rose Griffon](products/rg/README.md) |
 | products | [shell](products/shell/) | 4 | [Aphrody Shell](products/shell/README.md) |
 | products | [shenron](products/shenron/) | 10 | - |
 | products | [ui](products/ui/) | 35 | [Aphrody UI](products/ui/README.md) |
@@ -146,7 +139,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [koharu](reference/koharu/) | 5 | - |
 | reference | [native](reference/native/) | 2 | - |
 | reference | [os](reference/os/) | 31 | - |
-| reference | [rg](reference/rg/) | 19 | - |
 | reference | [shell](reference/shell/) | 10 | - |
 | reference | [shenron](reference/shenron/) | 15 | - |
 | reference | [ui](reference/ui/) | 219 | [UI reference documents](reference/ui/README.md) |
@@ -163,8 +155,8 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [upstream-victauri](reference/upstream-victauri/) vendored upstream copy | 6 | - |
 | reference | [upstream-vllm](reference/upstream-vllm/) vendored upstream copy | 53 | - |
 | reference | [upstream-WSL](reference/upstream-WSL/) vendored upstream copy | 18 | - |
-| reference | [web](reference/web/) | 102 | - |
-| reference | [workspace](reference/workspace/) | 14 | [Workspace documentation](reference/workspace/INDEX.md) |
+| reference | [web](reference/web/) | 98 | - |
+| reference | [workspace](reference/workspace/) | 13 | [Workspace documentation](reference/workspace/INDEX.md) |
 | research | [ai](research/ai/) | 50 | - |
 | research | [compat](research/compat/) | 11 | - |
 | research | [discord](research/discord/) | 1 | - |
@@ -182,10 +174,12 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | _root (outside the category layout) | [(files)](_root/) | 1 | - |
 | (root) (outside the category layout) | [(files)](./) | 2 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
-| migration (outside the category layout) | [(files)](migration/) | 133 | [Migration records](migration/README.md) |
+| migration (outside the category layout) | [(files)](migration/) | 138 | [Migration records](migration/README.md) |
 | migration (outside the category layout) | [a2a-os-move-2026-10-01](migration/a2a-os-move-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-clean-clone-2026-10-01](migration/contracts-clean-clone-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-qualification-2026-10-01](migration/contracts-qualification-2026-10-01/) | 6 | - |
+| migration (outside the category layout) | [huggingface-native](migration/huggingface-native/) | 7 | - |
+| migration (outside the category layout) | [jan-absorption](migration/jan-absorption/) | 6 | [Jan absorption evidence](migration/jan-absorption/README.md) |
 | migration (outside the category layout) | [kernel-clean-clone-2026-10-01](migration/kernel-clean-clone-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [kernel-qualification-2026-10-01](migration/kernel-qualification-2026-10-01/) | 3 | - |
 | migration (outside the category layout) | [kernel-source-optin-2026-10-01](migration/kernel-source-optin-2026-10-01/) | 3 | - |
@@ -193,4 +187,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 10 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 5194 files.
+Total: 5091 files.

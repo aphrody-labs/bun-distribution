@@ -2,11 +2,6 @@
   "schemaVersion": 1,
   "$comment": "Ratchet for inline interpreter invocations. Counts may only fall; new files fail the check.",
   "files": {
-    "apps/rg/bot/src/api/ranked/persistence.test.ts": {
-      "count": 1,
-      "scope": "test",
-      "reason": "Fresh-process isolation fixture."
-    },
     "apps/shenron/bot/tests/boot-without-services.test.ts": {
       "count": 1,
       "scope": "test",
@@ -16,11 +11,6 @@
       "count": 1,
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
-    },
-    "config/infra/docker/rg-vps-replica/supabase-studio.yml": {
-      "count": 2,
-      "scope": "container",
-      "reason": "Healthcheck inside the upstream container image, which ships Node only."
     },
     "packages/compat/n2b-client/test/binary-resolution.test.ts": {
       "count": 1,
@@ -37,11 +27,6 @@
       "scope": "local",
       "reason": "Fresh Bun process isolates the native library consumer under test."
     },
-    "packages/infra/workspace/src/iecode-packages.test.ts": {
-      "count": 2,
-      "scope": "test",
-      "reason": "Exercises a host or Python owner exactly as shipped."
-    },
     "packages/infra/workspace/src/infra-audit.ts": {
       "count": 2,
       "scope": "remote",
@@ -56,11 +41,6 @@
       "count": 2,
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
-    },
-    "packages/infra/workspace/test/canonical-tar.test.ts": {
-      "count": 1,
-      "scope": "test",
-      "reason": "CPython tarfile/gzip oracle: proves the TypeScript canonical archives stay byte-identical."
     },
     "packages/infra/workspace/test/infra-audit.test.ts": {
       "count": 1,
@@ -83,11 +63,6 @@
       "reason": "Fresh-process isolation fixture."
     },
     "packages/interop/native/test-native-artifact.test.ts": {
-      "count": 1,
-      "scope": "test",
-      "reason": "Fresh-process isolation fixture."
-    },
-    "packages/rg/cron/src/import.test.ts": {
       "count": 1,
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
@@ -152,20 +127,10 @@
       "scope": "host",
       "reason": "Calls the Bun binary under the VPS home, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
     },
-    "scripts/audit/rg-build.test.ts": {
-      "count": 2,
-      "scope": "test",
-      "reason": "Exercises a host or Python owner exactly as shipped."
-    },
     "scripts/audit/shenron/scripts/ops/ocr-french-databooks-aphrody.test.ts": {
       "count": 1,
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
-    },
-    "scripts/build-aphrody-stack-release.sh": {
-      "count": 2,
-      "scope": "local",
-      "reason": "Release assembly; next candidate to port manifest, hash and catalog steps into the Workspace rg/shenron owners."
     },
     "scripts/install-vps-adapter.sh": {
       "count": 4,
@@ -206,11 +171,6 @@
       "count": 2,
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
-    },
-    "scripts/rg/assemble-vps-release.sh": {
-      "count": 4,
-      "scope": "local",
-      "reason": "Release assembly; next candidate to port manifest, hash and catalog steps into the Workspace rg/shenron owners."
     },
     "scripts/test-atomic-deploy-bundle.sh": {
       "count": 2,

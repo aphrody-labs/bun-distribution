@@ -3,7 +3,6 @@ import { expect, test } from "bun:test";
 import { mkdtemp, mkdir, rm, writeFile, readFile, rename } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runRg } from "../src/rg.ts";
 import { runShenron } from "../src/shenron.ts";
 import { buildDependencies, dependencyBuildPlan } from "../src/bun-dependency-builds.ts";
 
@@ -197,35 +196,4 @@ test("Shenron compile selects its owner leaf once and prepares workspace artifac
       "--fixture",
     ]);
   });
-});
-
-test("RG typecheck stops before consuming stale output from a failed dependency build", async () => {
-  await fixture(async (root) => {
-    await mkdir(join(root, "packages/base/dist"), { recursive: true });
-    await writeFile(
-      join(root, "packages/base/dist/index.d.ts"),
-      "export declare const stale: true;",
-    );
-    await mkdir(join(root, "apps/rg"), { recursive: true });
-    await mkdir(join(root, "packages/rg"), { recursive: true });
-    await rename(join(root, "packages/app"), join(root, "apps/rg/app"));
-    await writeFile(
-      join(root, "package.json"),
-      JSON.stringify({ workspaces: ["apps/rg/*", "packages/*", "!packages/excluded"] }),
-    );
-    await writeFile(
-      join(root, "apps/rg/app/package.json"),
-      JSON.stringify({
-        name: "fixture-app",
-        dependencies: { bridge: "workspace:*" },
-        scripts: { typecheck: "bun gate.ts" },
-      }),
-    );
-    await writeFile(
-      join(root, "apps/rg/app/gate.ts"),
-      `await Bun.write(${JSON.stringify(join(root, "gate.log"))}, "ran");`,
-    );
-    expect(await runRg(["check", "typecheck"], root)).toBe(17);
-    expect(await Bun.file(join(root, "gate.log")).exists()).toBe(false);
-  }, true);
 });

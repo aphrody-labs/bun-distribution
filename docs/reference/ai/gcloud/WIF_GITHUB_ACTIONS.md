@@ -62,7 +62,7 @@ gcloud iam service-accounts add-iam-policy-binding "aphrody-bot@aphrody.iam.gser
 
 ## 3. Configuration du Workflow GitHub Actions
 
-Configurez le fichier de workflow YAML (`.github/rg/workflows/ci.yml`) dans votre dépôt.
+Configurez le fichier de workflow YAML (`iecode/.github/rg/workflows/ci.yml`) dans votre dépôt.
 
 ### Permissions du workflow
 Le workflow doit obligatoirement avoir les permissions d'écriture pour `id-token` afin de pouvoir demander le jeton OIDC à GitHub.

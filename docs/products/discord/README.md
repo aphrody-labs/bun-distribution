@@ -46,8 +46,8 @@ aphrody/
 | Application | Domain | Standalone Binary | Systemd Unit |
 | :--- | :--- | :--- | :--- |
 | **`@shenron/bot`** | Dragon Ball universe, card games, OCR, public API (`:5006`) | `dist/shenron` (~151.6 MB) | `systemd/shenron-bot.service` |
-| **`@rosegriffon/bot`** | Inazuma Eleven community, Azalée game bot, moderation, XP | `dist/rg-bot` (~144.9 MB) | `systemd/rg-bot.service` |
-| **`@rosegriffon/achillea-bot`** | Inazuma Eleven tournament automation | `dist/achillea` | `systemd/rg-achillea-bot.service` |
+| **`@rosegriffon/bot`** | Inazuma Eleven community, Azalée game bot, moderation, XP | `dist/rg-bot` (~144.9 MB) | `iecode/config/rg/host/systemd/rg-bot.service` |
+| **`@rosegriffon/achillea-bot`** | Inazuma Eleven tournament automation | `dist/achillea` | `iecode/config/rg/host/systemd/rg-achillea-bot.service` |
 
 ---
 
@@ -76,7 +76,7 @@ Aphrody Discord bots are compiled ahead-of-time (AOT) into standalone native exe
 
 1. **Reflection & Decorator Ordering (`src/entry-standalone.ts`)**:
    Guarantees that `reflect-metadata` is loaded synchronously into memory before TypeScript decorators (`@Discord`, `@Slash`, `@Guard`) are evaluated. Also provides standard CLI flags (`--help`, `--version`, `--dry-run`) without opening a Discord connection.
-2. **Static Loader Table (`apps/rg/bot/src/modules.ts`)**:
+2. **Static Loader Table (`iecode/apps/rg/bot/src/modules.ts`)**:
    Replaces dynamic directory scans (`fs.readdirSync`) with explicit static import loaders (`MODULE_LOADERS`), allowing Bun's bundler to discover and compile all 50+ command modules while preserving runtime profile selection (`rg` vs `azalee`).
 3. **Host Zero-Dependency Model**:
    The output binaries (`dist/shenron`, `dist/rg-bot`) are completely self-contained. Target hosts running `systemd` do not need `node_modules` or a host Bun installation.

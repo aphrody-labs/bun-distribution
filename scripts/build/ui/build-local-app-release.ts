@@ -40,7 +40,7 @@ const extract = Bun.spawn(["tar", "-x", "-C", source], {
 });
 if ((await extract.exited) || (await archive.exited))
   throw new Error("Source archive extraction failed");
-await cp(join(root, ".cache/iecode-packages"), join(source, ".cache/iecode-packages"), {
+await cp(join(root, ".cache/yolo-packages"), join(source, ".cache/yolo-packages"), {
   recursive: true,
 });
 await run(["bun", "install", "--frozen-lockfile", "--ignore-scripts"], source);

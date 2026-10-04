@@ -7,7 +7,7 @@ Common pitfalls hit by engineers working on `aphrody`. Each entry follows a
 mitigations; this page exists to short-circuit the rediscovery loop.
 
 If your issue is not here, see `FAQ.md` or open a GitHub issue
-using `packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml`.
+using `packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml` (not in repo).
 
 ## 1. `aphrody --version` panics with "No provider set"
 
@@ -122,5 +122,5 @@ using `packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml`.
 ## 14. Got more?
 
 Skim `FAQ.md` first. If still stuck, open a GitHub issue using
-`packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml` and attach the output of
+`packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml` (not in repo) and attach the output of
 `aphrody doctor`.

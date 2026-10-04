@@ -17,7 +17,6 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { existsSync } from "node:fs";
 import { canonicalTar, gzipCanonical, readTar, type TarMember } from "./canonical-tar.ts";
-import { validateArchiveTypes } from "./iecode-packages.ts";
 import { infraRoot } from "./runtime.ts";
 
 export interface AphrodyArchive {
@@ -120,6 +119,24 @@ async function archiveVersion(path: string): Promise<string> {
   );
   if (!entry) throw new Error(`${path} has no package/package.json`);
   return (JSON.parse(new TextDecoder().decode(entry.data)) as { version: string }).version;
+}
+
+/** Private or host-specific files that must never ship in a package archive. */
+const PRIVATE_ENTRY =
+  /(^|\/)(?:\.env(?:\.[^/]*)?|\.npmrc|node_modules|target|\.git|[^/]*\.(?:pem|pfx|key|keys|sqlite|db|7z|nds|nsp|nca|xci|cia|3ds|cpk|iso|rom|sav|live_save))($|\/)/i;
+
+/** Refuses archive entries outside `package/`, with traversal, or matching {@link PRIVATE_ENTRY}. */
+export function assertPublicEntries(entries: TarMember[], name: string) {
+  for (const entry of entries) {
+    const path = entry.name.replace(/^package\//, "");
+    if (
+      !entry.name.startsWith("package/") ||
+      entry.name.includes("\\") ||
+      path.split("/").includes("..") ||
+      PRIVATE_ENTRY.test(path)
+    )
+      throw new Error(`${name} archive carries a private or unsafe entry: ${entry.name}`);
+  }
 }
 
 const IMPORT_SPECIFIER =
@@ -284,12 +301,9 @@ export async function prepareAphrodyPackages(options: {
         throw new Error(`bun pm pack failed for ${name}: ${packed.stderr}`);
       const [file] = await readdir(out);
       if (!file) throw new Error(`bun pm pack produced no archive for ${name}`);
-      await validateArchiveTypes(file, out);
-      const contents = await embedExternalImports(
-        readTar(Bun.gunzipSync(await readFile(join(out, file)))),
-        directory,
-        root,
-      );
+      const archived = readTar(Bun.gunzipSync(await readFile(join(out, file))));
+      assertPublicEntries(archived, name);
+      const contents = await embedExternalImports(archived, directory, root);
       await writeFile(join(out, file), portableArchive(contents, pinnedVersions, name));
       const entries = new Set(contents.map((entry) => entry.name.replace(/^package\//, "")));
       const missing = exportTargets(manifest).filter((target) => !entries.has(target));

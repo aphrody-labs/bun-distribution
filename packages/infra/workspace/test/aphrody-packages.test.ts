@@ -7,6 +7,7 @@ import { readTar } from "../src/canonical-tar.ts";
 import {
   aphrodyClosure,
   archiveName,
+  assertPublicEntries,
   embedExternalImports,
   exportTargets,
   portableArchive,
@@ -129,4 +130,25 @@ test("JSON imported from outside the package is embedded and its specifier rewri
   } finally {
     await rm(repository, { recursive: true, force: true });
   }
+});
+
+test("private or traversing entries are refused", () => {
+  const entry = (name: string) => ({
+    name,
+    type: "file" as const,
+    mode: 0o644,
+    size: 0,
+    data: new Uint8Array(),
+  });
+  expect(() => assertPublicEntries([entry("package/src/index.ts")], "@aphrody/a")).not.toThrow();
+  for (const name of [
+    "package/.env",
+    "package/.env.local",
+    "package/.npmrc",
+    "package/keys/a.pem",
+    "package/data/game.cpk",
+    "other/x.ts",
+    "package/../x",
+  ])
+    expect(() => assertPublicEntries([entry(name)], "@aphrody/a")).toThrow("private or unsafe");
 });

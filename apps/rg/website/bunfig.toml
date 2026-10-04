@@ -1,4 +1,0 @@
-# Tests website : globals DOM (document/window) via happy-dom (cf. https://bun.com/docs/test/dom).
-# Le fichier de preload happydom.ts vit a la racine du monorepo.
-[test]
-preload = ["../../../config/rg/happydom.ts"]

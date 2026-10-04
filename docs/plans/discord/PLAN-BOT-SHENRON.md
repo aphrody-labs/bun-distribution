@@ -60,7 +60,7 @@ est le premier palier; la production relève ensuite du flux `aphrody-infra`.
 
 ### Runtime et chargement du bot
 
-`apps/rg/bot/src/index.ts` installe `reflect-metadata`, configure TSyringe comme
+`iecode/apps/rg/bot/src/index.ts` installe `reflect-metadata`, configure TSyringe comme
 moteur d’injection de DiscordX, importe le barrel latéral `src/_entries.ts`,
 applique les migrations SQLite au démarrage, vérifie l’espace vectoriel RAG,
 hydrate les caches, crée un client Gateway unique, enregistre les commandes,
@@ -196,7 +196,7 @@ Le client reste sur npm `14.27.0`; ne pas résoudre avec deux versions installé
    depuis Shenron; ne pas déclarer le package source local `discord.js`.
    Enregistrer le SHA source dans la doc du monorepo et verrouiller les chemins
    sélectionnés dans `bun.lock`.
-2. Utiliser les noms canoniques upstream dans `apps/rg/bot/package.json` :
+2. Utiliser les noms canoniques upstream dans `iecode/apps/rg/bot/package.json` :
    `discordx`, `@discordx/di`, `@discordx/pagination` avec ranges semver
    publiés compatibles avec les versions locales du SHA choisi. Ces
    dépendances doivent accepter le repli npm en l’absence du checkout frère.

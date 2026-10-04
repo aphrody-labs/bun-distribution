@@ -1,11 +1,4 @@
 {
   "recorded": "2026-10-02",
-  "errors": [
-    "apps/rg/website/src/app/api/admin/patreon/webhooks/route.ts: error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.",
-    "apps/rg/website/src/app/api/auth/patreon/webhook/route.ts: error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.",
-    "apps/rg/website/src/components/patreon/PatreonConnectButton.tsx: error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.",
-    "apps/rg/website/src/lib/patreon/client.ts: error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.",
-    "apps/rg/website/src/lib/patreon/types.ts: error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations.",
-    "apps/rg/website/src/lib/patreon/webhooks.ts: error TS2307: Cannot find module '@rosegriffon/patreon-bun' or its corresponding type declarations."
-  ]
+  "errors": []
 }

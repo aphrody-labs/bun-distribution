@@ -126,7 +126,7 @@ Detailed in [`COMPILER.md`](COMPILER.md):
    - Dragon Ball canon database, interactive commands, card games, OCR integration, and public HTTP/REST/GraphQL API server on port 5006.
    - Entry point: `src/entry-standalone.ts`.
    - Output binary: `dist/shenron` (~151.6 MB).
-2. **`apps/rg/bot` (`@rosegriffon/bot`)**:
+2. **`iecode/apps/rg/bot` (`@rosegriffon/bot`)**:
    - Rose Griffon / Azalée Inazuma Eleven community bot, moderation, tournament coordination, XP and role sync.
    - Dual-profile dynamic dispatching (`rg` vs `azalee`) via static module loader registry (`src/modules.ts`).
    - Entry point: `src/entry-standalone.ts`.
@@ -138,13 +138,13 @@ Detailed in [`COMPILER.md`](COMPILER.md):
 
 Detailed in [`docs/operations/discord/SYSTEMD-SERVICES.md`](../../operations/discord/SYSTEMD-SERVICES.md):
 - `systemd/shenron-bot.service` executes `/srv/shenron/current/apps/bot/dist/shenron`.
-- `systemd/rg-bot.service` executes `/srv/rg/current/apps/bot/dist/rg-bot`.
+- `iecode/config/rg/host/systemd/rg-bot.service` executes `/srv/rg/current/apps/bot/dist/rg-bot`.
 - Complete elimination of host node_modules and Bun binary requirements.
 
 ---
 
 ## 3. Boundary Principles
 
-1. **Separation of Concerns**: Discord protocols, decorators, and runtime lifecycles live in `@aphrody/discord-kit`. Domain logic, SQL schemas, business commands, and credentials remain strictly inside their respective applications (`apps/shenron/bot`, `apps/rg/bot`).
+1. **Separation of Concerns**: Discord protocols, decorators, and runtime lifecycles live in `@aphrody/discord-kit`. Domain logic, SQL schemas, business commands, and credentials remain strictly inside their respective applications (`apps/shenron/bot`, `iecode/apps/rg/bot`).
 2. **No Duplicated Gateways**: Each application runs exactly one Discord Gateway connection. HTTP interaction webhooks and Gateway delivery are mutually exclusive.
 3. **Deterministic Verification**: No change can be merged without passing `bun run discord:verify --compile` (100% pass across catalog audit, kit unit tests, messaging unit tests, bot suites, and AOT standalone compilation).

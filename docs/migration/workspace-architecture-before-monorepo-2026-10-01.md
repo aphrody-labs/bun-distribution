@@ -40,7 +40,7 @@ does not prove that a service or desktop artifact is deployed.
 | [aphrody-ai](../products/ai/_source/README.md.a7d252bc425b) | Agent/runtime/tools, model clients and lifecycle, inference, RAG/memory, OCR/vision/voice, training, AI MCP/A2A, app-server and the `aphrody` CLI |
 | [aphrody-infra](../products/infra/README.md) | Targets, topology, service/routes catalogues, release/deployment control, Git/SSH/VPN and remote operations |
 | [aphrody-discord](../products/discord/README.md) | Shared Discord transport, protocol contracts and framework adapters; consuming applications retain commands, data, auth policy and secrets |
-| [rg](../products/rg/README.md), shenron, nie, iecode | Domain products, data and workflows consuming shared capabilities through their declared packages, libraries or service contracts |
+| [rg](https://github.com/aphrody-labs/iecode/blob/main/docs/rg/products/README.md), shenron, nie, iecode | Domain products, data and workflows consuming shared capabilities through their declared packages, libraries or service contracts |
 
 The generated [ecosystem catalogue](../ecosystem/ECOSYSTEM.md),
 [CLI tree](../ecosystem/CLI.md) and

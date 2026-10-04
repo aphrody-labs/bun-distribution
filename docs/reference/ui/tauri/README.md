@@ -40,6 +40,6 @@ Owner documents in [`packages/ui/material-web/docs/tauri/`](../../../../packages
 
 ## Historical records
 
-- [`docs/products/rg/azalee-tauri.md`](../../../products/rg/azalee-tauri.md): archived Azalee Tauri client (no longer part of the monorepo).
+- [`iecode/docs/rg/products/azalee-tauri.md`](https://github.com/aphrody-labs/iecode/blob/main/docs/rg/products/azalee-tauri.md): archived Azalee Tauri client (no longer part of the monorepo).
 - [`docs/plans/ai/plans/tauri-app.md`](../../../plans/ai/plans/tauri-app.md): superseded in-process Tauri plan (2026-09-20 snapshot).
 - Agent skill for Tauri 2 (owned by the AI domain): [`plugins/aphrody/skills/tauri-v2`](../../../../plugins/aphrody/skills/tauri-v2/SKILL.md).

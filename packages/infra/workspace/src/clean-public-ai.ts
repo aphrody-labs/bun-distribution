@@ -9,7 +9,7 @@ import { readdir, readFile } from "node:fs/promises";
  *
  * Rules:
  * - Code, skills, MCP definitions, and plugin definitions under plugins/ or crates/ai are exempt.
- * - Public apps (apps/rg/website, apps/shenron/site, etc.), public pages, and git history are audited.
+ * - Public apps (apps/shenron/site, etc.), public pages, and git history are audited.
  */
 
 // Patterns to detect in public files and commit messages
@@ -88,8 +88,6 @@ export async function auditPublicSurfaces(
 ): Promise<{ hits: ScanHit[]; scannedCount: number }> {
   const root = resolve(rootDir);
   const publicDirs = [
-    resolve(root, "apps/rg/website/public"),
-    resolve(root, "apps/rg/website/src"),
     resolve(root, "apps/shenron/site/public"),
     resolve(root, "apps/shenron/site/src"),
   ];

@@ -55,37 +55,6 @@
       ]
     },
     {
-      "id": "lexical",
-      "ecosystem": "npm",
-      "name": "lexical",
-      "github": "facebook/lexical",
-      "context7": "/facebook/lexical",
-      "topics": [
-        "breaking changes",
-        "commands"
-      ]
-    },
-    {
-      "id": "react-table",
-      "ecosystem": "npm",
-      "name": "@tanstack/react-table",
-      "github": "TanStack/table",
-      "context7": "/tanstack/table",
-      "topics": [
-        "migration v9"
-      ]
-    },
-    {
-      "id": "sentry-nextjs",
-      "ecosystem": "npm",
-      "name": "@sentry/nextjs",
-      "github": "getsentry/sentry-javascript",
-      "context7": "/getsentry/sentry-javascript",
-      "topics": [
-        "migration v11"
-      ]
-    },
-    {
       "id": "next",
       "ecosystem": "npm",
       "name": "next",
@@ -137,22 +106,6 @@
         "aphrody-tauri-wrap"
       ],
       "bun": []
-    },
-    "lexical": {
-      "bun": [
-        "apps/rg/website"
-      ]
-    },
-    "react-table": {
-      "bun": [
-        "apps/rg/website",
-        "packages/rg/ui"
-      ]
-    },
-    "sentry-nextjs": {
-      "bun": [
-        "apps/rg/website"
-      ]
     },
     "xterm": {
       "bun": [

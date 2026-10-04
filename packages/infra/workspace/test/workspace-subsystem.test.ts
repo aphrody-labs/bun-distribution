@@ -16,9 +16,6 @@ test("the catalog publishes unique read-only tools with closed object schemas", 
     expect(tool.readOnly).toBe(true);
     expect(tool.inputSchema).toMatchObject({ type: "object", additionalProperties: false });
   }
-  expect(await callWorkspaceTool("workspace_iecode_source", { root: repository })).toMatchObject({
-    slug: "aphrody-labs/iecode",
-  });
   expect(
     await callWorkspaceTool("workspace_build_factory_status", { root: repository }),
   ).toHaveProperty("route");
@@ -46,7 +43,7 @@ test("serve registers through the kernel, answers routed calls and fails on kern
           send({
             id: "kernel-1",
             method: "tools/call",
-            params: { name: "workspace_iecode_source", arguments: { root: repository } },
+            params: { name: "workspace_build_factory_status", arguments: { root: repository } },
           });
         } else if (message.id === "kernel-1") {
           seen.result = message.result;
@@ -66,10 +63,8 @@ test("serve registers through the kernel, answers routed calls and fails on kern
     expect((seen.registration!.tools as { name: string }[]).map((tool) => tool.name)).toEqual(
       WORKSPACE_TOOLS.map((tool) => tool.name),
     );
-    expect(seen.result).toMatchObject({
-      isError: false,
-      structuredContent: { slug: "aphrody-labs/iecode" },
-    });
+    expect(seen.result).toMatchObject({ isError: false });
+    expect(seen.result!.structuredContent).toHaveProperty("route");
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await rm(directory, { recursive: true, force: true });

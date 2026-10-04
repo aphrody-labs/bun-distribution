@@ -109,7 +109,7 @@ roster matches the live release (`5691ba4b`: website, api, bot, achillea-bot, cr
 ## 4. Gaps and owner decisions found by this audit (2026-09-26, all closed)
 
 Fixed in this pass (see `config/service-catalog.json`, `config/production-topology.json`,
-`config/a2a-peers.json`, and the header banners added to the nginx files under `nginx/rg/`):
+`config/a2a-peers.json`, and the header banners added to the nginx files under `iecode/config/rg/host/nginx/`):
 
 1. `rg-cdn` (8801), `rg-storage` (8810), `rg-realtime` (8812) had real systemd units and reserved
    topology ports but no `service-catalog.json` entry — added.
@@ -117,14 +117,14 @@ Fixed in this pass (see `config/service-catalog.json`, `config/production-topolo
    undeclared anywhere — added to `additionalUpstreams` and `production-topology.json`.
 3. The A2A peer record for `aphrody` pointed at a retired service/route without saying so — now
    carries `status`/`retiredAt` like the `shenron` peer already did.
-4. `nginx/rg/supabase-compat.inc`'s `/rest/v1/` and `/graphql/v1/` blocks hard-coded
+4. `iecode/config/rg/host/nginx/supabase-compat.inc`'s `/rest/v1/` and `/graphql/v1/` blocks hard-coded
    `127.0.0.1:8809` (`rg-postgrest`), a service `docs/PLAN.md` (not in repo)'s ledger records as removed with no
    consumer (2026-09-23) and for which no systemd unit exists anywhere in this repo — marked
    retired in place (not deleted, so the location shape survives if it's ever redeployed).
 5. Six pre-consolidation per-host RG nginx templates (`rosegriffon.conf`,
    `achillea.rosegriffon.conf`, `api.rosegriffon.conf`, `cdn.rosegriffon.conf`,
    `ranked.rosegriffon.conf`, `azalee.rosegriffon.conf`) and `supabase-internal.conf` predate and
-   are superseded by the consolidated, release-managed `nginx/rg/rg-production.conf`
+   are superseded by the consolidated, release-managed `iecode/config/rg/host/nginx/rg-production.conf`
    (docs/PLAN.md, 2026-09-25 "Live rg.conf is nginx/rg/rg-production.conf" decision) but carried no
    marker saying so — every one now has a header banner naming its replacement, so nobody
    reinstalls a stale vhost next to the live one.
@@ -136,7 +136,7 @@ Fixed in this pass (see `config/service-catalog.json`, `config/production-topolo
    item 12 below.
 7. `production-topology.json`'s `internalOnly` list mixed live ports with three that no service has
    ever declared (3000, 3005, 3006) and was missing 3014 (the RG preview-environment upstream,
-   `nginx/rg/generated/website_preview.conf`) — split into `internalOnly` (real, declared) and a
+   `iecode/config/rg/host/nginx/generated/website_preview.conf`) — split into `internalOnly` (real, declared) and a
    new `reservedNoCurrentOwner` array (3000, 3005 — occupied by something outside this catalog per
    the 2026-09-23 ledger entry, do not reassign — and 3006) so the two categories are no longer
    silently merged. `aphrody-infra validate` stays green either way since no catalog service
@@ -145,13 +145,13 @@ Fixed in this pass (see `config/service-catalog.json`, `config/production-topolo
 Resolved by the `rg` sibling audit (§5) the same day — no longer open:
 
 8. ~~rg-cdn vs rg-api for `cdn.rosegriffon.fr`~~ — **answered.** `apps/api/src/index.ts` (not in repo) (in the
-   `rg` repo) imports `handleCdn`/`handleStorage`/`handleRealtime` from the sibling `packages/rg/cdn`,
-   `packages/rg/storage`, `packages/rg/realtime` packages and mounts them **in-process** on `rg-api:8800`, with
+   `rg` repo) imports `handleCdn`/`handleStorage`/`handleRealtime` from the sibling `iecode/packages/rg/cdn`,
+   `iecode/packages/rg/storage`, `iecode/packages/rg/realtime` packages and mounts them **in-process** on `rg-api:8800`, with
    its own comments confirming the intent: `// remplace rg-cdn:8801`, `// remplace rg-storage:8810`,
    `// remplace rg-realtime:8812`. So `rg-production.conf` proxying everything to `:8800` is correct,
    not a regression; `rg-cdn.service`/`rg-storage.service`/`rg-realtime.service` are an
    alternate/older standalone deployment mode of the *same code*, currently superseded by the
-   unified `rg-api` path for live traffic (one exception: `apps/rg/website/src/lib/db/platform.ts`'s
+   unified `rg-api` path for live traffic (one exception: `iecode/apps/rg/website/src/lib/db/platform.ts`'s
    admin health dashboard still probes `:8810`/`:8812` directly as a standalone-service check).
    `config/service-catalog.json`'s notes for these three services were corrected accordingly.
 9. ~~rg-storage/rg-realtime: proxied via rg-api, or a dead standalone unit?~~ — same answer as #8.
@@ -183,20 +183,20 @@ of 2026-09-26 — nothing in this section is open any more:
     entry that would have no service to point at.
 12. ~~`rpbey.fr` contradiction~~ — **resolved 2026-09-26, operator decision: the domain was sold.**
     Neither side of the contradiction stands any more, so instead of picking one this pass removed
-    the domain outright: the four `nginx/rg/*rpbey.fr*.conf` templates and the `rpbey.fr` block in
+    the domain outright: the four `nginx/rg/*rpbey.fr*.conf` (not in repo) templates and the `rpbey.fr` block in
     the live `rg-production.conf` (server_name list and the 503 maintenance server); the `rpbey.fr`
     entry in the `aphrody.com` OVH profile's domain set (`packages/aphrody-ovh/src/profiles.ts` (not in repo),
     `crates/infra/ovh/src/profile.rs`, and their tests); the `cdn.rpbey.fr` entry in `rg`'s
-    `packages/rg/cdn/server.ts` `ALLOWED_PUBLIC_HOSTS` (and its test in `packages/rg/cdn/server.test.ts`); and
+    `iecode/packages/rg/cdn/server.ts` `ALLOWED_PUBLIC_HOSTS` (and its test in `iecode/packages/rg/cdn/server.test.ts`); and
     the `rpbey.fr`/`*.rpbey.fr` branch of the nginx-stats parser in `rg`'s
-    `packages/rg/cron/src/tasks/stats/achillea.ts`. `docs/reference/infra/ops/OVH.md` and `docs/ovh/README.md` (not in repo) now
+    `iecode/packages/rg/cron/src/tasks/stats/achillea.ts`. `docs/reference/infra/ops/OVH.md` and `docs/ovh/README.md` (not in repo) now
     record the sale instead of describing a live-but-unserved zone. No route ever existed in
     `config/nginx-routes.json`/`config/service-catalog.json` for this domain, so no catalog entry
     needed removing there. CHANGELOG/history mentions (e.g. `shenron/docs/archive/`) were left
     untouched, per the "history stays" rule.
 13. ~~Port 8811 (`SUPABASE_INTERNAL_URL`)~~ — **resolved 2026-09-26: routed to `rg-api:8800`
-    (absorbed), not un-superseded.** `rg`'s own `packages/rg/db/src/env.ts` (`INTERNAL_URL`),
-    `packages/rg/cron/src/lib/storage-assets.ts` (`baseStorage()`) and `apps/rg/website/next.config.ts`'s
+    (absorbed), not un-superseded.** `rg`'s own `iecode/packages/rg/db/src/env.ts` (`INTERNAL_URL`),
+    `iecode/packages/rg/cron/src/lib/storage-assets.ts` (`baseStorage()`) and `iecode/apps/rg/website/next.config.ts`'s
     storage `rewrites()` (`FALLBACK_STORAGE_URL`) all now default `SUPABASE_INTERNAL_URL` to
     `http://127.0.0.1:8800` instead of `:8811`, since `rg-api` absorbs storage/realtime in-process
     (items 8/9 above) and is the only backend `rg-production.conf` actually routes `/storage/v1/`
@@ -238,7 +238,7 @@ commit trailers in each repo for any fix that landed):
 - **rg**: fixed and committed (`60fa573`) two literal-duplication cases (a `:8800` log literal next
   to the `PORT` constant already in scope in `apps/api/src/index.ts` (not in repo); a repeated
   `"http://127.0.0.1:8811"` fallback extracted to `FALLBACK_STORAGE_URL` in
-  `apps/rg/website/next.config.ts`). Also answered the two open architecture questions this audit had
+  `iecode/apps/rg/website/next.config.ts`). Also answered the two open architecture questions this audit had
   left for the `rg` owner (§4 items 8/9, now resolved) and surfaced two new findings recorded above
   as §4 items 12 (the `rpbey.fr` contradiction) and 13 (the live `:8811` default), both since
   resolved (2026-09-26, see those items) — and

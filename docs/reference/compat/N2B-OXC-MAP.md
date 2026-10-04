@@ -95,14 +95,14 @@ Consumers of `aphrody-oxc-bridge`: `crates/interop/ffi/Cargo.toml:54`
 
 | Package | Declared | Resolved (bun.lock) | Where |
 |---|---|---|---|
-| `oxlint` | root catalog `1.86.0` (`package.json:34`), root devDep `catalog:` (`:357`) | `oxlint@1.86.0` (bun.lock:5760) | `catalog:` in `packages/rg/achillea-{types,client,contract,core}`, `packages/shenron/pipeline`, `packages/koharu/bridge`, `apps/rg/{website,bot}`, `apps/shenron/bot`, `apps/koharu/editor`; peer `>=1.0.0` in `packages/ui/eslint-plugin-m3/package.json:46` |
+| `oxlint` | root catalog `1.86.0` (`package.json:34`), root devDep `catalog:` (`:357`) | `oxlint@1.86.0` (bun.lock:5760) | `catalog:` in `packages/rg/achillea-{types,client,contract,core}` (not in repo), `packages/shenron/pipeline`, `packages/koharu/bridge`, `apps/rg/{website,bot}` (not in repo), `apps/shenron/bot`, `apps/koharu/editor`; peer `>=1.0.0` in `packages/ui/eslint-plugin-m3/package.json:46` |
 | `oxfmt` | root catalog `0.71.0` (`package.json:35`), root devDep `catalog:` (`:356`) | `oxfmt@0.71.0` (bun.lock:5758) | root only in the main workspace |
 | `oxc-parser` | not declared by any first-party package.json | `oxc-parser@0.143.0` (bun.lock:5756), transitive, pulled by `@sentry/bundler-plugins@11.1.0` (bun.lock:3440) | - |
 | `@oxc-project/types` | not declared | `0.151.0` (bun.lock:2930), required `=0.151.0` by `rolldown@1.2.11` (bun.lock:6156); `oxc-parser` wants `^0.143.0` | - |
 | `oxc-transform`, `oxc-minify`, `oxc-resolver` | not declared, not in bun.lock | - | - |
 
 Separate imported workspaces (own lockfiles, not the root catalog):
-`config/rg/package.json` (catalog `oxlint ^1.86.0` :47, `oxfmt ^0.71.0` :158) and
+`config/rg/package.json` (not in repo) (catalog `oxlint ^1.86.0` :47, `oxfmt ^0.71.0` :158) and
 `config/shenron/package.json` (catalog `oxlint ^1.81.0` :28, `oxfmt ^0.66.0` :29,
 behind the root pins).
 
@@ -111,8 +111,8 @@ Pins: `config/update/pins.json` tools `oxlint` (targets `package.json`,
 
 Config files (30 found outside `node_modules`/`target`/`.next`): root
 `.oxlintrc.json`, `.oxfmtrc.json` (`$schema` from `node_modules/oxlint|oxfmt`);
-`config/rg/.oxlintrc.json`, `config/rg/.oxfmtrc.json`, `config/shenron/.oxlintrc.json`,
-`config/shenron/.oxfmtrc.json`, `packages/rg/config/oxlintrc.json`,
+`config/rg/.oxlintrc.json` (not in repo), `config/rg/.oxfmtrc.json` (not in repo), `config/shenron/.oxlintrc.json`,
+`config/shenron/.oxfmtrc.json`, `iecode/packages/rg/config/oxlintrc.json`,
 `packages/ui/eslint-plugin-m3/test/.oxlintrc.json`, and per-package pairs in
 `packages/ui/{m3-primitives,assets,m3-theme,m3-explorer,m3-forms,canvas,m3-ai,...}`.
 
@@ -122,7 +122,7 @@ Gates and scripts running them:
 |---|---|
 | Root scripts | `package.json:276` `ai:lint` (`oxlint -c .oxlintrc.json packages/ai/ packages/web/x/`), `:277` `ai:fmt` (`oxfmt ...`) |
 | Monorepo gate allow-list | `packages/infra/workspace/src/monorepo-gate.ts:174-175` (accepts `oxlint ...` and `oxfmt --check ...` package scripts) |
-| RG ops | `packages/infra/workspace/src/rg.ts:207` (`config/rg/oxfmt.json`) |
+| RG ops | `packages/infra/workspace/src/rg.ts:207` (not in repo) (`config/rg/oxfmt.json` (not in repo)) |
 | Asset generator | `scripts/build/ui/packages/assets/scripts/generate.ts:104` (`bunx oxfmt`) |
 | Agent home tool list | `packages/infra/workspace/src/agent-home.ts:72-73` |
 

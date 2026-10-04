@@ -17,7 +17,7 @@
 //   install  `node_modules` holds only links into the isolated store: a real package directory is a
 //            stale hoisted leftover that `bun install` never replaces (two copies of React, ...)
 
-import { Glob, TOML } from "bun";
+import { TOML } from "bun";
 import { firstPartyManifests } from "@aphrody/update/manifests";
 import { readdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";

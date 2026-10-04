@@ -11,8 +11,6 @@ const SCRIPT_PATHS = [
   "scripts/ops/backup-shenron-pg.sh",
   "scripts/ops/backup-shenron-sqlite.sh",
   "scripts/ops/repo-sync.ts",
-  "scripts/ops/rg-watchdog.sh",
-  "scripts/rg/sauvegarde.ts",
   "scripts/source-sync.ts",
 ] as const;
 
@@ -30,11 +28,6 @@ function git(root: string, args: string[]): string {
 
 function hash(bytes: Buffer): string {
   return createHash("sha256").update(bytes).digest("hex");
-}
-
-function category(path: string): string {
-  if (path.endsWith("rg-watchdog.sh")) return "dev";
-  return "tools";
 }
 
 export async function importInfraScripts(
@@ -66,7 +59,7 @@ export async function importInfraScripts(
     const sourceHash = hash(sourceBytes);
     if (entry.sha256 !== sourceHash)
       throw new Error(`Infra service script changed after inventory: ${path}`);
-    const destination = `scripts/${category(path)}/infra/${path}`;
+    const destination = `scripts/tools/infra/${path}`;
     if (entry.target && entry.target !== destination)
       throw new Error(`Infra service script already maps elsewhere: ${path}`);
     const targetPath = resolve(target, destination);
@@ -106,7 +99,7 @@ export async function importInfraScripts(
       source: `aphrody-infra/${item.path}`,
       target: item.destination,
       sha256: item.sourceHash,
-      category: category(item.path),
+      category: "tools",
     })),
   };
   const reportPath = "docs/migration/infra-scripts-import.json";

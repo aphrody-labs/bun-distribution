@@ -51,7 +51,7 @@ local attesté par `SMOKE.json`), l'artefact Shenron (`bun run site:artifact` et
 `git archive`) et l'épinglage du commit RG — et enregistre les 13 SHA des
 sous-modules dans `BUNDLE.json` et `RELEASE_SHA`
 ([`IMMUTABLE-RELEASES.md`](../../operations/infra/IMMUTABLE-RELEASES.md)). La release RG restait
-assemblée sur la VPS par `scripts/rg/assemble-vps-release.sh`. NIE et IECode ne
+assemblée sur la VPS par `iecode/scripts/rg/assemble-vps-release.sh`. NIE et IECode ne
 publient plus de release VPS selon cet état historique. Les tests Shell des
 adaptateurs sont appelés directement (`bash scripts/test-atomic-deploy-<stack>.sh`)
 quand le fixture correspondant est disponible ; aucun script racine

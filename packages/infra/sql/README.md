@@ -110,7 +110,7 @@ applies the same pragmas as the Rust crate:
 
 ## Consumers
 
-- `@rosegriffon/db` (`packages/rg/db`):
+- `@rosegriffon/db` (`iecode/packages/rg/db`):
   - `bun-sql` builds its pool with `createSql` and `resolvePoolSize`, using
     `tls`/`prepare: "inherit"`.
   - `redis` builds its client with `createRedisClient` and logs through

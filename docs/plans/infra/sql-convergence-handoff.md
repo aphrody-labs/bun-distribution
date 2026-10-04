@@ -80,10 +80,10 @@ Each worker reports in its own files; check them, do not assume success.
    Bun.SQL with TLS/pooler rules, redis via Bun `RedisClient`, sqlite policy +
    sqlite-vec, `vacuumInto`); `@rosegriffon/db` and `@shenron/db`
    `bun-sql`/`env`/`redis` delegate with unchanged contracts;
-   `apps/rg/website/next.config.ts` transpiles `@aphrody/sql`; npm sqlite-vec
+   `iecode/apps/rg/website/next.config.ts` transpiles `@aphrody/sql`; npm sqlite-vec
    `^0.1.9` in shenron pipeline + bot; `bun.lock` updated. Gates: bun test
    33/12/78 pass, tsgo clean ×3, oxlint clean except 16 pre-existing findings in
-   `packages/rg/db/src/redis.ts`, `monorepo:layout` OK (85 packages). Note:
+   `iecode/packages/rg/db/src/redis.ts`, `monorepo:layout` OK (85 packages). Note:
    `@rosegriffon/db` still has a public `publishConfig` and now depends on the
    private `@aphrody/sql` — do not publish (owner rule: everything private).
 5. **Python — DONE** (`../aphrody-py/packages/ai/py/aphrody-train`): hashing,
@@ -97,10 +97,10 @@ Each worker reports in its own files; check them, do not assume success.
 6. **IEVR → IECODE — DONE (uncommitted in both repos).** IECODE is the only
    owner of inagle, inagle-cross, azalee, zukan/NIE scripts and IEVR docs; Aphrody
    consumes `../iecode/packages/{inagle,inagle-cross,azalee}` as Bun workspace
-   members (`docs/decisions/rg/ievr-packages-from-iecode.md`, map
+   members (`iecode/docs/rg/decisions/ievr-packages-from-iecode.md`, map
    `docs/migration/ievr-to-iecode-2026-10-01.json`). RG website production build
    passes; bot 1 264 tests pass; IECODE inagle 136 + azalee 282 tests pass.
-   Follow-ups: `scripts/rg/assemble-vps-release.sh` must bundle IECODE packages at
+   Follow-ups: `iecode/scripts/rg/assemble-vps-release.sh` must bundle IECODE packages at
    a pinned revision; dangling doc links (plugin skills nie-*,
    docs/migration/IMPORTED-DOCS-INDEX.md); IECODE `bun.lock`/`docs.7z` for Codex.
 
@@ -162,7 +162,7 @@ dbfr 26 GB of media identical to vps; vps leftover checkouts.
    puppeteer, …): `/tmp/mirror-verdict.tsv` records, per repo, how many refs are
    not in upstream. Delete only repos with `not-upstream=0`, then repoint
    `config/tauri-upstream.json` at the upstream URLs. Keep `challonge`,
-   `voiranime`, `worldbeyblade`, `xai`, `x`, `x-client` (RG `config/rg`
+   `voiranime`, `worldbeyblade`, `xai`, `x`, `x-client` (RG `config/rg` (not in repo)
    dependencies) and every repo with local commits. `YOLO` is 63 % identical to
    `plugins/aphrody` (111 of 175 files): review the other 64 before deleting.
 2. agy (UI/M3/Tauri, in the monorepo): resolve the 11 `retained-duplicate`

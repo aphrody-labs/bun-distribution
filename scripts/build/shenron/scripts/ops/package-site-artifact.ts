@@ -154,36 +154,6 @@ if (process.argv[3] === "--release-dir") {
         return { name: owner.name, path: ownerRelative, roots: [...roots].toSorted() };
       }),
     );
-    const pinnedPackageDir = join(repo, ".cache/iecode-packages");
-    if (existsSync(join(pinnedPackageDir, "manifest.json"))) {
-      const provenance = await Bun.file(join(pinnedPackageDir, "manifest.json")).json();
-      if (provenance.dirty !== false || !/^[a-f0-9]{40}$/.test(provenance.sourceRevision)) {
-        throw new Error("IECODE package provenance must be a clean full revision");
-      }
-      const consumerManifest = await Bun.file(join(repo, "package.json")).text();
-      const targetPackages = join(sourceStage, ".cache/iecode-packages");
-      await mkdir(targetPackages, { recursive: true });
-      await Promise.all(
-        provenance.packages.map(async (entry: { archive: string; sha256: string }) => {
-          if (
-            !/^[a-z0-9-]+\.tgz$/.test(entry.archive) ||
-            !consumerManifest.includes(entry.archive)
-          ) {
-            throw new Error("IECODE archive differs from pinned consumer manifest");
-          }
-          const archive = Bun.file(join(pinnedPackageDir, entry.archive));
-          const hash = new Bun.CryptoHasher("sha256")
-            .update(await archive.arrayBuffer())
-            .digest("hex");
-          if (hash !== entry.sha256) throw new Error("IECODE archive provenance hash mismatch");
-          await Bun.write(join(targetPackages, entry.archive), archive);
-        }),
-      );
-      await Bun.write(
-        join(targetPackages, "manifest.json"),
-        Bun.file(join(pinnedPackageDir, "manifest.json")),
-      );
-    }
     await mkdir(join(sourceStage, "apps/shenron/bot/dist"), { recursive: true });
     await Bun.write(join(sourceStage, "apps/shenron/bot/dist/shenron"), Bun.file(botBinary));
     const mode = run(["chmod", "0755", join(sourceStage, "apps/shenron/bot/dist/shenron")]);
