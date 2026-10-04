@@ -3,7 +3,7 @@
   "owner": "aphrody-infra",
   "enabled": true,
   "target": "vps",
-  "executionOnlyTargets": ["vps"],
+  "executionOnlyTargets": [],
   "workspaceRoot": "/srv/aphrody-build/workspaces/aphrody",
   "cacheRoot": "/srv/aphrody-build/cache",
   "artifactRoot": "/srv/aphrody-build/artifacts",
@@ -52,6 +52,7 @@
   },
   "repositories": {
     "aphrody": "/srv/aphrody-build/workspaces/aphrody",
+    "yolo": "/srv/aphrody-build/workspaces/yolo",
     "iecode": "/srv/aphrody-build/workspaces/iecode",
     "aphrody-py": "/srv/aphrody-build/workspaces/aphrody-py"
   },

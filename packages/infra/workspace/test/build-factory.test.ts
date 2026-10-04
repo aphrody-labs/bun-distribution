@@ -74,6 +74,25 @@ test("factory plans use the existing Infra owner and shared serial lock", () => 
   expect(plan.command).toEqual(["bun", "run", "build"]);
 });
 
+test("Yolo shares factory caches while preserving its canonical packaging target directory", async () => {
+  const declared: BuildFactoryConfig = await Bun.file(
+    join(import.meta.dir, "../../../../config/build-factory.json"),
+  ).json();
+  expect(declared.repositories.yolo).toBe("/srv/aphrody-build/workspaces/yolo");
+  const plan = buildFactoryPlan(declared, "yolo", revision, ["just", "runtime-package"]);
+  expect(plan.repository).toBe("yolo");
+  expect(plan.workspace).toBe(declared.repositories.yolo);
+  expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
+  expect(plan.transport[5]).not.toContain("CARGO_TARGET_DIR=");
+  expect(plan.transport[5]).toContain("SCCACHE_DIR=/srv/aphrody-build/cache/sccache");
+  expect(plan.transport[5]).toContain("git rev-parse HEAD");
+  expect(plan.transport[5]).toContain("git status --porcelain");
+  expect(plan.transport[5]).toContain("flock --close -- '/srv/aphrody-build/locks/heavy.lock'");
+  expect(() =>
+    buildFactoryPlan({ ...declared, executionOnlyTargets: ["vps"] }, "yolo", revision, ["just"]),
+  ).toThrow("execution-only");
+});
+
 test("factory requires pinned clean source policy and bounded compiler jobs", () => {
   expect(() => buildFactoryPlan(config, "aphrody", "main", ["bun"])).toThrow("pinned Git");
   expect(() => buildFactoryPlan(config, "unknown", revision, ["bun"])).toThrow("repository");
@@ -97,7 +116,7 @@ test("factory quotes owner arguments without expanding shell expressions", () =>
 });
 
 test.skipIf(process.platform === "win32")(
-  "factory preserves literal shell-sensitive arguments and refuses changed source",
+  "Yolo factory preserves literal shell-sensitive arguments and refuses changed source",
   async () => {
     const root = await mkdtemp(join(tmpdir(), "aphrody-factory-"));
     try {
@@ -124,11 +143,11 @@ test.skipIf(process.platform === "win32")(
       await writeFile(join(root, ".git/info/exclude"), "locks/\n");
       const fixtureConfig = {
         ...config,
-        repositories: { aphrody: root },
+        repositories: { yolo: root },
         lockPath: join(root, "locks/heavy.lock"),
       };
       const literal = "name'$(echo should-not-expand)`echo literal`";
-      const plan = buildFactoryPlan(fixtureConfig, "aphrody", await git("rev-parse", "HEAD"), [
+      const plan = buildFactoryPlan(fixtureConfig, "yolo", await git("rev-parse", "HEAD"), [
         "bash",
         "-c",
         'printf "%s" "$1"',
@@ -194,8 +213,7 @@ test.skipIf(process.platform === "win32")(
       [process.execPath, join(import.meta.dir, "../src/build-factory.ts"), "status", "--route"],
       { env: { ...process.env, APHRODY_BUILD_HOST: "vps" }, stdout: "pipe" },
     );
-    // The repository currently reserves VPS for execution, including inside the host.
-    expect((await new Response(child.stdout).text()).trim()).toBe("factory");
+    expect((await new Response(child.stdout).text()).trim()).toBe("local");
     expect(await child.exited).toBe(0);
   },
 );

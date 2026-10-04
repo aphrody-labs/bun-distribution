@@ -71,7 +71,7 @@ export function buildFactoryPlan(
     `UV_CACHE_DIR=${cache}/uv`,
     `APHRODY_ARTIFACT_ROOT=${artifacts}`,
   ];
-  // IECODE packaging consumes its canonical target/ layout; retain it while sharing sccache.
+  // Yolo/IECODE packaging consumes canonical target/ layouts; retain them while sharing sccache.
   if (repository === "aphrody")
     environment.push(
       `CARGO_TARGET_DIR=${cache}/cargo/${repository}`,
@@ -185,7 +185,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|iecode|aphrody-py> --revision <full-git-sha> -- <owner command> [arguments...]\n       aphrody-ops build-factory status [--route]",
+      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> -- <owner command> [arguments...]\n       aphrody-ops build-factory status [--route]",
     );
     return 0;
   }
