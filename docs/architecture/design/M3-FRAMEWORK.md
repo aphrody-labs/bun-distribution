@@ -1,111 +1,140 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# The `@aphrody/m3` framework
+# The Aphrody M3 framework
 
-Rust owns the canonical tokens. `@aphrody/m3` (`packages/m3`) serves, builds and themes Bun web
-and desktop Tauri apps through `Bun.serve` and `Bun.build`. Next.js has a separate adapter;
-mobile browser and installed Android/iOS support remain to be qualified. Base UI and Tailwind
-CSS are the forked React web foundation, including webviews; native widgets need their own
-adapter. Decisions: [`M3-PLAN.md`](../../plans/design/M3-PLAN.md). Cross-host delivery:
-[`M3-MULTI-HOST-PLAN.md`](../../plans/design/M3-MULTI-HOST-PLAN.md). Agent guide: the `m3` skill.
+`aphrody-m3` is the private design workspace consumed at `design/aphrody-m3` by its host
+repositories. It owns the Bun framework packages, React and Lit adapters, assets and application
+UI. Aphrody owns the canonical Rust UI crates in `crates/ui/*`; Yolo supplies the runtime and
+orchestrates the workspace commands. Package manifests and their exports define the consumer
+APIs. Repository layout and commands: [framework guide](../../guides/FRAMEWORK.md).
+Decisions: [M3 plan](../../plans/design/M3-PLAN.md). Host qualification:
+[delivery plan](../../plans/design/M3-MULTI-HOST-PLAN.md).
 
-## Architecture
+## Architecture and ownership
 
+```text
+Aphrody crates/ui/m3-tokens          canonical Rust token contract
+        |
+Aphrody crates/ui/bun + interop/ffi  m3Css, Sass and icon exports
+        |
+@aphrody/bun                        lazy native FFI consumer
+        |
+@aphrody/m3                         m3Plugin, serveM3, buildM3, m3 CLI
+        |
+        +-- @aphrody/m3-bun         composed plugin, UI + API server, executable and packaging
+        +-- material-web -> m3-react    Lit components and React wrappers
+        +-- m3-primitives family       React + Tailwind application components
+        +-- m3-next                    Next.js host adapter
 ```
-crates/aphrody-m3-tokens (Rust)   seed -> HCT -> palettes -> roles; type, shape, motion, layout
-        |
-crates/aphrody-bun -> @aphrody/bun   m3Css({ sheet, seed, variant, dark, contrast })
-        |
-packages/m3 (@aphrody/m3)   m3Plugin | serveM3 | buildM3 | M3App (/react) | /lit | m3 CLI
-        |
-        +-- packages/material-web (Lit md-*), packages/m3-react (@aphrody/m3-react)
-        +-- packages/m3-primitives, m3-forms, m3-explorer, m3-ai (React 19 + Tailwind v4)
-                -> packages/app-ui (Tauri webview), Drive
-```
 
-CSS custom properties (`--md-sys-*`) are the common layer: the only values that cross the
-shadow DOM of `md-*` elements, and what the `m3:tailwind.css` utilities read.
+CSS custom properties (`--md-sys-*`) join the renderers through shared themes. Lit components
+inherit them through shadow DOM; React and Base UI components consume them through CSS and
+Tailwind utilities. `packages/app-ui` is the canonical application UI in this workspace;
+its Rust host remains in Aphrody. Source adapters and generated files do not establish native
+installation, activation or mobile support.
 
-The Bun workspace links `@base-ui/react` and `@base-ui/utils` from `third_party/base-ui`, and
-`tailwindcss` and `@tailwindcss/node` from `third_party/tailwindcss`. `@aphrody/m3-primitives`
-uses the Base UI fork with one React resolution. The M3 Bun plugin calls the Tailwind fork's
-compiler and the published native `@tailwindcss/oxide` scanner directly. Initialize both
-submodules before `bun install --frozen-lockfile` in a fresh checkout.
+`@aphrody/m3` loads `@aphrody/bun` only when native sheets or Sass are requested. The native
+library comes from its owner; this design workspace does not compile it. See the
+[native library guide](../../guides/NATIVE.md) for resolution and qualification.
+`@aphrody/m3-bun/plugin` composes the M3 plugin with standalone font sheets, inline Material
+Symbols and optional-module imports. Its TypeScript generator supplies token and scheme
+sheets without the Rust library. Tailwind and SpaceUI sheets require the native generator or
+an explicit `css` generator; the generated `@aphrody/m3-tailwind/preset.css` is also available.
 
-## Packages
+Forks are pinned submodules under `forks/`, including `material-web`, `base-ui`, `tailwindcss`,
+`material-color-utilities`, icons and fonts. The root catalog currently resolves Material Web
+from `file:forks/material-web`, while Base UI and the Tailwind compiler/scanner use catalog
+versions. The lockfile determines the installed graph. Keeping a fork checkout does not imply
+that every consumer imports that fork directly.
 
-| Package | Tree | Role |
+## Consumer packages
+
+| Package | Tree | Contract |
 | --- | --- | --- |
-| `@aphrody/m3` | `packages/m3` | Plugin, `serveM3`, `buildM3`, `M3App`, Lit entry, `m3` CLI. |
-| `@aphrody/bun` | `packages/bun` + `crates/ui/bun` | FFI: HCT maths, `m3Css`, Sass compile (`sassRustPlugin`). |
-| `@aphrody/m3-theme` | `packages/m3-theme` | Generated `tokens.css`, `tailwind.css`, `spaceui.css`; `M3ThemeProvider`; Tauri bridge. |
-| `@aphrody/m3-tokens` | `packages/m3-tokens` | TypeScript tokens: dynamic colour, breakpoints, platform contract. |
-| `@aphrody/m3-motion` | `packages/m3-motion` | Springs, easings, durations. |
-| `@aphrody/m3-fonts` | `packages/m3-fonts` | WOFF2 subsets and font stacks ([`FONTS-AND-ICONS.md`](./FONTS-AND-ICONS.md)). |
-| `@aphrody/m3-icons` | `packages/m3-icons` | Material Symbols as inline SVG ([`M3-ICONS.md`](./M3-ICONS.md)). |
-| `@aphrody/material-web` | `packages/material-web` | Lit `md-*` fork plus Aphrody extension elements. |
-| `@aphrody/m3-react` | `packages/m3-react` | `@lit/react` wrappers, `adaptive`, `state`, `transitions`. |
-| `@aphrody/m3-primitives`, `-forms`, `-explorer`, `-ai` | `packages/m3-*` | React components for application shells (D2). |
-| `@aphrody/m3-next` | `packages/m3-next` | Next.js 16 App Router adapter (`examples/m3-next`). |
-| `@aphrody/m3-config` | `packages/m3-config` | Shared tsconfig, tsup and test presets (private). |
+| `@aphrody/m3` | `packages/m3` | Bun plugin, dev server, UI builder, `m3` CLI; browser adapters at `/react` and `/lit`. |
+| `@aphrody/m3-bun` | `packages/m3-bun` | Composed plugin, API routes, static server, compile, package, deploy-file generation and supervised smoke checks. |
+| `@aphrody/bun` | Installed package or Aphrody `packages/interop/native` | FFI over the Aphrody native library: `m3Css`, HCT, Sass and icons. |
+| `@aphrody/m3-tokens` | `packages/m3-tokens` | Token CSS, dynamic colour, breakpoints, expressive tokens and platform contract. |
+| `@aphrody/m3-theme` | `packages/m3-theme` | Shared sheets, React theme provider and Tauri bridge. |
+| `@aphrody/material-web` | `forks/material-web` | Lit components and Aphrody extensions. |
+| `@aphrody/m3-react` | `packages/m3-react` | `@lit/react` wrappers, adaptive hooks, state and transitions. |
+| `@aphrody/m3-baseui`, `@aphrody/m3-primitives` | Corresponding `packages/m3-*` | Base UI styling and React application primitives. |
+| `@aphrody/m3-forms`, `-explorer`, `-ai`, `-reader` | Corresponding `packages/m3-*` | Application component families sharing the theme contract. |
+| `@aphrody/m3-tailwind` | `packages/m3-tailwind` | Tailwind v4 CSS preset generated from M3 tokens. |
+| `@aphrody/m3-fonts`, `@aphrody/m3-icons` | Corresponding `packages/m3-*` | [Font sources](./FONTS-AND-ICONS.md) and [icon APIs](./M3-ICONS.md). |
+| `@aphrody/m3-motion` | `packages/m3-motion` | Springs, easings and durations. |
+| `@aphrody/m3-next` | `packages/m3-next` | Next.js adapter; examples under `packages/m3-next/examples`. |
+| `@aphrody/m3-config` | `packages/m3-config` | Shared tsconfigs, `Bun.build` preset, SQLite cache and DOM test preload. |
 | `@aphrody/eslint-plugin-m3` | `packages/eslint-plugin-m3` | M3 lint rules. |
 
-## An application
+Bun source conditions and built `default`/declaration entries vary by package. Inspect the
+requested export in its manifest. The shared build pipeline (`scripts/build.ts`) reads
+`build.config.ts`, uses the `m3-config/bun-build` preset and emits declarations. Root workspace
+exclusions distinguish host-bound application packages from standalone members. These private
+packages are not published by the framework commands.
 
-```
+## Application and commands
+
+```text
 my-app/
-  m3.config.ts      entry, routes, proxy, port, tauri.uiDist, theme (defineM3Config)
+  m3.config.ts      defineM3Config: entry, routes, proxy, port, tauri.uiDist, theme
   bunfig.toml       [serve.static] plugins = ["@aphrody/m3/plugin"]
   package.json      "dev": "m3 dev", "build": "m3 build"
-  src/index.html    <link rel="stylesheet" href="m3:theme.css"> + module script
-  src/m3-env.d.ts   /// <reference types="@aphrody/m3/client" />
+  src/index.html    m3:theme.css and a module script
+  src/m3-env.d.ts   reference types="@aphrody/m3/client"
 ```
 
-`m3 new <dir>` scaffolds this layout. `mountM3App("#root", <App />, { theme })` mounts under
-`StrictMode` with `M3ThemeProvider`, the window size class and a `MotionConfig` using
-`m3Springs` (`reducedMotion: "user"`).
+`m3 new <dir>` creates the web scaffold through `@aphrody/scaffold` without installing
+dependencies. `mountM3App` from `@aphrody/m3/react` composes `StrictMode`, `M3ThemeProvider`,
+the window size class and reduced-motion-aware `MotionConfig`.
 
-## Rules and pitfalls
+| Command | Behavior |
+| --- | --- |
+| `m3 dev` | Serves the configured HTML and routes with Bun HMR and optional proxying. |
+| `m3 build` | Builds the configured UI through `Bun.build`. |
+| `m3 build --tauri [dir]` | Writes `index.html`, `app.js`, `app.css` and `fonts/` for the configured webview. |
+| `m3 desktop` | Builds the Tauri webview output; `--dev` starts its UI dev server. Native packaging belongs to the host build owner. |
+| `m3 compile` | Delegates to the optional `@aphrody/m3-bun` peer to embed UI/API and produce an executable. |
+| `m3 check` | Runs the nearest `aphrody-m3` repository's `check`, or a legacy host `bun:check`, then the current application's tests. At the M3 root it uses the repository `test` script. An unrelated application `check` cannot claim the repository contract. |
+| `m3-bun build`, `serve`, `compile`, `package` | Build, serve and package an application with UI and API in one process. |
+| `m3-bun deploy` | Generates reviewed host configuration files; applying or activating them belongs to the host owner. |
 
-- `m3Plugin` composes Tailwind v4 through `@tailwindcss/node` and `@tailwindcss/oxide`, Sass
-  through Rust (`.scss` -> Lit `css`), the `m3:*` modules
-  (`m3:theme.css`, `m3:tailwind.css`, `m3:spaceui.css`, `m3:scheme.css`, `m3:symbols*.css`,
-  `m3:fonts.css`) and `?url` imports.
-- Import `m3:*` from TypeScript or link it from HTML. Never `@import` it from a Tailwind CSS
-  file: Tailwind resolves its own imports and cannot see plugin modules.
-- `Bun.serve` takes plugins from `bunfig.toml` only; `m3 dev` warns when the plugin is missing.
-- `m3 build --tauri [dir]` writes the fixed webview layout (`index.html`, `app.js`, `app.css`,
-  `fonts/`) with unhashed names and external module scripts for the `script-src 'self'` CSP.
-- `m3 tokens --bundle <dir>` writes a self-contained token/font bundle; no static design-system
-  copy is kept in the repository.
-- Scheme variants are kebab-case in Rust (`tonalSpot` -> `tonal-spot`).
+An app using `m3-bun` registers `@aphrody/m3-bun/plugin` in `bunfig.toml` and can export
+`bun = defineM3Bun({ api: "src/api.ts" })` beside its default M3 configuration. Its API is
+typed with `defineM3Api`; `routesToFetch` exposes those routes to fetch-based hosts. The
+compiled app carries its built files; platform support still requires execution and packaging
+checks on each supported target.
 
-## Adaptive layout
+## Tokens and adaptive layout
 
-Window size classes come from `crates/ui/m3-tokens/src/adaptive.rs`: compact `< 600`,
-medium `600-839`, expanded `840-1199`, large `1200-1599`, extra-large `>= 1600` (dp), with pane
-counts, navigation (bar -> collapsed rail -> expanded rail), grid columns (4/12), margins (16/24)
-and `export_breakpoints_css()` (`--md-sys-breakpoint-*` plus Tailwind `--breakpoint-*`). The web
-reads the same numbers from `@aphrody/m3-tokens/breakpoints` and `@aphrody/m3-react/adaptive`
-(`useWindowSizeClass`, SSR-safe, `compact` until mounted).
+`m3:*` modules can be imported from TypeScript or linked from HTML. Tailwind resolves its own
+CSS imports, so a Tailwind `@import` cannot address a virtual M3 module. Bun's static dev server
+loads plugins from `bunfig.toml`; `m3 dev` reports a missing registration. Native scheme names
+are kebab-case (`tonalSpot` becomes `tonal-spot`).
 
-## Component Coverage & Web Components Bridge
+The Rust adaptive contract is in Aphrody `crates/ui/m3-tokens/src/adaptive.rs`. Web width
+boundaries are exposed by `@aphrody/m3-tokens/breakpoints`: compact `< 600`, medium `< 840`,
+expanded `< 1200`, large `< 1600`, then extra-large. Height classes use `480` and `900`.
+`@aphrody/m3-react/adaptive` provides SSR-safe hooks; `M3App` defaults to `compact` until mounted.
 
-- **Glossary & Mapping**: The canonical 32 Material Design 3 components and concepts are indexed in `m3-glossary.md`.
-- **Web Components (`@aphrody/material-web`)**: Provides ~82 `md-*` web components built on Lit, inheriting custom CSS properties (`--md-sys-color-*`).
-- **React Wrappers (`@aphrody/m3-react`)**: Wraps the `md-*` web components via `@lit/react createComponent`, themed by `theme.css` generated from `aphrody design tokens`.
-- **Headless React Primitives (`@aphrody/m3-primitives`)**: Headless accessible components backed by `@base-ui/react` and styled with Tailwind CSS v4 utility classes.
+```sh
+# Bun framework: native sheet generation
+m3 tokens --sheet tokens --seed '#6750a4' --out tokens.css
+m3 tokens --bundle token-bundle
 
-## Token Generation CLI & Exports
-
-Tokens originate in Rust (`crates/ui/m3-tokens`, re-exported via `aphrody_m3_tokens::facade`) and can be emitted across formats:
-```bash
-# Standard CSS custom properties
-aphrody design tokens --sheet tokens --out tokens.css
-
-# Fusion with Tailwind v4 inline theme and shadcn registry aliases
+# Installed Aphrody CLI: baseline colour tokens and fusion aliases
+aphrody design tokens --output tokens.css
 aphrody design tokens --fusion --dark --format css
 ```
-- **HCT Engine**: Generates 13 tonal palettes from a single seed color.
-- **Tailwind v4 Integration**: `@theme inline` consumes `--md-sys-color-*` and `--md-sys-breakpoint-*`.
-- **shadcn Compatibility**: `theme-aphrody.json` (`registry:theme`) bridges M3 design tokens into React/shadcn component pipelines.
 
+The two CLI surfaces expose different options; consult their live help. `m3 tokens` requires
+the native library unless a caller supplies a generator through the programmatic API.
+Output files alone do not establish renderer parity or measured performance.
+
+## Qualification
+
+Root `check` runs package-export, asset and documentation-link gates. Root `test`, `lint` and
+`typecheck` use the workspace task owner. The CLI boundary regression is explicitly run with
+`bun test ./packages/m3/qualification/check.test.ts`; it covers standalone and nested M3
+checkouts, host compatibility, test ownership and exit-code propagation using temporary fixtures.
+Native suites state their skips when the required library is unavailable. Record the command,
+target and result before claiming installation, compatibility or activation.

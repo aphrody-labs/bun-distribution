@@ -1,91 +1,85 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# M3 framework and host plan
+# M3 framework and host qualification
 
-## Goal and boundary
+## Goal and authority
 
-Build a customizable Material 3 framework whose design contract can be rendered on web,
-desktop and mobile. Share roles, interaction expectations and adaptive rules; qualify each
-renderer and installed host separately. The Aphrody product currently has one Tauri v2
-desktop webview in `packages/app-ui` (not in repo) for Chat, Files, Models and Settings. Its product scope
-is defined by [GUI](../../reference/GUI.md). Browser navigation, shell/PTY/terminal sessions and system
-administration stay outside that webview.
+Share Material 3 roles, theme inputs, interaction expectations and adaptive rules
+across the framework's renderers. Qualify each browser, native renderer and
+installed host independently. The private M3 repository is the design submodule;
+product UI and native integrations follow Aphrody's
+[PLAN](../../../../../PLAN.md), [GOAL](../../../../../GOAL.md) and
+[AGENTS](../../../../../AGENTS.md). Runtime/SDK production follows
+[Yolo's plan](../../../../../../yolo/PLAN.md).
 
-The framework is a library, not a second product navigation shell. Generic packages must
-not depend on Aphrody AI, Drive, Tauri commands or FSL source. Keep Drive as the Files
-feature of the product, with its own runtime and provenance boundary.
+The framework packages expose reusable APIs. `apps/web` is the small web example;
+`apps/showcase` exercises packages with mobile, desktop and TV layouts, local
+fixtures and a Bun API. Product navigation, persistent stores, RPC and platform
+privileges stay under their application owners.
 
-## One contract, several renderers
+## One design contract, several renderers
 
-| Layer | Owner | Portable contract |
+| Layer | Current owner | Contract and boundary |
 | --- | --- | --- |
-| Design roles | `crates/ui/m3-tokens` | Palette/HCT, typography, shape, elevation, motion, state, adaptive classes and accessibility defaults. |
-| Web projection | `@aphrody/m3-tokens`, `@aphrody/m3-theme` | CSS variables and TypeScript interfaces aligned with the Rust contract. No second palette authority. |
-| React web | `@aphrody/m3-primitives` family | Maintained Base UI fork for accessible behavior; maintained Tailwind CSS fork for M3 styling. |
-| Web components | `@aphrody/material-web` and `@aphrody/m3-react` | Lit implementation consuming the same roles and accessibility contract. |
-| Build and hosts | `@aphrody/m3`, `@aphrody/m3-next`, `aphrody-app` | Bun, Next.js and Tauri adapters; host authority stays outside components. |
-| Native Rust | `aphrody-m3-tokens`, `aphrody-render` and optional GUI packages | Reuse tokens and rendering contracts; native widgets need their own interaction and accessibility proof. |
+| Rust design roles | Aphrody `crates/ui/m3-tokens` | Typed tokens, HCT, palettes and CSS-sheet generation. Native parity needs its own runtime receipt. |
+| Web projection | `m3-tokens`, `m3-theme`, `m3-tailwind` | CSS roles, TypeScript inputs and Tailwind aliases; JavaScript dynamic colour uses Material Color Utilities. |
+| React DOM | `m3-primitives` family and `m3-motion` | Base UI behaviour, Tailwind styling and M3 motion. This also applies inside webviews. |
+| Custom elements | `material-web`, `m3-front`, `m3-react` | Lit components and React wrappers consuming shared roles. |
+| Web hosts | `m3`, `m3-bun`, `m3-next` | Bun and Next adapters; no platform authority is inferred from a component import. |
+| Host generation | `scaffold`, `m3-next-migrate` | Pinned Tauri 3 shell generation; migration rejects unsupported host adapters before activation. |
+| Native host | Aphrody `crates/ui/m3-showcase`, `crates/ui/app`, rendering crates | Native process, permission and resource ownership stay in the parent workspace. |
 
-Base UI renders React DOM and Tailwind emits CSS. Neither is a mobile native widget engine.
-Their forked source belongs to the web renderer, including desktop and mobile webviews.
-`@radix-ui/*` is excluded from the active component graph. The Lit line remains useful for
-custom elements and other web hosts; it is a separate implementation of the same contract.
-See the upstream [Base UI overview](https://base-ui.com/react/overview/about) and
-[Tailwind theme contract](https://tailwindcss.com/docs/theme).
+Base UI renders React DOM and Tailwind emits CSS; native widgets require separate
+interaction and accessibility evidence. Active dependencies come from manifests
+and the lockfile. Retain upstream notices even when compatibility wrappers replace
+their behaviour; do not infer a dependency's removal from the renderer choice.
 
 ## Customization contract
 
-Expose explicit inputs for brand seed and scheme variant, light/dark/system mode and contrast.
-The Rust token engine must produce the resulting role set. Web hosts consume CSS variables and
-Tailwind `@theme` aliases; native hosts consume typed role values. Component code names roles
-instead of hardcoded colours. Existing seed and mode support is in `@aphrody/m3-theme`;
-the complete cross-host contract is still open.
+Existing theme APIs expose seed, variant, light/dark/system mode and contrast.
+Next's static shell, preference cookie and lazy colour engine have unit/DOM
+contracts. Recheck the same seed/mode/contrast across JavaScript, Lit and the native
+renderer before claiming cross-host parity.
 
-Define typography/font overrides, shape and density, motion/reduced motion, RTL/localization,
-and persistence with typed inputs and documented defaults before calling those axes supported.
-The responsive contract follows available window width, not device names. Mobile hosts also
-need safe-area, virtual-keyboard and touch behavior beyond width classes. Theme changes must
-reach Lit shadow DOM, React DOM and any native renderer without separate palette tables.
+Typography/font overrides, shape, density, RTL/localization, text scaling,
+persistence and high contrast each require a documented default and host-specific
+proof. Responsive width/height classes and showcase layout preferences cover web
+layout. Installed mobile qualification also needs safe areas, virtual keyboard,
+touch, suspend/resume and platform process cleanup.
 
-## Delivery matrix
+## Delivery matrix — 2026-10-04
 
-| Target | Current state | Verified Status & Evidence |
+The [scoped UI receipt](./M3-PLAN.md#verified-ui-batch) totals **211 pass, 1 skip**.
+It establishes the named software contracts on Linux with Bun 1.4.2.
+
+| Target | Source/test evidence available | Qualification remaining |
 | --- | --- | --- |
-| Browser/Bun and Next.js | Packages and examples exist | `FAIT`: Verified in `@aphrody/m3`, `examples/m3-spaceui-showcase`, and `serve-desktop-ui.ts`. Bun-native bundling and hydration pass. |
-| Tauri desktop | Unified desktop product host | `FAIT`: Bundled `ui-dist` verified with offline webview, 28+ Tauri commands, typed broker, and live desktop server (`http://127.0.0.1:1421`). |
-| Mobile browser | Adaptive tokens and web components exist | `FAIT (tokens/responsive)`: Compact/Medium/Expanded breakpoint CSS and responsive layout rules generated in `aphrody-m3-tokens`. |
-| Android/iOS installed app | Pilot scoped to Tauri mobile architecture | `PLANNÉ`: Pinned to Tauri v2/v3 mobile target architecture using generated M3 assets. |
-| React Native or native Rust mobile | No adapter delivered | `HORS-PORTÉE`: Deferred; webview satisfies target requirements. |
-| Standalone Rust desktop GUI | Reusable renderer crates exist (`aphrody-render`) | `FAIT (crates)`: Deterministic CPU/GPU rasterization in `aphrody-render` (65 unit tests passing). |
+| Bun browser app | Framework/example source; showcase unit/API contracts pass | Production browser build, interactions, offline assets and visual/accessibility receipt for the chosen app. |
+| Next.js web | 49 unit pass, 10 isolated DOM pass; theme/proxy/export/runner contracts | Browser receipt, asynchronous DOM gate stability and the skipped Rust parity check. |
+| Tauri desktop | `apps/showcase` host contracts pass; native owner is Aphrody `crates/ui/m3-showcase` | Factory-admitted native build, bundle, install, API lifecycle, permissions and real host interaction receipt. |
+| Mobile browser and TV layout | Showcase adaptive contracts and three D-pad DOM tests pass | Real browser keyboard/touch, viewport/safe-area, text scaling and screen-reader checks. Layout presets do not establish a mobile installation. |
+| Android/iOS installed app | Scaffolder mobile entry/capability contracts and host diagnostics exist | Actual SDK/toolchain, build, install, lifecycle and interaction checks. iOS needs a macOS/Xcode host. |
+| Standalone Rust desktop GUI | Rendering/token crates exist in Aphrody | Native widget, focus/accessibility, packaged app and installed-host receipt. No Rust gate ran in this UI audit. |
+| React Native/native Rust mobile | No delivered framework adapter was qualified by this batch | A separately scoped adapter and its platform qualification. |
 
-Tauri mobile is a candidate because [Tauri v2 supports Android and iOS
-targets](https://v2.tauri.app/start/prerequisites/); the present
-`aphrody-app` configuration and sidecars are desktop-specific. The pilot must be a separate
-host, with platform-safe capabilities and no assumption that the desktop broker, Drive daemon
-or windows can run on mobile. iOS builds require a macOS/Xcode builder. React Native remains
-a possible later adapter, not a current framework feature.
+Tauri versions follow the specific host's manifests. The scaffolder's
+[TAURI_3 pins](../../../packages/scaffold/src/pins.ts) and parent workspace
+dependencies must not be described as universal Tauri v2 support. Desktop sidecars
+and broker behaviour do not establish Android/iOS equivalence. Cross-compilation,
+generated configuration and source tests remain distinct from installation.
 
-## Order of work
+## Delivery order and release bar
 
-1. **Stabilize the contract.** (`FAIT`): Canonical MCU 0.4.0 tokens in `crates/ui/m3-tokens`, HCT palettes, CSS variables, and typed role/adaptive schema exported.
-2. **Complete the web kit.** (`FAIT`): Base UI / Tailwind v4 and Lit (`material-web`) component families mapped in `M3-COMPONENT-FAMILY-MATRIX.md`; form contract clarified.
-3. **Qualify responsive web.** (`FAIT`): Breakpoints (`--md-sys-breakpoint-*`), compact, medium, and expanded window adaptations verified.
-4. **Qualify installed hosts.** (`FAIT`): Tauri desktop offline bundle verified; persistent desktop web server running on `http://127.0.0.1:1421` with zero-copy Bun I/O.
-5. **Add native adapters selectively.** (`FAIT`): `aphrody-render` text/vector rasterization and native FFI bridge via `@aphrody/bun` operational.
+1. Close the owned framework source batch with existing manifest/import, asset,
+   docs, TypeScript, lint/format, tests and build gates from
+   [M3-PLAN](./M3-PLAN.md#existing-gates).
+2. Qualify the chosen web examples in a browser, including theme persistence,
+   offline assets, focus/labels, keyboard/touch and reduced motion.
+3. Have the native integrator qualify each intended installed host through the
+   declared build factory and Cargo serialization. Record artifact, revision,
+   target, installation, permissions, cancellation and shutdown evidence.
+4. Check customization/accessibility parity and record comparable performance
+   measurements per renderer. Keep fork bases, Aphrody deltas and notices traceable.
 
-## Framework release bar
-
-- **Consumer API:** publish the theme inputs, component contracts and host adapters with
-  examples for Bun, Next.js and Tauri. Keep product RPC and FSL code out of package imports.
-- **Customization:** compare the same seed, mode and contrast across React, Lit and Rust;
-  document which other axes are implemented and how host overrides persist.
-- **Accessibility:** verify focus, labels, keyboard/touch, high contrast, reduced motion and
-  text scaling on each supported renderer, including a screen reader on installed hosts.
-- **Performance:** record per-entry bundle bytes, CSS bytes, cold build time and interaction
-  responsiveness for the showcase; set budgets from measured baselines before publishing.
-- **Fork upkeep:** record the upstream Base UI/Tailwind base and Aphrody delta, maintain
-  notices, and requalify compiler output and component behavior when either fork advances.
-
-Do not mark a platform supported from source exports, a viewport preset or a successful
-compile alone. Release evidence includes an installed app where applicable, keyboard/touch
-and screen-reader use, reduced motion, contrast, theme persistence, offline assets, and
-platform process cleanup. Preserve fork and Drive/FSL notices throughout migration.
+Consumer examples and package APIs stay private under current authority. Public
+publication or deployment requires the owner's scope; successful local tests do
+not activate a service or close the parent runtime milestones.

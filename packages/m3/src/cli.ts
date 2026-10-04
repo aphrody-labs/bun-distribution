@@ -19,7 +19,17 @@ import { createM3Project } from "./new.js";
 import { serveM3 } from "./server.js";
 import { m3Tokens, SHEETS, writeTokenBundle } from "./tokens.js";
 
-export const COMMANDS = ["dev", "build", "tokens", "check", "new", "compile", "desktop", "help", "version"] as const;
+export const COMMANDS = [
+  "dev",
+  "build",
+  "tokens",
+  "check",
+  "new",
+  "compile",
+  "desktop",
+  "help",
+  "version",
+] as const;
 export type M3Command = (typeof COMMANDS)[number];
 
 export type FlagValue = string | boolean;
@@ -49,6 +59,7 @@ Usage:
   m3 check
   m3 new <dir>
 
+new requires the Aphrody/M3 private source owner workspace; use an apps/* member (for example m3 new apps/my-app).
 dev, build, compile and desktop read m3.config.ts from the working directory.
 compile builds the UI and links it with the Bun runtime into one executable that serves it (and the app's API):
 it runs @aphrody/m3-bun, which must be installed next to this package.`;
@@ -92,7 +103,8 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       continue;
     }
     if (command === undefined) {
-      if (!(COMMANDS as readonly string[]).includes(arg)) throw new Error(`unknown command ${arg}\n\n${USAGE}`);
+      if (!(COMMANDS as readonly string[]).includes(arg))
+        throw new Error(`unknown command ${arg}\n\n${USAGE}`);
       command = arg as M3Command;
     } else {
       positionals.push(arg);
@@ -121,13 +133,16 @@ function numberFlag(flags: Record<string, FlagValue>, name: string): number | un
 /** `--sheet`, validated. */
 export function sheetFlag(flags: Record<string, FlagValue>): M3Sheet {
   const sheet = stringFlag(flags, "sheet") ?? "tokens";
-  if (!(SHEETS as readonly string[]).includes(sheet)) throw new Error(`--sheet must be one of ${SHEETS.join(", ")}`);
+  if (!(SHEETS as readonly string[]).includes(sheet))
+    throw new Error(`--sheet must be one of ${SHEETS.join(", ")}`);
   return sheet as M3Sheet;
 }
 
 /** The package version. */
 export async function version(): Promise<string> {
-  const manifest = JSON.parse(await Bun.file(join(import.meta.dir, "..", "package.json")).text()) as { version: string };
+  const manifest = JSON.parse(
+    await Bun.file(join(import.meta.dir, "..", "package.json")).text(),
+  ) as { version: string };
   return manifest.version;
 }
 
@@ -138,15 +153,24 @@ export async function bunfigHasPlugin(dir: string): Promise<boolean> {
   return (await Bun.file(file).text()).includes("@aphrody/m3/plugin");
 }
 
-/** Nearest directory at or above `start` whose package.json declares a `bun:check` script. */
+/** The local M3 contract, or the legacy host workspace contract. An application's `check` is not a workspace contract. */
+function workspaceCheckScript(dir: string): "check" | "bun:check" | undefined {
+  const manifest = join(dir, "package.json");
+  if (!existsSync(manifest)) return undefined;
+  const { name, scripts } = JSON.parse(readFileSync(manifest, "utf8")) as {
+    name?: string;
+    scripts?: Record<string, string>;
+  };
+  if (name === "aphrody-m3" && scripts?.check) return "check";
+  if (scripts?.["bun:check"]) return "bun:check";
+  return undefined;
+}
+
+/** Nearest M3 repository with `check`, or host workspace with `bun:check`, at or above `start`. */
 export function findWorkspaceRoot(start: string): string | undefined {
   let dir = resolve(start);
   for (;;) {
-    const manifest = join(dir, "package.json");
-    if (existsSync(manifest)) {
-      const scripts = (JSON.parse(readFileSync(manifest, "utf8")) as { scripts?: Record<string, string> }).scripts;
-      if (scripts?.["bun:check"]) return dir;
-    }
+    if (workspaceCheckScript(dir)) return dir;
     const parent = dirname(dir);
     if (parent === dir) return undefined;
     dir = parent;
@@ -161,7 +185,13 @@ async function run(cmd: string[], cwd: string): Promise<number> {
 
 /** What `m3 compile` needs from `@aphrody/m3-bun`. */
 interface M3BunCompiler {
-  compileApp(options: { dir: string; configFile?: string; target?: string; outfile?: string; minify?: "none" | "basic" | "full" }): Promise<{
+  compileApp(options: {
+    dir: string;
+    configFile?: string;
+    target?: string;
+    outfile?: string;
+    minify?: "none" | "basic" | "full";
+  }): Promise<{
     outfile: string;
     bytes: number;
     target: string;
@@ -180,12 +210,18 @@ async function loadM3Bun(): Promise<M3BunCompiler> {
   try {
     return (await import(specifier)) as M3BunCompiler;
   } catch (cause) {
-    throw new Error("m3 compile: @aphrody/m3-bun is not installed; it compiles the app into one executable (bun add -d @aphrody/m3-bun)", { cause });
+    throw new Error(
+      "m3 compile: @aphrody/m3-bun is not installed; it compiles the app into one executable (bun add -d @aphrody/m3-bun)",
+      { cause },
+    );
   }
 }
 
 /** Run the CLI; resolves to the process exit code (long-running `dev` resolves once listening). */
-export async function runCli(argv: readonly string[], cwd: string = process.cwd()): Promise<number> {
+export async function runCli(
+  argv: readonly string[],
+  cwd: string = process.cwd(),
+): Promise<number> {
   const { command, flags, positionals } = parseArgs(argv);
   switch (command) {
     case "help":
@@ -197,7 +233,9 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
     case "dev": {
       const config = await loadM3Config(cwd, stringFlag(flags, "config"));
       if (!(await bunfigHasPlugin(config.dir))) {
-        console.warn(`m3 dev: ${join(config.dir, "bunfig.toml")} does not list "@aphrody/m3/plugin" in [serve.static] plugins; Tailwind and m3:* modules are not applied`);
+        console.warn(
+          `m3 dev: ${join(config.dir, "bunfig.toml")} does not list "@aphrody/m3/plugin" in [serve.static] plugins; Tailwind and m3:* modules are not applied`,
+        );
       }
       const server = await serveM3({
         index: config.entry,
@@ -208,7 +246,9 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
         hmr: flags.hmr === false ? false : (config.hmr ?? true),
         cwd: config.dir,
       });
-      const proxied = Object.entries(config.proxy).map(([prefix, target]) => `${prefix} -> ${target}`);
+      const proxied = Object.entries(config.proxy).map(
+        ([prefix, target]) => `${prefix} -> ${target}`,
+      );
       console.log(`m3 dev: ${server.url}${proxied.length ? ` (proxy ${proxied.join(", ")})` : ""}`);
       return 0;
     }
@@ -218,7 +258,10 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       let tauri: { uiDist: string } | undefined;
       if (typeof tauriFlag === "string") tauri = { uiDist: resolve(cwd, tauriFlag) };
       else if (tauriFlag === true) {
-        if (!config.tauri) throw new Error("m3 build --tauri: give a directory or set `tauri.uiDist` in m3.config.ts");
+        if (!config.tauri)
+          throw new Error(
+            "m3 build --tauri: give a directory or set `tauri.uiDist` in m3.config.ts",
+          );
         tauri = config.tauri;
       }
       const outdir = stringFlag(flags, "outdir");
@@ -237,7 +280,9 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       });
       const bytes = result.outputs.reduce((sum, o) => sum + o.bytes, 0);
       for (const output of result.outputs) console.log(`  ${output.path}  ${output.bytes} B`);
-      console.log(`m3 build: ${result.outputs.length} files, ${bytes} B into ${result.outdir} in ${Math.round(performance.now() - started)} ms`);
+      console.log(
+        `m3 build: ${result.outputs.length} files, ${bytes} B into ${result.outdir} in ${Math.round(performance.now() - started)} ms`,
+      );
       return 0;
     }
     case "tokens": {
@@ -253,7 +298,11 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
         console.log(`m3 tokens: ${files.length} files into ${dir}`);
         return 0;
       }
-      const css = await m3Tokens({ ...theme, sheet: sheetFlag(flags), dark: flags.dark === true ? true : undefined });
+      const css = await m3Tokens({
+        ...theme,
+        sheet: sheetFlag(flags),
+        dark: flags.dark === true ? true : undefined,
+      });
       const out = stringFlag(flags, "out");
       if (out) {
         const file = resolve(cwd, out);
@@ -267,9 +316,16 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
     }
     case "check": {
       const root = findWorkspaceRoot(cwd);
-      if (!root) throw new Error("m3 check: no package.json with a bun:check script above the working directory");
-      const contract = await run(["bun", "run", "bun:check"], root);
-      const tests = await run(["bun", "test"], cwd);
+      const script = root && workspaceCheckScript(root);
+      if (!root || !script)
+        throw new Error(
+          "m3 check: no aphrody-m3 check or host bun:check script above the working directory",
+        );
+      const contract = await run(["bun", "run", script], root);
+      const tests = await run(
+        script === "check" && resolve(cwd) === root ? ["bun", "run", "test"] : ["bun", "test"],
+        cwd,
+      );
       return contract !== 0 ? contract : tests;
     }
     case "new": {
@@ -292,7 +348,9 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
         ...(outfile ? { outfile: resolve(cwd, outfile) } : {}),
         ...(flags.dev === true ? { minify: "none" } : {}),
       });
-      console.log(`m3 compile: ${report.outfile} (${report.bytes} B, ${report.files} embedded files, target ${report.target}) in ${report.ms} ms`);
+      console.log(
+        `m3 compile: ${report.outfile} (${report.bytes} B, ${report.files} embedded files, target ${report.target}) in ${report.ms} ms`,
+      );
       for (const warning of report.warnings) console.warn(`m3 compile: ${warning}`);
       return 0;
     }
@@ -324,7 +382,9 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
         plugin: { theme: config.theme, root: config.root, configDir: config.dir },
         cwd: config.dir,
       });
-      console.log(`m3 desktop: built webview to ${tauri.uiDist} (${result.outputs.length} files) in ${Math.round(performance.now() - started)} ms`);
+      console.log(
+        `m3 desktop: built webview to ${tauri.uiDist} (${result.outputs.length} files) in ${Math.round(performance.now() - started)} ms`,
+      );
       return 0;
     }
   }
