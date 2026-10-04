@@ -52,7 +52,7 @@ listeners remain an unresolved runtime discrepancy. WSL's PostgreSQL cluster
 being down matches the runtime restriction but does not prove its data has
 been erased.
 
-`config/nginx-routes.json` declares the active RG/Shenron upstreams as loopback
+`yolo/config/host/nginx/routes.json` declares the active RG/Shenron upstreams as loopback
 TCP: `rosegriffon.fr` → `127.0.0.1:3004`, `api.rosegriffon.fr` and
 `cdn.rosegriffon.fr` → `127.0.0.1:8800`, `achillea.rosegriffon.fr` →
 `127.0.0.1:4000`, `ranked.rosegriffon.fr` → `127.0.0.1:4002`,
@@ -66,7 +66,7 @@ claim needs measurement. Treat the proposed HTTP upstream socket migration as
 future work.
 
 Use the current root catalogs (`config/production-topology.json`,
-`config/service-catalog.json`, `config/nginx-routes.json`) as declared intent;
+`config/service-catalog.json`, `yolo/config/host/nginx/routes.json`) as declared intent;
 use dated live observations for runtime state. Do not use archived split-repo
 paths or old service inventories as current evidence.
 
@@ -106,4 +106,4 @@ qualification in Aphrody.
 Related authorities: [Infra plan](../../plans/infra/PLAN.md),
 [`service-catalog.json`](../../../config/service-catalog.json),
 [`production-topology.json`](../../../config/production-topology.json), and
-[`nginx-routes.json`](../../../config/nginx-routes.json).
+`yolo/config/host/nginx/routes.json`.

@@ -52,7 +52,7 @@ export async function GET(): Promise<Response> {
 		"",
 		// Pas de ligne MCP ici : `mcp.dragonballfr.com` a été retiré le 2026-09-25
 		// (shenron-mcp fusionné dans les outils `aphrody-mcp` dragonball.*, sans
-		// équivalent HTTP public — aphrody-infra config/nginx-routes.json et
+		// équivalent HTTP public — yolo config/host/nginx/routes.json et
 		// config/service-catalog.json). C'est exactement le défaut que ce fichier
 		// dynamique remplace (voir le commentaire de tête) : ne pas le reproduire.
 		`- [${SITE_URL}/api/canon](${SITE_URL}/api/canon) : doctrine canon et corpus de preuves.`,

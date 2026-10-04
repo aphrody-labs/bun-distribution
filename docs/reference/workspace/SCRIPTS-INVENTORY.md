@@ -67,13 +67,13 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/build/web/apps/bxc/scripts/build-serverless.ts`
 - scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts (supprimé)
 
-### check-aphrody-apex-nginx.ps1
+### yolo config/host/nginx/check-aphrody-apex.ps1
 
-- `scripts/check-aphrody-apex-nginx.ps1`
+- `scripts/yolo config/host/nginx/check-aphrody-apex.ps1`
 
-### check-aphrody-apex-nginx.sh
+### yolo config/host/nginx/check-aphrody-apex.sh
 
-- `scripts/check-aphrody-apex-nginx.sh`
+- `scripts/yolo config/host/nginx/check-aphrody-apex.sh`
 
 ### check-aphrody-stack-units.sh
 

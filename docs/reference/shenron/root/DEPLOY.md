@@ -5,7 +5,7 @@
 > `docs/PRODUCTION-ALLOCATION.md`, la production (VPS, systemd,
 > Nginx, blue/green, backups, rollback) n'est plus pilotée depuis ce dépôt
 > mais depuis Infra du monorepo (`config/service-catalog.json`,
-> `config/nginx-routes.json`, `config/application-contracts.json`). Voir
+> `yolo/config/host/nginx/routes.json`, `config/application-contracts.json`). Voir
 > [`docs/operations/shenron/INFRA-DELEGATION.md`](../../../operations/shenron/INFRA-DELEGATION.md) pour le détail de la
 > frontière et la liste des fichiers d'ops en cours de retrait. Ce document ne
 > garde que ce qui reste local au repo : build, tests et compilation.
@@ -136,6 +136,6 @@ rollback, blue/green), se référer à :
 - `docs/SHENRON-MIGRATION.md`
 - `docs/PRODUCTION-ALLOCATION.md`
 - `config/service-catalog.json`
-- `config/nginx-routes.json`
+- `yolo/config/host/nginx/routes.json`
 - [`docs/operations/shenron/INFRA-DELEGATION.md`](../../../operations/shenron/INFRA-DELEGATION.md) (frontière et liste
   de suppression gated des fichiers d'ops encore présents dans ce repo)

@@ -135,8 +135,8 @@ export async function GET() {
 			],
 			// Pas de champ `mcp` : `mcp.dragonballfr.com` a été retiré le 2026-09-25
 			// (shenron-mcp fusionné dans les outils `aphrody-mcp` dragonball.*, qui ne
-			// sont pas exposés en HTTP public — cf. aphrody-infra
-			// config/nginx-routes.json et config/service-catalog.json). Republier
+			// sont pas exposés en HTTP public — cf. yolo
+			// config/host/nginx/routes.json et config/service-catalog.json). Republier
 			// cette URL la ferait 404 pour quiconque l'appelle depuis cette réponse.
 		},
 		{ headers: { ...CORS_MANGA, "Cache-Control": "public, max-age=300, s-maxage=3600" } }

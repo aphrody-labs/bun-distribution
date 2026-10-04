@@ -9,7 +9,9 @@ set -euo pipefail
 #   aphrody-infra-deploy-bundle   atomic-deploy-bundle.sh (aphrody -> shenron -> rg)
 # ADAPTER.json records the infra commit and every installed hash; the bundle
 # adapter refuses a bundle pinned to another aphrody-infra commit. Reinstall
-# after changing any adapter or config/{service-catalog,nginx-routes,secrets-contract}.json.
+# after changing any adapter or config/{service-catalog,secrets-contract}.json
+# or yolo config/host/nginx/routes.json (installed as nginx-routes.json).
+yolo_routes="${YOLO_ROOT:-$HOME/yolo}/config/host/nginx/routes.json"
 infra="${APHRODY_ADAPTER_SOURCE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 sbin="${APHRODY_ADAPTER_SBIN:-/usr/local/sbin}"
 share="${APHRODY_ADAPTER_SHARE:-/usr/local/share/aphrody-infra}"
@@ -69,11 +71,12 @@ else
 fi
 if [[ -n "$package_out" ]]; then
   [[ "$stack" = shenron ]] || { echo 'sealed source export currently supports --stack shenron' >&2; exit 2; }
-  python3 - "$infra" "$package_out" "$commit" "${expected_revision:+committed}" "$include_backup" <<'PYPACKAGE'
+  python3 - "$infra" "$package_out" "$commit" "${expected_revision:+committed}" "$include_backup" "$yolo_routes" <<'PYPACKAGE'
 import hashlib, json, pathlib, shutil, subprocess, sys, tempfile
 root, destination, revision = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).absolute(), sys.argv[3]
 committed = len(sys.argv) > 4 and sys.argv[4] == 'committed'
 backup_owner = len(sys.argv) > 5 and sys.argv[5] == 'true'
+yolo_routes = pathlib.Path(sys.argv[6])
 if destination.exists(): raise SystemExit('adapter package destination already exists')
 destination.parent.mkdir(parents=True, exist_ok=True)
 stage = pathlib.Path(tempfile.mkdtemp(prefix='.adapter-package-', dir=destination.parent))
@@ -84,7 +87,11 @@ try:
     for relative in selected:
         source = root / relative
         target = stage / relative; target.parent.mkdir(parents=True, exist_ok=True)
-        if committed:
+        if relative == 'config/nginx-routes.json':
+            # Routes are owned by yolo (config/host/nginx/routes.json), not by the aphrody revision.
+            if yolo_routes.is_symlink() or not yolo_routes.is_file(): raise ValueError('yolo routes must be a regular file')
+            shutil.copy2(yolo_routes, target)
+        elif committed:
             prefix = ['git', '-c', f'safe.directory={root}', '-C', str(root)]
             tree = subprocess.check_output(prefix + ['ls-tree', revision, '--', relative], text=True).strip()
             if not tree.startswith(('100644 blob ', '100755 blob ')):
@@ -115,9 +122,12 @@ if [[ "$stack" = shenron ]]; then
   adapters=([aphrody-infra-deploy-shenron]=atomic-deploy-shenron.sh)
 fi
 for name in "${!adapters[@]}"; do install -m 0755 "$infra/scripts/${adapters[$name]}" "$sbin/$name"; done
-for catalog in service-catalog nginx-routes secrets-contract; do
+for catalog in service-catalog secrets-contract; do
   install -m 0644 "$infra/config/$catalog.json" "$share/$catalog.json"
 done
+# Routes come from yolo, or from the sealed package when installing from one.
+routes_src="$yolo_routes"; [[ -f "$infra/config/nginx-routes.json" ]] && routes_src="$infra/config/nginx-routes.json"
+install -m 0644 "$routes_src" "$share/nginx-routes.json"
 if $include_backup; then
   libexec="${APHRODY_ADAPTER_LIBEXEC:-/usr/local/libexec/aphrody-infra}"
   unit_dir="${APHRODY_ADAPTER_SYSTEMD:-/etc/systemd/system}"

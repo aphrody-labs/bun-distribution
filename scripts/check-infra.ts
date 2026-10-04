@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { stat } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
 type JsonObject = Record<string, unknown>;
@@ -25,13 +26,14 @@ type Route = {
 };
 
 const repo = resolve(import.meta.dir, "..");
+const yoloRoot = process.env.YOLO_ROOT ?? join(homedir(), "yolo");
 
 function fail(message: string): never {
   throw new Error(message);
 }
 
 async function readJson<T>(relative: string): Promise<T> {
-  return JSON.parse(await Bun.file(join(repo, relative)).text()) as T;
+  return JSON.parse(await Bun.file(resolve(repo, relative)).text()) as T;
 }
 
 export function sensitiveInventoryPath(path: string): boolean {
@@ -96,7 +98,9 @@ async function main(): Promise<void> {
     peers: A2aPeer[];
     protocol: { rpcPath: string; agentCardPath: string };
   }>("config/a2a-peers.json");
-  const routes = await readJson<{ routes: Route[]; internal: Route[] }>("config/nginx-routes.json");
+  const routes = await readJson<{ routes: Route[]; internal: Route[] }>(
+    join(yoloRoot, "config/host/nginx/routes.json"),
+  );
   const catalog = await readJson<{ services: Array<{ id: string }> }>(
     "config/service-catalog.json",
   );

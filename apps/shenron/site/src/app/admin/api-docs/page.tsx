@@ -34,7 +34,7 @@ export const metadata: Metadata = {
  *
  * `mcp.dragonballfr.com` a été retiré le 2026-09-25 (shenron-mcp fusionné dans
  * les outils `aphrody-mcp` dragonball.*, sans équivalent HTTP public — voir
- * aphrody-infra `config/nginx-routes.json` et `config/service-catalog.json`.
+ * yolo `config/host/nginx/routes.json` et `config/service-catalog.json`.
  * Ne pas le remettre ici : ce n'est plus joignable.
  */
 const OPEN_READ = [

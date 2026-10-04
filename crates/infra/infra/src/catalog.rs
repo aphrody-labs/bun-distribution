@@ -3,7 +3,7 @@
 //!
 //! Provides typed access to:
 //! - `config/service-catalog.json` (systemd services, runtimes, proxy links)
-//! - `config/nginx-routes.json` (public domain mappings and upstreams)
+//! - yolo `config/host/nginx/routes.json` (`$YOLO_ROOT`; public domain mappings and upstreams)
 //! - `config/application-contracts.json` (inter-app architecture constraints)
 //! - `config/infra/inventory/targets.json` (cross-host infrastructure matrix)
 

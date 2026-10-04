@@ -51,7 +51,7 @@ The root JSON catalogues are authoritative for declared policy:
 
 - `config/service-catalog.json` owns service IDs, units, health paths and
   declared ports;
-- `config/nginx-routes.json` owns public hosts and upstream routes;
+- `yolo/config/host/nginx/routes.json` owns public hosts and upstream routes;
 - `config/production-topology.json` owns host roles and public/internal port
   policy.
 

@@ -29,7 +29,7 @@ Better Auth / Postgres / backups pour Shenron (contrats
   `shenron-bot.service` (API incluse),
   `shenron-backup.timer`).
 - Les routes Nginx publiques et la politique « un seul Nginx, une seule table
-  de routes » (`config/nginx-routes.json`).
+  de routes » (`yolo/config/host/nginx/routes.json`).
 - Les contrats d'application (`config/application-contracts.json`) : UI et
   Better Auth canoniques chez RG, PostgreSQL comme source de vérité, SQLite
   comme cache local borné.
@@ -44,7 +44,7 @@ Better Auth / Postgres / backups pour Shenron (contrats
 `@shenron/api` (Hono) est **monté dans `shenron-bot` et dans `shenron-site`** ;
 il n'existe ni unité `shenron-api` ni vhost `shenron-api` dédiés. Les routes
 publiques de l'API sont servies par les vhosts du bot et du site déclarés dans
-`config/nginx-routes.json`. Contrat, montages et limiteurs :
+`yolo/config/host/nginx/routes.json`. Contrat, montages et limiteurs :
 [`design/aphrody-m3/packages/material-web/docs/STACK.md`](../../architecture/shenron/STACK.md) (§3.6 `@shenron/api`, ticket INFRA-5 du §7.3).
 
 ## Dépendances d'exécution (catalogue de l'Infra du monorepo)

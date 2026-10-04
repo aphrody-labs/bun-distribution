@@ -9,7 +9,7 @@ Authoritative sources (never a second registry):
 
 - `config/service-catalog.json` — every unit, its loopback port, health check, owning repository
   and `status`.
-- `config/nginx-routes.json` — every public host and path, and the internal paths reached through
+- `yolo/config/host/nginx/routes.json` — every public host and path, and the internal paths reached through
   a public host.
 - `config/production-topology.json` — the port policy (`publicPorts` vs `internalOnly`) per host.
 - `config/a2a-peers.json` — the A2A registry (JSON-RPC endpoints and agent cards).
@@ -173,7 +173,7 @@ of 2026-09-26 — nothing in this section is open any more:
 11. ~~`yolo/config/host/nginx/aphrody/aphrody.com.conf`'s `mcp.`, `downloads.`, `n2b.`, `api.` hosts~~ — **resolved
     2026-09-26.** `mcp.aphrody.com`, `n2b.aphrody.com` and `api.aphrody.com` all back onto
     already-retired services (`aphrody-site` :8083, plus `aphrody-a2a` :8788 and `aphrody-ai-http`
-    :8789 for `api.aphrody.com`) — added matching `config/nginx-routes.json` entries with
+    :8789 for `api.aphrody.com`) — added matching `yolo/config/host/nginx/routes.json` entries with
     `status: retired`/`retiredAt: 2026-09-25` (same date as the services they back), plus an inline
     banner on each server block in `yolo/config/host/nginx/aphrody/aphrody.com.conf`/`aphrody-apex.conf` naming the
     retirement. `downloads.aphrody.com` (and its `bot.`/`admin.` siblings) is different in kind:
@@ -191,7 +191,7 @@ of 2026-09-26 — nothing in this section is open any more:
     the `rpbey.fr`/`*.rpbey.fr` branch of the nginx-stats parser in `rg`'s
     `iecode/packages/rg/cron/src/tasks/stats/achillea.ts`. `docs/reference/infra/ops/OVH.md` and `docs/ovh/README.md` (not in repo) now
     record the sale instead of describing a live-but-unserved zone. No route ever existed in
-    `config/nginx-routes.json`/`config/service-catalog.json` for this domain, so no catalog entry
+    `yolo/config/host/nginx/routes.json`/`config/service-catalog.json` for this domain, so no catalog entry
     needed removing there. CHANGELOG/history mentions (e.g. `shenron/docs/archive/`) were left
     untouched, per the "history stays" rule.
 13. ~~Port 8811 (`SUPABASE_INTERNAL_URL`)~~ — **resolved 2026-09-26: routed to `rg-api:8800`
@@ -214,7 +214,7 @@ commit trailers in each repo for any fix that landed):
 - **aphrody-ai**: every literal that duplicates a canonical `APHRODY_AI_*` value already resolves
   through that env var first; nothing trivial to fix. One drift found and fixed 2026-09-26:
   `crates/ai/rag-eval/src/main.rs`'s `DEFAULT_MCP_URL` defaulted to `https://aphrody.com/mcp`,
-  a path/host with no live entry in `config/nginx-routes.json` (its `aphrody-site` backend is
+  a path/host with no live entry in `yolo/config/host/nginx/routes.json` (its `aphrody-site` backend is
   retired). Made env-driven (`APHRODY_MCP_HTTP_URL`, checked before the local default) with the
   local default repointed at `http://127.0.0.1:8789/mcp` — `aphrody-mcp http`'s own `--bind`
   default and `/mcp` mount (`crates/ai/mcp/src/main.rs`), the one MCP HTTP origin this

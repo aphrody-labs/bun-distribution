@@ -45,7 +45,7 @@ backups et probes.
 - backups : `shenron-backup.timer` (sauvegarde SQLite locale) et les unités
   spécialisées déclarées dans le catalogue ;
 - exposition publique : Nginx uniquement, déclarée dans
-  `config/nginx-routes.json` ; les vhosts sont des gabarits reviewables sous
+  `yolo/config/host/nginx/routes.json` ; les vhosts sont des gabarits reviewables sous
   `nginx/*.conf.example`, concaténés en `nginx/shenron.conf` (not in repo) dans le bundle et
   installés par l'adaptateur ;
 - déploiement : `scripts/atomic-deploy-shenron.sh` (`assemble` puis
@@ -62,7 +62,7 @@ démarré par `bun src/index.ts` depuis `apps/bot` (not in repo). Le catalogue i
 aligné sur ce fait : **`shenron-api.service` est retiré** (ajouté à
 `policies.retiredUnits` dans `config/service-catalog.json`) et
 `shenron-bot.service` porte à la fois le bot et le `health` public
-(`http://127.0.0.1:5006/health`, `public: true`). `config/nginx-routes.json`
+(`http://127.0.0.1:5006/health`, `public: true`). `yolo/config/host/nginx/routes.json`
 route donc `bot.dragonballfr.com` vers le service `shenron-bot`, pas
 `shenron-api`.
 
@@ -124,7 +124,7 @@ Le WireGuard historique (`wg0`, 10.8.0.0/24) est inactif côté VPS. Le chemin p
 retenu est donc `shenron-pg-tunnel.service`, un tunnel SSH supervisé par systemd.
 
 CDN : `cdn.dragonballfr.com` est une route Shenron dédiée, co-localisée sur le
-VPS (`config/nginx-routes.json`, `yolo/config/host/nginx/shenron/cdn.dragonballfr.com.conf.example`),
+VPS (`yolo/config/host/nginx/routes.json`, `yolo/config/host/nginx/shenron/cdn.dragonballfr.com.conf.example`),
 parce que le site est construit avec cet hôte comme base d'assets.
 
 Nginx : un seul fichier possédé par Shenron sur l'hôte,

@@ -4,7 +4,7 @@
 > et unités ci-dessous proviennent de la consolidation des anciens dépôts.
 > Depuis, les owners, manifests et catalogues du monorepo ont évolué. Pour les
 > workloads et routes déclarés, consulter `config/service-catalog.json`,
-> `config/nginx-routes.json` et `config/production-topology.json`. Pour
+> `yolo/config/host/nginx/routes.json` et `config/production-topology.json`. Pour
 > l’implémentation, consulter les fichiers actuels `crates/infra/infra/`,
 > `packages/infra/workspace/` et `scripts/`. L’observation hôte datée est
 > séparée dans `VPS-STATUS-2026-10-02.md`.
@@ -17,7 +17,7 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 > host). Shared sandbox/identity directives are drop-ins in `systemd/shared`
 > and proxy headers are `nginx/snippets/*.inc`; compose with
 > `bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit|compose-nginx|check`.
-> `config/service-catalog.json` and `config/nginx-routes.json` remain here as
+> `config/service-catalog.json` and `yolo/config/host/nginx/routes.json` remain here as
 > declared intent (their `vhost` paths are relative to `config/host`).
 
 ---
@@ -26,7 +26,7 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 
 `aphrody-infra` est l'unique dépositaire et autorité d'exploitation pour :
 - **Supervision & Cycle de vie** : Définition des unités systemd, timers et drop-ins.
-- **Routage & Passerelle Web** : Vhosts Nginx, certificats Let's Encrypt et table de routes publiques (`config/nginx-routes.json`).
+- **Routage & Passerelle Web** : Vhosts Nginx, certificats Let's Encrypt et table de routes publiques (`yolo/config/host/nginx/routes.json`).
 - **Catalogue de Services** : Unique registre de tous les workloads applicatifs (`config/service-catalog.json`).
 - **Gestion des Réseaux & Proxies** : Mullvad WireGuard (`wg0`), passerelle Privoxy (`127.0.0.1:8119`), tunnels PostgreSQL (`15433`).
 - **Pipelines de Déploiement** : Assemblage d'artefacts scellés et bascules atomiques blue/green (`scripts/atomic-deploy*.sh`).

@@ -5,7 +5,7 @@ backups, timers, rétention) est portée par le dépôt frère `aphrody-infra` :
 
 - catalogue des services et unités : `aphrody-infra/config/service-catalog.json`,
   `aphrody-infra/systemd/shenron-*.{service,timer}` ;
-- routes publiques : `aphrody-infra/config/nginx-routes.json`,
+- routes publiques : `yolo/config/host/nginx/routes.json`,
   gabarits `aphrody-infra/nginx/*dragonballfr.com.conf.example` ;
 - backups : `aphrody-infra/scripts/ops/backup-shenron-{pg,sqlite}.sh` ;
 - topologie et hôtes : `aphrody-infra/docs/SHENRON-MIGRATION.md`,

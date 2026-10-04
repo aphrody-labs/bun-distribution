@@ -229,7 +229,7 @@ async fn main() -> ExitCode {
 /// `127.0.0.1:8789`, serving the MCP endpoint at `/mcp`
 /// (`crates/aphrody-mcp/src/main.rs`'s `TopCommand::Http` and `http_app()`).
 /// `mcp.aphrody.com`/`aphrody.com/mcp` is not a route this eval tool can rely
-/// on: `aphrody-infra`'s `config/nginx-routes.json` marks it `status: retired`
+/// on: yolo's `config/host/nginx/routes.json` marks it `status: retired`
 /// (its backing `aphrody-site` origin is retired), so a hard-coded public URL
 /// here would silently point at nothing. `APHRODY_MCP_HTTP_URL` lets a
 /// deployment that does expose a live MCP HTTP origin override this without a

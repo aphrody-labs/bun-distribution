@@ -76,7 +76,7 @@ respect runtime threading and lifetime rules.
 
 Infra configuration is canonical: [services](../../../config/service-catalog.json),
 [topology](../../../config/production-topology.json),
-[routes](../../../config/nginx-routes.json) and
+`yolo/config/host/nginx/routes.json` and
 [local AI](../../../config/local-ai.json). Current release records and live
 probes establish deployed state; manifests and historical catalogues do not.
 Migration tools may intentionally read legacy archives, while active service

@@ -1,5 +1,5 @@
 //! Cross-catalog invariants between `config/service-catalog.json`,
-//! `config/nginx-routes.json`, `config/local-ai.json`, `config/pipeline.json`,
+//! yolo `config/host/nginx/routes.json`, `config/local-ai.json`, `config/pipeline.json`,
 //! the topology port policy of `config/production-topology.json` and the
 //! repository registry of `config/stack-training.json`.
 
@@ -39,11 +39,16 @@ fn load(root: &Path, relative: &str) -> Result<Value> {
 /// Host config (systemd units, nginx sites) lives in yolo: `$YOLO_ROOT/config/host`,
 /// default `$HOME/yolo` (`%USERPROFILE%\yolo` on Windows).
 pub fn host_systemd_root() -> PathBuf {
+    host_config_root().join("systemd")
+}
+
+/// `$YOLO_ROOT/config/host` (default `$HOME/yolo`): systemd units, nginx sites and routes.
+pub fn host_config_root() -> PathBuf {
     let yolo = std::env::var_os("YOLO_ROOT").map(PathBuf::from).unwrap_or_else(|| {
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
         PathBuf::from(home.unwrap_or_default()).join("yolo")
     });
-    yolo.join("config/host/systemd")
+    yolo.join("config/host")
 }
 
 fn unit_template_exists(systemd_root: &Path, unit: &str) -> bool {
@@ -73,7 +78,7 @@ pub fn run(root: &Path) -> Result<Report> {
     let topology = load(root, "config/production-topology.json")?;
     let contract = load_local_ai(root)?;
     let pipeline = load_pipeline_config(root)?;
-    let mut report = check(&catalog, &load(root, "config/nginx-routes.json")?);
+    let mut report = check(&catalog, &load(&host_config_root(), "nginx/routes.json")?);
     report.merge(check_topology_ports(&catalog, &topology));
     report.merge(check_local_ai(&catalog, &topology, &contract));
     report.errors.extend(check_pipeline(&pipeline));

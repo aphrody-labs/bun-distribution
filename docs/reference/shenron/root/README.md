@@ -71,7 +71,7 @@ Infra du monorepo ; cf. [`docs/operations/shenron/INFRA-DELEGATION.md`](../../..
 | `../../../plugins/aphrody` | plugin Claude Code / Codex / Antigravity unique | Skills Dragon Ball, Aphrody AI/LLM, OS, Web, N2B et WinClean ; MCP `aphrody-mcp` + `aphrody-kernel` | marketplace `aphrody-ai` |
 
 Ports, unités systemd et routes Nginx sont catalogués côté Infra du monorepo
-(`config/service-catalog.json`, `config/nginx-routes.json`) ; ce dépôt ne fait
+(`config/service-catalog.json`, `yolo/config/host/nginx/routes.json`) ; ce dépôt ne fait
 plus foi sur l'état de publication (release Git ≠ release déployée). Les
 contrats et commandes d'intégration Aphrody sont décrits dans
 [`docs/architecture/shenron/APHRODY-ECOSYSTEM.md`](../../../architecture/shenron/APHRODY-ECOSYSTEM.md) ; le code du serveur

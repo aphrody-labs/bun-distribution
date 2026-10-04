@@ -171,7 +171,7 @@ credentials and proprietary assets are not superproject source artifacts.
 | --- | --- |
 | Desktop requests, events and approval replies | App protocol; handlers in AI and broker in UI |
 | Agent submissions/events and A2A | [Contracts repository](../products/contracts/README.md) and [A2A documentation](../products/contracts/a2a/README.md) |
-| Services, health, routes and placement | Infra [service catalogue](../../config/service-catalog.json), [topology](../../config/production-topology.json), [routes](../../config/nginx-routes.json), [local AI](../../config/local-ai.json) |
+| Services, health, routes and placement | Infra [service catalogue](../../config/service-catalog.json), [topology](../../config/production-topology.json), `yolo/config/host/nginx/routes.json`, [local AI](../../config/local-ai.json) |
 | Jobs, process resources and native secrets | OS implementation and its actual APIs; AI adapters add feature-specific input/results |
 | RAG, sessions, models and memory | AI owner crates; do not add root schema snapshots |
 | Application databases | RG/Shenron and other application schema owners; Infra owns deployment/backup, not their business schema |

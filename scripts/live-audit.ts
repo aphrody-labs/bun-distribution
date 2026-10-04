@@ -4,7 +4,7 @@
  *
  *   bun scripts/live-audit.ts [--site <host>] [--skip-crawl] [--ssh <alias>] [--json]
  *
- * 1. routes  — every public route of config/nginx-routes.json answers < 400 on its probe path.
+ * 1. routes  — every public route of yolo config/host/nginx/routes.json answers < 400 on its probe path.
  * 2. crawl   — the native Aphrody Web crawler scans each active site of
  *              config/live-audit.json; every crawled page must be 2xx and free of error markers.
  * 3. links   — internal links found in crawled pages but not crawled are fetched (broken links).
@@ -62,7 +62,7 @@ const option = (name: string) => {
 };
 const config = (await Bun.file(join(root, "config", "live-audit.json")).json()) as Config;
 const routes = (
-  (await Bun.file(join(root, "config", "nginx-routes.json")).json()) as { routes: Route[] }
+  (await Bun.file(join(process.env.YOLO_ROOT ?? join(homedir(), "yolo"), "config", "host", "nginx", "routes.json")).json()) as { routes: Route[] }
 ).routes;
 const onlySite = option("--site");
 const sites = config.sites.filter(

@@ -6,7 +6,7 @@ Application repositories retain business logic and data schemas.
 
 | Source | Authority |
 | --- | --- |
-| `config/service-catalog.json`, `nginx-routes.json` | Workloads and routing |
+| `config/service-catalog.json`, yolo `config/host/nginx/routes.json` | Workloads and routing |
 | `config/production-topology.json`, `scheduler-policy.json` | Placement and timers |
 | `config/infra/inventory/targets.json`, dated inventory files | Targets and sanitized observations |
 | `config/application-contracts.json`, `local-ai.json` | Shared application/AI integration |

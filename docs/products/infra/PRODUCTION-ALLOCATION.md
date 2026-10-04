@@ -5,7 +5,7 @@
 La topologie déclarée est portée par
 [`config/production-topology.json`](../../../config/production-topology.json),
 les unités par [`config/service-catalog.json`](../../../config/service-catalog.json)
-et les routes par [`config/nginx-routes.json`](../../../config/nginx-routes.json).
+et les routes par `yolo/config/host/nginx/routes.json`.
 Le VPS héberge les allocations actives RG, Shenron et Nginx ; les allocations
 Aphrody Web/AI et NIE sont marquées retired dans le catalogue. La pile Aphrody
 ne doit donc pas être décrite comme redéployée par le bundle sans nouvelle

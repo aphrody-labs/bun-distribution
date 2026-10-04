@@ -42,7 +42,7 @@
       "authEnv": null,
       "status": "retired",
       "retiredAt": "2026-09-25",
-      "note": "backing service aphrody-a2a and the aphrody.com vhost are status:retired in config/service-catalog.json / config/nginx-routes.json pending the Aphrody convergence redeploy; this peer record stays as the redeploy shape, not a live endpoint"
+      "note": "backing service aphrody-a2a and the aphrody.com vhost are status:retired in config/service-catalog.json / yolo/config/host/nginx/routes.json pending the Aphrody convergence redeploy; this peer record stays as the redeploy shape, not a live endpoint"
     },
     {
       "id": "shenron",

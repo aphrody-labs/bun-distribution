@@ -48,7 +48,7 @@ absolu d'hôte. Un service est désigné par son identifiant dans
 `aphrody-ai-http`, `aphrody-shenron-embed`, `aphrody-web-api`,
 `shenron-pg-tunnel`…), et un client le trouve par une variable
 d'environnement provisionnée par l'Infra du monorepo. Les hôtes publics sont
-déclarés dans `config/nginx-routes.json`.
+déclarés dans `yolo/config/host/nginx/routes.json`.
 
 ---
 
