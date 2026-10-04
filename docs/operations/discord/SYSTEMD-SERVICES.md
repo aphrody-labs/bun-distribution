@@ -28,9 +28,9 @@ With the introduction of `aphrody-discord-compiler` and AOT standalone compilati
 
 ## 2. Updated Systemd Service Units
 
-The systemd units in the repository (`systemd/shenron-bot.service` and `iecode/config/rg/host/systemd/rg-bot.service`) have been updated to target the autonomous native binaries directly.
+The systemd units in the repository (`yolo/config/host/systemd/shenron/shenron-bot.service` and `iecode/config/rg/host/systemd/rg-bot.service`) have been updated to target the autonomous native binaries directly.
 
-### 2.1 `systemd/shenron-bot.service`
+### 2.1 `yolo/config/host/systemd/shenron/shenron-bot.service`
 
 ```ini
 [Unit]

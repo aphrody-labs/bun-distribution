@@ -80,9 +80,9 @@ closed 2026-09-26.
 | `aphrody.com` | `/api/v1/a2a`, `/.well-known/agent-card.json` | aphrody-a2a :8788 | retired 2026-09-25 |
 | `aphrody.com` | `/api/v1/models`, `/api/v1/rag/*` | aphrody-ai-http :8789 | retired 2026-09-25 |
 | `aphrody.com` | `/api/v1/web/` | aphrody-web-api :3007 | retired 2026-09-25 |
-| `mcp.aphrody.com` | `/mcp` | aphrody-site :8083 | retired 2026-09-25 (`nginx/aphrody/aphrody-apex.conf`) |
-| `n2b.aphrody.com` | `/api/v1/n2b`, `/api/v1/n2b/` | aphrody-site :8083 | retired 2026-09-25 (`nginx/aphrody/aphrody.com.conf`) |
-| `api.aphrody.com` | `/healthz`, `/api/v1/a2a`, `/api/v1/models`, `/api/v1/rag/*`, `/api/` etc. | aphrody-site :8083, aphrody-a2a :8788, aphrody-ai-http :8789 | retired 2026-09-25 (`nginx/aphrody/aphrody.com.conf`) |
+| `mcp.aphrody.com` | `/mcp` | aphrody-site :8083 | retired 2026-09-25 (`yolo/config/host/nginx/aphrody/aphrody-apex.conf`) |
+| `n2b.aphrody.com` | `/api/v1/n2b`, `/api/v1/n2b/` | aphrody-site :8083 | retired 2026-09-25 (`yolo/config/host/nginx/aphrody/aphrody.com.conf`) |
+| `api.aphrody.com` | `/healthz`, `/api/v1/a2a`, `/api/v1/models`, `/api/v1/rag/*`, `/api/` etc. | aphrody-site :8083, aphrody-a2a :8788, aphrody-ai-http :8789 | retired 2026-09-25 (`yolo/config/host/nginx/aphrody/aphrody.com.conf`) |
 | `bot.aphrody.com` | `/` | `aphrody-discord-dev` (`127.0.0.1:4010`) | Bun dev app: signed Discord HTTP interactions, Gateway session for non-interaction events, OAuth2 login/callback; managed by `aphrody-infra` |
 | `downloads.aphrody.com` / `admin.aphrody.com` | `/` | none — reserved, explicit 410 | reserved; no backing service |
 | `cdn.aphrody.com` | `/s/`, `/h/`, `/s/manifest.json` | static `aphrody-cdn` release tree (`config/asset-catalog.json`) — no backend process, so no `service-catalog.json` entry | retired 2026-09-25: `/srv/aphrody-cdn` and its vhost were removed with the Aphrody retirement (`config/asset-catalog.json` `status: retired`); not part of the bundle |
@@ -170,12 +170,12 @@ of 2026-09-26 — nothing in this section is open any more:
     either without first confirming a live owner. `staging-nds.conf`'s own design intent (a staged
     NDS emulator, deliberately never public) is unchanged and still documented inline; it simply
     has no implementing code yet in this ecosystem.
-11. ~~`nginx/aphrody/aphrody.com.conf`'s `mcp.`, `downloads.`, `n2b.`, `api.` hosts~~ — **resolved
+11. ~~`yolo/config/host/nginx/aphrody/aphrody.com.conf`'s `mcp.`, `downloads.`, `n2b.`, `api.` hosts~~ — **resolved
     2026-09-26.** `mcp.aphrody.com`, `n2b.aphrody.com` and `api.aphrody.com` all back onto
     already-retired services (`aphrody-site` :8083, plus `aphrody-a2a` :8788 and `aphrody-ai-http`
     :8789 for `api.aphrody.com`) — added matching `config/nginx-routes.json` entries with
     `status: retired`/`retiredAt: 2026-09-25` (same date as the services they back), plus an inline
-    banner on each server block in `nginx/aphrody/aphrody.com.conf`/`aphrody-apex.conf` naming the
+    banner on each server block in `yolo/config/host/nginx/aphrody/aphrody.com.conf`/`aphrody-apex.conf` naming the
     retirement. `downloads.aphrody.com` (and its `bot.`/`admin.` siblings) is different in kind:
     it never had a backing service — it is a reserved placeholder returning an explicit 410 — so
     it correctly has no `nginx-routes.json` entry (that schema requires a `service` to reference);

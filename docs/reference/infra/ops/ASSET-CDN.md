@@ -45,7 +45,7 @@ bun scripts/assets/cdn.ts publish --vps <ssh-host> [--dry-run]
 `publish` rsyncs the release to `/srv/aphrody-cdn/releases/<RELEASE_SHA>` and switches
 `/srv/aphrody-cdn/current` atomically; the previous release stays for rollback (switch the link
 back). The vhost is `iecode/config/nie/host/nginx/aphrody-nie-cdn.conf`, installed with
-`nginx/aphrody/aphrody-cdn-static.inc` in `/etc/nginx/conf.d/`, then
+`yolo/config/host/nginx/aphrody/aphrody-cdn-static.inc` in `/etc/nginx/conf.d/`, then
 `nginx -t && systemctl reload nginx` (first publish and install: 2026-09-23, release
 `122a3f0c217c`, 92 files).
 

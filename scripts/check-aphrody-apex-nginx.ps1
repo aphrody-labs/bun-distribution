@@ -1,6 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
-$config = Join-Path $repo 'nginx/aphrody/aphrody-apex.conf'
+$yolo = if ($env:YOLO_ROOT) { $env:YOLO_ROOT } else { Join-Path $env:USERPROFILE 'yolo' }
+$config = Join-Path $yolo 'config/host/nginx/aphrody/aphrody-apex.conf'
 $tempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
 $scratch = Join-Path $tempRoot ("aphrody-nginx-check-" + [guid]::NewGuid().ToString('N'))
 try {

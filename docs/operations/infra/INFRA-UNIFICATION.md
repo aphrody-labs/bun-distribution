@@ -11,6 +11,15 @@
 
 Ce document établit la source de vérité unifiée et le bilan de consolidation de l'ensemble des scripts, configurations et documentations d'infrastructure pour l'écosystème Aphrody (`aphrody-infra`, `aphrody`, `aphrody-os`, `rg`, `shenron`, `nie`, `iecode`).
 
+> **Host config home (2026-10-04).** systemd units/drop-ins and nginx sites of
+> aphrody, shenron, rg and nie live in yolo: `$YOLO_ROOT/config/host` (default
+> `~/yolo`), indexed by `catalog.json` (service, unit, site, owner repo, target
+> host). Shared sandbox/identity directives are drop-ins in `systemd/shared`
+> and proxy headers are `nginx/snippets/*.inc`; compose with
+> `bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit|compose-nginx|check`.
+> `config/service-catalog.json` and `config/nginx-routes.json` remain here as
+> declared intent (their `vhost` paths are relative to `config/host`).
+
 ---
 
 ## 1. Principe d'Autorité Unique
@@ -30,7 +39,7 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 
 | Domaine / Projet | Emplacement Centralisé (`aphrody-infra`) | Ancien Emplacement (Dépôt Sœur) | Rôle & Optimisations |
 |---|---|---|---|
-| **Shenron Media Bridge** | `scripts/shenron/install-media-vpn-proxy.sh`<br>`config/infra/host/privoxy/shenron-media.conf`<br>`systemd/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
+| **Shenron Media Bridge** | `scripts/shenron/install-media-vpn-proxy.sh`<br>`config/infra/host/privoxy/shenron-media.conf`<br>`yolo/config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
 | **Shenron Crawl Sync** | `scripts/shenron/sync-bxc-crawls.ts` | `shenron/scripts/ops/sync-bxc-crawls-to-newvps.ts` | Synchronisation SQLite vers PostgreSQL via Bun pur. Modernisation de l'alias hôte (`vps`), modes `--dry-run` et `--json`. |
 | **Shenron Backups** | `scripts/ops/backup-shenron-pg.sh`<br>`scripts/ops/backup-shenron-sqlite.sh` | `shenron/scripts/backup-shenron-*.sh` | Dépotoir logique MVCC `pg_dump` compressé, manifestes SHA-256, purge différée après accusé de réception offsite Windows. |
 | **NIE 3D Model Prewarm** | `scripts/nie/model-serve-prewarm.sh` (not in repo) | `nie/scripts/ops/model-serve-prewarm.sh` | Pré-chauffage du cache 3D (`nie-model-serve` :8790) pour les modèles GLB et Keshin critiques. Support `--json` et paramétrage du port. |

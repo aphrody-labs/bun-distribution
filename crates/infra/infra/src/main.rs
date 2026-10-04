@@ -1344,7 +1344,7 @@ fn deploy(
 fn validate_catalogs(root: &Path, as_json: bool, run: &mut Run) -> Result<()> {
     let mut report = validate::run(root)?;
     let catalog = aphrody_infra::catalog::load_service_catalog(root)?;
-    report.errors.extend(validate::check_unit_templates(root, &catalog));
+    report.errors.extend(validate::check_unit_templates(&validate::host_systemd_root(), &catalog));
     run.action(
         "validate",
         if report.errors.is_empty() { "success" } else { "failed" },

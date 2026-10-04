@@ -138,10 +138,11 @@ if (!(await Bun.file(join(privateDir, "tls.key")).exists())) {
   ]);
   await chmod(join(privateDir, "tls.key"), 0o600);
 }
+const yoloRoot = process.env.YOLO_ROOT ?? process.env.APHRODY_YOLO_ROOT ?? join(homedir(), "yolo");
 const configPath = join(privateDir, "nginx.conf");
 await Bun.write(
   configPath,
-  (await readFile(join(root, "config/infra/host/nginx/aphrody-local.conf"), "utf8"))
+  (await readFile(join(yoloRoot, "config/host/nginx/aphrody/aphrody-local.conf"), "utf8"))
     .replaceAll("@STATE@", state)
     .replaceAll("@PRIVATE@", privateDir),
 );
@@ -150,7 +151,6 @@ const units = join(homedir(), ".config/systemd/user");
 await mkdir(units, { recursive: true });
 const kernelOverride = join(units, "aphrody-kernel.service.d/local-app.conf");
 const previousKernelOverride = await readFile(kernelOverride, "utf8").catch(() => undefined);
-const yoloRoot = process.env.APHRODY_YOLO_ROOT ?? join(homedir(), "yolo");
 await run([
   "bun",
   join(yoloRoot, "packages/core/src/units/cli.ts"),

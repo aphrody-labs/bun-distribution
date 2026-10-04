@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "description": "The shared static asset CDN of the Aphrody monorepo (UI design assets and AI brand assets), owned and operated by Infra. One source owns each file content; the CDN serves every source under one origin. Built and published by scripts/assets/cdn.ts, served by nginx/aphrody/aphrody-cdn-static.inc on the cdn.aphrody.com vhost.",
+  "description": "The shared static asset CDN of the Aphrody monorepo (UI design assets and AI brand assets), owned and operated by Infra. One source owns each file content; the CDN serves every source under one origin. Built and published by scripts/assets/cdn.ts, served by yolo/config/host/nginx/aphrody/aphrody-cdn-static.inc on the cdn.aphrody.com vhost.",
   "cdn": {
     "service": "aphrody-cdn",
     "host": "cdn.aphrody.com",
     "status": "retired",
     "retiredAt": "2026-09-25",
-    "note": "The release tree /srv/aphrody-cdn and the cdn.aphrody.com vhost (nginx/aphrody/aphrody-nie-cdn.conf) were removed from vps with the Aphrody retirement (config/infra/inventory/vps-source.json). The catalog stays the redeploy shape: `cdn.ts publish` recreates the release root, then the vhost and a certificate must be installed again. The all-in-one bundle does not carry it.",
+    "note": "The release tree /srv/aphrody-cdn and the cdn.aphrody.com vhost (yolo/config/host/nginx/nie/aphrody-nie-cdn.conf) were removed from vps with the Aphrody retirement (config/infra/inventory/vps-source.json). The catalog stays the redeploy shape: `cdn.ts publish` recreates the release root, then the vhost and a certificate must be installed again. The all-in-one bundle does not carry it.",
     "releaseRoot": "/srv/aphrody-cdn",
     "paths": {
       "scoped": "/s/",

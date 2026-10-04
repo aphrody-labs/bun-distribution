@@ -10,7 +10,7 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default, serde::Serialize)]
 pub struct Report {
@@ -36,18 +36,34 @@ fn load(root: &Path, relative: &str) -> Result<Value> {
     serde_json::from_str(&text).with_context(|| format!("JSON invalide: {}", path.display()))
 }
 
+/// Host config (systemd units, nginx sites) lives in yolo: `$YOLO_ROOT/config/host`,
+/// default `$HOME/yolo` (`%USERPROFILE%\yolo` on Windows).
+pub fn host_systemd_root() -> PathBuf {
+    let yolo = std::env::var_os("YOLO_ROOT").map(PathBuf::from).unwrap_or_else(|| {
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
+        PathBuf::from(home.unwrap_or_default()).join("yolo")
+    });
+    yolo.join("config/host/systemd")
+}
+
+fn unit_template_exists(systemd_root: &Path, unit: &str) -> bool {
+    std::fs::read_dir(systemd_root).into_iter().flatten().flatten().any(|owner| {
+        owner.path().join(unit).is_file() || owner.path().join(format!("{unit}.example")).is_file()
+    })
+}
+
 /// Source validation only. Package-owned units still require independent
-/// target-host systemd and health qualification.
-pub fn check_unit_templates(root: &Path, catalog: &ServiceCatalog) -> Vec<String> {
+/// target-host systemd and health qualification. `systemd_root` holds one
+/// subdirectory per owner (see [`host_systemd_root`]).
+pub fn check_unit_templates(systemd_root: &Path, catalog: &ServiceCatalog) -> Vec<String> {
     catalog
         .services
         .iter()
         .filter(|service| !service.is_retired() && service.requires_unit_template())
         .filter_map(|service| {
-            let source = root.join("systemd").join(&service.unit);
-            let example = root.join("systemd").join(format!("{}.example", service.unit));
-            (!source.is_file() && !example.is_file())
-                .then(|| format!("{}: unité {} absente de systemd/", service.id, service.unit))
+            (!unit_template_exists(systemd_root, &service.unit)).then(|| {
+                format!("{}: unité {} absente de yolo config/host/systemd/", service.id, service.unit)
+            })
         })
         .collect()
 }
@@ -1033,16 +1049,16 @@ mod tests {
         let load_catalog = |value: &Value| {
             serde_json::from_value::<ServiceCatalog>(value.clone()).expect("fixture catalog")
         };
-        assert_eq!(check_unit_templates(root.path(), &load_catalog(&raw)).len(), 1);
+        assert_eq!(check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).len(), 1);
         raw["services"][0]["unitSource"] = json!("repository");
-        assert_eq!(check_unit_templates(root.path(), &load_catalog(&raw)).len(), 1);
+        assert_eq!(check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).len(), 1);
         raw["services"][0]["unitSource"] = json!("system-package");
-        assert!(check_unit_templates(root.path(), &load_catalog(&raw)).is_empty());
+        assert!(check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).is_empty());
         raw["services"][0]["unitSource"] = json!("repository");
-        fs::create_dir(root.path().join("systemd")).expect("fixture systemd directory");
-        fs::write(root.path().join("systemd/redis-server.service.example"), "[Service]\n")
+        fs::create_dir_all(root.path().join("systemd/aphrody")).expect("fixture systemd directory");
+        fs::write(root.path().join("systemd/aphrody/redis-server.service.example"), "[Service]\n")
             .expect("fixture unit template");
-        assert!(check_unit_templates(root.path(), &load_catalog(&raw)).is_empty());
+        assert!(check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).is_empty());
     }
 
     #[test]

@@ -151,8 +151,8 @@ La liste gated ci-dessus a été exécutée (parité confirmée dans l'Infra du 
   `scripts/ops/ingest_rag_to_aphrody.py` (not in repo) (one-shot, sans référence).
 - **Déplacés vers l'Infra du monorepo** : `scripts/ops/backup-shenron-{pg,sqlite}.sh`
   (les copies locales restent gelées tant que les timers DBFR exécutent
-  l'ancien checkout `~/shenron/scripts/…` sur `dbfr`) ; `systemd/privoxy.service.d/shenron-media.conf` ;
-  `nginx/cdn.dragonballfr.com.conf.example` (non routé, décision ouverte).
+  l'ancien checkout `~/shenron/scripts/…` sur `dbfr`) ; `yolo/config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` ;
+  `yolo/config/host/nginx/shenron/cdn.dragonballfr.com.conf.example` (non routé, décision ouverte).
 - **Artefact site** : `bun run site:artifact` (`scripts/build/shenron/scripts/ops/build-site-external.ts`,
   base de build via `SITE_BUILD_DATABASE_URL` ou `.env.remote-db`) produit
   `artifacts/site-build.tar.gz{,.sha256}` ; `bun run site:migrate` applique les
@@ -166,7 +166,7 @@ La liste gated ci-dessus a été exécutée (parité confirmée dans l'Infra du 
   `APHRODY_AI_RERANK_BASE_URL` (ou l'alias `RERANK_URL`) est explicitement configurée. Sans poids E5 prêts ou sans vecteurs compatibles,
   le RAG se replie toujours sur BM25; ce dépôt ne prouve pas la disponibilité
   runtime du modèle.
-- **Restent ici** (hors infra) : `deploy/install-media-vpn-proxy.sh` et
+- **Restent ici** (hors infra) : `scripts/shenron/install-media-vpn-proxy.sh` (installeur unique) et
   `deploy/privoxy/*` (lit le drop-in dans `../aphrody-infra`) ;
   `apps/shenron/bot/scripts/log-watcher.ts` reste un outil CLI manuel. Son unité
   systemd est retirée du catalogue et ne doit pas être recréée implicitement.

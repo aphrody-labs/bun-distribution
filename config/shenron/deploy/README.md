@@ -19,6 +19,5 @@ dans le catalogue `aphrody-infra`. Frontière et historique des suppressions :
 
 | Chemin | Rôle | Statut |
 | --- | --- | --- |
-| `deploy/install-media-vpn-proxy.sh` | Installe Privoxy (pont HTTP `127.0.0.1:8119` vers le SOCKS5 Mullvad sur `wg0`) ; lit le drop-in systemd dans `../aphrody-infra/systemd/privoxy.service.d/` (surchargeable par `APHRODY_INFRA_ROOT`). | À migrer vers `aphrody-infra/scripts/ops/` ou un composant hôte `aphrody-os`. |
 | `deploy/privoxy/shenron-media.conf` | Configuration Privoxy installée en `/etc/privoxy/config`. | Idem. |
 | `deploy/privoxy/shenron-media-proxy.env` | URL locale du pont média lue par le bot (`SHENRON_MEDIA_PROXIES`), sans secret. | Idem. |

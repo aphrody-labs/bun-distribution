@@ -2,15 +2,16 @@
   "schemaVersion": 1,
   "proxy": "nginx",
   "sourceOfTruth": "config/service-catalog.json",
+  "vhostRoot": "$YOLO_ROOT/config/host",
   "routes": [
     { "host": "bot.aphrody.com", "service": "aphrody-discord-dev", "upstream": "127.0.0.1:4010", "probePath": "/healthz", "vhost": "nginx/aphrody/bot.aphrody.com.conf" },
     { "host": "aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "status": "retired", "retiredAt": "2026-09-25" },
     { "host": "mcp.aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "paths": ["/mcp"], "vhost": "nginx/aphrody/aphrody-apex.conf", "status": "retired", "retiredAt": "2026-09-25" },
     { "host": "n2b.aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "paths": ["/api/v1/n2b", "/api/v1/n2b/"], "vhost": "nginx/aphrody/aphrody.com.conf", "status": "retired", "retiredAt": "2026-09-25" },
     { "host": "api.aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "paths": ["/healthz", "/health", "/api/v1/openapi.json", "/api/v1/ecosystem", "/llms.txt", "/ai.json", "/api/"], "vhost": "nginx/aphrody/aphrody.com.conf", "status": "retired", "retiredAt": "2026-09-25" },
-    { "host": "dragonballfr.com", "service": "shenron-site", "upstream": "127.0.0.1:5011", "probePath": "/api/health", "vhost": "nginx/dragonballfr.com.conf.example" },
-    { "host": "bot.dragonballfr.com", "service": "shenron-bot", "upstream": "127.0.0.1:5006", "probePath": "/health", "vhost": "nginx/bot.dragonballfr.com.conf.example" },
-    { "host": "cdn.dragonballfr.com", "service": "shenron-site", "upstream": "127.0.0.1:5011", "probePath": "/health", "paths": ["/_next/static/", "/_next/image", "/wiki/", "/assets/", "/health", "/api/health"], "vhost": "nginx/cdn.dragonballfr.com.conf.example" },
+    { "host": "dragonballfr.com", "service": "shenron-site", "upstream": "127.0.0.1:5011", "probePath": "/api/health", "vhost": "nginx/shenron/dragonballfr.com.conf.example" },
+    { "host": "bot.dragonballfr.com", "service": "shenron-bot", "upstream": "127.0.0.1:5006", "probePath": "/health", "vhost": "nginx/shenron/bot.dragonballfr.com.conf.example" },
+    { "host": "cdn.dragonballfr.com", "service": "shenron-site", "upstream": "127.0.0.1:5011", "probePath": "/health", "paths": ["/_next/static/", "/_next/image", "/wiki/", "/assets/", "/health", "/api/health"], "vhost": "nginx/shenron/cdn.dragonballfr.com.conf.example" },
     { "host": "mcp.dragonballfr.com", "service": "shenron-mcp", "upstream": "127.0.0.1:5010", "protocol": "mcp-a2a", "status": "retired", "retiredAt": "2026-09-25" }
   ],
   "internal": [

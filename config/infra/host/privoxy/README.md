@@ -9,5 +9,5 @@ Ce répertoire centralise la configuration hôte Privoxy pour l'infrastructure A
 - **Fichiers** :
   - `shenron-media.conf` : Configuration Privoxy installée en `/etc/privoxy/config`.
   - `shenron-media-proxy.env.example` : Modèle d'environnement local pour les bots/services.
-  - `systemd/privoxy.service.d/shenron-media.conf` : Drop-in systemd assurant l'ordre de démarrage après `wg-quick@wg0.service`.
+  - `yolo/config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` : Drop-in systemd assurant l'ordre de démarrage après `wg-quick@wg0.service`.
   - `scripts/shenron/install-media-vpn-proxy.sh` : Script d'installation et de validation automatisé.

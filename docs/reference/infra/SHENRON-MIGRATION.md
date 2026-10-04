@@ -124,7 +124,7 @@ Le WireGuard historique (`wg0`, 10.8.0.0/24) est inactif côté VPS. Le chemin p
 retenu est donc `shenron-pg-tunnel.service`, un tunnel SSH supervisé par systemd.
 
 CDN : `cdn.dragonballfr.com` est une route Shenron dédiée, co-localisée sur le
-VPS (`config/nginx-routes.json`, `nginx/cdn.dragonballfr.com.conf.example`),
+VPS (`config/nginx-routes.json`, `yolo/config/host/nginx/shenron/cdn.dragonballfr.com.conf.example`),
 parce que le site est construit avec cet hôte comme base d'assets.
 
 Nginx : un seul fichier possédé par Shenron sur l'hôte,
@@ -215,7 +215,7 @@ filebrowser, watchdog et superviseurs propres à Shenron sont retirées du plan.
 - Catalogue corrigé : `aphrody-shenron-embed.workingDirectory` pointe
   `apps/shenron-embed` (not in repo) ; `staged` retiré de `aphrody-shenron-embed`,
   `shenron-mcp` et `shenron-backup` (actifs en production). Source
-  `systemd/shenron-zswap.service` (not in repo) supprimée (unité retirée, absente des deux hôtes).
+  `yolo/config/host/systemd/shenron/shenron-zswap.service` (not in repo) supprimée (unité retirée, absente des deux hôtes).
 - Écart résolu (2026-09-30) : sur DBFR, `shenron-pg-backup.service` et
   `shenron-sqlite-replica-backup.service` disposent d'un fallback direct et
   résilient vers `~/shenron/scripts/backup-shenron-{pg,sqlite}.sh`

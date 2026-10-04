@@ -14,18 +14,18 @@ The Bun modules that serve multiple repositories are documented in
 | `config/infra/host/logrotate/rsyslog` | Daily system log rotation (`/etc/logrotate.d`) | `rg/infra/logrotate` |
 | `config/infra/host/privoxy/shenron-media.conf` + `scripts/shenron/install-media-vpn-proxy.sh` | Mullvad HTTP bridge (`:8119` -> `10.8.0.1:1080`) | `shenron/deploy/privoxy/` |
 | `iecode/config/rg/host/systemd/rg-zram-swap.service` | Compressed zram swap, main VPS | `rg/infra/systemd` |
-| `systemd/nginx.service.d/*.conf` | nginx restart policy and CPU/IO priority | `rg/infra/systemd` |
-| `systemd/privoxy.service.d/*.conf` | Privoxy restart & WireGuard dependency drop-in | `shenron/deploy/privoxy/` |
+| `yolo/config/host/systemd/shared/nginx.service.d/*.conf` | nginx restart policy and CPU/IO priority | `rg/infra/systemd` |
+| `yolo/config/host/systemd/shenron/privoxy.service.d/*.conf` | Privoxy restart & WireGuard dependency drop-in | `shenron/deploy/privoxy/` |
 | `systemd/rg-watchdog@.{service,timer}` (not in repo) + `iecode/scripts/rg/ops/rg-watchdog.sh` | Per-service HTTP/memory watchdog template | `rg` |
 | `systemd/rg-infra-monitor.{service,timer}` (not in repo) + `scripts/infra-status.ts` | Bun status/check/plan monitor | Formerly split across `rg`, `aphrody` (`stack.ts`) |
 | `systemd/rg-repo-sync.{service,timer}` (not in repo) + `scripts/ops/repo-sync.ts` | Explicit rg/nie Git sync, no autocommit — [REPO-SYNC.md](../../../reference/infra/ops/REPO-SYNC.md) | `rg` |
-| `systemd/aphrody-source-sync.service` + `scripts/source-sync.ts` | User service for first-party source fetch and fast-forward sync; preserves dirty and divergent worktrees | Aphrody development workstation |
+| `yolo/config/host/systemd/aphrody/aphrody-source-sync.service` + `scripts/source-sync.ts` | User service for first-party source fetch and fast-forward sync; preserves dirty and divergent worktrees | Aphrody development workstation |
 | `scripts/ops/ovh.py`, `scripts/ops/ovh-dns.ts` | OVH DNS API clients — [OVH.md](../../../reference/infra/ops/OVH.md); OVHcloud runbook [../ovh/README.md](../ovh/README.md) | `nie`, `shenron` |
 | `scripts/nie/model-serve-prewarm.sh` (not in repo) | Historical prewarm helper for the retired NIE VPS service (:8790) | `nie/scripts/ops/` |
 | `scripts/shenron/sync-bxc-crawls.ts` | BXC SQLite -> PostgreSQL crawl sync | `shenron/scripts/ops/` |
 | `iecode/scripts/rg/assemble-vps-release.sh` | Next.js 16 standalone release assembler | `rg/scripts/ops/` |
 | `crates/infra/infra/src/secrets/` + Infra CLI `secrets` commands | Sovereign AES-256-GCM GitOps secrets & leak audit | [Secret management](../../../reference/infra/SECRET-MANAGEMENT.md) |
-| `nginx/aphrody/` | `aphrody.com` vhost and includes | `aphrody/deploy/nginx`, `nie/deploy/nginx` |
+| `yolo/config/host/nginx/aphrody/` | `aphrody.com` vhost and includes | `aphrody/deploy/nginx`, `nie/deploy/nginx` |
 
 The table is a migration map, not a live list of installed units. Compare every
 unit with `config/service-catalog.json` and a dated host observation before

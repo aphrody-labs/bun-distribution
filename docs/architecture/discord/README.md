@@ -137,7 +137,7 @@ Detailed in [`COMPILER.md`](COMPILER.md):
 ### Layer 5: Host Systemd Services (`systemd/`)
 
 Detailed in [`docs/operations/discord/SYSTEMD-SERVICES.md`](../../operations/discord/SYSTEMD-SERVICES.md):
-- `systemd/shenron-bot.service` executes `/srv/shenron/current/apps/bot/dist/shenron`.
+- `yolo/config/host/systemd/shenron/shenron-bot.service` executes `/srv/shenron/current/apps/bot/dist/shenron`.
 - `iecode/config/rg/host/systemd/rg-bot.service` executes `/srv/rg/current/apps/bot/dist/rg-bot`.
 - Complete elimination of host node_modules and Bun binary requirements.
 

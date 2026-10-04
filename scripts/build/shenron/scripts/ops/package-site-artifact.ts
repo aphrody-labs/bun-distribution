@@ -2,12 +2,26 @@
 /** Emballe un `.next-build` produit hors VPS pour import bleu/vert vérifié. */
 import { existsSync } from "node:fs";
 import { mkdir, rm, readdir, lstat, readlink, unlink, cp } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join, relative as relativePath } from "node:path";
 
 import { artifactStore, artifactPath } from "./site-artifact-paths.ts";
 
 const repo = join(import.meta.dir, "..", "..", "..", "..", "..");
 const build = join(repo, "apps", "shenron", "site", ".next-build");
+// Units and nginx fragments live in yolo (config/host); compose shared drop-ins/snippets inline.
+const yolo = process.env.YOLO_ROOT || join(homedir(), "yolo");
+const hostConfig = join(yolo, "config", "host");
+const hostCli = join(yolo, "packages", "core", "src", "host", "cli.ts");
+const compose = (...args: string[]) => {
+  const out = Bun.spawnSync(["bun", hostCli, ...args], {
+    env: { ...process.env, YOLO_ROOT: yolo },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (out.exitCode) throw new Error(`${args.join(" ")}: ${out.stderr.toString()}`);
+  return out.stdout.toString();
+};
 const outputArg = process.argv[2] ?? "artifacts/site-build.tar.gz";
 const run = (cmd: string[]) => Bun.spawnSync(cmd, { cwd: repo, stdout: "pipe", stderr: "pipe" });
 
@@ -167,7 +181,7 @@ if (process.argv[3] === "--release-dir") {
       ["shenron-site", "shenron-bot"].map((unit) =>
         Bun.write(
           join(payloadStage, "systemd", `${unit}.service`),
-          Bun.file(join(repo, "systemd", `${unit}.service`)),
+          compose("compose-unit", `${unit}.service`),
         ),
       ),
     );
@@ -182,7 +196,7 @@ if (process.argv[3] === "--release-dir") {
       (
         await Promise.all(
           fragments.map((fragment) =>
-            Bun.file(join(repo, "nginx", `${fragment}.conf.example`)).text(),
+            compose("compose-nginx", join(hostConfig, "nginx/shenron", `${fragment}.conf.example`)),
           ),
         )
       ).join("\n");

@@ -33,8 +33,8 @@ pas de la fusion des processus (voir §3 et §6).
 
 | Élément | Nature | Propriétaire (unité / code) | Remarques |
 | --- | --- | --- | --- |
-| `shenron-site` | service long, Bun + `next start` | Infra du monorepo / `apps/shenron/site` | MemoryHigh 2560M, Max 4G, Low 256M, OOMScoreAdjust -300 (`systemd/shenron-site.service`, `config/service-catalog.json:153-163`). Standalone refusé (`apps/shenron/site/next.config.ts:56-59`). |
-| `shenron-bot` | service long, un processus Bun : discordx + `Bun.serve` API | Infra du monorepo / `apps/shenron/bot` | `BUN_JSC_forceRAMSize=1GiB`, MemoryLow 384M, **aucun plafond**, OOMScoreAdjust -500 (`systemd/shenron-bot.service`, `service-catalog.json:180-190`). |
+| `shenron-site` | service long, Bun + `next start` | Infra du monorepo / `apps/shenron/site` | MemoryHigh 2560M, Max 4G, Low 256M, OOMScoreAdjust -300 (`yolo/config/host/systemd/shenron/shenron-site.service`, `config/service-catalog.json:153-163`). Standalone refusé (`apps/shenron/site/next.config.ts:56-59`). |
+| `shenron-bot` | service long, un processus Bun : discordx + `Bun.serve` API | Infra du monorepo / `apps/shenron/bot` | `BUN_JSC_forceRAMSize=1GiB`, MemoryLow 384M, **aucun plafond**, OOMScoreAdjust -500 (`yolo/config/host/systemd/shenron/shenron-bot.service`, `service-catalog.json:180-190`). |
 | API bot | dans `shenron-bot` | `apps/shenron/bot/src/api/server.ts:1132` | Démarre seulement dans `clientReady` (`apps/shenron/bot/src/index.ts:97-116`). Un échec de login termine le processus (`index.ts:155-158`). |
 | CronRegistry (~10 jobs) | `setInterval` en mémoire | `apps/shenron/bot/src/api/cron-registry.ts:39-99` | Les échéances sont perdues à chaque redémarrage (risque pour `ursaf-cycle`, 24 h). |
 | Tick Giveaway | `setInterval` hors registre | `apps/shenron/bot/src/commands/giveaway/Giveaway.ts:173` | Invisible dans `/cron`. |
@@ -132,7 +132,7 @@ After=network-online.target
 WantedBy=multi-user.target
 ```
 
-`systemd/shenron-bot.service` → `systemd/shenron-runtime.service` (not in repo) :
+`yolo/config/host/systemd/shenron/shenron-bot.service` → `yolo/config/host/systemd/shenron/shenron-runtime.service` (not in repo) :
 
 ```diff
 -Description=Shenron bot (discordx + Bun.serve API)
@@ -164,7 +164,7 @@ se fait donc par une unité `shenron-bot.service` minimale, gardée une release,
 `shenron-site.service` et `shenron-pg-tunnel.service` reçoivent `PartOf=shenron.target` et
 `WantedBy=shenron.target`.
 
-On supprime `systemd/shenron-backup.{service,timer}` et `systemd/shenron-zswap.service` (not in repo).
+On supprime `yolo/config/host/systemd/shenron/shenron-backup.{service,timer}` et `yolo/config/host/systemd/shenron/shenron-zswap.service` (not in repo).
 
 `config/scheduler-policy.json` : l'entrée `shenron-backup` change de propriétaire et devient
 `shenron-runtime-scheduler` (`owns: ["shenron-sqlite-local-cache"]`). Elle reste l'exception

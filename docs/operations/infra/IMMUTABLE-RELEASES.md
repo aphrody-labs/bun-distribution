@@ -69,14 +69,15 @@ serves `https://bot.aphrody.com`, binds only to loopback `:4010`, and reads
 `DISCORD_GUILD_ID`, `BASE_URL` and `PORT`. Never place that file in a release.
 
 For first-time provisioning, issue a dedicated certificate with the webroot
-challenge and install the Nginx/systemd files from `nginx/aphrody/` and `systemd/`:
+challenge and install the Nginx/systemd files from yolo (`$YOLO_ROOT/config/host/{nginx,systemd}`, default `~/yolo`; nginx `include snippets/*.inc` files go to `/etc/nginx/snippets/`):
 
 ```bash
 sudo certbot certonly --webroot -w /var/www/letsencrypt \
   --cert-name bot.aphrody.com -d bot.aphrody.com
-sudo install -o root -g root -m 0644 systemd/aphrody-discord-dev.service \
-  /etc/systemd/system/aphrody-discord-dev.service
-sudo install -o root -g root -m 0644 nginx/aphrody/bot.aphrody.com.conf \
+bun "${YOLO_ROOT:-$HOME/yolo}/packages/core/src/host/cli.ts" compose-unit aphrody-discord-dev.service \
+  | sudo tee /etc/systemd/system/aphrody-discord-dev.service >/dev/null
+sudo install -d /etc/nginx/snippets && sudo install -m 0644 "${YOLO_ROOT:-$HOME/yolo}"/config/host/nginx/snippets/*.inc /etc/nginx/snippets/
+sudo install -o root -g root -m 0644 "${YOLO_ROOT:-$HOME/yolo}/config/host/nginx/aphrody/bot.aphrody.com.conf" \
   /etc/nginx/conf.d/bot.aphrody.com.conf
 sudo install -o root -g root -m 0755 scripts/ops/certbot-nginx-reload.sh \
   /etc/letsencrypt/renewal-hooks/deploy/aphrody-nginx-reload
@@ -144,7 +145,7 @@ The agent console served by `aphrody` is `aphrody-ui`'s tracked
 `crates/ui/app/ui-dist`, embedded at compile time by
 `aphrody-app-server`; a build that falls back to its placeholder page fails.
 Nginx serves `/ai.json` byte-for-byte from `/srv/aphrody/current/ai.json` and
-routes the apex (`nginx/aphrody/aphrody-apex.conf`: `aphrody.com`,
+routes the apex (`yolo/config/host/nginx/aphrody/aphrody-apex.conf`: `aphrody.com`,
 `www.aphrody.com`, `mcp.aphrody.com`) to the loopback services.
 
 Persistent state stays outside releases: Web SQLite, crawler queue and cookies

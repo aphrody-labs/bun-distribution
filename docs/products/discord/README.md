@@ -45,7 +45,7 @@ aphrody/
 
 | Application | Domain | Standalone Binary | Systemd Unit |
 | :--- | :--- | :--- | :--- |
-| **`@shenron/bot`** | Dragon Ball universe, card games, OCR, public API (`:5006`) | `dist/shenron` (~151.6 MB) | `systemd/shenron-bot.service` |
+| **`@shenron/bot`** | Dragon Ball universe, card games, OCR, public API (`:5006`) | `dist/shenron` (~151.6 MB) | `yolo/config/host/systemd/shenron/shenron-bot.service` |
 | **`@rosegriffon/bot`** | Inazuma Eleven community, Azalée game bot, moderation, XP | `dist/rg-bot` (~144.9 MB) | `iecode/config/rg/host/systemd/rg-bot.service` |
 | **`@rosegriffon/achillea-bot`** | Inazuma Eleven tournament automation | `dist/achillea` | `iecode/config/rg/host/systemd/rg-achillea-bot.service` |
 
