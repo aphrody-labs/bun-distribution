@@ -1,0 +1,12 @@
+{
+  "name": "aphrody-m3",
+  "private": true,
+  "description": "Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates, docs and forks.",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "lint": "oxlint packages",
+    "fmt:check": "oxfmt --check packages",
+    "typecheck": "bun run --filter '*' typecheck",
+    "icons:ico": "bun packages/material-design-icons/scripts/svg-to-ico.ts"
+  }
+}

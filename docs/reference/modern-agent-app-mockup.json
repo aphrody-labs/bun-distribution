@@ -1,0 +1,477 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "app_metadata": {
+    "name": "Aphrody Agent Desktop",
+    "codename": "Aphrody UI 2026",
+    "version": "2.0.0",
+    "target_platform": "Windows 11 / Linux (Tauri v2 + Bun Material Design 3)",
+    "design_system": "Material Design 3 (Material You 2026 + Zero-Slop Professional Ergonomics)",
+    "benchmark_sources": [
+      "Google App Desktop (Floating Spotlight Alt+Space)",
+      "OpenAI Codex Desktop (3-column layout, GPT-6 Luna, full access security, image studio)",
+      "Anthropic Claude Desktop (Workspaces tree, connectors popover, trusted folders)",
+      "Google Antigravity Desktop (Dual-pane IDE, embedded PowerShell, KaTeX math, MCP health monitoring)"
+    ]
+  },
+  "design_tokens": {
+    "color_schemes": {
+      "dark_baseline": {
+        "surface": "#121316",
+        "surface_dim": "#0e0f11",
+        "surface_bright": "#2c2d32",
+        "surface_container_lowest": "#0a0b0d",
+        "surface_container_low": "#18191d",
+        "surface_container": "#1e1f25",
+        "surface_container_high": "#25262c",
+        "surface_container_highest": "#2d2f36",
+        "on_surface": "#e2e2e9",
+        "on_surface_variant": "#c4c6d0",
+        "outline": "#8e909a",
+        "outline_variant": "#44464f",
+        "primary": "#a8c7fa",
+        "on_primary": "#083063",
+        "primary_container": "#244476",
+        "on_primary_container": "#d3e3fd",
+        "secondary": "#bfc6dc",
+        "on_secondary": "#283042",
+        "secondary_container": "#3f4759",
+        "on_secondary_container": "#dbe2f9",
+        "tertiary": "#d8bbfb",
+        "on_tertiary": "#3c1e69",
+        "tertiary_container": "#553782",
+        "on_tertiary_container": "#eedbff",
+        "error": "#ffb4ab",
+        "on_error": "#690005",
+        "error_container": "#93000a",
+        "on_error_container": "#ffdad6",
+        "warning": "#f59e0b",
+        "on_warning": "#452b00",
+        "warning_container": "#633f00",
+        "on_warning_container": "#ffdf9e",
+        "success": "#34d399",
+        "on_success": "#003822",
+        "success_container": "#005234",
+        "on_success_container": "#6bf8be"
+      },
+      "light_baseline": {
+        "surface": "#fbfbf9",
+        "surface_dim": "#dad9d4",
+        "surface_bright": "#ffffff",
+        "surface_container_lowest": "#ffffff",
+        "surface_container_low": "#f4f3ee",
+        "surface_container": "#eeebe5",
+        "surface_container_high": "#e8e5df",
+        "surface_container_highest": "#e2ded9",
+        "on_surface": "#1b1c18",
+        "on_surface_variant": "#454741",
+        "outline": "#757871",
+        "outline_variant": "#c5c8bf",
+        "primary": "#0b57d0",
+        "on_primary": "#ffffff",
+        "primary_container": "#d3e3fd",
+        "on_primary_container": "#041e49",
+        "secondary": "#535f70",
+        "on_secondary": "#ffffff",
+        "secondary_container": "#d7e3f8",
+        "on_secondary_container": "#101c2b",
+        "tertiary": "#6b5778",
+        "on_tertiary": "#ffffff",
+        "tertiary_container": "#f3daff",
+        "on_tertiary_container": "#251432",
+        "error": "#ba1a1a",
+        "on_error": "#ffffff",
+        "error_container": "#ffdad6",
+        "on_error_container": "#410002"
+      }
+    },
+    "typography": {
+      "font_family_sans": "Google Sans Flex, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      "font_family_mono": "JetBrains Mono, Consolas, 'Cascadia Code', monospace",
+      "font_family_serif": "Anthropic Sans, Georgia, serif",
+      "scales": {
+        "display_large": { "size": "57px", "line_height": "64px", "weight": "400", "tracking": "-0.25px" },
+        "headline_medium": { "size": "28px", "line_height": "36px", "weight": "600", "tracking": "0px" },
+        "title_large": { "size": "22px", "line_height": "28px", "weight": "500", "tracking": "0px" },
+        "title_medium": { "size": "16px", "line_height": "24px", "weight": "600", "tracking": "0.15px" },
+        "body_large": { "size": "16px", "line_height": "24px", "weight": "400", "tracking": "0.5px" },
+        "body_medium": { "size": "14px", "line_height": "20px", "weight": "400", "tracking": "0.25px" },
+        "label_large": { "size": "14px", "line_height": "20px", "weight": "500", "tracking": "0.1px" },
+        "label_small": { "size": "11px", "line_height": "16px", "weight": "500", "tracking": "0.5px" },
+        "code_block": { "size": "13px", "line_height": "20px", "weight": "400", "font": "mono" }
+      }
+    },
+    "shapes": {
+      "corner_none": "0px",
+      "corner_extra_small": "4px",
+      "corner_small": "8px",
+      "corner_medium": "12px",
+      "corner_large": "16px",
+      "corner_extra_large": "28px",
+      "corner_full_pill": "9999px"
+    },
+    "elevations": {
+      "level0": "none",
+      "level1": "0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30)",
+      "level2": "0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30)",
+      "level3": "0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.30)",
+      "level4": "0px 6px 10px 4px rgba(0, 0, 0, 0.15), 0px 2px 3px 0px rgba(0, 0, 0, 0.30)",
+      "level5": "0px 8px 12px 6px rgba(0, 0, 0, 0.15), 0px 4px 4px 0px rgba(0, 0, 0, 0.30)"
+    },
+    "motion": {
+      "easing_standard": "cubic-bezier(0.2, 0.0, 0, 1.0)",
+      "easing_emphasized": "cubic-bezier(0.05, 0.7, 0.1, 1.0)",
+      "duration_short": "200ms",
+      "duration_medium": "350ms",
+      "duration_long": "500ms"
+    }
+  },
+  "layout_architecture": {
+    "modes": [
+      {
+        "id": "desktop_full_workspace",
+        "description": "Environnement de bureau principal tri-pane ou dual-pane avec rail de navigation persistant, explorateur de projets/sessions, canvas de conversation et volet d'outils contextuel.",
+        "columns": [
+          { "id": "nav_rail", "width": "52px", "collapsible": false, "component": "NavigationRail" },
+          { "id": "sidebar", "width": "280px", "min_width": "220px", "max_width": "420px", "collapsible": true, "default_open": true, "component": "ProjectSessionSidebar" },
+          { "id": "main_canvas", "width": "flex-1", "min_width": "500px", "component": "ConversationWorkCanvas" },
+          { "id": "auxiliary_pane", "width": "42%", "min_width": "360px", "max_width": "65%", "collapsible": true, "default_open": true, "component": "AuxiliarySplitPaneManager" }
+        ]
+      },
+      {
+        "id": "spotlight_floating_capsule",
+        "description": "Barre flottante minimale style Google Desktop Spotlight, invoquée à chaud via Alt+Space depuis n'importe où dans Windows.",
+        "window_properties": {
+          "frameless": true,
+          "transparent": true,
+          "always_on_top": true,
+          "width": "860px",
+          "height": "auto",
+          "max_height": "640px",
+          "backdrop_blur": "24px",
+          "border_radius": "28px"
+        }
+      }
+    ]
+  },
+  "components": {
+    "NavigationRail": {
+      "description": "Rail de navigation vertical ultra-fin (52px) persistant à gauche, inspiré de Codex et Antigravity.",
+      "items": [
+        { "id": "home", "icon": "home", "label": "Accueil / Workspace", "route": "/workspace", "shortcut": "Alt+1" },
+        { "id": "history", "icon": "schedule", "label": "Historique des sessions", "route": "/history", "shortcut": "Alt+2" },
+        { "id": "drive_explorer", "icon": "folder_copy", "label": "Aphrody Drive / VFS Explorer", "route": "/drive", "shortcut": "Alt+3" },
+        { "id": "crawler_web", "icon": "travel_explore", "label": "Navigateur Web & Crawlers (BXC)", "route": "/web", "shortcut": "Alt+4" },
+        { "id": "creative_studio", "icon": "palette", "label": "Studio Visuel & Génération 2D/3D", "route": "/studio", "shortcut": "Alt+5" },
+        { "id": "mcp_diagnostics", "icon": "hub", "label": "Serveurs MCP & Outils de runtime", "route": "/mcp", "shortcut": "Alt+6" },
+        { "id": "settings", "icon": "settings", "label": "Paramètres & Personnalisation", "action": "openSettingsModal", "shortcut": "Ctrl+," }
+      ],
+      "footer_items": [
+        { "id": "help", "icon": "help_outline", "label": "Documentation & Aide" },
+        { "id": "profile", "component": "UserAvatarBadge", "label": "Compte utilisateur" }
+      ]
+    },
+    "ProjectSessionSidebar": {
+      "description": "Barre latérale de gestion des projets et conversations récentes avec filtres, raccourcis et indicateurs d'état en direct.",
+      "header": {
+        "title": "Aphrody Agent",
+        "action_new": { "label": "Nouveau chat", "icon": "add_comment", "shortcut": "Ctrl+N" },
+        "search_input": { "placeholder": "Rechercher projets et sessions...", "shortcut": "Ctrl+F" }
+      },
+      "sections": [
+        {
+          "id": "global_actions",
+          "items": [
+            { "id": "scheduled_tasks", "icon": "alarm", "label": "Tâches planifiées", "badge": "3 actives" },
+            { "id": "artifacts", "icon": "auto_stories", "label": "Artéfacts générés", "badge": "12 récents" },
+            { "id": "customizations", "icon": "tune", "label": "Compétences & Rôles" }
+          ]
+        },
+        {
+          "id": "projects_tree",
+          "title": "Projets (Multi-root Workspaces)",
+          "actions": [{ "icon": "add", "tooltip": "Attacher un dossier workspace" }],
+          "items": [
+            {
+              "id": "aphrody_ui",
+              "name": "aphrody-ui",
+              "path": "$HOME/src/aphrody-ui",
+              "branch": "main",
+              "git_status": "clean",
+              "active_session": "Design System Benchmark & UI Spec"
+            },
+            {
+              "id": "aphrody_os",
+              "name": "aphrody-os",
+              "path": "$HOME/src/aphrody-os",
+              "branch": "main",
+              "git_status": "modified (2)",
+              "active_session": "Kernel Windows 11 Diagnostics"
+            },
+            {
+              "id": "aphrody_web",
+              "name": "aphrody-web",
+              "path": "$HOME/src/aphrody-web",
+              "branch": "main",
+              "git_status": "clean",
+              "active_session": "BXC Crawler Engine Test"
+            }
+          ]
+        },
+        {
+          "id": "recent_sessions",
+          "title": "Sessions récentes",
+          "items": [
+            { "id": "s1", "title": "Design System Benchmark & UI Spec", "project": "aphrody-ui", "status": "active", "badge_color": "primary" },
+            { "id": "s2", "title": "Nettoyer le code mort et unifier l'auth", "project": "rg", "status": "unread", "badge_color": "secondary" },
+            { "id": "s3", "title": "Résoudre équation différentielle Riemann", "project": "aphrody-os", "status": "completed", "badge_color": "none" },
+            { "id": "s4", "title": "Génération maquette Poster Bloom & 3D", "project": "aphrody-ui", "status": "completed", "badge_color": "none" }
+          ]
+        }
+      ]
+    },
+    "ConversationWorkCanvas": {
+      "description": "Canvas central de raisonnement et de travail de l'agent IA.",
+      "top_header": {
+        "breadcrumbs": [
+          { "type": "project", "name": "aphrody-ui", "icon": "folder" },
+          { "type": "session", "name": "Design System Benchmark & UI Spec" }
+        ],
+        "status_chip": { "label": "NHITL Autonomous Mode", "color": "success", "icon": "shield" },
+        "actions": [
+          { "id": "share", "icon": "share", "tooltip": "Partager ou exporter la session" },
+          { "id": "fork", "icon": "fork_right", "tooltip": "Bifurquer la conversation (Branch)" },
+          { "id": "toggle_terminal", "icon": "terminal", "tooltip": "Basculer panneau terminal (Ctrl+J)" },
+          { "id": "toggle_crawler", "icon": "language", "tooltip": "Basculer panneau web crawler (Ctrl+Shift+C)" },
+          { "id": "open_ide", "label": "Open IDE", "icon": "code", "tooltip": "Ouvrir dans l'éditeur de code complet" }
+        ]
+      },
+      "chat_stream": {
+        "turn_elements": [
+          {
+            "type": "user_turn",
+            "alignment": "right",
+            "style": { "background": "surface_container_high", "border_radius": "20px 20px 4px 20px" },
+            "content_components": ["TextPrompt", "AttachmentChips", "MentionPills"]
+          },
+          {
+            "type": "agent_turn",
+            "alignment": "left",
+            "style": { "background": "transparent", "border_radius": "0px" },
+            "content_components": [
+              {
+                "id": "reasoning_drawer",
+                "label": "Raisonnement en cours (Chain-of-Thought)",
+                "state": "collapsed_or_streaming",
+                "elapsed_time": "14.2s",
+                "tokens_evaluated": "2.4k",
+                "steps": [
+                  "1. Analyse des captures d'écran UI dans assets/",
+                  "2. Extraction des coordonnées de découpe pixel-perfect",
+                  "3. Définition de l'architecture des composants M3 2026"
+                ]
+              },
+              {
+                "id": "markdown_response",
+                "features": ["KaTeX Math Typesetting", "Syntax Highlighted Code Blocks", "Interactive Tables", "Mermaid Diagrams"]
+              },
+              {
+                "id": "tool_execution_card",
+                "status": "success",
+                "tool_name": "aphrody_kernel.execute_command",
+                "args_preview": "uv run --with pillow python scripts/process_assets.py",
+                "duration_ms": 682,
+                "collapsible_output": "Summary: 12 source captures processed, 29 crops created."
+              },
+              {
+                "id": "action_toolbar",
+                "actions": ["Copy Markdown", "Thumbs Up/Down", "Fork Conversation", "View JSON-RPC Trace"]
+              }
+            ]
+          }
+        ]
+      },
+      "floating_composer": {
+        "description": "Capsule de prompt flottante M3 inspirée de Codex, Claude et Antigravity.",
+        "elevation": "level3",
+        "border_radius": "28px",
+        "background": "surface_container",
+        "sub_badges": [
+          { "id": "security_badge", "label": "Accès complet", "level": "privileged_shell", "color": "warning", "icon": "shield_lock" },
+          { "id": "nhitl_badge", "label": "NHITL Auto-Approve", "color": "success", "icon": "bolt" }
+        ],
+        "input_area": {
+          "placeholder": "Posez une question, @ pour mentionner un fichier/agent, / pour les commandes...",
+          "auto_grow": true,
+          "max_lines": 8
+        },
+        "controls_row": {
+          "left_tools": [
+            { "id": "add_context_btn", "icon": "add", "label": "+", "popover": "AddContextPopover" },
+            { "id": "screen_capture_btn", "icon": "screenshot_monitor", "tooltip": "Capturer une région de l'écran" },
+            { "id": "plan_mode_toggle", "icon": "lightbulb", "label": "Mode Plan", "toggle": true },
+            { "id": "goal_mode_toggle", "icon": "flag", "label": "Objectif Autonome", "toggle": true }
+          ],
+          "right_tools": [
+            {
+              "id": "model_picker",
+              "current_model": "GPT-6 Luna (Reasoning Pro)",
+              "popover": "ModelSelectorPopover",
+              "supported_families": [
+                { "name": "OpenAI Codex", "models": ["GPT-6 Astra", "GPT-6 Sol", "GPT-6 Luna", "GPT-5.6 Terra"] },
+                { "name": "Google Gemini", "models": ["Gemini 3.8 Pro Thinker", "Gemini 3.8 Flash Low", "Gemini 3.5 Flash"] },
+                { "name": "Anthropic Claude", "models": ["Claude Opus 5.5 Extra", "Claude Sonnet 4.5"] },
+                { "name": "Aphrody Local", "models": ["Aphrody Llama-3.3-70B Q4", "DeepSeek-R1 Local 32B"] }
+              ]
+            },
+            { "id": "voice_input_btn", "icon": "mic", "tooltip": "Dictée vocale directe" },
+            { "id": "audio_waveform_btn", "icon": "graphic_eq", "tooltip": "Session vocale temps réel (Audio-to-Audio)" },
+            { "id": "stop_emergency_btn", "icon": "stop", "color": "error", "tooltip": "Arrêt d'urgence de l'agent", "visible_when": "running" },
+            { "id": "submit_btn", "icon": "arrow_upward", "tooltip": "Envoyer le message (Entrée)" }
+          ]
+        }
+      }
+    },
+    "AuxiliarySplitPaneManager": {
+      "description": "Gestionnaire d'onglets pour le panneau scindé auxiliaire droit (Terminal, Navigateur Web BXC, Explorateur Drive, Inspecteur MCP).",
+      "tabs": [
+        {
+          "id": "terminal_pane",
+          "title": "Terminal Shell",
+          "icon": "terminal",
+          "content": {
+            "type": "PTYTerminal",
+            "shell": "Windows PowerShell / Nushell",
+            "features": ["Splits multiples", "Historique persistant", "Recherche dans les buffers", "Injection de scripts agent"]
+          }
+        },
+        {
+          "id": "crawler_web_pane",
+          "title": "BXC Web Crawler & Browser",
+          "icon": "travel_explore",
+          "content": {
+            "type": "HeadlessWebview",
+            "engine": "Aphrody Web / Wry Webview",
+            "controls": ["Barre d'URL", "Snapshot DOM", "Console JS", "Inspection cookies/réseau", "Extraction markdown instantanée"]
+          }
+        },
+        {
+          "id": "file_viewer_pane",
+          "title": "Explorateur de Fichiers & Diff",
+          "icon": "description",
+          "content": {
+            "type": "CodeViewer",
+            "features": ["Syntaxe 50+ langages", "Rendu KaTeX math", "Visualiseur de diffs unifiés et côte-à-côte", "Édition en direct"]
+          }
+        },
+        {
+          "id": "mcp_inspector_pane",
+          "title": "Inspecteur d'Outils MCP",
+          "icon": "precision_manufacturing",
+          "content": {
+            "type": "ToolCallTree",
+            "features": ["Liste des appels JSON-RPC", "Status vert/rouge", "Durée d'exécution", "Replay d'outils"]
+          }
+        }
+      ]
+    },
+    "AddContextPopover": {
+      "description": "Menu contextuel déployé au clic sur le '+' du composer.",
+      "sections": [
+        {
+          "title": "Ajouter du contexte",
+          "items": [
+            { "id": "files_folders", "icon": "attach_file", "label": "Fichiers et dossiers", "shortcut": "Ctrl+U" },
+            { "id": "active_terminal", "icon": "terminal", "label": "Joindre console active", "description": "Injecter l'état du shell en cours" },
+            { "id": "screen_region", "icon": "crop", "label": "Capture de zone d'écran", "description": "Sélectionner une région sur le bureau" },
+            { "id": "sketch_draw", "icon": "draw", "label": "Dessiner un croquis d'architecture", "description": "Canvas vectoriel rapide" }
+          ]
+        },
+        {
+          "title": "Connecteurs & Documentation",
+          "items": [
+            { "id": "context7", "icon": "library_books", "label": "Context7 Docs fraîches", "toggle": true, "default": true },
+            { "id": "aphrody_docs", "icon": "auto_stories", "label": "Documentation Aphrody", "toggle": true, "default": true },
+            { "id": "chrome_browser", "icon": "web", "label": "Onglets Chrome / Obscura", "toggle": true, "default": false }
+          ]
+        },
+        {
+          "title": "Capacités d'exécution",
+          "items": [
+            { "id": "computer_use", "icon": "desktop_windows", "label": "Computer Use Windows 11", "description": "Piloter le curseur et les fenêtres OS" },
+            { "id": "bxc_browser", "icon": "travel_explore", "label": "In-app BXC Crawler", "description": "Navigation web autonome headless" }
+          ]
+        }
+      ]
+    },
+    "SettingsModal": {
+      "description": "Boîte de dialogue modale complète des préférences, inspirée de Claude et Antigravity.",
+      "layout": "Master-Detail Modal Dialog (560px x 1140px effectif)",
+      "navigation_groups": [
+        {
+          "group": "Général",
+          "items": [
+            { "id": "general", "icon": "tune", "label": "Général" },
+            { "id": "appearance", "icon": "palette", "label": "Apparence & Thèmes" },
+            { "id": "models", "icon": "smart_toy", "label": "Modèles & Routage" },
+            { "id": "voice", "icon": "record_voice_over", "label": "Voix & Audio" }
+          ]
+        },
+        {
+          "group": "Agent & Outils",
+          "items": [
+            { "id": "mcp_servers", "icon": "hub", "label": "Serveurs MCP" },
+            { "id": "subagents", "icon": "group_work", "label": "Sous-Agents Spécialisés" },
+            { "id": "trusted_folders", "icon": "folder_shared", "label": "Dossiers de confiance" },
+            { "id": "permissions", "icon": "verified_user", "label": "Sécurité & NHITL" }
+          ]
+        },
+        {
+          "group": "Système & Réseau",
+          "items": [
+            { "id": "terminal", "icon": "terminal", "label": "Terminaux & PTY" },
+            { "id": "crawler", "icon": "travel_explore", "label": "Crawlers & Proxies" },
+            { "id": "api_keys", "icon": "key", "label": "Clés API & Identités" }
+          ]
+        }
+      ],
+      "panels": {
+        "mcp_servers": {
+          "title": "Serveurs MCP Installés",
+          "actions": [
+            { "id": "refresh", "icon": "refresh", "label": "Actualiser" },
+            { "id": "add_mcp", "icon": "add", "label": "Ajouter un serveur MCP" },
+            { "id": "open_config", "icon": "code", "label": "Ouvrir mcp.json" }
+          ],
+          "server_item_structure": {
+            "name": "string",
+            "status_dot": "green (healthy) | red (error) | yellow (starting)",
+            "error_diagnostic": "string (ex: binaire introuvable, erreur de connexion)",
+            "tools_count": "number",
+            "active_toggle": "boolean",
+            "delete_btn": "icon"
+          }
+        },
+        "subagents": {
+          "title": "Sous-Agents Globaux Spécialisés",
+          "subagents_list": [
+            { "name": "web-verify-enforcer", "role": "Vérificateur de qualité web et tests", "active": true },
+            { "name": "web-x-grok-architect", "role": "Architecte client X et streaming Grok", "active": true },
+            { "name": "rust-async-specialist", "role": "Expert Tokio et architectures concurrentes", "active": true }
+          ]
+        }
+      }
+    }
+  },
+  "keyboard_shortcuts_matrix": [
+    { "combo": "Alt + Space", "action": "Invoquer / Masquer la capsule flottante Spotlight", "scope": "Global Windows OS" },
+    { "combo": "Ctrl + N", "action": "Nouvelle session de discussion", "scope": "App" },
+    { "combo": "Ctrl + B", "action": "Afficher / Masquer la barre latérale", "scope": "App" },
+    { "combo": "Ctrl + J", "action": "Afficher / Masquer le volet Terminal", "scope": "App" },
+    { "combo": "Ctrl + Shift + C", "action": "Afficher / Masquer le volet Web Crawler BXC", "scope": "App" },
+    { "combo": "Ctrl + ,", "action": "Ouvrir les Paramètres", "scope": "App" },
+    { "combo": "Ctrl + K", "action": "Palette de commandes universelle", "scope": "App" },
+    { "combo": "Ctrl + U", "action": "Ajouter des fichiers ou des photos", "scope": "Composer" },
+    { "combo": "Ctrl + Enter", "action": "Envoyer le prompt avec exécution forcée", "scope": "Composer" },
+    { "combo": "Esc", "action": "Fermer les menus volants / Annuler l'action", "scope": "Modal / Popover" }
+  ]
+}

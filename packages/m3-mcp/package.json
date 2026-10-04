@@ -1,0 +1,14 @@
+{
+  "name": "@aphrody/m3-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Design/UI MCP server of aphrody-m3: package catalogue, Material Symbols SVG lookup, SVG to Tauri icons.",
+  "type": "module",
+  "exports": { ".": "./src/server.ts" },
+  "scripts": { "start": "bun src/server.ts" },
+  "dependencies": {
+    "@aphrody/material-design-icons": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "zod": "^4.6.5"
+  }
+}

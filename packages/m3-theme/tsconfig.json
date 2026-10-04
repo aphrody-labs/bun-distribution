@@ -1,0 +1,13 @@
+{
+  "extends": "@aphrody/m3-config/tsconfig.json",
+  "include": [
+    "src/**/*",
+    "generate.ts",
+    "scripts/**/*.ts",
+    "test/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@aphrody/m3-config",
+  "version": "3.3.3",
+  "private": true,
+  "description": "Shared build, typecheck and test presets for the @aphrody Material Design 3 packages: tsconfig, tsup preset and the happy-dom test preload.",
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    "./tsconfig.json": "./tsconfig.json",
+    "./tsconfig.build.json": "./tsconfig.build.json",
+    "./tsup": "./tsup.ts",
+    "./bun-build": "./bun-build.ts",
+    "./cache-db": "./cache-db.ts",
+    "./test/dom": "./test/dom.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsgo -p tsconfig.check.json --noEmit"
+  },
+  "dependencies": {
+    "@happy-dom/global-registrator": "catalog:",
+    "element-internals-polyfill": "catalog:"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

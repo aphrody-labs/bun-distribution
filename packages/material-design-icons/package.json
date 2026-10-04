@@ -1,0 +1,16 @@
+{
+  "name": "@aphrody/material-design-icons",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Material Symbols SVG catalogue (forks/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "bin": {
+    "m3-svg-to-ico": "./scripts/svg-to-ico.ts"
+  },
+  "scripts": {
+    "icons:ico": "bun scripts/svg-to-ico.ts"
+  }
+}

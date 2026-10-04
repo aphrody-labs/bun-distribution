@@ -1,0 +1,15 @@
+[submodule "forks/tailwindcss"]
+	path = forks/tailwindcss
+	url = git@github-dev:aphrody-labs/tailwindcss.git
+[submodule "forks/base-ui"]
+	path = forks/base-ui
+	url = git@github-dev:aphrody-labs/base-ui.git
+[submodule "forks/material-web"]
+	path = forks/material-web
+	url = git@github-dev:aphrody-labs/material-web.git
+[submodule "forks/material-color-utilities"]
+	path = forks/material-color-utilities
+	url = git@github-dev:aphrody-labs/material-color-utilities.git
+[submodule "forks/material-design-icons"]
+	path = forks/material-design-icons
+	url = git@github-dev:aphrody-labs/material-design-icons.git
