@@ -13,12 +13,8 @@
     "src"
   ],
   "scripts": {
-    "build": "bunx --bun tsc -b",
-    "typecheck": "bunx --bun tsc --noEmit"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "bun": ">=1.4.2"

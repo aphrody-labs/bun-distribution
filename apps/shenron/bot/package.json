@@ -14,7 +14,7 @@
     "dashboard:css": "bash scripts/build-dashboard-css.sh",
     "dashboard:watch": "bun node_modules/.bin/tailwindcss --input src/dashboard/styles.css --output src/dashboard/styles.compiled.css --watch",
     "compile": "bun ../../../packages/infra/workspace/src/ops.ts shenron script @shenron/bot compile:owner",
-    "type-check": "bunx tsc --noEmit",
+    "type-check": "tsc --noEmit",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "test": "bun test --isolate tests/",
@@ -24,7 +24,7 @@
     "bg:optimize": "bun scripts/optimize-backgrounds.ts",
     "bg:all": "bun scripts/fetch-backgrounds.ts --download && bun scripts/optimize-backgrounds.ts",
     "gen:entries": "bun scripts/gen-entries.ts",
-    "db:generate": "bunx drizzle-kit generate",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "bun src/db/migrate.ts",
     "db:seed-wiki": "bun src/db/seed-wiki.ts",
     "db:seed-triggers": "bun src/db/seed-triggers.ts",
@@ -39,8 +39,8 @@
     "db:seed-xv2-char-techniques": "bun src/db/seed-xv2-char-techniques.ts",
     "db:seed-all": "bun src/db/seed-triggers.ts && bun src/db/seed-level-rewards.ts && bun src/db/seed-shop-banners.ts",
     "db:sync-news": "bun scripts/sync-news.ts",
-    "db:studio": "bunx drizzle-kit studio",
-    "db:push": "bunx drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:push": "drizzle-kit push",
     "db:seed-xv2-char-meta": "bun src/db/seed-xv2-char-meta.ts",
     "db:seed-xv2-all": "bun src/db/seed-xv2-techniques.ts && bun src/db/seed-xv2-characters.ts && bun src/db/seed-xv2-char-meta.ts && bun src/db/seed-xv2-portraits.ts && bun src/db/seed-xv2-transformations.ts && bun src/db/seed-xv2-char-techniques.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -83,13 +83,10 @@
   },
   "devDependencies": {
     "@tailwindcss/cli": "catalog:",
-    "@types/bun": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "drizzle-kit": "^0.31.11",
-    "oxlint": "catalog:",
-    "tailwindcss": "catalog:",
-    "typescript": "catalog:"
+    "tailwindcss": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

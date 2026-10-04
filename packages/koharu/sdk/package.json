@@ -42,8 +42,6 @@
     }
   },
   "devDependencies": {
-    "@types/bun": "catalog:",
-    "@tauri-apps/api": "catalog:",
-    "typescript": "catalog:"
+    "@tauri-apps/api": "catalog:"
   }
 }

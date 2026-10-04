@@ -17,7 +17,7 @@
     "lint": "oxlint src --ignore-pattern src/protocol.ts --ignore-pattern src/wasm",
     "typecheck": "tsc --noEmit",
     "prepack": "bun run build",
-    "dev": "bunx --bun nodemon --watch ../../../crates/koharu/koharu-canvas --watch ../../../crates/koharu/koharu-rasterizer --ext rs,toml --delay 250ms --on-change-only --exec \"bun run build:dev\"",
+    "dev": "nodemon --watch ../../../crates/koharu/koharu-canvas --watch ../../../crates/koharu/koharu-rasterizer --ext rs,toml --delay 250ms --on-change-only --exec \"bun run build:dev\"",
     "build": "bun x wasm-pack@0.15.0 build ../../../crates/koharu/koharu-canvas --release --target web --out-dir ../../../packages/koharu/bridge/src/wasm --out-name koharu_canvas --no-pack && bun scripts/prepare-wasm.ts",
     "build:dev": "bun x wasm-pack@0.15.0 build ../../../crates/koharu/koharu-canvas --dev --target web --out-dir ../../../packages/koharu/bridge/src/wasm --out-name koharu_canvas --no-pack && bun scripts/prepare-wasm.ts"
   },
@@ -25,8 +25,6 @@
     "@tauri-apps/api": "catalog:"
   },
   "devDependencies": {
-    "nodemon": "catalog:",
-    "oxlint": "catalog:",
-    "typescript": "catalog:"
+    "nodemon": "catalog:"
   }
 }

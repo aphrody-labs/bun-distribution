@@ -25,14 +25,10 @@
     "lint": "oxlint src test",
     "check": "bun src/cli.ts check",
     "test": "bun test test",
-    "typecheck": "bunx --bun tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@aphrody/paths": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "@types/node": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

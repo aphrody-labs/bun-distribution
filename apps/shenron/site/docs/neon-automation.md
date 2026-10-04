@@ -30,7 +30,7 @@ PR ouverte / synchronize
        ├─ neondatabase/create-branch-action@v5
        │     → branche Neon `preview/pr-<n>-<head>` (fork de la branche par défaut)
        │     → sortie: db_url_with_pooler
-       ├─ bunx drizzle-kit migrate           (apps/shenron/site, DATABASE_URL = branche PR)
+       ├─ drizzle-kit migrate           (apps/shenron/site, DATABASE_URL = branche PR)
        │     → applique les migrations GÉNÉRÉES, idempotent
        ├─ vercel env add DATABASE_URL preview <git-branch>
        │     → le déploiement PREVIEW de `dbfr` tape la branche Neon isolée
@@ -40,7 +40,7 @@ merge / push main  (si schéma changé)
   └─ deploy-vercel.yml
        ├─ job migrate-prod  (gate dorny/paths-filter sur schema.ts/migrations/**)
        │     → neonctl résout la connection string de la branche par défaut (prod)
-       │     → bunx drizzle-kit migrate   (idempotent, prod)
+       │     → drizzle-kit migrate   (idempotent, prod)
        └─ job deploy (needs: migrate-prod)
              → vercel deploy --prod
 

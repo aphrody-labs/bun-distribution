@@ -17,9 +17,6 @@
     "test": "bun test",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "devDependencies": {
-    "typescript": "catalog:"
-  },
   "engines": {
     "bun": ">=1.4.2"
   }

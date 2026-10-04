@@ -36,15 +36,10 @@
   "scripts": {
     "build": "bash ../../../scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi --features gpu",
     "test": "bash ../../../scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi --features gpu && APHRODY_FFI_DEV=1 APHRODY_FFI_REQUIRE_NATIVE=1 bun test test-library.test.ts test-native.test.ts test-native-artifact.test.ts && APHRODY_FFI_DEV=1 bun run test-ffi.ts && APHRODY_FFI_DEV=1 bun run test-cli-only.ts",
-    "typecheck": "bunx --bun tsc --project tsconfig.json --noEmit"
+    "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
     "@aphrody/update": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "@types/node": "catalog:",
-    "typescript": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

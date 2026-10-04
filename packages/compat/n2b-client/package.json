@@ -20,18 +20,14 @@
     "src"
   ],
   "scripts": {
-    "build": "bunx --bun tsc -b",
+    "build": "tsc -b",
     "start": "bun src/start.ts",
     "dev": "bun --watch src/index.ts",
-    "typecheck": "bunx --bun tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "cargo build -p aphrody-n2b && bun test"
   },
   "dependencies": {
     "@aphrody/n2b-types": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

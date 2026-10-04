@@ -8,9 +8,9 @@
     "bun": ">=1.4.2"
   },
   "scripts": {
-    "dev": "bunx --bun next dev --port 3000",
-    "build": "bunx --bun next build",
-    "start": "bunx --bun next start",
+    "dev": "bun --bun next dev --port 3000",
+    "build": "bun --bun next build",
+    "start": "bun --bun next start",
     "lint": "oxlint -c .oxlintrc.json",
     "typecheck": "tsc --noEmit",
     "test": "bun tests/run.ts"
@@ -33,15 +33,11 @@
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "^14.6.7",
-    "@types/bun": "catalog:",
-    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@tauri-apps/api": "catalog:",
     "@tauri-apps/plugin-opener": "catalog:",
-    "oxlint": "catalog:",
     "tailwindcss": "catalog:",
-    "typescript": "catalog:",
     "i18next": "^26.4.2"
   }
 }

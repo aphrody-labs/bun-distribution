@@ -50,7 +50,6 @@
     "@shenron/config": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "catalog:",
     "typescript": "catalog:",
     "better-auth": "catalog:",
     "hono": "catalog:",

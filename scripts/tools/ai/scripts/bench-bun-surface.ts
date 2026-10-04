@@ -83,9 +83,9 @@ async function main() {
   console.log("1/4 Exécution de profile-status.ts...");
   const profileStatusRes = runCommand("bun", ["run", path.join(APHRODY_HOME, "scripts/profile-status.ts")]);
 
-  // 2. bunx oxlint -c .oxlintrc.json
+  // 2. oxlint -c .oxlintrc.json
   console.log("2/4 Exécution de oxlint...");
-  const oxlintRes = runCommand("bunx", ["oxlint", "-c", ".oxlintrc.json"]);
+  const oxlintRes = runCommand("oxlint", ["-c", ".oxlintrc.json"]);
   const oxlintMetrics = parseOxlintOutput(oxlintRes.stdout, oxlintRes.stderr);
 
   // 3. bun scripts/sync-agent-plugins.ts
@@ -106,7 +106,7 @@ async function main() {
   const typecheckResults: Record<string, any> = {};
   for (const pkg of typecheckPackages) {
     console.log(`  -> Typecheck ${pkg.name}...`);
-    const tscRes = runCommand("bunx", ["tsc", "--noEmit", "-p", pkg.path]);
+    const tscRes = runCommand("tsc", ["--noEmit", "-p", pkg.path]);
     typecheckResults[pkg.name] = {
       command: tscRes.command,
       exitCode: tscRes.exitCode,

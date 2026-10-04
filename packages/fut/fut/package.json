@@ -83,10 +83,6 @@
     "@aphrody/bun": "workspace:*",
     "@aphrody/sql": "workspace:*"
   },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
-  },
   "engines": {
     "bun": ">=1.4.2"
   }

@@ -47,14 +47,10 @@
         "@testing-library/jest-dom": "catalog:",
         "@testing-library/react": "catalog:",
         "@testing-library/user-event": "^14.6.7",
-        "@types/bun": "catalog:",
-        "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "i18next": "^26.4.2",
-        "oxlint": "catalog:",
         "tailwindcss": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "apps/shenron/bot": {
@@ -96,13 +92,10 @@
       },
       "devDependencies": {
         "@tailwindcss/cli": "catalog:",
-        "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "drizzle-kit": "^0.31.11",
-        "oxlint": "catalog:",
         "tailwindcss": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "apps/shenron/site": {
@@ -187,13 +180,11 @@
         "@huggingface/transformers": "^4.3.0",
         "@tailwindcss/postcss": "catalog:",
         "@types/howler": "^2.2.13",
-        "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "drizzle-kit": "^0.31.11",
         "schema-dts": "catalog:",
         "tailwindcss": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/ai/doc-ai": {
@@ -208,21 +199,12 @@
         "ai": "catalog:",
         "zod": "catalog:",
       },
-      "devDependencies": {
-        "@types/node": "catalog:",
-        "bun-types": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/ai/xai": {
       "name": "@aphrody/xai",
       "version": "1.1.6",
       "dependencies": {
         "@aphrody/x": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/bun/test-dom": {
@@ -231,21 +213,12 @@
       "dependencies": {
         "@happy-dom/global-registrator": "catalog:",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "@types/node": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/compat/n2b-client": {
       "name": "@aphrody/n2b-core",
       "version": "0.6.2",
       "dependencies": {
         "@aphrody/n2b-types": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/compat/n2b-plugin": {
@@ -255,10 +228,6 @@
         "@aphrody/n2b-core": "workspace:*",
         "@aphrody/n2b-types": "workspace:*",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/compat/n2b-shims": {
       "name": "@aphrody/n2b-shims",
@@ -266,18 +235,10 @@
       "dependencies": {
         "@aphrody/n2b-core": "workspace:*",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/compat/n2b-types": {
       "name": "@aphrody/n2b-types",
       "version": "0.6.2",
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/discord/aphrody-messaging": {
       "name": "@aphrody/messaging",
@@ -299,7 +260,6 @@
         "discordx": "catalog:",
       },
       "devDependencies": {
-        "@types/bun": "catalog:",
         "tsdown": "^0.23.0",
         "typescript": "catalog:",
       },
@@ -322,10 +282,6 @@
         "type-graphql": "catalog:",
         "zod": "catalog:",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/google/google": {
       "name": "@aphrody/google",
@@ -346,10 +302,6 @@
       "bin": {
         "aphrody-ovh": "./src/cli.ts",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/infra/paths": {
       "name": "@aphrody/paths",
@@ -364,10 +316,6 @@
       "dependencies": {
         "sqlite-vec": "^0.1.9",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/infra/update": {
       "name": "@aphrody/update",
@@ -377,10 +325,6 @@
       },
       "dependencies": {
         "@aphrody/paths": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "@types/node": "catalog:",
       },
     },
     "packages/infra/workspace": {
@@ -405,11 +349,6 @@
       "dependencies": {
         "@aphrody/update": "workspace:*",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "@types/node": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/koharu/bridge": {
       "name": "@koharu/bridge",
@@ -419,8 +358,6 @@
       },
       "devDependencies": {
         "nodemon": "catalog:",
-        "oxlint": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/koharu/docs": {
@@ -437,8 +374,6 @@
       },
       "devDependencies": {
         "@tauri-apps/api": "catalog:",
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "@tauri-apps/api": "catalog:",
@@ -476,12 +411,10 @@
         "zustand": "catalog:",
       },
       "devDependencies": {
-        "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "react": "^19.3.0",
@@ -502,11 +435,8 @@
         "@happy-dom/global-registrator": "catalog:",
         "@tanstack/react-query": "catalog:",
         "@testing-library/react": "catalog:",
-        "@types/bun": "catalog:",
-        "@types/node": "catalog:",
         "@types/react": "catalog:",
         "react": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "@tanstack/react-query": "^5.0.0",
@@ -520,9 +450,6 @@
     "packages/os/kernel-client": {
       "name": "@aphrody/os",
       "version": "0.1.0",
-      "devDependencies": {
-        "typescript": "catalog:",
-      },
     },
     "packages/os/winclean": {
       "name": "@aphrody/winclean",
@@ -530,17 +457,10 @@
       "dependencies": {
         "@aphrody/os": "workspace:*",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/shell/web": {
       "name": "@aphrody/shell-web",
       "version": "0.1.0",
-      "devDependencies": {
-        "typescript": "catalog:",
-      },
     },
     "packages/shenron/api": {
       "name": "@shenron/api",
@@ -553,9 +473,7 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@types/bun": "catalog:",
         "drizzle-orm": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/shenron/auth": {
@@ -566,7 +484,6 @@
       },
       "devDependencies": {
         "@shenron/db": "workspace:*",
-        "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "better-auth": "catalog:",
         "drizzle-orm": "catalog:",
@@ -594,10 +511,6 @@
         "@aphrody/paths": "workspace:*",
         "zod": "catalog:",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/shenron/db": {
       "name": "@shenron/db",
@@ -609,20 +522,12 @@
         "drizzle-orm": "catalog:",
         "postgres": "^3.4.9",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/shenron/images": {
       "name": "@shenron/images",
       "version": "0.1.0",
       "dependencies": {
         "sharp": "catalog:",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/shenron/pipeline": {
@@ -644,12 +549,6 @@
         "sqlite-vec": "^0.1.9",
         "zod": "catalog:",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "@types/node": "catalog:",
-        "oxlint": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/shenron/ui": {
       "name": "@shenron/ui",
@@ -669,14 +568,12 @@
       "devDependencies": {
         "@shenron/config": "workspace:*",
         "@tailwindcss/postcss": "catalog:",
-        "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "postcss": "8.5.28",
         "react": "catalog:",
         "react-dom": "catalog:",
         "tailwindcss": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "react": "catalog:",
@@ -692,10 +589,6 @@
         "@ag-ui/core": "catalog:",
         "@ag-ui/encoder": "catalog:",
         "@ag-ui/proto": "catalog:",
-      },
-      "devDependencies": {
-        "@types/node": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/ui/app-ui": {
@@ -755,7 +648,6 @@
         "@types/react-dom": "catalog:",
         "@types/three": "catalog:",
         "tailwindcss": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/ui/assets": {
@@ -763,9 +655,7 @@
       "version": "0.1.0",
       "devDependencies": {
         "@types/react": "catalog:",
-        "bun-types": "catalog:",
         "react": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -810,9 +700,7 @@
       "devDependencies": {
         "@aphrody/m3": "workspace:*",
         "@types/react": "catalog:",
-        "bun-types": "catalog:",
         "react": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -838,7 +726,6 @@
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
         "@aphrody/scaffold": "workspace:*",
-        "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "@typescript/native-preview": "catalog:",
@@ -891,7 +778,6 @@
       "version": "0.1.0",
       "devDependencies": {
         "@types/jscodeshift": "^17.3.0",
-        "@types/node": "catalog:",
         "jscodeshift": "^17.3.0",
       },
     },
@@ -917,8 +803,6 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
-        "@types/node": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/ui/m3-explorer": {
@@ -948,9 +832,7 @@
       "version": "3.3.3",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
-        "@types/node": "catalog:",
         "@typescript/native-preview": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/ui/m3-forms": {
@@ -1030,7 +912,6 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
-        "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "@typescript/native-preview": "catalog:",
@@ -1063,7 +944,6 @@
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
         "@aphrody/scaffold": "workspace:*",
-        "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "@typescript/native-preview": "catalog:",
         "tsup": "catalog:",
@@ -1171,8 +1051,6 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
-        "@types/bun": "catalog:",
-        "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
       },
@@ -1185,9 +1063,7 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
-        "@types/bun": "catalog:",
         "@typescript/native-preview": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/ui/web-to-tauri": {
@@ -1202,9 +1078,7 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
-        "@types/bun": "catalog:",
         "@typescript/native-preview": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/web/agent-browser": {
@@ -1216,20 +1090,12 @@
       "dependencies": {
         "@aphrody/runtime-sdk": "catalog:",
       },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
-      },
     },
     "packages/web/aphrody-web-test": {
       "name": "@aphrody/web-test",
       "version": "0.2.6",
       "dependencies": {
         "@aphrody/agent-browser": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/web/x": {
@@ -1239,10 +1105,6 @@
         "@aphrody/bun": "workspace:*",
         "@aphrody/paths": "workspace:*",
         "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "typescript": "catalog:",
       },
     },
   },

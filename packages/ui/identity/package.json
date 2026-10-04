@@ -27,9 +27,7 @@
   "devDependencies": {
     "@aphrody/m3": "workspace:*",
     "@types/react": "catalog:",
-    "bun-types": "catalog:",
-    "react": "catalog:",
-    "typescript": "catalog:"
+    "react": "catalog:"
   },
   "peerDependencies": {
     "react": ">=18.0.0"

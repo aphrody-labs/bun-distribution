@@ -138,6 +138,15 @@ bun test <tests>
 Respecter les manifests des propriétaires pour les scripts et les périmètres.
 Les exécutables globaux n’alignent pas automatiquement les dépendances locales.
 
+Contrat des outils globaux (2026-10-04) : `oxlint`, `oxfmt`, `tsc`, `bun` et `nu`
+sont appelés directement, sans `bunx`/`npx`/`nx`, dans les scripts `package.json`,
+les scripts TypeScript/shell et la documentation. Les scripts `package.json`
+résolvent d’abord `node_modules/.bin` (outil local, ex. `next`, `drizzle-kit`,
+`nodemon`), puis le PATH global. `bunx` reste réservé aux outils volontairement
+épinglés par version et non installés globalement (`wasm-pack@0.15.0`,
+`@tauri-apps/cli@<pin>`, `jscodeshift`, `@ast-grep/cli`, `json-schema-to-typescript`,
+`@material-design-icons/scripts`).
+
 ## Inventaire des exécutables
 
 Sources : [manifest développeur](../../../config/developer-cli-tools.json),

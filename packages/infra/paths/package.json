@@ -13,7 +13,7 @@
     "build": "bun build src/index.ts --target bun --packages external --outdir dist",
     "lint": "oxlint src test",
     "test": "bun test test",
-    "typecheck": "bunx --bun tsc --noEmit --target esnext --module preserve --moduleResolution bundler --allowImportingTsExtensions --types bun src/index.ts"
+    "typecheck": "tsc --noEmit --target esnext --module preserve --moduleResolution bundler --allowImportingTsExtensions --types bun src/index.ts"
   },
   "devDependencies": {
     "@aphrody/workspace": "workspace:*"

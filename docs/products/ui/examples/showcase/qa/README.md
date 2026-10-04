@@ -55,7 +55,7 @@ a tokenless `bun install` of the monorepo never fails, and `bun run typecheck`
 ```bash
 cd examples/showcase
 bun add -O @aphrody/aphrody-web            # public npm, no auth needed
-bunx tsc -p tsconfig.qa.json --noEmit   # optional: typecheck the harness
+tsc -p tsconfig.qa.json --noEmit   # optional: typecheck the harness
 CHROME_BIN=/usr/local/bin/google-chrome bun run qa
 # also honoured: APHRODY_WEB_CHROME_BIN, CHROME_PATH
 # optional: APHRODY_WEB_RENDER_LIB=/path/to/libaphrody_web_render.so (enables parseSerp)

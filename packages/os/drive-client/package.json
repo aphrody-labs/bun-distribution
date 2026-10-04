@@ -75,11 +75,8 @@
     "@happy-dom/global-registrator": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@testing-library/react": "catalog:",
-    "@types/bun": "catalog:",
-    "@types/node": "catalog:",
     "@types/react": "catalog:",
-    "react": "catalog:",
-    "typescript": "catalog:"
+    "react": "catalog:"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",

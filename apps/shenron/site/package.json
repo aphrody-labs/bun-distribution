@@ -9,20 +9,20 @@
   },
   "scripts": {
     "predev": "bun ../../../packages/shenron/ui/scripts/sync-assets.ts --to public",
-    "dev": "NEXT_DIST_DIR=.next-dev bunx next dev --turbopack",
+    "dev": "NEXT_DIST_DIR=.next-dev next dev --turbopack",
     "prebuild": "bun ../../../packages/shenron/ui/scripts/sync-assets.ts --to public",
-    "build": "NEXT_DIST_DIR=.next-build bunx next build --turbopack",
-    "start": "bunx next start",
+    "build": "NEXT_DIST_DIR=.next-build next build --turbopack",
+    "start": "next start",
     "lint": "oxlint -c .oxlintrc.json",
     "test": "bun test --isolate tests/",
     "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json",
     "type-check:tests": "tsc --noEmit -p tsconfig.tests.json",
     "wiki:repair-interviews": "bun scripts/repair-interview-databook-links.ts",
     "manga:populate": "bun scripts/populate-manga-pages.ts",
-    "db:migrate": "bunx drizzle-kit migrate",
+    "db:migrate": "drizzle-kit migrate",
     "db:push": "echo \"db:push est interdit : migrations via le runbook aphrody-infra (docs/STACK.md D5)\" >&2 && exit 1",
-    "db:studio": "bunx drizzle-kit studio",
-    "db:generate": "bunx drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -104,13 +104,11 @@
     "@huggingface/transformers": "^4.3.0",
     "@tailwindcss/postcss": "catalog:",
     "@types/howler": "^2.2.13",
-    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "drizzle-kit": "^0.31.11",
     "schema-dts": "catalog:",
-    "tailwindcss": "catalog:",
-    "typescript": "catalog:"
+    "tailwindcss": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

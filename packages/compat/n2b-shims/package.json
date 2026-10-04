@@ -17,15 +17,11 @@
     "src"
   ],
   "scripts": {
-    "build": "bunx --bun tsc -b",
-    "typecheck": "bunx --bun tsc --noEmit"
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@aphrody/n2b-core": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

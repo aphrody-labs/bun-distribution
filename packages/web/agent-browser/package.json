@@ -33,10 +33,6 @@
   "dependencies": {
     "@aphrody/runtime-sdk": "catalog:"
   },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
-  },
   "engines": {
     "bun": ">=1.4.2"
   }

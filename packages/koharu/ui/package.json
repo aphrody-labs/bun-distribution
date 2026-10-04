@@ -61,11 +61,9 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:",
-    "typescript": "catalog:"
+    "react-dom": "catalog:"
   }
 }

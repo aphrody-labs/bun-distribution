@@ -101,7 +101,7 @@ const written = (
   (f): f is string => f !== null,
 );
 if (written.length > 0) {
-  const fmt = Bun.spawnSync(["bunx", "oxfmt", ...written], {
+  const fmt = Bun.spawnSync(["oxfmt", ...written], {
     stdout: "inherit",
     stderr: "inherit",
   });

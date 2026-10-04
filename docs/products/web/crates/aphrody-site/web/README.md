@@ -28,5 +28,5 @@ change:
 bun build crates/aphrody-site/web/src/app.ts --target browser --minify --outfile crates/aphrody-site/web/dist/app.js
 bun build crates/aphrody-site/web/src/styles.css --target browser --minify --outfile crates/aphrody-site/web/dist/styles.css
 bun test crates/aphrody-site/web/test
-bunx tsc --noEmit -p crates/aphrody-site/web/tsconfig.json
+tsc --noEmit -p crates/aphrody-site/web/tsconfig.json
 ```

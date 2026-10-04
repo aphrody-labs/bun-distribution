@@ -49,7 +49,7 @@ function runTransform(inputPath: string, transform: string): string {
  * avant comparaison → on teste la sémantique du codemod, pas le style d'impression.
  */
 function format(source: string): string {
-  return execFileSync("bunx", ["oxfmt", "--stdin-filepath=f.tsx"], {
+  return execFileSync("oxfmt", ["--stdin-filepath=f.tsx"], {
     cwd: ROOT,
     input: source,
     encoding: "utf8",

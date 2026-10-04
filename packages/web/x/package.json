@@ -49,10 +49,6 @@
     "catalog:sync": "bun ../../../scripts/tools/web/x-catalog-sync.ts",
     "coverage": "bun ../../../scripts/tools/web/x-coverage.ts"
   },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
-  },
   "dependencies": {
     "@aphrody/paths": "workspace:*",
     "@aphrody/bun": "workspace:*",

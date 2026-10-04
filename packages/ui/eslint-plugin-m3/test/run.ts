@@ -22,7 +22,7 @@ const RULES = [
 ];
 
 function lint(file: string): string {
-  const r = spawnSync(["bunx", "oxlint", "-c", CONFIG, join(ROOT, "test", "fixtures", file)], {
+  const r = spawnSync(["oxlint", "-c", CONFIG, join(ROOT, "test", "fixtures", file)], {
     cwd: ROOT,
   });
   return r.stdout.toString() + r.stderr.toString();

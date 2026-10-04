@@ -26,10 +26,6 @@
     "email": "bun ./src/cli.ts email"
   },
   "dependencies": {},
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
-  },
   "engines": {
     "bun": ">=1.4.2"
   }

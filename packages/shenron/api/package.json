@@ -28,9 +28,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "catalog:",
-    "drizzle-orm": "catalog:",
-    "typescript": "catalog:"
+    "drizzle-orm": "catalog:"
   },
   "shenron": {
     "runtime": {

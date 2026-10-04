@@ -37,9 +37,5 @@
   },
   "dependencies": {
     "@aphrody/x": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
   }
 }

@@ -1249,7 +1249,7 @@ site, monolithe `server.ts` (203 `container.resolve`), importateurs externes.
   `var/stack-research/**`.
 - **Un agent ne doit jamais** : lancer `bun install`/`add`/`remove`, `git add`,
   `commit`, `stash`, `reset`, `checkout -- <chemin>`, `rebase` ; formater tout
-  le dépôt (seulement `bunx oxfmt <fichiers possédés>`) ; lire ou écrire un
+  le dépôt (seulement `oxfmt <fichiers possédés>`) ; lire ou écrire un
   `.env*` ; se connecter à une base autre qu'une base L2 ; exécuter
   `drizzle-kit push|migrate|generate` ; lancer `rag:build` ou un script du
   pipeline contre une base ; toucher un fichier hors de ses chemins possédés
@@ -1413,7 +1413,7 @@ bun run audit:architecture && bun run audit:scripts
 bun packages/api/scripts/openapi.ts --check  # à partir de la vague 3
 bun packages/ui/scripts/generate-tokens.ts --check && bun packages/ui/scripts/check-css-equivalence.ts
 bun packages/pipeline/scripts/ai/check-contracts.ts   # ignoré avec raison sans le dépôt voisin
-bunx oxfmt --check <fichiers modifiés>
+oxfmt --check <fichiers modifiés>
 git diff --check
 ```
 

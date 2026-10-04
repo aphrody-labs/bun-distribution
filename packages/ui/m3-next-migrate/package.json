@@ -109,7 +109,6 @@
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*",
     "@aphrody/scaffold": "workspace:*",
-    "@types/bun": "catalog:",
     "@types/react": "catalog:",
     "@typescript/native-preview": "catalog:",
     "tsup": "catalog:",

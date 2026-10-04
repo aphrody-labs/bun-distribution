@@ -39,10 +39,6 @@
     "postgres": "^3.4.9",
     "@shenron/config": "workspace:*"
   },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
-  },
   "shenron": {
     "runtime": {
       ".": "server",

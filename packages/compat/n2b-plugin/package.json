@@ -13,16 +13,12 @@
     "src"
   ],
   "scripts": {
-    "typecheck": "bunx --bun tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
     "@aphrody/n2b-types": "workspace:*",
     "@aphrody/n2b-core": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"
