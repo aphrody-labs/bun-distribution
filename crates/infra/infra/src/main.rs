@@ -483,10 +483,11 @@ fn command(root: &Path, program: &str, args: &[&str]) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_owned())
 }
 
-fn load_matrix(root: &Path) -> Result<Matrix> {
-    let path = root.join("config/infra/inventory/targets.json");
+/// The cross-host target matrix lives in yolo: `$YOLO_ROOT/config/host/inventory/targets.json`.
+fn load_matrix() -> Result<Matrix> {
+    let path = validate::host_config_root().join("inventory/targets.json");
     let bytes = fs::read(&path).with_context(|| format!("manifest absent: {}", path.display()))?;
-    serde_json::from_slice(&bytes).context("config/infra/inventory/targets.json invalide")
+    serde_json::from_slice(&bytes).with_context(|| format!("{} invalide", path.display()))
 }
 
 fn selected<'a>(matrix: &'a Matrix, id: Option<&str>) -> Result<Vec<&'a Target>> {
@@ -552,8 +553,8 @@ fn local_target(target: &Target) -> Value {
     json!({ "id": target.id, "kind": target.kind, "os": target.os, "roots": roots, "authority": target.authority })
 }
 
-fn status(root: &Path, target_id: Option<&str>, as_json: bool, run: &mut Run) -> Result<()> {
-    let matrix = load_matrix(root)?;
+fn status(target_id: Option<&str>, as_json: bool, run: &mut Run) -> Result<()> {
+    let matrix = load_matrix()?;
     let targets: Vec<Value> = selected(&matrix, target_id)?.into_iter().map(|target| {
         let result = if matches!(target.id.as_str(), "windows-local" | "nie-local-data" | "nie-repo") {
             local_target(target)
@@ -927,7 +928,7 @@ fn doctor(root: &Path, as_json: bool, strict: bool, run: &mut Run) -> Result<()>
         })
         .unwrap_or_else(|| json!({ "configPresent": false }));
     let source_sync = user_unit_check("aphrody-source-sync.service");
-    let matrix = load_matrix(root)?;
+    let matrix = load_matrix()?;
     let failures =
         tools.iter().any(|tool| {
             !tool["available"].as_bool().unwrap_or(false)
@@ -955,7 +956,7 @@ fn doctor(root: &Path, as_json: bool, strict: bool, run: &mut Run) -> Result<()>
 }
 
 fn sync(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> Result<()> {
-    let matrix = load_matrix(root)?;
+    let matrix = load_matrix()?;
     let targets = selected(&matrix, target_id)?;
     for target in targets {
         let detail = json!({ "target": target.id, "mode": if apply { "apply" } else { "plan" }, "policy": "preserve-dirty-worktrees" });
@@ -1230,7 +1231,7 @@ fn dev_env_local(root: &Path, host: &str, apply: bool, run: &mut Run) -> Result<
 }
 
 fn dev_env(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> Result<()> {
-    let matrix = load_matrix(root)?;
+    let matrix = load_matrix()?;
     let targets = selected(&matrix, target_id)?;
     for target in targets {
         let (host, program, args): (&str, &str, Vec<&str>) = match target.id.as_str() {
@@ -1297,14 +1298,13 @@ fn remote_stack_adapter_args<'a>(
 }
 
 fn deploy(
-    root: &Path,
     target: &str,
     stack: DeployStack,
     release: Option<&str>,
     apply: bool,
     run: &mut Run,
 ) -> Result<()> {
-    let matrix = load_matrix(root)?;
+    let matrix = load_matrix()?;
     let _ = selected(&matrix, Some(target))?;
     let adapter = std::env::var(stack.adapter_env()).unwrap_or_else(|_| stack.adapter().to_owned());
     let detail = json!({ "target": target, "stack": stack, "release": release, "releaseRoot": stack.release_root(), "mode": if apply { "apply" } else { "plan" }, "adapter": adapter, "requires": stack.requires() });
@@ -2116,7 +2116,7 @@ async fn main() -> Result<()> {
     let scope = format!("{:?}", cli.command);
     let mut run = Run::start(&root, &scope)?;
     let result = match &cli.command {
-        CommandKind::Status { target, json } => status(&root, target.as_deref(), *json, &mut run),
+        CommandKind::Status { target, json } => status(target.as_deref(), *json, &mut run),
         CommandKind::Quality { stage, repo, run: execute, json } => {
             quality(&root, *stage, repo.as_deref(), *execute, *json, &mut run)
         },
@@ -2134,7 +2134,7 @@ async fn main() -> Result<()> {
         CommandKind::Doctor { json, strict } => doctor(&root, *json, *strict, &mut run),
         CommandKind::Sync { target, apply } => sync(&root, target.as_deref(), *apply, &mut run),
         CommandKind::Deploy { target, stack, release, apply } => {
-            deploy(&root, target, *stack, release.as_deref(), *apply, &mut run)
+            deploy(target, *stack, release.as_deref(), *apply, &mut run)
         },
         CommandKind::Validate { json } => validate_catalogs(&root, *json, &mut run),
         CommandKind::Reclaim { target, apply } => reclaim_disk(&root, target, *apply, &mut run),

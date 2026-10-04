@@ -61,4 +61,4 @@ aphrody-ssh exec --host vps -- readlink -f /srv/shenron/current
 
 Related authorities: [Infra plan](../../plans/infra/PLAN.md), [immutable
 release runbook](./IMMUTABLE-RELEASES.md), [service catalogue](../../../config/service-catalog.json),
-and [production target inventory](../../../config/infra/inventory/targets.json).
+and production target inventory (`yolo/config/host/inventory/targets.json`).

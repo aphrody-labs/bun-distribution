@@ -462,6 +462,19 @@
           "features": []
         },
         {
+          "name": "aphrody-gpu-backend",
+          "path": "crates/native/gpu-backend",
+          "description": "Shared wgpu instance, adapter, device and surface-configuration boundary for Aphrody and IECODE renderers.",
+          "bins": [],
+          "features": [
+            "default",
+            "native-backends",
+            "webgl",
+            "webgpu",
+            "wgsl"
+          ]
+        },
+        {
           "name": "aphrody-guard",
           "path": "crates/os/guard",
           "description": "Autonomous-agent safety guardrails: pre-main process hardening (disable core dumps, block ptrace attach, strip LD_*/DYLD_* loader env) and a cross-platform shell command-safety classifier (Allow / Prompt / Forbidden) for gating agent-issued commands. Inspired by OpenAI Codex (Apache-2.0).",
@@ -11751,7 +11764,7 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 196,
+    "crates": 197,
     "binaries": 62,
     "bunPackages": 44,
     "pythonPackages": 8,

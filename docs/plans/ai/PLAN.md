@@ -2,9 +2,9 @@
 # Delivery plan
 
 Active cross-repository backlog, updated 2026-09-29. [Architecture](../../architecture/ai/ARCHITECTURE.md)
-owns boundaries; [GUI](../../reference/ui/GUI.md), [UI design](../../architecture/ui/UI-DESIGN.md)
-and [UX](../../architecture/ui/UX-DESIGN.md) own product behavior.
-The [M3 host plan](../ui/design/M3-MULTI-HOST-PLAN.md) refines D3/D5/D6:
+owns boundaries; [GUI](../../../design/aphrody-m3/docs/reference/GUI.md), [UI design](../../../design/aphrody-m3/docs/architecture/UI-DESIGN.md)
+and [UX](../../../design/aphrody-m3/docs/architecture/UX-DESIGN.md) own product behavior.
+The [M3 host plan](../../../design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md) refines D3/D5/D6:
 Tauri is Aphrody's current and only qualified desktop host. Rust renderers stay reusable
 libraries; no separate winit/wgpu desktop is a delivery target. A GPU host adapter is
 considered only for a measured workflow that Tauri/web cannot meet, and remains part of the

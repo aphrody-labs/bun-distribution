@@ -6,7 +6,7 @@ training, MCP/A2A, app-server and the `aphrody` CLI.
 
 The workstation targets one M3 desktop with Chat, Files, Web and Models. The
 existing Tauri host drives a resident `aphrody app-server` over stdio JSON-RPC;
-the [native UI migration](../../plans/ui/design/M3-MULTI-HOST-PLAN.md) preserves
+the [native UI migration](../../../design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md) preserves
 that process boundary. Siblings never acquire a reverse dependency on AI.
 
 <a id="sibling-repositories"></a>

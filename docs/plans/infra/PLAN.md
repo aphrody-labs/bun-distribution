@@ -30,8 +30,8 @@ Observed release links: `/srv/rg/current` pointed to release
 `5691ba4be97b94279878e00d264793c1b28f8cf1` and `/srv/shenron/current` pointed
 to `4cac743f`. `/srv/aphrody/current` and `/srv/aphrody-infra/current` were
 absent. Do not infer that missing links are healthy, deployed, or safe to
-recreate. The old `config/infra/inventory/vps-source.json` and
-`config/infra/inventory/vps-unit-catalog.json` remain historical records; use the dated
+recreate. The old `yolo/config/host/inventory/vps-source.json` and
+`yolo/config/host/inventory/vps-unit-catalog.json` remain historical records; use the dated
 read-only observations above for this snapshot, and refresh inventory only
 after an authorized inventory capture or host mutation.
 
@@ -227,9 +227,9 @@ results apply to their named revisions and dates, not current host health.
 
 ## 6. Decision ledger (append-only)
 
-- **2026-09-29:** activated Aphrody Discord development release `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808`. Active checksums, service, public health/Gateway, login/install redirects and unauthenticated session check passed. The login rate limit passed its local test. A controlled rollback to the prior release and reactivation of this release passed public health/Gateway probes; fresh authorized callback remains open. Evidence: `config/infra/inventory/aphrody-discord-dev-2026-09-29.md`.
+- **2026-09-29:** activated Aphrody Discord development release `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808`. Active checksums, service, public health/Gateway, login/install redirects and unauthenticated session check passed. The login rate limit passed its local test. A controlled rollback to the prior release and reactivation of this release passed public health/Gateway probes; fresh authorized callback remains open. Evidence: `yolo/config/host/inventory/aphrody-discord-dev-2026-09-29.md`.
 
-- **2026-09-29:** activated Aphrody Discord development release `084964f4a95c1d4231a75d282b61c371b4852120`. Active checksums, public health/Gateway, guild `ping`, minimal `identify` login, separate bot installation, denied callback replay, and logout origin checks passed. Authorized callback and rollback drill remain open; see `config/infra/inventory/aphrody-discord-dev-2026-09-29.md`.
+- **2026-09-29:** activated Aphrody Discord development release `084964f4a95c1d4231a75d282b61c371b4852120`. Active checksums, public health/Gateway, guild `ping`, minimal `identify` login, separate bot installation, denied callback replay, and logout origin checks passed. Authorized callback and rollback drill remain open; see `yolo/config/host/inventory/aphrody-discord-dev-2026-09-29.md`.
 
 - **2026-09-29:** refreshed the `@aphrody/workspace` consolidation inventory
   against live Git state and added categorized script import. The latest scan
@@ -507,7 +507,7 @@ sections current and store operational detail in its existing runbook.
 
 ## 2026-10-03 — VPS factory and DBFR Shenron owner decision
 
-The current owner decision supersedes the prior WSL build and VPS-only Shenron placement. Heavy build/test/release operations run through `build:factory` on VPS; WSL/Windows retain source editing and scoped static checks. RG application units and timers are stopped and disabled, with protected data and rollback releases retained. Host zram remains infrastructure swap. DBFR runtime activation is pending qualified artifact, private environment, state and route checks; keep a single bot gateway. See [factory runbook](../../operations/infra/BUILD-FACTORY.md) and [dated observations](../../../config/infra/inventory/build-factory-2026-10-03.json).
+The current owner decision supersedes the prior WSL build and VPS-only Shenron placement. Heavy build/test/release operations run through `build:factory` on VPS; WSL/Windows retain source editing and scoped static checks. RG application units and timers are stopped and disabled, with protected data and rollback releases retained. Host zram remains infrastructure swap. DBFR runtime activation is pending qualified artifact, private environment, state and route checks; keep a single bot gateway. See [factory runbook](../../operations/infra/BUILD-FACTORY.md) and dated observations (`yolo/config/host/inventory/build-factory-2026-10-03.json`).
 
 ### 2026-10-03 — DBFR cache cleanup
 

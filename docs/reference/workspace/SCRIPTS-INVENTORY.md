@@ -332,8 +332,8 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 - scripts/build/ui/packages/material-web/scripts/component-custom-elements.ts → `design/aphrody-m3/packages/material-web/scripts/component-custom-elements.ts`
 - scripts/build/ui/packages/material-web/scripts/css-to-ts.ts → `design/aphrody-m3/packages/material-web/scripts/css-to-ts.ts`
 - scripts/build/ui/packages/material-web/scripts/generate-sass-token-meta.ts → `design/aphrody-m3/packages/material-web/scripts/generate-sass-token-meta.ts`
-- scripts/migration/ui/packages/material-web/migration/codemods/scripts/run-fixtures.ts → `design/aphrody-m3/packages/material-web/migration/codemods/scripts/run-fixtures.ts`
-- scripts/migration/ui/packages/material-web/migration/scripts/theme-to-tokens.ts → `design/aphrody-m3/packages/material-web/migration/scripts/theme-to-tokens.ts`
+- scripts/migration/ui/packages/material-web/migration/codemods/scripts/run-fixtures.ts → `design/aphrody-m3/packages/m3-codemods/scripts/run-fixtures.ts`
+- scripts/migration/ui/packages/material-web/migration/scripts/theme-to-tokens.ts → `design/aphrody-m3/packages/m3-tokens/src/theme-to-tokens.ts`
 - scripts/tools/os/drive/core/scripts/combine.sh → `crates/os/drive/core/scripts/combine.sh`
 - scripts/tools/os/drive/core/scripts/update_spacedrive.sh → `crates/os/drive/core/scripts/update_spacedrive.sh`
 

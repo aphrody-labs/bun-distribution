@@ -28,7 +28,7 @@ UI is canonical in `design/aphrody-m3/packages/app-ui` and `crates/ui/*`.
 - Rust: `crates/<domain>/<crate>`; general CLI: `apps/cli`.
 - Bun apps/packages: `apps/<domain>/<app>`, `packages/<domain>/<package>`.
 - Docs: `docs/<category>/<domain>`; scripts: `scripts/{audit,build,dev,migration,release,tools}`.
-- Infra: `config/infra/`; live audits: `scripts/audit/live*`;
+- Infra: `yolo/config/host/` (inventory, toolchain, units, nginx); live audits: `scripts/audit/live*`;
   Shenron admin: `scripts/tools/shenron`.
 
 [Rust naming](docs/architecture/rust-crate-naming.md) applies. Package/library/

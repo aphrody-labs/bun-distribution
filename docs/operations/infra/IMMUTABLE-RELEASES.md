@@ -104,7 +104,7 @@ Historical status (2026-09-29 08:50 UTC): release
 checksums, public health/Gateway, `ping` command, minimal login and separate
 install redirects, denied callback replay, and logout origin checks passed.
 The authorized callback and rollback drill remain open; see
-[`config/infra/inventory/aphrody-discord-dev-2026-09-29.md`](../../../config/infra/inventory/aphrody-discord-dev-2026-09-29.md).
+`yolo/config/host/inventory/aphrody-discord-dev-2026-09-29.md`.
 
 Historical status (2026-09-29 08:56 UTC): release
 `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808` superseded the prior
@@ -341,7 +341,7 @@ active. On success `/srv/aphrody-infra/BUNDLE.json` (with `activatedAt`) and
 After activation: run `$B/provision-shenron-ai-access.sh` as root to prove
 Shenron → AI (RAG search returns passages), drop `"status": "retired"` from the
 five Aphrody services, their routes, the `vps` allocation and the `vps`
-local-AI target in `config/`, refresh `config/infra/inventory/vps-source.json`, then run
+local-AI target in `config/`, refresh `yolo/config/host/inventory/vps-source.json`, then run
 the `live` pipeline stage (`bun run audit:live`).
 
 ## Existing-host path (legacy)

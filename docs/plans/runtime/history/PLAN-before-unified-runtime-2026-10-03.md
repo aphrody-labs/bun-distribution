@@ -227,7 +227,7 @@ actifs, aucun import vers une ancienne implantation déplacée.
 
 ### Architecture du workspace — 2026-10-01
 
-- FAIT : la [page canonique](docs/architecture/workspace/ARCHITECTURE.md)
+- FAIT : la [page canonique](../../../../design/aphrody-m3/docs/architecture/drive/apps/server/ARCHITECTURE.md)
   décrit les racines actives, les workspaces racine, les propriétaires actuels,
   les frontières à qualifier et Shenron comme gate produit final.
 - L’ancienne page est préservée octet pour octet dans
@@ -955,7 +955,7 @@ Propriétaires : `crates/ai`, `crates/web`, `packages/ai`, `packages/web`.
 
 ### Web et navigateur (2026-10-01)
 
-Cartographie : [architecture](docs/architecture/web/ARCHITECTURE.md) (21 crates
+Cartographie : [architecture](../../../../design/aphrody-m3/docs/architecture/drive/apps/server/ARCHITECTURE.md) (21 crates
 Rust, 3 paquets Bun, consommateurs, 16 écarts), contrat de service
 [docs/apis/web/WEB-SERVICE-CONTRACT.md](docs/apis/web/WEB-SERVICE-CONTRACT.md),
 configuration unique [config/web.json](config/web.json), automatisation
@@ -1170,7 +1170,7 @@ smoke documenté. Une mise en production est une opération distincte.
 - Décision du propriétaire : l'app Aphrody (`crates/ui/app`) devient l'outil unique
   d'administration Shenron, de manga/traduction Koharu, de databooks,
   d'entraînement et du Drive dbfr ; plan détaillé
-  [aphrody-app-studio.md](design/aphrody-m3/docs/plans/aphrody-app-studio.md). Lève la réserve
+  [aphrody-app-studio.md](../../../../design/aphrody-m3/docs/plans/aphrody-app-studio.md). Lève la réserve
   de `GEMINI.md` ; la mise en production site/bot reste distincte.
 - FAIT (124fe0570) : destination `/studio` ; onglet Shenron natif (`@shenron/ui`)
   sur l'API publique extraite de `aphrody-command::shenron_cmd` ; dashboard admin

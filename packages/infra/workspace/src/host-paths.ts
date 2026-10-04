@@ -2,7 +2,7 @@
 /**
  * Repository-wide audit of machine- and host-specific paths: removed checkouts (~/source, the
  * pre-monorepo superproject), absolute user homes, WSL mounts and VPS-only homes. Aphrody must run
- * from any checkout location and platform; host layouts belong to config/infra declarations.
+ * from any checkout location and platform; host layouts belong to the declarations in yolo `config/host`.
  */
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";

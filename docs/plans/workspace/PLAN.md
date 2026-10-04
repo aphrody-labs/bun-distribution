@@ -646,9 +646,9 @@ tant que ses gates sont satisfaites. À la migration, corriger les métadonnées
 réparties entre `aphrody-ui` et `material-web`. Base UI et Tailwind gardent
 leurs patches et historiques upstream référencés ; ce ne sont pas des packages
 M3 à réécrire ni à publier sous des identités Aphrody. Le plan de référence
-est [M3-PLAN.md](../ui/design/M3-PLAN.md), avec son
-[contrat multi-hôtes](../ui/design/M3-MULTI-HOST-PLAN.md) et son
-[schéma framework](../../architecture/ui/design/M3-FRAMEWORK.md).
+est [M3-PLAN.md](../../../design/aphrody-m3/docs/plans/design/M3-PLAN.md), avec son
+[contrat multi-hôtes](../../../design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md) et son
+[schéma framework](../../../design/aphrody-m3/docs/architecture/design/M3-FRAMEWORK.md).
 
 ### Décisions consolidées qui restaient implicites dans le plan NIE
 
@@ -707,7 +707,7 @@ une case ouverte ne rouvre pas une décision ci-dessous.
   (IECODE `docs/history/aphrody-docs-2026-10-01/plans/nie/PLAN.md` (not in repo))
   guident l'absorption ; Rust et Bun rejoignent `aphrody`, Python `aphrody-py`.
 - UI : M3, Tauri courant, qualification de l'hôte natif selon le
-  [plan multi-hôtes](../ui/design/M3-MULTI-HOST-PLAN.md), desktop,
+  [plan multi-hôtes](../../../design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md), desktop,
   web/mobile et accessibilité. La fusion Rust ne supprime pas un parcours GUI.
 - AI : CLI, MCP, app-server, RAG, workers/modèles/OCR, capacités Shell/OS et
   parcours Koharu. Respecter les frontières de sessions, annulation et stockage.

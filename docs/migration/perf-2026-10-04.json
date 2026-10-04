@@ -78,25 +78,25 @@
   },
   "cli": {
     "aphrody": {
-      "cmd": "/home/aphro/.local/bin/aphrody --version",
+      "cmd": "~/.local/bin/aphrody --version",
       "runs": 15,
       "median_ms": 12.23,
       "min_ms": 11.4
     },
     "aphrody-ops": {
-      "cmd": "/home/aphro/.local/bin/aphrody-ops --version",
+      "cmd": "~/.local/bin/aphrody-ops --version",
       "runs": 15,
       "median_ms": 9.45,
       "min_ms": 8.87
     },
     "aphrody-kernel": {
-      "cmd": "/home/aphro/.local/bin/aphrody-kernel --version",
+      "cmd": "~/.local/bin/aphrody-kernel --version",
       "runs": 15,
       "median_ms": 2.56,
       "min_ms": 2.45
     },
     "yolo": {
-      "cmd": "/home/aphro/.local/bin/yolo --version",
+      "cmd": "~/.local/bin/yolo --version",
       "runs": 15,
       "median_ms": 11.02,
       "min_ms": 10.68

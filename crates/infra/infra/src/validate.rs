@@ -64,11 +64,13 @@ pub fn check_unit_templates(systemd_root: &Path, catalog: &ServiceCatalog) -> Ve
     catalog
         .services
         .iter()
-        .filter(|service| !service.is_retired() && service.requires_unit_template())
-        .filter_map(|service| {
-            (!unit_template_exists(systemd_root, &service.unit)).then(|| {
-                format!("{}: unité {} absente de yolo config/host/systemd/", service.id, service.unit)
-            })
+        .filter(|service| {
+            !service.is_retired()
+                && service.requires_unit_template()
+                && !unit_template_exists(systemd_root, &service.unit)
+        })
+        .map(|service| {
+            format!("{}: unité {} absente de yolo config/host/systemd/", service.id, service.unit)
         })
         .collect()
 }

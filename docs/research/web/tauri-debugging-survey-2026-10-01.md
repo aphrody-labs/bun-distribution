@@ -147,7 +147,7 @@ actually checked here.
 | Runtime | CDP endpoint | DOM / a11y | Screenshot | Eval | Console | Network | Checked here |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | CEF (`tauri-runtime-cef` 3.0.0-alpha.4, `cef` 152.3.0) | Yes. `Cef::remote_debugging(RemoteDebugging::{Disabled, Port{port, allowed_origins}, Pipe})`; default `Disabled`, which also pins `devtools.remote_debugging.allowed` off. `Pipe` is reachable only by the launching process; `Port` has no authentication, accepts `localhost` plus `allowed_origins`, port 1024-65535 | Yes, CDP `DOM`, `DOMSnapshot`, `Accessibility` | Yes, `Page.captureScreenshot` | Yes, `Runtime.evaluate` and `eval_with_callback` | Yes, `Runtime`/`Log` events | Yes, `Network` events | Source read. In-process path also exists: `WebviewCefExt::send_dev_tools_message` and `on_dev_tools_protocol` (message ids from `allocate_devtools_message_id`). Release builds ignore Chromium command-line switches unless the app opts in. koharu already enables `Port{4000}` under `cfg(debug_assertions)` in [`koharu-app/src/app.rs`](../../../crates/koharu/koharu-app/src/app.rs). Not launched |
-| WebView2 (wry 0.57, Windows) | Yes, via `--remote-debugging-port` in `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` ([Microsoft: WebDriver, `--remote-debugging-port`](https://learn.microsoft.com/en-us/microsoft-edge/webview2/how-to/webdriver); [Microsoft: CDP in WebView2](https://learn.microsoft.com/en-us/microsoft-edge/webview2/how-to/chromium-devtools-protocol)) or wry's `WebviewBuilderExtWindows::with_additional_browser_args` (which replaces wry's default args). **WebView2 Runtime 150 ignores the env var, HKCU policy and command-line switch when the host process is elevated**; only HKLM policy and API-supplied arguments are honoured (tauri-apps/wry#1782 open; the proposed wry fix #1783 was closed unmerged; MicrosoftEdge/WebView2Feedback#5645) | Yes via CDP | Yes, CDP, or `CapturePreview` through `with_webview` | Yes | Yes | Yes | Docs fetched (HTTP 200), wry source read (`src/webview2/mod.rs` builds the args), issue text read. Not run: no Windows host. The existing procedure in [DESKTOP-INTEGRATION.md](../../reference/ui/DESKTOP-INTEGRATION.md) uses the env var, so it can silently stop working on elevated CI runners with Runtime 150 or newer |
+| WebView2 (wry 0.57, Windows) | Yes, via `--remote-debugging-port` in `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` ([Microsoft: WebDriver, `--remote-debugging-port`](https://learn.microsoft.com/en-us/microsoft-edge/webview2/how-to/webdriver); [Microsoft: CDP in WebView2](https://learn.microsoft.com/en-us/microsoft-edge/webview2/how-to/chromium-devtools-protocol)) or wry's `WebviewBuilderExtWindows::with_additional_browser_args` (which replaces wry's default args). **WebView2 Runtime 150 ignores the env var, HKCU policy and command-line switch when the host process is elevated**; only HKLM policy and API-supplied arguments are honoured (tauri-apps/wry#1782 open; the proposed wry fix #1783 was closed unmerged; MicrosoftEdge/WebView2Feedback#5645) | Yes via CDP | Yes, CDP, or `CapturePreview` through `with_webview` | Yes | Yes | Yes | Docs fetched (HTTP 200), wry source read (`src/webview2/mod.rs` builds the args), issue text read. Not run: no Windows host. The existing procedure in [DESKTOP-INTEGRATION.md](../../../design/aphrody-m3/docs/reference/DESKTOP-INTEGRATION.md) uses the env var, so it can silently stop working on elevated CI runners with Runtime 150 or newer |
 | WebKitGTK (wry 0.57 on Linux, 2.52.6 here) | **No CDP.** `WEBKIT_INSPECTOR_SERVER` and `WEBKIT_INSPECTOR_HTTP_SERVER` exist (WebKit's own remote inspector, not CDP, protocol not exercised here; strings present in `libwebkit2gtk-4.1.so.0.21.10`); `MiniBrowser` is installed beside the library. Automation via `WebKitWebDriver` and `webkit_web_context_set_automation_allowed` (wry sets it when `TAURI_WEBVIEW_AUTOMATION=true`; one automation context per process) | DOM via JS or WebKitWebDriver; no a11y tree API without in-page code | Yes, `WebView::snapshot` (bindings `webkit2gtk` 2.0.2) | Yes, `evaluate_javascript`, wry `eval_with_callback` | Partial: `enable-write-console-messages-to-stdout` setting, or an injected console wrapper | Partial: `resource-load-started` signal (request level, no bodies or timings) | `strings` confirmed the two inspector variables; bindings read. `WebKitWebDriver` is not installed on this host (Ubuntu package `webkit2gtk-driver`). Not run |
 | WKWebView (wry 0.57, macOS) | **No CDP.** Safari Web Inspector only: wry calls `setInspectable(true)` when devtools are enabled (debug builds or the `devtools` feature), macOS 13.3+ ([Apple](https://developer.apple.com/documentation/webkit/wkwebview/isinspectable)). Apple ships no WebDriver for embedded WKWebView; `tauri-driver`'s README lists macOS as "Todo" | DOM and a11y only through injected JS (hypothesi uses the `aria-api` bundle) | Yes, `takeSnapshot` (used by the hypothesi macOS path) | Yes, `evaluateJavaScript` | Injected wrapper only | Injected wrapper only | Source read only. Not run: no macOS host |
 
@@ -183,7 +183,7 @@ Why: the widest tool set that fits an agent loop, MIT (compatible with this
 Apache-2.0 repository when the notice is kept), active (v0.11.2 on 2026-05-20,
 v0.12.0 on 2026-07-06, v0.13.0 on 2026-08-28), the largest user base of the Tauri MCP
 projects found (312 stars, 41 forks, 315719 crate downloads), and it is the
-revision [`tauri-mcp-parity.md`](../ui/integrations/tauri-mcp-parity.md) already
+revision [`tauri-mcp-parity.md`](../../../design/aphrody-m3/docs/research/integrations/tauri-mcp-parity.md) already
 uses as naming reference. Most of its logic is plain JavaScript sent through one
 `execute_js` command, so a Rust MCP can reuse it.
 
@@ -192,7 +192,7 @@ Why it is only a patch base:
 - Tauri 2 only. The bridge crate depends on `tauri = "2"` and no v3 work exists.
 - Insecure defaults: WebSocket bound to `0.0.0.0`, no token, no Origin check
   (open issue #36), no release gate other than the host app's own `cfg`.
-  This is why [`tauri-mcp.md`](../../reference/ui/integrations/tauri-mcp.md)
+  This is why [`tauri-mcp.md`](../../../design/aphrody-m3/docs/reference/integrations/tauri-mcp.md)
   records that the upstream checkout was removed and replaced by native kernel
   IPC.
 - A Node.js MCP server (`@hypothesi/tauri-mcp-server`) in front of the plugin.
@@ -258,7 +258,7 @@ Notes for the maintainer of these pins:
 - No `config/web-upstream.json` was created because `config/tauri-upstream.json`
   appeared before editing.
 - `upstream/mcp-server-tauri` puts back a tree that
-  [`tauri-mcp.md`](../../reference/ui/integrations/tauri-mcp.md) says was
+  [`tauri-mcp.md`](../../../design/aphrody-m3/docs/reference/integrations/tauri-mcp.md) says was
   removed. It lives under `upstream/` as the repository rules require, is not
   wired into any build, and the unauthenticated listener is still not installed
   anywhere. That sentence in `tauri-mcp.md` is now stale and was left for its
@@ -270,7 +270,7 @@ Notes for the maintainer of these pins:
   provided the notices stay (they do, unmodified, in the pins). Keep the MIT
   notice with any file derived from hypothesi or Choochmeque code; the existing
   copy for hypothesi is
-  [`tauri-mcp-upstream.LICENSE`](../../reference/ui/integrations/tauri-mcp-upstream.LICENSE).
+  [`tauri-mcp-upstream.LICENSE`](../../../design/aphrody-m3/docs/reference/integrations/tauri-mcp-upstream.LICENSE).
 - Incompatible or unclear, not forked: PolyForm Noncommercial (devtools web
   client), AGPL-3.0-only (tauri-remote-ui), no license (P3GLEG, Lumither,
   bayshores, DaveDev42), NOASSERTION (moinsen-dev). `@crabnebula/test-runner-backend`
@@ -292,7 +292,7 @@ interactions are generated JavaScript run through
 screenshots exist on Windows only.
 
 Gap against the hypothesi tool set (from
-[`tauri-mcp-parity.md`](../ui/integrations/tauri-mcp-parity.md), confirmed by
+[`tauri-mcp-parity.md`](../../../design/aphrody-m3/docs/research/integrations/tauri-mcp-parity.md), confirmed by
 reading the bridge): no IPC monitor, IPC invoke/emit, backend-state tool;
 `read_logs` needs a page-side `__APHRODY_MCP_LOGS__` buffer; `manage_window` is
 partial; no Linux or macOS native screenshot; no a11y tree (the upstream

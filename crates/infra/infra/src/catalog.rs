@@ -5,7 +5,7 @@
 //! - `config/service-catalog.json` (systemd services, runtimes, proxy links)
 //! - yolo `config/host/nginx/routes.json` (`$YOLO_ROOT`; public domain mappings and upstreams)
 //! - `config/application-contracts.json` (inter-app architecture constraints)
-//! - `config/infra/inventory/targets.json` (cross-host infrastructure matrix)
+//! - yolo `config/host/inventory/targets.json` (cross-host infrastructure matrix)
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -158,8 +158,9 @@ pub fn load_service_catalog(root: &Path) -> Result<ServiceCatalog> {
     serde_json::from_str(&content).with_context(|| format!("désérialisation de {}", path.display()))
 }
 
-pub fn load_target_matrix(root: &Path) -> Result<TargetMatrix> {
-    let path = root.join("config/infra/inventory/targets.json");
+/// The cross-host matrix is owned by yolo (`$YOLO_ROOT/config/host/inventory/targets.json`).
+pub fn load_target_matrix() -> Result<TargetMatrix> {
+    let path = crate::validate::host_config_root().join("inventory/targets.json");
     let content =
         fs::read_to_string(&path).with_context(|| format!("lecture de {}", path.display()))?;
     serde_json::from_str(&content).with_context(|| format!("désérialisation de {}", path.display()))

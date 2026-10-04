@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Workspace architecture
 
-**Host decision, 2026-09-28:** the [native M3 plan](../plans/ui/design/M3-MULTI-HOST-PLAN.md) owns migration
+**Host decision, 2026-09-28:** the [native M3 plan](../../design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md) owns migration
 to Rust/winit/wgpu. Tauri references below describe the existing integration host;
 the target preserves one shell and the out-of-process AI contract. Native delivery
 requires its own platform, accessibility and installed-workflow evidence.
@@ -11,7 +11,7 @@ category repositories and the domain applications that consume them. The
 [cross-repository Spacedrive plan](../plans/workspace/PLAN.md) coordinates its absorption;
 the active AI workstation delivery plan is
 [aphrody-ai/docs/PLAN.md](../plans/ai/PLAN.md).
-The desktop specification is [aphrody-ui/docs/GUI.md](../reference/ui/GUI.md).
+The desktop specification is [aphrody-ui/docs/GUI.md](../../design/aphrody-m3/docs/reference/GUI.md).
 Priorities and acceptance criteria remain in those owning documents.
 
 ## Source root and repository ownership
@@ -34,7 +34,7 @@ does not prove that a service or desktop artifact is deployed.
 | [aphrody-os](../products/os/_source/README.md.712b5622bf2b) | Kernel/system capabilities, process supervision, jobs, secrets, sandbox/policy, WinClean, reverse engineering, plugin distribution and the FSL Drive engine/daemon |
 | [aphrody-shell](../products/shell/README.md) | Nushell, terminal/PTY and TUI implementations |
 | [aphrody-web](../products/web/README.md) | Obscura, BXC, browsing/extraction, web clients, aphrody-site as public HTTP origin and the transitory FSL Drive server |
-| [aphrody-ui](../products/ui/_source/README.md.8c1fe132fe5c) | The Aphrody Tauri desktop, app-ui shell, Material 3, Drive presentation and renderers; a retained Drive source copy remains during migration |
+| [aphrody-ui](../../design/aphrody-m3/docs/products/_source/README.md.8c1fe132fe5c) | The Aphrody Tauri desktop, app-ui shell, Material 3, Drive presentation and renderers; a retained Drive source copy remains during migration |
 | [aphrody-koharu](../products/koharu/README.md) | Reusable Koharu project, page, scene, manga pipeline and model configuration libraries; Rust and Bun SDKs |
 | [aphrody-compat](../products/compat/_source/README.md.038abe5c2ce0) | Bun/N2B compatibility facilities and documentation |
 | [aphrody-ai](../products/ai/_source/README.md.a7d252bc425b) | Agent/runtime/tools, model clients and lifecycle, inference, RAG/memory, OCR/vision/voice, training, AI MCP/A2A, app-server and the `aphrody` CLI |
@@ -242,7 +242,7 @@ complete distributed dependency/source closure and model terms to support it.
 | --- | --- |
 | Where does a change belong? | This architecture, then the child repository's instructions and manifests |
 | What is the workstation implementing next? | [AI delivery plan](../plans/ai/PLAN.md) |
-| How does the desktop behave? | [GUI specification](../reference/ui/GUI.md) and its UI/UX design documents |
+| How does the desktop behave? | [GUI specification](../../design/aphrody-m3/docs/reference/GUI.md) and its UI/UX design documents |
 | Which capability or command already exists? | [Generated ecosystem discovery](../ecosystem/ECOSYSTEM.md), then current source/help |
 | What runs on a host? | Infra catalogues, release records and live evidence |
 | What is pinned locally? | Gitlinks, child Git state and generated root manifest |

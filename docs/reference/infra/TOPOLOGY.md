@@ -30,7 +30,7 @@ services), `/srv/shenron/current` and `/srv/rg/current`; the all-in-one bundle
 state lives in `/srv/aphrody-infra` (`bundles/`, `state/`, `BUNDLE.json`,
 `BUNDLE.previous.json`). As of 2026-09-26 RG and Shenron are live and the
 Aphrody plane is retired (removed 2026-09-25) until the first bundle
-activation; `config/infra/inventory/vps-source.json` records the observed state.
+activation; `yolo/config/host/inventory/vps-source.json` records the observed state.
 
 Nginx serves `/ai.json` byte-for-byte from `/srv/aphrody/current/ai.json` and
 routes A2A and AI REST paths directly to their loopback services; the site

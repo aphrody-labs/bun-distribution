@@ -72,13 +72,16 @@ async function main(): Promise<void> {
 
   const required = [
     "README.md",
-    "config/infra/inventory/vps-source.json",
     "docs/reference/infra/TOPOLOGY.md",
     "docs/reference/infra/MIGRATION-GUARDRAILS.md",
     "config/local-ai.json",
     "config/local-ai.env.example",
   ];
-  const yoloUnits = ["config/host/systemd/aphrody/aphrody-web-api.service", "config/host/catalog.json"];
+  const yoloUnits = [
+    "config/host/systemd/aphrody/aphrody-web-api.service",
+    "config/host/catalog.json",
+    "config/host/inventory/vps-source.json",
+  ];
   for (const relative of yoloUnits) {
     try {
       if (!(await stat(join(yoloRoot, relative))).isFile()) fail(`Missing yolo host file: ${relative}`);
@@ -96,7 +99,7 @@ async function main(): Promise<void> {
     }
   }
 
-  await readJson<JsonObject>("config/infra/inventory/vps-source.json");
+  await readJson<JsonObject>(join(yoloRoot, "config/host/inventory/vps-source.json"));
   const a2a = await readJson<{
     peers: A2aPeer[];
     protocol: { rpcPath: string; agentCardPath: string };

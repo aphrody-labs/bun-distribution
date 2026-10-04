@@ -5,7 +5,7 @@ Start with the [product README](../README.md) and the
 [active monorepo plan](../../../../PLAN.md). Rust and Bun owners now share
 this checkout; Python remains in `../aphrody-py` and game implementation
 in `../iecode`. The separate `aphrody-ui` checkout belongs to its
-designated agent. The [imported UI contract](../../../reference/ui/GUI.md)
+designated agent. The [imported UI contract](../../../../design/aphrody-m3/docs/reference/GUI.md)
 does not prove current runtime behavior.
 
 The [imported AI delivery plan](../../../plans/ai/PLAN.md) retains its domain

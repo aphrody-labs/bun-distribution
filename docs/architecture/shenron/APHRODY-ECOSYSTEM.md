@@ -569,7 +569,7 @@ Service `aphrody-site` : `APHRODY_SITE_WEB_UPSTREAM`,
 16. Créer l'adaptateur de déploiement Shenron dans Infra du monorepo
     (`DeployStack`, PLAN P1 #9).
 17. Réconcilier les états contradictoires :
-    - `SHENRON-MIGRATION.md:117-121`, `docs/PLAN.md:39` (not in repo) et `config/infra/inventory/vps-unit-catalog.json:4` ne décrivent pas le même état ;
+    - `SHENRON-MIGRATION.md:117-121`, `docs/PLAN.md:39` (not in repo) et `yolo/config/host/inventory/vps-unit-catalog.json:4` ne décrivent pas le même état ;
     - `docs/PLAN.md:37,221` attribue à `aphrody-shenron-embed` le port de `nie-model-serve` ;
     - `policies.sharedReleasePointer` (`service-catalog.json:215`) désigne la racine RG alors que `policies.applicationRoots.shenron` (`:220`) donne à Shenron sa propre racine, et `application-contracts.json:13` qualifie Shenron d'`application-namespace-on-rg-plane` ;
     - `aphrody-web-api` : `publicProxy: "aphrody-site"` au catalogue (`service-catalog.json:26`) contre une route Nginx directe (`nginx-routes.json:22`).

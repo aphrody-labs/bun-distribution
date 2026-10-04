@@ -18,7 +18,7 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 > and proxy headers are `nginx/snippets/*.inc`; compose with
 > `bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit|compose-nginx|check`.
 > `config/service-catalog.json` and `yolo/config/host/nginx/routes.json` remain here as
-> declared intent (their `vhost` paths are relative to `config/host`).
+> declared intent (their `vhost` paths are relative to the yolo host config root).
 
 ---
 

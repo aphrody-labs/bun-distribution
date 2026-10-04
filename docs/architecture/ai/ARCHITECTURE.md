@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Architecture
 
-**Host decision, 2026-09-29:** the [M3 multi-host plan](../../plans/ui/design/M3-MULTI-HOST-PLAN.md)
+**Host decision, 2026-09-29:** the [M3 multi-host plan](../../../design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md)
 keeps Tauri as Aphrody's current and only qualified desktop host. The existing
 Rust renderer crates remain reusable libraries; this architecture does not
 target a second winit/wgpu desktop application. A GPU-specific host adapter
@@ -11,7 +11,7 @@ The [agent delivery plan](../../plans/ai/PLAN.md) defines product and installed-
 Aphrody is a single Material Design 3 workstation combining a sovereign coding
 agent, a VDFS explorer, web workflows and local models. The active implementation
 sequence is [PLAN.md](../../plans/ai/PLAN.md); the UI interaction contract is
-[aphrody-ui/docs/GUI.md](../../reference/ui/GUI.md).
+[aphrody-ui/docs/GUI.md](../../../design/aphrody-m3/docs/reference/GUI.md).
 
 ## One product, explicit process boundaries
 

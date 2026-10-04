@@ -3,7 +3,7 @@
 
 > **Retired on vps since 2026-09-25.** `/srv/aphrody-cdn` and the `cdn.aphrody.com` vhost were
 > removed with the Aphrody retirement (`config/asset-catalog.json` `status: retired`,
-> `config/infra/inventory/vps-source.json`). This page stays the redeploy runbook; the all-in-one bundle does
+> `yolo/config/host/inventory/vps-source.json`). This page stays the redeploy runbook; the all-in-one bundle does
 > not carry the CDN.
 
 `cdn.aphrody.com` is the CDN origin of the monorepo's UI design assets and AI
