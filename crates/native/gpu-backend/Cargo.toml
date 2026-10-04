@@ -15,7 +15,9 @@ publish = false
 workspace = true
 
 [features]
-default = []
+default = ["wgsl", "native-backends"]
+wgsl = ["wgpu/wgsl"]
+native-backends = ["wgpu/vulkan", "wgpu/dx12", "wgpu/metal"]
 webgpu = ["wgpu/webgpu"]
 webgl = ["wgpu/webgl"]
 
