@@ -1,18 +1,29 @@
 [submodule "forks/tailwindcss"]
 	path = forks/tailwindcss
 	url = git@github-dev:aphrody-labs/tailwindcss.git
+	upstream = https://github.com/tailwindlabs/tailwindcss.git
+	shallow = true
 [submodule "forks/base-ui"]
 	path = forks/base-ui
 	url = git@github-dev:aphrody-labs/base-ui.git
+	upstream = https://github.com/mui/base-ui.git
+	shallow = true
 [submodule "forks/material-web"]
 	path = forks/material-web
 	url = git@github-dev:aphrody-labs/material-web.git
+	upstream = https://github.com/material-components/material-web.git
+	shallow = true
 [submodule "forks/material-color-utilities"]
 	path = forks/material-color-utilities
 	url = git@github-dev:aphrody-labs/material-color-utilities.git
+	upstream = https://github.com/material-foundation/material-color-utilities.git
+	shallow = true
 [submodule "forks/material-design-icons"]
 	path = forks/material-design-icons
 	url = git@github-dev:aphrody-labs/material-design-icons.git
+	upstream = https://github.com/google/material-design-icons.git
+	sparse = symbols/web
+	shallow = true
 [submodule "packages/nie-ui"]
 	path = packages/nie-ui
 	url = git@github-dev:aphrody-labs/nie-ui.git
