@@ -22,6 +22,12 @@ describe("yolo task plan", () => {
     expect(plan("bench", ["--only", "yolo"])[0]!.cmd.slice(1)).toEqual(["scripts/bench/run.ts", "--only", "yolo"]);
     expect(plan("bench:check")[0]!.cmd.slice(1)).toEqual(["scripts/bench/run.ts", "--check"]);
   });
+  test("test runs every workspace package and ends with the repository gates", () => {
+    const steps = plan("test");
+    expect(steps[1]!.cmd).toContain("./scripts/check-exports.test.ts");
+    expect(steps[2]!.cmd).toContain("*");
+    expect(steps.slice(3).map((s) => s.cmd[1])).toEqual(["scripts/check-exports.ts", "scripts/check-assets.ts", "scripts/check-links.ts"]);
+  });
   test("YOLO_CLI resolves under YOLO_ROOT", () => {
     expect(YOLO_CLI.endsWith("apps/cli/src/index.ts")).toBe(true);
   });

@@ -109,6 +109,9 @@
     "tailwindcss": "catalog:",
     "typescript": "catalog:"
   },
+  "patchedDependencies": {
+    "@ag-ui/core@1.0.1": "patches/ag-ui-core-1.0.1.patch"
+  },
   "scripts": {
     "build": "bun scripts/yolo.ts build",
     "test": "bun scripts/yolo.ts test",
@@ -122,6 +125,9 @@
     "fmt:check": "oxfmt --check packages apps scripts",
     "icons:ico": "bun packages/material-design-icons/scripts/svg-to-ico.ts",
     "forks": "bun scripts/forks.ts",
-    "bundle-size": "bun scripts/bundle-size.ts"
+    "bundle-size": "bun scripts/bundle-size.ts",
+    "check": "bun scripts/check-exports.ts && bun scripts/check-assets.ts && bun scripts/check-links.ts",
+    "fonts:sync": "bun scripts/fonts-sync.ts",
+    "native": "bun scripts/native.ts"
   }
 }

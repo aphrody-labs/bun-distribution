@@ -6,7 +6,8 @@
 //   build    yolo web build     -> apps/web `build` (cached app build), then scripts/build.ts (packages, cached)
 //   serve    yolo web dev       -> apps/web `dev`   (m3 dev)
 //   compile  yolo tauri build   -> apps/web `build`, then apps/web `compile` (m3 compile, single executable)
-//   test / lint / typecheck     workspace gates, after a yolo preflight (`yolo version --json`); typecheck is scripts/build.ts
+//   test / lint / typecheck     workspace gates, after a yolo preflight (`yolo version --json`); typecheck is scripts/build.ts;
+//                               test runs every package, the script tests and check-exports, check-assets, check-links
 //   bench / bench:check         scripts/bench/run.ts: measure the startup, install, bundle and compile numbers of
 //                               docs/reports/PERF.md; `bench:check` fails past docs/reports/perf-budget.json + 10%
 //   install:theme               packages/m3-os-themes CLI (dry-run unless --apply)
@@ -27,9 +28,6 @@ export const yolo = (...args: string[]): Step => ({
   cwd: REPO,
   env: { YOLO_HOME: REPO },
 });
-
-/** Workspace selection: the @aphrody/m3* packages (never the host-bound app-ui, whose build starts Cargo). */
-const M3 = ["--filter", "@aphrody/m3*"];
 
 /** Lint scope: m3 packages (not the nested app submodules), apps and scripts. */
 const lintPaths = (): string[] => [
@@ -57,10 +55,24 @@ export function plan(task: string, rest: string[] = []): Step[] {
     case "test":
       return [
         yolo("version", "--json"),
-        bun(REPO, "test", "./scripts/yolo.test.ts", "./scripts/bench/lib.test.ts"),
+        bun(
+          REPO,
+          "test",
+          "./scripts/yolo.test.ts",
+          "./scripts/bench/lib.test.ts",
+          "./scripts/check-exports.test.ts",
+          "./scripts/check-assets.test.ts",
+          "./scripts/check-links.test.ts",
+          "./scripts/native.test.ts",
+          "./scripts/forks.test.ts",
+        ),
         // Package tests do not need each other's results: `--parallel` runs them all at once, where `--filter` alone
         // waits for the workspace dependencies' scripts first (5.3 s -> 2.9 s). A failing package fails the task.
-        bun(REPO, "run", "--parallel", "--no-exit-on-error", ...M3, "--if-present", "test"),
+        bun(REPO, "run", "--parallel", "--no-exit-on-error", "--filter", "*", "--if-present", "test"),
+        // Repository gates: manifests and first-party imports, asset references and app icons, docs links.
+        bun(REPO, "scripts/check-exports.ts"),
+        bun(REPO, "scripts/check-assets.ts"),
+        bun(REPO, "scripts/check-links.ts"),
       ];
     case "lint":
       return [yolo("version", "--json"), bun(REPO, "x", "oxlint", ...lintPaths())];

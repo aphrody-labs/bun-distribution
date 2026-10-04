@@ -456,6 +456,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "@ag-ui/core@1.0.1": "patches/ag-ui-core-1.0.1.patch",
+  },
   "catalog": {
     "@ag-ui/a2ui-toolkit": "0.0.4",
     "@ag-ui/client": "npm:@aphrody/ag-ui-client@1.0.1-aphrody.1",
