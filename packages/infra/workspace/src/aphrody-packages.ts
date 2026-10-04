@@ -147,12 +147,13 @@ export async function prepareAphrodyPackages(options: {
   );
   if (dirty && !options.allowDirty)
     throw new Error("Packed @aphrody/* sources are dirty; commit them or pass --allow-dirty.");
-  const overrides =
-    (
-      JSON.parse(await readFile(join(root, "package.json"), "utf8")) as {
-        overrides?: Record<string, string>;
-      }
-    ).overrides ?? {};
+  // The workspace resolves pinned external archives through its overrides or catalog.
+  const rootManifest = JSON.parse(await readFile(join(root, "package.json"), "utf8")) as {
+    overrides?: Record<string, string>;
+    workspaces?: { catalog?: Record<string, string> };
+  };
+  const pinnedSpec = (name: string) =>
+    rootManifest.overrides?.[name] ?? rootManifest.workspaces?.catalog?.[name];
   const stage = await mkdtemp(join(tmpdir(), "aphrody-packages-"));
   try {
     const packages: AphrodyArchive[] = [];
@@ -207,7 +208,7 @@ export async function prepareAphrodyPackages(options: {
     // External packages this workspace itself consumes as pinned archives (the Yolo runtime SDK) pass through.
     const unresolved: string[] = [];
     for (const name of external) {
-      const spec = overrides[name];
+      const spec = pinnedSpec(name);
       if (!spec?.startsWith("file:")) {
         unresolved.push(name);
         continue;
