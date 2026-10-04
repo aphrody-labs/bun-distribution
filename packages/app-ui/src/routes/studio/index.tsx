@@ -10,18 +10,24 @@ import { DatabooksStudio } from "./DatabooksStudio";
 import { DriveStudio } from "./DriveStudio";
 import { A2AStudio } from "./A2AStudio";
 
-export type StudioSection = "shenron" | "manga" | "admin" | "training" | "databooks" | "drive" | "a2a";
+export type StudioSection =
+  | "shenron"
+  | "manga"
+  | "admin"
+  | "training"
+  | "databooks"
+  | "drive"
+  | "a2a";
 
 export const studioSections: Array<{ id: StudioSection; label: string; icon: string }> = [
   { id: "shenron", label: "Shenron", icon: "monitoring" },
-  { id: "a2a", label: "Flotte A2A & Apps MCP", icon: "hub" },
+  { id: "a2a", label: "Outils des agents", icon: "hub" },
   { id: "manga", label: "Manga & traduction", icon: "translate" },
   { id: "admin", label: "Administration Shenron", icon: "admin_panel_settings" },
   { id: "training", label: "Entraînement", icon: "model_training" },
   { id: "databooks", label: "Databooks", icon: "menu_book" },
   { id: "drive", label: "Drive dbfr", icon: "cloud_sync" },
 ];
-
 
 export function StudioRoute() {
   const [section, setSection] = useState<StudioSection>("shenron");
@@ -53,7 +59,10 @@ export function StudioRoute() {
         </div>
       </header>
 
-      <section role="tabpanel" aria-label={studioSections.find((entry) => entry.id === section)?.label}>
+      <section
+        role="tabpanel"
+        aria-label={studioSections.find((entry) => entry.id === section)?.label}
+      >
         {section === "shenron" ? (
           <ShenronStudio />
         ) : section === "a2a" ? (

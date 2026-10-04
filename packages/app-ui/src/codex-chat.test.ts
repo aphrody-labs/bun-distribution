@@ -26,7 +26,7 @@ describe("Codex Chat - Approval Decisions & Wire Formatting", () => {
 
     const buildReply = (
       appr: ApprovalItem,
-      decision: "accept" | "acceptForSession" | "decline" | "cancel"
+      decision: "accept" | "acceptForSession" | "decline" | "cancel",
     ) => ({
       id: appr.id,
       result: { decision },
@@ -121,7 +121,13 @@ describe("Codex Chat - Item & Turn Reduction", () => {
   });
 
   it("appends delta to matching assistant message without polluting previous messages", () => {
-    const items: Array<{ id: string; role: "assistant"; content: string; streaming?: boolean; itemId?: string }> = [
+    const items: Array<{
+      id: string;
+      role: "assistant";
+      content: string;
+      streaming?: boolean;
+      itemId?: string;
+    }> = [
       { id: "msg-1", role: "assistant", content: "Hello", streaming: false, itemId: "item-1" },
       { id: "msg-2", role: "assistant", content: "Work", streaming: true, itemId: "item-2" },
     ];
@@ -129,8 +135,8 @@ describe("Codex Chat - Item & Turn Reduction", () => {
     const delta = " in progress";
     const targetItemId = "item-2";
 
-    const updated = items.map((it) =>
-      it.itemId === targetItemId ? { ...it, content: it.content + delta } : it
+    const updated = items.map((item) =>
+      item.itemId === targetItemId ? { ...item, content: item.content + delta } : item,
     );
 
     expect(updated[0].content).toBe("Hello");
@@ -176,7 +182,7 @@ describe("Codex Chat - Thread Actions & Wire Payloads", () => {
     ];
 
     const updated = threads.map((t) =>
-      t.id === "t-1" ? { ...t, name: "Renamed 1", preview: "Renamed 1" } : t
+      t.id === "t-1" ? { ...t, name: "Renamed 1", preview: "Renamed 1" } : t,
     );
 
     expect(updated[0].name).toBe("Renamed 1");
@@ -215,7 +221,7 @@ describe("Codex Chat - ThreadDrawer Component", () => {
         isOpen: false,
         onClose: () => {},
         threads: [],
-      })
+      }),
     );
     expect(html).toBe("");
   });
@@ -235,7 +241,7 @@ describe("Codex Chat - ThreadDrawer Component", () => {
         onRenameThread: () => {},
         onForkThread: () => {},
         onCompactThread: () => {},
-      })
+      }),
     );
 
     expect(html).toContain("Historique des sessions");
@@ -253,7 +259,7 @@ describe("Codex Chat - ThreadDrawer Component", () => {
         isOpen: true,
         onClose: () => {},
         threads: [],
-      })
+      }),
     );
 
     expect(html).toContain("Aucune session : envoyez un message pour en créer une");
@@ -267,7 +273,7 @@ describe("Codex Chat - Pixel-Perfect Parity & Timeline Cards", () => {
         path: "crates/ui/app/src/lib.rs",
         kind: "Modified",
         diff: "+#[tauri::command]\n+async fn aphrody_rpc() {}",
-      })
+      }),
     );
 
     expect(html).toContain("Modifié");
@@ -303,7 +309,7 @@ describe("Codex Chat - Pixel-Perfect Parity & Timeline Cards", () => {
         modelOptions: [],
         cwd: "C:/workspace/aphrody",
         onCwdChange: () => {},
-      })
+      }),
     );
 
     // Centred reading column (--app-reading-column, 760px) and docked prompt bar once turns exist
@@ -323,7 +329,7 @@ describe("Codex Chat - Pixel-Perfect Parity & Timeline Cards", () => {
     // Assistant message: plain text at left, no bubble, hover action buttons
     expect(html).toContain("Hey! What can I help you with?");
     expect(html).toContain("content_copy");
-    expect(html).toContain("thumb_down");
+    expect(html).not.toContain("thumb_down");
 
     // Floating composer at bottom with placeholder "Que voulez-vous faire ?"
     expect(html).toContain('placeholder="Que voulez-vous faire ?"');
@@ -351,7 +357,7 @@ describe("Codex Chat - Pixel-Perfect Parity & Timeline Cards", () => {
         modelOptions: [],
         cwd: "",
         onCwdChange: () => {},
-      })
+      }),
     );
 
     expect(html).toContain("stop");

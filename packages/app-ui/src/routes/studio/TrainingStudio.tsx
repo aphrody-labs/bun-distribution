@@ -1,110 +1,154 @@
 // SPDX-License-Identifier: Apache-2.0
-// Training: Shenron embedding / reranker candidates trained through aphrody-command's
-// `train_candidate` (Python aphrody-train), with live state from the `studio://train` event.
+// Read-only native training environment and events. The existing start owner still invokes
+// the Python training process, so this UI does not expose that launch path.
 import { useEffect, useState } from "react";
 import { Button, Card } from "@aphrody/m3-primitives";
-import { PageHeader } from "@shenron/ui/layout/PageHeader";
 import { isTauri } from "../../tauri-bridge";
-import { shenron, training, type ShenronTraining, type TrainEvent, type TrainKind } from "../../studio-bridge";
+import { shenron, training, type ShenronTraining, type TrainEvent } from "../../studio-bridge";
 
-const buttonClass = "min-h-12 px-5 text-[18px]";
-const fieldClass = "min-h-12 rounded-xl border border-outline bg-surface-container px-4 text-[18px]";
+export interface TrainingStudioBackend {
+  isDesktop(): boolean;
+  environment(): Promise<ShenronTraining>;
+  subscribe(handler: (event: TrainEvent) => void): Promise<() => void | Promise<void>>;
+}
+const backend: TrainingStudioBackend = {
+  isDesktop: isTauri,
+  environment: shenron.training,
+  subscribe: training.onEvent,
+};
 
-export function TrainingStudio() {
+function unsubscribe(stop: () => void | Promise<void>) {
+  try {
+    void Promise.resolve(stop()).catch((error: unknown) => {
+      console.warn("Training event cleanup failed", error);
+    });
+  } catch (error) {
+    console.warn("Training event cleanup failed", error);
+  }
+}
+const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+export function TrainingStudio({ services = backend }: { services?: TrainingStudioBackend } = {}) {
+  const desktop = services.isDesktop();
   const [env, setEnv] = useState<ShenronTraining | null>(null);
-  const [kind, setKind] = useState<TrainKind>("embed");
-  const [steps, setSteps] = useState(10);
-  const [allowCpu, setAllowCpu] = useState(false);
-  const [baseModel, setBaseModel] = useState("");
+  const [loading, setLoading] = useState(desktop);
+  const [listening, setListening] = useState(false);
+  const [environmentError, setEnvironmentError] = useState<string | null>(null);
+  const [eventError, setEventError] = useState<string | null>(null);
   const [events, setEvents] = useState<TrainEvent[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    if (!isTauri()) return;
-    shenron.training().then(setEnv, (cause: unknown) => setError(String(cause)));
-    let unlisten: (() => void) | undefined;
-    void training.onEvent((event) => setEvents((current) => [event, ...current].slice(0, 20))).then((stop) => {
-      unlisten = stop;
-    });
-    return () => unlisten?.();
-  }, []);
+    if (!desktop) return;
+    let active = true;
+    let stop: (() => void | Promise<void>) | undefined;
+    setLoading(true);
+    setListening(false);
+    setEnvironmentError(null);
+    setEventError(null);
+    setEnv(null);
+    void services
+      .environment()
+      .then((report) => {
+        if (active) setEnv(report);
+        return null;
+      })
+      .catch((error: unknown) => {
+        if (active) setEnvironmentError(message(error));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    void services
+      .subscribe((event) => {
+        if (active) setEvents((current) => [event, ...current].slice(0, 20));
+      })
+      .then((unlisten) => {
+        if (active) {
+          stop = unlisten;
+          setListening(true);
+        } else unsubscribe(unlisten);
+        return null;
+      })
+      .catch((error: unknown) => {
+        if (active) setEventError(message(error));
+      });
+    return () => {
+      active = false;
+      if (stop) unsubscribe(stop);
+    };
+  }, [services, desktop, reload]);
 
-  if (!isTauri()) {
-    return <p className="text-[18px] text-on-surface-variant">L’entraînement nécessite l’application Aphrody.</p>;
+  if (!desktop) {
+    return (
+      <p className="text-body-large text-on-surface-variant">
+        L'état de l'entraînement est disponible dans l'application Aphrody.
+      </p>
+    );
   }
-
-  const running = events[0]?.state === "started";
-
-  const start = async () => {
-    setError(null);
-    try {
-      await training.start(kind, steps, allowCpu, baseModel.trim() || undefined);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    }
-  };
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader eyebrow="Shenron" title="Entraînement" subtitle="Candidats embeddings et reranker sur les triplets dbfr" />
-      {env ? (
-        <Card className="flex flex-col gap-2 p-6 text-[18px]">
-          <p>GPU détectés : {env.gpu_count}</p>
-          <p>Candidats : {env.candidate_root}</p>
-          <p>Projet Python : {env.python_project ?? "introuvable"}</p>
-          <p className="text-on-surface-variant">{env.rag_promotion}</p>
-        </Card>
-      ) : null}
-      <Card className="flex flex-col gap-4 p-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <select aria-label="Type de modèle" className={fieldClass} value={kind} onChange={(event) => setKind(event.target.value as TrainKind)}>
-            <option value="embed">Embeddings</option>
-            <option value="rerank">Reranker</option>
-          </select>
-          <label className="flex items-center gap-2 text-[18px]">
-            Pas
-            <input
-              type="number"
-              min={1}
-              className={`${fieldClass} w-28`}
-              value={steps}
-              onChange={(event) => setSteps(Math.max(1, Number(event.target.value) || 1))}
-            />
-          </label>
-          <label className="flex items-center gap-2 text-[18px]">
-            <input type="checkbox" className="size-6" checked={allowCpu} onChange={(event) => setAllowCpu(event.target.checked)} />
-            Autoriser le CPU
-          </label>
-        </div>
-        <input
-          aria-label="Modèle de base"
-          className={fieldClass}
-          placeholder={kind === "embed" ? "intfloat/multilingual-e5-small" : "BAAI/bge-reranker-base"}
-          value={baseModel}
-          onChange={(event) => setBaseModel(event.target.value)}
-        />
-        <Button className={buttonClass} disabled={running} onClick={() => void start()}>
-          {running ? "Entraînement en cours…" : "Lancer l’entraînement"}
-        </Button>
-        {error ? (
-          <p role="alert" className="text-[18px] text-error">
-            {error}
+      <header className="space-y-2">
+        <p className="text-label-large font-medium text-primary">Shenron</p>
+        <h1 className="text-headline-large font-semibold text-on-surface">Entraînement</h1>
+        <p className="text-body-large text-on-surface-variant">
+          Environnement et événements des candidats embeddings et reranker
+        </p>
+      </header>
+      <Card className="flex flex-col gap-3 p-6 text-body-large">
+        <h2 className="text-title-large font-medium">Environnement</h2>
+        {loading && <p role="status">Lecture de l'environnement d'entraînement…</p>}
+        {env && (
+          <>
+            <p>GPU détectés : {env.gpu_count}</p>
+            <p>Candidats : {env.candidate_root}</p>
+            <p>Projet d'entraînement : {env.python_project ?? "introuvable"}</p>
+            <p className="text-on-surface-variant">{env.rag_promotion}</p>
+          </>
+        )}
+        {environmentError && (
+          <p role="alert" className="text-error">
+            Environnement indisponible : {environmentError}
+          </p>
+        )}
+      </Card>
+      <Card className="flex flex-col gap-3 p-6 text-body-large">
+        <h2 className="text-title-large font-medium">Événements reçus</h2>
+        {eventError ? (
+          <p role="alert" className="text-error">
+            Flux d'événements indisponible : {eventError}
+          </p>
+        ) : !listening ? (
+          <p role="status">Connexion aux événements d'entraînement…</p>
+        ) : events.length === 0 ? (
+          <p className="text-on-surface-variant">
+            Aucun événement reçu depuis l'ouverture de cette vue.
           </p>
         ) : null}
+        {events.length > 0 && (
+          <ol className="flex flex-col gap-2">
+            {events.map((event, index) => (
+              <li key={index} className="rounded-medium bg-surface-container-high p-3">
+                {event.state === "started"
+                  ? `Démarré : ${event.kind}, ${event.steps} pas, ${event.baseModel}`
+                  : event.state === "finished"
+                    ? `Terminé : ${event.kind} → ${event.output}`
+                    : `Échec : ${event.kind} — ${event.error}`}
+              </li>
+            ))}
+          </ol>
+        )}
       </Card>
-      {events.length > 0 ? (
-        <ol className="flex flex-col gap-2">
-          {events.map((event, index) => (
-            <li key={index} className="rounded-xl bg-surface-container p-3 text-[16px]">
-              {event.state === "started"
-                ? `Démarré : ${event.kind}, ${event.steps} pas, ${event.baseModel}`
-                : event.state === "finished"
-                  ? `Terminé : ${event.kind} → ${event.output}`
-                  : `Échec : ${event.kind} — ${event.error}`}
-            </li>
-          ))}
-        </ol>
-      ) : null}
+      {(environmentError || eventError) && (
+        <Button
+          variant="tonal"
+          className="self-start"
+          onClick={() => setReload((value) => value + 1)}
+        >
+          Réessayer
+        </Button>
+      )}
     </div>
   );
 }

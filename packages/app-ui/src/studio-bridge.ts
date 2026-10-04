@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Studio bridge: typed calls to the in-process Koharu service (`koharu_rpc`, crates/ui/app/src/koharu.rs).
 // Shapes mirror crates/koharu/koharu-library/src/{service,project}.rs and koharu-pipeline request types.
-import { isTauri, tauriInvoke } from "./tauri-bridge";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { isTauri } from "./tauri-bridge";
 
 export type KoharuStage = "detection" | "ocr" | "translation" | "inpainting";
 
@@ -39,11 +41,13 @@ export interface KoharuPipelineReport {
   project: KoharuProjectInfo;
 }
 
-export async function koharuRpc<T>(method: string, params: unknown = null): Promise<T> {
+export async function koharuRpc<T>(
+  method: string,
+  params: Record<string, unknown> = {},
+): Promise<T> {
   if (!isTauri()) throw new Error("Koharu nécessite l’application Aphrody.");
-  const result = await tauriInvoke<T>("koharu_rpc", { method, params });
-  if (result === null) throw new Error("Le service natif Koharu est indisponible.");
-  return result;
+  // Native IPC rejects errors; JSON null is a valid successful result (e.g. project.close).
+  return invoke<T>("koharu_rpc", { method, params });
 }
 
 export const koharu = {
@@ -60,8 +64,8 @@ export const koharu = {
       scope: pages && pages.length > 0 ? { scope: "pages", value: pages } : { scope: "project" },
       cpu,
     }),
-  pipelineStatus: () => koharuRpc<{ running: unknown }>("pipeline.status"),
-  cancelPipeline: () => koharuRpc<null>("pipeline.cancel"),
+  pipelineStatus: () => koharuRpc<{ running: number | null }>("pipeline.status"),
+  cancelPipeline: (job: number) => koharuRpc<{ cancelled: true }>("pipeline.cancel", { job }),
   exportPng: (page: string, path: string) =>
     koharuRpc<{ path: string; bytes: number }>("page.exportPng", { page, path }),
   exportPsd: (page: string, path: string) =>
@@ -72,9 +76,8 @@ export const koharu = {
 /** Structured Shenron reports from crates/ui/app/src/studio.rs (logic owned by aphrody-command). */
 async function studio<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
   if (!isTauri()) throw new Error("Cette vue nécessite l’application Aphrody.");
-  const result = await tauriInvoke<T>(command, args);
-  if (result === null) throw new Error(`Commande native ${command} indisponible.`);
-  return result;
+  // Result<()> commands (admin window and training start) serialize successful acknowledgement as null.
+  return invoke<T>(command, args);
 }
 
 export interface ShenronProbe {
@@ -89,7 +92,13 @@ export interface ShenronHealth {
   site: ShenronProbe;
   bot: ShenronProbe;
   aphrody_ai_http: ShenronProbe;
-  serving_rag: { reachable: boolean; ready: boolean; chunks?: number; vectors?: number; reason?: string };
+  serving_rag: {
+    reachable: boolean;
+    ready: boolean;
+    chunks?: number;
+    vectors?: number;
+    reason?: string;
+  };
   agent_home: { valid: boolean; files?: number; revision?: string; error?: string };
   rag_backend: string;
 }
@@ -118,7 +127,11 @@ export const shenron = {
   health: () => studio<ShenronHealth>("studio_shenron_health"),
   ragStats: () => studio<ShenronRagStats>("studio_shenron_rag_stats"),
   ragSearch: (query: string, limit = 10, kind?: string) =>
-    studio<{ mode?: string; results: ShenronRagHit[] }>("studio_shenron_rag_search", { query, limit, kind: kind ?? null }),
+    studio<{ mode?: string; results: ShenronRagHit[] }>("studio_shenron_rag_search", {
+      query,
+      limit,
+      kind: kind ?? null,
+    }),
   training: () => studio<ShenronTraining>("studio_shenron_training"),
 };
 
@@ -142,11 +155,18 @@ export type TrainEvent =
   | { state: "failed"; kind: TrainKind; error: string };
 
 export const training = {
+  /** Acknowledgement only; completion/failure comes from the native studio://train event. */
   start: (kind: TrainKind, steps: number, allowCpu: boolean, baseModel?: string) =>
-    studio<null>("studio_shenron_train_start", { kind, steps, allowCpu, baseModel: baseModel ?? null }),
+    studio<null>("studio_shenron_train_start", {
+      kind,
+      steps,
+      allowCpu,
+      baseModel: baseModel ?? null,
+    }),
   async onEvent(handler: (event: TrainEvent) => void): Promise<() => void> {
-    if (!window.__TAURI__?.event) return () => undefined;
-    return window.__TAURI__.event.listen("studio://train", (event) => handler(event.payload as TrainEvent));
+    if (!isTauri())
+      throw new Error("Les événements d’entraînement nécessitent l’application Aphrody.");
+    return listen<TrainEvent>("studio://train", (event) => handler(event.payload));
   },
 };
 
@@ -166,12 +186,15 @@ export interface CorpusHit {
 export const corpus = {
   info: () => studio<{ documents: number }>("studio_corpus_info"),
   search: (query: string, options: { limit?: number; kind?: string; lang?: string } = {}) =>
-    studio<{ results?: CorpusHit[]; hits?: CorpusHit[]; [key: string]: unknown }>("studio_corpus_search", {
-      query,
-      limit: options.limit ?? 20,
-      kind: options.kind ?? null,
-      lang: options.lang ?? null,
-    }),
+    studio<{ results?: CorpusHit[]; hits?: CorpusHit[]; [key: string]: unknown }>(
+      "studio_corpus_search",
+      {
+        query,
+        limit: options.limit ?? 20,
+        kind: options.kind ?? null,
+        lang: options.lang ?? null,
+      },
+    ),
   ask: (question: string) => studio<Record<string, unknown>>("studio_corpus_ask", { question }),
 };
 

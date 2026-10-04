@@ -4,10 +4,13 @@
 //   m3 build --tauri  -> crates/ui/app/ui-dist (index.html, app.js, app.css, fonts/)
 import { defineM3Config } from "@aphrody/m3/config";
 
+import { appServerProxy } from "./backend";
+
 export default defineM3Config({
+  proxy: appServerProxy(),
   entry: "src/index.html",
   port: 1421,
-  tauri: { uiDist: "../../../../crates/ui/app/ui-dist" },
+  tauri: { uiDist: "../../../crates/ui/app/ui-dist" },
   drop: ["debugger"],
   optimizeImports: [
     "@phosphor-icons/react",

@@ -30,7 +30,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import * as ts from "@typescript/typescript6";
 
-const REPO_ROOT = resolve(import.meta.dir, "../../../../..");
+const REPO_ROOT = resolve(import.meta.dir, "../../../..");
 const WEBSITE_SRC = join(REPO_ROOT, "apps/rg/website/src");
 const BASELINE_PATH = join(import.meta.dir, "presentation-literals-baseline.json");
 

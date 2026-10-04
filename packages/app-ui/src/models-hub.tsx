@@ -103,8 +103,12 @@ export function ModelsHub() {
 
   useEffect(() => {
     void refreshStore();
-    void getActiveModelSetting().then(setActiveModel);
-    void getDefaultModelSetting().then(setDefaultModel);
+    void getActiveModelSetting()
+      .then(setActiveModel)
+      .catch(() => setLoadError("Modèle actif indisponible."));
+    void getDefaultModelSetting()
+      .then(setDefaultModel)
+      .catch(() => setLoadError("Modèle par défaut indisponible."));
     void readSetting<unknown>("favoriteModels")
       .then((value) => {
         if (Array.isArray(value))
@@ -144,16 +148,23 @@ export function ModelsHub() {
   }, [installedModelsList]);
 
   const handleUseInChat = async (modelId: string) => {
-    await setActiveModelSetting(modelId);
-    setActiveModel(modelId);
-    toast.success(`Modèle sélectionné pour le chat : ${modelId}`);
-    navigate("/", { state: { model: modelId } });
+    try {
+      await setActiveModelSetting(modelId);
+      setActiveModel(modelId);
+      navigate("/", { state: { model: modelId } });
+    } catch {
+      toast.error("Impossible d’enregistrer le modèle pour le chat.");
+    }
   };
 
   const handleSetDefault = async (modelId: string) => {
-    await setDefaultModelSetting(modelId);
-    setDefaultModel(modelId);
-    toast.success(`Modèle par défaut défini : ${modelId}`);
+    try {
+      await setDefaultModelSetting(modelId);
+      setDefaultModel(modelId);
+      toast.success(`Modèle par défaut défini : ${modelId}`);
+    } catch {
+      toast.error("Impossible d’enregistrer le modèle par défaut.");
+    }
   };
 
   const toggleFavorite = async (id: string) => {

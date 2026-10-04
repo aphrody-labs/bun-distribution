@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { compactPet, type RawAnimations, renderModule } from "./compact";
 import { frameAt, gazeFrame, PET, spriteStyle, trackDuration } from "./pet";
 
-const crateJson = join(import.meta.dir, "../../../../../crates/ui/identity/assets/aphrody/animations.json");
+const crateJson = join(import.meta.dir, "../../../../crates/ui/identity/assets/aphrody/animations.json");
 
 describe("generated pet data", () => {
   test("matches the crate animations.json (run `bun run gen` after a re-export)", async () => {

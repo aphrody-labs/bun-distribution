@@ -7,7 +7,7 @@
 import { join } from "node:path";
 import { compactPet, renderModule } from "../src/compact";
 
-const crate = join(import.meta.dir, "../../../../../crates/ui/identity/assets/aphrody/animations.json");
+const crate = join(import.meta.dir, "../../../../crates/ui/identity/assets/aphrody/animations.json");
 const out = join(import.meta.dir, "../src/animations.generated.ts");
 const compact = compactPet(await Bun.file(crate).json());
 await Bun.write(out, renderModule(compact));

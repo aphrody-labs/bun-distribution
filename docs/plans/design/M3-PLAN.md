@@ -2,10 +2,10 @@
 # M3 plan: contracts and qualification
 
 Source review and scoped UI checks: 2026-10-04. The canonical product architecture and
-execution rules remain in Aphrody's [PLAN](../../../../../PLAN.md),
-[GOAL](../../../../../GOAL.md), [AGENTS](../../../../../AGENTS.md) and
-[MEMORY](../../../../../MEMORY.md). Yolo owns runtime production under its
-[PLAN](../../../../../../yolo/PLAN.md). This document scopes the M3 framework;
+execution rules remain in Aphrody's [PLAN](../../../../PLAN.md),
+[GOAL](../../../../GOAL.md), [AGENTS](../../../../AGENTS.md) and
+[MEMORY](../../../../MEMORY.md). Yolo owns runtime production under its
+[PLAN](../../../../../yolo/PLAN.md). This document scopes the M3 framework;
 it does not close those repositories' runtime or installation milestones.
 
 Use the [framework guide](../../guides/FRAMEWORK.md) for the package map and
@@ -14,7 +14,7 @@ Use the [framework guide](../../guides/FRAMEWORK.md) for the package map and
 ## Ownership and repository boundary
 
 `aphrody-m3` is the private design repository consumed through the
-`design/aphrody-m3` submodule. Its Bun packages, apps, templates, examples and
+`m3/` submodule in Aphrody. Its Bun packages, apps, templates, examples and
 forks live here; Rust UI crates remain in Aphrody's `crates/ui/*`. Root workspace
 exclusions keep host-bound packages under their product integrator. Preserve
 private repositories, fork histories, licences and protected stores. Package

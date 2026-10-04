@@ -2,12 +2,12 @@
 import { resolve } from "node:path";
 
 export const SHOWCASE_ROOT = resolve(import.meta.dir, "..");
-export const APHRODY_ROOT = resolve(SHOWCASE_ROOT, "../../../..");
+export const APHRODY_ROOT = resolve(SHOWCASE_ROOT, "../../..");
 export const TAURI_ROOT = resolve(APHRODY_ROOT, "crates/ui/m3-showcase");
 /** Canonical Aphrody artwork stays in its protected identity owner; generated icons are ignored. */
 export const ICON_SOURCE = resolve(
   SHOWCASE_ROOT,
-  "../../../../crates/ui/identity/assets/brand/icon.svg",
+  "../../../crates/ui/identity/assets/brand/icon.svg",
 );
 
 export function iconCommand(root = TAURI_ROOT, executable = Bun.which("tauri")): string[] {

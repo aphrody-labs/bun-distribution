@@ -65,7 +65,7 @@ describe("showcase host delivery contract", () => {
   test("the host has a real mobile entry and no ambient privileged namespace", () => {
     const files = showcaseShellFiles();
     const config = JSON.parse(String(files["tauri.conf.json"]));
-    expect(config.build.frontendDist).toBe("../../../design/aphrody-m3/apps/showcase/dist");
+    expect(config.build.frontendDist).toBe("../../../m3/apps/showcase/dist");
     expect(config.app.windows).toEqual([]);
     expect(config.bundle.externalBin).toEqual(["binaries/m3-showcase"]);
     const wrap = JSON.parse(String(files["wrap.json"]));

@@ -22,7 +22,7 @@ in all three layouts and both colour schemes. It fails for console errors or
 external assets and writes its receipt outside the repository.
 
 The frontend and Bun API stay in this application. The native Tauri shell belongs to
-[Aphrody's canonical Rust owner](../../../../crates/ui/m3-showcase/Cargo.toml);
+[Aphrody's canonical Rust owner](../../../crates/ui/m3-showcase/Cargo.toml);
 it inherits the workspace's pinned Tauri dependencies. Its desktop wrapper starts
 the compiled Bun sidecar on loopback, serves UI and API from the same origin,
 and owns the child's lifecycle. A static frontend directory alone does not host

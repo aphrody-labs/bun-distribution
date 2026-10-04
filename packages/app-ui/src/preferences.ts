@@ -107,11 +107,17 @@ export const DEFAULT_PREFERENCES: Preferences = {
 export function normalizePreferences(value: unknown): Preferences {
   const stored = (value && typeof value === "object" ? value : {}) as Partial<Preferences>;
   const bool = (item: unknown, fallback: boolean) => (typeof item === "boolean" ? item : fallback);
-  const str = (item: unknown, fallback: string) => (typeof item === "string" && item.trim() ? item.trim() : fallback);
-  const num = (item: unknown, fallback: number) => (typeof item === "number" && !isNaN(item) ? item : fallback);
-  const arr = (item: unknown, fallback: string[]) => (Array.isArray(item) ? item.filter((x): x is string => typeof x === "string") : fallback);
+  const str = (item: unknown, fallback: string) =>
+    typeof item === "string" && item.trim() ? item.trim() : fallback;
+  const num = (item: unknown, fallback: number) =>
+    typeof item === "number" && !isNaN(item) ? item : fallback;
+  const arr = (item: unknown, fallback: string[]) =>
+    Array.isArray(item) ? item.filter((x): x is string => typeof x === "string") : fallback;
   const sources = (stored.sources ?? {}) as Partial<SearchSources>;
-  const modelsDir = typeof stored.modelsDir === "string" && stored.modelsDir.trim() ? stored.modelsDir.trim() : null;
+  const modelsDir =
+    typeof stored.modelsDir === "string" && stored.modelsDir.trim()
+      ? stored.modelsDir.trim()
+      : null;
 
   return {
     version: 1,
@@ -128,12 +134,23 @@ export function normalizePreferences(value: unknown): Preferences {
     startWithSystem: bool(stored.startWithSystem, DEFAULT_PREFERENCES.startWithSystem),
     keepInTray: bool(stored.keepInTray, DEFAULT_PREFERENCES.keepInTray),
     openWithDefault: bool(stored.openWithDefault, DEFAULT_PREFERENCES.openWithDefault),
-    theme: (stored.theme === "light" || stored.theme === "dark" || stored.theme === "system" ? stored.theme : DEFAULT_PREFERENCES.theme),
+    theme:
+      stored.theme === "light" || stored.theme === "dark" || stored.theme === "system"
+        ? stored.theme
+        : DEFAULT_PREFERENCES.theme,
     reducedMotion: bool(stored.reducedMotion, DEFAULT_PREFERENCES.reducedMotion),
     fontSize: num(stored.fontSize, DEFAULT_PREFERENCES.fontSize),
     defaultModel: str(stored.defaultModel, DEFAULT_PREFERENCES.defaultModel),
-    defaultEffort: (stored.defaultEffort === "none" || stored.defaultEffort === "low" || stored.defaultEffort === "high" ? stored.defaultEffort : "medium"),
-    accessMode: (stored.accessMode === "read-only" || stored.accessMode === "workspace-write" ? stored.accessMode : "dangerously-bypass"),
+    defaultEffort:
+      stored.defaultEffort === "none" ||
+      stored.defaultEffort === "low" ||
+      stored.defaultEffort === "high"
+        ? stored.defaultEffort
+        : "medium",
+    accessMode:
+      stored.accessMode === "read-only" || stored.accessMode === "workspace-write"
+        ? stored.accessMode
+        : "dangerously-bypass",
     trustedFolders: arr(stored.trustedFolders, DEFAULT_PREFERENCES.trustedFolders),
     agentBinary: str(stored.agentBinary, DEFAULT_PREFERENCES.agentBinary),
   };
@@ -172,7 +189,10 @@ async function migrateLegacy(rid: number, legacy: Storage | undefined) {
   // A value already in the store wins: the migration runs once, then the legacy key is gone.
   const copied = await Promise.all(
     pending.map(async ({ storeKey, raw }) => {
-      const [, exists] = await invoke<[unknown, boolean]>("plugin:store|get", { rid, key: storeKey });
+      const [, exists] = await invoke<[unknown, boolean]>("plugin:store|get", {
+        rid,
+        key: storeKey,
+      });
       if (exists) return false;
       const value = storeKey === STORE_PREFERENCES ? parsePreferences(raw) : raw;
       await invoke("plugin:store|set", { rid, key: storeKey, value });
@@ -225,8 +245,11 @@ export async function hydratePreferences(): Promise<Preferences> {
 
 /** Persist `prefs` and update the cache. */
 export async function savePreferences(prefs: Preferences): Promise<void> {
-  cache = prefs;
   await writeSetting(STORE_PREFERENCES, prefs);
+  cache = prefs;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("aphrody:preferences-changed", { detail: prefs }));
+  }
 }
 
 /** Update a subset of preferences, write to persistent store and update the cache. */

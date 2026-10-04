@@ -2,3 +2,6 @@
 # by `m3 dev` (Bun.serve).
 [serve.static]
 plugins = ["@aphrody/m3/plugin", "./undeclared-deps.ts"]
+
+[test]
+preload = ["./test-preload.ts"]

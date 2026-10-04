@@ -2,9 +2,9 @@
 // Brand emblem of Aphrody (crates/ui/identity/assets/brand), inlined as `data:` URLs by the
 // `?url` loader of the @aphrody/m3 plugin (`m3 dev`, `m3 build`). Import this entry only from
 // an app bundled by @aphrody/m3; the pure pet logic lives in `@aphrody/identity/pet`.
-import icon64 from "../../../../../crates/ui/identity/assets/brand/icon-64.png?url";
-import icon128 from "../../../../../crates/ui/identity/assets/brand/icon-128.png?url";
-import icon192 from "../../../../../crates/ui/identity/assets/brand/icon-192.png?url";
+import icon64 from "../../../../crates/ui/identity/assets/brand/icon-64.png?url";
+import icon128 from "../../../../crates/ui/identity/assets/brand/icon-128.png?url";
+import icon192 from "../../../../crates/ui/identity/assets/brand/icon-192.png?url";
 
 /** The emblem at 64, 128 and 192 px, for `srcSet` on high-DPI screens. */
 export const BRAND_ICONS = { 64: icon64, 128: icon128, 192: icon192 } as const;

@@ -4,7 +4,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import clsx from "clsx";
+import { listen } from "@tauri-apps/api/event";
+import { clsx } from "clsx";
 import {
   Badge,
   Button,
@@ -14,13 +15,7 @@ import {
   toast,
   usePopover,
 } from "@aphrody/m3-primitives";
-import {
-  Markdown,
-  ToolCall,
-  type ToolCallPair,
-  A2APeerInspector,
-  A2ATaskTimeline,
-} from "@aphrody/m3-ai";
+import { Markdown, ToolCall, type ToolCallPair } from "@aphrody/m3-ai";
 
 export interface ChatModelOption {
   id: string;
@@ -35,17 +30,15 @@ export interface ChatModelOption {
 import {
   aphrodyReply,
   aphrodyRpc,
+  ensureAphrodyInitialized,
+  isTauri,
   aphrodySessionStream,
   copyToNativeClipboard,
   pickDirectory,
   pickFile,
   tauriInvoke,
   runRagSearch,
-  runOcr,
-  runTranscribe,
   askShenron,
-  fetchInstalledModels,
-  fetchModelCatalog,
 } from "./tauri-bridge";
 import { buildTurnInputItems } from "./routes/explorer/ai-helpers";
 import { useChatStore } from "./stores/chat-store";
@@ -54,7 +47,11 @@ import { TITLE_GRADIENT_STOPS } from "./brand-tokens";
 export type PromptBarShape = "empty" | "content" | "docked";
 
 /** Gemini prompt bar corner state: 40px empty, 32px with content, docked 24 24 0 0 once a conversation runs or the feed scrolls. */
-export function promptBarShape(state: { hasTurns: boolean; scrolled: boolean; hasContent: boolean }): PromptBarShape {
+export function promptBarShape(state: {
+  hasTurns: boolean;
+  scrolled: boolean;
+  hasContent: boolean;
+}): PromptBarShape {
   if (state.hasTurns || state.scrolled) return "docked";
   return state.hasContent ? "content" : "empty";
 }
@@ -63,7 +60,14 @@ export function promptBarShape(state: { hasTurns: boolean; scrolled: boolean; ha
 export function SparkleMark({ size = 24 }: { size?: number }) {
   const id = "app-sparkle-gradient";
   return (
-    <svg className="app-sparkle" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <svg
+      className="app-sparkle"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
       <defs>
         <linearGradient id={id} x1="0" y1="1" x2="1" y2="0">
           {TITLE_GRADIENT_STOPS.map((stop, i) => (
@@ -90,6 +94,7 @@ export type ApprovalItem = {
   network?: string;
   choices?: string[];
   status: "pending" | "approved" | "denied" | "session";
+  submitting?: boolean;
   backendGeneration?: number;
   threadId?: string;
   turnId?: string;
@@ -109,7 +114,14 @@ export type FileChangeItem = {
 
 export type Turn =
   | { id: string; role: "user"; content: string; attachments?: string[]; turnId?: string }
-  | { id: string; role: "assistant"; content: string; streaming?: boolean; turnId?: string; itemId?: string }
+  | {
+      id: string;
+      role: "assistant";
+      content: string;
+      streaming?: boolean;
+      turnId?: string;
+      itemId?: string;
+    }
   | { id: string; role: "tool"; pair: ToolCallPair; turnId?: string; itemId?: string }
   | { id: string; role: "fileChange"; fileChange: FileChangeItem }
   | { id: string; role: "approval"; approval: ApprovalItem };
@@ -123,11 +135,17 @@ export interface ThreadSummary {
   cwd?: string;
 }
 
-export function buildThreadRenamePayload(threadId: string, name: string): { threadId: string; name: string } {
+export function buildThreadRenamePayload(
+  threadId: string,
+  name: string,
+): { threadId: string; name: string } {
   return { threadId, name };
 }
 
-export function buildThreadForkPayload(threadId: string, turnId?: string): { threadId: string; turnId?: string } {
+export function buildThreadForkPayload(
+  threadId: string,
+  turnId?: string,
+): { threadId: string; turnId?: string } {
   return turnId ? { threadId, turnId } : { threadId };
 }
 
@@ -237,7 +255,9 @@ export function ThreadDrawer({
         <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
           {filteredThreads.length === 0 ? (
             <div className="py-12 text-center text-body-medium text-on-surface-variant">
-              {threads.length === 0 ? "Aucune session : envoyez un message pour en créer une" : "Aucune session ne correspond : modifiez la recherche"}
+              {threads.length === 0
+                ? "Aucune session : envoyez un message pour en créer une"
+                : "Aucune session ne correspond : modifiez la recherche"}
             </div>
           ) : (
             filteredThreads.map((t) => {
@@ -245,7 +265,7 @@ export function ThreadDrawer({
               const isEditing = editingThreadId === t.id;
               const displayName = t.name || t.preview || "Session sans titre";
               const formattedDate = new Date(
-                t.createdAt > 1e11 ? t.createdAt : t.createdAt * 1000
+                t.createdAt > 1e11 ? t.createdAt : t.createdAt * 1000,
               ).toLocaleDateString([], {
                 month: "short",
                 day: "numeric",
@@ -275,18 +295,10 @@ export function ThreadDrawer({
                       placeholder="Nom de la session..."
                     />
                     <div className="flex justify-end gap-2 pt-1">
-                      <Button
-                        variant="text"
-                        size="sm"
-                        onClick={() => setEditingThreadId(null)}
-                      >
+                      <Button variant="text" size="sm" onClick={() => setEditingThreadId(null)}>
                         Annuler
                       </Button>
-                      <Button
-                        variant="filled"
-                        size="sm"
-                        onClick={() => handleSaveRename(t.id)}
-                      >
+                      <Button variant="filled" size="sm" onClick={() => handleSaveRename(t.id)}>
                         Enregistrer
                       </Button>
                     </div>
@@ -311,7 +323,10 @@ export function ThreadDrawer({
                     }}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-body-medium truncate flex-1" title={displayName}>
+                      <span
+                        className="font-semibold text-body-medium truncate flex-1"
+                        title={displayName}
+                      >
                         {displayName}
                       </span>
                       {isActive && (
@@ -445,15 +460,15 @@ export function FileChangeCard({
     kind === "Created" || kind === "created"
       ? "Créé"
       : kind === "Deleted" || kind === "deleted"
-      ? "Supprimé"
-      : "Modifié";
+        ? "Supprimé"
+        : "Modifié";
 
   const kindTone =
     kindLabel === "Créé"
       ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
       : kindLabel === "Supprimé"
-      ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
-      : "bg-blue-500/15 text-blue-400 border-blue-500/30";
+        ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
+        : "bg-blue-500/15 text-blue-400 border-blue-500/30";
 
   return (
     <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-high/60 p-3.5 my-2 shadow-xs transition-colors">
@@ -462,14 +477,12 @@ export function FileChangeCard({
           <span
             className={clsx(
               "px-2 py-0.5 rounded-md text-label-small font-semibold border",
-              kindTone
+              kindTone,
             )}
           >
             {kindLabel}
           </span>
-          <span className="font-mono text-body-medium text-on-surface truncate">
-            {path}
-          </span>
+          <span className="font-mono text-body-medium text-on-surface truncate">{path}</span>
         </div>
 
         {diff && (
@@ -511,32 +524,26 @@ export function ApprovalCard({
     >
       <div className="flex items-center gap-2 mb-2">
         <Icon name="gavel" size={20} className="text-amber-500" />
-        <h3 className="m-0 text-title-small font-semibold text-on-surface">
-          {approval.title}
-        </h3>
+        <h3 className="m-0 text-title-small font-semibold text-on-surface">{approval.title}</h3>
         <span className="flex-1" />
         {!isPending && (
           <Badge
             variant={
-              approval.status === "approved" || approval.status === "session"
-                ? "accent"
-                : "error"
+              approval.status === "approved" || approval.status === "session" ? "accent" : "error"
             }
             size="sm"
           >
             {approval.status === "approved"
               ? "Autorisé"
               : approval.status === "session"
-              ? "Autorisé pour ce projet"
-              : "Refusé"}
+                ? "Autorisé pour ce projet"
+                : "Refusé"}
           </Badge>
         )}
       </div>
 
       {approval.reason && (
-        <p className="m-0 mb-2 text-body-medium text-on-surface-variant">
-          {approval.reason}
-        </p>
+        <p className="m-0 mb-2 text-body-medium text-on-surface-variant">{approval.reason}</p>
       )}
 
       {approval.network && (
@@ -564,6 +571,7 @@ export function ApprovalCard({
           <Button
             variant="filled"
             size="sm"
+            disabled={approval.submitting}
             onClick={() => onDecide("decline")}
             className="bg-error text-on-error hover:bg-error/90 font-medium"
             autoFocus
@@ -573,6 +581,7 @@ export function ApprovalCard({
           <Button
             variant="tonal"
             size="sm"
+            disabled={approval.submitting}
             onClick={() => onDecide("accept")}
           >
             Autoriser une fois
@@ -580,6 +589,7 @@ export function ApprovalCard({
           <Button
             variant="text"
             size="sm"
+            disabled={approval.submitting}
             onClick={() => onDecide("acceptForSession")}
           >
             Autoriser pour ce projet
@@ -593,6 +603,8 @@ export function ApprovalCard({
 export interface CodexChatProps {
   turns: Turn[];
   busy: boolean;
+  ready?: boolean;
+  settingsLocked?: boolean;
   draft: string;
   onDraftChange: (text: string) => void;
   attachedFiles?: string[];
@@ -612,7 +624,10 @@ export interface CodexChatProps {
   cwd: string;
   onCwdChange: (cwd: string) => void;
   sessionTitle?: string;
-  onApprovalDecision?: (approval: ApprovalItem, decision: "accept" | "acceptForSession" | "decline" | "cancel") => void;
+  onApprovalDecision?: (
+    approval: ApprovalItem,
+    decision: "accept" | "acceptForSession" | "decline" | "cancel",
+  ) => void;
   threads?: ThreadSummary[];
   onSelectThread?: (id: string) => void;
   activeThreadId?: string;
@@ -624,6 +639,8 @@ export interface CodexChatProps {
 export function CodexChat({
   turns,
   busy,
+  ready = true,
+  settingsLocked = false,
   draft,
   onDraftChange,
   attachedFiles = [],
@@ -661,7 +678,6 @@ export function CodexChat({
   const plusPopover = usePopover();
   const modelPopover = usePopover();
   const accessPopover = usePopover();
-  const [showA2APanel, setShowA2APanel] = useState(false);
 
   // Auto-scroll on turns update
   useEffect(() => {
@@ -683,13 +699,13 @@ export function CodexChat({
     const formatted = turns
       .map((t) => {
         if (t.role === "tool") return `[TOOL] ${t.pair.name}\n${t.pair.resultRaw ?? ""}`;
-        if (t.role === "fileChange") return `[FILE CHANGE] ${t.fileChange.path}\n${t.fileChange.diff}`;
+        if (t.role === "fileChange")
+          return `[FILE CHANGE] ${t.fileChange.path}\n${t.fileChange.diff}`;
         if (t.role === "approval") return `[APPROVAL] ${t.approval.title} (${t.approval.status})`;
         return `[${t.role.toUpperCase()}]\n${t.content}`;
       })
       .join("\n\n");
-    await copyToNativeClipboard(formatted);
-    toast.success("Échange copié");
+    await copyChatText(formatted, "Échange copié");
   };
 
   const handlePickAddFile = async () => {
@@ -706,6 +722,7 @@ export function CodexChat({
 
   const handlePickAddFolder = async () => {
     plusPopover.setOpen(false);
+    if (busy || settingsLocked) return;
     const picked = await pickDirectory("Sélectionner un dossier projet", cwd);
     if (picked) {
       onCwdChange(picked);
@@ -726,16 +743,34 @@ export function CodexChat({
 
   const SLASH_COMMANDS: SlashCommandItem[] = useMemo(
     () => [
-      { command: "/goal", desc: "Objectif persistant autonome", icon: "track_changes", badge: "Agent" },
-      { command: "/plan", desc: "Mode planification interactive", icon: "lightbulb", badge: "Plan" },
-      { command: "/rag", desc: "Recherche connaissances (RAG)", icon: "search_insights", badge: "RAG" },
-      { command: "/shenron", desc: "Questionner le wiki Dragon Ball", icon: "auto_awesome", badge: "Shenron" },
-      { command: "/ocr", desc: "Extraire le texte d'un document", icon: "document_scanner", badge: "Vision" },
-      { command: "/transcribe", desc: "Transcription audio Whisper", icon: "mic", badge: "Whisper" },
+      {
+        command: "/goal",
+        desc: "Définir un objectif pour l’agent",
+        icon: "track_changes",
+        badge: "Agent",
+      },
+      { command: "/plan", desc: "Préparer un plan avec l’agent", icon: "lightbulb", badge: "Plan" },
+      {
+        command: "/rag",
+        desc: "Recherche connaissances (RAG)",
+        icon: "search_insights",
+        badge: "RAG",
+      },
+      {
+        command: "/shenron",
+        desc: "Questionner le wiki Dragon Ball",
+        icon: "auto_awesome",
+        badge: "Shenron",
+      },
       { command: "/model", desc: "Changer de modèle actif", icon: "bolt", badge: "Modèles" },
-      { command: "/clear", desc: "Réinitialiser la conversation", icon: "delete_sweep", badge: "Session" },
+      {
+        command: "/clear",
+        desc: "Réinitialiser la conversation",
+        icon: "delete_sweep",
+        badge: "Session",
+      },
     ],
-    []
+    [],
   );
 
   const showSlashMenu = useMemo(() => {
@@ -769,56 +804,6 @@ export function CodexChat({
   const handleInsertRag = () => {
     plusPopover.setOpen(false);
     onDraftChange(draft ? `${draft}\n/rag ` : "/rag ");
-  };
-
-  const handlePickOcr = async () => {
-    plusPopover.setOpen(false);
-    const picked = await pickFile("Sélectionner une image ou un PDF pour OCR", cwd);
-    if (picked) {
-      toast.info("Extraction du texte (OCR)…");
-      try {
-        const res = await runOcr({ path: picked });
-        const outText = (res && typeof res.output === "string" ? res.output : "").trim();
-        if (outText) {
-          const filename = picked.split(/[/\\]/).pop() || picked;
-          onDraftChange(
-            draft
-              ? `${draft}\n\n[Texte extrait de ${filename}] :\n${outText}`
-              : `[Texte extrait de ${filename}] :\n${outText}`
-          );
-          toast.success("Texte extrait");
-        } else {
-          toast.info("Aucun texte détecté : essayez une image plus nette ou un PDF non scanné");
-        }
-      } catch (e) {
-        toast.error(`Échec de l'OCR : ${e instanceof Error ? e.message : String(e)}`);
-      }
-    }
-  };
-
-  const handlePickTranscribe = async () => {
-    plusPopover.setOpen(false);
-    const picked = await pickFile("Sélectionner un fichier audio ou vidéo", cwd);
-    if (picked) {
-      toast.info("Transcription Whisper…");
-      try {
-        const res = await runTranscribe({ path: picked });
-        const outText = (res && typeof res.output === "string" ? res.output : "").trim();
-        if (outText) {
-          const filename = picked.split(/[/\\]/).pop() || picked;
-          onDraftChange(
-            draft
-              ? `${draft}\n\n[Transcription Whisper de ${filename}] :\n${outText}`
-              : `[Transcription Whisper de ${filename}] :\n${outText}`
-          );
-          toast.success("Transcription ajoutée au message");
-        } else {
-          toast.info("Aucune parole détectée : vérifiez la piste audio du fichier");
-        }
-      } catch (e) {
-        toast.error(`Échec de la transcription : ${e instanceof Error ? e.message : String(e)}`);
-      }
-    }
   };
 
   const handleDictation = () => {
@@ -876,24 +861,6 @@ export function CodexChat({
     }
   };
 
-  // Standard recommended Codex models list
-  const standardModels = [
-    "GPT-6 Astra",
-    "GPT-6 Sol",
-    "GPT-6 Luna",
-    "GPT-5.6 Sol",
-    "GPT-5.6 Terra",
-    "GPT-5.6 Luna",
-    "GPT-5.5",
-  ];
-
-  const allModels = Array.from(
-    new Set([
-      ...modelOptions.map((m) => m.name),
-      ...standardModels,
-    ])
-  );
-
   return (
     <div className="flex-1 h-full min-h-0 flex flex-col bg-surface relative overflow-hidden text-body-large codex-chat-pane">
       {/* Top Header - Titre du fil centré et actions discrètes */}
@@ -929,20 +896,23 @@ export function CodexChat({
               />
             </div>
           ) : (
-            <div
-              className="flex items-center gap-2 cursor-pointer group/title"
-              onClick={() => {
-                setEditTitleDraft(sessionTitle || "");
-                setIsEditingTitle(true);
-              }}
-              title="Cliquer pour renommer"
-            >
+            <div className="flex items-center gap-2 min-w-0">
               <h1 className="m-0 text-title-medium font-semibold text-on-surface truncate">
                 {sessionTitle || "Nouveau chat"}
               </h1>
-              <span className="material-symbol text-on-surface-variant opacity-0 group-hover/title:opacity-100 transition-opacity text-title-small">
-                edit
-              </span>
+              {activeThreadId && onRenameThread && (
+                <CircleButton
+                  icon="edit"
+                  variant="standard"
+                  size="sm"
+                  onClick={() => {
+                    setEditTitleDraft(sessionTitle || "");
+                    setIsEditingTitle(true);
+                  }}
+                  title="Renommer le chat"
+                  aria-label="Renommer le chat"
+                />
+              )}
             </div>
           )}
         </div>
@@ -950,18 +920,11 @@ export function CodexChat({
         {/* Action icons en haut à droite : ... , layout, + */}
         <div className="flex items-center gap-1.5 shrink-0">
           <CircleButton
-            icon="hub"
-            variant={showA2APanel ? "filled" : "standard"}
-            size="md"
-            onClick={() => setShowA2APanel((prev) => !prev)}
-            title="Flotte d'agents pairs (A2A & MCP)"
-            aria-label="Flotte d'agents pairs (A2A & MCP)"
-          />
-          <CircleButton
             icon="add"
             variant="standard"
             size="md"
             onClick={onNewSession}
+            disabled={busy}
             title="Nouveau chat"
             aria-label="Nouveau chat"
           />
@@ -981,39 +944,13 @@ export function CodexChat({
               variant="standard"
               size="md"
               onClick={onClearSession}
-              title="Effacer le chat"
-              aria-label="Effacer le chat"
+              disabled={busy}
+              title="Fermer ce chat"
+              aria-label="Fermer ce chat"
             />
           )}
         </div>
       </div>
-
-      {/* Volet latéral de coordination de la flotte d'agents (A2A & AG-UI) */}
-      {showA2APanel && (
-        <div className="border-b border-outline-variant/30 bg-surface-container-low px-6 py-4 transition-all">
-          <div className="flex items-center justify-between pb-3 mb-3 border-b border-outline-variant/20">
-            <div className="flex items-center gap-2">
-              <span className="material-symbol text-primary text-title-medium">hub</span>
-              <h2 className="text-title-small font-semibold text-on-surface">Coordination A2A & Pairs Actifs</h2>
-              <span className="text-label-small text-on-surface-variant font-mono bg-surface-container px-2 py-0.5 rounded-full">
-                .coord
-              </span>
-            </div>
-            <CircleButton
-              icon="close"
-              variant="standard"
-              size="sm"
-              onClick={() => setShowA2APanel(false)}
-              title="Fermer le volet A2A"
-              aria-label="Fermer le volet A2A"
-            />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <A2APeerInspector />
-            <A2ATaskTimeline />
-          </div>
-        </div>
-      )}
 
       {/* Main conversation feed: centred reading column (--app-reading-column, 760px) */}
       <div
@@ -1072,13 +1009,16 @@ export function CodexChat({
                     {turn.attachments && turn.attachments.length > 0 && (
                       <div className="flex flex-wrap gap-2 justify-end mt-2 max-w-[75%]">
                         {turn.attachments.map((filePath, idx) => {
-                          const filename = filePath.replace(/\\/g, "/").split("/").pop() || filePath;
+                          const filename =
+                            filePath.replace(/\\/g, "/").split("/").pop() || filePath;
                           return (
                             <div
                               key={idx}
                               className="app-chip flex items-center gap-1.5 px-3 py-1 bg-surface-container text-label-large text-on-surface"
                             >
-                              <span className="material-symbol text-title-small text-primary">description</span>
+                              <span className="material-symbol text-title-small text-primary">
+                                description
+                              </span>
                               <span className="truncate max-w-xs">{filename}</span>
                             </div>
                           );
@@ -1093,43 +1033,38 @@ export function CodexChat({
               return (
                 <div key={turn.id} className="group flex flex-col py-2 w-full text-left">
                   <div className="flex w-full items-start gap-3">
-                    <span className="mt-1"><SparkleMark size={24} /></span>
+                    <span className="mt-1">
+                      <SparkleMark size={24} />
+                    </span>
                     <div
                       className="min-w-0 flex-1 bg-transparent text-body-large text-on-surface"
                       aria-busy={turn.streaming || undefined}
                     >
-                      <Markdown content={turn.content} size="large" className="break-words font-sans" />
+                      <Markdown
+                        content={turn.content}
+                        size="large"
+                        className="break-words font-sans"
+                      />
                     </div>
                   </div>
-                  {/* Boutons d'action au survol (copier, dislike, fork/branch) */}
+                  {/* Copier ou bifurquer un fil réellement disponible. */}
                   <div className="mt-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                     <CircleButton
                       icon="content_copy"
                       variant="standard"
                       size="sm"
-                      onClick={() => {
-                        void copyToNativeClipboard(turn.content);
-                        toast.success("Message copié");
-                      }}
+                      onClick={() => void copyChatText(turn.content, "Message copié")}
                       title="Copier le message"
                       aria-label="Copier le message"
                     />
-                    <CircleButton
-                      icon="thumb_down"
-                      variant="standard"
-                      size="sm"
-                      onClick={() => toast.info("Avis négatif enregistré")}
-                      title="Je n'aime pas"
-                      aria-label="Je n'aime pas"
-                    />
-                    {turn.turnId && onForkThread && (
+                    {activeThreadId && onForkThread && ready && !busy && (
                       <CircleButton
                         icon="call_split"
                         variant="standard"
                         size="sm"
-                        onClick={() => void onForkThread(activeThreadId || "", turn.turnId)}
-                        title="Bifurquer à partir de ce tour"
-                        aria-label="Bifurquer à partir de ce tour"
+                        onClick={() => void onForkThread(activeThreadId)}
+                        title="Bifurquer ce chat"
+                        aria-label="Bifurquer ce chat"
                       />
                     )}
                   </div>
@@ -1159,13 +1094,17 @@ export function CodexChat({
                       "flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large transition-colors cursor-pointer text-left",
                       idx === selectedSlashIndex
                         ? "bg-secondary-container text-on-secondary-container font-semibold"
-                        : "text-on-surface hover:bg-surface-container-highest"
+                        : "text-on-surface hover:bg-surface-container-highest",
                     )}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="material-symbol text-title-small text-primary">{cmd.icon}</span>
+                      <span className="material-symbol text-title-small text-primary">
+                        {cmd.icon}
+                      </span>
                       <span className="font-mono text-label-large font-bold">{cmd.command}</span>
-                      <span className="text-body-large text-on-surface-variant truncate max-w-[200px]">{cmd.desc}</span>
+                      <span className="text-body-large text-on-surface-variant truncate max-w-[200px]">
+                        {cmd.desc}
+                      </span>
                     </div>
                     <span className="text-label-small text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
                       {cmd.badge}
@@ -1190,7 +1129,10 @@ export function CodexChat({
                   }
                   if (e.key === "ArrowUp") {
                     e.preventDefault();
-                    setSelectedSlashIndex((prev) => (prev - 1 + filteredSlashCommands.length) % filteredSlashCommands.length);
+                    setSelectedSlashIndex(
+                      (prev) =>
+                        (prev - 1 + filteredSlashCommands.length) % filteredSlashCommands.length,
+                    );
                     return;
                   }
                   if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
@@ -1207,7 +1149,7 @@ export function CodexChat({
                 }
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  if (!busy && (draft.trim() || (attachedFiles && attachedFiles.length > 0))) onSend();
+                  if (ready && !busy && (draft.trim() || attachedFiles.length > 0)) onSend();
                 } else if (e.key === "Escape" && busy) {
                   e.preventDefault();
                   onStop();
@@ -1228,7 +1170,9 @@ export function CodexChat({
                       key={idx}
                       className="app-chip flex items-center gap-2 px-3 py-1 bg-surface-container text-label-large text-on-surface"
                     >
-                      <span className="material-symbol text-title-small text-primary">attach_file</span>
+                      <span className="material-symbol text-title-small text-primary">
+                        attach_file
+                      </span>
                       <span className="truncate max-w-xs">{filename}</span>
                       <button
                         type="button"
@@ -1276,15 +1220,20 @@ export function CodexChat({
                         onClick={handlePickAddFile}
                         className="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
                       >
-                        <span className="material-symbol text-title-small text-primary">attach_file</span>
+                        <span className="material-symbol text-title-small text-primary">
+                          attach_file
+                        </span>
                         <span>Fichiers et dossiers</span>
                       </button>
                       <button
                         type="button"
+                        disabled={busy || settingsLocked}
                         onClick={handlePickAddFolder}
                         className="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
                       >
-                        <span className="material-symbol text-title-small text-primary">folder_open</span>
+                        <span className="material-symbol text-title-small text-primary">
+                          folder_open
+                        </span>
                         <span>Dossier de travail</span>
                       </button>
                       <button
@@ -1293,32 +1242,14 @@ export function CodexChat({
                         className="flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="material-symbol text-title-small text-primary">search_insights</span>
+                          <span className="material-symbol text-title-small text-primary">
+                            search_insights
+                          </span>
                           <span>Recherche connaissances</span>
                         </div>
-                        <span className="text-label-small text-on-surface-variant font-mono">/rag</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handlePickOcr}
-                        className="flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="material-symbol text-title-small text-primary">document_scanner</span>
-                          <span>Extraire le texte (OCR)</span>
-                        </div>
-                        <span className="text-label-small text-on-surface-variant font-mono">Vision</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handlePickTranscribe}
-                        className="flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="material-symbol text-title-small text-primary">mic</span>
-                          <span>Transcrire audio</span>
-                        </div>
-                        <span className="text-label-small text-on-surface-variant font-mono">Whisper</span>
+                        <span className="text-label-small text-on-surface-variant font-mono">
+                          /rag
+                        </span>
                       </button>
                       <button
                         type="button"
@@ -1326,10 +1257,14 @@ export function CodexChat({
                         className="flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="material-symbol text-title-small text-primary">track_changes</span>
+                          <span className="material-symbol text-title-small text-primary">
+                            track_changes
+                          </span>
                           <span>Objectif autonome</span>
                         </div>
-                        <span className="text-label-small text-on-surface-variant font-mono">/goal</span>
+                        <span className="text-label-small text-on-surface-variant font-mono">
+                          /goal
+                        </span>
                       </button>
                       <button
                         type="button"
@@ -1337,13 +1272,16 @@ export function CodexChat({
                         className="flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer text-left"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="material-symbol text-title-small text-primary">lightbulb</span>
+                          <span className="material-symbol text-title-small text-primary">
+                            lightbulb
+                          </span>
                           <span>Mode plan</span>
                         </div>
-                        <span className="text-label-small text-on-surface-variant font-mono">/plan</span>
+                        <span className="text-label-small text-on-surface-variant font-mono">
+                          /plan
+                        </span>
                       </button>
                     </div>
-
                   </Popover.Content>
                 </Popover.Root>
 
@@ -1355,13 +1293,15 @@ export function CodexChat({
                       className="app-chip flex items-center gap-1.5 px-3 py-1.5 text-label-large font-medium text-on-tertiary-container bg-tertiary-container hover:bg-tertiary-container/80 transition-colors cursor-pointer"
                       title={`Niveau d'accès : ${accessMode === "full" ? "accès complet" : accessMode === "ask" ? "demander avant modifications" : "lecture seule"}`}
                     >
-                      <span className="material-symbol text-title-small" aria-hidden="true">warning</span>
+                      <span className="material-symbol text-title-small" aria-hidden="true">
+                        warning
+                      </span>
                       <span className="app-chip-label">
                         {accessMode === "full"
                           ? "Accès complet"
                           : accessMode === "ask"
-                          ? "Demander avant modifications"
-                          : "Lecture seule"}
+                            ? "Demander avant modifications"
+                            : "Lecture seule"}
                       </span>
                     </button>
                   </Popover.Trigger>
@@ -1376,45 +1316,60 @@ export function CodexChat({
                     <div className="space-y-0.5">
                       <button
                         type="button"
+                        disabled={busy || settingsLocked}
                         onClick={() => {
                           onAccessModeChange?.("full");
                           accessPopover.setOpen(false);
                         }}
                         className={clsx(
                           "flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large cursor-pointer text-left",
-                          accessMode === "full" ? "bg-amber-500/20 text-amber-400 font-bold" : "text-on-surface hover:bg-surface-container-highest"
+                          accessMode === "full"
+                            ? "bg-amber-500/20 text-amber-400 font-bold"
+                            : "text-on-surface hover:bg-surface-container-highest",
                         )}
                       >
                         <span>Accès complet (Bypass)</span>
-                        {accessMode === "full" && <span className="material-symbol text-title-small">check</span>}
+                        {accessMode === "full" && (
+                          <span className="material-symbol text-title-small">check</span>
+                        )}
                       </button>
                       <button
                         type="button"
+                        disabled={busy || settingsLocked}
                         onClick={() => {
                           onAccessModeChange?.("ask");
                           accessPopover.setOpen(false);
                         }}
                         className={clsx(
                           "flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large cursor-pointer text-left",
-                          accessMode === "ask" ? "bg-secondary-container text-primary font-bold" : "text-on-surface hover:bg-surface-container-highest"
+                          accessMode === "ask"
+                            ? "bg-secondary-container text-primary font-bold"
+                            : "text-on-surface hover:bg-surface-container-highest",
                         )}
                       >
                         <span>Demander avant modif</span>
-                        {accessMode === "ask" && <span className="material-symbol text-title-small">check</span>}
+                        {accessMode === "ask" && (
+                          <span className="material-symbol text-title-small">check</span>
+                        )}
                       </button>
                       <button
                         type="button"
+                        disabled={busy || settingsLocked}
                         onClick={() => {
                           onAccessModeChange?.("readonly");
                           accessPopover.setOpen(false);
                         }}
                         className={clsx(
                           "flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large cursor-pointer text-left",
-                          accessMode === "readonly" ? "bg-secondary-container text-primary font-bold" : "text-on-surface hover:bg-surface-container-highest"
+                          accessMode === "readonly"
+                            ? "bg-secondary-container text-primary font-bold"
+                            : "text-on-surface hover:bg-surface-container-highest",
                         )}
                       >
                         <span>Lecture seule</span>
-                        {accessMode === "readonly" && <span className="material-symbol text-title-small">check</span>}
+                        {accessMode === "readonly" && (
+                          <span className="material-symbol text-title-small">check</span>
+                        )}
                       </button>
                     </div>
                   </Popover.Content>
@@ -1441,12 +1396,32 @@ export function CodexChat({
                     <button
                       type="button"
                       className="app-chip flex items-center gap-2 px-3.5 py-2 bg-surface-container hover:bg-surface-container-highest text-label-large font-medium text-on-surface transition-colors cursor-pointer"
-                      title={`Modèle : ${model || "GPT-6 Luna"}, effort : ${effort}. Changer de modèle ou d'effort`}
+                      title={
+                        settingsLocked
+                          ? "Modèle de ce chat. Créez un nouveau chat pour changer de modèle."
+                          : `Modèle : ${model || "Aucun modèle configuré"}`
+                      }
                     >
-                      <span className="material-symbol text-primary text-title-small" aria-hidden="true">bolt</span>
-                      <span className="app-chip-label font-semibold">{model || "GPT-6 Luna"}</span>
-                      <span className="app-chip-label text-on-surface-variant font-normal">{effort}</span>
-                      <span className="material-symbol text-on-surface-variant text-title-small" aria-hidden="true">expand_more</span>
+                      <span
+                        className="material-symbol text-primary text-title-small"
+                        aria-hidden="true"
+                      >
+                        bolt
+                      </span>
+                      <span className="app-chip-label font-semibold">
+                        {model || "Choisir un modèle"}
+                      </span>
+                      {onEffortChange && (
+                        <span className="app-chip-label text-on-surface-variant font-normal">
+                          {effort}
+                        </span>
+                      )}
+                      <span
+                        className="material-symbol text-on-surface-variant text-title-small"
+                        aria-hidden="true"
+                      >
+                        expand_more
+                      </span>
                     </button>
                   </Popover.Trigger>
                   <Popover.Content
@@ -1458,126 +1433,75 @@ export function CodexChat({
                       Sélectionner un modèle
                     </div>
                     <div className="px-3 pb-2 text-label-small font-semibold text-primary">
-                      Par défaut · Ensemble de modèles recommandé
+                      Modèles configurés par votre agent
                     </div>
 
                     <div className="max-h-72 overflow-y-auto space-y-1">
-                      {/* Modèles locaux installés */}
-                      {modelOptions.filter((m) => m.badge === "Local").length > 0 && (
-                        <div className="pt-1">
-                          <div className="px-3 py-1 text-label-small font-semibold text-primary uppercase tracking-wider flex items-center gap-1.5">
-                            <span className="material-symbol text-title-small">download_done</span>
-                            <span>Modèles locaux installés</span>
-                          </div>
-                          {modelOptions
-                            .filter((m) => m.badge === "Local")
-                            .map((opt) => {
-                              const isSelected = (model || "GPT-6 Luna") === opt.id || (model || "GPT-6 Luna") === opt.name;
-                              return (
-                                <button
-                                  key={opt.id}
-                                  type="button"
-                                  onClick={() => {
-                                    onModelChange(opt.id);
-                                    modelPopover.setOpen(false);
-                                  }}
-                                  className={clsx(
-                                    "flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large cursor-pointer text-left transition-colors",
-                                    isSelected
-                                      ? "bg-secondary-container/70 text-on-secondary-container font-semibold"
-                                      : "text-on-surface hover:bg-surface-container-highest"
-                                  )}
-                                >
-                                  <div className="flex flex-col min-w-0 pr-2">
-                                    <span className="truncate">{opt.name}</span>
-                                    <span className="text-label-small text-on-surface-variant truncate">{opt.description}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="px-1.5 py-0.5 rounded text-label-small bg-primary/10 text-primary font-medium">Local</span>
-                                    {isSelected && (
-                                      <span className="material-symbol text-title-small text-primary">check</span>
-                                    )}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                        </div>
-                      )}
-
-                      {/* Catalogue recommandé */}
-                      <div className="pt-1 border-t border-outline-variant/15">
-                        <div className="px-3 py-1 text-label-small font-semibold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
-                          <span className="material-symbol text-title-small">smart_toy</span>
-                          <span>Recommandés & cloud</span>
-                        </div>
-                        {allModels
-                          .filter((mName) => !modelOptions.some((opt) => opt.badge === "Local" && (opt.id === mName || opt.name === mName)))
-                          .map((mName) => {
-                            const isSelected = (model || "GPT-6 Luna") === mName;
-                            const matchedOpt = modelOptions.find((o) => o.name === mName || o.id === mName);
-                            return (
-                              <button
-                                key={mName}
-                                type="button"
-                                onClick={() => {
-                                  onModelChange(matchedOpt?.id || mName);
-                                  modelPopover.setOpen(false);
-                                }}
-                                className={clsx(
-                                  "flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large cursor-pointer text-left transition-colors",
-                                  isSelected
-                                    ? "bg-secondary-container/70 text-on-secondary-container font-semibold"
-                                    : "text-on-surface hover:bg-surface-container-highest"
-                                )}
-                              >
-                                <div className="flex flex-col min-w-0 pr-2">
-                                  <span className="truncate">{mName}</span>
-                                  {matchedOpt?.description && (
-                                    <span className="text-label-small text-on-surface-variant truncate">{matchedOpt.description}</span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  {matchedOpt?.badge && (
-                                    <span className="px-1.5 py-0.5 rounded text-label-small bg-surface-container-highest text-on-surface-variant font-medium">
-                                      {matchedOpt.badge}
-                                    </span>
-                                  )}
-                                  {isSelected && (
-                                    <span className="material-symbol text-title-small text-primary">check</span>
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
-                      </div>
-                    </div>
-
-                    {/* Sélecteur de niveau d'effort */}
-                    <div className="mt-2 pt-2 border-t border-outline-variant/20 px-2">
-                      <div className="text-label-small text-on-surface-variant mb-1.5">
-                        Niveau d'effort
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {(["None", "Low", "Medium", "High", "Minimal"] as const).map((lvl) => (
+                      {modelOptions.length === 0 ? (
+                        <p className="px-3 py-2 text-body-medium text-on-surface-variant">
+                          Aucun modèle configuré.
+                        </p>
+                      ) : (
+                        modelOptions.map((option) => (
                           <button
-                            key={lvl}
+                            key={option.id}
                             type="button"
+                            disabled={busy || settingsLocked}
                             onClick={() => {
-                              onEffortChange?.(lvl);
+                              onModelChange(option.id);
                               modelPopover.setOpen(false);
                             }}
                             className={clsx(
-                              "flex-1 py-1 text-label-small font-medium rounded-lg text-center transition-colors cursor-pointer",
-                              effort === lvl
-                                ? "bg-primary text-on-primary font-bold shadow-xs"
-                                : "bg-surface-container text-on-surface-variant hover:bg-surface-container-highest"
+                              "flex w-full items-center justify-between px-3 py-2 rounded-xl text-label-large text-left transition-colors disabled:opacity-50",
+                              model === option.id
+                                ? "bg-secondary-container/70 text-on-secondary-container font-semibold"
+                                : "text-on-surface hover:bg-surface-container-highest",
                             )}
                           >
-                            {lvl}
+                            <span className="min-w-0">
+                              <span className="block truncate">{option.name}</span>
+                              <span className="block text-label-small text-on-surface-variant">
+                                {option.provider}
+                              </span>
+                            </span>
+                            {model === option.id && (
+                              <span className="material-symbol text-title-small text-primary">
+                                check
+                              </span>
+                            )}
                           </button>
-                        ))}
-                      </div>
+                        ))
+                      )}
                     </div>
+
+                    {/* Le sélecteur d’effort exige un contrat fourni par le parent. */}
+                    {onEffortChange && (
+                      <div className="mt-2 pt-2 border-t border-outline-variant/20 px-2">
+                        <div className="text-label-small text-on-surface-variant mb-1.5">
+                          Niveau d'effort
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {(["None", "Low", "Medium", "High", "Minimal"] as const).map((lvl) => (
+                            <button
+                              key={lvl}
+                              type="button"
+                              onClick={() => {
+                                onEffortChange?.(lvl);
+                                modelPopover.setOpen(false);
+                              }}
+                              className={clsx(
+                                "flex-1 py-1 text-label-small font-medium rounded-lg text-center transition-colors cursor-pointer",
+                                effort === lvl
+                                  ? "bg-primary text-on-primary font-bold shadow-xs"
+                                  : "bg-surface-container text-on-surface-variant hover:bg-surface-container-highest",
+                              )}
+                            >
+                              {lvl}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </Popover.Content>
                 </Popover.Root>
 
@@ -1589,10 +1513,12 @@ export function CodexChat({
                     "size-11 rounded-full flex items-center justify-center transition-all cursor-pointer",
                     isListening
                       ? "bg-error text-on-error animate-pulse shadow-md"
-                      : "hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface"
+                      : "hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface",
                   )}
                   title={isListening ? "Arrêter la dictée vocale (en cours...)" : "Dictée vocale"}
-                  aria-label={isListening ? "Arrêter la dictée vocale (en cours...)" : "Dictée vocale"}
+                  aria-label={
+                    isListening ? "Arrêter la dictée vocale (en cours...)" : "Dictée vocale"
+                  }
                 >
                   <span className="material-symbol text-title-medium font-bold">mic</span>
                 </button>
@@ -1601,14 +1527,14 @@ export function CodexChat({
                 <button
                   type="button"
                   onClick={busy ? onStop : onSend}
-                  disabled={!busy && !draft.trim()}
+                  disabled={!busy && (!ready || (!draft.trim() && attachedFiles.length === 0))}
                   className={clsx(
                     "size-11 rounded-full flex items-center justify-center shadow-md transition-all cursor-pointer",
                     busy
                       ? "bg-error text-on-error hover:bg-error/90 animate-pulse"
                       : draft.trim()
-                      ? "bg-primary text-on-primary hover:bg-primary/92 active:scale-95"
-                      : "bg-surface-container-highest text-on-surface-variant/40 cursor-not-allowed"
+                        ? "bg-primary text-on-primary hover:bg-primary/92 active:scale-95"
+                        : "bg-surface-container-highest text-on-surface-variant/40 cursor-not-allowed",
                   )}
                   title={busy ? "Arrêter la génération" : "Envoyer"}
                   aria-label={busy ? "Arrêter la génération" : "Envoyer"}
@@ -1616,7 +1542,9 @@ export function CodexChat({
                   {busy ? (
                     <span className="material-symbol text-title-medium font-bold">stop</span>
                   ) : (
-                    <span className="material-symbol text-title-medium font-bold">arrow_upward</span>
+                    <span className="material-symbol text-title-medium font-bold">
+                      arrow_upward
+                    </span>
                   )}
                 </button>
               </div>
@@ -1628,33 +1556,42 @@ export function CodexChat({
   );
 }
 
-let handshakeDone = false;
-
-async function chatRpc(method: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+async function chatRpc(
+  method: string,
+  params: Record<string, unknown> = {},
+): Promise<Record<string, unknown>> {
   return aphrodyRpc(method, params);
 }
 
-async function ensureHandshake(): Promise<void> {
-  if (handshakeDone) return;
-  try {
-    await chatRpc("initialize", {
-      clientInfo: { name: "aphrody-desktop", version: "1.0.0" },
-      capabilities: { experimentalApi: false, aphrody: true },
-    });
-    await chatRpc("initialized", {});
-    handshakeDone = true;
-  } catch (e) {
-    console.warn("Handshake notice:", e);
-  }
+function chatErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return /Server returned HTTP [0-9]+|HTTP [0-9]+|Failed to fetch|fetch failed|NetworkError/i.test(
+    message,
+  )
+    ? "Connexion au service indisponible."
+    : message;
+}
+
+async function copyChatText(text: string, success: string): Promise<void> {
+  if (await copyToNativeClipboard(text)) toast.success(success);
+  else toast.error("Copie impossible : le presse-papiers est indisponible.");
 }
 
 export function CodexChatRoute() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
+  const [loadingThread, setLoadingThread] = useState(false);
+  const threadLoadEpoch = useRef(0);
   const [draft, setDraft] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<string[]>([]);
   const [turnId, setTurnId] = useState<string>();
   const [modelOptions, setModelOptions] = useState<ChatModelOption[]>([]);
+  const [connectionError, setConnectionError] = useState<string>();
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
+  const [ready, setReady] = useState(false);
+  const stopRequested = useRef(false);
+  const approvalReplies = useRef(new Set<string>());
+  const confirmedApprovalReplies = useRef(new Set<string>());
 
   // Connect cleanly with useChatStore (shared with SpacesSidebar)
   const {
@@ -1670,16 +1607,12 @@ export function CodexChatRoute() {
     setActiveThreadId,
     setSessionTitle,
     setModel,
-    setEffort,
     setAccessMode,
     setCwd,
     clearNewSessionRequest,
   } = useChatStore();
 
   const threadIdRef = useRef<string | null>(activeThreadId);
-  useEffect(() => {
-    threadIdRef.current = activeThreadId;
-  }, [activeThreadId]);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -1719,31 +1652,33 @@ export function CodexChatRoute() {
   }, [location, navigate, setCwd]);
 
   const loadThreads = async () => {
-    try {
-      const res = await chatRpc("thread/list", { limit: 20 });
-      const rawList = Array.isArray(res.threads)
-        ? res.threads
-        : Array.isArray(res.data)
+    const res = await chatRpc("thread/list", { limit: 20 });
+    const rawList = Array.isArray(res.threads)
+      ? res.threads
+      : Array.isArray(res.data)
         ? res.data
-        : [];
-      const loaded: ThreadSummary[] = (
-        rawList as Array<{ id: string; name?: string; preview?: string; createdAt: number; cwd?: string }>
-      ).map((t) => ({
+        : undefined;
+    if (!rawList) throw new Error("Historique indisponible.");
+    const loaded: ThreadSummary[] = rawList.map((value: unknown) => {
+      const t = value as ThreadSummary;
+      if (typeof t.id !== "string" || !t.id) throw new Error("Historique invalide.");
+      return {
         id: t.id,
         name: t.name,
         preview: t.name || t.preview,
         createdAt: t.createdAt,
         cwd: t.cwd,
-      }));
-      setThreads(loaded);
-    } catch {}
+      };
+    });
+    setThreads(loaded);
   };
 
   const switchThread = async (id: string) => {
+    const epoch = ++threadLoadEpoch.current;
+    setLoadingThread(true);
     try {
-      setBusy(true);
       // Ensure resumed
-      await chatRpc("thread/resume", { threadId: id }).catch(() => {});
+      await chatRpc("thread/resume", { threadId: id });
 
       const res = (await chatRpc("thread/read", { threadId: id, includeTurns: true })) as {
         thread?: {
@@ -1758,6 +1693,7 @@ export function CodexChatRoute() {
               id: string;
               type: string;
               text?: string;
+              content?: Array<{ type: string; text?: string }>;
               toolName?: string;
               args?: Record<string, unknown>;
               path?: string;
@@ -1768,12 +1704,17 @@ export function CodexChatRoute() {
         };
       };
 
+      if (epoch !== threadLoadEpoch.current) return;
+      if (!res.thread || res.thread.id !== id)
+        throw new Error("Le serveur n’a pas retourné ce chat.");
       setActiveThreadId(id);
       threadIdRef.current = id;
       if (res.thread?.cwd) setCwd(res.thread.cwd);
       if (res.thread?.model) setModel(res.thread.model);
       const activeSummary = threads.find((t) => t.id === id);
-      setSessionTitle(res.thread?.name || res.thread?.preview || activeSummary?.name || activeSummary?.preview);
+      setSessionTitle(
+        res.thread?.name || res.thread?.preview || activeSummary?.name || activeSummary?.preview,
+      );
 
       const reconstructed: Turn[] = [];
       for (const t of res.thread?.turns ?? []) {
@@ -1782,7 +1723,12 @@ export function CodexChatRoute() {
             reconstructed.push({
               id: item.id || `msg-${Date.now()}`,
               role: "user",
-              content: item.text ?? "",
+              content:
+                item.text ??
+                item.content
+                  ?.flatMap((part) => (typeof part.text === "string" ? [part.text] : []))
+                  .join("\n") ??
+                "",
               turnId: t.id,
             });
           } else if (item.type === "agentMessage") {
@@ -1829,16 +1775,39 @@ export function CodexChatRoute() {
       }
       setTurns(reconstructed);
     } catch (e) {
-      toast.error(`Impossible de charger le fil : ${e instanceof Error ? e.message : String(e)}`);
+      if (epoch !== threadLoadEpoch.current) return;
+      setActiveThreadId(threadIdRef.current);
+      toast.error(`Impossible de charger le fil : ${chatErrorMessage(e)}`);
+      throw e;
     } finally {
-      setBusy(false);
+      if (epoch === threadLoadEpoch.current) setLoadingThread(false);
     }
   };
+
+  // Sidebar selections use the same owner-backed history load as route actions.
+  useEffect(() => {
+    if (!ready || !activeThreadId || activeThreadId === threadIdRef.current) return;
+    if (busy) {
+      setActiveThreadId(threadIdRef.current);
+      toast.info("Arrêtez l’exécution avant de changer de chat.");
+      return;
+    }
+    void switchThread(activeThreadId).catch(() => {});
+  }, [activeThreadId, ready, busy]);
 
   // React to new session request from SpacesSidebar
   useEffect(() => {
     if (newSessionRequested) {
       clearNewSessionRequest();
+      if (busy) {
+        setActiveThreadId(threadIdRef.current);
+        const summary = threads.find((thread) => thread.id === threadIdRef.current);
+        setSessionTitle(summary?.name || summary?.preview);
+        toast.info("Arrêtez l’exécution avant de créer un nouveau chat.");
+        return;
+      }
+      threadLoadEpoch.current++;
+      setLoadingThread(false);
       setTurns([]);
       setDraft("");
       setAttachedFiles([]);
@@ -1847,42 +1816,46 @@ export function CodexChatRoute() {
     }
   }, [newSessionRequested, clearNewSessionRequest]);
 
-  // Initial load: Handshake first, then model/list and cwd
+  // Backend initialization and catalog must succeed before a message can be sent.
   useEffect(() => {
     let active = true;
-    (async () => {
-      await ensureHandshake();
-
+    setReady(false);
+    setConnectionError(undefined);
+    void (async () => {
       try {
+        await ensureAphrodyInitialized();
         const listed = await chatRpc("model/list");
-        const data = (listed.data ?? []) as Array<{ id: string; provider: string; default?: boolean }>;
-        if (active && data.length > 0) {
-          const opts: ChatModelOption[] = data.map((entry) => ({
-            id: entry.id,
-            name: entry.id,
-            provider: entry.provider,
-            capabilities: [],
-            badge: entry.provider.toLowerCase().includes("local") ? "Local" : "Cloud",
-          }));
-          setModelOptions(opts);
-          const def = data.find((e) => e.default)?.id ?? opts[0].id;
-          setModel(def);
+        if (!Array.isArray(listed.data)) throw new Error("Catalogue de modèles indisponible.");
+        const data = listed.data as Array<{ id: string; provider: string; default?: boolean }>;
+        const options = data.map((entry) => {
+          if (typeof entry.id !== "string" || typeof entry.provider !== "string")
+            throw new Error("Catalogue de modèles invalide.");
+          return { id: entry.id, name: entry.id, provider: entry.provider };
+        });
+        if (!active) return;
+        setModelOptions(options);
+        const selected =
+          data.find((entry) => entry.id === model) ??
+          data.find((entry) => entry.default) ??
+          data[0];
+        setModel(selected?.id ?? "");
+        try {
+          const res = await tauriInvoke<{ cwd?: string }>("aphrody_system_cwd");
+          if (active && res?.cwd && !cwd) setCwd(res.cwd);
+        } catch {
+          /* A browser host can use the backend's configured directory. */
         }
-      } catch (e) {
-        console.warn("model/list fetch notice:", e);
+        await loadThreads();
+        if (active && activeThreadId) await switchThread(activeThreadId);
+        if (active) setReady(true);
+      } catch (error) {
+        if (active) setConnectionError(chatErrorMessage(error));
       }
-
-      try {
-        const res = await tauriInvoke<{ cwd?: string }>("aphrody_system_cwd");
-        if (active && res?.cwd) setCwd(res.cwd);
-      } catch {}
-
-      await loadThreads();
     })();
     return () => {
       active = false;
     };
-  }, []);
+  }, [connectionAttempt]);
 
   const handleNotification = (payload: unknown) => {
     const notification = payload as {
@@ -1909,6 +1882,7 @@ export function CodexChatRoute() {
           diff?: string;
           kind?: string;
           args?: Record<string, unknown>;
+          result?: Record<string, unknown>;
         };
         turn?: { id?: string; status?: string; error?: { message?: string } };
       };
@@ -1922,7 +1896,7 @@ export function CodexChatRoute() {
       const newName = params?.name;
       if (tId && newName) {
         setThreads(
-          threads.map((it) => (it.id === tId ? { ...it, name: newName, preview: newName } : it))
+          threads.map((it) => (it.id === tId ? { ...it, name: newName, preview: newName } : it)),
         );
         if (tId === threadIdRef.current) {
           setSessionTitle(newName);
@@ -1934,13 +1908,19 @@ export function CodexChatRoute() {
     if (notification.method === "thread/compacted") {
       const tId = targetThreadId;
       if (tId && tId === threadIdRef.current) {
-        void switchThread(tId);
+        void switchThread(tId).catch(() => {});
       }
-      void loadThreads();
+      void loadThreads().catch((error) => toast.error(chatErrorMessage(error)));
       return;
     }
 
-    if (targetThreadId && threadIdRef.current && targetThreadId !== threadIdRef.current) return;
+    if (targetThreadId && targetThreadId !== threadIdRef.current) return;
+
+    if (notification.method === "turn/started") {
+      setTurnId(params?.turn?.id);
+      setBusy(true);
+      return;
+    }
 
     // Inline Server Requests (Approvals)
     if (notification.method === "item/commandExecution/requestApproval") {
@@ -1958,7 +1938,11 @@ export function CodexChatRoute() {
     }
 
     if (notification.method === "item/fileChange/requestApproval") {
-      const reqId = notification.id ?? `appr-${Date.now()}`;
+      if (notification.id === undefined) {
+        toast.error("Demande d’autorisation invalide : identifiant manquant.");
+        return;
+      }
+      const reqId = notification.id;
       const approval: ApprovalItem = {
         id: reqId,
         kind: "fileChange",
@@ -1973,19 +1957,17 @@ export function CodexChatRoute() {
         itemId: params?.itemId,
       };
 
-      // NHITL / YOLO auto-approval: if accessMode is full, automatically approve and reply
-      if (accessMode === "full") {
-        approval.status = "approved";
-        setTurns((items) => [...items, { id: `approval-${reqId}`, role: "approval", approval }]);
-        void aphrodyReply({
-          id: reqId,
-          result: { decision: "accept" },
-          backendGeneration: notification.backendGeneration,
-        }).catch((err) => console.warn("Auto-approval failed:", err));
-        return;
-      }
-
-      setTurns((items) => [...items, { id: `approval-${reqId}`, role: "approval", approval }]);
+      setTurns((items) =>
+        items.some(
+          (item) =>
+            item.role === "approval" &&
+            item.approval.id === reqId &&
+            item.approval.backendGeneration === approval.backendGeneration,
+        )
+          ? items
+          : [...items, { id: `approval-${reqId}`, role: "approval", approval }],
+      );
+      if (accessMode === "full") void handleApprovalDecision(approval, "accept");
       return;
     }
 
@@ -1996,11 +1978,18 @@ export function CodexChatRoute() {
       setTurns((items) => {
         if (targetItemId) {
           const foundIdx = items.findIndex(
-            (it) => it.role === "assistant" && it.itemId === targetItemId
+            (it) => it.role === "assistant" && it.itemId === targetItemId,
           );
           if (foundIdx !== -1) {
             const updated = [...items];
-            const prev = updated[foundIdx] as { id: string; role: "assistant"; content: string; streaming?: boolean; turnId?: string; itemId?: string };
+            const prev = updated[foundIdx] as {
+              id: string;
+              role: "assistant";
+              content: string;
+              streaming?: boolean;
+              turnId?: string;
+              itemId?: string;
+            };
             updated[foundIdx] = { ...prev, content: prev.content + delta, streaming: true };
             return updated;
           }
@@ -2027,7 +2016,8 @@ export function CodexChatRoute() {
       setTurns((items) => {
         if (targetItemId) {
           const foundIdx = items.findIndex(
-            (it) => it.role === "assistant" && (it.itemId === targetItemId || it.id === targetItemId)
+            (it) =>
+              it.role === "assistant" && (it.itemId === targetItemId || it.id === targetItemId),
           );
           if (foundIdx !== -1) {
             const updated = [...items];
@@ -2054,10 +2044,7 @@ export function CodexChatRoute() {
           },
         ];
       });
-    } else if (
-      notification.method === "item/started" &&
-      params?.item?.type === "mcpToolCall"
-    ) {
+    } else if (notification.method === "item/started" && params?.item?.type === "mcpToolCall") {
       const toolName = params.item.toolName ?? "tool";
       const callId = params.item.id ?? `tool-${Date.now()}`;
       const pair: ToolCallPair = {
@@ -2070,29 +2057,41 @@ export function CodexChatRoute() {
         status: "running",
         title: toolName,
       };
-      setTurns((items) => [...items, { id: callId, role: "tool", pair, itemId: callId, turnId: params.turnId }]);
-    } else if (
-      notification.method === "item/completed" &&
-      params?.item?.type === "mcpToolCall"
-    ) {
+      setTurns((items) => [
+        ...items,
+        { id: callId, role: "tool", pair, itemId: callId, turnId: params.turnId },
+      ]);
+    } else if (notification.method === "item/completed" && params?.item?.type === "mcpToolCall") {
       const callId = params.item.id;
       const toolName = params.item.toolName ?? "tool";
-      const resultText = params.item.text ?? "";
+      const result = params.item.result;
+      const resultText = params.item.text ?? (result ? JSON.stringify(result, null, 2) : "");
       setTurns((items) =>
         items.map((item) => {
           if (
             item.role === "tool" &&
-            (callId ? item.id === callId || item.itemId === callId : item.pair.name === toolName && item.pair.status === "running")
+            (callId
+              ? item.id === callId || item.itemId === callId
+              : item.pair.name === toolName && item.pair.status === "running")
           ) {
             return {
               ...item,
-              pair: { ...item.pair, resultRaw: resultText, result: null, status: "completed" },
+              pair: {
+                ...item.pair,
+                resultRaw: resultText,
+                result: result ?? null,
+                status: result?.ok === false ? "error" : "completed",
+              },
             };
           }
           return item;
-        })
+        }),
       );
-    } else if (notification.method === "item/completed" && params?.item?.type === "fileChange" && params.item.diff) {
+    } else if (
+      notification.method === "item/completed" &&
+      params?.item?.type === "fileChange" &&
+      params.item.diff
+    ) {
       const callId = params.item.id ?? `patch-${Date.now()}`;
       setTurns((items) => [
         ...items,
@@ -2111,55 +2110,80 @@ export function CodexChatRoute() {
         },
       ]);
     } else if (notification.method === "turn/completed") {
+      stopRequested.current = false;
       setBusy(false);
       setTurnId(undefined);
       if (params?.turn?.status === "failed") {
-        toast.error(params.turn.error?.message ?? "Le tour a échoué : relancez le message ou consultez les logs app-server");
+        toast.error(
+          params.turn.error?.message ??
+            "Le tour a échoué : relancez le message ou consultez les logs app-server",
+        );
       }
-      void loadThreads();
+      void loadThreads().catch((error) => toast.error(chatErrorMessage(error)));
 
       // Auto-compact context (NHITL / YOLO continuous mode)
       // When turns accumulate (>= 25), trigger compact to maintain fast inference & low memory.
       if (activeThreadId && turns.length >= 25) {
         void chatRpc("thread/compact/start", { threadId: activeThreadId }).catch((err) =>
-          console.warn("Auto-compact context skipped:", err)
+          console.warn("Auto-compact context skipped:", err),
         );
       }
     }
   };
 
-  // Connect aphrody_session_stream on active thread
+  const notificationHandler = useRef(handleNotification);
+  notificationHandler.current = handleNotification;
+
+  // The native broker already broadcasts each event. Use its event bus once;
+  // browser hosts use the scoped SSE stream instead of a second native channel.
   useEffect(() => {
-    if (!activeThreadId) return;
+    if (!activeThreadId || isTauri()) return;
 
     let unsub: (() => void) | undefined;
     let active = true;
 
     aphrodySessionStream(activeThreadId, (payload) => {
       if (!active) return;
-      handleNotification(payload);
-    }).then((cleanup) => {
-      if (!active) cleanup();
-      else unsub = cleanup;
-    });
+      notificationHandler.current(payload);
+    })
+      .then((cleanup) => {
+        if (!active) cleanup();
+        else unsub = cleanup;
+        return null;
+      })
+      .catch((error) => {
+        if (active) {
+          setConnectionError(chatErrorMessage(error));
+          setReady(false);
+        }
+      });
 
     return () => {
       active = false;
       unsub?.();
     };
-  }, [activeThreadId]);
+  }, [activeThreadId, connectionAttempt]);
 
   // General notification listener (fallback for process-wide and thread events)
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     let cancelled = false;
 
-    if (window.__TAURI__?.event) {
-      void window.__TAURI__.event
-        .listen("aphrody://notification", ({ payload }: { payload: unknown }) => handleNotification(payload))
+    const nativeListen = window.__TAURI__?.event?.listen ?? (isTauri() ? listen : undefined);
+    if (nativeListen) {
+      void nativeListen("aphrody://notification", ({ payload }: { payload: unknown }) =>
+        notificationHandler.current(payload),
+      )
         .then((stop) => {
           if (cancelled) stop();
           else unlisten = stop;
+          return null;
+        })
+        .catch((error) => {
+          if (!cancelled) {
+            setConnectionError(chatErrorMessage(error));
+            setReady(false);
+          }
         });
     }
 
@@ -2169,81 +2193,28 @@ export function CodexChatRoute() {
     };
   }, []);
 
-  // Charger les modèles réels locaux (aphrody model list) et le catalogue
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadModels() {
-      const opts: ChatModelOption[] = [];
-      try {
-        const installed = await fetchInstalledModels();
-        if (installed && Array.isArray(installed.models)) {
-          for (const m of installed.models) {
-            const displayName = m.catalog_id || m.ref.split("/").pop() || m.ref;
-            opts.push({
-              id: m.ref,
-              name: displayName,
-              description: `Local ${m.format.toUpperCase()} · ${(m.bytes / (1024 * 1024 * 1024)).toFixed(1)} Go`,
-              provider: "Local (aphrody-models)",
-              badge: "Local",
-              defaultEffort: "None",
-            });
-          }
-        }
-      } catch (err) {
-        console.debug("Note: Modèles locaux non disponibles via IPC", err);
-      }
-
-      try {
-        const cat = await fetchModelCatalog();
-        if (cat && Array.isArray(cat.entries)) {
-          for (const entry of cat.entries) {
-            if (!opts.some((o) => o.id === entry.id || o.name === entry.title)) {
-              opts.push({
-                id: entry.id,
-                name: entry.title,
-                description: `${entry.task} · ${entry.summary}`,
-                provider: `Catalogue (${entry.backend})`,
-                badge: "Catalogue",
-                defaultEffort: "Minimal",
-              });
-            }
-          }
-        }
-      } catch (err) {
-        console.debug("Note: Catalogue distant non disponible via IPC", err);
-      }
-
-      if (!cancelled && opts.length > 0) {
-        setModelOptions(opts);
-      }
-    }
-
-    void loadModels();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const handleApprovalDecision = async (
     approval: ApprovalItem,
-    decision: "accept" | "acceptForSession" | "decline" | "cancel"
+    decision: "accept" | "acceptForSession" | "decline" | "cancel",
   ) => {
     const newStatus =
-      decision === "accept"
-        ? "approved"
-        : decision === "acceptForSession"
-        ? "session"
-        : "denied";
+      decision === "accept" ? "approved" : decision === "acceptForSession" ? "session" : "denied";
 
-    setTurns((items) =>
-      items.map((it) =>
-        it.role === "approval" && it.approval.id === approval.id
-          ? { ...it, approval: { ...it.approval, status: newStatus } }
-          : it
-      )
-    );
+    const replyKey = `${approval.backendGeneration ?? ""}:${approval.id}`;
+    if (approvalReplies.current.has(replyKey) || confirmedApprovalReplies.current.has(replyKey))
+      return;
+    approvalReplies.current.add(replyKey);
+    const updateApproval = (patch: Partial<ApprovalItem>) =>
+      setTurns((items) =>
+        items.map((item) =>
+          item.role === "approval" &&
+          item.approval.id === approval.id &&
+          item.approval.backendGeneration === approval.backendGeneration
+            ? { ...item, approval: { ...item.approval, ...patch } }
+            : item,
+        ),
+      );
+    updateApproval({ submitting: true });
 
     try {
       await aphrodyReply({
@@ -2251,32 +2222,31 @@ export function CodexChatRoute() {
         result: { decision },
         backendGeneration: approval.backendGeneration,
       });
+      confirmedApprovalReplies.current.add(replyKey);
+      updateApproval({ status: newStatus, submitting: false });
       toast.success(
         decision === "accept"
           ? "Action autorisée"
           : decision === "acceptForSession"
-          ? "Action autorisée pour ce projet"
-          : "Action refusée"
+            ? "Action autorisée pour ce projet"
+            : "Action refusée",
       );
     } catch (e) {
-      toast.error(
-        `Décision non envoyée : ${
-          e instanceof Error ? e.message : String(e)
-        }`
-      );
+      updateApproval({ submitting: false });
+      toast.error(`Décision non envoyée : ${chatErrorMessage(e)}`);
+    } finally {
+      approvalReplies.current.delete(replyKey);
     }
   };
 
   const handleSend = async () => {
     const text = draft.trim();
-    if ((!text && attachedFiles.length === 0) || busy) return;
+    if ((!text && attachedFiles.length === 0) || busy || loadingThread || !ready || connectionError)
+      return;
 
     // Instant local commands with zero latency
     if (text === "/clear") {
-      setTurns([]);
-      setDraft("");
-      setAttachedFiles([]);
-      toast.success("Conversation réinitialisée");
+      handleNewSession();
       return;
     }
 
@@ -2294,16 +2264,25 @@ export function CodexChatRoute() {
           .filter((hit) => hit.url.startsWith("https://dragonballfr.com/"))
           .map((hit) => `- [${hit.title}](${hit.url})\n  ${hit.snippet}`)
           .join("\n");
-        const content = [result.answer || "Aucune réponse disponible.", sources ? `### Sources\n${sources}` : ""]
+        const content = [
+          result.answer || "Aucune réponse disponible.",
+          sources ? `### Sources\n${sources}` : "",
+        ]
           .filter(Boolean)
           .join("\n\n");
-        setTurns((items) => [...items, { id: `shenron-${Date.now()}`, role: "assistant", content }]);
+        setTurns((items) => [
+          ...items,
+          { id: `shenron-${Date.now()}`, role: "assistant", content },
+        ]);
       } catch (err) {
-        setTurns((items) => [...items, {
-          id: `shenron-${Date.now()}`,
-          role: "assistant",
-          content: `Erreur Shenron : ${err instanceof Error ? err.message : String(err)}`,
-        }]);
+        setTurns((items) => [
+          ...items,
+          {
+            id: `shenron-${Date.now()}`,
+            role: "assistant",
+            content: `Erreur Shenron : ${err instanceof Error ? err.message : String(err)}`,
+          },
+        ]);
       }
       return;
     }
@@ -2311,8 +2290,18 @@ export function CodexChatRoute() {
     if (text.startsWith("/model ")) {
       const targetModel = text.slice(7).trim();
       if (targetModel) {
-        setModel(targetModel);
-        toast.success(`Modèle actif : ${targetModel}`);
+        if (activeThreadId) {
+          toast.info("Créez un nouveau chat pour changer de modèle.");
+          return;
+        }
+        const option = modelOptions.find(
+          (entry) => entry.id === targetModel || entry.name === targetModel,
+        );
+        if (!option) {
+          toast.error("Ce modèle n’est pas configuré.");
+          return;
+        }
+        setModel(option.id);
       }
       setDraft("");
       return;
@@ -2324,10 +2313,7 @@ export function CodexChatRoute() {
         toast.info("Indiquez les termes à rechercher : /rag <requête>");
         return;
       }
-      setTurns((items) => [
-        ...items,
-        { id: `user-${Date.now()}`, role: "user", content: text },
-      ]);
+      setTurns((items) => [...items, { id: `user-${Date.now()}`, role: "user", content: text }]);
       setDraft("");
       try {
         const ragRes = await runRagSearch(query, 5);
@@ -2352,12 +2338,17 @@ export function CodexChatRoute() {
       } catch (err) {
         setTurns((items) => [
           ...items,
-          { id: `rag-${Date.now()}`, role: "assistant", content: `❌ Erreur recherche RAG : ${err instanceof Error ? err.message : String(err)}` },
+          {
+            id: `rag-${Date.now()}`,
+            role: "assistant",
+            content: `❌ Erreur recherche RAG : ${err instanceof Error ? err.message : String(err)}`,
+          },
         ]);
       }
       return;
     }
 
+    stopRequested.current = false;
     setBusy(true);
     const filesToSend = [...attachedFiles];
     try {
@@ -2365,48 +2356,76 @@ export function CodexChatRoute() {
       if (!currentId) {
         const params: Record<string, unknown> = {
           approvalPolicy: accessMode === "full" ? "never" : "on-request",
-          sandbox: accessMode === "full" ? "danger-full-access" : accessMode === "ask" ? "workspace-write" : "read-only",
+          sandbox:
+            accessMode === "full"
+              ? "danger-full-access"
+              : accessMode === "ask"
+                ? "workspace-write"
+                : "read-only",
         };
         if (model.trim()) params.model = model.trim();
         if (cwd.trim()) params.cwd = cwd.trim();
         const created = (await chatRpc("thread/start", params)) as { thread: { id: string } };
+        if (!created.thread?.id) throw new Error("Le serveur n’a pas créé de chat.");
         currentId = created.thread.id;
         setActiveThreadId(currentId);
         threadIdRef.current = currentId;
       }
-      setTurns((items) => [
-        ...items,
-        {
-          id: `user-${Date.now()}`,
-          role: "user",
-          content: text || (filesToSend.length > 0 ? `Fichiers joints : ${filesToSend.join(", ")}` : ""),
-          attachments: filesToSend.length > 0 ? filesToSend : undefined,
-        },
-      ]);
-      setDraft("");
-      setAttachedFiles([]);
-
       const inputItems = buildTurnInputItems(text, filesToSend);
 
       const started = (await chatRpc("turn/start", {
         threadId: currentId,
         input: inputItems,
       })) as { turn: { id: string } };
+      if (!started.turn?.id) throw new Error("Le serveur n’a pas confirmé l’envoi du message.");
+      const belongsToTurn = (item: Turn) =>
+        (item.role === "fileChange"
+          ? item.fileChange.turnId
+          : item.role === "approval"
+            ? item.approval.turnId
+            : item.turnId) === started.turn.id;
+      setTurns((items) => [
+        ...items.filter((item) => !belongsToTurn(item)),
+        {
+          id: `user-${started.turn.id}`,
+          role: "user",
+          content: text,
+          attachments: filesToSend.length ? filesToSend : undefined,
+          turnId: started.turn.id,
+        },
+        ...items.filter(belongsToTurn),
+      ]);
+      setDraft("");
+      setAttachedFiles([]);
       setTurnId(started.turn.id);
+      if (stopRequested.current) await requestInterrupt(currentId, started.turn.id);
     } catch (e) {
+      stopRequested.current = false;
       setBusy(false);
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(chatErrorMessage(e));
+    }
+  };
+
+  const requestInterrupt = async (threadId: string, activeTurnId: string) => {
+    try {
+      const result = await chatRpc("turn/interrupt", { threadId, turnId: activeTurnId });
+      if (result.status !== "interrupt_requested") throw new Error("L’arrêt n’a pas été confirmé.");
+    } catch (error) {
+      stopRequested.current = false;
+      toast.error(`Arrêt impossible : ${chatErrorMessage(error)}`);
     }
   };
 
   const handleStop = () => {
-    if (activeThreadId && turnId) {
-      void chatRpc("turn/interrupt", { threadId: activeThreadId, turnId }).catch(() => {});
-    }
+    if (!busy || stopRequested.current) return;
+    stopRequested.current = true;
+    if (threadIdRef.current && turnId) void requestInterrupt(threadIdRef.current, turnId);
   };
 
   const handleNewSession = () => {
     if (!busy) {
+      threadLoadEpoch.current++;
+      setLoadingThread(false);
       setActiveThreadId(null);
       threadIdRef.current = null;
       setTurnId(undefined);
@@ -2417,37 +2436,9 @@ export function CodexChatRoute() {
     }
   };
 
-  const handleRenameThread = async (id: string, name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    try {
-      await chatRpc("thread/name/update", { threadId: id, name: trimmed });
-      setThreads(
-        threads.map((t) => (t.id === id ? { ...t, name: trimmed, preview: trimmed } : t))
-      );
-      if (id === threadIdRef.current) {
-        setSessionTitle(trimmed);
-      }
-      toast.success("Fil renommé");
-    } catch (e) {
-      try {
-        await chatRpc("thread/name/set", { threadId: id, name: trimmed });
-        setThreads(
-          threads.map((t) => (t.id === id ? { ...t, name: trimmed, preview: trimmed } : t))
-        );
-        if (id === threadIdRef.current) {
-          setSessionTitle(trimmed);
-        }
-        toast.success("Fil renommé");
-      } catch {
-        toast.error(`Renommage impossible : ${e instanceof Error ? e.message : String(e)}`);
-      }
-    }
-  };
-
   const handleForkThread = async (id: string, forkedTurnId?: string) => {
     try {
-      setBusy(true);
+      setLoadingThread(true);
       const params: { threadId: string; turnId?: string } = { threadId: id };
       if (forkedTurnId) {
         params.turnId = forkedTurnId;
@@ -2456,38 +2447,54 @@ export function CodexChatRoute() {
         thread?: { id: string; name?: string; preview?: string };
       };
       const forkedId = res.thread?.id;
+      if (!forkedId || forkedId === id) throw new Error("Le serveur n’a pas créé de nouveau chat.");
       await loadThreads();
-      if (forkedId) {
-        await switchThread(forkedId);
-        toast.success("Fil bifurqué");
-      } else {
-        toast.success("Fil bifurqué");
-      }
+      await switchThread(forkedId);
+      toast.success("Fil bifurqué");
     } catch (e) {
-      toast.error(`Bifurcation impossible : ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`Bifurcation impossible : ${chatErrorMessage(e)}`);
     } finally {
-      setBusy(false);
+      setLoadingThread(false);
     }
   };
 
   const handleCompactThread = async (id: string) => {
     try {
-      await chatRpc("thread/compact/start", { threadId: id });
+      const result = await chatRpc("thread/compact/start", { threadId: id });
+      if (result.status !== "started") throw new Error("Le compactage n’a pas été confirmé.");
       toast.success("Compactage du fil lancé");
       if (id === threadIdRef.current) {
         await switchThread(id);
       }
       await loadThreads();
     } catch (e) {
-      toast.error(`Compactage impossible : ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`Compactage impossible : ${chatErrorMessage(e)}`);
     }
   };
 
   return (
     <div className="h-full w-full overflow-hidden bg-surface flex flex-col">
+      {connectionError && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 px-4 py-3 bg-error-container text-on-error-container"
+        >
+          <span>Connexion au service indisponible.</span>
+          <Button variant="text" onClick={() => setConnectionAttempt((attempt) => attempt + 1)}>
+            Réessayer
+          </Button>
+        </div>
+      )}
+      {loadingThread && (
+        <div role="status" className="px-4 py-2 text-on-surface-variant">
+          Chargement du chat…
+        </div>
+      )}
       <CodexChat
         turns={turns}
         busy={busy}
+        ready={ready && !connectionError && !loadingThread}
+        settingsLocked={!!activeThreadId}
         draft={draft}
         onDraftChange={setDraft}
         attachedFiles={attachedFiles}
@@ -2496,14 +2503,10 @@ export function CodexChatRoute() {
         onSend={() => void handleSend()}
         onStop={handleStop}
         onNewSession={handleNewSession}
-        onClearSession={() => {
-          setTurns([]);
-          setAttachedFiles([]);
-        }}
-        model={model}
+        onClearSession={handleNewSession}
+        model={ready ? model : ""}
         onModelChange={setModel}
         effort={effort}
-        onEffortChange={setEffort}
         accessMode={accessMode}
         onAccessModeChange={setAccessMode}
         modelOptions={modelOptions}
@@ -2512,9 +2515,8 @@ export function CodexChatRoute() {
         sessionTitle={sessionTitle}
         onApprovalDecision={handleApprovalDecision}
         threads={threads}
-        onSelectThread={(id) => void switchThread(id)}
+        onSelectThread={(id) => void switchThread(id).catch(() => {})}
         activeThreadId={activeThreadId ?? undefined}
-        onRenameThread={handleRenameThread}
         onForkThread={handleForkThread}
         onCompactThread={handleCompactThread}
       />

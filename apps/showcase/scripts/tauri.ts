@@ -9,7 +9,7 @@ import {
   readFactoryConfig,
   routeHeavyBuild,
   type BuildFactoryStatus,
-} from "../../../../../packages/infra/workspace/src/build-factory";
+} from "../../../../packages/infra/workspace/src/build-factory";
 import { APHRODY_ROOT, SHOWCASE_ROOT, TAURI_ROOT } from "./icons";
 
 export const CARGO_RUNNER = resolve(APHRODY_ROOT, "scripts/build/rust/cargo-serial.sh");
@@ -24,7 +24,7 @@ export function showcaseShellFiles(): FileMap {
     version: "3.3.3",
     mobile: true,
     build: {
-      frontendDist: "../../../design/aphrody-m3/apps/showcase/dist",
+      frontendDist: "../../../m3/apps/showcase/dist",
     },
     window: { mode: "runtime" },
     withGlobalTauri: false,
@@ -208,7 +208,7 @@ export function assertFactoryHost(status: BuildFactoryStatus): void {
     status.host !== status.target
   )
     throw new Error(
-      "Native host compilation must execute through the configured Workspace build factory; use aphrody-ops build-factory run --repo aphrody --revision <full-sha> -- bun design/aphrody-m3/apps/showcase/scripts/tauri.ts build. Local Cargo flags do not authorize host builds.",
+      "Native host compilation must execute through the configured Workspace build factory; use aphrody-ops build-factory run --repo aphrody --revision <full-sha> -- bun m3/apps/showcase/scripts/tauri.ts build. Local Cargo flags do not authorize host builds.",
     );
 }
 
@@ -352,7 +352,7 @@ export async function runTauri(input: string[] = [], root = TAURI_ROOT): Promise
   if (plan.missing.length) throw new Error(plan.missing.join("\n"));
   if (HEAVY_COMMANDS.has(args[0]!)) {
     const dispatched = await routeHeavyBuild(
-      ["bun", "design/aphrody-m3/apps/showcase/scripts/tauri.ts", ...args],
+      ["bun", "m3/apps/showcase/scripts/tauri.ts", ...args],
       APHRODY_ROOT,
     );
     if (dispatched !== undefined) {

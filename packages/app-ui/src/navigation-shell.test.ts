@@ -143,12 +143,12 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
     expect(appearanceCode).toContain("Plancher Low Vision");
     expect(appearanceCode).toContain("20 px");
     expect(appearanceCode).toContain("22 px");
-    expect(appearanceCode).toContain("reduce-motion");
+    expect(appearanceCode).toContain("applyAppearance(prefs)");
 
     const appCssPath = resolve(__dirname, "app.css");
     const appCss = readFileSync(appCssPath, "utf-8");
     expect(appCss).toContain("LOW_VISION is a product invariant");
-    expect(appCss).toContain("font-size: max(18px, 1em)");
+    expect(appCss).toContain("font-size: max(var(--aphrody-base-font-size, 18px), 1em)");
   });
 
   it("chat store handles thread grouping into projects and unread indicators", () => {

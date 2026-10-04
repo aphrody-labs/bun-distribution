@@ -15,8 +15,12 @@ import {
   springsFromTokensCss,
 } from "./brand-theme";
 
-const tokensCss = await Bun.file(Bun.fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css"))).text();
-const rustBrand = await Bun.file(new URL("../../../../../crates/ui/m3-tokens/src/gemini_brand.rs", import.meta.url)).text();
+const tokensCss = await Bun.file(
+  Bun.fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css")),
+).text();
+const rustBrand = await Bun.file(
+  new URL("../../../../crates/ui/m3-tokens/src/gemini_brand.rs", import.meta.url),
+).text();
 
 function luminance(hex: string): number {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
@@ -41,7 +45,12 @@ describe("brand theme", () => {
     expect(rustBrand).toContain("GEMINI_TITLE_BLUE: u32 = 0xFF42_85F4");
     expect(rustBrand).toContain("GEMINI_TITLE_PURPLE: u32 = 0xFF9B_72CB");
     expect(rustBrand).toContain("GEMINI_TITLE_PINK: u32 = 0xFFD9_6570");
-    expect(SHAPE).toEqual({ promptEmpty: "40px", promptContent: "32px", promptDocked: "24px 24px 0 0", chip: "16px" });
+    expect(SHAPE).toEqual({
+      promptEmpty: "40px",
+      promptContent: "32px",
+      promptDocked: "24px 24px 0 0",
+      chip: "16px",
+    });
     expect(GEMINI_SURFACE).toEqual({ light: "#f8fafd", dark: "#131314" });
     expect(READING_COLUMN).toBe(760);
     expect(WEIGHTS).toEqual({ display: 280, headline: 350, body: 400, bodyStrong: 500 });
@@ -51,22 +60,34 @@ describe("brand theme", () => {
     const css = brandCss(tokensCss);
     const dark = schemeFromSeed(BRAND_SEED, { dark: true });
     const light = schemeFromSeed(BRAND_SEED, { dark: false });
-    const lightBlock = css.slice(css.indexOf(":root.light,\n.light {"), css.indexOf(":root,\n.dark {"));
+    const lightBlock = css.slice(
+      css.indexOf(":root.light,\n.light {"),
+      css.indexOf(":root,\n.dark {"),
+    );
     const darkBlock = css.slice(css.indexOf(":root,\n.dark {"), css.indexOf("/* Gemini surfaces"));
     expect(lightBlock).toContain("color-scheme: light;");
     expect(darkBlock).toContain("color-scheme: dark;");
-    for (const [role, hex] of Object.entries(light)) expect(lightBlock).toContain(`${role}: ${hex};`);
+    for (const [role, hex] of Object.entries(light))
+      expect(lightBlock).toContain(`${role}: ${hex};`);
     for (const [role, hex] of Object.entries(dark)) expect(darkBlock).toContain(`${role}: ${hex};`);
   });
 
   test("Gemini surfaces override only surface and background, with AA text contrast", () => {
     const css = brandCss(tokensCss);
     const overrides = css.slice(css.indexOf("/* Gemini surfaces"));
-    expect(overrides).toContain(`:root.light,\n.light {\n  --md-sys-color-background: #f8fafd;\n  --md-sys-color-surface: #f8fafd;\n}`);
-    expect(overrides).toContain(`:root,\n.dark {\n  --md-sys-color-background: #131314;\n  --md-sys-color-surface: #131314;\n}`);
+    expect(overrides).toContain(
+      `:root.light,\n.light {\n  --md-sys-color-background: #f8fafd;\n  --md-sys-color-surface: #f8fafd;\n}`,
+    );
+    expect(overrides).toContain(
+      `:root,\n.dark {\n  --md-sys-color-background: #131314;\n  --md-sys-color-surface: #131314;\n}`,
+    );
     const light = schemeFromSeed(BRAND_SEED, { dark: false }) as Record<string, string>;
     const dark = schemeFromSeed(BRAND_SEED, { dark: true }) as Record<string, string>;
-    for (const role of ["--md-sys-color-on-surface", "--md-sys-color-on-surface-variant", "--md-sys-color-primary"]) {
+    for (const role of [
+      "--md-sys-color-on-surface",
+      "--md-sys-color-on-surface-variant",
+      "--md-sys-color-primary",
+    ]) {
       expect(contrast(light[role]!, GEMINI_SURFACE.light)).toBeGreaterThanOrEqual(4.5);
       expect(contrast(dark[role]!, GEMINI_SURFACE.dark)).toBeGreaterThanOrEqual(4.5);
     }

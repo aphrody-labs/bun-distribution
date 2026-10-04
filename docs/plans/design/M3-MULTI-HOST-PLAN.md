@@ -7,9 +7,9 @@ Share Material 3 roles, theme inputs, interaction expectations and adaptive rule
 across the framework's renderers. Qualify each browser, native renderer and
 installed host independently. The private M3 repository is the design submodule;
 product UI and native integrations follow Aphrody's
-[PLAN](../../../../../PLAN.md), [GOAL](../../../../../GOAL.md) and
-[AGENTS](../../../../../AGENTS.md). Runtime/SDK production follows
-[Yolo's plan](../../../../../../yolo/PLAN.md).
+[PLAN](../../../../PLAN.md), [GOAL](../../../../GOAL.md) and
+[AGENTS](../../../../AGENTS.md). Runtime/SDK production follows
+[Yolo's plan](../../../../../yolo/PLAN.md).
 
 The framework packages expose reusable APIs. `apps/web` is the small web example;
 `apps/showcase` exercises packages with mobile, desktop and TV layouts, local

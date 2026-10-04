@@ -26,7 +26,7 @@ import {
   writeFiles,
 } from "../src/index.ts";
 
-const root = resolve(import.meta.dir, "../../../../..");
+const root = resolve(import.meta.dir, "../../../..");
 const text = (value: string | Uint8Array | undefined): string =>
   typeof value === "string" ? value : new TextDecoder().decode(value);
 
@@ -55,7 +55,7 @@ describe("pins", () => {
   it("are mirrored once: tauri-sync tracks this file and no other scaffolder", async () => {
     const config = JSON.parse(await Bun.file(join(root, "config/tauri-upstream.json")).text());
     expect(config.mirrors.map((mirror: { file: string }) => mirror.file)).toEqual([
-      "design/aphrody-m3/packages/scaffold/src/pins.ts",
+      "m3/packages/scaffold/src/pins.ts",
     ]);
   });
 });

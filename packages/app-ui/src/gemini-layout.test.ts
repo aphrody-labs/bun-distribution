@@ -34,10 +34,16 @@ describe("Gemini prompt bar", () => {
 
   test("CSS maps each state to the brand corner tokens", () => {
     expect(appCss).toContain("border-radius: var(--app-shape-prompt-empty);");
-    expect(appCss).toContain('.app-prompt-bar[data-shape="content"] { border-radius: var(--app-shape-prompt-content); }');
-    expect(appCss).toContain('.app-prompt-bar[data-shape="docked"] { border-radius: var(--app-shape-prompt-docked); }');
+    expect(appCss).toMatch(
+      /\.app-prompt-bar\[data-shape="content"\]\s*\{\s*border-radius:\s*var\(--app-shape-prompt-content\);\s*\}/,
+    );
+    expect(appCss).toMatch(
+      /\.app-prompt-bar\[data-shape="docked"\]\s*\{\s*border-radius:\s*var\(--app-shape-prompt-docked\);\s*\}/,
+    );
     expect(appCss).toContain("border: 1px solid var(--md-sys-color-outline-variant);");
-    expect(appCss).toContain("field-sizing: content; height: auto; min-block-size: 1lh; max-block-size: 10lh;");
+    expect(appCss).toMatch(
+      /field-sizing:\s*content;\s*height:\s*auto;\s*min-block-size:\s*1lh;\s*max-block-size:\s*10lh;/,
+    );
     expect(appCss).toContain("border-radius: var(--app-shape-chip);");
   });
 
@@ -65,18 +71,24 @@ describe("Gemini layout invariants", () => {
   });
 
   test("springs drive only user-triggered morphs, with fallback and reduced motion", () => {
-    const supports = appCss.slice(appCss.indexOf("@supports (transition-timing-function: linear(0, 1))"));
+    const supports = appCss.slice(
+      appCss.indexOf("@supports (transition-timing-function: linear(0, 1))"),
+    );
     expect(supports).toContain("var(--app-motion-spring-default-spatial)");
-    expect(appCss.indexOf("cubic-bezier(0.2, 0, 0, 1);\n}\n.app-prompt-bar[data-shape")).toBeGreaterThan(0);
+    expect(
+      appCss.indexOf("cubic-bezier(0.2, 0, 0, 1);\n}\n.app-prompt-bar[data-shape"),
+    ).toBeGreaterThan(0);
     const reduced = appCss.slice(appCss.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
     expect(reduced).toContain(".app-prompt-bar");
-    expect(reduced).toContain(".app-rail-panel { transition: none; }");
+    expect(reduced).toMatch(/\.app-rail-panel\s*\{\s*transition:\s*none;\s*\}/);
     expect(appCss).toContain("@supports (animation-timeline: scroll())");
   });
 
   test("shape tokens are loaded so rounded-full and the typescale resolve", () => {
     expect(appCss.indexOf('@import "@aphrody/m3-tokens/m3-tokens.css"')).toBeGreaterThan(0);
-    expect(appCss.indexOf('@import "@aphrody/m3-tokens/m3-tokens.css"')).toBeLessThan(appCss.indexOf('@import "./brand.css"'));
+    expect(appCss.indexOf('@import "@aphrody/m3-tokens/m3-tokens.css"')).toBeLessThan(
+      appCss.indexOf('@import "./brand.css"'),
+    );
   });
 
   test("greeting uses a display size on the h2, not the body role or the 18px floor", () => {
@@ -94,17 +106,21 @@ describe("Gemini layout invariants", () => {
 
   test("chips never wrap and collapse to icons on narrow windows", () => {
     expect(appCss).toContain("white-space: nowrap;\n  border-radius: var(--app-shape-chip);");
-    expect(appCss).toMatch(/@media \(max-width: 839px\) \{\n  \.app-chip-label \{[^}]*clip-path: inset\(50%\)/);
+    expect(appCss).toMatch(
+      /@media \(max-width: 839px\) \{\n  \.app-chip-label \{[^}]*clip-path: inset\(50%\)/,
+    );
     expect(chatSrc).toContain("Niveau d'accès : ");
-    expect(chatSrc).toContain('app-chip-label font-semibold');
+    expect(chatSrc).toContain("app-chip-label font-semibold");
   });
 
   test("LOW_VISION 18px floor stays in place", () => {
-    expect(appCss).toContain("font-size: max(18px, 1em);");
+    expect(appCss).toContain("font-size: max(var(--aphrody-base-font-size, 18px), 1em);");
   });
 
   test("rail is inert and collapsed when hidden", () => {
-    const closed = renderToStaticMarkup(createElement(Rail, { expanded: false, label: "Rail" }, "x"));
+    const closed = renderToStaticMarkup(
+      createElement(Rail, { expanded: false, label: "Rail" }, "x"),
+    );
     expect(closed).toContain('data-expanded="false"');
     expect(closed).toContain("inert");
     const open = renderToStaticMarkup(createElement(Rail, { expanded: true, label: "Rail" }, "x"));

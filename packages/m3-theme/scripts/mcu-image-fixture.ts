@@ -19,11 +19,11 @@ import { join } from "node:path";
 
 const OUT_JSON = join(
   import.meta.dir,
-  "../../../../../crates/ui/m3-tokens/tests/fixtures/mcu-image.json",
+  "../../../../crates/ui/m3-tokens/tests/fixtures/mcu-image.json",
 );
 const OUT_IMAGES_DIR = join(
   import.meta.dir,
-  "../../../../../crates/ui/m3-tokens/tests/fixtures/images",
+  "../../../../crates/ui/m3-tokens/tests/fixtures/images",
 );
 
 /** The default seed `quantize::DEFAULT_SEED` in the Rust port uses. */

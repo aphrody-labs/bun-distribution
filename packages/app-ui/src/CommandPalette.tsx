@@ -8,11 +8,7 @@ import { Icon, Kbd } from "@aphrody/m3-primitives";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadPreferences, savePreferences } from "./preferences";
-import {
-  getDefaultSuggestions,
-  suggest,
-  type Suggestion,
-} from "./quickbar-suggest";
+import { getDefaultSuggestions, suggest, type Suggestion } from "./quickbar-suggest";
 import { useChatStore } from "./stores/chat-store";
 import { desktopRoutes } from "./desktop-navigation";
 import { dispatchMenuCommand, isMacPlatform, menuShortcut } from "./menu-commands";
@@ -22,16 +18,15 @@ export interface CommandPaletteProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-export function CommandPalette({
-  open: controlledOpen,
-  onOpenChange,
-}: CommandPaletteProps = {}) {
+export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPaletteProps = {}) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
 
   const [draft, setDraft] = useState("");
   const [highlight, setHighlight] = useState(0);
+  const [actionError, setActionError] = useState("");
+  const [activating, setActivating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -119,43 +114,47 @@ export function CommandPalette({
     }
   }, [suggestions.length]);
 
-  const activateItem = (item: Suggestion) => {
-    setOpen(false);
-
-    if (item.kind === "navigation") {
-      navigate(item.route);
-    } else if (item.kind === "command" && item.menu) {
-      dispatchMenuCommand(item.menu);
-    } else if (item.kind === "command") {
-      switch (item.command) {
-        case "models":
-          navigate(desktopRoutes.models);
-          break;
-        case "clear":
-          setDraft("");
-          break;
-        case "settings":
-          navigate(desktopRoutes.settings);
-          break;
-        case "theme": {
-          const currentTheme = prefs.theme;
-          const nextTheme = currentTheme === "dark" ? "light" : "dark";
-          void savePreferences({ ...prefs, theme: nextTheme });
-          break;
+  const activateItem = async (item: Suggestion) => {
+    if (activating) return;
+    setActivating(true);
+    setActionError("");
+    try {
+      if (item.kind === "navigation") {
+        navigate(item.route);
+      } else if (item.kind === "command" && item.menu) {
+        dispatchMenuCommand(item.menu);
+      } else if (item.kind === "command") {
+        switch (item.command) {
+          case "models":
+            navigate(desktopRoutes.models);
+            break;
+          case "clear":
+            setDraft("");
+            break;
+          case "settings":
+            navigate(desktopRoutes.settings);
+            break;
+          case "theme":
+            await savePreferences({ ...prefs, theme: prefs.theme === "dark" ? "light" : "dark" });
+            break;
+          default:
+            throw new Error("Cette commande n'est pas disponible.");
         }
-        default:
-          break;
+      } else if (item.kind === "file") {
+        navigate(`/explorer?path=${encodeURIComponent(item.path)}`);
+      } else if (item.kind === "thread") {
+        setActiveThreadId(item.thread.id);
+        navigate(desktopRoutes.chat);
+      } else if (item.kind === "calculator") {
+        if (!navigator.clipboard?.writeText)
+          throw new Error("Le presse-papiers n'est pas disponible.");
+        await navigator.clipboard.writeText(item.value);
       }
-    } else if (item.kind === "file") {
-      navigate(`/explorer?path=${encodeURIComponent(item.path)}`);
-    } else if (item.kind === "thread") {
-      setActiveThreadId(item.thread.id);
-      navigate(desktopRoutes.chat);
-    } else if (item.kind === "calculator") {
-      if (typeof navigator !== "undefined" && navigator.clipboard) {
-        void navigator.clipboard.writeText(item.value);
-      }
-      setDraft(item.value);
+      setOpen(false);
+    } catch (failure) {
+      setActionError(failure instanceof Error ? failure.message : String(failure));
+    } finally {
+      setActivating(false);
     }
   };
 
@@ -176,10 +175,10 @@ export function CommandPalette({
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (suggestions.length > 0 && highlight >= 0 && highlight < suggestions.length) {
-        activateItem(suggestions[highlight]);
+        void activateItem(suggestions[highlight]);
       } else if (draft.trim()) {
-        // Fallback: question to chat
-        navigate(desktopRoutes.chat);
+        // Transfer the exact text to the composer; the user sends it from Chat.
+        navigate(desktopRoutes.chat, { state: { initialPrompt: draft } });
         setOpen(false);
       }
     }
@@ -192,6 +191,7 @@ export function CommandPalette({
       role="dialog"
       aria-modal="true"
       aria-label="Palette de commandes"
+      aria-busy={activating}
       className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 p-4 pt-20 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -214,9 +214,7 @@ export function CommandPalette({
             role="combobox"
             aria-expanded={suggestions.length > 0}
             aria-controls="command-palette-suggestions"
-            aria-activedescendant={
-              highlight >= 0 ? `command-palette-item-${highlight}` : undefined
-            }
+            aria-activedescendant={highlight >= 0 ? `command-palette-item-${highlight}` : undefined}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Rechercher ou exécuter une action..."
@@ -226,6 +224,12 @@ export function CommandPalette({
             <Kbd>Esc</Kbd>
           </div>
         </div>
+
+        {actionError && (
+          <p role="alert" className="m-0 mt-3 text-body-large text-error">
+            {actionError}
+          </p>
+        )}
 
         {/* Suggestions list */}
         <div className="mt-3 max-h-[460px] overflow-y-auto pr-1">
@@ -242,25 +246,25 @@ export function CommandPalette({
                   item.kind === "calculator"
                     ? "calculate"
                     : item.kind === "thread"
-                    ? "history"
-                    : item.kind === "navigation"
-                    ? item.icon
-                    : item.kind === "command"
-                    ? item.icon
-                    : item.icon ?? (item.isDir ? "folder" : "description");
+                      ? "history"
+                      : item.kind === "navigation"
+                        ? item.icon
+                        : item.kind === "command"
+                          ? item.icon
+                          : (item.icon ?? (item.isDir ? "folder" : "description"));
 
                 const badgeLabel =
                   item.kind === "navigation"
                     ? "Navigation"
                     : item.kind === "command"
-                    ? "Commande"
-                    : item.kind === "file"
-                    ? item.isDir
-                      ? "Dossier"
-                      : "Fichier"
-                    : item.kind === "thread"
-                    ? "Fil"
-                    : "Calcul";
+                      ? "Commande"
+                      : item.kind === "file"
+                        ? item.isDir
+                          ? "Dossier"
+                          : "Fichier"
+                        : item.kind === "thread"
+                          ? "Fil"
+                          : "Calcul";
 
                 return (
                   <li
@@ -268,17 +272,17 @@ export function CommandPalette({
                       item.kind === "thread"
                         ? item.thread.id
                         : item.kind === "navigation"
-                        ? item.id
-                        : item.kind === "command"
-                        ? item.id
-                        : item.kind === "file"
-                        ? item.id
-                        : "calculator"
+                          ? item.id
+                          : item.kind === "command"
+                            ? item.id
+                            : item.kind === "file"
+                              ? item.id
+                              : "calculator"
                     }
                     id={`command-palette-item-${index}`}
                     role="option"
                     aria-selected={isSelected}
-                    onClick={() => activateItem(item)}
+                    onClick={() => void activateItem(item)}
                     onMouseEnter={() => setHighlight(index)}
                     className={`flex min-h-14 cursor-pointer items-center justify-between gap-4 rounded-xl px-4 py-3 text-body-large transition-colors ${
                       isSelected
@@ -297,17 +301,11 @@ export function CommandPalette({
                       <div className="flex flex-col overflow-hidden text-left">
                         {item.kind === "calculator" ? (
                           <div className="truncate">
-                            <span className="text-on-surface-variant">
-                              {item.expression} ={" "}
-                            </span>
-                            <strong className="text-title-small">
-                              {item.value}
-                            </strong>
+                            <span className="text-on-surface-variant">{item.expression} = </span>
+                            <strong className="text-title-small">{item.value}</strong>
                           </div>
                         ) : item.kind === "thread" ? (
-                          <span className="truncate text-label-large">
-                            {item.thread.title}
-                          </span>
+                          <span className="truncate text-label-large">{item.thread.title}</span>
                         ) : item.kind === "navigation" ? (
                           <div className="flex flex-col truncate">
                             <span className="truncate text-label-large font-semibold">
@@ -344,7 +342,9 @@ export function CommandPalette({
                         {badgeLabel}
                       </span>
                       {item.kind === "command" && item.menu
-                        ? menuShortcut(item.menu, isMacPlatform()).map((k) => <Kbd key={k}>{k}</Kbd>)
+                        ? menuShortcut(item.menu, isMacPlatform()).map((k) => (
+                            <Kbd key={k}>{k}</Kbd>
+                          ))
                         : null}
                       {isSelected && <Kbd>↵</Kbd>}
                     </div>
@@ -363,7 +363,7 @@ export function CommandPalette({
                 Aucun résultat pour « {draft} »
               </p>
               <p className="m-0 mt-1 text-body-large text-on-surface-variant">
-                Appuyez sur Entrée pour poser cette question à Aphrody.
+                Appuyez sur Entrée pour ouvrir ce texte dans le chat.
               </p>
             </div>
           )}

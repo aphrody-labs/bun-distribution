@@ -3,7 +3,7 @@
 
 [GOAL.md](GOAL.md) owns the requested scope. [AGENTS.md](AGENTS.md) owns local
 execution rules. [MEMORY.md](MEMORY.md) records dated validation and limitations.
-The [Aphrody architecture](../../PLAN.md) and [Yolo producer plan](../../../yolo/PLAN.md)
+The [Aphrody architecture](../PLAN.md) and [Yolo producer plan](../../yolo/PLAN.md)
 remain authoritative for native runtime and installed hosts.
 
 ## One framework, explicit owners

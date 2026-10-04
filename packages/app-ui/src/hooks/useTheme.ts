@@ -1,113 +1,80 @@
-import { useEffect } from 'react';
-import { useCoreQuery, useSpacedriveClient } from '../contexts/SpacedriveContext';
+// SPDX-License-Identifier: Apache-2.0
+import { useEffect } from "react";
+import {
+  DEFAULT_PREFERENCES,
+  hydratePreferences,
+  PREFERENCES_KEY,
+  type Preferences,
+} from "../preferences";
 
-const THEME_CLASS_MAP: Record<string, string> = {
-	light: 'vanilla-theme',
-	dark: '', // default, no class needed
-	midnight: 'midnight-theme',
-	noir: 'noir-theme',
-	slate: 'slate-theme',
-	nord: 'nord-theme',
-	mocha: 'mocha-theme',
-};
+export const APPEARANCE_EVENT = "aphrody:preferences-changed";
 
 export function applyTheme(theme: string) {
-	let resolvedTheme = theme;
-
-	// Handle system theme
-	if (theme === 'system') {
-		const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-		resolvedTheme = prefersDark ? 'dark' : 'light';
-	}
-
-	// Apply theme class to document
-	const themeClass = THEME_CLASS_MAP[resolvedTheme];
-
-	// Remove all theme classes
-	document.documentElement.classList.remove(
-		'vanilla-theme',
-		'midnight-theme',
-		'noir-theme',
-		'slate-theme',
-		'nord-theme',
-		'mocha-theme'
-	);
-
-	// Add the new theme class if it's not dark (dark is default)
-	if (themeClass) {
-		document.documentElement.classList.add(themeClass);
-	}
+  const resolved =
+    theme === "system"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
+      : theme === "light"
+        ? "light"
+        : "dark";
+  const root = document.documentElement;
+  root.classList.remove(
+    "light",
+    "dark",
+    "vanilla-theme",
+    "midnight-theme",
+    "noir-theme",
+    "slate-theme",
+    "nord-theme",
+    "mocha-theme",
+  );
+  root.classList.add(resolved);
+  root.style.colorScheme = resolved;
 }
 
+export function applyAppearance(
+  preferences: Pick<Preferences, "theme" | "fontSize" | "reducedMotion">,
+) {
+  applyTheme(preferences.theme);
+  const size = [18, 20, 22].includes(preferences.fontSize) ? preferences.fontSize : 18;
+  document.documentElement.style.setProperty("--aphrody-base-font-size", `${size}px`);
+  document.documentElement.classList.toggle("reduce-motion", preferences.reducedMotion);
+}
+
+/** Appearance belongs to the application preferences, independently of Drive availability. */
 export function useTheme() {
-	const client = useSpacedriveClient();
-	const { data: config, refetch } = useCoreQuery({ type: 'config.app.get', input: null as any });
-
-	// Apply theme on mount and when config changes
-	useEffect(() => {
-		const theme = config?.preferences?.theme || 'system';
-		applyTheme(theme);
-	}, [config?.preferences?.theme]);
-
-	// Listen for config change events from Rust (following useJobs pattern)
-	useEffect(() => {
-		if (!client) return;
-
-		console.log('[useTheme] Setting up ConfigChanged subscription');
-		let unsubscribe: (() => void) | undefined;
-		let isCancelled = false;
-
-		const handleEvent = (event: any) => {
-			if ('ConfigChanged' in event) {
-				console.log('[useTheme] Received ConfigChanged event:', event.ConfigChanged);
-				const configEvent = event.ConfigChanged;
-				if (configEvent?.field === 'theme') {
-					// Refetch config to get the new theme value
-					refetch().then((result) => {
-						if (result.data?.preferences?.theme) {
-							applyTheme(result.data.preferences.theme);
-						}
-					});
-				}
-			}
-		};
-
-		const filter = {
-			event_types: ['ConfigChanged']
-		};
-
-		client.subscribeFiltered(filter, handleEvent).then((unsub) => {
-			console.log('[useTheme] ConfigChanged subscription created');
-			if (isCancelled) {
-				console.log('[useTheme] Subscription was cancelled during setup, cleaning up');
-				unsub();
-			} else {
-				unsubscribe = unsub;
-			}
-		});
-
-		return () => {
-			console.log('[useTheme] Cleaning up ConfigChanged subscription');
-			isCancelled = true;
-			unsubscribe?.();
-		};
-	}, [client]);
-
-	// Listen for system theme changes when theme is set to "system"
-	useEffect(() => {
-		const theme = config?.preferences?.theme || 'system';
-
-		if (theme !== 'system') return;
-
-		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-		const handleChange = (e: MediaQueryListEvent) => {
-			const resolvedTheme = e.matches ? 'dark' : 'light';
-			applyTheme(resolvedTheme);
-		};
-
-		mediaQuery.addEventListener('change', handleChange);
-
-		return () => mediaQuery.removeEventListener('change', handleChange);
-	}, [config?.preferences?.theme]);
+  useEffect(() => {
+    let active = true;
+    let current = DEFAULT_PREFERENCES;
+    const apply = (preferences: Preferences) => {
+      if (!active) return;
+      current = preferences;
+      applyAppearance(preferences);
+    };
+    const saved = (event: Event) => apply((event as CustomEvent<Preferences>).detail);
+    const systemChanged = () => {
+      if (current.theme === "system") applyTheme("system");
+    };
+    const reload = () => {
+      void hydratePreferences()
+        .then(apply)
+        .catch(() => {});
+    };
+    const storageChanged = (event: StorageEvent) => {
+      if (event.key === PREFERENCES_KEY) reload();
+    };
+    apply(current);
+    reload();
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    media.addEventListener("change", systemChanged);
+    window.addEventListener(APPEARANCE_EVENT, saved);
+    window.addEventListener("storage", storageChanged);
+    return () => {
+      active = false;
+      media.removeEventListener("change", systemChanged);
+      window.removeEventListener(APPEARANCE_EVENT, saved);
+      window.removeEventListener("storage", storageChanged);
+    };
+  }, []);
 }

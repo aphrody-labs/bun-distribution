@@ -9,7 +9,7 @@ import { chromium, type Page } from "playwright-core";
 import { PAGES } from "../src/pages/index.ts";
 import { CHROMIUM_ARGS } from "./shots.ts";
 
-const RUNS = fileURLToPath(new URL("../../../../../.coord/runs/m3-prod/", import.meta.url));
+const RUNS = fileURLToPath(new URL("../../../../.coord/runs/m3-prod/", import.meta.url));
 interface Check {
   name: string;
   passed: boolean;

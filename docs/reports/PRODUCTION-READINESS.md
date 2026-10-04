@@ -148,7 +148,7 @@ stopped on an uncached `actix-codec` dependency. Neither metadata scope
 compiles a Rust engine or qualifies an artifact. Native check, test, strict
 Clippy, packaging, installation and device qualification remain open.
 
-The [factory owner](../../../../packages/infra/workspace/src/build-factory.ts)
+The [factory owner](../../../packages/infra/workspace/src/build-factory.ts)
 prepared fresh VPS Aphrody sources at
 `d06d00738a8f26857d8c057609a182a1e81e9994`. FFI job `75735`
 is queued behind the serialized heavy lock, last reported held by legacy

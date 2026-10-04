@@ -8,14 +8,28 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { AphrodyAvatar } from "@aphrody/identity";
 import { Icon, Kbd, Tooltip } from "@aphrody/m3-primitives";
-import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { ThreadSummary } from "./history";
 import { HistoryPanel, listAllThreads } from "./history-panel";
 import { Onboarding } from "./onboarding";
-import { hydratePreferences, loadPreferences, type Preferences, savePreferences } from "./preferences";
+import {
+  hydratePreferences,
+  loadPreferences,
+  type Preferences,
+  savePreferences,
+} from "./preferences";
 import { type Attachment, buildInput, imageDataUrl } from "./quickbar-input";
-import { suggest, type Suggestion } from "./quickbar-suggest";
-import { desktopRoutes } from "./desktop-navigation";
+import { CANONICAL_COMMANDS, suggest, type Suggestion } from "./quickbar-suggest";
+import { emitTo } from "@tauri-apps/api/event";
+import { MENU_EVENTS } from "./menu-commands";
 
 type Notification = {
   method?: string;
@@ -32,7 +46,8 @@ type RpcResponse = { result?: Record<string, unknown>; error?: { message?: strin
 let requestId = 0;
 
 async function rpc(method: string, params: Record<string, unknown> = {}) {
-  const request = method === "initialized" ? { method, params } : { id: ++requestId, method, params };
+  const request =
+    method === "initialized" ? { method, params } : { id: ++requestId, method, params };
   const response = await invoke<RpcResponse>("aphrody_rpc", { request });
   if (response.error) throw new Error(response.error.message ?? "Aphrody RPC failure");
   return response.result ?? {};
@@ -125,7 +140,16 @@ export function QuickBar() {
   }, []);
 
   const suggestions = useMemo(
-    () => (busy || showHistory ? [] : suggest(draft, threads, prefs.sources)),
+    () =>
+      busy || showHistory
+        ? []
+        : suggest(draft, threads, prefs.sources, {
+            navigationTargets: [],
+            files: [],
+            commands: CANONICAL_COMMANDS.filter(
+              (item) => item.menu || item.command === "clear" || item.command === "theme",
+            ),
+          }),
     [draft, threads, prefs.sources, busy, showHistory],
   );
 
@@ -178,32 +202,30 @@ export function QuickBar() {
     inputRef.current?.focus();
   };
 
-  const pick = (item: Suggestion) => {
+  const pick = async (item: Suggestion) => {
     setHighlight(-1);
-    if (item.kind === "thread") {
-      openThread(item.thread);
-    } else if (item.kind === "calculator") {
-      setDraft(item.value);
-    } else if (item.kind === "navigation") {
-      void invoke("aphrody_shell_window", { action: { action: "navigate", route: item.route } }).catch(() => {});
-      hide();
-    } else if (item.kind === "command") {
-      if (item.command === "clear") {
+    setError("");
+    try {
+      if (item.kind === "thread") {
+        openThread(item.thread);
+      } else if (item.kind === "calculator") {
+        setDraft(item.value);
+      } else if (item.kind === "command" && item.menu) {
+        // This is a separate webview: relay only to the main window's registered menu listener.
+        await emitTo("main", MENU_EVENTS[item.menu]);
+        await quickbar({ action: "open_main" });
+      } else if (item.kind === "command" && item.command === "clear") {
         setDraft("");
         setAnswer("");
-        setError("");
-      } else if (item.command === "settings") {
-        void invoke("aphrody_shell_window", { action: { action: "navigate", route: desktopRoutes.settings } }).catch(() => {});
-        hide();
-      } else if (item.command === "models") {
-        void invoke("aphrody_shell_window", { action: { action: "navigate", route: desktopRoutes.models } }).catch(() => {});
-        hide();
+      } else if (item.kind === "command" && item.command === "theme") {
+        const next: Preferences = { ...prefs, theme: prefs.theme === "dark" ? "light" : "dark" };
+        await savePreferences(next);
+        setPrefs(next);
       } else {
-        hide();
+        throw new Error("Cette action n'est pas disponible dans la barre rapide.");
       }
-    } else if (item.kind === "file") {
-      void invoke("aphrody_shell_window", { action: { action: "navigate", route: `/explorer?path=${encodeURIComponent(item.path)}` } }).catch(() => {});
-      hide();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : String(failure));
     }
   };
 
@@ -212,7 +234,10 @@ export function QuickBar() {
     const card = cardRef.current;
     if (!card || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(() => {
-      void quickbar({ action: "resize", height: Math.ceil(card.getBoundingClientRect().height) + 16 }).catch(() => {});
+      void quickbar({
+        action: "resize",
+        height: Math.ceil(card.getBoundingClientRect().height) + 16,
+      }).catch(() => {});
     });
     observer.observe(card);
     return () => observer.disconnect();
@@ -225,7 +250,10 @@ export function QuickBar() {
       const { open } = await import("@tauri-apps/plugin-dialog");
       const picked = await open({ title: "Joindre un fichier", multiple: true, directory: false });
       const paths = Array.isArray(picked) ? picked : picked ? [picked] : [];
-      setAttachments((items) => [...items, ...paths.map((path) => ({ kind: "file" as const, path }))]);
+      setAttachments((items) => [
+        ...items,
+        ...paths.map((path) => ({ kind: "file" as const, path })),
+      ]);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -251,6 +279,10 @@ export function QuickBar() {
     event?.preventDefault();
     const question = draft.trim();
     if (!question || busy) return;
+    if (question.startsWith(">") && suggestions.length === 0) {
+      setError("Cette commande n’est pas disponible dans la barre rapide.");
+      return;
+    }
     setBusy(true);
     setError("");
     setAnswer("");
@@ -263,13 +295,20 @@ export function QuickBar() {
         const started = (await rpc("thread/start", {})) as { thread?: { id?: string } };
         threadId = started.thread?.id;
         if (!threadId) throw new Error("thread/start returned no thread id");
-        setActiveThread({ id: threadId, title: question, updatedAt: Math.floor(Date.now() / 1000) });
+        setActiveThread({
+          id: threadId,
+          title: question,
+          updatedAt: Math.floor(Date.now() / 1000),
+        });
       }
       const channel = new Channel<Notification>();
       channel.onmessage = (message) => {
         if (message.method === "item/agentMessage/delta") {
           setAnswer((text) => text + (message.params?.delta ?? ""));
-        } else if (message.method === "item/completed" && message.params?.item?.type === "agentMessage") {
+        } else if (
+          message.method === "item/completed" &&
+          message.params?.item?.type === "agentMessage"
+        ) {
           setAnswer(message.params.item.text ?? "");
         } else if (message.method === "turn/completed") {
           setBusy(false);
@@ -307,7 +346,7 @@ export function QuickBar() {
       const item = suggestions[highlight];
       if (item) {
         event.preventDefault();
-        pick(item);
+        void pick(item);
       }
     }
   };
@@ -323,7 +362,9 @@ export function QuickBar() {
           className="flex items-center gap-2 pb-2"
           onMouseDown={(event) => {
             if (event.button === 0 && event.target === event.currentTarget) {
-              void import("@tauri-apps/api/window").then(({ getCurrentWindow }) => getCurrentWindow().startDragging());
+              void import("@tauri-apps/api/window").then(({ getCurrentWindow }) =>
+                getCurrentWindow().startDragging(),
+              );
             }
           }}
         >
@@ -346,7 +387,11 @@ export function QuickBar() {
         </header>
 
         {prefsLoaded && !prefs.onboarded && (
-          <Onboarding modelsDir={prefs.modelsDir} onModelsDir={chooseModelsDir} onDone={finishOnboarding} />
+          <Onboarding
+            modelsDir={prefs.modelsDir}
+            onModelsDir={chooseModelsDir}
+            onDone={finishOnboarding}
+          />
         )}
 
         {activeThread && (
@@ -382,36 +427,43 @@ export function QuickBar() {
         />
 
         {suggestions.length > 0 && (
-          <ul id="quickbar-suggestions" role="listbox" aria-label="Suggestions" className="m-0 mt-2 list-none rounded-2xl bg-surface-container p-1">
+          <ul
+            id="quickbar-suggestions"
+            role="listbox"
+            aria-label="Suggestions"
+            className="m-0 mt-2 list-none rounded-2xl bg-surface-container p-1"
+          >
             {suggestions.map((item, index) => {
               const key =
                 item.kind === "thread"
                   ? item.thread.id
                   : item.kind === "navigation"
-                  ? item.id
-                  : item.kind === "command"
-                  ? item.id
-                  : item.kind === "file"
-                  ? item.id
-                  : "calculator";
+                    ? item.id
+                    : item.kind === "command"
+                      ? item.id
+                      : item.kind === "file"
+                        ? item.id
+                        : "calculator";
               const iconName =
                 item.kind === "calculator"
                   ? "calculate"
                   : item.kind === "thread"
-                  ? "history"
-                  : item.kind === "navigation"
-                  ? item.icon
-                  : item.kind === "command"
-                  ? item.icon
-                  : item.icon ?? (item.isDir ? "folder" : "description");
+                    ? "history"
+                    : item.kind === "navigation"
+                      ? item.icon
+                      : item.kind === "command"
+                        ? item.icon
+                        : (item.icon ?? (item.isDir ? "folder" : "description"));
               const kindBadge =
                 item.kind === "navigation"
                   ? "Navigation"
                   : item.kind === "command"
-                  ? "Commande"
-                  : item.kind === "file"
-                  ? (item.isDir ? "Dossier" : "Fichier")
-                  : null;
+                    ? "Commande"
+                    : item.kind === "file"
+                      ? item.isDir
+                        ? "Dossier"
+                        : "Fichier"
+                      : null;
               return (
                 <li
                   key={key}
@@ -420,7 +472,7 @@ export function QuickBar() {
                   aria-selected={index === highlight}
                   onMouseDown={(event) => {
                     event.preventDefault();
-                    pick(item);
+                    void pick(item);
                   }}
                   className={`flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-full px-4 text-body-large ${index === highlight ? "bg-secondary-container text-on-secondary-container" : "hover:bg-on-surface/8"}`}
                 >
@@ -465,9 +517,17 @@ export function QuickBar() {
         {attachments.length > 0 && (
           <ul className="mt-2 flex flex-wrap gap-2">
             {attachments.map((item, index) => (
-              <li key={`${item.kind}-${index}`} className="flex items-center gap-1 rounded-sm bg-secondary-container py-1 pr-1 pl-3 text-label-medium text-on-secondary-container">
-                <Icon name={item.kind === "image" ? "screenshot_monitor" : "description"} size={16} />
-                <span className="max-w-60 truncate">{item.kind === "image" ? item.label : item.path}</span>
+              <li
+                key={`${item.kind}-${index}`}
+                className="flex items-center gap-1 rounded-sm bg-secondary-container py-1 pr-1 pl-3 text-label-medium text-on-secondary-container"
+              >
+                <Icon
+                  name={item.kind === "image" ? "screenshot_monitor" : "description"}
+                  size={16}
+                />
+                <span className="max-w-60 truncate">
+                  {item.kind === "image" ? item.label : item.path}
+                </span>
                 <button
                   type="button"
                   aria-label="Retirer"
@@ -482,7 +542,12 @@ export function QuickBar() {
         )}
 
         <div className="mt-2 flex items-center gap-1">
-          <IconAction icon="add" label="Joindre un fichier" onClick={() => void attachFile()} disabled={busy} />
+          <IconAction
+            icon="add"
+            label="Joindre un fichier"
+            onClick={() => void attachFile()}
+            disabled={busy}
+          />
           <div className="flex-1" />
           <IconAction
             icon="present_to_all"
@@ -498,8 +563,17 @@ export function QuickBar() {
         </div>
 
         {(answer || busy || error) && (
-          <div className="mt-2 max-h-96 overflow-y-auto rounded-2xl bg-surface-container px-4 py-3 text-body-medium whitespace-pre-wrap" aria-live="polite">
-            {error ? <span className="text-error">{error}</span> : answer || <span className="text-on-surface-variant">Reflexion...</span>}
+          <div
+            className="mt-2 max-h-96 overflow-y-auto rounded-2xl bg-surface-container px-4 py-3 text-body-medium whitespace-pre-wrap"
+            aria-live="polite"
+          >
+            {error ? (
+              <span role="alert" className="text-error">
+                {error}
+              </span>
+            ) : (
+              answer || <span className="text-on-surface-variant">Reflexion...</span>
+            )}
           </div>
         )}
       </form>

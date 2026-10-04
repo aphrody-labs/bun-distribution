@@ -11,7 +11,8 @@ import { formatMb } from "../../models-hub-state";
 import { hydratePreferences, updatePreferences } from "../../preferences";
 
 export function ModelsSettings() {
-  const [storeLocation, setStoreLocation] = useState<string>("~/.aphrody/models");
+  const [storeLocation, setStoreLocation] = useState<string | null>(null);
+  const [storeError, setStoreError] = useState("");
   const [hardware, setHardware] = useState<HardwareTelemetry | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -37,7 +38,7 @@ export function ModelsSettings() {
         if (root) setStoreLocation(root);
         return undefined;
       })
-      .catch(() => setError("Stockage natif indisponible."));
+      .catch(() => setStoreError("Stockage natif indisponible."));
     void refreshHardware();
   }, []);
 
@@ -69,9 +70,9 @@ export function ModelsSettings() {
       </div>
 
       <div className="space-y-6">
-        {error && (
+        {(error || storeError) && (
           <p role="alert" className="text-error">
-            {error}
+            {error || storeError}
           </p>
         )}
         {/* Emplacement de stockage */}
@@ -85,7 +86,8 @@ export function ModelsSettings() {
                 Dossier racine hébergeant les poids des modèles GGUF et les embeddings.
               </p>
               <div className="mt-3 p-3 rounded-medium bg-surface-container border border-outline-variant/30 font-mono text-body-large text-on-surface break-all">
-                {storeLocation}
+                {storeLocation ??
+                  (storeError ? "Emplacement indisponible" : "Chargement de l’emplacement…")}
               </div>
             </div>
             <Button

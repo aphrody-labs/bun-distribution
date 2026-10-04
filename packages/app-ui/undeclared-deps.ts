@@ -1,27 +1,28 @@
 // SPDX-License-Identifier: Apache-2.0
-// Resolver for the undeclared dependencies of react-selecto@1.26: it imports `react`,
-// `framework-utils` and `@daybrush/utils` without declaring them (only `selecto` is a dependency).
-// The workspace uses Bun's isolated linker without hoisting, so those bare imports do not resolve
-// from its store directory. They are resolved from the sibling `selecto` package (which declares
-// the two utilities) and from this package (which declares React), so the bundle keeps a single
-// React copy. Shared by `build.ts` (Bun.build) and `bunfig.toml` (`m3 dev`, Bun.serve).
+// Keep host and nested M3 workspaces on the application's React instance.
+// The same resolver runs in production, development and behavioral tests.
 import { dirname } from "node:path";
 import type { BunPlugin } from "bun";
 
 const here = import.meta.dir;
 
-/** Resolve a bare import made by a package that forgot to declare it. */
 export const undeclaredDependencies: BunPlugin = {
-  name: "app-ui-undeclared-dependencies",
+  name: "app-ui-shared-dependencies",
   setup(build) {
-    build.onResolve({ filter: /^(react(\/.*)?|framework-utils|@daybrush\/utils)$/ }, (args) => {
+    build.onResolve({ filter: /^\.\/assets\/NotoSansCJK-VF\.otf$/ }, () => ({
+      path: Bun.resolveSync("@aphrody/koharu-ui/assets/NotoSansCJK-VF.otf", here),
+    }));
+    build.onResolve({ filter: /^(react|react-dom)(\/.*)?$/ }, (args) => ({
+      path: Bun.resolveSync(args.path, here),
+    }));
+    build.onResolve({ filter: /^(framework-utils|@daybrush\/utils)$/ }, (args) => {
       if (!args.importer.includes("/react-selecto/")) return undefined;
       const selectoDir = dirname(Bun.resolveSync("selecto/package.json", args.importer));
       for (const from of [selectoDir, here]) {
         try {
           return { path: Bun.resolveSync(args.path, from) };
         } catch {
-          // try the next base directory
+          // Try the next declared dependency owner.
         }
       }
       return undefined;

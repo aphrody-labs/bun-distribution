@@ -11,6 +11,6 @@ repository.
 | `@aphrody/identity/pet` | `PET`, `frameAt`, `gazeFrame`, `spriteStyle` (timed tracks, 16-way gaze) | nothing |
 
 The brand and atlas modules import the crate assets by relative path, so they resolve in an aphrody
-checkout (this repository as `design/aphrody-m3`). `src/animations.generated.ts` is generated from the
+checkout (this repository mounted at `m3/`). `src/animations.generated.ts` is generated from the
 crate's `assets/aphrody/animations.json` by `bun run gen`; `bun run test` (`src/pet.test.ts`) fails when
 the two disagree. Typecheck: `bun run typecheck`.

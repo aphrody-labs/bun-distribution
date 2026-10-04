@@ -2,8 +2,8 @@
 # Aphrody M3 instructions
 
 Read [GOAL.md](GOAL.md), [PLAN.md](PLAN.md) and [MEMORY.md](MEMORY.md) before changes.
-When embedded in Aphrody, its [repository instructions](../../AGENTS.md) and
-[architecture plan](../../PLAN.md) also apply.
+When embedded in Aphrody, its [repository instructions](../AGENTS.md) and
+[architecture plan](../PLAN.md) also apply.
 
 This private repository owns the Material 3 framework and its web adapters.
 Aphrody owns product behavior, native UI crates and installed application hosts;

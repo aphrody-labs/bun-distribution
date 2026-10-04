@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Real React DOM interactions with synthetic owner responses; no live data or service claims.
 // oxlint-disable-next-line no-unassigned-import -- existing owner registers the DOM for component interactions
-import "../../../../../packages/bun/test-dom/src/index";
+import "../../../../packages/bun/test-dom/src/index";
 import { afterEach, expect, test } from "bun:test";
 import { createElement, act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -19,10 +19,12 @@ test("configured MCP servers show unknown connection honestly and propagate regi
     core: {
       invoke: async <T>(command: string, args?: Record<string, unknown>): Promise<T> => {
         expect(command).toBe("aphrody_rpc");
-        expect((args?.request as { method: string } | undefined)?.method).toBe(
-          "mcpServerStatus/list",
-        );
+        const method = (args?.request as { method: string } | undefined)?.method;
         if (fail) return { error: { message: "synthetic unavailable" } } as T;
+        if (method === "initialize") return { result: { serverInfo: { name: "aphrody" } } } as T;
+        if (method === "initialized") return {} as T;
+        if (method === "tools/list") return { result: { data: [] } } as T;
+        expect(method).toBe("mcpServerStatus/list");
         return {
           result: { servers: [{ name: "synthetic", status: "unknown", toolCount: 0 }] },
         } as T;
@@ -30,12 +32,14 @@ test("configured MCP servers show unknown connection honestly and propagate regi
     },
   };
   await mount(createElement(AgentToolsSettings));
-  await click("Actualiser les outils");
+  await click("Actualiser");
   expect(host.textContent).toContain("Connexion non vérifiée");
   expect(host.textContent).not.toContain("Aucun serveur configuré");
   fail = true;
-  await click("Actualiser les outils");
-  expect(host.querySelector('[role="alert"]')?.textContent).toContain("synthetic unavailable");
+  await click("Actualiser");
+  expect(host.querySelector('[role="alert"]')?.textContent).toContain(
+    "Impossible de lire les outils",
+  );
 });
 
 let root: Root | undefined;

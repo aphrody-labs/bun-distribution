@@ -6,6 +6,7 @@
 import "m3:symbols.css";
 import { type ReactNode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
+import { listen } from "@tauri-apps/api/event";
 import { SpacedriveClient, HttpTransport } from "@aphrody/drive-client";
 import { PlatformProvider, type Platform } from "./contexts/PlatformContext";
 import { Shell } from "./Shell";
@@ -21,7 +22,9 @@ const nativePlatform: Platform = {
   platform: isTauri() ? "tauri" : "web",
   openLink(url: string) {
     if (isTauri()) {
-      void tauriInvoke("plugin:opener|open_url", { url }).catch(() => window.open(url, "_blank"));
+      void tauriInvoke("plugin:opener|open_url", { url }).catch(() =>
+        window.open(url, "_blank", "noopener,noreferrer"),
+      );
     } else {
       window.open(url, "_blank", "noopener,noreferrer");
     }
@@ -70,33 +73,26 @@ const nativePlatform: Platform = {
 /**
  * Real Spacedrive client connected to the aphrody-drive plugin supervisor.
  */
-const client =
-  typeof window !== "undefined" && window.__TAURI__?.core
-    ? SpacedriveClient.fromTauri(
-        (cmd, args) => {
-          const tauriCmd =
-            cmd === "daemon_request" ||
-            cmd === "subscribe_to_events" ||
-            cmd === "unsubscribe_from_events" ||
-            cmd === "get_daemon_status" ||
-            cmd === "get_current_library_id" ||
-            cmd === "set_current_library_id" ||
-            cmd === "get_selected_file_ids" ||
-            cmd === "set_selected_file_ids" ||
-            cmd === "open_drive"
-              ? `plugin:aphrody-drive|${cmd}`
-              : cmd;
-          return window.__TAURI__!.core!.invoke(tauriCmd, args).catch((err) => {
-            console.warn(`[aphrody-drive IPC] ${tauriCmd}:`, err);
-            return null;
-          });
-        },
-        (event, handler) =>
-          window.__TAURI__?.event?.listen
-            ? window.__TAURI__.event.listen(event, handler)
-            : Promise.resolve(() => {}),
-      )
-    : new SpacedriveClient(new HttpTransport());
+const client = isTauri()
+  ? SpacedriveClient.fromTauri(
+      (cmd, args) => {
+        const tauriCmd =
+          cmd === "daemon_request" ||
+          cmd === "subscribe_to_events" ||
+          cmd === "unsubscribe_from_events" ||
+          cmd === "get_daemon_status" ||
+          cmd === "get_current_library_id" ||
+          cmd === "set_current_library_id" ||
+          cmd === "get_selected_file_ids" ||
+          cmd === "set_selected_file_ids" ||
+          cmd === "open_drive"
+            ? `plugin:aphrody-drive|${cmd}`
+            : cmd;
+        return tauriInvoke(tauriCmd, args);
+      },
+      (event, handler) => listen(event, handler),
+    )
+  : new SpacedriveClient(new HttpTransport());
 
 function App() {
   useEffect(() => {

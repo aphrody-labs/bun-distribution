@@ -41,20 +41,28 @@ export interface OsInfo {
 }
 
 export function isTauri(): boolean {
-  return typeof window !== "undefined" && Boolean(
-    window.__TAURI__?.core ||
-    (window as unknown as { __TAURI_INTERNALS__?: { invoke: unknown } }).__TAURI_INTERNALS__
+  return (
+    typeof window !== "undefined" &&
+    Boolean(
+      window.__TAURI__?.core ||
+      (window as unknown as { __TAURI_INTERNALS__?: { invoke: unknown } }).__TAURI_INTERNALS__,
+    )
   );
 }
 
-export async function tauriInvoke<T>(cmd: string, args: Record<string, unknown> = {}): Promise<T | null> {
+export async function tauriInvoke<T>(
+  cmd: string,
+  args: Record<string, unknown> = {},
+): Promise<T | null> {
   if (!isTauri()) return null;
   if (window.__TAURI__?.core) {
     return window.__TAURI__.core.invoke<T>(cmd, args);
   }
-  const internals = (window as unknown as {
-    __TAURI_INTERNALS__?: { invoke: <R>(c: string, a: Record<string, unknown>) => Promise<R> };
-  }).__TAURI_INTERNALS__;
+  const internals = (
+    window as unknown as {
+      __TAURI_INTERNALS__?: { invoke: <R>(c: string, a: Record<string, unknown>) => Promise<R> };
+    }
+  ).__TAURI_INTERNALS__;
   if (internals?.invoke) {
     return internals.invoke<T>(cmd, args);
   }
@@ -64,7 +72,14 @@ export async function tauriInvoke<T>(cmd: string, args: Record<string, unknown> 
 export interface ShenronChatResponse {
   answer: string;
   mode: string;
-  hits: Array<{ title: string; url: string; snippet: string; score: number; kind: string; source_id?: string | null }>;
+  hits: Array<{
+    title: string;
+    url: string;
+    snippet: string;
+    score: number;
+    kind: string;
+    source_id?: string | null;
+  }>;
 }
 
 export async function askShenron(query: string): Promise<ShenronChatResponse> {
@@ -77,8 +92,12 @@ export async function askShenron(query: string): Promise<ShenronChatResponse> {
 // Window Management (aphrody_shell_window)
 // ==========================================
 
-export async function shellWindowAction(action: Record<string, unknown>): Promise<{ closed: boolean; state?: ShellWindowState } | null> {
-  return tauriInvoke<{ closed: boolean; state?: ShellWindowState }>("aphrody_shell_window", { action });
+export async function shellWindowAction(
+  action: Record<string, unknown>,
+): Promise<{ closed: boolean; state?: ShellWindowState } | null> {
+  return tauriInvoke<{ closed: boolean; state?: ShellWindowState }>("aphrody_shell_window", {
+    action,
+  });
 }
 
 export async function shellMinimize() {
@@ -125,7 +144,10 @@ export async function appReady(): Promise<void> {
 // Native Dialogs (tauri-plugin-dialog)
 // ==========================================
 
-export async function pickDirectory(title = "Select Working Directory", defaultPath?: string): Promise<string | null> {
+export async function pickDirectory(
+  title = "Select Working Directory",
+  defaultPath?: string,
+): Promise<string | null> {
   if (isTauri()) {
     try {
       const { open } = await import("@tauri-apps/plugin-dialog");
@@ -145,7 +167,10 @@ export async function pickDirectory(title = "Select Working Directory", defaultP
   return null;
 }
 
-export async function pickFile(title = "Select File", defaultPath?: string): Promise<string | null> {
+export async function pickFile(
+  title = "Select File",
+  defaultPath?: string,
+): Promise<string | null> {
   if (isTauri()) {
     try {
       const { open } = await import("@tauri-apps/plugin-dialog");
@@ -202,7 +227,11 @@ export async function confirmNative(message: string, title = "Confirmation"): Pr
   return true;
 }
 
-export async function messageNative(message: string, title = "Aphrody OS", kind: "info" | "warning" | "error" = "info"): Promise<void> {
+export async function messageNative(
+  message: string,
+  title = "Aphrody OS",
+  kind: "info" | "warning" | "error" = "info",
+): Promise<void> {
   if (isTauri()) {
     try {
       const { message: msg } = await import("@tauri-apps/plugin-dialog");
@@ -234,14 +263,16 @@ export async function getOsTelemetry(): Promise<OsInfo> {
     };
   }
   try {
-    const internals = (window as unknown as {
-      __TAURI_OS_PLUGIN_INTERNALS__?: {
-        platform: string;
-        version: string;
-        arch: string;
-        os_type: string;
-      };
-    }).__TAURI_OS_PLUGIN_INTERNALS__;
+    const internals = (
+      window as unknown as {
+        __TAURI_OS_PLUGIN_INTERNALS__?: {
+          platform: string;
+          version: string;
+          arch: string;
+          os_type: string;
+        };
+      }
+    ).__TAURI_OS_PLUGIN_INTERNALS__;
 
     const [locale, hostname] = await Promise.all([
       tauriInvoke<string>("plugin:os|locale").catch(() => null),
@@ -249,10 +280,13 @@ export async function getOsTelemetry(): Promise<OsInfo> {
     ]);
 
     return {
-      platform: internals?.platform || (typeof navigator !== "undefined" ? navigator.platform || "unknown" : "unknown"),
+      platform:
+        internals?.platform ||
+        (typeof navigator !== "undefined" ? navigator.platform || "unknown" : "unknown"),
       version: internals?.version || "unknown",
       arch: internals?.arch || "unknown",
-      locale: locale || (typeof navigator !== "undefined" ? navigator.language || "en-US" : "en-US"),
+      locale:
+        locale || (typeof navigator !== "undefined" ? navigator.language || "en-US" : "en-US"),
       hostname: hostname || "localhost",
       osType: internals?.os_type || "unknown",
     };
@@ -304,8 +338,10 @@ export async function sendDesktopNotification(title: string, body?: string): Pro
   }
   if (typeof Notification !== "undefined" && Notification.permission === "granted") {
     try {
-      new Notification(title, { body });
-    } catch { /* ignored */ }
+      void new Notification(title, { body });
+    } catch {
+      /* ignored */
+    }
   }
 }
 
@@ -439,7 +475,14 @@ export interface InstalledModels {
 
 export interface PullReport {
   spec: string;
-  artifacts: Array<{ ref: string; path: string; bytes: number; sha256: string; format: string; outcome: string }>;
+  artifacts: Array<{
+    ref: string;
+    path: string;
+    bytes: number;
+    sha256: string;
+    format: string;
+    outcome: string;
+  }>;
   transferred_bytes: number;
   total_bytes: number;
 }
@@ -510,9 +553,13 @@ export function scanExternalModelStores(): Promise<ExternalStoreStatus[]> {
   return desktopInvoke("aphrody_model_scan_external");
 }
 
-export async function onModelPullProgress(handler: (progress: PullProgress) => void): Promise<() => void> {
+export async function onModelPullProgress(
+  handler: (progress: PullProgress) => void,
+): Promise<() => void> {
   if (!window.__TAURI__?.event) return () => undefined;
-  return window.__TAURI__.event.listen(MODEL_PULL_EVENT, (event) => handler(event.payload as PullProgress));
+  return window.__TAURI__.event.listen(MODEL_PULL_EVENT, (event) =>
+    handler(event.payload as PullProgress),
+  );
 }
 
 // ==========================================
@@ -556,23 +603,66 @@ export async function installAppUpdate(
 }
 
 let bridgeRequestId = 0;
+let initialization: Promise<void> | undefined;
 
-export async function aphrodyRpc(method: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
-  const request = method === "initialized" ? { method, params } : { id: ++bridgeRequestId, method, params };
-  if (isTauri()) {
-    const response = await tauriInvoke<{ result?: unknown; error?: { message?: string } }>("aphrody_rpc", { request });
-    if (response?.error) throw new Error(response.error.message ?? "Aphrody RPC failure");
-    return (response?.result ?? {}) as Record<string, unknown>;
+/** One handshake shared by every route; a failed connection remains retryable. */
+export function ensureAphrodyInitialized(): Promise<void> {
+  initialization ??= (async () => {
+    try {
+      await aphrodyRpc("initialize", {
+        clientInfo: { name: "aphrody-desktop", version: "1.0.0" },
+        capabilities: { experimentalApi: false, aphrody: true },
+      });
+    } catch (error) {
+      // A different webview may already have initialized the shared broker.
+      if (!(error instanceof Error) || error.message !== "invalid request: Already initialized")
+        throw error;
+    }
+    await aphrodyRpc("initialized");
+  })().catch((error: unknown) => {
+    initialization = undefined;
+    throw error;
+  });
+  return initialization;
+}
+
+function rpcResult(body: unknown, notification: boolean): Record<string, unknown> {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new Error("Réponse du service invalide.");
   }
-  const response = await fetch("./rpc", {
+  const response = body as { result?: unknown; error?: { message?: string } };
+  if (response.error) throw new Error(response.error.message ?? "Échec du service.");
+  if (notification) return {};
+  if (!response.result || typeof response.result !== "object" || Array.isArray(response.result)) {
+    throw new Error("Réponse du service incomplète.");
+  }
+  return response.result as Record<string, unknown>;
+}
+
+export async function aphrodyRpc(
+  method: string,
+  params: Record<string, unknown> = {},
+): Promise<Record<string, unknown>> {
+  const request =
+    method === "initialized" ? { method, params } : { id: ++bridgeRequestId, method, params };
+  if (isTauri()) {
+    const response = await tauriInvoke<{ result?: unknown; error?: { message?: string } }>(
+      "aphrody_rpc",
+      { request },
+    );
+    return rpcResult(response, method === "initialized");
+  }
+  const response = await fetch("/rpc", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
   });
   if (!response.ok) throw new Error(`Server returned HTTP ${response.status}`);
-  const body = (await response.json()) as { result?: Record<string, unknown>; error?: { message?: string } };
-  if (body.error) throw new Error(body.error.message ?? "Aphrody RPC failure");
-  return body.result ?? {};
+  const body = (await response.json()) as {
+    result?: Record<string, unknown>;
+    error?: { message?: string };
+  };
+  return rpcResult(body, method === "initialized");
 }
 
 export async function aphrodyReply(response: {
@@ -585,16 +675,18 @@ export async function aphrodyReply(response: {
     await tauriInvoke("aphrody_reply", { response });
     return;
   }
-  await fetch("./rpc", {
+  const acknowledged = await fetch("/rpc", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(response),
   });
+  if (!acknowledged.ok) throw new Error(`Server returned HTTP ${acknowledged.status}`);
+  rpcResult(await acknowledged.json(), true);
 }
 
 export async function aphrodySessionStream(
   threadId: string,
-  onMessage: (msg: unknown) => void
+  onMessage: (msg: unknown) => void,
 ): Promise<() => void> {
   if (!isTauri() && typeof EventSource !== "undefined") {
     return browserSessionStream(threadId, onMessage);
@@ -615,10 +707,10 @@ export async function aphrodySessionStream(
         }).catch(() => {});
       };
     } catch (err) {
-      console.warn("Failed to attach session stream:", err);
+      throw new Error("Impossible de connecter le flux de conversation.", { cause: err });
     }
   }
-  return () => {};
+  throw new Error("Le flux de conversation est indisponible.");
 }
 
 // ==========================================
@@ -639,7 +731,9 @@ export type DesktopIntegrationAction =
   | { action: "set_autostart"; on: boolean };
 
 /** Read or change the desktop integration from the main window. `null` outside Tauri. */
-export function desktopIntegration(action: DesktopIntegrationAction): Promise<DesktopIntegrationState | null> {
+export function desktopIntegration(
+  action: DesktopIntegrationAction,
+): Promise<DesktopIntegrationState | null> {
   return tauriInvoke<DesktopIntegrationState>("aphrody_desktop_integration", { action });
 }
 
@@ -683,39 +777,8 @@ export async function fsReadText(path: string): Promise<FsFileResult | null> {
 }
 
 // ==========================================
-// AI Contextual Operations (OCR, Transcribe, RAG)
+// Document search through the app-server
 // ==========================================
-
-export interface OcrRunOptions {
-  path: string;
-  languages?: string[];
-  force?: boolean;
-}
-
-export async function runOcr(options: OcrRunOptions): Promise<Record<string, unknown>> {
-  void options;
-  throw new Error("OCR is not exposed by the Aphrody app-server yet.");
-}
-
-export interface TranscribeRunOptions {
-  path: string;
-  model?: string;
-  language?: string;
-}
-
-export async function runTranscribe(options: TranscribeRunOptions): Promise<Record<string, unknown>> {
-  return aphrodyRpc("aphrody/transcribe/run", { ...options });
-}
-
-export interface RagIndexOptions {
-  path: string;
-  recursive?: boolean;
-}
-
-export async function runRagIndex(options: RagIndexOptions): Promise<Record<string, unknown>> {
-  void options;
-  throw new Error("RAG indexing is not exposed by the Aphrody app-server yet.");
-}
 
 export interface RagSearchResultItem {
   path: string;
@@ -750,52 +813,10 @@ export interface RagStats {
 }
 
 export async function getRagStats(): Promise<RagStats> {
-  try {
-    const status = await aphrodyRpc("aphrody/rag/status");
-    return {
-      documents: typeof status.indexedDocuments === "number" ? status.indexedDocuments : 0,
-      chunks: typeof status.totalChunks === "number" ? status.totalChunks : 0,
-    };
-  } catch {}
-  return { documents: 0, chunks: 0 };
-}
-
-// ---------------------------------------------------------------------------
-// Native Rust A2A & MCP Desktop Studio Bridge
-// ---------------------------------------------------------------------------
-
-export interface NativeA2AFleetResponse {
-  peers: Array<{
-    id: string;
-    name: string;
-    role: string;
-    status: "busy" | "idle" | "offline";
-    version?: string;
-    skills?: string[];
-    activeClaim?: string;
-  }>;
-  claims: Array<Record<string, unknown>>;
-  envelopes: Array<Record<string, unknown>>;
-  coordDir: string;
-}
-
-export async function fetchA2AFleetStatus(): Promise<NativeA2AFleetResponse | null> {
-  return tauriInvoke<NativeA2AFleetResponse>("studio_a2a_fleet_status");
-}
-
-export async function sendA2AEnvelope(envelope: Record<string, unknown>): Promise<{ sent: boolean; path: string } | null> {
-  return tauriInvoke<{ sent: boolean; path: string }>("studio_a2a_send_envelope", { envelope });
-}
-
-export interface NativeMcpToolItem {
-  name: string;
-  description: string;
-  ui?: {
-    resourceUri?: string;
-    html?: string;
-  } | null;
-}
-
-export async function fetchMcpToolsList(): Promise<{ tools: NativeMcpToolItem[]; protocol: string; m3Parity: boolean } | null> {
-  return tauriInvoke<{ tools: NativeMcpToolItem[]; protocol: string; m3Parity: boolean }>("studio_mcp_tools_list");
+  await ensureAphrodyInitialized();
+  const status = await aphrodyRpc("aphrody/rag/status");
+  if (typeof status.indexedDocuments !== "number" || typeof status.totalChunks !== "number") {
+    throw new Error("Les statistiques documentaires sont indisponibles.");
+  }
+  return { documents: status.indexedDocuments, chunks: status.totalChunks };
 }

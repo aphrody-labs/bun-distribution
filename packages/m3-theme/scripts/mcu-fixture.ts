@@ -25,7 +25,7 @@ import {
 } from "@material/material-color-utilities";
 import { join } from "node:path";
 
-const OUT = join(import.meta.dir, "../../../../../crates/ui/m3-tokens/tests/fixtures/mcu.json");
+const OUT = join(import.meta.dir, "../../../../crates/ui/m3-tokens/tests/fixtures/mcu.json");
 
 /** Deterministic colours: xorshift32 plus the usual suspects. */
 function sampleColors(count: number): number[] {

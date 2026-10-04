@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # The Aphrody M3 framework
 
-`aphrody-m3` is the private design workspace consumed at `design/aphrody-m3` by its host
-repositories. It owns the Bun framework packages, React and Lit adapters, assets and application
+`aphrody-m3` is the private UI framework workspace mounted at `m3/` in Aphrody.
+Other host repositories choose their own pinned mount points. It owns the Bun framework packages, React and Lit adapters, assets and application
 UI. Aphrody owns the canonical Rust UI crates in `crates/ui/*`; Yolo supplies the runtime and
 orchestrates the workspace commands. Package manifests and their exports define the consumer
 APIs. Repository layout and commands: [framework guide](../../guides/FRAMEWORK.md).

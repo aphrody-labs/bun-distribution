@@ -6,7 +6,7 @@ Converts a website, web app or built bundle into a native Tauri 3 app that chang
 page, its API or its backend can see. Guide:
 [`docs/guides/ui/WEB-TO-TAURI.md`](../../docs/guides/WEB-TO-TAURI.md). Config contract:
 [`docs/apis/ui/WRAP-CONFIG.md`](../../docs/apis/WRAP-CONFIG.md). Runtime:
-[`crates/ui/tauri-wrap`](../../../../crates/ui/tauri-wrap).
+[`crates/ui/tauri-wrap`](../../../crates/ui/tauri-wrap).
 
 ```sh
 bun run ui:wrap plan https://example.com
