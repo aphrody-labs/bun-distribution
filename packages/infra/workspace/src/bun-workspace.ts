@@ -18,11 +18,11 @@
 //            stale hoisted leftover that `bun install` never replaces (two copies of React, ...)
 
 import { Glob, TOML } from "bun";
+import { firstPartyManifests } from "@aphrody/update/manifests";
 import { readdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 
 /** Vendored packages can be linked for resolution without adopting first-party manifest rules. */
-export const UPSTREAM = ["packages/aphrody-spaceui/", "third_party/"];
 
 /** The M3 family (published packages only): lockstep version and shared presets. */
 export const M3_FAMILY = /^@aphrody\/(m3(-[a-z0-9-]+)?|material-web|bun)$/;
@@ -204,34 +204,6 @@ export function checkManifest(
     }
   }
   return out;
-}
-
-/** Manifests actually selected by the root Bun workspace globs. */
-export async function firstPartyManifests(
-  repo: string,
-  patternsOverride?: readonly string[],
-): Promise<string[]> {
-  const root = await Bun.file(join(repo, "package.json")).json();
-  const patterns: readonly string[] =
-    patternsOverride ??
-    (Array.isArray(root.workspaces) ? root.workspaces : (root.workspaces?.packages ?? []));
-  const includes = patterns.filter((pattern) => !pattern.startsWith("!"));
-  const excludes = patterns
-    .filter((pattern) => pattern.startsWith("!"))
-    .map((pattern) => new Glob(`${pattern.slice(1).replace(/\/$/, "")}/package.json`));
-  const found = await Promise.all(
-    includes.map(async (pattern) => {
-      const manifestPattern = `${pattern.replace(/\/$/, "")}/package.json`;
-      if (!/[?*{[]/.test(pattern)) {
-        return (await Bun.file(join(repo, manifestPattern)).exists()) ? [manifestPattern] : [];
-      }
-      return Array.fromAsync(new Glob(manifestPattern).scan({ cwd: repo, onlyFiles: true }));
-    }),
-  );
-  return [...new Set(found.flat().map((path) => path.replaceAll("\\", "/")))]
-    .filter((path) => !excludes.some((exclude) => exclude.match(path)))
-    .filter((path) => !UPSTREAM.some((prefix) => path.startsWith(prefix)))
-    .toSorted();
 }
 
 /**

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { realpath } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
-import { firstPartyManifests } from "./bun-workspace.ts";
+import { firstPartyManifests } from "@aphrody/update/manifests";
 import { routeHeavyBuild } from "./build-factory.ts";
 import { DEFAULT_INLINE_BASELINE } from "./inline-interpreters.ts";
 

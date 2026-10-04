@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Derive validation stages from the active manifests, bottom to top. */
 import { basename, join, resolve } from "node:path";
-import { firstPartyManifests } from "./bun-workspace.ts";
+import { firstPartyManifests } from "@aphrody/update/manifests";
 const DOMAIN_ORDER = [
   "bun",
   "compat",

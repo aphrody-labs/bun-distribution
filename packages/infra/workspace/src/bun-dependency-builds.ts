@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { dirname, join } from "node:path";
-import { firstPartyManifests } from "./bun-workspace.ts";
+import { firstPartyManifests } from "@aphrody/update/manifests";
 
 interface PackageManifest {
   name: string;

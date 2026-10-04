@@ -22,7 +22,7 @@ import { osv, parseBunLock, pool, type Dep } from "../deps/inventory.ts";
 import { plan as toolsPlan, runTools, type ToolRow } from "../tools.ts";
 import { parseSemver, pickEligible, runTauriSync } from "../tauri/sync.ts";
 import { runSources } from "../sources/drift.ts";
-import { firstPartyManifests } from "../../../workspace/src/bun-workspace.ts";
+import { firstPartyManifests } from "../manifests.ts";
 
 // ---------------------------------------------------------------- types
 

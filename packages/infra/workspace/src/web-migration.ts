@@ -4,7 +4,7 @@ import { Glob, TOML } from "bun";
 import { spawnSync } from "@aphrody/update/process";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import { firstPartyManifests } from "./bun-workspace.ts";
+import { firstPartyManifests } from "@aphrody/update/manifests";
 
 type Component = { name: string; manifest: string };
 type CatalogGap = { manifest: string; section: string; dependency: string; catalog: string };

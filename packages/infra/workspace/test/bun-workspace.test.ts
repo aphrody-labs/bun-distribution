@@ -3,9 +3,9 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { firstPartyManifests } from "@aphrody/update/manifests";
 import {
   checkManifest,
-  firstPartyManifests,
   M3_FAMILY,
   minimumBun,
   parseTsconfigExtends,
