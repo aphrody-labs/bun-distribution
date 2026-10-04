@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import { join, posix, resolve } from "node:path";
 import { infraRoot, runInfra } from "./runtime.ts";
+import {
+  factorySourceScope,
+  selectedSourceClean,
+  selectedSourcePrelude,
+  selectedSourceSetup,
+  selectedSourceUpdate,
+  selectedSourceVerify,
+} from "./build-factory-source.ts";
 
 export interface BuildFactoryConfig {
   schemaVersion: number;
@@ -38,7 +46,9 @@ export function buildFactoryPlan(
   repository: string,
   revision: string,
   command: readonly string[],
+  options: { submodules?: readonly string[] } = {},
 ) {
+  const sourceScope = factorySourceScope(options.submodules);
   if (config.executionOnlyTargets?.includes(config.target))
     throw new Error(
       `Build target ${config.target} is execution-only; designate a new factory host`,
@@ -89,8 +99,16 @@ export function buildFactoryPlan(
     'export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"',
     `cd -- ${shellQuote(root)}`,
     `test "$(git rev-parse HEAD)" = ${shellQuote(revision)} || { echo 'Build factory source revision differs from the requested pin' >&2; exit 2; }`,
-    "test -z \"$(git status --porcelain --untracked-files=all --ignore-submodules=none)\" || { echo 'Build factory source checkout is dirty' >&2; exit 2; }",
-    `git submodule foreach --quiet --recursive 'test -z "$(git status --porcelain --untracked-files=all --ignore-submodules=none)"'`,
+    ...(sourceScope.kind === "gitlinks"
+      ? [
+          ...selectedSourcePrelude(sourceScope, revision),
+          ...selectedSourceClean(),
+          ...selectedSourceVerify(),
+        ]
+      : [
+          "test -z \"$(git status --porcelain --untracked-files=all --ignore-submodules=none)\" || { echo 'Build factory source checkout is dirty' >&2; exit 2; }",
+          `git submodule foreach --quiet --recursive 'test -z "$(git status --porcelain --untracked-files=all --ignore-submodules=none)"'`,
+        ]),
     `exec env ${environment.map(shellQuote).join(" ")} ${command.map(shellQuote).join(" ")}`,
   ].join("\n");
   // The supervisor owns the descriptor; long-lived cache daemons must not inherit it.
@@ -101,6 +119,7 @@ export function buildFactoryPlan(
     target: config.target,
     workspace: root,
     command: [...command],
+    sourceScope,
     serialized: true,
     commandTimeoutSeconds,
     transport: ["ssh", "exec", "--host", config.target, "--cmd", remoteCommand],
@@ -143,12 +162,15 @@ export function buildFactoryPreparePlan(
   repository: string,
   revision: string,
   source: FactorySource,
-  options: { initializeSubmodules?: boolean } = {},
+  options: { initializeSubmodules?: boolean; submodules?: readonly string[] } = {},
 ) {
+  const sourceScope = factorySourceScope(options.submodules);
+  if (sourceScope.kind === "gitlinks" && options.initializeSubmodules === false)
+    throw new Error("Selected submodules cannot be combined with --no-submodules");
   if (!["yolo", "aphrody", "aphrody-py"].includes(repository)) {
     throw new Error("Factory preparation is limited to yolo, aphrody and aphrody-py");
   }
-  const validation = buildFactoryPlan(config, repository, revision, ["git", "checkout"]);
+  const validation = buildFactoryPlan(config, repository, revision, ["git", "checkout"], options);
   const base = posix.dirname(absolutePath(config.repositories.aphrody!, "aphrody repository"));
   if (validation.workspace !== posix.join(base, repository) || base === "/") {
     throw new Error("Factory repository must stay in its declared sibling workspace");
@@ -196,26 +218,37 @@ export function buildFactoryPreparePlan(
     `test "$(git rev-parse --show-toplevel)" = "$root" || { echo 'Factory source is not its declared Git root; preserved' >&2; exit 2; }`,
     "origin=$(git config --get-all remote.origin.url)",
     `case "$origin" in ${normalizedExisting.map(shellQuote).join("|")}) ;; *) echo 'Existing factory origin differs from the declared private repository; preserved' >&2; exit 2 ;; esac`,
+    ...(sourceScope.kind === "gitlinks" ? selectedSourceSetup(sourceScope, revision) : []),
     'if [ -f "$(git rev-parse --git-path index)" ]; then',
-    `  ${clean}`,
+    ...(sourceScope.kind === "gitlinks" ? selectedSourceClean() : [`  ${clean}`]),
     "else",
     '  test -z "$(find . -mindepth 1 -maxdepth 1 ! -name .git -print -quit)" || { echo "Uninitialized factory checkout contains unowned files; preserved" >&2; exit 2; }',
     "fi",
-    `git submodule foreach --quiet --recursive ${shellQuote(clean)}`,
+    ...(sourceScope.kind === "gitlinks"
+      ? []
+      : [`git submodule foreach --quiet --recursive ${shellQuote(clean)}`]),
     "git fetch --prune --tags --filter=blob:none origin refs/heads/main:refs/remotes/origin/main",
     `git cat-file -e ${shellQuote(`${revision}^{commit}`)} 2>/dev/null || git fetch --filter=blob:none origin ${shellQuote(revision)}`,
     `git cat-file -e ${shellQuote(`${revision}^{commit}`)}`,
     `git merge-base --is-ancestor ${shellQuote(revision)} refs/remotes/origin/main || { echo 'Requested source revision is not on the declared remote main history' >&2; exit 2; }`,
-    `git checkout --detach --no-overwrite-ignore ${shellQuote(revision)}`,
-    "git submodule sync --recursive",
-    `git submodule foreach --quiet --recursive ${shellQuote(guardedSubmodules)}`,
-    ...(options.initializeSubmodules === false
-      ? []
-      : ["git submodule update --init --recursive --jobs 4 --filter=blob:none"]),
+    ...(sourceScope.kind === "gitlinks" ? selectedSourcePrelude(sourceScope, revision) : []),
+    `git${sourceScope.kind === "gitlinks" ? " -c submodule.recurse=false" : ""} checkout --detach --no-overwrite-ignore ${shellQuote(revision)}`,
+    ...(sourceScope.kind === "gitlinks"
+      ? selectedSourceUpdate(FACTORY_GIT)
+      : [
+          "git submodule sync --recursive",
+          `git submodule foreach --quiet --recursive ${shellQuote(guardedSubmodules)}`,
+          ...(options.initializeSubmodules === false
+            ? []
+            : ["git submodule update --init --recursive --jobs 4 --filter=blob:none"]),
+        ]),
     `test "$(git rev-parse HEAD)" = ${shellQuote(revision)}`,
-    clean,
-    `git submodule foreach --quiet --recursive ${shellQuote(clean)}`,
-    "echo 'Factory source prepared; no build started'",
+    ...(sourceScope.kind === "gitlinks"
+      ? [...selectedSourceClean(), ...selectedSourceVerify()]
+      : [clean, `git submodule foreach --quiet --recursive ${shellQuote(clean)}`]),
+    sourceScope.kind === "gitlinks"
+      ? "echo 'Factory selected gitlink closure prepared; whole repository cleanliness not asserted; no build started'"
+      : "echo 'Factory source prepared; no build started'",
   ].join("\n");
   const directoryCommands = [
     base,
@@ -234,6 +267,7 @@ export function buildFactoryPreparePlan(
   return {
     operation: "prepare" as const,
     initializesSubmodules: options.initializeSubmodules !== false,
+    sourceScope,
     lockPath,
     repository,
     revision,
@@ -466,7 +500,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> [--detach --job <stable-id>] -- <owner command> [arguments...]\n       aphrody-ops build-factory prepare --repo <aphrody|yolo|aphrody-py> --revision <full-git-sha> [--apply] [--no-submodules]\n       aphrody-ops build-factory status [--route]\n       aphrody-ops build-factory status --job <stable-id> [--tail <0..200>]\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
+      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> [--submodules <gitlink[,gitlink]>] [--detach --job <stable-id>] -- <owner command> [arguments...]\n       aphrody-ops build-factory prepare --repo <aphrody|yolo|aphrody-py> --revision <full-git-sha> [--apply] [--no-submodules | --submodules <gitlink[,gitlink]>]\n       aphrody-ops build-factory status [--route]\n       aphrody-ops build-factory status --job <stable-id> [--tail <0..200>]\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\n--submodules prepares/verifies only selected root-tree gitlinks and their recursive descendants, plus parent source files/index. Unselected gitlinks are preserved; whole repository cleanliness is not asserted. Combine the same scope with plan/run. Selected scope cannot be combined with --no-submodules. Detached jobs retain the selected source scope in their request fingerprint.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
     );
     return 0;
   }
@@ -507,6 +541,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   let command: string[] = [];
   let apply = false;
   let initializeSubmodules = true;
+  let submodules: readonly string[] | undefined;
   let detach = false;
   let jobId = "";
   const seen = new Set<string>();
@@ -532,13 +567,21 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
       detach = true;
       continue;
     }
-    if (arg !== "--repo" && arg !== "--revision" && !(action !== "prepare" && arg === "--job"))
+    if (
+      arg !== "--repo" &&
+      arg !== "--revision" &&
+      arg !== "--submodules" &&
+      !(action !== "prepare" && arg === "--job")
+    )
       throw new Error(`Unknown argument: ${arg}`);
     const value = rest[++i];
     if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
     if (arg === "--repo") repository = value;
     else if (arg === "--revision") revision = value;
-    else jobId = value;
+    else if (arg === "--submodules") {
+      const scope = factorySourceScope(value.split(","));
+      if (scope.kind === "gitlinks") submodules = scope.paths;
+    } else jobId = value;
   }
   if (detach !== Boolean(jobId))
     throw new Error("Detached jobs require both --detach and an explicit --job <stable-id>");
@@ -549,6 +592,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     const source = await declaredFactorySource(root, repository, revision);
     const plan = buildFactoryPreparePlan(config, repository, revision, source, {
       initializeSubmodules,
+      submodules,
     });
     if (!apply) {
       console.log(JSON.stringify({ executed: false, ...plan }, null, 2));
@@ -568,6 +612,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
           revision: plan.revision,
           target: plan.target,
           workspace: plan.workspace,
+          sourceScope: plan.sourceScope,
           stdout: result.stdout,
           stderr: result.stderr,
         },
@@ -577,7 +622,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     );
     return result.exitCode;
   }
-  const plan = buildFactoryPlan(config, repository, revision, command);
+  const plan = buildFactoryPlan(config, repository, revision, command, { submodules });
   if (detach) {
     const { factoryJobPlan } = await import("./build-factory-jobs.ts");
     const job = factoryJobPlan(config, plan, jobId);

@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { posix } from "node:path";
 import { buildFactoryPlan, type BuildFactoryConfig } from "./build-factory.ts";
+import type { FactorySourceScope } from "./build-factory-source.ts";
 
 export interface FactoryOwnerPlan {
   repository: string;
@@ -11,6 +12,7 @@ export interface FactoryOwnerPlan {
   command: readonly string[];
   commandTimeoutSeconds: number;
   transport: readonly string[];
+  sourceScope?: FactorySourceScope;
 }
 
 export const FACTORY_JOB_MAX_TAIL_LINES = 200;
@@ -159,6 +161,7 @@ function projection(lines = 0) {
   const meta = request();
   const result = {
     schemaVersion: 1, jobId: meta.jobId, fingerprint: meta.fingerprint,
+    ...(meta.sourceScope ? { sourceScope: meta.sourceScope } : {}),
     repository: meta.repository, revision: meta.revision, target: meta.target,
     requestedAt: meta.requestedAt, status: "queued", phase: "dispatch"
   };
@@ -257,7 +260,8 @@ try {
     const meta = {
       schemaVersion: 1, jobId: input.jobId, fingerprint: input.fingerprint,
       repository: input.repository, revision: input.revision, target: input.target,
-      commandTimeoutSeconds: input.commandTimeoutSeconds, requestedAt: new Date().toISOString()
+      commandTimeoutSeconds: input.commandTimeoutSeconds, requestedAt: new Date().toISOString(),
+      ...(input.sourceScope ? { sourceScope: input.sourceScope } : {})
     };
     exclusive(join(input.directory, "request.json"), JSON.stringify(meta) + "\n");
     exclusive(join(input.directory, "state.json"), JSON.stringify({ fingerprint: input.fingerprint, status: "queued" }) + "\n");
@@ -350,6 +354,10 @@ export function factoryJobPlan(
     existingPlan.repository,
     existingPlan.revision,
     existingPlan.command,
+    {
+      submodules:
+        existingPlan.sourceScope?.kind === "gitlinks" ? existingPlan.sourceScope.paths : undefined,
+    },
   );
   if (
     canonical.transport[5] !== remoteCommand ||
@@ -379,11 +387,13 @@ export function factoryJobPlan(
     target: existingPlan.target,
     commandTimeoutSeconds: existingPlan.commandTimeoutSeconds,
     remoteCommand,
+    sourceScope: existingPlan.sourceScope,
   };
   return {
     operation: "submit" as const,
     jobId,
     fingerprint,
+    sourceScope: existingPlan.sourceScope,
     directory,
     target: existingPlan.target,
     commandTimeoutSeconds: existingPlan.commandTimeoutSeconds,
