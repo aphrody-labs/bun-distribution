@@ -1,11 +1,11 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Dependency inventory
 
-Generated 2026-10-03T03:33:55.648Z by `aphrody-update deps inventory` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: `target/deps-inventory/inventory.json` (not committed).
+Generated 2026-10-04T03:38:40.421Z by `aphrody-update deps inventory` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: `target/deps-inventory/inventory.json` (not committed).
 
 ## Rust (Cargo.lock)
 
-- resolved: 2341, behind latest: 701 (direct: 100), with advisories: 16, yanked/deprecated: 0
+- resolved: 2351, behind latest: 715 (direct: 104), with advisories: 16, yanked/deprecated: 0
 
 Held advisories (reason in `config/deps/advisory-holds.json`):
 - atomic-polyfill 1.0.3: RUSTSEC-2023-0089 (latest 1.0.3) - unmaintained notice, transitive; no newer release.
@@ -30,6 +30,7 @@ Direct dependencies behind latest:
 - aes-gcm 0.10.3 -> 0.11.1
 - arrow-array 58.4.0 -> 60.0.0
 - arrow-schema 58.4.0 -> 60.0.0
+- auto_impl 1.3.0 -> 1.4.0
 - base64 0.13.1 -> 0.23.1
 - base64 0.21.7 -> 0.23.1
 - base64 0.22.1 -> 0.23.1
@@ -47,7 +48,8 @@ Direct dependencies behind latest:
 - glam 0.30.10 -> 0.33.12
 - glam 0.31.1 -> 0.33.12
 - glam 0.32.1 -> 0.33.12
-- harfrust 0.12.0 -> 0.13.3
+- harfrust 0.12.0 -> 0.14.0
+- harfrust 0.13.3 -> 0.14.0
 - hashbrown 0.12.3 -> 0.17.1
 - hashbrown 0.14.5 -> 0.17.1
 - hashbrown 0.15.5 -> 0.17.1
@@ -75,6 +77,7 @@ Direct dependencies behind latest:
 - rand 0.7.3 -> 0.10.3
 - rand 0.8.8 -> 0.10.3
 - rand 0.9.5 -> 0.10.3
+- rars 0.9.4 -> 0.10.0
 - read-fonts 0.39.2 -> 0.45.0
 - read-fonts 0.41.0 -> 0.45.0
 - read-fonts 0.43.3 -> 0.45.0
@@ -83,29 +86,24 @@ Direct dependencies behind latest:
 - rfd 0.16.0 -> 0.17.2
 - roxmltree 0.20.0 -> 0.21.1
 - rustc-hash 1.1.0 -> 2.1.3
-- rustix 0.38.44 -> 1.1.5
-- schemars 0.9.0 -> 1.2.2
-- scraper 0.25.0 -> 0.27.0
 
 ## Bun (bun.lock)
 
-- resolved: 2733, behind latest: 1062 (direct: 113), with advisories: 10, yanked/deprecated: 39
+- resolved: 2229, behind latest: 798 (direct: 60), with advisories: 8, yanked/deprecated: 37
 
 Open advisories with a newer release (bump or replace the consumer):
+- http-cache-semantics 4.2.0: GHSA-ch52-4w7c-c8xp (latest 4.3.0)
 - react-router 6.30.6: GHSA-337j-9hxr-rhxg, GHSA-wrjc-x8rr-h8h6 (latest 8.4.0)
 
 Open advisories with no newer release:
 - braces 3.0.3: GHSA-vfj7-8cjw-p6xm (latest 3.0.3)
-- http-cache-semantics 4.2.0: GHSA-ch52-4w7c-c8xp (latest 4.2.0)
 
 Held advisories (reason in `config/deps/advisory-holds.json`):
 - adm-zip 0.6.0: GHSA-7q85-xj36-vmfc, GHSA-8238-w5pm-2374, GHSA-c6fg-446q-cg94 (latest 0.6.1) - 0.6.0 is pinned exactly by @mintlify/cli and @mintlify/previewing (dev docs tool `mint`, @koharu/docs only); 0.6.1 is already used by onnxruntime-node. Moves with the next mint release.
 - esbuild 0.27.7: GHSA-g7r4-m6w7-qqqr (latest 0.28.2) - 0.27/0.21/0.18 are pinned by vite and tool ranges that exclude 0.28; the advisories concern the esbuild dev server only.
 - js-yaml 4.3.1: GHSA-2883-xcg3-v3hh (latest 5.4.2) - 4.3.1 is pinned exactly by @mintlify/* (dev docs tool `mint`); every other consumer already resolves 4.3.2, 3.15.2 or 5.x. Moves with the next mint release.
-- quill 2.0.3: GHSA-v3m3-f69x-jf25 (latest 2.0.3) - no newer release (2.0.3 is latest).
 - esbuild 0.18.20: GHSA-67mh-4wv8-2f99 (latest 0.28.2) - 0.27/0.21/0.18 are pinned by vite and tool ranges that exclude 0.28; the advisories concern the esbuild dev server only.
 - sharp 0.33.5: GHSA-f88m-g3jw-g9cj, GHSA-rgj7-g3m4-5g8c (latest 0.35.5) - 0.33.5 is pinned by @mintlify/prebuild (dev docs tool `mint`); the catalog, next, miniflare and favicons resolve 0.35.x. Moves with the next mint release; the 0.35.5 copy is not affected.
-- uuid 9.0.1: GHSA-w5hq-g745-h8pq (latest 14.0.2) - uuid 9 is a transitive major; only v3/v5/v6 with a caller-supplied buffer is affected.
 
 Yanked or deprecated:
 - @esbuild-kit/core-utils 3.3.2: Merged into tsx: https://tsx.hirok.io
@@ -135,14 +133,7 @@ Yanked or deprecated:
 - @yuku-parser/binding-win32-arm64 0.10.2: yuku-parser runs on yuku-core since 0.14
 
 Direct dependencies behind latest:
-- @ai-sdk/google-vertex 5.0.98 -> 5.0.101
-- @ai-sdk/openai-compatible 3.0.59 -> 3.0.62
 - @ai-sdk/provider 4.0.19 -> 4.0.21
-- @better-auth/api-key 1.7.6 -> 1.7.7
-- @better-auth/oauth-provider 1.7.6 -> 1.7.7
-- @better-auth/passkey 1.7.6 -> 1.7.7
-- @colyseus/core 0.18.17 -> 0.18.18
-- @colyseus/schema 5.0.34 -> 5.0.35
 - @napi-rs/canvas 1.0.9 -> 1.0.10
 - @napi-rs/canvas-android-arm64 1.0.9 -> 1.0.10
 - @napi-rs/canvas-darwin-arm64 1.0.9 -> 1.0.10
@@ -155,55 +146,82 @@ Direct dependencies behind latest:
 - @napi-rs/canvas-linux-x64-musl 1.0.9 -> 1.0.10
 - @napi-rs/canvas-win32-arm64-msvc 1.0.9 -> 1.0.10
 - @napi-rs/canvas-win32-x64-msvc 1.0.9 -> 1.0.10
-- @neon/config 1.8.2 -> 1.8.3
-- @neon/env 1.4.7 -> 1.5.0
-- @next/bundle-analyzer 16.3.6 -> 16.3.8
-- @next/third-parties 16.3.6 -> 16.3.8
+- @neon/env 1.4.8 -> 1.5.0
 - @react-three/drei 9.122.0 -> 10.7.9
-- @sentry/nextjs 11.1.0 -> 11.4.0
-- @stripe/stripe-js 9.17.0 -> 10.0.0
-- @tanstack/query-sync-storage-persister 5.104.0 -> 5.104.1
 - @tanstack/react-query 5.104.0 -> 5.104.1
-- @tanstack/react-query-persist-client 5.104.0 -> 5.104.1
-- @tauri-apps/plugin-dialog 2.8.0 -> 2.8.1
-- @tiptap/core 3.31.3 -> 3.31.4
-- @tiptap/extension-drag-handle 3.31.3 -> 3.31.4
-- @tiptap/extension-drag-handle-react 3.31.3 -> 3.31.4
-- @tiptap/extension-file-handler 3.31.3 -> 3.31.4
-- @tiptap/extension-highlight 3.31.3 -> 3.31.4
-- @tiptap/extension-image 3.31.3 -> 3.31.4
-- @tiptap/extension-placeholder 3.31.3 -> 3.31.4
-- @tiptap/extension-subscript 3.31.3 -> 3.31.4
-- @tiptap/extension-superscript 3.31.3 -> 3.31.4
-- @tiptap/extension-table 3.31.3 -> 3.31.4
-- @tiptap/extension-text-align 3.31.3 -> 3.31.4
-- @tiptap/extension-text-style 3.31.3 -> 3.31.4
-- @tiptap/extension-youtube 3.31.3 -> 3.31.4
-- @tiptap/extensions 3.31.3 -> 3.31.4
-- @tiptap/html 3.31.3 -> 3.31.4
-- @tiptap/pm 3.31.3 -> 3.31.4
-- @tiptap/react 3.31.3 -> 3.31.4
-- @tiptap/starter-kit 3.31.3 -> 3.31.4
-- @tiptap/static-renderer 3.31.3 -> 3.31.4
-- @tiptap/suggestion 3.31.3 -> 3.31.4
-- @types/google.maps 3.66.4 -> 3.66.5
 - @types/node 26.6.3 -> 26.6.4
 - typescript 6.0.3 -> 7.0.2
-- ai 7.0.122 -> 7.0.127
+- ai 7.0.126 -> 7.0.127
 - better-auth 1.7.6 -> 1.7.7
-- commander 14.0.3 -> 15.0.0
 - dotenv 17.4.2 -> 18.0.5
+- fuse.js 7.1.0 -> 7.5.0
+- googleapis 182.0.0 -> 183.0.0
 - graphql 16.14.2 -> 17.0.2
 - graphql-scalars 1.26.0 -> 2.0.0
+- lucide-react 1.48.0 -> 1.51.0
+- maplibre-gl 6.11.2 -> 6.12.0
+- mint 4.2.948 -> 4.2.984
+- motion 13.4.4 -> 14.0.0
+- next-intl 4.14.7 -> 4.14.9
+- pino 10.3.1 -> 10.4.0
+- pixi.js 8.21.0 -> 8.22.0
+- react-resizable-panels 4.14.1 -> 4.14.2
+- react-router-dom 6.30.6 -> 7.18.4
+- schema-dts 2.0.0 -> 2.1.0
+- shadcn 4.21.0 -> 4.21.1
+- tailwindcss 3.4.17 -> 4.3.3
+- turbo 2.11.5 -> 2.11.7
+- type-fest 4.41.0 -> 5.10.0
+- undici-types 8.9.0 -> 8.11.2
+- uuid 11.1.1 -> 14.0.2
+- zod 3.25.76 -> 4.6.5
+- google-auth-library 10.9.1 -> 11.1.0
+- node-fetch 2.6.7 -> 3.3.2
+- lru-cache 5.1.1 -> 11.5.3
+- react 19.2.3 -> 19.3.0
+- zod 4.3.6 -> 4.6.5
+- postcss 8.5.23 -> 8.5.28
+- remark-gfm 4.0.0 -> 4.0.1
+- sharp 0.33.5 -> 0.35.5
+- express 4.22.0 -> 5.2.1
+- graphql 16.11.0 -> 17.0.2
+- zod 3.24.0 -> 4.6.5
+- node-fetch 2.7.0 -> 3.3.2
+- lru-cache 10.4.3 -> 11.5.3
+- type-fest 0.20.2 -> 5.10.0
+- ts-morph 26.0.0 -> 28.0.0
+- three 0.170.0 -> 0.186.1
+- zustand 4.5.7 -> 5.0.15
+- type-fest 0.21.3 -> 5.10.0
 
 ## Python (requirements, uv.lock)
 
-- resolved: 264, behind latest: 52 (direct: 0), with advisories: 3, yanked/deprecated: 0
+- resolved: 383, behind latest: 152 (direct: 0), with advisories: 21, yanked/deprecated: 0
+
+Open advisories with a newer release (bump or replace the consumer):
+- accelerate 1.13.0: GHSA-4j2p-28q2-5m79, PYSEC-2026-3804 (latest 1.15.0)
+- aiohttp 3.13.5: GHSA-2fqr-mr3j-6wp8, GHSA-4fvr-rgm6-gqmc, GHSA-4m7w-qmgq-4wj5 (latest 3.14.3)
+- anyio 4.13.0: GHSA-5p39-cfhj-2xmp, GHSA-82r6-8w77-94w6, PYSEC-2026-4024 (latest 4.15.1)
+- click 8.3.2: PYSEC-2026-2132 (latest 8.5.0)
+- cryptography 46.0.6: GHSA-537c-gmf6-5ccf, GHSA-g6cj-pr64-35w5, GHSA-jwv3-5hgf-82ww (latest 50.0.2)
+- datasets 4.8.4: GHSA-379c-qx7v-6h59, PYSEC-2026-3716 (latest 5.0.1)
+- flask 2.3.3: GHSA-68rp-wp8r-4726, PYSEC-2026-2151 (latest 3.1.3)
+- idna 3.11: GHSA-65pc-fj4g-8rjx, PYSEC-2026-215 (latest 3.20)
+- msgpack 1.1.2: GHSA-6v7p-g79w-8964, PYSEC-2026-3625 (latest 1.2.3)
+- pillow 12.2.0: GHSA-45hq-cxwh-f6vc, GHSA-4x4j-2g7c-83w6, GHSA-5x94-69rx-g8h2 (latest 12.3.0)
+- pyasn1 0.6.3: GHSA-8ppf-4f7h-5ppj, GHSA-hm4w-wwcw-mr6r, GHSA-m4p7-r5rc-7g4j (latest 0.6.4)
+- pytest 8.4.2: GHSA-6w46-j5rx-g56g, PYSEC-2026-1845 (latest 9.1.1)
+- python-engineio 4.13.1: GHSA-cgwc-pv48-fhj5, GHSA-m9gh-vj53-gvh9, PYSEC-2026-3032 (latest 4.14.0)
+- python-socketio 5.16.1: GHSA-5w7q-77mv-v69f, PYSEC-2026-3042 (latest 5.17.0)
+- setuptools 81.0.0: GHSA-h35f-9h28-mq5c, PYSEC-2026-3447 (latest 84.0.0)
+- urllib3 2.6.3: GHSA-8988-9cw3-xx77, GHSA-gh4c-6fx4-qh6g, GHSA-mf9v-mfxr-j63j (latest 2.8.0)
 
 Held advisories (reason in `config/deps/advisory-holds.json`):
 - torch 2.8.0: GHSA-qfhq-4f3w-5fph, GHSA-rrmf-rvhw-rf47, GHSA-vgrw-7cvw-pwgx (latest 2.14.1) - pinned ==2.8.0 in aphrody-train: the 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke test.
 - torch 2.8.0+cu129: GHSA-qfhq-4f3w-5fph, GHSA-rrmf-rvhw-rf47, GHSA-vgrw-7cvw-pwgx (latest 2.14.1) - pinned ==2.8.0 in aphrody-train: the 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke test.
 - transformers 4.57.6: GHSA-29pf-2h5f-8g72, GHSA-69w3-r845-3855, GHSA-fgcw-684q-jj6r (latest 5.18.0) - kept below 4.58 by aphrody-train (sentence-transformers 5.x line); 5.x needs sentence-transformers 6.
+- torch 2.11.0: GHSA-rrmf-rvhw-rf47 (latest 2.14.1) - pinned ==2.8.0 in aphrody-train: the 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke test.
+- transformers 5.5.0: GHSA-x9r9-c232-4q39, GHSA-xrqw-3rrv-vx5w, PYSEC-2026-3929 (latest 5.18.0) - kept below 4.58 by aphrody-train (sentence-transformers 5.x line); 5.x needs sentence-transformers 6.
 
 ## Git sources
 
@@ -216,8 +234,8 @@ Held advisories (reason in `config/deps/advisory-holds.json`):
 
 ## First-party crates
 
-- 213 crates (17 AI/MCP/model related by name)
-- version drift from the workspace version (prerelease suffixes ignored; imported crates keep their upstream versions): 79
+- 217 crates (18 AI/MCP/model related by name)
+- version drift from the workspace version (prerelease suffixes ignored; imported crates keep their upstream versions): 83
   - aphrody-a2a 0.3.0 (workspace 1.0.0)
   - aphrody-n2b-types 0.6.2 (workspace 1.0.0)
   - aphrody-n2b-registry 0.6.2 (workspace 1.0.0)
@@ -225,6 +243,7 @@ Held advisories (reason in `config/deps/advisory-holds.json`):
   - aphrody-oxc-bridge 0.1.0 (workspace 1.0.0)
   - aphrody-n2b-core 0.6.2 (workspace 1.0.0)
   - aphrody-n2b-native 0.2.0 (workspace 1.0.0)
+  - serde-saphyr 0.0.16 (workspace 1.0.0)
   - aphrody-a2a-pb 0.1.8 (workspace 1.0.0)
   - aphrody-a2a-grpc 0.2.2 (workspace 1.0.0)
   - aphrody-a2a-server 0.3.0 (workspace 1.0.0)
@@ -237,8 +256,7 @@ Held advisories (reason in `config/deps/advisory-holds.json`):
   - log-analyzer 0.1.0 (workspace 1.0.0)
   - sd-ffmpeg 0.1.0 (workspace 1.0.0)
   - sd-archive 0.1.0 (workspace 1.0.0)
-  - sd-fda 0.1.0 (workspace 1.0.0)
-- names already on crates.io (vendored upstream crates such as taffy or whisper-rs-sys are expected; first-party names there are a publish-time collision): 15
+- names already on crates.io (vendored upstream crates such as taffy or whisper-rs-sys are expected; first-party names there are a publish-time collision): 19
   - ffmpeg-sys-next
   - koharu
   - koharu-bindgen
@@ -252,5 +270,9 @@ Held advisories (reason in `config/deps/advisory-holds.json`):
   - koharu-torch-sys
   - log-analyzer
   - obscura
+  - serde-saphyr
+  - simdutf
+  - tauri-plugin-dialog
+  - tauri-plugin-mcp-bridge
   - whisper-rs-sys
   - xtask

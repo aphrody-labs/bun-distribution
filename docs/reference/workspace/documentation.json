@@ -536,8 +536,8 @@
     {
       "path": "apps/shenron/site/docs/neon-automation.md",
       "title": "Archive historique — Neon ↔ GitHub ↔ Vercel",
-      "sha256": "33a9345ffc7cc88adbea86ff371e15b2db0d8c9f81b06f0da35b0558eae862b6",
-      "bytes": 9852,
+      "sha256": "1d66d71ac40633bfd537d76d14fe1c5eccf88d872fcac2bf667af96f63cd54d5",
+      "bytes": 9842,
       "domain": "shenron",
       "status": "historical",
       "visibility": "private",
@@ -1836,7 +1836,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "f7b5e846737934fab15dcc8f81d739c6611bc796a40c473f6b8e83d10a997a6b",
+      "sha256": "039fc9273fbcefb3626e4ef9233534e1563f4ef93dd53137da0347b4f8e3b458",
       "bytes": 15158,
       "domain": "",
       "status": "generated",
@@ -3796,8 +3796,8 @@
     {
       "path": "docs/architecture/shenron/STACK.md",
       "title": "Pile unifiée Shenron (@shenron/)",
-      "sha256": "52dbb0af82bf4d60bc592bacacc1e83ff3dc7c543a3175515987490483f4c921",
-      "bytes": 122987,
+      "sha256": "506de321aaf43c252769f1ace051b3600d10f61976614c3e69616ef499c32733",
+      "bytes": 122977,
       "domain": "shenron",
       "status": "canonical",
       "visibility": "private",
@@ -8114,6 +8114,16 @@
       "canonical": "docs/migration/BUN-NATIVE-PACKAGE.md"
     },
     {
+      "path": "docs/migration/CONFIG-DEDUP-2026-10-04.md",
+      "title": "Config file dedup, phase 1 (2026-10-04)",
+      "sha256": "b1bbdbfbc55709c4f7cb727207e43386dbd10a9492582ad49193f396d88173eb",
+      "bytes": 1594,
+      "domain": "",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/migration/CONFIG-DEDUP-2026-10-04.md"
+    },
+    {
       "path": "docs/migration/DISCORD-QUALIFICATION.md",
       "title": "Discord Qualification and Upstream Elimination Report",
       "sha256": "bc840ed71c6f61d5483976cb2432e19666ac1781d348b2a969a6cc0b1a685c4d",
@@ -8222,6 +8232,16 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/migration/NIE-NATIVE-AGGREGATION.md"
+    },
+    {
+      "path": "docs/migration/PERF-2026-10-04.md",
+      "title": "Perf snapshot 2026-10-04",
+      "sha256": "b115fe9dbc21b12150eec33ee5fef5ddd4cda6cc6f863582a82040cfd0cc4c57",
+      "bytes": 1097,
+      "domain": "",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/migration/PERF-2026-10-04.md"
     },
     {
       "path": "docs/migration/PLAN-before-reorganization-2026-10-01.md",
@@ -8662,6 +8682,16 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/operations/infra/SOURCE-SYNC-QUALIFICATION-2026-10-02.md"
+    },
+    {
+      "path": "docs/operations/infra/TOOLCHAIN-SYNC.md",
+      "title": "Toolchain sync (WSL, Windows, vps, dbfr)",
+      "sha256": "33fd3f3721e40d5554ed10fd276b9bb703fedd021d25d9c2c1e4064704855ec3",
+      "bytes": 3071,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/TOOLCHAIN-SYNC.md"
     },
     {
       "path": "docs/operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md",
@@ -10946,8 +10976,8 @@
     {
       "path": "docs/products/ui/examples/showcase/qa/README.md",
       "title": "Gemini AI Mode — visual QA",
-      "sha256": "3cb67c3dc2232f3c1971fb002d515d0863635fb395ec95992a98017a16129f6f",
-      "bytes": 3713,
+      "sha256": "5c89acef5f4b1d63fb468c2408bdfac05e5c55b0f377c4339e9430cb82f0a5b1",
+      "bytes": 3708,
       "domain": "ui",
       "status": "historical",
       "visibility": "private",
@@ -12936,8 +12966,8 @@
     {
       "path": "docs/products/web/crates/aphrody-site/web/README.md",
       "title": "Aphrody Web OS portal",
-      "sha256": "b53ad44881cc852fd3edb020b5e1e7e042b97c8dfbbf46a9f5ade30d6718200c",
-      "bytes": 1536,
+      "sha256": "ebfaa415b6153264eaa56badc171545698cc3101c6d2a03f251a5bb651c2fea4",
+      "bytes": 1531,
       "domain": "web",
       "status": "canonical",
       "visibility": "private",
@@ -13256,8 +13286,8 @@
     {
       "path": "docs/reference/ai/MAIL-STACK.md",
       "title": "Messagerie Aphrody",
-      "sha256": "5ee19e082d1246a21f985032897664fe1331390af71d7e6355fda92d42e6ffbd",
-      "bytes": 5348,
+      "sha256": "5611da519a22375205254344d62875c5097924130aa5a8c4c50cf945393bfd37",
+      "bytes": 5367,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -14696,8 +14726,8 @@
     {
       "path": "docs/reference/compat/N2B-OXC-MAP.md",
       "title": "N2B and Oxc map (Rust and Bun)",
-      "sha256": "7af74b9cbf69af518ac7abd03f2892bf81fe5c05cae935797350d8c7b1205f8d",
-      "bytes": 15042,
+      "sha256": "7dc0b1b366dbde1cb205f2b4a9538132cde882c2ad9277f0b37603a1b2add626",
+      "bytes": 14977,
       "domain": "compat",
       "status": "historical",
       "visibility": "private",
@@ -45076,8 +45106,8 @@
     {
       "path": "docs/reference/workspace/CLI.md",
       "title": "CLI du poste Aphrody",
-      "sha256": "ac2d669e2df164e1eff677591a0e50edb4a68e934e9c51bc3c876956a096df2e",
-      "bytes": 13422,
+      "sha256": "131503a03e7282d5464063273a404e5a25f2942b22358b8d351453f2c01f587f",
+      "bytes": 14451,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
@@ -45086,8 +45116,8 @@
     {
       "path": "docs/reference/workspace/DEPS-INVENTORY.md",
       "title": "Dependency inventory",
-      "sha256": "3c77b041af5e19d9a6e47303aafa583b0cde0fb2d95be05ebb21b02e40844cd7",
-      "bytes": 13811,
+      "sha256": "1203070db516ae54f290d3afd0d5019bac161288c64a5b5a57f4d68b51860327",
+      "bytes": 14873,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
@@ -45146,7 +45176,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "0b429e938184c379feac3a6a32de750894fe8027a811c8c3e79566cbab831b8b",
+      "sha256": "33f56df7bb340ce1a3f9263e74f14eabdebb1e6f23600f30dc812eef91ed6268",
       "bytes": 39140,
       "domain": "workspace",
       "status": "generated",

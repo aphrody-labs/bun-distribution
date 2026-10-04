@@ -111,8 +111,7 @@ Pins: `config/update/pins.json` tools `oxlint` (targets `package.json`,
 
 Config files (30 found outside `node_modules`/`target`/`.next`): root
 `.oxlintrc.json`, `.oxfmtrc.json` (`$schema` from `node_modules/oxlint|oxfmt`);
-`config/rg/.oxlintrc.json` (not in repo), `config/rg/.oxfmtrc.json` (not in repo), `config/shenron/.oxlintrc.json`,
-`config/shenron/.oxfmtrc.json`, `iecode/packages/rg/config/oxlintrc.json`,
+`config/rg/.oxlintrc.json` (not in repo), `config/rg/.oxfmtrc.json` (not in repo), `iecode/packages/rg/config/oxlintrc.json`,
 `packages/ui/eslint-plugin-m3/test/.oxlintrc.json`, and per-package pairs in
 `packages/ui/{m3-primitives,assets,m3-theme,m3-explorer,m3-forms,canvas,m3-ai,...}`.
 
