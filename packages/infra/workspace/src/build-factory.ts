@@ -355,23 +355,150 @@ export async function routeHeavyBuild(
   ).exitCode;
 }
 
+interface FactoryJobTransport {
+  operation: "submit" | "status";
+  jobId: string;
+  target: string;
+  transport: string[];
+  fingerprint?: string;
+  repository?: string;
+  revision?: string;
+}
+
+/** Transport failures are ambiguous after submission; a stable job is never automatically replayed. */
+async function runFactoryJobTransport(plan: FactoryJobTransport, root: string): Promise<number> {
+  const unknown = (error: string, transportExitCode?: number) => {
+    console.log(
+      JSON.stringify({
+        schemaVersion: 1,
+        success: false,
+        operation: plan.operation,
+        jobId: plan.jobId,
+        target: plan.target,
+        ...(plan.fingerprint ? { fingerprint: plan.fingerprint } : {}),
+        status: "unknown",
+        dispatchConfirmed: false,
+        reconciliationRequired: true,
+        ...(transportExitCode === undefined ? {} : { transportExitCode }),
+        error: error.slice(-16384),
+      }),
+    );
+    return transportExitCode && transportExitCode > 0 && transportExitCode <= 255
+      ? transportExitCode
+      : 2;
+  };
+  let result;
+  try {
+    result = await runInfra({
+      args: plan.transport,
+      cwd: root,
+      env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: "60" },
+    });
+  } catch (error) {
+    return unknown(error instanceof Error ? error.message : "Factory job transport failed");
+  }
+  if (result.exitCode !== 0)
+    return unknown(result.stderr.slice(-16384) || "Factory job transport failed", result.exitCode);
+  try {
+    if (Buffer.byteLength(result.stdout, "utf8") > 1048576)
+      throw new Error("Factory job receipt exceeds its budget");
+    const receipt = JSON.parse(result.stdout);
+    if (
+      !receipt ||
+      typeof receipt !== "object" ||
+      receipt.schemaVersion !== 1 ||
+      receipt.jobId !== plan.jobId ||
+      receipt.target !== plan.target ||
+      !/^[a-f0-9]{64}$/u.test(receipt.fingerprint ?? "") ||
+      (plan.fingerprint !== undefined && receipt.fingerprint !== plan.fingerprint) ||
+      !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(receipt.repository ?? "") ||
+      !/^[a-f0-9]{40}$/u.test(receipt.revision ?? "") ||
+      (plan.repository !== undefined && receipt.repository !== plan.repository) ||
+      (plan.revision !== undefined && receipt.revision !== plan.revision) ||
+      !["queued", "active", "succeeded", "failed", "indeterminate"].includes(receipt.status) ||
+      !["dispatch", "complete"].includes(receipt.phase) ||
+      typeof receipt.requestedAt !== "string" ||
+      !Number.isFinite(Date.parse(receipt.requestedAt)) ||
+      (plan.operation === "submit" && !["created", "existing"].includes(receipt.submission))
+    )
+      throw new Error("Factory job receipt does not match the requested identity");
+    if (
+      receipt.status === "active" &&
+      (!Number.isSafeInteger(receipt.pid) || receipt.pid < 1 || receipt.processAlive !== true)
+    )
+      throw new Error("Factory active receipt lacks a live supervisor identity");
+    const terminal = receipt.status === "succeeded" || receipt.status === "failed";
+    if (
+      terminal &&
+      (receipt.phase !== "complete" ||
+        !Number.isSafeInteger(receipt.exitCode) ||
+        receipt.exitCode < 0 ||
+        receipt.exitCode > 255 ||
+        (receipt.exitCode === 0) !== (receipt.status === "succeeded") ||
+        typeof receipt.finishedAt !== "string" ||
+        !Number.isFinite(Date.parse(receipt.finishedAt)))
+    )
+      throw new Error("Factory job terminal receipt is invalid");
+    if (!terminal && (receipt.phase !== "dispatch" || receipt.exitCode !== undefined))
+      throw new Error("Factory job receipt asserts an unproven exit");
+    console.log(
+      JSON.stringify(
+        {
+          ...receipt,
+          operation: plan.operation,
+          success: true,
+          dispatchConfirmed: plan.operation === "submit",
+          reconciliationRequired: receipt.status === "indeterminate",
+        },
+        null,
+        2,
+      ),
+    );
+    return 0;
+  } catch (error) {
+    return unknown(error instanceof Error ? error.message : "Cannot decode factory job receipt");
+  }
+}
+
 /** Plan by default; run dispatches exclusively through the installed Infra SSH owner. */
 async function runBuildFactoryAction(args: string[], root: string): Promise<number> {
   const separator = args.indexOf("--");
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> -- <owner command> [arguments...]\n       aphrody-ops build-factory prepare --repo <aphrody|yolo|aphrody-py> --revision <full-git-sha> [--apply] [--no-submodules]\n       aphrody-ops build-factory status [--route]\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.",
+      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> [--detach --job <stable-id>] -- <owner command> [arguments...]\n       aphrody-ops build-factory prepare --repo <aphrody|yolo|aphrody-py> --revision <full-git-sha> [--apply] [--no-submodules]\n       aphrody-ops build-factory status [--route]\n       aphrody-ops build-factory status --job <stable-id> [--tail <0..200>]\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
     );
     return 0;
   }
   const [action = "plan", ...rest] = args;
   if (action === "status") {
-    if (rest.some((arg) => arg !== "--route"))
-      throw new Error("Usage: build-factory status [--route]");
-    const status = heavyBuildStatus(await readFactoryConfig(root), process.env);
-    console.log(rest.length ? status.route : JSON.stringify(status, null, 2));
-    return 0;
+    if (!rest.includes("--job")) {
+      if (rest.some((arg) => arg !== "--route"))
+        throw new Error("Usage: build-factory status [--route] or --job <id> [--tail <0..200>]");
+      const status = heavyBuildStatus(await readFactoryConfig(root), process.env);
+      console.log(rest.length ? status.route : JSON.stringify(status, null, 2));
+      return 0;
+    }
+    let jobId = "";
+    let tailLines = 0;
+    const seen = new Set<string>();
+    for (let i = 0; i < rest.length; i++) {
+      const arg = rest[i]!;
+      if (!["--job", "--tail"].includes(arg) || seen.has(arg))
+        throw new Error("Usage: build-factory status --job <id> [--tail <0..200>]");
+      seen.add(arg);
+      const value = rest[++i];
+      if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+      if (arg === "--job") jobId = value;
+      else {
+        if (!/^\d+$/u.test(value)) throw new Error("Factory log tail requires 0..200 lines");
+        tailLines = Number(value);
+      }
+    }
+    const config = await readFactoryConfig(root);
+    if (!config) throw new Error("config/build-factory.json is absent");
+    const { factoryJobStatusPlan } = await import("./build-factory-jobs.ts");
+    return runFactoryJobTransport(factoryJobStatusPlan(config, jobId, { tailLines }), root);
   }
   if (action !== "plan" && action !== "run" && action !== "prepare")
     throw new Error("Expected build-factory plan, run or prepare");
@@ -380,8 +507,19 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   let command: string[] = [];
   let apply = false;
   let initializeSubmodules = true;
+  let detach = false;
+  let jobId = "";
+  const seen = new Set<string>();
   for (let i = 0; i < rest.length; i++) {
-    const arg = rest[i];
+    const arg = rest[i]!;
+    if (arg === "--") {
+      if (action === "prepare")
+        throw new Error("Factory preparation does not accept a build command");
+      command = rest.slice(i + 1);
+      break;
+    }
+    if (seen.has(arg)) throw new Error(`Duplicate argument: ${arg}`);
+    seen.add(arg);
     if (action === "prepare" && arg === "--no-submodules") {
       initializeSubmodules = false;
       continue;
@@ -390,18 +528,20 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
       apply = true;
       continue;
     }
-    if (arg === "--") {
-      if (action === "prepare")
-        throw new Error("Factory preparation does not accept a build command");
-      command = rest.slice(i + 1);
-      break;
+    if (action !== "prepare" && arg === "--detach") {
+      detach = true;
+      continue;
     }
-    if (arg !== "--repo" && arg !== "--revision") throw new Error(`Unknown argument: ${arg}`);
+    if (arg !== "--repo" && arg !== "--revision" && !(action !== "prepare" && arg === "--job"))
+      throw new Error(`Unknown argument: ${arg}`);
     const value = rest[++i];
     if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
     if (arg === "--repo") repository = value;
-    else revision = value;
+    else if (arg === "--revision") revision = value;
+    else jobId = value;
   }
+  if (detach !== Boolean(jobId))
+    throw new Error("Detached jobs require both --detach and an explicit --job <stable-id>");
   const config = await readFactoryConfig(root);
   if (!config) throw new Error("config/build-factory.json is absent");
   if (action === "prepare") {
@@ -438,6 +578,33 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     return result.exitCode;
   }
   const plan = buildFactoryPlan(config, repository, revision, command);
+  if (detach) {
+    const { factoryJobPlan } = await import("./build-factory-jobs.ts");
+    const job = factoryJobPlan(config, plan, jobId);
+    if (action === "plan") {
+      console.log(
+        JSON.stringify(
+          {
+            executed: false,
+            detached: true,
+            repository: plan.repository,
+            revision: plan.revision,
+            workspace: plan.workspace,
+            command: plan.command,
+            serialized: plan.serialized,
+            ...job,
+          },
+          null,
+          2,
+        ),
+      );
+      return 0;
+    }
+    return runFactoryJobTransport(
+      { ...job, repository: plan.repository, revision: plan.revision },
+      root,
+    );
+  }
   if (action === "plan") {
     console.log(JSON.stringify({ executed: false, ...plan }, null, 2));
     return 0;
