@@ -1,0 +1,34 @@
+{
+  "baseui.js.button": {
+    "bytes": 22525,
+    "gzip": 8468
+  },
+  "baseui.js.button+switch+tabs": {
+    "bytes": 46065,
+    "gzip": 16446
+  },
+  "baseui.js.everything": {
+    "bytes": 491868,
+    "gzip": 163183
+  },
+  "baseui.css.all": {
+    "bytes": 4676,
+    "gzip": 1114
+  },
+  "tailwind.preset.css": {
+    "bytes": 15177,
+    "gzip": 1519
+  },
+  "tailwind.app.css": {
+    "bytes": 5191,
+    "gzip": 1118
+  },
+  "next.client.js": {
+    "bytes": 94295,
+    "gzip": 22261
+  },
+  "next.index.js": {
+    "bytes": 96537,
+    "gzip": 23385
+  }
+}
