@@ -1,0 +1,180 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Material 3 appearance for the Base UI parts of @aphrody/m3-baseui.
+ * Requires m3-tokens.css and a colour sheet (--md-sys-color-*) on the page.
+ */
+
+.m3-bui-button {
+  --_bg: transparent;
+  --_fg: var(--md-sys-color-primary);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 24px;
+  border: 1px solid transparent;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--_bg);
+  color: var(--_fg);
+  font: var(--md-sys-typescale-label-large-weight) var(--md-sys-typescale-label-large-size) /
+    var(--md-sys-typescale-label-large-line-height) var(--md-sys-typescale-label-large-font);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  cursor: pointer;
+  transition: box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+}
+.m3-bui-button--filled {
+  --_bg: var(--md-sys-color-primary);
+  --_fg: var(--md-sys-color-on-primary);
+}
+.m3-bui-button--tonal {
+  --_bg: var(--md-sys-color-secondary-container);
+  --_fg: var(--md-sys-color-on-secondary-container);
+}
+.m3-bui-button--elevated {
+  --_bg: var(--md-sys-color-surface-container-low);
+  box-shadow: var(--md-sys-elevation-level1);
+}
+.m3-bui-button--outlined {
+  border-color: var(--md-sys-color-outline);
+}
+.m3-bui-button::after,
+.m3-bui-switch::after,
+.m3-bui-checkbox::after,
+.m3-bui-tabs__tab::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+}
+.m3-bui-button:hover::after,
+.m3-bui-tabs__tab:hover::after {
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+.m3-bui-button:focus-visible::after,
+.m3-bui-tabs__tab:focus-visible::after {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
+.m3-bui-button:active::after {
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
+}
+.m3-bui-button:focus-visible,
+.m3-bui-switch:focus-visible,
+.m3-bui-checkbox:focus-visible,
+.m3-bui-tabs__tab:focus-visible {
+  outline: 3px solid var(--md-sys-color-secondary);
+  outline-offset: 2px;
+}
+.m3-bui-button[data-disabled],
+.m3-bui-switch[data-disabled],
+.m3-bui-checkbox[data-disabled] {
+  opacity: 0.38;
+  cursor: default;
+  pointer-events: none;
+}
+
+.m3-bui-switch {
+  position: relative;
+  box-sizing: border-box;
+  width: 52px;
+  height: 32px;
+  padding: 0;
+  border: 2px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface-container-highest);
+  cursor: pointer;
+  transition: background var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+}
+.m3-bui-switch[data-checked] {
+  background: var(--md-sys-color-primary);
+  border-color: var(--md-sys-color-primary);
+}
+.m3-bui-switch__thumb {
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-outline);
+  transition:
+    transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized),
+    width var(--md-sys-motion-duration-short4),
+    height var(--md-sys-motion-duration-short4),
+    margin var(--md-sys-motion-duration-short4);
+}
+.m3-bui-switch[data-checked] .m3-bui-switch__thumb {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  transform: translateX(22px);
+  background: var(--md-sys-color-on-primary);
+}
+
+.m3-bui-checkbox {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 2px solid var(--md-sys-color-on-surface-variant);
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background: transparent;
+  color: var(--md-sys-color-on-primary);
+  cursor: pointer;
+}
+.m3-bui-checkbox[data-checked],
+.m3-bui-checkbox[data-indeterminate] {
+  background: var(--md-sys-color-primary);
+  border-color: var(--md-sys-color-primary);
+}
+.m3-bui-checkbox__indicator {
+  display: grid;
+  place-items: center;
+}
+.m3-bui-checkbox__indicator[data-unchecked] {
+  display: none;
+}
+
+.m3-bui-tabs__list {
+  position: relative;
+  display: flex;
+  border-bottom: 1px solid var(--md-sys-color-surface-variant);
+}
+.m3-bui-tabs__tab {
+  position: relative;
+  flex: 1;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-title-small-weight) var(--md-sys-typescale-title-small-size) /
+    var(--md-sys-typescale-title-small-line-height) var(--md-sys-typescale-title-small-font);
+  cursor: pointer;
+}
+.m3-bui-tabs__tab[data-selected],
+.m3-bui-tabs__tab[data-active] {
+  color: var(--md-sys-color-primary);
+}
+.m3-bui-tabs__indicator {
+  position: absolute;
+  left: var(--active-tab-left);
+  bottom: 0;
+  width: var(--active-tab-width);
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--md-sys-color-primary);
+  transition:
+    left var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized),
+    width var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
+}
+.m3-bui-tabs__panel {
+  padding: 16px;
+  color: var(--md-sys-color-on-surface);
+}
