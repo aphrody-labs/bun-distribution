@@ -3,12 +3,12 @@
   "yolo": {
     "repository": "https://github.com/aphrody-labs/yolo.git",
     "path": "../yolo",
-    "rev": "27403350547d36ef208068df929bc4e2eeb22218",
+    "rev": "1b69f35d0a795ece172210f1d6d0d0c08a64f34a",
     "envOverride": "APHRODY_YOLO_ROOT",
     "sdk": {
       "version": "0.1.0",
-      "archive": "aphrody-runtime-sdk-0.1.0-c81812ea.tgz",
-      "sha256": "c81812ea13393c7e87853866ce2282539e438870d3c52a35c72293050a071d57"
+      "archive": "aphrody-runtime-sdk-0.1.0-b8094276.tgz",
+      "sha256": "b80942769891b70b6248aaab4606756cbed81de0033617b231293037bdf0f8a6"
     }
   }
 }

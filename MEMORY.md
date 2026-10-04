@@ -19,8 +19,8 @@ consommateur, sans recopier les décisions ni les jalons producteur.
 | Windows 11 natif (MSVC) | `248a65ad7`, `38ad193d8` : `aphrody-ops system-packages` (apt et winget depuis `config/system-packages.json`, pwsh 7.6.6 en un processus, module `Microsoft.WinGet.Client` sous Windows natif, `winget export` depuis WSL) ; Build Tools 2022 désinstallés, Build Tools 2026 18.10 (MSVC 14.51) installés ; Windows SDK 10.0.26100, .NET SDK 10.0.401 ; `scripts/dev/windows-cargo.ps1` (vswhere, Launch-VsDevShell, aucun réglage machine) ; tests natifs MSVC sur Windows 11 : `aphrody-winclean` (36+7+3+5), `aphrody-diagnostics` 38, `aphrody-a2a-coord` 5, `aphrody-a2a-pb` 63+4, `aphrody-wsl` 3 ; bogues trouvés et corrigés par ces exécutions : `winclean` (tests Windows jamais compilés, hash du registre périmé), `a2a-pb/build.rs` (dépendait du répertoire courant), `automation-inventory` (séparateurs) | Build Tools 2026 : `isComplete=0` après code 1603, toolset présent ; le dépôt est lu via `W:` (`net use W: \\wsl.localhost\Ubuntu-24.04`) car `protoc` ne lit pas les chemins UNC ; pas de checkout Windows séparé ; aucun macOS |
 
 Pin SDK : [config/sibling-checkouts.json](config/sibling-checkouts.json) ;
-catalog et [bun.lock](bun.lock). SDK 0.1.0, archive `c81812ea`, producteur
-`27403350547d36ef208068df929bc4e2eeb22218`. Artefact natif et matrice :
+catalog et [bun.lock](bun.lock). SDK 0.1.0, archive `b8094276`, producteur
+`1b69f35d0a795ece172210f1d6d0d0c08a64f34a`. Artefact natif et matrice :
 [mémoire Yolo](../yolo/MEMORY.md). Révision SDK et révision native sont distinctes.
 
 Obligations conservées : contrats Shenron/RG/Koharu, UI canonique Aphrody,

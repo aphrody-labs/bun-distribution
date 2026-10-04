@@ -1131,7 +1131,7 @@
     "@ai-sdk/google-vertex": "^5.0.98",
     "@aphrody/material-web": "3.3.3",
     "@aphrody/mcp-ui": "7.1.1-aphrody.1",
-    "@aphrody/runtime-sdk": "file:.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-c81812ea.tgz",
+    "@aphrody/runtime-sdk": "file:.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-b8094276.tgz",
     "@base-ui/react": "^1.8.0",
     "@cloudflare/workers-types": "^5.20260929.1",
     "@discordjs/rest": "^2.6.3",
@@ -1391,7 +1391,7 @@
 
     "@aphrody/paths": ["@aphrody/paths@workspace:packages/infra/paths"],
 
-    "@aphrody/runtime-sdk": ["@aphrody/runtime-sdk@.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-c81812ea.tgz", {}, "sha512-ZUyxcHP1pZcbbe0t4CjXM7DW9RI1QXjJBz53x5MkC06IPQClLpfmunWYWM0CWG14OYTOXuWvbnzGj0v4N4ry7g=="],
+    "@aphrody/runtime-sdk": ["@aphrody/runtime-sdk@.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-b8094276.tgz", {}, "sha512-GqHvb4t818usHlN4hSgqdHgcLHMxP4ex3hjoGs0cNKccY9uVrhqD3A8bBV69fX4SdsnHlFF1ri4c0h70jkDfZQ=="],
 
     "@aphrody/scaffold": ["@aphrody/scaffold@workspace:packages/ui/scaffold"],
 
