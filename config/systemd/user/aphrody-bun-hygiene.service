@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody Bun version policy and package-manager hygiene; upgrades Bun only, report otherwise
+
+[Service]
+Type=oneshot
+Nice=10
+ExecStart=%h/.local/bin/aphrody-bun-hygiene

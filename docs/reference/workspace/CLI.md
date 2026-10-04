@@ -142,10 +142,14 @@ Contrat des outils globaux (2026-10-04) : `oxlint`, `oxfmt`, `tsc`, `bun` et `nu
 sont appelés directement, sans `bunx`/`npx`/`nx`, dans les scripts `package.json`,
 les scripts TypeScript/shell et la documentation. Les scripts `package.json`
 résolvent d’abord `node_modules/.bin` (outil local, ex. `next`, `drizzle-kit`,
-`nodemon`), puis le PATH global. `bunx` reste réservé aux outils volontairement
-épinglés par version et non installés globalement (`wasm-pack@0.15.0`,
-`@tauri-apps/cli@<pin>`, `jscodeshift`, `@ast-grep/cli`, `json-schema-to-typescript`,
-`@material-design-icons/scripts`).
+`nodemon`), puis le PATH global. `bunx` n’est plus nécessaire pour les outils suivants, installés globalement et
+épinglés sur WSL, Windows, vps et dbfr (`bun add -g`, manifeste
+`config/infra/toolchain.json`, procédure `docs/operations/infra/TOOLCHAIN-SYNC.md`) :
+`wasm-pack@0.15.0`, `@tauri-apps/cli@3.0.0-alpha.4`, `jscodeshift`, `@ast-grep/cli`
+(`ast-grep`), `json-schema-to-typescript` (`json2ts`), `@material-design-icons/scripts`,
+ainsi que `drizzle-kit`, `prisma`, `wrangler`, `serve`, `nodemon`, `nx`, `shadcn`,
+`@tailwindcss/cli`, `vite`, `@mikro-orm/cli`, `sharp-cli`. Les scripts peuvent appeler ces
+binaires directement ; `bunx` ne reste utile que pour un outil absent de cette liste.
 
 ## Inventaire des exécutables
 

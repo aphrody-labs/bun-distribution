@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "generatedAt": "2026-10-04",
+  "hosts": [
+    "wsl",
+    "windows",
+    "vps",
+    "dbfr"
+  ],
+  "policy": {
+    "canonicalSource": "one source per tool and host; shadowed duplicates removed",
+    "path": "per-user bin dirs only (~/.cargo/bin, ~/.bun/bin, ~/.local/bin); PATH and profiles are owned by aphrody-claude user/shell, never edited here",
+    "cargo": "no Cargo build: toolchains via rustup, tools via cargo-binstall with compile strategy disabled",
+    "untouched": [
+      "services",
+      "nginx",
+      "systemd units",
+      "databases",
+      "models",
+      "persistent stores"
+    ]
+  },
+  "versions": {
+    "rust": "1.98.1",
+    "rustNightly": "nightly-2026-05-17",
+    "bun": "1.4.2",
+    "nu": "0.116.0",
+    "python": "3.12",
+    "typescript": "7.0.2",
+    "ovhcloud": "0.15.0",
+    "pwsh": "7.6.6",
+    "yq": "4.54.1",
+    "carapace": "1.8.0",
+    "wasmPack": "0.15.0",
+    "gh": "2.102.0",
+    "jq": "1.8.2",
+    "tauriCli": "3.0.0-alpha.4"
+  },
+  "rustToolchain": {
+    "components": [
+      "rustfmt",
+      "clippy",
+      "rust-src",
+      "rust-analyzer"
+    ],
+    "targets": [
+      "x86_64-pc-windows-msvc",
+      "wasm32-unknown-unknown",
+      "wasm32-wasip1"
+    ]
+  },
+  "binstall": [
+    "nu@0.116.0",
+    "fd-find",
+    "bat",
+    "git-delta",
+    "du-dust",
+    "hyperfine",
+    "just",
+    "sccache",
+    "zellij",
+    "atuin",
+    "starship",
+    "zoxide",
+    "cargo-nextest"
+  ],
+  "apt": [
+    "git",
+    "curl",
+    "openssh-client",
+    "rsync",
+    "zstd",
+    "pigz",
+    "mosh",
+    "ripgrep",
+    "eza",
+    "nodejs"
+  ],
+  "aptRemovedAsShadowed": [
+    "bat",
+    "fd-find",
+    "just",
+    "sccache",
+    "rclone",
+    "gh"
+  ],
+  "bunGlobal": [
+    "typescript@7.0.2",
+    "@typescript/native-preview",
+    "oxlint",
+    "oxfmt",
+    "@types/bun",
+    "@types/node",
+    "bun-types",
+    "drizzle-kit",
+    "prisma",
+    "jscodeshift",
+    "@ast-grep/cli",
+    "wrangler",
+    "serve",
+    "nodemon",
+    "nx",
+    "shadcn",
+    "json-schema-to-typescript",
+    "@tailwindcss/cli",
+    "vite",
+    "@mikro-orm/cli",
+    "sharp-cli",
+    "@tauri-apps/cli@3.0.0-alpha.4",
+    "@material-design-icons/scripts",
+    "wasm-pack@0.15.0"
+  ],
+  "bunxScanSources": [
+    "aphrody",
+    "yolo",
+    "aphrody-py"
+  ],
+  "releaseBinaries": {
+    "ovhcloud": "https://github.com/ovh/ovhcloud-cli/releases/download/v{version}/ovhcloud-cli_{Linux_x86_64|Windows_x86_64}",
+    "rclone": "https://downloads.rclone.org/rclone-current-linux-amd64.zip",
+    "yq": "https://github.com/mikefarah/yq/releases/download/v{version}/yq_linux_amd64",
+    "carapace": "https://github.com/carapace-sh/carapace-bin/releases/download/v{version}/carapace-bin_{version}_linux_amd64.tar.gz",
+    "pwsh": "https://github.com/PowerShell/PowerShell/releases/download/v{version}/powershell-{version}-linux-x64.tar.gz",
+    "gh": "https://github.com/cli/cli/releases/download/v{version}/gh_{version}_linux_amd64.tar.gz",
+    "jq": "https://github.com/jqlang/jq/releases/download/jq-{version}/jq-linux-amd64 (WSL only)"
+  },
+  "aphrodyArtifacts": {
+    "linuxPrebuilt": [
+      "aphrody",
+      "aphrody-infra",
+      "aphrody-kernel"
+    ],
+    "note": "aphrody-ovh is a library compiled into aphrody-infra; aphrody-ops and aphrody-workspace are Bun scripts under packages/infra/workspace and need a source checkout",
+    "windowsBuild": "scripts/build/rust/cargo-serial.sh build --release --target x86_64-pc-windows-msvc -p aphrody-infra -p aphrody-kernel (integrator only, on the factory)"
+  },
+  "perHostExceptions": {
+    "wsl": "Ubuntu 24.04 apt is stale: ripgrep and eza via cargo-binstall, apt copies removed; jq/gh release binaries, apt jq removed",
+    "windows": "winget user scope for jq, yq, carapace, zstd, wezterm nightly, gh, uv; binstall for the Rust set plus eza and ripgrep; no native rsync/pigz/zellij/sftp",
+    "vps": "jq stays apt (system scripts, minimal PATH)",
+    "dbfr": "jq stays apt; no extra rust targets (12G free on /)"
+  },
+  "bunGlobalNote": "wasm-pack is a bun global (prebuilt release binary downloaded by its npm package); cargo copy removed",
+  "bunHygiene": {
+    "policy": "newest stable Bun release at least 3 days old (bunfig minimumReleaseAge); every host applies the same rule",
+    "linux": {
+      "script": "scripts/tools/bun-hygiene.sh",
+      "installedAs": "~/.local/bin/aphrody-bun-hygiene",
+      "units": [
+        "config/systemd/user/aphrody-bun-hygiene.service",
+        "config/systemd/user/aphrody-bun-hygiene.timer"
+      ],
+      "schedule": "daily 05:30 +-30m, user timer, linger enabled on vps and dbfr",
+      "log": "~/.local/state/aphrody/log/bun-hygiene.log"
+    },
+    "windows": {
+      "script": "scripts/tools/bun-hygiene.ps1 -Register",
+      "task": "AphrodyBunHygiene (daily 05:30, user)",
+      "log": "%LOCALAPPDATA%\\aphrody\\log\\bun-hygiene.log"
+    },
+    "steps": [
+      "bun upgrade to eligible release",
+      "bun pm ls -g",
+      "bun outdated (global)",
+      "bun pm -g untrusted",
+      "cache report, prune entries unused 30 days above 5 GB",
+      "frozen-lockfile dry-run in a temp copy (checkout hosts only)"
+    ]
+  }
+}
