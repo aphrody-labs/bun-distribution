@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "bun ../../bin/m3-next.ts dev",
     "build": "bun ../../bin/m3-next.ts build",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "bun test test/"
   },
   "dependencies": {
     "@aphrody/m3-baseui": "workspace:*",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "catalog:",
+    "@types/bun": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "tailwindcss": "catalog:",

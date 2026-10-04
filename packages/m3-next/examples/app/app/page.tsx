@@ -21,8 +21,8 @@ export default async function Home() {
       <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
         <h1 className="text-display-small-emphasized text-primary">Material 3 on Next.js 16</h1>
         <p className="text-body-large text-on-surface-variant">
-          App Router, Cache Components, proxy.ts, React Compiler and typed routes, with Base UI parts styled by M3
-          tokens through a Tailwind v4 preset.
+          App Router, Cache Components, proxy.ts, React Compiler and typed routes, with Base UI
+          parts styled by M3 tokens through a Tailwind v4 preset.
         </p>
         <section className="rounded-extra-large bg-surface-container-high p-6 shadow-elevation-1">
           <h2 className="text-title-large">Cached on the server</h2>

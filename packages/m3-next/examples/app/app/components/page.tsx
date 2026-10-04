@@ -154,7 +154,9 @@ export default function ComponentsPage() {
               <M3Dialog.Backdrop />
               <M3Dialog.Popup>
                 <M3Dialog.Title>Discard draft?</M3Dialog.Title>
-                <M3Dialog.Description>The draft is deleted and cannot be restored.</M3Dialog.Description>
+                <M3Dialog.Description>
+                  The draft is deleted and cannot be restored.
+                </M3Dialog.Description>
                 <div className="flex justify-end gap-2">
                   <M3Dialog.Close render={<M3Button variant="text" />}>Cancel</M3Dialog.Close>
                   <M3Dialog.Close render={<M3Button variant="text" />}>Discard</M3Dialog.Close>
@@ -179,7 +181,9 @@ export default function ComponentsPage() {
               <M3Accordion.Header>
                 <M3Accordion.Trigger>What is Cache Components?</M3Accordion.Trigger>
               </M3Accordion.Header>
-              <M3Accordion.Panel>`use cache`, `cacheLife` and `cacheTag`, with a static shell.</M3Accordion.Panel>
+              <M3Accordion.Panel>
+                `use cache`, `cacheLife` and `cacheTag`, with a static shell.
+              </M3Accordion.Panel>
             </M3Accordion.Item>
           </M3Accordion.Root>
         </Section>
