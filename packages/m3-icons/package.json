@@ -48,7 +48,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@aphrody/bun": "workspace:*"
+    "@aphrody/bun": "^3.3.0"
   },
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*",

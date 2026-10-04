@@ -73,7 +73,7 @@
     "@aphrody/m3-tokens": "workspace:*"
   },
   "devDependencies": {
-    "@aphrody/bun": "workspace:*",
+    "@aphrody/bun": "^3.3.0",
     "@aphrody/m3-config": "workspace:*",
     "@material/material-color-utilities": "catalog:",
     "@types/react": "catalog:",

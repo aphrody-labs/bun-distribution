@@ -55,7 +55,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@aphrody/bun": "workspace:*",
+    "@aphrody/bun": "^3.3.0",
     "@aphrody/m3-theme": "workspace:*",
     "@aphrody/m3-tokens": "workspace:*"
   },
