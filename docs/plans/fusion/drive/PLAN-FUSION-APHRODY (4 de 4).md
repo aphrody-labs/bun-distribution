@@ -221,3 +221,29 @@ Les en-têtes JSC lus viennent du préconstruit du VPS (`/srv/aphrody-build/cach
 **Fait nouveau** : le fork Bun contient déjà une couche d'API C++ V8 au-dessus de JSC (`src/jsc/bindings/v8`, 82 fichiers, ≈ 7 400 lignes, pour les addons natifs Node). Elle n'est **pas** une solution de remplacement pour Obscura : `rusty_v8` lie le vrai V8 et appelle son C++, pas cette couche ; et elle n'implémente aucun des appels utilisés par Obscura sauf `FunctionTemplate::New` et `HandleScope` (0 occurrence de `Isolate::TerminateExecution`, `Context::New`, `ScriptCompiler::CachedData`, `SnapshotCreator`, `TryCatch`, `GetHeapStatistics`).
 
 **Remplacement automatique** : la correspondance ci-dessus est lisible par machine (reçu JSON, symbole V8 → symbole JSC → symbole Bun). Aucune réécriture automatique du code d'Obscura n'a été exécutée : elle dépend de l'interface `JsEngine` du §11.3 et des deux trous (snapshot, limite de tas), à trancher avant. Le script se relance après chaque bump du pin WebKit ou de `rusty_v8` pour détecter un équivalent qui disparaît.
+
+## 12. Décisions tranchées (2026-10-05, « tranche tout »)
+
+Chaque décision ouverte du §8 et du §10.4 est tranchée ci-dessous sur la base des faits mesurés dans cette partie. Elles restent révisables par le propriétaire avant J0 ; aucune action externe (renommage de dépôt, création de dépôt, publication) n'est exécutée par ce plan.
+
+| # | Décision | Tranché | Raison (fait vérifié) |
+|---|---|---|---|
+| 1 | Nom `yolo` | Ordre fixe : (a) renommer l'ancien `aphrody-labs/yolo` en `yolo-legacy` et l'archiver, (b) repointer les références du §1, (c) seulement ensuite créer le nouveau `yolo` depuis `main` du fork Bun | Le dépôt `yolo` existe déjà (privé, 220 commits) ; créer le nouveau avant le renommage casse la redirection. `yolo-legacy` n'existe pas (404) |
+| 2 | Collision du CLI | Option 1 : un seul `yolo` ; le CLI Bun actuel devient les commandes de plugin du binaire (`yolo ops …`) ; noms `create`, `update`, `upgrade` réservés au runtime | Prolonge la surface unique du 5 octobre ; l'option 3 contredit la Décision finale |
+| 3 | Préfixe de modules | `yolo:*` natif, avec alias de transition `bun:yolo/*` jusqu'à la parité | Les parties 1 à 3 et les one shots utilisent `yolo:*` ; le fork a déjà l'espace `bun:` |
+| 4 | Branche source d'Obscura | **Fait** : branche `yolo` du fork (amont v0.2.4 + 3 commits dont SSRF) et copie du monorepo remise à niveau (`d21e0f54a`) | Reste à extraire les patches Aphrody vers `patches/obscura/` à J0 |
+| 5 | Base glibc | Reprendre la méthode qui a fonctionné pour `aphrody` : définir `acosf`, `asinf`, `atan2f` depuis libm dans le fork (cfg linux gnu) ; sysroot plus ancien seulement si d'autres symboles @GLIBC_2.43 apparaissent | `bun` 1.4.3 du forge n'importe que ces trois symboles @GLIBC_2.43 ; `cargo-zigbuild` a échoué sur simdutf AVX-512 |
+| 6 | Machine d'exécution | VPS sous verrous d'usine (build mesuré : 902,8 s) pour J0 à J2 ; dbfr en secours pour le Rust seul ; pas de serveur dédié pour l'instant | Build complet qualifié sur le VPS ; dbfr n'a que 11 Gio de RAM |
+| 7 | Patches Tauri restants | Oui : pousser le patch dialog et le préfixe ACL dans `aphrody-labs/plugins-workspace` avant la bascule en pins | Seuls patches non présents dans les forks (§4) |
+| 8 | V8 pendant la transition | **Ne pas couper** `native-browser` et `render` par défaut avant la parité JSC ; la coupure est un livrable du 2 bis, après réussite de la suite de parité | `CLAUDE.md` impose de conserver V8 jusqu'à la parité requise ; §11.3 |
+| 9 | Dépendance optionnelle `tauri` | Oui : tokio/reqwest derrière une feature dans le fork `aphrody-labs/tauri` (patch petit, proposable à l'amont) | `tauri-runtime-wry` tire le crate `tauri` complet (§4) |
+| 10 | IPC desktop | Option B : `tauri` complet dans l'hôte de plugin | Évite de réécrire l'IPC côté Bun ; recommandation de l'audit |
+| 11 | Protocole hôte de fenêtres | ABI courte (`tauri-ffi`) | Cohérent avec l'ABI `yolo-runtime` 1.4 |
+| 12 | Rythme des rebases | Pins par révision exacte ; rebase à chaque version amont stable, jamais en flux continu, jusqu'au passage GTK4/WebKitGTK 6.0 | `bun_upstream_sync.ts` fusionne sans pousser en force |
+| 13 | PR Bun #40275 (empreinte TLS) | Cherry-pick plutôt que réécriture | Le fork ne contient aucun proxy SOCKS ni cette empreinte |
+| 14 | Essai `node:vm` | Oui : essai d'une heure avant le portage Rust du chantier B | Peu coûteux, évite un portage inutile |
+| 15 | Prérequis machine | JSC précompilé par défaut ; ICU et le noyau Bun compilés ; dbfr rejoint la chaîne en secours (`--host auto`, 3 jobs) | `config.ts:1295` ; `config/host/vps-cargo.json` |
+| 16 | Trous du §11.4 | Snapshot : évaluer `bootstrap.js` au démarrage avec cache de bytecode (mesurer le coût avant le one shot). Limite de tas : sondage du coût mémoire côté hôte, correctif WebKit en dernier recours | Aucun symbole JSC pour ces deux capacités (reçu d'équivalence) |
+| 17 | `deno_core` | Le retirer seulement avec le portage JSC (pas d'étape intermédiaire `rusty_v8` direct) | §11.3 : sans gain avant la décision JSC |
+| 18 | Runtime Python | Nom `ir` pris à la lettre, isolé dans une constante ; l'alternative `vu` (inverse littéral de `uv`) reste à confirmer par le propriétaire | Le plan `docs/plans/ir/PLAN.md` (agent en cours) porte la même réserve |
+| 19 | dbfr | Ne pas relancer nginx ni privoxy ; dbfr est hôte de build secondaire ; aucune autre suppression ; l'unique copie de `/srv/shenron/shared` est celle du VPS (32 Go) et doit être sauvegardée avant toute opération sur le VPS | Rapport de l'agent de ménage : la suppression sur dbfr n'était pas la sienne |
