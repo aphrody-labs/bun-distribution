@@ -58,6 +58,11 @@ pub use web::*;
 #[cfg(not(target_arch = "wasm32"))]
 mod yolo;
 
+// glibc re-versioned libm functions (acosf@GLIBC_2.43 ...) defined locally so a library linked on a newer
+// glibc host still loads on older ones (WSL 2.39). Not part of the C ABI.
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+mod glibc_compat;
+
 // Zero-copy exports (caller-owned buffers): CPU rasterizer and tool-call repair.
 #[cfg(not(target_arch = "wasm32"))]
 mod zerocopy;

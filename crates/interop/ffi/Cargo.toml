@@ -89,5 +89,10 @@ aphrody-stdio-capture = { workspace = true }
 tokio      = { workspace = true }
 url        = { workspace = true }
 
+# glibc 2.43 re-versioned libm float functions: src/glibc_compat.rs defines them from libm so a cdylib built
+# on the factory (glibc 2.43) still loads on glibc 2.39 hosts (WSL Ubuntu 24.04).
+[target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
+libm = { workspace = true }
+
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = { workspace = true }

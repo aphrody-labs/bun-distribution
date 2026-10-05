@@ -1333,6 +1333,7 @@ dependencies = [
  "async-trait",
  "base64 0.23.1",
  "futures",
+ "libm",
  "mimalloc",
  "obscura-dom",
  "obscura-net",
