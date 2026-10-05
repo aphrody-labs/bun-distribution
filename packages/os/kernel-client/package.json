@@ -9,6 +9,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "bun build src/index.ts --target bun --packages external --outdir dist",
     "lint": "oxlint src test",

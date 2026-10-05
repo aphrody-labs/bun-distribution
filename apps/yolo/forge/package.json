@@ -1,13 +1,15 @@
 {
   "name": "@aphrody/bun-forge",
   "version": "0.1.0",
-  "private": true,
   "description": "One executable that builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
   "license": "Apache-2.0",
   "bin": {
     "bun-forge": "./src/main.ts"
   },
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "compile": "bun build ./src/main.ts --compile --minify --bytecode --format=esm --sourcemap --outfile dist/bun-forge",
     "compile:all": "bun build ./src/main.ts --compile --minify --bytecode --format=esm --target=bun-linux-x64 --outfile dist/bun-forge-linux-x64 && bun build ./src/main.ts --compile --minify --bytecode --format=esm --target=bun-linux-arm64 --outfile dist/bun-forge-linux-arm64",

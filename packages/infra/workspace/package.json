@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/workspace",
   "version": "0.1.0",
-  "private": true,
   "description": "Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations",
   "license": "Apache-2.0",
   "author": "Aphrody",
@@ -10,6 +9,10 @@
     "aphrody-optimize": "./src/optimize.ts",
     "aphrody-workspace": "./src/cli.ts"
   },
+  "files": [
+    "src",
+    "README.md"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -22,8 +25,6 @@
     "./drive-upstream-audit": "./src/drive-upstream-audit.ts",
     "./drive-daemon": "./src/drive-daemon.ts",
     "./tauri": "./src/tauri.ts",
-    "./tauri-apps": "../update/src/tauri/apps.ts",
-    "./tauri-sync": "../update/src/tauri/sync.ts",
     "./bun-native": "./src/bun-native.ts",
     "./ui-dedup-manifest": "./src/ui-dedup-manifest.ts",
     "./spaceui-icons": "./src/spaceui-icons.ts",
@@ -61,7 +62,6 @@
     "./cargo-package-repair": "./src/cargo-package-repair.ts",
     "./cargo-release-audit": "./src/cargo-release-audit.ts",
     "./consolidation": "./src/consolidation.ts",
-    "./rg": "./src/rg.ts",
     "./shenron": "./src/shenron.ts",
     "./agent-home-drive-sync": "./src/agent-home-drive-sync.ts",
     "./web-migration": "./src/web-migration.ts",
@@ -73,6 +73,9 @@
     "./agent-sync": "./src/agent-sync.ts",
     "./native-runtime": "./src/native-runtime.ts",
     "./native-desktop": "./src/native-desktop.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "bun build ./src/cli.ts ./src/ops.ts --target=bun --outdir dist --sourcemap=linked",

@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/n2b-shims",
-  "version": "0.6.2",
-  "private": true,
+  "version": "0.6.3",
   "description": "Alias de compatibilité : ré-exporte @aphrody/n2b-core/shims (polyfills Bun-natifs env, fs, path, shell).",
   "license": "Apache-2.0",
   "files": [

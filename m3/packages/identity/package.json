@@ -19,6 +19,9 @@
     "./atlas": "./src/atlas.ts",
     "./pet": "./src/pet.ts"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "gen": "bun scripts/generate.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",

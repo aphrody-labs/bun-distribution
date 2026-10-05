@@ -33,6 +33,9 @@
     "./types": "./src/types.ts",
     "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "typecheck": "tsgo -p tsconfig.json --noEmit",
     "test": "bun test"

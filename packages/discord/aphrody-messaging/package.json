@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/messaging",
   "version": "0.1.0",
-  "private": true,
   "description": "Aphrody messaging channel contracts and Discord REST adapter.",
   "license": "Apache-2.0",
   "files": [
@@ -16,17 +15,20 @@
       "import": "./dist/index.mjs"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown src/index.ts --format esm --dts",
     "test": "bun test test",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
+  "dependencies": {
+    "@discordjs/rest": "catalog:"
+  },
   "devDependencies": {
     "tsdown": "catalog:",
     "typescript": "catalog:"
-  },
-  "dependencies": {
-    "@discordjs/rest": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

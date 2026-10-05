@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/m3-theme",
-  "version": "3.3.3",
-  "private": true,
+  "version": "3.3.4",
   "description": "Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases).",
   "keywords": [
     "design-tokens",
@@ -26,7 +25,8 @@
     "dist",
     "tokens.css",
     "tailwind.css",
-    "spaceui.css"
+    "spaceui.css",
+    "src"
   ],
   "type": "module",
   "main": "./src/index.ts",

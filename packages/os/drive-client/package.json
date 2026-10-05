@@ -12,7 +12,8 @@
   "author": "Spacedrive",
   "files": [
     "dist/**/*",
-    "src/**/*"
+    "src/**/*",
+    "src"
   ],
   "type": "module",
   "main": "src/index.ts",
@@ -55,6 +56,9 @@
       "bun": "./src/bun.ts",
       "default": "./src/bun.ts"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "bun build src/index.ts src/bun.ts src/hooks/index.ts --target bun --packages external --outdir dist",

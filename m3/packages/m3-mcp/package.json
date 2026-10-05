@@ -1,11 +1,13 @@
 {
   "name": "@aphrody/m3-mcp",
-  "version": "1.0.0",
-  "private": true,
+  "version": "3.3.4",
   "description": "Single design/UI MCP server of aphrody-m3: packages, M3 tokens (lookup, validate), docs search, research links, templates, Material Symbols SVG, SVG to Tauri icons.",
   "type": "module",
   "exports": {
     ".": "./src/server.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "start": "bun src/server.ts",

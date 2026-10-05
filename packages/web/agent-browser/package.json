@@ -26,6 +26,9 @@
     "./tauri": "./src/tauri.ts",
     "./runtime": "./src/runtime.ts"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test test/",

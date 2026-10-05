@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/m3-next-tauri-example",
-  "version": "3.3.3",
-  "private": true,
+  "version": "3.3.4",
   "description": "Static export of a Next.js 16 app for a Tauri webview: no server, no proxy, no cookies read on the server; the theme preference lives in the browser.",
   "type": "module",
   "scripts": {
@@ -29,5 +28,8 @@
   },
   "engines": {
     "bun": ">=1.4.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

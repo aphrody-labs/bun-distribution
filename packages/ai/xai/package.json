@@ -1,19 +1,16 @@
 {
   "name": "@aphrody/xai",
-  "private": true,
   "version": "1.1.6",
+  "description": "Headless xAI Grok API client for Bun — high-level fluent Chat API (createChat/append/sample/stream/executeToolCalls/sampleStructured, reasoning, structured, XTools for native X tool fulfillment) + SUPER_GROK_TOKEN keyless + OIDC. OpenAI-compatible REST, deep native integration with @aphrody/x.",
+  "bugs": {
+    "url": "https://github.com/aphrody-labs/aphrody/issues"
+  },
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/aphrody-labs/aphrody.git",
     "directory": "packages/xai"
   },
-  "bugs": {
-    "url": "https://github.com/aphrody-labs/aphrody/issues"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "description": "Headless xAI Grok API client for Bun — high-level fluent Chat API (createChat/append/sample/stream/executeToolCalls/sampleStructured, reasoning, structured, XTools for native X tool fulfillment) + SUPER_GROK_TOKEN keyless + OIDC. OpenAI-compatible REST, deep native integration with @aphrody/x.",
   "files": [
     "src/",
     "!src/**/*.test.ts",
@@ -21,15 +18,14 @@
     "README.md",
     "LICENSE"
   ],
-  "engines": {
-    "bun": ">=1.4.2"
-  },
-  "license": "Apache-2.0",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -37,5 +33,8 @@
   },
   "dependencies": {
     "@aphrody/x": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

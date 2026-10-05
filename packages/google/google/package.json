@@ -1,9 +1,22 @@
 {
   "name": "@aphrody/google",
   "version": "1.0.0-canary",
-  "private": true,
-  "type": "module",
   "description": "Canonical Bun facade for Aphrody Google Cloud and Gemini.",
+  "license": "Apache-2.0",
+  "bin": {
+    "aphrody-google": "./bin/aphrody-google.ts"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./runtime": "./src/runtime.ts",
+    "./api": "./src/api.ts",
+    "./drive-sync": "./src/drive-sync.ts",
+    "./drive-model-sync": "./src/drive-model-sync.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --format esm",
     "build:cli": "bun build ./bin/aphrody-google.ts --compile --outfile ./dist/aphrody-google-bun",
@@ -11,16 +24,6 @@
     "google:sync": "bun ./bin/aphrody-google.ts drive sync",
     "test": "bun test ./test",
     "verify": "bun run test && bun run build"
-  },
-  "bin": {
-    "aphrody-google": "./bin/aphrody-google.ts"
-  },
-  "exports": {
-    ".": "./src/index.ts",
-    "./runtime": "./src/runtime.ts",
-    "./api": "./src/api.ts",
-    "./drive-sync": "./src/drive-sync.ts",
-    "./drive-model-sync": "./src/drive-model-sync.ts"
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "catalog:",
@@ -30,6 +33,5 @@
   },
   "engines": {
     "bun": ">=1.4.2"
-  },
-  "license": "Apache-2.0"
+  }
 }

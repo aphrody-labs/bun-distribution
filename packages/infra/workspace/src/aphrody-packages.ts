@@ -360,11 +360,226 @@ export async function prepareAphrodyPackages(options: {
   }
 }
 
+/** Credentials and host-specific paths that must never reach the public registry. */
+const SECRET_TEXT =
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----|npm_[A-Za-z0-9]{36}|gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{40,}|xox[baprs]-[A-Za-z0-9-]{10,}|sk-[A-Za-z0-9]{32,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|[MN][A-Za-z\d]{23,25}\.[\w-]{6}\.[\w-]{27,}/;
+const HOST_TEXT = /\/home\/aphro\b|\/mnt\/c\/Users\b|[A-Za-z]:\\Users\\aphro\b/;
+
+/** Problems that forbid publishing an archive: unsafe entries, secrets, host paths, unshipped exports or specs. */
+export function auditArchive(entries: TarMember[], name: string): string[] {
+  const problems: string[] = [];
+  try {
+    assertPublicEntries(entries, name);
+  } catch (error) {
+    problems.push((error as Error).message);
+  }
+  const manifestEntry = entries.find((entry) => entry.name === "package/package.json");
+  if (!manifestEntry) return [...problems, "archive has no package/package.json"];
+  const manifest = JSON.parse(new TextDecoder().decode(manifestEntry.data)) as PackageJson &
+    Record<string, unknown>;
+  const present = new Set(entries.map((entry) => entry.name.replace(/^package\//, "")));
+  const missing = exportTargets(manifest).filter((target) => !present.has(target));
+  if (missing.length) problems.push(`exports not shipped: ${missing.join(", ")}`);
+  for (const field of ["dependencies", "peerDependencies", "optionalDependencies"])
+    for (const [dependency, spec] of Object.entries(
+      (manifest[field] as Record<string, string> | undefined) ?? {},
+    ))
+      if (/^(?:workspace|catalog|file|link):/.test(spec))
+        problems.push(`unpublishable spec ${dependency}@${spec}`);
+  for (const entry of entries) {
+    if (entry.type !== "file" || entry.size > 8_000_000) continue;
+    const text = new TextDecoder().decode(entry.data);
+    if (SECRET_TEXT.test(text)) problems.push(`credential-like text in ${entry.name}`);
+    if (HOST_TEXT.test(text)) problems.push(`host path in ${entry.name}`);
+  }
+  return problems;
+}
+
+/** @aphrody/* runtime dependencies first, so every published spec resolves on the registry. */
+export async function publishOrder(root: string, names: string[]): Promise<string[]> {
+  const directories = await aphrodyPackageDirectories(root);
+  const ordered: string[] = [];
+  const state = new Map<string, "visiting" | "done">();
+  const visit = async (name: string) => {
+    if (state.get(name) === "done" || !directories.has(name)) return;
+    if (state.get(name) === "visiting") return; // cycles publish in discovery order
+    state.set(name, "visiting");
+    const manifest = JSON.parse(
+      await readFile(join(directories.get(name)!, "package.json"), "utf8"),
+    ) as { dependencies?: Record<string, string>; peerDependencies?: Record<string, string> };
+    for (const dependency of Object.keys({
+      ...manifest.dependencies,
+      ...manifest.peerDependencies,
+    }))
+      if (dependency.startsWith("@aphrody/")) await visit(dependency);
+    state.set(name, "done");
+    ordered.push(name);
+  };
+  for (const name of names.toSorted()) await visit(name);
+  return ordered;
+}
+
+export interface PublishOutcome {
+  name: string;
+  version: string;
+  status: "published" | "current" | "ready" | "blocked" | "failed";
+  detail?: string;
+}
+
+/** Registry state of one version: absent, or its tarball SHA-1 (npm `dist.shasum`). */
+async function registryShasum(name: string, version: string, registry: string) {
+  const response = await fetch(`${registry}/${name.replace("/", "%2f")}`, {
+    headers: { accept: "application/json", "cache-control": "no-cache" },
+  });
+  if (response.status === 404) return { exists: false } as const;
+  if (!response.ok) throw new Error(`registry ${response.status} for ${name}`);
+  const packument = (await response.json()) as {
+    versions?: Record<string, { dist?: { shasum?: string } }>;
+    time?: Record<string, string>;
+  };
+  const published = packument.versions?.[version];
+  // A staged version blocks republication but is absent from `versions`.
+  if (!published && packument.time?.[version]) return { exists: true, shasum: undefined } as const;
+  return published
+    ? ({ exists: true, shasum: published.dist?.shasum } as const)
+    : ({ exists: false } as const);
+}
+
+/**
+ * Publishes @aphrody/* workspace members to the public npm registry with `bun publish`. Each package
+ * is built when an export is missing, packed once, audited ({@link auditArchive}) and that exact
+ * archive is published. A version already on the registry with identical bytes is `current`; with
+ * different bytes it is `blocked` until the version is bumped. Without `apply` nothing is published.
+ */
+export async function publishAphrodyPackages(options: {
+  root?: string;
+  names?: string[];
+  apply?: boolean;
+  registry?: string;
+}): Promise<PublishOutcome[]> {
+  const root = resolve(options.root ?? process.env.APHRODY_ROOT ?? process.cwd());
+  const registry = options.registry ?? "https://registry.npmjs.org";
+  const directories = await aphrodyPackageDirectories(root);
+  const names = options.names?.length ? options.names : [...directories.keys()];
+  const unknown = names.filter((name) => !directories.has(name));
+  if (unknown.length) throw new Error(`Not workspace members: ${unknown.join(", ")}`);
+  const outcomes: PublishOutcome[] = [];
+  const failed = new Set<string>();
+  for (const name of await publishOrder(root, names)) {
+    if (!names.includes(name)) continue;
+    const directory = directories.get(name)!;
+    const manifest = JSON.parse(
+      await readFile(join(directory, "package.json"), "utf8"),
+    ) as PackageJson & {
+      private?: boolean;
+      dependencies?: Record<string, string>;
+      peerDependencies?: Record<string, string>;
+    };
+    const outcome = (status: PublishOutcome["status"], detail?: string) => {
+      outcomes.push({ name, version: manifest.version, status, ...(detail ? { detail } : {}) });
+      if (status === "blocked" || status === "failed") failed.add(name);
+    };
+    if (manifest.private) {
+      outcome("blocked", "private: true");
+      continue;
+    }
+    const blockers = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies }).filter(
+      (dependency) => failed.has(dependency),
+    );
+    if (blockers.length) {
+      outcome("blocked", `depends on unpublished ${blockers.join(", ")}`);
+      continue;
+    }
+    if (exportTargets(manifest).some((target) => !existsSync(join(directory, target)))) {
+      if (!manifest.scripts?.build) {
+        outcome("blocked", "exports missing files and no build script");
+        continue;
+      }
+      const built = Bun.spawnSync(["bun", "run", "build"], {
+        cwd: directory,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      if (built.exitCode !== 0) {
+        outcome("failed", `build: ${built.stderr.toString().trim().slice(-400)}`);
+        continue;
+      }
+    }
+    const stage = await mkdtemp(join(tmpdir(), "aphrody-publish-"));
+    try {
+      const packed = Bun.spawnSync(
+        ["bun", "pm", "pack", "--destination", stage, "--quiet", "--ignore-scripts"],
+        { cwd: directory, stdout: "pipe", stderr: "pipe" },
+      );
+      const [file] = await readdir(stage);
+      if (packed.exitCode !== 0 || !file) {
+        outcome("failed", `pack: ${packed.stderr.toString().trim().slice(-400)}`);
+        continue;
+      }
+      const archive = join(stage, file);
+      const bytes = await readFile(archive);
+      const problems = auditArchive(readTar(Bun.gunzipSync(bytes)), name);
+      if (problems.length) {
+        outcome("blocked", problems.join("; "));
+        continue;
+      }
+      const shasum = createHash("sha1").update(bytes).digest("hex");
+      const state = await registryShasum(name, manifest.version, registry);
+      if (state.exists) {
+        if (state.shasum === shasum) outcome("current");
+        else
+          outcome(
+            "blocked",
+            state.shasum
+              ? "version already published with different content; bump it"
+              : "version staged on the registry; approve it there or bump it",
+          );
+        continue;
+      }
+      if (!options.apply) {
+        outcome("ready");
+        continue;
+      }
+      const published = Bun.spawnSync(["bun", "publish", archive, "--access", "public"], {
+        cwd: directory,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      if (published.exitCode === 0) outcome("published");
+      else
+        outcome(
+          "failed",
+          `${published.stdout.toString()}${published.stderr.toString()}`.trim().slice(-400),
+        );
+    } finally {
+      await rm(stage, { recursive: true, force: true });
+    }
+  }
+  return outcomes;
+}
+
 const usage =
-  "Usage: aphrody-ops aphrody-packages prepare (--package <@aphrody/name>... | --pin <file> [--write-pin]) --destination <dir> [--apply] [--allow-dirty]";
+  "Usage: aphrody-ops aphrody-packages publish [--package <@aphrody/name>...] [--apply]\n" +
+  "       aphrody-ops aphrody-packages prepare (--package <@aphrody/name>... | --pin <file> [--write-pin]) --destination <dir> [--apply] [--allow-dirty]";
 
 export async function runAphrodyPackages(args: string[]): Promise<number> {
   const [action, ...rest] = args;
+  if (action === "publish") {
+    const names: string[] = [];
+    let apply = false;
+    for (let i = 0; i < rest.length; i++) {
+      if (rest[i] === "--apply") apply = true;
+      else if (rest[i] === "--package" && rest[i + 1] && !rest[i + 1]!.startsWith("--"))
+        names.push(rest[++i]!);
+      else throw new Error(`Unknown or incomplete argument: ${rest[i]}`);
+    }
+    const outcomes = await publishAphrodyPackages({ names, apply });
+    for (const item of outcomes)
+      console.log(
+        `${item.status.padEnd(9)} ${item.name}@${item.version}${item.detail ? `  ${item.detail}` : ""}`,
+      );
+    return outcomes.some((item) => item.status === "failed" || item.status === "blocked") ? 1 : 0;
+  }
   if (action !== "prepare") {
     console.log(usage);
     return action === "--help" || action === "-h" ? 0 : 64;

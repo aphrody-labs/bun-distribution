@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/n2b-plugin",
-  "version": "0.6.2",
-  "private": true,
+  "version": "0.6.3",
   "description": "Bun plugin scanning through the native Yolo tooling SDK; explicit legacy CLI opt-in",
   "license": "Apache-2.0",
   "files": [

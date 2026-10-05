@@ -15,6 +15,9 @@
     "./email": "./src/email.ts",
     "./profiles": "./src/profiles.ts"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "bun build src/index.ts src/cli.ts --target bun --packages external --outdir dist",
     "lint": "oxlint src test",

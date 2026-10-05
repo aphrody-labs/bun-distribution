@@ -1,29 +1,26 @@
 {
   "name": "@aphrody/x",
-  "private": true,
   "version": "1.3.0",
+  "description": "Headless X (Twitter) client in pure TypeScript for Bun. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), full stealth, store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model.",
+  "keywords": [
+    "aphrody",
+    "aphrody-web",
+    "bun",
+    "client",
+    "graphql",
+    "headless",
+    "twitter",
+    "x"
+  ],
+  "bugs": {
+    "url": "https://github.com/aphrody-labs/aphrody/issues"
+  },
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/aphrody-labs/aphrody.git",
     "directory": "packages/x"
   },
-  "bugs": {
-    "url": "https://github.com/aphrody-labs/aphrody/issues"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "description": "Headless X (Twitter) client in pure TypeScript for Bun. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), full stealth, store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model.",
-  "keywords": [
-    "aphrody",
-    "bun",
-    "x",
-    "twitter",
-    "client",
-    "graphql",
-    "headless",
-    "aphrody-web"
-  ],
   "files": [
     "src/",
     "!src/**/*.test.ts",
@@ -31,15 +28,14 @@
     "README.md",
     "LICENSE"
   ],
-  "engines": {
-    "bun": ">=1.4.2"
-  },
-  "license": "Apache-2.0",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc",
@@ -50,9 +46,12 @@
     "coverage": "bun ../../../scripts/tools/web/x-coverage.ts"
   },
   "dependencies": {
-    "@aphrody/paths": "workspace:*",
     "@aphrody/bun": "workspace:*",
+    "@aphrody/paths": "workspace:*",
     "zod": "catalog:"
   },
-  "peerDependencies": {}
+  "peerDependencies": {},
+  "engines": {
+    "bun": ">=1.4.2"
+  }
 }

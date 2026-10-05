@@ -1,29 +1,26 @@
 {
   "name": "@aphrody/web-test",
-  "private": true,
   "version": "0.2.6",
+  "description": "Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server.",
+  "keywords": [
+    "aphrody",
+    "bun",
+    "cdp",
+    "e2e",
+    "locator",
+    "playwright",
+    "test",
+    "web-first-assertions"
+  ],
+  "bugs": {
+    "url": "https://github.com/aphrody-labs/aphrody/issues"
+  },
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/aphrody-labs/aphrody.git",
     "directory": "packages/web/aphrody-web-test"
   },
-  "bugs": {
-    "url": "https://github.com/aphrody-labs/aphrody/issues"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "description": "Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server.",
-  "keywords": [
-    "aphrody",
-    "bun",
-    "playwright",
-    "test",
-    "e2e",
-    "cdp",
-    "locator",
-    "web-first-assertions"
-  ],
   "files": [
     "src/",
     "!src/**/*.test.ts",
@@ -31,10 +28,6 @@
     "README.md",
     "LICENSE"
   ],
-  "engines": {
-    "bun": ">=1.4.2"
-  },
-  "license": "Apache-2.0",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -44,6 +37,9 @@
     "./next": "./src/next/index.ts",
     "./sites": "./src/sites/index.ts"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "oxlint",
@@ -51,5 +47,8 @@
   },
   "dependencies": {
     "@aphrody/agent-browser": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

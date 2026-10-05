@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/n2b-core",
-  "version": "0.6.2",
-  "private": true,
+  "version": "0.6.3",
   "description": "Native N2B SDK scan, explicit legacy CLI helpers and Bun shims",
   "license": "Apache-2.0",
   "files": [

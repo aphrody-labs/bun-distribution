@@ -9,9 +9,11 @@ import {
   aphrodyPackageDirectories,
   archiveName,
   assertPublicEntries,
+  auditArchive,
   embedExternalImports,
   exportTargets,
   portableArchive,
+  publishOrder,
   staleArchives,
   type AphrodyPackagesManifest,
 } from "../src/aphrody-packages.ts";
@@ -161,4 +163,43 @@ test("private or traversing entries are refused", () => {
     "package/../x",
   ])
     expect(() => assertPublicEntries([entry(name)], "@aphrody/a")).toThrow("private or unsafe");
+});
+
+const member = (name: string, text: string) => {
+  const data = new TextEncoder().encode(text);
+  return { name, type: "file" as const, mode: 0o644, size: data.length, data };
+};
+
+test("publication audit refuses unshipped exports, workspace specs, credentials and host paths", () => {
+  const manifest = (value: object) => member("package/package.json", JSON.stringify(value));
+  expect(
+    auditArchive(
+      [
+        manifest({ version: "1.0.0", exports: "./src/index.ts" }),
+        member("package/src/index.ts", ""),
+      ],
+      "@aphrody/a",
+    ),
+  ).toEqual([]);
+  const problems = auditArchive(
+    [
+      manifest({
+        version: "1.0.0",
+        exports: { bun: "./guest-js/index.ts" },
+        dependencies: { "@aphrody/b": "workspace:*" },
+      }),
+      member("package/dist/a.js", 'const t = "npm_' + "a".repeat(36) + '";'),
+      member("package/dist/b.js", "// built in /home/aphro/aphrody"),
+    ],
+    "@aphrody/a",
+  );
+  expect(problems.join("\n")).toContain("exports not shipped: guest-js/index.ts");
+  expect(problems.join("\n")).toContain("unpublishable spec @aphrody/b@workspace:*");
+  expect(problems.join("\n")).toContain("credential-like text in package/dist/a.js");
+  expect(problems.join("\n")).toContain("host path in package/dist/b.js");
+});
+
+test("publication order puts @aphrody runtime dependencies first", async () => {
+  const order = await publishOrder(root, ["@aphrody/plugin-opener", "@aphrody/api"]);
+  expect(order.indexOf("@aphrody/api")).toBeLessThan(order.indexOf("@aphrody/plugin-opener"));
 });

@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/m3-ai",
-  "version": "3.3.3",
-  "private": true,
+  "version": "3.3.4",
   "description": "Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives.",
   "keywords": [
     "material-3",
@@ -14,7 +13,8 @@
   "author": "aphrody-code",
   "files": [
     "dist",
-    "LICENSE.spaceui"
+    "LICENSE.spaceui",
+    "src"
   ],
   "type": "module",
   "sideEffects": false,

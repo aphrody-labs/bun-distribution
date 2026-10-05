@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/m3-front",
-  "version": "3.3.3",
-  "private": true,
+  "version": "3.3.4",
   "description": "Framework-agnostic Material 3 front layer: <m3-theme> web component, lazy material-web registration and window-class observation on top of @aphrody/material-web and @aphrody/m3-tokens.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
@@ -25,6 +24,9 @@
     "./register": "./src/register.ts",
     "./window-class": "./src/window-class.ts",
     "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "test": "bun test test/",

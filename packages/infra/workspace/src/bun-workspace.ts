@@ -31,6 +31,10 @@ export const M3_OWN_TSCONFIG = new Set([
   "@aphrody/m3-config",
   "@aphrody/bun",
   "@aphrody/material-web",
+  // Standalone targets: the Bun MCP server and the Next.js examples carry their own compiler options.
+  "@aphrody/m3-mcp",
+  "@aphrody/m3-next-example",
+  "@aphrody/m3-next-tauri-example",
 ]);
 /** Workspace packages whose tsconfig files are exported presets, not TypeScript source. */
 export const TYPECHECK_EXEMPT = new Set(["@aphrody/drive-config"]);

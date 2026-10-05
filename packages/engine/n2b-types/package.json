@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/n2b-types",
-  "version": "0.6.2",
-  "private": true,
+  "version": "0.6.3",
   "description": "Compatibility aliases of the canonical Yolo native tooling report schema",
   "license": "Apache-2.0",
   "files": [

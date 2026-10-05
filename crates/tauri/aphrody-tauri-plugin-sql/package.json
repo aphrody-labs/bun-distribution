@@ -20,7 +20,8 @@
   "files": [
     "dist-js",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "guest-js"
   ],
   "dependencies": {
     "@aphrody/api": "workspace:*"
@@ -31,5 +32,8 @@
   "scripts": {
     "typecheck": "tsgo -p tsconfig.json --noEmit",
     "build": "bun ../build-js.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
