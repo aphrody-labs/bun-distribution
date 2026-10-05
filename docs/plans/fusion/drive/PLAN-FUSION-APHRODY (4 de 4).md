@@ -151,3 +151,42 @@ Trois recherches sans accès aux dépôts : Obscura (versions, issues, PR), Taur
 ## Sources de cette partie
 
 Rapports d'audit du 5 octobre (lecture seule) : mécanismes d'extension du fork Bun, inventaire et absorption d'Obscura, inventaire Tauri et impact du renommage ; reçu `bun-forge` de `c439b6fbd` ; comparaisons GitHub (`compare`) des forks `aphrody-labs/{bun,obscura,tauri,plugins-workspace,wry,tao,create-tauri-app}` contre leurs amonts ; `vendor.toml`, `vendor.lock`, `config/upstream-sources.json`, `config/tauri-upstream.json`, `docs/reference/web/crates/aphrody-obscura/OBSCURA-UPSTREAM.txt` ; `objdump -T` des binaires ; `PLAN.md`, `MEMORY.md` et `docs/research/infra/hosting-offers-2026-10-05.md` d'`aphrody` (commits `b1af71346` à `a8f0f4211`). Les gains de performance du §6 sont des estimations ; les durées de build et tailles sont mesurées.
+
+## 11. Usage réel de deno_core et de V8 dans le fork Obscura (mesuré le 2026-10-05)
+
+Mesures faites directement sur le fork `aphrody-labs/obscura`, branche `yolo` (`dbea8a7`, amont v0.2.4 + 3 commits), avec `rg` sur les sources ; les comptages sont des lignes ou des occurrences selon l'indication.
+
+### 11.1 « Deno » se réduit à deno_core
+
+| Fait | Mesure |
+|---|---|
+| Dépendances Deno | `deno_core 0.412` (aussi en build-dependency) et `deno_error 0.7`. **Aucune** extension `deno_web`, `deno_url`, `deno_console`, `deno_webidl` ni `serde_v8` |
+| Où | uniquement la crate `obscura-js` : `runtime.rs` (93 lignes citant `deno_core`), `ops.rs` (21), `module_loader.rs` (16), `frame.rs` (7), `build.rs` (7), `import_map.rs` (6). `obscura-dom`, `-net`, `-render`, `-cdp`, `-mcp` n'en dépendent pas |
+| Ops | 74 ops distincts (76 `#[op2]` : 46 simples, 27 `fast`, 3 `nofast`), **aucun op asynchrone**, pas de macro `extension!` ; 74 ops appelés depuis `bootstrap.js` par `Deno.core.ops.op_*`, et **aucune autre API `Deno.core`** n'est utilisée |
+| Web APIs | tout le DOM et les API web sont du JavaScript maison (`js/bootstrap.js`, 17 932 lignes) au-dessus de ces 74 ops ; deno_core ne fournit ni fetch, ni timers, ni URL |
+| Ce que deno_core apporte réellement | `JsRuntime` (isolate + boucle d'événements), `OpState` (62 occurrences : état par page, `RealmStates`), `ModuleLoader` + `load_side_es_module` + `mod_evaluate` (modules ES, 331 lignes + `import_map.rs` 455 lignes), création de snapshot (`build.rs`), `JsError`, `JsBuffer`, `ModuleSpecifier`/`resolve_import` |
+| Contraintes tokio | la construction exige un contexte tokio (`enter_tokio_context`, runtime de repli multi-thread) et un verrou global `ISOLATE_CREATE_LOCK` ; `poll_event_loop` est piloté depuis tokio |
+
+**Conséquence** : retirer deno_core ne touche qu'`obscura-js` (≈ 35 000 lignes de Rust dont les tests, 8 428 d'ops) et ne demande de réimplémenter que : l'enregistrement des 74 ops, le chargeur de modules, la boucle d'événements et l'état par page. Les 76 ops sont tous synchrones, donc simples à exposer comme fonctions hôtes.
+
+### 11.2 Surface V8 directe (hors deno_core)
+
+Lignes citant `v8::` : `runtime.rs` 106, `ops.rs` 42, `frame.rs` 2, `v8_flags.rs` 1 ; `obscura-browser/page.rs` n'a que des commentaires. Le nombre varie selon la méthode de comptage (183 occurrences dans la partie 1) ; seule la liste ci-dessous compte pour le portage. Les usages ordinaires (`Local`, `Global`, `String::new`, `Value`, `Object`, `Function`, `scope`/`PinScope`, `TryCatch`) existent dans tout moteur ; les sept capacités **propres à V8** sont :
+
+| # | Capacité V8 | Où | Équivalent JSC (hypothèse à vérifier, non testée) |
+|---|---|---|---|
+| 1 | Snapshot de démarrage de `bootstrap.js` (`create_snapshot` dans `build.rs`, `startup_snapshot` ; chemin de compilation croisée avec `mksnapshot` ; 52 mentions dans `build.rs`) | `build.rs`, `runtime.rs` | pas d'API publique de snapshot de tas ; repli : évaluer `bootstrap.js` au démarrage avec cache de bytecode |
+| 2 | Plusieurs `v8::Context` dans un isolate pour les frames (`Context::from_snapshot`, `frame.rs`) | `runtime.rs`, `frame.rs` | plusieurs `JSGlobalContext` dans un `JSContextGroup` : modèle compatible |
+| 3 | Cache de code (`script_compiler` + `CachedData`) | `runtime.rs` | cache de bytecode JSC (existe côté Bun, API privée) |
+| 4 | Limite de tas (`add_near_heap_limit_callback`, `HeapStatistics`) et arrêt (`IsolateHandle::terminate_execution`, watchdog `spawn_watchdog`, 122 lignes `cdp_watchdog.rs`) | `runtime.rs` | arrêt par le watchdog de la VM JSC ; pas de rappel équivalent de limite de tas connu : à concevoir |
+| 5 | Drapeaux V8 (`set_v8_flags`, `--max-old-space-size`…) | `v8_flags.rs` | sans objet ; mapper vers les options JSC ou retirer |
+| 6 | Locale ICU globale (`v8::icu::set_default_locale`, bug #734) | `runtime.rs` | ICU de WebKit : réglage propre à JSC |
+| 7 | `Private::for_api`, statut de module privé lu par `mod_evaluate` | `runtime.rs`, `ops.rs` | à réécrire avec le chargeur de modules |
+
+### 11.3 Ce que cela change au plan
+
+1. **Frontière de portage** : définir une interface `JsEngine` d'exactement ces sept capacités plus l'enregistrement de 74 ops synchrones ; tout le reste d'`obscura-js` (DOM, CDP, rendu) est indépendant du moteur. Le portage JSC (chantier du J0 à J3) devient un travail borné à `obscura-js`, pas à Obscura entière.
+2. **Retrait de deno_core** : faisable séparément du retrait de V8 (il n'y a que deno_core, aucun paquet `deno_*` d'API web) ; première étape sans risque de parité si on garde V8 : remplacer `JsRuntime` par `rusty_v8` direct. Cette étape est facultative et n'a de valeur que si elle réduit le coût du portage JSC ; ne pas la faire avant la décision JSC.
+3. **Règle de dépôt** : `CLAUDE.md` impose de conserver V8 jusqu'à la parité Obscura/JSC requise ; le plan ne supprime donc V8 qu'après réussite de la suite de parité (334 tests de `runtime.rs` et les tests `obscura-cdp`) sur JSC.
+4. **Points à mesurer avant décision** (non vérifiés) : coût de démarrage sans snapshot (évaluation de 17 932 lignes de JS à chaque isolate), existence d'un moyen de limiter le tas sous JSC, comportement des modules ES (`import()`, 2 usages dans `bootstrap.js`).
+5. **Sécurité** : le watchdog et la limite de tas sont les garde-fous contre les scripts hostiles ; aucun équivalent JSC ne doit manquer au moment de retirer V8.
