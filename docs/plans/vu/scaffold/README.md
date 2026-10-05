@@ -9,9 +9,8 @@ that they stay reviewable and checked by a gate even where the private repositor
 | --- | --- | --- |
 | [vu.json](vu.json) | vu.json (byte-identical) | The single place of the runtime name and the templates of every derived name |
 | [vendor.json](vendor.json) | vendor.json (byte-identical) | Pins: the three forks (exact commit, fork branch, crates.io evidence) and the python-build-standalone assets with sha256 |
-| [vu-forge.json](vu-forge.json) | config/forge.json | Build host settings, smoke commands and receipt schema (mirror of config/bun-forge.json in spirit) |
-| [Cargo.toml.scaffold](Cargo.toml.scaffold) | Cargo.toml | Workspace root of the launcher and the CPython embedding |
-| [rust-toolchain.toml.scaffold](rust-toolchain.toml.scaffold) | rust-toolchain.toml | The Aphrody Rust channel |
+| [Cargo.toml.scaffold](Cargo.toml.scaffold) | Cargo.toml | Workspace root of the launcher and the CPython embedding (copy at the time of the first build) |
+| [rust-toolchain.toml.scaffold](rust-toolchain.toml.scaffold) | rust-toolchain.toml | The Aphrody Rust channel (copy at the time of the first build) |
 
 The two `.scaffold` files carry that suffix so that Cargo and the repository's manifest scanners ignore them.
 

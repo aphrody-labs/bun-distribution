@@ -9616,8 +9616,8 @@
     {
       "path": "docs/plans/vu/PLAN.md",
       "title": "vu: the Aphrody Python runtime",
-      "sha256": "b6a178cc1f62dac8bde7bda6a284caee4339040020a4ddae3b1a6710d686c967",
-      "bytes": 35039,
+      "sha256": "e3e6644998f90a0e7c623e6abe8b816650faf7ba4cd11e9327dd4951bd35d860",
+      "bytes": 35587,
       "domain": "vu",
       "status": "canonical",
       "visibility": "private",
@@ -9626,8 +9626,8 @@
     {
       "path": "docs/plans/vu/scaffold/README.md",
       "title": "Mirror of the seed of the private vu repository",
-      "sha256": "677a3bc2cfb16bd9e70f301f4abee0561559de816759854a9d662f31f99654f9",
-      "bytes": 1589,
+      "sha256": "d75c447c3b0a2cbf16b4c5a7570ca1cbd0d251d0eb4b0fa52dd33467b6912780",
+      "bytes": 1509,
       "domain": "vu",
       "status": "canonical",
       "visibility": "private",
