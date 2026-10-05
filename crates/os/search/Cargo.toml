@@ -14,6 +14,7 @@ description            = "In-memory full-text search: tokenizer, inverted index,
 workspace = true
 
 [dependencies]
+aphrody-everything-sdk = { workspace = true }
 serde      = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror  = { workspace = true }
@@ -21,12 +22,6 @@ tracing    = { workspace = true }
 tokio      = { workspace = true, features = ["fs", "io-util", "macros", "rt"] }
 chrono     = { workspace = true, features = ["serde"] }
 regex      = { workspace = true }
-
-[target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = [
-    "Win32_Foundation",
-    "Win32_System_LibraryLoader",
-] }
 
 [dev-dependencies]
 tempfile = { workspace = true }
@@ -36,4 +31,4 @@ tokio    = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "f
 # `tracing` and `regex` are used through macro / lazy paths; keep them
 # explicit so machete doesn't strip them when callers disable log capture
 # or skip the tokenizer regex fast-path.
-ignored = ["tracing", "regex", "windows"]
+ignored = ["tracing", "regex"]

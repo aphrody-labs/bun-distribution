@@ -20,7 +20,7 @@
 //! # }
 //! ```
 
-// Unsafe is confined to the Windows FFI in `everything` (dynamic SDK loading) and `ntfs_win` (NTFS FSCTLs).
+// Unsafe is confined to the Windows FFI in `ntfs_win` (NTFS FSCTLs); the Everything SDK binding lives in aphrody-everything-sdk.
 #![deny(unsafe_code)]
 
 pub mod everything;
