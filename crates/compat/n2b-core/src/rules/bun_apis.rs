@@ -25,9 +25,9 @@
 
 use std::collections::HashSet;
 
+use crate::util::{Edit, apply_edits, line_offsets, make_finding};
 use aphrody_n2b_registry::{APIS, ApiEntry, ImportGraph, MODULES};
 use aphrody_n2b_types::types::{Finding, MakeFindingOpts, Severity};
-use crate::util::{Edit, apply_edits, line_offsets, make_finding};
 use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
 
@@ -90,8 +90,8 @@ static NODE_BUILTINS: Lazy<HashSet<&'static str>> =
 /// un graphe vide → tous les filtres `import_from` retournent `false` et
 /// les règles concernées sont silencieuses. Préfère `apply_bun_api_rules_with_imports`.
 pub fn apply_bun_api_rules(path: &str, source: &str, aggressive: bool) -> (Vec<Finding>, String) {
-    let imports = crate::rules::imports_ast::build_import_graph(path, source);
-    apply_bun_api_rules_with_imports(path, source, aggressive, &imports)
+    let context = crate::rules::imports_ast::build_source_context(path, source);
+    apply_bun_api_rules_with_context(path, source, aggressive, &context.imports, &context)
 }
 
 pub fn apply_bun_api_rules_with_imports(
@@ -99,6 +99,17 @@ pub fn apply_bun_api_rules_with_imports(
     source: &str,
     aggressive: bool,
     imports: &ImportGraph,
+) -> (Vec<Finding>, String) {
+    let context = crate::rules::imports_ast::build_source_context(path, source);
+    apply_bun_api_rules_with_context(path, source, aggressive, imports, &context)
+}
+
+pub(crate) fn apply_bun_api_rules_with_context(
+    path: &str,
+    source: &str,
+    aggressive: bool,
+    imports: &ImportGraph,
+    context: &crate::rules::imports_ast::SourceContext,
 ) -> (Vec<Finding>, String) {
     let offsets = line_offsets(source);
     let mut findings: Vec<Finding> = Vec::new();
@@ -110,6 +121,12 @@ pub fn apply_bun_api_rules_with_imports(
                 mat.get(0).expect("invariant: capture group 0 is always present in a match");
             let index = whole.start();
             let original = whole.as_str();
+            if context.ignored_starts.iter().any(|span| span.contains(&(index as u32))) {
+                continue;
+            }
+            if r.id == "api/child-process-spawn" && !context.spawn_calls.contains(&index) {
+                continue;
+            }
 
             // Phase 2 : filtre AST. Le finding n'est émis que si :
             //  (a) le pattern matché commence par `<from>.` — usage
@@ -119,7 +136,9 @@ pub fn apply_bun_api_rules_with_imports(
             //      vers `from` (résolu par l'AST oxc).
             // Sans `import_from`, la règle reste textuelle (cas globals :
             // Buffer, process, etc.).
-            if let Some(from) = &r.import_from {
+            if let Some(from) = &r.import_from
+                && r.id != "api/child-process-spawn"
+            {
                 let from_norm = strip_node_prefix(from);
                 let explicit_prefix = format!("{from_norm}.");
                 // Préfixe explicite valide UNIQUEMENT si `from` est un module

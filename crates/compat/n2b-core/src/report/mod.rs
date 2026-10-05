@@ -15,10 +15,10 @@
 use crate::ai::{
     Context, SCHEMA_URL, SCHEMA_VERSION, byte_offset, category, confidence, context_lines, docs_url,
 };
+use crate::util::line_offsets;
 use aphrody_n2b_types::types::{
     CompatInfo, CompatStatus, FileFix, Finding, Mode, RunOptions, Severity,
 };
-use crate::util::line_offsets;
 use colored::Colorize;
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -205,6 +205,10 @@ fn render_compat_text(c: &CompatInfo) -> String {
 }
 
 fn meta(opts: &RunOptions, fixes: &[FileFix]) -> Value {
+    meta_counts(opts, fixes.len(), fixes.iter().map(|f| f.findings.len()).sum())
+}
+
+fn meta_counts(opts: &RunOptions, files_scanned: usize, findings_total: usize) -> Value {
     json!({
         "schema_version": SCHEMA_VERSION,
         "$schema": SCHEMA_URL,
@@ -212,8 +216,8 @@ fn meta(opts: &RunOptions, fixes: &[FileFix]) -> Value {
         "version": VERSION,
         "mode": opts.mode,
         "root": opts.root.display().to_string(),
-        "files_scanned": fixes.len(),
-        "findings_total": fixes.iter().map(|f| f.findings.len()).sum::<usize>(),
+        "files_scanned": files_scanned,
+        "findings_total": findings_total,
     })
 }
 
@@ -226,35 +230,51 @@ pub fn render_json(fixes: &[FileFix], opts: &RunOptions) -> String {
 /// `serde_json::Value` (sérialisé en amont) pour rester decoupled de
 /// `n2b-core::report_card` au niveau du module `report`.
 pub fn render_json_with_card(fixes: &[FileFix], opts: &RunOptions, card: Option<&Value>) -> String {
-    let files: Vec<Value> = fixes
+    let files = fixes
         .iter()
-        .map(|f| {
-            let offsets = line_offsets(&f.before);
-            let findings: Vec<Value> = f
-                .findings
-                .iter()
-                .map(|fi| {
-                    serde_json::to_value(enrich(fi, &f.before, &offsets)).unwrap_or(json!({}))
-                })
-                .collect();
-            json!({
-                "path": f.file,
-                "changed": f.before != f.after,
-                "findings": findings,
-            })
-        })
-        .collect();
+        .map(json_file)
+        .collect::<Result<Vec<_>, _>>()
+        .expect("N2B report fields are serializable primitives");
 
-    let mut m = meta(opts, fixes);
-    if let Some(obj) = m.as_object_mut() {
-        obj.insert("files".to_string(), Value::Array(files));
-        if let Some(c) = card
-            && let Ok(v) = serde_json::to_value(c)
-        {
-            obj.insert("report_card".to_string(), v);
-        }
+    let mut m = json_report(files, opts);
+    if let Some(obj) = m.as_object_mut()
+        && let Some(c) = card
+        && let Ok(v) = serde_json::to_value(c)
+    {
+        obj.insert("report_card".to_string(), v);
     }
     serde_json::to_string_pretty(&m).unwrap_or_default()
+}
+
+/// Enrich one file while its original source is available; retain no full source texts.
+pub fn json_file(file: &FileFix) -> Result<Value, serde_json::Error> {
+    let offsets = line_offsets(&file.before);
+    let findings = file
+        .findings
+        .iter()
+        .map(|finding| serde_json::to_value(enrich(finding, &file.before, &offsets)))
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut entry = json!({
+        "path": file.file,
+        "changed": file.before != file.after,
+    });
+    entry
+        .as_object_mut()
+        .expect("file metadata is an object")
+        .insert("findings".to_string(), Value::Array(findings));
+    Ok(entry)
+}
+
+/// Assemble entries produced by json_file without rendering or parsing JSON text.
+/// files_scanned retains the existing report meaning: entries with findings/edits.
+pub fn json_report(files: Vec<Value>, opts: &RunOptions) -> Value {
+    let total = files.iter().map(|file| file["findings"].as_array().map_or(0, Vec::len)).sum();
+    let mut report = meta_counts(opts, files.len(), total);
+    report
+        .as_object_mut()
+        .expect("report metadata is an object")
+        .insert("files".to_string(), Value::Array(files));
+    report
 }
 
 /// Affiche le report card en mode text (Phase 5 §5.4 §5.6).

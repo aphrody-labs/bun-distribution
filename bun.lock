@@ -921,6 +921,7 @@
       "version": "3.3.3",
       "dependencies": {
         "@aphrody/media": "workspace:*",
+        "@aphrody/runtime-sdk": "catalog:",
         "@aphrody/update": "workspace:*",
       },
     },

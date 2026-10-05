@@ -1,6 +1,6 @@
 // @generated — DO NOT EDIT MANUALLY.
-// Regenerate with: bun run n2b:codegen
-// Source of truth: ../aphrody-contracts/schema/v2.json
+// Regenerate with: bun scripts/tools/compat/scripts/n2b/generate-schema-types.ts
+// Source of truth: Yolo crates/aphrody-n2b-types/schema/v2.json
 
 #![allow(clippy::redundant_closure_call)]
 #![allow(clippy::needless_lifetimes)]

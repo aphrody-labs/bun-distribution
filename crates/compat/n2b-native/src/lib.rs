@@ -91,6 +91,8 @@ pub extern "C" fn node2bun_abi_version() -> u32 {
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ScanOptions {
+    #[serde(default = "run::default_jobs")]
+    jobs: usize,
     #[serde(default)]
     ignore: Vec<String>,
     #[serde(default)]
@@ -118,6 +120,13 @@ impl From<ScanMode> for Mode {
     }
 }
 
+#[derive(serde::Serialize)]
+#[serde(untagged)]
+enum ScanResult {
+    Success { ok: bool, report: serde_json::Value },
+    Error { ok: bool, error: String },
+}
+
 /// Scan a project in check mode and return an owned JSON result.
 ///
 /// Success has `{"ok":true,"report":<N2B JSON report>}`; failure has
@@ -132,7 +141,7 @@ pub unsafe extern "C" fn node2bun_scan_json(root_ptr: *const c_char) -> *mut c_c
     unsafe { node2bun_scan_with_options_json(root_ptr, std::ptr::null()) }
 }
 
-/// Run the N2B core with JSON options: `ignore`, `mode` and `dry_run`.
+/// Run the N2B core with JSON options: `ignore`, `mode`, `dry_run` and `jobs` (1–6).
 /// `mode=fix` and `mode=aggressive` can write project files unless `dry_run=true`.
 /// Both arguments must be null or valid NUL-terminated UTF-8 strings.
 /// The result is owned by the caller and freed with `node2bun_string_free`.
@@ -156,7 +165,12 @@ pub unsafe extern "C" fn node2bun_scan_with_options_json(
             return Err(format!("project root is not a directory: {}", root.display()));
         }
         let options = if options_ptr.is_null() {
-            ScanOptions { ignore: Vec::new(), mode: ScanMode::Check, dry_run: true }
+            ScanOptions {
+                jobs: run::default_jobs(),
+                ignore: Vec::new(),
+                mode: ScanMode::Check,
+                dry_run: true,
+            }
         } else {
             let json = unsafe { CStr::from_ptr(options_ptr) }
                 .to_str()
@@ -173,17 +187,15 @@ pub unsafe extern "C" fn node2bun_scan_with_options_json(
             agent: false,
             dry_run: options.dry_run,
         };
-        let findings = run::run(&opts).map_err(|error| error.to_string())?;
-        let report =
-            serde_json::from_str::<serde_json::Value>(&report::render_json(&findings, &opts))
-                .map_err(|error| error.to_string())?;
-        Ok(report)
+        let files = run::run_map_with_jobs(&opts, options.jobs, |fix| Ok(report::json_file(&fix)?))
+            .map_err(|error| format!("{error:#}"))?;
+        Ok(report::json_report(files, &opts))
     });
 
     let result = match outcome {
-        Ok(Ok(report)) => serde_json::json!({ "ok": true, "report": report }),
-        Ok(Err(error)) => serde_json::json!({ "ok": false, "error": error }),
-        Err(_) => serde_json::json!({ "ok": false, "error": "N2B scan panicked" }),
+        Ok(Ok(report)) => ScanResult::Success { ok: true, report },
+        Ok(Err(error)) => ScanResult::Error { ok: false, error },
+        Err(_) => ScanResult::Error { ok: false, error: "N2B scan panicked".into() },
     };
     serde_json::to_string(&result)
         .ok()
@@ -207,6 +219,53 @@ pub unsafe extern "C" fn node2bun_string_free(ptr: *mut c_char) {
 #[cfg(test)]
 mod scan_tests {
     use super::*;
+
+    #[test]
+    fn native_envelope_preserves_core_report_without_a_json_roundtrip() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("index.js"), "#!/usr/bin/env node\n").unwrap();
+        let root = CString::new(dir.path().to_string_lossy().as_bytes()).unwrap();
+        let opts = RunOptions {
+            root: dir.path().into(),
+            mode: Mode::Check,
+            report: Report::Json,
+            quiet: true,
+            ignore: vec![],
+            agent: false,
+            dry_run: true,
+        };
+        let expected: serde_json::Value =
+            serde_json::from_str(&report::render_json(&run::run(&opts).unwrap(), &opts)).unwrap();
+        let pointer = unsafe { node2bun_scan_json(root.as_ptr()) };
+        let actual: serde_json::Value =
+            serde_json::from_str(unsafe { CStr::from_ptr(pointer) }.to_str().unwrap()).unwrap();
+        unsafe { node2bun_string_free(pointer) };
+        assert_eq!(actual, serde_json::json!({ "ok": true, "report": expected }));
+    }
+
+    #[test]
+    fn jobs_option_is_bounded_and_invalid_source_is_an_error() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = CString::new(dir.path().to_string_lossy().as_bytes()).unwrap();
+        for jobs in [0, 7] {
+            let options = CString::new(format!(r#"{{"jobs":{jobs}}}"#)).unwrap();
+            let pointer =
+                unsafe { node2bun_scan_with_options_json(root.as_ptr(), options.as_ptr()) };
+            let json: serde_json::Value =
+                serde_json::from_str(unsafe { CStr::from_ptr(pointer) }.to_str().unwrap()).unwrap();
+            unsafe { node2bun_string_free(pointer) };
+            assert_eq!(json["ok"], false);
+            assert!(json["error"].as_str().unwrap().contains("jobs"));
+        }
+        std::fs::write(dir.path().join("bad.js"), [0xff]).unwrap();
+        let options = CString::new(r#"{"jobs":1}"#).unwrap();
+        let pointer = unsafe { node2bun_scan_with_options_json(root.as_ptr(), options.as_ptr()) };
+        let json: serde_json::Value =
+            serde_json::from_str(unsafe { CStr::from_ptr(pointer) }.to_str().unwrap()).unwrap();
+        unsafe { node2bun_string_free(pointer) };
+        assert_eq!(json["ok"], false);
+        assert!(json["error"].as_str().unwrap().contains("bad.js"));
+    }
 
     #[test]
     fn scan_json_reports_node_findings_without_editing_the_project() {

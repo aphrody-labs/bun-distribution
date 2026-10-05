@@ -2135,6 +2135,7 @@ dependencies = [
  "reqwest 0.13.5",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "url",
  "walkdir",
@@ -2286,6 +2287,8 @@ name = "aphrody-oxc-bridge"
 version = "0.1.0"
 dependencies = [
  "oxc_allocator",
+ "oxc_ast",
+ "oxc_ast_visit",
  "oxc_codegen",
  "oxc_formatter",
  "oxc_linter",
@@ -2293,6 +2296,7 @@ dependencies = [
  "oxc_parser",
  "oxc_semantic",
  "oxc_span",
+ "oxc_syntax",
  "rustc-hash 2.1.3",
  "serde_json",
 ]
@@ -31783,6 +31787,14 @@ dependencies = [
  "quote",
  "syn 3.0.6",
  "synstructure 0.14.0",
+]
+
+[[package]]
+name = "yolo-tooling"
+version = "1.0.0"
+dependencies = [
+ "aphrody-n2b-native",
+ "aphrody-oxc-bridge",
 ]
 
 [[package]]

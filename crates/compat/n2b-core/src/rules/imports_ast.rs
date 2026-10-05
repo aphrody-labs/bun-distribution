@@ -28,8 +28,9 @@ use oxc_ast::ast::{
 };
 use oxc_ast_visit::Visit;
 use oxc_parser::Parser;
-use oxc_span::SourceType;
+use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, ops::Range};
 
 #[derive(Debug, Clone)]
 pub struct Specifier {
@@ -212,8 +213,17 @@ pub fn extract_specifiers(path: &str, source: &str) -> Vec<Specifier> {
 // ---------------------------------------------------------------------------
 
 /// Visitor qui résout les bindings locaux → (specifier, kind).
+pub(crate) struct SourceContext {
+    pub imports: ImportGraph,
+    pub ignored_starts: Vec<Range<u32>>,
+    pub spawn_calls: Vec<usize>,
+}
+
 struct GraphCollect {
     graph: ImportGraph,
+    ignored_starts: Vec<Range<u32>>,
+    bindings: HashMap<String, usize>,
+    calls: Vec<(usize, String, Option<String>)>,
 }
 
 impl GraphCollect {
@@ -271,7 +281,46 @@ fn extract_require_arg<'a>(call: &oxc_ast::ast::CallExpression<'a>) -> Option<St
 }
 
 impl<'a> Visit<'a> for GraphCollect {
+    fn visit_binding_identifier(&mut self, it: &oxc_ast::ast::BindingIdentifier<'a>) {
+        *self.bindings.entry(it.name.to_string()).or_default() += 1;
+    }
+    fn visit_string_literal(&mut self, it: &oxc_ast::ast::StringLiteral<'a>) {
+        self.ignored_starts.push(it.span.start..it.span.end);
+    }
+    fn visit_template_element(&mut self, it: &oxc_ast::ast::TemplateElement<'a>) {
+        self.ignored_starts.push(it.span.start..it.span.end);
+    }
+    fn visit_reg_exp_literal(&mut self, it: &oxc_ast::ast::RegExpLiteral<'a>) {
+        self.ignored_starts.push(it.span.start..it.span.end);
+    }
+    fn visit_jsx_text(&mut self, it: &oxc_ast::ast::JSXText<'a>) {
+        self.ignored_starts.push(it.span.start..it.span.end);
+    }
+    fn visit_static_member_expression(&mut self, it: &oxc_ast::ast::StaticMemberExpression<'a>) {
+        // A property suffix is not a free identifier: Bun.spawn != spawn.
+        self.ignored_starts.push(it.property.span.start..it.property.span.end);
+        oxc_ast_visit::walk::walk_static_member_expression(self, it);
+    }
+    fn visit_call_expression(&mut self, it: &oxc_ast::ast::CallExpression<'a>) {
+        match &it.callee {
+            Expression::Identifier(id) => {
+                self.calls.push((it.callee.span().start as usize, id.name.to_string(), None))
+            },
+            Expression::StaticMemberExpression(member) => {
+                if let Expression::Identifier(id) = &member.object {
+                    self.calls.push((
+                        it.callee.span().start as usize,
+                        id.name.to_string(),
+                        Some(member.property.name.to_string()),
+                    ));
+                }
+            },
+            _ => {},
+        }
+        oxc_ast_visit::walk::walk_call_expression(self, it);
+    }
     fn visit_import_declaration(&mut self, it: &oxc_ast::ast::ImportDeclaration<'a>) {
+        self.ignored_starts.push(it.source.span.start..it.source.span.end);
         let specifier = it.source.value.as_str().to_string();
         let Some(specs) = it.specifiers.as_ref() else {
             // import "foo" (side-effect) — pas de binding local.
@@ -326,11 +375,26 @@ impl<'a> Visit<'a> for GraphCollect {
 /// silencieux par défaut. Le pattern dynamique est un cas Phase 5
 /// (rule `globals/require-dynamic`).
 pub fn build_import_graph(path: &str, source: &str) -> ImportGraph {
+    build_source_context(path, source).imports
+}
+
+pub(crate) fn build_source_context(path: &str, source: &str) -> SourceContext {
     let allocator = Allocator::default();
     let st = source_type_from_path(path);
     let ret = Parser::new(&allocator, source, st).parse();
 
-    let mut collect = GraphCollect { graph: ImportGraph::new() };
+    let mut collect = GraphCollect {
+        graph: ImportGraph::new(),
+        ignored_starts: ret
+            .program
+            .comments
+            .iter()
+            .map(|c| c.span.start..c.span.end)
+            .chain(ret.program.directives.iter().map(|d| d.span.start..d.span.end))
+            .collect(),
+        bindings: HashMap::new(),
+        calls: Vec::new(),
+    };
 
     // Statements top-level — couvre le cas commun (imports en tête de fichier
     // ou require() au top-level/dans un bloc). Le visitor traverse récursivement.
@@ -356,7 +420,34 @@ pub fn build_import_graph(path: &str, source: &str) -> ImportGraph {
         }
     }
 
-    collect.graph
+    let spawn_calls = collect
+        .calls
+        .iter()
+        .filter_map(|(start, root, member)| {
+            let binding = collect.graph.bindings.get(root)?;
+            if binding.specifier.trim_start_matches("node:") != "child_process" {
+                return None;
+            }
+            let declarations = collect.bindings.get(root).copied().unwrap_or_default();
+            // Conservative when a local declaration shadows an import anywhere in
+            // the file. Without scope resolution, never rewrite an ambiguous call.
+            let allowed_declarations = usize::from(matches!(binding.kind, BindingKind::Require));
+            if declarations > allowed_declarations {
+                return None;
+            }
+            let is_spawn = match (&binding.kind, member.as_deref()) {
+                (BindingKind::Named { imported }, None) => imported == "spawn",
+                (
+                    BindingKind::Namespace | BindingKind::Default | BindingKind::Require,
+                    Some("spawn"),
+                ) => true,
+                (BindingKind::Require, None) => root == "spawn",
+                _ => false,
+            };
+            is_spawn.then_some(*start)
+        })
+        .collect();
+    SourceContext { imports: collect.graph, ignored_starts: collect.ignored_starts, spawn_calls }
 }
 
 #[cfg(test)]

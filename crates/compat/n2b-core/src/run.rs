@@ -17,8 +17,8 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::Result;
-use crossbeam_channel::unbounded;
+use anyhow::{Context, Result};
+use crossbeam_channel::bounded;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use ignore::{WalkBuilder, WalkState};
 use once_cell::sync::Lazy;
@@ -77,7 +77,33 @@ fn is_workflow(rel: &str) -> bool {
     RE.is_match(&normalized)
 }
 
+/// Upper bound for one recursive scan, including its parallel file workers.
+pub const DEFAULT_MAX_JOBS: usize = crate::util::resources::MAX_SCAN_WORKERS;
+
+pub fn default_jobs() -> usize {
+    crate::util::resources::default_scan_workers()
+}
+
 pub fn run(opts: &RunOptions) -> Result<Vec<FileFix>> {
+    run_with_jobs(opts, default_jobs())
+}
+
+/// Scan recursively in process with a bounded worker count and pending-result queue.
+/// The returned report still owns its complete findings and before/after file texts.
+pub fn run_with_jobs(opts: &RunOptions, jobs: usize) -> Result<Vec<FileFix>> {
+    run_map_with_jobs(opts, jobs, Ok)
+}
+
+/// Project each completed file on a native worker before queuing its result.
+/// The callback owns the file and can release source texts after extracting context.
+/// It must not call JS/JSC or re-enter this engine: the scan lease is non-reentrant.
+pub fn run_map_with_jobs<T, F>(opts: &RunOptions, jobs: usize, map: F) -> Result<Vec<T>>
+where
+    T: Send,
+    F: Fn(FileFix) -> Result<T> + Sync,
+{
+    // Repository mapping and N2B share this owner across native/JS callers.
+    let _lease = crate::util::resources::acquire_scan_lease(jobs)?;
     // Phase 4 §4.7 : résout n2b.json (parent-first), valide, applique
     // `ignore` + `rules` overrides. Précédence : flags CLI > n2b.json > défauts.
     let manifest = crate::manifest::resolve_and_load(&opts.root)?;
@@ -116,75 +142,138 @@ pub fn run(opts: &RunOptions) -> Result<Vec<FileFix>> {
     let root: Arc<PathBuf> = Arc::new(opts.root.clone());
     let opts_arc: Arc<RunOptions> = Arc::new(opts.clone());
 
-    let (tx, rx) = unbounded::<FileFix>();
-
-    WalkBuilder::new(opts.root.clone())
-        .hidden(false)
-        .git_ignore(true)
-        .git_global(false)
-        .git_exclude(false)
-        .parents(false)
-        // 0 = auto-detect from available parallelism
-        .threads(0)
-        .build_parallel()
-        .run(|| {
-            // Factory: called once per worker thread, returns the per-entry closure.
-            let tx = tx.clone();
-            let ignore_set = Arc::clone(&ignore_set);
-            let root = Arc::clone(&root);
-            let opts = Arc::clone(&opts_arc);
-
-            Box::new(move |result| {
-                let entry = match result {
-                    Ok(e) => e,
-                    Err(_) => return WalkState::Continue,
-                };
-
-                // Skip non-files immediately.
-                if !entry.file_type().map(|t| t.is_file()).unwrap_or(false) {
-                    return WalkState::Continue;
+    let (tx, rx) = bounded::<Result<(String, T)>>(jobs * 2);
+    // Drain while workers run: a bounded queue followed by collection only after
+    // run() joins would deadlock as soon as workers filled the queue.
+    let mut fixes = std::thread::scope(|scope| -> Result<Vec<(String, T)>> {
+        let collector = scope.spawn(move || {
+            let mut fixes = Vec::new();
+            let mut failure = None;
+            for result in rx {
+                match result {
+                    Ok(fix) => fixes.push(fix),
+                    Err(error) => {
+                        if failure.is_none() {
+                            failure = Some(error);
+                        }
+                    },
                 }
-
-                let abs = entry.into_path();
-                // Le chemin relatif est normalisé en séparateurs POSIX. Sans cela,
-                // sous Windows, `rel` vaut `node_modules\x.ts` alors que les motifs
-                // de DEFAULT_IGNORE sont écrits `**/node_modules/**` : AUCUNE
-                // exclusion ne s'applique, et le scan descend dans node_modules,
-                // target et .git sans que rien ne le signale. Le champ `path` du
-                // rapport JSON devient au passage identique sur les trois OS.
-                let rel = abs
-                    .strip_prefix(root.as_ref())
-                    .unwrap_or(&abs)
+            }
+            failure.map_or(Ok(fixes), Err)
+        });
+        let directory_ignores = Arc::clone(&ignore_set);
+        let directory_root = Arc::clone(&root);
+        WalkBuilder::new(opts.root.clone())
+            .hidden(false)
+            .git_ignore(true)
+            .git_global(false)
+            .git_exclude(false)
+            .parents(false)
+            .threads(jobs)
+            .filter_entry(move |entry| {
+                if !entry.file_type().is_some_and(|kind| kind.is_dir()) {
+                    return true;
+                }
+                let rel = entry
+                    .path()
+                    .strip_prefix(directory_root.as_ref())
+                    .unwrap_or(entry.path())
                     .to_string_lossy()
                     .replace('\\', "/");
-
-                if ignore_set.is_match(&rel) {
-                    return WalkState::Continue;
-                }
-
-                if let Ok(Some(fix)) = process_file(&abs, &rel, &opts) {
-                    // Send never fails while rx is alive (it lives until after run() returns).
-                    let _ = tx.send(fix);
-                }
-
-                WalkState::Continue
+                rel.is_empty()
+                    || !(directory_ignores.is_match(&rel)
+                        || directory_ignores.is_match(format!("{rel}/")))
             })
-        });
-
-    // Drop the last sender so the receiver iterator terminates.
-    drop(tx);
-
-    let mut fixes: Vec<FileFix> = rx.into_iter().collect();
+            .build_parallel()
+            .run(|| {
+                let tx = tx.clone();
+                let ignore_set = Arc::clone(&ignore_set);
+                let root = Arc::clone(&root);
+                let opts = Arc::clone(&opts_arc);
+                let overrides = Arc::clone(&manifest_overrides);
+                let map = &map;
+                Box::new(move |result| {
+                    let entry = match result {
+                        Ok(entry) => entry,
+                        Err(error) => {
+                            let _ = tx.send(Err(error.into()));
+                            return WalkState::Quit;
+                        },
+                    };
+                    if !entry.file_type().is_some_and(|kind| kind.is_file()) {
+                        return WalkState::Continue;
+                    }
+                    let abs = entry.into_path();
+                    let rel = abs
+                        .strip_prefix(root.as_ref())
+                        .unwrap_or(&abs)
+                        .to_string_lossy()
+                        .replace('\\', "/");
+                    if ignore_set.is_match(&rel) {
+                        return WalkState::Continue;
+                    }
+                    let result = process_file(&abs, &rel, &opts)
+                        .and_then(|fix| {
+                            fix.map(|fix| finalize_file(&abs, fix, &opts, &overrides))
+                                .transpose()
+                                .map(Option::flatten)
+                        })
+                        .and_then(|fix| {
+                            fix.map(|fix| {
+                                let path = fix.file.clone();
+                                map(fix).map(|value| (path, value))
+                            })
+                            .transpose()
+                        });
+                    match result {
+                        Ok(Some(fix)) => {
+                            if tx.send(Ok(fix)).is_err() {
+                                return WalkState::Quit;
+                            }
+                        },
+                        Ok(None) => {},
+                        Err(error) => {
+                            let _ = tx.send(Err(error.context(format!("scan {}", abs.display()))));
+                            return WalkState::Quit;
+                        },
+                    }
+                    WalkState::Continue
+                })
+            });
+        drop(tx);
+        collector.join().map_err(|_| anyhow::anyhow!("scan result collector panicked"))?
+    })?;
     // Restore deterministic order (parallel walk produces non-deterministic order).
-    fixes.sort_unstable_by(|a, b| a.file.cmp(&b.file));
+    fixes.sort_unstable_by(|a, b| a.0.cmp(&b.0));
 
-    // Phase 4 §4.7 : applique les overrides de règles du manifeste — drop les
-    // findings dont la règle est `"off"`, ré-ajuste severity/autofix.
-    if !manifest_overrides.is_empty() {
-        crate::manifest::apply_rule_overrides(&mut fixes, &manifest_overrides);
+    Ok(fixes.into_iter().map(|(_, value)| value).collect())
+}
+
+fn finalize_file(
+    abs: &Path,
+    mut fix: FileFix,
+    opts: &RunOptions,
+    overrides: &crate::manifest::RuleOverrideMap,
+) -> Result<Option<FileFix>> {
+    // Scanners currently return complete transformed text, not a per-rule edit
+    // plan. Keep the whole file intact if any matching rule forbids an edit;
+    // reconstructing selected edits from shifted offsets could corrupt source.
+    let blocked = fix.findings.iter().any(|finding| {
+        overrides
+            .get(&finding.rule_id)
+            .is_some_and(|rule| rule.is_off() || rule.autofix_override() == Some(false))
+    });
+    if blocked {
+        fix.after.clone_from(&fix.before);
     }
-
-    Ok(fixes)
+    crate::manifest::apply_rule_overrides(std::slice::from_mut(&mut fix), overrides);
+    if fix.findings.is_empty() && fix.before == fix.after {
+        return Ok(None);
+    }
+    if opts.mode != Mode::Check && !opts.dry_run && fix.after != fix.before {
+        std::fs::write(abs, &fix.after).context("write transformed source")?;
+    }
+    Ok(Some(fix))
 }
 
 fn process_file(abs: &Path, rel: &str, opts: &RunOptions) -> Result<Option<FileFix>> {
@@ -254,17 +343,11 @@ fn process_file(abs: &Path, rel: &str, opts: &RunOptions) -> Result<Option<FileF
     }
 
     // Size cap 2 MiB.
-    let meta = match std::fs::metadata(abs) {
-        Ok(m) => m,
-        Err(_) => return Ok(None),
-    };
+    let meta = std::fs::metadata(abs).context("read file metadata")?;
     if meta.len() > 2 * 1024 * 1024 {
         return Ok(None);
     }
-    let before = match std::fs::read_to_string(abs) {
-        Ok(s) => s,
-        Err(_) => return Ok(None),
-    };
+    let before = std::fs::read_to_string(abs).context("read UTF-8 source")?;
 
     let (findings, after) = if is_pkg {
         scan_package_json(rel, &before)
@@ -310,10 +393,6 @@ fn process_file(abs: &Path, rel: &str, opts: &RunOptions) -> Result<Option<FileF
 
     if findings.is_empty() && before == after {
         return Ok(None);
-    }
-
-    if opts.mode != Mode::Check && !opts.dry_run && after != before {
-        std::fs::write(abs, &after)?;
     }
 
     Ok(Some(FileFix { file: rel.to_string(), before, after, findings }))

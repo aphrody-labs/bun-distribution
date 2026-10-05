@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::rules::{
-    bun_apis::apply_bun_api_rules_with_imports, imports_ast::build_import_graph,
+    bun_apis::apply_bun_api_rules_with_context, imports_ast::build_source_context,
     node_imports::apply_node_import_rules,
 };
 use aphrody_n2b_types::types::{Finding, Mode, RunOptions};
@@ -30,8 +30,9 @@ pub fn scan_source(path: &str, content: &str, opts: &RunOptions) -> (Vec<Finding
     all.extend(f);
     // Phase 2 : graphe d'imports construit une fois (oxc parse partagé) puis
     // injecté dans le matching api/* pour résoudre PS1.
-    let imports = build_import_graph(path, &working);
-    let (f, working) = apply_bun_api_rules_with_imports(path, &working, aggressive, &imports);
+    let context = build_source_context(path, &working);
+    let (f, working) =
+        apply_bun_api_rules_with_context(path, &working, aggressive, &context.imports, &context);
     all.extend(f);
 
     if opts.mode == Mode::Check {

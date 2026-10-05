@@ -29,4 +29,4 @@ pub mod run;
 pub mod scanners;
 pub mod util;
 
-pub use aphrody_n2b_types::{schema, types};
+pub use aphrody_n2b_types::{REPORT_SCHEMA_V2, schema, types};

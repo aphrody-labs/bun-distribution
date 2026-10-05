@@ -357,6 +357,7 @@ nu-protocol = { version = "0.116.0", default-features = false, features = ["brot
 nu-std = { version = "0.116.0", default-features = false, features = ["sqlite"] }
 crossbeam-channel  = { version = "0.5" }
 oxc_ast_visit      = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
+oxc_syntax         = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
 aphrody-n2b-native = { path = "crates/compat/n2b-native", version = "0.2.0", features = [] }
 libloading = "0.9.0"
 windows-sys = { version = "0.61", features = ["Win32_System_SystemInformation"] }

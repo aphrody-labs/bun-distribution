@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Compatibility exports of the canonical Yolo repository engine.
+//! Native Yolo repository engine modules.
 #![forbid(unsafe_code)]
-pub use yolo_core::{mapper, polyglot};
+
+pub mod mapper;
+pub mod polyglot;

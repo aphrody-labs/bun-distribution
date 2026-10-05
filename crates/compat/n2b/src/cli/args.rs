@@ -107,6 +107,14 @@ pub(crate) struct Cli {
     #[arg(long)]
     pub ignore: Vec<String>,
 
+    /// Maximum simultaneous recursive scan workers (1..=6).
+    #[arg(long, value_parser = clap::value_parser!(u8).range(1..=6))]
+    pub jobs: Option<u8>,
+
+    /// Preview fixes without writing source files or running migration side effects.
+    #[arg(long, conflicts_with = "migrate")]
+    pub dry_run: bool,
+
     /// Supprime toute sortie sur stdout (le code de retour reste significatif).
     #[arg(long)]
     pub quiet: bool,

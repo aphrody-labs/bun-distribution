@@ -66,3 +66,62 @@ pub fn make_finding(
         compat: opts.compat,
     }
 }
+
+pub mod resources {
+    use std::{
+        error::Error,
+        fmt,
+        sync::{Mutex, MutexGuard},
+    };
+
+    pub const MAX_SCAN_WORKERS: usize = 6;
+    static SCAN_OWNER: Mutex<()> = Mutex::new(());
+
+    pub fn default_scan_workers() -> usize {
+        std::thread::available_parallelism()
+            .map_or(1, usize::from)
+            .min(MAX_SCAN_WORKERS)
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum ScanLeaseError {
+        InvalidJobs(usize),
+        Poisoned,
+    }
+
+    impl fmt::Display for ScanLeaseError {
+        fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                Self::InvalidJobs(jobs) => write!(
+                    formatter,
+                    "jobs must be between 1 and {MAX_SCAN_WORKERS} (got {jobs})"
+                ),
+                Self::Poisoned => formatter.write_str("shared native scan owner is poisoned"),
+            }
+        }
+    }
+
+    impl Error for ScanLeaseError {}
+
+    pub struct ScanLease {
+        _guard: MutexGuard<'static, ()>,
+        workers: usize,
+    }
+
+    impl ScanLease {
+        pub fn workers(&self) -> usize {
+            self.workers
+        }
+    }
+
+    pub fn acquire_scan_lease(jobs: usize) -> Result<ScanLease, ScanLeaseError> {
+        if !(1..=MAX_SCAN_WORKERS).contains(&jobs) {
+            return Err(ScanLeaseError::InvalidJobs(jobs));
+        }
+        let guard = SCAN_OWNER.lock().map_err(|_| ScanLeaseError::Poisoned)?;
+        Ok(ScanLease {
+            _guard: guard,
+            workers: jobs,
+        })
+    }
+}

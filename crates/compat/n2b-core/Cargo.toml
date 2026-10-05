@@ -45,6 +45,7 @@ oxc_span.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
+tempfile.workspace = true
 serde_json = { workspace = true }
 
 [features]

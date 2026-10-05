@@ -60,7 +60,8 @@ aggressive  = false
 
 [[apis]]
 id          = "api/child-process-spawn"
-pattern     = '\b(?:child_process\.)?spawn\s*\('
+import_from = "node:child_process"
+pattern     = '\b(?:[A-Za-z_$][\w$]*\s*\.\s*)?[A-Za-z_$][\w$]*\s*\('
 message     = "Bun.spawn offre une API plus ergonomique (streams Web, ipc, preload)"
 severity    = "warn"
 replace     = "none"

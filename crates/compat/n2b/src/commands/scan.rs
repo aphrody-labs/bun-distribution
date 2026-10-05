@@ -46,10 +46,13 @@ pub(crate) fn run(cli: &Cli) -> Result<ExitCode> {
         quiet: cli.quiet,
         ignore: cli.ignore.clone(),
         agent: cli.agent,
-        dry_run: false,
+        dry_run: cli.dry_run,
     };
 
-    let fixes = run::run(&opts)?;
+    let fixes = match cli.jobs {
+        Some(jobs) => run::run_with_jobs(&opts, usize::from(jobs))?,
+        None => run::run(&opts)?,
+    };
 
     // Mode --migrate : applique les side-effects après le scan+fix +
     // génère/persiste le report card (Phase 5 §5.4 + §5.6).
