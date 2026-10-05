@@ -2242,6 +2242,7 @@ async fn execute_ovh(command: &aphrody_ovh::OvhCommand, run: &mut Run) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::assert_matches;
 
     #[test]
     fn pipeline_check_resolves_filtered_monorepo_scripts() {
@@ -2377,9 +2378,9 @@ mod tests {
         let rg =
             Cli::try_parse_from(["aphrody-infra", "deploy", "--target", "vps", "--stack", "rg"])
                 .unwrap();
-        assert!(matches!(rg.command, CommandKind::Deploy { stack: DeployStack::Rg, .. }));
+        assert_matches!(rg.command, CommandKind::Deploy { stack: DeployStack::Rg, .. });
         let default = Cli::try_parse_from(["aphrody-infra", "deploy", "--target", "vps"]).unwrap();
-        assert!(matches!(default.command, CommandKind::Deploy { stack: DeployStack::Aphrody, .. }));
+        assert_matches!(default.command, CommandKind::Deploy { stack: DeployStack::Aphrody, .. });
         for (name, expected) in [
             ("shenron", DeployStack::Shenron),
             ("bundle", DeployStack::Bundle),
@@ -2435,18 +2436,18 @@ mod tests {
     #[test]
     fn drive_cli_routes_mounts_and_ls() {
         let mounts = Cli::try_parse_from(["aphrody-infra", "drive", "mounts", "--json"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             mounts.command,
             CommandKind::Drive { command: DriveCommand::Mounts { json: true } }
-        ));
+        );
         let ls =
             Cli::try_parse_from(["aphrody-infra", "drive", "ls", "vdfs://vps/var/www"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             ls.command,
             CommandKind::Drive {
                 command: DriveCommand::Ls { ref uri, json: false }
             } if uri == "vdfs://vps/var/www"
-        ));
+        );
         let tree = Cli::try_parse_from([
             "aphrody-infra",
             "drive",
@@ -2456,7 +2457,7 @@ mod tests {
             "2",
         ])
         .unwrap();
-        assert!(matches!(
+        assert_matches!(
             tree.command,
             CommandKind::Drive {
                 command: DriveCommand::Tree {
@@ -2465,16 +2466,16 @@ mod tests {
                     json: false,
                 }
             } if uri == "vdfs://local/crates"
-        ));
+        );
     }
 
     #[test]
     fn ovh_cli_routes_profiles_and_dns() {
         let profiles = Cli::try_parse_from(["aphrody-infra", "ovh", "profiles"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             profiles.command,
             CommandKind::Ovh { command: aphrody_ovh::OvhCommand::Profiles }
-        ));
+        );
 
         let dns = Cli::try_parse_from([
             "aphrody-infra",
@@ -2486,44 +2487,44 @@ mod tests {
             "A",
         ])
         .unwrap();
-        assert!(matches!(
+        assert_matches!(
             dns.command,
             CommandKind::Ovh {
                 command: aphrody_ovh::OvhCommand::Dns {
                     subcommand: aphrody_ovh::OvhDnsSubcommand::Records { ref zone, ref r#type, .. }
                 }
             } if zone == "aphrody.com" && r#type.as_deref() == Some("A")
-        ));
+        );
 
         let vps = Cli::try_parse_from(["aphrody-infra", "ovh", "vps", "list"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             vps.command,
             CommandKind::Ovh {
                 command: aphrody_ovh::OvhCommand::Vps {
                     subcommand: aphrody_ovh::OvhVpsSubcommand::List { .. }
                 }
             }
-        ));
+        );
     }
 
     #[test]
     fn secrets_cli_routes_audit_and_check() {
         let audit = Cli::try_parse_from(["aphrody-infra", "secrets", "audit", "--json"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             audit.command,
             CommandKind::Secrets {
                 command: crate::secrets::SecretsCommand::Audit { json: true, .. }
             }
-        ));
+        );
 
         let check =
             Cli::try_parse_from(["aphrody-infra", "secrets", "check", "--service", "rg-api"])
                 .unwrap();
-        assert!(matches!(
+        assert_matches!(
             check.command,
             CommandKind::Secrets {
                 command: crate::secrets::SecretsCommand::Check { ref service, .. }
             } if service == "rg-api"
-        ));
+        );
     }
 }

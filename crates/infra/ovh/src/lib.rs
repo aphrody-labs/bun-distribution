@@ -866,6 +866,7 @@ impl OvhCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::assert_matches;
 
     #[test]
     fn test_sha1_hex_computation() {
@@ -924,11 +925,11 @@ consumer_key = ck_ini
     fn renew_quotes_by_default_and_pay_requires_apply() {
         use clap::Parser;
         let quote = Harness::try_parse_from(["ovh", "vps", "renew", "vps-1"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             quote.command,
             OvhCommand::Vps { subcommand: OvhVpsSubcommand::Renew { apply: false, pay: false, ref period, .. } }
                 if period == "P1M"
-        ));
+        );
         assert!(Harness::try_parse_from(["ovh", "vps", "renew", "vps-1", "--pay"]).is_err());
         assert!(
             Harness::try_parse_from(["ovh", "vps", "renew", "vps-1", "--apply", "--pay"]).is_ok()
@@ -949,13 +950,13 @@ consumer_key = ck_ini
         use clap::Parser;
 
         let status = Harness::try_parse_from(["ovh", "auth", "status", "--json"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             status.command,
             OvhCommand::Auth { subcommand: OvhAuthSubcommand::Status { json: true, .. } }
-        ));
+        );
 
         let list = Harness::try_parse_from(["ovh", "services", "--json"]).unwrap();
-        assert!(matches!(list.command, OvhCommand::Services { json: true, subcommand: None, .. }));
+        assert_matches!(list.command, OvhCommand::Services { json: true, subcommand: None, .. });
 
         let watch = Harness::try_parse_from([
             "ovh",
@@ -969,7 +970,7 @@ consumer_key = ck_ini
             "aphrody.com",
         ])
         .unwrap();
-        assert!(matches!(
+        assert_matches!(
             watch.command,
             OvhCommand::Services {
                 profile: Some(ref p),
@@ -980,18 +981,18 @@ consumer_key = ck_ini
                 }),
                 ..
             } if p == "aphrody.com"
-        ));
+        );
         let default_days = Harness::try_parse_from(["ovh", "services", "watch"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             default_days.command,
             OvhCommand::Services {
                 subcommand: Some(OvhServicesSubcommand::Watch { days: 14, .. }),
                 ..
             }
-        ));
+        );
 
         let renew = Harness::try_parse_from(["ovh", "services", "renew", "69570856"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             renew.command,
             OvhCommand::Services {
                 subcommand: Some(OvhServicesSubcommand::Renew {
@@ -1002,7 +1003,7 @@ consumer_key = ck_ini
                 }),
                 ..
             }
-        ));
+        );
         assert!(Harness::try_parse_from(["ovh", "services", "renew", "x", "--pay"]).is_err());
         assert!(
             Harness::try_parse_from([
@@ -1028,16 +1029,16 @@ consumer_key = ck_ini
             "--apply",
         ])
         .unwrap();
-        assert!(matches!(
+        assert_matches!(
             renew.command,
             OvhCommand::Domain {
                 subcommand: OvhDomainSubcommand::Renew { apply: true, pay: false, .. }
             }
-        ));
+        );
         assert!(Harness::try_parse_from(["ovh", "domain", "renew", "a.com", "--pay"]).is_err());
 
         let on = Harness::try_parse_from(["ovh", "domain", "autorenew", "a.com", "--on"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             on.command,
             OvhCommand::Domain {
                 subcommand: OvhDomainSubcommand::Autorenew {
@@ -1047,26 +1048,26 @@ consumer_key = ck_ini
                     ..
                 }
             }
-        ));
+        );
         assert!(
             Harness::try_parse_from(["ovh", "domain", "autorenew", "a.com", "--on", "--off"])
                 .is_err()
         );
 
         let sync = Harness::try_parse_from(["ovh", "iam", "sync"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             sync.command,
             OvhCommand::Iam { subcommand: OvhIamSubcommand::Sync { apply: false, .. } }
-        ));
+        );
         assert!(Harness::try_parse_from(["ovh", "iam", "sync", "--apply"]).is_ok());
 
         let export =
             Harness::try_parse_from(["ovh", "dns", "export", "a.com", "--output", "a.zone"])
                 .unwrap();
-        assert!(matches!(
+        assert_matches!(
             export.command,
             OvhCommand::Dns { subcommand: OvhDnsSubcommand::Export { output: Some(_), .. } }
-        ));
+        );
         assert!(Harness::try_parse_from(["ovh", "dns", "backup", "--dir", "/tmp/z"]).is_ok());
         assert!(Harness::try_parse_from(["ovh", "dns", "backup"]).is_err());
     }
@@ -1077,11 +1078,11 @@ consumer_key = ck_ini
 
         // Test `start` subcommand
         let start = Harness::try_parse_from(["ovh", "vps", "start", "vps-1"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             start.command,
             OvhCommand::Vps { subcommand: OvhVpsSubcommand::Start { apply: false, ref service_name, .. } }
                 if service_name == "vps-1"
-        ));
+        );
 
         // Test `set-delete-at-expiration` with --preserve
         let preserve = Harness::try_parse_from([
@@ -1092,7 +1093,7 @@ consumer_key = ck_ini
             "--preserve",
         ])
         .unwrap();
-        assert!(matches!(
+        assert_matches!(
             preserve.command,
             OvhCommand::Vps {
                 subcommand: OvhVpsSubcommand::SetDeleteAtExpiration {
@@ -1101,7 +1102,7 @@ consumer_key = ck_ini
                     ..
                 }
             }
-        ));
+        );
 
         // Test `set-delete-at-expiration` with --delete
         let delete = Harness::try_parse_from([
@@ -1112,7 +1113,7 @@ consumer_key = ck_ini
             "--delete",
         ])
         .unwrap();
-        assert!(matches!(
+        assert_matches!(
             delete.command,
             OvhCommand::Vps {
                 subcommand: OvhVpsSubcommand::SetDeleteAtExpiration {
@@ -1121,25 +1122,25 @@ consumer_key = ck_ini
                     ..
                 }
             }
-        ));
+        );
 
         // Test `watch` with no arguments (all VPS)
         let watch = Harness::try_parse_from(["ovh", "vps", "watch"]).unwrap();
-        assert!(matches!(
+        assert_matches!(
             watch.command,
             OvhCommand::Vps {
                 subcommand: OvhVpsSubcommand::Watch { service_name: None, alerts_only: false, .. }
             }
-        ));
+        );
 
         // Test `watch` with specific VPS and flags
         let watch_alerts =
             Harness::try_parse_from(["ovh", "vps", "watch", "vps-1", "--alerts-only", "--notify"])
                 .unwrap();
-        assert!(matches!(
+        assert_matches!(
             watch_alerts.command,
             OvhCommand::Vps { subcommand: OvhVpsSubcommand::Watch { service_name: Some(ref name), alerts_only: true, notify: true, .. } }
                 if name == "vps-1"
-        ));
+        );
     }
 }
