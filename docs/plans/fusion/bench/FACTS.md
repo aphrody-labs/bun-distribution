@@ -1,6 +1,6 @@
 # Faits vérifiés pour la fusion V8 / JSC (extrait de l'arbitre)
 
-État du 2026-10-05, 22:52 (Europe/Paris). Extrait tenu par `claude-bench-arbiter`, prêt à être lu ; il n'est envoyé à personne. Source de vérité détaillée : journal §13 de `docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md`, méthode `METHOD.md`, reçu `docs/plans/fusion/engine-equivalence-2026-10-05.json`. Chaque ligne dit comment la revérifier. Règle d'usage : tout fait tiré d'un showcase ou d'un banc doit citer le binaire du fork au pin (c439b6fbd, WebKit 5718a6ec), jamais le Bun installé.
+État du 2026-10-05, 23:13 (Europe/Paris). Extrait tenu par `claude-bench-arbiter`, prêt à être lu ; il n'est envoyé à personne. Source de vérité détaillée : journal §13 de `docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md`, méthode `METHOD.md`, reçu `docs/plans/fusion/engine-equivalence-2026-10-05.json`. Chaque ligne dit comment la revérifier. Règle d'usage : tout fait tiré d'un showcase ou d'un banc doit citer le binaire du fork au pin (c439b6fbd, WebKit 5718a6ec), jamais le Bun installé.
 
 ## 1. Révisions et binaires
 
@@ -20,7 +20,7 @@
 - Couvertes (V8 appelé par `obscura-js`, symbole JSC dans les en-têtes du préconstruit, symbole utilisé par Bun) : contextes multiples (`JSContextGroupCreate`, `JSGlobalContextCreateInGroup`), cache de code (`CachedBytecode`), arrêt de script (`VM::notifyNeedTermination`, `JSContextGroupSetExecutionTimeLimit`), drapeaux (`BUN_JSC_*`, traduction non 1:1), chargeur de modules (`JSModuleLoader`), fonctions hôtes, microtâches (`drainMicrotasks`), exceptions (`ThrowScope`, `CatchScope`).
 - Trou : snapshot de démarrage (aucun symbole `StartupSnapshot`/`SnapshotCreator` dans JSC ni dans Bun).
 - Trou : limite de tas avec rappel. `gcMaxHeapSize` n'est pas un équivalent (au pin, `Heap.cpp` s'en sert comme seuil de demande de GC sur les octets alloués dans le cycle). Atténuation disponible, non éprouvée : `bun:jsc.heapStats`, `memoryUsage`, `percentAvailableMemoryInUse`, `JSGetMemoryUsageStatistics`, puis arrêt.
-- Locale par défaut : `jsc-only`. `WTF::overrideUserPreferredLanguages` est déclaré et exporté, aucune source de Bun ne l'appelle (0 occurrence) ; `bun:jsc.setTimeZone` règle le fuseau horaire (`WTF::setTimeZoneOverride`), pas la locale. Non éprouvé.
+- Locale par défaut : `jsc-only`. `WTF::overrideUserPreferredLanguages` est déclaré et exporté, aucune source de Bun ne l'appelle (0 occurrence) ; `bun:jsc.setTimeZone` règle le fuseau horaire (`WTF::setTimeZoneOverride`), pas la locale. Mesuré (B3, fork au pin) : la locale par défaut de JSC reste `en-US` quel que soit l’environnement ; le réglage d’une autre locale reste non éprouvé.
 - Briques d'atténuation présentes (existence seulement) : `ShadowRealm` et `NodeVMGlobalObject` (contextes), `produceCachedData` / `cachedData` (cache de bytecode via `node:vm`), `useJIT` (voie interpréteur seul).
 - La couche V8 de Bun (`src/jsc/bindings/v8`) n'est pas un remplacement : `rusty_v8` lie le vrai V8.
 
@@ -31,7 +31,10 @@ Fichiers bruts : `docs/plans/fusion/bench/20261005T203424Z-B1-…json`, `…B2a-
 - `compute` (voie moteur, `shared/compute.js`, source identique) : V8 plus rapide. Rapport JSC/V8 sur les médianes : 1,43 (3 échauffements), 1,24 (10 échauffements, médiane des médianes de processus 1,33) ; plages de processus disjointes (test exact p = 0,0079, 5 contre 5). Le fork n'est pas plus lent que le Bun 1.4.2 installé (même ordre de grandeur sur la même machine).
 - `json` (source identique) : JSC plus rapide, rapport JSC/V8 0,69.
 - Démarrage du processus (hyperfine, 40 exécutions) : Bun 11,1 ms, Deno 35,8 ms.
-- Aucune mesure valide ne couvre encore : coût d'évaluation de `bootstrap.js` (S4), realm supplémentaire (S3), appel d'op (S7), RSS (colonnes de l'arène invalides).
+- Banc B3 (`…B3-dbfr-bootstrap-eval-and-probes.json`, verdict `indicatif` pour S3 et S4, sondes `valide`) : évaluation de `bootstrap.js` dans un contexte `node:vm`, ops simulés. JSC sans snapshot : 46 ms au premier realm d'un processus (compilation 15 + exécution 28), 10 ms aux suivants ; V8 sans snapshot : 75 ms à froid, 59 ms avec un nom de fichier neuf, 14 ms avec le même nom. Le cache de code lu depuis un fichier fait passer V8 de 75 à 26 ms mais ne réduit pas la compilation sous JSC (40 ms). Création d'un contexte vide : JSC 0,2 ms, V8 0,6 ms.
+- Sondes B3 sous le fork : arrêt d'un script (`vm` timeout 200 ms → 200,8 ms, contexte réutilisable), microtâches (`drainMicrotasks`), drapeaux (`BUN_JSC_useJIT=0` honoré, option inconnue rejetée), locale par défaut constante `en-US` quel que soit l'environnement (V8 suit l'environnement), plafond mémoire en émulation Worker + sondage du RSS + `terminate()` (plafond 300 Mo, pic +302 Mo, arrêt en 5 ms, mémoire rendue).
+- `bootstrap.js` utilise cinq API `Deno.core` hors ops : `createTimer`, `cancelTimer`, `setReportExceptionCallback`, `setUnhandledPromiseRejectionHandler`, `setHandledPromiseRejectionHandler` (le plan disait « aucune »).
+- Aucune mesure valide ne couvre encore : appel d'op (S7), snapshot V8 d'Obscura (S4 côté V8), latence de page complète (S5), RSS par page (S6) ; les colonnes RSS de l'arène sont invalides.
 
 ## 4. Défauts connus des outils
 
