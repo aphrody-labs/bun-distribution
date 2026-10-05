@@ -153,3 +153,6 @@ npm-debug.log*
 # JavaScript build output of the Tauri fork packages (crates/tauri/build-js.ts)
 /crates/tauri/*/dist/
 /crates/tauri/*/dist-js/
+
+# Tauri permission JSON schema: written by tauri-plugin/tauri-build at compile time (one identical copy per plugin).
+**/permissions/schemas/schema.json
