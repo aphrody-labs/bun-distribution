@@ -238,7 +238,8 @@
     "docs:audit": "bun packages/infra/workspace/src/ops.ts docs audit --root . --json",
     "docs:site": "bun packages/infra/workspace/src/ops.ts docs site --root .",
     "cli:help": "bun packages/infra/workspace/src/ops.ts cli-help",
-    "build:factory": "bun packages/infra/workspace/src/ops.ts build-factory"
+    "build:factory": "bun packages/infra/workspace/src/ops.ts build-factory",
+    "audit:product-residue": "bun scripts/audit/workspace/product-residue.ts"
   },
   "dependencies": {
     "@neon/config": "^1.8.2",
