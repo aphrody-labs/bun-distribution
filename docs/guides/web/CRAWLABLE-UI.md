@@ -78,7 +78,7 @@ slack. Review the diff of this file like code; tighten, never loosen without a r
   rendered. `FormItem` scans its own children (host elements, fragments and wrapper components that
   receive children) and keeps the old behavior when a self-closing custom component might render
   one.
-- `MangaReader` and `DatabookReader` roots are `role="region"` labelled with the title.
+- `MangaReader` and `CaptionedReader` roots are `role="region"` labelled with the title.
   `CollectionReader` sets `aria-controls` only while its contents panel is mounted.
 - `@aphrody/m3-next` gains `m3SitemapXml`, `m3RobotsTxt`, `m3LlmsTxt` (llmstxt.org) and `m3JsonLd`
   (script-safe JSON-LD) as pure functions with tests.
@@ -90,7 +90,7 @@ slack. Review the diff of this file like code; tighten, never loosen without a r
 - Custom listbox `Select` renders its options in a portal that does not exist on the server, so the
   options are not in the initial HTML (the trigger and a hidden input are).
 - `CollectionReader` switches chapters with client state (buttons), so only the first chapter is in
-  the HTML; `MangaReader` and `DatabookReader` page by Swiper, so crawlers see the first slides.
+  the HTML; `MangaReader` and `CaptionedReader` page by Swiper, so crawlers see the first slides.
 - `Icon` renders the Material Symbols ligature name as text inside an `aria-hidden` span; a crawler
   that ignores `aria-hidden` reads "close", "search"... (`ariaHiddenWords` counts them).
 - `CardTitle`, `CategoryHeading`, `ScreenHeading` are always `h3`: a page must place them under an

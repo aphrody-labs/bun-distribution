@@ -6,7 +6,7 @@ import type { ReactElement } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToStaticMarkup, renderToString } from "react-dom/server";
 
-import { CaptionedReader, DatabookReader } from "../src/CaptionedReader";
+import { CaptionedReader } from "../src/CaptionedReader";
 import { MangaReader } from "../src/MangaReader";
 
 async function hydrationErrors(element: ReactElement): Promise<unknown[]> {
@@ -39,10 +39,6 @@ describe("swiper-based readers", () => {
 
   test("CaptionedReader renders its title on the server", () => {
     expect(renderToStaticMarkup(captioned)).toContain("Recueil illustré");
-  });
-
-  test("DatabookReader stays a deprecated alias of CaptionedReader", () => {
-    expect(DatabookReader).toBe(CaptionedReader);
   });
 
   test("MangaReader hydrates without recoverable errors", async () => {

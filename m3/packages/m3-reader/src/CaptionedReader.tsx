@@ -802,10 +802,3 @@ export function CaptionedReader({
     </div>
   );
 }
-
-/** @deprecated Renamed {@link CaptionedReader}; this alias goes away in the next major release. */
-export const DatabookReader = CaptionedReader;
-/** @deprecated Renamed {@link CaptionedReaderPage}. */
-export type DatabookReaderPage = CaptionedReaderPage;
-/** @deprecated Renamed {@link CaptionedReaderProps}. */
-export type DatabookReaderProps = CaptionedReaderProps;
