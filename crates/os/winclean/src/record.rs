@@ -64,10 +64,10 @@ fn record_windows(arguments: &Value) -> Result<Value, String> {
         let image = image::load_from_memory(&png).map_err(|error| error.to_string())?.to_rgb8();
         frames.push(image);
         next += interval;
-        if let Some(delay) = next.checked_sub(started.elapsed()) {
-            if !delay.is_zero() {
-                thread::sleep(delay);
-            }
+        if let Some(delay) = next.checked_sub(started.elapsed())
+            && !delay.is_zero()
+        {
+            thread::sleep(delay);
         }
     }
     if frames.is_empty() {
@@ -168,7 +168,7 @@ fn chunk(tag: &[u8; 4], data: &[u8], output: &mut Vec<u8>) {
     output.extend_from_slice(tag);
     output.extend_from_slice(&(data.len() as u32).to_le_bytes());
     output.extend_from_slice(data);
-    if data.len() % 2 != 0 {
+    if !data.len().is_multiple_of(2) {
         output.push(0);
     }
 }

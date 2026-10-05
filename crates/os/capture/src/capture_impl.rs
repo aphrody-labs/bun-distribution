@@ -709,7 +709,7 @@ pub(crate) fn key_scan(scan: u16, action: &str, extended: bool) -> Result<()> {
     };
     let mut flags = KEYEVENTF_SCANCODE;
     if extended {
-        flags = flags | KEYEVENTF_EXTENDEDKEY;
+        flags |= KEYEVENTF_EXTENDEDKEY;
     }
     let down = INPUT {
         r#type: INPUT_KEYBOARD,

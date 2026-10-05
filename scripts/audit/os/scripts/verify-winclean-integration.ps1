@@ -3,10 +3,10 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent $PSScriptRoot
-$rustCatalog = Join-Path $root 'crates/aphrody-winclean/src/tools.json'
-$ledgerPath = Join-Path $root 'crates/aphrody-winclean/tool-migration.json'
-$bunCatalog = Join-Path $root 'packages/winclean/src/generated.ts'
+$root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../../..')).Path
+$rustCatalog = Join-Path $root 'crates/os/winclean/src/tools.json'
+$ledgerPath = Join-Path $root 'crates/os/winclean/tool-migration.json'
+$bunCatalog = Join-Path $root 'packages/os/winclean/src/generated.ts'
 # Resolve the real target directory via `cargo metadata`: the superproject's
 # `../.cargo/config.toml` routes this workspace into a target-dir shared with
 # sibling repos, so it is never `$root/target`.
@@ -17,7 +17,7 @@ $kernel = Join-Path $osTargetDir 'debug/aphrody-kernel.exe'
 foreach ($path in @($rustCatalog, $ledgerPath, $bunCatalog)) {
     if (-not (Test-Path -LiteralPath $path)) { throw "WinClean integration input missing: $path" }
 }
-& bun (Join-Path $root 'scripts/generate-winclean-catalog.ts') --check
+& bun (Join-Path $root 'scripts/tools/os/scripts/generate-winclean-catalog.ts') --check
 if ($LASTEXITCODE -ne 0) { throw 'WinClean generated bindings or catalog metadata diverge.' }
 
 $rustTools = @((Get-Content -LiteralPath $rustCatalog -Raw | ConvertFrom-Json).tools).Count

@@ -45,10 +45,10 @@ pub fn computer_speak(text: &str, requested_path: Option<&str>) -> Result<Value,
                 ))
             });
         let path = if path.extension().is_none() { path.with_extension("wav") } else { path };
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
 
         let synthesizer = SpeechSynthesizer::new().map_err(|e| e.to_string())?;

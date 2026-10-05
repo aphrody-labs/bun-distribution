@@ -327,7 +327,10 @@ mod imp {
                 .ok_or(EverythingError::MissingSymbol($name))?;
             // SAFETY: the export has the documented Everything SDK signature of the
             // destination field; `transmute` only changes the fn-pointer type.
-            unsafe { std::mem::transmute::<unsafe extern "system" fn() -> isize, _>(f) }
+            // The destination is the field type, which the macro cannot name.
+            #[allow(clippy::missing_transmute_annotations)]
+            let f = unsafe { std::mem::transmute::<unsafe extern "system" fn() -> isize, _>(f) };
+            f
         }};
     }
 

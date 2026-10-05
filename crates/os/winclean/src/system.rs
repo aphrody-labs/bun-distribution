@@ -460,7 +460,7 @@ pub fn trim_process_working_set(pid: u32) -> io::Result<serde_json::Value> {
     let _ = unsafe { windows::Win32::Foundation::CloseHandle(handle) };
     result
         .map(|_| serde_json::json!({"success":true,"pid":pid}))
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
+        .map_err(|e| io::Error::other(e.to_string()))
 }
 
 #[cfg(not(windows))]
@@ -468,8 +468,8 @@ pub fn trim_process_working_set(_pid: u32) -> io::Result<serde_json::Value> {
     Err(io::Error::new(io::ErrorKind::Unsupported, "working-set trimming is Windows-only"))
 }
 
-/// Trims every process that can be opened with PROCESS_SET_QUOTA. Processes
-/// that deny access are reported as skipped; no process is terminated.
+/// Trims every process working set through SystemMemoryListInformation; no
+/// process is terminated.
 #[cfg(windows)]
 pub fn empty_working_sets() -> io::Result<serde_json::Value> {
     nt_set_system_information(2).map(|status| serde_json::json!({"success":true,"action":"MemoryEmptyWorkingSets","status":status}))
@@ -503,6 +503,9 @@ fn nt_set_system_information(command: i32) -> io::Result<i32> {
         core::{PCSTR, PCWSTR},
     };
     type NtSetSystemInformation = unsafe extern "system" fn(i32, *mut c_void, u32) -> i32;
+    // SystemMemoryListInformation answers STATUS_PRIVILEGE_NOT_HELD unless
+    // SeProfileSingleProcessPrivilege is enabled, even on an elevated token.
+    crate::memory::enable_privilege(windows::Win32::Security::SE_PROF_SINGLE_PROCESS_NAME)?;
     let library_name: Vec<u16> = "ntdll.dll\0".encode_utf16().collect();
     let library = unsafe { LoadLibraryW(PCWSTR(library_name.as_ptr())) }
         .map_err(|error| io::Error::new(io::ErrorKind::NotFound, error.to_string()))?;
@@ -536,7 +539,7 @@ pub fn set_process_affinity(pid: u32, requested: usize) -> io::Result<serde_json
     let mut previous = 0usize;
     let mut system = 0usize;
     unsafe { GetProcessAffinityMask(handle, &mut previous, &mut system) }
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        .map_err(|e| io::Error::other(e.to_string()))?;
     let target = if requested == 0 { system } else { requested & system };
     if target == 0 {
         let _ = unsafe { windows::Win32::Foundation::CloseHandle(handle) };

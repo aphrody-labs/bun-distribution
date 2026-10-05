@@ -45,7 +45,7 @@ pub fn read_bytes(pid: u32, address: u64, length: usize) -> io::Result<Vec<u8>> 
         )
     };
     close(handle);
-    result.map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+    result.map_err(|e| io::Error::other(e.to_string()))?;
     data.truncate(read);
     Ok(data)
 }
@@ -72,7 +72,7 @@ pub fn write_bytes(pid: u32, address: u64, data: &[u8]) -> io::Result<usize> {
         )
     };
     close(handle);
-    result.map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+    result.map_err(|e| io::Error::other(e.to_string()))?;
     Ok(written)
 }
 
@@ -120,7 +120,7 @@ pub fn free(pid: u32, address: u64) -> io::Result<()> {
     let h = open(pid, true)?;
     let r = unsafe { VirtualFreeEx(h, address as *mut _, 0, MEM_RELEASE) };
     close(h);
-    r.map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
+    r.map_err(|e| io::Error::other(e.to_string()))
 }
 #[cfg(not(windows))]
 pub fn free(_pid: u32, _address: u64) -> io::Result<()> {
@@ -134,7 +134,7 @@ pub fn protect(pid: u32, address: u64, size: usize, value: &str) -> io::Result<u
     let mut old = PAGE_PROTECTION_FLAGS(0);
     let r = unsafe { VirtualProtectEx(h, address as *const _, size, protection(value)?, &mut old) };
     close(h);
-    r.map(|_| old.0).map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
+    r.map(|_| old.0).map_err(|e| io::Error::other(e.to_string()))
 }
 #[cfg(not(windows))]
 pub fn protect(_pid: u32, _address: u64, _size: usize, _value: &str) -> io::Result<u32> {
@@ -204,28 +204,27 @@ pub fn suspend_resume(pid: u32, resume: bool) -> io::Result<serde_json::Value> {
         Threading::{OpenThread, ResumeThread, SuspendThread, THREAD_SUSPEND_RESUME},
     };
     let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0) }
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        .map_err(|e| io::Error::other(e.to_string()))?;
     let mut entry =
         THREADENTRY32 { dwSize: std::mem::size_of::<THREADENTRY32>() as u32, ..Default::default() };
     let mut count = 0u32;
     let mut ok = unsafe { Thread32First(snapshot, &mut entry) }.is_ok();
     while ok {
-        if entry.th32OwnerProcessID == pid {
-            if let Ok(thread) =
+        if entry.th32OwnerProcessID == pid
+            && let Ok(thread) =
                 unsafe { OpenThread(THREAD_SUSPEND_RESUME, false, entry.th32ThreadID) }
-            {
-                if resume {
-                    unsafe {
-                        ResumeThread(thread);
-                    }
-                } else {
-                    unsafe {
-                        SuspendThread(thread);
-                    }
+        {
+            if resume {
+                unsafe {
+                    ResumeThread(thread);
                 }
-                let _ = unsafe { windows::Win32::Foundation::CloseHandle(thread) };
-                count += 1;
+            } else {
+                unsafe {
+                    SuspendThread(thread);
+                }
             }
+            let _ = unsafe { windows::Win32::Foundation::CloseHandle(thread) };
+            count += 1;
         }
         ok = unsafe { Thread32Next(snapshot, &mut entry) }.is_ok();
     }
@@ -239,9 +238,18 @@ pub fn suspend_resume(_pid: u32, _resume: bool) -> io::Result<serde_json::Value>
 
 #[cfg(windows)]
 pub fn enable_debug_privilege() -> io::Result<serde_json::Value> {
+    enable_privilege(windows::Win32::Security::SE_DEBUG_NAME)
+        .map(|()| serde_json::json!({"success":true,"privilege":"SeDebugPrivilege"}))
+}
+
+/// Enables one privilege on the current process token. Fails when the token
+/// does not hold it (non-elevated process) instead of reporting a silent no-op.
+#[cfg(windows)]
+pub(crate) fn enable_privilege(name: windows::core::PCWSTR) -> io::Result<()> {
     use windows::Win32::{
+        Foundation::{ERROR_NOT_ALL_ASSIGNED, GetLastError},
         Security::{
-            AdjustTokenPrivileges, LUID_AND_ATTRIBUTES, LookupPrivilegeValueW, SE_DEBUG_NAME,
+            AdjustTokenPrivileges, LUID_AND_ATTRIBUTES, LookupPrivilegeValueW,
             SE_PRIVILEGE_ENABLED, TOKEN_ADJUST_PRIVILEGES, TOKEN_PRIVILEGES,
         },
         System::Threading::{GetCurrentProcess, OpenProcessToken},
@@ -251,13 +259,24 @@ pub fn enable_debug_privilege() -> io::Result<serde_json::Value> {
         .map_err(|e| io::Error::new(io::ErrorKind::PermissionDenied, e.to_string()))?;
     let mut privilege =
         TOKEN_PRIVILEGES { PrivilegeCount: 1, Privileges: [LUID_AND_ATTRIBUTES::default()] };
-    unsafe { LookupPrivilegeValueW(None, SE_DEBUG_NAME, &mut privilege.Privileges[0].Luid) }
-        .map_err(|e| io::Error::new(io::ErrorKind::NotFound, e.to_string()))?;
+    if let Err(e) = unsafe { LookupPrivilegeValueW(None, name, &mut privilege.Privileges[0].Luid) }
+    {
+        let _ = unsafe { windows::Win32::Foundation::CloseHandle(token) };
+        return Err(io::Error::new(io::ErrorKind::NotFound, e.to_string()));
+    }
     privilege.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
     let r = unsafe { AdjustTokenPrivileges(token, false, Some(&privilege), 0, None, None) };
+    let not_assigned = r.is_ok() && unsafe { GetLastError() } == ERROR_NOT_ALL_ASSIGNED;
     let _ = unsafe { windows::Win32::Foundation::CloseHandle(token) };
-    r.map(|_| serde_json::json!({"success":true,"privilege":"SeDebugPrivilege"}))
-        .map_err(|e| io::Error::new(io::ErrorKind::PermissionDenied, e.to_string()))
+    r.map_err(|e| io::Error::new(io::ErrorKind::PermissionDenied, e.to_string()))?;
+    if not_assigned {
+        let name = unsafe { name.to_string() }.unwrap_or_default();
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            format!("{name} is not held by this token; run the kernel elevated"),
+        ));
+    }
+    Ok(())
 }
 #[cfg(not(windows))]
 pub fn enable_debug_privilege() -> io::Result<serde_json::Value> {
@@ -272,7 +291,7 @@ pub fn list_modules(pid: u32) -> io::Result<Vec<serde_json::Value>> {
     };
     let snapshot =
         unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid) }
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| io::Error::other(e.to_string()))?;
     let mut entry =
         MODULEENTRY32 { dwSize: std::mem::size_of::<MODULEENTRY32>() as u32, ..Default::default() };
     let mut rows = Vec::new();
@@ -503,7 +522,7 @@ pub fn scan_module_aob(
         };
         if result.is_err() || read == 0 {
             close(handle);
-            return Err(io::Error::new(io::ErrorKind::Other, "module memory read failed"));
+            return Err(io::Error::other("module memory read failed"));
         }
         chunk.truncate(read);
         let carry_len = carry.len();

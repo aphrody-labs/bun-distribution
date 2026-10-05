@@ -109,10 +109,10 @@ mod imp {
                     &mut count,
                 )
             };
-            if let Err(error) = probe {
-                if win32_code(&error) != Some(ERROR_INSUFFICIENT_BUFFER) {
-                    return Err(hresult_error(&error, "EvtRender"));
-                }
+            if let Err(error) = probe
+                && win32_code(&error) != Some(ERROR_INSUFFICIENT_BUFFER)
+            {
+                return Err(hresult_error(&error, "EvtRender"));
             }
             let slots = (used as usize).div_ceil(std::mem::size_of::<EVT_VARIANT>());
             let mut values = vec![EVT_VARIANT::default(); slots.max(1)];

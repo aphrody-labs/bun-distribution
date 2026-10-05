@@ -38,10 +38,10 @@ mod native {
                 candidates.push(PathBuf::from(path));
             }
         }
-        if let Ok(exe) = std::env::current_exe() {
-            if let Some(parent) = exe.parent() {
-                candidates.push(parent.join("onnxruntime.dll"));
-            }
+        if let Ok(exe) = std::env::current_exe()
+            && let Some(parent) = exe.parent()
+        {
+            candidates.push(parent.join("onnxruntime.dll"));
         }
         if let Ok(current) = std::env::current_dir() {
             candidates.push(current.join("onnxruntime.dll"));
