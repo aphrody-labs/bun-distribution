@@ -69,18 +69,18 @@ export function detectFutUrlType(rawUrl: string): DetectedUrlInfo {
 	// FUT.GG: /players/272834-joao-neves/27-272834/
 	// FUTBin: /27/player/97/joao-pedro-goncalves-neves
 	if (
-		(provider === "FUTGG" && path.includes("/players/") && path.match(/\/players\/[0-9]+-[^\/]+/)) ||
+		(provider === "FUTGG" && path.includes("/players/") && path.match(/\/players\/[0-9]+-[^/]+/)) ||
 		(provider === "FUTBIN" && path.includes("/player/"))
 	) {
 		pageType = "PLAYER";
 		if (provider === "FUTGG") {
-			const m = path.match(/\/players\/([0-9]+)-([^\/]+)/);
+			const m = path.match(/\/players\/([0-9]+)-([^/]+)/);
 			if (m) {
 				identifier = m[1];
 				slug = m[2];
 			}
 		} else {
-			const m = path.match(/\/player\/([0-9]+)(?:\/([^\/]+))?/);
+			const m = path.match(/\/player\/([0-9]+)(?:\/([^/]+))?/);
 			if (m) {
 				identifier = m[1];
 				slug = m[2];
@@ -102,7 +102,7 @@ export function detectFutUrlType(rawUrl: string): DetectedUrlInfo {
 			.split("/")
 			.filter(Boolean);
 		const sbcSlug = sbcSegments.at(-1)?.replace(/^[0-9]{2}-/, "");
-		const mFutBin = path.match(/\/squad-building-challenges\/(?:ea\/)?([0-9]+|[a-z0-9\-]+)/i);
+		const mFutBin = path.match(/\/squad-building-challenges\/(?:ea\/)?([0-9]+|[a-z0-9-]+)/i);
 		if (sbcSlug && sbcSlug !== "challenge" && !/^[0-9]+$/.test(sbcSlug)) {
 			slug = sbcSlug;
 		} else if (mFutBin) {
@@ -116,7 +116,7 @@ export function detectFutUrlType(rawUrl: string): DetectedUrlInfo {
 	// FUTBin: /squad/, /squad/12345, /community/squad/12345
 	if (path.includes("/squad-builder") || path.includes("/squad/") || path.includes("/squads/")) {
 		pageType = "SQUAD";
-		const m = path.match(/\/(?:squad-builder|squads|squad)\/([0-9a-z\-]+)/);
+		const m = path.match(/\/(?:squad-builder|squads|squad)\/([0-9a-z-]+)/);
 		if (m) {
 			identifier = m[1];
 		}
@@ -131,7 +131,7 @@ export function detectFutUrlType(rawUrl: string): DetectedUrlInfo {
 		// Keep the year prefix here: FutEvolutionsClient.getEvolutionDetail()
 		// builds /evolutions/<slug>/ directly, and its listing regex expects the
 		// `27-relentless-winger` form.
-		const m = path.match(/\/evolutions?\/([a-z0-9\-]+)(?:\/|$)/);
+		const m = path.match(/\/evolutions?\/([a-z0-9-]+)(?:\/|$)/);
 		const evoSlug = m?.[1];
 		if (evoSlug && evoSlug !== "all" && evoSlug !== "active") {
 			slug = evoSlug;

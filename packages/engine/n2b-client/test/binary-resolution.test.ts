@@ -9,7 +9,7 @@ test.skipIf(process.platform === "win32")(
   async () => {
     const root = await mkdtemp(join(tmpdir(), "n2b-layout-"));
     try {
-      const source = join(root, "packages/n2b-client/src");
+      const source = join(root, "packages/engine/n2b-client/src");
       const build = join(root, "target/debug");
       await Promise.all([mkdir(source, { recursive: true }), mkdir(build, { recursive: true })]);
       await copyFile(join(import.meta.dir, "../src/cli.ts"), join(source, "cli.ts"));

@@ -168,7 +168,7 @@ async function request(path: string, init?: RequestInit): Promise<unknown> {
       signal,
     });
   } catch (error) {
-    if (signal.aborted) throw new Error(`Aphrody A2A store timed out after ${timeout} ms`);
+    if (signal.aborted) throw new Error(`Aphrody A2A store timed out after ${timeout} ms`, { cause: error });
     throw error;
   }
   let payload: unknown;

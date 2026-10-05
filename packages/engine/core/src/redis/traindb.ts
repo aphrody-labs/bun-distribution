@@ -188,7 +188,7 @@ export class RedisTrainDb {
     validatePageSize(offset, "offset");
     const values = await this.#records.values();
     return [...values.keys()]
-      .sort(compareIds)
+      .toSorted(compareIds)
       .slice(offset, offset + limit)
       .map((id) => validateTrainingRecord(JSON.parse(values.get(id)!), id));
   }

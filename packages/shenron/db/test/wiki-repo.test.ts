@@ -10,7 +10,7 @@ import { createWikiReadRepository, escapeLike, toPublicRow, wikiQueries } from "
 import type { ShenronPgDatabase } from "../src/types";
 import { WIKI_REGISTRY } from "../src/wiki-registry";
 
-const NO_SLUG: WikiCategoryName[] = [
+const NO_SLUG: WikiCategoryName[] = new Set([
 	"characters",
 	"episodes",
 	"planets",
@@ -18,7 +18,7 @@ const NO_SLUG: WikiCategoryName[] = [
 	"timeline_events",
 	"transformations",
 	"wishes",
-];
+]);
 
 const drivers = {
 	"postgres-js": postgresJsDrizzle.mock({ schema: fullSchema }),
@@ -79,7 +79,7 @@ describe("wiki registry", () => {
 
 	test("slug columns", () => {
 		for (const { name } of WIKI_CATEGORIES) {
-			if (NO_SLUG.includes(name)) expect(WIKI_REGISTRY[name].slugColumn).toBeNull();
+			if (NO_SLUG.has(name)) expect(WIKI_REGISTRY[name].slugColumn).toBeNull();
 			else expect(WIKI_REGISTRY[name].slugColumn).toBe("slug");
 		}
 	});

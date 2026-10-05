@@ -53,7 +53,7 @@ export function negotiateLocale(acceptLanguage?: string | null): SupportedLocale
 			const [tag, q] = part.trim().split(";q=");
 			return { tag: (tag ?? "").toLowerCase(), q: q ? Number(q) : 1 };
 		})
-		.sort((a, b) => b.q - a.q);
+		.toSorted((a, b) => b.q - a.q);
 	for (const c of candidates) {
 		const two = c.tag.slice(0, 2);
 		if (two === "fr" || two === "en" || two === "ja") return two;

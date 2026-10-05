@@ -79,7 +79,7 @@ try{
 `;
 
 function distribution(values: number[]) {
-  const sorted = [...values].sort((a, b) => a - b);
+  const sorted = [...values].toSorted((a, b) => a - b);
   const percentile = (p: number) =>
     sorted[Math.min(sorted.length - 1, Math.ceil(p * sorted.length) - 1)]!;
   return {

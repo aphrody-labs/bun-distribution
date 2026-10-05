@@ -427,7 +427,7 @@ async function readDrafts(target: string): Promise<Draft[]> {
 	const files = statSync(target).isDirectory()
 		? readdirSync(target)
 				.filter((f) => f.endsWith(".json"))
-				.sort()
+				.toSorted()
 				.map((f) => join(target, f))
 		: [target];
 	const all: Draft[] = [];

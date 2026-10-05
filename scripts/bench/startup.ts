@@ -68,7 +68,7 @@ function invoke(command: StartupCommand, options: StartupOptions): Sample {
 }
 
 function distribution(values: readonly number[]) {
-  const sorted = [...values].sort((a, b) => a - b);
+  const sorted = [...values].toSorted((a, b) => a - b);
   const percentile = (p: number) => sorted[Math.ceil(p * sorted.length) - 1]!;
   return {
     count: sorted.length,

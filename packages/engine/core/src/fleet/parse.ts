@@ -486,7 +486,7 @@ export function summarizeProcs(procs: readonly Proc[], top = 8): ProcSummary {
     zombies: procs.filter((p) => p.stat.startsWith("Z")).length,
     byUser,
     topRss: [...userland]
-      .sort((a, b) => b.rssBytes - a.rssBytes)
+      .toSorted((a, b) => b.rssBytes - a.rssBytes)
       .slice(0, top)
       .map((p) => ({
         pid: p.pid,
@@ -922,7 +922,7 @@ export function analyze(a: Audit, minFree: number = DEFAULT_MIN_FREE): Finding[]
     if (!floor.ok) {
       const base = fs.mount === "/" ? "/" : `${fs.mount}/`;
       const picked: string[] = [];
-      for (const b of [...a.biggest].sort((x, y) => y.bytes - x.bytes)) {
+      for (const b of [...a.biggest].toSorted((x, y) => y.bytes - x.bytes)) {
         if (!b.path.startsWith(base) && b.path !== fs.mount) continue;
         if (
           picked.some(
@@ -1071,5 +1071,5 @@ export function analyze(a: Audit, minFree: number = DEFAULT_MIN_FREE): Finding[]
       });
 
   const order: Record<Severity, number> = { critical: 0, warn: 1, info: 2 };
-  return out.sort((x, y) => order[x.severity] - order[y.severity]);
+  return out.toSorted((x, y) => order[x.severity] - order[y.severity]);
 }

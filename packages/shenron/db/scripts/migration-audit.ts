@@ -105,7 +105,7 @@ export function collectAudit(root: string): MigrationAudit {
 	}));
 	const files = readdirSync(dir)
 		.filter((f) => f.endsWith(".sql"))
-		.sort();
+		.toSorted();
 	const tags = files.map((f) => f.slice(0, -4));
 	const journaledSet = new Set(list.map((e) => e.tag));
 	const fileSet = new Set(tags);
@@ -120,7 +120,7 @@ export function collectAudit(root: string): MigrationAudit {
 
 	const snapshots = readdirSync(join(dir, "meta"))
 		.filter((f) => f.endsWith("_snapshot.json"))
-		.sort();
+		.toSorted();
 
 	const filter = parseTablesFilter(readText(join(root, DRIZZLE_CONFIG)));
 	const tables = parsePgTables(readText(join(root, PUBLIC_SCHEMA)));

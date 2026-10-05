@@ -149,7 +149,7 @@ try {
 		let sortie = file
 			.filter((p) => (classe ? p.defaut === classe : true))
 			.filter((p) => (fiche ? p.fiche === fiche : true))
-			.sort((a, b) => b.gravite - a.gravite || a.fiche - b.fiche || a.page - b.page)
+			.toSorted((a, b) => b.gravite - a.gravite || a.fiche - b.fiche || a.page - b.page)
 			.slice(depuis);
 		if (limite > 0) sortie = sortie.slice(0, limite);
 

@@ -51,7 +51,7 @@ export function BarreCanon({
 				type="search"
 				defaultValue={q}
 				autoComplete="off"
-				autoFocus={!q}
+				
 				enterKeyHint="search"
 				aria-describedby={describedBy}
 				placeholder={placeholder || t("wiki.canon.placeholder")}

@@ -18,7 +18,7 @@
  * n'est plus consulté). Rendu 100 % côté serveur (SEO/ISR préservés).
  */
 import type { WikiSectionLink } from "@/db/bot-schema";
-import { getWikiSections, type WikiSource } from "@/lib/shenron";
+import { getWikiSections } from "@/lib/shenron";
 import {
 	sectionAccent,
 	sectionSlug,
@@ -146,7 +146,7 @@ function ensureFullPwsPack(raw: RawSection[]): RawSection[] {
 	const pwsOrder = PWS_GROUP_PRESETS.map((p) => p.key);
 	const pws = out
 		.filter((s) => s.group === PWS_GROUP_NAME)
-		.sort((a, b) => {
+		.toSorted((a, b) => {
 			const ia = pwsOrder.indexOf(a.key);
 			const ib = pwsOrder.indexOf(b.key);
 			return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);

@@ -140,7 +140,7 @@ export async function getTopRaters(limit = 50): Promise<ContributorRow[]> {
 				},
 			];
 		})
-		.sort(
+		.toSorted(
 			(x, y) =>
 				y.ratings - x.ratings ||
 				y.ratingComments - x.ratingComments ||
@@ -148,7 +148,7 @@ export async function getTopRaters(limit = 50): Promise<ContributorRow[]> {
 				x.username.localeCompare(y.username, "fr")
 		)
 		.slice(0, take)
-		.map(({ lastDate: _lastDate, ...row }, i) => ({ ...row, rank: i + 1 }));
+		.map(({ lastDate: _lastDate, ...row }, i) => (Object.assign(row, { rank: i + 1 })));
 }
 
 /* ─────────────────── Dossier détaillé d'un membre ─────────────────── */

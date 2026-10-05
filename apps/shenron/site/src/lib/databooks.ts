@@ -166,7 +166,7 @@ function toColumns(w: DatabookWrite): Record<string, unknown> {
 	// de plus que son absence.
 	if (w.pages !== undefined) {
 		c.pages = normalizePages(w.pages).map(({ verifiee, ...p }) =>
-			verifiee ? { ...p, [CLE_VERIFIEE]: true } : p
+			verifiee ? Object.assign(p, { [CLE_VERIFIEE]: true }) : p
 		);
 	}
 	return c;

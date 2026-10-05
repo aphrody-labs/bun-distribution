@@ -193,7 +193,7 @@ export function CharacterGrid({
 			counts.set(c.race, (counts.get(c.race) ?? 0) + 1);
 		}
 		return [...counts.entries()]
-			.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+			.toSorted((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
 			.map(([value, count]) => ({ value, label: value, count }));
 	}, [characters]);
 
@@ -250,8 +250,8 @@ export function CharacterGrid({
 	const fichesTriees = useMemo(
 		() =>
 			tri === "alpha"
-				? [...filtered].sort((a, b) => a.name.localeCompare(b.name, "fr"))
-				: [...filtered].sort(comparerRichesse),
+				? [...filtered].toSorted((a, b) => a.name.localeCompare(b.name, "fr"))
+				: [...filtered].toSorted(comparerRichesse),
 		[filtered, tri]
 	);
 
@@ -265,7 +265,7 @@ export function CharacterGrid({
 	const versionsTriees = useMemo(() => {
 		if (vue !== "versions") return versionsFiltrees;
 		const note = new Map(characters.map((c) => [c.id, c.richesse ?? 0]));
-		return [...versionsFiltrees].sort((a, b) => {
+		return [...versionsFiltrees].toSorted((a, b) => {
 			if (tri === "alpha") return a.name.localeCompare(b.name, "fr");
 			const d = (note.get(b.characterId) ?? 0) - (note.get(a.characterId) ?? 0);
 			return d !== 0 ? d : a.name.localeCompare(b.name, "fr");

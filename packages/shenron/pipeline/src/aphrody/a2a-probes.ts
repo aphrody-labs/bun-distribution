@@ -259,7 +259,7 @@ async function probeDatabooksPipeline(): Promise<DatabooksPipelineSnapshot> {
 			writerStats
 				.map((w) => w.latestAt)
 				.filter((v): v is string => Boolean(v))
-				.sort()
+				.toSorted()
 				.pop() ?? null;
 
 		const pagesTotal = Number(totals?.pages_total ?? 0);

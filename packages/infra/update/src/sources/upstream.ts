@@ -67,7 +67,7 @@ export function nonVital(root: string, manifest: Manifest): string[] {
   return readdirSync(root, { withFileTypes: true })
     .filter((e) => e.isDirectory() && !vital.has(e.name) && !e.name.includes(".pre-bump-"))
     .map((e) => e.name)
-    .sort();
+    .toSorted();
 }
 
 export type ForkEntry = { repo: string; role?: string; parent?: string; keep?: string };

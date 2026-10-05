@@ -35,7 +35,7 @@ if (!env.BXC_RUST_BRIDGE_LIB) {
 				return [];
 			}
 		})
-		.sort((a, b) => b.mtime - a.mtime);
+		.toSorted((a, b) => b.mtime - a.mtime);
 	if (built[0]) env.BXC_RUST_BRIDGE_LIB = built[0].path;
 }
 

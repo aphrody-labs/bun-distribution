@@ -123,7 +123,7 @@ export function parseTweetResult(result: any, quoteDepth = DEFAULT_QUOTE_DEPTH):
       if (Array.isArray(variants)) {
         const mp4 = variants
           .filter((v: any) => v?.content_type === "video/mp4")
-          .sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+          .toSorted((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))[0];
         video_url = mp4?.url || undefined;
       }
     }

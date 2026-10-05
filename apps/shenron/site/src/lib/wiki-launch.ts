@@ -500,7 +500,7 @@ export function orderedEntries(
 	entries: readonly LaunchCategory[] = ALL_ENTRIES
 ): LaunchCategory[] {
 	const rank = new Map(order.map((k, i) => [k, i]));
-	return [...entries].sort((a, b) => {
+	return [...entries].toSorted((a, b) => {
 		const ra = rank.get(a.key) ?? Number.MAX_SAFE_INTEGER;
 		const rb = rank.get(b.key) ?? Number.MAX_SAFE_INTEGER;
 		if (ra !== rb) return ra - rb;

@@ -66,7 +66,7 @@ for (const tool of tools) {
   );
   const properties = tool.inputSchema.properties ?? {};
   assert(
-    JSON.stringify([...fields.keys()].sort()) === JSON.stringify(Object.keys(properties).sort()),
+    JSON.stringify([...fields.keys()].toSorted()) === JSON.stringify(Object.keys(properties).toSorted()),
     `Bun args fields diverge for ${tool.name}`,
   );
   const required = new Set(tool.inputSchema.required ?? []);

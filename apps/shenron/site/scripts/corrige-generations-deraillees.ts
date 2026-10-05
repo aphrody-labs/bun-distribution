@@ -286,7 +286,7 @@ if (N_ECHANTILLONS > 0 && modifications.length > 0) {
 	console.log(`\n${"=".repeat(78)}`);
 	console.log(`ÉCHANTILLONS (${N_ECHANTILLONS} des coupes les plus profondes)`);
 	console.log("=".repeat(78));
-	const tries = [...modifications].sort((a, b) => a.ratio - b.ratio).slice(0, N_ECHANTILLONS);
+	const tries = [...modifications].toSorted((a, b) => a.ratio - b.ratio).slice(0, N_ECHANTILLONS);
 	for (const m of tries) {
 		const motifs = m.coupes
 			.map(
@@ -329,7 +329,7 @@ for (const m of modifications) {
 const idRevision = () => `ocr-generation-${Date.now()}-${crypto.randomUUID()}`;
 let deposees = 0;
 let echecs = 0;
-for (const [databookId, liste] of [...parOuvrage.entries()].sort((a, b) => a[0] - b[0])) {
+for (const [databookId, liste] of [...parOuvrage.entries()].toSorted((a, b) => a[0] - b[0])) {
 	try {
 		await sql.begin(async (tx) => {
 			for (const m of liste) {

@@ -32,9 +32,9 @@ const cles = (o: unknown, prefixe = ""): string[] =>
 
 describe("dictionnaires", () => {
 	test("les trois langues portent exactement les mêmes clés", () => {
-		const attendu = cles(fr).sort();
-		expect(cles(ja).sort()).toEqual(attendu);
-		expect(cles(en).sort()).toEqual(attendu);
+		const attendu = cles(fr).toSorted();
+		expect(cles(ja).toSorted()).toEqual(attendu);
+		expect(cles(en).toSorted()).toEqual(attendu);
 	});
 
 	test("aucune valeur n'est vide ni recopiée du français par paresse", () => {

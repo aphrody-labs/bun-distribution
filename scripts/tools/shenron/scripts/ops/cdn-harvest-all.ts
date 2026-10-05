@@ -16,7 +16,7 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
-import { mkdir, stat } from "node:fs/promises";
+
 import { homedir } from "node:os";
 import { join } from "node:path";
 import postgres from "postgres";
@@ -239,7 +239,7 @@ async function runHarvestPool(jobs: PageJob[], concurrency: number): Promise<{
 				}
 
 				const job = jobs[nextIdx++];
-				worker.postMessage(job.task);
+				worker.postMessage(job.task, worker.location.origin);
 			};
 
 			worker.onmessage = (event: MessageEvent<HarvestResult>) => {
@@ -314,7 +314,7 @@ async function syncDatabases(volumes: VolumeItem[], sql: postgres.Sql) {
 				const pad = String(p.pageNumber).padStart(3, "0");
 				const localImg = `${vol.dbRelativePrefix}/${pad}.${ext}`;
 				return {
-					...(existing || {}),
+					...existing,
 					number: p.pageNumber,
 					image: localImg,
 					verifiee: true,

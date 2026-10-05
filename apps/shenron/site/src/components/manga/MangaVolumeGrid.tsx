@@ -494,7 +494,7 @@ export function MangaVolumeGrid({
 					)}
 				</div>
 
-				<div
+				<div tabIndex={0}
 					role="tablist"
 					aria-label="Collections du manga"
 					onKeyDown={onTablistKeyDown}

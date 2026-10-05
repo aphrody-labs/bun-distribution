@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /** BXC domain clients sharing a single CLI contract and service module. */
-import { execBxc, execBxcJson } from "./spawn";
+import { execBxcJson } from "./spawn";
 import { AphrodyTranslateService } from "../aphrody/translate";
 import { AphrodyFramesClient } from "../aphrody/frames";
 import { AphrodyWikiService } from "../aphrody/wiki";
@@ -343,7 +343,7 @@ function categoryFor(collection: SnapshotCollection): string {
  * the snapshot provides them; otherwise the public fiche URL remains available.
  */
 export class DragonballCnService {
-	constructor(_options: BxcSpawnOptions = {}) {}
+	
 
 	async catalog(
 		category: DbcnCatalogCategory = "full_color",

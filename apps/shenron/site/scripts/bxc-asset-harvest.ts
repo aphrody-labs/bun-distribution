@@ -447,10 +447,7 @@ function extractFromReconJson(stdout: string, page: string): AssetHit[] {
 	} catch {
 		// also harvest media URLs from plain recon markdown dump
 		hits.push(
-      ...extractFromMarkdown(stdout, page).map((h) => ({
-        ...h,
-        via: "aphrody-web-recon" as const,
-      })),
+      ...extractFromMarkdown(stdout, page).map((h) => (Object.assign(h, { via: 'aphrody-web-recon' as const }))),
 		);
 	}
 	return hits;

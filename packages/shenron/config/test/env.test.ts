@@ -99,7 +99,7 @@ describe("parseEnv", () => {
 		const invalid = parseEnv(schema, { TOKEN: SECRET, MODE: SECRET });
 		expect(invalid.ok).toBe(false);
 		if (!invalid.ok) {
-			expect(invalid.issues.map((issue) => `${issue.name}:${issue.problem}`).sort()).toEqual([
+			expect(invalid.issues.map((issue) => `${issue.name}:${issue.problem}`).toSorted()).toEqual([
 				"MODE:invalid",
 				"TOKEN:invalid",
 			]);

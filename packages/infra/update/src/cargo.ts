@@ -24,8 +24,8 @@ export function lockDiff(before: Map<string, Set<string>>, after: Map<string, Se
   for (const [n, vs] of after) {
     const old = before.get(n);
     if (!old) { out.push({ ecosystem: "cargo-lock", name: n, from: "(new)", to: [...vs].join(",") }); continue; }
-    const a = [...old].sort().join(",");
-    const b = [...vs].sort().join(",");
+    const a = [...old].toSorted().join(",");
+    const b = [...vs].toSorted().join(",");
     if (a !== b) out.push({ ecosystem: "cargo-lock", name: n, from: a, to: b });
   }
   for (const n of before.keys()) if (!after.has(n)) out.push({ ecosystem: "cargo-lock", name: n, from: [...before.get(n)!].join(","), to: "(removed)" });

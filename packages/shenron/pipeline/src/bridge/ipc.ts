@@ -122,7 +122,7 @@ export class DbuiBridge {
 			if (!res.ok) throw new Error(`HTTP ${res.status} on ${cmd}`);
 			return (await res.json()) as T;
 		} catch (error) {
-			throw new Error(`Échec du bridge HTTP ${cmd}: ${error instanceof Error ? error.message : String(error)}`);
+			throw new Error(`Échec du bridge HTTP ${cmd}: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 		}
 	}
 
@@ -148,7 +148,7 @@ export class DbuiBridge {
 			if (!res.ok) throw new Error(`HTTP ${res.status} on aphrody_rag_search`);
 			body = await res.json();
 		} catch (error) {
-			throw new Error(`Échec du bridge HTTP aphrody_rag_search: ${error instanceof Error ? error.message : String(error)}`);
+			throw new Error(`Échec du bridge HTTP aphrody_rag_search: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 		}
 		const malformed = (why: string) => new Error(`Échec du bridge HTTP aphrody_rag_search: réponse invalide (${why})`);
 		if (typeof body !== "object" || body === null || Array.isArray(body)) throw malformed("corps non objet");

@@ -89,7 +89,7 @@ export default async function PersonnagesPage() {
 			// jauge, deux décimales de plus ne feraient qu'alourdir la charge RSC.
 			richesse: noteDe(richesse, c.id),
 		}))
-		.sort(comparerRichesse);
+		.toSorted(comparerRichesse);
 	const dragonsShown = dragons ?? [];
 
 	return (

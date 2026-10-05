@@ -62,7 +62,7 @@ export async function discoverOfficialPages(capture: (url: string) => Promise<st
 		}
 	}
 	if (!pages.size) throw new Error("Official sitemap contains no eligible pages");
-	return [...pages].sort();
+	return [...pages].toSorted();
 }
 
 export async function runOfficialCrawl(
@@ -104,7 +104,7 @@ export async function runOfficialCrawl(
 	for (let batch = 0; batch < batches; batch++) {
 		if (state.completedBatches.includes(batch)) continue;
 		const seeds = urls.slice(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE);
-		let record = [...state.jobs].reverse().find((item) => item.batch === batch && item.status === "running");
+		let record = [...state.jobs].toReversed().find((item) => item.batch === batch && item.status === "running");
 		let job;
 		if (record) {
 			try {

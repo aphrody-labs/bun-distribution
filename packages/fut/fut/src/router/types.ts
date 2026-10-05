@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import type { DualPlatformPrediction, MarketAnomalyReport, PlayerPricePrediction } from "../prediction/types.ts";
+import type { DualPlatformPrediction, MarketAnomalyReport } from "../prediction/types.ts";
 import type { MetaRatingReport } from "../squad/metaRating.ts";
-import type { SbcSet, SbcChallenge, FodderPriceTier } from "../sbc/types.ts";
-import type { EvolutionItem, EvolutionSimulationResult } from "../evolutions/types.ts";
+import type { SbcChallenge, FodderPriceTier } from "../sbc/types.ts";
+import type { EvolutionSimulationResult } from "../evolutions/types.ts";
 
 export type FutPageType =
 	| "PLAYER"

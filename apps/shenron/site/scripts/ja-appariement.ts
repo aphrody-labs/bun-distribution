@@ -333,7 +333,7 @@ for (const portee of ["manga", "ouvrage", "periodique"] as const) {
 
 // Les plus attestées d'abord : ce sont les techniques du manga, et c'est là que
 // `--limite` doit couper si l'on ne veut relire qu'un échantillon.
-const montrer = (TOUT ? props : [...nouveaux, ...divergents, ...aVerifier]).sort(
+const montrer = (TOUT ? props : [...nouveaux, ...divergents, ...aVerifier]).toSorted(
 	(a, b) => b.attestations - a.attestations
 );
 console.log(`\n— propositions —`);

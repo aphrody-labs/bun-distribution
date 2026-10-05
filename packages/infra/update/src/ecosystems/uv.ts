@@ -388,7 +388,7 @@ export function classifyDirect(i: {
   const latest = i.release?.latest;
   if (!latest) return { ...base, state: "unknown" };
   const fits = locked.filter((v) => satisfies(v, i.spec));
-  const best = [...(fits.length ? fits : locked)].sort(cmpPy).at(-1)!;
+  const best = [...(fits.length ? fits : locked)].toSorted(cmpPy).at(-1)!;
   if (cmpPy(best, latest) >= 0) return base;
   const row: DirectRow = { ...base, kind: bumpKind(best, latest) };
   const hold = holdFor(i.holds, i.name, latest);
@@ -434,7 +434,7 @@ export function transitiveBehind(i: {
   for (const [name, versions] of i.versions) {
     if (i.directNames.has(name)) continue;
     const latest = i.latest.get(name)?.latest;
-    const best = [...versions].sort(cmpPy).at(-1)!;
+    const best = [...versions].toSorted(cmpPy).at(-1)!;
     if (latest && cmpPy(best, latest) < 0)
       out.push({
         lock: i.lock,
@@ -444,7 +444,7 @@ export function transitiveBehind(i: {
         held: holdFor(i.holds, name, latest)?.reason,
       });
   }
-  return out.sort((a, b) => a.name.localeCompare(b.name));
+  return out.toSorted((a, b) => a.name.localeCompare(b.name));
 }
 
 // ---------------------------------------------------------------- python policy
@@ -575,7 +575,7 @@ export function pythonRoot(c: Ctx, override?: string): string | undefined {
 /** Directories with a `uv.lock` and every pyproject.toml, relative to the Python root (vendored docs excluded). */
 export function discover(pyRoot: string): Layout {
   const scan = (pattern: string) =>
-    [...new Bun.Glob(pattern).scanSync({ cwd: pyRoot })].filter((f) => !SKIP_DIRS.test(f)).sort();
+    [...new Bun.Glob(pattern).scanSync({ cwd: pyRoot })].filter((f) => !SKIP_DIRS.test(f)).toSorted();
   return {
     pyRoot,
     locks: scan("**/uv.lock").map((f) => dirname(f)),
@@ -588,7 +588,7 @@ export function lockFor(project: string, locks: string[]): string | undefined {
   const dir = dirname(project);
   return locks
     .filter((l) => l === "." || dir === l || dir.startsWith(`${l}/`))
-    .sort((a, b) => b.length - a.length)[0];
+    .toSorted((a, b) => b.length - a.length)[0];
 }
 
 type Run = { status: number | null; stdout: string; stderr: string };
@@ -788,7 +788,7 @@ export async function collectStatus(
         advisoryHolds,
       }),
     )
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .toSorted((a, b) => a.name.localeCompare(b.name));
 
   const directNames = new Set(direct.map((d) => d.name));
   const transitive = [...lockVers].flatMap(([lock, versions]) =>
@@ -998,7 +998,7 @@ export function latestSnapshot(c: Ctx): string | undefined {
   const d = readdirSync(base, { withFileTypes: true })
     .filter((e) => e.isDirectory() && existsSync(join(base, e.name, "root.json")))
     .map((e) => e.name)
-    .sort()
+    .toSorted()
     .at(-1);
   return d ? join(SNAPSHOT_DIR, d) : undefined;
 }
@@ -1123,7 +1123,7 @@ export async function applyBumps(
       return 1;
     }
     const diff = lockDiff(before, lockMap(readFileSync(join(cwd, "uv.lock"), "utf8"))).map(
-      (ch) => ({ ...ch, ecosystem: "uv-lock" }),
+      (ch) => (Object.assign(ch, { ecosystem: 'uv-lock' })),
     );
     console.log(`lock   ${lockLabel(l)}: ${diff.length} package change(s)`);
     for (const ch of diff.slice(0, 80))

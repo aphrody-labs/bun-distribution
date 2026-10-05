@@ -16,7 +16,7 @@ function legacyPagesVisibles(page: number, total: number, fenetre = 1): Array<nu
 	if (page <= 3) [2, 3, 4].forEach((n) => n < total && set.add(n));
 	if (page >= total - 2) [total - 1, total - 2, total - 3].forEach((n) => n > 1 && set.add(n));
 
-	const tri = [...set].filter((n) => n >= 1 && n <= total).sort((a, b) => a - b);
+	const tri = [...set].filter((n) => n >= 1 && n <= total).toSorted((a, b) => a - b);
 	const out: Array<number | null> = [];
 	let precedent = 0;
 	for (const n of tri) {
@@ -42,7 +42,7 @@ function legacyPagerWindow(page: number, total: number, radius = 1): Array<numbe
 	if (page <= 3) [2, 3, 4].forEach((n) => n < total && keep.add(n));
 	if (page >= total - 2) [total - 1, total - 2, total - 3].forEach((n) => n > 1 && keep.add(n));
 
-	const sorted = [...keep].filter((n) => n >= 1 && n <= total).sort((a, b) => a - b);
+	const sorted = [...keep].filter((n) => n >= 1 && n <= total).toSorted((a, b) => a - b);
 	const out: Array<number | null> = [];
 	let previous = 0;
 	for (const n of sorted) {

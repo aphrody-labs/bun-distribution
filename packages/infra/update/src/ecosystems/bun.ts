@@ -197,7 +197,7 @@ export function collectDirect(root: Manifest, manifests: Record<string, Manifest
       }
     }
   }
-  return [...map.values()].sort(
+  return [...map.values()].toSorted(
     (a, b) => a.name.localeCompare(b.name) || a.spec.localeCompare(b.spec),
   );
 }
@@ -216,7 +216,7 @@ export function touchedManifests(
     const changed = a.size !== b.size || [...a].some(([n, s]) => b.get(n) !== s);
     if (changed) out.push(path);
   }
-  return out.sort();
+  return out.toSorted();
 }
 
 // ---------------------------------------------------------------- config
@@ -287,7 +287,7 @@ export function expandMajors(requested: string[], rows: Row[]): string[] {
     for (const r of rows)
       if (r.kind === "major" && !r.inRange && fam.some((re) => re.test(r.name))) out.add(r.name);
   }
-  return [...out].sort();
+  return [...out].toSorted();
 }
 
 // ---------------------------------------------------------------- rows
@@ -551,7 +551,7 @@ export function describeOverrides(
       name,
       spec,
       local,
-      resolved: [...new Set(lock.filter((d) => d.name === name).map((d) => d.version))].sort(
+      resolved: [...new Set(lock.filter((d) => d.name === name).map((d) => d.version))].toSorted(
         cmpVersion,
       ),
       latest: latest.get(name)?.version,
@@ -587,7 +587,10 @@ export async function openAdvisories(
   });
   const all: Advisory[] = rows.map((r) => {
     const l = latest.get(r.name)?.version;
-    return { ...r, latest: l, fixable: !!l && cmpVersion(r.version, l) < 0 };
+    return Object.assign(r, {
+	latest: l,
+	fixable: !!l && cmpVersion(r.version, l) < 0
+});
   });
   return {
     open: all.filter((a) => !advisoryHeld(holds, a.name)),
@@ -704,7 +707,7 @@ export function renderStatus(s: Status): string[] {
 
 /** Files a bump may touch: every first-party manifest, the root manifest and bun.lock. */
 export async function bumpFiles(c: Ctx): Promise<string[]> {
-  return [...new Set(["package.json", "bun.lock", ...(await firstPartyManifests(c.root))])].sort();
+  return [...new Set(["package.json", "bun.lock", ...(await firstPartyManifests(c.root))])].toSorted();
 }
 
 export function snapshot(
@@ -728,7 +731,7 @@ export function latestSnapshot(c: Ctx): string | undefined {
   const d = readdirSync(base, { withFileTypes: true })
     .filter((e) => e.isDirectory())
     .map((e) => e.name)
-    .sort()
+    .toSorted()
     .at(-1);
   return d ? join(SNAPSHOT_DIR, d) : undefined;
 }
@@ -753,7 +756,7 @@ export function restoreSnapshot(c: Ctx, dir: string): string[] {
     }
   };
   walk("");
-  return restored.sort();
+  return restored.toSorted();
 }
 
 // ---------------------------------------------------------------- verify
@@ -805,7 +808,7 @@ export async function verify(
   if (!o.skipTests) run("bun run test (workspace)", "bun", ["run", "test"]);
   const dirs = [...new Set([...touched.map((p) => dirname(p)), "packages/infra/update"])]
     .filter((d) => d !== ".")
-    .sort();
+    .toSorted();
   for (const d of dirs) {
     const m = JSON.parse(c.read(join(d, "package.json"))) as Manifest;
     if (!m.scripts?.typecheck) {
@@ -928,7 +931,7 @@ async function applyBumps(c: Ctx, args: Args): Promise<number> {
           .map((r) => r.name)
           .concat(expandMajors(args.majors, s2.rows)),
       ),
-    ].sort();
+    ].toSorted();
     const { edits, errors } = specEdits(s2.rows, names, targetOf);
     for (const e of errors) console.error(`bump   skip ${e}`);
     for (const e of edits) {

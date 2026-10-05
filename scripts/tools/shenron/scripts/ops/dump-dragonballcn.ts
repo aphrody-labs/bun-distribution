@@ -302,7 +302,7 @@ async function main() {
           }
 
           const task = queue[nextIdx++];
-          worker.postMessage(task);
+          worker.postMessage(task, worker.location.origin);
         };
 
         worker.onmessage = async (e: MessageEvent) => {

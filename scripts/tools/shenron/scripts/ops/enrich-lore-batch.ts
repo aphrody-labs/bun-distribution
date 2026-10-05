@@ -1,6 +1,6 @@
 import { Client } from 'pg';
-import * as fs from 'fs';
-import * as path from 'path';
+
+
 
 const canonFooter = `\n\n## Philosophie Martiale et Héritage d'Akira Toriyama
 La représentation de cet élément dans l'univers d'Akira Toriyama s'inscrit dans la profonde évolution de l'œuvre originale, initiée à l'origine comme une simple relecture humoristique du "Pèlerinage vers l'Ouest" (Saiyūki) pour devenir l'archétype ultime du Shōnen martial. Avec l'évolution de la série vers des affrontements d'envergure cosmique, les lieux, les tournois et les affrontements majeurs sont devenus les réceptacles narratifs de la philosophie martiale de l'auteur : la quête de l'amélioration perpétuelle de soi, la reconnaissance de ses propres limites, et le dépassement par l'effort et la discipline. 
@@ -155,7 +155,7 @@ async function main() {
         WHERE id = $3
       `, [loc.article, loc.sources, loc.id]);
       
-    } catch (e) {
+    } catch  {
       
       hasError = true;
     }
@@ -170,7 +170,7 @@ async function main() {
         WHERE id = $3
       `, [t.article, t.sources, t.id]);
       
-    } catch (e) {
+    } catch  {
       
       hasError = true;
     }
@@ -185,7 +185,7 @@ async function main() {
         WHERE id = $3
       `, [b.article, b.sources, b.id]);
       
-    } catch (e) {
+    } catch  {
       
       hasError = true;
     }

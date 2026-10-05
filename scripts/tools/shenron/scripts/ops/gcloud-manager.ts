@@ -80,9 +80,9 @@ async function checkStatus() {
 		console.log("\n🔍 Vérification des APIs activées...");
 		const srv = await exec(["gcloud", "services", "list", "--enabled", "--format=value(config.name)"]);
 		if (srv.code === 0) {
-			const enabled = srv.stdout.split("\n").map((s) => s.trim());
+			const enabled = new Set(srv.stdout.split("\n").map((s) => s.trim()));
 			for (const api of REQUIRED_APIS) {
-				const isOk = enabled.includes(api);
+				const isOk = enabled.has(api);
 				console.log(`  ${isOk ? "✓" : "✗"} ${api} : ${isOk ? "\x1b[32mactivée\x1b[0m" : "\x1b[31mnon activée\x1b[0m"}`);
 			}
 		}

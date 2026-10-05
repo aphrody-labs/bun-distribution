@@ -53,7 +53,7 @@ export function analyseLots(brut: string | undefined, total: number): number[] {
 		const n = Number(morceau.trim());
 		if (Number.isInteger(n) && n > 0) out.add(n);
 	}
-	return [...out].sort((a, b) => a - b);
+	return [...out].toSorted((a, b) => a - b);
 }
 
 /** `3` -> `lot-003`, la convention de `export-databooks-ocr.ts`. */

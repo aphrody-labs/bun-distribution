@@ -91,7 +91,7 @@ export function FileKindsView() {
 	});
 	const stats = [...(data?.stats ?? [])]
 		.filter((stat) => stat.file_count > 0)
-		.sort((a, b) => b.file_count - a.file_count);
+		.toSorted((a, b) => b.file_count - a.file_count);
 
 	return (
 		<section aria-labelledby="file-kinds-title" className="flex h-full min-h-0 flex-col bg-surface text-on-surface">

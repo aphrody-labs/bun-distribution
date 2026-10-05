@@ -21,7 +21,7 @@ async function run() {
 		const limit = limitIdx < args.length && !args[limitIdx]?.startsWith("--") ? Number(args[limitIdx]) : 5;
 		console.log(`Lecture des ${limit} derniers messages du salon admin (${ADMIN_LAB_CHANNEL_ID})...\n`);
 		const msgs = await getAdminLabRecentMessages(limit);
-		for (const m of msgs.reverse()) {
+		for (const m of msgs.toReversed()) {
 			const author = m.author?.username ?? "Inconnu";
 			const time = new Date(m.timestamp).toLocaleTimeString();
 			console.log(`[${time}] ${author}: ${m.content || "(Embed)"}`);

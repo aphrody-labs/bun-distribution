@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // End-to-end tests that invoke the Rust binary `n2b` via the TS façade.
-// Runs against `tests/rpb-dashboard-baseline/scan.json` baseline (bypassing
+// Runs against `crates/compat/n2b/tests/baselines/rpb-dashboard-baseline/scan.json` baseline (bypassing
 // subprocess cost) for the shape-level assertions, and against a real
 // subprocess call on `test/fixture/` for the live integration check.
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { OmniUrlResult, RecommendedAction } from "../router/types.ts";
+import type { OmniUrlResult } from "../router/types.ts";
 
 export interface DiscordEmbedPayload {
 	username: string;

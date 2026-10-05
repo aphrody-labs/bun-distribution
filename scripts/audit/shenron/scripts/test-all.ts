@@ -293,7 +293,7 @@ async function countTests(dir: string, testDir?: string, policy?: Policy): Promi
 				if (!excluded.has(abs)) out.add(abs);
 			}
 		}
-		return [...out].sort();
+		return [...out].toSorted();
 	}
 	const base = testDir ? join(dir, testDir) : dir;
 	if (!existsSync(base)) return [];

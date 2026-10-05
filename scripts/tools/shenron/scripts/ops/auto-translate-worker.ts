@@ -11,7 +11,7 @@
  *   bun scripts/ops/auto-translate-worker.ts --lot-suivant --taille 10
  */
 
-import { existsSync, readFileSync } from "node:fs";
+
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import {
@@ -24,9 +24,7 @@ import {
 	type PlancheBrute,
 } from "../../../../../apps/shenron/site/scripts/_databooks-base";
 import {
-	demasquerVocabulaire,
 	masquerVocabulaire,
-	verifierConformiteTraduction,
 	verifierTexteSource,
 } from "../../../../../apps/shenron/site/src/lib/ja/lexique-canonique";
 

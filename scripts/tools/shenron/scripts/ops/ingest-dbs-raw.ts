@@ -159,7 +159,7 @@ async function extractChaptersList(): Promise<JmangaChapterMeta[]> {
 
 // Limiter la concurrence globale
 async function mapConcurrent<T, R>(items: T[], concurrency: number, fn: (item: T, idx: number) => Promise<R>): Promise<R[]> {
-	const results: R[] = new Array(items.length);
+	const results: R[] = Array.from<R>({ length: items.length });
 	let nextIndex = 0;
 	const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
 		while (nextIndex < items.length) {
@@ -234,7 +234,7 @@ async function main() {
 			if (existsSync(chDir)) {
 				existingFiles = readdirSync(chDir)
 					.filter((f) => f.endsWith(".webp") && !f.startsWith("."))
-					.sort();
+					.toSorted();
 			}
 
 			// Interroger l'API jmanga pour connaître les images

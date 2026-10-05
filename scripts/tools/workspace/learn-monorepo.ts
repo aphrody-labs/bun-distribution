@@ -84,7 +84,7 @@ async function discoverRepositories() {
       pinned: false,
       source: "infra-checkout",
     });
-  return [...discovered.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return [...discovered.values()].toSorted((a, b) => a.name.localeCompare(b.name));
 }
 
 async function walk(dir: string, base = dir, entries: Entry[] = []): Promise<Entry[]> {
@@ -135,7 +135,7 @@ async function inspect(repo: { name: string; path: string; pinned: boolean; sour
       acc[ext] = (acc[ext] ?? 0) + 1;
       return acc;
     }, {}),
-  ).sort((a, b) => b[1] - a[1]);
+  ).toSorted((a, b) => b[1] - a[1]);
   const pkg = await parseJson(join(path, "package.json"));
   const capabilities = [
     files.some((file) => /(^|\/)(apps|packages|src)(\/|$)/.test(file.path)) && "application-source",

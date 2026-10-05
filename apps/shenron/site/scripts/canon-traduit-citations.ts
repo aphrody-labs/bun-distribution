@@ -107,7 +107,7 @@ const lignes = (await sql`
 	where visible and provenance = 'aphrody'
 	order by id
 `) as unknown as Pick<CanonReference, "id" | "subject" | "text" | "textFr" | "source" | "year" | "lang">[];
-const config = { references: lignes.map((r) => ({ ...r, textFr: r.textFr ?? undefined })) };
+const config = { references: lignes.map((r) => (Object.assign(r, { textFr: r.textFr ?? undefined }))) };
 
 const aTraduire = config.references.filter((r) => r.lang !== "fr" && !r.textFr);
 const traduites = config.references.filter((r) => r.lang !== "fr" && r.textFr);
@@ -207,7 +207,7 @@ for (const [id, textFr] of acceptees) {
 }
 const fusion = {
 	references: config.references.map((r) =>
-		acceptees.has(r.id) ? { ...r, textFr: acceptees.get(r.id) } : r
+		acceptees.has(r.id) ? Object.assign(r, { textFr: acceptees.get(r.id) }) : r
 	),
 };
 

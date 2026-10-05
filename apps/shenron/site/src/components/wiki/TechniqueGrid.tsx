@@ -60,7 +60,7 @@ export function TechniqueGrid({
 			const k = t.type ?? "Autre";
 			compte.set(k, (compte.get(k) ?? 0) + 1);
 		}
-		return [...compte.entries()].sort((a, b) => b[1] - a[1]);
+		return [...compte.entries()].toSorted((a, b) => b[1] - a[1]);
 	}, [techniques]);
 
 	const filtrees = useMemo(

@@ -8,7 +8,7 @@
  *   install.sh, install.ps1          the one-command installers
  *   SHA256SUMS, release.json         integrity and provenance
  *
- * It never starts Cargo: package the runtime first (`just runtime-package`). In CI every OS runs
+ * It never starts Cargo: package the runtime first (`just yolo::runtime-package`). In CI every OS runs
  * this natively, so each target gets its own executable and library.
  *
  *   bun run scripts/release/release.ts [--out dist/release]
@@ -30,7 +30,7 @@ import { toolingAsset } from "./tooling-asset";
 const root = resolve(import.meta.dir, "../..");
 const outIndex = Bun.argv.indexOf("--out");
 const outRoot = resolve(root, outIndex > 0 ? (Bun.argv[outIndex + 1] as string) : "dist/release");
-const version = readFileSync(join(root, "VERSION"), "utf8").trim();
+const version = readFileSync(join(root, "apps/yolo/VERSION"), "utf8").trim();
 const target = hostTarget();
 const windows = target.includes("windows");
 const dir = join(outRoot, version);
@@ -52,7 +52,7 @@ async function run(argv: string[], cwd = root): Promise<string> {
 
 const artifactDir = join(root, "dist/runtime", target);
 if (!existsSync(join(artifactDir, "manifest.json"))) {
-  throw new Error(`No packaged runtime for ${target}: run \`just runtime-package\` first`);
+  throw new Error(`No packaged runtime for ${target}: run \`just yolo::runtime-package\` first`);
 }
 const manifest = verifyArtifact(artifactDir);
 const tooling = await toolingAsset(root);
@@ -125,7 +125,7 @@ for (const imported of imports.crates) {
 await run(["tar", "-czf", join(dir, crates), "-C", crateStage, "."]);
 
 // 4. installers, checksums, provenance
-for (const script of ["install.sh", "install.ps1"]) cpSync(join(root, script), join(dir, script));
+for (const script of ["install.sh", "install.ps1"]) cpSync(join(root, "apps/yolo", script), join(dir, script));
 const files = readdirSync(dir)
   .filter((f) => f !== "SHA256SUMS" && f !== "release.json")
   .toSorted();

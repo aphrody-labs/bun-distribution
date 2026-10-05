@@ -10,10 +10,8 @@ import {
 	Clapperboard,
 	Mic,
 	Globe,
-	Sparkles,
 	Quote,
 	Building2,
-	Calendar,
 	Film,
 } from "lucide-react";
 

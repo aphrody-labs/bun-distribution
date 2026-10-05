@@ -29,7 +29,7 @@ describe("orderPlayers", () => {
 			r
 				.map((x) => x.provider)
 				.slice(1)
-				.sort()
+				.toSorted()
 		).toEqual(["streamhide", "voe"]);
 	});
 

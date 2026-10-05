@@ -27,10 +27,10 @@ describe("staff policy", () => {
 	test("bot and site scopes differ exactly on OWNER_IDS and BOT_DEV_ID", () => {
 		const bot = staffPolicyFromEnv(env, "bot");
 		const site = staffPolicyFromEnv(env, "site");
-		expect([...bot.ids].sort()).toEqual([OWNER, OWNER2, DEV, ALLOWED].sort());
-		expect([...site.ids].sort()).toEqual([OWNER, ALLOWED].sort());
-		const diff = [...bot.ids].filter((id) => !site.ids.has(id)).sort();
-		expect(diff).toEqual([OWNER2, DEV].sort());
+		expect([...bot.ids].toSorted()).toEqual([OWNER, OWNER2, DEV, ALLOWED].toSorted());
+		expect([...site.ids].toSorted()).toEqual([OWNER, ALLOWED].toSorted());
+		const diff = [...bot.ids].filter((id) => !site.ids.has(id)).toSorted();
+		expect(diff).toEqual([OWNER2, DEV].toSorted());
 		expect([...site.ids].every((id) => bot.ids.has(id))).toBe(true);
 	});
 

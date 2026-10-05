@@ -21,7 +21,7 @@ export function pageWindow(current: number, total: number, radius = 1): Array<nu
 	if (current <= 3) [2, 3, 4].forEach((n) => n < total && keep.add(n));
 	if (current >= total - 2) [total - 1, total - 2, total - 3].forEach((n) => n > 1 && keep.add(n));
 
-	const sorted = [...keep].filter((n) => n >= 1 && n <= total).sort((a, b) => a - b);
+	const sorted = [...keep].filter((n) => n >= 1 && n <= total).toSorted((a, b) => a - b);
 	const out: Array<number | null> = [];
 	let previous = 0;
 	for (const n of sorted) {

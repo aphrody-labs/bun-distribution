@@ -12,7 +12,7 @@
 import { join } from "node:path";
 import { connecte } from "../../../../../apps/shenron/site/scripts/_databooks-base";
 import { TECHNIQUES } from "../../../../../apps/shenron/site/scripts/_technique-lexicon";
-import { contientJaponais, normaliserJa } from "../../../../../apps/shenron/site/src/lib/ja/normalisation";
+import { contientJaponais } from "../../../../../apps/shenron/site/src/lib/ja/normalisation";
 
 export interface LexiqueEntry {
 	ja: string;
@@ -157,7 +157,7 @@ async function main() {
 	}
 
 	// 4. Trier le lexique par longueur japonaise DÉCROISSANTE (règle primordiale)
-	const lexiqueTrie = Array.from(mapCanon.values()).sort((a, b) => {
+	const lexiqueTrie = Array.from(mapCanon.values()).toSorted((a, b) => {
 		if (b.length !== a.length) return b.length - a.length;
 		return a.ja.localeCompare(b.ja);
 	});

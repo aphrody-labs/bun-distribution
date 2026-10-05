@@ -150,7 +150,7 @@ async function main(): Promise<void> {
     const checkout = findCheckout();
     if (checkout === null) {
       console.error(
-        `\`yolo ${command}\` requires yolo checkout data. Run it inside a checkout containing vendor.toml and apps/cli/src/index.ts.`,
+        `\`yolo ${command}\` requires yolo checkout data. Run it inside a checkout containing vendor.toml and apps/yolo/cli/src/index.ts.`,
       );
       process.exitCode = 1;
       return;
@@ -336,7 +336,7 @@ async function main(): Promise<void> {
       if (existsSync(docsDir)) {
         if (!query) {
           const glob = new Bun.Glob("*.{md,mdx}");
-          matches = Array.from(glob.scanSync({ cwd: docsDir, onlyFiles: true })).sort();
+          matches = Array.from(glob.scanSync({ cwd: docsDir, onlyFiles: true })).toSorted();
         } else {
           const glob = new Bun.Glob("**/*.{md,mdx}");
           for (const filePath of glob.scanSync({ cwd: docsDir, onlyFiles: true })) {

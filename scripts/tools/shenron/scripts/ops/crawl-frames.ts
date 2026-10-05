@@ -241,7 +241,7 @@ function embedsAt(lecs: Array<{ hebergeur: string; urls: string[] }>, i: number)
 	return lecs
 		.filter((l) => l.urls[i])
 		.map((l) => ({ hoster: l.hebergeur, url: l.urls[i]! }))
-		.sort((a, b) => rank(a.hoster) - rank(b.hoster));
+		.toSorted((a, b) => rank(a.hoster) - rank(b.hoster));
 }
 const rank = (h: string) => (HOSTERS.indexOf(h) === -1 ? 99 : HOSTERS.indexOf(h));
 
@@ -411,7 +411,7 @@ async function planMovies(sql: SQL, src: MovieSource, jobs: Job[], report: strin
 			.slice(0, FENETRE)
 			.map((f) => ({ f, ecart: Math.abs(f.duration_min! * 60 - duree!) }))
 			.filter((c) => c.ecart <= MOVIE_TOLERANCE_S)
-			.sort((a, b) => a.ecart - b.ecart);
+			.toSorted((a, b) => a.ecart - b.ecart);
 		const film = candidats[0]?.f;
 		if (!film) {
 			report.push(

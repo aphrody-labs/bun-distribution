@@ -607,7 +607,7 @@ function WikiSectionLinksEditor({
                 placeholder="Rechercher une fiche…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                autoFocus
+                
               />
             </div>
             <button

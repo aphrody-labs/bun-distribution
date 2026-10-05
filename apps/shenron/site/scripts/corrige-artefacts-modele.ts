@@ -303,7 +303,7 @@ function paquets<T>(items: T[], taille: number): T[][] {
 let deposees = 0;
 let echecs = 0;
 
-for (const [databookId, liste] of [...parOuvrage.entries()].sort((a, b) => a[0] - b[0])) {
+for (const [databookId, liste] of [...parOuvrage.entries()].toSorted((a, b) => a[0] - b[0])) {
 	for (const lot of paquets(liste, PAQUET)) {
 		const corps = JSON.stringify({
 			mode: "merge",

@@ -17,7 +17,7 @@
 import { handleAnyFutUrl, type OmniRouterOptions } from "../router/omniRouter.ts";
 import type { OmniUrlResult, PlayerUrlResult, SbcUrlResult, SquadUrlResult, EvolutionUrlResult, FodderUrlResult, MarketListingUrlResult } from "../router/types.ts";
 import { FutDatabaseRepository } from "../repository/FutDatabaseRepository.ts";
-import { FutPricePredictor } from "../prediction/predictor.ts";
+
 import { FODDER_PRICE_INDEX } from "../sbc/bpm.ts";
 import { getCurrentMarketPhase } from "../prediction/index.ts";
 import { computeCheapestFodderComposition } from "../importers/sbcImporter.ts";
@@ -34,7 +34,6 @@ import type {
 	UtQuickSellResult,
 	UtAuctionItem,
 	UtMarketSearchParams,
-	UtSessionData,
 } from "../ea/types.ts";
 
 export interface FutCoreOptions extends OmniRouterOptions {

@@ -138,10 +138,9 @@ function scanSections(lines: readonly string[]): Section[] {
     }
     depth = Math.max(0, depth + bracketDelta(line));
   }
-  return headers.map((h, idx) => ({
-    ...h,
-    end: idx + 1 < headers.length ? (headers[idx + 1] as { start: number }).start : lines.length,
-  }));
+  return headers.map((h, idx) => (Object.assign(h, { end: idx + 1 < headers.length ? (headers[idx + 1] as {
+	start: number;
+}).start : lines.length })));
 }
 
 /** Ranges `[start, end)` of `key = value` entries (multi-line aware) in a section body. */
@@ -229,7 +228,7 @@ export function transformManifest(text: string, ctx: TransformContext): Transfor
     if (/^\s*workspace\s*=/.test(lines[i] as string)) lines.splice(i, 1);
   }
   const drop = /^(workspace(\..*)?|profile(\..*)?|patch(\..*)?|replace)$/;
-  for (const section of scanSections(lines).reverse()) {
+  for (const section of scanSections(lines).toReversed()) {
     if (drop.test(section.name)) lines.splice(section.start, section.end - section.start);
   }
   while (lines.length > 0 && lines[lines.length - 1] === "" && lines[lines.length - 2] === "")
@@ -243,7 +242,7 @@ export function transformManifest(text: string, ctx: TransformContext): Transfor
   let sections = scanSections(lines);
   const pkg = sections.find((s) => s.name === "package");
   if (pkg === undefined) throw new Error(`${crate.name}: missing [package]`);
-  for (const entry of entryRanges(lines, pkg).reverse()) {
+  for (const entry of entryRanges(lines, pkg).toReversed()) {
     const raw = (lines.slice(entry.start, entry.end) as string[]).join("\n");
     const dotted = /^\s*([A-Za-z0-9_-]+)\.workspace\s*=\s*true\s*(?:#.*)?$/.exec(raw);
     const inline = /^\s*([A-Za-z0-9_-]+)\s*=\s*\{\s*workspace\s*=\s*true\s*\}\s*(?:#.*)?$/.exec(
@@ -337,7 +336,7 @@ export function transformManifest(text: string, ctx: TransformContext): Transfor
   };
 
   sections = scanSections(lines);
-  for (const section of [...sections].reverse()) {
+  for (const section of [...sections].toReversed()) {
     if (DEP_DETAIL_SECTION.test(section.name)) {
       const m =
         /\.(?:dev-|build-)?dependencies\.("[^"]+"|[A-Za-z0-9_-]+)$|^(?:dev-|build-)?dependencies\.("[^"]+"|[A-Za-z0-9_-]+)$/.exec(
@@ -354,7 +353,7 @@ export function transformManifest(text: string, ctx: TransformContext): Transfor
       continue;
     }
     if (!DEP_SECTION.test(section.name)) continue;
-    for (const entry of entryRanges(lines, section).reverse()) {
+    for (const entry of entryRanges(lines, section).toReversed()) {
       const { key, value } = parseEntry(lines.slice(entry.start, entry.end).join("\n"));
       const { spec, changed } = rewriteDependency(key, asSpec(value));
       if (!changed) continue;
@@ -523,7 +522,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
   const fileLists = new Map<string, string[]>();
   for (const source of cfg.sources) {
     const checkout = checkouts.get(source.name) as string;
-    const all = walk(checkout).sort();
+    const all = walk(checkout).toSorted();
     fileLists.set(source.name, all);
     for (const file of all) {
       if (basename(file) !== "Cargo.toml" || file.includes("node_modules/")) continue;
@@ -716,8 +715,8 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
     }
   }
 
-  const crateDirs = crates.map((c) => c.newDir);
-  const removedDirs = options.previousDirs.filter((d) => !crateDirs.includes(d));
+  const crateDirs = new Set(crates.map((c) => c.newDir));
+  const removedDirs = options.previousDirs.filter((d) => !crateDirs.has(d));
   return { files, crates, sources, warnings, removedDirs, copyDirs };
 }
 
@@ -780,7 +779,7 @@ export async function scanSources(rootDir: string, cfg: VendorConfig): Promise<n
   for (const source of cfg.sources) {
     const repo = resolve(rootDir, "vendor", source.name);
     const listing = await git(repo, ["ls-files", "-z", "--", "Cargo.toml", "**/Cargo.toml"]);
-    const manifests = listing.split("\0").filter(Boolean).sort();
+    const manifests = listing.split("\0").filter(Boolean).toSorted();
     console.log(`\x1b[1m${source.name}\x1b[0m (${manifests.length} manifests)`);
     for (const file of manifests) {
       const dir = posix.dirname(file);

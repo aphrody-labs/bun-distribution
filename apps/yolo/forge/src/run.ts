@@ -500,7 +500,7 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
         });
         await run([receipt.artifact!.path, "test", "test/js/first_party/"], {
           cwd: tree,
-          env: { ...env, BUN_DEBUG_QUIET_LOGS: "1" },
+          env: { ...env, BUN_DEBUG_QUIET_LOGS: "1", BUN_FEATURE_FLAG_INTERNAL_FOR_TESTING: "1" },
           logFile,
         });
       });

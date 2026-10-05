@@ -84,7 +84,7 @@ export default async function FilmsPage() {
 	const data = await dbUniverse.movies();
 	if (!data || data.movies.length === 0)
 		return <SectionUnavailable title={<T k="wiki.films.unavailable" />} />;
-	const movies = data.movies.map((m) => ({ ...m, synopsis: stripSourceTags(m.synopsis) }));
+	const movies = data.movies.map((m) => (Object.assign(m, { synopsis: stripSourceTags(m.synopsis) })));
 
 	// Film mis en avant = le plus récent daté (effet « nouveauté » en billboard).
 	// Restreint aux vrais films : le bouton dit « Regarder le film », et une OVA
@@ -92,14 +92,14 @@ export default async function FilmsPage() {
 	const featured =
 		[...movies]
 			.filter((m) => m.release_date != null && estFilm(m.series))
-			.sort((a, b) => (b.release_date ?? 0) - (a.release_date ?? 0))[0] ?? movies[0]!;
+			.toSorted((a, b) => (b.release_date ?? 0) - (a.release_date ?? 0))[0] ?? movies[0]!;
 	const fYear = yearOf(featured.release_date);
 
 	// Ordonne les séries connues puis toute série présente non listée.
 	const presentSeries = [...new Set(movies.map((m) => m.series))];
 	const orderedSeries = [
 		...SERIES_ORDER.filter((s) => presentSeries.includes(s)),
-		...presentSeries.filter((s) => !SERIES_ORDER.includes(s)).sort(),
+		...presentSeries.filter((s) => !SERIES_ORDER.includes(s)).toSorted(),
 	];
 	const groups = orderedSeries
 		.map((s) => ({
@@ -107,7 +107,7 @@ export default async function FilmsPage() {
 			label: SERIES_LABELS[s] ?? s.replace(/_/g, " "),
 			movies: movies
 				.filter((m) => m.series === s)
-				.sort((a, b) => (a.release_date ?? 0) - (b.release_date ?? 0)),
+				.toSorted((a, b) => (a.release_date ?? 0) - (b.release_date ?? 0)),
 		}))
 		.filter((g) => g.movies.length > 0);
 

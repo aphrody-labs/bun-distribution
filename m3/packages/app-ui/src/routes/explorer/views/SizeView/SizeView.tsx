@@ -623,7 +623,7 @@ export function SizeView() {
     const regularFiles = files.filter((f: File) => f.kind !== "Directory" && f.size > 0);
 
     // Always include all folders, then fill with largest files
-    const sortedFiles = regularFiles.sort((a: File, b: File) => b.size - a.size);
+    const sortedFiles = regularFiles.toSorted((a: File, b: File) => b.size - a.size);
     const topFiles = sortedFiles.slice(0, Math.max(0, itemLimit - folders.length));
 
     const combined = [...folders, ...topFiles];

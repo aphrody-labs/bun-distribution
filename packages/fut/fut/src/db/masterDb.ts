@@ -18,9 +18,7 @@ import { Database } from "bun:sqlite";
 import { MASTER_DB_SCHEMA_SQL } from "./schema.ts";
 import type {
 	FcIqRoleEntry,
-	MasterLeague,
 	MasterPlayer,
-	MasterTeam,
 	PlayerSearchFilter,
 	PlaystyleEntry,
 } from "./types.ts";

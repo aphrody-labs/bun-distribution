@@ -75,7 +75,7 @@ export async function importSourceLicenses(
     const rootEntries = sourceMap.entries
       .filter((entry) => entry.source.startsWith(`${root.key}/`))
       .filter((entry) => isRootLicense(entry.source.slice(root.key.length + 1)))
-      .sort((a, b) => a.source.localeCompare(b.source));
+      .toSorted((a, b) => a.source.localeCompare(b.source));
     if (rootEntries.length === 0) missingRootLicense.push(root.key);
     for (const entry of rootEntries) {
       const name = entry.source.slice(root.key.length + 1);

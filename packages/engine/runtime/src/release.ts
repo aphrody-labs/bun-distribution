@@ -85,6 +85,6 @@ export function list(): { name: string; current: boolean; previous: boolean }[] 
   const previous = read(dir, "previous");
   return readdirSync(dir)
     .filter((entry) => entry !== "current" && entry !== "previous" && !entry.endsWith(".tmp"))
-    .sort()
+    .toSorted()
     .map((name) => ({ name, current: name === current, previous: name === previous }));
 }

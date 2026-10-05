@@ -87,7 +87,7 @@ async function getDatabaseUrl(): Promise<string | null> {
 	const envFile = join(homedir(), ".shenron-neon.env");
 	if (existsSync(envFile)) {
 		const txt = await Bun.file(envFile).text().catch(() => "");
-		const line = txt.split(/\r?\n/).filter((l) => /^DATABASE_URL=/.test(l)).pop();
+		const line = txt.split(/\r?\n/).filter((l) => l.startsWith('DATABASE_URL=')).pop();
 		const val = line?.slice("DATABASE_URL=".length).trim().replace(/^["']|["']$/g, "");
 		if (val) return val;
 	}
@@ -235,7 +235,7 @@ async function main() {
 
 		for (const g of groups.values()) {
 			const linesOut = [`# ${g.series} — ${g.tome}`];
-			for (const p of g.pages.sort((a, b) => a.planche - b.planche)) {
+			for (const p of g.pages.toSorted((a, b) => a.planche - b.planche)) {
 				const parsed = parseLines(p.lines, p.text);
 				linesOut.push(
 					`\n## Planche ${String(p.planche).padStart(3, "0")}\n`,

@@ -113,13 +113,13 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
   },
 ];
 const PREFILTER = String.raw`/home/|/Users/|[A-Za-z]:[\\/]+Users|/mnt/[a-z]/|/source([/"'\x60[:space:])]|$)|aphrody-src|aphrody-(infra|ai|web|ui|os|compat|contracts|shell|native)/`;
-const REWRITABLE: HostPathArea[] = ["docs", "record", "data", "code", "config"];
+const REWRITABLE: HostPathArea[] = new Set(["docs", "record", "data", "code", "config"]);
 /** Config files only take the retired-layout mapping; other rules need a reviewed edit. */
-const CONFIG_REWRITES: HostPathRule[] = ["legacy-layout"];
+const CONFIG_REWRITES: HostPathRule[] = new Set(["legacy-layout"]);
 const canRewrite = (area: HostPathArea, rule: HostPathRule, line: string): boolean =>
-  REWRITABLE.includes(area) &&
+  REWRITABLE.has(area) &&
   (area !== "code" || COMMENT_LINE.test(line)) &&
-  (area !== "config" || CONFIG_REWRITES.includes(rule));
+  (area !== "config" || CONFIG_REWRITES.has(rule));
 const COMMENT_LINE = /^\s*(\/\/|\/\*|\*|#(?!!)|<!--|--\s)/;
 /** Rules a zone legitimately carries: fixtures and the declared VPS catalog name hosts on purpose. */
 const ALLOWED: Partial<Record<HostPathArea, HostPathRule[]>> = {
@@ -196,7 +196,7 @@ export function scanHostPaths(text: string, area: HostPathArea, rust = false): H
           line: index + 1,
           rule,
           match: match[0],
-          ...(rewrite && REWRITABLE.includes(area) && (area !== "code" || COMMENT_LINE.test(line))
+          ...(rewrite && REWRITABLE.has(area) && (area !== "code" || COMMENT_LINE.test(line))
             ? { rewrite: rewrite(match[0]) }
             : {}),
         });
@@ -207,7 +207,7 @@ export function scanHostPaths(text: string, area: HostPathArea, rust = false): H
 
 /** Apply the offered rewrites, rule by rule in RULES order, to prose, records and data. */
 export function rewriteHostPaths(text: string, area: HostPathArea): string {
-  if (!REWRITABLE.includes(area)) return text;
+  if (!REWRITABLE.has(area)) return text;
   return text
     .split("\n")
     .map((line) => {

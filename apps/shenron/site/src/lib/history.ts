@@ -55,7 +55,7 @@ export function readHistory(): HistoryEntry[] {
 		if (!raw) return [];
 		const parsed: unknown = JSON.parse(raw);
 		if (!Array.isArray(parsed)) return [];
-		return parsed.filter(isEntry).sort((a, b) => b.at - a.at);
+		return parsed.filter(isEntry).toSorted((a, b) => b.at - a.at);
 	} catch {
 		return [];
 	}

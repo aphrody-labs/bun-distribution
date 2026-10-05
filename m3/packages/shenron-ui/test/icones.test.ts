@@ -48,7 +48,7 @@ describe("@shenron/ui/icones", () => {
 					k !== "Glyphe" &&
 					typeof (I as Record<string, unknown>)[k] === "function"
 			)
-			.sort();
+			.toSorted();
 		expect(names.length).toBe(98);
 		const all = names
 			.map((k) => {

@@ -61,7 +61,7 @@ export async function discoverAphrodyBinaries(root = infraRoot()): Promise<Aphro
       await add(path, profile);
     }
   }
-  return [...found.values()].sort((left, right) => left.name.localeCompare(right.name));
+  return [...found.values()].toSorted((left, right) => left.name.localeCompare(right.name));
 }
 
 export async function runAphrodyBinary(name: string, args: string[]): Promise<number> {

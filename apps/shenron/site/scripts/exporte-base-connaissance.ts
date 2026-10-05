@@ -321,7 +321,7 @@ function graphiesDuCorpus(
 			ouvrages: e.ouvrages.size,
 			sur_planches_saines: e.saines,
 		}))
-		.sort((a, b) => b.occurrences - a.occurrences);
+		.toSorted((a, b) => b.occurrences - a.occurrences);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -460,7 +460,7 @@ async function principal() {
 		// La file de relecture, déjà triée : le plus grave d'abord.
 		await ecrireJsonl(
 			join(SORTIE, "transcriptions", "databooks-a-relire.jsonl"),
-			planches.filter((p) => p.defaut).sort((a, b) => a.note - b.note)
+			planches.filter((p) => p.defaut).toSorted((a, b) => a.note - b.note)
 		);
 		const manga = await sql`
 			SELECT id, series, tome, planche, lang, has_ja, line_count, char_count, text
@@ -523,13 +523,12 @@ async function principal() {
 
 	const enrichies = graphies.map((g) => {
 		const norme = normaliserJa(g.graphie);
-		return {
-			...g,
-			dans_lexique: connuesNorm.has(norme) ? 1 : 0,
-			contient_terme_lexique: contientConnu(norme) ? 1 : 0,
-			sous_chaine_lexique: sousChainesLexique.has(norme) ? 1 : 0,
-			dans_jmdict: avecJmdict ? (jmdict.has(g.graphie) || jmdict.has(norme) ? 1 : 0) : -1,
-		};
+		return Object.assign(g, {
+	dans_lexique: connuesNorm.has(norme) ? 1 : 0,
+	contient_terme_lexique: contientConnu(norme) ? 1 : 0,
+	sous_chaine_lexique: sousChainesLexique.has(norme) ? 1 : 0,
+	dans_jmdict: avecJmdict ? jmdict.has(g.graphie) || jmdict.has(norme) ? 1 : 0 : -1
+});
 	});
 	const ancree = (g: (typeof enrichies)[number]) =>
 		g.dans_lexique || g.contient_terme_lexique || g.sous_chaine_lexique;
@@ -665,7 +664,7 @@ async function principal() {
 				hypothese: hypotheseDe(g, v),
 			};
 		})
-		.sort((a, b) => b.occurrences - a.occurrences);
+		.toSorted((a, b) => b.occurrences - a.occurrences);
 	await ecrireJsonl(join(SORTIE, "japonais", "graphies-a-trancher.jsonl"), aTrancher);
 	const fautesProbables = aTrancher.filter(
 		(g) => g.hypothese === "faute de lecture probable"
@@ -754,15 +753,15 @@ function lisezmoi(m: {
 	regles_copiees: string[];
 }): string {
 	const cov = m.lexique.couverture_name_ja
-		.sort((a, b) => a.taux - b.taux)
+		.toSorted((a, b) => a.taux - b.taux)
 		.map((c) => `| ${c.type} | ${c.avec_ja} / ${c.total} | ${c.taux} % |`)
 		.join("\n");
 	const def = Object.entries(m.transcriptions.par_defaut)
-		.sort((a, b) => b[1] - a[1])
+		.toSorted((a, b) => b[1] - a[1])
 		.map(([k, v]) => `| ${k} | ${v} |`)
 		.join("\n");
 	const tables = Object.entries(m.donnees)
-		.sort((a, b) => b[1].lignes - a[1].lignes)
+		.toSorted((a, b) => b[1].lignes - a[1].lignes)
 		.map(([k, v]) => `| \`donnees/${k}.jsonl\` | ${v.lignes} |`)
 		.join("\n");
 

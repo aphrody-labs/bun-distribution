@@ -6,7 +6,6 @@ import { ClientGatedWrap } from "@/components/GatedClientLink";
 import { useSearchParams, usePathname } from "next/navigation";
 import type { Battle } from "@/lib/db-universe";
 import {
-	Swords,
 	Trophy,
 	History,
 	Sparkles,
@@ -14,15 +13,11 @@ import {
 	Search,
 	X,
 	ShieldAlert,
-	CheckCircle2,
 	Flame,
 	GitBranch,
 	LayoutGrid,
-	Layers,
 	ExternalLink,
-	Tv,
 	Film,
-	BookOpen,
 } from "lucide-react";
 
 export interface TournamentItem {

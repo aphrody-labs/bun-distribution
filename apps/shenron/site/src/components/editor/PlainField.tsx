@@ -152,7 +152,7 @@ export function PlainField({
 				required={required}
 				disabled={disabled}
 				readOnly={readOnly}
-				autoFocus={autoFocus}
+				
 				spellCheck={spellCheck}
 				aria-describedby={hint || maxLength ? `${fieldId}-desc` : undefined}
 				className={cn(

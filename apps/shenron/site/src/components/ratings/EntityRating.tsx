@@ -367,7 +367,7 @@ export function EntityRating({
 		>
 			{/* En-tête compact + onglets */}
 			<div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10">
-				<div
+				<div tabIndex={0}
 					className="flex flex-wrap items-end gap-1"
 					role="tablist"
 					aria-label="Notes et avis"

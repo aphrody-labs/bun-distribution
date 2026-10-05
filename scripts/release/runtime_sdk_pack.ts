@@ -144,7 +144,7 @@ export async function packRuntimeSdk(options: {
         if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
         const status = await lstat(target);
         if (!status.isFile() || status.isSymbolicLink() || !bytes.equals(await readFile(target)))
-          throw new Error("Existing SDK archive conflicts with the pinned content");
+          throw new Error("Existing SDK archive conflicts with the pinned content", { cause: error });
       }
     }
     const metadataPath = join(destination, `${archive}.json`);

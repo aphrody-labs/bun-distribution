@@ -14,7 +14,7 @@
  * - Journalisation dans public.wiki_revisions
  */
 
-import { existsSync, mkdirSync, linkSync, copyFileSync } from "node:fs";
+import { existsSync, mkdirSync, copyFileSync } from "node:fs";
 import { readdir, chmod } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import postgres from "postgres";
@@ -365,7 +365,7 @@ async function run() {
 			console.log(`\n📖 Legend 1 : Traitement du volume existant (381 planches)...`);
 			const files = (await readdir(legendDir))
 				.filter((f) => f.endsWith(".jpg"))
-				.sort((a, b) => {
+				.toSorted((a, b) => {
 					const numA = Number.parseInt(a.replace(".jpg", ""), 10);
 					const numB = Number.parseInt(b.replace(".jpg", ""), 10);
 					return numA - numB;

@@ -44,10 +44,7 @@ export async function GET(req: NextRequest) {
 				const matchingEditions = edition
 					? w.editions.filter((e) => e.edition === edition)
 					: w.editions;
-				return {
-					...w,
-					editions: matchingEditions,
-				};
+				return Object.assign(w, { editions: matchingEditions });
 			})
 			.filter((w) => w.editions.length > 0 || !edition);
 

@@ -202,7 +202,7 @@ async function main(): Promise<void> {
 
 	let deposees = 0;
 	let echecs = 0;
-	for (const [databookId, liste] of [...parOuvrage.entries()].sort((a, b) => a[0] - b[0])) {
+	for (const [databookId, liste] of [...parOuvrage.entries()].toSorted((a, b) => a[0] - b[0])) {
 		for (const lot of paquets(liste, taille)) {
 			const { ok, corps } = await depose(databookId, lot, simulation);
 			if (ok) {

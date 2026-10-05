@@ -49,7 +49,7 @@ test("a Bun subsystem is served to other clients and leaves on close", async () 
             required: ["text"],
           },
           handler: ({ text }) => ({
-            reversed: String(text).split("").reverse().join(""),
+            reversed: String(text).split("").toReversed().join(""),
             runtime: `bun ${Bun.version}`,
           }),
         },

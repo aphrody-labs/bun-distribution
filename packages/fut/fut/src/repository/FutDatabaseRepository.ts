@@ -253,7 +253,7 @@ export class FutDatabaseRepository {
 				} catch {
 					alternativePositions = r.alternative_positions
 						.split(",")
-						.map((s: string) => s.trim().replace(/^["'\[\]]+|["'\[\]]+$/g, ""))
+						.map((s: string) => s.trim().replace(/^["'[\]]+|["'[\]]+$/g, ""))
 						.filter(Boolean);
 				}
 			}
@@ -312,7 +312,7 @@ export class FutDatabaseRepository {
 			} catch {
 				alternativePositions = row.alternative_positions
 					.split(",")
-					.map((s: string) => s.trim().replace(/^["'\[\]]+|["'\[\]]+$/g, ""))
+					.map((s: string) => s.trim().replace(/^["'[\]]+|["'[\]]+$/g, ""))
 					.filter(Boolean);
 			}
 		}

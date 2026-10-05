@@ -16,10 +16,8 @@
 
 import { FODDER_PRICE_INDEX } from "../sbc/index.ts";
 import type {
-	AdvisoryAction,
 	AnomalyType,
 	MarketAnomalyReport,
-	MarketPhase,
 	PlayerPricePrediction,
 } from "./types.ts";
 

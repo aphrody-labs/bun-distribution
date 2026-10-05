@@ -255,7 +255,7 @@ export async function listToriyamaWords(scope: ToriyamaCorpusScope = "all"): Pro
 		ensure(book.title, year, book);
 	}
 
-	const ordered = [...groups.values()].sort((a, b) => {
+	const ordered = [...groups.values()].toSorted((a, b) => {
 		// Sans année connue, l'ouvrage passe en fin de liste plutôt qu'en tête :
 		// une date manquante n'est pas une date ancienne.
 		if (a.year === null && b.year === null) return a.document.localeCompare(b.document, "fr");
@@ -352,7 +352,7 @@ export function pickThemes(words: ToriyamaWord[]): ToriyamaTheme[] {
 				const haystack = `${w.subject} ${w.text} ${w.textFr ?? ""}`;
 				return theme.pattern.test(haystack) && (w.textFr ?? w.text).length <= THEME_MAX_CHARS;
 			})
-			.sort((a, b) => readable(a) - readable(b));
+			.toSorted((a, b) => readable(a) - readable(b));
 		const picked: ToriyamaWord[] = [];
 		const seenDocuments = new Set<string>();
 		for (const w of matched) {

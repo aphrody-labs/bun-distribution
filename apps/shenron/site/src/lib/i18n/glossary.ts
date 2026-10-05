@@ -32,7 +32,7 @@ export interface GlossaryTerm {
 }
 
 /** Terms longest first: « Super Saiyan Blue » must match before « Super Saiyan ». */
-export const GLOSSARY: GlossaryTerm[] = [...(glossaireBrut as GlossaryTerm[])].sort(
+export const GLOSSARY: GlossaryTerm[] = [...(glossaireBrut as GlossaryTerm[])].toSorted(
 	(a, b) => b.fr.length - a.fr.length
 );
 

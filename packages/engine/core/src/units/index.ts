@@ -89,7 +89,7 @@ export function renderAll(cat: UnitCatalog = unitCatalog): RenderedUnit[] {
     [renderService(e), renderTimer(e)].filter((x): x is RenderedUnit => !!x),
   );
   out.push(...cat.dropIns.map(renderDropIn));
-  return out.sort((a, b) => a.file.localeCompare(b.file));
+  return out.toSorted((a, b) => a.file.localeCompare(b.file));
 }
 
 /** Unit file names only (no drop-ins), for install and drift listings. */

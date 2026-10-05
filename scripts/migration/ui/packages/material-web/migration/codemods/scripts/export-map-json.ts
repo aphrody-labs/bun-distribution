@@ -53,7 +53,7 @@ const map = {
   // Gaps réels (pas d'élément md -> transition/tokens/primitive).
   gapComponents: GAP_COMPONENTS,
   // Props retirées avec TODO (pas d'équivalent direct md).
-  propsDroppedWithTodo: [...PROP_DROP_WITH_TODO].sort(),
+  propsDroppedWithTodo: [...PROP_DROP_WITH_TODO].toSorted(),
   // Règles de migration des icônes @mui/icons-material -> Material Symbols.
   icons: {
     strategy:

@@ -133,7 +133,7 @@ for (const p of planches) {
 
 console.log(`\nplanches touchées : ${modifs.length} / ${planches.length}`);
 console.log(`\npar graphie (${totalParEntree.size} distinctes) :`);
-for (const [lu, v] of [...totalParEntree.entries()].sort((a, b) => b[1].n - a[1].n)) {
+for (const [lu, v] of [...totalParEntree.entries()].toSorted((a, b) => b[1].n - a[1].n)) {
 	console.log(
 		`  ${String(v.n).padStart(4)}×  ${lu.padEnd(16)} → ${v.correct.padEnd(14)} (${v.ouvrages.size} ouvrage(s))`
 	);
@@ -245,7 +245,7 @@ const ouvrages: Ouvrage[] = ouvragesRaw.map((r) => ({
 	pages: (Array.isArray(r.pages) ? r.pages : []) as { number: number; text: string | null }[],
 }));
 function premierNiveau(pages: { number: number; text: string | null }[]): number | "aucun" {
-	const tri = pages.filter((p) => p.text && p.text.trim()).sort((a, b) => a.number - b.number);
+	const tri = pages.filter((p) => p.text && p.text.trim()).toSorted((a, b) => a.number - b.number);
 	for (const p of tri) {
 		const m = p.text!.match(/^(#{1,6})[ \t]/m);
 		if (m) return m[1].length;
@@ -267,7 +267,7 @@ console.log(
 for (const [cat, acc] of parCategorie) {
 	const total = [...acc.values()].reduce((a, b) => a + b, 0);
 	const parts = [...acc.entries()]
-		.sort((a, b) => b[1] - a[1])
+		.toSorted((a, b) => b[1] - a[1])
 		.map(([k, v]) => `${k === "aucun" ? "aucun" : `niveau ${k}`}:${v}`);
 	console.log(`  ${cat.padEnd(24)} (${total} ouv.)  ${parts.join("  ")}`);
 }

@@ -34,7 +34,7 @@ export function loadGrokAuthFile(
   if (entries.length === 0) {
     throw new Error(`No valid auth entry in ${path}`);
   }
-  const pick = entries.sort((a, b) => {
+  const pick = entries.toSorted((a, b) => {
     const ta = Date.parse(a.expires_at ?? "") || 0;
     const tb = Date.parse(b.expires_at ?? "") || 0;
     return tb - ta;

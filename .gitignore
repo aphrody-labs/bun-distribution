@@ -154,3 +154,6 @@ npm-debug.log*
 # Fetched by scripts/tools/vendor/fetch.ts from config/vendor.json
 /m3/forks/
 /py/vendor/
+
+# Machine state gathered by scripts/tools/portable (config/portable.json); never committed.
+/.portable/

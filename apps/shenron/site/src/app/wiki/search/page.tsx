@@ -171,7 +171,7 @@ export default async function SearchPage({
 							defaultValue={q}
 							aria-label="Rechercher dans l'univers Dragon Ball"
 							placeholder="Goku, Namek, Tournoi du Pouvoir, Kakarot…"
-							autoFocus
+							
 							className="w-full h-14 pl-12 pr-5 rounded-xl bg-dbz-card/50 border-2 border-dbz-border focus:border-dbz-orange focus:bg-dbz-card outline-none text-white placeholder:text-white/50 font-display text-lg transition-all"
 						/>
 					</div>

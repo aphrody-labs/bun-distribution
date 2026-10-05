@@ -29,7 +29,7 @@ afterEach(() => setEnv(saved.enforce, saved.token));
 
 describe("S5 — bot A2A write guard", () => {
 	it("guards exactly message/send and tasks/cancel", () => {
-		expect([...A2A_WRITE_METHODS].sort()).toEqual(["message/send", "tasks/cancel"]);
+		expect([...A2A_WRITE_METHODS].toSorted()).toEqual(["message/send", "tasks/cancel"]);
 	});
 
 	it("enforce unset: response identical to today plus one warning", async () => {

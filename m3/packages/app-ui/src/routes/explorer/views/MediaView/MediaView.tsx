@@ -156,10 +156,10 @@ export function MediaView() {
 	const files = useMemo(() => {
 		if (isSearchMode) {
 			// In search mode, filter explorerFiles to only show media
-			return [...explorerFiles.filter(isMediaFile)].reverse();
+			return explorerFiles.filter(isMediaFile).toReversed();
 		}
 		// Normal mode: use media_listing query
-		return [...(mediaQuery.data?.files || [])].reverse();
+		return [...(mediaQuery.data?.files || [])].toReversed();
 	}, [isSearchMode, explorerFiles, mediaQuery.data?.files]);
 
 	// Update current files in explorer context for quick preview navigation

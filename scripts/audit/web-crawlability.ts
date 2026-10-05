@@ -780,10 +780,10 @@ export function analyzeDocument(root: HtmlNode, pageUrl = "http://page.invalid/"
       duplicates: [...idCounts]
         .filter(([, n]) => n > 1)
         .map(([id]) => id)
-        .sort(),
-      brokenRefs: [...brokenRefs].sort(),
+        .toSorted(),
+      brokenRefs: [...brokenRefs].toSorted(),
     },
-    hooks: { testIds, components, componentNames: [...componentNames].sort() },
+    hooks: { testIds, components, componentNames: [...componentNames].toSorted() },
     customElements: {
       total: customs.length,
       empty: emptyCustom.map(describeNode),
@@ -792,7 +792,7 @@ export function analyzeDocument(root: HtmlNode, pageUrl = "http://page.invalid/"
     jsonLd: {
       blocks: jsonLdScripts.length,
       invalid: jsonErrors.length,
-      types: [...types].sort(),
+      types: [...types].toSorted(),
       errors: jsonErrors,
     },
     text: { visibleWords: countWords(bodyText), visibleChars: bodyText.length, ariaHiddenWords },
@@ -1040,7 +1040,7 @@ export function aggregate(
           unreachable: [...unreachable],
         }
       : null,
-    componentNames: [...new Set(pages.flatMap((p) => p.html.hooks.componentNames))].sort(),
+    componentNames: [...new Set(pages.flatMap((p) => p.html.hooks.componentNames))].toSorted(),
   };
 }
 
@@ -1087,7 +1087,7 @@ function offenders(pages: readonly PageReport[], metric: GapMetric): string {
   return (
     pages
       .filter((page) => per(page) > 0)
-      .sort((a, b) => per(b) - per(a))
+      .toSorted((a, b) => per(b) - per(a))
       .slice(0, 5)
       .map((page) => `${page.path} (${per(page)})`)
       .join(", ") || "-"

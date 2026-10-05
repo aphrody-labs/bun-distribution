@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { VoiceActor, VoiceActorRole } from "@/lib/db-universe";
 import { useT } from "@/components/T";
 import { assetUrl } from "@/lib/assets";
-import { ArrowRight, Sparkles, Users } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
 
 const SERIES = [
 	"Toutes",

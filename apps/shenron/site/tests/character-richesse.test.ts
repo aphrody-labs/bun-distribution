@@ -116,7 +116,7 @@ describe("comparerRichesse", () => {
 			{ name: "Goku", richesse: 98 },
 			{ name: "Yamcha", richesse: 40 },
 		];
-		expect([...liste].sort(comparerRichesse).map((c) => c.name)).toEqual([
+		expect([...liste].toSorted(comparerRichesse).map((c) => c.name)).toEqual([
 			"Goku",
 			"Yamcha",
 			"Figurant",
@@ -131,7 +131,7 @@ describe("comparerRichesse", () => {
 			{ name: "Bekoganof", richesse: 0 },
 			{ name: "Navel", richesse: 0 },
 		];
-		expect([...liste].sort(comparerRichesse).map((c) => c.name)).toEqual([
+		expect([...liste].toSorted(comparerRichesse).map((c) => c.name)).toEqual([
 			"Bekoganof",
 			"Navel",
 			"Zalatz",
@@ -140,7 +140,7 @@ describe("comparerRichesse", () => {
 
 	test("une note absente vaut zéro plutôt que de faire échouer le tri", () => {
 		const liste = [{ name: "Sans note" }, { name: "Goku", richesse: 50 }];
-		expect([...liste].sort(comparerRichesse)[0]!.name).toBe("Goku");
+		expect([...liste].toSorted(comparerRichesse)[0]!.name).toBe("Goku");
 	});
 
 	test("départage accentué : le tri français, pas l'ordre des points de code", () => {
@@ -149,7 +149,7 @@ describe("comparerRichesse", () => {
 			{ name: "Écureuil", richesse: 0 },
 			{ name: "Abra", richesse: 0 },
 		];
-		expect([...liste].sort(comparerRichesse).map((c) => c.name)).toEqual([
+		expect([...liste].toSorted(comparerRichesse).map((c) => c.name)).toEqual([
 			"Abra",
 			"Écureuil",
 			"Zabon",

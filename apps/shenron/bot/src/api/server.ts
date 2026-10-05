@@ -2710,7 +2710,7 @@ export class ApiServer {
 									`[${term}]` +
 									text.slice(at + term.length, at + term.length + 30) +
 									(at + term.length + 30 < text.length ? "…" : "");
-								return { ...rest, snippet };
+								return Object.assign(rest, { snippet });
 							});
 						}
 						// Nettoie le bruit OCR des snippets (watermarks scantrad/domaines) pour

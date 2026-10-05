@@ -170,7 +170,7 @@ export async function POST(req: Request) {
 		}
 
 		const raw = (searchData?.matches ?? []).map((match) =>
-			origin === "local" ? { ...match, anilist: undefined } : match
+			origin === "local" ? Object.assign(match, { anilist: undefined }) : match
 		);
 		// Rattachement aux fiches du site : un résultat qui ne pointe pas vers
 		// /wiki/episodes/<id> ou /wiki/films/<slug> ne sert à rien au lecteur.

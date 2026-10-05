@@ -32,7 +32,7 @@ function databaseUrl(): string | null {
 	const line = readFileSync(envPath, "utf8")
 		.split("\n")
 		.findLast((entry) => entry.startsWith("DATABASE_URL="));
-	return line?.slice("DATABASE_URL=".length).trim().replace(/^['\"]|['\"]$/g, "") || null;
+	return line?.slice("DATABASE_URL=".length).trim().replace(/^['"]|['"]$/g, "") || null;
 }
 
 const url = databaseUrl();

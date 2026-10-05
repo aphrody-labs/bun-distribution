@@ -242,7 +242,7 @@ export function TierlistEditor({
 	const categories = useMemo(() => {
 		const set = new Set<string>();
 		for (const it of board.pool) set.add(it.category || "Autres");
-		return [...set].sort((a, b) =>
+		return [...set].toSorted((a, b) =>
 			a === CUSTOM_CATEGORY ? -1 : b === CUSTOM_CATEGORY ? 1 : a.localeCompare(b)
 		);
 	}, [board.pool]);

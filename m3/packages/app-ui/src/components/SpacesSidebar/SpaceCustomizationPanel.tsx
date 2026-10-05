@@ -260,7 +260,7 @@ export function SpaceCustomizationPanel({
 															setGroupName("");
 														}
 													}}
-													autoFocus
+													
 												/>
 											)}
 

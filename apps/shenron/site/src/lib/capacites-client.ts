@@ -108,7 +108,7 @@ export function mesurerReseau(): { debitMbps: number | null; latenceMs: number |
 		// (durée quasi nulle) ferait exploser une moyenne.
 		const debits = grosses
 			.map((r) => (r.transferSize * 8) / (r.duration / 1000) / 1_000_000)
-			.sort((a, b) => a - b);
+			.toSorted((a, b) => a - b);
 		debitMbps = Math.round(debits[Math.floor(debits.length / 2)] * 10) / 10;
 	}
 

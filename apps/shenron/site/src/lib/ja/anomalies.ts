@@ -101,7 +101,7 @@ export function indexerLexique(lex: TermeLexique[]): IndexLexique {
 
 /** Trie le lexique du plus long au plus court — l'appariement long d'abord. */
 export function trierLexique(lex: TermeLexique[]): TermeLexique[] {
-	return lex.slice().sort((a, b) => b.ja.length - a.ja.length);
+	return lex.slice().toSorted((a, b) => b.ja.length - a.ja.length);
 }
 
 /**

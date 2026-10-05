@@ -273,7 +273,7 @@ export function analyze(css: string): Analysis {
 			)
 				descriptors.push(`${d.prop.toLowerCase()}:${collapse(d.value)}`);
 		});
-		return `${head}{${descriptors.sort().join(";")}}`;
+		return `${head}{${descriptors.toSorted().join(";")}}`;
 	};
 
 	const walk = (container: Container, layer: string[], conds: string[], selectors: string[] | null) => {

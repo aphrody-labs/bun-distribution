@@ -38,7 +38,7 @@ export const RAIL_CAP = 14;
 export const orderSeries = (rows: { series: string }[] | null): string[] =>
 	(rows ?? [])
 		.map((r) => r.series)
-		.sort((a, b) => {
+		.toSorted((a, b) => {
 			const ia = SERIES_ORDER.indexOf(a);
 			const ib = SERIES_ORDER.indexOf(b);
 			return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);

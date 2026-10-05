@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 
 const runs = Number(process.env.PERF_RUNS ?? 15);
-const med = (a: number[]) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)]!;
+const med = (a: number[]) => [...a].toSorted((x, y) => x - y)[Math.floor(a.length / 2)]!;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 function timeCmd(cmd: string[], cwd = process.cwd(), n = runs) {

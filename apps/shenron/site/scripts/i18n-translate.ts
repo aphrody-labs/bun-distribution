@@ -189,11 +189,11 @@ for (const locale of CIBLES) {
 
 	const ordonnee = ordonner(fr, cible);
 	await Bun.write(path.join(MESSAGES, `${locale}.json`), `${JSON.stringify(ordonnee, null, "\t")}\n`);
-	machine[locale] = [...new Set([...(machine[locale] ?? []), ...faites])].sort();
+	machine[locale] = [...new Set([...(machine[locale] ?? []), ...faites])].toSorted();
 	if (copies.length > 0) {
 		machine[`${locale}:copiéDuFrançais`] = [
 			...new Set([...(machine[`${locale}:copiéDuFrançais`] ?? []), ...copies]),
-		].sort();
+		].toSorted();
 	}
 	console.log(
 		`  ${faites.length} écrite(s)${copies.length ? `, ${copies.length} copiée(s) du français (texte juridique)` : ""} → messages/${locale}.json`

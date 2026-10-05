@@ -17,7 +17,7 @@
 import { Database } from "bun:sqlite";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { FORMATIONS_CATALOG, getFormation } from "./formations.ts";
+import { getFormation } from "./formations.ts";
 import { isPlayerInPosition } from "./chemistry.ts";
 import { Squad } from "./squad.ts";
 import type { PitchPosition, SquadPlayerItem } from "./types.ts";
@@ -150,7 +150,7 @@ export class SquadSolver {
 					} catch {
 						alternativePositions = r.alternative_positions
 							.split(",")
-							.map((s: string) => s.trim().replace(/^["'\[\]]+|["'\[\]]+$/g, ""))
+							.map((s: string) => s.trim().replace(/^["'[\]]+|["'[\]]+$/g, ""))
 							.filter(Boolean) as PitchPosition[];
 					}
 				}

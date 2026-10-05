@@ -1,6 +1,5 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
 
 describe("Sprint 4 — Contributor Detail Pages & Wiring", () => {
 	it("la page index /wiki/contributeurs redirige vers /wiki/staff", () => {

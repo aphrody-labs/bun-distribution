@@ -274,7 +274,7 @@ async function buildGapReport(
     if (!existsSync(p)) continue;
     const set = new Set<string>();
     collectTypenames(JSON.parse(readFileSync(p, "utf-8")), set);
-    typenameSets[op] = [...set].sort();
+    typenameSets[op] = [...set].toSorted();
   }
 
   const ok = ops.filter((o) => results[o]?.ok);

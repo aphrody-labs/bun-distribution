@@ -77,7 +77,7 @@ export function ChronologyTimeline({ items }: { items: ResolvedTimelineItem[] })
 		});
 		// « era » = ordre officiel fourni (déjà résolu côté serveur) → on ne re-trie
 		// PAS. Les autres modes sont des vues alternatives calculées à la volée.
-		return sort === "era" ? list : [...list].sort(compareTimeline(sort));
+		return sort === "era" ? list : [...list].toSorted(compareTimeline(sort));
 	}, [items, eras, showEpisodes, showMovies, showManga, q, sort]);
 
 	const totalEpisodes = useMemo(() => items.filter((i) => i.kind === "episode").length, [items]);

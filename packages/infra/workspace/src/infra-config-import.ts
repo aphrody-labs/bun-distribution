@@ -77,7 +77,7 @@ function endpointClasses(value: unknown): Record<string, number> {
     }
   }
   visit(value);
-  return Object.fromEntries([...counts].sort(([a], [b]) => a.localeCompare(b)));
+  return Object.fromEntries([...counts].toSorted(([a], [b]) => a.localeCompare(b)));
 }
 
 function textEndpointClasses(text: string): Record<string, number> {
@@ -98,7 +98,7 @@ function textEndpointClasses(text: string): Record<string, number> {
     const kind = classifyHost(host);
     counts.set(kind, (counts.get(kind) ?? 0) + 1);
   }
-  return Object.fromEntries([...counts].sort(([a], [b]) => a.localeCompare(b)));
+  return Object.fromEntries([...counts].toSorted(([a], [b]) => a.localeCompare(b)));
 }
 
 function remap(
@@ -175,7 +175,7 @@ export async function importInfraConfig(
   ])
     .split("\0")
     .filter(Boolean)
-    .sort();
+    .toSorted();
   const dirty = git(source, [
     "status",
     "--porcelain=v1",

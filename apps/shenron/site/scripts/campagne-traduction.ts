@@ -62,7 +62,7 @@ async function ouvragesEnAttente(): Promise<{ id: number; reste: number; titre: 
 		const m = ligne.match(/^\s*(\d+)\s+reste\s+(\d+)\s+faites\s+\d+\s+\d+ k signes\s+(.+?)\s*$/);
 		if (m) sortie.push({ id: Number(m[1]), reste: Number(m[2]), titre: m[3]! });
 	}
-	return sortie.sort((a, b) => b.reste - a.reste);
+	return sortie.toSorted((a, b) => b.reste - a.reste);
 }
 
 if (commande === "prepare") {
@@ -116,7 +116,7 @@ if (commande === "depose") {
 	const appliquer = flag("appliquer");
 	const fichiers = readdirSync(racine)
 		.filter((f) => f.endsWith(".jsonl"))
-		.sort();
+		.toSorted();
 	if (fichiers.length === 0) {
 		console.log(`aucune sortie d'agent (*.jsonl) dans ${racine}`);
 		process.exit(0);

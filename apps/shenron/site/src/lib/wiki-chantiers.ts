@@ -108,5 +108,5 @@ export async function listeChantiers(exemplesParRubrique = 6): Promise<Chantier[
 
 	return resultats
 		.filter((r): r is Chantier => r !== null && r.vides > 0)
-		.sort((a, b) => b.vides - a.vides);
+		.toSorted((a, b) => b.vides - a.vides);
 }

@@ -40,7 +40,7 @@ describe("tokens de thème", () => {
 		for (const k of cles) {
 			expect(DEFAULT_SITE_THEME.colors[k]).toMatch(/^#[0-9a-fA-F]{3,8}$/);
 		}
-		expect(THEME_COLORS.map((c) => c.key).sort()).toEqual([...cles].sort());
+		expect(THEME_COLORS.map((c) => c.key).toSorted()).toEqual([...cles].toSorted());
 	});
 
 	test("les accents d'origine gardent leur valeur historique en défaut", () => {

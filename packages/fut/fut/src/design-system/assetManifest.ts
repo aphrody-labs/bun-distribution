@@ -83,5 +83,5 @@ export function frostbiteAssetCategories(): Array<{ category: string; count: num
 	}
 	return [...counts.entries()]
 		.map(([category, count]) => ({ category, count }))
-		.sort((a, b) => b.count - a.count || a.category.localeCompare(b.category));
+		.toSorted((a, b) => b.count - a.count || a.category.localeCompare(b.category));
 }

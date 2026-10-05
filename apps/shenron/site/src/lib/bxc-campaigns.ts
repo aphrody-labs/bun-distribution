@@ -194,7 +194,7 @@ export async function listBxcCampaigns(): Promise<BxcCampaign[]> {
 	}
 
 	const names = [...new Set([...CURRENT_CAMPAIGN_NAMES, ...entries.filter((name) => name.startsWith(CAMPAIGN_PREFIX))])]
-		.sort((a, b) => Number(CURRENT_CAMPAIGN_NAMES.has(b)) - Number(CURRENT_CAMPAIGN_NAMES.has(a)) || b.localeCompare(a))
+		.toSorted((a, b) => Number(CURRENT_CAMPAIGN_NAMES.has(b)) - Number(CURRENT_CAMPAIGN_NAMES.has(a)) || b.localeCompare(a))
 		.slice(0, 12);
 
 	return Promise.all(
@@ -248,10 +248,7 @@ export async function listRecentBxcImports(): Promise<BxcImportedRecord[]> {
 			ORDER BY fetched_at DESC
 			LIMIT 12
 		`);
-		return (result as unknown as BxcImportedRecord[]).map((record) => ({
-			...record,
-			fetchedAt: new Date(record.fetchedAt),
-		}));
+		return (result as unknown as BxcImportedRecord[]).map((record) => (Object.assign(record, { fetchedAt: new Date(record.fetchedAt) })));
 	} catch {
 		// L'import est asynchrone : une table absente ou une base momentanément
 		// indisponible ne doit pas rendre le cockpit inutilisable.
@@ -318,7 +315,7 @@ export async function listBxcHarvestAssets(): Promise<BxcHarvestAsset[]> {
 				sourceUrl: provenance.get(name) ?? null,
 			}))
 		);
-		return assets.sort((a, b) => b.bytes - a.bytes);
+		return assets.toSorted((a, b) => b.bytes - a.bytes);
 	} catch {
 		return [];
 	}

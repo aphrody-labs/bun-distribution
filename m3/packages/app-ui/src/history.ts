@@ -37,7 +37,7 @@ export function normalizeThreads(result: unknown): { threads: ThreadSummary[]; n
       model: str(item.model) || undefined,
       status: typeof item.status === "string" ? item.status : undefined,
     }))
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+    .toSorted((a, b) => b.updatedAt - a.updatedAt);
   const nextCursor = str(record.nextCursor) || undefined;
   return { threads, nextCursor };
 }

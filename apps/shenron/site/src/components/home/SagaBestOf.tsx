@@ -181,7 +181,7 @@ export function SagaBestOf({
 			</div>
 
 			{/* ── Rail de sélection des sagas ── */}
-			<div
+			<div tabIndex={0}
 				ref={railRef}
 				className="bestof__rail"
 				role="tablist"

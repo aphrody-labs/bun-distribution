@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { Sparkles, Flame, Zap, Shield, Swords, Layers, ChevronRight } from "lucide-react";
+
+import { Flame, Shield, Layers } from "lucide-react";
 
 interface EvolutionTreeNode {
 	name: string;

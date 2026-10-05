@@ -235,7 +235,7 @@ export async function runCorpusIngest(options: { dryRun?: boolean; runner?: Comm
 	const root = join(import.meta.dir, "../../../..");
 	const loc = corpusLocations(root);
 	const corpusDir = join(loc.crawlDir, "corpus");
-	const exports = existsSync(corpusDir) ? readdirSync(corpusDir).filter((f) => f.endsWith(".jsonl")).sort().map((f) => join(corpusDir, f)) : [];
+	const exports = existsSync(corpusDir) ? readdirSync(corpusDir).filter((f) => f.endsWith(".jsonl")).toSorted().map((f) => join(corpusDir, f)) : [];
 	if (!exports.length && !options.dryRun) throw new Error(`aucun export Aphrody Web dans ${corpusDir}; lancer d'abord: pipeline crawl universal`);
 	const command = ["bun", join(root, "packages/shenron/pipeline/scripts/rag-sync-aphrody.ts"), "--corpus-crawl", `--crawl-dir=${loc.crawlDir}`];
 	if (!options.dryRun) command.push("--appliquer");

@@ -51,7 +51,7 @@ function cheminUrl(fichier: string): string | null {
 const pages = [...new Glob("src/app/admin/**/page.tsx").scanSync(racine)]
 	.map(cheminUrl)
 	.filter((u): u is string => u !== null)
-	.sort();
+	.toSorted();
 
 describe("l'espace /admin est fermé aux anonymes", () => {
 	test("le recensement des pages admin n'est pas vide", () => {

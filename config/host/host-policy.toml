@@ -1,0 +1,47 @@
+# Policy for `yolo host` (see docs/SERVER.md). Lists add to the built-in defaults; they cannot remove the
+# hard-coded protections (ssh and the base system are never stopped, protected paths are never reclaimed,
+# nothing is formatted or wiped). Per-host tables ([hosts.vps.*]) add to the global ones.
+
+[services]
+# Never stopped or disabled. Globs match the unit name without ".service".
+keep = ["ssh", "nginx", "fail2ban", "aphrody-*", "yolo-*", "shenron-*", "cron", "docker", "containerd", "postgresql*", "redis*", "certbot*"]
+# Proposed for stopping by `yolo host services` (still needs --apply, and never overrides the keep list).
+stop = ["snapd", "ModemManager", "multipathd", "udisks2", "packagekit", "apport*", "motd-news", "ubuntu-advantage*", "esm-cache", "lxd*", "lxcfs", "irqbalance", "bluetooth", "cups*", "avahi-daemon", "wpa_supplicant"]
+
+[locks]
+# No mutation while one of these files is flock-held (the Aphrody build factory heavy lock is added for its host).
+paths = []
+
+[protect]
+# Extra trees only reachable through `yolo host archive` (the build factory cache and artifacts are added for its host).
+paths = []
+
+[space]
+# Free-space floor of `yolo host audit` and `yolo ship` (ratio 0..1). A variable: --min-free and YOLO_MIN_FREE win
+# over this value, a [hosts.<name>.space] table wins over it for one host.
+min_free = 0.2
+# `yolo host space`: commands in flight, and how many directory levels are scanned as independent subtrees.
+parallel = 8
+split_depth = 2
+
+[reclaim]
+build_artifact_min_age_days = 7
+journal_max_size = "500M"
+journal_max_age_days = 14
+rotated_log_age_days = 30
+# Where to look for target/ (next to Cargo.toml), node_modules/ (next to package.json) and .next/ directories.
+scan_roots = ["~", "/srv", "/opt", "/tmp"]
+# Regenerable caches below ~/.cache or ~/.npm. sccache, ~/.cargo/registry and ~/.bun/install/cache are never cleaned.
+cache_dirs = ["~/.cache/pip", "~/.cache/thumbnails", "~/.npm/_logs"]
+# directory names the scan never enters
+exclude_names = ["aphrody-ui", ".git", ".rustup", ".cargo"]
+swap_file_globs = ["/swapfile*", "/swap.img", "/var/swapfile*"]
+
+[tune]
+nginx_workers = "auto"
+governor = "performance"
+thp = "madvise"
+swappiness = 10
+
+# [hosts.vps.services]
+# keep = ["shenron-pg-tunnel"]

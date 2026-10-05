@@ -200,7 +200,7 @@ export function policyFile(yoloRoot: string, explicit?: string): string | null {
     explicit,
     process.env["YOLO_HOST_POLICY"],
     join(process.cwd(), "host-policy.toml"),
-    join(yoloRoot, "host-policy.toml"),
+    join(yoloRoot, "config/host/host-policy.toml"),
   ];
   for (const c of candidates) if (c !== undefined && c !== "" && existsSync(c)) return c;
   return null;
@@ -1030,7 +1030,7 @@ export function archiveSuggestions(
     const why = protectedReason(p, ctx) ?? "not a regenerable cache";
     out.push({ path: p, bytes: d.bytes, why });
   }
-  return out.sort((x, y) => y.bytes - x.bytes).slice(0, 6);
+  return out.toSorted((x, y) => y.bytes - x.bytes).slice(0, 6);
 }
 
 export function renderAudit(
@@ -1229,7 +1229,7 @@ export function planServices(
       : sshServiceArgs(host, unit, action)
           .map((x) => (/^[\w./@:+-]+$/.test(x) ? x : sq(x)))
           .join(" ");
-  for (const unit of [...wanted].sort()) {
+  for (const unit of [...wanted].toSorted()) {
     const v = canStopUnit(unit, policy.services);
     if (!v.ok) {
       skipped.push({ what: unit, why: v.reason });
@@ -1270,7 +1270,7 @@ export function planServices(
 
 export function renderServices(rows: readonly ServiceRow[]): string {
   const order = { candidate: 0, unknown: 1, keep: 2 } as const;
-  const sorted = [...rows].sort(
+  const sorted = [...rows].toSorted(
     (x, y) => order[x.cls] - order[y.cls] || x.name.localeCompare(y.name),
   );
   return table([["CLASS", "UNIT", "WHY"], ...sorted.map((r) => [r.cls, r.name, r.why])]);
@@ -1701,7 +1701,7 @@ export const mbit = (bytesPerSec: number): number => (bytesPerSec * 8) / 1e6;
 
 export function median(xs: readonly number[]): number {
   if (xs.length === 0) return Number.NaN;
-  const s = [...xs].sort((a, b) => a - b);
+  const s = [...xs].toSorted((a, b) => a - b);
   const m = Math.floor(s.length / 2);
   return s.length % 2 === 1 ? (s[m] as number) : ((s[m - 1] as number) + (s[m] as number)) / 2;
 }

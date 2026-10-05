@@ -252,8 +252,8 @@ export function featurePlan(
 ): FeaturePlan {
   const rules = skip.map((s) => ({ re: glob(s.feature), reason: s.reason }));
   const plan: FeaturePlan = { enabled: [], skipped: [] };
-  for (const p of [...packages].sort((a, b) => a.name.localeCompare(b.name))) {
-    for (const f of Object.keys(p.features).sort()) {
+  for (const p of [...packages].toSorted((a, b) => a.name.localeCompare(b.name))) {
+    for (const f of Object.keys(p.features).toSorted()) {
       if (f === "default") continue;
       const id = `${p.name}/${f}`;
       const rule = rules.find((r) => r.re.test(id));
@@ -295,7 +295,7 @@ export function targetPackages(
     if (rule) excluded.push({ crate: n, reason: rule.reason });
     return !rule;
   });
-  return { packages: [...new Set(kept)].sort(), excluded };
+  return { packages: [...new Set(kept)].toSorted(), excluded };
 }
 
 export type TestFailure = { suite: string; name: string; kind: "fail" | "flaky"; message: string };
@@ -316,7 +316,7 @@ export function newestLlvm(dirs: string[]): string | undefined {
     .map((d) => /^llvm-(\d+)$/.exec(d)?.[1])
     .filter((v): v is string => !!v)
     .map(Number)
-    .sort((a, b) => b - a);
+    .toSorted((a, b) => b - a);
   return versions.length ? `llvm-${versions[0]}` : undefined;
 }
 
@@ -377,7 +377,7 @@ export function parseFmtList(text: string, root: string): string[] {
     if (!l.endsWith(".rs")) continue;
     out.add(l.startsWith("/") ? relative(root, l) : l);
   }
-  return [...out].sort();
+  return [...out].toSorted();
 }
 
 /** Owner crate of a repo-relative file: the member whose directory is the longest prefix. */
@@ -622,7 +622,7 @@ class Doctor {
     if (this.fix) {
       const crates = [...this.fmtByCrate(files).keys()]
         .filter((n): n is string => !!n && this.writable(n))
-        .sort();
+        .toSorted();
       const repair = this.fmtCrates(crates);
       if (repair) {
         commands.push(`cargo fmt -p <${crates.length} crate(s)>`);
@@ -691,7 +691,7 @@ class Doctor {
       const fixable = diags.filter((d) => d.fixable && d.level === "warning");
       const crates = [...new Set(fixable.map((d) => d.crate))]
         .filter((n) => this.writable(n))
-        .sort();
+        .toSorted();
       if (crates.length) {
         // Suggestions are applied as source edits: crates that were on the formatting policy are put back on it.
         const unformatted = new Set(this.fmtByCrate(this.fmtList().files).keys());

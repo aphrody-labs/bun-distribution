@@ -416,7 +416,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 
 	const recentThreads = useMemo(() => {
 		return [...threads]
-			.sort((a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt))
+			.toSorted((a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt))
 			.slice(0, 8);
 	}, [threads]);
 

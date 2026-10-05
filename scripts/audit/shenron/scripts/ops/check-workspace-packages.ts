@@ -421,7 +421,7 @@ function checkCycles(): void {
 		]) {
 			for (const dep of Object.keys(group ?? {})) if (PACKAGES[dep] && dep !== name) deps.add(dep);
 		}
-		graph.set(name, [...deps].sort());
+		graph.set(name, [...deps].toSorted());
 	}
 	const state = new Map<string, "visiting" | "done">();
 	const seen = new Set<string>();
@@ -439,7 +439,7 @@ function checkCycles(): void {
 		for (const next of graph.get(node) ?? []) visit(next, [...path, node]);
 		state.set(node, "done");
 	};
-	for (const node of [...graph.keys()].sort()) visit(node, []);
+	for (const node of [...graph.keys()].toSorted()) visit(node, []);
 }
 
 /** Shenron packages are upstream of Aphrody repositories, never consumers. */
@@ -574,13 +574,13 @@ if (WRITE_BASELINE) {
 						reason: "pre-existing at wave 1; fixed by the owning workstream before wave 5",
 					}
 			),
-	].sort((a, b) => a.id.localeCompare(b.id));
+	].toSorted((a, b) => a.id.localeCompare(b.id));
 	const next: Baseline = {
 		$comment:
 			baseline.$comment ??
 			"Pre-existing check:packages violations. `transitional` must be empty at the end of Phase 1 (--strict); `phase2` entries cite a docs/STACK.md §7.3 ticket. The baseline may only shrink after wave 1.",
 		transitional,
-		phase2: phase2.sort((a, b) => a.id.localeCompare(b.id)),
+		phase2: phase2.toSorted((a, b) => a.id.localeCompare(b.id)),
 	};
 	await Bun.write(BASELINE_FILE, `${JSON.stringify(next, null, "\t")}\n`);
 	console.log(

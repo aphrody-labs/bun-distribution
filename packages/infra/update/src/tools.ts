@@ -35,7 +35,7 @@ export async function latest(tool: string, src: { github?: string; pypi?: string
   if (src.github) {
     const rel = await registries.github(src.github).catch(() => []);
     const re = new RegExp(src.stripTag ?? "^v");
-    return rel.map((r) => r.tag.replace(re, "")).filter((t) => /^\d+\.\d+\.\d+$/.test(t)).sort(cmpVersion).at(-1);
+    return rel.map((r) => r.tag.replace(re, "")).filter((t) => /^\d+\.\d+\.\d+$/.test(t)).toSorted(cmpVersion).at(-1);
   }
   return undefined;
 }

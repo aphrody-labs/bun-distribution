@@ -41,7 +41,7 @@ export async function tauriUpdaterKey(nativeDeps) {
 		const quote = os.type() === 'Windows_NT' ? '"' : "'"
 		await exec(`pnpm exec tauri signer generate --ci -w ${quote}${privateKeyPath}${quote}`)
 		;[publicKey, privateKey] = await readKeys()
-		if (!(publicKey && privateKey)) throw new Error('Empty keys')
+		if (!(publicKey && privateKey)) throw new Error('Empty keys', { cause: err })
 	}
 
 	env.TAURI_SIGNING_PRIVATE_KEY = privateKey

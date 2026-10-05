@@ -261,7 +261,7 @@ function datesIn(block: string): FoundDate[] {
 function earliestDate(found: FoundDate[]): { y: number; m: number; d: number } | null {
 	const full = found
 		.filter((f): f is { y: number; m: number; d: number } => f.m !== null && f.d !== null)
-		.sort((a, b) => a.y - b.y || a.m - b.m || a.d - b.d);
+		.toSorted((a, b) => a.y - b.y || a.m - b.m || a.d - b.d);
 	const first = full[0];
 	if (!first) return null;
 	for (const p of found) {
@@ -386,7 +386,7 @@ try {
 			const ok = officials
 				.filter((o) => o.label === label && o.status === 200 && o.finalUrl && o.title)
 				.filter((o) => latinKey(o.title!).includes(nameKey))
-				.sort((a, b) => Number(b.finalUrl!.includes("bandainamcoent.eu")) - Number(a.finalUrl!.includes("bandainamcoent.eu")));
+				.toSorted((a, b) => Number(b.finalUrl!.includes("bandainamcoent.eu")) - Number(a.finalUrl!.includes("bandainamcoent.eu")));
 			const taken = new Set(rows.map((r) => r.official_url).filter(Boolean));
 			const pick = ok.find((o) => !taken.has(o.finalUrl));
 			if (pick) {

@@ -90,7 +90,7 @@ export function orderWorkspaces(packages: WorkspacePackage[]): WorkspacePackage[
 			throw new Error(`cycle de dépendances : ${[...trail, pkg.name].join(" → ")}`);
 		}
 		visiting.add(pkg.name);
-		for (const dep of [...pkg.deps].sort()) {
+		for (const dep of [...pkg.deps].toSorted()) {
 			const target = byName.get(dep);
 			if (target) visit(target, [...trail, pkg.name]);
 		}
@@ -99,7 +99,7 @@ export function orderWorkspaces(packages: WorkspacePackage[]): WorkspacePackage[
 		ordered.push(pkg);
 	};
 
-	for (const pkg of [...packages].sort((a, b) => a.name.localeCompare(b.name))) {
+	for (const pkg of [...packages].toSorted((a, b) => a.name.localeCompare(b.name))) {
 		visit(pkg, []);
 	}
 	return ordered;

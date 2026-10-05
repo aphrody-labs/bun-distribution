@@ -16,13 +16,9 @@
 
 import type {
 	DetectedUrlInfo,
-	EvolutionUrlResult,
 	FodderUrlResult,
-	MarketListingUrlResult,
 	OmniUrlResult,
-	PlayerUrlResult,
 	RecommendedAction,
-	SbcUrlResult,
 	SquadUrlResult,
 } from "../router/types.ts";
 import type { PlayerCommunitySentiment } from "../social/types.ts";

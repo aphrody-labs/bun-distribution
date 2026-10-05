@@ -81,10 +81,10 @@ export async function generateBunCatalog(
   const globTypes = new Bun.Glob("*.d.ts");
 
   const allDocs = existsSync(bunDocsDir)
-    ? Array.from(globDocs.scanSync({ cwd: bunDocsDir, onlyFiles: true })).sort()
+    ? Array.from(globDocs.scanSync({ cwd: bunDocsDir, onlyFiles: true })).toSorted()
     : [];
   const allTypes = existsSync(bunTypesDir)
-    ? Array.from(globTypes.scanSync({ cwd: bunTypesDir, onlyFiles: true })).sort()
+    ? Array.from(globTypes.scanSync({ cwd: bunTypesDir, onlyFiles: true })).toSorted()
     : [];
 
   const domains: BunApiDomain[] = [

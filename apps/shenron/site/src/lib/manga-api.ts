@@ -479,7 +479,7 @@ export async function chercherPlanches(
 	const classes = rows
 		.map((r) => ({ r, d: scorer(r.text, terme, Number(r.sim) || 0) }))
 		.filter((x) => x.d.score > 0)
-		.sort(
+		.toSorted(
 			(a, b) =>
 				b.d.score - a.d.score ||
 				a.r.series.localeCompare(b.r.series) ||

@@ -228,9 +228,9 @@ try {
 	};
 
 	let ecartes = 0;
-	for (const [k, groupe] of [...groupes].sort()) {
+	for (const [k, groupe] of [...groupes].toSorted()) {
 		if (groupe.length < 2) continue;
-		const classes = [...groupe].sort((a, b) => score(b) - score(a) || a.id - b.id);
+		const classes = [...groupe].toSorted((a, b) => score(b) - score(a) || a.id - b.id);
 		// On ne garde dans le groupe que ce qui est bien la même personne que la
 		// fiche de tête ; le reste est une homonymie, pas un doublon.
 		const tete = classes[0]!;
@@ -346,12 +346,12 @@ try {
 	let arbitragesJa = 0;
 	let masqueesJa = 0;
 	const liensOrphelins: string[] = [];
-	for (const [k, groupe] of [...groupesJa].sort()) {
+	for (const [k, groupe] of [...groupesJa].toSorted()) {
 		if (groupe.length < 2) continue;
 		// Déjà traité par la passe latine : même clé latine pour toutes les fiches
 		// du groupe ⇒ ne pas recompter.
 		if (new Set(groupe.map((f) => cle(f.name))).size === 1) continue;
-		const classes = [...groupe].sort((a, b) => score(b) - score(a) || a.id - b.id);
+		const classes = [...groupe].toSorted((a, b) => score(b) - score(a) || a.id - b.id);
 		const substantielles = classes.filter((f) => f.aArticle || f.sections > 0);
 		if (substantielles.length > 1) {
 			ambigus.push(

@@ -15,7 +15,7 @@
  */
 
 import type { FutPlatform } from "../types.ts";
-import type { DetailedCardStats } from "../squad/metaRating.ts";
+
 import type { PlayerCommunitySentiment } from "../social/types.ts";
 export type { FutPlatform };
 

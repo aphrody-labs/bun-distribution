@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import Link from "next/link";
+
 import { dbUniverse } from "@/lib/db-universe";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { WikiDrawer } from "@/components/wiki/WikiDrawer";

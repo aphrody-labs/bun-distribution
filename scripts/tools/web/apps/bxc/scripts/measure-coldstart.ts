@@ -230,7 +230,7 @@ async function runProfile(profile: Profile): Promise<ProfileResult> {
 		await new Promise((r) => setTimeout(r, 80));
 	}
 
-	const sorted = [...samples].sort((a, b) => a - b);
+	const sorted = [...samples].toSorted((a, b) => a - b);
 
 	return {
 		profile,

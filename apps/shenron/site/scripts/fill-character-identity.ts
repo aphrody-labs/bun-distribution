@@ -156,7 +156,7 @@ async function refreshCaches(): Promise<void> {
 		await waitForLoad();
 		for (const m of await members(sub.title)) if (m.ns === 0) titles.add(m.title);
 	}
-	const list = [...titles].sort();
+	const list = [...titles].toSorted();
 	await Bun.write(join(CACHE, "kz-character-titles.txt"), list.join("\n"));
 
 	const lines: string[] = [];

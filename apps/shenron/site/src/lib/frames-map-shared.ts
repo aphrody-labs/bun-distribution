@@ -230,7 +230,7 @@ export function formatTimecode(
 export function sortFrameMatches<
 	T extends { similarity: number; isDragonBall: boolean; siteEpisode?: SiteEpisodeRef | null },
 >(matches: T[]): T[] {
-	return [...matches].sort(
+	return [...matches].toSorted(
 		(a, b) =>
 			Number(b.isDragonBall) - Number(a.isDragonBall) ||
 			Number(Boolean(b.siteEpisode)) - Number(Boolean(a.siteEpisode)) ||

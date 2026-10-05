@@ -83,7 +83,7 @@ export async function discoverBunPackageWorkspaces(
   );
   return candidates
     .flatMap((candidate) => (candidate ? [candidate] : []))
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .toSorted((a, b) => a.id.localeCompare(b.id));
 }
 
 function selectedWorkspaces(

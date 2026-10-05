@@ -119,7 +119,7 @@ export function LinkDialog({
 			)}
 			<PanelField label="Adresse" hint="Une page du site (/wiki/…) ou une adresse complète.">
 				<input
-					autoFocus
+					
 					className={panelInputClass}
 					value={href}
 					onChange={(e) => setHref(e.target.value)}
@@ -368,7 +368,7 @@ export function EmbedDialog({
 				hint="YouTube (watch, short, youtu.be), Dailymotion ou n'importe quel lecteur intégrable."
 			>
 				<input
-					autoFocus
+					
 					className={panelInputClass}
 					value={url}
 					onChange={(e) => setUrl(e.target.value)}
@@ -434,7 +434,7 @@ export function KiDialog({
 		>
 			<PanelField label="Contexte" hint="La saga ou le moment auquel cette valeur se rapporte.">
 				<input
-					autoFocus
+					
 					className={panelInputClass}
 					value={ctx}
 					onChange={(e) => setCtx(e.target.value)}
@@ -506,7 +506,7 @@ export function ButtonDialog({
 		>
 			<PanelField label="Libellé">
 				<input
-					autoFocus
+					
 					className={panelInputClass}
 					value={label}
 					onChange={(e) => setLabel(e.target.value)}
@@ -801,7 +801,7 @@ export function FindReplaceDialog({
 		// De la fin vers le début : remplacer en avançant décalerait les positions
 		// suivantes de la longueur déjà changée.
 		const chain = editor.chain().focus();
-		for (const m of [...matches].reverse()) {
+		for (const m of [...matches].toReversed()) {
 			chain.insertContentAt({ from: m.from, to: m.to }, replacement);
 		}
 		chain.run();
@@ -825,7 +825,7 @@ export function FindReplaceDialog({
 		>
 			<PanelField label="Rechercher">
 				<input
-					autoFocus
+					
 					className={panelInputClass}
 					value={needle}
 					onChange={(e) => {

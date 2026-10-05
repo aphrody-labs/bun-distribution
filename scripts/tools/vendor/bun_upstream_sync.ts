@@ -274,7 +274,7 @@ export class BunUpstreamSyncEngine {
 
     const patchFiles = readdirSync(this.patchesDir)
       .filter((file) => file.endsWith(".patch"))
-      .sort();
+      .toSorted();
 
     for (const patch of patchFiles) {
       const fullPath = resolve(this.patchesDir, patch);
@@ -407,11 +407,11 @@ export class BunUpstreamSyncEngine {
 
 // CLI execution
 if (import.meta.main) {
-  const args = process.argv.slice(2);
-  const isDryRun = args.includes("--dry-run");
-  const isApply = args.includes("--apply");
-  const isAutoFix = args.includes("--auto-fix");
-  const isReapply = args.includes("--reapply-patches");
+  const args = new Set(process.argv.slice(2));
+  const isDryRun = args.has("--dry-run");
+  const isApply = args.has("--apply");
+  const isAutoFix = args.has("--auto-fix");
+  const isReapply = args.has("--reapply-patches");
 
   const engine = new BunUpstreamSyncEngine();
   engine

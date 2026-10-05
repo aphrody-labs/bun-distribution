@@ -89,7 +89,7 @@ export function protegerTermes(texte: string, lexique: TermeCanonique[] = CANON_
 	let debordement = 0;
 
 	// Tri par longueur décroissante pour éviter le masquage de préfixes
-	const trie = [...lexique].sort((a, b) => b.ja.length - a.ja.length);
+	const trie = [...lexique].toSorted((a, b) => b.ja.length - a.ja.length);
 
 	for (const t of trie) {
 		if (!t.fr || !masque.includes(t.ja)) continue;
@@ -106,7 +106,7 @@ export function protegerTermes(texte: string, lexique: TermeCanonique[] = CANON_
 
 export function restaurerTermes(traduction: string, table: Map<string, string>): string {
 	let out = traduction;
-	const sortedJetons = [...table.keys()].sort((a, b) => b.length - a.length);
+	const sortedJetons = [...table.keys()].toSorted((a, b) => b.length - a.length);
 	for (const jeton of sortedJetons) {
 		out = out.replaceAll(jeton, table.get(jeton)!);
 	}

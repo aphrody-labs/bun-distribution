@@ -1,7 +1,7 @@
 /**
  * `yolo py`: Python + uv + PyO3 toolchain commands.
  *
- *   yolo py status [--json|--md]     status of Python, uv, maturin, PyO3 and packages/python
+ *   yolo py status [--json|--md]     status of Python, uv, maturin, PyO3 and packages/engine/python
  *   yolo py test                     runs Python pytest test suite via uv
  *   yolo py lint                     runs ruff check
  *   yolo py fmt                      runs ruff format
@@ -60,7 +60,7 @@ export async function runPythonCommand(
       ruffVer = proc.stdout.toString().trim() || null;
     }
 
-    const pkgDir = join(root, "packages/python");
+    const pkgDir = join(root, "packages/engine/python");
     const packageConfigured = existsSync(join(pkgDir, "pyproject.toml"));
     const venvActive = existsSync(join(pkgDir, ".venv"));
 
@@ -99,7 +99,7 @@ export async function runPythonCommand(
     out(`  Maturin:      ${maturinVer ?? "\x1b[33mnot found\x1b[0m"}`);
     out(`  Ruff:         ${ruffVer ?? "\x1b[33mnot found\x1b[0m"}`);
     out(
-      `  Package:      ${packageConfigured ? "\x1b[32mpackages/python (configured)\x1b[0m" : "\x1b[31mnot configured\x1b[0m"}`,
+      `  Package:      ${packageConfigured ? "\x1b[32mpackages/engine/python (configured)\x1b[0m" : "\x1b[31mnot configured\x1b[0m"}`,
     );
     out(
       `  Virtualenv:   ${venvActive ? "\x1b[32mready (.venv)\x1b[0m" : "\x1b[33mnot initialized\x1b[0m"}`,
@@ -125,7 +125,7 @@ export async function runPythonCommand(
         "python",
         "-m",
         "pytest",
-        "packages/python/tests",
+        "packages/engine/python/tests",
       ],
       {
         cwd: root,
@@ -136,7 +136,7 @@ export async function runPythonCommand(
   }
 
   if (sub === "lint") {
-    const cmd = ruffBin ? [ruffBin, "check", "packages/python"] : null;
+    const cmd = ruffBin ? [ruffBin, "check", "packages/engine/python"] : null;
     if (!cmd) {
       console.error("The installed ruff binary is required for Python linting");
       return 1;
@@ -146,7 +146,7 @@ export async function runPythonCommand(
   }
 
   if (sub === "fmt") {
-    const cmd = ruffBin ? [ruffBin, "format", "packages/python"] : null;
+    const cmd = ruffBin ? [ruffBin, "format", "packages/engine/python"] : null;
     if (!cmd) {
       console.error("The installed ruff binary is required for Python formatting");
       return 1;
@@ -161,7 +161,7 @@ export async function runPythonCommand(
       return 1;
     }
     const proc = Bun.spawn(
-      ["uv", "run", "--directory", "packages/python", "maturin", "develop", "--release"],
+      ["uv", "run", "--directory", "packages/engine/python", "maturin", "develop", "--release"],
       {
         cwd: root,
         stdio: ["inherit", "inherit", "inherit"],

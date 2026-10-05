@@ -911,10 +911,7 @@ const sanitizeCatalogue = (input: unknown): HomeCatalogueConfig => {
 		...sanitizeHeading(input, fallback),
 		destinations: fallback.destinations.map((destination) => {
 			const patch = byHref.get(destination.href);
-			return {
-				...destination,
-				enabled: typeof patch?.enabled === "boolean" ? patch.enabled : destination.enabled,
-			};
+			return Object.assign(destination, { enabled: typeof patch?.enabled === 'boolean' ? patch.enabled : destination.enabled });
 		}),
 	};
 };

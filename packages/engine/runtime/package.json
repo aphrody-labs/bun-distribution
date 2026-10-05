@@ -6,8 +6,8 @@
   "license": "MIT AND Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aphrody-labs/yolo.git",
-    "directory": "packages/runtime"
+    "url": "git+https://github.com/aphrody-labs/aphrody.git",
+    "directory": "packages/engine/runtime"
   },
   "files": [
     "src",
@@ -33,7 +33,7 @@
     "./desktop-artifact": "./src/desktop-artifact.ts"
   },
   "scripts": {
-    "test": "bun --cwd=../.. test test/runtime_sdk.test.ts test/runtime_sdk_pack.test.ts test/runtime-ffi.test.ts test/runtime_release.test.ts test/ffi.test.ts test/privilege.test.ts",
+    "test": "bun test test/runtime_sdk.test.ts test/runtime_sdk_pack.test.ts test/runtime-ffi.test.ts test/runtime_release.test.ts test/ffi.test.ts test/privilege.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {},

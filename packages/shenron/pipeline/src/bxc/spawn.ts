@@ -191,6 +191,6 @@ export async function execBxcJson<T>(
   try {
     return JSON.parse(raw) as T;
   } catch (err) {
-    throw new Error(`Failed to parse bxc JSON output: ${err instanceof Error ? err.message : String(err)}\nRaw output: ${raw.slice(0, 500)}`);
+    throw new Error(`Failed to parse bxc JSON output: ${err instanceof Error ? err.message : String(err)}\nRaw output: ${raw.slice(0, 500)}`, { cause: err });
   }
 }

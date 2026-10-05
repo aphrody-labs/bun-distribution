@@ -101,10 +101,7 @@ const ICONES_PRINCIPALES: Record<
 	"/wiki/films": { Icone: Film },
 };
 
-const DESTINATIONS: readonly Destination[] = MOBILE_PRIMARY_DESTINATIONS.map((destination) => ({
-	...destination,
-	...ICONES_PRINCIPALES[destination.href],
-}));
+const DESTINATIONS: readonly Destination[] = MOBILE_PRIMARY_DESTINATIONS.map((destination) => (Object.assign(destination, ICONES_PRINCIPALES[destination.href])));
 
 /** Le reste des rubriques, dans la feuille « Plus ». Ordre : visiteurs décroissants. */
 const AUTRES: ReadonlyArray<{ href: string; label: string; note: string }> =

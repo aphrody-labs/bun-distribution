@@ -213,7 +213,7 @@ describe("buildTweetQueue", () => {
     // A retweet's likes belong to someone else, so the threshold cannot apply:
     // scope alone decides, even at 50k likes.
     const on = buildTweetQueue(posts, VIEWER, { includeRetweets: true });
-    expect(on.queue.map((t) => t.id).sort()).toEqual(["rt", "t"]);
+    expect(on.queue.map((t) => t.id).toSorted()).toEqual(["rt", "t"]);
   });
 
   test("kinds narrows the scope", () => {
@@ -263,7 +263,7 @@ describe("captureArchive", () => {
     });
 
     const archive = await captureArchive(client, VIEWER, "tester", {});
-    expect(archive.posts.map((p) => p.id).sort()).toEqual(["dup", "r1", "t1"]);
+    expect(archive.posts.map((p) => p.id).toSorted()).toEqual(["dup", "r1", "t1"]);
     expect(archive.sources.map((s) => s.source)).toEqual(["tweets", "replies", "media"]);
     expect(archive.complete).toBe(true);
   });
@@ -863,6 +863,6 @@ describe("barren pages (regression)", () => {
     const archive = await captureArchive(client, VIEWER, "tester", { maxBarrenPages: 3 });
     // p1, dup(2), dup(3) sterile x2, p4 remet a zero, puis 3 steriles -> arret page 7.
     expect(served).toBe(7);
-    expect(archive.posts.map((p) => p.id).sort()).toEqual(["dup", "p1", "p4"]);
+    expect(archive.posts.map((p) => p.id).toSorted()).toEqual(["dup", "p1", "p4"]);
   });
 });

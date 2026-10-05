@@ -629,7 +629,7 @@ try {
 								(t) => t.serie === s.epSerie && t.num >= s.epDebut! && t.num <= s.epFin! && vu(t)
 							)
 							.map((t) => ({ id: t.id, num: t.num, title: t.titre }))
-							.sort((a, b) => a.num - b.num)
+							.toSorted((a, b) => a.num - b.num)
 					: [];
 			preuves.push({
 				saga: s,

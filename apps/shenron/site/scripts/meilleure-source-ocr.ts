@@ -86,7 +86,7 @@ interface Candidat {
 
 const candidats = new Map<string, Candidat>();
 
-const fichiers = (await readdir(LOTS)).filter((f) => f.endsWith(".jsonl")).sort();
+const fichiers = (await readdir(LOTS)).filter((f) => f.endsWith(".jsonl")).toSorted();
 if (fichiers.length === 0) {
 	console.error(`✗ aucun .jsonl dans ${LOTS}`);
 	process.exit(1);
@@ -171,7 +171,7 @@ for (const g of gains) {
 	parDefaut.set(d, (parDefaut.get(d) ?? 0) + 1);
 }
 console.log(`\n${gains.length} planche(s) où un lot bat la base :`);
-for (const [d, n] of [...parDefaut].sort((a, b) => b[1] - a[1])) {
+for (const [d, n] of [...parDefaut].toSorted((a, b) => b[1] - a[1])) {
 	console.log(`  ${d.padEnd(14)} ${String(n).padStart(5)}`);
 }
 

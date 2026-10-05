@@ -201,7 +201,7 @@ async function rootSnapshot(
     .filter(Boolean)
     .map(safeKey);
   const entries: Entry[] = [];
-  for (const path of [...new Set(tracked)].sort()) {
+  for (const path of [...new Set(tracked)].toSorted()) {
     if (
       spec.rootDocsOnly &&
       !(
@@ -610,7 +610,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       const priorRows = (await readFile(indexPath, "utf8"))
         .split("\n")
         .filter((line) => line.startsWith("- `") && !line.includes(`\`${ownerFilter}/`));
-      indexContent = [...index.slice(0, 5), ...priorRows.concat(index.slice(5)).sort()];
+      indexContent = [...index.slice(0, 5), ...priorRows.concat(index.slice(5)).toSorted()];
     }
     await writeFile(indexPath, `${indexContent.join("\n")}\n`);
     await writeFile(output, `${JSON.stringify(report)}\n`);
@@ -1179,7 +1179,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       paths: allEntries.length,
       byKind: Object.fromEntries(
         [...new Set(allEntries.map((entry) => entry.kind))]
-          .sort()
+          .toSorted()
           .map((kind) => [kind, allEntries.filter((entry) => entry.kind === kind).length]),
       ),
     },

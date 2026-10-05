@@ -16,7 +16,7 @@ import {
 	mediaPageAssets,
 	mediaPageRefs,
 } from "../../bot/src/db/schema";
-import type { ChapterItem, VolumeData } from "../src/components/manga/UnifiedVolumeReader";
+import type { VolumeData } from "../src/components/manga/UnifiedVolumeReader";
 
 describe("Sprint 2 — Media Works, Editions & Volume Reader Compatibility", () => {
 	test("PostgreSQL Drizzle schema exports all 6 media models", () => {

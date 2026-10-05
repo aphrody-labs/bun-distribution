@@ -132,7 +132,7 @@ export function CharacterSagaVariants({
 			{/* Rail défilant sur mobile : quatorze sagas ne tiennent pas sur une
 			    ligne d'écran de téléphone, et les empiler pousserait le contenu
 			    hors de vue avant qu'on ait lu la première. */}
-			<div
+			<div tabIndex={0}
 				className="-mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-1 scrollbar-thin sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
 				role="tablist"
 				aria-label={`Sagas de ${characterName}`}

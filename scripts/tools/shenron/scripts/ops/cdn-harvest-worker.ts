@@ -6,7 +6,7 @@
  * des planches Dragon Ball / DragonBallCN via BXC curl-impersonate.
  */
 import { existsSync } from "node:fs";
-import { mkdir, rename, unlink, writeFile, stat } from "node:fs/promises";
+import { mkdir, rename, writeFile, stat } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
@@ -79,7 +79,7 @@ self.onmessage = async (event: MessageEvent<HarvestTask>) => {
 				destPath: task.destPath,
 				bytes: s.size,
 				elapsedMs: Math.round(performance.now() - startTime),
-			});
+			}, self.location.origin);
 			return;
 		} catch {
 			// Continuer le téléchargement si erreur stat
@@ -149,7 +149,7 @@ self.onmessage = async (event: MessageEvent<HarvestTask>) => {
 				width,
 				height,
 				elapsedMs: Math.round(performance.now() - startTime),
-			});
+			}, self.location.origin);
 			return;
 		} catch (err) {
 			lastError = err instanceof Error ? err : new Error(String(err));
@@ -165,5 +165,5 @@ self.onmessage = async (event: MessageEvent<HarvestTask>) => {
 		destPath: task.destPath,
 		error: lastError?.message ?? "Échec inconnu après retries",
 		elapsedMs: Math.round(performance.now() - startTime),
-	});
+	}, self.location.origin);
 };

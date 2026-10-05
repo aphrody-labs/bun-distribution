@@ -230,7 +230,7 @@ export function workerTransport(
       worker.terminate();
     } else if (data.type === "closed") worker.terminate();
   });
-  worker.postMessage({ type: "init", cols, rows });
+  worker.postMessage({ type: "init", cols, rows }, worker.location.origin);
   return {
     send: (bytes) => {
       if (closed) return;
@@ -238,13 +238,13 @@ export function workerTransport(
       worker.postMessage({ type: "input", bytes: owned.buffer }, [owned.buffer]);
     },
     resize: (c, r) => {
-      if (!closed) worker.postMessage({ type: "resize", cols: c, rows: r });
+      if (!closed) worker.postMessage({ type: "resize", cols: c, rows: r }, worker.location.origin);
     },
     onOutput: (cb) => (out = cb),
     close: () => {
       if (closed) return;
       closed = true;
-      worker.postMessage({ type: "close" });
+      worker.postMessage({ type: "close" }, worker.location.origin);
     },
   };
 }

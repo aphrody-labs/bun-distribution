@@ -82,7 +82,7 @@ async function main() {
 				let obj: ResultatLigne;
 				try {
 					obj = JSON.parse(ligne);
-				} catch (e) {
+				} catch  {
 					console.warn(`Ligne JSON invalide ignorée dans ${basename(chemin)}`);
 					continue;
 				}

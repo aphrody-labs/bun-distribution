@@ -48,7 +48,7 @@ const SECTION_LABELS: Record<string, string> = {
 function labelFor(from: string): string {
 	const match = Object.keys(SECTION_LABELS)
 		.filter((p) => from === p || from.startsWith(p + "/") || from.startsWith(p))
-		.sort((a, b) => b.length - a.length)[0];
+		.toSorted((a, b) => b.length - a.length)[0];
 	return match ? SECTION_LABELS[match] : "cette section";
 }
 

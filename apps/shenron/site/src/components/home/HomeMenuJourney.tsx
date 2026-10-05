@@ -31,7 +31,7 @@ export function HomeMenuJourney({
 	// La première carte passe alors pleine largeur et referme la composition.
 	const oddNarrow = kept.filter((destination) => !destination.wide).length % 2 === 1;
 	const destinations = kept.map((destination, index) =>
-		oddNarrow && index === 0 && !destination.wide ? { ...destination, wide: true } : destination
+		oddNarrow && index === 0 && !destination.wide ? Object.assign(destination, { wide: true }) : destination
 	);
 	if (!config.enabled || destinations.length === 0) return null;
 

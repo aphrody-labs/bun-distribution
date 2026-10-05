@@ -7,7 +7,7 @@ import pkg from "../../package.json";
 
 describe("@shenron/pipeline/aphrody exports", () => {
   it("root exposes the shared service clients and script adapters", () => {
-    expect(Object.keys(root).sort()).toEqual([
+    expect(Object.keys(root).toSorted()).toEqual([
       "AphrodyComputeClient",
       "AphrodyFramesClient",
       "AphrodyTranslateService",
@@ -48,7 +48,7 @@ describe("@shenron/pipeline/aphrody exports", () => {
   });
 
   it("cli subpath exposes the JSON wrappers", () => {
-    expect(Object.keys(cli).sort()).toEqual([
+    expect(Object.keys(cli).toSorted()).toEqual([
       "DEFAULT_APHRODY_CLI_TIMEOUT_MS",
       "aphrodyDoctor",
       "aphrodyGitInspect",

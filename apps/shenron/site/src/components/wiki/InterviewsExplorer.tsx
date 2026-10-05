@@ -56,20 +56,20 @@ export function InterviewsExplorer({ groups, ragResults = [] }: InterviewsExplor
 		const list = [...filtered];
 		switch (sortOrder) {
 			case "date-desc":
-				return list.sort(
+				return list.toSorted(
 					(a, b) => (b.year ?? 0) - (a.year ?? 0) || a.document.localeCompare(b.document, "fr")
 				);
 			case "date-asc":
-				return list.sort(
+				return list.toSorted(
 					(a, b) =>
 						(a.year ?? 9999) - (b.year ?? 9999) || a.document.localeCompare(b.document, "fr")
 				);
 			case "count-desc":
-				return list.sort(
+				return list.toSorted(
 					(a, b) => b.words.length - a.words.length || (b.year ?? 0) - (a.year ?? 0)
 				);
 			case "title-asc":
-				return list.sort((a, b) => a.document.localeCompare(b.document, "fr"));
+				return list.toSorted((a, b) => a.document.localeCompare(b.document, "fr"));
 			default:
 				return list;
 		}

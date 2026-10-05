@@ -96,7 +96,7 @@ export const GATES: readonly Gate[] = [
   {
     id: "import-check",
     title: "vendored crates equal a fresh import of the pinned submodules",
-    command: ["bun", "run", "apps/cli/src/index.ts", "import", "--check", "--out", ".cache/vendor"],
+    command: ["bun", "run", "apps/yolo/cli/src/index.ts", "import", "--check", "--out", ".cache/vendor"],
     surfaces: ["vendor.toml", "vendor.lock", "crates/**", "vendor"],
     precondition: (root) =>
       existsSync(join(root, ".cache/vendor"))
@@ -106,8 +106,8 @@ export const GATES: readonly Gate[] = [
   {
     id: "python-lint",
     title: "ruff check (owned Python package)",
-    command: ["ruff", "check", "packages/python"],
-    surfaces: ["packages/python/**", "pyproject.toml"],
+    command: ["ruff", "check", "packages/engine/python"],
+    surfaces: ["packages/engine/python/**", "pyproject.toml"],
     precondition: () => (Bun.which("ruff") ? null : "ruff is not installed on PATH"),
   },
   {
@@ -125,7 +125,7 @@ export const GATES: readonly Gate[] = [
       "import yolo._yolo_native",
     ],
     surfaces: [
-      "packages/python/**",
+      "packages/engine/python/**",
       "crates/engine/yolo-pyo3/**",
       "crates/engine/yolo-core/**",
       "pyproject.toml",
@@ -135,7 +135,7 @@ export const GATES: readonly Gate[] = [
   },
   {
     id: "python-test",
-    title: "Python pytest (packages/python)",
+    title: "Python pytest (packages/engine/python)",
     command: [
       "uv",
       "run",
@@ -148,11 +148,11 @@ export const GATES: readonly Gate[] = [
       "python",
       "-m",
       "pytest",
-      "packages/python/tests",
+      "packages/engine/python/tests",
     ],
     needs: ["python-native"],
     surfaces: [
-      "packages/python/**",
+      "packages/engine/python/**",
       "crates/engine/yolo-pyo3/**",
       "crates/engine/yolo-core/**",
       "pyproject.toml",

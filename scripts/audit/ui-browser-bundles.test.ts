@@ -8,7 +8,7 @@ describe("ui browser bundle gate", () => {
       ".": { types: "./a.d.ts", bun: "./src/a.ts", default: "./dist/a.js" },
       "./b": "./b.js",
     });
-    expect([...targets].sort()).toEqual(["./b.js", "./dist/a.js", "./src/a.ts"]);
+    expect([...targets].toSorted()).toEqual(["./b.js", "./dist/a.js", "./src/a.ts"]);
   });
 
   test("classify distinguishes expected and unexpected failures", () => {

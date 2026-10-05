@@ -179,20 +179,20 @@ export function startOpfsWorker(scope: WorkerScope): void {
           const output = state.engine.input(new Uint8Array(request.bytes));
           persist(state);
           sendBytes(scope, "output", output);
-          if (state.engine.exited()) scope.postMessage({ type: "exited" });
+          if (state.engine.exited()) scope.postMessage({ type: "exited" }, scope.location.origin);
         } else if (request.type === "resize") {
           state.engine.resize(request.cols, request.rows);
         } else {
           for (const handle of state.handles) handle.close();
           state = null;
-          scope.postMessage({ type: "closed" });
+          scope.postMessage({ type: "closed" }, scope.location.origin);
         }
       })
       .catch((error: unknown) => {
         scope.postMessage({
           type: "error",
           message: error instanceof Error ? error.message : String(error),
-        });
+        }, scope.location.origin);
       });
   });
 }

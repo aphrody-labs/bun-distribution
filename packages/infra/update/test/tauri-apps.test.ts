@@ -206,7 +206,7 @@ test("discover scans excluded paths and skips target and node_modules", async ()
     "crates/ui/stray",
     "upstream/fx/examples/demo/src-tauri",
   ]);
-  expect(found.find((item) => item.dir === "crates/ui/app")?.via.sort()).toEqual([
+  expect(found.find((item) => item.dir === "crates/ui/app")?.via.toSorted()).toEqual([
     "cargo",
     "conf",
     "npm",
@@ -216,7 +216,7 @@ test("discover scans excluded paths and skips target and node_modules", async ()
 test("audit reports unregistered projects, pinned deps, schema drift and legacy sibling refs", async () => {
   const root = await fixtureTree();
   const report = await audit(root, parseRegistry(registryJson));
-  const codes = report.violations.map((item) => `${item.code}:${item.subject}`).sort();
+  const codes = report.violations.map((item) => `${item.code}:${item.subject}`).toSorted();
   expect(codes).toEqual([
     "legacy-sibling:crates/ui/app/tauri.conf.json",
     "pinned-crate:app",

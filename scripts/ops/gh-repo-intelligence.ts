@@ -74,7 +74,7 @@ const ranked = active
         priority: priorities.includes(repo.nameWithOwner),
         score: score(repo) + (priorities.includes(repo.nameWithOwner) ? 1000 : 0),
     }))
-    .sort((a, b) => b.score - a.score || a.nameWithOwner.localeCompare(b.nameWithOwner));
+    .toSorted((a, b) => b.score - a.score || a.nameWithOwner.localeCompare(b.nameWithOwner));
 const groups = new Map<string, string[]>();
 for (const repo of active) {
     const key = repo.nameWithOwner

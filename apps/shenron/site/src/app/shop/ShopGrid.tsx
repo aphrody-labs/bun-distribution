@@ -489,7 +489,7 @@ export function ShopGrid({ items, economy }: { items: ShopItem[]; economy: ShopE
 
 			{/* ── Filtres ──────────────────────────────────────────────────── */}
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div className="flex flex-wrap gap-2" role="tablist" aria-label="Filtrer la boutique" onKeyDown={onTablistKeyDown}>
+				<div tabIndex={0} className="flex flex-wrap gap-2" role="tablist" aria-label="Filtrer la boutique" onKeyDown={onTablistKeyDown}>
 					{(["all", ...TYPE_ORDER] as const).map((type) => (
 						<button
 							key={type}

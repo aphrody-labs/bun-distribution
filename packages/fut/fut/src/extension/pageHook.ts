@@ -16,9 +16,7 @@
 
 import type {
 	UtasEventType,
-	UtasInterceptedEvent,
 	WebappAgentCommand,
-	WebappAgentResponse,
 } from "./types.ts";
 
 /**

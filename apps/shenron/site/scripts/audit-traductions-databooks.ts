@@ -137,7 +137,7 @@ try {
 
 	const corrompues = lignes.filter((l) => l.verdict.niveau === "corrompu");
 	console.log(`${lignes.length} planche(s) traduite(s) auditée(s) — seuils : suspect ≥ ${SEUIL_SUSPECT}, corrompu ≥ ${SEUIL_CORROMPU} ou signal certain.\n`);
-	for (const [w, b] of [...parEcrivain].sort((a, b) => b[1].audites - a[1].audites)) {
+	for (const [w, b] of [...parEcrivain].toSorted((a, b) => b[1].audites - a[1].audites)) {
 		console.log(`  ${w.padEnd(36)} ${String(b.audites).padStart(5)} auditées  ${String(b.suspects).padStart(4)} suspectes  ${String(b.corrompus).padStart(4)} corrompues`);
 	}
 	if (DETAILS) {
@@ -254,7 +254,7 @@ try {
 		const classements = lignes
 			.filter((l) => l.verdict.niveau !== "sain")
 			.map((l) => {
-				const primaire = [...l.verdict.signaux].sort(
+				const primaire = [...l.verdict.signaux].toSorted(
 					(a, b) => Number(Boolean(b.certain)) - Number(Boolean(a.certain)) || b.poids - a.poids || a.code.localeCompare(b.code)
 				)[0];
 				return {
@@ -265,7 +265,7 @@ try {
 				};
 			});
 		const parClasse = Object.fromEntries(
-			[...Map.groupBy(classements, (c) => c.classe)].map(([classe, cas]) => [classe, cas.length]).sort()
+			[...Map.groupBy(classements, (c) => c.classe)].map(([classe, cas]) => [classe, cas.length]).toSorted()
 		);
 		await Bun.write(
 			JSON_SORTIE,

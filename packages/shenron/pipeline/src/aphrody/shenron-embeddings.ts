@@ -25,7 +25,7 @@ import type { EmbedKind } from "@shenron/pipeline/ai/embeddings";
 export const SHENRON_EMBED_MODEL = SHENRON_E5.modelId;
 export const SHENRON_EMBED_DIMENSIONS = SHENRON_E5.dimensions;
 const DEFAULT_TIMEOUT_MS = 10_000;
-const LOOPBACK_HOSTS = ["127.0.0.1", "[::1]", "localhost"];
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "[::1]", "localhost"]);
 
 export type ShenronEmbedKind = EmbedKind;
 
@@ -53,7 +53,7 @@ export function resolveShenronEmbeddingsBaseUrl(
 	const url = new URL(options.baseUrl);
 	if (
 		url.protocol !== "http:" ||
-		!LOOPBACK_HOSTS.includes(url.hostname) ||
+		!LOOPBACK_HOSTS.has(url.hostname) ||
 		url.username ||
 		url.password
 	) {

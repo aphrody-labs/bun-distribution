@@ -34,17 +34,17 @@ step() { # name command...
   "$@" || { status "failed: $name"; echo "FAILED: $name"; exit 1; }
 }
 cd "$ws" || exit 1
-version=$(cat VERSION)
+version=$(cat apps/yolo/VERSION)
 step "toolchain bootstrap" bash scripts/release/bootstrap_remote.sh
 command -v sccache >/dev/null && export RUSTC_WRAPPER=sccache
 step "bun install" bun install --frozen-lockfile
-step "check: types, lint, format, rustfmt, clippy" just check
-step "desktop provider: format, check, clippy and tests" just qualify-desktop
-step "imported providers: format, workspace check and tests" just qualify-upstream
-step "Python adapter native tests" just test-python-crate
-step "licenses and sources (cargo deny)" just deny-ci
-step "runtime artifact (build + package)" just runtime-package
-step "tests (bun + nextest)" just test-all
+step "check: types, lint, format, rustfmt, clippy" just yolo::check
+step "desktop provider: format, check, clippy and tests" just yolo::qualify-desktop
+step "imported providers: format, workspace check and tests" just yolo::qualify-upstream
+step "Python adapter native tests" just yolo::test-python-crate
+step "licenses and sources (cargo deny)" just yolo::deny-ci
+step "runtime artifact (build + package)" just yolo::runtime-package
+step "tests (bun + nextest)" just yolo::test-all
 step "release assets" bun run scripts/release/release.ts
 step "install and deploy smoke (D0, D2)" bash scripts/release/smoke_remote.sh "dist/release/$version"
 if git tag --points-at "$sha" | grep -qx "v$version"; then

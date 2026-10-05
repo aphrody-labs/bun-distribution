@@ -108,7 +108,7 @@ export function ExpandableSearchButton({
 								size="sm"
 								className="w-64"
 								onBlur={handleBlur}
-								autoFocus
+								
 							/>
 						</motion.div>
 					)}

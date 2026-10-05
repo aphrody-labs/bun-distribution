@@ -90,7 +90,7 @@ function ShellLayoutContent() {
             const locPath = loc.sd_path.Physical.path;
             return pathStr.startsWith(locPath);
           })
-          .sort((a, b) => {
+          .toSorted((a, b) => {
             const aPath = "Physical" in a.sd_path! ? a.sd_path!.Physical.path : "";
             const bPath = "Physical" in b.sd_path! ? b.sd_path!.Physical.path : "";
             return bPath.length - aPath.length;

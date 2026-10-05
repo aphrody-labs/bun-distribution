@@ -87,7 +87,7 @@ export default async function TransformationsPage() {
 			g.members.push({ id: char.id, slug: char.slug, name: char.name, image: char.image });
 	}
 
-	const list = [...groups.values()].sort(
+	const list = [...groups.values()].toSorted(
 		(a, b) => b.members.length - a.members.length || a.name.localeCompare(b.name)
 	);
 

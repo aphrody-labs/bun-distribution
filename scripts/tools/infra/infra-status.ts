@@ -254,7 +254,10 @@ async function network() {
 	const beforeByName = new Map(before.map((row) => [row.interface, row]));
 	return after.map((row) => {
 		const previous = beforeByName.get(row.interface) ?? row;
-		return { ...row, rxBytesPerSecond: Math.max(0, row.rxBytes - previous.rxBytes), txBytesPerSecond: Math.max(0, row.txBytes - previous.txBytes) };
+		return Object.assign(row, {
+	rxBytesPerSecond: Math.max(0, row.rxBytes - previous.rxBytes),
+	txBytesPerSecond: Math.max(0, row.txBytes - previous.txBytes)
+});
 	});
 }
 
@@ -271,14 +274,14 @@ async function processSummary() {
 		const fields = line.trim().split(/\s+/u);
 		return { pid: number(fields[0]), ppid: number(fields[1]), user: fields[2], command: fields[3], cpuPercent: number(fields[4]), memoryPercent: number(fields[5]), rssKb: number(fields[6]), state: fields[7] };
 	});
-	return { count: processes.length, topCpu: processes.slice(0, 10), topMemory: [...processes].sort((a, b) => (b.memoryPercent ?? 0) - (a.memoryPercent ?? 0)).slice(0, 10) };
+	return { count: processes.length, topCpu: processes.slice(0, 10), topMemory: [...processes].toSorted((a, b) => (b.memoryPercent ?? 0) - (a.memoryPercent ?? 0)).slice(0, 10) };
 }
 
 async function serviceSummary() {
 	const listed = await run(["systemctl", "list-units", "--type=service", "--state=running", "--no-legend", "--plain"]);
 	const names = listed.stdout.trim().split("\n").filter(Boolean).map((line) => line.trim().split(/\s+/u)[0]);
 	const resources = await Promise.all(names.map(async (unit) => ({ unit, ...(await unitStatus(unit)) })));
-	return { runningCount: names.length, running: names, topMemory: [...resources].sort((a, b) => (b.memoryBytes ?? 0) - (a.memoryBytes ?? 0)).slice(0, 10), topCpuTime: [...resources].sort((a, b) => (b.cpuTimeNs ?? 0) - (a.cpuTimeNs ?? 0)).slice(0, 10) };
+	return { runningCount: names.length, running: names, topMemory: [...resources].toSorted((a, b) => (b.memoryBytes ?? 0) - (a.memoryBytes ?? 0)).slice(0, 10), topCpuTime: [...resources].toSorted((a, b) => (b.cpuTimeNs ?? 0) - (a.cpuTimeNs ?? 0)).slice(0, 10) };
 }
 
 async function socketSummary() {
@@ -311,7 +314,7 @@ async function inventory() {
 		return { path, timedOut: du.code === 124, entries: du.stdout.trim().split("\n").filter(Boolean).map((line) => {
 			const match = line.match(/^(\d+)\s+(.*)$/u);
 			return match ? { bytes: Number(match[1]), path: match[2] } : { raw: line };
-		}).sort((a, b) => ((b as { bytes?: number }).bytes ?? 0) - ((a as { bytes?: number }).bytes ?? 0)).slice(0, 20) };
+		}).toSorted((a, b) => ((b as { bytes?: number }).bytes ?? 0) - ((a as { bytes?: number }).bytes ?? 0)).slice(0, 20) };
 	}));
 	return result;
 }

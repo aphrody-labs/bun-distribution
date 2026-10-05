@@ -136,7 +136,7 @@ function IndexIndicator({path}: {path: SdPath}) {
 					const locPath = loc.sd_path.Physical.path;
 					return pathStr.startsWith(locPath);
 				})
-				.sort((a: any, b: any) => {
+				.toSorted((a: any, b: any) => {
 					const aPath =
 						'Physical' in a.sd_path!
 							? a.sd_path!.Physical.path
@@ -448,7 +448,7 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 						onChange={(e) => setEditValue(e.target.value)}
 						onKeyDown={handleEditKeyDown}
 						onBlur={exitEditMode}
-						autoFocus
+						
 						className={clsx(
 							'min-w-0 flex-1 border-0 bg-transparent outline-none ring-0',
 							'text-on-surface text-label-medium',

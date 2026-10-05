@@ -40,7 +40,7 @@ async function workspaces(root = infraRoot()): Promise<Workspace[]> {
       });
     }
   }
-  return found.sort((left, right) => left.name.localeCompare(right.name));
+  return found.toSorted((left, right) => left.name.localeCompare(right.name));
 }
 
 function checkScripts(check: Check): string[] {
@@ -202,13 +202,13 @@ export async function runShenron(args: string[], root = infraRoot()): Promise<nu
                 name,
                 path,
                 kind,
-                scripts: Object.keys(scripts).sort(),
+                scripts: Object.keys(scripts).toSorted(),
               })),
             }
           : items.map(({ name, kind, scripts }) => ({
               name,
               kind,
-              scripts: Object.entries(scripts).sort(([left], [right]) => left.localeCompare(right)),
+              scripts: Object.entries(scripts).toSorted(([left], [right]) => left.localeCompare(right)),
             })),
         null,
         2,

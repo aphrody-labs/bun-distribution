@@ -116,7 +116,7 @@ export function gitFiles(repoDir: string, patterns: string[]): string[] {
     ...new Set(result.stdout.split("\0").filter((file) => file !== "" && !EXCLUDED.test(file))),
   ]
     .filter((file) => existsSync(join(repoDir, file)))
-    .sort();
+    .toSorted();
 }
 
 const read = (path: string): string => readFileSync(path, "utf8");
@@ -411,7 +411,7 @@ function parseVariants(toks: Tok[]): Variant[] {
   return variants;
 }
 
-const CLAP_DERIVES = ["Parser", "Subcommand", "Args"];
+const CLAP_DERIVES = new Set(["Parser", "Subcommand", "Args"]);
 
 /** Every enum/struct deriving `Parser`, `Subcommand` or `Args` in a Rust source file. */
 export function clapItems(src: string, file: string, crate: string, repo: string): ClapItem[] {
@@ -453,7 +453,7 @@ export function clapItems(src: string, file: string, crate: string, repo: string
             .split(",")
             .map((d) => d.trim().split("::").at(-1) ?? ""),
         );
-      if (opener === "{" && derives.some((d) => CLAP_DERIVES.includes(d))) {
+      if (opener === "{" && derives.some((d) => CLAP_DERIVES.has(d))) {
         const body = toks.slice(j + 1, end - 1);
         items.push({
           ...pending,
@@ -619,7 +619,7 @@ export class ClapIndex {
       out.push({
         name: values.get("name")?.[0] ?? kebab(variant.name),
         about: docs.replace(/\s+/g, " ").trim(),
-        aliases: [...new Set(aliases)].sort(),
+        aliases: [...new Set(aliases)].toSorted(),
         cfg: cfgOf(variant.attrs),
         children,
       });
@@ -893,10 +893,10 @@ export function collect(root: string): Ecosystem {
             name: pkg.name,
             path: crateDir,
             description: oneLine(pkg.description ?? ""),
-            bins: bins.map((b) => b.name).sort(),
+            bins: bins.map((b) => b.name).toSorted(),
             features: Object.keys(pkg.features)
               .filter((f) => !f.startsWith("dep:"))
-              .sort(),
+              .toSorted(),
           });
           const usesClap = pkg.dependencies.some((d) => d.name === "clap");
           for (const bin of bins) {
@@ -934,7 +934,7 @@ export function collect(root: string): Ecosystem {
         name: json.name,
         path: pkgDir || ".",
         description: oneLine(json.description ?? ""),
-        bins: bins.sort(),
+        bins: bins.toSorted(),
       });
     }
     info.bunPackages.sort((a, b) => a.name.localeCompare(b.name) || a.path.localeCompare(b.path));

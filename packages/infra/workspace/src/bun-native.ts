@@ -374,7 +374,7 @@ export async function runBunNative(
           if ((error as NodeJS.ErrnoException).code !== "EXDEV") throw error;
           await copyFile(staged, finalArtifact);
           if ((await sha256(finalArtifact)) !== stagedHash)
-            throw new Error("native publication copy changed");
+            throw new Error("native publication copy changed", { cause: error });
         }
         await copyFile(stagedManifest, join(publication, "manifest.json"));
         signal.throwIfAborted();

@@ -170,7 +170,7 @@ for (const t of TABLES) {
 	}
 }
 
-const liste = [...termes.values()].sort((a, b) => a.fr.localeCompare(b.fr, "fr"));
+const liste = [...termes.values()].toSorted((a, b) => a.fr.localeCompare(b.fr, "fr"));
 const avecJa = liste.filter((t) => t.ja).length;
 console.log(
 	`${liste.length} termes protégés — ${avecJa} avec graphie japonaise, ${ambigus} ramené(s) au seul français (graphies en conflit)\n` +

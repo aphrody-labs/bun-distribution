@@ -105,7 +105,7 @@ export function KnowledgeView() {
 
 		// Sort by count and return top categories
 		return Array.from(groups.entries())
-			.sort((a, b) => b[1].length - a[1].length)
+			.toSorted((a, b) => b[1].length - a[1].length)
 			.slice(0, 6);
 	}, [files]);
 
@@ -131,7 +131,7 @@ export function KnowledgeView() {
 			});
 		});
 
-		return Array.from(tagMap.values()).sort((a, b) => b.count - a.count);
+		return Array.from(tagMap.values()).toSorted((a, b) => b.count - a.count);
 	}, [files]);
 
 	return (

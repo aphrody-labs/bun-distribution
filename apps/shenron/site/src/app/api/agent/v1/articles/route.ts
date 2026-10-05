@@ -78,12 +78,11 @@ export async function GET(req: Request) {
 		return agentOk({
 			page,
 			perPage,
-			articles: rows.map((r) => ({
-				...r,
-				publishedAt: r.publishedAt?.toISOString() ?? null,
-				updatedAt: r.updatedAt.toISOString(),
-				url: `/news/${r.slug}`,
-			})),
+			articles: rows.map((r) => (Object.assign(r, {
+	publishedAt: r.publishedAt?.toISOString() ?? null,
+	updatedAt: r.updatedAt.toISOString(),
+	url: `/news/${r.slug}`
+}))),
 		});
 	});
 }

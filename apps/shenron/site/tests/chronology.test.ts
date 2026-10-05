@@ -126,7 +126,7 @@ describe("compareTimeline", () => {
 			ep(1, { title: "Aube" }),
 			ep(2, { title: "Bataille" }),
 		];
-		expect([...items].sort(compareTimeline("title")).map((i) => i.title)).toEqual([
+		expect([...items].toSorted(compareTimeline("title")).map((i) => i.title)).toEqual([
 			"Aube",
 			"Bataille",
 			"Cellule",
@@ -135,6 +135,6 @@ describe("compareTimeline", () => {
 
 	test("tri par date, les plus anciennes d'abord", () => {
 		const items = [ep(3, { date: 300 }), ep(1, { date: 100 }), ep(2, { date: 200 })];
-		expect([...items].sort(compareTimeline("date")).map((i) => i.date)).toEqual([100, 200, 300]);
+		expect([...items].toSorted(compareTimeline("date")).map((i) => i.date)).toEqual([100, 200, 300]);
 	});
 });

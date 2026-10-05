@@ -76,7 +76,7 @@ const freshness = (c: SqliteCandidate): string => (c.newestRow && c.newestRow > 
 function bestSqlite(all: SqliteCandidate[], domain: Domain): SqliteCandidate | undefined {
   return all
     .filter((c) => c.domain === domain && !c.error)
-    .sort((a, b) =>
+    .toSorted((a, b) =>
       Number(b.integrity === "ok") - Number(a.integrity === "ok")
       || b.totalRows - a.totalRows
       || freshness(b).localeCompare(freshness(a)))[0];
@@ -85,13 +85,13 @@ function bestSqlite(all: SqliteCandidate[], domain: Domain): SqliteCandidate | u
 function freshestPackage(all: PackageCandidate[], domain: Domain): PackageCandidate | undefined {
   return all
     .filter((p) => p.domain === domain)
-    .sort((a, b) => b.modified.localeCompare(a.modified) || Bun.semver.order(b.version, a.version))[0];
+    .toSorted((a, b) => b.modified.localeCompare(a.modified) || Bun.semver.order(b.version, a.version))[0];
 }
 
 function compareSqlite(rg: SqliteCandidate, sh: SqliteCandidate) {
   const rgTables = new Map(rg.tables.map((t) => [t.name, t]));
   const shTables = new Map(sh.tables.map((t) => [t.name, t]));
-  const common = [...rgTables.keys()].filter((n) => shTables.has(n)).sort().map((name) => {
+  const common = [...rgTables.keys()].filter((n) => shTables.has(n)).toSorted().map((name) => {
     const a = rgTables.get(name)!;
     const b = shTables.get(name)!;
     return {
@@ -103,8 +103,8 @@ function compareSqlite(rg: SqliteCandidate, sh: SqliteCandidate) {
   });
   return {
     sameContent: rg.sha256 === sh.sha256,
-    tablesOnlyRg: [...rgTables.keys()].filter((n) => !shTables.has(n)).sort(),
-    tablesOnlyShenron: [...shTables.keys()].filter((n) => !rgTables.has(n)).sort(),
+    tablesOnlyRg: [...rgTables.keys()].filter((n) => !shTables.has(n)).toSorted(),
+    tablesOnlyShenron: [...shTables.keys()].filter((n) => !rgTables.has(n)).toSorted(),
     commonTables: common,
   };
 }
@@ -114,7 +114,7 @@ function comparePackages(rg: PackageCandidate, sh: PackageCandidate) {
   const shared: { name: string; rg: string; shenron: string; same: boolean }[] = [];
   const onlyRg: string[] = [];
   const onlyShenron: string[] = [];
-  for (const name of [...deps].sort()) {
+  for (const name of [...deps].toSorted()) {
     const a = rg.dependencies[name];
     const b = sh.dependencies[name];
     if (a && b) shared.push({ name, rg: a, shenron: b, same: a === b });
@@ -135,7 +135,7 @@ function comparePackages(rg: PackageCandidate, sh: PackageCandidate) {
     },
     identicalFiles: rg.files.filter((f) => shByHash.has(f.sha256)).map((f) => ({ rg: f.path, shenron: shByHash.get(f.sha256)! })),
     samePathDifferentContent: rg.files.filter((f) => shByPath.has(f.path) && shByPath.get(f.path)!.sha256 !== f.sha256).map((f) => f.path),
-    sameModuleName: [...new Set(rg.files.map((f) => basename(f.path)).filter((b) => shBase.has(b) && /\.tsx?$/.test(b)))].sort(),
+    sameModuleName: [...new Set(rg.files.map((f) => basename(f.path)).filter((b) => shBase.has(b) && /\.tsx?$/.test(b)))].toSorted(),
     declaredTables: {
       common: rg.declaredTables.filter((t) => sh.declaredTables.includes(t)),
       rgCount: rg.declaredTables.length,
@@ -182,7 +182,7 @@ const lines: string[] = [`# RG vs Shenron — bases SQLite et packages db (${rep
 lines.push(`Hôtes : ${report.hosts.map((h) => `${h.host} (${h.sqlite} sqlite, ${h.packages} packages)`).join(", ")}`);
 for (const f of failures) lines.push(`ÉCHEC ${f.host} : ${f.error}`);
 lines.push("", "## Candidats SQLite", "", "| domaine | hôte:chemin | Mo | lignes | tables | fraîcheur | intégrité |", "|---|---|--:|--:|--:|---|---|");
-for (const c of [...sqlite].sort((a, b) => a.domain.localeCompare(b.domain) || b.totalRows - a.totalRows)) {
+for (const c of [...sqlite].toSorted((a, b) => a.domain.localeCompare(b.domain) || b.totalRows - a.totalRows)) {
   lines.push(`| ${c.domain} | ${where(c)} | ${(c.bytes / 1e6).toFixed(1)} | ${fmt.format(c.totalRows)} | ${c.tables.length} | ${freshness(c).slice(0, 16)} | ${c.error ? `erreur: ${c.error}` : c.integrity} |`);
 }
 for (const d of ["rg", "shenron"] as const) {
@@ -197,7 +197,7 @@ if (sc) {
   lines.push(`Tables communes (${sc.commonTables.length}) : ${list(sc.commonTables.map((t) => `${t.name} (${fmt.format(t.rows.rg)}/${fmt.format(t.rows.shenron)})`))}`);
 }
 lines.push("", "## Packages db", "", "| domaine | hôte:dossier | nom@version | fichiers | modifié |", "|---|---|---|--:|---|");
-for (const p of [...packages].sort((a, b) => a.domain.localeCompare(b.domain) || b.modified.localeCompare(a.modified))) {
+for (const p of [...packages].toSorted((a, b) => a.domain.localeCompare(b.domain) || b.modified.localeCompare(a.modified))) {
   lines.push(`| ${p.domain} | ${where(p)} | ${p.name}@${p.version} | ${p.files.length} | ${p.modified.slice(0, 16)} |`);
 }
 for (const d of ["rg", "shenron"] as const) {

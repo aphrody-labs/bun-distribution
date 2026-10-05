@@ -1,5 +1,5 @@
 // Light consumer: calls a native capability through the SDK, compiling no engine.
-// Run: bun run packages/runtime/examples/stats.ts   (after `just runtime-build`)
+// Run: bun run packages/engine/runtime/examples/stats.ts   (after `just yolo::runtime-build`)
 import { Runtime } from "../src/index";
 
 using runtime = Runtime.load();

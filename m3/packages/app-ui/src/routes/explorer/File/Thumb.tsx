@@ -75,7 +75,7 @@ export const Thumb = memo(function Thumb({
     // Only use higher resolution for very large sizes (>400px)
     const preferredSize = targetSize <= 400 ? targetSize * 0.6 : targetSize;
 
-    const thumbnail = thumbnails.sort((a, b) => {
+    const thumbnail = thumbnails.toSorted((a, b) => {
       // Parse variant (e.g., "grid@1x", "detail@1x") to get size and scale
       const aSize = parseInt(
         a.variant.split("x")[0]?.replace(/\D/g, "") || "0",

@@ -185,7 +185,7 @@ console.log(
 	`${totalCorrections} correction(s) sur ${modifications.length} planche(s) / ${planches.length} examinées\n`
 );
 
-const tri = [...totaux.entries()].sort((a, b) => b[1].n - a[1].n);
+const tri = [...totaux.entries()].toSorted((a, b) => b[1].n - a[1].n);
 for (const [lu, v] of tri) {
 	console.log(
 		`  ${String(v.n).padStart(4)}×  ${lu.padEnd(16)} → ${v.correct.padEnd(16)} ${String(v.planches).padStart(3)} pl  ${String(v.ouvrages.size).padStart(2)} ouv   ${v.fr}`
@@ -284,7 +284,7 @@ function paquets<T>(items: T[], taille: number): T[][] {
 let deposees = 0;
 let echecs = 0;
 
-for (const [databookId, liste] of [...parOuvrage.entries()].sort((a, b) => a[0] - b[0])) {
+for (const [databookId, liste] of [...parOuvrage.entries()].toSorted((a, b) => a[0] - b[0])) {
 	for (const lot of paquets(liste, PAQUET)) {
 		const corps = JSON.stringify({
 			mode: "merge",

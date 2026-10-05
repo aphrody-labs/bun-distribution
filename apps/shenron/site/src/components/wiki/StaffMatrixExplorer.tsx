@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, X, Users, Sparkles, Feather, Clapperboard, Mic, Music, BookOpen } from "lucide-react";
+import { Search, X, Users, Feather, Clapperboard, Mic, Music, BookOpen } from "lucide-react";
 
 type ContributorCategory =
 	| "all"

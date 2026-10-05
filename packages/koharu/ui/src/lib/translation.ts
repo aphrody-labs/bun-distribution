@@ -29,7 +29,7 @@ export function orderedLanguageChoices(
 ): Array<{ tag: string; name: string }> {
   return languages
     .map((language) => ({ tag: language.tag, name: language.name }))
-    .sort((left, right) =>
+    .toSorted((left, right) =>
       left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: 'base' }),
     )
 }

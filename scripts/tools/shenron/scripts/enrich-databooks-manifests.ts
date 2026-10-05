@@ -3,8 +3,8 @@
  * Les sorties sont manifeste.ocr.json et décrivent les entrées réellement
  * présentes sur disque ainsi que les résultats JSONL déjà produits.
  */
-import { readdir, readFile, stat } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 type Entry = {
 	databookId: number;
@@ -19,7 +19,7 @@ const root = process.argv[2] ?? "data/sj-ocr";
 const lots = (await readdir(root, { withFileTypes: true }))
 	.filter((x) => x.isDirectory() && /^lot-\d+$/.test(x.name))
 	.map((x) => x.name)
-	.sort();
+	.toSorted();
 
 const profile = (kind: string | undefined, category: string | undefined) => ({
 	kind: kind ?? "unknown",
@@ -42,7 +42,7 @@ for (const lot of lots) {
 		entrees: Entry[];
 	};
 	const imageDir = join(dir, "images");
-	const files = (await readdir(imageDir)).filter((x) => /\.(?:jpe?g|png|webp)$/i.test(x)).sort();
+	const files = (await readdir(imageDir)).filter((x) => /\.(?:jpe?g|png|webp)$/i.test(x)).toSorted();
 	const expected = source.entrees.map((entry) => entry.image.split("/").at(-1) ?? entry.image);
 	const existing = await readFile(join(dir, "resultats.jsonl"), "utf8").catch(() => "");
 	const resultImages = existing

@@ -123,8 +123,8 @@ export type A2ATaskStatus =
 
 export type HonestDeliveryVerdict = "FAIT" | "INCOMPLET" | "NON_FAIT";
 
-const VERDICTS: readonly HonestDeliveryVerdict[] = ["FAIT", "INCOMPLET", "NON_FAIT"];
-const TERMINAL_STATUSES: readonly A2ATaskStatus[] = ["completed", "failed", "canceled"];
+const VERDICTS: readonly HonestDeliveryVerdict[] = new Set(["FAIT", "INCOMPLET", "NON_FAIT"]);
+const TERMINAL_STATUSES: readonly A2ATaskStatus[] = new Set(["completed", "failed", "canceled"]);
 
 export interface A2ATextPart {
 	type: "text";
@@ -925,7 +925,7 @@ export class ShenronA2AHub {
 			metadata: { sourceAgent: SHENRON_A2A_AGENT_ID, targetAgent: target, timestamp: new Date().toISOString() },
 		});
 
-		const pending = !TERMINAL_STATUSES.includes(status);
+		const pending = !TERMINAL_STATUSES.has(status);
 		const responseEnvelope: A2AEnvelope = {
 			v: 1,
 			ts: new Date().toISOString(),
@@ -967,7 +967,7 @@ export class ShenronA2AHub {
 	static async updateTask(params: A2ATaskUpdateParams): Promise<A2ATaskUpdateResult> {
 		const task = await loadTask(params.taskId);
 		if (!task) return { ok: false, code: -32004, message: `Task not found: ${params.taskId}` };
-		if (TERMINAL_STATUSES.includes(task.status)) {
+		if (TERMINAL_STATUSES.has(task.status)) {
 			return {
 				ok: false,
 				code: -32002,
@@ -977,7 +977,7 @@ export class ShenronA2AHub {
 
 		const { verdict, text, data } = params;
 		const sourceAgent = params.sourceAgent ?? "peer";
-		if (verdict !== undefined && !VERDICTS.includes(verdict)) {
+		if (verdict !== undefined && !VERDICTS.has(verdict)) {
 			return { ok: false, code: -32602, message: `Verdict invalide : ${String(verdict)}` };
 		}
 		const artifacts = (params.artifacts ?? []).filter(isArtifact);
@@ -1008,7 +1008,7 @@ export class ShenronA2AHub {
 					? params.status
 					: "working";
 		} else {
-			if (params.status && TERMINAL_STATUSES.includes(params.status)) {
+			if (params.status && TERMINAL_STATUSES.has(params.status)) {
 				return {
 					ok: false,
 					code: -32602,
@@ -1109,7 +1109,7 @@ export class ShenronA2AHub {
 	 */
 	static async reconcileTask(task: A2ATask): Promise<A2ATask> {
 		const envelopeId = task.metadata?.envelopeId;
-		if (typeof envelopeId !== "string" || TERMINAL_STATUSES.includes(task.status)) return task;
+		if (typeof envelopeId !== "string" || TERMINAL_STATUSES.has(task.status)) return task;
 		const applied = new Set((task.metadata.appliedEnvelopes as string[] | undefined) ?? []);
 		const replies = (await loadEnvelopes(5000))
 			.filter(
@@ -1124,7 +1124,7 @@ export class ShenronA2AHub {
 			.sort((a, b) => (a.ts || "").localeCompare(b.ts || ""));
 		let current = task;
 		for (const env of replies) {
-			if (TERMINAL_STATUSES.includes(current.status)) break;
+			if (TERMINAL_STATUSES.has(current.status)) break;
 			const res = await this.applyPeerEnvelope(current, env);
 			if (res.ok) current = res.task;
 		}

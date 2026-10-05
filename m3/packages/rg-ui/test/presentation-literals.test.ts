@@ -123,7 +123,7 @@ function isAllowed(path: string, category: Category): boolean {
 
 function listSourceFiles(directory: string): string[] {
 	const files: string[] = [];
-	for (const entry of readdirSync(directory).sort()) {
+	for (const entry of readdirSync(directory).toSorted()) {
 		const absolute = join(directory, entry);
 		if (statSync(absolute).isDirectory()) {
 			files.push(...listSourceFiles(absolute));
@@ -241,7 +241,7 @@ describe("ratchet des littéraux de présentation", () => {
 		const baseline = (await Bun.file(BASELINE_PATH).json()) as Baseline;
 		expect(baseline.schemaVersion).toBe(1);
 		expect(baseline.scope).toMatch(/^apps\/(?:rg\/)?website\/src\/\*\*\/\*\.\{tsx,css\}$/);
-		expect(Object.keys(baseline.counts).sort()).toEqual([...CATEGORIES].sort());
+		expect(Object.keys(baseline.counts).toSorted()).toEqual([...CATEGORIES].toSorted());
 
 		const current = currentCounts();
 		const increases = CATEGORIES.flatMap((category) => {

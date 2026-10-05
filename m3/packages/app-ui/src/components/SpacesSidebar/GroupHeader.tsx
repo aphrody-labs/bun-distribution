@@ -133,7 +133,7 @@ export function GroupHeader({
             }
           }}
           onBlur={handleRename}
-          autoFocus
+          
           className="flex-1 px-2 py-1 text-label-small font-semibold tracking-wider rounded-small bg-surface-container border border-outline-variant text-on-surface placeholder:text-outline outline-none focus:border-primary"
         />
       ) : (

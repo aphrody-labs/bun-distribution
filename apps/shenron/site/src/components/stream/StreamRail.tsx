@@ -132,7 +132,7 @@ export function StreamRail({
 				// Le preflight Tailwind pose `list-style: none`, ce qui fait perdre le
 				// rôle `list` sous VoiceOver/Safari : l'`aria-label` du rail se
 				// retrouverait sur un élément générique, donc jamais annoncé.
-				role="list"
+				
 				aria-label={ariaLabel}
 				className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 			>

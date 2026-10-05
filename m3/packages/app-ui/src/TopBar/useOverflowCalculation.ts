@@ -69,11 +69,11 @@ export function useOverflowCalculation() {
 
 		const leftItems = Array.from(items.values())
 			.filter(item => item.position === "left")
-			.sort(sortByPriority);
+			.toSorted(sortByPriority);
 
 		const rightItems = Array.from(items.values())
 			.filter(item => item.position === "right")
-			.sort(sortByPriority);
+			.toSorted(sortByPriority);
 
 		const centerItems = Array.from(items.values())
 			.filter(item => item.position === "center");

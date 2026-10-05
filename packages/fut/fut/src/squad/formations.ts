@@ -15,7 +15,7 @@
  */
 
 import { getEaFormation, listEaFormations } from "./eaFormations.ts";
-import type { FormationDefinition, PitchPosition } from "./types.ts";
+import type { FormationDefinition } from "./types.ts";
 
 export const FORMATIONS_CATALOG: Record<string, FormationDefinition> = {
 	"4-4-1-1": {

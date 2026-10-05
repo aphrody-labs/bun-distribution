@@ -18,7 +18,7 @@
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { rename } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import postgres from "postgres";
 import { defautDePlanche } from "../../../../../apps/shenron/site/src/lib/databooks-defauts";
 
@@ -124,7 +124,7 @@ function recordId(record: CorpusRecord): string {
 function termsFor(candidate: WikiPageCandidate): string[] {
 	return [...new Set([candidate.title, candidate.nameJa ?? "", ...(candidate.aliases ?? [])].map((v) => v.trim()).filter(Boolean))]
 		.filter((term) => (containsCjk(term) ? [...normalized(term)].length >= 3 : [...normalized(term)].length >= 4))
-		.sort((a, b) => normalized(a).localeCompare(normalized(b), "und"));
+		.toSorted((a, b) => normalized(a).localeCompare(normalized(b), "und"));
 }
 
 /** Pure, deterministic transformation suitable for review and focused tests. */
@@ -135,7 +135,7 @@ export function buildSourceBundles(
 ): SourceBundleDocument {
 	if (!Number.isInteger(limit) || limit < 1) throw new Error("limit must be a positive integer");
 	const sortedRecords = records
-		.filter((record) => record.verified && record.text.trim() !== "" && /^https:\/\//.test(record.sourceUrl))
+		.filter((record) => record.verified && record.text.trim() !== "" && record.sourceUrl.startsWith('https://'))
 		.toSorted((a, b) => recordId(a).localeCompare(recordId(b), "und"));
 	const bundles = [...candidates]
 		.toSorted((a, b) => a.id.localeCompare(b.id, "und"))
@@ -194,7 +194,7 @@ async function databaseUrl(): Promise<string> {
 	if (process.env.DATABASE_URL?.trim()) return process.env.DATABASE_URL.trim();
 	const siteEnv = await Bun.file(join(import.meta.dir, "../../apps/site/.env")).text().catch(() => "");
 	const line = siteEnv.split("\n").filter((value) => value.startsWith("DATABASE_URL=")).at(-1);
-	const url = line?.slice("DATABASE_URL=".length).trim().replace(/^[\"']|[\"']$/g, "");
+	const url = line?.slice("DATABASE_URL=".length).trim().replace(/^["']|["']$/g, "");
 	if (!url) throw new Error("DATABASE_URL is required to read the primary-source corpus");
 	return url;
 }

@@ -537,7 +537,7 @@ test("apply moves, removes duplicates, rewrites inbound links and records aliase
     expect(map.entries[1]).toMatchObject({ importedTarget: "docs/architecture/ui/m3/M3-X.md" });
     expect(map.entries[1]?.importedSha256).toBe(sha256Of(moved));
     const dedup = report.actions.find((action) => action.id === "dedup:pkg");
-    expect(dedup?.inboundRewritten.map((item) => item.file).sort()).toEqual([
+    expect(dedup?.inboundRewritten.map((item) => item.file).toSorted()).toEqual([
       "docs/architecture/ui/design/other.md",
       "docs/architecture/ui/m3/M3-X.md",
     ]);

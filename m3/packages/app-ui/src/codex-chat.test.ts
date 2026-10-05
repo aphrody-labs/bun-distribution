@@ -136,7 +136,7 @@ describe("Codex Chat - Item & Turn Reduction", () => {
     const targetItemId = "item-2";
 
     const updated = items.map((item) =>
-      item.itemId === targetItemId ? { ...item, content: item.content + delta } : item,
+      item.itemId === targetItemId ? Object.assign(item, { content: item.content + delta }) : item,
     );
 
     expect(updated[0].content).toBe("Hello");
@@ -182,7 +182,10 @@ describe("Codex Chat - Thread Actions & Wire Payloads", () => {
     ];
 
     const updated = threads.map((t) =>
-      t.id === "t-1" ? { ...t, name: "Renamed 1", preview: "Renamed 1" } : t,
+      t.id === "t-1" ? Object.assign(t, {
+	name: 'Renamed 1',
+	preview: 'Renamed 1'
+}) : t,
     );
 
     expect(updated[0].name).toBe("Renamed 1");

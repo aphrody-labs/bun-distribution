@@ -67,12 +67,12 @@ self.onmessage = async (event: MessageEvent<WorkerTask>) => {
         totalPages: detail.totalPages,
         pages: detail.pages,
       },
-    });
+    }, self.location.origin);
   } catch (error) {
     self.postMessage({
       type: "error",
       did,
       error: error instanceof Error ? error.message : String(error),
-    });
+    }, self.location.origin);
   }
 };

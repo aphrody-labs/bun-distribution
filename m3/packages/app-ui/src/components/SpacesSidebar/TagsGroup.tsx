@@ -242,7 +242,7 @@ export function TagsGroup({
 									}
 								}}
 								placeholder="Tag name..."
-								autoFocus
+								
 								className="bg-surface-container border-outline-variant text-on-surface placeholder:text-outline focus:border-primary w-full rounded-small border px-2 py-1 text-body-small outline-none"
 							/>
 						</div>

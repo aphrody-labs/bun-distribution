@@ -258,7 +258,7 @@ async function main() {
 					if (sources.length >= 5) break;
 					let match = false;
 					for (const t of terms) {
-						const isAscii = /^[a-z0-9\s\-]+$/i.test(t);
+						const isAscii = /^[a-z0-9\s-]+$/i.test(t);
 						if (isAscii && t.length >= 3) {
 							const regex = new RegExp(`(?<!\\p{L})${escapeRegExp(t.toLowerCase())}(?!\\p{L})`, "iu");
 							if (
@@ -286,7 +286,7 @@ async function main() {
 					if (sources.length >= 5) break;
 					let match = false;
 					for (const t of terms) {
-						const isAscii = /^[a-z0-9\s\-]+$/i.test(t);
+						const isAscii = /^[a-z0-9\s-]+$/i.test(t);
 						if (isAscii && t.length >= 3) {
 							const regex = new RegExp(`(?<!\\p{L})${escapeRegExp(t.toLowerCase())}(?!\\p{L})`, "iu");
 							if (regex.test(p.textFrNorm)) {
@@ -314,7 +314,7 @@ async function main() {
 					if (sources.length >= 5) break;
 					let match = false;
 					for (const t of terms) {
-						const isAscii = /^[a-z0-9\s\-]+$/i.test(t);
+						const isAscii = /^[a-z0-9\s-]+$/i.test(t);
 						if (isAscii && t.length >= 3) {
 							const regex = new RegExp(`(?<!\\p{L})${escapeRegExp(t.toLowerCase())}(?!\\p{L})`, "iu");
 							if (regex.test(p.textFrNorm)) {

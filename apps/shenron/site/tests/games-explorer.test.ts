@@ -45,7 +45,7 @@ function filterAndSortGames(
 			const platMatch = g.platforms ? g.platforms.toLowerCase().includes(q) : false;
 			return titleMatch || titleJaMatch || devMatch || pubMatch || descMatch || platMatch;
 		})
-		.sort((a, b) => {
+		.toSorted((a, b) => {
 			const rA = ratings[String(a.id)]?.average ?? 0;
 			const rB = ratings[String(b.id)]?.average ?? 0;
 			const countA = ratings[String(a.id)]?.count ?? 0;

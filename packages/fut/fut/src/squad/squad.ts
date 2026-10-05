@@ -15,7 +15,7 @@
  */
 
 import { calculateSquadChemistry, isPlayerInPosition } from "./chemistry.ts";
-import { FORMATIONS_CATALOG, getFormation } from "./formations.ts";
+import { getFormation } from "./formations.ts";
 import { analyzeTacticalBalance, evaluatePlayerRoleTier } from "./roles.ts";
 import type {
 	FormationDefinition,

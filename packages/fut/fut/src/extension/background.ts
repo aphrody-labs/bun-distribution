@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { ExtensionStreamPacket, StoredEaCookie } from "./types.ts";
+import type { StoredEaCookie } from "./types.ts";
 
 export const DEFAULT_BXC_STREAM_WS_URL = "ws://localhost:3000/fut/stream";
 

@@ -108,7 +108,7 @@ describe("manifest declarations", () => {
     expect(shared.consumers).toEqual(["demo"]);
     expect(shared.declaredIn).toEqual(["Cargo.toml"]);
     const serde = rows.find((r) => r.crate === "serde")!;
-    expect(serde.declaredIn.sort()).toEqual(["Cargo.toml", "crates/x/Cargo.toml"]);
+    expect(serde.declaredIn.toSorted()).toEqual(["Cargo.toml", "crates/x/Cargo.toml"]);
     expect(rows.find((r) => r.crate === "yara-x")?.req).toBe("=1.7.0");
   });
 });
@@ -174,7 +174,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 `;
   test("members are the source-less packages and touched crates are the reverse closure", () => {
     const g = lockGraph(lock);
-    expect([...g.members].sort()).toEqual(["app", "lib", "other"]);
+    expect([...g.members].toSorted()).toEqual(["app", "lib", "other"]);
     expect(touchedMembers(g, ["serde"])).toEqual(["app", "lib"]);
     expect(touchedMembers(g, ["inner"])).toEqual(["app", "lib"]);
     expect(touchedMembers(g, ["tokio"])).toEqual(["other"]);

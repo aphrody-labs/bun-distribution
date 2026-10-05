@@ -64,8 +64,8 @@ describe("table des noms propres", () => {
 		// Dr. Slump). Figer la liste empêche qu'une cinquième s'y glisse sans
 		// que quelqu'un l'ait regardée.
 		const orphelines = NOMS_PROPRES_MAL_LUS.filter((f) => f.attesteJuste === 0).map((f) => f.lu);
-		expect(orphelines.sort()).toEqual(
-			["シルコル", "パバロニ", "ブビピンマン", "メチオーフ"].sort()
+		expect(orphelines.toSorted()).toEqual(
+			["シルコル", "パバロニ", "ブビピンマン", "メチオーフ"].toSorted()
 		);
 	});
 
@@ -190,7 +190,7 @@ describe("cas réels du corpus", () => {
 		// #18 p.180 : la liste des guerriers de Bojack, deux noms abîmés.
 		const { texte, details } = detaillerNomsPropres("サンギャ\n\nフージン\n\nゴクア\n\nビドー");
 		expect(texte).toBe("ザンギャ\n\nブージン\n\nゴクア\n\nビドー");
-		expect(details.map((d) => d.lu).sort()).toEqual(["サンギャ", "フージン"]);
+		expect(details.map((d) => d.lu).toSorted()).toEqual(["サンギャ", "フージン"]);
 	});
 
 	test("une planche qui répète la même faute la compte autant de fois", () => {

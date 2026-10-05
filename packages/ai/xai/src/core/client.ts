@@ -460,7 +460,7 @@ export class Chat {
           if (data === "[DONE]") {
             // append final assistant (content and/or tool_calls)
             const finalTcs: ToolCall[] = Object.keys(toolCallAccs)
-              .sort((a, b) => Number(a) - Number(b))
+              .toSorted((a, b) => Number(a) - Number(b))
               .map((k) => {
                 const a = toolCallAccs[Number(k)];
                 if (!a.id) return null;

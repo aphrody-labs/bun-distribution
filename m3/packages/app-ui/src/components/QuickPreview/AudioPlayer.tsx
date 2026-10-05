@@ -147,7 +147,7 @@ export function AudioPlayer({ src, file }: AudioPlayerProps) {
 			audioRef.current?.removeEventListener("timeupdate", updateLyrics);
 			audioRef.current?.removeEventListener("seeked", updateLyrics);
 		};
-	}, [audioRef.current, cues, currentCueIndex]);
+	}, [cues, currentCueIndex]);
 
 	useEffect(() => {
 		if (!audioRef.current) return;

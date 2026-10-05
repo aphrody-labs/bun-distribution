@@ -57,9 +57,9 @@ test("header scanner finds the export surface", () => {
 });
 
 test("every Rust export is declared in the C headers", () => {
-  expect([...rust].filter((n) => !header.has(n) && !INTERNAL.has(n)).sort()).toEqual([]);
+  expect([...rust].filter((n) => !header.has(n) && !INTERNAL.has(n)).toSorted()).toEqual([]);
 });
 
 test("every C header declaration has a Rust export", () => {
-  expect([...header].filter((n) => !rust.has(n)).sort()).toEqual([]);
+  expect([...header].filter((n) => !rust.has(n)).toSorted()).toEqual([]);
 });

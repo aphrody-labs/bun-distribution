@@ -527,7 +527,7 @@ async function main() {
       sdb.exec("PRAGMA busy_timeout = 10000;");
       sdb.exec("PRAGMA journal_mode = WAL;");
     }
-  } catch (e) {
+  } catch  {
     console.warn("⚠️ SQLite occupé, écriture prioritaire sur PostgreSQL.");
   }
 

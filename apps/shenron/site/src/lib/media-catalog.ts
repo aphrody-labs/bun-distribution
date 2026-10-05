@@ -92,9 +92,6 @@ export async function readMediaCatalog() {
 		episodes,
 		movies,
 		manga,
-		databooks: databooks.map((book) => ({
-			...book,
-			cover: publicDatabookImage(book.cover),
-		})),
+		databooks: databooks.map((book) => (Object.assign(book, { cover: publicDatabookImage(book.cover) }))),
 	};
 }

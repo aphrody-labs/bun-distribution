@@ -43,7 +43,7 @@ async function runLot(lot: string): Promise<number> {
 	const images = (await readdir(imageDir))
 		.filter((name) => [".jpg", ".jpeg", ".png", ".webp"].includes(extname(name).toLowerCase()))
 		.filter((name) => requestedBooks.size === 0 || requestedBooks.has(name.split("-")[0]!))
-		.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+		.toSorted((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 	const completed = await existingRows(legacyPath);
 	const evidence = new Map<string, string>();
 	const saved = await Bun.file(evidencePath).text().catch(() => "");
@@ -103,7 +103,7 @@ async function runLot(lot: string): Promise<number> {
 const lots = (await readdir(root, { withFileTypes: true }))
 	.filter((entry) => entry.isDirectory() && /^lot-\d+$/.test(entry.name))
 	.map((entry) => entry.name)
-	.sort();
+	.toSorted();
 let added = 0;
 for (const lot of lots) added += await runLot(lot);
 console.log(`OCR Aphrody terminé : ${added} nouvelle(s) planche(s), ${lots.length} lot(s).`);

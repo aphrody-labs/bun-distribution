@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { WIKI_NAVIGATION_MANIFEST, type WikiNavGroup, type WikiNavItem } from "@/lib/wiki-nav-manifest";
-import { ChevronDown, Compass, X, Sparkles, BookOpen, Layers } from "lucide-react";
+import { WIKI_NAVIGATION_MANIFEST, type WikiNavItem } from "@/lib/wiki-nav-manifest";
+import { ChevronDown, Compass, X, BookOpen } from "lucide-react";
 
 export function WikiDrawer({ className = "" }: { className?: string }) {
 	const [isOpen, setIsOpen] = useState(false);

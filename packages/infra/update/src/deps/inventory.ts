@@ -387,13 +387,12 @@ export async function inventory(
   }
   const bun: Row[] = bunDeps.map((d) => {
     const i = npm.get(d.name) ?? {};
-    return {
-      ...d,
-      latest: i.latest,
-      behind: !!i.latest && cmpVersion(d.version, i.latest) < 0,
-      deprecated: i.deprecated,
-      direct: declared.has(d.name),
-    };
+    return Object.assign(d, {
+	latest: i.latest,
+	behind: !!i.latest && cmpVersion(d.version, i.latest) < 0,
+	deprecated: i.deprecated,
+	direct: declared.has(d.name)
+});
   });
 
   // ---- Python
@@ -436,7 +435,7 @@ export async function inventory(
     firstParty: {
       crates: own.length,
       versionDrift: drift,
-      nameTaken: taken.sort(),
+      nameTaken: taken.toSorted(),
       aiCrates: own.filter((n) => /ai|llm|mcp|model|infer/.test(n)).length,
     },
   };

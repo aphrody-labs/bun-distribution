@@ -83,7 +83,7 @@ export class SbcIlpSolver {
 		const count = reqs.exactPlayersCount ?? 11;
 
 		// Sort pool: prioritize untradeables (effective cost 0) if requested, then by price ascending
-		const sortedPool = [...pool].sort((a, b) => {
+		const sortedPool = [...pool].toSorted((a, b) => {
 			if (options.prioritizeUntradeables) {
 				const aUntrad = a.isUntradeable ? 1 : 0;
 				const bUntrad = b.isUntradeable ? 1 : 0;
@@ -118,7 +118,7 @@ export class SbcIlpSolver {
 
 		// Find feasible combinations using sliding window search
 		const target = reqs.targetRating;
-		const candidateRanks = Array.from(byRating.keys()).sort((a, b) => b - a);
+		const candidateRanks = Array.from(byRating.keys()).toSorted((a, b) => b - a);
 
 		// Heuristic search over typical fodder patterns
 		// e.g. [target+2, target+1, target, target-1, target-2, ...]
@@ -166,7 +166,7 @@ export class SbcIlpSolver {
 		// Fallback to absolute highest rating cards if tight
 		if (!bestCombination) {
 			const fallback = sortedPool
-				.sort((a, b) => b.rating - a.rating)
+				.toSorted((a, b) => b.rating - a.rating)
 				.slice(0, count);
 
 			const { squadRating } = SbcIlpSolver.calculateSquadRating(fallback.map((c) => c.rating));
@@ -191,7 +191,7 @@ export class SbcIlpSolver {
 			};
 		}
 
-		const finalRatings = bestCombination.map((c) => c.rating).sort((a, b) => b - a);
+		const finalRatings = bestCombination.map((c) => c.rating).toSorted((a, b) => b - a);
 		const { squadRating, excessSum } = SbcIlpSolver.calculateSquadRating(finalRatings);
 		const untradeablesCount = bestCombination.filter((c) => c.isUntradeable).length;
 

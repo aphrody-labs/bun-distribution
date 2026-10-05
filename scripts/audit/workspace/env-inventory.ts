@@ -54,7 +54,7 @@ const notUserConfiguration = new Set([
   "CARGO_CFG_TARGET_ARCH", "CARGO_CFG_TARGET_ENV", "CARGO_CFG_TARGET_OS", "OUT_DIR",
   "TARGET", "TARGET_TRIPLE", "DOCS_RS", "NOTIFY_SOCKET", "WATCHDOG_USEC",
 ]);
-for (const key of [...keys]) {
+for (const key of keys) {
   if (notUserConfiguration.has(key) || key.startsWith("CARGO_FEATURE_") || key.startsWith("NEXT_PRIVATE_")) {
     keys.delete(key);
   }
@@ -83,12 +83,12 @@ const output = [
 ];
 const remaining = new Set(keys);
 for (const [title, matches] of sections) {
-  const group = [...remaining].filter(matches).sort();
+  const group = [...remaining].filter(matches).toSorted();
   if (!group.length) continue;
   output.push("", `## ${title}`, ...group.map((key) => `# ${key}=`));
   for (const key of group) remaining.delete(key);
 }
-if (remaining.size) output.push("", "## Other first-party variables", ...[...remaining].sort().map((key) => `# ${key}=`));
+if (remaining.size) output.push("", "## Other first-party variables", ...[...remaining].toSorted().map((key) => `# ${key}=`));
 
 const target = join(root, ".env.example");
 await Bun.write(target, `${output.join("\n")}\n`);

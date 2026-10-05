@@ -300,7 +300,7 @@ async function main() {
         db.run(`ALTER TABLE db_techniques ADD COLUMN article_sources TEXT;`);
         db.run(`ALTER TABLE db_techniques ADD COLUMN article_updated_at TEXT;`);
         console.log("Colonnes article ajoutées à SQLite db_techniques.");
-      } catch (e) {
+      } catch  {
         // Les colonnes existent sûrement déjà
       }
 

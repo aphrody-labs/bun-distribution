@@ -56,7 +56,7 @@ describe("asset dedup manifest", () => {
 				const h = Bun.hash(readFileSync(join(APPS, f))).toString(16);
 				(byHash.get(h) ?? byHash.set(h, []).get(h)!).push(f);
 			}
-			for (const g of byHash.values()) if (g.length > 1 && !ALLOWED_GROUP(g)) dups.push(g.sort());
+			for (const g of byHash.values()) if (g.length > 1 && !ALLOWED_GROUP(g)) dups.push(g.toSorted());
 		}
 		// A new duplicate: keep one copy (prefer apps/shenron/site/public) and add the
 		// others to packages/shenron/images/src/asset-aliases.json.

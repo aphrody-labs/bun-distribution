@@ -59,7 +59,7 @@ const expand = (glob: string): string[] => {
 };
 const excluded = new Set(excludeGlobs.flatMap(expand));
 const globs = memberGlobs.length ? memberGlobs : ((parse(readFileSync(join(src, "Cargo.toml"), "utf8")) as any).workspace?.members ?? []);
-const members = [...new Set(globs.flatMap(expand))].filter((m) => !excluded.has(m)).sort();
+const members = [...new Set(globs.flatMap(expand))].filter((m) => !excluded.has(m)).toSorted();
 // Path dependencies inside the tree are implicit workspace members (cargo rule): follow them.
 {
   const pathDepsOf = (dir: string): string[] => {

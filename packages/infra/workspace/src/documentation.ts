@@ -125,7 +125,7 @@ export function buildDocumentationManifest(
   const imported = importedUpstreamMatcher(root);
   const paths = listRepositoryFiles(root)
     .files.filter((path) => /\.(md|mdx)$/.test(path) && !PRIVATE_CONTEXT.test(path))
-    .sort();
+    .toSorted();
   const documents: DocumentRecord[] = [];
   const excluded: DocumentationManifest["excluded"] = [];
   for (const path of paths) {
@@ -176,7 +176,7 @@ export function buildDocumentationManifest(
   for (const [sha256, group] of groups) {
     if (group.length < 2) continue;
     // This is an authority alias, not permission to remove runtime templates or notices.
-    const ranked = [...group].sort((a, b) => {
+    const ranked = [...group].toSorted((a, b) => {
       const rank = (doc: DocumentRecord) =>
         (doc.status === "canonical" ? 0 : 10) +
         (/^(packages|crates|apps)\//.test(doc.path) ? 0 : doc.path.startsWith("docs/") ? 1 : 2);
@@ -355,7 +355,7 @@ export async function runDocumentation(argv: string[]): Promise<number> {
               duplicates: manifest.duplicates.length,
               statuses: Object.fromEntries(
                 [...new Set(manifest.documents.map((doc) => doc.status))]
-                  .sort()
+                  .toSorted()
                   .map((status) => [
                     status,
                     manifest.documents.filter((doc) => doc.status === status).length,

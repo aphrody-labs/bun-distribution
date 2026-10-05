@@ -45,7 +45,7 @@ const WRAPPERS = [
 describe("@shenron/ui portability", () => {
 	test("every wrapper is exported with the react class", () => {
 		const entries = listExportEntries(pkgDir).filter((e) => e.key === "./*");
-		expect(entries.map((e) => e.subpath.slice(2)).sort()).toEqual([...WRAPPERS].sort());
+		expect(entries.map((e) => e.subpath.slice(2)).toSorted()).toEqual([...WRAPPERS].toSorted());
 		for (const e of entries) expect(e.runtime).toBe("react");
 	});
 

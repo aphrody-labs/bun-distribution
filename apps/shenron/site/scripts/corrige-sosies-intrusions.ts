@@ -257,7 +257,7 @@ if (ecartesSecurite.length > 0) {
 if (parSubstitution.size > 0) {
 	console.log(`\n${"-".repeat(78)}`);
 	console.log(`Sosies corrigés, cas par cas (${parSubstitution.size} suites distinctes) :`);
-	for (const [avant, v] of [...parSubstitution].sort((a, b) => b[1].n - a[1].n)) {
+	for (const [avant, v] of [...parSubstitution].toSorted((a, b) => b[1].n - a[1].n)) {
 		console.log(
 			`  ${String(v.n).padStart(3)}×  ${avant.padEnd(16)} → ${v.apres.padEnd(16)} ${v.ou.join(", ")}`
 		);
@@ -324,7 +324,7 @@ function paquets<T>(items: T[], taille: number): T[][] {
 
 let deposees = 0;
 let echecs = 0;
-for (const [databookId, liste] of [...parOuvrage.entries()].sort((a, b) => a[0] - b[0])) {
+for (const [databookId, liste] of [...parOuvrage.entries()].toSorted((a, b) => a[0] - b[0])) {
 	for (const lot of paquets(liste, PAQUET)) {
 		const corps = JSON.stringify({
 			mode: "merge",

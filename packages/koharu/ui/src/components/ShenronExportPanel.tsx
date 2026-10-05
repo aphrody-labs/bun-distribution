@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Export native Koharu page results to Shenron as unreviewed manga candidates.
-/// <reference path="../shenron-pipeline-env.d.ts" />
 import { useEffect, useState } from "react";
 import {
   mapNativeKoharuPageResult,

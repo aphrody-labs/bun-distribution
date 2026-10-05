@@ -301,7 +301,7 @@ describeLive(`no-404 — site (${BASE})`, () => {
 
 		// 2. Union dédupliquée : static pages + API (énumérées) + sondes API + crawl.
 		const all = new Set<string>([...staticPagePaths, ...apiPaths, ...apiProbes, ...crawled]);
-		const urls = [...all].sort();
+		const urls = [...all].toSorted();
 
 		// 3. Vérification concurrente.
 		const results = await mapLimit(urls, CONCURRENCY, check);

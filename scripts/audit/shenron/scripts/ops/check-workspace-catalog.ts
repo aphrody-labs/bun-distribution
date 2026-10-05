@@ -31,7 +31,7 @@ for (const pattern of patterns.filter((entry) => !entry.startsWith("!"))) {
 }
 
 const errors: string[] = [];
-for (const path of [...manifests].sort()) {
+for (const path of [...manifests].toSorted()) {
 	const pkg = (await Bun.file(path).json()) as {
 		name?: string;
 		dependencies?: Record<string, string>;

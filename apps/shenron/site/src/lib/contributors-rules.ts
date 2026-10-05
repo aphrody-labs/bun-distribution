@@ -47,7 +47,7 @@ export function detectCheatSignals(
 	const times = ratings
 		.map((r) => new Date(r.createdAt).getTime())
 		.filter((t) => Number.isFinite(t))
-		.sort((a, b) => a - b);
+		.toSorted((a, b) => a - b);
 	let worstBurst = 0;
 	for (let i = 0, j = 0; i < times.length; i++) {
 		while (times[i] - times[j] > 3_600_000) j++;
@@ -66,7 +66,7 @@ export function detectCheatSignals(
 	const gaps: number[] = [];
 	for (let i = 1; i < times.length; i++) gaps.push(times[i] - times[i - 1]);
 	if (gaps.length >= 10) {
-		const sorted = gaps.slice().sort((a, b) => a - b);
+		const sorted = gaps.slice().toSorted((a, b) => a - b);
 		const median = sorted[Math.floor(sorted.length / 2)];
 		if (median < 5_000) {
 			signals.push({
@@ -107,7 +107,7 @@ export function detectCheatSignals(
 	].filter((b) => b.length > 0);
 	const freq = new Map<string, number>();
 	for (const b of bodies) freq.set(b, (freq.get(b) ?? 0) + 1);
-	const worst = [...freq.entries()].sort((a, b) => b[1] - a[1])[0];
+	const worst = [...freq.entries()].toSorted((a, b) => b[1] - a[1])[0];
 	if (worst && worst[1] >= 3) {
 		signals.push({
 			code: "duplicate-text",

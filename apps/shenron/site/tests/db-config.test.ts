@@ -14,7 +14,7 @@ beforeAll(async () => {
 
 describe("apps/shenron/site/src/lib/db facade", () => {
 	it("exports exactly the historical names", () => {
-		expect(Object.keys(mod).sort()).toEqual(
+		expect(Object.keys(mod).toSorted()).toEqual(
 			[
 				"DB_APPLICATION_NAME",
 				"DEFAULT_POOL_MAX",
@@ -24,7 +24,7 @@ describe("apps/shenron/site/src/lib/db facade", () => {
 				"resolveDatabaseUrl",
 				"resolvePoolMax",
 				"schema",
-			].sort()
+			].toSorted()
 		);
 		expect(mod.DB_APPLICATION_NAME).toBe("shenron-site");
 	});

@@ -3,7 +3,7 @@
 /** Run Shenron's Dragon Ball corpus plan through Aphrody Web's Rust crawl owner. */
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 
 type Target = {

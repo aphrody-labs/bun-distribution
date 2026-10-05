@@ -95,7 +95,7 @@ async function main() {
 	);
 
 	const failed = results.filter((result) => result.code !== 0);
-	const resultPayload = { runId, workers, batch, lanes: results.sort((a, b) => a.lane - b.lane), failed: failed.length };
+	const resultPayload = { runId, workers, batch, lanes: results.toSorted((a, b) => a.lane - b.lane), failed: failed.length };
 	await writeFile(join(runDir, "results", "lanes.json"), JSON.stringify(resultPayload, null, 2));
 	if (failed.length) throw new Error(`${failed.length} lane(s) ont échoué; voir ${join(runDir, "logs")}`);
 

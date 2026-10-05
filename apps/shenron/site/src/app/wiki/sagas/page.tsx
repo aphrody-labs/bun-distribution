@@ -58,7 +58,7 @@ export default async function SagasPage() {
 	const bySeries = SERIES_ORDER.map((s) => ({
 		key: s,
 		label: SERIES_LABELS[s] ?? s,
-		sagas: sagas.filter((sg) => sg.series === s).sort((a, b) => a.order_idx - b.order_idx),
+		sagas: sagas.filter((sg) => sg.series === s).toSorted((a, b) => a.order_idx - b.order_idx),
 	})).filter((g) => g.sagas.length > 0);
 
 	const totalArcs = arcs.length;
@@ -91,7 +91,7 @@ export default async function SagasPage() {
 						</h2>
 						<div className="space-y-8">
 							{g.sagas.map((s: Saga) => {
-								const sagaArcs = (arcsBySaga.get(s.slug) ?? []).sort(
+								const sagaArcs = (arcsBySaga.get(s.slug) ?? []).toSorted(
 									(a, b) => a.order_idx - b.order_idx
 								);
 								return (

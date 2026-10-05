@@ -121,7 +121,7 @@ function occurrences(graphie: string): number {
 // (« スカウター », le scouter, vu 477 fois dans 19 ouvrages).
 const frequents = [...candidats.entries()]
 	.filter(([, c]) => c.n >= MIN && c.ouvrages.size >= MIN_OUVRAGES)
-	.sort((a, b) => b[1].n - a[1].n);
+	.toSorted((a, b) => b[1].n - a[1].n);
 
 const vocabulaire: typeof frequents = [];
 const fautes: { mot: string; vers: string; fr: string; n: number }[] = [];

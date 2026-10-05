@@ -71,7 +71,7 @@ export function FontPicker({
   const input = useRef<HTMLInputElement>(null)
   const orderedFamilies = useMemo(
     () =>
-      [...families].sort(
+      [...families].toSorted(
         (left, right) =>
           scriptRank(left) - scriptRank(right) ||
           left.name.localeCompare(right.name, undefined, {
@@ -478,7 +478,7 @@ function fontFacets(families: FontFamily[]) {
 }
 
 function unique(values: string[]): string[] {
-  return [...new Set(values)].sort((left, right) =>
+  return [...new Set(values)].toSorted((left, right) =>
     formatMetadata(left).localeCompare(formatMetadata(right), undefined, {
       numeric: true,
       sensitivity: 'base',

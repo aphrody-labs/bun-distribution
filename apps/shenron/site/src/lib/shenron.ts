@@ -644,10 +644,7 @@ export async function getShenronCharacterCards(query?: string): Promise<DBCharac
 					)
 					.limit(25)
 			: await base.where(eq(botCharacters.visible, true));
-		return rows.map((r) => ({
-			...r,
-			slug: formatCharacterSlug(r),
-		})) as DBCharacterCard[];
+		return rows.map((r) => (Object.assign(r, { slug: formatCharacterSlug(r) }))) as DBCharacterCard[];
 	} catch (e) {
 		console.error("[shenron] getShenronCharacterCards a échoué:", e);
 		throw new Error("Character cards are temporarily unavailable.", { cause: e });
@@ -976,7 +973,7 @@ export async function getShenronSagaCharacters(sagaId: number): Promise<SagaChar
 				// l'ordre alphabétique — Bébi après Baba.
 				poids: (v.evidence?.planches ?? 0) + (v.evidence?.synopsis ?? 0) * 3,
 			}))
-			.sort((a, b) => b.poids - a.poids || a.name.localeCompare(b.name, "fr"));
+			.toSorted((a, b) => b.poids - a.poids || a.name.localeCompare(b.name, "fr"));
 
 		// La base porte des fiches en double pour plusieurs personnages majeurs
 		// (« Goku » id 1 ET « Son Goku », « Gohan » ET « Son Gohan ») : mesurées
@@ -996,7 +993,7 @@ export async function getShenronSagaCharacters(sagaId: number): Promise<SagaChar
 				vues.set(cle, p);
 			}
 		}
-		return [...vues.values()].sort(
+		return [...vues.values()].toSorted(
 			(a, b) => b.poids - a.poids || a.name.localeCompare(b.name, "fr")
 		);
 	} catch (e) {

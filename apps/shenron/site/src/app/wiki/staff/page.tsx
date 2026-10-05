@@ -12,7 +12,7 @@ import { UnifiedStaffExplorer, type StaffTier } from "@/components/wiki/UnifiedS
 import { buildUnifiedStaffCatalog } from "@/lib/unified-staff-catalog";
 import { dbUniverse } from "@/lib/db-universe";
 import { ogMeta } from "@/lib/og";
-import { Sparkles, Award, BookOpen, ExternalLink, ArrowRight, ShieldCheck } from "lucide-react";
+import { Sparkles, Award, ExternalLink, ArrowRight } from "lucide-react";
 import { JsonLd } from "@/components/JsonLd";
 
 export const revalidate = 3600;

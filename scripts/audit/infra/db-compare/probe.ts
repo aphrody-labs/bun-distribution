@@ -118,7 +118,7 @@ async function findFiles(roots: string[], args: string[]): Promise<string[]> {
   if (existing.length === 0) return [];
   const prune = ["(", "-name", "node_modules", "-o", "-name", "target", "-o", "-name", ".git", "-o", "-name", ".next", ")", "-prune", "-o"];
   const out = await Bun.$`find ${existing} -xdev ${prune} ${args} -print`.nothrow().quiet().text();
-  return [...new Set(out.split("\n").filter(Boolean))].sort();
+  return [...new Set(out.split("\n").filter(Boolean))].toSorted();
 }
 
 function quoteIdent(name: string): string {
@@ -208,7 +208,7 @@ async function probePackage(host: string, manifestPath: string): Promise<Package
     dependencies: { ...manifest.peerDependencies, ...manifest.dependencies },
     exports: typeof exportsField === "string" ? ["."] : Object.keys(exportsField ?? {}),
     files,
-    declaredTables: [...declared].filter(Boolean).sort(),
+    declaredTables: [...declared].filter(Boolean).toSorted(),
   };
 }
 

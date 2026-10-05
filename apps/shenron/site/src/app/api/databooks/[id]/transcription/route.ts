@@ -166,7 +166,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 				{ status: 400, headers: CORS }
 			);
 		}
-		pages = [...construites.values()].sort((a, b) => a.number - b.number);
+		pages = [...construites.values()].toSorted((a, b) => a.number - b.number);
 	} else {
 		pages = [];
 		const connus = new Set(avant.pages.map((p) => p.number));
@@ -235,7 +235,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 			: [...textes.keys()];
 	const avantPlanches: Record<string, unknown> = {};
 	const apresPlanches: Record<string, unknown> = {};
-	for (const n of numerosTouches.sort((a, b) => a - b)) {
+	for (const n of numerosTouches.toSorted((a, b) => a - b)) {
 		const a = avantParNumero.get(n) ?? null;
 		const b = apresParNumero.get(n) ?? null;
 		if (a === b) continue; // rien n'a bougé sur cette planche : hors du journal

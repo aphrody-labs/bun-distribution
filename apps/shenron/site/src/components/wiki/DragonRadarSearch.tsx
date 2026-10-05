@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ClientGatedWrap } from "@/components/GatedClientLink";
 import {
 	DragonRadar,
-	DragonBall,
 	Livre,
-	Palette,
 	Etoile,
 	Kame,
-	Bibliotheque,
 } from "@/components/icones";
 import { assetUrl } from "@/lib/assets";
 

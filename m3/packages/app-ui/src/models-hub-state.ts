@@ -55,7 +55,7 @@ export function searchModelCatalog<
   return fuse
     .search(query)
     .map(({ item }, index) => ({ item, index, rank: rank(item) }))
-    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .toSorted((a, b) => a.rank - b.rank || a.index - b.index)
     .map(({ item }) => item.entry);
 }
 
@@ -211,10 +211,7 @@ export function resolveExternalModelPath(homeDir: string, defaultSubpath: string
 
 /** Given a home directory, build candidate paths for all standard external model stores. */
 export function buildStandardExternalCandidates(homeDir: string): ExternalStoreCandidate[] {
-  return STANDARD_EXTERNAL_MODEL_DIRS.map((def) => ({
-    ...def,
-    path: resolveExternalModelPath(homeDir, def.defaultSubpath),
-  }));
+  return STANDARD_EXTERNAL_MODEL_DIRS.map((def) => (Object.assign(def, { path: resolveExternalModelPath(homeDir, def.defaultSubpath) })));
 }
 
 /** Infer the home directory from an arbitrary known system path (e.g. cwd, store root, or app data dir). */

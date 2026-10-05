@@ -66,11 +66,10 @@ export default function DragonBall2048() {
 			if (gameOver) return;
 
 			setTiles((prevTiles) => {
-				let newTiles = [...prevTiles].map((t) => ({
-					...t,
-					isNew: false,
-					isMerged: false,
-				}));
+				let newTiles = [...prevTiles].map((t) => (Object.assign(t, {
+	isNew: false,
+	isMerged: false
+})));
 				// Tuiles SURVIVANTES du coup : une tuile absorbée par une fusion doit
 				// disparaître du plateau. `newTiles` la gardait (seule la ligne fusionnée
 				// était reconstruite), donc chaque fusion laissait un fantôme à l'ancienne

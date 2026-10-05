@@ -365,7 +365,7 @@ export function PageRail() {
               <DialogDescription>{t('navigator.renameDescription')}</DialogDescription>
             </DialogHeader>
             <Input
-              autoFocus
+              
               value={renameValue}
               aria-label={t('navigator.pageName')}
               className='mt-4'

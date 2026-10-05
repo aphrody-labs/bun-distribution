@@ -11,7 +11,7 @@ import {
 } from "../src/guards";
 
 const FIXTURES = join(import.meta.dir, "fixtures");
-const summary = (offences: Offence[]) => offences.map((o) => `${o.file} ${o.rule}`).sort();
+const summary = (offences: Offence[]) => offences.map((o) => `${o.file} ${o.rule}`).toSorted();
 
 describe("stripNonCode", () => {
 	test("blanks comments and literal contents, keeps offsets and code", () => {
@@ -59,7 +59,7 @@ describe("checkPackageRuntimes", () => {
 				"src/server-react.ts server:react",
 				"src/t3.ts t3-env",
 				"src/tsyringe.ts tsyringe",
-			].sort()
+			].toSorted()
 		);
 	});
 });

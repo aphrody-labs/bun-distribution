@@ -527,7 +527,7 @@ export function rewriteMarkdown(
   mentionPattern: RegExp | null,
   mentionTarget: (path: string) => string,
 ): RewriteResult {
-  const sites = [...scanLinkSites(content), ...scanDefinitionSites(content)].sort(
+  const sites = [...scanLinkSites(content), ...scanDefinitionSites(content)].toSorted(
     (a, b) => b.start - a.start,
   );
   let result = content;
@@ -559,7 +559,7 @@ export function rewriteMarkdown(
 
 export function buildMentionPattern(paths: Iterable<string>): RegExp | null {
   const escaped = [...paths]
-    .sort((a, b) => b.length - a.length)
+    .toSorted((a, b) => b.length - a.length)
     .map((path) => path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (!escaped.length) return null;
   return new RegExp(`(?<![A-Za-z0-9_./~-])(?:${escaped.join("|")})(?![A-Za-z0-9_-])`, "g");
@@ -610,7 +610,7 @@ export function listRepositoryFiles(root: string): { files: string[]; untracked:
   const present = [...new Set([...tracked, ...others])].filter((path) =>
     existsSync(join(root, path)),
   );
-  return { files: present.sort(), untracked: new Set(others) };
+  return { files: present.toSorted(), untracked: new Set(others) };
 }
 
 export function dirtyFiles(root: string): Set<string> {
@@ -806,9 +806,9 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
           text.slice(0, 2400),
         ),
       upstream: /(^|\/)(drive|upstream)\//.test(path) || basename(path).startsWith("UPSTREAM"),
-      outbound: [...new Set(outboundOf.get(path) ?? [])].sort(),
-      unresolvedOutbound: [...new Set(unresolvedOf.get(path) ?? [])].sort(),
-      inbound: [...(inbound.get(path) ?? [])].sort(),
+      outbound: [...new Set(outboundOf.get(path) ?? [])].toSorted(),
+      unresolvedOutbound: [...new Set(unresolvedOf.get(path) ?? [])].toSorted(),
+      inbound: [...(inbound.get(path) ?? [])].toSorted(),
     });
   }
 
@@ -825,9 +825,9 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
     .map(([sha256, group]) => ({
       sha256,
       bytes: group[0]?.bytes ?? 0,
-      paths: group.map((entry) => entry.path).sort(),
+      paths: group.map((entry) => entry.path).toSorted(),
     }))
-    .sort((a, b) => (a.paths[0] ?? "").localeCompare(b.paths[0] ?? ""));
+    .toSorted((a, b) => (a.paths[0] ?? "").localeCompare(b.paths[0] ?? ""));
 
   // Near duplicates: 5-word shingles, Jaccard / containment, via an inverted index.
   const comparable = entries.filter(
@@ -929,7 +929,7 @@ export interface Plan {
 function logicalSegments(path: string): string[] {
   return path
     .split("/")
-    .reverse()
+    .toReversed()
     .map((segment) => segment.replace(/^aphrody-/, ""));
 }
 
@@ -1010,7 +1010,7 @@ export function planOwnerDuplicates(
       const best = owners
         .map((owner) => ({ owner, rank: ownerRank(owner.path, copy.path) }))
         .filter((candidate) => candidate.rank >= 0)
-        .sort((a, b) => b.rank - a.rank)[0];
+        .toSorted((a, b) => b.rank - a.rank)[0];
       if (best)
         plan(
           copy,
@@ -1142,7 +1142,7 @@ export function applyPathMap(
 ): { content: string; replacements: number } {
   if (!map.size) return { content, replacements: 0 };
   const keys = [...map.keys()]
-    .sort((a, b) => b.length - a.length)
+    .toSorted((a, b) => b.length - a.length)
     .map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   const pattern = new RegExp(`(?<![A-Za-z0-9_./~-])(?:${keys.join("|")})(?![A-Za-z0-9_-])`, "g");
   const protectedRanges = [...scanLinkSites(content), ...scanDefinitionSites(content)].map(
@@ -1460,7 +1460,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
         directory = dirname(directory);
       }
     }
-    for (const directory of [...emptied].sort((a, b) => b.length - a.length)) {
+    for (const directory of [...emptied].toSorted((a, b) => b.length - a.length)) {
       const absolute = join(root, directory);
       try {
         if ((await readdir(absolute)).length === 0) {
@@ -1491,7 +1491,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
     return {
       ...action,
       ...(action.action === "fix-paths" ? { pathFixes: pathFixes.get(action.id) ?? [] } : {}),
-      inboundRewritten: inboundRewritten.sort((a, b) => a.file.localeCompare(b.file)),
+      inboundRewritten: inboundRewritten.toSorted((a, b) => a.file.localeCompare(b.file)),
       sourceMapEntries: mapEntries,
       outcome: action.action === "retain" ? "recorded" : options.write ? "applied" : "dry-run",
     };
@@ -1504,7 +1504,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
     scope: plan.scope,
     root,
     actions: applied,
-    rewrittenFiles: rewrittenFiles.sort((a, b) => a.file.localeCompare(b.file)),
+    rewrittenFiles: rewrittenFiles.toSorted((a, b) => a.file.localeCompare(b.file)),
     skippedFiles,
     unresolvedRewrites,
     removedDirectories,
@@ -1691,7 +1691,7 @@ export function matchHubPatterns(
       (path) =>
         includes.some((rule) => rule.test(path)) && !excludes.some((rule) => rule.test(path)),
     )
-    .sort();
+    .toSorted();
 }
 
 export interface HubRow {
@@ -1811,7 +1811,7 @@ export function buildConsolidationReport(input: ConsolidationReportInput): Recor
     actions,
     rewrittenFiles: [...rewritten.entries()]
       .map(([file, counts]) => ({ file, ...counts }))
-      .sort((a, b) => a.file.localeCompare(b.file)),
+      .toSorted((a, b) => a.file.localeCompare(b.file)),
     skippedFiles: input.applies.flatMap((report) => report.skippedFiles),
     unresolvedRewrites: input.applies.flatMap((report) => report.unresolvedRewrites),
     removedDirectories: input.applies.flatMap((report) => report.removedDirectories),

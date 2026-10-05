@@ -213,7 +213,7 @@ async function main() {
       in_plugin: pluginApis.has(r.api),
       sources_count: r.sources.size,
     }))
-    .sort((a, b) => b.sources_count - a.sources_count || a.api.localeCompare(b.api));
+    .toSorted((a, b) => b.sources_count - a.sources_count || a.api.localeCompare(b.api));
 
   const total = rows.length;
   const pluginCov = rows.filter((r) => r.in_plugin).length;

@@ -9,7 +9,7 @@
  *   bun scripts/ops/batch-manga-ocr.ts --series DBS --exporter
  */
 
-import { existsSync } from "node:fs";
+
 import { join } from "node:path";
 import { connecte } from "../../../../../apps/shenron/site/scripts/_databooks-base";
 

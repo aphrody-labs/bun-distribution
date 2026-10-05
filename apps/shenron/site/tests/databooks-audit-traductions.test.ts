@@ -47,7 +47,7 @@ describe("nombres", () => {
 
 	test("rassemble chiffres, pleine chasse, cerclés et kanji", () => {
 		const n = nombresDe("◆1990年WJNo.１２其之二百五十七 ⑪ 集英社");
-		expect([...n].sort((a, b) => a - b)).toEqual([11, 12, 257, 1990]);
+		expect([...n].toSorted((a, b) => a - b)).toEqual([11, 12, 257, 1990]);
 	});
 
 	test("un chapitre traduit en chiffres arabes n'est pas inventé", () => {

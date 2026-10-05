@@ -166,7 +166,7 @@ export function DatabookGrid({
 				return hay.includes(needle);
 			})
 			.slice()
-			.sort((a, b) => {
+			.toSorted((a, b) => {
 				const av = a.publishedAt ?? 0;
 				const bv = b.publishedAt ?? 0;
 				return order === "desc" ? bv - av : av - bv;

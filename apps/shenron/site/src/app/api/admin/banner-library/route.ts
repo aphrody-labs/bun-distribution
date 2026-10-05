@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
 		),
 	]);
 
-	const items = [...official, ...toei, ...wiki].sort((a, b) => a.name.localeCompare(b.name));
+	const items = [...official, ...toei, ...wiki].toSorted((a, b) => a.name.localeCompare(b.name));
 
 	return NextResponse.json({
 		count: items.length,

@@ -326,7 +326,7 @@ export function CommunityTops({
 				</div>
 			)}
 
-			<div
+			<div tabIndex={0}
 				className="flex flex-wrap gap-2"
 				role="tablist"
 				aria-label="Choisir un top 3"

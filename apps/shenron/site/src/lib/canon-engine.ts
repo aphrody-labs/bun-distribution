@@ -1569,7 +1569,7 @@ export function referencesPour(
 	// de plus — on garde la mieux notée.
 	const sujetsVus = new Set<string>();
 	const retenues: CanonReference[] = [];
-	for (const { reference } of notes.sort(
+	for (const { reference } of notes.toSorted(
 		(a, b) => b.poids - a.poids || a.reference.text.length - b.reference.text.length
 	)) {
 		const cle = normaliser(reference.subject);
@@ -1681,7 +1681,7 @@ function suggestionsPour(
 			.map((e) => e.title);
 	}
 	return notes
-		.sort((a, b) => b.poids - a.poids)
+		.toSorted((a, b) => b.poids - a.poids)
 		.slice(0, maximum)
 		.map((n) => n.titre);
 }

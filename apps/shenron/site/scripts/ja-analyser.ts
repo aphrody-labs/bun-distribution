@@ -137,7 +137,7 @@ for (const [i, p] of planches.entries()) {
 
 const retenues = [...parGraphie.values()]
 	.filter((c) => retenirParFrequence(c.s, occurrences) && c.n >= SEUIL)
-	.sort((a, b) => b.n - a.n);
+	.toSorted((a, b) => b.n - a.n);
 
 const secs = (Bun.nanoseconds() - t0) / 1e9;
 console.log(
@@ -159,7 +159,10 @@ if (SORTIE) {
 	await Bun.write(
 		SORTIE,
 		JSON.stringify(
-			retenues.map((c) => ({ ...c.s, occurrences: c.n, ouvrages: [...c.ou] })),
+			retenues.map((c) => (Object.assign(c.s, {
+	occurrences: c.n,
+	ouvrages: [...c.ou]
+}))),
 			null,
 			2
 		)

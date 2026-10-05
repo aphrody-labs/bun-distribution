@@ -97,7 +97,7 @@ async function lexiqueWiki(): Promise<string[]> {
 	]);
 	return [...new Set(entites.map((e) => e.name.trim()))]
 		.filter((n) => n.length >= 4 && !/\d/.test(n) && !EXCLU.has(normaliser(n)))
-		.sort((a, b) => b.length - a.length);
+		.toSorted((a, b) => b.length - a.length);
 }
 
 function coupePropre(texte: string, maximum: number): string {

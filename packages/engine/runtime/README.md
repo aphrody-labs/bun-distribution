@@ -16,7 +16,7 @@ await child.stopAsync(2000);
 
 Library resolution: `$YOLO_RUNTIME_LIB`, then the installed artifact
 (`$YOLO_RUNTIME_HOME/<target>/current`, default `~/.yolo/runtime`), then `target/runtime/` of the
-yolo checkout. Install with `just runtime-install`, roll back with `just runtime-rollback`.
+yolo checkout. Install with `just yolo::runtime-install`, roll back with `just yolo::runtime-rollback`.
 
 For one-shot binary output, ABI 1.4 provides lossless capture with an explicit
 budget. Overflow rejects with `RuntimeError` / `Status.OutputLimit`; no successful

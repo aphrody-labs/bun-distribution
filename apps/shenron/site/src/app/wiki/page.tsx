@@ -91,18 +91,17 @@ export default async function WikiIndex() {
 	// porte déjà pour le méga-menu : sans elle, le sommaire du wiki n'affichait
 	// qu'un nom et un nombre, et une rubrique de 33 entrées ressemblait à une
 	// rubrique de 1 300. Même traitement pour toutes, sans texte écrit deux fois.
-	const rubriques = WIKI_CATEGORIES.map((cat) => ({
-		...cat,
-		count: c[cat.countKey] ?? 0,
-		blurb: entryByKey(cat.key)?.blurb ?? null,
-	}));
+	const rubriques = WIKI_CATEGORIES.map((cat) => (Object.assign(cat, {
+	count: c[cat.countKey] ?? 0,
+	blurb: entryByKey(cat.key)?.blurb ?? null
+})));
 	const encyclopedie = rubriques.filter((r) => r.group === "encyclopedia");
 	const supports = rubriques.filter((r) => r.group === "media");
 
 	const vedettes = characters
 		.filter((ch) => ch.image)
 		.slice(0, 18)
-		.map((ch) => ({ ...ch, image: pickBestImage([ch.image, ch.portraitXv2]) ?? ch.image }));
+		.map((ch) => (Object.assign(ch, { image: pickBestImage([ch.image, ch.portraitXv2]) ?? ch.image })));
 	const films = movies.slice(0, 18);
 	const episodes = episodesData?.episodes.slice(0, 12) ?? [];
 	const databooks = databookData?.items ?? [];

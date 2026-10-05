@@ -36,7 +36,7 @@ async function collectFiles(
 function fingerprints(files: Map<string, { hash: string; size: number }>) {
   return Object.fromEntries(
     [...files.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
+      .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([path, { hash, size }]) => [path, { sha256: hash, size }]),
   );
 }
@@ -122,10 +122,10 @@ export async function runUiDedupManifest(args: string[]): Promise<number> {
           "Both active hosts import m3/packages/app-ui. The old @aphrody/drive package metadata is retired; retain its excluded FSL source archive until unique code and provenance are reviewed.",
         identicalCount: cluster1Identical,
         divergentCount: cluster1Divergent.length,
-        divergentPaths: cluster1Divergent.sort(),
+        divergentPaths: cluster1Divergent.toSorted(),
         appOnlyCount: cluster1AppOnly.length,
         driveOnlyCount: cluster1DriveOnly.length,
-        driveOnlyPaths: cluster1DriveOnly.sort(),
+        driveOnlyPaths: cluster1DriveOnly.toSorted(),
         appUiFiles: fingerprints(appUiFiles),
         driveInterfaceFiles: fingerprints(driveFiles),
       },
@@ -135,7 +135,7 @@ export async function runUiDedupManifest(args: string[]): Promise<number> {
           "@aphrody/assets is the only production import path; the six SpaceUI differences were classified and the MIT reference remains for provenance.",
         identicalCount: cluster2Identical,
         divergentCount: cluster2Divergent.length,
-        divergentFiles: cluster2Divergent.sort(),
+        divergentFiles: cluster2Divergent.toSorted(),
         assetFiles: fingerprints(assetsFiles),
         spaceuiIconFiles: fingerprints(spaceIconsFiles),
       },

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { openSync, readSync, closeSync, statSync } from "node:fs";
+import { openSync, readSync, closeSync } from "node:fs";
 import { OodleDecompressor } from "./oodle.ts";
 import type { CasBlockHeader } from "./types.ts";
 

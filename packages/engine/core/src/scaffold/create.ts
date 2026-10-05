@@ -1,6 +1,6 @@
 /**
  * `yolo create <dir>`: scaffolds an Aphrody stack project from the versioned templates in
- * `templates/` (layers and versions are described by `templates/stack.toml`).
+ * `m3/templates/` (layers and versions are described by `m3/templates/stack.toml`).
  *
  *   yolo create my-app [--with web|react,desktop] [--framework hono|elysia] [--yolo-path <checkout>]
  *
@@ -31,7 +31,7 @@ export interface StackManifest {
 
 export async function loadStack(rootDir: string): Promise<StackManifest> {
   return Bun.TOML.parse(
-    await Bun.file(resolve(rootDir, "templates/stack.toml")).text(),
+    await Bun.file(resolve(rootDir, "m3/templates/stack.toml")).text(),
   ) as StackManifest;
 }
 
@@ -136,7 +136,7 @@ export async function createProject(options: CreateOptions): Promise<string[]> {
     mkdirSync(dirname(dest), { recursive: true });
     await Bun.write(dest, content);
   }
-  return [...written.keys()].sort();
+  return [...written.keys()].toSorted();
 }
 
 const HELP = `\x1b[1myolo create\x1b[0m <dir> — scaffold an Aphrody stack project
@@ -207,7 +207,7 @@ export async function runCreateCommand(
     `\x1b[1mCreated ${basename(target)}\x1b[0m (${files.length} files, features: base, ${features.join(", ")})`,
   );
   console.log(
-    `\n  cd ${dir}\n  bun install\n  just -f ${join(yoloPath, "justfile")} runtime-build   # once\n  bun run dev`,
+    `\n  cd ${dir}\n  bun install\n  just -f ${join(yoloPath, "Justfile")} yolo::runtime-build   # once\n  bun run dev`,
   );
   return 0;
 }

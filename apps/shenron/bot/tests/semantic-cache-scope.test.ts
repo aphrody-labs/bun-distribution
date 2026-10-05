@@ -13,7 +13,7 @@ const fakeRedis = {
 		sortedSets.set(key, entries);
 	},
 	zrange: async (key: string, start: number, stop: number) => {
-		const members = [...(sortedSets.get(key) ?? new Map())].sort((a, b) => a[1] - b[1]).map(([member]) => member);
+		const members = [...(sortedSets.get(key) ?? new Map())].toSorted((a, b) => a[1] - b[1]).map(([member]) => member);
 		return members.slice(start, stop === -1 ? undefined : stop + 1);
 	},
 	zcard: async (key: string) => sortedSets.get(key)?.size ?? 0,

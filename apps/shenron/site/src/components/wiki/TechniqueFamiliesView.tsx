@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+
 import { ClientGatedWrap } from "@/components/GatedClientLink";
 import { Sparkles, Flame, Zap, Shield, Swords, Layers, ChevronDown, ChevronUp } from "lucide-react";
 import type { TechniqueCard } from "./TechniqueGrid";

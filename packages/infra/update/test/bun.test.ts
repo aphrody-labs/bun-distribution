@@ -269,7 +269,7 @@ describe("rows and plan", () => {
     expect(
       behind(rows)
         .map((r) => r.name)
-        .sort(),
+        .toSorted(),
     ).toEqual(["held", "inrange", "major", "pinned", "waiting"]);
   });
 

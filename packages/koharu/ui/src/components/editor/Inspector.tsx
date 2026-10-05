@@ -462,7 +462,7 @@ function usableFontWeights(family: FontFamily | undefined, style: FontStyle): nu
       }
     }
   }
-  return [...weights].sort((left, right) => left - right)
+  return [...weights].toSorted((left, right) => left - right)
 }
 
 function nearestFontWeight(weights: number[], target: number): number {
@@ -482,10 +482,10 @@ function displayedLayers(layers: Layer[], page: EntityId) {
     rows.push({ layer, index: indexes.get(layer.id) ?? 0, depth })
     if (!isGroupLayer(layer)) return
     const children = layerChildren(layers, layer.id)
-    const ordered = layer.role === 'text' ? children : [...children].reverse()
+    const ordered = layer.role === 'text' ? children : [...children].toReversed()
     for (const child of ordered) append(child, depth + 1)
   }
-  const roots = layers.filter((layer) => (layer.parent ?? page) === page).reverse()
+  const roots = layers.filter((layer) => (layer.parent ?? page) === page).toReversed()
   for (const layer of roots) append(layer, 0)
   return rows
 }
@@ -519,7 +519,7 @@ function LayersInspector() {
     const shownSiblings =
       parentLayer && isGroupLayer(parentLayer) && parentLayer.role === 'text'
         ? storedSiblings
-        : [...storedSiblings].reverse()
+        : [...storedSiblings].toReversed()
     const shownSource = shownSiblings.findIndex((candidate) => candidate.id === layer.id)
     const shownTarget = shownSource + displayDelta
     const targetLayer = shownSiblings[shownTarget]
@@ -606,7 +606,7 @@ function LayersInspector() {
             const siblings =
               parentLayer && isGroupLayer(parentLayer) && parentLayer.role === 'text'
                 ? storedSiblings
-                : [...storedSiblings].reverse()
+                : [...storedSiblings].toReversed()
             const position = siblings.findIndex((candidate) => candidate.id === layer.id)
             return (
               <LayerRow

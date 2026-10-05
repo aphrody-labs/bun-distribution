@@ -195,7 +195,7 @@ export async function brokenUrls(urls: string[], concurrency = 8): Promise<strin
       }
     }),
   );
-  return broken.sort();
+  return broken.toSorted();
 }
 
 /** Fetches JSON; returns status, parsed body (or raw text) and headers. */

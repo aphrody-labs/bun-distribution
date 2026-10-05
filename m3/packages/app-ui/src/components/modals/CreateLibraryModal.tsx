@@ -312,7 +312,7 @@ function CreateLibraryDialog(props: CreateLibraryDialogProps) {
 						{...form.register("name", { required: "Name is required" })}
 						size="md"
 						placeholder="My library"
-						autoFocus
+						
 						className="bg-surface-container-highest"
 					/>
 					{form.formState.errors.name && (

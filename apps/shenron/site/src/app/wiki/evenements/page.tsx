@@ -12,7 +12,7 @@ import { WikiDrawer } from "@/components/wiki/WikiDrawer";
 import { ogMeta } from "@/lib/og";
 import { pageHero } from "@/lib/banner-config";
 import { JsonLd } from "@/components/JsonLd";
-import { Swords, Trophy, GitBranch, Sparkles, ArrowRight } from "lucide-react";
+
 import type { Metadata } from "next";
 
 export const revalidate = 3600;

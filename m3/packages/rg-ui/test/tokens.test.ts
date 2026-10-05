@@ -119,10 +119,10 @@ describe("tokens exposés", () => {
 	});
 
 	test("les thèmes unifiés exposent les mêmes rôles MD3", () => {
-		const reference = Object.keys(THEMES["theme-roy"].md3).sort();
+		const reference = Object.keys(THEMES["theme-roy"].md3).toSorted();
 		expect(reference.length).toBe(36);
 		for (const nom of NOMS_THEMES) {
-			expect(Object.keys(THEMES[nom].md3).sort()).toEqual(reference);
+			expect(Object.keys(THEMES[nom].md3).toSorted()).toEqual(reference);
 		}
 	});
 
@@ -133,7 +133,7 @@ describe("tokens exposés", () => {
 		// thèmes Azalée de `--chart-*`.
 		const blocs = analyserBlocs(css);
 		const varsDuTheme = (nom: string) =>
-			[...(blocs.find((b) => b.selecteurs.includes(`.${nom}`))?.declarations.keys() ?? [])].sort();
+			[...(blocs.find((b) => b.selecteurs.includes(`.${nom}`))?.declarations.keys() ?? [])].toSorted();
 
 		const reference = varsDuTheme(NOMS_THEMES[0]!);
 		expect(reference.length).toBe(68);

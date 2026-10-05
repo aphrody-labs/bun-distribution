@@ -124,7 +124,7 @@ if (flag("ids")) {
 				parDefaut: Object.fromEntries([...parDefaut].map(([d, l]) => [d, l.length])),
 				tomes: [...parTome]
 					.filter(([, t]) => t.fautives > 0)
-					.sort((a, b) => b[1].fautives - a[1].fautives)
+					.toSorted((a, b) => b[1].fautives - a[1].fautives)
 					.map(([tome, t]) => ({ tome, ...t })),
 			},
 			null,
@@ -137,13 +137,13 @@ if (flag("ids")) {
 		console.log("\nAucune signature d'échec du modèle sur le corpus manga.");
 	} else {
 		console.log("");
-		for (const [defaut, liste] of [...parDefaut].sort((a, b) => b[1].length - a[1].length)) {
+		for (const [defaut, liste] of [...parDefaut].toSorted((a, b) => b[1].length - a[1].length)) {
 			console.log(`${defaut.padEnd(14)} ${String(liste.length).padStart(6)}`);
 			for (const l of liste.slice(0, EXEMPLES)) {
 				console.log(`   ${l.series}:${l.tome}:${l.planche} (${(l.text ?? "").length} signes)`);
 			}
 		}
-		const pires = [...parTome].filter(([, t]) => t.fautives > 0).sort((a, b) => b[1].fautives - a[1].fautives);
+		const pires = [...parTome].filter(([, t]) => t.fautives > 0).toSorted((a, b) => b[1].fautives - a[1].fautives);
 		if (pires.length > 0) {
 			console.log(`\ntomes les plus touchés :`);
 			for (const [tome, t] of pires.slice(0, 12)) {

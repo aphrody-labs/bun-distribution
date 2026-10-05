@@ -152,10 +152,10 @@ export async function scanDirectory(
       bytes: stat.bytes,
       lines: stat.lines,
     }))
-    .sort((a, b) => b.bytes - a.bytes || (a.ext < b.ext ? -1 : a.ext > b.ext ? 1 : 0));
+    .toSorted((a, b) => b.bytes - a.bytes || (a.ext < b.ext ? -1 : a.ext > b.ext ? 1 : 0));
 
   const largestFiles = [...entries]
-    .sort((a, b) => b.bytes - a.bytes || comparePaths(a, b))
+    .toSorted((a, b) => b.bytes - a.bytes || comparePaths(a, b))
     .slice(0, 10);
   const elapsedMs = Math.round((Bun.nanoseconds() - t0) / 1_000_000);
 

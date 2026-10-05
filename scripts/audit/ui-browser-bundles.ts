@@ -77,7 +77,7 @@ export function discoverEntries(uiRoot: string): string[] {
       if (entry) entries.add(`${name.name}/${entry}`);
     }
   }
-  return [...entries].sort();
+  return [...entries].toSorted();
 }
 
 /** Resolve Vite-style `?url` asset imports to the file itself, as the consuming app bundlers do. */

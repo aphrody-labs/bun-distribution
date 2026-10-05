@@ -17,7 +17,7 @@ const timeoutMs = Math.max(1_000, Math.min(30_000, Number(process.env.REFONTE_AP
 const paths = ["/api/wiki/media?limit=1", "/api/wiki/timelines?limit=1", "/api/wiki/contributors?limit=1", "/api/wiki/events?limit=1"];
 
 const percentile = (values: number[], p: number) => {
-	const sorted = [...values].sort((a, b) => a - b);
+	const sorted = [...values].toSorted((a, b) => a - b);
 	return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * p) - 1)] ?? 0;
 };
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { AcceleRateType, MasterPlayerStats } from "../db/types.ts";
+
 
 export type BuildUpPlayStyle = "ShortPassing" | "Balanced" | "DirectPassing" | "LongBall";
 export type DefensiveApproach = "Deep" | "Balanced" | "HighPress" | "Aggressive";

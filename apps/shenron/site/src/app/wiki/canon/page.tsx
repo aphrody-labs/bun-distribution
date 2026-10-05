@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
 import { assetUrl } from "@/lib/assets";
-import { BarreCanon } from "./BarreCanon";
+
 import { canonPreuves, type PlanchePreuve } from "@/lib/canon-preuves";
 import { chercherPlanches, type ResultatPlanche } from "@/lib/manga-api";
 import { chercherScenes, type SceneTrouvee } from "@/lib/frames-map";

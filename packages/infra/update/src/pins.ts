@@ -16,7 +16,7 @@ export function targetFiles(c: Ctx, t: Target): string[] {
   if (t.file) return c.exists(t.file) ? [t.file] : [];
   const out: string[] = [];
   for (const f of new Bun.Glob(t.glob!).scanSync({ cwd: c.root })) if (!SKIP.test(f)) out.push(f);
-  return out.sort();
+  return out.toSorted();
 }
 
 function regex(t: Target): RegExp {

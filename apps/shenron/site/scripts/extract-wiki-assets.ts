@@ -193,11 +193,8 @@ function filterHighResImages(images: WikiImage[]): WikiImage[] {
         img.fichier.toLowerCase().includes("bullet");
       return !isTiny && !isIcon;
     })
-    .map((img) => ({
-      ...img,
-      category: classifyImage(img),
-    }))
-    .sort((a, b) => b.largeur * b.hauteur - a.largeur * a.hauteur);
+    .map((img) => (Object.assign(img, { category: classifyImage(img) })))
+    .toSorted((a, b) => b.largeur * b.hauteur - a.largeur * a.hauteur);
 }
 
 function extractSummaryFromMarkdown(md: string): string {

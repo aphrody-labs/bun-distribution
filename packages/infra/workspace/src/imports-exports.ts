@@ -200,11 +200,11 @@ async function activeWorkspacePackages(
     const dir = dirname(item.path);
     const memberships = roots
       .filter((workspace) => workspaceContains(workspace.path, workspace.patterns, dir))
-      .sort((a, b) => b.path.length - a.path.length);
+      .toSorted((a, b) => b.path.length - a.path.length);
     const owner = memberships[0];
     if (owner) found.set(item.path, { ...item, workspaceRoot: relative(root, owner.path) || "." });
   }
-  return [...found.values()].sort((a, b) => a.path.localeCompare(b.path));
+  return [...found.values()].toSorted((a, b) => a.path.localeCompare(b.path));
 }
 
 function externalModuleName(node: ts.Node | undefined): string | null {
@@ -371,7 +371,7 @@ function parseSource(
     ts.forEachChild(node, visit);
   };
   visit(source);
-  return { path, imports, exports: [...exports].sort() };
+  return { path, imports, exports: [...exports].toSorted() };
 }
 
 async function sourceFiles(packageDir: string, nestedWorkspaceDirs: string[]): Promise<string[]> {
@@ -408,7 +408,7 @@ function manifestEntries(manifest: WorkspaceManifest): string[] {
     }
     if (key === ".") continue;
   }
-  return [...result].sort();
+  return [...result].toSorted();
 }
 
 async function auditPackage(
@@ -456,7 +456,7 @@ async function auditPackage(
   );
   const unlisted = externalImports
     .filter((name) => !declared.has(name) && !name.startsWith("@types/"))
-    .sort();
+    .toSorted();
   // Development tools are usually invoked by package scripts rather than imported
   // from application source, so only runtime/peer/optional dependencies are audited
   // for unused declarations.
@@ -466,7 +466,7 @@ async function auditPackage(
     ...item.manifest.optionalDependencies,
   })
     .filter((name) => !subpathUsed.has(name) && !name.startsWith("@types/"))
-    .sort();
+    .toSorted();
   const exportsByFile: Record<string, string[]> = {};
   for (const file of parsedFiles) {
     if (file.exports.length)
@@ -537,7 +537,7 @@ export async function scanImportsExports(
     importCount: imports.length,
     externalPackages: [
       ...new Set(imports.flatMap((ref) => (ref.packageName ? [ref.packageName] : []))),
-    ].sort(),
+    ].toSorted(),
     versionSpecDifferences,
   };
 }

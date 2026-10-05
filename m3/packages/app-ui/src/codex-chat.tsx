@@ -574,7 +574,7 @@ export function ApprovalCard({
             disabled={approval.submitting}
             onClick={() => onDecide("decline")}
             className="bg-error text-on-error hover:bg-error/90 font-medium"
-            autoFocus
+            
           >
             Refuser (Défaut)
           </Button>
@@ -877,7 +877,7 @@ export function CodexChat({
                   if (e.key === "Escape") setIsEditingTitle(false);
                 }}
                 className="px-3 py-1 rounded-xl bg-surface-container-high border border-primary text-title-medium font-bold text-on-surface focus:outline-none max-w-sm"
-                autoFocus
+                
                 placeholder="Nom du fil..."
               />
               <CircleButton

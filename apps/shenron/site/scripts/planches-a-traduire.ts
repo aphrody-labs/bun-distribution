@@ -144,7 +144,7 @@ try {
 		}
 		const lignes = [...par.entries()]
 			.filter(([, e]) => e.reste > 0 || e.faites > 0)
-			.sort((a, b) => b[1].reste - a[1].reste);
+			.toSorted((a, b) => b[1].reste - a[1].reste);
 		for (const [id, e] of lignes) {
 			console.log(
 				`${id.padStart(4)}  reste ${String(e.reste).padStart(4)}  faites ${String(e.faites).padStart(4)}  ${String(Math.round(e.signes / 1000)).padStart(4)} k signes  ${e.titre}`

@@ -222,7 +222,7 @@ export async function requireLiveRag(): Promise<LiveRag> {
   } catch (error) {
     // Driver errors may carry private connection details; expose only the phase.
     if (error instanceof Error && /^(Shenron |Real Shenron )/.test(error.message)) throw error;
-    throw new Error("Real Shenron qualification failed; inspect the private service logs");
+    throw new Error("Real Shenron qualification failed; inspect the private service logs", { cause: error });
   } finally {
     redis.close();
     await Promise.all([editorial.end(), index.end()]);

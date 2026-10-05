@@ -141,7 +141,7 @@ export function TransformationsPanel({ characterId }: { characterId: string }) {
               placeholder="ex. Super Saiyan, Ultra Instinct…"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              autoFocus
+              
             />
           </label>
           <label>

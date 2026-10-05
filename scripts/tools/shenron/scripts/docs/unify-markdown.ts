@@ -41,7 +41,7 @@ async function main() {
 				f.trim() !== "" && !IGNORE_PATTERNS.some((p) => f.includes(p)) && relPath !== outputFile
 			);
 		})
-		.sort();
+		.toSorted();
 
 	console.log(`📄 ${allFiles.length} fichiers trouvés.`);
 

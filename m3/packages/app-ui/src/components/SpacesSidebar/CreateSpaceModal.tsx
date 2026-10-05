@@ -73,7 +73,7 @@ function CreateSpaceDialog(props: { id: number }) {
 					<Input
 						{...form.register('name', { required: true })}
 						placeholder="e.g., Work Files, Personal Photos"
-						autoFocus
+						
 					/>
 				</div>
 

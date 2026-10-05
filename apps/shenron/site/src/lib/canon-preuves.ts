@@ -140,7 +140,7 @@ async function resoudrePlanches(
 			score,
 		});
 	}
-	return [...parCle.values()].sort((a, b) => b.score - a.score);
+	return [...parCle.values()].toSorted((a, b) => b.score - a.score);
 }
 
 /**
@@ -319,8 +319,8 @@ export const canonPreuves = cache(async (question: string): Promise<CanonPreuves
 		});
 	}
 
-	const retenues = fiches.sort((a, b) => b.score - a.score).slice(0, 6);
-	const planchesCandidats = refs.sort((a, b) => b.score - a.score).slice(0, 6);
+	const retenues = fiches.toSorted((a, b) => b.score - a.score).slice(0, 6);
+	const planchesCandidats = refs.toSorted((a, b) => b.score - a.score).slice(0, 6);
 	const [planches, illustrations] = await Promise.all([
 		resoudrePlanches(planchesCandidats).catch(() => [] as PlanchePreuve[]),
 		Promise.all(retenues.map((f) => illustrerFiche(f.href))),
@@ -328,7 +328,7 @@ export const canonPreuves = cache(async (question: string): Promise<CanonPreuves
 	return {
 		verdict,
 		planches: planches.slice(0, 4),
-		fiches: retenues.map((f, i) => ({ ...f, ...illustrations[i]! })),
+		fiches: retenues.map((f, i) => (Object.assign(f, illustrations[i]!))),
 		mode: parQuestion?.mode ?? parMotsCles?.mode ?? null,
 		suggestions,
 	};

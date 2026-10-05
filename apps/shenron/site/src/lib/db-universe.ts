@@ -51,7 +51,6 @@ import {
 	botContributorCredits,
 	botNarrativeTimelines,
 	botNarrativeEvents,
-	botNarrativeEventParticipants,
 	botNarrativeEventRelations,
 	botMediaWorks,
 	botMediaEditions,
@@ -1069,12 +1068,11 @@ export const dbUniverse = {
 				.where(and(eq(botArcs.visible, true), eq(botSagas.visible, true)))
 				.orderBy(asc(botSagas.orderIdx), asc(botArcs.orderIdx));
 			return {
-				arcs: rows.map((r) => ({
-					...toArc(r.arc),
-					saga_name: r.sagaName,
-					saga_slug: r.sagaSlug,
-					saga_series: r.sagaSeries,
-				})),
+				arcs: rows.map((r) => (Object.assign(toArc(r.arc), {
+	saga_name: r.sagaName,
+	saga_slug: r.sagaSlug,
+	saga_series: r.sagaSeries
+}))),
 			};
 		}),
 
@@ -1645,7 +1643,7 @@ export const dbUniverse = {
 					poster: r.poster,
 					release_date: r.release_date ?? null,
 				}))
-				.sort(
+				.toSorted(
 					(a, b) =>
 						(a.release_date ?? Number.POSITIVE_INFINITY) - (b.release_date ?? Number.POSITIVE_INFINITY) || a.id - b.id,
 				);
@@ -1809,10 +1807,7 @@ export const dbUniverse = {
 				.innerJoin(botCharacters, eq(botCharacters.id, botGameCharacters.characterId))
 				.where(and(eq(botGameCharacters.gameId, g.id), eq(botCharacters.visible, true)))
 				.orderBy(asc(botCharacters.name));
-			const characters = rawCharacters.map((c) => ({
-				...c,
-				slug: formatCharacterSlug(c),
-			}));
+			const characters = rawCharacters.map((c) => (Object.assign(c, { slug: formatCharacterSlug(c) })));
 			return { ...toGame(g), characters };
 		}),
 
@@ -2489,14 +2484,13 @@ export const dbUniverse = {
 				q: term,
 				characters,
 				planets,
-				sagas: sagas.map((s) => ({ ...s, series: s.series ?? "" })),
-				movies: movies.map((m) => ({ ...m, series: m.series ?? "" })),
+				sagas: sagas.map((s) => (Object.assign(s, { series: s.series ?? '' }))),
+				movies: movies.map((m) => (Object.assign(m, { series: m.series ?? '' }))),
 				games,
-				episodes: episodes.map((e) => ({
-					...e,
-					title: e.title ?? "",
-					number_in_series: e.number_in_series ?? 0,
-				})),
+				episodes: episodes.map((e) => (Object.assign(e, {
+	title: e.title ?? '',
+	number_in_series: e.number_in_series ?? 0
+}))),
 				techniques,
 				races,
 				transformations: transfoDedup,
@@ -2513,7 +2507,7 @@ export const dbUniverse = {
 				dragons,
 				databooks,
 				novels,
-				contributors: contributors.map((c) => ({ ...c, id: Number(c.id) })),
+				contributors: contributors.map((c) => (Object.assign(c, { id: Number(c.id) }))),
 			};
 		}),
 

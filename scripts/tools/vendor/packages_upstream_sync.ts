@@ -140,9 +140,9 @@ async function inspectPackage(
 }
 
 async function main() {
-  const args = process.argv.slice(2);
-  const jsonMode = args.includes("--json");
-  const fetchMode = args.includes("--fetch");
+  const args = new Set(process.argv.slice(2));
+  const jsonMode = args.has("--json");
+  const fetchMode = args.has("--fetch");
 
   console.log("──────────────────────────────────────────────────────────────────────────────");
   console.log(" Aphrody Monorepo Forks & Packages Control Hub (via `aphrody git`)");

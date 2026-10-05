@@ -247,7 +247,7 @@ if (totauxFautes.size > 0) {
 	console.log(
 		`\n${"-".repeat(78)}\nFautes de lecture corrigées, par graphie (${totauxFautes.size} graphies distinctes) :`
 	);
-	const tri = [...totauxFautes.entries()].sort((a, b) => b[1].n - a[1].n);
+	const tri = [...totauxFautes.entries()].toSorted((a, b) => b[1].n - a[1].n);
 	for (const [lu, v] of tri) {
 		console.log(
 			`  ${String(v.n).padStart(4)}×  ${lu.padEnd(12)} → ${v.correct.padEnd(12)} (${v.ouvrages.size} ouvrage(s))`
@@ -320,7 +320,7 @@ function paquets<T>(items: T[], taille: number): T[][] {
 let deposees = 0;
 let echecs = 0;
 
-for (const [databookId, liste] of [...parOuvrage.entries()].sort((a, b) => a[0] - b[0])) {
+for (const [databookId, liste] of [...parOuvrage.entries()].toSorted((a, b) => a[0] - b[0])) {
 	for (const lot of paquets(liste, PAQUET)) {
 		const corps = JSON.stringify({
 			mode: "merge",

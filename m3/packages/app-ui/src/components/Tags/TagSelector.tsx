@@ -187,7 +187,7 @@ export function TagSelector({
 					onChange={(e) => setQuery(e.target.value)}
 					onKeyDown={handleKeyDown}
 					placeholder="Search tags..."
-					autoFocus={autoFocus}
+					
 					className="text-on-surface placeholder:text-outline flex-1 bg-transparent text-body-medium outline-none"
 				/>
 			</div>

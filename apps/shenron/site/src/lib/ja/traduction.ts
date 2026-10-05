@@ -163,7 +163,7 @@ export function occurrencesDuLexique<T extends { ja: string }>(
 		occupe.fill(1, c.debut, c.fin);
 		retenues.push(c);
 	}
-	return retenues.sort((a, b) => a.debut - b.debut);
+	return retenues.toSorted((a, b) => a.debut - b.debut);
 }
 
 /**

@@ -43,6 +43,6 @@ export function orderPlayers<T extends { provider: string }>(
 	if (!Array.isArray(players)) return null;
 	return players
 		.map((p, i) => ({ p, i, r: rang(p?.provider) }))
-		.sort((a, b) => a.r - b.r || a.i - b.i)
+		.toSorted((a, b) => a.r - b.r || a.i - b.i)
 		.map((x) => x.p);
 }

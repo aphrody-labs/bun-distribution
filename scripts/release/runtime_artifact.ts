@@ -3,7 +3,7 @@
  * Packages the precompiled runtime library into `dist/runtime/<target>/`:
  * the shared library, its C header and a manifest identifying target, toolchain, ABI, source
  * revisions, build options and hashes. It never starts Cargo: build first with
- * `just runtime-build` (profile `runtime`, unwinding panics).
+ * `just yolo::runtime-build` (profile `runtime`, unwinding panics).
  */
 import { mkdirSync } from "node:fs";
 import { basename, resolve } from "node:path";
@@ -15,7 +15,7 @@ const root = resolve(import.meta.dir, "../..");
 const libraryPath =
   process.env["YOLO_RUNTIME_LIB"] || resolve(root, "target/runtime", libraryFile());
 if (!(await Bun.file(libraryPath).exists())) {
-  console.error(`Missing ${libraryPath}: run \`just runtime-build\` first.`);
+  console.error(`Missing ${libraryPath}: run \`just yolo::runtime-build\` first.`);
   process.exit(1);
 }
 

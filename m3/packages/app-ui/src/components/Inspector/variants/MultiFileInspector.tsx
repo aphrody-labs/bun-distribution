@@ -17,7 +17,7 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
 
   // Get last 3 files for thumbnail stacking (v1 style)
   const thumbnailFiles = useMemo(() => {
-    return files.slice(-3).reverse();
+    return files.slice(-3).toReversed();
   }, [files]);
 
   // Calculate aggregated metadata
@@ -53,17 +53,17 @@ export function MultiFileInspector({ files }: MultiFileInspectorProps) {
       created: files
         .map((f) => f.created_at)
         .filter(Boolean)
-        .sort(),
+        .toSorted(),
       modified: files
         .map((f) => f.modified_at)
         .filter(Boolean)
-        .sort(),
+        .toSorted(),
     };
 
     return {
       totalSize,
-      kindCounts: Array.from(kindCounts.entries()).sort((a, b) => b[1] - a[1]),
-      tags: Array.from(tagMap.values()).sort((a, b) => b.count - a.count),
+      kindCounts: Array.from(kindCounts.entries()).toSorted((a, b) => b[1] - a[1]),
+      tags: Array.from(tagMap.values()).toSorted((a, b) => b.count - a.count),
       dateRanges: {
         created:
           dates.created.length > 0

@@ -183,7 +183,7 @@ export async function chercherScenes(q: string, limit = 8): Promise<SceneTrouvee
 	return rows
 		.map((r) => ({ r, d: scorer(r.corpus, terme, Number(r.sim) || 0) }))
 		.filter((x) => x.d.score > 0)
-		.sort((a, b) => b.d.score - a.d.score || Number(a.r.id) - Number(b.r.id))
+		.toSorted((a, b) => b.d.score - a.d.score || Number(a.r.id) - Number(b.r.id))
 		.slice(0, max)
 		.map(({ r, d }) => ({
 			id: Number(r.id),

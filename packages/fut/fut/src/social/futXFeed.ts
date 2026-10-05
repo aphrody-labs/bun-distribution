@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { XClient, XSession, type Tweet } from "@aphrody/x";
+import { XClient, XSession } from "@aphrody/x";
 import { analyzePlayerTweets } from "./sentimentEngine.ts";
 import type {
 	FutNewsCategory,
@@ -94,7 +94,7 @@ export class FutXFeed {
 		}
 
 		// Sort by urgency and then by creation date / engagement
-		return items.sort((a, b) => {
+		return items.toSorted((a, b) => {
 			const urgencyWeight = { BREAKING: 3, HIGH: 2, NORMAL: 1 };
 			const scoreA = urgencyWeight[a.urgency] * 10000 + a.likes * 2 + a.retweets * 3;
 			const scoreB = urgencyWeight[b.urgency] * 10000 + b.likes * 2 + b.retweets * 3;

@@ -84,7 +84,7 @@ export async function scanRepository(root: string) {
       });
     }
   }
-  const packages = [...new Map(bun.map((p) => [p.path, p])).values()].sort((a, b) =>
+  const packages = [...new Map(bun.map((p) => [p.path, p])).values()].toSorted((a, b) =>
     a.path.localeCompare(b.path),
   );
   const names = new Map<string, string[]>();

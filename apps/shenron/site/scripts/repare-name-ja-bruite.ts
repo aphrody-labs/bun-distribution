@@ -194,7 +194,7 @@ try {
 	}
 
 	console.log(`\nPar motif :`);
-	for (const [m, n] of Object.entries(parMotif).sort((a, b) => b[1] - a[1]))
+	for (const [m, n] of Object.entries(parMotif).toSorted((a, b) => b[1] - a[1]))
 		console.log(`  ${String(n).padStart(3)}  ${m}`);
 	if (laissees.length) {
 		console.log(`\n${laissees.length} fiche(s) bruitée(s) LAISSÉES EN PLACE (arbitrage humain) :`);

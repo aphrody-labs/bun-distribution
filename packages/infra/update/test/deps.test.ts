@@ -65,7 +65,7 @@ describe("inventory parsers", () => {
   });
   test("bun.lock entries", () => {
     const lock = `    "@scope/pkg": ["@scope/pkg@1.2.3", "", {}, "sha"],\n    "left-pad": ["left-pad@1.3.0", "", {}, "sha"],\n`;
-    expect(parseBunLock(lock).map((d) => `${d.name}@${d.version}`).sort()).toEqual(["@scope/pkg@1.2.3", "left-pad@1.3.0"]);
+    expect(parseBunLock(lock).map((d) => `${d.name}@${d.version}`).toSorted()).toEqual(["@scope/pkg@1.2.3", "left-pad@1.3.0"]);
   });
   test("requirements pins", () => {
     expect(parseRequirements("Foo_Bar[extra]==1.0.2 \\\n  --hash=sha256:x\nplain>=1\n")).toEqual([{ name: "foo-bar", version: "1.0.2" }]);

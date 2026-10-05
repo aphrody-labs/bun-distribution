@@ -21,7 +21,7 @@ export async function loadFleet(root = infraRoot()): Promise<Fleet> {
   ]);
   return {
     generatedAt: ecosystem.generatedAt,
-    repositories: (ecosystem.repos ?? []).flatMap((repo) => (repo.name ? [repo.name] : [])).sort(),
+    repositories: (ecosystem.repos ?? []).flatMap((repo) => (repo.name ? [repo.name] : [])).toSorted(),
     stages: (pipeline.stages ?? []).flatMap((stage) =>
       stage.id
         ? [
@@ -29,7 +29,7 @@ export async function loadFleet(root = infraRoot()): Promise<Fleet> {
               id: stage.id,
               repositories: [
                 ...new Set((stage.steps ?? []).flatMap((step) => (step.repo ? [step.repo] : []))),
-              ].sort(),
+              ].toSorted(),
             },
           ]
         : [],

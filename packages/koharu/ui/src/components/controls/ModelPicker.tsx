@@ -85,7 +85,7 @@ export function ModelPicker({
               <Search className='size-3' />
             </InputGroupAddon>
             <InputGroupInput
-              autoFocus
+              
               value={query}
               aria-label={t('modelPicker.search')}
               placeholder={t('modelPicker.search')}
@@ -123,7 +123,7 @@ export function ModelPicker({
             return (
               <Button
                 key={quantization?.id ?? key}
-                autoFocus={Boolean(quantization) && index === 0}
+                
                 type='button'
                 variant='ghost'
                 aria-label={

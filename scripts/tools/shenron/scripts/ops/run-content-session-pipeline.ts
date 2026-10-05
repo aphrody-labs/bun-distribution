@@ -35,7 +35,7 @@ async function databaseUrl(): Promise<string> {
 			.at(-1)
 			?.slice("DATABASE_URL=".length)
 			.trim()
-			.replace(/^['\"]|['\"]$/g, "");
+			.replace(/^['"]|['"]$/g, "");
 		if (value) return value;
 	}
 	throw new Error("DATABASE_URL is required");

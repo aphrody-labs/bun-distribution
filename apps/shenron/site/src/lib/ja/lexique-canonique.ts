@@ -57,7 +57,7 @@ export function chargerLexiqueCanonique(): LexiqueEntry[] {
 				const content = readFileSync(p, "utf-8");
 				const parsed = JSON.parse(content) as LexiqueEntry[];
 				// Toujours s'assurer du tri par longueur décroissante
-				cachedLexique = parsed.sort((a, b) => {
+				cachedLexique = parsed.toSorted((a, b) => {
 					if (b.length !== a.length) return b.length - a.length;
 					return a.ja.localeCompare(b.ja);
 				});
@@ -89,7 +89,7 @@ export function chargerLexiqueCanonique(): LexiqueEntry[] {
 		] as const as LexiqueEntry[]
 	)
 		.slice()
-		.sort((a, b) => {
+		.toSorted((a, b) => {
 			if (b.length !== a.length) return b.length - a.length;
 			return a.ja.localeCompare(b.ja);
 		});

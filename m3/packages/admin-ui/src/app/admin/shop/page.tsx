@@ -164,11 +164,10 @@ export default function ShopPage() {
         "/database/shop_items?limit=500",
       );
       // Normaliser roleId et enabled pour chaque ligne
-      const rows = (res.rows ?? []).map((r) => ({
-        ...r,
-        roleId: r.roleId ?? r.role_id ?? null,
-        enabled: Boolean(r.enabled),
-      }));
+      const rows = (res.rows ?? []).map((r) => (Object.assign(r, {
+	roleId: r.roleId ?? r.role_id ?? null,
+	enabled: Boolean(r.enabled)
+})));
       return { rows, total: rows.length };
     },
   });

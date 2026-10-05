@@ -132,8 +132,8 @@ const resolved = new Map<string, SiteEpisodeRef>([
 
 describe("frames-map — mapping des séries et des films", () => {
 	test("les séries DBFR couvrent les sept diffusions du site", () => {
-		expect(Object.values(ANILIST_TO_SERIES).sort()).toEqual(
-			["DB", "DBGT", "DBS", "DBZ", "DBZ_KAI", "DBZ_KAI_FINAL", "DB_DAIMA"].sort()
+		expect(Object.values(ANILIST_TO_SERIES).toSorted()).toEqual(
+			["DB", "DBGT", "DBS", "DBZ", "DBZ_KAI", "DBZ_KAI_FINAL", "DB_DAIMA"].toSorted()
 		);
 		expect(DBFR_ANILIST_IDS.length).toBe(7);
 	});

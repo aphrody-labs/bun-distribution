@@ -86,7 +86,7 @@ export function WikiSectionsReader({
 		let n = 2;
 		while (seen.has(key)) key = `${p.key}-${n++}`;
 		seen.add(key);
-		return key === p.key ? p : { ...p, key };
+		return key === p.key ? p : Object.assign(p, { key });
 	});
 
 	useEffect(() => {

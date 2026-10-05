@@ -15,7 +15,7 @@
  */
 
 import { readFileSync, existsSync } from "node:fs";
-import type { SuperbundleToc, TocEntry } from "./types.ts";
+import type { SuperbundleToc } from "./types.ts";
 
 export class TocReader {
 	/**

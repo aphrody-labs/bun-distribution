@@ -194,7 +194,7 @@ function serializeInlineRun(nodes: JSONContent[], applied: Set<string>, raw: boo
 		const node = nodes[i]!;
 		const pending = ((node.marks ?? []) as Mark[])
 			.filter((m) => !applied.has(markKey(m)))
-			.sort((a, b) => markRank(a) - markRank(b));
+			.toSorted((a, b) => markRank(a) - markRank(b));
 
 		if (pending.length === 0) {
 			out += serializeLeaf(node, raw);

@@ -319,7 +319,7 @@ export async function listFeed(
 		)
 	);
 
-	const merged = parts.flat().sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+	const merged = parts.flat().toSorted((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
 	const start = (page - 1) * perPage;
 	const entries = merged.slice(start, start + perPage);
 	const hasMore = merged.length > start + perPage;

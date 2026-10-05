@@ -2251,10 +2251,10 @@ function frontiere(c: string | undefined): boolean {
  * longue qui la contiendrait (`フロリー` dans `バイオフロリー`). La frontière
  * katakana suffirait ici, mais l'ordre doit être garanti plutôt que fortuit.
  */
-const ORDRE: FauteNomPropre[] = [...NOMS_PROPRES_MAL_LUS].sort((a, b) => b.lu.length - a.lu.length);
+const ORDRE: FauteNomPropre[] = [...NOMS_PROPRES_MAL_LUS].toSorted((a, b) => b.lu.length - a.lu.length);
 
 /** Même précaution pour les chaînes agglutinées, qui peuvent s'emboîter. */
-const ORDRE_AGGLUTINE: AgglutinationValidee[] = [...AGGLUTINATIONS_VALIDEES_A_LA_MAIN].sort(
+const ORDRE_AGGLUTINE: AgglutinationValidee[] = [...AGGLUTINATIONS_VALIDEES_A_LA_MAIN].toSorted(
 	(a, b) => b.lu.length - a.lu.length
 );
 

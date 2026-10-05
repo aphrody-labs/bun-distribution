@@ -279,7 +279,7 @@ export class DiscordChannel {
 		}
 		return messages
 			.filter((message) => compareSnowflakes(message.id, after) > 0)
-			.sort((left, right) => compareSnowflakes(left.id, right.id));
+			.toSorted((left, right) => compareSnowflakes(left.id, right.id));
 	}
 
 	private async request<T>(

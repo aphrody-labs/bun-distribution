@@ -66,7 +66,7 @@ for (const l of lignes) {
 }
 
 let paires = 0;
-for (const [cle, membres] of [...groupes].sort()) {
+for (const [cle, membres] of [...groupes].toSorted()) {
 	if (membres.length < 2) continue;
 	paires++;
 	console.log(`\n« ${cle} » — ${membres.length} fiches`);

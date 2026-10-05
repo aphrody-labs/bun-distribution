@@ -399,7 +399,10 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
     ...integrated.map(async (source) => {
       const dir = join(args.repo, source.integratedPath);
       const row = await inspect(dirname(dir), { ...source, id: basename(dir) });
-      return { ...row, id: source.id, detail: `${source.integratedPath} ${row.detail}` };
+      return Object.assign(row, {
+	id: source.id,
+	detail: `${source.integratedPath} ${row.detail}`
+});
     }),
   ]);
   const problems =

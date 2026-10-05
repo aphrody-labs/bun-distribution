@@ -34,10 +34,10 @@ export function UnifiedVolumeReader({ volume }: { volume: VolumeData }) {
       : `Chapitre ${chapter.chapter_number}`, []);
   const editions = useMemo<ReaderCollectionEdition[]>(() => [
     { id: "nb", label: "Original N&B (Tankōbon)", chapters: chapters.filter((chapter) => chapter.series !== "DBFC")
-      .sort((a, b) => a.chapter_number - b.chapter_number)
+      .toSorted((a, b) => a.chapter_number - b.chapter_number)
       .map((chapter) => ({ id: chapter.id, label: formatChapterTitle(chapter), pageCount: chapter.pages?.length ?? 0 })) },
     { id: "color", label: "Full Color (Shueisha)", chapters: chapters.filter((chapter) => chapter.series === "DBFC")
-      .sort((a, b) => a.chapter_number - b.chapter_number)
+      .toSorted((a, b) => a.chapter_number - b.chapter_number)
       .map((chapter) => ({ id: chapter.id, label: formatChapterTitle(chapter), pageCount: chapter.pages?.length ?? 0 })) },
   ], [chapters, formatChapterTitle]);
   const initialEdition = searchParams?.get("edition") ?? "nb";

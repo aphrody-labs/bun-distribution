@@ -18,15 +18,15 @@ function strings(value: object, prefix = ''): Array<[string, string]> {
 }
 
 function placeholders(value: string): string[] {
-  return Array.from(value.matchAll(/{{\s*([^},\s]+).*?}}/g), ([, name]) => name).sort()
+  return Array.from(value.matchAll(/{{\s*([^},\s]+).*?}}/g), ([, name]) => name).toSorted()
 }
 
 describe('editor localization', () => {
   it('defines the same flattened translation schema in every locale', () => {
-    const expected = keys(resources['en-US'].translation).sort()
+    const expected = keys(resources['en-US'].translation).toSorted()
     for (const [locale, resource] of Object.entries(resources)) {
       expect('native' in resource.translation, locale).toBe(false)
-      expect(keys(resource.translation).sort(), locale).toEqual(expected)
+      expect(keys(resource.translation).toSorted(), locale).toEqual(expected)
     }
   })
 

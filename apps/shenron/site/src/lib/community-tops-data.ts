@@ -58,14 +58,14 @@ async function ratingAggs(
 function rankEntries(candidates: Omit<CommunityTopEntry, "rank">[]): CommunityTopEntry[] {
 	return candidates
 		.slice()
-		.sort((a, b) => {
+		.toSorted((a, b) => {
 			if (b.bayes !== a.bayes) return b.bayes - a.bayes;
 			if (b.count !== a.count) return b.count - a.count;
 			if (b.average !== a.average) return b.average - a.average;
 			return a.title.localeCompare(b.title, "fr");
 		})
 		.slice(0, COMMUNITY_TOP_LIMIT)
-		.map((e, i) => ({ ...e, rank: (i + 1) as 1 | 2 | 3 }));
+		.map((e, i) => (Object.assign(e, { rank: (i + 1) as 1 | 2 | 3 })));
 }
 
 function epLabel(series: string | null, num: number | null): string {

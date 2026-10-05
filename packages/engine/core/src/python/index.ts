@@ -6,7 +6,6 @@
  * Implements zero-copy status inspection, execution dispatch, and model-level bridging.
  */
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 
 export interface PythonEnvironmentStatus {
   readonly schema: "yolo.python/1";

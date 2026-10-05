@@ -238,7 +238,7 @@ function extractImports(source: string, code: string): ImportRef[] {
 			refs.push({ specifier, index: match.index ?? 0, typeOnly: typeGroup && Boolean(match[1]) });
 		}
 	}
-	return refs.sort((a, b) => a.index - b.index);
+	return refs.toSorted((a, b) => a.index - b.index);
 }
 
 function lineAt(source: string, index: number): string {

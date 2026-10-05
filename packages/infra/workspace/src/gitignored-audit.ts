@@ -71,7 +71,7 @@ export async function runGitignoredAudit(args: string[]): Promise<number> {
         ignored: records.length,
         bytes: records.reduce((total, record) => total + record.bytes, 0),
         duplicates,
-        largest: [...records].sort((a, b) => b.bytes - a.bytes).slice(0, 20),
+        largest: [...records].toSorted((a, b) => b.bytes - a.bytes).slice(0, 20),
       },
       null,
       2,

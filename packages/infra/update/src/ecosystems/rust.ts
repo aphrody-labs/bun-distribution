@@ -284,7 +284,7 @@ export function directDeps(decls: DepDecl[]): DirectDep[] {
       if (w?.req) add(w.crate, w.req, w.manifest, d.pkg, d.enabledBy);
     } else if (d.req) add(d.crate, d.req, d.manifest, d.pkg, d.enabledBy);
   }
-  return [...map.values()].sort(
+  return [...map.values()].toSorted(
     (a, b) => a.crate.localeCompare(b.crate) || a.req.localeCompare(b.req),
   );
 }
@@ -371,7 +371,7 @@ export function touchedMembers(graph: LockGraph, changed: Iterable<string>): str
       }
   }
   for (const n of changed) if (graph.members.has(n)) seen.add(n);
-  return [...seen].filter((n) => graph.members.has(n)).sort();
+  return [...seen].filter((n) => graph.members.has(n)).toSorted();
 }
 
 /** Parse `cargo update --dry-run` (or real) output lines such as `Updating syn v2.0.1 -> v2.0.2`. */
@@ -455,15 +455,15 @@ export function classify(i: ClassifyInput): OutdatedRow[] {
           p.name === d.crate && p.source?.startsWith("registry+") && satisfies(p.version, d.req),
       )
       .map((p) => noBuild(p.version))
-      .sort(cmpVersion)
+      .toSorted(cmpVersion)
       .at(-1);
     const vers = (i.versions.get(d.crate) ?? [])
       .filter((v) => !v.yanked)
-      .map((v) => ({ ...v, vers: noBuild(v.vers) }));
+      .map((v) => (Object.assign(v, { vers: noBuild(v.vers) })));
     const allowPre = !!locked && locked.includes("-");
     const stable = vers
       .filter((v) => allowPre || !v.vers.includes("-"))
-      .sort((a, b) => cmpVersion(a.vers, b.vers));
+      .toSorted((a, b) => cmpVersion(a.vers, b.vers));
     const within = stable.filter((v) => satisfies(v.vers, d.req)).at(-1);
     const beyondV = stable
       .filter((v) => !satisfies(v.vers, d.req) && cmpVersion(v.vers, locked ?? "0.0.0") > 0)
@@ -513,7 +513,7 @@ export function splitAdvisories(
   }
   const by = (x: Advisory, y: Advisory) =>
     x.crate.localeCompare(y.crate) || cmpVersion(x.version, y.version);
-  return { open: open.sort(by), held: held.sort(by) };
+  return { open: open.toSorted(by), held: held.toSorted(by) };
 }
 
 /** Crates named by `cargo deny --format json check advisories` diagnostics, with their advisory ids. */
@@ -839,7 +839,7 @@ function restore(c: Ctx, s: Snapshot) {
 function recordTouched(c: Ctx, names: string[]) {
   const f = "target/update/rust-touched.json";
   const prev = c.jsonFile<{ crates: string[] }>(f, { crates: [] }).crates;
-  c.write(f, JSON.stringify({ crates: [...new Set([...prev, ...names])].sort() }, null, 2));
+  c.write(f, JSON.stringify({ crates: [...new Set([...prev, ...names])].toSorted() }, null, 2));
 }
 
 async function apply(c: Ctx, args: string[]): Promise<number> {

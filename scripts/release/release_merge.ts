@@ -40,13 +40,13 @@ const sha256 = (path: string): string =>
   new Bun.CryptoHasher("sha256").update(new Uint8Array(readFileSync(path))).digest("hex");
 const files = readdirSync(out)
   .filter((f) => f !== "SHA256SUMS" && f !== "release.json")
-  .sort();
+  .toSorted();
 writeFileSync(
   join(out, "SHA256SUMS"),
   `${files.map((f) => `${sha256(join(out, f))}  ${f}`).join("\n")}\n`,
 );
 writeFileSync(
   join(out, "release.json"),
-  `${JSON.stringify({ name: "yolo", version, targets: targets.sort(), assets: files }, null, 2)}\n`,
+  `${JSON.stringify({ name: "yolo", version, targets: targets.toSorted(), assets: files }, null, 2)}\n`,
 );
 console.log(`Merged ${targets.length} target(s) for ${version} into ${out}: ${targets.join(", ")}`);

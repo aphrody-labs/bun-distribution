@@ -58,7 +58,7 @@ export function readFavorites(): Favorite[] {
 		const raw = window.localStorage.getItem(KEY);
 		if (!raw) return [];
 		const parsed: unknown = JSON.parse(raw);
-		return Array.isArray(parsed) ? parsed.filter(isFavorite).sort((a, b) => b.at - a.at) : [];
+		return Array.isArray(parsed) ? parsed.filter(isFavorite).toSorted((a, b) => b.at - a.at) : [];
 	} catch {
 		return [];
 	}
@@ -132,7 +132,7 @@ export async function syncFavorites(): Promise<void> {
 			const prev = byKey.get(k);
 			if (!prev || f.at > prev.at) byKey.set(k, f);
 		}
-		const merged = [...byKey.values()].sort((a, b) => b.at - a.at);
+		const merged = [...byKey.values()].toSorted((a, b) => b.at - a.at);
 		window.localStorage.setItem(KEY, JSON.stringify(merged));
 		window.dispatchEvent(new CustomEvent(FAVORITES_EVENT));
 		void push(merged);

@@ -101,7 +101,7 @@ function hostOf(url: string): string {
 function countBy<T>(items: T[], key: (item: T) => string): Record<string, number> {
 	const out: Record<string, number> = {};
 	for (const item of items) out[key(item)] = (out[key(item)] ?? 0) + 1;
-	return Object.fromEntries(Object.entries(out).sort((a, b) => b[1] - a[1]));
+	return Object.fromEntries(Object.entries(out).toSorted((a, b) => b[1] - a[1]));
 }
 
 async function run(cmd: string[], cwd: string, input?: string): Promise<string> {
@@ -167,7 +167,7 @@ async function select(): Promise<void> {
 		JSON.stringify(
 			{
 				fiches: rows.length,
-				ecartees: Object.fromEntries(Object.entries(reasons).sort((a, b) => b[1] - a[1])),
+				ecartees: Object.fromEntries(Object.entries(reasons).toSorted((a, b) => b[1] - a[1])),
 				candidats: candidates.length,
 				parHote: countBy(candidates, (row) => hostOf(row.url ?? "")),
 				parRubrique: countBy(candidates, (row) => row.category),

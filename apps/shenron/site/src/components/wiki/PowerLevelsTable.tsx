@@ -40,7 +40,7 @@ export function PowerLevelsTable({
 			return inChar || inForm || inSaga || inNotes;
 		});
 
-		return list.sort((a, b) => {
+		return list.toSorted((a, b) => {
 			const valA = a.battle_power ?? 0;
 			const valB = b.battle_power ?? 0;
 			return sortBy === "desc" ? valB - valA : valA - valB;

@@ -151,7 +151,7 @@ async function cmdEtat(): Promise<void> {
 			parCat.set(c, v);
 		}
 		console.log("catégorie                       livres  planches  transcrites");
-		for (const [c, v] of [...parCat.entries()].sort((a, b) => b[1].planches - a[1].planches)) {
+		for (const [c, v] of [...parCat.entries()].toSorted((a, b) => b[1].planches - a[1].planches)) {
 			console.log(
 				`${c.padEnd(30)} ${String(v.livres).padStart(6)}  ${String(v.planches).padStart(8)}  ${String(v.transcrites).padStart(6)} ${pct(v.transcrites, v.planches).padStart(5)}`
 			);
@@ -161,7 +161,7 @@ async function cmdEtat(): Promise<void> {
 		console.log("   id  planches  transcrites  fautives  traduites  titre");
 		for (const e of etats
 			.filter((e) => e.transcrites < e.planches)
-			.sort((a, b) => b.planches - b.transcrites - (a.planches - a.transcrites))
+			.toSorted((a, b) => b.planches - b.transcrites - (a.planches - a.transcrites))
 			.slice(0, 20)) {
 			console.log(
 				`${String(e.id).padStart(5)}  ${String(e.planches).padStart(8)}  ${String(e.transcrites).padStart(11)}  ${String(e.fautives).padStart(8)}  ${String(e.traduites).padStart(9)}  ${e.titre}`
@@ -325,7 +325,7 @@ async function cmdSante(): Promise<void> {
 			);
 		}
 
-		const classes = Object.keys(compte).sort((a, b) => (compte[b] ?? 0) - (compte[a] ?? 0));
+		const classes = Object.keys(compte).toSorted((a, b) => (compte[b] ?? 0) - (compte[a] ?? 0));
 		if (JSON_SORTIE) {
 			console.log(
 				JSON.stringify(
@@ -410,7 +410,7 @@ function resteDuLot(dossier: string): { faites: number; restantes: string[] } | 
 	}
 	return {
 		faites: faits.size,
-		restantes: fichiers.filter((f) => !faits.has(f)).sort(),
+		restantes: fichiers.filter((f) => !faits.has(f)).toSorted(),
 	};
 }
 
@@ -422,7 +422,7 @@ function cmdReste(): void {
 		dossiers = readdirSync(racine)
 			.map((d) => join(racine, d))
 			.filter((d) => statSync(d).isDirectory())
-			.sort();
+			.toSorted();
 	} catch {
 		usage(`racine illisible : ${racine}`);
 	}

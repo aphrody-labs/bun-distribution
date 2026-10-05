@@ -112,7 +112,7 @@ export class VirtualXboxController {
 				this.reset();
 
 				return { success: true, slot: this.slotIndex, mode: "hardware" };
-			} catch (err) {
+			} catch  {
 				// Fallback to mock mode if driver cannot be opened
 				this.isConnected = true;
 				this.slotIndex = 1;

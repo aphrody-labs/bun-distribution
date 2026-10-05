@@ -50,7 +50,7 @@ function lireBrut(): EntreeHistorique[] {
 
 /** Les dernières fiches consultées, de la plus récente à la plus ancienne. */
 export function lireHistorique(): EntreeHistorique[] {
-	return lireBrut().sort((a, b) => b.vuLe - a.vuLe);
+	return lireBrut().toSorted((a, b) => b.vuLe - a.vuLe);
 }
 
 /**

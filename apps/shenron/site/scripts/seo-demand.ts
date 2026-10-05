@@ -87,7 +87,7 @@ async function entities(): Promise<Entity[]> {
 		for (const r of rows) out.push({ name: r.name, href: `${t.route}/${r.id}`, kind: t.kind });
 	}
 	// Longest names first: « Super Saiyan Blue » must win over « Super Saiyan ».
-	return out.sort((a, b) => b.name.length - a.name.length);
+	return out.toSorted((a, b) => b.name.length - a.name.length);
 }
 
 /**
@@ -156,7 +156,7 @@ async function suggest(prefix: string): Promise<string[]> {
 }
 
 const known = await entities();
-const folded = known.map((e) => ({ ...e, needle: fold(e.name) }));
+const folded = known.map((e) => (Object.assign(e, { needle: fold(e.name) })));
 
 /** Section-level fallback: no fiche, but a hub that answers the intent. */
 const SECTIONS: { needle: RegExp; href: string; label: string }[] = [

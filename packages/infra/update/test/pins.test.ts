@@ -30,6 +30,6 @@ describe("lockDiff", () => {
   test("added, changed and removed packages", () => {
     const a = lockMap('[[package]]\nname = "a"\nversion = "1.0.0"\n[[package]]\nname = "gone"\nversion = "1.0.0"\n');
     const b = lockMap('[[package]]\nname = "a"\nversion = "1.1.0"\n[[package]]\nname = "new"\nversion = "2.0.0"\n');
-    expect(lockDiff(a, b).map((c) => `${c.name}:${c.from}>${c.to}`).sort()).toEqual(["a:1.0.0>1.1.0", "gone:1.0.0>(removed)", "new:(new)>2.0.0"]);
+    expect(lockDiff(a, b).map((c) => `${c.name}:${c.from}>${c.to}`).toSorted()).toEqual(["a:1.0.0>1.1.0", "gone:1.0.0>(removed)", "new:(new)>2.0.0"]);
   });
 });

@@ -722,7 +722,7 @@ async function balayerLexique(sql: postgres.Sql, planches: Planche[]): Promise<T
 			});
 		}
 	}
-	return trous.sort((a, b) => b.planches - a.planches);
+	return trous.toSorted((a, b) => b.planches - a.planches);
 }
 
 // ---------------------------------------------------------------------------
@@ -851,7 +851,7 @@ if (!SANS_LEXIQUE && !FAMILLE) {
 				"un jeu de 1992, treize ans avant Cumber).\n"
 		);
 		// Les nettes d'abord : ce sont celles qui se lisent sans rouvrir l'image.
-		const ordonnes = [...trous].sort((a, b) => b.nettes - a.nettes || b.planches - a.planches);
+		const ordonnes = [...trous].toSorted((a, b) => b.nettes - a.nettes || b.planches - a.planches);
 		const neufs = ordonnes.filter((t) => !ARBITRAGES[`${t.fautif}→${t.juste}`]);
 		const juges = ordonnes.filter((t) => ARBITRAGES[`${t.fautif}→${t.juste}`]);
 

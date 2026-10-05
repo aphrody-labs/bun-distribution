@@ -6,8 +6,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aphrody-labs/yolo.git",
-    "directory": "packages/plugins"
+    "url": "git+https://github.com/aphrody-labs/aphrody.git",
+    "directory": "packages/engine/plugins"
   },
   "type": "module",
   "main": "./src/index.ts",
@@ -18,7 +18,7 @@
     "./schema": "./src/schema.ts"
   },
   "scripts": {
-    "test": "bun --cwd=../.. test test/plugins.test.ts",
+    "test": "bun test test/plugins.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {},

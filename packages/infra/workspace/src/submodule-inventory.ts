@@ -177,7 +177,7 @@ export async function inventoryNestedFiles(submodules: Submodule[], roots: Submo
     checkoutPaths.set(submodule.path, checkout);
     const raw = git(checkout, ["ls-files", "-z", "--cached", "--others", "--exclude-standard"]);
     if (raw === null) continue;
-    const paths = [...new Set(raw.split("\0").filter(Boolean))].sort();
+    const paths = [...new Set(raw.split("\0").filter(Boolean))].toSorted();
     const indexed = fileObjects(checkout, ["ls-files", "--stage", "-z"]);
     const committed = fileObjects(checkout, ["ls-tree", "-r", "-z", "HEAD"]);
     const statuses = fileStatuses(checkout);
@@ -259,7 +259,7 @@ export async function inventoryNestedFiles(submodules: Submodule[], roots: Submo
             existsSync(join(directory, expected))
           );
         })
-        .sort();
+        .toSorted();
       memberResolutions.push({
         submodule: manifest.submodule,
         manifest: manifest.path,
@@ -287,7 +287,7 @@ export async function inventoryNestedFiles(submodules: Submodule[], roots: Submo
       unresolvedMemberPatterns: memberResolutions.filter((member) => "unresolved" in member).length,
       byKind: Object.fromEntries(
         [...new Set(entries.map((entry) => entry.kind as string))]
-          .sort()
+          .toSorted()
           .map((kind) => [kind, entries.filter((entry) => entry.kind === kind).length]),
       ),
     },
@@ -357,7 +357,7 @@ export function inventorySubmodules(roots: SubmoduleRoot[]): {
     const indexed = gitlinks(top, ["ls-files", "--stage", "-z"]);
     const committed = gitlinks(top, ["ls-tree", "-r", "-z", "HEAD"]);
     const paths = new Set([...declared.keys(), ...indexed.keys(), ...committed.keys()]);
-    for (const path of [...paths].sort()) {
+    for (const path of [...paths].toSorted()) {
       const location = resolve(top, path);
       const relativePath = join(prefix, path).replaceAll("\\", "/");
       const declaration = declared.get(path);
@@ -414,7 +414,7 @@ export function inventorySubmodules(roots: SubmoduleRoot[]): {
     walk(root.key, path, "", 1);
   }
   submodules.sort((a, b) => a.path.localeCompare(b.path) || a.root.localeCompare(b.root));
-  const states = [...new Set(submodules.map((entry) => entry.state))].sort();
+  const states = [...new Set(submodules.map((entry) => entry.state))].toSorted();
   return {
     observedAt: new Date().toISOString(),
     scope:

@@ -29,7 +29,7 @@ export function renderAsciiPitch(squad: Squad): string {
 	];
 
 	// Sort slots by Y ascending (Attackers at top, GK at bottom)
-	const sorted = [...slots].sort((a, b) => a.coordinates.y - b.coordinates.y);
+	const sorted = [...slots].toSorted((a, b) => a.coordinates.y - b.coordinates.y);
 
 	const lines: string[] = [...header];
 

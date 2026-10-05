@@ -41,7 +41,7 @@ async function walk(directory: string): Promise<string[]> {
     return [];
   }
   const files: string[] = [];
-  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+  for (const entry of entries.toSorted((left, right) => left.name.localeCompare(right.name))) {
     const path = resolve(directory, entry.name);
     if (entry.isSymbolicLink()) continue;
     if (entry.isDirectory()) {

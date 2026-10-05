@@ -140,7 +140,7 @@ export function EpisodeScenes({
 		() =>
 			(frames ?? [])
 				.filter((f): f is SceneFrame & { imagePath: string } => f.imagePath != null)
-				.sort((a, b) => a.sortOrder - b.sortOrder),
+				.toSorted((a, b) => a.sortOrder - b.sortOrder),
 		[frames]
 	);
 
@@ -173,7 +173,7 @@ export function EpisodeScenes({
 		});
 	}, []);
 
-	const orderedSelection = useMemo(() => [...selected].sort((a, b) => a - b), [selected]);
+	const orderedSelection = useMemo(() => [...selected].toSorted((a, b) => a - b), [selected]);
 
 	const exportGif = useCallback(async () => {
 		setBusyGif(true);

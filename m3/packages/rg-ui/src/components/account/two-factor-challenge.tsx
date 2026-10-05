@@ -92,7 +92,7 @@ export function TwoFactorChallenge({
 						<Label htmlFor="code-2fa">{secours ? "Code de secours" : "Code à six chiffres"}</Label>
 						<Input
 							id="code-2fa"
-							autoFocus
+							
 							autoComplete="one-time-code"
 							inputMode={secours ? "text" : "numeric"}
 							maxLength={secours ? 32 : 6}

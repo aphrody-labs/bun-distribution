@@ -79,7 +79,7 @@ async function champsSansNom(): Promise<string[]> {
 			}
 		}
 	}
-	return sans.sort();
+	return sans.toSorted();
 }
 
 describe("accessibilité des formulaires publics", () => {

@@ -202,7 +202,7 @@ export function BingoGame() {
 							max={100}
 							value={guess}
 							onChange={(e) => setGuess(e.target.value)}
-							autoFocus
+							
 							aria-label="Puissance estimée, de 1 à 100"
 							placeholder="Puissance estimée 1-100"
 							className="flex-1 bg-dbz-bg border-2 border-dbz-border focus:border-dbz-orange p-3 font-mono text-xl text-center"

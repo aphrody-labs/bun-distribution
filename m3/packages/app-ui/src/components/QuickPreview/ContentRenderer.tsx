@@ -141,7 +141,7 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
 			file.sidecars?.filter((s) => s.kind === "thumb") || [];
 		if (thumbnails.length === 0) return null;
 
-		const highest = thumbnails.sort((a, b) => {
+		const highest = thumbnails.toSorted((a, b) => {
 			const aSize = parseInt(
 				a.variant.split("x")[0]?.replace(/\D/g, "") || "0",
 			);

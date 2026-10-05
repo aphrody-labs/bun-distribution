@@ -153,7 +153,7 @@ function countRemaining(into: Map<string, number>, text: string): void {
 }
 
 function topEntries(map: Map<string, number>, limit = 20): Record<string, number> {
-	return Object.fromEntries([...map].sort((a, b) => b[1] - a[1]).slice(0, limit));
+	return Object.fromEntries([...map].toSorted((a, b) => b[1] - a[1]).slice(0, limit));
 }
 
 /** Interleaves plans across groups so samples cover every category. */

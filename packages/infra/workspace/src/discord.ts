@@ -41,12 +41,11 @@ export function getDiscordBotsStatus(root = infraRoot()): DiscordBotStatus[] {
       size = stat.size;
       modified = stat.mtime.toISOString();
     }
-    return {
-      ...bot,
-      binaryExists: exists,
-      binarySizeBytes: size,
-      lastModified: modified,
-    };
+    return Object.assign(bot, {
+	binaryExists: exists,
+	binarySizeBytes: size,
+	lastModified: modified
+});
   });
 }
 

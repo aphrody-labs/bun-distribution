@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { googleGenerate, googleModels, googleWhoami, resolveGoogleBinary } from "../src/auth.ts";
+import { googleModels, resolveGoogleBinary } from "../src/auth.ts";
 
 test("Google facade reports a native binary when one is configured or installed", () => {
 	const previous = Bun.env.APHRODY_GOOGLE_BIN;

@@ -107,7 +107,7 @@ async function fetchPageContentWithRetry(
 ): Promise<{ content: string; status: string }> {
 	return pRetry(
 		async () => {
-			if (false) {
+			if (Bun.env.FUT_GHOST_BROWSER === "1") {
 				const ghost = await launchGhostBrowser();
 				try {
 					const res = await ghost.page.goto(url);
@@ -700,7 +700,7 @@ async function runRecursiveScraper() {
 					$crawled_at: new Date().toISOString(),
 					$status: "error",
 				});
-			} catch (dbErr) {
+			} catch  {
 				// Ignore DB logging errors
 			}
 		}

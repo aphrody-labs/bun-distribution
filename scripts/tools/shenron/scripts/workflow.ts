@@ -693,7 +693,7 @@ async function pool<T, R>(
 	limit: number,
 	operation: (item: T) => Promise<R>
 ): Promise<R[]> {
-	const results = new Array<R>(items.length);
+	const results = Array.from<R>({ length: items.length });
 	let cursor = 0;
 	await Promise.all(
 		Array.from({ length: Math.min(limit, items.length) }, async () => {

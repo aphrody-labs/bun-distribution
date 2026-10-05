@@ -315,7 +315,7 @@ async function main(): Promise<number> {
 			status: check.status,
 			contentType: check.contentType,
 			reason: check.reason,
-			pages: [...imagePages.get(url)!].sort(),
+			pages: [...imagePages.get(url)!].toSorted(),
 		});
 	});
 	broken.sort((a, b) => a.url.localeCompare(b.url));
@@ -327,7 +327,7 @@ async function main(): Promise<number> {
 		sitemapUrls: urls.length,
 		families,
 		pages: pages.length,
-		pageErrors: pageErrors.sort((a, b) => a.url.localeCompare(b.url)),
+		pageErrors: pageErrors.toSorted((a, b) => a.url.localeCompare(b.url)),
 		images: images.length,
 		broken,
 	};

@@ -124,7 +124,7 @@ export async function JournalIndex({ page }: { page: number }) {
 	for (const r of allTags) {
 		for (const t of r.tags ?? []) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
 	}
-	const topTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+	const topTags = [...tagCounts.entries()].toSorted((a, b) => b[1] - a[1]).slice(0, 10);
 
 	return (
 		<PageShell rhythm="loose">

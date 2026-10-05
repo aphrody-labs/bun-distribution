@@ -210,7 +210,7 @@ export function analyzePlayerTweets(
 
 	// Top trending keywords
 	const sortedKeywords = Array.from(foundKeywords.entries())
-		.sort((a, b) => b[1] - a[1])
+		.toSorted((a, b) => b[1] - a[1])
 		.slice(0, 6)
 		.map(([kw]) => kw);
 
