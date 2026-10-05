@@ -7,7 +7,7 @@
       "path": "vendor/bun",
       "url": "git@github-dev:aphrody-labs/bun.git",
       "upstream": "https://github.com/oven-sh/bun.git",
-      "ref": "cf4e249669120828ca4c133ecd528195bb2cdc5c",
+      "ref": "8b5badd2a054f0b1ca01250effcf29f5fbc1842c",
       "rootFiles": true
     }
   ]

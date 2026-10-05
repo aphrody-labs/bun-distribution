@@ -95,3 +95,25 @@ restent des alias de compatibilité jusqu'à qualification.
   `mcp-oauth` restent des bibliothèques.
 - Gate : chaque fusion est qualifiée par `cargo check`/tests via la factory (révision épinglée) ou
   `bun test`, puis l'ancien crate/package est supprimé. Aucune fusion sans gate.
+
+## 6. Bun au centre (directive propriétaire du 2026-10-05)
+
+Bun est le runtime central ; le fork `aphrody-labs/bun` (branche `yolo`, `vendor/bun`, pin dans
+`config/vendor.json`) absorbe les bibliothèques JS/TS au niveau du résolveur, comme Bun le fait déjà
+pour `ws`, `undici` et `node-fetch` (`src/js/thirdparty` + `src/resolve_builtins/HardcodedModule.rs`).
+Ce qui ne sert ni la production ni ce but sort du dépôt.
+
+Contrat : [config/bun-absorb.json](config/bun-absorb.json) classe chaque paquet npm — `builtin`
+(déclaration refusée), `fork` (servi par le fork), `native` (API Bun existante, imports en ratchet
+descendant via `config/bun-absorb.baseline.json`), `gap` (candidat fork). Gate :
+`bun scripts/audit/workspace/bun-absorb.ts` (catalogue mort refusé ; `--fork-active` refuse aussi les
+paquets `fork` déclarés).
+
+- [x] Contrat, ratchet et retrait de 50 entrées de catalogue mortes.
+- [x] Fork : `picocolors`, `tiny-invariant`, `dotenv` (+ `dotenv/config`), `uuid` servis en natif (source).
+- [ ] Activation : build du fork par la factory (`yolo ship`), installation du runtime, puis
+  `--fork-active` et retrait des déclarations `fork`.
+- [ ] `native` : `postgres`/`pg` → `Bun.SQL`, `sharp` → `Bun.Image`, `playwright*` → `Bun.WebView`,
+  `marked` → `Bun.markdown`, `dayjs`/`date-fns` → `Temporal`, `smol-toml` → `Bun.TOML`, `tsup` → `Bun.build`.
+- [ ] `gap` → fork : `lru-cache`, `p-queue`/`p-retry`/`bottleneck`, `pino`, `fuse.js`, `qrcode`,
+  `@napi-rs/canvas`.

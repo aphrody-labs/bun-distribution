@@ -32,6 +32,18 @@ Les scans lexicaux et anciens états Git ne prouvent pas le graphe résolu,
 les profils panic, la release courante ou un gain. Vérifier la surface sélectionnée.
 Mémoire fichier uniquement ; aucune synchronisation de mémoire fournisseur revendiquée.
 
+## Bun au centre — 2026-10-05
+
+`5ba61608c` : contrat `config/bun-absorb.json`, ratchet `scripts/audit/workspace/bun-absorb.ts`
+(4 tests), 50 entrées de catalogue mortes retirées, `bun.lock` régénéré. 1 352 fichiers non suivis du
+monorepo base-ui (racine `test/`, `playground/`, `examples/`, `netlify/`, `docs/src`, workflows) supprimés.
+Fork `8b5badd2` (`aphrody-labs/bun`, `yolo`) : `picocolors`, `tiny-invariant`, `dotenv`, `dotenv/config`,
+`uuid` résolus en modules intégrés ; comparaison différentielle aux paquets npm (picocolors 1.1, dotenv
+17.4.2, tiny-invariant 1.3.3, uuid 11.1.1) : 670 assertions identiques sur les sources et sur la sortie
+release du codegen `bundle-modules.ts`. Limites : aucun build ni `bun bd test` du fork (le `cargo check`
+local échoue faute des dépendances natives `vendor/lolhtml` du build Bun) ; runtime installé = Bun 1.4.2
+officiel, donc absorption non active.
+
 ## M3 and app transport — 2026-10-05
 
 Owner-directed relocation: `m3/` replaces `design/aphrody-m3/`. Git history,

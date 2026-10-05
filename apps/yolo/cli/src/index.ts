@@ -304,7 +304,7 @@ async function main(): Promise<void> {
     case "desktop":
     case "tauri": {
       const sub = args[1] || "build";
-      const webDir = resolve(rootDir(), "apps/web");
+      const webDir = resolve(rootDir(), "apps/yolo/web");
       if (!existsSync(webDir)) {
         console.error(`\x1b[31mError:\x1b[0m web app not found at ${webDir}`);
         process.exit(1);
