@@ -40,8 +40,6 @@
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-table": "catalog:",
     "@tanstack/react-virtual": "^3.13.12",
-    "@tauri-apps/api": "catalog:",
-    "@tauri-apps/plugin-dialog": "^2.4.0",
     "clsx": "catalog:",
     "d3": "^7.9.0",
     "fuse.js": "catalog:",
@@ -57,7 +55,9 @@
     "react-selecto": "^1.26.3",
     "three": "catalog:",
     "zustand": "catalog:",
-    "@shenron/config": "workspace:*"
+    "@shenron/config": "workspace:*",
+    "@aphrody/api": "workspace:*",
+    "@aphrody/plugin-dialog": "workspace:*"
   },
   "devDependencies": {
     "@aphrody/m3": "workspace:*",

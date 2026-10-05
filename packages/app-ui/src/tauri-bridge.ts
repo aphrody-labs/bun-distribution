@@ -5,7 +5,7 @@
  * desktop notifications, clipboard manager, and process lifecycle.
  */
 
-import { Channel } from "@tauri-apps/api/core";
+import { Channel } from "@aphrody/api/core";
 import { browserSessionStream } from "./browser-session-stream";
 
 declare global {
@@ -150,7 +150,7 @@ export async function pickDirectory(
 ): Promise<string | null> {
   if (isTauri()) {
     try {
-      const { open } = await import("@tauri-apps/plugin-dialog");
+      const { open } = await import("@aphrody/plugin-dialog");
       const result = await open({
         title,
         defaultPath,
@@ -173,7 +173,7 @@ export async function pickFile(
 ): Promise<string | null> {
   if (isTauri()) {
     try {
-      const { open } = await import("@tauri-apps/plugin-dialog");
+      const { open } = await import("@aphrody/plugin-dialog");
       const result = await open({
         title,
         defaultPath,
@@ -197,7 +197,7 @@ export async function saveFileDialog(options: {
 }): Promise<string | null> {
   if (isTauri()) {
     try {
-      const { save } = await import("@tauri-apps/plugin-dialog");
+      const { save } = await import("@aphrody/plugin-dialog");
       return await save(options);
     } catch {
       return tauriInvoke<string | null>("plugin:dialog|save", { options });
@@ -209,7 +209,7 @@ export async function saveFileDialog(options: {
 export async function confirmNative(message: string, title = "Confirmation"): Promise<boolean> {
   if (isTauri()) {
     try {
-      const { confirm } = await import("@tauri-apps/plugin-dialog");
+      const { confirm } = await import("@aphrody/plugin-dialog");
       return await confirm(message, { title, kind: "warning" });
     } catch {
       const res = await tauriInvoke<string>("plugin:dialog|message", {
@@ -234,7 +234,7 @@ export async function messageNative(
 ): Promise<void> {
   if (isTauri()) {
     try {
-      const { message: msg } = await import("@tauri-apps/plugin-dialog");
+      const { message: msg } = await import("@aphrody/plugin-dialog");
       await msg(message, { title, kind });
       return;
     } catch {

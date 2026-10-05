@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Studio bridge: typed calls to the in-process Koharu service (`koharu_rpc`, crates/ui/app/src/koharu.rs).
 // Shapes mirror crates/koharu/koharu-library/src/{service,project}.rs and koharu-pipeline request types.
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@aphrody/api/core";
+import { listen } from "@aphrody/api/event";
 import { isTauri } from "./tauri-bridge";
 
 export type KoharuStage = "detection" | "ocr" | "translation" | "inpainting";

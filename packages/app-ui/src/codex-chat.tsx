@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { listen } from "@tauri-apps/api/event";
+import { listen } from "@aphrody/api/event";
 import { clsx } from "clsx";
 import {
   Badge,

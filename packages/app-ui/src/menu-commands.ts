@@ -84,7 +84,7 @@ export function useMenuCommands(): void {
     const unlisteners: Array<() => void> = [];
     if (isTauri()) {
       void (async () => {
-        const { listen } = await import("@tauri-apps/api/event");
+        const { listen } = await import("@aphrody/api/event");
         const commands = Object.keys(MENU_EVENTS) as MenuCommand[];
         const handles = await Promise.all(
           commands.map((command) => listen(MENU_EVENTS[command], () => void run(command))),
