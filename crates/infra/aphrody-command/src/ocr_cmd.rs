@@ -219,28 +219,6 @@ pub(crate) enum OcrAction {
         #[command(subcommand)]
         action: DbAction,
     },
-    /// Bridge to the sibling `shenron` checkout: emit, verify or deposit
-    /// through shenron's own quality judge and depositor.
-    ///
-    /// Prefer this over `dbfr` when a `shenron` checkout sits beside aphrody's
-    /// — it gains a second, independently tuned quality gate on top of
-    /// aphrody's own, and stays the depositor shenron's own tooling expects.
-    ///
-    /// Example: aphrody ocr shenron pipeline --apply
-    Shenron {
-        #[command(subcommand)]
-        action: crate::ocr_shenron::ShenronAction,
-    },
-    /// Read and feed the Dragon Ball FR databooks API.
-    ///
-    /// Reads are public; a deposit carries a bearer token and only sends the
-    /// pages the corpus stored as readable text.
-    ///
-    /// Example: aphrody ocr dbfr pages 42 --missing
-    Dbfr {
-        #[command(subcommand)]
-        action: crate::ocr_dbfr::DbfrAction,
-    },
     /// Transcribe a Shenron Dragon Ball databook lot with the safe preset.
     ///
     /// This is deliberately separate from generic `batch`: granite-docling is
@@ -341,25 +319,16 @@ pub(crate) enum DbAction {
 /// Returns a `miette` report when the model or the llama.cpp runner is
 /// missing, or when the output file cannot be written.
 pub(crate) async fn run(action: OcrAction) -> miette::Result<()> {
-    // Only the databooks bridge is async — it speaks HTTP. Every other action
-    // is synchronous end to end (llama.cpp runs in a child process).
-    if let OcrAction::Dbfr { action } = action {
-        return crate::ocr_dbfr::run(action).await;
-    }
+    // Every action is synchronous end to end (llama.cpp runs in a child process).
     run_blocking(action)
 }
 
-/// Every `ocr` action but the HTTP bridge, run on the calling thread.
+/// Every `ocr` action, run on the calling thread.
 ///
 /// This is what the pre-runtime `--server` batch path calls: it must stay
 /// callable with no tokio runtime in sight.
 fn run_blocking(action: OcrAction) -> miette::Result<()> {
     match action {
-        // Routed by `run` before this point; the sync entry never parses it.
-        OcrAction::Dbfr { .. } => {
-            Err(miette::miette!("`ocr dbfr` needs the async runtime and is dispatched by `run`"))
-        },
-        OcrAction::Shenron { action } => crate::ocr_shenron::run(action),
         OcrAction::Page { image, model, prompt, max_tokens, raw, result_v2, deposit, output } => {
             page(&image, &model, prompt.as_deref(), max_tokens, raw, result_v2, &deposit, &output)
         },
@@ -464,10 +433,10 @@ fn deposit(
     result: &aphrody_ocr::ocr_core::OcrResult,
     source: Option<&str>,
 ) {
-    if let Some(store) = store {
-        if let Err(e) = store.deposit(result, source) {
-            eprintln!("deposit failed ({}): {e}", result.page_id);
-        }
+    if let Some(store) = store
+        && let Err(e) = store.deposit(result, source)
+    {
+        eprintln!("deposit failed ({}): {e}", result.page_id);
     }
 }
 
@@ -808,6 +777,7 @@ fn options(model: &str, prompt: Option<&str>, max_tokens: u32, raw: bool) -> Ocr
     options
 }
 
+#[allow(clippy::too_many_arguments)] // one positional per CLI flag of `ocr page`
 fn page(
     image: &Path,
     model: &str,
@@ -843,6 +813,7 @@ fn page(
     output.emit_report(&report, &json)
 }
 
+#[allow(clippy::too_many_arguments)] // one positional per CLI flag of `ocr batch`/`databooks`
 fn batch(
     dir: &Path,
     out: Option<&Path>,
@@ -883,11 +854,11 @@ fn batch(
     // Append, never truncate: resuming must not destroy the earlier pages.
     let mut sink: Box<dyn std::io::Write> = match out {
         Some(path) => {
-            if let Some(parent) = path.parent() {
-                if !parent.as_os_str().is_empty() {
-                    std::fs::create_dir_all(parent)
-                        .map_err(|e| miette::miette!("create {}: {e}", parent.display()))?;
-                }
+            if let Some(parent) = path.parent()
+                && !parent.as_os_str().is_empty()
+            {
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| miette::miette!("create {}: {e}", parent.display()))?;
             }
             Box::new(
                 std::fs::OpenOptions::new()
@@ -959,7 +930,7 @@ fn batch(
                 // The JSONL is written first: it is the durable stream, and a
                 // store that cannot be written must never cost a read page.
                 deposit(store.as_mut(), &record, Some("aphrody ocr batch"));
-                if read % 10 == 0 {
+                if read.is_multiple_of(10) {
                     let rate = started.elapsed().as_secs_f64()
                         / f64::from(u32::try_from(read).unwrap_or(u32::MAX));
                     eprintln!(
@@ -1029,11 +1000,11 @@ fn batch_ppocr(
 
     let mut sink: Box<dyn std::io::Write> = match out {
         Some(path) => {
-            if let Some(parent) = path.parent() {
-                if !parent.as_os_str().is_empty() {
-                    std::fs::create_dir_all(parent)
-                        .map_err(|e| miette::miette!("create {}: {e}", parent.display()))?;
-                }
+            if let Some(parent) = path.parent()
+                && !parent.as_os_str().is_empty()
+            {
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| miette::miette!("create {}: {e}", parent.display()))?;
             }
             Box::new(
                 std::fs::OpenOptions::new()
@@ -1433,9 +1404,18 @@ fn is_done_path(image: &Path, done: &std::collections::BTreeSet<PathBuf>) -> boo
     if done.contains(image) {
         return true;
     }
-    image
-        .file_name()
-        .is_some_and(|name| done.iter().any(|recorded| recorded.file_name() == Some(name)))
+    // Recorded paths may come from either platform: split basenames on both separators.
+    portable_name(image)
+        .is_some_and(|name| done.iter().any(|recorded| portable_name(recorded) == Some(name)))
+}
+
+/// Basename of a path recorded on Linux or Windows, whatever the current platform.
+fn portable_name(path: &Path) -> Option<&std::ffi::OsStr> {
+    path.to_str()
+        .and_then(|text| text.rsplit(['/', '\\']).next())
+        .filter(|name| !name.is_empty())
+        .map(std::ffi::OsStr::new)
+        .or_else(|| path.file_name())
 }
 
 /// Write one result as a JSONL line and flush it.

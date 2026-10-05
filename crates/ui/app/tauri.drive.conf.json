@@ -3,8 +3,7 @@
   "bundle": {
     "externalBin": [
       "binaries/sd-daemon",
-      "binaries/aphrody",
-      "binaries/koharu-sdk"
+      "binaries/aphrody"
     ]
   }
 }

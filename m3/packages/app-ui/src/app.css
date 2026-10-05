@@ -6,7 +6,6 @@
 @import "@aphrody/m3-theme/spaceui.css";
 @import "./brand.css";
 @import "@aphrody/m3-theme/tailwind.css";
-@import "@aphrody/koharu-ui/styles.css";
 @import "./styles.css";
 
 @source "../../m3-ai/dist";

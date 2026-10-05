@@ -9,8 +9,6 @@
  * - App-Server (crates/ai/app-server JSON-RPC)
  * - OS Kernel (crates/os/kernel subsystems & tools)
  * - Drive (crates/ui/drive, sd-daemon, VDFS)
- * - Koharu (crates/koharu, in-process manga OCR/translation)
- * - Shenron (apps/shenron, DBFR persona & RAG)
  * - Shell (crates/shell, NuShell & PTY)
  *
  * Usage:
@@ -20,7 +18,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "../../..");
-const LOCALES_DIR = join(REPO_ROOT, "packages", "ui", "m3", "src", "locales");
+const LOCALES_DIR = join(REPO_ROOT, "m3", "packages", "m3", "src", "locales");
 
 export interface I18nSchema {
   common: Record<string, string>;
@@ -32,8 +30,6 @@ export interface I18nSchema {
   kernel: Record<string, string>;
   subsystems: Record<string, string>;
   drive: Record<string, string>;
-  koharu: Record<string, string>;
-  shenron: Record<string, string>;
   shell: Record<string, string>;
   ffi: Record<string, string>;
   errors: Record<string, string>;
@@ -184,26 +180,6 @@ export const EN_CATALOG: I18nSchema = {
     socket_path: "Local Daemon Socket",
     migrations_up_to_date: "Database Schema Migrations Validated",
     vdfs_index: "Virtual Distributed File System Index",
-  },
-  koharu: {
-    title: "Koharu Document & Vision Engine",
-    ocr_engine: "Deep Learning OCR Engine",
-    detector: "Text Bubble Segmentation Detector",
-    translator: "Manga & Document Translation Pipeline",
-    manga_reader: "Adaptive Manga Reader Canvas",
-    pipeline_active: "In-Process Vision Pipeline Active",
-    canvas_bridge: "WASM Hardware Accelerated Canvas Bridge",
-    specta_bindings: "Type-Safe Specta IPC Bindings",
-    in_process_execution: "Direct Native Library Execution (Zero Subprocess)",
-  },
-  shenron: {
-    title: "Shenron Agent & DBFR Engine",
-    rag_query: "Grounded Knowledge RAG Query",
-    character_persona: "Shenron Persona Active",
-    databooks: "Canonical Databooks & Archive",
-    wiki_references: "Dragon Ball FR Wiki Entities",
-    pipeline_status: "Site Knowledge Pipeline",
-    grounded_response: "Verified Grounded Response",
   },
   shell: {
     title: "Aphrody Native Shell & PTY",
@@ -378,26 +354,6 @@ export const FR_CATALOG: I18nSchema = {
     migrations_up_to_date: "Migrations de schéma de base de données validées",
     vdfs_index: "Index du système de fichiers distribué virtuel",
   },
-  koharu: {
-    title: "Moteur Document & Vision Koharu",
-    ocr_engine: "Moteur OCR par apprentissage profond",
-    detector: "Détecteur de bulles de texte et segmentation",
-    translator: "Chaîne de traduction de mangas et documents",
-    manga_reader: "Lecteur de manga sur canvas adaptatif",
-    pipeline_active: "Chaîne de vision in-process active",
-    canvas_bridge: "Pont canvas accéléré matériellement en WASM",
-    specta_bindings: "Liaisons IPC Specta typées de bout en bout",
-    in_process_execution: "Exécution native directe en bibliothèque (zéro sous-processus)",
-  },
-  shenron: {
-    title: "Moteur d'Agent Shenron & DBFR",
-    rag_query: "Requête RAG sur base de connaissances certifiée",
-    character_persona: "Personnalité Shenron active",
-    databooks: "Guides et archives canoniques",
-    wiki_references: "Entités du wiki Dragon Ball FR",
-    pipeline_status: "Chaîne de traitement des connaissances",
-    grounded_response: "Réponse ancrée et vérifiée",
-  },
   shell: {
     title: "Shell natif Aphrody & PTY",
     nushell_backend: "Moteur NuShell structuré",
@@ -428,8 +384,16 @@ export const FR_CATALOG: I18nSchema = {
 export async function generateLocales(apply = false) {
   if (apply) {
     await mkdir(LOCALES_DIR, { recursive: true });
-    await writeFile(join(LOCALES_DIR, "en.json"), JSON.stringify(EN_CATALOG, null, 2) + "\n", "utf8");
-    await writeFile(join(LOCALES_DIR, "fr.json"), JSON.stringify(FR_CATALOG, null, 2) + "\n", "utf8");
+    await writeFile(
+      join(LOCALES_DIR, "en.json"),
+      JSON.stringify(EN_CATALOG, null, 2) + "\n",
+      "utf8",
+    );
+    await writeFile(
+      join(LOCALES_DIR, "fr.json"),
+      JSON.stringify(FR_CATALOG, null, 2) + "\n",
+      "utf8",
+    );
     console.log(`[i18n-generate] Wrote symmetric EN & FR catalogs to ${LOCALES_DIR}`);
   }
   return { en: EN_CATALOG, fr: FR_CATALOG };

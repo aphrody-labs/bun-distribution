@@ -2,9 +2,8 @@ import { expect, test } from "bun:test";
 import { deriveTitleFromPath } from "./route-title";
 
 test("Studio links and application tabs share the actual page title", () => {
-  expect(deriveTitleFromPath("/studio", "?section=admin")).toBe("Administration");
-  expect(deriveTitleFromPath("/studio", "?section=manga")).toBe("Koharu · Manga & traduction");
-  expect(deriveTitleFromPath("/studio", "?section=unknown")).toBe("Shenron");
+  expect(deriveTitleFromPath("/studio", "?section=drive")).toBe("Drive");
+  expect(deriveTitleFromPath("/studio", "?section=unknown")).toBe("Outils des agents");
   expect(deriveTitleFromPath("/models", "")).toBe("Modèles & IA");
   expect(deriveTitleFromPath("/sources/source-id", "")).toBeNull();
 });

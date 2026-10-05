@@ -5,7 +5,7 @@ import { describe, expect, test } from "bun:test";
 
 describe("Codex UI - Architecture & Navigation", () => {
   const normalizeDestination = (dest: string): "chat" | "files" => {
-    if (dest === "agent" || dest === "chat" || dest === "shenron") return "chat";
+    if (dest === "agent" || dest === "chat") return "chat";
     if (dest === "drive" || dest === "files" || dest === "windows") return "files";
     return "chat";
   };

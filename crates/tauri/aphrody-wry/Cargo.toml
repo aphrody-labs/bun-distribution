@@ -225,4 +225,4 @@ dom_query = { version = "0.28.0", default-features = false }
 
 [lints.rust.unexpected_cfgs]
 level = "warn"
-check-cfg = ["cfg(linux)", "cfg(gtk)"]
+check-cfg = ["cfg(linux)", "cfg(gtk)", "cfg(feature, values(\"v2_42\"))"]

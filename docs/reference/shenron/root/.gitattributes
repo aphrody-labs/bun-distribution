@@ -1,3 +1,0 @@
-# Les scripts exécutés par Bash doivent rester en LF, même sur un checkout Windows.
-*.sh text eol=lf
-*.bash text eol=lf

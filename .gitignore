@@ -65,9 +65,6 @@ compile_commands.json
 !**/fixtures/**/*.sqlite3
 !**/fixtures/**/*.dump
 /upstream/discord/packages/discordx/coverage/
-/apps/shenron/*/node_modules/
-/packages/shenron/*/node_modules/
-/apps/shenron/*/.next-build/
 __pycache__/
 *.py[cod]
 .env
@@ -99,8 +96,6 @@ Thumbs.db
 
 # Generated host native artifacts; staged by the package builder.
 /packages/interop/native/native/
-# Private imported Shenron state: credentials, trained weights and user data.
-/data/shenron/home/
 
 # Translation caches written by test/dev runs
 .aphrody-translate-cache.json
@@ -114,9 +109,6 @@ Thumbs.db
 /packages/google/antigravity-sdk-python/build/
 /packages/google/antigravity-sdk-python/*.egg-info/
 
-# Generated Shenron corpus and historical live audit: retain in local stores.
-/data/shenron/rag/massive-training-triplets-full.jsonl
-/data/shenron/ops/live-site-assets.json
 
 # Per-machine plugin store written by aphrody-ops plugins (absolute local path)
 /.agents/plugins.json

@@ -59,10 +59,6 @@ mod infer_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "jobs"))]
 mod job_cmd;
 #[cfg(not(target_arch = "wasm32"))]
-mod manga_cmd;
-#[cfg(all(not(target_arch = "wasm32"), feature = "koharu"))]
-mod manga_settings_cmd;
-#[cfg(not(target_arch = "wasm32"))]
 mod mcp_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod memory_cmd;
@@ -74,10 +70,6 @@ pub(crate) mod nl_tokens;
 mod oc_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "ocr"))]
 mod ocr_cmd;
-#[cfg(all(not(target_arch = "wasm32"), feature = "ocr"))]
-mod ocr_dbfr;
-#[cfg(all(not(target_arch = "wasm32"), feature = "ocr"))]
-mod ocr_shenron;
 #[cfg(not(target_arch = "wasm32"))]
 mod oss_cmd;
 #[cfg(not(target_arch = "wasm32"))]
@@ -98,10 +90,6 @@ mod scan_cmd;
 mod self_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod session_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod shenron_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-pub use shenron_cmd::locate_home_shenron;
 #[cfg(all(not(target_arch = "wasm32"), feature = "train"))]
 mod train_cmd;
 #[cfg(not(target_arch = "wasm32"))]
@@ -406,18 +394,6 @@ enum Commands {
         #[command(subcommand)]
         action: pillars_cmd::ShellAction,
     },
-    /// Shenron Sovereign Bridge — unified integration connecting Aphrody (AI, Web, Infra, Shell, OS) to Shenron and Dragon Ball FR.
-    #[cfg(not(target_arch = "wasm32"))]
-    Shenron {
-        #[command(subcommand)]
-        action: shenron_cmd::ShenronAction,
-    },
-    /// Koharu manga page analysis, translation, cleanup and PSD export.
-    #[cfg(not(target_arch = "wasm32"))]
-    Manga {
-        #[command(subcommand)]
-        action: manga_cmd::MangaAction,
-    },
     /// Forward vers le binaire natif OpenAI Codex (`codex`).
     #[cfg(not(target_arch = "wasm32"))]
     Codex {
@@ -495,7 +471,7 @@ enum Commands {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Traduction unifiée via aphrody-translate, avec protection Shenron JP->FR
+    /// Traduction unifiée via aphrody-translate
     #[cfg(not(target_arch = "wasm32"))]
     Translate {
         /// Texte à traduire directement
@@ -1694,14 +1670,6 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         Some(Commands::Shell { action }) => {
             pillars_cmd::handle_shell(action)?;
         },
-        #[cfg(not(target_arch = "wasm32"))]
-        Some(Commands::Shenron { action }) => {
-            shenron_cmd::run(action).await?;
-        },
-        #[cfg(not(target_arch = "wasm32"))]
-        Some(Commands::Manga { action }) => {
-            manga_cmd::run(action).await?;
-        },
         Some(Commands::Codex { args }) => {
             commands::CodexCommand { args }.execute(ctx).await?;
         },
@@ -2588,7 +2556,9 @@ mod tests {
             .expect("agent options work at each agent command boundary");
             let Some(Commands::Exec(args)) = cli.command else { panic!("exec") };
             let inherited = args.options.apply_to(cli.agent_options.overrides());
-            let Some(exec_cmd::ExecCommand::Resume(session)) = args.command else { panic!("resume") };
+            let Some(exec_cmd::ExecCommand::Resume(session)) = args.command else {
+                panic!("resume")
+            };
             assert_eq!(session.options.apply_to(inherited).model.as_deref(), Some("session-model"));
         });
     }

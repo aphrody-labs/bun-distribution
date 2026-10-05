@@ -142,7 +142,9 @@ d’IECODE et de FUT.
   par `crates/tauri/build-js.ts`) ; `agent-browser` est à absorber dans Aphrody Web (Rust).
 - Produits hors plateforme → dépôt propre (modèle Bun/Linux : aucun produit aval dans le dépôt) :
   [x] FUT (`aphrody-labs/fut`, historique conservé, 148 tests verts en autonomie) ;
-  [ ] Shenron + frontal Koharu fusionnés (`aphrody-labs/shenron`, structure aplatie apps/packages/scripts/deploy).
+  [x] Shenron + couche traduction Koharu extraits (`aphrody-labs/shenron`, 2026-10-05, historique conservé :
+  apps, paquets, UI, crates Koharu, modules Rust Shenron, plugin, `@aphrody/media`) ; le plan d’hôtes Shenron
+  (systemd, nginx, privoxy, déploiement atomique, sauvegardes) et la passerelle `/api/v1/shenron/*` restent à l’Infra.
 - [x] Doublons de mécanismes retirés (`8b94aa7d4`, session aphrody-1a) : crate `aphrody-marketplace`,
   `publish-workspaces.ts`, pin SDK `sibling-checkouts`, wrappers `bun install` (façade `yolo-core/pm`).
 - [ ] Publication npm des paquets consommés par Shenron et FUT, puis migration d’IECODE et FUT vers npm.
@@ -165,6 +167,6 @@ passent uniquement par ces registres : aucun lien en dur, aucune archive, aucun 
   `tauri-plugin-mcp-bridge`) → dépendre de la version amont si nos correctifs sont résorbés, sinon renommer le
   fork ; `cargo publish --workspace --dry-run` sur la fabrique, puis envoi local `--no-verify` dans l’ordre topologique.
 - [ ] PyPI : paquets `py/` construits et publiés par `uv build` / `uv publish`.
-- [ ] Shenron + Koharu (fork créé comme backend manga et traduction de Shenron) → `aphrody-labs/shenron`, Bun + Rust,
-  sans régression ni doublon : site, bot, pipeline, éditeur et crates Koharu, app desktop native sur le fork Bun,
-  RAG et backend propres exploitant Aphrody, inférence LLM CPU via Aphrody, chat M3 AI et dashboard admin M3.
+- [~] Shenron + Koharu → `aphrody-labs/shenron`, Bun + Rust : extraction faite (voir §7) ; la fusion UI/apps, l’app
+  desktop Tauri 3 + Bun + Next 16, le RAG/backend propres, le MCP `dragonball.*` et l’installation Windows sont menés
+  dans ce dépôt. Le socle ML `koharu-*` (llama, torch, diffusion, runtime, config, bindgen) reste ici.

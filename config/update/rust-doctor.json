@@ -29,13 +29,11 @@
       "exclude": [
         { "crates": "aphrody-google", "reason": "host-only: built on aphrody-gemini-runtime and aphrody-model-client, which need tokio net; the wasm stub of the aphrody CLI does not link it" },
         { "crates": "aphrody-jev", "reason": "host-only: links rustls with ring" },
-        { "crates": "aphrody-manga", "reason": "host-only: tokio net and the Koharu native pipeline" },
         { "crates": "aphrody-mcp", "reason": "host-only: MCP server over stdio, process and filesystem tools" },
         { "crates": "aphrody-mcp-client", "reason": "host-only: its async traits require Send futures, which browser fetch does not give" },
         { "crates": "aphrody-messaging", "reason": "host-only: reads the host name through rustix and sends through reqwest with tokio net" },
         { "crates": "aphrody-session", "reason": "host-only: tokio net and the filesystem session mirror" },
-        { "crates": "aphrody-web-bridge", "reason": "host-only: embeds V8 through deno_core" },
-        { "crates": "koharu-library", "reason": "vendored upstream: native torch and llama backends; its browser artifact is koharu-canvas" }
+        { "crates": "aphrody-web-bridge", "reason": "host-only: embeds V8 through deno_core" }
       ]
     },
     {

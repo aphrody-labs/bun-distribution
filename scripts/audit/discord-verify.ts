@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "../..");
@@ -8,16 +8,7 @@ const rootPkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 const catalog = rootPkg.workspaces?.catalog ?? {};
 
 // 1. Verify that canonical Discord packages are defined in the root catalog
-const requiredCatalog = [
-  "discordx",
-  "@discordx/di",
-  "@discordx/pagination",
-  "@discordx/importer",
-  "@discordx/utilities",
-  "discord.js",
-  "discord-api-types",
-  "@discordjs/rest",
-];
+const requiredCatalog = ["discordx", "discord.js", "discord-api-types", "@discordjs/rest"];
 
 for (const pkg of requiredCatalog) {
   if (!catalog[pkg]) {
@@ -47,11 +38,19 @@ for (const gate of ["typecheck", "test", "build"]) {
   run(messaging, "run", gate);
 }
 
-// 4. Gate consumer bots typecheck & integrity if requested with --full
+// 4. Gate consumer bots typecheck & integrity if requested with --full. The Shenron bot lives in
+// aphrody-labs/shenron (SHENRON_ROOT, else the sibling checkout of this repository).
 if (process.argv.includes("--full")) {
-  const shenronBot = resolve(root, "apps/shenron/bot");
-  run(shenronBot, "run", "type-check");
-  run(shenronBot, "run", "test");
+  const shenronBot = resolve(
+    process.env.SHENRON_ROOT?.trim() || resolve(root, "..", "shenron"),
+    "apps/bot",
+  );
+  if (existsSync(shenronBot)) {
+    run(shenronBot, "run", "type-check");
+    run(shenronBot, "run", "test");
+  } else {
+    console.log(`\nskip Shenron bot gates: no checkout at ${shenronBot}`);
+  }
 }
 
 // 5. Gate native standalone compilation if requested with --compile

@@ -252,12 +252,16 @@ pub(crate) async fn dispatch_a2a(
                 coord_dir: coord_dir.or_else(|| env_path("COORD_DIR")),
             };
             if !opts.no_tcp {
-                println!("A2A coord on http://{addr} — agent card, /ping, /msg, /jsonrpc, /events, JSON-RPC, HTTP+REST");
+                println!(
+                    "A2A coord on http://{addr} — agent card, /ping, /msg, /jsonrpc, /events, JSON-RPC, HTTP+REST"
+                );
             }
             if let Some(sock) = &opts.unix {
                 println!("A2A coord on unix:{}", sock.display());
             }
-            listener::serve_with_options(cfg, opts).await.map_err(|e| miette::miette!("a2a serve failed: {e}"))?;
+            listener::serve_with_options(cfg, opts)
+                .await
+                .map_err(|e| miette::miette!("a2a serve failed: {e}"))?;
         },
         crate::A2aAction::Tick { iteration, side, peer, subject, body, kind } => {
             let opts =
@@ -763,7 +767,8 @@ impl TerminalCommand for AgyCommand {
         // Branche nativement le home agent aphrody (persona + serveur MCP
         // `aphrody`) et le package yolo (skills) dans `~/.gemini` avant de céder
         // la main à `agy`. Best-effort : n'échoue jamais la session.
-        let prov = crate::agy_provision::provision(aphrody_diagnostics::doctor::repo_root().as_deref());
+        let prov =
+            crate::agy_provision::provision(aphrody_diagnostics::doctor::repo_root().as_deref());
         if prov.changed() {
             eprintln!(
                 "aphrody agy: home agent + yolo câblés dans ~/.gemini (mcp={} skills={} \
@@ -851,7 +856,8 @@ impl TerminalCommand for CodexCommand {
         })?;
 
         // Provisionne idempotemment aphrody MCP + yolo persona dans $CODEX_HOME
-        let prov = crate::codex_provision::provision(aphrody_diagnostics::doctor::repo_root().as_deref());
+        let prov =
+            crate::codex_provision::provision(aphrody_diagnostics::doctor::repo_root().as_deref());
         if prov.changed() {
             eprintln!(
                 "aphrody codex: home agent + yolo câblés dans $CODEX_HOME (config={} persona={})",
@@ -954,16 +960,30 @@ impl TerminalCommand for GoogleCommand {
                 println!("Usage: aphrody google <COMMAND> [OPTIONS]");
                 println!();
                 println!("Commands:");
-                println!("  dns <NAME> [TYPE]    Query Google Public DNS-over-HTTPS (A, AAAA, MX, TXT...)");
-                println!("  suggest <QUERY>      Get real-time Google Autocomplete query suggestions");
-                println!("  languages [TARGET]   List 195 official supported Google Cloud Translation languages");
-                println!("  status               Print resolved Google/Gemini runtime contract as JSON");
-                println!("  env                  Print shell exports for the Google Cloud / Gemini runtime");
-                println!("  doctor               Validate Google project mapping and local configuration");
+                println!(
+                    "  dns <NAME> [TYPE]    Query Google Public DNS-over-HTTPS (A, AAAA, MX, TXT...)"
+                );
+                println!(
+                    "  suggest <QUERY>      Get real-time Google Autocomplete query suggestions"
+                );
+                println!(
+                    "  languages [TARGET]   List 195 official supported Google Cloud Translation languages"
+                );
+                println!(
+                    "  status               Print resolved Google/Gemini runtime contract as JSON"
+                );
+                println!(
+                    "  env                  Print shell exports for the Google Cloud / Gemini runtime"
+                );
+                println!(
+                    "  doctor               Validate Google project mapping and local configuration"
+                );
                 println!("  login                Sign in to Google with the OAuth PKCE flow");
                 println!("  auth-status          Report Google AI authentication status");
                 println!("  whoami               Print the signed-in Google account profile");
-                println!("  models               List Gemini models available to the authenticated account");
+                println!(
+                    "  models               List Gemini models available to the authenticated account"
+                );
                 println!("  generate             Generate one Gemini response with Antigravity");
                 println!("  generate-stream      Stream one Gemini response from stdin");
                 return Ok(());
@@ -990,10 +1010,14 @@ impl TerminalCommand for GoogleCommand {
                     .build()
                     .map_err(|e| miette::miette!("HTTP client error: {e}"))?;
 
-                let res = client.get(url).send().await
-                    .map_err(|e| miette::miette!("Erreur lors de la requête DoH Google: {e}"))?;
+                let res =
+                    client.get(url).send().await.map_err(|e| {
+                        miette::miette!("Erreur lors de la requête DoH Google: {e}")
+                    })?;
 
-                let body: serde_json::Value = res.json().await
+                let body: serde_json::Value = res
+                    .json()
+                    .await
                     .map_err(|e| miette::miette!("Réponse DoH JSON invalide: {e}"))?;
 
                 if json {
@@ -1003,21 +1027,38 @@ impl TerminalCommand for GoogleCommand {
                     if status != 0 {
                         println!("{} Status: {}", "DNS Query Failed:".bold().red(), status);
                     } else if let Some(answers) = body.get("Answer").and_then(|a| a.as_array()) {
-                        println!("{} {} ({})", "🔍 Google Public DNS:".bold().green(), name, record_type);
+                        println!(
+                            "{} {} ({})",
+                            "🔍 Google Public DNS:".bold().green(),
+                            name,
+                            record_type
+                        );
                         for ans in answers {
                             let data = ans.get("data").and_then(|d| d.as_str()).unwrap_or("");
                             let ttl = ans.get("TTL").and_then(|t| t.as_i64()).unwrap_or(0);
                             let t = ans.get("type").and_then(|t| t.as_i64()).unwrap_or(0);
-                            println!("  {} {} (type {}, TTL {}s)", "->".bold().cyan(), data.bold(), t, ttl);
+                            println!(
+                                "  {} {} (type {}, TTL {}s)",
+                                "->".bold().cyan(),
+                                data.bold(),
+                                t,
+                                ttl
+                            );
                         }
                     } else {
-                        println!("{} Aucun enregistrement trouvé pour {} ({})", "ℹ".bold().yellow(), name, record_type);
+                        println!(
+                            "{} Aucun enregistrement trouvé pour {} ({})",
+                            "ℹ".bold().yellow(),
+                            name,
+                            record_type
+                        );
                     }
                 }
                 return Ok(());
             },
             "suggest" => {
-                let query = self.args[1..].iter()
+                let query = self.args[1..]
+                    .iter()
                     .filter(|a| !a.starts_with('-'))
                     .cloned()
                     .collect::<Vec<_>>()
@@ -1027,7 +1068,9 @@ impl TerminalCommand for GoogleCommand {
                 }
                 let json = self.args.iter().any(|a| a == "--json");
 
-                let mut url = reqwest::Url::parse("https://suggestqueries.google.com/complete/search").unwrap();
+                let mut url =
+                    reqwest::Url::parse("https://suggestqueries.google.com/complete/search")
+                        .unwrap();
                 url.query_pairs_mut().append_pair("client", "chrome").append_pair("q", &query);
 
                 let client = reqwest::Client::builder()
@@ -1035,24 +1078,35 @@ impl TerminalCommand for GoogleCommand {
                     .build()
                     .map_err(|e| miette::miette!("HTTP client error: {e}"))?;
 
-                let res = client.get(url).send().await
-                    .map_err(|e| miette::miette!("Erreur lors de la requête Google Suggest: {e}"))?;
+                let res = client.get(url).send().await.map_err(|e| {
+                    miette::miette!("Erreur lors de la requête Google Suggest: {e}")
+                })?;
 
-                let body: serde_json::Value = res.json().await
+                let body: serde_json::Value = res
+                    .json()
+                    .await
                     .map_err(|e| miette::miette!("Réponse Suggest JSON invalide: {e}"))?;
 
-                let suggestions = body.as_array()
+                let suggestions = body
+                    .as_array()
                     .and_then(|a| a.get(1))
                     .and_then(|s| s.as_array())
                     .map(|arr| {
-                        arr.iter().filter_map(|item| item.as_str().map(String::from)).collect::<Vec<_>>()
+                        arr.iter()
+                            .filter_map(|item| item.as_str().map(String::from))
+                            .collect::<Vec<_>>()
                     })
                     .unwrap_or_default();
 
                 if json {
                     println!("{}", serde_json::to_string_pretty(&suggestions).unwrap());
                 } else {
-                    println!("{} {} ({} suggestions)", "💡 Suggestions pour :".bold().blue(), query, suggestions.len());
+                    println!(
+                        "{} {} ({} suggestions)",
+                        "💡 Suggestions pour :".bold().blue(),
+                        query,
+                        suggestions.len()
+                    );
                     for (i, s) in suggestions.iter().enumerate() {
                         println!("  {:2}. {}", i + 1, s.cyan());
                     }
@@ -1066,7 +1120,11 @@ impl TerminalCommand for GoogleCommand {
                 if json {
                     println!("{}", serde_json::to_string_pretty(&langs).unwrap());
                 } else {
-                    println!("{} {} langues supportées", "🌐 Google Translation:".bold().green(), langs.data.languages.len());
+                    println!(
+                        "{} {} langues supportées",
+                        "🌐 Google Translation:".bold().green(),
+                        langs.data.languages.len()
+                    );
                     for lang in &langs.data.languages {
                         if let Some(name) = &lang.name {
                             println!("  {:8} -> {}", lang.language.cyan().bold(), name);
@@ -1077,7 +1135,7 @@ impl TerminalCommand for GoogleCommand {
                 }
                 return Ok(());
             },
-            _ => {}
+            _ => {},
         }
 
         // For other commands (status, env, doctor, login, whoami, models, generate, etc.), forward to aphrody-google binary.
@@ -1085,15 +1143,17 @@ impl TerminalCommand for GoogleCommand {
             .map(PathBuf::from)
             .or_else(|| {
                 // Installed next to this binary (the per-user bin directory), never at a fixed account.
-                let p = std::env::current_exe().ok()?.parent()?.join(if cfg!(windows) { "aphrody-google.exe" } else { "aphrody-google" });
+                let p = std::env::current_exe().ok()?.parent()?.join(if cfg!(windows) {
+                    "aphrody-google.exe"
+                } else {
+                    "aphrody-google"
+                });
                 if p.is_file() { Some(p) } else { None }
             })
             .or_else(|| which::which("aphrody-google").ok());
 
         if let Some(bin_path) = google_bin {
-            let status = std::process::Command::new(&bin_path)
-                .args(&self.args)
-                .status();
+            let status = std::process::Command::new(&bin_path).args(&self.args).status();
             if let Ok(st) = status {
                 if st.success() {
                     return Ok(());
@@ -1117,7 +1177,9 @@ impl TerminalCommand for GoogleCommand {
             return Ok(());
         }
 
-        Err(miette::miette!("Commande google non reconnue: `{first}`. Voir `aphrody google --help`"))
+        Err(miette::miette!(
+            "Commande google non reconnue: `{first}`. Voir `aphrody google --help`"
+        ))
     }
 }
 
@@ -1174,11 +1236,10 @@ impl TerminalCommand for TranslateCommand {
         if let Some(ref text) = self.text {
             let is_jp = self.source == "ja" || aphrody_translate::Translator::is_japanese(text);
             let res = if is_jp {
-                println!(
-                    "{}",
-                    "Mode Shenron JP -> FR activé (protection canonique + contrôle qualité)".cyan()
-                );
-                translator.translate_jp_to_fr(text).await.map_err(|e| miette::miette!("{e}"))?
+                translator
+                    .translate_with_lang(text, "ja", &self.target)
+                    .await
+                    .map_err(|e| miette::miette!("{e}"))?
             } else {
                 let src = if self.source == "auto" { "en" } else { &self.source };
                 translator
@@ -1198,7 +1259,10 @@ impl TerminalCommand for TranslateCommand {
                 .map_err(|e| miette::miette!("Lecture {}: {e}", path.display()))?;
             let is_jp = self.source == "ja" || aphrody_translate::Translator::is_japanese(&content);
             let res = if is_jp {
-                translator.translate_jp_to_fr(&content).await.map_err(|e| miette::miette!("{e}"))?
+                translator
+                    .translate_with_lang(&content, "ja", &self.target)
+                    .await
+                    .map_err(|e| miette::miette!("{e}"))?
             } else {
                 let src = if self.source == "auto" { "en" } else { &self.source };
                 translator
@@ -1372,26 +1436,32 @@ impl TerminalCommand for SearchCommand {
         println!("{}", format!("🔍 Recherche : {}", q).bold().blue());
 
         let cli = aphrody_web_bridge::BxcCli::discover().map_err(|e| miette::miette!("{e}"))?;
-        let results = match cli
-            .search(&q, Some(10), aphrody_web_bridge::cli::SEARCH_BUDGET)
-            .await
-        {
+        let results = match cli.search(&q, Some(10), aphrody_web_bridge::cli::SEARCH_BUDGET).await {
             Ok(res) => res,
             Err(e) => {
                 let err_str = e.to_string();
-                if err_str.contains("blocked") || err_str.contains("interstitial") || err_str.contains("organic") {
+                if err_str.contains("blocked")
+                    || err_str.contains("interstitial")
+                    || err_str.contains("organic")
+                {
                     println!(
                         "\n{} {}",
                         "⚠️  Google a présenté un interstitiel anti-bot pour cette requête anonyme.".bold().yellow(),
                         "Utilisez `aphrody web search --cookies <cookies.json>` ou connectez-vous avec `aphrody google login`.".dimmed()
                     );
                     println!("\n{}", "Alternatives disponibles sans blocage :".bold());
-                    println!("  • `aphrody docs search \"{}\"` pour la documentation technique", q.cyan());
-                    println!("  • `aphrody google suggest \"{}\"` pour les suggestions de complétion Google", q.cyan());
+                    println!(
+                        "  • `aphrody docs search \"{}\"` pour la documentation technique",
+                        q.cyan()
+                    );
+                    println!(
+                        "  • `aphrody google suggest \"{}\"` pour les suggestions de complétion Google",
+                        q.cyan()
+                    );
                     return Ok(());
                 }
                 return Err(miette::miette!("{e}"));
-            }
+            },
         };
 
         for hit in results.hits.iter().take(10) {
@@ -1592,15 +1662,15 @@ pub(crate) struct TermCommand {
 }
 
 impl TermCommand {
-    pub(crate) fn validate_and_configure(&self) -> miette::Result<(SocketAddr, aphrody_terminal_backend::PtyConfig)> {
+    pub(crate) fn validate_and_configure(
+        &self,
+    ) -> miette::Result<(SocketAddr, aphrody_terminal_backend::PtyConfig)> {
         let addr: SocketAddr = self
             .addr
             .parse()
             .map_err(|e| miette::miette!("invalid --addr '{}': {e}", self.addr))?;
 
-        let env_token = std::env::var("APHRODY_OS_AUTH_TOKEN")
-            .ok()
-            .filter(|s| !s.is_empty());
+        let env_token = std::env::var("APHRODY_OS_AUTH_TOKEN").ok().filter(|s| !s.is_empty());
         let explicit_token = self.token.clone().or(env_token);
 
         // Require authentication token when binding to non-loopback addresses (e.g. 0.0.0.0)
@@ -2269,14 +2339,12 @@ mod term_command_tests {
     fn term_command_rejects_non_loopback_without_auth() {
         // Ensure env var is absent for this test
         let _env_guard = std::env::var("APHRODY_OS_AUTH_TOKEN").ok();
-        unsafe { std::env::remove_var("APHRODY_OS_AUTH_TOKEN"); }
+        unsafe {
+            std::env::remove_var("APHRODY_OS_AUTH_TOKEN");
+        }
 
-        let cmd = TermCommand {
-            addr: "0.0.0.0:8788".to_string(),
-            shell: None,
-            cwd: None,
-            token: None,
-        };
+        let cmd =
+            TermCommand { addr: "0.0.0.0:8788".to_string(), shell: None, cwd: None, token: None };
 
         let res = cmd.validate_and_configure();
         assert!(res.is_err(), "non-loopback without token must be rejected");
@@ -2284,7 +2352,9 @@ mod term_command_tests {
         assert!(err_str.contains("non-loopback address"), "unexpected error: {err_str}");
 
         if let Some(tok) = _env_guard {
-            unsafe { std::env::set_var("APHRODY_OS_AUTH_TOKEN", tok); }
+            unsafe {
+                std::env::set_var("APHRODY_OS_AUTH_TOKEN", tok);
+            }
         }
     }
 
@@ -2305,14 +2375,12 @@ mod term_command_tests {
     #[test]
     fn term_command_generates_token_for_loopback_when_unset() {
         let _env_guard = std::env::var("APHRODY_OS_AUTH_TOKEN").ok();
-        unsafe { std::env::remove_var("APHRODY_OS_AUTH_TOKEN"); }
+        unsafe {
+            std::env::remove_var("APHRODY_OS_AUTH_TOKEN");
+        }
 
-        let cmd = TermCommand {
-            addr: "127.0.0.1:8788".to_string(),
-            shell: None,
-            cwd: None,
-            token: None,
-        };
+        let cmd =
+            TermCommand { addr: "127.0.0.1:8788".to_string(), shell: None, cwd: None, token: None };
 
         let (addr, cfg) = cmd.validate_and_configure().expect("loopback should succeed");
         assert_eq!(addr, "127.0.0.1:8788".parse().unwrap());
@@ -2321,7 +2389,9 @@ mod term_command_tests {
         assert!(token.chars().all(|c| c.is_ascii_hexdigit()));
 
         if let Some(tok) = _env_guard {
-            unsafe { std::env::set_var("APHRODY_OS_AUTH_TOKEN", tok); }
+            unsafe {
+                std::env::set_var("APHRODY_OS_AUTH_TOKEN", tok);
+            }
         }
     }
 

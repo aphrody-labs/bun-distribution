@@ -377,14 +377,14 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
     let kind = params.kind.as_deref().filter(|value| !value.is_empty());
     let origin_source_id = params.source_id.as_deref().filter(|value| !value.is_empty());
     let entity = params.entity.as_deref().filter(|value| !value.is_empty());
-    #[cfg(any(feature = "dragonball", feature = "rag"))]
+    #[cfg(any(feature = "gateway-cache", feature = "rag"))]
     let cache = aphrody_rag::redis_cache::RedisRagCache::from_url(
         std::env::var("REDIS_URL").ok().as_deref(),
         Some("shenron:rag:http:"),
     );
-    #[cfg(any(feature = "dragonball", feature = "rag"))]
+    #[cfg(any(feature = "gateway-cache", feature = "rag"))]
     let cache_query = shenron_cache_query(&client, &params, &query, limit).await;
-    #[cfg(any(feature = "dragonball", feature = "rag"))]
+    #[cfg(any(feature = "gateway-cache", feature = "rag"))]
     if let Some(cache_query) = &cache_query
         && let Some(cached) = cache.get_rag_result(cache_query, "retrieval").await
         && let Ok(payload) = serde_json::from_str::<Value>(&cached)
@@ -547,7 +547,7 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
         "lexical"
     };
     let payload = json!({ "results": results, "mode": mode });
-    #[cfg(any(feature = "dragonball", feature = "rag"))]
+    #[cfg(any(feature = "gateway-cache", feature = "rag"))]
     if let Some(cache_query) = &cache_query {
         let _ = cache.cache_rag_result(cache_query, "retrieval", &payload.to_string()).await;
     }
@@ -556,7 +556,7 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
     result
 }
 
-#[cfg(any(feature = "dragonball", feature = "rag"))]
+#[cfg(any(feature = "gateway-cache", feature = "rag"))]
 async fn shenron_cache_query(
     client: &Client,
     params: &ShenronSearchQuery,

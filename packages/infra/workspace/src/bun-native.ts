@@ -91,8 +91,6 @@ export function renderNativeConsumerImports(packageRoot: string): string {
     n2b: "n2b",
     cli: "cli",
     web: "web",
-    manga: "manga",
-    shenron: "shenron",
   };
   return Object.entries(modules)
     .map(
@@ -134,9 +132,6 @@ import { pathToFileURL } from "node:url";
       assert.equal(captured.code, 0);
       assert.match(captured.stdout, /aphrody/i);
       assert.match(web.webStripTags("<p>native fixture</p>"), /native fixture/);
-      assert.equal(manga.mangaAbiVersion(), expected.manga_abi_version);
-      assert.equal(shenron.shenronAbiVersion(), expected.shenron_abi_version);
-      assert.equal(typeof shenron.shenronVersion(), "string");
       assert.equal(oxc.formatSource("const x=1;", "fixture.js"), "const x = 1;\\n");
       assert.equal(typeof oxc.minifySource("const x=1;", "fixture.js"), "string");
       assert.ok(Array.isArray(oxc.lintSource("const x=1;", "fixture.js")));

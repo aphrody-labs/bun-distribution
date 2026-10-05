@@ -149,55 +149,6 @@ export async function runTauri(args: string[]): Promise<number> {
     console.log(`[tauri] Staged aphrody sidecar: ${staged}`);
   }
 
-  /** Bundle the headless Koharu SDK beside Aphrody; its model runtime stays out of the UI process. */
-  async function stageKoharuSidecar(profile: "debug" | "release") {
-    const host = hostTriple();
-    const suffix = host.includes("windows") ? ".exe" : "";
-    let source = Bun.env.KOHARU_SDK_SIDECAR_SOURCE ?? "";
-    if (!source) {
-      const workspace = sidecarWorkspace("koharu-library", "crates/koharu/koharu-library");
-      const { dir: koharuDir, manifest } = workspace;
-      const metadata = Bun.spawnSync(
-        ["cargo", "metadata", "--format-version", "1", "--no-deps", "--manifest-path", manifest],
-        { cwd: koharuDir, env: commandEnv, stdout: "pipe", stderr: "inherit" },
-      );
-      if (metadata.exitCode !== 0)
-        throw new Error("cargo metadata failed for the koharu workspace");
-      const targetDir = (
-        JSON.parse(new TextDecoder().decode(metadata.stdout)) as { target_directory: string }
-      ).target_directory;
-      runSync(
-        [
-          cargoSerial,
-          "build",
-          "--manifest-path",
-          manifest,
-          "-p",
-          "koharu-library",
-          "--bin",
-          "koharu-sdk",
-          "--locked",
-          ...(profile === "release" ? ["--release"] : []),
-        ],
-        koharuDir,
-        "Koharu SDK build failed",
-      );
-      source = join(targetDir, profile, `koharu-sdk${suffix}`);
-    }
-    if (!(await isFile(source))) throw new Error(`Koharu SDK sidecar binary missing: ${source}`);
-
-    const binaries = join(appDir, "binaries");
-    await mkdir(binaries, { recursive: true });
-    const staged = join(binaries, `koharu-sdk-${host}${suffix}`);
-    await copyFile(source, staged);
-
-    const appTarget = resolve(repo, Bun.env.CARGO_TARGET_DIR ?? "target");
-    await mkdir(join(appTarget, profile), { recursive: true });
-    const besideApp = join(appTarget, profile, `koharu-sdk${suffix}`);
-    if (resolve(source) !== resolve(besideApp)) await copyFile(source, besideApp);
-    console.log(`[tauri] Staged Koharu SDK sidecar: ${staged}`);
-  }
-
   /**
    * Updater settings injected at bundle time: `APHRODY_UPDATER_ENDPOINT` (the release feed of
    * the aphrody-infra release plane) and `APHRODY_UPDATER_PUBKEY` (minisign public key; the
@@ -248,8 +199,6 @@ export async function runTauri(args: string[]): Promise<number> {
       );
       console.log(`[tauri] Staging aphrody sidecar (${profileFlag})...`);
       await stageAphrodySidecar(action === "dev" ? "debug" : "release");
-      console.log(`[tauri] Staging Koharu SDK sidecar (${profileFlag})...`);
-      await stageKoharuSidecar(action === "dev" ? "debug" : "release");
     }
 
     // Step 3: Run target action in the desktop app crate

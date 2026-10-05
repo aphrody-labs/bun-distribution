@@ -23,7 +23,9 @@ use clap::{Args, Subcommand};
 use miette::IntoDiagnostic as _;
 
 use crate::session_cmd::SessionArgs;
-pub(crate) use aphrody_diagnostics::config::{apply_environment_profile, load_config, profile_workspace};
+pub(crate) use aphrody_diagnostics::config::{
+    apply_environment_profile, load_config, profile_workspace,
+};
 
 #[derive(Debug, Clone, Default, Args)]
 pub(crate) struct ExecArgs {

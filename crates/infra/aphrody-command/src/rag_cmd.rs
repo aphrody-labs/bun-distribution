@@ -65,24 +65,6 @@ enum RagAction {
         #[arg(long)]
         kind: Option<String>,
     },
-    /// Ingest a Shenron corpus JSON, JSONL or lots directory into the RAG store.
-    IngestShenron {
-        /// One or more corpus JSON/JSONL inputs or directories containing them.
-        #[arg(required = true, num_args = 1..)]
-        paths: Vec<PathBuf>,
-        /// Maximum number of documents to ingest.
-        #[arg(long)]
-        max_docs: Option<usize>,
-        /// Do not compute dense embeddings during this ingestion.
-        #[arg(long)]
-        lexical_only: bool,
-        /// Store the full source URL as the document path for older consumers.
-        #[arg(long)]
-        preserve_url: bool,
-        /// Reproduce the historical Shenron corpus chunk boundaries.
-        #[arg(long)]
-        legacy_chunks: bool,
-    },
     /// Assemble source context for a model prompt.
     Context {
         query: String,
@@ -314,46 +296,22 @@ pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Resul
                 println!("{}", serde_json::to_string(&result).into_diagnostic()?);
                 return Ok(());
             },
-            RagAction::Index { .. }
-            | RagAction::Context { .. }
-            | RagAction::IngestShenron { .. } => {
+            RagAction::Index { .. } | RagAction::Context { .. } => {
                 return Err(miette::miette!(
                     "this RAG command uses the local SQLite index; pass --db explicitly"
                 ));
             },
         }
     }
-    if matches!(
-        &args.action,
-        RagAction::Index { .. } | RagAction::WebIngest { .. } | RagAction::IngestShenron { .. }
-    ) {
+    if matches!(&args.action, RagAction::Index { .. } | RagAction::WebIngest { .. }) {
         if let Some(parent) = db.parent().filter(|parent| !parent.as_os_str().is_empty()) {
             std::fs::create_dir_all(parent).into_diagnostic()?;
         }
     } else if !db.is_file() {
-        return Err(miette::miette!(
-            "RAG index does not exist; run `aphrody rag index` or `aphrody rag ingest-shenron` first"
-        ));
+        return Err(miette::miette!("RAG index does not exist; run `aphrody rag index` first"));
     }
     let store = Arc::new(RagStore::open(&db).into_diagnostic()?);
     match args.action {
-        RagAction::IngestShenron { paths, max_docs, lexical_only, preserve_url, legacy_chunks } => {
-            let mut docs = Vec::new();
-            for path in paths {
-                docs.extend(aphrody_rag::load_shenron_corpus(path).into_diagnostic()?);
-            }
-            let embedder = if lexical_only { None } else { build_embedder(&config.rag).await? };
-            let opts = aphrody_rag::ShenronIngestOptions {
-                max_docs,
-                preserve_urls: preserve_url,
-                legacy_chunks,
-                ..Default::default()
-            };
-            let stats = aphrody_rag::ingest_shenron_docs(&store, &docs, embedder.as_ref(), &opts)
-                .await
-                .into_diagnostic()?;
-            println!("{}", serde_json::to_string(&stats).into_diagnostic()?);
-        },
         RagAction::Index { path } => {
             if !path.is_dir() {
                 return Err(miette::miette!("RAG source must be an existing directory"));

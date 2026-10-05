@@ -72,9 +72,10 @@ pub(crate) async fn run_discord(action: DiscordAction) -> Result<()> {
                 compiler.compile(&BotTarget::Custom(PathBuf::from(&target)), &options)?;
             }
             Ok(())
-        }
+        },
         DiscordAction::Inspect { target, json } => {
-            let bot_target = BotTarget::parse(&target).unwrap_or(BotTarget::Custom(PathBuf::from(&target)));
+            let bot_target =
+                BotTarget::parse(&target).unwrap_or(BotTarget::Custom(PathBuf::from(&target)));
             let inspection = compiler.inspect(&bot_target)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&inspection).unwrap());
@@ -89,9 +90,7 @@ pub(crate) async fn run_discord(action: DiscordAction) -> Result<()> {
                 println!("   Oxc diagnostics errors:   {}", inspection.oxc_diagnostics_errors);
             }
             Ok(())
-        }
-        DiscordAction::Verify => {
-            compiler.verify_monorepo()
-        }
+        },
+        DiscordAction::Verify => compiler.verify_monorepo(),
     }
 }

@@ -71,9 +71,7 @@ async fn env(args: EnvArgs) -> miette::Result<()> {
     if args.print {
         let body = match args.format {
             PrintFormat::Env => diag::to_env_lines(&resolved),
-            PrintFormat::Json => {
-                serde_json::to_string_pretty(&published.json).into_diagnostic()?
-            },
+            PrintFormat::Json => serde_json::to_string_pretty(&published.json).into_diagnostic()?,
             PrintFormat::Nu => diag::to_nu_lines(&resolved),
             PrintFormat::Pwsh => diag::to_pwsh_lines(&resolved),
         };
@@ -100,4 +98,3 @@ pub(crate) async fn run(action: AiAction) -> miette::Result<()> {
         },
     }
 }
-

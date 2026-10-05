@@ -6,7 +6,6 @@ use std::{path::PathBuf, time::Duration};
 use aphrody_subsystem::SystemSubsystem;
 use serde_json::{Value, json};
 
-
 const KERNEL_TIMEOUT: Duration = Duration::from_secs(30);
 
 async fn tool(name: &str, arguments: Value) -> Result<Value, String> {

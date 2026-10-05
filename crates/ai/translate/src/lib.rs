@@ -10,12 +10,10 @@
 pub mod ai_patterns;
 pub mod aphrodify;
 pub mod extract;
-pub mod shenron;
 pub mod translate;
 
 use std::path::Path;
 
-pub use shenron::{TermeLexique, default_canon_lexique};
 pub use translate::{Backend, Translator};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

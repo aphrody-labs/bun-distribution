@@ -17,6 +17,18 @@ use colored::Colorize;
 use miette::{Context, IntoDiagnostic, Result, bail};
 use serde::{Deserialize, Serialize};
 
+/// The Shenron bot lives in aphrody-labs/shenron (`apps/bot`): the current checkout when it is
+/// the Shenron one, else `SHENRON_ROOT`, else the `shenron` checkout beside this repository.
+fn shenron_bot_dir(root: &Path) -> PathBuf {
+    if root.join("apps/site").is_dir() && root.join("apps/bot/package.json").is_file() {
+        return root.join("apps/bot");
+    }
+    std::env::var_os("SHENRON_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| root.parent().unwrap_or(root).join("shenron"))
+        .join("apps/bot")
+}
+
 /// Target Discord bots recognized by Aphrody.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BotTarget {
@@ -59,7 +71,7 @@ impl BotTarget {
 
     pub fn default_dir(&self, root: &Path) -> PathBuf {
         match self {
-            Self::Shenron => root.join("apps/shenron/bot"),
+            Self::Shenron => shenron_bot_dir(root),
             Self::RoseGriffon | Self::Achillea => root.join("apps/rg/bot"),
             Self::Custom(p) => p.clone(),
         }
@@ -383,6 +395,15 @@ impl DiscordCompiler {
         let targets = [BotTarget::Shenron, BotTarget::RoseGriffon];
         let mut results = Vec::new();
         for t in &targets {
+            // Each bot ships from its product checkout; a missing one is reported, not fatal.
+            if !t.default_dir(&self.root).exists() {
+                println!(
+                    "skip {}: no checkout at {}",
+                    t.display_name(),
+                    t.default_dir(&self.root).display()
+                );
+                continue;
+            }
             results.push(self.compile(t, options)?);
         }
         Ok(results)

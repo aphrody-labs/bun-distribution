@@ -353,10 +353,10 @@
         "Requires": "shenron-data-tunnel.service aphrody-shenron-embed.service aphrody-ai-http.service"
       },
       "service": {
-        "WorkingDirectory": "%h/aphrody",
+        "WorkingDirectory": "%h/shenron",
         "Environment": "PATH=%h/.local/bin:%h/.bun/bin:/usr/local/bin:/usr/bin:/bin",
         "EnvironmentFile": "%h/.aphrody/private/shenron/ai-http.env",
-        "ExecStart": "%h/.bun/bin/bun packages/shenron/pipeline/scripts/rag-sync-aphrody.ts --toutes --appliquer --report=%h/.aphrody/workspaces/dbfr/indexes/shenron-rag-latest.json",
+        "ExecStart": "%h/.bun/bin/bun packages/pipeline/scripts/rag-sync-aphrody.ts --toutes --appliquer --report=%h/.aphrody/workspaces/dbfr/indexes/shenron-rag-latest.json",
         "TimeoutStartSec": "infinity",
         "UMask": "0077",
         "NoNewPrivileges": "yes"

@@ -303,19 +303,3 @@ export * from "./icons";
 export * from "./reproduce";
 export * from "./render";
 export * from "./svg";
-export * from "./manga";
-export {
-  EXPECTED_SHENRON_ABI_VERSION,
-  shenronAbiVersion,
-  shenronVersion,
-  shenronLastError,
-  shenronRun,
-  shenronRunCaptured,
-  shenronRagSearch,
-  shenronRagStats,
-  shenronRagChunk,
-  shenronAuthStatus,
-  shenronPersonaPrompt,
-  shenronPersonaAsk,
-} from "./shenron";
-export type { ShenronCapturedResult } from "./shenron";

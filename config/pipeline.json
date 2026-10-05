@@ -635,24 +635,6 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/media",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/media",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/xai",
             "typecheck"
           ]
@@ -724,93 +706,6 @@
             "--filter",
             "@aphrody/discord-kit",
             "build"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "bun-koharu",
-      "parallel": false,
-      "steps": [
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/koharu-editor-example",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/koharu-editor-example",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/koharu-editor-example",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/koharu-editor-example",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/koharu-bridge",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/koharu-bridge",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/koharu-bridge",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/koharu-sdk",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/koharu-ui",
-            "typecheck"
           ]
         }
       ]
@@ -1826,33 +1721,6 @@
           "command": [
             "run",
             "--filter",
-            "@shenron/ui",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/ui",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/ui",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/web-to-tauri",
             "typecheck"
           ]
@@ -1886,8 +1754,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/api",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-autostart",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-autostart",
+            "build"
           ]
         },
         {
@@ -1904,8 +1790,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-barcode-scanner",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-biometric",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-biometric",
+            "build"
           ]
         },
         {
@@ -1922,8 +1826,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-cli",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-clipboard-manager",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-clipboard-manager",
+            "build"
           ]
         },
         {
@@ -1940,8 +1862,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-deep-link",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-dialog",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-dialog",
+            "build"
           ]
         },
         {
@@ -1958,8 +1898,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-fs",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-geolocation",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-geolocation",
+            "build"
           ]
         },
         {
@@ -1976,8 +1934,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-global-shortcut",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-haptics",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-haptics",
+            "build"
           ]
         },
         {
@@ -1994,8 +1970,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-http",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-log",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-log",
+            "build"
           ]
         },
         {
@@ -2012,8 +2006,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-nfc",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-notification",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-notification",
+            "build"
           ]
         },
         {
@@ -2030,8 +2042,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-opener",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-os",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-os",
+            "build"
           ]
         },
         {
@@ -2048,8 +2078,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-positioner",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-process",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-process",
+            "build"
           ]
         },
         {
@@ -2066,8 +2114,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-shell",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-sql",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-sql",
+            "build"
           ]
         },
         {
@@ -2084,8 +2150,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-store",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-stronghold",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-stronghold",
+            "build"
           ]
         },
         {
@@ -2102,8 +2186,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-updater",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-upload",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-upload",
+            "build"
           ]
         },
         {
@@ -2120,8 +2222,26 @@
           "command": [
             "run",
             "--filter",
+            "@aphrody/plugin-websocket",
+            "build"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
             "@aphrody/plugin-window-state",
             "typecheck"
+          ]
+        },
+        {
+          "repo": "aphrody",
+          "command": [
+            "run",
+            "--filter",
+            "@aphrody/plugin-window-state",
+            "build"
           ]
         }
       ]
@@ -2208,246 +2328,6 @@
             "run",
             "--filter",
             "@aphrody/yolo-web",
-            "build"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "product-shenron-final",
-      "parallel": false,
-      "steps": [
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/bot",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/bot",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/bot",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/bot",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/site",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/site",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/site",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/site",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/api",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/api",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/api",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/auth",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/auth",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/auth",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/config",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/config",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/config",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/db",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/db",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/db",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/images",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/images",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/pipeline",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/pipeline",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/pipeline",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@shenron/pipeline",
             "build"
           ]
         }

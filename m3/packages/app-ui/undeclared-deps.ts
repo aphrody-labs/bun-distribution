@@ -9,9 +9,6 @@ const here = import.meta.dir;
 export const undeclaredDependencies: BunPlugin = {
   name: "app-ui-shared-dependencies",
   setup(build) {
-    build.onResolve({ filter: /^\.\/assets\/NotoSansCJK-VF\.otf$/ }, () => ({
-      path: Bun.resolveSync("@aphrody/koharu-ui/assets/NotoSansCJK-VF.otf", here),
-    }));
     build.onResolve({ filter: /^(react|react-dom)(\/.*)?$/ }, (args) => ({
       path: Bun.resolveSync(args.path, here),
     }));

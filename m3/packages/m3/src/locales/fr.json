@@ -144,26 +144,6 @@
     "migrations_up_to_date": "Migrations de schéma de base de données validées",
     "vdfs_index": "Index du système de fichiers distribué virtuel"
   },
-  "koharu": {
-    "title": "Moteur Document & Vision Koharu",
-    "ocr_engine": "Moteur OCR par apprentissage profond",
-    "detector": "Détecteur de bulles de texte et segmentation",
-    "translator": "Chaîne de traduction de mangas et documents",
-    "manga_reader": "Lecteur de manga sur canvas adaptatif",
-    "pipeline_active": "Chaîne de vision in-process active",
-    "canvas_bridge": "Pont canvas accéléré matériellement en WASM",
-    "specta_bindings": "Liaisons IPC Specta typées de bout en bout",
-    "in_process_execution": "Exécution native directe en bibliothèque (zéro sous-processus)"
-  },
-  "shenron": {
-    "title": "Moteur d'Agent Shenron & DBFR",
-    "rag_query": "Requête RAG sur base de connaissances certifiée",
-    "character_persona": "Personnalité Shenron active",
-    "databooks": "Guides et archives canoniques",
-    "wiki_references": "Entités du wiki Dragon Ball FR",
-    "pipeline_status": "Chaîne de traitement des connaissances",
-    "grounded_response": "Réponse ancrée et vérifiée"
-  },
   "shell": {
     "title": "Shell natif Aphrody & PTY",
     "nushell_backend": "Moteur NuShell structuré",

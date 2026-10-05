@@ -11,7 +11,7 @@ test("native qualification loads all modules from the selected consumer despite 
     const selected = join(root, "selected # consumer");
     await mkdir(join(selected, "src"), { recursive: true });
     await Promise.all(
-      ["index", "oxc", "n2b", "cli", "web", "manga", "shenron"].map((file) =>
+      ["index", "oxc", "n2b", "cli", "web"].map((file) =>
         writeFile(
           join(selected, "src", `${file}.ts`),
           `export const origin = ${JSON.stringify(file)};`,
@@ -25,11 +25,11 @@ test("native qualification loads all modules from the selected consumer despite 
       JSON.stringify({ name: "@aphrody/bun", main: "index.ts" }),
     );
     await writeFile(join(decoy, "index.ts"), 'throw new Error("wrong consumer loaded");');
-    const script = `${renderNativeConsumerImports(selected)}\nconsole.log([m3, oxc, n2b, cli, web, manga, shenron].map(module => module.origin).join(","));`;
+    const script = `${renderNativeConsumerImports(selected)}\nconsole.log([m3, oxc, n2b, cli, web].map(module => module.origin).join(","));`;
     const result = Bun.spawnSync([process.execPath, "-e", script], { cwd: root });
     expect(result.exitCode).toBe(0);
     expect(result.stderr.toString()).toBe("");
-    expect(result.stdout.toString().trim()).toBe("index,oxc,n2b,cli,web,manga,shenron");
+    expect(result.stdout.toString().trim()).toBe("index,oxc,n2b,cli,web");
   } finally {
     await rm(root, { recursive: true, force: true });
   }

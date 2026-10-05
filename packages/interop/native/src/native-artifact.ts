@@ -13,8 +13,6 @@ import { basename, dirname, join } from "node:path";
 export const NATIVE_ABI_VERSIONS = {
   aphrody_abi_version: 1,
   aphrody_web_bridge_abi_version: 4,
-  shenron_abi_version: 1,
-  manga_abi_version: 1,
   bun_rs_abi_version: 1,
   node2bun_abi_version: 2,
   aphrody_oxc_abi_version: 1,

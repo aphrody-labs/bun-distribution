@@ -22,13 +22,19 @@ export interface DiscordBotStatus {
   lastModified?: string;
 }
 
+/** Checkout of aphrody-labs/shenron, which owns the Shenron bot: SHENRON_ROOT, else the sibling of this repository. */
+export function shenronCheckout(root = infraRoot()): string {
+  return process.env.SHENRON_ROOT?.trim() || join(root, "..", "shenron");
+}
+
 export function getDiscordBotsStatus(root = infraRoot()): DiscordBotStatus[] {
+  const shenron = shenronCheckout(root);
   const bots = [
     {
       id: "shenron",
       name: "Shenron Discord Bot + Public API",
-      path: join(root, "apps/shenron/bot"),
-      binaryPath: join(root, "apps/shenron/bot/dist/shenron"),
+      path: join(shenron, "apps/bot"),
+      binaryPath: join(shenron, "apps/bot/dist/shenron"),
     },
   ];
 

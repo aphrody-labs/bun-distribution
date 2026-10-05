@@ -13,8 +13,6 @@ import {
 
 export const EXPECTED_ABI_VERSION = NATIVE_ABI_VERSIONS.aphrody_abi_version;
 export const EXPECTED_WEB_ABI_VERSION = NATIVE_ABI_VERSIONS.aphrody_web_bridge_abi_version;
-export const EXPECTED_SHENRON_ABI_VERSION = NATIVE_ABI_VERSIONS.shenron_abi_version;
-export const EXPECTED_MANGA_ABI_VERSION = NATIVE_ABI_VERSIONS.manga_abi_version;
 export const EXPECTED_BUN_RS_ABI_VERSION = NATIVE_ABI_VERSIONS.bun_rs_abi_version;
 export const EXPECTED_N2B_ABI_VERSION = NATIVE_ABI_VERSIONS.node2bun_abi_version;
 export const EXPECTED_OXC_ABI_VERSION = NATIVE_ABI_VERSIONS.aphrody_oxc_abi_version;
@@ -34,41 +32,6 @@ const SYMBOLS = {
   aphrody_run_captured: { args: [FFIType.cstring], returns: FFIType.ptr },
   aphrody_string_free: { args: [FFIType.ptr], returns: FFIType.void },
   aphrody_last_error: { args: [], returns: FFIType.ptr },
-  shenron_abi_version: { args: [], returns: FFIType.u32 },
-  shenron_version: { args: [], returns: FFIType.cstring },
-  shenron_string_free: { args: [FFIType.ptr], returns: FFIType.void },
-  shenron_run_json: { args: [FFIType.cstring], returns: FFIType.i32 },
-  shenron_run: { args: [FFIType.i32, FFIType.ptr], returns: FFIType.i32 },
-  shenron_run_captured: { args: [FFIType.cstring], returns: FFIType.ptr },
-  shenron_rag_search: {
-    args: [FFIType.cstring, FFIType.i32, FFIType.cstring],
-    returns: FFIType.ptr,
-  },
-  shenron_rag_stats: { args: [], returns: FFIType.ptr },
-  shenron_rag_chunk: { args: [FFIType.cstring, FFIType.i32, FFIType.f32], returns: FFIType.ptr },
-  shenron_auth_status: { args: [], returns: FFIType.ptr },
-  shenron_persona_prompt: { args: [], returns: FFIType.cstring },
-  shenron_persona_ask: { args: [FFIType.cstring], returns: FFIType.ptr },
-  manga_abi_version: { args: [], returns: FFIType.u32 },
-  manga_detect_bubbles: { args: [FFIType.ptr, "usize"], returns: FFIType.ptr },
-  manga_typeset_fit: {
-    args: [FFIType.cstring, FFIType.f32, FFIType.f32, FFIType.f32, FFIType.f32, FFIType.i32],
-    returns: FFIType.ptr,
-  },
-  manga_pipeline_run: {
-    args: [FFIType.ptr, "usize", FFIType.cstring],
-    returns: FFIType.ptr,
-  },
-  manga_scanlate_cdn: { args: [FFIType.cstring, FFIType.cstring], returns: FFIType.ptr },
-  manga_scanlate_databook: {
-    args: [FFIType.u64, FFIType.u32, FFIType.cstring],
-    returns: FFIType.ptr,
-  },
-  manga_scanlate_chapter: {
-    args: [FFIType.u64, FFIType.u32, FFIType.cstring],
-    returns: FFIType.ptr,
-  },
-  manga_string_free: { args: [FFIType.ptr], returns: FFIType.void },
   aphrody_web_extract_main: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
   aphrody_web_free_string: { args: [FFIType.ptr], returns: FFIType.void },
   aphrody_web_extract_title: { args: [FFIType.ptr], returns: FFIType.ptr },
@@ -309,13 +272,9 @@ interface SharedNativeLibrary {
 }
 const sharedState = globalThis as typeof globalThis & { [LIBRARY_KEY]?: SharedNativeLibrary };
 
-/** Compatibility overrides share one path policy and cannot select two handles. */
+/** The explicit native library override, if any. */
 function configuredLibraryOverride(): string | undefined {
-  const canonical = process.env.APHRODY_FFI_LIB;
-  const compatibility = process.env.SHENRON_FFI_LIB;
-  if (canonical && compatibility && resolve(canonical) !== resolve(compatibility))
-    throw new Error("APHRODY_FFI_LIB and SHENRON_FFI_LIB select different native libraries");
-  return canonical || compatibility;
+  return process.env.APHRODY_FFI_LIB || undefined;
 }
 
 /** Resolve only artifacts for this host; explicit overrides must exist. */
@@ -323,9 +282,7 @@ export function resolveNativeLibraryPath(): string | undefined {
   const override = configuredLibraryOverride();
   if (override) {
     if (!existsSync(override))
-      throw new Error(
-        `${process.env.APHRODY_FFI_LIB ? "APHRODY_FFI_LIB" : "SHENRON_FFI_LIB"} points to a missing file: ${override}`,
-      );
+      throw new Error(`APHRODY_FFI_LIB points to a missing file: ${override}`);
     return resolve(override);
   }
   const file = `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${suffix}`;
@@ -377,8 +334,6 @@ export function loadNativeLibrary(): NativeLibrary {
     for (const [name, actual, expected] of [
       ["Aphrody", loaded.symbols.aphrody_abi_version(), EXPECTED_ABI_VERSION],
       ["Web", loaded.symbols.aphrody_web_bridge_abi_version(), EXPECTED_WEB_ABI_VERSION],
-      ["Shenron", loaded.symbols.shenron_abi_version(), EXPECTED_SHENRON_ABI_VERSION],
-      ["Manga", loaded.symbols.manga_abi_version(), EXPECTED_MANGA_ABI_VERSION],
       ["M3", loaded.symbols.bun_rs_abi_version(), EXPECTED_BUN_RS_ABI_VERSION],
       ["Zero-copy", loaded.symbols.aphrody_zerocopy_abi_version(), EXPECTED_ZEROCOPY_ABI_VERSION],
     ] as const) {

@@ -25,7 +25,6 @@ workspace = true
 default = []
 gpu = ["aphrody-bun/gpu"]
 native-stealth = ["obscura-net/stealth"]
-koharu    = ["aphrody-command/koharu", "aphrody-manga/koharu"]
 # Forward aphrody-command's opt-in command features so a feature-rich cdylib can be
 # built (e.g. `cargo build -p aphrody-ffi --features forensics`). Inactive by
 # default, so the wasm `cargo check` never tries to pull these host-only deps.
@@ -54,7 +53,6 @@ aphrody-bun = { workspace = true }
 aphrody-n2b-native = { workspace = true }
 aphrody-oxc-bridge = { workspace = true }
 # World/VFS/formats are qualified independently of absent authentic Wiki data.
-aphrody-manga = { workspace = true }
 aphrody-rag-core = { workspace = true }
 aphrody-softraster = { workspace = true }
 aphrody-toolcall-repair = { workspace = true }

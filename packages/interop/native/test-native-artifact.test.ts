@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, test } from "bun:test";
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   hashNativeArtifact,
   NATIVE_ABI_VERSIONS,
@@ -115,7 +115,6 @@ async function isolated(code: string, env: Record<string, string | undefined>, c
       ...process.env,
       APHRODY_FFI_DEV: undefined,
       APHRODY_FFI_LIB: undefined,
-      SHENRON_FFI_LIB: undefined,
       ...env,
     },
     stdout: "pipe",
@@ -133,9 +132,18 @@ test("an installed package imports every public entry without checkout ancestors
   const path = temporary();
   cpSync(join(import.meta.dir, "src"), join(path, "src"), { recursive: true });
   cpSync(join(import.meta.dir, "package.json"), join(path, "package.json"));
+  // An installed package sees its declared dependencies (n2b re-exports @aphrody/runtime-sdk).
+  const { dependencies = {} } = (await Bun.file(join(import.meta.dir, "package.json")).json()) as {
+    dependencies?: Record<string, string>;
+  };
+  for (const name of Object.keys(dependencies)) {
+    const target = dirname(Bun.resolveSync(`${name}/package.json`, import.meta.dir));
+    mkdirSync(dirname(join(path, "node_modules", name)), { recursive: true });
+    symlinkSync(target, join(path, "node_modules", name), "dir");
+  }
   await isolated(
     `
-    for (const name of ["index", "cli", "web", "shenron", "manga", "svg", "render", "reproduce", "icons", "n2b", "oxc"])
+    for (const name of ["index", "cli", "web", "svg", "render", "reproduce", "icons", "n2b", "oxc"])
       await import("./src/" + name + ".ts");
     const { nativeLibraryLoaded } = await import("./src/library.ts");
     if (nativeLibraryLoaded()) throw new Error("native code loaded on import");

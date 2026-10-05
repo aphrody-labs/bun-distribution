@@ -2,21 +2,6 @@
   "schemaVersion": 1,
   "$comment": "Ratchet for inline interpreter invocations. Counts may only fall; new files fail the check.",
   "files": {
-    "apps/shenron/bot/tests/boot-without-services.test.ts": {
-      "count": 1,
-      "scope": "test",
-      "reason": "Fresh-process isolation fixture."
-    },
-    "apps/shenron/site/tests/databooks-freeze.test.ts": {
-      "count": 1,
-      "scope": "test",
-      "reason": "Fresh-process isolation fixture."
-    },
-    "packages/compat/n2b-client/test/binary-resolution.test.ts": {
-      "count": 1,
-      "scope": "test",
-      "reason": "Fresh-process isolation fixture."
-    },
     "packages/infra/update/test/tauri-sync-apply.test.ts": {
       "count": 1,
       "scope": "test",
@@ -63,11 +48,6 @@
       "reason": "Fresh-process isolation fixture."
     },
     "packages/interop/native/test-native-artifact.test.ts": {
-      "count": 1,
-      "scope": "test",
-      "reason": "Fresh-process isolation fixture."
-    },
-    "packages/shenron/pipeline/test/aphrody/native-contract.test.ts": {
       "count": 1,
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
@@ -126,11 +106,6 @@
       "count": 1,
       "scope": "host",
       "reason": "Calls the Bun binary under the VPS home, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
-    },
-    "scripts/audit/shenron/scripts/ops/ocr-french-databooks-aphrody.test.ts": {
-      "count": 1,
-      "scope": "test",
-      "reason": "Fresh-process isolation fixture."
     },
     "scripts/tools/install-vps-adapter.sh": {
       "count": 4,

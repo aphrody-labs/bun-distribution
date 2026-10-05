@@ -722,7 +722,8 @@ mod tests {
         let ws = dir.path().to_path_buf();
         let payload = stop_payload(&ws, "pas fini");
         for expected in 1..=2 {
-            let reply = handle_hook_in(HookEvent::Stop, &payload, std::slice::from_ref(&ws)).unwrap();
+            let reply =
+                handle_hook_in(HookEvent::Stop, &payload, std::slice::from_ref(&ws)).unwrap();
             assert_eq!(reply["decision"], "continue");
             assert_eq!(load_state(&ws).unwrap().iteration, expected);
         }
@@ -789,7 +790,8 @@ mod tests {
         failing["terminationReason"] = json!("error");
         failing["error"] = json!("quota");
         for _ in 1..MAX_ERROR_STREAK {
-            let reply = handle_hook_in(HookEvent::Stop, &failing, std::slice::from_ref(&ws)).unwrap();
+            let reply =
+                handle_hook_in(HookEvent::Stop, &failing, std::slice::from_ref(&ws)).unwrap();
             assert_eq!(reply["decision"], "continue");
         }
         assert_eq!(load_state(&ws).unwrap().error_streak, MAX_ERROR_STREAK - 1);
@@ -812,7 +814,8 @@ mod tests {
         let dir = armed_ws(5);
         let ws = dir.path().to_path_buf();
         let payload = post_invocation_payload(&ws, 3, "je continue");
-        let reply = handle_hook_in(HookEvent::PostInvocation, &payload, std::slice::from_ref(&ws)).unwrap();
+        let reply =
+            handle_hook_in(HookEvent::PostInvocation, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply, json!({}));
         let st = load_state(&ws).unwrap();
         assert_eq!((st.invocations, st.last_invocation_num, st.iteration), (1, 3, 0));
@@ -828,7 +831,8 @@ mod tests {
         assert!(load_state(&ws).unwrap().done_seen);
         // `finalModelOutput` vide : la sentinelle captée au tour précédent suffit.
         let reply =
-            handle_hook_in(HookEvent::Stop, &stop_payload(&ws, ""), std::slice::from_ref(&ws)).unwrap();
+            handle_hook_in(HookEvent::Stop, &stop_payload(&ws, ""), std::slice::from_ref(&ws))
+                .unwrap();
         assert_eq!(reply["decision"], "allow_stop");
         assert!(load_state(&ws).is_none());
     }
@@ -843,14 +847,16 @@ mod tests {
             "prompt_response": "pas fini",
         });
         assert_eq!(detect_event(&payload), HookEvent::AfterAgent);
-        let reply = handle_hook_in(HookEvent::AfterAgent, &payload, std::slice::from_ref(&ws)).unwrap();
+        let reply =
+            handle_hook_in(HookEvent::AfterAgent, &payload, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["decision"], "deny");
         assert!(reply["reason"].as_str().unwrap().contains("ship feature X"));
         let done = json!({
             "hook_event_name": "AfterAgent",
             "prompt_response": "ok\nAPHRODY_LOOP_DONE",
         });
-        let reply = handle_hook_in(HookEvent::AfterAgent, &done, std::slice::from_ref(&ws)).unwrap();
+        let reply =
+            handle_hook_in(HookEvent::AfterAgent, &done, std::slice::from_ref(&ws)).unwrap();
         assert_eq!(reply["continue"], true);
         assert!(reply["systemMessage"].as_str().unwrap().contains("objectif atteint"));
         assert!(load_state(&ws).is_none());

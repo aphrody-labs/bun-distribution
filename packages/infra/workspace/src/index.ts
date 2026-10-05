@@ -38,7 +38,6 @@ export { runCargoBoundaries } from "./cargo-boundaries.ts";
 export { runAutomationInventory } from "./automation-inventory.ts";
 export { runRuntimeGate } from "./runtime-gate.ts";
 export { runIecodeDoctor } from "./iecode-doctor.ts";
-export { runKoharuRelease } from "./koharu-release.ts";
 export { runPowerShellSyntax } from "./powershell-syntax.ts";
 export { runWorkspaceClean } from "./workspace-clean.ts";
 export { scanRepository, runRepositoryState } from "./repository-state.ts";
@@ -65,7 +64,7 @@ export {
   auditCargoRelease,
   classifyRequirements,
 } from "./cargo-release-audit.ts";
-export { runShenron, shenronRoots } from "./shenron.ts";
+export { runShenron } from "./shenron.ts";
 export { getDiscordBotsStatus, runDiscord } from "./discord.ts";
 export type { DiscordBotStatus } from "./discord.ts";
 

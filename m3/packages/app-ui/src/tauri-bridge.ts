@@ -69,23 +69,18 @@ export async function tauriInvoke<T>(
   return null;
 }
 
-export interface ShenronChatResponse {
+export interface LocalAiAnswer {
   answer: string;
-  mode: string;
-  hits: Array<{
-    title: string;
-    url: string;
-    snippet: string;
-    score: number;
-    kind: string;
-    source_id?: string | null;
-  }>;
 }
 
-export async function askShenron(query: string): Promise<ShenronChatResponse> {
-  const result = await tauriInvoke<ShenronChatResponse>("aphrody_shenron_chat", { query });
-  if (!result) throw new Error("L’assistant Shenron est disponible dans l’application de bureau.");
-  return result;
+/** Ask the local chat model served by the managed `llama-server` (`studio_native_chat`). */
+export async function askLocalAi(prompt: string): Promise<LocalAiAnswer> {
+  const result = await tauriInvoke<{ choices?: Array<{ message?: { content?: string } }> }>(
+    "studio_native_chat",
+    { messages: [{ role: "user", content: prompt }], temperature: null, maxTokens: null },
+  );
+  if (!result) throw new Error("L’assistant local est disponible dans l’application de bureau.");
+  return { answer: result.choices?.[0]?.message?.content ?? "" };
 }
 
 // ==========================================

@@ -6,7 +6,7 @@ import { filterSessionsList, SYSTEM_PRESETS, TOKEN_LIMIT_OPTIONS } from "./syste
 import { SIDEBAR_COLLAPSED_KEY, STORE_SIDEBAR_COLLAPSED } from "./preferences";
 
 describe("Jan Parity - System Presets & Inference Tuning", () => {
-  test("SYSTEM_PRESETS includes default, engineer, code_reviewer, shenron, and custom presets", () => {
+  test("SYSTEM_PRESETS includes default, engineer, code_reviewer and custom presets", () => {
     expect(SYSTEM_PRESETS.default).toBeDefined();
     expect(SYSTEM_PRESETS.default.label).toBe("Default assistant");
     expect(SYSTEM_PRESETS.default.prompt.length).toBeGreaterThan(10);
@@ -18,10 +18,6 @@ describe("Jan Parity - System Presets & Inference Tuning", () => {
     expect(SYSTEM_PRESETS.code_reviewer).toBeDefined();
     expect(SYSTEM_PRESETS.code_reviewer.label).toBe("Rigorous code reviewer");
     expect(SYSTEM_PRESETS.code_reviewer.prompt).toContain("code reviewer");
-
-    expect(SYSTEM_PRESETS.shenron).toBeDefined();
-    expect(SYSTEM_PRESETS.shenron.label).toBe("Shenron DB sage");
-    expect(SYSTEM_PRESETS.shenron.prompt).toContain("Shenron");
 
     expect(SYSTEM_PRESETS.custom).toBeDefined();
     expect(SYSTEM_PRESETS.custom.label).toContain("Custom");
@@ -39,8 +35,16 @@ describe("Jan Parity - System Presets & Inference Tuning", () => {
 
 describe("Kunkun Parity - Search & Filtering", () => {
   const sampleSessions = [
-    { id: "thread-abc-123", preview: "Rust refactor of aphrody-app", cwd: "/home/user/src/aphrody" },
-    { id: "thread-def-456", preview: "Shenron canon analysis of Toriyama manga", cwd: "/home/user/src/shenron" },
+    {
+      id: "thread-abc-123",
+      preview: "Rust refactor of aphrody-app",
+      cwd: "/home/user/src/aphrody",
+    },
+    {
+      id: "thread-def-456",
+      preview: "Shenron canon analysis of Toriyama manga",
+      cwd: "/home/user/src/shenron",
+    },
     { id: "thread-ghi-789", preview: "Database optimization", cwd: "/home/user/data" },
   ];
 

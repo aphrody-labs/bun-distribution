@@ -27,7 +27,6 @@
     missing_docs,
     missing_debug_implementations,
     clippy::all,
-    clippy::cargo,
     clippy::missing_inline_in_public_items,
     clippy::must_use_candidate
 )]

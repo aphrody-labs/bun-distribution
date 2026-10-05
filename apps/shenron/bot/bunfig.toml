@@ -1,6 +1,0 @@
-[run]
-# Preload reflect-metadata before every bun run for tsyringe decorators
-preload = ["./src/lib/preload.ts"]
-
-[test]
-preload = ["./src/lib/preload.ts"]

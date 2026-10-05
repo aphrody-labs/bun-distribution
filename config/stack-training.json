@@ -91,9 +91,9 @@
     {
       "id": "shenron",
       "role": "Dragon Ball domain application on the RG runtime plane",
-      "source": "https://github.com/aphrody-labs/aphrody",
+      "source": "https://github.com/aphrody-labs/shenron",
       "production": true,
-      "monorepoPaths": "apps/shenron, packages/shenron",
+      "monorepoPaths": "apps/site, apps/bot, packages/* (aphrody-labs/shenron, extracted from the Aphrody monorepo on 2026-10-05 with history)",
       "note": "Imported into the monorepo at shenron 58e03b40 (its last commit); the separate shenron repository was deleted on 2026-10-01 after a verified backup. The running vps release /srv/shenron/releases/4cac743f is a self-contained artifact."
     },
     {
@@ -147,7 +147,7 @@
       "name": "@aphrody/challonge",
       "value": "medium",
       "role": "tournament data adapter",
-      "source": "https://github.com/aphrody-labs/aphrody (packages/shenron/pipeline BxcBridge; former bxc repository deleted 2026-10-01)",
+      "source": "https://github.com/aphrody-labs/shenron (packages/pipeline BxcBridge; former bxc repository deleted 2026-10-01)",
       "policy": "domain-optional"
     },
     {

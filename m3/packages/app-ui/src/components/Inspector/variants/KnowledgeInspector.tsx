@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-// Knowledge Inspector: Real Aphrody & Shenron AI Assistant for Spacedrive
+// Knowledge Inspector: Aphrody local AI assistant for Spacedrive
 import { Icon, m3FocusRing, CircularProgress, toast } from "@aphrody/m3-primitives";
 import { useState } from "react";
 import clsx from "clsx";
-import { askShenron, runRagSearch } from "../../../tauri-bridge";
+import { askLocalAi, runRagSearch } from "../../../tauri-bridge";
 import { useI18n } from "../../../i18n";
 
 interface Message {
@@ -22,7 +22,7 @@ export function KnowledgeInspector() {
       id: 1,
       role: "assistant",
       content:
-        "Bonjour ! Je suis l'assistant Aphrody / Shenron. Je peux explorer vos documents, indexer votre base vectorielle RAG et répondre à vos questions sur vos données.",
+        "Bonjour ! Je suis l'assistant Aphrody. Je peux explorer vos documents, indexer votre base vectorielle RAG et répondre à vos questions sur vos données.",
       timestamp: new Date(),
     },
   ]);
@@ -44,12 +44,12 @@ export function KnowledgeInspector() {
     setLoading(true);
 
     try {
-      // Direct call to real Shenron / local RAG AI bridge
-      const response = await askShenron(promptToSend);
+      // Local chat model first, then the RAG search below as a fallback.
+      const response = await askLocalAi(promptToSend);
       const assistantMessage: Message = {
         id: userMessageId + 1,
         role: "assistant",
-        content: response?.answer || "Aucune réponse retournée par Shenron.",
+        content: response?.answer || "Aucune réponse retournée par le modèle local.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
@@ -58,9 +58,13 @@ export function KnowledgeInspector() {
       try {
         const ragResponse = await runRagSearch(promptToSend, 3);
         const results = ragResponse?.results || [];
-        const fallbackText = results.length > 0
-          ? `Résultats RAG trouvés :\n` + results.map((r, i) => `${i + 1}. ${r.path || "Document"} (ligne: ${r.line ?? "N/A"})`).join("\n")
-          : "Aucune information pertinente trouvée dans la base RAG locale.";
+        const fallbackText =
+          results.length > 0
+            ? `Résultats RAG trouvés :\n` +
+              results
+                .map((r, i) => `${i + 1}. ${r.path || "Document"} (ligne: ${r.line ?? "N/A"})`)
+                .join("\n")
+            : "Aucune information pertinente trouvée dans la base RAG locale.";
         setMessages((prev) => [
           ...prev,
           {
@@ -103,8 +107,10 @@ export function KnowledgeInspector() {
             <Icon name="auto_awesome" size={20} filled />
           </div>
           <div>
-            <div className="text-title-medium font-semibold text-on-surface">Shenron assistant</div>
-            <div className="text-body-small text-on-surface-variant">RAG & connaissances souveraines</div>
+            <div className="text-title-medium font-semibold text-on-surface">Assistant Aphrody</div>
+            <div className="text-body-small text-on-surface-variant">
+              RAG & connaissances souveraines
+            </div>
           </div>
         </div>
       </div>
@@ -125,11 +131,7 @@ export function KnowledgeInspector() {
                   : "bg-secondary-container text-on-secondary-container",
               )}
             >
-              {msg.role === "assistant" ? (
-                <Icon name="auto_awesome" size={16} filled />
-              ) : (
-                "U"
-              )}
+              {msg.role === "assistant" ? <Icon name="auto_awesome" size={16} filled /> : "U"}
             </div>
 
             {/* Message content */}
@@ -161,7 +163,7 @@ export function KnowledgeInspector() {
         {loading && (
           <div className="flex items-center gap-2 text-on-surface-variant text-body-small italic px-2">
             <CircularProgress radius={10} progress={65} />
-            <span>{t("inspector.generating_answer", "Shenron analyse le fichier...")}</span>
+            <span>{t("inspector.generating_answer", "Analyse du fichier...")}</span>
           </div>
         )}
       </div>

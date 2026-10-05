@@ -1,3 +1,6 @@
+// WebKitGTK 2.40 deprecates run_javascript; kept as upstream wry does until its evaluate_javascript port.
+#![allow(deprecated)]
+
 use std::{cell::RefCell, rc::Rc};
 
 use gtk::{

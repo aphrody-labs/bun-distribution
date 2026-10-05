@@ -1,25 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-// Studio: the Shenron × Koharu workspace of the desktop app (docs/plans/ui/aphrody-app-studio.md).
+// Studio of the desktop app (docs/plans/ui/aphrody-app-studio.md): agent tools and Drive.
 // Each section calls an existing native owner through typed Studio commands.
 import { useEffect, useState, type ComponentType } from "react";
 import { useSearchParams } from "react-router-dom";
 import { studioSection, studioSections, type StudioSection } from "./navigation";
 export { studioSections, type StudioSection } from "./navigation";
-import { MangaStudio } from "./MangaStudio";
-import { ShenronStudio } from "./ShenronStudio";
-import { AdminStudio } from "./AdminStudio";
-import { TrainingStudio } from "./TrainingStudio";
-import { DatabooksStudio } from "./DatabooksStudio";
 import { DriveStudio } from "./DriveStudio";
 import { A2AStudio } from "./A2AStudio";
 
 const panels: Record<StudioSection, ComponentType> = {
-  shenron: ShenronStudio,
   a2a: A2AStudio,
-  manga: MangaStudio,
-  admin: AdminStudio,
-  training: TrainingStudio,
-  databooks: DatabooksStudio,
   drive: DriveStudio,
 };
 

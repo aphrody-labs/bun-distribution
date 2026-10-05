@@ -17,15 +17,8 @@ import {
   loadNativeLibrary,
   EXPECTED_ABI_VERSION,
   EXPECTED_WEB_ABI_VERSION,
-  EXPECTED_SHENRON_ABI_VERSION,
-  EXPECTED_MANGA_ABI_VERSION,
 } from "./library";
-export {
-  EXPECTED_ABI_VERSION,
-  EXPECTED_WEB_ABI_VERSION,
-  EXPECTED_SHENRON_ABI_VERSION,
-  EXPECTED_MANGA_ABI_VERSION,
-};
+export { EXPECTED_ABI_VERSION, EXPECTED_WEB_ABI_VERSION };
 
 const ENCODER = new TextEncoder();
 
@@ -46,7 +39,7 @@ let liveIndexHandles = 0;
 let liveDomTrees = 0;
 const liveJobIds = new Set<number>();
 
-/** @internal Shared native library handle for the Aphrody, Shenron, Web and Manga exports. */
+/** @internal Shared native library handle for the Aphrody and Web exports. */
 export function loadLib(): FfiLibrary {
   return loadNativeLibrary();
 }
@@ -750,100 +743,6 @@ export function webXAlgorithmRank(
     ),
   );
   return JSON.parse(result) as unknown;
-}
-
-/** Runtime ABI revision of the Shenron command and service exports. */
-export function shenronAbiVersion(): number {
-  return loadLib().symbols.shenron_abi_version();
-}
-
-/** Shenron CLI version. */
-export function shenronVersion(): string {
-  const value = loadLib().symbols.shenron_version();
-  if (value === null) throw new Error("aphrody-ffi returned a null Shenron version");
-  return value.toString();
-}
-
-/** Run a Shenron command with inherited stdio. Arguments exclude `shenron`. */
-export function shenronRun(args: string[]): number {
-  validateCliArgs(args);
-  return loadLib().symbols.shenron_run_json(cstr(JSON.stringify(args)));
-}
-
-/** Run a Shenron command and capture stdout and stderr without spawning a process. */
-export function shenronRunCaptured(args: string[]): CapturedResult {
-  validateCliArgs(args);
-  const pointer = loadLib().symbols.shenron_run_captured(cstr(JSON.stringify(args)));
-  return parseCapturedResult(
-    readOwnedString(pointer, (value) => loadLib().symbols.shenron_string_free(value)),
-    "Shenron",
-  );
-}
-
-/** Search Shenron RAG; the returned JSON carries the CLI code, stdout and stderr. */
-export function shenronRagSearch(query: string, limit = 10, kind?: string): CapturedResult {
-  if (!Number.isInteger(limit) || limit < 1)
-    throw new RangeError("RAG limit must be a positive integer");
-  const pointer = loadLib().symbols.shenron_rag_search(
-    cstr(query),
-    limit,
-    kind === undefined ? null : cstr(kind),
-  );
-  return parseCapturedResult(
-    readOwnedString(pointer, (value) => loadLib().symbols.shenron_string_free(value)),
-    "Shenron RAG search",
-  );
-}
-
-/** Read Shenron RAG statistics; the returned JSON carries code/stdout/stderr. */
-export function shenronRagStats(): CapturedResult {
-  const pointer = loadLib().symbols.shenron_rag_stats();
-  return parseCapturedResult(
-    readOwnedString(pointer, (value) => loadLib().symbols.shenron_string_free(value)),
-    "Shenron RAG stats",
-  );
-}
-
-/** Chunk Markdown through Aphrody's canonical Shenron-parity RAG implementation. */
-export function shenronRagChunk(
-  markdown: string,
-  maxChars = 1400,
-  overlapPct = 0.15,
-): Array<{ content: string; section: string }> {
-  if (!Number.isInteger(maxChars) || maxChars < 1)
-    throw new RangeError("maxChars must be positive");
-  if (!Number.isFinite(overlapPct) || overlapPct < 0 || overlapPct > 1)
-    throw new RangeError("overlapPct must be between zero and one");
-  const pointer = loadLib().symbols.shenron_rag_chunk(cstr(markdown), maxChars, overlapPct);
-  const raw = readOwnedString(pointer, (value) => loadLib().symbols.shenron_string_free(value));
-  const result = JSON.parse(raw) as unknown;
-  if (!Array.isArray(result)) throw new Error("Aphrody RAG chunker returned an invalid response");
-  return result as Array<{ content: string; section: string }>;
-}
-
-/** Read sanitized Shenron authentication status; secret values are never returned. */
-export function shenronAuthStatus(): CapturedResult {
-  const pointer = loadLib().symbols.shenron_auth_status();
-  return parseCapturedResult(
-    readOwnedString(pointer, (value) => loadLib().symbols.shenron_string_free(value)),
-    "Shenron auth status",
-  );
-}
-
-/** Read the canonical local Shenron persona prompt. */
-export function shenronPersonaPrompt(): string {
-  const value = loadLib().symbols.shenron_persona_prompt();
-  if (value === null) throw new Error("shenron_persona_prompt returned a null pointer");
-  return value.toString();
-}
-
-/** Ask the Shenron persona; result carries code/stdout/stderr. */
-export function shenronPersonaAsk(question: string): CapturedResult {
-  const pointer = loadLib().symbols.shenron_persona_ask(cstr(question));
-  return parseCapturedResult(
-    readOwnedString(pointer, (value) => loadLib().symbols.shenron_string_free(value)),
-    "Shenron persona",
-  );
 }
 
 function validateCliArgs(args: string[]): void {

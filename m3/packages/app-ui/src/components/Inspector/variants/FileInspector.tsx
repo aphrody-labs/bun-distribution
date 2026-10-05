@@ -26,7 +26,7 @@ import {
 import { getIcon } from "@aphrody/assets/util";
 import type { File, SdPath } from "@aphrody/drive-client";
 import { toast, Icon, Button } from "@aphrody/m3-primitives";
-import { askShenron } from "../../../tauri-bridge";
+import { askLocalAi } from "../../../tauri-bridge";
 import { isAudioVideoEligible } from "../../../routes/explorer/ai-helpers";
 import { useAskAphrody } from "../../../routes/explorer/hooks/useAskAphrody";
 import { clsx } from "clsx";
@@ -1556,7 +1556,7 @@ function ChatTab({ file }: { file?: File }) {
   >([
     {
       id: 1,
-      sender: "Shenron AI",
+      sender: "Aphrody AI",
       content: file
         ? `Je suis prêt à analyser le fichier "${file.name}". Que souhaitez-vous savoir ou extraire ?`
         : "Je suis prêt à analyser votre fichier sélectionné.",
@@ -1584,12 +1584,12 @@ function ChatTab({ file }: { file?: File }) {
 
     try {
       const prompt = file ? `[Fichier: ${file.name} (Taille: ${file.size} octets)]\n${text}` : text;
-      const res = await askShenron(prompt);
+      const res = await askLocalAi(prompt);
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
-          sender: "Shenron AI",
+          sender: "Aphrody AI",
           content: res?.answer || "Analyse terminée.",
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           isAI: true,
@@ -1647,9 +1647,7 @@ function ChatTab({ file }: { file?: File }) {
           </div>
         ))}
         {loading && (
-          <div className="text-[11px] text-on-surface-variant italic px-2">
-            Shenron réfléchit...
-          </div>
+          <div className="text-[11px] text-on-surface-variant italic px-2">Analyse en cours...</div>
         )}
       </div>
 

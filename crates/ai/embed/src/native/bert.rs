@@ -166,12 +166,12 @@ impl NativeBert {
                 cfg.hidden_act
             )));
         }
-        if let Some(kind) = cfg.position_embedding_type.as_deref() {
-            if kind != "absolute" {
-                return Err(Error::InvalidInput(format!(
-                    "unsupported position_embedding_type `{kind}`"
-                )));
-            }
+        if let Some(kind) = cfg.position_embedding_type.as_deref()
+            && kind != "absolute"
+        {
+            return Err(Error::InvalidInput(format!(
+                "unsupported position_embedding_type `{kind}`"
+            )));
         }
         if !cfg.hidden_size.is_multiple_of(cfg.num_attention_heads) {
             return Err(Error::InvalidInput("hidden_size not divisible by heads".into()));
@@ -373,10 +373,10 @@ impl NativeBert {
                     return Err(Error::InvalidInput("type_ids length mismatch".into()));
                 }
                 // Models without segment embeddings (XLM-R: type_vocab_size = 1) get 0.
-                if d.type_vocab > 1 {
-                    if let Some(bad) = types.iter().find(|&&t| t as usize >= d.type_vocab) {
-                        return Err(Error::InvalidInput(format!("type id {bad} >= type vocab")));
-                    }
+                if d.type_vocab > 1
+                    && let Some(bad) = types.iter().find(|&&t| t as usize >= d.type_vocab)
+                {
+                    return Err(Error::InvalidInput(format!("type id {bad} >= type vocab")));
                 }
             }
         }

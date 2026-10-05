@@ -235,15 +235,15 @@ fn probe(
     });
     output.emit_report(&report, &json)?;
 
-    if let Some(required) = required {
-        if model.provider != required {
-            // A batch job that silently ran on CPU is worse than one that
-            // refused to start, so this is an error, not a warning.
-            return Err(miette::miette!(
-                "required provider `{required}` but the session landed on `{}`",
-                model.provider
-            ));
-        }
+    if let Some(required) = required
+        && model.provider != required
+    {
+        // A batch job that silently ran on CPU is worse than one that
+        // refused to start, so this is an error, not a warning.
+        return Err(miette::miette!(
+            "required provider `{required}` but the session landed on `{}`",
+            model.provider
+        ));
     }
     Ok(())
 }

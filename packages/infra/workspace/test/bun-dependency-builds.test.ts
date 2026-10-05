@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { mkdtemp, mkdir, rm, writeFile, readFile, rename } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runShenron } from "../src/shenron.ts";
 import { buildDependencies, dependencyBuildPlan } from "../src/bun-dependency-builds.ts";
 
 async function fixture(run: (root: string) => Promise<void>, failure = false) {
@@ -136,64 +135,5 @@ test("duplicate workspace owners fail before any build", async () => {
     await expect(dependencyBuildPlan(root, ["fixture-app"])).rejects.toThrow(
       "Duplicate workspace artifact owner: base",
     );
-  });
-});
-
-test("Shenron typecheck prepares dependencies and refuses a failed artifact", async () => {
-  await fixture(async (root) => {
-    await mkdir(join(root, "apps/shenron"), { recursive: true });
-    await mkdir(join(root, "packages/shenron"), { recursive: true });
-    await rename(join(root, "packages/app"), join(root, "apps/shenron/app"));
-    await writeFile(
-      join(root, "package.json"),
-      JSON.stringify({ workspaces: ["apps/shenron/*", "packages/*", "!packages/excluded"] }),
-    );
-    await writeFile(
-      join(root, "apps/shenron/app/package.json"),
-      JSON.stringify({
-        name: "fixture-app",
-        dependencies: { bridge: "workspace:*" },
-        scripts: { typecheck: "bun gate.ts" },
-      }),
-    );
-    await writeFile(
-      join(root, "apps/shenron/app/gate.ts"),
-      `await Bun.write(${JSON.stringify(join(root, "gate.log"))}, "ran");`,
-    );
-    expect(await runShenron(["check", "typecheck"], root)).toBe(17);
-    expect(await Bun.file(join(root, "gate.log")).exists()).toBe(false);
-  }, true);
-});
-
-test("Shenron compile selects its owner leaf once and prepares workspace artifacts", async () => {
-  await fixture(async (root) => {
-    await mkdir(join(root, "apps/shenron"), { recursive: true });
-    await mkdir(join(root, "packages/shenron"), { recursive: true });
-    await rename(join(root, "packages/app"), join(root, "apps/shenron/app"));
-    await writeFile(
-      join(root, "package.json"),
-      JSON.stringify({ workspaces: ["apps/shenron/*", "packages/*", "!packages/excluded"] }),
-    );
-    await writeFile(
-      join(root, "apps/shenron/app/package.json"),
-      JSON.stringify({
-        name: "fixture-app",
-        dependencies: { bridge: "workspace:*" },
-        scripts: { compile: "bun public.ts", "compile:owner": "bun owner.ts" },
-      }),
-    );
-    await writeFile(
-      join(root, "apps/shenron/app/public.ts"),
-      'throw new Error("public wrapper must not recurse");',
-    );
-    await writeFile(
-      join(root, "apps/shenron/app/owner.ts"),
-      `await Bun.write(${JSON.stringify(join(root, "owner-args.json"))}, JSON.stringify(process.argv.slice(2)));`,
-    );
-    expect(await runShenron(["script", "fixture-app", "compile", "--fixture"], root)).toBe(0);
-    expect(await readFile(join(root, "builds.log"), "utf8")).toBe("base\nmiddle\n");
-    expect(JSON.parse(await readFile(join(root, "owner-args.json"), "utf8"))).toEqual([
-      "--fixture",
-    ]);
   });
 });

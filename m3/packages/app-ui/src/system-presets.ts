@@ -9,19 +9,18 @@ export interface SystemPreset {
 export const SYSTEM_PRESETS: Record<string, SystemPreset> = {
   default: {
     label: "Default assistant",
-    prompt: "You are Aphrody, an advanced AI software engineering assistant running on local hardware.",
+    prompt:
+      "You are Aphrody, an advanced AI software engineering assistant running on local hardware.",
   },
   engineer: {
     label: "Autonomous engineer",
-    prompt: "You are an autonomous senior staff engineer. Analyze problems deeply, formulate verified solutions, follow clean code principles, and prioritize robust error handling.",
+    prompt:
+      "You are an autonomous senior staff engineer. Analyze problems deeply, formulate verified solutions, follow clean code principles, and prioritize robust error handling.",
   },
   code_reviewer: {
     label: "Rigorous code reviewer",
-    prompt: "You are a rigorous code reviewer. Check for edge cases, performance pitfalls, security vulnerabilities, and adherence to system invariants.",
-  },
-  shenron: {
-    label: "Shenron DB sage",
-    prompt: "You are Shenron, the eternal dragon and sage of canonical Dragon Ball knowledge. Ground every response in official Toriyama works and databooks.",
+    prompt:
+      "You are a rigorous code reviewer. Check for edge cases, performance pitfalls, security vulnerabilities, and adherence to system invariants.",
   },
   custom: {
     label: "Custom prompt...",
@@ -33,13 +32,14 @@ export const TOKEN_LIMIT_OPTIONS = [1024, 2048, 4096, 8192, 16384, 32768] as con
 
 export function filterSessionsList<T extends { id: string; preview?: string; cwd?: string }>(
   sessions: T[],
-  query: string
+  query: string,
 ): T[] {
   if (!query.trim()) return sessions;
   const q = query.toLowerCase();
-  return sessions.filter((s) => (
-    (s.preview?.toLowerCase().includes(q) ?? false) ||
-    s.id.toLowerCase().includes(q) ||
-    (s.cwd?.toLowerCase().includes(q) ?? false)
-  ));
+  return sessions.filter(
+    (s) =>
+      (s.preview?.toLowerCase().includes(q) ?? false) ||
+      s.id.toLowerCase().includes(q) ||
+      (s.cwd?.toLowerCase().includes(q) ?? false),
+  );
 }

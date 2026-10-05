@@ -86,7 +86,7 @@ impl AgyBackend {
         if let Ok(p) = std::env::var("APHRODY_CLOUDCODE_PROJECT")
             .or_else(|_| std::env::var("GOOGLE_CLOUD_PROJECT"))
             && !p.is_empty()
-            {
+        {
             let _ = project.set(p);
         }
 

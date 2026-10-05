@@ -28,8 +28,8 @@ UI is canonical in `m3/packages/app-ui` and `crates/ui/*`.
 - Rust: `crates/<domain>/<crate>`; general CLI: `apps/cli`.
 - Bun apps/packages: `apps/<domain>/<app>`, `packages/<domain>/<package>`.
 - Docs: `docs/<category>/<domain>`; scripts: `scripts/{audit,build,dev,migration,release,tools}`.
-- Infra: `config/host/` (`inventory/`, `systemd/`, `nginx/`, `rg/`, `nie/`); live audits: `scripts/audit/live*`;
-  Shenron admin: `scripts/tools/shenron`.
+- Infra: `config/host/` (`inventory/`, `systemd/`, `nginx/`, `rg/`, `nie/`, Shenron host plane); live
+  audits: `scripts/audit/live*`. Shenron and Koharu source live in `aphrody-labs/shenron`.
 
 [Rust naming](docs/architecture/rust-crate-naming.md) applies. Package/library/
 binary/CLI/schema/permission identities are compatibility contracts.

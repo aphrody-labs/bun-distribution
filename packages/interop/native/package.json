@@ -21,8 +21,6 @@
     "./src/*.js": "./src/*.ts",
     "./src/*": "./src/*",
     "./cli": "./src/cli.ts",
-    "./manga": "./src/manga.ts",
-    "./shenron": "./src/shenron.ts",
     "./web": "./src/web.ts",
     "./n2b": "./src/n2b.ts",
     "./oxc": "./src/oxc.ts",
@@ -38,7 +36,6 @@
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@aphrody/media": "workspace:*",
     "@aphrody/runtime-sdk": "workspace:*",
     "@aphrody/update": "workspace:*"
   },

@@ -221,96 +221,6 @@ APHRODY_API void aphrody_string_free(char *ptr);
  */
 APHRODY_NODISCARD APHRODY_API const char *aphrody_last_error(void);
 
-/* ========================================================================== */
-/* Shenron Sovereign Monorepo C-ABI Exports                                  */
-/* ========================================================================== */
-
-/**
- * @brief Runtime ABI revision of Shenron functions (currently #APHRODY_ABI_VERSION).
- */
-APHRODY_NODISCARD APHRODY_API uint32_t shenron_abi_version(void);
-
-/**
- * @brief Shenron library version string.
- */
-APHRODY_NODISCARD APHRODY_RETURNS_NONNULL APHRODY_API const char *shenron_version(void);
-
-/**
- * @brief Release a string returned by any Shenron FFI function.
- */
-APHRODY_API void shenron_string_free(char *ptr);
-
-/**
- * @brief Run a Shenron command with inherited stdio.
- */
-APHRODY_NODISCARD APHRODY_API int shenron_run(int argc, const char *const *argv);
-
-/**
- * @brief Run a Shenron command from a JSON array of arguments with inherited stdio.
- */
-APHRODY_NODISCARD APHRODY_API int shenron_run_json(const char *args_json);
-
-/**
- * @brief Run a Shenron command with captured stdio, returning `{"code":0,"stdout":"...","stderr":"..."}` JSON.
- */
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *shenron_run_captured(const char *args_json);
-
-/**
- * @brief Perform a high-speed RAG search on the Shenron index in-process.
- */
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *shenron_rag_search(const char *query, int limit, const char *kind);
-
-/**
- * @brief Retrieve Shenron RAG index statistics as a JSON string.
- */
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *shenron_rag_stats(void);
-
-/**
- * @brief Retrieve Shenron Sovereign Super Admin authentication status as a JSON string.
- */
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *shenron_auth_status(void);
-
-/**
- * @brief Retrieve the canonical Akira Toriyama (Tori-bot) x Shenron persona prompt.
- */
-APHRODY_NODISCARD APHRODY_RETURNS_NONNULL APHRODY_API const char *shenron_persona_prompt(void);
-
-/**
- * @brief Query the sovereign Akira Toriyama / Shenron persona directly.
- */
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *shenron_persona_ask(const char *question);
-
-/**
- * @brief Returns the Manga processing ABI version.
- */
-APHRODY_NODISCARD APHRODY_API uint32_t manga_abi_version(void);
-
-/**
- * @brief Detect speech bubbles, reading order and sound effects on raw image bytes.
- * Returns a JSON string containing detected bubbles and onomatopoeia.
- * Must be freed with ::manga_string_free or ::aphrody_string_free.
- */
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *manga_detect_bubbles(const uint8_t *image_bytes, size_t image_len);
-
-/**
- * @brief Calculate optimal typesetting layout and font fitting for text inside a bounding box.
- * Returns a JSON string with layout details.
- * Must be freed with ::manga_string_free or ::aphrody_string_free.
- */
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *manga_typeset_fit(const char *text, float box_x, float box_y, float box_w, float box_h, int vertical);
-
-/**
- * @brief Execute the full manga pipeline and generate a multi-layer Photoshop (.psd) file.
- * Returns a JSON string with metadata and base64-encoded PSD file bytes.
- * Must be freed with ::manga_string_free or ::aphrody_string_free.
- */
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *manga_pipeline_run(const uint8_t *image_bytes, size_t image_len, const char *target_lang);
-
-/**
- * @brief Free a string allocated by manga_* functions.
- */
-APHRODY_API void manga_string_free(char *str);
-
 /* Web extraction and vector indexing share this native library.
  * Every returned char* below is owned by this library and must be freed with
  * aphrody_string_free or aphrody_web_free_string. */
@@ -386,13 +296,6 @@ APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_extract_links(con
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_extract_text(const char *html);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_normalize_url(const char *url);
 APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_http_request_submit(const char *request_ptr);
-
-/* Shenron RAG chunking and Manga scanlation. Owned results are released with
- * shenron_string_free / manga_string_free respectively. */
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *shenron_rag_chunk(const char *markdown, int max_chars, float overlap_pct);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *manga_scanlate_cdn(const char *url_or_path, const char *target_lang);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *manga_scanlate_databook(uint64_t databook_id, uint32_t plate_number, const char *target_lang);
-APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *manga_scanlate_chapter(uint64_t chapter_id, uint32_t plate_number, const char *target_lang);
 
 /* Zero-copy ABI (see src/zerocopy.rs). All memory is owned by the caller: the
  * library never allocates or frees. Document writers copy into `out` only when

@@ -1389,9 +1389,14 @@ async fn handle_web_crawl(request: WebCrawlRequest) -> miette::Result<()> {
             maintenance_interval_ms: 10_000,
             max_iterations: None,
         };
-        aphrody_web_crawl::crawl_daemon(&mut frontier, &ObscuraTransport::default(), &daemon_opts, None)
-            .await
-            .into_diagnostic()?
+        aphrody_web_crawl::crawl_daemon(
+            &mut frontier,
+            &ObscuraTransport::default(),
+            &daemon_opts,
+            None,
+        )
+        .await
+        .into_diagnostic()?
     } else {
         aphrody_web_crawl::crawl_bounded(&mut frontier, &ObscuraTransport::default(), &options)
             .await

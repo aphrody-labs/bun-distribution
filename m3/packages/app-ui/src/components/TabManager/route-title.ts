@@ -19,10 +19,6 @@ const titles: Record<string, string> = {
   "/redundancy": "Redondance",
   "/redundancy/at-risk": "Fichiers à risque",
   "/redundancy/compare": "Comparer les volumes",
-  "/admin": "Administration",
-  "/koharu": "Koharu · Manga & traduction",
-  "/manga": "Koharu · Manga & traduction",
-  "/shenron": "Shenron",
 };
 
 /** Null preserves titles supplied by a loaded source detail. */

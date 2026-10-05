@@ -405,13 +405,15 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 if apply {
                     command.arg("--apply");
                 }
-                let status = command.status().map_err(|error| miette::miette!("run bun: {error}"))?;
+                let status =
+                    command.status().map_err(|error| miette::miette!("run bun: {error}"))?;
                 if !status.success() {
                     return Err(miette::miette!("upstream-sources sync failed ({status})"));
                 }
                 return Ok(());
             }
-            let report = aphrody_git::source_report(&path, source_root.as_deref()).map_err(to_report)?;
+            let report =
+                aphrody_git::source_report(&path, source_root.as_deref()).map_err(to_report)?;
             emit(&serde_json::to_value(&report).map_err(to_report)?, pretty)?;
             if matches!(action, SourceAction::Verify) && !report.is_healthy() {
                 return Err(miette::miette!("upstream sources are not all healthy"));
@@ -423,7 +425,8 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 emit(&serde_json::to_value(&entries).map_err(to_report)?, pretty)?;
                 return Ok(());
             }
-            let id = id.ok_or_else(|| miette::miette!("an upstream id is required (see `list`)"))?;
+            let id =
+                id.ok_or_else(|| miette::miette!("an upstream id is required (see `list`)"))?;
             let entry = aphrody_git::upstream::find(&entries, &id).map_err(to_report)?;
             let client = GitHubClient::from_env().map_err(to_report)?;
             let value = match action {
@@ -471,15 +474,13 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
             if canonical_author {
                 command.arg("--canonical-author");
             }
-            command
-                .arg("--author-name")
-                .arg(&author_name)
-                .arg("--author-email")
-                .arg(&author_email);
+            command.arg("--author-name").arg(&author_name).arg("--author-email").arg(&author_email);
             if apply {
                 command.arg("--apply");
             }
-            let status = command.status().map_err(|error| miette::miette!("run bun git-attribution: {error}"))?;
+            let status = command
+                .status()
+                .map_err(|error| miette::miette!("run bun git-attribution: {error}"))?;
             if !status.success() {
                 return Err(miette::miette!("git attribution check/strip failed ({status})"));
             }
@@ -491,7 +492,9 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 .arg("clean-public-ai")
                 .arg("--root")
                 .arg(&root);
-            let status = command.status().map_err(|error| miette::miette!("run bun clean-public-ai: {error}"))?;
+            let status = command
+                .status()
+                .map_err(|error| miette::miette!("run bun clean-public-ai: {error}"))?;
             if !status.success() {
                 return Err(miette::miette!("clean-public-ai check failed ({status})"));
             }

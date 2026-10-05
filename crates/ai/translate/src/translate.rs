@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Moteur unifié de traduction aphrody — combine Aphrody Web Google Translate et le système Shenron
-//! JP -> FR.
+//! Moteur unifié de traduction aphrody (Aphrody Web Google Translate, Google RPC, MyMemory).
 //!
 //! Trois étages de backend :
 //!   - `Backend::WebGoogle` -> Moteur Google Translate multi-tier via un adaptateur Web explicite
@@ -9,13 +8,8 @@
 //!     haute disponibilité)
 //!   - `Backend::MyMemory`  -> API MyMemory historique (repli)
 //!
-//! Intégration Shenron :
-//!   - Détection d'incohérence amont (`intraduisible`)
-//!   - Découpage naturel (`segments_traduisibles`)
-//!   - Masquage des entités du domaine (`proteger_termes` via jetons Zeta, Yuni, Kilo...)
-//!   - Traduction du contexte préservé
-//!   - Réinjection de la terminologie canonique officielle (`restaurer_termes`)
-//!   - Contrôle qualité de sortie (`refus`) et finition de style Aphrody (`aphrodify`)
+//! La chaîne JP -> FR des databooks Dragon Ball (protection du lexique canonique, contrôle qualité)
+//! appartient à Shenron (`shenron-translate`, aphrody-labs/shenron) et s'appuie sur ce moteur.
 
 use std::{
     path::{Path, PathBuf},
@@ -29,11 +23,6 @@ use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tracing::warn;
-
-use crate::{
-    aphrodify,
-    shenron::{self, TermeLexique, default_canon_lexique},
-};
 
 /// Backend de traduction sélectionné.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -90,7 +79,6 @@ pub struct CacheFile {
 /// Moteur de traduction unifié.
 pub struct Translator {
     backend: Backend,
-    lexique: Vec<TermeLexique>,
     #[cfg(not(target_arch = "wasm32"))]
     client: reqwest::Client,
     cache: Arc<DashMap<String, String>>,
@@ -104,14 +92,13 @@ impl Translator {
     /// Construit un `Translator` avec le cache persistant par défaut.
     pub fn new(cache_path: PathBuf, contact_email: Option<String>) -> Result<Self> {
         let cache: Arc<DashMap<String, String>> = Arc::new(DashMap::new());
-        let lexique = default_canon_lexique();
 
         #[cfg(not(target_arch = "wasm32"))]
         {
             let _ = rustls::crypto::ring::default_provider().install_default();
 
             let client = reqwest::Client::builder()
-                .user_agent("aphrody-translate/2.0 (Google+Shenron engine)")
+                .user_agent("aphrody-translate/2.0")
                 .timeout(std::time::Duration::from_secs(15))
                 .build()?;
 
@@ -124,14 +111,14 @@ impl Translator {
                 }
             }
 
-            Ok(Self { backend: Backend::Auto, lexique, client, cache, cache_path, contact_email })
+            Ok(Self { backend: Backend::Auto, client, cache, cache_path, contact_email })
         }
 
         #[cfg(target_arch = "wasm32")]
         {
             let _ = cache_path;
             let _ = contact_email;
-            Ok(Self { backend: Backend::Auto, lexique, cache })
+            Ok(Self { backend: Backend::Auto, cache })
         }
     }
 
@@ -139,17 +126,6 @@ impl Translator {
     pub fn with_backend(mut self, backend: Backend) -> Self {
         self.backend = backend;
         self
-    }
-
-    /// Ajoute ou remplace le lexique canonique Shenron.
-    pub fn with_lexique(mut self, lexique: Vec<TermeLexique>) -> Self {
-        self.lexique = lexique;
-        self
-    }
-
-    /// Accès en lecture au lexique canonique.
-    pub fn lexique(&self) -> &[TermeLexique] {
-        &self.lexique
     }
 
     fn cache_key(source: &str, target: &str, text: &str) -> String {
@@ -173,9 +149,7 @@ impl Translator {
         })
     }
 
-    /// Traduit un texte vers le français.
-    /// Si le texte contient du japonais, route automatiquement vers la chaîne de souveraineté
-    /// Shenron JP -> FR avec protection du domaine et contrôle qualité.
+    /// Traduit un texte vers le français (source japonaise détectée, sinon anglaise).
     pub async fn translate(&self, text: &str) -> Result<String> {
         let stripped = text.trim();
         if stripped.is_empty() {
@@ -183,7 +157,7 @@ impl Translator {
         }
 
         if Self::is_japanese(stripped) {
-            self.translate_jp_to_fr(stripped).await
+            self.translate_with_lang(stripped, "ja", "fr").await
         } else {
             self.translate_with_lang(stripped, "en", "fr").await
         }
@@ -272,47 +246,6 @@ impl Translator {
                 Err(error) => Err(error),
             }
         }
-    }
-
-    /// Chaîne de traduction souveraine Japonais -> Français combinant Shenron + Aphrody Web Google.
-    pub async fn translate_jp_to_fr(&self, text: &str) -> Result<String> {
-        let stripped = text.trim();
-        if stripped.is_empty() {
-            return Ok(String::new());
-        }
-
-        // Étape 1 : Détection d'anomalie structurelle en amont (règle Shenron intraduisible)
-        if let Some(motif) = shenron::intraduisible(stripped) {
-            warn!(motif = %motif, "texte japonais jugé intraduisible par Shenron");
-            // Ne pas traduire un texte corrompu pour éviter le blanchiment d'hallucinations
-            return Ok(stripped.to_string());
-        }
-
-        // Étape 2 : Découpage déterministe en segments sûrs
-        let segments = shenron::segments_traduisibles(stripped, 280);
-        let mut segments_fr = Vec::new();
-
-        for seg in segments {
-            // Étape 3 : Masquage des termes du domaine (jetons Zeta, Yuni, Kilo...)
-            let prot = shenron::proteger_termes(&seg, &self.lexique);
-
-            // Étape 4 : Traduction du segment protégé via Google
-            let translated_mask = self.translate_with_lang(&prot.masque, "ja", "fr").await?;
-
-            // Étape 5 : Réinjection des termes canoniques français officiels
-            let restored = shenron::restaurer_termes(&translated_mask, &prot.table);
-
-            // Étape 6 : Contrôle qualité de sortie Shenron (refus)
-            if let Some(err) = shenron::refus(&restored, &seg) {
-                warn!(refus = %err, "contrôle qualité Shenron : traduction suspecte");
-            }
-
-            // Étape 7 : Finition sobre style Aphrody
-            let final_seg = aphrodify::aphrodify(&restored);
-            segments_fr.push(if final_seg.is_empty() { restored } else { final_seg });
-        }
-
-        Ok(segments_fr.join(" "))
     }
 
     #[cfg(not(target_arch = "wasm32"))]

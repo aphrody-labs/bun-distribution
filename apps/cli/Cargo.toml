@@ -17,7 +17,6 @@ workspace = true
 
 [features]
 default = []
-koharu = ["aphrody-command/koharu"]
 native = ["aphrody-command/native"]
 rag = ["aphrody-command/rag"]
 train = ["aphrody-command/train"]

@@ -294,10 +294,7 @@ pub struct CrawlDaemonOptions {
 impl Default for CrawlDaemonOptions {
     fn default() -> Self {
         Self {
-            base: CrawlOptions {
-                wait_for_revisits: true,
-                ..CrawlOptions::default()
-            },
+            base: CrawlOptions { wait_for_revisits: true, ..CrawlOptions::default() },
             idle_poll_ms: 1_000,
             maintenance_interval_ms: 10_000,
             max_iterations: None,
@@ -318,15 +315,15 @@ pub async fn crawl_daemon<T: CrawlTransport>(
     let mut iterations = 0;
 
     loop {
-        if let Some(ref rx) = shutdown {
-            if *rx.borrow() {
-                break;
-            }
+        if let Some(ref rx) = shutdown
+            && *rx.borrow()
+        {
+            break;
         }
-        if let Some(max_iter) = options.max_iterations {
-            if iterations >= max_iter {
-                break;
-            }
+        if let Some(max_iter) = options.max_iterations
+            && iterations >= max_iter
+        {
+            break;
         }
         iterations += 1;
 
@@ -493,11 +490,7 @@ async fn ingest_seed_sitemaps<T: CrawlTransport>(
 /// Canonical anchor extraction: resolved, fragment-normalised, de-duplicated
 /// `(url, anchor text)` pairs in document order. `skip_nofollow` drops
 /// `rel=nofollow` anchors. Shared by the crawler and the `aphrody-web` crawl.
-pub fn extract_links_opts(
-    html: &str,
-    page_url: &Url,
-    skip_nofollow: bool,
-) -> Vec<(Url, String)> {
+pub fn extract_links_opts(html: &str, page_url: &Url, skip_nofollow: bool) -> Vec<(Url, String)> {
     let dom = parse_html(html);
     let mut seen = HashSet::new();
     let mut links = Vec::new();
@@ -606,9 +599,11 @@ mod tests {
     async fn daemon_crawl_terminates_at_max_iterations_and_accumulates_results() {
         let mut frontier = Frontier::memory(FrontierOptions::default()).unwrap();
         frontier.enqueue(AddRequest::seed("https://daemon.test/"), now_ms()).unwrap();
-        let pages = HashMap::from([
-            ("https://daemon.test/".into(), "<main><h1>Daemon Home</h1><p>Daemon content is long enough to extract.</p></main>".into()),
-        ]);
+        let pages = HashMap::from([(
+            "https://daemon.test/".into(),
+            "<main><h1>Daemon Home</h1><p>Daemon content is long enough to extract.</p></main>"
+                .into(),
+        )]);
         let options = CrawlDaemonOptions {
             base: CrawlOptions {
                 allowed_domains: vec!["daemon.test".into()],

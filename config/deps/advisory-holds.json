@@ -24,9 +24,6 @@
     { "ecosystem": "npm", "name": "basic-ftp", "reason": "transitive major (5 to 6); moves with its consumer." },
     { "ecosystem": "npm", "name": "extract-zip", "reason": "no newer release (2.0.1 is latest)." },
     { "ecosystem": "npm", "name": "quill", "reason": "no newer release (2.0.3 is latest)." },
-    { "ecosystem": "npm", "name": "adm-zip", "reason": "0.6.0 is pinned exactly by @mintlify/cli and @mintlify/previewing (dev docs tool `mint`, @aphrody/koharu-docs only); 0.6.1 is already used by onnxruntime-node. Moves with the next mint release." },
-    { "ecosystem": "npm", "name": "js-yaml", "reason": "4.3.1 is pinned exactly by @mintlify/* (dev docs tool `mint`); every other consumer already resolves 4.3.2, 3.15.2 or 5.x. Moves with the next mint release." },
-    { "ecosystem": "npm", "name": "sharp", "reason": "0.33.5 is pinned by @mintlify/prebuild (dev docs tool `mint`); the catalog, next, miniflare and favicons resolve 0.35.x. Moves with the next mint release; the 0.35.5 copy is not affected." },
     { "ecosystem": "PyPI", "name": "torch", "reason": "pinned ==2.8.0 in aphrody-train: the 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke test." },
     { "ecosystem": "PyPI", "name": "transformers", "reason": "kept below 4.58 by aphrody-train (sentence-transformers 5.x line); 5.x needs sentence-transformers 6." }
   ]

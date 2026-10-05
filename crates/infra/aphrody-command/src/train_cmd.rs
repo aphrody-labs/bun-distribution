@@ -205,7 +205,9 @@ pub(crate) async fn run(args: TrainArgs) -> Result<()> {
             }
         },
         TrainAction::Promote { .. } => unreachable!("promotion was refused before state access"),
-        TrainAction::RegistryMigrate => unreachable!("registry migration returned before state access"),
+        TrainAction::RegistryMigrate => {
+            unreachable!("registry migration returned before state access")
+        },
     }
     Ok(())
 }

@@ -18,46 +18,6 @@ use tokio::{
     process::Command,
 };
 
-const EXPECTED_DRAGONBALL_TOOLS: &[&str] = &[
-    "dragonball.rag_search",
-    "dragonball.rag_context",
-    "dragonball.rag_ask",
-    "dragonball.sources",
-    "dragonball.data_coverage",
-    "dragonball.wiki_search",
-    "dragonball.wiki_list",
-    "dragonball.wiki_get",
-    "dragonball.wiki_categories",
-    "dragonball.manga_search",
-    "dragonball.manga_tomes",
-    "dragonball.manga_page",
-    "dragonball.manga_chapitre",
-    "dragonball.manga_planche",
-    "dragonball.manga_recherche",
-    "dragonball.manga_scanlate",
-    "dragonball.chronologie",
-    "dragonball.bot_stats",
-    "dragonball.bot_personas",
-    "dragonball.bot_leaderboard",
-    "dragonball.bot_commands",
-    "dragonball.news",
-    "dragonball.databooks_search",
-    "dragonball.databooks_planches",
-    "dragonball.databooks_get",
-    "dragonball.databooks_scanlate",
-    "dragonball.canon_check",
-    "dragonball.canon_references",
-    "dragonball.a2a_send",
-    "dragonball.a2a_task_status",
-    "dragonball.a2a_task_list",
-    "dragonball.a2a_agent_card",
-    "dragonball.admin_databooks_deposit",
-    "dragonball.admin_bot_commands",
-    "dragonball.admin_bot_command_execute",
-    "dragonball.admin_services",
-    "dragonball.admin_service_action",
-];
-
 /// The loader must accept the Claude Desktop / `.mcp.json` shape and surface
 /// the requested entry by name. This is the exact path `aphrody-mcp client
 /// list <server-name>` walks before opening a transport.
@@ -202,13 +162,14 @@ async fn stateless_mcp_discovers_and_lists_the_full_shenron_catalog() {
     assert_eq!(tools_response["id"], 2);
     let tools = tools_response["result"]["tools"].as_array().expect("tools array");
     let names: Vec<_> = tools.iter().filter_map(|tool| tool["name"].as_str()).collect();
-    let dragonball_names: Vec<_> =
-        names.iter().copied().filter(|name| name.starts_with("dragonball.")).collect();
-    assert_eq!(dragonball_names.len(), EXPECTED_DRAGONBALL_TOOLS.len());
-    for &name in EXPECTED_DRAGONBALL_TOOLS {
-        assert!(dragonball_names.contains(&name), "stateless tools/list is missing {name}");
-        let tool =
-            tools.iter().find(|tool| tool["name"].as_str() == Some(name)).expect("listed tool");
+    assert!(!names.is_empty(), "stateless tools/list returned no tools");
+    // The Dragon Ball tools are served by shenron-mcp (aphrody-labs/shenron), not this server.
+    assert!(
+        !names.iter().any(|name| name.starts_with("dragonball.")),
+        "dragonball.* tools must not be served by aphrody-mcp"
+    );
+    for tool in tools {
+        let name = tool["name"].as_str().unwrap_or_default();
         assert!(tool["inputSchema"].is_object(), "{name} must publish an object schema");
     }
 

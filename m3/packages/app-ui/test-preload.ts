@@ -9,7 +9,12 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 for (const name of ["react", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom"]) {
   const canonical = require(name);
-  const nestedPath = Bun.resolveSync(name, new URL("../../", import.meta.url).pathname);
+  let nestedPath: string;
+  try {
+    nestedPath = Bun.resolveSync(name, new URL("../../", import.meta.url).pathname);
+  } catch {
+    continue; // the nested workspace has no React of its own: nothing to alias
+  }
   const hostPath = Bun.resolveSync(name, import.meta.dir);
   if (nestedPath !== hostPath)
     mock.module(nestedPath, () => ({ ...canonical, default: canonical }));

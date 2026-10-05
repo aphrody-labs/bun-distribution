@@ -8,7 +8,6 @@
 //! incremental file indexing, and agent-facing toolcalls (`rag_search`, `rag_context`).
 
 pub mod config_resolve;
-pub mod dragonball;
 pub mod embedder;
 pub mod error;
 pub mod indexer;
@@ -17,7 +16,6 @@ pub mod redis_cache;
 pub mod reranker;
 pub mod schema;
 pub mod search;
-pub mod shenron;
 pub mod store;
 pub mod tools;
 
@@ -43,10 +41,6 @@ pub use redis_cache::RedisRagCache;
 pub use reranker::NativeReranker;
 pub use reranker::{LlamaServerReranker, NoopReranker, Reranker};
 pub use search::{RagSearcher, SearchMode, SearchOptions, SearchResult};
-pub use shenron::{
-    ShenronCorpusDoc, ShenronIngestOptions, ShenronIngestStats, ingest_shenron_docs,
-    load_shenron_corpus,
-};
 pub use store::{ChunkRecord, DocRecord, RagStats, RagStore, ScoredChunk};
 pub use tools::{
     RagContextTool, RagSearchTool, WebIngestTool, register_rag_tools, register_web_ingest_tool,

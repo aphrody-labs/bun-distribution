@@ -44,12 +44,6 @@ tauri-build = { workspace = true }
 [dependencies]
 reqwest = { workspace = true }
 aphrody-app-server = { workspace = true }
-# Shenron logic (health, RAG, training) used by the Studio commands, see src/studio.rs.
-aphrody-command = { workspace = true }
-# Offline Shenron corpus (databooks, wiki, manga) for the Studio, see src/studio.rs.
-aphrody-rag = { workspace = true }
-# Full Koharu editor backend (commands + state) hosted on the app's runtime, without CEF.
-koharu-app = { workspace = true }
 aphrody-capture = { workspace = true }
 aphrody-compat = { workspace = true }
 aphrody-diagnostics = { workspace = true }
@@ -68,7 +62,6 @@ aphrody-subsystem = { workspace = true }
 aphrody-systemd = { workspace = true }
 async-trait = { workspace = true }
 base64 = { workspace = true }
-koharu-library = { workspace = true }
 # The process-wide TLS provider the `__llama-daemon` entry installs before any HTTP client exists.
 rustls = { workspace = true }
 tauri = { workspace = true, features = ["dynamic-acl", "image-ico", "tray-icon"] }

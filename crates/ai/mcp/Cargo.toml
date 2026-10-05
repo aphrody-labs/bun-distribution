@@ -19,10 +19,12 @@ path = "src/main.rs"
 # The Obscura browser (HTTP + DOM + V8, plus the layout/paint engine for
 # screenshots and PDF) served natively. On by default: V8 ships prebuilt for
 # Linux and Windows MSVC (the only Windows toolchain aphrody uses).
-default = ["native-browser", "dragonball", "managed-llama"]
+default = ["native-browser", "managed-llama", "gateway-cache"]
+# Redis cache of the Shenron HTTP gateway search (`/api/v1/shenron/rag/search`), built on
+# `aphrody-rag::redis_cache`. On by default, as it was under the former `dragonball` feature.
+gateway-cache = ["dep:aphrody-rag"]
 # Managed llama.cpp daemon as the Shenron LLM backend when no chat base URL is configured.
 managed-llama = ["dep:aphrody-llama-server"]
-koharu = ["aphrody-manga/koharu"]
 native-browser = ["dep:aphrody-web-service", "aphrody-web-service/render"]
 # Obscura stealth (fingerprint + tracker blocking, wreq TLS impersonation).
 browser-stealth = ["native-browser", "aphrody-web-service/stealth"]
@@ -53,9 +55,6 @@ vision    = ["dep:aphrody-vision", "dep:tempfile"]
 # `aphrody_job_submit` / `aphrody_job_status` — persistent background queue.
 # Drags bundled libsqlite3 into the binary, hence opt-in.
 jobs      = ["dep:aphrody-jobs", "dep:chrono"]
-# `dbfr_*` — the Dragon Ball FR databooks API (read + guarded deposit). Only
-# HTTP, so it costs nothing but its own tool surface.
-dbfr      = []
 # `aphrody_rag_search` / `aphrody_rag_context` — the local aphrody-rag SQLite
 # index (`$APHRODY_RAG_DB`, default `~/.aphrody/rag/index.db`).
 rag       = ["dep:aphrody-rag"]
@@ -64,13 +63,8 @@ rag       = ["dep:aphrody-rag"]
 rag-ort   = ["rag", "aphrody-rag/ort"]
 native    = ["rag", "aphrody-rag/native"]
 rag-native = ["native"]
-# `dragonball.*` — the Dragon Ball tools of the single Aphrody MCP (ported from
-# the retired Bun `apps/shenron-mcp`): Shenron bot/site API proxies plus the
-# local corpus, persona and `APHRODY_AI_*` chat of `aphrody-rag::dragonball`.
-# On by default: aphrody-mcp is the one MCP the kernel plugin proxies.
-dragonball = ["dep:aphrody-rag"]
 # Everything the toolbox exposes over MCP.
-toolbox   = ["ocr", "stt-local", "vision", "jobs", "dbfr", "rag-ort", "dragonball"]
+toolbox   = ["ocr", "stt-local", "vision", "jobs", "rag-ort"]
 
 # `winclean` — the 166 tools of aphrody-winclean (Windows computer use + OS control)
 # advertised and dispatched in-process via aphrody-winclean. Opt-in because the
@@ -166,7 +160,6 @@ regex              = { workspace = true }
 # through aphrody-antigravity, so the `memory` feature adds no C library).
 aphrody-session    = { workspace = true, features = ["memory"] }
 aphrody-memory     = { workspace = true }
-aphrody-manga      = { workspace = true }
 # --- Toolbox backends (optional; see [features]) ---------------------------
 # Vision-language OCR: resolves an installed catalog model + llama-mtmd-cli.
 aphrody-ocr-vlm    = { workspace = true, optional = true }

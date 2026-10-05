@@ -65,6 +65,16 @@ Migration-only parent checks retain pre-existing lint/format debt and a failing
 live RAG preload guard. Serialized Rust gates are routed to the VPS factory,
 so no new Rust build result is claimed. Old workers stopped at the owner's request.
 
+## Extraction Shenron / Koharu — 2026-10-05
+
+| Sujet | Preuve | Limite |
+| --- | --- | --- |
+| Dépôt produit | `aphrody-labs/shenron` (privé) créé et poussé : 169 commits filtrés par `git-filter-repo` (4 325 fichiers, blobs identiques à HEAD, 0 collision), historique du plugin `plugin-shenron` sous `plugin/`, `@aphrody/media` importé avec historique ; `node_modules` purgé de l'historique | Ouverture publique après nettoyage des trailers IA hérités et du corpus local `data/rag/massive-training-triplets-full.jsonl` (audit : 9 030 objets, 0 secret réel, 35 faux positifs de fixtures) |
+| Retiré d'Aphrody | apps/packages Shenron et Koharu, `m3/packages/{shenron-ui,admin-ui}`, 16 crates de traduction Koharu, `aphrody-manga`, `aphrody-rag::{dragonball,shenron}`, outils MCP `dragonball.*`/`dbfr_*`, CLI `shenron`/`manga`/`ocr shenron`/`ocr dbfr`/`rag ingest-shenron`, exports FFI `shenron_*`/`manga_*`, Studio et réglages Koharu du bureau, chaîne JP→FR de `aphrody-translate` ; 32 dépendances de workspace orphelines et 79 entrées de catalogue Bun retirées | Restes documentaires et générés : lots de l'agent purge-aphrody |
+| Conservé à l'Infra | unités systemd/nginx/privoxy Shenron, `atomic-deploy-shenron.sh`, sauvegardes, passerelle `/api/v1/shenron/*` (cache Redis sous la feature `gateway-cache`, défaut), pair A2A `shenron`, profil `dbfr`, socle ML `koharu-*` | Le bot se compile depuis `SHENRON_ROOT` ou le checkout voisin |
+| État privé | `data/shenron/home` (3 Gio, identifiants, modèles), `bot.db`, caches et sorties de build déplacés vers `~/shenron` (6 181 fichiers, SHA-256 vérifiés avant/après) ; unité utilisateur `shenron-rag-sync` repointée | Rechargement systemd non relancé (timer déjà en échec avant) |
+| Gates | `cargo check`, `clippy -D warnings` et tests ciblés verts (`aphrody-{translate,config,rag,discord-compiler,command,mcp,ffi,embed}`, `aphrody`, `aphrody-app`) ; Bun : typecheck de 5 paquets, app-ui 207 tests, `@aphrody/workspace` 292, `@aphrody/bun` 7 ; lots d'erreurs préexistantes corrigés (clippy 1.98, `simdutf`, fork Tauri, OCR resume portable, préchargement app-ui, test d'isolation natif, contrat Discord) | Diagnostic local `APHRODY_LOCAL_CARGO=1` ; assets d'icônes d'`aphrody-bun` absents du dépôt depuis `c2d7bbd32` (restaurés localement pour vérifier, non commités) |
+
 ## Shenron / Aphrody shared implementation — 2026-10-05
 
 Readers, their CSS and modal focus now delegate to M3; six desktop/mobile PNGs

@@ -43,35 +43,6 @@
       "note": "Canonical adaptive M3 showcase shell. The frontend and Bun API live in m3/apps/showcase; tauri-wrap owns the compiled desktop sidecar and its lifecycle. Mobile entry is retained; production activation requires a qualified native API host adapter."
     },
     {
-      "id": "koharu",
-      "kind": "app",
-      "path": "crates/koharu/koharu",
-      "package": "koharu",
-      "runtime": "cef",
-      "workspace": "member",
-      "confs": [
-        "tauri.conf.json",
-        "tauri.linux.conf.json",
-        "tauri.macos.conf.json",
-        "tauri.windows.conf.json"
-      ],
-      "gate": true,
-      "generated": [
-        "crates/koharu/koharu/gen"
-      ],
-      "note": "Koharu desktop shell; the only CEF runtime consumer. Frontend: apps/koharu/editor (@aphrody/koharu-editor-example)."
-    },
-    {
-      "id": "koharu-app",
-      "kind": "library",
-      "path": "crates/koharu/koharu-app",
-      "package": "koharu-app",
-      "runtime": "cef",
-      "workspace": "member",
-      "gate": true,
-      "note": "Koharu application library (commands, specta bindings) linked by the koharu binary."
-    },
-    {
       "id": "aphrody-drive",
       "kind": "plugin",
       "path": "crates/ui/drive",
@@ -87,30 +58,6 @@
       "package": "aphrody-tauri-mcp",
       "workspace": "member",
       "note": "Native MCP adapter for Tauri webview inspection; no tauri crate dependency."
-    },
-    {
-      "id": "koharu-bridge",
-      "kind": "js-package",
-      "path": "packages/koharu/bridge",
-      "note": "@aphrody/koharu-bridge: wasm canvas bridge and Tauri IPC bindings (@tauri-apps/api via catalog)."
-    },
-    {
-      "id": "koharu-sdk",
-      "kind": "js-package",
-      "path": "packages/koharu/sdk",
-      "note": "@aphrody/koharu-sdk: headless Koharu SDK with the ./tauri entry."
-    },
-    {
-      "id": "koharu-ui",
-      "kind": "js-package",
-      "path": "packages/koharu/ui",
-      "note": "@koharu/ui: Koharu UI components (@tauri-apps/api, plugin-opener via catalog)."
-    },
-    {
-      "id": "koharu-editor",
-      "kind": "js-package",
-      "path": "apps/koharu/editor",
-      "note": "@aphrody/koharu-editor-example: static Next.js export (out/) embedded by the koharu app."
     },
     {
       "id": "scaffold",

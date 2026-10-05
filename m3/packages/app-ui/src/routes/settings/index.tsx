@@ -10,7 +10,6 @@ import {
   ModelsSettings,
   KeyboardSettings,
 } from "../../Settings/pages";
-import { KoharuSettings } from "../../Settings/pages/KoharuSettings";
 
 export interface SettingsProps {
   embedded?: boolean;
@@ -32,8 +31,6 @@ export function Settings({ embedded: _embedded = false }: SettingsProps) {
         return <ModelsSettings />;
       case "keyboard":
         return <KeyboardSettings />;
-      case "koharu":
-        return <KoharuSettings />;
       default:
         return <GeneralSettings />;
     }
@@ -41,9 +38,7 @@ export function Settings({ embedded: _embedded = false }: SettingsProps) {
 
   return (
     <div className="h-full min-h-0 w-full overflow-y-auto bg-surface text-on-surface">
-      <main className="mx-auto max-w-4xl p-6 md:p-8">
-        {renderContent()}
-      </main>
+      <main className="mx-auto max-w-4xl p-6 md:p-8">{renderContent()}</main>
     </div>
   );
 }

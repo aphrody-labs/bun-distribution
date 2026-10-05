@@ -16,7 +16,6 @@ workspace = true
 
 [features]
 default = []
-koharu = ["aphrody-manga/koharu"]
 native = ["aphrody-rag/native"]
 rag = ["dep:aphrody-rag", "aphrody-rag/ort", "aphrody-rag/native", "aphrody-agent-runtime/rag", "aphrody-app-server/rag", "native"]
 train = ["dep:aphrody-train", "aphrody-train/registry"]
@@ -127,7 +126,6 @@ obscura                           = { workspace = true }
 obscura-net                       = { workspace = true }
 aphrody-n2b                       = { workspace = true }
 aphrody-translate         = { workspace = true }
-aphrody-manga             = { workspace = true }
 aphrody-ecosystem         = { workspace = true }
 aphrody-backend                   = { workspace = true }
 aphrody-toolchains                = { workspace = true }

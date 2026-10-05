@@ -15,7 +15,8 @@ import {
 console.log("=== Bun-RS FFI JS/TS Test ===");
 if (version() !== "1.0.0-canary") throw new Error("unexpected aphrody-bun ABI version");
 if (add(10, 20) !== 30) throw new Error("FFI addition contract failed");
-if (add(2_147_483_647, 1) !== -2_147_483_648) throw new Error("FFI wrapping addition contract failed");
+if (add(2_147_483_647, 1) !== -2_147_483_648)
+  throw new Error("FFI wrapping addition contract failed");
 if (countChar("hello world", "o") !== 2) throw new Error("FFI byte count contract failed");
 if (findBytes("supercalifragilistic", "fragil") !== 9)
   throw new Error("FFI substring contract failed");
@@ -110,7 +111,8 @@ if (!pngSignature.every((b, i) => cpuA[i] === b)) throw new Error("m3Render3d PN
 if (Buffer.compare(Buffer.from(cpuA), Buffer.from(cpuB)) !== 0)
   throw new Error("m3Render3d CPU determinism contract failed");
 const auto = m3Render3d(scene3d, "auto");
-if (!pngSignature.every((b, i) => auto[i] === b)) throw new Error("m3Render3d auto contract failed");
+if (!pngSignature.every((b, i) => auto[i] === b))
+  throw new Error("m3Render3d auto contract failed");
 let rejected = false;
 try {
   m3Render3d({ ...scene3d, samples: 2 as 4 });
@@ -127,13 +129,11 @@ import {
   runAphrody,
 } from "./src/index.ts";
 import {
-  shenronAbiVersion,
-  shenronVersion,
-  shenronRunCaptured,
-  shenronPersonaPrompt,
-} from "./src/shenron.ts";
-import { mangaAbiVersion, mangaDetectBubbles, mangaTypesetFit } from "./src/manga.ts";
-import { webExtractTitle, webStripTags, webParseHtml, close as closeAphrodyFfi } from "./src/web.ts";
+  webExtractTitle,
+  webStripTags,
+  webParseHtml,
+  close as closeAphrodyFfi,
+} from "./src/web.ts";
 if (getAphrodyAbiVersion() !== 1) throw new Error("unsupported aphrody-ffi ABI version");
 console.log("aphrody-ffi CLI version:", getAphrodyVersion());
 const r = runAphrodyCaptured(["version", "--json"]);
@@ -151,25 +151,13 @@ try {
   rejectedNul = error instanceof TypeError;
 }
 if (!rejectedNul) throw new Error("CLI argument NUL validation contract failed");
-if (shenronAbiVersion() !== 1) throw new Error("unsupported Shenron ABI version");
-if (shenronVersion().length === 0) throw new Error("Shenron version must not be empty");
-const shenronStatus = shenronRunCaptured(["auth", "status", "--json"]);
-if (!Number.isInteger(shenronStatus.code) || typeof shenronStatus.stdout !== "string")
-  throw new Error("Shenron captured CLI result contract failed");
-const persona = shenronPersonaPrompt();
-if (!persona.includes("Shenron") && !persona.includes("Toriyama"))
-  throw new Error("Shenron canonical persona contract failed");
-if (mangaAbiVersion() !== 1) throw new Error("unsupported Manga ABI version");
-const layout = mangaTypesetFit("Hello", { x: 0, y: 0, width: 120, height: 48 });
-if (layout.code !== 0 || !JSON.parse(layout.stdout)) throw new Error("Manga typesetting FFI contract failed");
-const emptyImage = mangaDetectBubbles(new Uint8Array());
-if (emptyImage.code === 0 || emptyImage.stderr.length === 0)
-  throw new Error("Manga invalid-input FFI contract failed");
-if (webExtractTitle("<title>FFI</title>") !== "FFI") throw new Error("Web title FFI contract failed");
-if (webStripTags("<p>safe</p>") !== "safe") throw new Error("Web tag stripping FFI contract failed");
+if (webExtractTitle("<title>FFI</title>") !== "FFI")
+  throw new Error("Web title FFI contract failed");
+if (webStripTags("<p>safe</p>") !== "safe")
+  throw new Error("Web tag stripping FFI contract failed");
 const dom = webParseHtml("<main><p class='entry'>native DOM</p></main>");
 try {
-  if (dom.querySelector("p.entry") !== "<p class=\"entry\">native DOM</p>")
+  if (dom.querySelector("p.entry") !== '<p class="entry">native DOM</p>')
     throw new Error("Web DOM query FFI contract failed");
   let blockedClose = false;
   try {

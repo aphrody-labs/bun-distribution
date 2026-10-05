@@ -149,7 +149,7 @@
       "public": true,
       "status": "retired",
       "retiredAt": "2026-09-25",
-      "supersededBy": "aphrody-mcp dragonball.* tools (feature dragonball, default; aphrody-ai d0cb59d deleted apps/shenron-mcp, its systemd unit and mcp.dragonballfr.com vhost template); agent skills in ~/plugins/shenron"
+      "supersededBy": "shenron-mcp dragonball.* tools in aphrody-labs/shenron (crates/shenron-mcp, served by the Shenron plugin; aphrody-ai d0cb59d deleted apps/shenron-mcp, its systemd unit and mcp.dragonballfr.com vhost template)"
     },
     {
       "id": "shenron-bot",

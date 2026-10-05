@@ -23,8 +23,9 @@
     },
     "shenron": {
       "role": "application-namespace-on-rg-plane",
+      "source": "aphrody-labs/shenron",
       "website": { "runtime": "next-bun", "package": "@shenron/site", "ui": "reuse-rg-ui-contract", "auth": "reuse-rg-better-auth-boundary", "api": "shenron-bot" },
-      "api": { "runtime": "bun", "database": "postgresql", "localCache": "sqlite", "mcp": "aphrody-mcp dragonball.*" },
+      "api": { "runtime": "bun", "database": "postgresql", "localCache": "sqlite", "mcp": "shenron-mcp dragonball.* (aphrody-labs/shenron)" },
       "bot": { "runtime": "bun-discord.js", "api": "shenron-bot", "database": "postgresql-with-sqlite-cache" },
       "data": { "primary": "postgresql", "media": "shared-nginx-storage", "backup": "aphrody-infra-backup-policy" }
     },

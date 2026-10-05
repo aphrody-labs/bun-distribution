@@ -108,7 +108,7 @@ mod native {
                 Translator::new(cache_path, args.contact_email.clone())?.with_backend(backend);
 
             let res = if args.source == "ja" || Translator::is_japanese(text) {
-                translator.translate_jp_to_fr(text).await?
+                translator.translate_with_lang(text, "ja", &args.target).await?
             } else {
                 let src = if args.source == "auto" { "en" } else { &args.source };
                 translator.translate_with_lang(text, src, &args.target).await?

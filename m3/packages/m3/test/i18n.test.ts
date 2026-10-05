@@ -15,8 +15,6 @@ describe("M3 i18n localization contract", () => {
     expect(t("nav.files")).toBe("Files & Drive");
     expect(t("chat.title")).toBe("Aphrody Agent Console");
     expect(t("subsystems.web")).toBe("Web & Obscura Engine");
-    expect(t("koharu.title")).toBe("Koharu Document & Vision Engine");
-    expect(t("shenron.title")).toBe("Shenron Agent & DBFR Engine");
     expect(t("drive.title")).toBe("Aphrody Drive Engine");
     expect(t("shell.title")).toBe("Aphrody Native Shell & PTY");
     expect(t("ffi.title")).toBe("Aphrody Native FFI Bridge");
@@ -27,8 +25,6 @@ describe("M3 i18n localization contract", () => {
     expect(t("nav.files")).toBe("Fichiers & Drive");
     expect(t("chat.title")).toBe("Console d'Agent Aphrody");
     expect(t("subsystems.web")).toBe("Moteur Web & Obscura");
-    expect(t("koharu.title")).toBe("Moteur Document & Vision Koharu");
-    expect(t("shenron.title")).toBe("Moteur d'Agent Shenron & DBFR");
     expect(t("drive.title")).toBe("Moteur Aphrody Drive");
     expect(t("shell.title")).toBe("Shell natif Aphrody & PTY");
     expect(t("ffi.title")).toBe("Pont FFI natif d'Aphrody");

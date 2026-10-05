@@ -185,9 +185,6 @@ if (operation === "pipeline-catalog") {
 if (operation === "repository-state") {
   process.exit(await (await import("./repository-state.ts")).runRepositoryState(rest));
 }
-if (operation === "koharu-release") {
-  process.exit(await (await import("./koharu-release.ts")).runKoharuRelease(rest));
-}
 if (operation === "iecode-doctor") {
   process.exit(await (await import("./iecode-doctor.ts")).runIecodeDoctor(rest));
 }

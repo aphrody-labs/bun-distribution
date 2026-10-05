@@ -19,13 +19,11 @@ pub mod broker;
 pub mod desktop;
 pub mod identity;
 pub mod integration;
-pub mod studio;
-pub mod koharu;
 pub mod llama_daemon;
 pub mod models;
 pub mod quickbar;
 pub mod runtime;
-pub mod shenron;
+pub mod studio;
 pub mod web_subsystem;
 pub mod window;
 
@@ -760,9 +758,6 @@ pub fn run() {
             // The broker needs the app handle; a command reaching it before this point gets
             // Tauri's "state not managed" error instead of a panic.
             app.manage(AppServerBroker::new(app.handle().clone()));
-            app.manage(koharu::KoharuBroker::new(app.handle().clone()));
-            // The full Koharu editor (@aphrody/koharu-ui) runs on koharu-app's commands and state.
-            koharu_app::setup(app, false)?;
             tauri::async_runtime::spawn(start_kernel(app.handle().clone()));
             quickbar::register(app.handle());
             integration::setup(app.handle())?;
@@ -799,9 +794,6 @@ pub fn run() {
             }
         })
         .on_window_event(|window, event| {
-            if window.label() == integration::MAIN && matches!(event, tauri::WindowEvent::Destroyed) {
-                koharu_app::on_window_event(window, event);
-            }
             if window.label() == integration::MAIN
                 && let tauri::WindowEvent::CloseRequested { api, .. } = event
             {
@@ -831,27 +823,13 @@ pub fn run() {
                 });
             }
         })
-        .invoke_handler({
-            let app_commands: Box<dyn Fn(tauri::ipc::Invoke) -> bool + Send + Sync> =
-                Box::new(tauri::generate_handler![
-                studio::studio_shenron_health,
-                studio::studio_shenron_rag_stats,
-                studio::studio_shenron_rag_search,
-                studio::studio_shenron_training,
+        .invoke_handler(tauri::generate_handler![
                 studio::studio_native_ai_status,
                 studio::studio_native_chat,
-                studio::studio_open_shenron_admin,
-                studio::studio_shenron_train_start,
-                studio::studio_corpus_info,
-                studio::studio_corpus_search,
-                studio::studio_corpus_ask,
                 studio::studio_google_drive_authorize,
                 studio::studio_a2a_fleet_status,
                 studio::studio_a2a_send_envelope,
                 studio::studio_mcp_tools_list,
-                koharu::koharu_rpc,
-                koharu::koharu_rpc_batch,
-                shenron::aphrody_shenron_chat,
                 aphrody_meta,
                 aphrody_rpc,
                 aphrody_reply,
@@ -891,17 +869,7 @@ pub fn run() {
                 identity::aphrody_pixel_comparer,
                 identity::aphrody_pixel_vectoriser,
                 identity::aphrody_pixel_planche,
-            ]);
-            // Koharu editor commands keep their own names (packages/koharu/bridge/protocol.ts).
-            let koharu_commands = koharu_app::bindings().invoke_handler();
-            move |invoke: tauri::ipc::Invoke| {
-                if koharu_app::COMMAND_NAMES.contains(&invoke.message.command()) {
-                    koharu_commands(invoke)
-                } else {
-                    app_commands(invoke)
-                }
-            }
-        })
+        ])
         .build(tauri::generate_context!())
         .expect("aphrody desktop: fatal error while building the Tauri application")
         .run(|app, event| {

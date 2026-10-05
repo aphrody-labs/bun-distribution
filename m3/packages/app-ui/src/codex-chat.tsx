@@ -38,7 +38,6 @@ import {
   pickFile,
   tauriInvoke,
   runRagSearch,
-  askShenron,
 } from "./tauri-bridge";
 import { buildTurnInputItems } from "./routes/explorer/ai-helpers";
 import { useChatStore } from "./stores/chat-store";
@@ -574,7 +573,6 @@ export function ApprovalCard({
             disabled={approval.submitting}
             onClick={() => onDecide("decline")}
             className="bg-error text-on-error hover:bg-error/90 font-medium"
-            
           >
             Refuser (Défaut)
           </Button>
@@ -756,12 +754,6 @@ export function CodexChat({
         icon: "search_insights",
         badge: "RAG",
       },
-      {
-        command: "/shenron",
-        desc: "Questionner le wiki Dragon Ball",
-        icon: "auto_awesome",
-        badge: "Shenron",
-      },
       { command: "/model", desc: "Changer de modèle actif", icon: "bolt", badge: "Modèles" },
       {
         command: "/clear",
@@ -877,7 +869,7 @@ export function CodexChat({
                   if (e.key === "Escape") setIsEditingTitle(false);
                 }}
                 className="px-3 py-1 rounded-xl bg-surface-container-high border border-primary text-title-medium font-bold text-on-surface focus:outline-none max-w-sm"
-                
+
                 placeholder="Nom du fil..."
               />
               <CircleButton
@@ -2247,43 +2239,6 @@ export function CodexChatRoute() {
     // Instant local commands with zero latency
     if (text === "/clear") {
       handleNewSession();
-      return;
-    }
-
-    if (text.startsWith("/shenron ")) {
-      const query = text.slice("/shenron ".length).trim();
-      if (!query) {
-        toast.info("Indiquez votre question : /shenron <question>");
-        return;
-      }
-      setTurns((items) => [...items, { id: `user-${Date.now()}`, role: "user", content: query }]);
-      setDraft("");
-      try {
-        const result = await askShenron(query);
-        const sources = result.hits
-          .filter((hit) => hit.url.startsWith("https://dragonballfr.com/"))
-          .map((hit) => `- [${hit.title}](${hit.url})\n  ${hit.snippet}`)
-          .join("\n");
-        const content = [
-          result.answer || "Aucune réponse disponible.",
-          sources ? `### Sources\n${sources}` : "",
-        ]
-          .filter(Boolean)
-          .join("\n\n");
-        setTurns((items) => [
-          ...items,
-          { id: `shenron-${Date.now()}`, role: "assistant", content },
-        ]);
-      } catch (err) {
-        setTurns((items) => [
-          ...items,
-          {
-            id: `shenron-${Date.now()}`,
-            role: "assistant",
-            content: `Erreur Shenron : ${err instanceof Error ? err.message : String(err)}`,
-          },
-        ]);
-      }
       return;
     }
 

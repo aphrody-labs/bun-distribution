@@ -240,7 +240,7 @@ impl UserDefinedEmbedder {
         )
         .map_err(|error| EmbedError::ModelInit(error.to_string()))?;
         let probe = model
-            .embed(&["embedding dimension probe"], None)
+            .embed(["embedding dimension probe"], None)
             .map_err(|error| EmbedError::Inference(error.to_string()))?;
         let dimension = probe.first().map_or(0, Vec::len);
         if dimension == 0 || probe[0].iter().any(|value| !value.is_finite()) {

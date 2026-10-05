@@ -40,7 +40,6 @@
     "./automation-inventory": "./src/automation-inventory.ts",
     "./runtime-gate": "./src/runtime-gate.ts",
     "./iecode-doctor": "./src/iecode-doctor.ts",
-    "./koharu-release": "./src/koharu-release.ts",
     "./powershell-syntax": "./src/powershell-syntax.ts",
     "./workspace-clean": "./src/workspace-clean.ts",
     "./ai-release-gate": "./src/ai-release-gate.ts",
