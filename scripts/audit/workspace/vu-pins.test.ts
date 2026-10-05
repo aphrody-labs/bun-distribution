@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { resolve } from "node:path";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import {
+  checkMirror,
   checkPins,
   checkRemote,
   expand,
@@ -90,5 +93,30 @@ describe("vu-pins", () => {
       route.includes("/branches/") ? { commit: { sha: "f".repeat(40) } } : good(route);
     expect(checkRemote(vendor, bad).length).toBe(vendor.sources.length);
     expect(checkRemote(vendor, failing)[0]).toContain("HTTP 404");
+  });
+
+  test("the private repository must carry byte-identical pins", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "vu-mirror-"));
+    try {
+      expect(await checkMirror(dir)).toEqual([
+        "vu repository: vendor.json is missing",
+        "vu repository: vu.json is missing",
+      ]);
+      writeFileSync(
+        join(dir, "vendor.json"),
+        await Bun.file(`${ROOT}/docs/plans/vu/scaffold/vendor.json`).text(),
+      );
+      writeFileSync(
+        join(dir, "vu.json"),
+        await Bun.file(`${ROOT}/docs/plans/vu/scaffold/vu.json`).text(),
+      );
+      expect(await checkMirror(dir)).toEqual([]);
+      writeFileSync(join(dir, "vu.json"), "{}\n");
+      expect(await checkMirror(dir)).toEqual([
+        "vu repository: vu.json differs from the mirror in docs/plans/vu/scaffold",
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

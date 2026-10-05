@@ -3166,7 +3166,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "0a9a161c81df5f6f64df33d16b02d77ca85b5b69b3d91691da791a680ba65027",
+      "sha256": "23fdf5b5fecd354a32edfeaa4f446144aa2d5b439929cfb60e3ca35b617dcf2e",
       "bytes": 11609,
       "domain": "",
       "status": "generated",
@@ -3256,8 +3256,8 @@
     {
       "path": "docs/VENDORING.md",
       "title": "Vendoring the Tauri stack",
-      "sha256": "f8606fcb16370c6b80eaaca21061ba3387f5788dcfde15c8703d1135f8ff7eeb",
-      "bytes": 3821,
+      "sha256": "19bec67ec1e489bb49baa9825d74672ef16abdfaa4f8d63d9d94123f787ba1ee",
+      "bytes": 3827,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -9334,6 +9334,16 @@
       "canonical": "docs/plans/discord/PLAN.md"
     },
     {
+      "path": "docs/plans/fusion/bench/METHOD.md",
+      "title": "Méthode du banc V8 / JSC : liste de comparabilité et seuils",
+      "sha256": "28a42a623f821cd088adb798e3e3e04b54dc48176ba2664f790452a797fd7ed9",
+      "bytes": 12129,
+      "domain": "fusion",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/fusion/bench/METHOD.md"
+    },
+    {
       "path": "docs/plans/fusion/drive/AUDIT-fork-bun-mecanismes.md",
       "title": "Fork Bun → yolo : mécanismes d'extension (préparation des faits)",
       "sha256": "2b603f8c77a5002877deffa3c310ef618b82ab1b931499db1700c11c05de9cf9",
@@ -9606,8 +9616,8 @@
     {
       "path": "docs/plans/vu/PLAN.md",
       "title": "vu: the Aphrody Python runtime",
-      "sha256": "5f7a84f0a5d2f9212994cb7168c56b483f1b1419d08e4229ade7fdbf36901f3d",
-      "bytes": 31521,
+      "sha256": "b6a178cc1f62dac8bde7bda6a284caee4339040020a4ddae3b1a6710d686c967",
+      "bytes": 35039,
       "domain": "vu",
       "status": "canonical",
       "visibility": "private",
@@ -9615,9 +9625,9 @@
     },
     {
       "path": "docs/plans/vu/scaffold/README.md",
-      "title": "Scaffold of the planned vu repository",
-      "sha256": "da8b62e240eeac22afeef74e7d4e0d6850ae36c4fc4d9d73771437c154d9b6ba",
-      "bytes": 1345,
+      "title": "Mirror of the seed of the private vu repository",
+      "sha256": "677a3bc2cfb16bd9e70f301f4abee0561559de816759854a9d662f31f99654f9",
+      "bytes": 1589,
       "domain": "vu",
       "status": "canonical",
       "visibility": "private",

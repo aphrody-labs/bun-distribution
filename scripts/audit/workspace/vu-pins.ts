@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Consistency gate of the pins of the vu runtime (docs/plans/vu/PLAN.md).
 //!
-//!   bun scripts/audit/workspace/vu-pins.ts [--online] [--json]
+//!   bun scripts/audit/workspace/vu-pins.ts [--online] [--vu <checkout>] [--json]
 //!
 //! Offline, `docs/plans/vu/scaffold/vendor.json` (pins of the planned vu monorepo),
 //! `docs/plans/vu/scaffold/vu.json` (the single place of the runtime name) and
 //! `config/upstream-sources.json` (provenance of the forks) must describe the same revisions and the same
 //! branch names. With `--online` the fork branches and the upstream tags are read through
-//! `aphrody git api` and must resolve to the pinned commit.
+//! `aphrody git api` and must resolve to the pinned commit. With `--vu <checkout>` the files `vendor.json` and
+//! `vu.json` of the private vu repository must be byte-identical to the mirror kept here.
 
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
@@ -150,6 +151,28 @@ export function checkPins(identity: Identity, vendor: Vendor, upstream: Upstream
   return problems;
 }
 
+/** The pins and the identity of the vu repository must be the files mirrored in docs/plans/vu/scaffold. */
+export async function checkMirror(
+  vuDir: string,
+  mirrorDir = `${ROOT}/docs/plans/vu/scaffold`,
+  files = ["vendor.json", "vu.json"],
+): Promise<string[]> {
+  const results = await Promise.all(
+    files.map(async (name) => {
+      const actual = Bun.file(`${vuDir}/${name}`);
+      if (!(await actual.exists())) return `vu repository: ${name} is missing`;
+      const [mine, theirs] = await Promise.all([
+        actual.text(),
+        Bun.file(`${mirrorDir}/${name}`).text(),
+      ]);
+      return mine === theirs
+        ? undefined
+        : `vu repository: ${name} differs from the mirror in docs/plans/vu/scaffold`;
+    }),
+  );
+  return results.filter((problem): problem is string => problem !== undefined);
+}
+
 function api(route: string): unknown {
   const result = spawnSync("aphrody", ["git", "api", route], {
     encoding: "utf8",
@@ -190,6 +213,12 @@ async function main(argv: string[]): Promise<number> {
   ).json()) as UpstreamSources;
   const problems = checkPins(identity, vendor, upstream);
   if (argv.includes("--online")) problems.push(...checkRemote(vendor));
+  const vuIndex = argv.indexOf("--vu");
+  if (vuIndex >= 0) {
+    const vuDir = argv[vuIndex + 1];
+    if (!vuDir) problems.push("--vu needs a checkout directory");
+    else problems.push(...(await checkMirror(vuDir)));
+  }
   if (argv.includes("--json")) {
     console.log(
       JSON.stringify(
