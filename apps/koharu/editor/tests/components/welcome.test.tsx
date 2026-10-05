@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'bun:test'
 
 import { StartView } from '@aphrody/koharu-ui/components/start/StartView'
 import { queryClient, useProject } from '@aphrody/koharu-ui/lib/queries'
-import { commands } from '@koharu/bridge/protocol'
+import { commands } from '@aphrody/koharu-bridge/protocol'
 
 function ProjectFlow() {
   const project = useProject().data

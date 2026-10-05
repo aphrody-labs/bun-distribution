@@ -1,14 +1,11 @@
 {
-  "name": "@koharu/sdk",
+  "name": "@aphrody/koharu-sdk",
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
-  "type": "module",
-  "engines": {
-    "bun": ">=1.4.2"
-  },
   "files": [
     "src"
   ],
+  "type": "module",
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -32,8 +29,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@koharu/bridge": "workspace:*",
+    "@aphrody/koharu-bridge": "workspace:*",
     "@aphrody/media": "workspace:*"
+  },
+  "devDependencies": {
+    "@aphrody/api": "workspace:*"
   },
   "peerDependencies": {
     "@aphrody/api": "workspace:*"
@@ -43,7 +43,7 @@
       "optional": true
     }
   },
-  "devDependencies": {
-    "@aphrody/api": "workspace:*"
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

@@ -28,7 +28,7 @@ import {
   type Preferences,
   type ProviderPreferences as ProviderSettings,
   type TypesettingConfig,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 import { Button } from '../../internal/components/button'
 import { Input } from '@aphrody/m3-primitives'
 import { ScrollArea } from '../../internal/components/scroll-area'

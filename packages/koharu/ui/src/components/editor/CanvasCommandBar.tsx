@@ -4,7 +4,7 @@ import { InferenceControl } from '@aphrody/koharu-ui/components/editor/Inference
 import { call } from '@aphrody/koharu-ui/lib/backend'
 import { usePage } from '@aphrody/koharu-ui/lib/queries'
 import { pipelineStages, useKoharuStore, type PipelineScope } from '@aphrody/koharu-ui/lib/store'
-import { commands, type Scope, type Stage } from '@koharu/bridge/protocol'
+import { commands, type Scope, type Stage } from '@aphrody/koharu-bridge/protocol'
 
 export function CanvasCommandBar() {
   const page = usePage().data

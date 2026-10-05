@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
 import { resizeFrame, rotateFrame } from '@aphrody/koharu-ui/lib/geometry'
-import type { Frame } from '@koharu/bridge/protocol'
+import type { Frame } from '@aphrody/koharu-bridge/protocol'
 
 const frame: Frame = { x: 10, y: 20, width: 100, height: 50, angle_degrees: 0 }
 

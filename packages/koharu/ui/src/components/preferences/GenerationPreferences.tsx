@@ -7,7 +7,7 @@ import {
   PreferenceRow,
   PreferenceSection,
 } from '@aphrody/koharu-ui/components/preferences/PreferenceFields'
-import type { GenerationConfig } from '@koharu/bridge/protocol'
+import type { GenerationConfig } from '@aphrody/koharu-bridge/protocol'
 import { Switch } from '@aphrody/m3-primitives'
 
 export function GenerationPreferences({

@@ -10,7 +10,7 @@ import {
   type Camera,
   type ResizeHandle,
 } from '@aphrody/koharu-ui/lib/geometry'
-import type { EntityId, Frame, Point, TransformFrame } from '@koharu/bridge/protocol'
+import type { EntityId, Frame, Point, TransformFrame } from '@aphrody/koharu-bridge/protocol'
 
 interface SelectionControlsProps {
   container: RefObject<HTMLDivElement | null>

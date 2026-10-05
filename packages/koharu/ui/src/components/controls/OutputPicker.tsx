@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { orderedLanguageChoices } from '@aphrody/koharu-ui/lib/translation'
-import type { LanguageChoice } from '@koharu/bridge/protocol'
+import type { LanguageChoice } from '@aphrody/koharu-bridge/protocol'
 import { Button } from '../../internal/components/button'
 import {
   Select,

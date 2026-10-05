@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { modelKey, modelSelection, providerName } from '@aphrody/koharu-ui/lib/translation'
-import type { Model, ModelSelection, ProviderPreference } from '@koharu/bridge/protocol'
+import type { Model, ModelSelection, ProviderPreference } from '@aphrody/koharu-bridge/protocol'
 import { Button } from '../../internal/components/button'
 import {
   InputGroup,

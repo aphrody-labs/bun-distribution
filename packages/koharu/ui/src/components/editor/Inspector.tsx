@@ -37,7 +37,7 @@ import {
 } from '@aphrody/koharu-ui/lib/document'
 import { pageKey, projectKey, queryClient, refresh, useFonts, usePage } from '@aphrody/koharu-ui/lib/queries'
 import { useKoharuStore } from '@aphrody/koharu-ui/lib/store'
-import { previewCanvasOpacity } from '@koharu/bridge/canvas'
+import { previewCanvasOpacity } from '@aphrody/koharu-bridge/canvas'
 import {
   commands,
   type EntityId,
@@ -47,7 +47,7 @@ import {
   type TextAlignment,
   type Typography,
   type WritingMode,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 import { Button } from '../../internal/components/button'
 import {
   DropdownMenu,

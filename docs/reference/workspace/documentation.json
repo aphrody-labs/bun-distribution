@@ -43215,7 +43215,7 @@
     },
     {
       "path": "packages/koharu/bridge/README.md",
-      "title": "@koharu/bridge",
+      "title": "@aphrody/koharu-bridge",
       "sha256": "b2965467739523916be4694ad2b23d284c5196c2d3b04e45f92ed585502fa194",
       "bytes": 913,
       "domain": "koharu",

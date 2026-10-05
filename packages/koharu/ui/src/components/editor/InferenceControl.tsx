@@ -25,7 +25,7 @@ import {
   type ModelSelection,
   type ProviderPreference,
   type Stage,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 import { Button } from '../../internal/components/button'
 import { Popover, PopoverContent, PopoverTrigger } from '../../internal/components/popover'
 import { cn } from '../../internal/lib/utils'

@@ -17,7 +17,7 @@ import type {
   Model,
   ProviderPreference,
   TranslationConfig as TranslationSettings,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 import { Badge } from '@aphrody/m3-primitives'
 import { Popover, PopoverContent, PopoverTrigger } from '../../internal/components/popover'
 import {

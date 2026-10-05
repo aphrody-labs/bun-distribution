@@ -22,7 +22,7 @@ import {
 } from '@aphrody/koharu-ui/lib/queries'
 import { useKoharuStore } from '@aphrody/koharu-ui/lib/store'
 import { titleBarMenuSections } from '@aphrody/koharu-ui/navigation'
-import { commands, type Operation, type Scope, type Stage } from '@koharu/bridge/protocol'
+import { commands, type Operation, type Scope, type Stage } from '@aphrody/koharu-bridge/protocol'
 import {
   Menubar,
   MenubarContent as UiMenubarContent,

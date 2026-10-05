@@ -6,7 +6,7 @@ import { hoisted, stubGlobal, unstubAllGlobals } from '@/tests/hoisted'
 import { CanvasWorkspace } from '@aphrody/koharu-ui/components/editor/CanvasWorkspace'
 import { pageKey, pagesKey, projectKey, queryClient } from '@aphrody/koharu-ui/lib/queries'
 import { useKoharuStore } from '@aphrody/koharu-ui/lib/store'
-import { commands, type Layer } from '@koharu/bridge/protocol'
+import { commands, type Layer } from '@aphrody/koharu-bridge/protocol'
 import { TooltipProvider } from '@aphrody/m3-primitives'
 
 const canvas = hoisted(() => ({
@@ -43,7 +43,7 @@ const prefetchCanvasPages = hoisted(() => vi.fn(async () => []))
 mock.module('@aphrody/koharu-ui/components/editor/useCanvas', () => ({
   useCanvas: () => canvasState,
 }))
-mock.module('@koharu/bridge/canvas', () => ({
+mock.module('@aphrody/koharu-bridge/canvas', () => ({
   prefetchCanvasPages,
   workspaceColor: () => [245, 245, 245],
 }))

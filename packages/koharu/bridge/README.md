@@ -1,4 +1,4 @@
-# @koharu/bridge
+# @aphrody/koharu-bridge
 
 This package owns Koharu's browser/native boundary:
 

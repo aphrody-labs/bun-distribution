@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { call } from '@aphrody/koharu-ui/lib/backend'
 import { pageKey, pagesKey, projectKey, refresh } from '@aphrody/koharu-ui/lib/queries'
 import { useKoharuStore } from '@aphrody/koharu-ui/lib/store'
-import { commands, type ProjectSummary } from '@koharu/bridge/protocol'
+import { commands, type ProjectSummary } from '@aphrody/koharu-bridge/protocol'
 import {
   AlertDialog,
   AlertDialogAction,

@@ -1,11 +1,10 @@
 {
   "name": "@aphrody/koharu-editor-example",
   "version": "0.1.0",
-  "private": true,
   "license": "MIT OR Apache-2.0",
   "type": "module",
-  "engines": {
-    "bun": ">=1.4.2"
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "bun --bun next dev --port 3000",
@@ -16,11 +15,11 @@
     "test": "bun tests/run.ts"
   },
   "dependencies": {
+    "@aphrody/bun-test-dom": "workspace:*",
+    "@aphrody/koharu-bridge": "workspace:*",
+    "@aphrody/koharu-ui": "workspace:*",
     "@aphrody/m3-primitives": "workspace:*",
     "@aphrody/m3-theme": "workspace:*",
-    "@koharu/bridge": "workspace:*",
-    "@aphrody/koharu-ui": "workspace:*",
-    "@aphrody/bun-test-dom": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "next": "catalog:",
     "next-themes": "catalog:",
@@ -29,15 +28,18 @@
     "react-i18next": "catalog:"
   },
   "devDependencies": {
+    "@aphrody/api": "workspace:*",
+    "@aphrody/plugin-opener": "workspace:*",
     "@tailwindcss/postcss": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "tailwindcss": "catalog:",
     "i18next": "catalog:",
-    "@aphrody/api": "workspace:*",
-    "@aphrody/plugin-opener": "workspace:*"
+    "tailwindcss": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

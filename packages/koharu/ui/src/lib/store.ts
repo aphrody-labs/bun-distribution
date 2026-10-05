@@ -13,7 +13,7 @@ import type {
   Stage,
   StartupState,
   ModelResources,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 import { toast } from '../internal/components/toast'
 
 export type CanvasTool = 'select' | 'text' | 'draw' | 'eraser' | 'color_picker' | 'remove' | 'pan'

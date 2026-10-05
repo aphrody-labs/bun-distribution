@@ -1,4 +1,4 @@
-import type { commands as nativeCommands } from '@koharu/bridge/protocol'
+import type { commands as nativeCommands } from '@aphrody/koharu-bridge/protocol'
 
 /** The Rust command surface remains the authority for argument and result types. */
 export type CommandMap = typeof nativeCommands

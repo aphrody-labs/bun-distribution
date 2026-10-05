@@ -11,7 +11,7 @@ import {
   type Preferences,
   type ProjectInfo,
   type StartupState,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 
 mock.module('@aphrody/api/core', () => ({
   Channel: class<T> {

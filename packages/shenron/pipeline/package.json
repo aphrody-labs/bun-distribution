@@ -75,22 +75,22 @@
     "rag:test": "bun scripts/test-live-rag.ts"
   },
   "dependencies": {
-    "@aphrody/paths": "workspace:*",
     "@ai-sdk/openai-compatible": "catalog:",
     "@ai-sdk/provider": "catalog:",
     "@aphrody/bun": "workspace:*",
+    "@aphrody/http": "workspace:*",
+    "@aphrody/inference": "workspace:*",
+    "@aphrody/koharu-sdk": "workspace:*",
+    "@aphrody/media": "workspace:*",
+    "@aphrody/paths": "workspace:*",
+    "@aphrody/runtime-sdk": "workspace:*",
     "@shenron/config": "workspace:*",
     "@shenron/db": "workspace:*",
     "ai": "catalog:",
     "postgres": "catalog:",
     "sharp": "catalog:",
     "sqlite-vec": "catalog:",
-    "zod": "catalog:",
-    "@aphrody/runtime-sdk": "workspace:*",
-    "@aphrody/http": "workspace:*",
-    "@aphrody/media": "workspace:*",
-    "@koharu/sdk": "workspace:*",
-    "@aphrody/inference": "workspace:*"
+    "zod": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

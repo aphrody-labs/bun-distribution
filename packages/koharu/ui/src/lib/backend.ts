@@ -1,12 +1,12 @@
 'use client'
 
-import { commands } from '@koharu/bridge/protocol'
+import { commands } from '@aphrody/koharu-bridge/protocol'
 import type {
   PipelineConfig,
   Preferences,
   ProviderPreferences,
   TypesettingConfig,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 
 import { receiveError, receivePreferences, receiveTranslationModels } from './store'
 

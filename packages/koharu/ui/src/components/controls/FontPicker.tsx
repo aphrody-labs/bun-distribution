@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useFontPreview } from '@aphrody/koharu-ui/lib/queries'
-import type { FontFamily, FontSource } from '@koharu/bridge/protocol'
+import type { FontFamily, FontSource } from '@aphrody/koharu-bridge/protocol'
 import { Badge } from '@aphrody/m3-primitives'
 import { Button } from '../../internal/components/button'
 import {

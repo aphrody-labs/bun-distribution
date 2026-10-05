@@ -2,7 +2,7 @@
 // Koharu settings use the same JSONL methods as the headless CLI and Bun SDK.
 import { useEffect, useMemo, useState } from "react";
 import { Button, Card } from "@aphrody/m3-primitives";
-import { createSettingsClient, type KoharuPipeline, type KoharuPipelineCatalog, type KoharuSettings as Preferences, type KoharuTranslationModel } from "@koharu/sdk/settings";
+import { createSettingsClient, type KoharuPipeline, type KoharuPipelineCatalog, type KoharuSettings as Preferences, type KoharuTranslationModel } from "@aphrody/koharu-sdk/settings";
 
 type Section = "pipeline" | "translation" | "providers" | "typesetting";
 

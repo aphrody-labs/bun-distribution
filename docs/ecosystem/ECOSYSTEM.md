@@ -251,9 +251,9 @@ Canonical Rust/Bun monorepo
 | `@aphrody/x` | packages/web/x | Headless X (Twitter) client in pure TypeScript for Bun. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), full stealth, store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model. |  |
 | `@aphrody/xai` | packages/ai/xai | Headless xAI Grok API client for Bun — high-level fluent Chat API (createChat/append/sample/stream/executeToolCalls/sampleStructured, reasoning, structured, XTools for native X tool fulfillment) + SUPER_GROK_TOKEN keyless + OIDC. OpenAI-compatible REST, deep native integration with @aphrody/x. |  |
 | `@hypothesi/tauri-plugin-mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge | A Tauri plugin that exposes an MCP server interface via WebSockets. |  |
-| `@koharu/bridge` | packages/koharu/bridge |  |  |
-| `@koharu/docs` | packages/koharu/docs |  |  |
-| `@koharu/sdk` | packages/koharu/sdk |  |  |
+| `@aphrody/koharu-bridge` | packages/koharu/bridge |  |  |
+| `@aphrody/koharu-docs` | packages/koharu/docs |  |  |
+| `@aphrody/koharu-sdk` | packages/koharu/sdk |  |  |
 | `@material-symbols/metadata` | crates/ui/bun/icons/metadata | Metadata for Material Symbols. |  |
 | `@shenron/api` | packages/shenron/api |  |  |
 | `@shenron/auth` | packages/shenron/auth | Briques Better Auth partagées (site Next, bot Bun, API) : secret, origines, cookies, fournisseur Discord, handler Request/Response |  |

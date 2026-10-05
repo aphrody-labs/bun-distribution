@@ -20,7 +20,7 @@ import {
   PreferenceSection,
   TextField,
 } from '@aphrody/koharu-ui/components/preferences/PreferenceFields'
-import type { PipelineConfig } from '@koharu/bridge/protocol'
+import type { PipelineConfig } from '@aphrody/koharu-bridge/protocol'
 import {
   Select,
   SelectContent,

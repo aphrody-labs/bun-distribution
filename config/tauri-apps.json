@@ -92,13 +92,13 @@
       "id": "koharu-bridge",
       "kind": "js-package",
       "path": "packages/koharu/bridge",
-      "note": "@koharu/bridge: wasm canvas bridge and Tauri IPC bindings (@tauri-apps/api via catalog)."
+      "note": "@aphrody/koharu-bridge: wasm canvas bridge and Tauri IPC bindings (@tauri-apps/api via catalog)."
     },
     {
       "id": "koharu-sdk",
       "kind": "js-package",
       "path": "packages/koharu/sdk",
-      "note": "@koharu/sdk: headless Koharu SDK with the ./tauri entry."
+      "note": "@aphrody/koharu-sdk: headless Koharu SDK with the ./tauri entry."
     },
     {
       "id": "koharu-ui",

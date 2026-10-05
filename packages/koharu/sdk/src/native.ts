@@ -13,7 +13,7 @@ import type {
   Scope,
   TypographyUpdate,
   TypesettingConfig,
-} from "@koharu/bridge/protocol";
+} from "@aphrody/koharu-bridge/protocol";
 
 interface NativeMethods {
   "agent.status": {

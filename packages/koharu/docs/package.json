@@ -1,5 +1,5 @@
 {
-  "name": "@koharu/docs",
+  "name": "@aphrody/koharu-docs",
   "private": true,
   "scripts": {
     "dev": "mint dev --port 3001 --no-open"

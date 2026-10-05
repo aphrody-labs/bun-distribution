@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { FontPicker } from '@aphrody/koharu-ui/components/controls/FontPicker'
 import { PreferencePage } from '@aphrody/koharu-ui/components/preferences/PreferenceFields'
 import { useFonts } from '@aphrody/koharu-ui/lib/queries'
-import type { TypesettingConfig } from '@koharu/bridge/protocol'
+import type { TypesettingConfig } from '@aphrody/koharu-bridge/protocol'
 import { Button } from '../../internal/components/button'
 
 export function TypesettingPreferences({

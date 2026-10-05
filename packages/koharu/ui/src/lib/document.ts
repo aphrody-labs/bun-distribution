@@ -1,4 +1,4 @@
-import type { Layer } from '@koharu/bridge/protocol'
+import type { Layer } from '@aphrody/koharu-bridge/protocol'
 
 export function isTextLayer(layer: Layer): layer is Extract<Layer, { type: 'text' }> {
   return layer.type === 'text'

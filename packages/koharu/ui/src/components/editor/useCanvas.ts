@@ -9,7 +9,7 @@ import {
   fetchCanvasManifest,
   fetchCanvasResource,
   type Canvas,
-} from '@koharu/bridge/canvas'
+} from '@aphrody/koharu-bridge/canvas'
 
 export type CanvasStatus = 'loading' | 'switching' | 'ready' | 'recovering' | 'error'
 

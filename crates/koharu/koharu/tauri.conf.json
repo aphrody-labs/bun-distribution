@@ -6,12 +6,12 @@
     "frontendDist": "../../../apps/koharu/editor/out",
     "beforeDevCommand": {
       "cwd": "../../..",
-      "script": "bun run --filter @koharu/bridge build && bun run --filter @aphrody/koharu-editor-example dev",
+      "script": "bun run --filter @aphrody/koharu-bridge build && bun run --filter @aphrody/koharu-editor-example dev",
       "wait": false
     },
     "beforeBuildCommand": {
       "cwd": "../../..",
-      "script": "bun run --filter @koharu/bridge build && bun run --filter @aphrody/koharu-editor-example build"
+      "script": "bun run --filter @aphrody/koharu-bridge build && bun run --filter @aphrody/koharu-editor-example build"
     }
   },
   "app": {

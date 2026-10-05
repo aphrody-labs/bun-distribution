@@ -1,4 +1,4 @@
-import type { EntityId, Frame, Layer, Point, TransformFrame } from '@koharu/bridge/protocol'
+import type { EntityId, Frame, Layer, Point, TransformFrame } from '@aphrody/koharu-bridge/protocol'
 
 import { effectiveLayerVisibility, isTextLayer } from './document'
 

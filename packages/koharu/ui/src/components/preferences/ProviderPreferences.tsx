@@ -15,7 +15,7 @@ import type {
   ProviderConfig,
   ProviderPreference,
   ProviderPreferences as ProviderSettings,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 import { Button } from '../../internal/components/button'
 import { Input } from '../../internal/components/input'
 

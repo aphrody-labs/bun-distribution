@@ -36,7 +36,7 @@ const adapter = hoisted(() => ({
   lost: null as ((reason: string) => void) | null,
 }))
 
-mock.module('@koharu/bridge/canvas', () => ({
+mock.module('@aphrody/koharu-bridge/canvas', () => ({
   createCanvas: vi.fn(
     async (_element: HTMLCanvasElement, onDeviceLost: (reason: string) => void) => {
       adapter.lost = onDeviceLost

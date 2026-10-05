@@ -34,12 +34,12 @@ patches, project state, model runtime, translator, and agent. See
 
 Koharu's page-processing source belongs to the standalone `aphrody-koharu`
 workspace: `crates/koharu/koharu-library` provides the headless Rust document/pipeline
-API, and `packages/koharu/sdk` currently declares `@koharu/sdk` with a `./native`
+API, and `packages/koharu/sdk` currently declares `@aphrody/koharu-sdk` with a `./native`
 entry that starts a `koharu-sdk` JSON-lines process. The observed SDK methods
 include project/page queries, `pipeline.run`, and `page.result`; `page.result`
 is typed as `unknown` in the current SDK source. This local package is not a
 Shenron dependency: the workspace has no Git remote, the Rust library inherits
-`publish = false`, the Bun SDK depends on `@koharu/bridge` via
+`publish = false`, the Bun SDK depends on `@aphrody/koharu-bridge` via
 `workspace:*`, and no external package/binary release is available to pin.
 
 Shenron's existing adapter consumes Aphrody's

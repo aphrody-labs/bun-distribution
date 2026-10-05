@@ -1952,19 +1952,19 @@
           "bins": []
         },
         {
-          "name": "@koharu/bridge",
+          "name": "@aphrody/koharu-bridge",
           "path": "packages/koharu/bridge",
           "description": "",
           "bins": []
         },
         {
-          "name": "@koharu/docs",
+          "name": "@aphrody/koharu-docs",
           "path": "packages/koharu/docs",
           "description": "",
           "bins": []
         },
         {
-          "name": "@koharu/sdk",
+          "name": "@aphrody/koharu-sdk",
           "path": "packages/koharu/sdk",
           "description": "",
           "bins": []

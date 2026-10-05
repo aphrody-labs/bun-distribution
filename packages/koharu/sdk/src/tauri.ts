@@ -3,7 +3,7 @@ import type { KoharuTransport, CommandName } from './index'
 /** Load Tauri only when a desktop host explicitly selects this adapter. */
 export async function createTauriTransport(): Promise<KoharuTransport> {
   const [{ commands }, { Channel }] = await Promise.all([
-    import('@koharu/bridge/protocol'),
+    import('@aphrody/koharu-bridge/protocol'),
     import('@aphrody/api/core'),
   ])
   return {

@@ -8,7 +8,7 @@ Bun SDK and CLI. The full editor is not mounted and product parity is not proven
 
 ## Ownership and boundary
 
-Koharu originated as a separate Tauri application. Its web client imports `@koharu/bridge/protocol` and
+Koharu originated as a separate Tauri application. Its web client imports `@aphrody/koharu-bridge/protocol` and
 calls generated Tauri commands directly; its Rust side owns project documents, processing jobs,
 inference, persistence and export. `aphrody-ui` owns a different Tauri desktop and its generic
 Chat/Files/Web/Models surfaces. The aphrody-ui desktop contract explicitly keeps AI out of its
@@ -70,7 +70,7 @@ must load its existing Tailwind v4 and M3 theme first, then import
 standalone example has its own build entrypoint and is not the host integration.
 
 The independent Koharu checkout has no configured Git remote, so the local
-`file:` dependency on `@koharu/bridge` and source references are not yet a
+`file:` dependency on `@aphrody/koharu-bridge` and source references are not yet a
 portable package-release contract. The focused package TypeScript check passed
 before the latest CSS-only conversion; this audit did not rerun it or exercise
 the host route. The feature map below remains the 2026-09-27 capability
@@ -89,7 +89,7 @@ Koharu capability.
 | Structured page/scene document | `koharu-scene` and `koharu-storage`; protocol `Page`, `Layer`, `AnalysisRegion`; layer editing commands | Aphrody has generic file metadata, preview, and inspector surfaces | **Absent**: no Koharu scene schema, layer hierarchy, per-page revisions, or editing commands. |
 | Manga detection, OCR, translation, inpainting pipeline | `commands.process(scope, operation)`; stages `detection`, `ocr`, `translation`, `inpainting`; `koharu-pipeline`, `koharu-ml`, `koharu-translator` | Generic Aphrody OCR action (`runOcr` / `aphrody/ocr/run`) and background job UI; agent chat can invoke tools | **Partial only at generic OCR/job level**. No manga detector, translation-stage orchestration, region association, or Koharu model lifecycle is present in app-ui. |
 | Provider and generation preferences | `koharu-sdk` preferences methods, model/provider preference panels; `koharu-translator` supports local and remote backends | Settings > Koharu reads and saves pipeline, translation, provider and typography configuration through `koharu_rpc` | **Native settings path implemented**. The complete editor settings component still uses the original Tauri command contract. |
-| Canvas rendering and navigation | `@koharu/bridge/canvas`: WASM `createCanvas`, WebGPU surface, staged manifests/resources, page prefetch; `CanvasWorkspace` | `aphrody-render` and `aphrody-tauri-3d` are native scene renderers; `@aphrody/canvas` is the native/CPU Skia image/PDF path | **Partial primitives, no drop-in editor**. Renderers have different scene and editing contracts; Aphrody has no Koharu page manifest/resource protocol or equivalent 2D editing command surface. |
+| Canvas rendering and navigation | `@aphrody/koharu-bridge/canvas`: WASM `createCanvas`, WebGPU surface, staged manifests/resources, page prefetch; `CanvasWorkspace` | `aphrody-render` and `aphrody-tauri-3d` are native scene renderers; `@aphrody/canvas` is the native/CPU Skia image/PDF path | **Partial primitives, no drop-in editor**. Renderers have different scene and editing contracts; Aphrody has no Koharu page manifest/resource protocol or equivalent 2D editing command surface. |
 | Selection, transforms, paint/erase/inpaint tools | Koharu `CanvasWorkspace`, `ToolBar`, `SelectionControls`; commands `commitTransform`, `commitInpaint`, `setGeometry`, `setVisibility`; raster strokes are applied by Koharu project commands | Aphrody explorer supports selecting files and batch file actions; canvas/render packages provide rendering primitives | **Absent**: file selection and visual rendering are not page-layer manipulation, brush editing, or transactional scene changes. |
 | Text and typography review | `Inspector`, `setSourceText`, `setTranslation`, `setTypography`; `FontPicker`; editable text layers | Aphrody has text/file preview and chat composer | **Absent**: no source/translation pair, bubble-aware text layer, typography editor, or translation review workflow. |
 | Undo/redo and revision-aware editing | Koharu commands `undo`, `redo`, revision-scoped canvas and edit commands | Aphrody chat supports thread operations; general app state and file actions are separate | **Absent**: no Koharu document history or revision-safe edit transaction API in app-ui. |

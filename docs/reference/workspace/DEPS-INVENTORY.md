@@ -99,7 +99,7 @@ Open advisories with no newer release:
 - braces 3.0.3: GHSA-vfj7-8cjw-p6xm (latest 3.0.3)
 
 Held advisories (reason in `config/deps/advisory-holds.json`):
-- adm-zip 0.6.0: GHSA-7q85-xj36-vmfc, GHSA-8238-w5pm-2374, GHSA-c6fg-446q-cg94 (latest 0.6.1) - 0.6.0 is pinned exactly by @mintlify/cli and @mintlify/previewing (dev docs tool `mint`, @koharu/docs only); 0.6.1 is already used by onnxruntime-node. Moves with the next mint release.
+- adm-zip 0.6.0: GHSA-7q85-xj36-vmfc, GHSA-8238-w5pm-2374, GHSA-c6fg-446q-cg94 (latest 0.6.1) - 0.6.0 is pinned exactly by @mintlify/cli and @mintlify/previewing (dev docs tool `mint`, @aphrody/koharu-docs only); 0.6.1 is already used by onnxruntime-node. Moves with the next mint release.
 - esbuild 0.27.7: GHSA-g7r4-m6w7-qqqr (latest 0.28.2) - 0.27/0.21/0.18 are pinned by vite and tool ranges that exclude 0.28; the advisories concern the esbuild dev server only.
 - js-yaml 4.3.1: GHSA-2883-xcg3-v3hh (latest 5.4.2) - 4.3.1 is pinned exactly by @mintlify/* (dev docs tool `mint`); every other consumer already resolves 4.3.2, 3.15.2 or 5.x. Moves with the next mint release.
 - esbuild 0.18.20: GHSA-67mh-4wv8-2f99 (latest 0.28.2) - 0.27/0.21/0.18 are pinned by vite and tool ranges that exclude 0.28; the advisories concern the esbuild dev server only.

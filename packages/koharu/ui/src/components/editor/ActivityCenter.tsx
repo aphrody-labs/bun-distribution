@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { call } from '@aphrody/koharu-ui/lib/backend'
 import { usePages } from '@aphrody/koharu-ui/lib/queries'
 import { useKoharuStore } from '@aphrody/koharu-ui/lib/store'
-import { commands, type Download as DownloadState, type Job } from '@koharu/bridge/protocol'
+import { commands, type Download as DownloadState, type Job } from '@aphrody/koharu-bridge/protocol'
 import { Button } from '../../internal/components/button'
 
 export function ActivityCenter() {

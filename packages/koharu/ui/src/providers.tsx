@@ -25,7 +25,7 @@ import {
   type Job,
   type ModelResources,
   type ProjectInfo,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 import { Toaster } from '@aphrody/m3-primitives'
 import { TooltipProvider } from '@aphrody/m3-primitives'
 

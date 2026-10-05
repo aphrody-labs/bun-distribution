@@ -28,7 +28,7 @@ import {
   usePages,
 } from '@aphrody/koharu-ui/lib/queries'
 import { useKoharuStore } from '@aphrody/koharu-ui/lib/store'
-import { prefetchCanvasPages, showCanvasPage } from '@koharu/bridge/canvas'
+import { prefetchCanvasPages, showCanvasPage } from '@aphrody/koharu-bridge/canvas'
 import {
   commands,
   type CanvasPagePreparation,
@@ -36,7 +36,7 @@ import {
   type PageImportSource,
   type PageSummary,
   type ProjectInfo,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 import { Button } from '../../internal/components/button'
 import {
   Dialog,

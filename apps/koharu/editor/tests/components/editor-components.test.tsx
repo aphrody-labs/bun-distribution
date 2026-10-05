@@ -34,14 +34,14 @@ import {
   useCommand,
 } from '@aphrody/koharu-ui/lib/queries'
 import { useKoharuStore } from '@aphrody/koharu-ui/lib/store'
-import * as canvasRuntime from '@koharu/bridge/canvas'
+import * as canvasRuntime from '@aphrody/koharu-bridge/canvas'
 import {
   commands,
   type Layer,
   type PageSummary,
   type Preferences,
   type ProjectInfo,
-} from '@koharu/bridge/protocol'
+} from '@aphrody/koharu-bridge/protocol'
 import { TooltipProvider } from '@aphrody/m3-primitives'
 
 const nativeWindow = hoisted(() => ({

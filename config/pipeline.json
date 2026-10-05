@@ -773,7 +773,7 @@
           "command": [
             "run",
             "--filter",
-            "@koharu/bridge",
+            "@aphrody/koharu-bridge",
             "lint"
           ]
         },
@@ -782,7 +782,7 @@
           "command": [
             "run",
             "--filter",
-            "@koharu/bridge",
+            "@aphrody/koharu-bridge",
             "typecheck"
           ]
         },
@@ -791,7 +791,7 @@
           "command": [
             "run",
             "--filter",
-            "@koharu/bridge",
+            "@aphrody/koharu-bridge",
             "build"
           ]
         },
@@ -800,7 +800,7 @@
           "command": [
             "run",
             "--filter",
-            "@koharu/sdk",
+            "@aphrody/koharu-sdk",
             "typecheck"
           ]
         },

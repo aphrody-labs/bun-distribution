@@ -289,9 +289,9 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `koharu-torch` | [crates/koharu/koharu-torch](../../../crates/koharu/koharu-torch) | rust crate | 0.83.5 | lib | yes | 1 | 2026-10-03 |
 | `koharu-torch-sys` | [crates/koharu/koharu-torch-sys](../../../crates/koharu/koharu-torch-sys) | rust crate | 0.83.5 | lib | no | 0 | 2026-09-29 |
 | `koharu-translator` | [crates/koharu/koharu-translator](../../../crates/koharu/koharu-translator) | rust crate | 0.83.5 | bin, lib | yes | 0 | 2026-09-29 |
-| `@koharu/bridge` | [packages/koharu/bridge](../../../packages/koharu/bridge) | bun package | 0.1.0 | lib | no | 0 | 2026-10-04 |
-| `@koharu/docs` | [packages/koharu/docs](../../../packages/koharu/docs) | bun package | - | private | no | 0 | 2026-10-04 |
-| `@koharu/sdk` | [packages/koharu/sdk](../../../packages/koharu/sdk) | bun package | 0.1.0 | lib | no | 0 | 2026-10-04 |
+| `@aphrody/koharu-bridge` | [packages/koharu/bridge](../../../packages/koharu/bridge) | bun package | 0.1.0 | lib | no | 0 | 2026-10-04 |
+| `@aphrody/koharu-docs` | [packages/koharu/docs](../../../packages/koharu/docs) | bun package | - | private | no | 0 | 2026-10-04 |
+| `@aphrody/koharu-sdk` | [packages/koharu/sdk](../../../packages/koharu/sdk) | bun package | 0.1.0 | lib | no | 0 | 2026-10-04 |
 | `@aphrody/koharu-ui` | [packages/koharu/ui](../../../packages/koharu/ui) | bun package | 0.1.0 | lib | no | 0 | 2026-10-04 |
 
 ## native
