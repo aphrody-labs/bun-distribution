@@ -51,7 +51,8 @@ name = "plugins-workspace"
 rustfmt = "default"
 crates = ["plugins/*"]
 # plugins/*/contributors: one shared assets/tauri/contributors (see the [[copy]] and README rewrite below).
-exclude = ["plugins/*/examples/**", "plugins/*/tests/**", "plugins/*/contributors/**"]
+# plugins/*/SECURITY.md: identical upstream policy, kept once as crates/tauri/SECURITY.md.
+exclude = ["plugins/*/examples/**", "plugins/*/tests/**", "plugins/*/contributors/**", "plugins/*/SECURITY.md"]
 
 [[source]]
 name = "wry"
