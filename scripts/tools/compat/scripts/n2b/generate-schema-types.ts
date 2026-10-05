@@ -23,7 +23,7 @@ const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..", "..");
 
 export async function schemaPaths(root = REPO_ROOT) {
   const crate = join(root, "crates/compat/n2b-types");
-  const schema = join(crate, "schema/v2.json");
+  const schema = join(root, "crates/contracts/schema/v2.json");
   if (!(await Bun.file(schema).exists())) {
     throw new Error(`Canonical N2B schema missing: ${schema}`);
   }
@@ -39,13 +39,13 @@ type SchemaPaths = Awaited<ReturnType<typeof schemaPaths>>;
 
 const BANNER_RS = `// @generated — DO NOT EDIT MANUALLY.
 // Regenerate with: bun scripts/tools/compat/scripts/n2b/generate-schema-types.ts
-// Source of truth: Yolo crates/aphrody-n2b-types/schema/v2.json
+// Source of truth: crates/contracts/schema/v2.json
 
 `;
 
 const BANNER_TS = `// @generated — DO NOT EDIT MANUALLY.
 // Regenerate with: bun scripts/tools/compat/scripts/n2b/generate-schema-types.ts
-// Source of truth: Yolo crates/aphrody-n2b-types/schema/v2.json
+// Source of truth: crates/contracts/schema/v2.json
 
 `;
 

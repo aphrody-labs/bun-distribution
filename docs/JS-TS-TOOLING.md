@@ -137,7 +137,7 @@ some individual file errors; it is not a substitute for N2B's strict traversal.
 | Python, desktop, browser and compiler engines | Existing uv/PyO3, Tauri, Obscura and Bun/Next owners | This lot does not deliver their future builtin absorption or shared WebView/allocator integration |
 
 The canonical report schema is
-[crates/aphrody-n2b-types/schema/v2.json](../crates/aphrody-n2b-types/schema/v2.json).
+[crates/contracts/schema/v2.json](../crates/contracts/schema/v2.json).
 Its generated TypeScript surface is
 [packages/runtime/src/tooling-schema.ts](../packages/runtime/src/tooling-schema.ts);
 the compatibility package aliases it. The Yolo schema generator owns both that

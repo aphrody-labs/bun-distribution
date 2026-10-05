@@ -84,14 +84,17 @@ files = "examples/tauri/**/*.rs"
 from = "../../examples/"
 to = "../../examples/tauri/"
 
-# The sibling rewrite makes this line longer than rustfmt's max width.
+# One config schema: the generator crate owns it; the CLI embeds that copy instead of a second generated file.
 [[rewrite]]
 files = "crates/aphrody-tauri-schema-generator/build.rs"
-from = '''    write_if_changed(out.join("../aphrody-tauri-cli/config.schema.json"), config_schema)?;'''
-to = '''    write_if_changed(
-      out.join("../aphrody-tauri-cli/config.schema.json"),
-      config_schema,
-    )?;'''
+from = '''    write_if_changed(out.join("../aphrody-tauri-cli/config.schema.json"), config_schema)?;
+'''
+to = ""
+
+[[rewrite]]
+files = "crates/aphrody-tauri-cli/src/helpers/config.rs"
+from = '''include_str!("../../config.schema.json")'''
+to = '''include_str!("../../../aphrody-tauri-schema-generator/schemas/config.schema.json")'''
 
 # Scaffolded apps depend on the Aphrody packages (the dependency keys stay `tauri`, `tauri-build`…).
 [[rewrite]]

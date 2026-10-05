@@ -57,10 +57,6 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
     let config_schema = serde_json::to_string_pretty(&config_schema)?;
     write_if_changed(schemas_dir.join(filename), &config_schema)?;
-    write_if_changed(
-      out.join("../aphrody-tauri-cli/config.schema.json"),
-      config_schema,
-    )?;
   }
 
   Ok(())

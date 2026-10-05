@@ -134,7 +134,7 @@ pub fn custom_sign_settings(
 }
 
 static CONFIG_SCHEMA_VALIDATOR: LazyLock<jsonschema::Validator> = LazyLock::new(|| {
-  let schema: JsonValue = serde_json::from_str(include_str!("../../config.schema.json"))
+  let schema: JsonValue = serde_json::from_str(include_str!("../../../aphrody-tauri-schema-generator/schemas/config.schema.json"))
     .expect("Failed to parse config schema bundled in the tauri-cli");
   jsonschema::validator_for(&schema).expect("Config schema bundled in the tauri-cli is invalid")
 });

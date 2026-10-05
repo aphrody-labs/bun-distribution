@@ -1,4 +1,4 @@
-<!-- Generated from migration/source-map.json by aphrody-ops consolidation docs-import. -->
+<!-- Generated from migration/source-map.json by yolo ops consolidation docs-import. -->
 # Documentation importée — références canoniques
 
 Navigation courante : [llms.txt](../llms.txt).

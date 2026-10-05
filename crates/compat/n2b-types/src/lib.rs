@@ -16,4 +16,4 @@ pub mod schema;
 pub mod types;
 
 /// Canonical version 2 report schema, shared by native and generated consumers.
-pub const REPORT_SCHEMA_V2: &str = include_str!("../schema/v2.json");
+pub const REPORT_SCHEMA_V2: &str = include_str!("../../../contracts/schema/v2.json");

@@ -5,7 +5,7 @@
 Patched Rust implementations are tracked inside the Aphrody Cargo workspace. Only optional build inputs live under the source root
 (`.cache/upstream`, override with `APHRODY_SOURCE_ROOT`); everything else is a catalogue entry that is read live.
 
-## Integrated Rust implementations (5)
+## Integrated Rust implementations (6)
 
 Source, tests and licences are tracked in the monorepo; Cargo needs no sibling checkout.
 
@@ -16,6 +16,7 @@ Source, tests and licences are tracked in the monorepo; Cargo needs no sibling c
 | `tauri-plugin-dialog` | 3.0.0-alpha.2 | `crates/tauri/aphrody-tauri-plugin-dialog` | `patches/tauri-plugin-dialog-3.0.0-alpha.2.patch` |
 | `serde-saphyr` | 0.0.16 | `crates/compat/serde-saphyr` | `patches/serde-saphyr-0.0.16-regex.patch` |
 | `aphrody-llama` | 0.83.5 | `crates/ml/llama` |  |
+| `aphrody-obscura` | 0.1.0 | `crates/web/obscura` |  |
 
 ## Vital checkouts (0)
 

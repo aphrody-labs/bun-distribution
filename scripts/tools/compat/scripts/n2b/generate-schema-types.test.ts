@@ -16,9 +16,9 @@ async function fixture() {
   return root;
 }
 
-test("schema and Rust output live in the n2b-types crate; generated TS in its package", async () => {
+test("schema lives in crates/contracts; Rust output in the n2b-types crate; generated TS in its package", async () => {
   const root = await fixture();
-  const schema = join(root, "crates/compat/n2b-types/schema/v2.json");
+  const schema = join(root, "crates/contracts/schema/v2.json");
   await Bun.write(schema, '{"title":"N2BReport"}');
   const paths = await schemaPaths(root);
   expect(paths.schema).toBe(schema);
