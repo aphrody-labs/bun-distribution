@@ -13,6 +13,11 @@
  *   bun scripts/build/rust/vps-cargo.ts logs <job>              replay a remote job log
  *   bun scripts/build/rust/vps-cargo.ts fetch --bin <name> [--profile release] [--dest <dir>]
  *   bun scripts/build/rust/vps-cargo.ts attach                  attach the remote tmux session
+ *
+ * `--repo <name>` (sync, run, fetch) builds an external repository declared under `repositories` in the config
+ * (for example the private vu runtime repository) through the same tunnel, locks and wrapper: its own worktree is
+ * snapshotted into its own ref, pushed to its own VPS checkout and built into its own target directory. The
+ * repository does not carry a copy of `cargo-serial.sh`; the wrapper of the Aphrody checkout on the VPS is used.
  */
 import { $ } from "bun";
 import { mkdir } from "node:fs/promises";
@@ -20,6 +25,20 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 export type Forward = { bind: string; to: string; purpose?: string };
+/** An external repository built through the tunnel (`--repo <name>`). */
+export type RepositoryConfig = {
+  /** Local worktree, `~` expanded. */
+  root: string;
+  remoteWorkspace: string;
+  /** Optional factory checkout to share objects with; empty or absent starts from an empty repository. */
+  remoteSeed?: string;
+  remoteTargetDir: string;
+  snapshotRef: string;
+  /** Absolute path of cargo-serial.sh on the VPS (an Aphrody checkout). */
+  cargoSerial: string;
+  remoteEnv?: Record<string, string>;
+};
+
 export type VpsCargoConfig = {
   host: string;
   controlPath: string;
@@ -36,7 +55,11 @@ export type VpsCargoConfig = {
   /** Largest `--jobs` the host accepts (a production host stays below its core count). */
   maxJobs?: number;
   /** Per-host overrides merged over this config: secondary build hosts such as dbfr. */
-  hosts?: Record<string, Partial<Omit<VpsCargoConfig, "hosts">>>;
+  hosts?: Record<string, Partial<Omit<VpsCargoConfig, "hosts" | "repositories">>>;
+  /** External repositories, by name, for `--repo`: primary host only. */
+  repositories?: Record<string, RepositoryConfig>;
+  /** Wrapper path on the VPS; the Aphrody default is relative to the remote workspace. Set by `--repo`. */
+  cargoSerial?: string;
   forwards: { remote: Forward[]; local: Forward[] };
   gitDaemon: { listen: string; port: number; basePath: string; repository: string };
   snapshotRef: string;
@@ -63,6 +86,37 @@ export async function loadConfig(path = CONFIG_PATH, host?: string): Promise<Vps
   const override = base.hosts?.[host];
   if (!override) throw new Error(`unknown build host "${host}" (config/host/vps-cargo.json hosts)`);
   return { ...base, ...override, remoteEnv: { ...base.remoteEnv, ...override.remoteEnv }, host };
+}
+
+/**
+ * The configuration of one external repository: its checkout, ref, target directory and wrapper replace the
+ * Aphrody ones, everything else (host, locks, tunnel) is shared. Returns the local worktree root with it.
+ */
+export function repositoryConfig(
+  config: VpsCargoConfig,
+  name: string,
+): { config: VpsCargoConfig; root: string } {
+  const repository = config.repositories?.[name];
+  if (!repository)
+    throw new Error(`unknown repository "${name}" (config/host/vps-cargo.json repositories)`);
+  const secondaries = Object.keys(config.hosts ?? {});
+  if (secondaries.includes(config.host)) {
+    throw new Error(
+      `repository "${name}" is configured for the primary host only, not ${config.host}`,
+    );
+  }
+  return {
+    root: expandHome(repository.root),
+    config: {
+      ...config,
+      remoteWorkspace: repository.remoteWorkspace,
+      remoteSeed: repository.remoteSeed ?? "",
+      remoteTargetDir: repository.remoteTargetDir,
+      snapshotRef: repository.snapshotRef,
+      cargoSerial: repository.cargoSerial,
+      remoteEnv: { ...config.remoteEnv, ...repository.remoteEnv },
+    },
+  };
 }
 
 /** True when the primary host's heavy lock is held: a build is running there. */
@@ -192,7 +246,7 @@ export function remoteRunScript(
     `cd ${shellQuote(config.remoteWorkspace)}`,
     `test "$(git rev-parse HEAD)" = ${sha} || { echo "checkout moved away from ${sha}" >&2; exit 2; }`,
     `export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`,
-    `exec env ${env.join(" ")} flock --close ${shellQuote(config.remoteHeavyLock)} scripts/build/rust/cargo-serial.sh ${cargoArgs.map(shellQuote).join(" ")}`,
+    `exec env ${env.join(" ")} flock --close ${shellQuote(config.remoteHeavyLock)} ${shellQuote(config.cargoSerial ?? "scripts/build/rust/cargo-serial.sh")} ${cargoArgs.map(shellQuote).join(" ")}`,
   ].join("; ");
   const window = `bash -c ${shellQuote(`(${body}) > ${log} 2>&1; echo $? > ${exit}`)}`;
   const session = shellQuote(config.remoteSession);
@@ -255,8 +309,10 @@ export async function snapshot(config: VpsCargoConfig, cwd = ROOT): Promise<stri
   return sha;
 }
 
-async function sync(config: VpsCargoConfig, pull: boolean): Promise<string> {
-  const sha = await snapshot(config);
+async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise<string> {
+  if (pull && root !== ROOT)
+    throw new Error("--pull reads the Aphrody git daemon: not available with --repo");
+  const sha = await snapshot(config, root);
   if (!pull) {
     // Seed the dedicated checkout first so the push has a repository to land in.
     if ((await ssh(config, remoteSeedScript(config))) !== 0) {
@@ -274,7 +330,7 @@ async function sync(config: VpsCargoConfig, pull: boolean): Promise<string> {
         `${sha}:${config.snapshotRef}`,
       ],
       {
-        cwd: ROOT,
+        cwd: root,
         env: { ...process.env, GIT_SSH_COMMAND: sshBase(config).join(" ") },
         stdout: "inherit",
         stderr: "inherit",
@@ -334,11 +390,15 @@ function flag(args: readonly string[], name: string): string | undefined {
   return index >= 0 ? args[index + 1] : undefined;
 }
 
-async function fetchArtifact(config: VpsCargoConfig, args: readonly string[]): Promise<number> {
+async function fetchArtifact(
+  config: VpsCargoConfig,
+  args: readonly string[],
+  root = ROOT,
+): Promise<number> {
   const bin = flag(args, "--bin");
   if (!bin) throw new Error("fetch needs --bin <name>");
   const profile = flag(args, "--profile") ?? "release";
-  const sha = (await $`git rev-parse ${config.snapshotRef}`.cwd(ROOT).text()).trim();
+  const sha = (await $`git rev-parse ${config.snapshotRef}`.cwd(root).text()).trim();
   const dest = expandHome(flag(args, "--dest") ?? `~/.local/lib/aphrody/wsl-${sha.slice(0, 12)}`);
   const remote = `${config.remoteTargetDir}/${profile}/${bin}`;
   await mkdir(dest, { recursive: true });
@@ -366,16 +426,20 @@ async function fetchArtifact(config: VpsCargoConfig, args: readonly string[]): P
 }
 
 const USAGE =
-  "usage: vps-cargo <tunnel up|down|status | sync [--pull] | run [--jobs N] [--pull] -- <cargo args> | logs <job> | fetch --bin <name> [--profile p] [--dest d] | attach>";
+  "usage: vps-cargo <tunnel up|down|status | sync [--pull] | run [--jobs N] [--pull] -- <cargo args> | logs <job> | fetch --bin <name> [--profile p] [--dest d] | attach> [--host <name|auto>] [--repo <name>]";
 
 export async function main(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
-  const config = await selectConfig(rest);
+  const selected = await selectConfig(rest);
+  const repo = flag(rest, "--repo");
+  const { config, root } = repo
+    ? repositoryConfig(selected, repo)
+    : { config: selected, root: ROOT };
   switch (command) {
     case "tunnel":
       return tunnel(config, rest[0]);
     case "sync":
-      console.log(await sync(config, rest.includes("--pull")));
+      console.log(await sync(config, rest.includes("--pull"), root));
       return 0;
     case "run": {
       const separator = rest.indexOf("--");
@@ -385,7 +449,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       const jobs = Number(flag(options, "--jobs") ?? Math.min(config.jobs, limit));
       if (!Number.isInteger(jobs) || jobs < 1 || jobs > limit)
         throw new Error(`--jobs must be 1..${limit} on ${config.host}`);
-      const sha = await sync(config, options.includes("--pull"));
+      const sha = await sync(config, options.includes("--pull"), root);
       const job = `${new Date().toISOString().replaceAll(/[:.]/g, "-")}-${sha.slice(0, 12)}`;
       console.log(`job ${job} (attach: bun scripts/build/rust/vps-cargo.ts attach)`);
       return ssh(config, remoteRunScript(config, sha, job, rest.slice(separator + 1), jobs));
@@ -394,7 +458,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       if (!rest[0]) throw new Error("usage: vps-cargo logs <job>");
       return ssh(config, `cat ${shellQuote(`${config.remoteLogDir}/${rest[0]}.log`)}`);
     case "fetch":
-      return fetchArtifact(config, rest);
+      return fetchArtifact(config, rest, root);
     case "attach":
       return Bun.spawn(
         [...sshBase(config), "-t", config.host, "tmux", "attach", "-t", config.remoteSession],

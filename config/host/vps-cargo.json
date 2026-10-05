@@ -36,6 +36,15 @@
     "repository": "aphrody"
   },
   "snapshotRef": "refs/wsl/snapshot",
+  "repositories": {
+    "vu": {
+      "root": "~/vu",
+      "remoteWorkspace": "/srv/aphrody-build/workspaces/vu-wsl",
+      "remoteTargetDir": "/srv/aphrody-build/cache/cargo/vu-wsl",
+      "snapshotRef": "refs/vu/snapshot",
+      "cargoSerial": "/srv/aphrody-build/workspaces/aphrody-wsl/scripts/build/rust/cargo-serial.sh"
+    }
+  },
   "refuseSnapshotPaths": [
     "(^|/)\\.env(\\..*)?$",
     "\\.(pem|key|p12|pfx)$",
