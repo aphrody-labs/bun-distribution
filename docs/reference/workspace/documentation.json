@@ -424,14 +424,14 @@
       "canonical": "AGENTS.md"
     },
     {
-      "path": "BXCTORUST.md",
+      "path": "docs/reference/workspace/BXCTORUST.md",
       "title": "BXC to Rust : Plan Directeur de Migration & d'Absorption Native",
       "sha256": "541a7be94648409d3bbd09717b7d0722161ceb311c5b26c786c6b6c77f1394bf",
       "bytes": 6375,
-      "domain": "",
+      "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "BXCTORUST.md"
+      "canonical": "docs/reference/workspace/BXCTORUST.md"
     },
     {
       "path": "CHANGELOG.md",
@@ -44167,10 +44167,6 @@
     },
     {
       "path": "TOOLS.md",
-      "reason": "symlink alias inventoried without following its content"
-    },
-    {
-      "path": "bxctorust.md",
       "reason": "symlink alias inventoried without following its content"
     }
   ]
