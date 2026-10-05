@@ -329,8 +329,8 @@ only in `tests/oracle`.
 | # | Batch | Gate | Status |
 | --- | --- | --- | --- |
 | 0 | This plan, inventory, claim | docs gate `yolo ops docs-links --root . --docs docs --scope docs` | this commit |
-| 1 | `aphrody-store`: path resolution, open, migrations 0001-0002, backup with sha256, `files/sources/pipeline_runs/sync_state`, unit tests; Graphify provenance entry | VPS `check`, `clippy -D warnings`, `test -p aphrody-store` | next |
-| 2 | Importers with dry-run: Graphify `graph.json` (graph tables 0003), memory (0004), legacy rag and knowledge.db, fsindex `files`, session index (0005), train dirs (0006); real dry-run counts on this machine | same + fixtures | |
+| 1 | `aphrody-store`: path resolution, open, migrations 0001-0006 (schema for all later batches), backup with sha256, `files/sources/pipeline_runs/sync_state`, deny list, unit tests; Graphify reference provenance entry | VPS `test -p aphrody-store` (36 tests), `clippy --all-targets -D warnings` | done |
+| 2 | Importers with dry-run: Graphify `graph.json` (streamed), memory, legacy rag, session index (metadata only) with the `aphrody-store` transitional CLI (`status`, `backup`, `import ... [--apply]`); remaining: knowledge.db (needs the rag chunkers, batch 3), fsindex `files`, train dirs; real dry-run counts on this machine | same + fixtures | code done, real dry run pending |
 | 3 | Unified retrieval in `aphrody-rag`: `RagStore` opens the home file, one hybrid search over chunks + graph + memories, pipeline stages classify/chunk/embed/index with `files` fingerprints, incremental and resumable | VPS tests + rag-eval smoke | |
 | 4 | `aphrody-code-graph`: model, `graph.json` I/O, query/path/explain/report, Rust extraction, fixtures and oracle snapshots (P1, P2 for Rust) | VPS tests | |
 | 5 | Code-graph breadth: TS/JS and Python, communities, god nodes, P2 to P6 complete; Graphify leaves the execution path | parity report committed | |

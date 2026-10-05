@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-store"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "aphrody-store: the single agent-home database (`<home>/db/aphrody.sqlite`): per-profile path resolution, versioned migrations, source/file fingerprints, pipeline journal, sync state and checksum-verified backups."
+
+[lints]
+workspace = true
+
+[features]
+default = []
+# Register sqlite-vec (`vec0`) on every connection (migration 0007 and later add the vec tables).
+vec = ["aphrody-sql/vec"]
+
+[dependencies]
+aphrody-agent-home = { workspace = true }
+aphrody-sql        = { workspace = true, features = ["sqlite"] }
+clap               = { workspace = true, features = ["derive"] }
+rusqlite           = { workspace = true }
+serde              = { workspace = true }
+serde_json         = { workspace = true }
+sha2               = { workspace = true }
+thiserror          = { workspace = true }
+
+[[bin]]
+name = "aphrody-store"
+path = "src/bin/aphrody-store.rs"
+
+[dev-dependencies]
+tempfile = { workspace = true }

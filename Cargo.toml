@@ -40,6 +40,7 @@ sqlite-vec = "0.1.9"
 rustls-native-certs = "0.8"
 webpki-roots = "1"
 aphrody-sql = { path = "crates/infra/sql", version = "0.1.0", default-features = false }
+aphrody-store = { path = "crates/ai/store", version = "1.0.0", features = [] }
 pyo3 = { version = "0.29", features = [] }
 anyhow = "1.0.104"
 aes-gcm = { version = "0.11", features = [] }
