@@ -4,7 +4,7 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type ExternalCheckout = "aphrody-py" | "iecode" | "rg" | "source" | "bxc";
+export type ExternalCheckout = "aphrody-py" | "iecode" | "rg" | "source" | "bxc" | "yolo" | "m3";
 
 const rootMarkers = ["rust-toolchain.toml", "Cargo.toml", "package.json"] as const;
 const envNames: Record<ExternalCheckout, readonly string[]> = {
@@ -13,6 +13,8 @@ const envNames: Record<ExternalCheckout, readonly string[]> = {
   rg: ["APHRODY_RG_ROOT", "RG_REPO_ROOT"],
   source: ["APHRODY_SOURCE_ROOT"],
   bxc: ["APHRODY_BXC_ROOT", "BXC_ROOT"],
+  yolo: ["APHRODY_YOLO_ROOT", "YOLO_ROOT"],
+  m3: ["APHRODY_M3_ROOT", "M3_ROOT"],
 };
 
 /** Find this Aphrody checkout by its root manifests, starting at a file or directory. */
@@ -50,15 +52,19 @@ export function checkoutRoot(checkout: ExternalCheckout): string {
   const parent = dirname(root);
   switch (checkout) {
     case "aphrody-py":
-      return resolve(parent, "aphrody-py");
+      return existsSync(join(root, "py")) ? join(root, "py") : resolve(parent, "aphrody-py");
     case "iecode":
-      return resolve(parent, "iecode");
+      return existsSync("/mnt/c/iecode") ? "/mnt/c/iecode" : resolve(parent, "iecode");
     case "rg":
       return root;
     case "source":
       return resolve(root, ".cache", "upstream");
     case "bxc":
       return join(homedir(), "bxc");
+    case "yolo":
+      return resolve(parent, "yolo");
+    case "m3":
+      return existsSync(join(root, "m3")) ? join(root, "m3") : resolve(parent, "aphrody-m3");
   }
 }
 
