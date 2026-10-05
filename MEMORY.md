@@ -137,3 +137,9 @@ Relevé en lecture seule (aucun Cargo) avec `yolo`, `aphrody-workspace`, `gh` et
 | Nom et plan | `0cd1df3a8` : runtime `vu` (inverse littéral de `uv`), décision du propriétaire, une constante dans `docs/plans/vu/scaffold/vu.json` ; [plan](docs/plans/vu/PLAN.md) avec journal de vérification et décisions D1 à D10 | Dépôt `vu` non créé |
 | Forks | `aphrody-labs/uv` `vu-pin-0.12.23` (`46b84fd0`), `aphrody-labs/ruff` `vu-pin-0.16.10` (`3265ed1f`), `aphrody-labs/pyo3` `vu-pin-0.29.3` (`451d99fd`) ; les paquets crates.io portent les mêmes commits ; les verrous de uv et ruff n'ont ni source git ni pyo3 ; `scripts/audit/workspace/vu-pins.ts` (6 tests, `--online` vert) ; entrées `vu-*` de `config/upstream-sources.json` | Forks publics (règle GitHub), aucun correctif Aphrody ; les crates `uv-*` et `ruff_*` sont des composants internes, l'interface publique est la CLI |
 | Faisabilité | VPS, rustc 1.98.1, 4 jobs : vérification de uv 3 min 51, de ruff 1 min 32, d'un binaire d'essai uv + ruff + PyO3 dans un workspace de 804 paquets 3 min 29 | Pas de build release, pas d'édition de liens, glibc du binaire non mesurée (WSL 2.39, VPS 2.43) |
+
+## Foyer agent, base unique, pipeline unique (agent-home-pipeline) — 2026-10-06
+
+| Lot | Preuve | Limite |
+| --- | --- | --- |
+| 0 Plan | [plan](docs/plans/agent-home-pipeline/PLAN.md) : inventaire mesuré (15 crates IA plus shell/session et sql, 16 bases SQLite et environ 735 transcripts JSONL sous ~/.aphrody, 4 chemins RAG divergents, 3 formats de mémoire, 4 magasins de vecteurs, 3 magasins d entraînement), graphe Graphify de ce dépôt (105 977 nœuds, 234 039 arêtes, 97 % EXTRACTED), cible une base `<foyer>/db/aphrody.sqlite` par foyer, crates `aphrody-store` et `aphrody-code-graph`, critères de parité P1 à P6, lots 1 à 8 | Aucun code ; `yolo train` n existe pas (délégué à créer) ; aucune base `vector/rag.sqlite` ni `rag/index.db` sur cette machine |
