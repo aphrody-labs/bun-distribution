@@ -447,7 +447,7 @@ export function renderTools(generatedAt: string, home: string, root: string): st
     "",
     "## Propriétaires et commandes",
     "",
-    "- Inventaire des commandes : CLI.md à la racine du monorepo ; consulter --help du binaire installé.",
+    "- Inventaire des commandes : docs/reference/workspace/CLI.md dans le monorepo ; consulter --help du binaire installé.",
     "- Kernel OS : `aphrody-kernel tools`, `aphrody-kernel call <outil> '<JSON>'`, `aphrody-kernel mcp`.",
     "- Nushell : `nu_eval` reçoit code/cwd/vars ; transmettre les données via vars. Cet outil peut modifier le système.",
     "- Git : `github_status` reçoit repo_path ; sa liste de modifications ne prouve pas leur auteur.",
