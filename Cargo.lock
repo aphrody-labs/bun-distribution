@@ -31790,6 +31790,72 @@ dependencies = [
 ]
 
 [[package]]
+name = "yolo-core"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "blake3",
+ "chrono",
+ "dashmap",
+ "dunce",
+ "globset",
+ "ignore",
+ "libc",
+ "notify 8.2.0",
+ "notify-debouncer-full",
+ "oxc_allocator",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_parser",
+ "oxc_span",
+ "parking_lot",
+ "rayon",
+ "regex",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "yolo-desktop"
+version = "1.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tauri-runtime-wry",
+ "yolo-core",
+]
+
+[[package]]
+name = "yolo-pyo3"
+version = "1.0.0"
+dependencies = [
+ "pyo3",
+ "yolo-core",
+]
+
+[[package]]
+name = "yolo-runtime"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "base64 0.23.1",
+ "libc",
+ "obscura-browser",
+ "obscura-net",
+ "serde",
+ "serde_json",
+ "tokio",
+ "url",
+ "yolo-core",
+]
+
+[[package]]
 name = "yolo-tooling"
 version = "1.0.0"
 dependencies = [

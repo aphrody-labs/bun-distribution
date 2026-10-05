@@ -1,112 +1,73 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Aphrody — plan actif
+# Plan Directeur Unique — Aphrody & Yolo Core Trinity
 
-Décision propriétaire : 2026-10-03. Objectif : applications Aphrody utilisant
-un runtime Bun/Tauri/Obscura précompilé et un SDK léger, avec installation,
-upgrade et rollback qualifiés. La refonte complète reste ouverte.
+Document d'architecture canonique et plan d'exécution unifié.
+Version : 2026-10-05 | Auteur : aphrody-dev <contact@aphrody.com>
 
-## Autorité et propriétaires
+---
 
-| Source unique | Responsabilité |
-| --- | --- |
-| Ce plan | Architecture commune, migration produit et critères de réussite |
-| [Plan Yolo](../yolo/PLAN.md) | Runtime, SDK, phases producteur et distribution |
-| [MEMORY.md](MEMORY.md) | Preuves consommateur et limites datées |
-| [Mémoire Yolo](../yolo/MEMORY.md) | Preuves producteur et artefacts natifs |
-| [AGENTS.md](AGENTS.md) | Règles du dépôt, identité, confidentialité et gates |
+## 1. Vision et Doctrine Fondamentale
 
-Aphrody conserve workflows, UI, intégrations et données métier. Yolo possède les
-moteurs et fournit des releases épinglées ; aucune source moteur dans Aphrody.
-Workspace/Infra possède orchestration, inventaires, fabriques et déploiement.
-UI : `m3/packages/app-ui`, `crates/ui/*`. Le sous-module M3 est directement à la
-racine (`m3/`), selon la [décision du 2026-10-05](docs/architecture/workspace/M3-LOCATION.md).
-Python et IECODE restent dans leurs
-dépôts, avec leurs contrats et stores séparés.
+Ce plan centralise et fusionne l'ensemble des axes directeurs du projet :
+1. **Dépôt central unique** : `/home/aphro/aphrody` est l'espace monorepo consolidé. Aucun clone orphelin ou arborescence de code résiduelle hors de ce périmètre.
+2. **Trinité Technologique 2026** :
+   - **Rust** : Moteur natif haute performance, C-ABI stable, sûreté mémoire, zéro copie.
+   - **Bun** : Runtime JavaScript/TypeScript 7 ultra-rapide, consommation native directe via `bun:ffi`.
+   - **Python / uv** : Écosystème IA/ML, PyO3 sans GIL (`py.detach()`), packaging unifié sous `uv`.
+3. **Zéro duplication** :
+   - Un seul workspace Rust Cargo consolidé.
+   - Un seul workspace Bun (`package.json`).
+   - Un seul workspace Python (`uv` / `pyproject.toml`).
+   - Élimination des wrappers et ponts redondants.
 
-## Contrats d'architecture
+---
 
-- SDK versionné et ABI C : poignées opaques, structures dimensionnées, négociation
-  ABI/capacités, buffers avec longueur, libération par l'allocateur, erreurs,
-  annulation, callbacks et règles de threading/lifetime explicites.
-- Les types Rust internes et rlibs moteurs ne sont pas l'ABI applicative.
-  Une extension standard doit compiler sans reconstruire les moteurs.
-- Chaque contexte, opération et ressource a un propriétaire. Files bornées,
-  saturation explicite ; arrêter et joindre les workers avant unload.
-  Respecter le thread UI et les threads autorisés des objets JavaScript.
-- Vérifier permissions, origine et isolation dans le natif. Une page distante
-  ne reçoit aucun privilège Bun/host implicite ; cookies et profils restent isolés.
-- Préserver unwind/récupération aux frontières réelles des artefacts.
-  Une faute mémoire peut arrêter le processus ; isoler les travaux quand requis.
-- Directive propriétaire du 2026-10-05 : Bun conserve JSC/WebKit, Obscura apporte
-  le fournisseur V8/headless, Tauri reste un plugin desktop. Qualifier leurs
-  contrats : DOM, GC, exceptions, promesses, microtasks, modules, workers,
-  timers, interruptions et destruction. Le retrait général de V8 n’est plus
-  la cible. La WebView embarquée partagée avec Bun exige un vrai backend Wry ;
-  les WebViews actuelles utilisent encore leurs moteurs de plateforme.
-- Garder les graphes moteurs compatibles et indépendants si nécessaire.
-  Préserver noms d'API/CLI/permissions, licences, provenance, features et lockfiles.
-  Retirer un chemin remplacé dans le lot qui qualifie son remplacement.
-- Compiler les moteurs par version/cible ; distribuer SDK, artefacts, hashes
-  et compatibilité. Refuser une ABI incompatible avant tout appel natif.
+## 2. Cartographie et Rôles
 
-## Exécution autonome — no human in the loop
+| Composant | Rôle & Responsabilité | Localisation canonique |
+| :--- | :--- | :--- |
+| **Aphrody CLI** | Point d'entrée AI-first, orchestration globale, MCP, agents, commandes | `apps/cli`, `crates/infra/aphrody-command` |
+| **Yolo Core & Runtime** | Moteur de supervision, benchmarking matériel, isolation processus | `crates/engine/yolo-core`, `crates/engine/yolo-runtime` |
+| **Interop FFI Unique** | Bibliothèque C-ABI unifiée (`libaphrody_ffi.so`) chargeant CLI, runtime, M3 tokens et tooling | `crates/interop/ffi` |
+| **M3 UI & Design System** | Tokens Material 3, composants, Canvas et rendu graphique pur | `m3/`, `crates/ui/*` |
+| **Python IA / ML SDK** | Extension native PyO3 (`_yolo_native` / `aphrody_rust`), RAG, embeddings | `py/packages/aphrody`, `crates/engine/yolo-pyo3`, `crates/ai/rag-python` |
+| **Obscura / Web Engine** | Navigation headless, extraction de données, profils stealth, HAR | `crates/web/*` |
 
-Dans le périmètre déjà autorisé, décider et exécuter de bout en bout sans
-confirmation intermédiaire : contrat ciblé → modification → gates → correction
-→ revue du diff → commit propriétaire → push sur le remote existant.
-Continuer les lots autorisés jusqu'à satisfaction des critères.
+---
 
-Utiliser les checkouts et caches existants. Aucun clone supplémentaire, copie
-de travail, checkout propre ou copie de script propriétaire. Appeler directement
-le propriétaire existant ; signaler un prérequis absent sans créer un substitut.
-Pas de nouvelle archive ni de code mort après migration qualifiée.
+## 3. Architecture FFI Unifiée
 
-Réutiliser les règles d'[AGENTS.md](AGENTS.md) : préserver les modifications
-concurrentes et les stores protégés ; réserver les chemins ; gates scoped une fois,
-puis répéter seulement après changement pertinent ou échec non résolu.
-Cargo sérialisé, sccache conservé, moteurs lourds par la fabrique.
+### A. Dynamic Library C-ABI (`bun:ffi`)
+- **Bibliothèque unique** : `libaphrody_ffi.so` (Linux) / `aphrody_ffi.dll` (Windows).
+- **Surfaces exportées** :
+  1. `aphrody_*` : Exécution in-process des commandes de la CLI.
+  2. `yolo_*` : Cycle de vie du runtime, supervision de processus, sondes HTTP, benchmark matériel.
+  3. `bun_rs_*` : Rendu des composants M3, calculs colorimétriques HCT, compilation SASS, SVG.
+  4. `aphrody_n2b_*` & `aphrody_oxc_*` : Passerelles AST et transpilation.
+  5. `ffi_sum_squares` : Calcul vectoriel zéro copie haute performance.
 
-Les validations techniques restent obligatoires. Une autorité manquante,
-une donnée indispensable ou un blocage externe est consigné ; avancer sur
-le reste autorisé. Cette consigne ne crée pas d'autorisation de publication
-publique, de destruction de données ou d'action dans un autre domaine.
+### B. Python Extension Modules (PyO3 0.29)
+- Déchargement systématique du GIL via `py.detach()`.
+- Calculs vectoriels, similarités cosinus et RRF natifs via Rayon.
 
-## Queue consommateur
+---
 
-| Ordre | Travail | Critère de fermeture |
-| --- | --- | --- |
-| 1 | Acquisition du runtime natif et compatibilité avec le SDK épinglé | Artefact vérifié obtenu sans rebuild moteur ; install/upgrade/rollback |
-| 2 | Intégrer le pilote desktop R3 fourni par Yolo | Écran rendu, permissions refusées, événements, annulation, arrêt, bundle installé |
-| 3 | Intégrer le navigateur R4 fourni par Yolo | Navigation, extraction, capture, isolation, tests produit |
-| 4 | Migrer les produits R7 : Shenron, RG, Koharu et autres consommateurs concernés | Graphe léger, contrats produit et release passent ; chemins remplacés retirés |
-| 5 | Qualifier les variantes serveur/headless/desktop | Santé et récupération, installation sur la matrice réellement supportée |
-| 6 | Valider R5/R6 côté produit, puis R8 | Contrats et coexistence JSC/V8, sélection des fournisseurs, mesures reproductibles |
+## 4. Jalons d'Exécution
 
-Supervision Web et bootstrap SDK sont livrés dans la portée de
-[MEMORY.md](MEMORY.md). Les jalons producteur sont suivis uniquement dans Yolo.
-Le SDK bootstrap exige un producteur existant ou un cache vérifié ; l'acquisition
-native sur une nouvelle machine reste ouverte.
+- [x] **Phase 1 : Consolidation Monorepo**
+  - Fusion des packages Bun et suppression des clones redondants (`nie-ui`, `aphrody-py`).
+  - Validation des suites de tests TypeScript (135 tests réussis).
+  - Validation de la suite de tests Python via `uv` (37 tests réussis).
 
-## Définition de réussite
+- [ ] **Phase 2 : Unification Native FFI**
+  - Intégrer les exports `yolo_*` et `ffi_sum_squares` dans `crates/interop/ffi`.
+  - Harmoniser le header C `crates/interop/ffi/include/aphrody.h`.
+  - Vérifier la compilation Cargo (`cargo check -p aphrody-ffi`).
 
-- [ ] Modifier workflow, écran ou intégration ne reconstruit pas les moteurs.
-- [ ] Une extension Rust standard compile avec le SDK léger.
-- [ ] Toute ressource native a un propriétaire et une destruction vérifiée.
-- [ ] Annulation et arrêt ne laissent ni fuite ni callback invalide.
-- [ ] Les droits des pages et extensions sont contrôlés côté natif.
-- [ ] Runtime/application : compatibilité, upgrade et rollback qualifiés.
-- [ ] Artefacts lourds précompilés pour chaque cible supportée.
-- [ ] Gains de build, taille et mémoire mesurés séparément.
-- [ ] Limites de compatibilité documentées.
-- [ ] Anciens chemins inutiles retirés après qualification.
+- [ ] **Phase 3 : Consolidation des Consommateurs SDK**
+  - Pointer le SDK `@aphrody/runtime` de manière transparente vers `aphrody_ffi`.
+  - Requalifier le chargement dynamique sous Bun (`bun:ffi`).
 
-Chaque fermeture cite son reçu : révisions, cible, commandes, résultats,
-artefact et limites. Distinguer source, tests, packaging, installation et
-activation. Aucun gain, support multiplateforme ou déploiement déduit des sources.
-
-## Références d'exécution
-
-- [Qualification consommateur](docs/guides/workspace/runtime-consumer.md)
-- [Référence Rspyts](docs/plans/runtime/rspyts-alignment.md)
-- [Stack sélectionnée](docs/reference/workspace/STACK-REPORT-2026-10.md)
-- [Commandes propriétaires](docs/guides/workspace/documentation.md)
+- [ ] **Phase 4 : Documentation & Nettoyage Final**
+  - Vérifier que tous les chemins relatifs sont synchronisés.
+  - Valider l'intégrité de l'Agent Home.
