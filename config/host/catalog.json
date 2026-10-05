@@ -326,6 +326,23 @@
       "pairs": "shenron-backup.service"
     },
     {
+      "service": "shenron-neon-pull",
+      "unit": "shenron-neon-pull.service",
+      "path": "systemd/shenron/shenron-neon-pull.service",
+      "dropIns": ["run-as-ubuntu"],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "shenron-neon-pull",
+      "unit": "shenron-neon-pull.timer",
+      "path": "systemd/shenron/shenron-neon-pull.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "shenron-neon-pull.service"
+    },
+    {
       "service": "shenron-cdn-sync",
       "unit": "shenron-cdn-sync.service",
       "path": "systemd/shenron/shenron-cdn-sync.service",

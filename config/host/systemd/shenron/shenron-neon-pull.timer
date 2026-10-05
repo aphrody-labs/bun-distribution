@@ -1,0 +1,12 @@
+# shenron-neon-pull.timer — reverse-sync PostgreSQL vers le réplica SQLite du bot, toutes les 15 min.
+[Unit]
+Description=Shenron — rafraîchissement du réplica SQLite (15 min)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+RandomizedDelaySec=30s
+Unit=shenron-neon-pull.service
+
+[Install]
+WantedBy=timers.target

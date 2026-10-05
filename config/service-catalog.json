@@ -214,6 +214,15 @@
       "runtime": "native",
       "unit": "shenron-backup.timer",
       "public": false
+    },
+    {
+      "id": "shenron-neon-pull",
+      "application": "shenron",
+      "kind": "replica-sync",
+      "runtime": "bun",
+      "unit": "shenron-neon-pull.timer",
+      "note": "every 15 min: apps/bot/scripts/sync-neon-to-sqlite.ts of /srv/shenron/current refreshes /srv/shenron/shared/bot/data/bot.db from PostgreSQL (never empties a table without --allow-empty)",
+      "public": false
     }
   ],
   "policies": {

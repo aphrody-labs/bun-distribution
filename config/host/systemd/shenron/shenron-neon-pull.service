@@ -1,0 +1,33 @@
+# shenron-neon-pull — rafraîchit le réplica SQLite du bot depuis PostgreSQL (source éditoriale).
+#
+# Exécute `apps/bot/scripts/sync-neon-to-sqlite.ts` de la release active
+# (/srv/shenron/current) contre /srv/shenron/shared/bot/data/bot.db, avec l environnement du
+# bot (DATABASE_URL via shenron-pg-tunnel). Une table que PostgreSQL rend vide n est jamais
+# vidée : le script exige `--allow-empty`, que cette unité ne passe pas.
+# Déclenché par shenron-neon-pull.timer (toutes les 15 min).
+#
+# Installation :
+#   bun $YOLO_ROOT/packages/engine/core/src/host/cli.ts compose-unit shenron-neon-pull.service | sudo tee /etc/systemd/system/shenron-neon-pull.service >/dev/null
+#   bun $YOLO_ROOT/packages/engine/core/src/host/cli.ts compose-unit shenron-neon-pull.timer | sudo tee /etc/systemd/system/shenron-neon-pull.timer >/dev/null
+#   sudo systemctl daemon-reload && sudo systemctl enable --now shenron-neon-pull.timer
+[Unit]
+Description=Shenron — réplica SQLite du bot rafraîchi depuis PostgreSQL
+After=network-online.target shenron-pg-tunnel.service
+Wants=network-online.target shenron-pg-tunnel.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/shenron/current/apps/bot
+EnvironmentFile=-/etc/rose-griffon/shenron-bot.env
+Environment=DATABASE_PATH=/srv/shenron/shared/bot/data/bot.db
+Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/home/ubuntu/.bun/bin/bun scripts/sync-neon-to-sqlite.ts
+TimeoutStartSec=10min
+Nice=10
+IOSchedulingClass=idle
+MemoryMax=1G
+NoNewPrivileges=yes
+PrivateTmp=yes
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=shenron-neon-pull
