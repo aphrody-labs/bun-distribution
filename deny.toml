@@ -1,0 +1,54 @@
+# cargo-deny policy for the whole workspace (run: just deny)
+
+[graph]
+all-features = false
+
+[advisories]
+version = 2
+ignore = []
+
+[licenses]
+version = 2
+confidence-threshold = 0.8
+allow = [
+  "MIT",
+  "MIT-0",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Zlib",
+  "0BSD",
+  "CC0-1.0",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Unicode-DFS-2016",
+  "BSL-1.0",
+  "CDLA-Permissive-2.0",
+  "OpenSSL",
+  "BlueOak-1.0.0",
+  "NCSA",
+  "bzip2-1.0.6",
+  "LGPL-2.0-or-later",
+  "Unlicense",
+]
+
+# Unpublished workspace crates (publish = false) carry no license of their own.
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "allow"
+wildcards = "allow"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# Git dependencies pinned in Cargo.lock (mistral.rs and its candle, the aphrody-labs taffy fork).
+allow-git = [
+  "https://github.com/EricLBuehler/mistral.rs.git",
+  "https://github.com/huggingface/candle.git",
+  "ssh://git@github-dev/aphrody-labs/taffy.git",
+]

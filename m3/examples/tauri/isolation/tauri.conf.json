@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.tauri.isolation",
   "build": {
-    "frontendDist": "dist",
+    "frontendDist": "ui",
     "beforeDevCommand": "",
     "beforeBuildCommand": ""
   },
