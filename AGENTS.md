@@ -28,7 +28,7 @@ UI is canonical in `m3/packages/app-ui` and `crates/ui/*`.
 - Rust: `crates/<domain>/<crate>`; general CLI: `apps/cli`.
 - Bun apps/packages: `apps/<domain>/<app>`, `packages/<domain>/<package>`.
 - Docs: `docs/<category>/<domain>`; scripts: `scripts/{audit,build,dev,migration,release,tools}`.
-- Infra: `yolo/config/host/` (inventory, toolchain, units, nginx); live audits: `scripts/audit/live*`;
+- Infra: `config/host/` (`inventory/`, `systemd/`, `nginx/`, `rg/`, `nie/`); live audits: `scripts/audit/live*`;
   Shenron admin: `scripts/tools/shenron`.
 
 [Rust naming](docs/architecture/rust-crate-naming.md) applies. Package/library/
@@ -76,6 +76,9 @@ Never npm, npx or bunx: call the binaries on PATH directly (oxlint, oxfmt, tsc).
 Remote work goes through `aphrody-infra ssh` or the MCP `infra_exec`, never raw ssh.
 
 ## Builds and validation
+
+Bun gates (root `package.json`): `bun run bun:check`, `typecheck`, `lint`,
+`format:check`, `test` (all via `@aphrody/workspace`); web: `web:verify`.
 
 Workers never start Cargo. The integrating agent uses
 `scripts/build/rust/cargo-serial.sh`, the configured factory and global sccache.
