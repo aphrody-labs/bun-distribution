@@ -77,6 +77,8 @@ capability owners where they exist: the Aphrody MCP tools, the single Rust CLI `
 Bun CLI `yolo` (`yolo ops`, `yolo workspace`, `yolo update`…) and Bun. Python stays product code under
 `py/`, run through `uv`. Call the binaries on PATH directly (oxlint, oxfmt, tsc). Remote hosts go through
 `aphrody infra ssh` or the MCP `infra_exec`; the `vps-cargo` tunnel is the SSH master for remote Cargo from WSL.
+Subagents follow the same owners: [agent tooling brief](docs/operations/agent-tooling.md) (skills, MCP tools,
+`aphrody`/`yolo` commands).
 
 Code graph: Graphify (`uv tool install graphifyy`, skill `/graphify`) indexes first-party code locally and offline
 (no LLM, `.graphifyignore` skips vendored trees and docs). Build or refresh with `graphify update .`, then prefer
