@@ -71,3 +71,27 @@ Ce plan centralise et fusionne l'ensemble des axes directeurs du projet :
 - [~] **Phase 4 : Documentation & Nettoyage Final** (chemins du tableau §2 vérifiés présents 2026-10-05 ; intégrité Agent Home `crates/ai/agent-home` en attente du gate Cargo sérialisé)
   - Vérifier que tous les chemins relatifs sont synchronisés.
   - Valider l'intégrité de l'Agent Home.
+
+## 5. Consolidation : un CLI, un FFI, un MCP (inventaire 2026-10-05)
+
+Cibles uniques : CLI `aphrody` (`apps/cli` + `crates/infra/aphrody-command`), FFI `aphrody-ffi`
+(`crates/interop/ffi`), MCP `aphrody-mcp` (`crates/ai/mcp`). Bun : un seul CLI `yolo`
+(`apps/yolo/cli`). Les identités publiées (binaires, symboles `yolo_*`, noms d'outils MCP)
+restent des alias de compatibilité jusqu'à qualification.
+
+- [ ] **CLI Rust** — absorber en sous-commandes de `aphrody-command` : `aphrody-infra`, `aphrody-yolo`,
+  `aphrody-google`, `aphrody-gemini-web`, `aphrody-x` (`x-cli`), `n2b`, `aphrody-translate`,
+  `aphrody-summary`, `aphrody-skills`, `aphrody-embed`, `aphrody-jev`, `aphrody-web`, `aphrody-app`,
+  `aphrody-kernel`, `aphrody-llama-daemon`. Bins de test/outil (`paint_file`, `pixel`, `export_assets`,
+  `a2a-duel-loop`, `rag-eval`, `tauri-e2e`) vont sous `examples/` ou `xtask`.
+- [ ] **CLI Bun** — replier `aphrody-ops`, `aphrody-optimize`, `aphrody-workspace`, `aphrody-update`,
+  `aphrody-ovh`, `aphrody-google`, `pipeline`, `doc-ai`, `agent-browser` en sous-commandes de `yolo`.
+- [ ] **FFI** — un seul cdylib `aphrody_ffi` : intégrer `yolo-tooling` (24 L, ré-exporte n2b-native et
+  oxc-bridge), `aphrody-inference-ffi`, `yolo-desktop`, `aphrody-a2a-ui`, `aphrody-shell-web`,
+  `aphrody-m3-showcase` par features ; `yolo-runtime` est déjà une dépendance. `yolo-pyo3` et
+  `py/packages/aphrody/native` restent des modules d'extension Python (PyO3), pas des cdylib C.
+- [ ] **MCP** — un seul serveur `aphrody-mcp` : intégrer `aphrody-google-mcp`, `obscura-mcp`,
+  `aphrody-tauri-mcp` (orphelins, aucun consommateur) et `aphrody-mcp-smoke` (test) ; `mcp-client` et
+  `mcp-oauth` restent des bibliothèques.
+- Gate : chaque fusion est qualifiée par `cargo check`/tests via la factory (révision épinglée) ou
+  `bun test`, puis l'ancien crate/package est supprimé. Aucune fusion sans gate.
