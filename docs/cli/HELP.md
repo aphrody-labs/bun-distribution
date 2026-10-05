@@ -178,7 +178,7 @@ COMMANDS:
 
 ```
 Unknown python subcommand: -h
-Usage: yolo py [status|test|lint|fmt|build] [--json|--md]
+Usage: yolo py [status|test|lint|fmt|build] [--engine] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]
 ```
 
 ## yolo hooks -h
