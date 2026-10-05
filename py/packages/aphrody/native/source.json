@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "repository": "aphrody",
+  "revision": "a4eb11a4b94fec3eb3207242bfe7412d4c331c05",
+  "canonical_path": "crates/ai/rag-python/src/lib.rs",
+  "canonical_core_path": "crates/ai/rag-core/src/fusion.rs",
+  "canonical_vector_path": "crates/ai/rag-core/src/vectors_f64.rs",
+  "canonical_float32_vector_path": "crates/ai/rag-core/src/vectors_f32.rs",
+  "projection": "wrapper bytes plus crate alias/module declarations; core module bytes unchanged",
+  "license": "Apache-2.0",
+  "archive_sha256": "cf961f7438779bce6409b20858f5f9e2afe1e5cdfb38ba1fdd6fdf33b1804969",
+  "files": {
+    "src/fusion.rs": {
+      "sha256": "e1a54693d588d59a423b4c5a1294b686ff20e56a552246887fc9e7d7a7eff365",
+      "size": 18288
+    },
+    "src/lib.rs": {
+      "sha256": "5c083e6cce1c4f2fc285c297fbcaf2854627a66680898b38d2e98e324509facf",
+      "size": 10241
+    },
+    "src/vectors_f32.rs": {
+      "sha256": "22866458d874f4b89f077619d2859f5b785b30dd896504e60c0e1ecc59615d9f",
+      "size": 6166
+    },
+    "src/vectors_f64.rs": {
+      "sha256": "8a1db013fdf32dd7228ab851c31473b62d3491b6ca55fbfe13c3b1bb0cbf6cf4",
+      "size": 12411
+    }
+  }
+}

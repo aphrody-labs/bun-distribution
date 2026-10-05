@@ -1,0 +1,24 @@
+{
+  "name": "@aphrody/yolo-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "scripts": {
+    "dev": "bun run build.ts --dev",
+    "build": "bun run build.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src/",
+    "tauri": "tauri --config ../../crates/yolo-desktop/tauri.conf.json",
+    "test": "bun --cwd=../.. test test/web.test.ts"
+  },
+  "dependencies": {},
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/yolo.git",
+    "directory": "apps/web"
+  }
+}

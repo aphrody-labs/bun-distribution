@@ -1,0 +1,185 @@
+# config.ini.example — copy this file to config.ini and customise for your setup.
+#
+# config.ini is gitignored (it may contain GCP project IDs written by the wizard).
+# This example file is the committed template; keep it clean of user-specific values.
+#
+# Quick start:
+#   cp config.ini.example config.ini
+#   # Edit [dataset:*] and [profile:*] sections for your data and training run.
+
+[DEFAULT]
+num_train_epochs = 3
+logging_steps = 25
+save_steps = 1000
+save_total_limit = 1
+gradient_accumulation_steps = 1
+learning_rate = 1e-5
+warmup_steps = 50
+output_dir = output
+
+# Text-only fine-tuning (optional). Default is speech/audio; omit these or use modality = audio.
+# modality = text
+# text_sub_mode = instruction
+# prompt_column = prompt
+# max_seq_length = 2048
+
+# Image + text fine-tuning (optional). CSV with image paths; see README/Datasets.md.
+# modality = image
+# image_sub_mode = caption
+# image_path_column = image_path
+# image_token_budget = 280
+# For VQA: image_sub_mode = vqa and set prompt_column to the question column.
+
+[dataset_defaults]
+text_column = text_perfect
+max_label_length = 256
+max_duration = 30.0
+id_column = id
+streaming_enabled = false
+preprocessing_num_workers = 0
+dataloader_num_workers = 4
+
+[group:gemma]
+dtype = bfloat16
+attn_implementation = eager
+optim = adamw_torch
+
+# Gemma 4 — primary targets (pre-trained base, recommended for audio LoRA fine-tuning)
+[model:gemma-4-e2b]
+base_model = google/gemma-4-E2B
+group = gemma
+per_device_train_batch_size = 2
+per_device_eval_batch_size = 2
+
+[model:gemma-4-e4b]
+base_model = google/gemma-4-E4B
+group = gemma
+per_device_train_batch_size = 1
+per_device_eval_batch_size = 1
+
+# Gemma 4 — instruction-tuned variants (alternative starting point)
+[model:gemma-4-e2b-it]
+base_model = google/gemma-4-E2B-it
+group = gemma
+per_device_train_batch_size = 2
+per_device_eval_batch_size = 2
+
+[model:gemma-4-e4b-it]
+base_model = google/gemma-4-E4B-it
+group = gemma
+per_device_train_batch_size = 1
+per_device_eval_batch_size = 1
+
+# Gemma 3n — retained for backwards compatibility
+[model:gemma-3n-e2b-it]
+base_model = google/gemma-3n-E2B-it
+group = gemma
+per_device_train_batch_size = 2
+per_device_eval_batch_size = 2
+
+[model:gemma-3n-e4b-it]
+base_model = google/gemma-3n-E4B-it
+group = gemma
+per_device_train_batch_size = 1
+per_device_eval_batch_size = 1
+
+# ----------------------------------------------------------------------------
+# Happy-path sample (text instruction tuning).
+#
+# These two sections point at the bundled CSVs in data/datasets/sample-text/
+# (16 train rows, 5 validation rows, columns: id,prompt,response). After
+# `cp config/config.ini.example config/config.ini` you can run:
+#
+#     gemma-macos-tuner finetune sample-text
+#
+# end-to-end without any extra data wrangling. Delete or rename them once you
+# have your own data.
+# ----------------------------------------------------------------------------
+[dataset:sample-text]
+source = sample-text
+train_split = train
+validation_split = validation
+
+[profile:sample-text]
+model = gemma-3n-e2b-it
+dataset = sample-text
+modality = text
+text_sub_mode = instruction
+prompt_column = prompt
+text_column = response
+max_seq_length = 512
+num_train_epochs = 1
+per_device_train_batch_size = 1
+per_device_eval_batch_size = 1
+gradient_accumulation_steps = 4
+learning_rate = 2e-4
+logging_steps = 1
+save_strategy = epoch
+eval_strategy = epoch
+lora_r = 8
+lora_alpha = 16
+lora_dropout = 0.05
+target_modules = q_proj,k_proj,v_proj,o_proj
+
+# ----------------------------------------------------------------------------
+# 16 GB Mac memory-budget knobs
+# ----------------------------------------------------------------------------
+# Stock defaults assume 32 GB+ unified memory. On 16 GB Macs the model + KV cache
+# + optimizer state usually doesn't fit, and macOS jetsam-kills the process
+# (you'll see "MPS backend out of memory" or exit code -9 with "leaked
+# semaphore objects"). Add these to your [profile:...] block on a 16 GB Mac:
+#
+#     per_device_train_batch_size = 1
+#     per_device_eval_batch_size = 1
+#     gradient_accumulation_steps = 16
+#     gradient_checkpointing = true
+#     bf16 = true
+#     max_seq_length = 1024            # drop to 512 if still OOM
+#     # image / audiovisual modalities:
+#     # image_token_budget = 70
+#
+# Also: use gemma-4-e2b(-it), not e4b. If MPS still complains, try
+#     export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.85
+# (do NOT set this to 0.0 — bootstrap rejects it).
+# See README/guides/apple-silicon/gemma4-guide.md for the full table.
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# Template LoRA profile + dataset (edit and rename for your own data).
+# ----------------------------------------------------------------------------
+[profile:my-lora-run]
+model = gemma-3n-e2b-it
+# Optional: pin to a specific HuggingFace revision for reproducibility.
+# model_revision = abc123def456  # commit hash or git ref
+
+dataset = my-dataset
+train_split = train
+validation_split = validation
+learning_rate = 2e-4
+num_train_epochs = 3
+gradient_accumulation_steps = 8
+logging_steps = 25
+save_strategy = epoch
+eval_strategy = epoch
+text_column = text
+lora_r = 16
+lora_alpha = 32
+lora_dropout = 0.05
+target_modules = q_proj,k_proj,v_proj,o_proj
+
+# Example dataset section.
+# The section name (e.g. "my-dataset") is the key used in profile "dataset =" lines.
+# "source" is the underlying dataset identifier: a local CSV directory name, a
+# HuggingFace dataset repo slug (e.g. "username/my-asr-dataset"), or a BigQuery
+# export name created by the wizard. Adjust splits and filters for your data.
+[dataset:my-dataset]
+source = my-dataset
+train_split = train
+validation_split = validation
+max_duration = 30.0
+
+# [bigquery] section: populated automatically by the wizard.
+# Do NOT commit real project or dataset IDs here.
+[bigquery]
+last_project_id =
+last_dataset_id =

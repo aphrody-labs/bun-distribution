@@ -1,0 +1,42 @@
+{
+  "schema": "aphrody.python-portability/1",
+  "date": "2026-10-04",
+  "scope": "Python SDK, canonical AgentClient/ADK session views and runtime path discovery",
+  "fullyMultiplatformQualified": false,
+  "changes": [
+    "Blender discovery uses explicit argument, APHRODY_BLENDER_BIN, then PATH; fixed host directories and version lists removed.",
+    "Invalid explicit executable selections fail instead of choosing a different installed runtime.",
+    "Runtime state-directory candidates use the native executable suffix, including .exe on Windows.",
+    "Explicit executable paths expand the user home and retain paths containing spaces.",
+    "SessionDB resolves APHRODY_HOME at construction; DEFAULT_DB_PATH remains a compatibility snapshot for existing imports.",
+    "ADK sessions use canonical AgentClient transport and native session persistence; no second runtime installer, credential store or database."
+  ],
+  "checks": {
+    "pytest": {
+      "command": "uv run --locked --no-sync pytest",
+      "passed": 665,
+      "skipped": 22,
+      "failed": 0,
+      "elapsedSeconds": 23.44
+    },
+    "ruff": {
+      "command": "uv run --locked --no-sync ruff check packages/aphrody/src/aphrody packages/aphrody/tests",
+      "status": "passed"
+    },
+    "mypy": {
+      "command": "uv run --locked --no-sync mypy",
+      "sourceFiles": 146,
+      "status": "passed"
+    },
+    "pathTests": "Temporary synthetic executable/database paths; Linux, Darwin and Windows suffix policy; relocation and spaces; not native execution on all platforms.",
+    "whitespace": "passed"
+  },
+  "limits": [
+    "Full Windows/macOS native runtime, Blender execution, installation and wheels have not been qualified.",
+    "Existing protected stores remain in their original locations; no automatic data migration.",
+    "ADK model/reset and other missing owner RPCs remain explicit unsupported capabilities.",
+    "ADK module notices retain AGPL-3.0-only provenance; package still declares Apache-2.0, so a new mixed-license wheel is not qualified.",
+    "YOLO/Rust/UI work remains stopped at the owner's request; this receipt does not qualify those repositories or interfaces.",
+    "Legacy dedicated RG deployment scripts are outside this SDK batch and belong to their canonical IECODE owner."
+  ]
+}

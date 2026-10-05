@@ -1,0 +1,43 @@
+{
+  "name": "@aphrody/runtime-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI",
+  "license": "MIT AND Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/yolo.git",
+    "directory": "packages/runtime"
+  },
+  "files": [
+    "src",
+    "runtime.d.ts",
+    "README.md",
+    "LICENSE-APACHE"
+  ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./modules": "./src/modules.ts",
+    "./preload": "./src/preload.ts",
+    "./runtime.d.ts": "./runtime.d.ts",
+    "./bundler": "./src/bundler.ts",
+    "./artifact": "./src/artifact.ts",
+    "./ffi": "./src/ffi.ts",
+    "./tooling": "./src/tooling.ts",
+    "./tooling-schema": "./src/tooling-schema.ts",
+    "./desktop": "./src/desktop.ts",
+    "./browser": "./src/browser.ts",
+    "./desktop-artifact": "./src/desktop-artifact.ts"
+  },
+  "scripts": {
+    "test": "bun --cwd=../.. test test/runtime_sdk.test.ts test/runtime_sdk_pack.test.ts test/runtime-ffi.test.ts test/runtime_release.test.ts test/ffi.test.ts test/privilege.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {},
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

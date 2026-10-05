@@ -1,0 +1,24 @@
+{
+  "schema_version": "gemma4_e4b_full_prompt_r64_one_epoch_withdrawal_v1",
+  "recorded_at": "2026-09-22T05:24:49Z",
+  "disposition": "WITHDRAWN",
+  "reason": "The owner states that Plan 006 was executed by accident.",
+  "decision_bearing": false,
+  "resume_authorized": false,
+  "historical_result": {
+    "path": "README/receipts/gemma4-e4b-full-prompt-r64-one-epoch-result.json",
+    "sha256": "b04a441fdf02cc206b0c70ff5016d1fab3539ad9de7f60b0ac253b2d3a8ef37f",
+    "policy": "Retained unchanged for auditability. Its KILL decision and metrics must not be used for model selection, baselines, training authorization, or product claims."
+  },
+  "resource_cleanup": {
+    "local_plan_006_graders_running": 0,
+    "matching_plan_006_gcp_instances_running": 0,
+    "unrelated_plan_029_instance_preserved": "gemma4-e4b-plan29-gold-sft-a100-80"
+  },
+  "closeout_notes": [
+    "A no-OCR regrade started during audit was terminated before completion and is not evidence.",
+    "The checkpoint-156 courier ledger entry was restored so the retained historical artifact set remains auditable.",
+    "No retraining, regeneration, or replacement grading is authorized by this closeout."
+  ],
+  "artifact_policy": "Historical checkpoints, ledgers, work items, grades, and receipts remain preserved and are not active experiment inputs or decision evidence."
+}

@@ -1,0 +1,16 @@
+[package]
+name = "yolo-pyo3"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach)"
+
+[lib]
+name = "_yolo_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+yolo-core = { path = "../yolo-core" }
+pyo3 = { workspace = true }

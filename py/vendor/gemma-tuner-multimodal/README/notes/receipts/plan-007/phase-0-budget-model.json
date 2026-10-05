@@ -1,0 +1,53 @@
+{
+  "billing_api": "not reconciled; published-rate estimate, never an invoice",
+  "ceiling_usd": 500,
+  "committed_usd_before_first_lease": 0.0,
+  "fits_ceiling": true,
+  "gcp": {
+    "account": "whisper-gcp-sft-runner@gist-is-backend.iam.gserviceaccount.com",
+    "automatic_restart": false,
+    "machine": "a2-ultragpu-1g (1x A100 80GB)",
+    "max_run_duration_seconds": 43200,
+    "project": "gist-is-backend",
+    "provisioning": "STANDARD",
+    "standard_usd_per_hour": 5.06879789,
+    "termination_action": "STOP"
+  },
+  "measured_projection_usd": {
+    "plus_storage_egress_reserve": 221.04,
+    "segment_hours": 1.56,
+    "twelve_segments": 94.79,
+    "with_three_retries": 118.48
+  },
+  "measured_smoke": {
+    "committed_compute_usd": 7.56,
+    "fwd_bwd_seconds_per_row_deterministic": 6.5,
+    "fwd_bwd_seconds_per_row_nondeterministic": 3.45,
+    "lease_hours_so_far": 1.49,
+    "lease_start_utc": "2026-09-25T04:02:35Z",
+    "note": "smoke step_seconds include 360-row mode panels at segment start/stop and are not steady-state",
+    "optimizer_step_seconds_estimate": 55,
+    "peak_gpu_gb": 21.0,
+    "seq_len_example_tokens": 4907,
+    "six_mode_panel_eval_seconds": 200
+  },
+  "schema_version": "plan33_budget_model_v1",
+  "status": "measured smoke; worst case retained; scale lease authorized by fits_ceiling",
+  "throughput_prior": {
+    "e2b_assumption": "no faster than E4B (conservative)",
+    "e4b_segment_seconds": 4913.1463,
+    "per_segment_overhead_seconds": 900,
+    "safety_multiplier": 1.5,
+    "source": "measured Plan 32 E4B 88-step segment train_runtime on the same machine type"
+  },
+  "worst_case_total_usd": 284.87,
+  "worst_case_usd": {
+    "boot_disk_300gb_pd_balanced_30_days": 30.0,
+    "egress_to_mac_for_conversion": 5.0,
+    "gcs_checkpoints_and_bundles_90_days": 10.0,
+    "smoke_and_setup_lease": 15.21,
+    "three_failed_segment_retries": 34.93,
+    "twelve_segments": 139.73,
+    "unobserved_reserve": 50.0
+  }
+}

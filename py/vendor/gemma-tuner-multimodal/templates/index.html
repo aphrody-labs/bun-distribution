@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gemma · training</title>
+
+    <script src="{{ asset_paths.socketio }}"></script>
+    <script src="{{ asset_paths.threejs }}"></script>
+    <script src="{{ asset_paths.chartjs }}"></script>
+
+    <style>
+        /* ---------------------------------------------------------------
+           gemma training visualizer
+           a window onto a model learning. black room, one warm light.
+           --------------------------------------------------------------- */
+
+        :root {
+            --bg:        #000000;
+            --ink:       #F5F5F0;   /* warm off-white, primary text */
+            --ink-2:     #8A8A85;   /* secondary */
+            --ink-3:     #3A3A38;   /* tertiary, gridlines, hairlines */
+            --amber:     #FFB000;   /* the one signature color */
+            --amber-dim: rgba(255, 176, 0, 0.55);
+            --amber-glow:rgba(255, 176, 0, 0.08);
+            --rose:      #FF4D6D;   /* reserved for danger states only */
+
+            --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                    "Helvetica Neue", system-ui, sans-serif;
+            --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo,
+                    Consolas, monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--sans);
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* Tabular figures everywhere a number can change. */
+        .num {
+            font-family: var(--mono);
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+        }
+
+        /* The legacy FPS counter is kept (the JS writes to it) but hidden.
+           A serious instrument does not advertise its frame rate. */
+        .fps-counter { display: none; }
+        #fps-value { display: none; }
+
+        /* ---------------------------------------------------------------
+           layout — single viewport, no scroll, four bands of life
+           --------------------------------------------------------------- */
+
+        .stage {
+            display: grid;
+            grid-template-rows: auto auto 1fr auto;
+            height: 100vh;
+            padding: 28px 36px 24px;
+            gap: 18px;
+        }
+
+        /* ---- band 1: wordmark + meta ---- */
+
+        .topbar {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--ink-3);
+            padding-bottom: 14px;
+        }
+
+        .wordmark {
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.18em;
+            text-transform: lowercase;
+            color: var(--ink-2);
+        }
+        .wordmark .dot {
+            color: var(--amber);
+            margin: 0 0.5em;
+        }
+
+        .meta {
+            display: flex;
+            gap: 28px;
+            font-size: 12px;
+            color: var(--ink-2);
+            letter-spacing: 0.04em;
+        }
+        .meta .label {
+            text-transform: lowercase;
+            margin-right: 8px;
+            color: var(--ink-3);
+        }
+        .meta .num {
+            color: var(--ink);
+            font-size: 12px;
+        }
+
+        /* ---- band 2: hero — the heartbeat ---- */
+
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(280px, 1fr) 2fr;
+            gap: 36px;
+            align-items: end;
+            padding-top: 8px;
+        }
+
+        .heartbeat {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            min-height: 0;
+        }
+
+        .heartbeat .loss-value {
+            font-family: var(--mono);
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+            font-size: clamp(72px, 11vw, 168px);
+            line-height: 0.92;
+            letter-spacing: -0.04em;
+            font-weight: 300;
+            color: var(--ink);
+            transition: color 220ms ease;
+        }
+        .heartbeat .loss-value.is-rising {
+            color: var(--rose);
+        }
+        .heartbeat .loss-label {
+            margin-top: 4px;
+            font-size: 11px;
+            letter-spacing: 0.18em;
+            text-transform: lowercase;
+            color: var(--ink-3);
+        }
+        .heartbeat .caption {
+            margin-top: 22px;
+            font-size: 22px;
+            font-weight: 300;
+            letter-spacing: -0.005em;
+            color: var(--ink);
+        }
+        .heartbeat .caption .verb {
+            color: var(--amber);
+        }
+
+        /* ---- the learning curve, the second protagonist ----
+
+           Same typographic register as the room panels: a hairline divider
+           on top, then a `panel-title` + `panel-subtitle` pair, then the
+           canvas. This is the change that makes the chart legible — without
+           the title the curve was a big nameless object on the right side
+           of the hero. */
+
+        .curve {
+            position: relative;
+            min-height: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid var(--ink-3);
+            padding-top: 12px;
+        }
+        .curve .curve-frame {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+        }
+        .curve canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        /* ---- band 3: the room — three windows + a quiet column ----
+
+           Flexbox (not grid) so that toggling a panel off via the dock
+           lets the surviving panels reflow and fill the space. With grid
+           the column would persist as an empty gap. */
+
+        .room {
+            display: flex;
+            gap: 18px;
+            min-height: 0;
+        }
+        .room > .panel.network     { flex: 1.6 1 0; min-width: 0; }
+        .room > .panel.attention   { flex: 1 1 0;   min-width: 0; }
+        .room > .panel.spectrogram { flex: 1 1 0;   min-width: 0; }
+        .room > .diagnostics       { flex: 1 1 0;   min-width: 0; }
+
+        .panel {
+            position: relative;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid var(--ink-3);
+            padding-top: 12px;
+        }
+
+        .panel-title {
+            font-size: 11px;
+            letter-spacing: 0.16em;
+            text-transform: lowercase;
+            color: var(--ink-2);
+            margin-bottom: 4px;
+        }
+        .panel-subtitle {
+            font-size: 11px;
+            color: var(--ink-3);
+            margin-bottom: 12px;
+            letter-spacing: 0.01em;
+        }
+        .panel-body {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* the 3D network — give it room and stillness */
+        #neural-network-3d {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            cursor: grab;
+        }
+        #neural-network-3d:active { cursor: grabbing; }
+        #neural-network-3d canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* attention canvas */
+        #attention-heatmap { flex: 1; min-height: 0; position: relative; }
+        #attention-canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            image-rendering: pixelated;
+            opacity: 0.92;
+        }
+
+        /* spectrogram */
+        #spectrogram-canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            flex: 1;
+            min-height: 0;
+            image-rendering: pixelated;
+            opacity: 0.92;
+        }
+
+        /* the diagnostics column (stacked) */
+        .diagnostics {
+            display: grid;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 14px;
+            min-height: 0;
+        }
+        .dx {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            border-top: 1px solid var(--ink-3);
+            padding-top: 10px;
+        }
+        .dx .panel-title {
+            margin-bottom: 4px;
+        }
+        /* A diagnostic panel's headline number — the single value that
+           says "this is the thing right now" before the eye drops to the
+           sparkline for the trajectory. Same monospace tabular-figures
+           register as the heartbeat, just smaller. */
+        .dx .dx-value {
+            font-family: var(--mono);
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+            font-size: 22px;
+            line-height: 1;
+            letter-spacing: -0.01em;
+            color: var(--ink);
+            margin-bottom: 6px;
+        }
+        .dx .dx-value .unit {
+            font-size: 0.5em;
+            color: var(--ink-3);
+            letter-spacing: 0.12em;
+            margin-left: 2px;
+        }
+        .dx canvas {
+            flex: 1;
+            min-height: 0;
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        /* ---- band 4: tokens row — what it's about to say ---- */
+
+        .saying {
+            border-top: 1px solid var(--ink-3);
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+            max-height: 110px;
+        }
+        .saying .panel-title { margin-bottom: 0; }
+        .token-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 18px;
+            align-items: baseline;
+            overflow: hidden;
+        }
+        .token {
+            font-family: var(--mono);
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+            font-size: 13px;
+            color: var(--ink);
+            border: none;
+            background: none;
+            padding: 0;
+            transition: opacity 240ms ease, color 240ms ease;
+            animation: none;
+        }
+        .token::after {
+            content: "·";
+            color: var(--ink-3);
+            margin-left: 18px;
+        }
+        .token:last-child::after { content: ""; }
+
+        /* ---- ambient: a single particle from the explosion effect ---- */
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--amber);
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 6px rgba(255, 176, 0, 0.6);
+        }
+
+        /* ---- the dock — quiet, lower-right, recedes when idle ---- */
+
+        .controls {
+            position: fixed;
+            bottom: 18px;
+            right: 24px;
+            display: flex;
+            gap: 14px;
+            z-index: 100;
+            opacity: 0.35;
+            transition: opacity 360ms ease;
+        }
+        .controls:hover,
+        .controls:focus-within { opacity: 1; }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--ink-3);
+            font-family: var(--sans);
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.14em;
+            text-transform: lowercase;
+            cursor: pointer;
+            padding: 6px 4px;
+            transition: color 180ms ease;
+        }
+        .control-btn:hover { color: var(--ink-2); }
+        .control-btn.active { color: var(--amber); }
+        /* Buttons render as plain text — the JS used to inject FontAwesome
+           <i> tags into innerHTML; the modern handlers use textContent and
+           any stale <i> elements that slip through stay invisible. */
+        .control-btn i { display: none; }
+        .control-btn:disabled {
+            opacity: 0.25;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* ---- the empty room: shown until the first step lands ---- */
+
+        .loading {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            z-index: 200;
+            font-family: var(--sans);
+            font-size: 13px;
+            letter-spacing: 0.18em;
+            text-transform: lowercase;
+            color: var(--ink-3);
+            transition: opacity 600ms ease;
+        }
+        .loading i { display: none; }
+        .loading::before {
+            content: "your machine is getting ready";
+            color: var(--ink-2);
+            animation: breathe 2.6s ease-in-out infinite;
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 0.35; }
+            50%      { opacity: 0.85; }
+        }
+
+        /* ---- accessibility: honor prefers-reduced-motion ---- */
+
+        @media (prefers-reduced-motion: reduce) {
+            /* The empty-room caption stops breathing — it just sits, fully lit. */
+            .loading::before {
+                animation: none;
+                opacity: 0.85;
+            }
+            /* The heartbeat number changes color but does not transition. */
+            .heartbeat .loss-value { transition: none; }
+            /* No tween on the token cloud either. */
+            .token { transition: none; }
+            /* The control dock stops easing on hover. */
+            .control-btn { transition: none; }
+            /* The 3D network's rotation/pulse is gated in JS via
+               window.matchMedia('(prefers-reduced-motion: reduce)'). */
+        }
+
+        /* ---- responsive: collapse the room on narrow screens ---- */
+
+        @media (max-width: 1280px) {
+            .room { grid-template-columns: 1.4fr 1fr 1fr; }
+            .room .panel.spectrogram { display: none; }
+        }
+        @media (max-width: 960px) {
+            .stage { padding: 20px 22px 18px; gap: 14px; }
+            .hero { grid-template-columns: 1fr; gap: 18px; }
+            .heartbeat .loss-value { font-size: 88px; }
+            .room { grid-template-columns: 1fr 1fr; }
+            .room .panel.attention { display: none; }
+            .meta { gap: 16px; font-size: 11px; }
+            .saying { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- the empty room, shown until the first step arrives -->
+    <div class="loading" id="loading"><i></i></div>
+
+    <!-- legacy FPS counter (hidden via CSS, JS still writes to it) -->
+    <div class="fps-counter">FPS: <span id="fps-value">60</span></div>
+
+    <main class="stage">
+        <!-- band 1 — wordmark + meta -->
+        <header class="topbar">
+            <div class="wordmark">gemma<span class="dot">·</span>training</div>
+            <div class="meta">
+                <div><span class="label">step</span><span class="num" id="step-count">0</span></div>
+                <div><span class="label">epoch</span><span class="num" id="epoch-count">0</span></div>
+                <div><span class="label">rate</span><span class="num" id="speed">0</span><span class="label" style="margin-left:6px">/s</span></div>
+                <div><span class="label">device</span><span class="num" id="device-name">—</span></div>
+                <div><span class="label">params</span><span class="num" id="param-count">—</span></div>
+            </div>
+        </header>
+
+        <!-- band 2 — hero: heartbeat + learning curve -->
+        <section class="hero">
+            <div class="heartbeat">
+                <div class="loss-value num" id="loss-value">—</div>
+                <div class="loss-label">loss</div>
+                <div class="caption">
+                    Your machine is <span class="verb" id="hero-verb">getting ready</span>.
+                </div>
+            </div>
+            <div class="curve">
+                <div class="panel-title">loss · over time</div>
+                <div class="panel-subtitle">how wrong the model still is, step by step</div>
+                <div class="curve-frame">
+                    <canvas id="loss-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- band 3 — the room: three windows + a diagnostics column -->
+        <section class="room">
+            <div class="panel network">
+                <div class="panel-title">inside the model</div>
+                <div class="panel-subtitle">lit by the gradients flowing through it</div>
+                <div class="panel-body">
+                    <div id="neural-network-3d"></div>
+                </div>
+            </div>
+
+            <div class="panel attention">
+                <div class="panel-title">what it's looking at</div>
+                <div class="panel-subtitle">attention across the input</div>
+                <div class="panel-body">
+                    <div id="attention-heatmap">
+                        <canvas id="attention-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio panel is default-hidden. Auto-revealed by the JS when
+                 the first mel_spectrogram payload arrives; text-only runs
+                 never see it. The dock "audio" button still force-shows. -->
+            <div class="panel spectrogram" style="display: none;">
+                <div class="panel-title">listening</div>
+                <div class="panel-subtitle">audio it's processing right now</div>
+                <div class="panel-body">
+                    <canvas id="spectrogram-canvas"></canvas>
+                </div>
+            </div>
+
+            <div class="diagnostics">
+                <div class="dx">
+                    <div class="panel-title">signal strength</div>
+                    <div class="dx-value num" id="gradient-value">—</div>
+                    <canvas id="gradient-chart"></canvas>
+                </div>
+                <div class="dx">
+                    <div class="panel-title">step size</div>
+                    <div class="dx-value num" id="lr-value">—</div>
+                    <canvas id="lr-chart"></canvas>
+                </div>
+                <div class="dx">
+                    <div class="panel-title">memory</div>
+                    <div class="dx-value num" id="memory-value">—<span class="unit"> gb</span></div>
+                    <canvas id="memory-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- band 4 — what it's about to say -->
+        <section class="saying">
+            <div class="panel-title">what it's about to say</div>
+            <div class="token-cloud" id="token-cloud"></div>
+        </section>
+    </main>
+
+    <!-- the dock -->
+    <div class="controls">
+        <button class="control-btn" id="pause-btn">pause</button>
+        <button class="control-btn" id="sound-btn">sound</button>
+        <button class="control-btn" id="fullscreen-btn">fullscreen</button>
+        <button class="control-btn" id="toggle-3d">model</button>
+        <button class="control-btn" id="toggle-attn">attention</button>
+        <button class="control-btn" id="toggle-tokens">tokens</button>
+        <button class="control-btn" id="toggle-spec">audio</button>
+        <button class="control-btn" id="record-btn">record</button>
+    </div>
+
+    <script src="/static/vendor/gifenc/gifenc.global.js?v=1"></script>
+    <script src="/static/viz/status.js?v=1"></script>
+    <script src="/static/viz/gemma-viz-state.js?v=5"></script>
+    <script src="/static/viz/gemma-viz-charts.js?v=4"></script>
+    <script src="/static/viz/gemma-viz-scene.js?v=2"></script>
+    <script src="/static/viz/gemma-viz-panels.js?v=1"></script>
+    <script src="/static/viz/gemma-viz-recording.js?v=4"></script>
+    <script src="/static/viz/gemma-viz-app.js?v=7"></script>
+</body>
+</html>

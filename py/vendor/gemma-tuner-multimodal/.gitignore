@@ -1,0 +1,191 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyStudio builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# PEP 582; __pypackages__
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+.ci-venv
+.venv-*/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Models and training outputs (downloaded weights; NOT source under gemma_tuner/models/)
+/models/
+!gemma_tuner/models/
+*.pt
+*.safetensors
+*.bin
+*.pth
+*.ckpt
+*.model
+*.gguf
+*.mlmodelc
+*.mlpackage
+experiments.csv
+experiments.db
+distributed_training_result.pt
+output/
+artifacts/runtime-receipts/
+artifacts/runtime-reviews/
+runtime/build/
+data/audio/
+data/bundles/
+data/datasets/*
+# Allow the bundled happy-path sample dataset (CSVs only).
+!data/datasets/sample-text/
+data/datasets/sample-text/.cache/
+data_patches/
+exports/
+tests/runtime/private/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Misc
+.DS_Store
+*.bak
+*.tmp
+*.orig
+secrets.json
+secrets.ini
+credentials.json
+credentials.ini
+distributed_hosts.json
+/temp_configs/
+
+# Local implementation plans (not published)
+README/plans/*
+!README/plans/001-text-only-finetuning.md
+!README/plans/002-gemma4-upgrade.md
+!README/plans/003-image-finetuning.md
+!README/plans/004-gemma4-e4b-metal-inference-engine.md
+!README/plans/005-gemma4-e4b-telepathic-context-sft.md
+!README/plans/006-gemma4-e4b-full-prompt-r64-one-epoch-plan.md
+
+# Agent / editor bundles (local only)
+.agents/
+.claude/
+# Explicit: david-ogilvy copywriting skill lives under .claude/skills/ (local; adapted from gist)
+.claude/skills/david-ogilvy/
+.cursor/
+Claude.md
+
+# User-specific runtime config — may contain GCP project IDs written by the wizard.
+# Commit config/config.ini.example instead; copy it to config/config.ini to get started.
+config/config.ini
+config.ini

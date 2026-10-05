@@ -1,0 +1,53 @@
+name: "🐛 Signalement de Bug"
+description: Signaler un dysfonctionnement dans l'écosystème Aphrody Python
+title: "[BUG]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Merci de remplir ce formulaire pour nous aider à diagnostiquer et résoudre le problème dans l'écosystème Aphrody Python.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Composant affecté
+      options:
+        - packages/aphrody (SDK Python et runtime Aphrody)
+        - packages/aphrody-train (Entraînement et fine-tuning)
+        - packages/cli (Interface en ligne de commande Aphrody)
+        - packages/embedding-fixtures (Fixtures et benchmarks d'embeddings)
+        - packages/model-tools (Outils et manipulation de modèles Koharu)
+        - packages/relecture-ocr (Moteur OCR et relecture)
+        - apps/meetings (Application et services de réunions)
+        - tools/packaging (Outillage de packaging uv / wheels)
+        - docs/ (Documentation et guides)
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du problème
+      description: Résumé clair et concis du comportement inattendu rencontré.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes de reproduction
+      description: Commandes ou code exacts pour reproduire l'anomalie.
+      value: |
+        1. Exécuter `...`
+        2. Observer l'erreur `...`
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environnement
+      description: Système d'exploitation, versions de Python, uv et Bun.
+      value: |
+        - OS: Linux / macOS / Windows
+        - Python: 3.12+ (3.11 / 3.12 / 3.13 / 3.14)
+        - uv: 0.12+
+        - Bun: 1.4+
+    validations:
+      required: false

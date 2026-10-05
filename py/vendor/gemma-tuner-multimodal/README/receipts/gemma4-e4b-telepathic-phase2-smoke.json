@@ -1,0 +1,87 @@
+{
+  "schema_version": "gemma4_e4b_telepathic_phase2_smoke_v2",
+  "completed_at": "2026-09-20T18:26:46Z",
+  "gcp": {
+    "project": "gist-is-backend",
+    "account": "whisper-gcp-sft-runner@gist-is-backend.iam.gserviceaccount.com",
+    "instance": "gemma4-e4b-telepathic-phase-2-80",
+    "zone": "us-central1-a",
+    "machine_type": "a2-ultragpu-1g",
+    "gpu": "NVIDIA A100 80GB",
+    "maximum_lease_seconds": 14400
+  },
+  "frozen_contract": {
+    "model_repo": "google/gemma-4-E4B-it",
+    "model_revision": "fee6332c1abaafb77f6f9624236c63aa2f1d0187",
+    "dtype": "bfloat16",
+    "attention_implementation": "sdpa",
+    "view_policy": "global_plus_four_nonoverlapping_quadrants",
+    "completion_only_logits": true,
+    "max_seq_length": 16384,
+    "rank": 8,
+    "learning_rate": 0.00005,
+    "profiles_sha256": "721081783b7e8f924c3fc430a5ffd3cdc8a36dee5cb6df3cf6f3e2dd34916a6c",
+    "requirements_lock_sha256": "9415a7a3e70b36c4506b5ea0d1c7968cc76f4057de709cea8f0220d42f518e1e",
+    "trainer_sha256": "b22b62a67dd1755890ca3be4ebb27ebde2b8cf4ab80bc5895adb870285d0b7f3",
+    "collator_sha256": "0c558d8dd14638f4f8af2d19cc6c6b9ea09c328fdf8a393e88c41593c47eaeb0",
+    "base_loader_sha256": "ad9a92bc30ffe3b18ecadb93c052f764c033207b37ca302f6cad78131554f5bf",
+    "clippable_conversion_sha256": "942aa1684167a761ae930393e4f41830687533625110a80eef8e44014892fca2",
+    "redacted_metrics_sha256": "3f25ab4eeae010dc595e17332b0364d6ecb343ce7ebc728451c01157ab1306dc"
+  },
+  "pretrained_load_proof": {
+    "method": "Load the native published architecture first, then convert loaded Gemma4ClippableLinear wrappers in place while preserving each Parameter object.",
+    "vision_tensor_exact_equal_to_pinned_safetensors": true,
+    "audio_tensor_exact_equal_to_pinned_safetensors": true,
+    "missing_clippable_weights": 0,
+    "unexpected_clippable_weights": 0
+  },
+  "prior_invalidated_evidence": {
+    "reason": "The obsolete pre-load class replacement changed published *.linear.weight keys to *.weight before Transformers key matching, producing randomly initialized vision/audio tower tensors.",
+    "scope": "Every smoke and overfit adapter produced before the post-load exact-equality proof is invalid and excluded from all gates."
+  },
+  "rejected_40gb_envelope": {
+    "instance": "gemma4-e4b-telepathic-phase-2",
+    "zone": "us-central1-c",
+    "machine_type": "a2-highgpu-1g",
+    "gpu": "NVIDIA A100 40GB",
+    "result": "out_of_memory_during_backward_on_the_largest_fixture",
+    "instance_status_after_rejection": "TERMINATED"
+  },
+  "trainable_parameters": {
+    "vision": 2260992,
+    "projector": 26624,
+    "decoder": 18350080,
+    "total": 20637696,
+    "matched_linear_modules": 407
+  },
+  "largest_conditioned_fixture": {
+    "fixture_csv_sha256": "49d5a7eff5371dc716a37a730c4c6cf27289ae18c137ee74e86a8abd18a826da",
+    "train_loss": 12.800910949707031,
+    "logged_gradient_norm": 23.82,
+    "runtime_seconds": 46.7979,
+    "gradient_l2_norms": {
+      "vision": 0.10591002672745947,
+      "projector": 0.023171521723270416,
+      "decoder": 0.9941057053870784
+    },
+    "gpu_memory": {
+      "samples": 70,
+      "peak_mib": 48454
+    },
+    "redacted_metric_rows": 2,
+    "output_integrity_sha256": "5b23102423d454396309775c7e545ee6a174d4adbd3bee95ab8cb038494431aa"
+  },
+  "gate": {
+    "finite_loss": true,
+    "finite_logged_gradient_norm": true,
+    "no_input_or_target_truncation": true,
+    "required_subsystems_with_nonzero_gradients": [
+      "vision",
+      "projector",
+      "decoder"
+    ],
+    "bounded_peak_memory": true,
+    "optimizer_step_completed": true,
+    "result": "PASS"
+  }
+}

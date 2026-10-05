@@ -1,0 +1,18 @@
+{
+  "actions": [
+    {
+      "detail": {
+        "command": "Exec { host: Vps, cmd: Some(\"sha256sum /tmp/aphrody-portability.de2UYgUM/atomic-deploy-shenron.sh /tmp/aphrody-portability.de2UYgUM/test-atomic-deploy-shenron.sh && sudo -n bash /tmp/aphrody-portability.de2UYgUM/test-atomic-deploy-shenron.sh\"), command: [] }"
+      },
+      "name": "ssh",
+      "status": "dispatched"
+    }
+  ],
+  "evidence": [],
+  "inputs": [],
+  "outputs": [],
+  "requested_scope": "Ssh { json: true, command: Exec { host: Vps, cmd: Some(\"sha256sum /tmp/aphrody-portability.de2UYgUM/atomic-deploy-shenron.sh /tmp/aphrody-portability.de2UYgUM/test-atomic-deploy-shenron.sh && sudo -n bash /tmp/aphrody-portability.de2UYgUM/test-atomic-deploy-shenron.sh\"), command: [] } }",
+  "run_id": "1791066549-2120966",
+  "status": "success",
+  "tool_versions": {}
+}

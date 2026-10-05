@@ -1,0 +1,44 @@
+{
+  "schema_version": "gemma4_e4b_full_prompt_judge_amendment_v1",
+  "recorded_at": "2026-09-21T02:43:26Z",
+  "timing": "after training and stock generation, before any semantic grade",
+  "owner_directive": {
+    "primary": "Cursor CLI cursor-grok-4.6-medium",
+    "secondary": "Cursor CLI composer-2.5[fast=false]",
+    "terra": "forbidden because its marginal cost is unnecessary"
+  },
+  "decision_policy": {
+    "primary_authority": "Grok paired direction under the frozen improvement rule",
+    "secondary_role": "Composer sensitivity analysis",
+    "disagreement": "material directional disagreement is inconclusive and withholds epoch-two eligibility"
+  },
+  "unchanged": [
+    "frozen first-20 validation examples",
+    "stock, checkpoint-78, and checkpoint-156 candidates",
+    "generation ABI and decoding",
+    "evaluation prompt and rubric",
+    "candidate blindness",
+    "comparison metrics",
+    "one-epoch training ceiling"
+  ],
+  "evidence": {
+    "prior_calibration_note_sha256": "d74fabe7414c98fc6ee3cbcfa4e35a5d4b7dc39a8027e9688bf0c571d4e3b756",
+    "rationale": "Existing mixed-100 evidence showed Grok-medium tracked historical Sonnet materially better than Terra and had far fewer false Excellent calls. Composer non-fast is retained only as an independent sensitivity judge."
+  },
+  "bindings": {
+    "original_preregistration_sha256": "15fc3b2ffee8e6eff9d90e6c872cbca0da8f9990b29ff917f2216a47cb0d2828",
+    "amended_plan_sha256": "c06563cd5c7811978c77662d720f605f53d6aa6154fc2ed618c655d0e41c68e8",
+    "amended_contract_sha256": "55f0831acd3d5e1afec42d2c149fbe923200929f974be24e298289cf632e0124",
+    "grader_sha256": "25ef3a4150cdeb7dc9cc0ed1a4319bb974c35d79026f5ca6f9f6a9996dedcf11",
+    "work_item_builder_sha256": "2c61ce2c7f32ca5f6b08594fc7a2a6b3b2d8f8ab1be39ab26c7426bf92658271",
+    "evaluation_prompt_sha256": "afb58a57173811636a44aa37b18a445c7790d0b338a291a887ae9887a6416cbb"
+  },
+  "budget_usd": {
+    "owner_total": 500.0,
+    "terra": 0.0,
+    "cursor_cli_marginal": 0.0,
+    "gcp_compute_max": 220.41,
+    "gcs_max": 10.0,
+    "contingency": 269.59
+  }
+}

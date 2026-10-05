@@ -1,0 +1,176 @@
+{
+  "schema_version": "gemma4-e4b-w6-kernel-development-v1",
+  "status": "development-not-promotion",
+  "recorded_utc": "2026-09-22T15:10:00+00:00",
+  "source": {
+    "git_head": "932e6f15bdcad812b049a14b5186453bd360cf3d",
+    "worktree_dirty": true,
+    "metal_source_sha256": "2ba27ffca17586f6f5e607f422b369b0c172032959a3e53398f28087944a63c1",
+    "metallib_sha256": "685a671fd01a9307cb564b52a17f88a6d7600173315fd504f26454c896c00cee",
+    "tensor_index_sha256": "7403082fdf3e7608bb19cae2f7d50010e61c963ab2baa15ba3c10793fee57823"
+  },
+  "host": {
+    "device": "Apple M2 Ultra",
+    "gpu_family": "Apple8",
+    "gpu_cores": 60,
+    "macos": "26.6.2",
+    "metal_language": "3.1"
+  },
+  "kernel": {
+    "format": "affine-w6-group64-bf16",
+    "values_per_lane": 8,
+    "rows_per_simdgroup": 4,
+    "simdgroups_per_threadgroup": 2,
+    "materialized_weight_copy": false,
+    "mapped_shards": 2,
+    "mapped_file_bytes": 7013888783,
+    "copied_weight_bytes": 0
+  },
+  "protocol": {
+    "warmups": 10,
+    "runs": 100,
+    "comparison": "same-source weights materialized as dense BF16",
+    "gpu_time": "MTLCommandBuffer GPUStartTime to GPUEndTime",
+    "wall_time": "one command buffer, one dispatch, commit, and completion wait",
+    "idle_qualified": false,
+    "caveat": "Unrelated ML workloads were active; results are directional kernel evidence only."
+  },
+  "benchmarks": [
+    {
+      "shape": "self_attn.q_proj",
+      "rows": 2048,
+      "columns": 2560,
+      "w6_gpu_p50_ms": 0.050000002,
+      "dense_gpu_p50_ms": 0.072291674,
+      "gpu_speedup_vs_dense": 1.4458334,
+      "wall_speedup_vs_dense": 1.0847322
+    },
+    {
+      "shape": "self_attn.o_proj",
+      "rows": 2560,
+      "columns": 2048,
+      "w6_gpu_p50_ms": 0.045499997,
+      "dense_gpu_p50_ms": 0.062750012,
+      "gpu_speedup_vs_dense": 1.3791212,
+      "wall_speedup_vs_dense": 1.0920746
+    },
+    {
+      "shape": "mlp.gate_proj",
+      "rows": 10240,
+      "columns": 2560,
+      "w6_gpu_p50_ms": 0.090749993,
+      "dense_gpu_p50_ms": 0.14366666,
+      "gpu_speedup_vs_dense": 1.5831039,
+      "wall_speedup_vs_dense": 1.2976782
+    },
+    {
+      "shape": "mlp.down_proj",
+      "rows": 2560,
+      "columns": 10240,
+      "w6_gpu_p50_ms": 0.22675001,
+      "dense_gpu_p50_ms": 0.28874999,
+      "gpu_speedup_vs_dense": 1.2734288,
+      "wall_speedup_vs_dense": 1.1231369
+    },
+    {
+      "shape": "per_layer_projection",
+      "rows": 2560,
+      "columns": 256,
+      "w6_gpu_p50_ms": 0.014374993,
+      "dense_gpu_p50_ms": 0.013791665,
+      "gpu_speedup_vs_dense": 0.95942064,
+      "wall_speedup_vs_dense": 1.0354694
+    },
+    {
+      "shape": "per_layer_input_gate",
+      "rows": 256,
+      "columns": 2560,
+      "w6_gpu_p50_ms": 0.04712501,
+      "dense_gpu_p50_ms": 0.064291671,
+      "gpu_speedup_vs_dense": 1.3642792,
+      "wall_speedup_vs_dense": 0.95649446
+    },
+    {
+      "shape": "tied_lm_head",
+      "rows": 262144,
+      "columns": 2560,
+      "w6_gpu_p50_ms": 2.2179167,
+      "dense_gpu_p50_ms": 2.661,
+      "gpu_speedup_vs_dense": 1.1997746,
+      "wall_speedup_vs_dense": 1.1858518
+    }
+  ],
+  "gathers": [
+    {
+      "shape": "token_embedding",
+      "tokens": 6210,
+      "source_columns": 2560,
+      "output_columns": 2560,
+      "gpu_p50_ms": 0.45100003,
+      "wall_p50_ms": 0.63075,
+      "output_gib_per_second": 65.657618
+    },
+    {
+      "shape": "per_layer_embedding_41",
+      "tokens": 6210,
+      "source_columns": 10752,
+      "column_offset": 10496,
+      "output_columns": 256,
+      "gpu_p50_ms": 0.047500012,
+      "wall_p50_ms": 0.226042,
+      "output_gib_per_second": 62.340168
+    }
+  ],
+  "matmuls": [
+    {
+      "shape": "prefill_q_proj",
+      "m": 6210,
+      "n": 2048,
+      "k": 2560,
+      "w6_gpu_p50_ms": 10.3615,
+      "dense_gpu_p50_ms": 11.589333,
+      "gpu_speedup_vs_dense": 1.1184996,
+      "wall_speedup_vs_dense": 1.1194895,
+      "sample_max_abs": 0.0009765625
+    },
+    {
+      "shape": "prefill_mlp_gate",
+      "m": 6210,
+      "n": 10240,
+      "k": 2560,
+      "w6_gpu_p50_ms": 50.178833,
+      "dense_gpu_p50_ms": 57.462625,
+      "gpu_speedup_vs_dense": 1.1451567,
+      "wall_speedup_vs_dense": 1.1449718,
+      "sample_max_abs": 0.00048828125
+    },
+    {
+      "shape": "prefill_mlp_down",
+      "m": 6210,
+      "n": 2560,
+      "k": 10240,
+      "w6_gpu_p50_ms": 52.3245,
+      "dense_gpu_p50_ms": 59.10325,
+      "gpu_speedup_vs_dense": 1.1295521,
+      "wall_speedup_vs_dense": 1.1286889,
+      "sample_max_abs": 0.00048828125
+    }
+  ],
+  "compatibility": [
+    {
+      "device": "Apple M1",
+      "gpu_family": "Apple7",
+      "macos": "15.7.9",
+      "artifact": "compiled on device",
+      "result": "pass"
+    },
+    {
+      "device": "Apple M2",
+      "gpu_family": "Apple8",
+      "macos": "15.7.9",
+      "artifact": "precompiled Metal 3.1 library",
+      "result": "pass",
+      "note": "Xcode 26.3 optional Metal Toolchain is not installed on this host."
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+# Known Issues
+
+## Gemma 4 troubleshooting
+
+- **`KeyError: 'gemma4'` (or model load fails with missing Gemma 4 modeling)** — Install the Gemma 4 stack: `pip install -r requirements/requirements-gemma4.txt` (see root `README.md`). The base `pip install -e .` pin stays on Transformers 4.x for Gemma 3n.
+- **`Gemma 4 is not implemented in '<entrypoint>' yet`** — Some non-training tools (`gemma_generate`, ASR eval, etc.) still reject Gemma 4 model ids until those paths are upgraded. **`gemma-macos-tuner export`** loads through the same family-aware base loader as `finetune` (multimodal towers preserved). For other entrypoints, use `gemma-macos-tuner finetune` with a Gemma 4 profile after installing `requirements/requirements-gemma4.txt`, or switch the model id to a Gemma 3n checkpoint.
+
+## General Issues
+
+- **Text mode still loads multimodal weights**: With `modality = text`, training uses `AutoTokenizer` and text batches only, but `AutoModelForCausalLM.from_pretrained` still loads the full Gemma checkpoint including the audio (USM) tower. Expect on the order of **~1–2 GB** extra resident RAM versus a hypothetical text-only variant; the tower is not exercised in the forward pass. Reducing this is out of scope for v1.
+- **Image mode throughput and memory**: Vision fine-tuning runs the image encoder every step; `image_token_budget = 1120` is realistic mainly at **batch size 1** on typical 32 GB unified-memory Macs, and wall time per step is often **several×** slower than text-only. **Train/serve:** use the same `image_token_budget` at inference as in training; mismatch can silently hurt quality.
+- **Cache not utilized properly**: Dataset preprocessing recomputes log-Mels on each run because the cache key includes the entire preprocessing config (including fp16/fp32 toggle). Need to implement caching based on audio SHA-1 instead.
+- **Blacklist/evaluate metadata collision**: The blacklist script rewrites Arrow files in-place and drops the "audio/_array" column that evaluate.py expects. Workaround: Run blacklist first, then evaluate, or use `--no-cache`.
+- **Documentation command syntax**: Some older documentation incorrectly shows `gemma-macos-tuner --profile <profile>` when it should be `gemma-macos-tuner finetune <profile>`. This has been fixed in most places but may still appear in some examples.
+
+## MPS (Apple Silicon) Specific Issues
+
+### Known Limitations (Updated for PyTorch 2.3 - July 2025)
+- **Flash Attention 2**: NOW SUPPORTED! Enable with `export SDPA_ALLOW_FLASH_ATTN=1`. Works for sequences ≤ 4096 and reduces peak memory by ~28%.
+- **Mixed Precision**: Use **float16** (native) or float32. Avoid bfloat16 - it's emulated and slower on M-series GPUs. Autocast works for linear/conv/gelu/softmax.
+- **Multi-GPU**: Still not supported - no torch.distributed backend for multiple M-series GPUs.
+- **Some Operations**: Certain PyTorch ops may fall back to CPU with PYTORCH_ENABLE_MPS_FALLBACK=1
+
+### Common MPS Errors and Solutions
+
+1. **"MPS backend out of memory"** (or process killed with exit code `-9` + "leaked semaphore objects")
+   - On 16 GB Macs the stock defaults are over-budget. See the **16 GB Mac memory-budget knobs** block at the top of `config/config.ini.example` for the recommended profile overrides (`per_device_train_batch_size = 1`, `gradient_accumulation_steps = 16`, `gradient_checkpointing = true`, `bf16 = true`, `max_seq_length = 1024`).
+   - Solution: Reduce batch size or set `PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.85`
+   - With Flash Attention 2 enabled, memory usage drops ~28%, often eliminating OOMs
+   - The unified memory architecture can cause swapping instead of OOM errors, which macOS resolves by jetsam-killing the process — that's the source of the `-9` exit code.
+
+2. **"Operation X not implemented for MPS"**
+   - Solution: Set `PYTORCH_ENABLE_MPS_FALLBACK=1` (performance impact)
+   - Most common ops now have MPS kernels in PyTorch 2.3
+   - Report specific operations for future fixes
+
+3. **Slower than expected performance**
+   - Enable Flash Attention 2: `export SDPA_ALLOW_FLASH_ATTN=1`
+   - Check if operations are falling back to CPU
+   - Disable `PYTORCH_ENABLE_MPS_FALLBACK` after testing
+   - Use appropriate batch sizes for your chip
+
+4. **Numerical differences from CUDA**
+   - MPS uses different floating-point optimizations
+   - Use fp16 (not bf16) for best performance on Apple Silicon
+   - Increase tolerance in accuracy checks if needed
+   - Results should be functionally equivalent
+
+### Performance Considerations
+- **Memory**: Apple Silicon uses unified memory - monitor total system RAM usage
+- **Batch Sizes**: 
+  - M1/M2 Pro: Start with micro-batch 2-4
+  - M1/M2 Max: Start with micro-batch 4-6
+  - M1/M2 Ultra: Can handle micro-batch 4-6 comfortably (20s segments, fp16, FA2)
+- **Data Loading**: `num_workers > 0` is now stable (was buggy pre-2.3). Sweet spot is 4-6 workers per CPU cluster.

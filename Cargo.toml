@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/koharu/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "apps/cli", "crates/web/*", "crates/discord/*"]
+members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/koharu/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "apps/cli", "crates/web/*", "crates/discord/*", "crates/engine/*"]
 exclude = [
   "crates/contracts/schema",
   "crates/os/drive",

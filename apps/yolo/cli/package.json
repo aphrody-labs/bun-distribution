@@ -1,0 +1,31 @@
+{
+  "name": "@aphrody/yolo-cli",
+  "version": "1.0.0",
+  "description": "Zero-dependency programmatic CLI for the YOLO Bun Industrial Engine",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "yolo": "./src/index.ts"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "dependencies": {},
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/yolo.git",
+    "directory": "apps/cli"
+  },
+  "files": [
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "test": "bun --cwd=../.. test test/cli_app.test.ts test/aphrody.test.ts test/api.test.ts test/host.test.ts test/host-space.test.ts test/import.test.ts test/mcp.test.ts test/rename.test.ts test/scan.test.ts test/stack.test.ts test/verify.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

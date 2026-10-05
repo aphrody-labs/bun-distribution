@@ -1,0 +1,18 @@
+{
+  "actions": [
+    {
+      "detail": {
+        "command": "Exec { host: Vps, cmd: None, command: [\"sudo\", \"-n\", \"true\"] }"
+      },
+      "name": "ssh",
+      "status": "dispatched"
+    }
+  ],
+  "evidence": [],
+  "inputs": [],
+  "outputs": [],
+  "requested_scope": "Ssh { json: true, command: Exec { host: Vps, cmd: None, command: [\"sudo\", \"-n\", \"true\"] } }",
+  "run_id": "1791066469-2106007",
+  "status": "success",
+  "tool_versions": {}
+}

@@ -1,0 +1,176 @@
+{
+  "schema_version": "gemma4_e4b_telepathic_phase0_v1",
+  "experiment_id": "gemma4-e4b-telepathic-context-sft",
+  "dataset": {
+    "path": "../perfect-dictator/data/datasets/tt_screenshot_telepathic_v3/gold.jsonl",
+    "sha256": "890a88ea7124796dcc6f30bc428b0015314ce8c67ac7be51e4d418e6bf9eff35",
+    "full_prompt_path": "../perfect-dictator/data/datasets/tt_screenshot_telepathic_v2/gold.jsonl",
+    "full_prompt_sha256": "61989be21337925ca8213e89fe72bd07f2bb8e2ff453ab7e99be8073d27f961a",
+    "schema_version": "tt_screenshot_telepathic_gold_v3",
+    "counts": {"train": 1246, "validation": 100, "test": 61, "owners": 491},
+    "validation_order": {
+      "algorithm": "ascending_sha256(seed + NUL + context_id)",
+      "seed": "gemma4-e4b-telepathic-validation-v1",
+      "first_stage_count": 20
+    },
+    "pilot_subset": {
+      "algorithm": "round_robin_ascending_sha256(seed + NUL + owner_id), then ascending_sha256(seed + NUL + context_id)",
+      "seed": "gemma4-e4b-telepathic-pilot-v1",
+      "count": 256,
+      "owner_diverse": true
+    }
+  },
+  "model": {
+    "repo_id": "google/gemma-4-E4B-it",
+    "revision": "fee6332c1abaafb77f6f9624236c63aa2f1d0187",
+    "license": "apache-2.0",
+    "files": {
+      "README.md": "b2472e75e0ab958980e2a78924ace0f075c9904748f2ee66c38192ff4869df9f",
+      "chat_template.jinja": "2f1b4d75d067bae3fe44e676721c7f077d243bc007156cb9c2f8b5836613d082",
+      "config.json": "33b10c02df3c2e8536cf323d29d53262aaa2f4d11dbe19bc729373fbe90295d4",
+      "generation_config.json": "d4226bbe3117d2d253ba4609720ba82c6c4ce4627a9a6ae05387c78983ac03de",
+      "model.safetensors": "cfbd3d2f1cd71bd471c37fe2bf8546d5028d41e5736f64e1ca6c6b8893125503",
+      "processor_config.json": "32bdf45d2ad4cc29a0822ddd157a182de76644f0419a6228d151495256e9813c",
+      "tokenizer.json": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+      "tokenizer_config.json": "90c3a3ba5bf53818383a58e1a776cbcacd2a038d4812eaa373e1522f2d06f3df"
+    },
+    "weight_bytes": 15992595884
+  },
+  "messages": {
+    "compact_system_role": false,
+    "conditioned_template": "../perfect-dictator/data/datasets/tt_screenshot_telepathic_v3/intent_system_prompt.txt",
+    "conditioned_template_sha256": "45f3cf423cbe28c55865496ed63a7bf019d0dbac6bb418ad44a0cff2ec610ed3",
+    "compact_instruction_sha256": "afd1fbfd80aa1d5aac168c44a58d89d5441574fdf7f2cec110f0b69d7a2cd18f",
+    "unresolved_user_name_fallback": "the user",
+    "thinking": false,
+    "full_prompt_source": "per-row rendered system_prompt and user_prompt from immutable v2"
+  },
+  "visual_abi": {
+    "policy": "global_plus_four_nonoverlapping_quadrants",
+    "order": ["global", "top_left", "top_right", "bottom_left", "bottom_right"],
+    "quadrant_boundary": "x_mid = width // 2; y_mid = height // 2; left/top receive floor half",
+    "rgb_conversion": "Pillow Image.convert(RGB)",
+    "processor_resize": true,
+    "processor_resample": 3,
+    "processor_resample_name": "bicubic",
+    "image_token_budget_per_view": 280,
+    "source_width": {"min": 56, "max": 1567},
+    "source_height": {"min": 19, "max": 1419},
+    "source_max_pixels": 1150000,
+    "source_largest_dimensions": [1250, 920]
+  },
+  "target_abi": {
+    "top_level_keys": ["context_analysis"],
+    "loss": "assistant tokens plus EOS only",
+    "truncation": "forbidden",
+    "target_chars": {"min": 721, "median": 1971, "max": 3519},
+    "token_bounds_with_five_views": {
+      "processor_expansion_delta_per_view": 267,
+      "compact": {"template_total_max": 11901, "processor_total_max": 13236, "assistant_plus_end_max": 608},
+      "conditioned": {"template_total_max": 12319, "processor_total_max": 13654, "assistant_plus_end_max": 603},
+      "full": {"template_total_max": 13249, "processor_total_max": 14584, "assistant_plus_end_max": 876}
+    }
+  },
+  "paired_training": {
+    "seed": 24092026,
+    "only_arm_difference": "conditioned has the rendered frozen intent system message; compact has no system role",
+    "dtype": "bfloat16",
+    "batch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "max_seq_length": 16384,
+    "optimizer": "adamw_torch",
+    "attn_implementation": "sdpa",
+    "weight_decay": 0.01,
+    "warmup_ratio": 0.03,
+    "scheduler": "cosine",
+    "lora_alpha_ratio": 2,
+    "lora_dropout": 0.05,
+    "lora_target_regex": "^(?:model\\.language_model\\..*\\.(?:q_proj|k_proj|v_proj|o_proj|gate_proj|up_proj|down_proj)|model\\.vision_tower\\.encoder\\.layers\\.\\d+\\.(?:self_attn\\.(?:q_proj|k_proj|v_proj|o_proj)|mlp\\.(?:gate_proj|up_proj|down_proj))|model\\.embed_vision\\.embedding_projection)$",
+    "recipe_matrix": [
+      {"rank": 8, "learning_rate": 0.00005, "trainable_parameters": {"decoder": 18350080, "vision": 2260992, "projector": 26624, "total": 20637696}},
+      {"rank": 8, "learning_rate": 0.0001, "trainable_parameters": {"decoder": 18350080, "vision": 2260992, "projector": 26624, "total": 20637696}},
+      {"rank": 16, "learning_rate": 0.00005, "trainable_parameters": {"decoder": 36700160, "vision": 4521984, "projector": 53248, "total": 41275392}},
+      {"rank": 16, "learning_rate": 0.0001, "trainable_parameters": {"decoder": 36700160, "vision": 4521984, "projector": 53248, "total": 41275392}}
+    ],
+    "pilot_epochs": 2,
+    "full_checkpoints_epochs": [0.5, 1, 2, 3],
+    "conditional_epoch_4": "single leader only when epoch 3 is best, paired semantics still improve without a new Fail, diagnostics do not regress, and budget remains",
+    "full_prompt_one_epoch": {
+      "rank": 64,
+      "alpha": 128,
+      "dropout": 0.05,
+      "learning_rate": 0.0001,
+      "scheduler": "constant",
+      "epochs": 1,
+      "gradient_accumulation_steps": 8,
+      "optimizer_steps": 156,
+      "checkpoint_steps": [78, 156]
+    }
+  },
+  "evaluation": {
+    "prompt_path": "../perfect-dictator/Scratchpad/screenshot-JSON-eval-prompt.md",
+    "prompt_sha256": "afb58a57173811636a44aa37b18a445c7790d0b338a291a887ae9887a6416cbb",
+    "parser_path": "tools/grade_tt_telepathic_cursor.py",
+    "parser_sha256": "25ef3a4150cdeb7dc9cc0ed1a4319bb974c35d79026f5ca6f9f6a9996dedcf11",
+    "work_item_builder_path": "tools/build_tt_telepathic_cursor_work_items.py",
+    "work_item_builder_sha256": "2c61ce2c7f32ca5f6b08594fc7a2a6b3b2d8f8ab1be39ab26c7426bf92658271",
+    "primary_judge": {
+      "runtime": "cursor_cli",
+      "model": "cursor-grok-4.6-medium",
+      "role": "paired_directional_authority"
+    },
+    "secondary_judge": {
+      "runtime": "cursor_cli",
+      "model": "composer-2.5[fast=false]",
+      "role": "sensitivity_only"
+    },
+    "terra": "forbidden_by_owner_before_semantic_grading",
+    "disagreement_policy": "material directional disagreement is inconclusive and withholds epoch-two eligibility",
+    "decode": {"do_sample": false, "thinking": false, "max_new_tokens": 8192}
+  },
+  "gcp": {
+    "project": "gist-is-backend",
+    "account": "whisper-gcp-sft-runner@gist-is-backend.iam.gserviceaccount.com",
+    "zone": "us-central1-a",
+    "machine_type": "a2-highgpu-1g",
+    "gpu": "NVIDIA A100 40GB",
+    "catalog_verified_at": "2026-09-20",
+    "regional_quota_at_verification": {"metric": "NVIDIA_A100_GPUS", "limit": 1, "usage": 0},
+    "standard_usd_per_hour": 3.673385,
+    "price_source": "https://cloud.google.com/products/compute/pricing/accelerator-optimized",
+    "idle_shutdown_minutes": 15,
+    "maximum_single_lease_hours": 16,
+    "maximum_program_compute_hours": 60,
+    "checkpoint_prefix": "gs://gist-is-training-data/model-artifacts/gemma4-e4b-telepathic-context-sft/",
+    "retention_days_after_close": 30,
+    "cleanup_owner": "mm"
+  },
+  "budget_usd": {
+    "owner_total": 500.0,
+    "gcp_compute_max": 220.41,
+    "terra_evaluation_max": 0.0,
+    "cursor_cli_evaluation_max": 0.0,
+    "gcs_max": 10.0,
+    "contingency": 269.59,
+    "compute_expected_hours": 26,
+    "compute_phase_expected_hours": {"phase_1": 1, "phase_2": 4, "phase_3": 19, "phase_4": 2},
+    "compute_phase_max_hours": {"phase_1": 2, "phase_2": 8, "phase_3": 44, "phase_4": 6},
+    "compute_phase_expected_usd": {"phase_1": 3.673385, "phase_2": 14.69354, "phase_3": 69.794315, "phase_4": 7.34677},
+    "compute_phase_max_usd": {"phase_1": 7.34677, "phase_2": 29.38708, "phase_3": 161.62894, "phase_4": 22.04031}
+  },
+  "advance_rules": {
+    "phase_2_to_3": "best pilot arm has >=8/20 Excellent, >=14/20 Excellent-or-VeryGood, <=1 Fail, >=99% raw-valid JSON, and clear paired improvement over matched stock",
+    "phase_3_to_4": "at least one immutable BF16 checkpoint survives the paired first-20 gate by a large margin",
+    "promotion": "validation >=70/100 Excellent and >=90/100 Excellent-or-VeryGood; sealed test >=43/61 Excellent and >=55/61 Excellent-or-VeryGood",
+    "kill": [
+      "neither pilot arm passes",
+      "non-finite loss or gradient",
+      "image or OCR dependence is absent",
+      "any required input or target truncates",
+      "resume equivalence fails",
+      "checkpoint durability fails",
+      "privacy boundary is violated",
+      "paid ceiling or maximum lease would be exceeded"
+    ]
+  }
+}

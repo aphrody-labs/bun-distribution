@@ -1,0 +1,71 @@
+{
+  "schema_version": "gemma4_e4b_full_prompt_r64_one_epoch_result_v1",
+  "recorded_at": "2026-09-21T04:06:58Z",
+  "decision": "KILL",
+  "decision_reason": "Neither trained checkpoint improved over matched stock under the primary blinded Grok 4.6 medium paired rule. Step 156 substantially improved strict JSON formatting but remained semantically worse than stock. Composer 2.5 non-fast independently agreed that both checkpoints were worse overall.",
+  "epoch_two_eligible": false,
+  "candidates": {
+    "stock": {
+      "generation": {
+        "rows": 20,
+        "raw_valid_json": 0,
+        "natural_stops": 20,
+        "runaways": 0,
+        "generation_tokens": {"mean": 799.3, "p50": 810.5, "p95": 989.9, "max": 1121},
+        "output_characters": {"mean": 3330.5, "p50": 3520.5, "p95": 4133.85, "max": 4815},
+        "latency_seconds": {"mean": 71.992618, "p50": 72.938361, "p95": 88.876221, "max": 100.732863},
+        "peak_memory_bytes": 24345129984
+      },
+      "grok_primary": {"Excellent": 0, "VeryGood": 3, "Good": 6, "NeedsImprovement": 10, "Fail": 1, "excellent_or_very_good": 3, "needs_improvement_or_fail": 11},
+      "composer_secondary": {"Excellent": 0, "VeryGood": 4, "Good": 6, "NeedsImprovement": 9, "Fail": 1, "excellent_or_very_good": 4, "needs_improvement_or_fail": 10}
+    },
+    "checkpoint_78": {
+      "generation": {
+        "rows": 20,
+        "raw_valid_json": 0,
+        "natural_stops": 20,
+        "runaways": 0,
+        "generation_tokens": {"mean": 632.85, "p50": 652.5, "p95": 971.6, "max": 1173},
+        "output_characters": {"mean": 2375.55, "p50": 2585.0, "p95": 3695.5, "max": 4693},
+        "latency_seconds": {"mean": 96.910817, "p50": 100.052283, "p95": 148.170787, "max": 178.395511},
+        "peak_memory_bytes": 25005832704
+      },
+      "grok_primary": {"Excellent": 0, "VeryGood": 1, "Good": 2, "NeedsImprovement": 11, "Fail": 6, "excellent_or_very_good": 1, "needs_improvement_or_fail": 17, "paired_improvements": 2, "paired_ties": 7, "paired_regressions": 11, "ordinal_net": -13},
+      "composer_secondary": {"Excellent": 0, "VeryGood": 1, "Good": 3, "NeedsImprovement": 16, "Fail": 0, "excellent_or_very_good": 1, "needs_improvement_or_fail": 16, "paired_improvements": 1, "paired_ties": 13, "paired_regressions": 6, "ordinal_net": -8}
+    },
+    "checkpoint_156": {
+      "generation": {
+        "rows": 20,
+        "raw_valid_json": 15,
+        "natural_stops": 20,
+        "runaways": 0,
+        "generation_tokens": {"mean": 572.8, "p50": 589.5, "p95": 772.5, "max": 839},
+        "output_characters": {"mean": 2226.75, "p50": 2335.5, "p95": 3024.85, "max": 3459},
+        "latency_seconds": {"mean": 87.867971, "p50": 89.921584, "p95": 118.380749, "max": 128.455091},
+        "peak_memory_bytes": 25005833216
+      },
+      "grok_primary": {"Excellent": 0, "VeryGood": 1, "Good": 4, "NeedsImprovement": 13, "Fail": 2, "excellent_or_very_good": 1, "needs_improvement_or_fail": 15, "paired_improvements": 3, "paired_ties": 9, "paired_regressions": 8, "ordinal_net": -7},
+      "composer_secondary": {"Excellent": 0, "VeryGood": 2, "Good": 7, "NeedsImprovement": 11, "Fail": 0, "excellent_or_very_good": 2, "needs_improvement_or_fail": 11, "paired_improvements": 8, "paired_ties": 3, "paired_regressions": 9, "ordinal_net": -2}
+    }
+  },
+  "judge_contract": {
+    "primary": "cursor-grok-4.6-medium",
+    "secondary": "composer-2.5[fast=false]",
+    "rows_each": 60,
+    "parseable_each": 60,
+    "evaluation_prompt_sha256": "afb58a57173811636a44aa37b18a445c7790d0b338a291a887ae9887a6416cbb",
+    "terra_calls": 0
+  },
+  "artifact_sha256": {
+    "stock_generations": "6f464969a448c90ad3f2b1b4ac3ee09a14b15632e39dc1f592075fd17c4baa22",
+    "checkpoint_78_generations": "320151b55dc2e8d2419f2b046b863eb522bd8367dde379a466793a4c27c87faa",
+    "checkpoint_156_generations": "e61315036d641acb430440a936d9cdfa3a61a420997d0ea903731c5fa21c7775",
+    "blind_work_items": "d7fb366162019b5f5ce844f3de836510e96f8a47874812ee168fa899c6a5ba52",
+    "private_blind_mapping": "8020a4005f337172dd2066297b46d5c8dd4b79daecdf08e96f295eabcdeb154c",
+    "grok_grades": "50e2eeae6b0b785b8c6881624a8c2c4693a8492229a925fa383eaef061de4b9d",
+    "composer_grades": "0ed1873d35bcbf51b42376a8c7ef9830223a07c0f375df982f9290a9d4ed4889",
+    "checkpoint_78_tree": "e312aebc121d2f57d7f14070e337b616eae40eb56b97f6c687763743f14efb05",
+    "checkpoint_156_tree": "57680ba0a7516fba5b63c66c1d14f7c26cb5aac2eb3e1e07557f81b759625a6b"
+  },
+  "privacy": "Private prompts, screenshots, OCR, targets, outputs, IDs, mappings, and per-item grades remain outside Git."
+}

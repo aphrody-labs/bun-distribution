@@ -1,0 +1,61 @@
+{
+  "schema_version": "gemma-tuner-r2-archive-v1",
+  "created_utc": "2026-09-22T16:26:18Z",
+  "git_commit": "365c448",
+  "bucket": "oasis-corpus",
+  "prefix": "run-artifacts/v1/runs/gemma-tuner-multimodal-365c448/",
+  "verification": "rclone check --download --one-way",
+  "artifacts": [
+    {
+      "name": "plan29-checkpoint88-eval",
+      "objects": 78,
+      "bytes": 4001590125,
+      "result": "0 differences",
+      "excluded": [
+        "mlx-checkpoint-264/model-00001-of-00004.safetensors",
+        "mlx-checkpoint-264/model-00002-of-00004.safetensors",
+        "mlx-checkpoint-264/model-00003-of-00004.safetensors",
+        "mlx-checkpoint-264/model-00004-of-00004.safetensors"
+      ],
+      "exclusion_reason": "Concurrent derived MLX merge created after archival began; reconstructible from the archived checkpoint-264 adapter/state, conversion receipt, and pinned base model."
+    },
+    {
+      "name": "local-r64-final",
+      "objects": 3,
+      "bytes": 660536234,
+      "result": "0 differences"
+    },
+    {
+      "name": "plan004-runtime-receipts",
+      "objects": 24,
+      "bytes": 97067306,
+      "result": "0 differences"
+    },
+    {
+      "name": "plan004-runtime-reviews",
+      "objects": 32,
+      "bytes": 8606317,
+      "result": "0 differences"
+    },
+    {
+      "name": "plan004-private-fixtures",
+      "objects": 200,
+      "bytes": 22638782,
+      "result": "0 differences"
+    },
+    {
+      "name": "training-bundles",
+      "objects": 5782,
+      "bytes": 2010759465,
+      "result": "0 differences"
+    },
+    {
+      "name": "gemma-r64-terra-first20",
+      "objects": 2,
+      "bytes": 303776,
+      "result": "0 differences"
+    }
+  ],
+  "total_objects": 6121,
+  "total_bytes": 6805302005
+}

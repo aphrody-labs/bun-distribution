@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aphrody-cli"
+version = "0.1.0"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = ["aphrody>=0.1.0", "fire>=0.7"]
+classifiers = ["Operating System :: POSIX :: Linux"]
+
+[project.scripts]
+aphrody-python = "aphrody_cli.main:main"
+aphrody-python-google = "aphrody_cli.google:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aphrody_cli"]
+
+[tool.uv.sources.aphrody]
+workspace = true

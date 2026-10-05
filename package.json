@@ -17,6 +17,8 @@
       "packages/os/*",
       "packages/koharu/*",
       "packages/fut/*",
+      "packages/engine/*",
+      "apps/yolo/*",
       "m3/packages/*",
       "!m3/packages/rg-ui",
       "packages/interop/*"

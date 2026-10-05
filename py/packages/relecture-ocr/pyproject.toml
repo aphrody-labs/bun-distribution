@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+[project]
+name = "shenron-relecture-ocr"
+version = "0.1.0"
+description = "Loopback OCR second-reader service for Shenron databook review"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.12,<3.13"
+dependencies = ["onnxruntime>=1.20", "rapidocr>=3.9.2"]
+classifiers = ["Operating System :: POSIX :: Linux"]
+
+[project.scripts]
+relecture-ocr = "relecture_ocr.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/relecture_ocr"]
+
+[tool.pytest.ini_options]

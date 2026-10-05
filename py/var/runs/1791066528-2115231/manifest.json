@@ -1,0 +1,18 @@
+{
+  "actions": [
+    {
+      "detail": {
+        "command": "Exec { host: Vps, cmd: Some(\"sudo -n systemctl show rg-repo-sync.service --property=LoadState,ActiveState,UnitFileState,FragmentPath --no-pager\"), command: [] }"
+      },
+      "name": "ssh",
+      "status": "dispatched"
+    }
+  ],
+  "evidence": [],
+  "inputs": [],
+  "outputs": [],
+  "requested_scope": "Ssh { json: true, command: Exec { host: Vps, cmd: Some(\"sudo -n systemctl show rg-repo-sync.service --property=LoadState,ActiveState,UnitFileState,FragmentPath --no-pager\"), command: [] } }",
+  "run_id": "1791066528-2115231",
+  "status": "success",
+  "tool_versions": {}
+}

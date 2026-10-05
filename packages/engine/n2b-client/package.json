@@ -1,0 +1,41 @@
+{
+  "name": "@aphrody/n2b-core",
+  "version": "0.6.2",
+  "private": true,
+  "description": "Native N2B SDK scan, explicit legacy CLI helpers and Bun shims",
+  "license": "Apache-2.0",
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli": "./src/cli.ts",
+    "./shims": "./src/shims/index.ts",
+    "./shims/env": "./src/shims/env.ts",
+    "./shims/fs": "./src/shims/fs.ts",
+    "./shims/path": "./src/shims/path.ts",
+    "./shims/shell": "./src/shims/shell.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "start": "bun src/start.ts",
+    "dev": "bun --watch src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@aphrody/n2b-types": "workspace:*",
+    "@aphrody/runtime-sdk": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

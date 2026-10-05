@@ -1,0 +1,90 @@
+{
+  "device": "mps",
+  "dtype": "bfloat16",
+  "gates": {
+    "max_relative_nll_delta": 0.01,
+    "min_top1_agreement": 0.99
+  },
+  "mode": "full",
+  "model": "google/gemma-4-E2B-it",
+  "passed": true,
+  "positive_control_transformers_5_5_0": {
+    "interpretation": "probe detects the known uncached shared-K/V defect; 5.5.0 must never enter the lineage",
+    "rows": [
+      {
+        "nll_cache_off": 13.311872,
+        "nll_cache_on": 1.081779,
+        "passed": false,
+        "split": "train",
+        "target_tokens": 737,
+        "top1_agreement": 0.023066
+      },
+      {
+        "nll_cache_off": 15.542081,
+        "nll_cache_on": 2.7132,
+        "passed": false,
+        "split": "validation",
+        "target_tokens": 275,
+        "top1_agreement": 0.014545
+      }
+    ]
+  },
+  "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+  "rows": [
+    {
+      "max_abs_logit_delta": 0.0,
+      "nll_cache_off": 1.081779,
+      "nll_cache_on": 1.081779,
+      "passed": true,
+      "preregistered_index": 0,
+      "prompt_tokens": 4968,
+      "relative_nll_delta": 0.0,
+      "seconds": 25.29,
+      "split": "train",
+      "target_tokens": 737,
+      "top1_agreement": 1.0
+    },
+    {
+      "max_abs_logit_delta": 0.0,
+      "nll_cache_off": 2.285408,
+      "nll_cache_on": 2.285408,
+      "passed": true,
+      "preregistered_index": 1,
+      "prompt_tokens": 4369,
+      "relative_nll_delta": 0.0,
+      "seconds": 32.67,
+      "split": "train",
+      "target_tokens": 287,
+      "top1_agreement": 1.0
+    },
+    {
+      "max_abs_logit_delta": 0.0,
+      "nll_cache_off": 2.7132,
+      "nll_cache_on": 2.7132,
+      "passed": true,
+      "preregistered_index": 0,
+      "prompt_tokens": 6597,
+      "relative_nll_delta": 0.0,
+      "seconds": 73.37,
+      "split": "validation",
+      "target_tokens": 275,
+      "top1_agreement": 1.0
+    },
+    {
+      "max_abs_logit_delta": 0.0,
+      "nll_cache_off": 1.309417,
+      "nll_cache_on": 1.309417,
+      "passed": true,
+      "preregistered_index": 1,
+      "prompt_tokens": 6289,
+      "relative_nll_delta": 0.0,
+      "seconds": 53.18,
+      "split": "validation",
+      "target_tokens": 373,
+      "top1_agreement": 1.0
+    }
+  ],
+  "schema_version": "plan33_shared_kv_probe_v1",
+  "torch": "2.11.0",
+  "transformers": "5.5.2"
+}

@@ -1,0 +1,12 @@
+aphrody-ai
+Copyright aphrody-code contributors. Licensed under the Apache License, Version 2.0.
+
+This repository includes material derived from third-party projects:
+
+- OpenAI Codex (https://github.com/openai/codex), Apache License 2.0.
+  JSON Schema fixtures, adapted Python SDK subprocess transport and request
+  routing (also ported to Bun), and reimplementations of its configuration,
+  event and app-server protocol formats. Details: docs/THIRD_PARTY_CODEX.md
+
+- Google Antigravity SDK for Python (py/antigravity-sdk-python/), Apache
+  License 2.0, vendored — see py/antigravity-sdk-python/LICENSE.

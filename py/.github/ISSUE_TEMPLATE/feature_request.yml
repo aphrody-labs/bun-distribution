@@ -1,0 +1,29 @@
+name: "🚀 Proposition de Fonctionnalité"
+description: Suggérer une nouvelle idée ou une amélioration d'optimisation pour Aphrody Python
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Merci de proposer une amélioration pour l'écosystème Aphrody Python !
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème ou cas d'usage visé
+      description: Quel besoin ou goulet d'étranglement cette fonctionnalité adresse-t-elle ?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution proposée
+      description: Description détaillée de la conception technique envisagée.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considérées
+      description: Quelles autres solutions ou approches ont été évaluées ?
+    validations:
+      required: false

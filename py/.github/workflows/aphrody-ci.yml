@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Aphrody Python CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: python-workspace-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: "0.12.22"
+          python-version: "3.12"
+          enable-cache: true
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install Global Canary Tooling (OXC)
+        run: |
+          bun install -g oxlint@latest oxfmt@latest
+      - name: Unified Lint & Format Checks (OXC + Ruff)
+        run: |
+          oxlint --no-error-on-unmatched-pattern
+          bun run lint
+          bun run fmt -- --check
+      - name: Fast Test Runner via Bun & Pytest
+        run: |
+          bun run test
+      - name: Check isolated locks, quality, types, tests and installed distributions
+        run: python tools/packaging/modernize_workspace.py check

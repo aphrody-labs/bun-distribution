@@ -1,0 +1,15 @@
+[submodule "vendor/gemma"]
+	path = vendor/gemma
+	url = git@github-dev:aphrody-labs/gemma.git
+	branch = yolo
+
+[submodule "vendor/gemma-tuner-multimodal"]
+	path = vendor/gemma-tuner-multimodal
+	url = https://github.com/mattmireles/gemma-tuner-multimodal.git
+	branch = main
+
+[submodule "vendor/jan"]
+	path = vendor/jan
+	url = https://github.com/janhq/jan.git
+	branch = main
+

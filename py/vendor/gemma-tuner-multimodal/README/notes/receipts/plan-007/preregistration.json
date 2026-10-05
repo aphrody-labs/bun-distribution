@@ -1,0 +1,110 @@
+{
+  "arms": {
+    "e2b_candidates": "endpoints 352/704/1056 plus at most one preregistered interior seal",
+    "e4b_product_reference": "Plan 31 step-704 E4B checkpoint (tree c624ff5a558ceb9135088e43155377576824b97b950bb4a2be6a5753bd98641f) converted to MLX BF16 by the same converter from its sealed GCS seal (Plan 32's frozen parent baseline); a separate product baseline, not a causal control",
+    "stock_e2b": "pinned revision 3e22461f converted to MLX BF16 with the same converter"
+  },
+  "bindings": {
+    "config_sha256": "781ddcf7c58f115a07d1d39ff80fb618135a98dd74b6ddefa90533be015556b1",
+    "data_receipt_sha256": "352da2811a6cffe2d10a3b6531734adad0c24810613468722967fdc3c07ec36b",
+    "model_pin_receipt_sha256": "a5e07018eaed8d9c783ebf153e44363afac4d7df96e45886e2d2e8815fc13880",
+    "projection_receipts_sha256": {
+      "epoch-1": "09dab2cfabdd72dce2901023add679c469e189fe4f9f7fa9f380800bc56e0c6a",
+      "epoch-2": "6264542cd740cc3f1ee20d4e2ee885a360e3bd3530ba72c7e33067460f2d6870",
+      "epoch-3": "34415d3d858220f2cd9a9baf5150f3dac905cd5d7f30d293552a382c8e9a5bfc"
+    },
+    "shared_kv_probe_receipt_sha256": "182334b8795f0314c5a9cbfb8fec415cec28f971a6f90a22ea65be6af36f970c"
+  },
+  "definitions": {
+    "balance": "count(APPROVED) - count(REJECTED) for one judge over an arm's outputs",
+    "major_error": "manual audit: omitted/misattributed visible participant or message, or unsupported literal content, in any REJECTED full or image_only output",
+    "runaway": "generation stopped by the 8192-token cap"
+  },
+  "exposed20": {
+    "role": "engineering screen only",
+    "rule": "first 20 rows of the frozen v3 validation manifest order",
+    "selection_panel_overlap": {
+      "images": 0,
+      "rows": 0,
+      "source": "perfect-dictator plan-31 validation-freeze receipt"
+    }
+  },
+  "gates": {
+    "beats_stock": "selected BF16 E2B balance > stock E2B balance for both judges on the 360 selection outputs",
+    "e4b_noninferiority": "for each judge: selected balance >= E4B balance - 18 over 360, and >= E4B balance - 6 in each of full and image_only",
+    "exposed20_screen": "candidate eligible unless its runaways exceed stock E2B or its 120-output balance is lower than stock by more than 6 for either judge",
+    "material_local_benefit": "median full-mode latency <= 0.70x E4B OR peak MLX memory <= 0.70x E4B, same host and runtime",
+    "no_major_error_increase": "selected major errors <= stock E2B major errors",
+    "no_mode_regression": "for every mode and judge, selected balance >= stock balance - 3 (of 60)",
+    "no_new_runaway": "selected runaways <= stock E2B runaways and <= E4B reference runaways",
+    "otherwise": "record KILL (E2B rejected for E4B) or inconclusive with the next falsifying experiment; thresholds never move after this freeze",
+    "selection_rule": "among eligible candidates passing all gates, highest mean two-judge balance; ties -> fewer runaways -> lower median tokens -> earlier step",
+    "six_bit_tolerance": "6-bit balance >= BF16 balance - 9 per judge, no new runaway, and no mode lower by more than 3; else keep BF16 or KILL"
+  },
+  "interior_seal_rule": "Among seals 88/176/264/440/528/616/792/880/968, take the one with the lowest mean six-mode validation-60 loss; include it only if that mean is lower than every endpoint's mean and its segment has no nonfinite event; ties -> earliest.",
+  "judging": {
+    "blinding": "one candidate per call; no arm, checkpoint, model, or mode identity; no reference output",
+    "instructions_shown": "canonical full v3 system+user bytes of the row (before mode omission)",
+    "judges": {
+      "composer": "composer-2.5[fast=false]",
+      "grok": "cursor-grok-4.6-medium"
+    },
+    "prompt_path": "perfect-dictator/README/notes/receipts/plan-32/instruction-aware-judge-prompt-v2.md",
+    "prompt_sha256": "f29503bdbe4522db17e30a08cd593d0fc215bfc7bf238089a3c4e3f2e84f1b85",
+    "verdicts": [
+      "APPROVED",
+      "REJECTED",
+      "NEEDS_REVIEW"
+    ]
+  },
+  "loss_panels": {
+    "fixed_interval_steps": 22,
+    "fixed_train_rows": 20,
+    "fixed_validation_rows": 20,
+    "full_validation_rows": 252,
+    "full_validation_steps": [
+      352,
+      704,
+      1056
+    ],
+    "mode_panel": "validation-60 x six modes at every 88-step seal",
+    "mode_panel_sha256": "246cba6d5a1c2fcbf9716cc0f1d0f93b11e4b0361442680ea803470fd81f18c4",
+    "role": "diagnostic only; never a quality claim"
+  },
+  "outputs_read_before_freeze": {
+    "sealed_test_rows": 0,
+    "stock_e2b_v3_generations": 0,
+    "trained_e2b_generations": 0
+  },
+  "plan": "README/plans/007-gemma4-e2b-literal-screenshot-sft-plan.md (Plan 33)",
+  "runtime_abi": {
+    "decoding": "greedy",
+    "env": "~/.cache/plan31-mlx-venv",
+    "hf_mps": "optional mechanism diagnosis only; never mixed into paired claims",
+    "host": "Apple M2 Ultra 64 GB",
+    "max_new_tokens": 8192,
+    "mlx": "0.32.2",
+    "mlx_vlm": "0.7.1",
+    "precision": "unquantized BF16 for selection; 6-bit only for the selected checkpoint",
+    "python": "3.11.15",
+    "row_order": "frozen panel order",
+    "thinking": "off"
+  },
+  "schema_version": "plan33_preregistration_v1",
+  "sealed_test": "unopened; no Plan 33 step may read it",
+  "selection_panel": {
+    "modes": [
+      "full",
+      "no_system",
+      "no_ocr",
+      "no_quadrants",
+      "image_instruction",
+      "image_only"
+    ],
+    "outputs_per_arm": 360,
+    "rows": 60,
+    "sha256": "246cba6d5a1c2fcbf9716cc0f1d0f93b11e4b0361442680ea803470fd81f18c4",
+    "source": "Plan 31 validation-freeze v1, same panel Plan 32 uses for E4B"
+  },
+  "status": "frozen_before_any_plan33_generation_or_training_output"
+}

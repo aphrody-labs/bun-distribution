@@ -1,0 +1,18 @@
+{
+  "actions": [
+    {
+      "detail": {
+        "command": "Status { host: Vps }"
+      },
+      "name": "ssh",
+      "status": "dispatched"
+    }
+  ],
+  "evidence": [],
+  "inputs": [],
+  "outputs": [],
+  "requested_scope": "Ssh { json: true, command: Status { host: Vps } }",
+  "run_id": "1791066461-2104331",
+  "status": "success",
+  "tool_versions": {}
+}
