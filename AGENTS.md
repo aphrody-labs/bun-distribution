@@ -66,6 +66,14 @@ Profiles `aphrody`, `dbfr`, `ie` remain isolated. Live transcripts/status are
 evidence, not authority/authorship. An explicitly requested all-worktree integration
 commit still requires staged review and exclusion of protected/ignored output.
 
+## Agent tooling
+
+Agents use only the Aphrody MCP tools, the `yolo` CLI, Rust CLIs (`aphrody`, `aphrody-infra`,
+`aphrody-ops`) and Bun (`bun`, `bun -e`, `bun <script>.ts`). No GNU shell utilities (grep, sed,
+awk, find, xargs, cat heredocs) and no Python for agent work: use MCP search/read/edit tools, the
+Edit tool or a Bun script. Python stays only as product code under `py/`, run through `uv`.
+Remote work goes through `aphrody-infra ssh` or the MCP `infra_exec`, never raw ssh.
+
 ## Builds and validation
 
 Workers never start Cargo. The integrating agent uses
