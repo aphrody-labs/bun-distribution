@@ -1,16 +1,18 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # SDK distribution validation
 
-The `Python SDK distributions` workflow builds Aphrody on Ubuntu Linux with
-Python 3.11, 3.12, 3.13 and 3.14. It copies only
-the SDK project into runner temporary
-storage, builds a source archive and a wheel, then independently rebuilds the
-wheel from the archive. Neither build uses checkout-neighbor Rust or Python
-projects. Runtime dependencies resolve from published package metadata; the root
-workspace environment and its optional training packages are not involved.
+The Linux SDK qualification (`modernize_workspace.py linux-sdk --python VERSION`, Python
+3.11, 3.12, 3.13 and 3.14) builds the `aphrody` wheel from the Aphrody monorepo checkout
+into temporary storage with `uv build --wheel`; the native extension is the workspace crate
+`crates/ai/rag-python`, so the build needs Cargo and runs on the serialized build host. No
+source archive is built or rebuilt for `aphrody`: its Rust source lives outside the package
+directory (see [native build](native-build.md)). Runtime dependencies resolve from published
+package metadata; the root workspace environment and its optional training packages are not
+involved. The nested GitHub workflows of the former standalone repository were removed
+(GitHub reads only the root `.github`).
 
 `tools/sdk/verify-wheel.py` checks each wheel's CPython 3.11 `abi3` tag, native
-extension, pinned Aphrody native-source provenance, native type signatures,
+extension, the `aphrody-rust` CycloneDX SBOM, native type signatures,
 Apache license text, PEP 561 marker and bundled Blender resources. It permits only the exactly pinned optional Antigravity Git dependency;
 other direct URLs and a core Scrapy dependency are rejected. It installs the wheel into a new temporary virtual
 environment, checks lazy root imports, checks the installed package origin and
@@ -18,8 +20,7 @@ version, and runs the three native ranking functions. These checks require no
 credentials, model downloads, provider requests or running native CLI.
 
 With `--tests`, the verifier copies all SDK `test_*.py` files except
-`test_build_backend.py`, `test_build_backend_reproducibility.py`,
-`test_pin_rag_source.py` and `test_public_api.py`.
+`test_public_api.py`.
 These files require the
 source tree; installed lazy-import behavior has a separate smoke check. Pytest
 runs with isolated Python, a separate configuration and explicit HTTPX/asyncio
@@ -39,8 +40,8 @@ python tools/packaging/modernize_workspace.py linux-sdk --python 3.11
 python tools/packaging/modernize_workspace.py check
 ```
 
-The SDK command accepts 3.11, 3.12, 3.13 and 3.14 and records wheel hashes
-after both installations pass. `check` qualifies all seven distributions on
+The SDK command accepts 3.11, 3.12, 3.13 and 3.14 and records the wheel hash
+after the installed-wheel checks pass. `check` qualifies all seven distributions on
 the complete workspace baseline, CPython 3.12. Configured CI jobs alone do
 not establish that a particular remote workflow run succeeded.
 

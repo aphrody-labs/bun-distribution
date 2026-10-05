@@ -30,7 +30,7 @@ Ce plan centralise et fusionne l'ensemble des axes directeurs du projet :
 | **Yolo Core & Runtime** | Moteur de supervision, benchmarking matériel, isolation processus | `crates/engine/yolo-core`, `crates/engine/yolo-runtime` |
 | **Interop FFI Unique** | Bibliothèque C-ABI unifiée (`libaphrody_ffi.so`) chargeant CLI, runtime, M3 tokens et tooling | `crates/interop/ffi` |
 | **M3 UI & Design System** | Tokens Material 3, composants, Canvas et rendu graphique pur | `m3/`, `crates/ui/*` |
-| **Python IA / ML SDK** | Extension native PyO3 (`_yolo_native` / `aphrody_rust`), RAG, embeddings | `py/packages/aphrody`, `crates/engine/yolo-pyo3`, `crates/ai/rag-python` |
+| **Python IA / ML SDK** | Extension native PyO3 (`_yolo_native` / `aphrody_rust`), RAG, embeddings ; runtime `ir` (uv + ruff + PyO3, [plan](docs/plans/ir/PLAN.md)) | `py/` (fusionné dans le monorepo le 2026-10-05), `crates/engine/yolo-pyo3`, `crates/ai/rag-python` (seul propriétaire du binding `aphrody-rust`) |
 | **Obscura / Web Engine** | Navigation headless, extraction de données, profils stealth, HAR | `crates/web/*` |
 
 ---
@@ -100,7 +100,7 @@ restent des alias de compatibilité jusqu'à qualification.
   `aphrody-inference-ffi` (feature `inference`) absorbés 2026-10-05, `yolo-runtime` réduit à `rlib` ; consommateurs
   Bun repointés vers `libaphrody_ffi`. Restent hors C-ABI : `aphrody-a2a-ui`/`aphrody-shell-web` (wasm-bindgen),
   cibles mobiles de `yolo-desktop`/`aphrody-m3-showcase` (fusion app desktop). `yolo-pyo3` et
-  `py/packages/aphrody/native` restent des modules d'extension Python (PyO3), pas des cdylib C.
+  `crates/ai/rag-python` (ex `py/packages/aphrody/native`, absorbé 2026-10-05) restent des modules d'extension Python (PyO3), pas des cdylib C.
 - [~] **MCP** — un seul serveur `aphrody-mcp` : `aphrody-tauri-mcp` retiré (14 outils déjà servis par
   `aphrody-mcp`, appel `aphrody_webview_*` corrigé), `aphrody-mcp-smoke` → exemple `mcp_smoke`, boucles
   stdio/HTTP mortes d'`obscura-mcp` retirées (bibliothèque d'outils seule). Un seul point d'entrée plugin :
@@ -166,7 +166,7 @@ d’IECODE et de FUT.
 - [x] Doublons de mécanismes retirés (`8b94aa7d4`, session aphrody-1a) : crate `aphrody-marketplace`,
   `publish-workspaces.ts`, pin SDK `sibling-checkouts`, wrappers `bun install` (façade `yolo-core/pm`).
 - [ ] Publication npm des paquets consommés par Shenron et FUT, puis migration d’IECODE et FUT vers npm.
-- [ ] `packages/` aplati (`packages/<nom>`, comme `bun/packages`) ; `py/` rendu à `aphrody-py`.
+- [ ] `packages/` aplati (`packages/<nom>`, comme `bun/packages`). `py/` n'est plus rendu à `aphrody-py` : directive du 2026-10-05, `py/` est fusionné dans Aphrody (inventaire et déduplication : [docs/plans/ir](docs/plans/ir/PLAN.md)).
 - [ ] GitHub : archiver les dépôts absorbés (`yolo`, `aphrody-m3`, `nie-ui`, `plugin-*` → `plugins`) et les
   forks intégrés ou purgés (tauri, tao, wry, plugins-workspace, create-tauri-app, next.js, tailwindcss,
   base-ui, fonts, material-*).

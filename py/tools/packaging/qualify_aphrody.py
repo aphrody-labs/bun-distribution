@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Build and exercise the native SDK outside its development workspace.
+"""Build and exercise the native SDK wheel from the Aphrody monorepo checkout.
 
-Run with ``uv run --locked python tools/packaging/qualify_aphrody.py``.
-The default input is committed Git source; --worktree explicitly qualifies a
-snapshot of concurrent, unpublished packaging changes instead.
+Run with ``uv run --locked python tools/packaging/qualify_aphrody.py``. The Rust
+extension is the monorepo crate `crates/ai/rag-python`; the wheel is built in
+place with the workspace `Cargo.lock`, so this gate needs Cargo and belongs on
+the serialized build host. The recorded revision is HEAD; `dirty_paths` lists
+uncommitted changes under `py/` and `crates/ai/rag-*` so unpublished input is
+never presented as committed source.
 """
 
 from __future__ import annotations
@@ -18,23 +21,17 @@ import os
 import shutil
 import subprocess
 import sys
-import tarfile
 import tempfile
 import tomllib
 import zipfile
 from email.parser import BytesParser
 from pathlib import Path
 
-REPOSITORY = Path(__file__).resolve().parents[2]
-PACKAGE = Path("packages/aphrody")
-UNTRACKED_INPUTS = {
-    "build_backend.py",
-    "src/aphrody/py.typed",
-    "native/Cargo.toml",
-    "native/Cargo.lock",
-    "native/source.json",
-    "native/source.tar.gz",
-}
+PY_ROOT = Path(__file__).resolve().parents[2]
+REPOSITORY = PY_ROOT.parent
+PACKAGE = PY_ROOT / "packages/aphrody"
+NATIVE_CRATES = ("crates/ai/rag-python", "crates/ai/rag-core")
+
 NATIVE_SMOKE = """
 import importlib.machinery
 import json
@@ -88,62 +85,6 @@ def run(args: list[str], cwd: Path, env: dict[str, str]) -> str:
         args, cwd=cwd, env=env, check=True, text=True, stdout=subprocess.PIPE
     )
     return result.stdout.strip()
-
-
-def snapshot(source: Path, destination: Path) -> dict[str, str]:
-    names = (
-        subprocess.check_output(
-            ["git", "ls-files", "-z", "--", str(PACKAGE)], cwd=source
-        )
-        .decode()
-        .split("\0")
-    )
-    paths = {Path(name).relative_to(PACKAGE) for name in names if name}
-    deleted = (
-        subprocess.check_output(
-            ["git", "ls-files", "--deleted", "-z", "--", str(PACKAGE)], cwd=source
-        )
-        .decode()
-        .split("\0")
-    )
-    paths.difference_update(Path(name).relative_to(PACKAGE) for name in deleted if name)
-    paths.update(Path(name) for name in UNTRACKED_INPUTS)
-    paths.update(Path(name) for name in license_inputs(source / PACKAGE))
-    # Worktree qualification must include new first-party modules as well as
-    # tracked ones. Restrict this to source/typing files, never runtime data.
-    python_source = source / PACKAGE / "src/aphrody"
-    for pattern in ("**/*.py", "**/*.pyi", "**/py.typed"):
-        paths.update(
-            path.relative_to(source / PACKAGE)
-            for path in python_source.glob(pattern)
-            if path.is_file()
-        )
-    for name in ("src/aphrody/aphrody_rust.pyi", "LICENSE", "NOTICE"):
-        if (source / PACKAGE / name).is_file():
-            paths.add(Path(name))
-    # Redistributable package data is explicit; secrets and generated native
-    # source never enter this unpublished-source staging allowlist.
-    resources = source / PACKAGE / "src/aphrody/resources"
-    if resources.exists():
-        paths.update(
-            path.relative_to(source / PACKAGE)
-            for path in resources.rglob("*")
-            if path.is_file()
-        )
-    hashes = {}
-    for relative in sorted(paths):
-        original = source / PACKAGE / relative
-        if not original.is_file() or original.is_symlink():
-            raise ValueError(f"Missing or symlinked packaging input: {relative}")
-        content = original.read_bytes()
-        target = destination / relative
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(content)
-        hashes[str(relative)] = sha256(content)
-    for name, digest in hashes.items():
-        if sha256((source / PACKAGE / name).read_bytes()) != digest:
-            raise ValueError(f"Source changed during snapshot: {name}; retry")
-    return hashes
 
 
 def license_inputs(package: Path) -> dict[str, str]:
@@ -240,122 +181,57 @@ def wheel_contents(
         return hashes
 
 
-def verify_package_payload(
-    inputs: dict[str, str],
-    wheels: tuple[dict[str, str], dict[str, str]],
-    sdist: Path,
-    prefix: str,
-    licenses: dict[str, str],
-) -> int:
-    """Compare source-layout inputs with wheel-layout members and sdist bytes."""
-    resources = 0
-    with tarfile.open(sdist) as archive:
-        members = archive.getnames()
-        if len(members) != len(set(members)):
-            raise ValueError("Sdist contains duplicate members")
-        for relative, digest in inputs.items():
-            if relative.startswith("src/aphrody/"):
-                wheel_member = relative.removeprefix("src/")
-                if any(wheel.get(wheel_member) != digest for wheel in wheels):
-                    raise ValueError(
-                        f"Wheel is missing or changes package input: {relative}"
-                    )
-                resources += relative.startswith("src/aphrody/resources/")
-            elif relative not in licenses:
-                continue
-            try:
-                member = archive.getmember(f"{prefix}/{relative}")
-            except KeyError as error:
-                raise ValueError(f"Sdist lacks package input: {relative}") from error
-            if not member.isfile():
-                raise ValueError(
-                    f"Sdist package input is not a regular file: {relative}"
-                )
-            source = archive.extractfile(member)
-            if source is None or sha256(source.read()) != digest:
-                raise ValueError(
-                    f"Sdist is missing or changes package input: {relative}"
-                )
-    return resources
+def package_inputs() -> dict[str, str]:
+    """Hash the tracked and new first-party files that define the wheel payload."""
+    names = (
+        subprocess.check_output(
+            [
+                "git",
+                "ls-files",
+                "-z",
+                "--cached",
+                "--others",
+                "--exclude-standard",
+                "--",
+                str(PACKAGE),
+                *(str(REPOSITORY / crate) for crate in NATIVE_CRATES),
+            ],
+            cwd=REPOSITORY,
+        )
+        .decode()
+        .split("\0")
+    )
+    hashes = {}
+    for name in sorted(filter(None, names)):
+        path = REPOSITORY / name
+        if path.is_file() and not path.is_symlink():
+            hashes[name] = sha256(path.read_bytes())
+    return hashes
 
 
-def json_differences(first, second, path="") -> list[str]:
-    """Describe metadata drift without copying local paths into public logs."""
-    if isinstance(first, dict) and isinstance(second, dict):
-        differences = []
-        for key in sorted(first.keys() | second.keys()):
-            child = f"{path}/{key}"
-            if key not in first or key not in second:
-                differences.append(child)
-            else:
-                differences.extend(json_differences(first[key], second[key], child))
-        return differences
-    if isinstance(first, list) and isinstance(second, list):
-        if len(first) != len(second):
-            return [path]
-        return [
-            child
-            for index, (a, b) in enumerate(zip(first, second, strict=True))
-            for child in json_differences(a, b, f"{path}/{index}")
-        ]
-    return [] if first == second else [path]
+def dirty_paths() -> list[str]:
+    status = subprocess.check_output(
+        [
+            "git",
+            "status",
+            "--porcelain",
+            "--",
+            str(PY_ROOT),
+            *(str(REPOSITORY / crate) for crate in NATIVE_CRATES),
+        ],
+        cwd=REPOSITORY,
+    ).decode()
+    return [line[3:] for line in status.splitlines()]
 
 
-def normalize_sbom_source(sbom: dict) -> dict:
-    """Normalize only references to this isolated Cargo source directory.
-
-    Full dependency versions, licenses, hashes, graph edges and root crate
-    identity must remain equal. Original SBOM bytes stay in both distributions.
-    """
-    reference = sbom["metadata"]["component"]["bom-ref"]
-    prefix, identity = reference.rsplit("#", 1)
-    if not prefix.startswith("path+file://") or identity != "aphrody-rust@0.1.0":
-        raise ValueError("Unexpected local source identity in Rust SBOM")
-
-    def normalize(value):
-        if isinstance(value, dict):
-            result = {}
-            for key, item in value.items():
-                if (
-                    key in {"bom-ref", "ref"}
-                    and isinstance(item, str)
-                    and (
-                        item == reference or item.startswith(reference + " bin-target-")
-                    )
-                ):
-                    item = f"isolated-native-source#{identity}" + item[len(reference) :]
-                result[key] = normalize(item)
-            return result
-        if isinstance(value, list):
-            return [normalize(item) for item in value]
-        return value
-
-    return normalize(sbom)
-
-
-def qualify(
-    work: Path, worktree: bool, python: str, artifacts: Path | None = None
-) -> dict:
+def qualify(work: Path, python: str, artifacts: Path | None = None) -> dict:
     env = os.environ.copy()
     for name in ("PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV", "UV_PROJECT_ENVIRONMENT"):
         env.pop(name, None)
     env["SOURCE_DATE_EPOCH"] = "1727740800"
     revision = run(["git", "rev-parse", "HEAD"], REPOSITORY, env)
-    source = REPOSITORY
-    if not worktree:
-        source = work / "clone"
-        run(
-            ["git", "clone", "--quiet", "--no-hardlinks", str(REPOSITORY), str(source)],
-            work,
-            env,
-        )
-        # A concurrent source commit may land while cloning; record the revision
-        # actually copied into this immutable clone rather than its earlier HEAD.
-        revision = run(["git", "rev-parse", "HEAD"], source, env)
-    stage = work / "package"
-    hashes = snapshot(source, stage)
-    # Build directories and Cargo targets are independent for each build.
-    direct = work / "direct"
+    hashes = package_inputs()
+    dist = work / "dist"
     run(
         [
             "uv",
@@ -365,167 +241,75 @@ def qualify(
             "--python",
             python,
             "--out-dir",
-            str(direct),
-            str(stage),
+            str(dist),
+            str(PACKAGE),
         ],
         work,
         env,
     )
-    run(
-        [
-            "uv",
-            "--no-config",
-            "build",
-            "--sdist",
-            "--python",
-            python,
-            "--out-dir",
-            str(direct),
-            str(stage),
-        ],
-        work,
-        env,
-    )
-    sdist = next(direct.glob("*.tar.gz"))
-    first = next(direct.glob("*.whl"))
-    with tarfile.open(sdist) as archive:
-        names = set(archive.getnames())
-    prefix = sdist.name.removesuffix(".tar.gz")
-    for name in (
-        "build_backend.py",
-        "native/Cargo.toml",
-        "native/Cargo.lock",
-        "native/source.json",
-        "native/source.tar.gz",
-    ):
-        if f"{prefix}/{name}" not in names:
-            raise ValueError(f"Sdist lacks pinned build input: {name}")
-    rebuilt = work / "rebuilt"
-    run(
-        [
-            "uv",
-            "--no-config",
-            "build",
-            "--python",
-            python,
-            "--wheel",
-            "--out-dir",
-            str(rebuilt),
-            str(sdist),
-        ],
-        work,
-        env,
-    )
-    second = next(rebuilt.glob("*.whl"))
-    licenses = license_inputs(stage)
-    license_expression = tomllib.loads((stage / "pyproject.toml").read_text())[
+    wheel = next(dist.glob("aphrody-*.whl"))
+    licenses = license_inputs(PACKAGE)
+    license_expression = tomllib.loads((PACKAGE / "pyproject.toml").read_text())[
         "project"
     ]["license"]
-    first_contents, second_contents = (
-        wheel_contents(wheel, licenses=licenses, license_expression=license_expression)
-        for wheel in (first, second)
+    contents = wheel_contents(
+        wheel, licenses=licenses, license_expression=license_expression
     )
-    changed = sorted(
-        name
-        for name in first_contents.keys() | second_contents.keys()
-        if first_contents.get(name) != second_contents.get(name)
+    resources = 0
+    for relative, digest in hashes.items():
+        prefix = (PACKAGE.relative_to(REPOSITORY) / "src/").as_posix() + "/"
+        if relative.startswith(prefix + "aphrody/"):
+            member = relative.removeprefix(prefix)
+            if contents.get(member) != digest:
+                raise ValueError(f"Wheel is missing or changes package input: {member}")
+            resources += "/resources/" in member
+    venv = work / "venv"
+    run(["uv", "--no-config", "venv", "--python", python, str(venv)], work, env)
+    interpreter = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    run(
+        [
+            "uv",
+            "--no-config",
+            "pip",
+            "install",
+            "--python",
+            str(interpreter),
+            str(wheel),
+        ],
+        work,
+        env,
     )
-    sbom_differences = {}
-    equivalent_sboms = True
-    with zipfile.ZipFile(first) as a, zipfile.ZipFile(second) as b:
-        for name in changed:
-            if ".dist-info/sboms/" in name and name.endswith(".json"):
-                first_sbom, second_sbom = (
-                    json.loads(a.read(name)),
-                    json.loads(b.read(name)),
-                )
-                sbom_differences[name] = json_differences(first_sbom, second_sbom)
-                equivalent_sboms &= normalize_sbom_source(
-                    first_sbom
-                ) == normalize_sbom_source(second_sbom)
-    payload_equivalent = equivalent_sboms and all(
-        name.endswith(".dist-info/RECORD") or name in sbom_differences
-        for name in changed
-    )
-    resource_count = verify_package_payload(
-        hashes, (first_contents, second_contents), sdist, prefix, licenses
-    )
-    smokes = []
-    for label, wheel in (("direct", first), ("sdist-rebuild", second)):
-        venv = work / f"venv-{label}"
-        run(["uv", "--no-config", "venv", "--python", python, str(venv)], work, env)
-        interpreter = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-        run(
-            [
-                "uv",
-                "--no-config",
-                "pip",
-                "install",
-                "--python",
-                str(interpreter),
-                str(wheel),
-            ],
-            work,
-            env,
-        )
-        smokes.append(
-            json.loads(run([str(interpreter), "-I", "-c", NATIVE_SMOKE], work, env))
-        )
+    smoke = json.loads(run([str(interpreter), "-I", "-c", NATIVE_SMOKE], work, env))
     if artifacts:
-        for label, artifact in (
-            ("direct", first),
-            ("direct", sdist),
-            ("rebuilt", second),
-        ):
-            target = artifacts / label / artifact.name
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(artifact, target)
+        artifacts.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(wheel, artifacts / wheel.name)
     return {
-        "schema_version": 1,
-        "input_mode": "worktree-snapshot" if worktree else "committed-clean-clone",
-        "python_git_revision": revision,
-        "native_provenance": json.loads((stage / "native/source.json").read_text()),
+        "schema_version": 2,
+        "input_mode": "monorepo-in-place",
+        "git_revision": revision,
+        "dirty_paths": dirty_paths(),
+        "native_crate": "crates/ai/rag-python",
         "input_sha256": hashes,
         "toolchains": {
             "uv": run(["uv", "--version"], work, env),
             "rustc": run(["rustc", "--version"], work, env),
         },
-        "sdist_sha256": sha256(sdist.read_bytes()),
-        "wheel_sha256": sha256(first.read_bytes()),
-        "rebuilt_wheel_sha256": sha256(second.read_bytes()),
-        "wheel_members_identical": not changed,
-        "differing_wheel_members": changed,
-        "sbom_differing_json_paths": sbom_differences,
-        "wheel_payload_and_provenance_equivalent": payload_equivalent,
-        "sbom_allowed_nondeterminism": "Isolated Cargo source path in local bom-ref/ref values only",
-        "package_resources_verified": resource_count,
+        "wheel_sha256": sha256(wheel.read_bytes()),
+        "package_resources_verified": resources,
         "license_expression_verified": license_expression,
         "license_inputs_sha256": licenses,
-        "wheel_bytes_identical": first.read_bytes() == second.read_bytes(),
-        "installed_smokes": smokes,
+        "installed_smoke": smoke,
     }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--worktree", action="store_true", help="Qualify unpublished input explicitly"
-    )
     parser.add_argument("--python", default="3.12")
     parser.add_argument("--report", type=Path, help="Write a JSON evidence report")
-    parser.add_argument(
-        "--artifacts-dir", type=Path, help="Retain the built distributions"
-    )
-    parser.add_argument(
-        "--require-byte-reproducibility",
-        action="store_true",
-        help="Also require byte-identical wheel archives",
-    )
+    parser.add_argument("--artifacts-dir", type=Path, help="Retain the built wheel")
     options = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="aphrody-packaging-") as temporary:
-        result = qualify(
-            Path(temporary), options.worktree, options.python, options.artifacts_dir
-        )
+        result = qualify(Path(temporary), options.python, options.artifacts_dir)
     if options.report:
         options.report.parent.mkdir(parents=True, exist_ok=True)
         options.report.write_text(json.dumps(result, indent=2) + "\n")
@@ -535,12 +319,10 @@ def main() -> None:
             indent=2,
         )
     )
-    if not result["wheel_payload_and_provenance_equivalent"]:
-        sys.exit(
-            "Wheel payload or dependency provenance differs across isolated builds"
+    if result["dirty_paths"]:
+        print(
+            "warning: uncommitted input under py/ or the native crates", file=sys.stderr
         )
-    if options.require_byte_reproducibility and not result["wheel_bytes_identical"]:
-        sys.exit("Reproducibility gate failed; inspect the reported wheel differences")
 
 
 if __name__ == "__main__":

@@ -151,10 +151,10 @@ execution; `AuthenticatedDocsClient`, `AuthenticatedDriveClient`, and
 `BlenderRunner` expose the document, file and Blender integrations directly.
 Persistent clients support context managers and release connections they own.
 
-The wheel includes the stable-ABI Rust ranking extension, its provenance, native
-type stubs, `py.typed` and the headless Blender scripts. Source distributions
-rebuild without the Aphrody Rust checkout; Rust source is pinned and verified
-from the compressed packaging artifact.
+The wheel includes the stable-ABI Rust ranking extension (built from the monorepo
+crate `crates/ai/rag-python`, with its CycloneDX SBOM), native type stubs, `py.typed`
+and the headless Blender scripts. Wheels are built inside the Aphrody monorepo
+(`uv build --wheel`); the Rust source is not copied into this package.
 
 ```python
 from aphrody import ActorClient

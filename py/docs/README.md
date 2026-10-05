@@ -87,11 +87,11 @@ uv lock
 
 ### PyO3 Native Build Workflow
 
-The native extension module is pinned and built via the packaging recipe in [packages/aphrody/native/Cargo.toml](../packages/aphrody/native/Cargo.toml):
+The native extension module is the Rust workspace crate `crates/ai/rag-python`, built in place by maturin (see [native build](sdk/native-build.md)); build on the serialized build host, never in WSL:
 
 ```bash
-# Rebuild the ABI3 native shared library and update wheels
-python tools/packaging/modernize_workspace.py apply
+# Rebuild the ABI3 native extension into a wheel
+uv build --wheel packages/aphrody --out-dir dist
 ```
 
 ---

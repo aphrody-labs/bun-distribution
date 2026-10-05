@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [package]
 name = "aphrody-rust"
-description = "Aphrody platform crate aphrody-rust."
+description = "PyO3 extension module aphrody.aphrody_rust (RAG vector kernels and rank fusion), built into the aphrody Python wheel."
 repository.workspace = true
 version = "0.1.0"
 edition.workspace = true

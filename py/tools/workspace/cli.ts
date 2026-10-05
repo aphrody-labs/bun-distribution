@@ -5,7 +5,7 @@ import { supervise, type MeasureOptions } from "./supervisor.ts";
 export const root = fileURLToPath(new URL("../../", import.meta.url));
 const python = ["uv", "run", "--locked", "python", "tools/packaging/modernize_workspace.py"];
 export const commands = {
-  build: [...python, "apply"],
+  build: ["uv", "build", "--wheel", "packages/aphrody", "--out-dir", "dist"],
   check: [...python, "check"],
   locks: [...python, "locks"],
   distributions: [...python, "distributions"],

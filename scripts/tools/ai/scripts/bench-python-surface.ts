@@ -10,7 +10,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 
 // Repository root, resolved from this script so the benchmark runs from any checkout.
-const REPO_ROOT = path.resolve(import.meta.dir, "..");
+const REPO_ROOT = path.resolve(import.meta.dir, "../../../..");
 // Agent home (benchmark outputs, profile scripts); APHRODY_HOME overrides it.
 const APHRODY_HOME = process.env.APHRODY_HOME ?? path.join(os.homedir(), ".aphrody");
 
@@ -131,7 +131,9 @@ async function main() {
   );
 
   // 4. Native Rust C-ABI extension check
-  console.log("4/6 Vérification de l'extension C-ABI aphrody_rust.pyd (FFI SIMD)...");
+  console.log(
+    "4/6 Vérification de l'extension native aphrody_rust (crates/ai/rag-python, FFI SIMD)...",
+  );
   const ffiCheckCmd = runCommand(
     "uv",
     [
@@ -155,8 +157,13 @@ async function main() {
 
   const totalDurationMs = Math.round((performance.now() - totalStart) * 100) / 100;
 
-  const pydPath = path.join(pyDir, "aphrody/aphrody/aphrody_rust.pyd");
-  const pydExists = fs.existsSync(pydPath);
+  // The extension is the crates/ai/rag-python crate, built into the package by maturin.
+  const sdkDir = path.join(pyDir, "packages/aphrody/src/aphrody");
+  const extension = fs.existsSync(sdkDir)
+    ? fs.readdirSync(sdkDir).find((name) => /^aphrody_rust\..*\.(so|pyd)$/.test(name))
+    : undefined;
+  const pydPath = path.join(sdkDir, extension ?? "aphrody_rust.abi3.so");
+  const pydExists = extension !== undefined;
 
   const benchmarkPayload = {
     timestamp: new Date().toISOString(),

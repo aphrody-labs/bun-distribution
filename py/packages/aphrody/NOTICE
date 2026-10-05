@@ -22,7 +22,7 @@ derived from openai/codex sdk/python/src/openai_codex/{client,_message_router}.p
 at revision 78245b47af2a7aafcabe025828ceecca69db4df1 (Apache-2.0), as recorded
 in that module. These transport notices are retained.
 
-The native math extension comes from the exact source recipe recorded in
-native/source.json and native/source.tar.gz, with Apache-2.0 source metadata.
-This packaging metadata is provenance, not proof of a newly compiled wheel
-or compatibility with every Yolo runtime/platform.
+The native math extension is the Rust crate crates/ai/rag-python (package
+aphrody-rust, Apache-2.0) of the Aphrody monorepo, built in place with the
+workspace Cargo.lock together with crates/ai/rag-core. This is provenance, not
+proof of a newly compiled wheel or compatibility with every Yolo runtime/platform.

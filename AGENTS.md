@@ -5,8 +5,10 @@
 
 Read [PLAN.md](PLAN.md) and [MEMORY.md](MEMORY.md). PLAN owns the active
 architecture and queue; MEMORY owns dated evidence. Aphrody owns products and
-Rust/Bun capabilities; Yolo produces the precompiled runtime/SDK. Python and
-IECODE retain their repositories, stores and authority.
+Rust/Bun capabilities; Yolo produces the precompiled runtime/SDK. IECODE retains its
+repository, store and authority. By owner directive of 2026-10-05 `py/` is fused into
+Aphrody (single owner for the `aphrody-rust` binding: `crates/ai/rag-python`); the Python
+runtime `ir` follows the Bun/Yolo precedent ([plan](docs/plans/ir/PLAN.md)).
 
 Work autonomously through authorized implementation, gates, commit and push,
 without intermediate confirmation. Missing authority/data or external blockers

@@ -19,12 +19,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-SOURCE_ONLY_TESTS = {
-    "test_build_backend.py",
-    "test_build_backend_reproducibility.py",
-    "test_pin_rag_source.py",
-    "test_public_api.py",
-}
+SOURCE_ONLY_TESTS = {"test_public_api.py"}
 BLENDER_RESOURCES = (
     "_bl_common.py",
     "gpu_render.py",
@@ -73,7 +68,6 @@ def inspect_wheel(wheel: Path) -> str:
         required = {
             "aphrody/py.typed",
             "aphrody/__init__.py",
-            "aphrody/native-source.json",
             "aphrody/aphrody_rust.pyi",
         }
         required.update(
@@ -82,13 +76,16 @@ def inspect_wheel(wheel: Path) -> str:
         missing = required - members
         if missing:
             raise ValueError(f"Wheel is missing SDK resources: {sorted(missing)}")
-        provenance = json.loads(archive.read("aphrody/native-source.json"))
-        if provenance.get("repository") != "aphrody" or not re.fullmatch(
-            r"[0-9a-f]{40}", provenance.get("revision", "")
-        ):
-            raise ValueError("Native source must identify a pinned Aphrody revision")
-        if not re.fullmatch(r"[0-9a-f]{64}", provenance.get("archive_sha256", "")):
-            raise ValueError("Native source provenance is missing its archive digest")
+        sboms = [
+            name
+            for name in members
+            if name.endswith(".dist-info/sboms/aphrody-rust.cyclonedx.json")
+        ]
+        if len(sboms) != 1:
+            raise ValueError("Wheel must carry the aphrody-rust CycloneDX SBOM")
+        component = json.loads(archive.read(sboms[0]))["metadata"]["component"]
+        if component.get("name") != "aphrody-rust":
+            raise ValueError("The SBOM must describe the aphrody-rust crate")
         native = [
             name
             for name in members

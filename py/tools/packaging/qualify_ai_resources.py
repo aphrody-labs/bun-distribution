@@ -17,7 +17,7 @@ import zipfile
 from email.parser import BytesParser
 from pathlib import Path
 
-from qualify_aphrody import REPOSITORY, run
+from qualify_aphrody import PY_ROOT, REPOSITORY, dirty_paths, run
 
 PACKAGES = {
     "aphrody-train": "packages/aphrody-train",
@@ -68,16 +68,12 @@ def qualify(work: Path, python: str) -> dict:
     for name in ("PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV", "UV_PROJECT_ENVIRONMENT"):
         env.pop(name, None)
     env["SOURCE_DATE_EPOCH"] = "1727740800"
-    clone = work / "clone"
-    run(
-        ["git", "clone", "--quiet", "--no-hardlinks", str(REPOSITORY), str(clone)],
-        work,
-        env,
-    )
+    clone = PY_ROOT
     report = {
         "schema_version": 1,
-        "input_mode": "committed-clone",
-        "python_revision": run(["git", "rev-parse", "HEAD"], clone, env),
+        "input_mode": "monorepo-in-place",
+        "git_revision": run(["git", "rev-parse", "HEAD"], REPOSITORY, env),
+        "dirty_paths": dirty_paths(),
         "source_notice_revision": "aphrody-ai@4a9e529fb721d5fb7a0ba87313a98928c2ab47a5",
         "uv_lock_sha256": digest((clone / "uv.lock").read_bytes()),
         "packages": {},

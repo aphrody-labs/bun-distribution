@@ -2,8 +2,7 @@
 
 [build-system]
 requires = ["maturin==1.14.1"]
-build-backend = "build_backend"
-backend-path = ["."]
+build-backend = "maturin"
 
 [project]
 name = "aphrody"
@@ -36,10 +35,11 @@ Repository = "https://github.com/aphrody-labs/aphrody-py"
 Documentation = "https://github.com/aphrody-labs/aphrody-py/tree/main/docs/sdk"
 
 [tool.maturin]
-manifest-path = "native/Cargo.toml"
+# The extension is owned by the Rust workspace: crates/ai/rag-python (package aphrody-rust)
+# builds with the root Cargo.lock. Build wheels with `uv build --wheel`.
+manifest-path = "../../../crates/ai/rag-python/Cargo.toml"
 locked = true
-include = [{ "path" = "build_backend.py", "format" = "sdist" }, { "path" = "native/source.json", "format" = "sdist" }, { "path" = "native/source.tar.gz", "format" = "sdist" }, { "path" = "native/Cargo.toml", "format" = "sdist" }, { "path" = "native/Cargo.lock", "format" = "sdist" }]
-exclude = [{ "path" = "tests/**", "format" = "wheel" }, { "path" = "build/**", "format" = "wheel" }, { "path" = "native/target/**", "format" = "wheel" }, { "path" = "native/src/**", "format" = "sdist" }, { "path" = "src/aphrody/native-source.json", "format" = "sdist" }]
+exclude = [{ "path" = "tests/**", "format" = "wheel" }, { "path" = "build/**", "format" = "wheel" }]
 python-source = "src"
 module-name = "aphrody.aphrody_rust"
 

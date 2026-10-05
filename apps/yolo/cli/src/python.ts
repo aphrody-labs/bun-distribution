@@ -1,11 +1,15 @@
 /**
  * `yolo py`: Python + uv + PyO3 toolchain commands.
  *
- *   yolo py status [--json|--md]     status of Python, uv, maturin, PyO3 and packages/engine/python
- *   yolo py test                     runs Python pytest test suite via uv
- *   yolo py lint                     runs ruff check
- *   yolo py fmt                      runs ruff format
- *   yolo py build                    builds native PyO3 extension via maturin
+ *   yolo py status [--json|--md]     status of Python, uv, maturin, PyO3, the py/ workspace and packages/engine/python
+ *   yolo py test                     runs the py/ pytest suite via uv (--engine: packages/engine/python)
+ *   yolo py lint                     runs ruff check on py/ (--engine: packages/engine/python)
+ *   yolo py fmt                      runs ruff format on py/ (--engine: packages/engine/python)
+ *   yolo py build                    builds the aphrody wheel (crates/ai/rag-python via maturin) into py/dist
+ *                                    (--engine: maturin develop of packages/engine/python)
+ *
+ * py/ is the fused Python workspace (docs/plans/ir/PLAN.md). The wheel build compiles Rust: run it on
+ * the serialized build host, never in WSL.
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -19,6 +23,7 @@ export interface PythonStatusReport {
   readonly maturinVersion: string | null;
   readonly ruffVersion: string | null;
   readonly packageConfigured: boolean;
+  readonly workspaceConfigured: boolean;
   readonly venvActive: boolean;
   readonly ok: boolean;
 }
@@ -32,6 +37,7 @@ export async function runPythonCommand(
   const sub = args[0] ?? "status";
   const json = args.includes("--json");
   const md = args.includes("--md");
+  const engine = args.includes("--engine");
 
   const uvBin = Bun.which("uv");
   const pyBin = Bun.which("python3") ?? Bun.which("python");
@@ -63,6 +69,7 @@ export async function runPythonCommand(
     const pkgDir = join(root, "packages/engine/python");
     const packageConfigured = existsSync(join(pkgDir, "pyproject.toml"));
     const venvActive = existsSync(join(pkgDir, ".venv"));
+    const workspaceConfigured = existsSync(join(root, "py/pyproject.toml"));
 
     const report: PythonStatusReport = {
       schema: "yolo.python/1",
@@ -72,8 +79,9 @@ export async function runPythonCommand(
       maturinVersion: maturinVer,
       ruffVersion: ruffVer,
       packageConfigured,
+      workspaceConfigured,
       venvActive,
-      ok: Boolean(uvBin && packageConfigured),
+      ok: Boolean(uvBin && (packageConfigured || workspaceConfigured)),
     };
 
     if (json) {
@@ -89,6 +97,7 @@ export async function runPythonCommand(
       out(`- **Maturin (PyO3):** ${report.maturinVersion ?? "Not found"}`);
       out(`- **Ruff:** ${report.ruffVersion ?? "Not found"}`);
       out(`- **Package Configured:** ${report.packageConfigured ? "✔ Yes" : "✘ No"}`);
+      out(`- **py/ Workspace:** ${report.workspaceConfigured ? "✔ Yes" : "✘ No"}`);
       out(`- **Virtualenv Ready:** ${report.venvActive ? "✔ Yes" : "✘ No"}`);
       return 0;
     }
@@ -102,6 +111,9 @@ export async function runPythonCommand(
       `  Package:      ${packageConfigured ? "\x1b[32mpackages/engine/python (configured)\x1b[0m" : "\x1b[31mnot configured\x1b[0m"}`,
     );
     out(
+      `  Workspace:    ${workspaceConfigured ? "\x1b[32mpy/ (configured)\x1b[0m" : "\x1b[31mpy/ not found\x1b[0m"}`,
+    );
+    out(
       `  Virtualenv:   ${venvActive ? "\x1b[32mready (.venv)\x1b[0m" : "\x1b[33mnot initialized\x1b[0m"}`,
     );
     return 0;
@@ -112,31 +124,28 @@ export async function runPythonCommand(
       console.error("uv is required to run Python tests (https://github.com/astral-sh/uv)");
       return 1;
     }
-    const proc = Bun.spawn(
-      [
-        "uv",
-        "run",
-        "--package",
-        "yolo",
-        "--extra",
-        "dev",
-        "--no-sync",
-        "--",
-        "python",
-        "-m",
-        "pytest",
-        "packages/engine/python/tests",
-      ],
-      {
-        cwd: root,
-        stdio: ["inherit", "inherit", "inherit"],
-      },
-    );
+    const command = engine
+      ? [
+          "uv",
+          "run",
+          "--package",
+          "yolo",
+          "--extra",
+          "dev",
+          "--no-sync",
+          "--",
+          "python",
+          "-m",
+          "pytest",
+          "packages/engine/python/tests",
+        ]
+      : ["uv", "run", "--directory", "py", "--no-sync", "pytest"];
+    const proc = Bun.spawn(command, { cwd: root, stdio: ["inherit", "inherit", "inherit"] });
     return (await proc.exited) ?? 1;
   }
 
   if (sub === "lint") {
-    const cmd = ruffBin ? [ruffBin, "check", "packages/engine/python"] : null;
+    const cmd = ruffBin ? [ruffBin, "check", engine ? "packages/engine/python" : "py"] : null;
     if (!cmd) {
       console.error("The installed ruff binary is required for Python linting");
       return 1;
@@ -146,7 +155,7 @@ export async function runPythonCommand(
   }
 
   if (sub === "fmt") {
-    const cmd = ruffBin ? [ruffBin, "format", "packages/engine/python"] : null;
+    const cmd = ruffBin ? [ruffBin, "format", engine ? "packages/engine/python" : "py"] : null;
     if (!cmd) {
       console.error("The installed ruff binary is required for Python formatting");
       return 1;
@@ -160,17 +169,14 @@ export async function runPythonCommand(
       console.error("uv is required to build the PyO3 native extension");
       return 1;
     }
-    const proc = Bun.spawn(
-      ["uv", "run", "--directory", "packages/engine/python", "maturin", "develop", "--release"],
-      {
-        cwd: root,
-        stdio: ["inherit", "inherit", "inherit"],
-      },
-    );
+    const command = engine
+      ? ["uv", "run", "--directory", "packages/engine/python", "maturin", "develop", "--release"]
+      : ["uv", "build", "--wheel", "py/packages/aphrody", "--out-dir", "py/dist"];
+    const proc = Bun.spawn(command, { cwd: root, stdio: ["inherit", "inherit", "inherit"] });
     return (await proc.exited) ?? 1;
   }
 
   console.error(`Unknown python subcommand: ${sub}`);
-  console.error("Usage: yolo py [status|test|lint|fmt|build] [--json|--md]");
+  console.error("Usage: yolo py [status|test|lint|fmt|build] [--engine] [--json|--md]");
   return 2;
 }

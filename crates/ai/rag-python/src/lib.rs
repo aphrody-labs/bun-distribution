@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 
+//! PyO3 extension module `aphrody.aphrody_rust`: the RAG vector kernels and rank fusion of
+//! `aphrody-rag-core` for the Python SDK.
+//!
+//! This crate is the single owner of the Python binding. The wheel is built from it in place by
+//! `py/packages/aphrody` (maturin, `manifest-path` pointing here, workspace `Cargo.lock`); no
+//! copy of this source or of the `rag-core` modules exists in `py/`. The stable ABI is
+//! `abi3-py311`; the package, library and function names are compatibility contracts of the
+//! `aphrody` wheel and its `aphrody_rust.pyi` stubs.
+
 use pyo3::prelude::*;
 use pyo3::types::PyByteArray;
 

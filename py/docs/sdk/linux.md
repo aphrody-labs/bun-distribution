@@ -28,7 +28,7 @@ Authentication uses the agy OAuth file, the Rust login file under
 private, with owner-only file permissions; no Windows credential store is
 required on Linux.
 
-Run `python tools/packaging/modernize_workspace.py apply`, then `check`.
+Run `python tools/packaging/modernize_workspace.py check`.
 For an isolated Linux SDK version, run `python tools/packaging/modernize_workspace.py
 linux-sdk --python 3.11` (also accepts 3.12, 3.13 and 3.14).
 Run `providers` separately for the pinned private Antigravity contract.

@@ -48,12 +48,12 @@ locks are checked in temporary copies outside workspace discovery. Source
 tests import installed editable packages without `pythonpath` injection;
 distribution tests use clean installations outside the checkout.
 
-## Migration and optional providers
+## Validation and optional providers
 
-The migration is repeatable:
+The gates are repeatable (they build the native extension from `crates/ai/rag-python`,
+so they run on the serialized build host):
 
 ```sh
-python tools/packaging/modernize_workspace.py apply
 python tools/packaging/modernize_workspace.py check
 python tools/packaging/modernize_workspace.py providers
 ```

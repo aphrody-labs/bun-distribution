@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Install locked SDK extras independently and run their existing contracts.
 
-All inputs come from an immutable clone of committed source. Tests exercise the
-installed wheel outside that clone; absent dependencies cannot turn into skips.
+Inputs come from the Aphrody monorepo checkout (HEAD revision recorded, uncommitted
+paths listed). Tests exercise the installed wheel outside the checkout; absent
+dependencies cannot turn into skips. The wheel compiles crates/ai/rag-python, so this
+gate needs Cargo and runs on the serialized build host.
 These local checks do not claim authenticated services, models or GPU parity.
 """
 
@@ -18,7 +20,15 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from qualify_aphrody import NATIVE_SMOKE, PACKAGE, REPOSITORY, snapshot, wheel_contents
+from qualify_aphrody import (
+    NATIVE_SMOKE,
+    PACKAGE,
+    PY_ROOT,
+    REPOSITORY,
+    dirty_paths,
+    package_inputs,
+    wheel_contents,
+)
 
 PROFILES = {
     "images": ("test_images.py", "test_optimize.py"),
@@ -54,15 +64,9 @@ def qualify(work: Path, extras: list[str], python: str) -> dict:
     for name in ("PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV", "UV_PROJECT_ENVIRONMENT"):
         env.pop(name, None)
     env["SOURCE_DATE_EPOCH"] = "1727740800"
-    clone = work / "clone"
-    run(
-        ["git", "clone", "--quiet", "--no-hardlinks", str(REPOSITORY), str(clone)],
-        work,
-        env,
-    )
-    revision = run(["git", "rev-parse", "HEAD"], clone, env).stdout.strip()
-    stage = work / "sdk"
-    inputs = snapshot(clone, stage)
+    clone = PY_ROOT
+    revision = run(["git", "rev-parse", "HEAD"], REPOSITORY, env).stdout.strip()
+    inputs = package_inputs()
     dist = work / "dist"
     run(
         [
@@ -74,7 +78,7 @@ def qualify(work: Path, extras: list[str], python: str) -> dict:
             python,
             "--out-dir",
             str(dist),
-            str(stage),
+            str(PACKAGE),
         ],
         work,
         env,
@@ -103,8 +107,9 @@ def qualify(work: Path, extras: list[str], python: str) -> dict:
         peer = next(dist.glob("google_antigravity-*.whl"))
     report = {
         "schema_version": 1,
-        "input_mode": "committed-clone",
-        "python_revision": revision,
+        "input_mode": "monorepo-in-place",
+        "git_revision": revision,
+        "dirty_paths": dirty_paths(),
         "input_sha256": inputs,
         "uv_lock_sha256": digest(clone / "uv.lock"),
         "sdk_wheel_sha256": digest(wheel),
@@ -118,8 +123,8 @@ def qualify(work: Path, extras: list[str], python: str) -> dict:
         ],
     }
     resources = {
-        str(path.relative_to(stage / "aphrody")): digest(path)
-        for path in (stage / "aphrody/resources").rglob("*")
+        str(path.relative_to(PACKAGE / "src/aphrody")): digest(path)
+        for path in (PACKAGE / "src/aphrody/resources").rglob("*")
         if path.is_file()
     }
     for extra in extras:
@@ -225,7 +230,7 @@ print(json.dumps({d.metadata['Name']: d.version
             tests = []
             result["test_input_sha256"] = {}
             for name in PROFILES[extra]:
-                source = clone / PACKAGE / "tests" / name
+                source = PACKAGE / "tests" / name
                 target = profile / name
                 shutil.copyfile(source, target)
                 tests.append(str(target))
