@@ -65,6 +65,8 @@ mod memory_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod model_cmd;
 #[cfg(not(target_arch = "wasm32"))]
+mod multicall;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod nl_tokens;
 #[cfg(not(target_arch = "wasm32"))]
 mod oc_cmd;
@@ -197,6 +199,7 @@ pub(crate) enum HermesChannelArg {
 #[command(version = "1.0.0-canary")]
 #[command(about = "Aphrody — cross-platform Rust binary (Linux / Windows / macOS / wasm).",
           long_about = None)]
+#[cfg_attr(not(target_arch = "wasm32"), command(after_help = multicall::HELP))]
 struct Cli {
     #[cfg(not(target_arch = "wasm32"))]
     #[command(flatten)]
@@ -381,12 +384,6 @@ enum Commands {
     Web {
         #[command(subcommand)]
         action: pillars_cmd::WebAction,
-    },
-    /// Canonical Infrastructure control: host matrix, SSH, VPN, deployment catalog.
-    #[cfg(not(target_arch = "wasm32"))]
-    Infra {
-        #[command(subcommand)]
-        action: pillars_cmd::InfraAction,
     },
     /// Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal.
     #[cfg(not(target_arch = "wasm32"))]
@@ -1234,7 +1231,8 @@ pub(crate) enum ScanAction {
 #[derive(Subcommand, Debug, Clone)]
 pub(crate) enum SelfAction {
     /// Register the release binary on the user PATH (HKCU on Windows,
-    /// symlink into $HOME/.local/bin on Unix).
+    /// symlink into $HOME/.local/bin on Unix) and link the former standalone
+    /// binary names (aphrody-infra, aphrody-kernel, …) to it.
     InstallPath {
         /// Absolute path to the aphrody binary; defaults to
         /// `<cwd>/target/release/aphrody[.exe]`.
@@ -1661,10 +1659,6 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Web { action }) => {
             pillars_cmd::handle_web(action).await?;
-        },
-        #[cfg(not(target_arch = "wasm32"))]
-        Some(Commands::Infra { action }) => {
-            pillars_cmd::handle_infra(action)?;
         },
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Shell { action }) => {
@@ -2246,6 +2240,11 @@ where
     // that one path is dispatched BEFORE any runtime exists.
     // `I` is consumed once, so materialise it here and pass the vector on.
     let argv: Vec<std::ffi::OsString> = args.into_iter().map(Into::into).collect();
+    // Former standalone binaries run on this thread, before any runtime exists.
+    let argv = match multicall::resolve(argv) {
+        multicall::Resolved::Entry(entry, args) => return entry(args),
+        multicall::Resolved::Clap(argv) => argv,
+    };
 
     #[cfg(all(not(target_arch = "wasm32"), feature = "ocr"))]
     if ocr_cmd::is_synchronous_server_batch(&argv) {
@@ -2295,7 +2294,13 @@ where
     // async_impl/client.rs). GoogleContext::new() builds one, so install first.
     let _ = rustls::crypto::ring::default_provider().install_default();
 
-    let cli = match Cli::try_parse_from(args) {
+    let argv: Vec<std::ffi::OsString> = args.into_iter().map(Into::into).collect();
+    let argv = match multicall::resolve(argv) {
+        // The caller (FFI) may be inside a runtime: the tool gets its own thread.
+        multicall::Resolved::Entry(entry, args) => return multicall::run_isolated(entry, args),
+        multicall::Resolved::Clap(argv) => argv,
+    };
+    let cli = match Cli::try_parse_from(argv) {
         Ok(cli) => cli,
         Err(err) => {
             // clap renders --help/--version to stdout (exit 0) and usage errors

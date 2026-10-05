@@ -279,7 +279,7 @@ export async function runCargoReleaseAudit(args: string[]): Promise<number> {
       /* JSON is the canonical report. */
     } else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops cargo-release-audit --metadata <metadata.json> [--root <workspace>] [--out <report.json>] [--check] [--json]",
+        "Usage: yolo ops cargo-release-audit --metadata <metadata.json> [--root <workspace>] [--out <report.json>] [--check] [--json]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

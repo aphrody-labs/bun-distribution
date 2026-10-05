@@ -7,9 +7,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$kernel = Join-Path $root 'target/debug/aphrody-kernel.exe'
+$kernel = Join-Path $root 'target/debug/aphrody.exe'
 if (-not (Test-Path -LiteralPath $kernel)) {
-    throw "aphrody-kernel missing: $kernel"
+    throw "aphrody missing: $kernel"
 }
 
 $targetKind = 'chatgpt-msix'
@@ -32,25 +32,25 @@ $session = Join-Path $common $stamp
 $latest = Join-Path $common 'latest'
 New-Item -ItemType Directory -Force -Path $session, $latest | Out-Null
 $pipe = "\\.\pipe\aphrody-winclean-live-$stamp"
-$server = Start-Process -FilePath $kernel -ArgumentList @('--socket', $pipe, 'serve', '--no-shell', '--no-browser') -WindowStyle Hidden -PassThru
+$server = Start-Process -FilePath $kernel -ArgumentList @('kernel', '--socket', $pipe, 'serve', '--no-shell', '--no-browser') -WindowStyle Hidden -PassThru
 
 function Invoke-KernelTool([string]$Tool, [hashtable]$Arguments) {
     $payload = $Arguments | ConvertTo-Json -Compress -Depth 20
-    $raw = & $kernel --socket $pipe call $Tool $payload 2>&1
+    $raw = & $kernel kernel --socket $pipe call $Tool $payload 2>&1
     if ($LASTEXITCODE -ne 0) { throw "kernel call failed: $Tool`n$($raw -join "`n")" }
     return ($raw -join "`n" | ConvertFrom-Json)
 }
 
 function Invoke-KernelA2a([string]$Target, [string]$Tool, [hashtable]$Arguments) {
     $payload = $Arguments | ConvertTo-Json -Compress -Depth 20
-    $raw = & $kernel --socket $pipe a2a $Target $Tool $payload 2>&1
+    $raw = & $kernel kernel --socket $pipe a2a $Target $Tool $payload 2>&1
     if ($LASTEXITCODE -ne 0) { throw "A2A call failed: $Tool`n$($raw -join "`n")" }
     return ($raw -join "`n" | ConvertFrom-Json)
 }
 
 try {
     Start-Sleep -Milliseconds 700
-    $tools = (& $kernel --socket $pipe tools 2>$null | ConvertFrom-Json)
+    $tools = (& $kernel kernel --socket $pipe tools 2>$null | ConvertFrom-Json)
     $hash = Invoke-KernelTool 'binary_hash_multi' @{ path = $source }
     $strings = Invoke-KernelTool 'binary_extract_strings' @{ path = $source; minLength = 4; maxResults = 32 }
     $entropy = Invoke-KernelTool 'binary_entropy_map' @{ path = $source; blockSize = 256 }

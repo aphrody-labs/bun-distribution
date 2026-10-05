@@ -1138,48 +1138,14 @@ impl TerminalCommand for GoogleCommand {
             _ => {},
         }
 
-        // For other commands (status, env, doctor, login, whoami, models, generate, etc.), forward to aphrody-google binary.
-        let google_bin = std::env::var_os("APHRODY_GOOGLE_BIN")
-            .map(PathBuf::from)
-            .or_else(|| {
-                // Installed next to this binary (the per-user bin directory), never at a fixed account.
-                let p = std::env::current_exe().ok()?.parent()?.join(if cfg!(windows) {
-                    "aphrody-google.exe"
-                } else {
-                    "aphrody-google"
-                });
-                if p.is_file() { Some(p) } else { None }
-            })
-            .or_else(|| which::which("aphrody-google").ok());
-
-        if let Some(bin_path) = google_bin {
-            let status = std::process::Command::new(&bin_path).args(&self.args).status();
-            if let Ok(st) = status {
-                if st.success() {
-                    return Ok(());
-                }
-                return Err(miette::Report::new(SubprocessExit(st.code().unwrap_or(1))));
-            }
+        // Every other command (status, env, doctor, login, whoami, models, generate, …) is the
+        // former aphrody-google CLI, run in process on its own thread (it builds its own runtime).
+        let mut argv = vec![std::ffi::OsString::from("aphrody-google")];
+        argv.extend(self.args.iter().map(std::ffi::OsString::from));
+        match crate::multicall::run_isolated(aphrody_google::cli_main, argv) {
+            0 => Ok(()),
+            code => Err(miette::Report::new(SubprocessExit(code))),
         }
-
-        // Fallback: If aphrody-google binary is not found, execute directly via aphrody_google library if status/env/doctor
-        if first == "status" {
-            let runtime = aphrody_google::GoogleRuntime::from_env();
-            let report = serde_json::json!({
-                "provider": "aphrody-google",
-                "project": runtime.project.id(),
-                "location": runtime.location,
-                "home": runtime.home,
-                "auth": runtime.auth,
-                "capabilities": ["vertex", "gemini-oauth", "gemini-web", "google-web", "mcp", "bxc"],
-            });
-            println!("{}", serde_json::to_string_pretty(&report).unwrap());
-            return Ok(());
-        }
-
-        Err(miette::miette!(
-            "Commande google non reconnue: `{first}`. Voir `aphrody google --help`"
-        ))
     }
 }
 

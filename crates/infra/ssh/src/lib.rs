@@ -1454,6 +1454,26 @@ where
     run(cli).await
 }
 
+/// Entry point of the former `aphrody-ssh` binary, now reached through the `aphrody` multi-call binary.
+/// `args[0]` is the program name (argv convention). Returns the process exit code.
+pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
+    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+        Ok(runtime) => runtime,
+        Err(error) => {
+            eprintln!("Error: {error}");
+            return 1;
+        },
+    };
+    match runtime.block_on(run_from_args(args)) {
+        Ok(()) => 0,
+        Err(Error::Clap(_)) => 2,
+        Err(error) => {
+            eprintln!("Error: {error}");
+            1
+        },
+    }
+}
+
 pub async fn run(cli: Cli) -> Result<(), Error> {
     let (host, args): (Host, Vec<String>) = match cli.command {
         Commands::Exec { host, cmd, command } => {

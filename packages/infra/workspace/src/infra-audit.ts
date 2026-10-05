@@ -412,7 +412,7 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     else if (arg === "--run") run = true;
     else if (arg === "--help") {
       console.log(
-        "Usage: aphrody-ops infra-audit [--root path] [--run] [--live] [--output report.json] [--evidence private-directory] [--gate-report prior-report.json]",
+        "Usage: yolo ops infra-audit [--root path] [--run] [--live] [--output report.json] [--evidence private-directory] [--gate-report prior-report.json]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
@@ -524,7 +524,8 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     ]);
     await observe("Bun OVH profiles", [
       process.execPath,
-      "packages/infra/ovh/src/cli.ts",
+      "apps/yolo/cli/src/index.ts",
+      "ovh",
       "profiles",
       "--json",
     ]);
@@ -533,7 +534,8 @@ export async function runInfraAudit(args: string[]): Promise<number> {
         `Bun OVH API ${profile}`,
         [
           process.execPath,
-          "packages/infra/ovh/src/cli.ts",
+          "apps/yolo/cli/src/index.ts",
+          "ovh",
           "check",
           "--profile",
           profile,
@@ -552,7 +554,8 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     ])
       await observe(`Bun ${commandArgs[0]}`, [
         process.execPath,
-        "packages/infra/workspace/src/ops.ts",
+        "apps/yolo/cli/src/index.ts",
+        "ops",
         ...commandArgs,
       ]);
     await observe("Infra source/config contracts", [

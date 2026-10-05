@@ -16,7 +16,6 @@
     "build": "bun run build.ts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src/",
-    "tauri": "tauri --config ../../../crates/engine/yolo-desktop/tauri.conf.json",
     "test": "bun test test/web.test.ts"
   },
   "dependencies": {},

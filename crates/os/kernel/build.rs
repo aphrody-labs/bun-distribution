@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Link settings for the `aphrody-kernel` binary.
+//! Link settings for binaries of this package. The kernel is now a library reached through the
+//! `aphrody` multi-call binary: the final executable (`apps/cli`) must pass `/OPT:NOICF` itself.
 //!
 //! The kernel embeds V8 through the browser subsystem (`aphrody-browser` -> Obscura ->
 //! `deno_core`). On MSVC, rustc links optimized builds with `/OPT:REF,ICF`; identical COMDAT

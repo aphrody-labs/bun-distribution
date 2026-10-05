@@ -34,10 +34,11 @@ test("path audit is read-only by default and rewrites only safe code paths on ap
 test("the Workspace operation advertises the path-audit command", () => {
   const output = Bun.spawnSync([
     process.execPath,
-    join(import.meta.dir, "../src/ops.ts"),
+    join(import.meta.dir, "../../../../apps/yolo/cli/src/index.ts"),
+    "ops",
     "path-audit",
     "--help",
   ]);
   expect(output.exitCode).toBe(0);
-  expect(output.stdout.toString()).toContain("aphrody-ops path-audit");
+  expect(output.stdout.toString()).toContain("yolo ops path-audit");
 });

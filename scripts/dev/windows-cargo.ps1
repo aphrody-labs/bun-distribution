@@ -13,7 +13,7 @@
 $ErrorActionPreference = 'Stop'
 if (-not $args.Count) { throw 'Usage: windows-cargo.ps1 <cargo arguments>' }
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-if (-not (Test-Path $vswhere)) { throw 'vswhere.exe not found: install Visual Studio Build Tools (aphrody-ops system-packages --host windows apply).' }
+if (-not (Test-Path $vswhere)) { throw 'vswhere.exe not found: install Visual Studio Build Tools (yolo ops system-packages --host windows apply).' }
 $install = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if (-not $install) { throw 'No Visual Studio installation with the MSVC x64 tools was found.' }
 $checkout = (Get-Location).Path

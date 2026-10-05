@@ -903,7 +903,7 @@ export function renderPlan(s: Status, majors: string[]): string[] {
 async function applyBumps(c: Ctx, args: Args): Promise<number> {
   const files = await bumpFiles(c);
   const snap = snapshot(c, files);
-  console.log(`snapshot ${snap} (restore with: aphrody-update bun rollback)`);
+  console.log(`snapshot ${snap} (restore with: yolo update bun rollback)`);
   const s = await collectStatus(c, { advisories: false });
   const rt = s.runtime.find((r) => r.tool === "bun");
   if (rt?.latest && rt.pinned && cmpVersion(rt.pinned, rt.latest) < 0)
@@ -919,7 +919,7 @@ async function applyBumps(c: Ctx, args: Args): Promise<number> {
   }
   const upd = c.run("bun", ["update", "-r"], { inherit: true });
   if (upd.status !== 0) {
-    console.error("bun update -r failed; restore with `aphrody-update bun rollback`");
+    console.error("bun update -r failed; restore with `yolo update bun rollback`");
     return 1;
   }
   {
@@ -943,7 +943,7 @@ async function applyBumps(c: Ctx, args: Args): Promise<number> {
     }
     if (edits.length && c.run("bun", ["install"], { inherit: true }).status !== 0) {
       console.error(
-        "bun install failed after the spec edits; restore with `aphrody-update bun rollback`",
+        "bun install failed after the spec edits; restore with `yolo update bun rollback`",
       );
       return 1;
     }

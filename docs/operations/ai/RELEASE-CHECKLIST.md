@@ -40,7 +40,7 @@ and tick boxes as you go.
       merged work since last tag (preview with
       `git log <last-tag>..HEAD --oneline`).
 - [ ] [`docs/reference/ai/SUMMARY.md`](../../reference/ai/SUMMARY.md) regenerated
-      (`cargo run -p aphrody-summary`).
+      (`aphrody summary`).
 - [ ] All cross-links resolve (manual spot-check on
       [`README.md`](../../products/ai/README.md), [`PLAN.md`](../../plans/ai/PLAN.md), [`docs/README.md`](../../products/ai/_source/README.md)).
 - [ ] No `_pending_` markers for features being released in this version.

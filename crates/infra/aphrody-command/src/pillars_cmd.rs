@@ -144,38 +144,7 @@ pub(crate) async fn handle_os(action: OsAction) -> miette::Result<()> {
 mod web;
 pub(crate) use web::{WebAction, handle_web};
 
-// --- 4. INFRA PILLAR ---
-#[derive(Debug, Subcommand)]
-pub(crate) enum InfraAction {
-    /// Inspect configured infrastructure targets and host matrix
-    Status {
-        /// Emit status as JSON
-        #[arg(long)]
-        json: bool,
-    },
-    /// Verify SSH connectivity and topology for configured hosts
-    Check,
-}
-
-pub(crate) fn handle_infra(action: InfraAction) -> miette::Result<()> {
-    match action {
-        InfraAction::Status { json } => {
-            let status = aphrody_diagnostics::infra_status();
-            if json {
-                println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
-            } else {
-                println!("=== Aphrody Infrastructure Control Plane ===");
-                println!("  * Host Matrix:       4 active targets");
-                println!("  * Services Catalog:  5 production units");
-                println!("  * Network Status:    Nominal");
-            }
-        },
-        InfraAction::Check => {
-            print!("{}", aphrody_diagnostics::infra_check()["raw"].as_str().unwrap_or_default());
-        },
-    }
-    Ok(())
-}
+// --- 4. INFRA PILLAR: `aphrody infra` is the aphrody-infra control plane (multicall.rs) ---
 
 // --- 5. SHELL PILLAR ---
 #[derive(Debug, Subcommand)]

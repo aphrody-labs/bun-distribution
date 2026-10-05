@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Advisories that cannot be fixed by a bump here. Each entry names why; `aphrody-update deps inventory` lists them as held instead of open. Re-check on every inventory: remove the entry as soon as the blocker moves.",
+  "note": "Advisories that cannot be fixed by a bump here. Each entry names why; `yolo update deps inventory` lists them as held instead of open. Re-check on every inventory: remove the entry as soon as the blocker moves.",
   "holds": [
     { "ecosystem": "crates.io", "name": "yara-x", "reason": "optional `yara` feature of aphrody-re. The fix for GHSA-2jx3-ff3v-j7jj lands in 1.19.0, but 1.19 to 1.21 need wasmtime ^43 to ^45, which carry RUSTSEC-2026-0222/0269/0316 (fixed only from 46.0.3). 1.7.0 keeps wasmtime 36.0.16 (patched). Rules are not deserialised from untrusted input." },
     { "ecosystem": "crates.io", "name": "bincode", "reason": "RUSTSEC-2025-0141 is an unmaintained notice; 3.0.0 is not a drop-in replacement. Transitive (heed-types and others)." },

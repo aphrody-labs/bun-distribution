@@ -297,7 +297,7 @@ export async function bump(c: Ctx, only: string | undefined): Promise<number> {
     if (verdict.startsWith("PATCH")) {
       c.write(
         `.coord/shared/sources-bump-${s.id}.md`,
-        `# ${s.id} bump blocked\n\n${current} -> ${target}\n\n${verdict}\n\nRebase the patch(es) ${(s.patches ?? []).map((p) => p.file).join(", ")} onto the new commit, then rerun \`aphrody-update sources bump --only ${s.id} --apply\`.\n`,
+        `# ${s.id} bump blocked\n\n${current} -> ${target}\n\n${verdict}\n\nRebase the patch(es) ${(s.patches ?? []).map((p) => p.file).join(", ")} onto the new commit, then rerun \`yolo update sources bump --only ${s.id} --apply\`.\n`,
       );
       continue;
     }

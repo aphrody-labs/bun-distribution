@@ -34,7 +34,7 @@ test("IECODE doctor help loads without other operations or installed dependencie
     const result = await dispatch(directory, "iecode-doctor", "--help");
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Usage: aphrody-ops iecode-doctor");
+    expect(result.stdout).toContain("Usage: yolo ops iecode-doctor");
   });
 });
 

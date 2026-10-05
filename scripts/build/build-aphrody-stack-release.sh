@@ -8,7 +8,7 @@ compute_release() {
   local plan=false
   if [[ "${1:-}" = --plan ]]; then plan=true; shift; fi
   [[ $# -le 2 ]] || { echo 'usage: build-aphrody-stack-release.sh --compute-only [--plan] [MONOREPO [COMMIT]]' >&2; return 2; }
-  local repo pin out target id stage work binary
+  local repo pin out target id stage work binary built
   repo="$(realpath -e -- "${1:-$(dirname -- "${BASH_SOURCE[0]}")/../..}")"
   pin="${2:-$(git -C "$repo" rev-parse HEAD)}"
   [[ "$(uname -s)" = Linux && "$(uname -m)" = x86_64 ]] || { echo 'Linux x86_64 build host required' >&2; return 2; }
@@ -23,9 +23,7 @@ compute_release() {
   fi
   printf 'source=%s\nmode=compute\nservices=aphrody-shenron-embed,aphrody-ai-http\n' "$pin"
   printf '%s\n' \
-    'cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-mcp --bin aphrody-mcp --no-default-features --features dragonball,managed-llama' \
-    'cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-embed --bin aphrody-embed --no-default-features --features server' \
-    'cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-llama-server --bin aphrody-llama-daemon --no-default-features'
+    'cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody --bin aphrody'
   [[ "$plan" = false ]] || return 0
 
   out="$(realpath -m -- "${APHRODY_COMPUTE_OUT:-$HOME/.aphrody/private/releases/shenron-compute}")"
@@ -47,12 +45,15 @@ compute_release() {
   (
     cd "$work/aphrody"
     export CARGO_TARGET_DIR="$target" APHRODY_CARGO_JOBS="${APHRODY_CARGO_JOBS:-2}"
-    scripts/build/rust/cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-mcp --bin aphrody-mcp --no-default-features --features dragonball,managed-llama > "$stage/.logs/mcp.log" 2>&1
-    scripts/build/rust/cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-embed --bin aphrody-embed --no-default-features --features server > "$stage/.logs/embed.log" 2>&1
-    scripts/build/rust/cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody-llama-server --bin aphrody-llama-daemon --no-default-features > "$stage/.logs/llama-daemon.log" 2>&1
+    # aphrody-mcp, aphrody-embed and aphrody-llama-daemon are entries of the single multi-call `aphrody` binary.
+    scripts/build/rust/cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody --bin aphrody > "$stage/.logs/aphrody.log" 2>&1
   ) || { echo "compute build failed; logs=$stage/.logs source=$work" >&2; return 1; }
   for binary in aphrody-mcp aphrody-embed aphrody-llama-daemon; do
-    install -m 0755 "$target/x86_64-unknown-linux-gnu/release/$binary" "$stage/bin/$binary"
+    built="$binary"
+    # The multi-call dispatch keys on the invocation name; the deploy gate requires one regular
+    # executable per service, so each name is its own copy of `aphrody`, not a symlink.
+    case "$binary" in aphrody-mcp|aphrody-embed|aphrody-llama-daemon) built=aphrody ;; esac
+    install -m 0755 "$target/x86_64-unknown-linux-gnu/release/$built" "$stage/bin/$binary"
     ldd "$stage/bin/$binary" > "$stage/.logs/$binary.ldd"
     ! grep -Fq 'not found' "$stage/.logs/$binary.ldd" || { echo "missing runtime library: $binary" >&2; return 1; }
   done

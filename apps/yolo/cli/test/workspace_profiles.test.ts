@@ -86,7 +86,10 @@ async function calls(log: string): Promise<string[][]> {
 }
 
 async function bunFixture(setup: Awaited<ReturnType<typeof fixture>>) {
-  await Bun.write(join(setup.dir, "apps/yolo/yolo.just"), Bun.file(join(root, "apps/yolo/yolo.just")));
+  await Bun.write(
+    join(setup.dir, "apps/yolo/yolo.just"),
+    Bun.file(join(root, "apps/yolo/yolo.just")),
+  );
   const source = join(setup.dir, "vendor/bun");
   await mkdir(join(source, "scripts"), { recursive: true });
   const pinFile = Bun.file(join(root, "vendor/bun/rust-toolchain.toml"));
@@ -292,13 +295,13 @@ profileTest(
     expect(result.exitCode, result.stderr).toBe(0);
     const executed = await calls(setup.log);
     const formatters = executed.filter((args) => args[0] === "fmt");
-    expect(formatters).toContainEqual(["fmt", "--check", "-p", "yolo-desktop"]);
+    expect(formatters).toContainEqual(["fmt", "--check", "-p", "aphrody-app"]);
     expect(formatters).toContainEqual(["fmt", "--check", "-p", "yolo-core", "-p", "yolo-runtime"]);
     expect(formatters).toContainEqual(["fmt", "--all", "--check"]);
     const commands = executed.filter((args) => args[0] !== "fmt");
     expect(commands).toHaveLength(13);
     for (const args of commands) expect(args).toContain("--locked");
-    for (const args of commands.slice(0, 3)) expect(packages(args)).toEqual(["yolo-desktop"]);
+    for (const args of commands.slice(0, 3)) expect(packages(args)).toEqual(["aphrody-app"]);
     for (const args of commands.slice(3, 6)) {
       expect(packages(args)).toEqual(["yolo-runtime"]);
       expect(args[args.indexOf("--features") + 1]).toBe("browser");
@@ -352,7 +355,10 @@ profileTest(
   "factory recipes dispatch a pinned profile through the native owner and reject invalid input",
   async () => {
     const setup = await fixture();
-    await Bun.write(join(setup.dir, "apps/yolo/yolo.just"), Bun.file(join(root, "apps/yolo/yolo.just")));
+    await Bun.write(
+      join(setup.dir, "apps/yolo/yolo.just"),
+      Bun.file(join(root, "apps/yolo/yolo.just")),
+    );
     const yolo = join(setup.dir, "bin/yolo");
     await Bun.write(yolo, setup.recorder);
     await chmod(yolo, 0o700);

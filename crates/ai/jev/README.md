@@ -23,7 +23,7 @@ Use Vercel's model identifier in the request (`typesafe-ai/jev`):
 
 ```powershell
 '{"state":"A customer reports a duplicate charge.","model":"typesafe-ai/jev","questions":{"refund":{"type":"noul","instructions":"Is a refund explicitly requested?"}}}' |
-  cargo run -p aphrody-jev --features server -- decide
+  aphrody jev decide
 ```
 
 The gateway endpoint and request format are documented by [Vercel](https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe); the model promotion is listed on the [Jev model page](https://vercel.com/ai-gateway/models/jev).

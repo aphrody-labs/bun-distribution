@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! End-to-end smoke tests for the `aphrody-mcp client …` subcommand.
+//! End-to-end smoke tests for the `aphrody mcp-server client …` subcommand (former `aphrody-mcp`).
 //!
 //! These tests exercise the same code path the CLI dispatches into:
 //!   1. Loader resolves a server entry from an in-tree `mcp.json` fixture.
@@ -17,6 +17,25 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
     process::Command,
 };
+
+/// Path of the workspace `aphrody` multi-call binary (the former `aphrody-mcp` binary is its
+/// `mcp-server` subcommand). `APHRODY_BIN` overrides; otherwise it is the `aphrody` next to the
+/// `deps/` directory of the current test executable (`target/<profile>/aphrody`), so build it
+/// first with `scripts/build/rust/cargo-serial.sh build -p aphrody`.
+fn aphrody_bin() -> std::path::PathBuf {
+    if let Some(path) = std::env::var_os("APHRODY_BIN") {
+        return path.into();
+    }
+    let exe = std::env::current_exe().expect("current exe");
+    let profile_dir = exe.parent().and_then(std::path::Path::parent).expect("target profile dir");
+    let bin = profile_dir.join(format!("aphrody{}", std::env::consts::EXE_SUFFIX));
+    assert!(
+        bin.is_file(),
+        "{} not found: build the `aphrody` binary (cargo build -p aphrody) or set APHRODY_BIN",
+        bin.display()
+    );
+    bin
+}
 
 /// The loader must accept the Claude Desktop / `.mcp.json` shape and surface
 /// the requested entry by name. This is the exact path `aphrody-mcp client
@@ -105,7 +124,8 @@ fn client_loader_returns_empty_on_missing_file() {
 /// carry their own protocol/client metadata and need no `initialize` request.
 #[tokio::test]
 async fn stateless_mcp_discovers_and_lists_the_full_shenron_catalog() {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_aphrody-mcp"))
+    let mut child = Command::new(aphrody_bin())
+        .arg("mcp-server")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .kill_on_drop(true)

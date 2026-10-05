@@ -48,7 +48,7 @@ rust-fmt-upstream-check:
     "{{cargo_owner}}" fmt --all --check
 
 rust-fmt-desktop-check:
-    "{{cargo_owner}}" fmt --check -p yolo-desktop
+    "{{cargo_owner}}" fmt --check -p aphrody-app
 
 rust-fmt-python-check:
     "{{cargo_owner}}" fmt --check -p yolo-pyo3
@@ -102,19 +102,20 @@ web-build:
 web-dev:
     cd apps/yolo/web && bun run dev
 
-desktop-build: web-build
-    "{{cargo_owner}}" build --locked -p yolo-desktop
+# The desktop host is aphrody-app (--host-info, --runtime-host); the artifact reads target/runtime/aphrody-app.
+desktop-build:
+    "{{cargo_owner}}" build --locked --profile runtime -p aphrody-app --bin aphrody-app
 
 desktop-dev: web-dev
 
 desktop-tauri-check:
-    "{{cargo_owner}}" check --locked -p yolo-desktop --all-targets
+    "{{cargo_owner}}" check --locked -p aphrody-app --all-targets
 
 clippy-desktop:
-    "{{cargo_owner}}" clippy --locked -p yolo-desktop --all-targets -- -D warnings
+    "{{cargo_owner}}" clippy --locked -p aphrody-app --all-targets -- -D warnings
 
 test-desktop:
-    "{{cargo_owner}}" nextest run --locked -p yolo-desktop --lib --bins --tests --no-fail-fast
+    "{{cargo_owner}}" nextest run --locked -p aphrody-app --lib --bins --tests --no-fail-fast
 
 qualify-desktop: rust-fmt-desktop-check desktop-tauri-check clippy-desktop test-desktop
 

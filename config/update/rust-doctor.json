@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Data for `aphrody-update rust doctor|fix` (packages/infra/update/src/ecosystems/rust-doctor.ts). Every entry carries its reason; a skip is reported as a note on each run, never as a pass. `*` is a wildcard. docs/operations/infra/update/RUST.md has the long form.",
+  "note": "Data for `yolo update rust doctor|fix` (packages/infra/update/src/ecosystems/rust-doctor.ts). Every entry carries its reason; a skip is reported as a note on each run, never as a pass. `*` is a wildcard. docs/operations/infra/update/RUST.md has the long form.",
   "vendored": [
     { "crates": "aphrody-bindgen", "reason": "vendored upstream (koharu-rs/koharu 0.83.5, crates/ml): not rewritten, keeps its upstream style" },
     { "crates": "aphrody-ml-*", "reason": "vendored upstream (koharu-rs/koharu 0.83.5, crates/ml): not rewritten, keeps its upstream style" },

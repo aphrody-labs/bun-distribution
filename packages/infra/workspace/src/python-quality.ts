@@ -34,7 +34,7 @@ export function runPythonQuality(args: string[], run: PythonQualityRunner = comm
     else if (arg === "--source") roots.push(args[++index] ?? "");
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops python-quality <lint|test> [--root <repository>] [--source <directory>]... [--no-build]\n--no-build uses the existing environment without dependency installation or native builds.",
+        "Usage: yolo ops python-quality <lint|test> [--root <repository>] [--source <directory>]... [--no-build]\n--no-build uses the existing environment without dependency installation or native builds.",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

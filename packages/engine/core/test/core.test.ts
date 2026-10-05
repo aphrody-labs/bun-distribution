@@ -335,11 +335,7 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
 
       const tools = coord.aphrodyTools();
       expect(Array.isArray(tools)).toBe(true);
-      expect(tools.length).toBe(3);
-      const names = tools.map((t) => t.name);
-      expect(names).toContain("aphrody-infra");
-      expect(names).toContain("aphrody-ops");
-      expect(names).toContain("aphrody-workspace");
+      expect(tools.map((t) => t.name)).toEqual(["aphrody-infra"]);
     });
   });
 

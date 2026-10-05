@@ -25,7 +25,7 @@ export async function runGitignoredAudit(args: string[]): Promise<number> {
     else if (arg === "--skip") skips.add(args[++index] ?? "");
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops gitignored-audit [--root <repository>] [--skip <directory>]...",
+        "Usage: yolo ops gitignored-audit [--root <repository>] [--skip <directory>]...",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

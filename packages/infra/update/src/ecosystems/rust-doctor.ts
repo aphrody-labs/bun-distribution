@@ -1094,14 +1094,14 @@ class Doctor {
       problems.push({
         stage: "bumps",
         severity: "warning",
-        message: `toolchain pin ${r.toolchain.pinned} is behind stable ${r.toolchain.stable}: aphrody-update tools rust --apply`,
+        message: `toolchain pin ${r.toolchain.pinned} is behind stable ${r.toolchain.stable}: yolo update tools rust --apply`,
       });
     for (const x of r.outdated.filter((o) => o.yanked))
       problems.push({
         stage: "bumps",
         severity: "error",
         crate: x.crate,
-        message: `${x.crate} ${x.locked} is yanked: aphrody-update rust apply`,
+        message: `${x.crate} ${x.locked} is yanked: yolo update rust apply`,
       });
     for (const x of r.outdated.filter((o) => o.inRange)) {
       const why = x.held ?? x.owner;
@@ -1109,7 +1109,7 @@ class Doctor {
         stage: "bumps",
         severity: why ? "info" : "warning",
         crate: x.crate,
-        message: `${x.crate} ${x.locked} is behind ${x.inRange} inside its requirement ${x.req}${why ? "" : ": aphrody-update rust apply"}`,
+        message: `${x.crate} ${x.locked} is behind ${x.inRange} inside its requirement ${x.req}${why ? "" : ": yolo update rust apply"}`,
         note: why,
       });
     }
@@ -1139,7 +1139,7 @@ class Doctor {
         severity: "info",
         crate: x.crate,
         message: `${x.crate} ${x.locked}: breaking release ${x.beyond} available`,
-        note: `aphrody-update rust apply --skip-refresh --majors ${x.crate}`,
+        note: `yolo update rust apply --skip-refresh --majors ${x.crate}`,
       });
     const free = majors.length;
     return {
@@ -1148,7 +1148,7 @@ class Doctor {
       seconds: secs(t),
       problems,
       fixed: 0,
-      commands: ["aphrody-update rust status"],
+      commands: ["yolo update rust status"],
       summary: `toolchain ${r.toolchain.pinned}${r.toolchain.behind ? ` (stable ${r.toolchain.stable})` : ""}; ${r.outdated.filter((o) => o.inRange).length} in-range, ${free} major(s) available, ${held.length} held; ${r.advisories.open.length} open advisory(ies), ${r.advisories.held.length} held`,
     };
   }
@@ -1171,7 +1171,7 @@ function printStage(s: StageResult, verbose: boolean) {
   if (notes) console.log(`  ${notes} note(s) (vendored, skipped or held; --verbose lists them)`);
 }
 
-/** Entry point for `aphrody-update rust doctor|fix`. */
+/** Entry point for `yolo update rust doctor|fix`. */
 export async function runDoctor(c: Ctx, args: string[]): Promise<number> {
   const list = (flag: string) => {
     const i = args.indexOf(flag);
@@ -1234,7 +1234,7 @@ export async function runDoctor(c: Ctx, args: string[]): Promise<number> {
   if (c.json) console.log(JSON.stringify(report, null, 2));
   else
     console.log(
-      `doctor  result    ${t.errors} error(s), ${t.warnings} warning(s), ${t.notes} note(s)${t.fixed ? `, ${t.fixed} repaired` : ""}; report ${OUT_DIR}/report.json${!fix && stages.some((s) => s.problems.some((p) => p.fixable)) ? "; repair with: aphrody-update rust fix" : ""}`,
+      `doctor  result    ${t.errors} error(s), ${t.warnings} warning(s), ${t.notes} note(s)${t.fixed ? `, ${t.fixed} repaired` : ""}; report ${OUT_DIR}/report.json${!fix && stages.some((s) => s.problems.some((p) => p.fixable)) ? "; repair with: yolo update rust fix" : ""}`,
     );
   return exitCode(t, args.includes("--strict"));
 }

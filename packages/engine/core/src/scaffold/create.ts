@@ -5,7 +5,7 @@
  *   yolo create my-app [--with web|react,desktop] [--framework hono|elysia] [--yolo-path <checkout>]
  *
  * Templates are plain files; `__NAME__`, `__IDENT__` and `__YOLO__` are substituted, `gitignore`
- * becomes `.gitignore`, and the `desktop` feature copies the icons of `crates/engine/yolo-desktop`.
+ * becomes `.gitignore`, and the `desktop` template carries its own `src-tauri/icons`.
  * Features are applied in order, a later file replaces an earlier one (the web feature replaces
  * `src/home.ts`). Templates that share an `exclusive` group in stack.toml (frontend: web or react,
  * framework: hono or elysia) cannot be combined. Zero dependencies.
@@ -123,13 +123,6 @@ export async function createProject(options: CreateOptions): Promise<string[]> {
     Object.assign(pkg.devDependencies, extraDevDependencies);
     written.set("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
   }
-  if (names.includes("desktop")) {
-    const icons = resolve(options.yoloPath, "crates/engine/yolo-desktop/icons");
-    if (!existsSync(icons)) throw new Error(`Desktop icons not found: ${icons}`);
-    for (const rel of walk(icons))
-      written.set(`src-tauri/icons/${rel}`, new Uint8Array(readFileSync(join(icons, rel))));
-  }
-
   mkdirSync(options.target, { recursive: true });
   for (const [rel, content] of written) {
     const dest = resolve(options.target, rel);

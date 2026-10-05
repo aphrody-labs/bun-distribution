@@ -11,7 +11,7 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
     const arg = args[index];
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops workspace-layout [--root <repository>]");
+      console.log("Usage: yolo ops workspace-layout [--root <repository>]");
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }

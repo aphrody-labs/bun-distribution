@@ -16,7 +16,7 @@ tauri-plugin =3.0.0-alpha.2.
   `tauri-3.0.0-alpha.3/src/ipc/{channel,mod}.rs` in the cargo registry.
   `withGlobalTauri` is not documented for v3 in Context7; the repo already uses
   `window.__TAURI__.core.invoke` and `window.__TAURI__.event.listen`
-  (`crates/shell/tauri-e2e/frontend/index.html`), so `window.__TAURI__.core.Channel`
+  (`crates/ui/app/examples/shell_e2e/frontend/index.html`), so `window.__TAURI__.core.Channel`
   is expected but not verified.
 - brush-core: not in Context7 ("brush" resolves to a Gaussian-splatting engine;
   `brush-core` returns nothing). Not in `~/source` or the cargo registry either.
@@ -153,7 +153,7 @@ webview; ordering is the reason to prefer it over events for terminal output.
 .invoke_handler(tauri::generate_handler![...]).build()`. `build.rs`:
 `tauri_plugin::Builder::new(COMMANDS).build()` generates `allow-<cmd>` / `deny-<cmd>`
 (underscores become dashes). `permissions/default.toml` groups them; the app capability
-lists `"aphrody-shell-tauri:default"` (as in `tauri-e2e/capabilities/main.json`).
+lists `"aphrody-shell-tauri:default"` (as in `crates/ui/app/capabilities/main.json`).
 Plugin commands are invoked as `plugin:<plugin-name>|<command>`.
 
 ## 3. xterm.js and ghostty-web

@@ -11,6 +11,7 @@
 //!   artifacts, metrics and promotions, recorded only when `APHRODY_TRAINING_DATABASE_URL[_POOLED]`
 //!   is set.
 
+mod cli;
 mod events;
 mod job;
 mod lease;
@@ -19,6 +20,7 @@ mod promote;
 pub mod registry;
 mod runner;
 
+pub use cli::cli_main;
 pub use events::TrainEvent;
 pub use job::{TrainKind, TrainingJob};
 pub use lease::acquire_training_lease;

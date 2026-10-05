@@ -12,7 +12,7 @@ export async function runCargoPackageRepair(args: string[]): Promise<number> {
   const table = tableIndex === -1 ? undefined : args[tableIndex + 1];
   if (!table || repositories.length === 0)
     throw new Error(
-      "Usage: aphrody-ops cargo-package-repair --rename-table <file> <repo>... [--apply]",
+      "Usage: yolo ops cargo-package-repair --rename-table <file> <repo>... [--apply]",
     );
   const names = (JSON.parse(await readFile(resolve(table), "utf8")) as Rename[])
     .map((entry) => entry.name_to)

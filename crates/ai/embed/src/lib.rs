@@ -68,6 +68,13 @@ pub mod native;
 #[cfg(feature = "server")]
 pub mod server;
 
+/// Entry point of the former `aphrody-embed` binary (`worker`, `serve`, `install`).
+#[cfg(feature = "server")]
+#[allow(clippy::pedantic)]
+mod cli;
+#[cfg(feature = "server")]
+pub use cli::cli_main;
+
 pub use cache::model_cache_dir;
 pub use error::{EmbedError, Result};
 pub use model::{EmbeddingModelKind, UnknownModel};

@@ -34,7 +34,7 @@ native      = [
 ]
 # candle-transformers BERT as a reference backend for parity tests.
 candle      = ["native", "dep:candle-core", "dep:candle-nn", "dep:candle-transformers"]
-# The `aphrody-embed` binary: `worker` (framed stdio) and `serve`
+# `cli_main` (the former `aphrody-embed` binary): `worker` (framed stdio) and `serve`
 # (OpenAI-compatible `/v1/embeddings`, the former shenron-embed contract).
 server      = ["native", "dep:axum", "dep:tokio", "dep:aphrody-http-error"]
 
@@ -114,11 +114,6 @@ tempfile    = { workspace = true }
 # see its uses when the feature is inactive. `tracing` is macro-only usage
 # (tracing::debug!/info!) which machete under-counts.
 ignored = ["fastembed", "tracing", "candle-core", "candle-nn", "candle-transformers"]
-
-[[bin]]
-name              = "aphrody-embed"
-path              = "src/bin/aphrody-embed/main.rs"
-required-features = ["server"]
 
 [[example]]
 name              = "native_bench"

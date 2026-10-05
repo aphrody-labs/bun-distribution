@@ -1,8 +1,7 @@
-#!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 import { resolve } from "node:path";
 
-export const optimizeHelp = `Usage: aphrody-workspace optimize [--print] [--] <bounded task>
+export const optimizeHelp = `Usage: yolo optimize [--print] [--] <bounded task>
 Reuse the optimize-workspace plugin skill through aphrody exec.
 --print prints the instructions without starting an agent.
 The current directory defines the workspace; existing AGENTS/PLAN remain authoritative.`;
@@ -35,13 +34,4 @@ export async function runOptimize(args: string[]): Promise<number> {
     stderr: "inherit",
   });
   return await child.exited;
-}
-
-if (import.meta.main) {
-  try {
-    process.exit(await runOptimize(process.argv.slice(2)));
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  }
 }

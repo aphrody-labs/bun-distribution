@@ -49,7 +49,7 @@ describe("@aphrody/agent-browser", () => {
 	});
 
 	it("does not start a second MCP host", async () => {
-		const cli = join(import.meta.dir, "../bin/agent-browser.js");
+		const cli = join(import.meta.dir, "../src/cli.ts");
 		const proc = Bun.spawn([process.execPath, cli, "mcp"], {
 			stdout: "pipe",
 			stderr: "pipe",

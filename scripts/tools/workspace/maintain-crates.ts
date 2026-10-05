@@ -216,14 +216,14 @@ async function main(): Promise<void> {
         if (existsSync(join(dir, "scripts")) || existsSync(join(dir, "package.json"))) {
           goals.push(`Bun and Nushell tooling lane: own scripts/** and package.json only. Improve maintenance automation using installed host commands and native runtime APIs where useful; avoid redundant packages or binaries. ${scope}`);
         }
-        const native = join(infra, "target", "debug", "aphrody-yolo");
-        const nativeSource = join(infra, "crates", "aphrody-yolo", "src", "main.rs");
+        const native = join(infra, "target", "debug", "aphrody");
+        const nativeSource = join(infra, "crates", "infra", "yolo", "src", "cli.rs");
         const needsBuild = !existsSync(native) || statSync(nativeSource).mtimeMs > statSync(native).mtimeMs;
         const mrxDir = join(infra, "target", "aphrody-crates-mrx", name);
-        const mapArgs = ["--root", dir, "--json", "map", "--out", join(mrxDir, "path.json"), "--map", join(mrxDir, "monorepo-map.json"), "scan"];
-        const planArgs = ["--root", dir, "--json", "plan"];
-        const checkArgs = ["--root", dir, "--json", "check"];
-        const agentArgs = ["--root", dir, "--json", "autopilot", "--once", "--sequential", ...goals.flatMap((goal) => ["--goal", goal]), ...(harness ? ["--harness", harness] : [])];
+        const mapArgs = ["yolo", "--root", dir, "--json", "map", "--out", join(mrxDir, "path.json"), "--map", join(mrxDir, "monorepo-map.json"), "scan"];
+        const planArgs = ["yolo", "--root", dir, "--json", "plan"];
+        const checkArgs = ["yolo", "--root", dir, "--json", "check"];
+        const agentArgs = ["yolo", "--root", dir, "--json", "autopilot", "--once", "--sequential", ...goals.flatMap((goal) => ["--goal", goal]), ...(harness ? ["--harness", harness] : [])];
         row.dispatchPlan = { nativeBinary: native, plan: planArgs, check: checkArgs, map: mapArgs, agent: agentArgs, nativeBuildRequired: needsBuild };
         if (apply && harness && !Bun.which(harness)) {
           row.action = `error: agent harness ${harness} is not installed`;
@@ -232,7 +232,7 @@ async function main(): Promise<void> {
           row.action = "skipped: YOLO runtime state is not gitignored in the selected repository";
         } else {
           if (apply) {
-            const build = run("cargo", ["build", "--locked", ...(online ? [] : ["--offline"]), "-p", "aphrody-yolo"], infra);
+            const build = run("cargo", ["build", "--locked", ...(online ? [] : ["--offline"]), "-p", "aphrody"], infra);
             if (build.code !== 0) row.action = `error: native YOLO build: ${detail(build)}`;
           }
           if (!row.action && (apply || !needsBuild)) {
@@ -241,7 +241,7 @@ async function main(): Promise<void> {
             const preview = run(native, [...agentArgs, "--dry-run"], infra);
             const detected = ["Cargo.toml", ...(existsSync(join(dir, "package.json")) ? ["package.json"] : [])]
               .map((path) => {
-                const result = run(native, ["--root", dir, "--json", "detect", path], infra);
+                const result = run(native, ["yolo", "--root", dir, "--json", "detect", path], infra);
                 if (result.code !== 0) return { path, error: detail(result) };
                 try {
                   const report = JSON.parse(result.stdout) as { definition?: { id?: string }; parse?: { validation_gate?: string } };

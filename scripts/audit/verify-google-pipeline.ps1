@@ -37,9 +37,9 @@ function Invoke-OwnerCommand {
 }
 
 $cargoManifest = Join-Path $AphrodyRoot 'crates/google/google/Cargo.toml'
-$rustMain = Join-Path $AphrodyRoot 'crates/google/google/src/main.rs'
+$rustMain = Join-Path $AphrodyRoot 'crates/google/google/src/cli.rs'
 $bunManifestPath = Join-Path $AphrodyRoot 'packages/google/google/package.json'
-$bunEntrypoint = Join-Path $AphrodyRoot 'packages/google/google/bin/aphrody-google.ts'
+$bunEntrypoint = Join-Path $AphrodyRoot 'packages/google/google/src/cli.ts'
 $docAiManifestPath = Join-Path $AphrodyRoot 'packages/ai/doc-ai/package.json'
 $docAiEntrypoint = Join-Path $AphrodyRoot 'packages/ai/doc-ai/src/llm.ts'
 $pythonManifest = Join-Path $PythonRoot 'packages/ai/py/aphrody/pyproject.toml'
@@ -61,9 +61,14 @@ $cargoMetadata = ($cargoMetadataOutput -join "`n") | ConvertFrom-Json
 $rustPackage = $cargoMetadata.packages | Where-Object {
     $_.name -eq 'aphrody-google'
 } | Select-Object -First 1
+# aphrody-google is a library entry (cli_main) of the single multi-call `aphrody` binary.
+$aphrodyPackage = $cargoMetadata.packages | Where-Object { $_.name -eq 'aphrody' } | Select-Object -First 1
 if (-not $rustPackage -or -not ($rustPackage.targets | Where-Object {
-    $_.name -eq 'aphrody-google' -and $_.kind -contains 'bin'
-})) { throw 'Current Cargo metadata does not expose the aphrody-google binary.' }
+    $_.kind -contains 'lib'
+})) { throw 'Current Cargo metadata does not expose the aphrody-google library.' }
+if (-not $aphrodyPackage -or -not ($aphrodyPackage.targets | Where-Object {
+    $_.name -eq 'aphrody' -and $_.kind -contains 'bin'
+})) { throw 'Current Cargo metadata does not expose the aphrody multi-call binary.' }
 if ([IO.Path]::GetFullPath($rustPackage.manifest_path) -ne [IO.Path]::GetFullPath($cargoManifest)) {
     throw "Cargo package aphrody-google is not owned by $cargoManifest."
 }

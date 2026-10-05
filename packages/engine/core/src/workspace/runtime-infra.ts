@@ -51,8 +51,9 @@ export async function infraExecutable(
       "--quiet",
       "--locked",
       "--bin",
-      "aphrody-infra",
+      "aphrody",
       "--",
+      "infra",
     ];
   }
   const name = `aphrody-infra${process.platform === "win32" ? ".exe" : ""}`;

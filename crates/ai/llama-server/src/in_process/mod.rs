@@ -18,26 +18,26 @@ use std::{
     sync::Arc,
 };
 
+use aphrody_llama::{
+    context::params::{LlamaAttentionType, LlamaContextParams},
+    llama_backend::LlamaBackend,
+    llama_batch::LlamaBatch,
+    model::{AddBos, LlamaChatMessage, LlamaLoraAdapter, LlamaModel, params::LlamaModelParams},
+    mtmd::{
+        MtmdBitmap, MtmdContext, MtmdContextParams, MtmdInputChunks, MtmdInputText,
+        mtmd_default_marker,
+    },
+    sampling::LlamaSampler,
+};
 use aphrody_model_client::{
     ChatMessage, ChatTurn, ImageSource, ModelCapabilities, ModelClient, ModelError, ModelStream,
     ModelStreamEvent, Part, Role, ToolDecl,
 };
 use async_trait::async_trait;
-use aphrody_llama::{
-    llama_backend::LlamaBackend,
-    llama_batch::LlamaBatch,
-    mtmd::{
-        MtmdBitmap, MtmdContext, MtmdContextParams, MtmdInputChunks, MtmdInputText,
-        mtmd_default_marker,
-    },
-    model::{AddBos, LlamaChatMessage, LlamaLoraAdapter, LlamaModel, params::LlamaModelParams},
-    context::params::{LlamaAttentionType, LlamaContextParams},
-    sampling::LlamaSampler,
-};
+use base64::Engine as _;
 use router::{Finish, Router, RouterConfig};
 use serde_json::json;
 use tokio::sync::{OnceCell, Semaphore, mpsc};
-use base64::Engine as _;
 
 pub use server::InProcessServer;
 
@@ -210,12 +210,11 @@ impl InProcessLlama {
         }
         let lora = match options.lora.first() {
             Some(spec) => {
-                let adapter = model.lora_adapter_init(&spec.path).map_err(|error| {
-                    LlamaLoadError::Lora {
+                let adapter =
+                    model.lora_adapter_init(&spec.path).map_err(|error| LlamaLoadError::Lora {
                         path: spec.path.display().to_string(),
                         message: error.to_string(),
-                    }
-                })?;
+                    })?;
                 Some(LoraHandle {
                     adapter: std::sync::Mutex::new(SendAdapter(adapter)),
                     scale: spec.scale,
@@ -229,11 +228,12 @@ impl InProcessLlama {
                     path: path.display().to_string(),
                     message: "path is not valid UTF-8".to_owned(),
                 })?;
-                let context = MtmdContext::init_from_file(text, &model, &MtmdContextParams::default())
-                    .map_err(|error| LlamaLoadError::Projector {
-                        path: path.display().to_string(),
-                        message: error.to_string(),
-                    })?;
+                let context =
+                    MtmdContext::init_from_file(text, &model, &MtmdContextParams::default())
+                        .map_err(|error| LlamaLoadError::Projector {
+                            path: path.display().to_string(),
+                            message: error.to_string(),
+                        })?;
                 Some(context)
             },
             None => None,
@@ -363,9 +363,9 @@ fn render_messages(turn: &ChatTurn, marker: Option<&str>) -> Vec<(&'static str, 
         for part in parts {
             match part {
                 Part::Text(value) => push(value),
-                Part::Image(_) => push(
-                    marker.unwrap_or("[image omitted: no multimodal projector is loaded]"),
-                ),
+                Part::Image(_) => {
+                    push(marker.unwrap_or("[image omitted: no multimodal projector is loaded]"))
+                },
                 Part::Reasoning { .. } => {},
                 Part::FunctionCall { name, args, .. } => push(&format!(
                     "<tool_call>\n{}\n</tool_call>",
@@ -440,9 +440,8 @@ fn generate(
         Err(_) => aphrody_llama::model::LlamaChatTemplate::new("chatml")
             .map_err(|error| error.to_string())?,
     };
-    let prompt = model
-        .apply_chat_template(&template, &messages, true)
-        .map_err(|error| error.to_string())?;
+    let prompt =
+        model.apply_chat_template(&template, &messages, true).map_err(|error| error.to_string())?;
 
     // Most templates write the BOS token themselves; add it only when they did not.
     let mut decoder = encoding_rs::UTF_8.new_decoder();
@@ -453,48 +452,53 @@ fn generate(
     // Text: one token list. Images: projector chunks (text + encoded image embeddings).
     let mut tokens = Vec::new();
     let mut chunks: Option<(MtmdInputChunks, Vec<MtmdBitmap>)> = None;
-    let (prompt_len, positions, max_chunk, non_causal) = if let (Some(context), false) =
-        (mtmd, images.is_empty())
-    {
-        let mut bitmaps = Vec::with_capacity(images.len());
-        for image in &images {
-            let bytes = image_bytes(image)?;
-            bitmaps.push(
-                MtmdBitmap::from_buffer(context, &bytes, false)
-                    .map_err(|error| format!("cannot decode image: {error}"))?,
+    let (prompt_len, positions, max_chunk, non_causal) =
+        if let (Some(context), false) = (mtmd, images.is_empty()) {
+            let mut bitmaps = Vec::with_capacity(images.len());
+            for image in &images {
+                let bytes = image_bytes(image)?;
+                bitmaps.push(
+                    MtmdBitmap::from_buffer(context, &bytes, false)
+                        .map_err(|error| format!("cannot decode image: {error}"))?,
+                );
+            }
+            let refs = bitmaps.iter().collect::<Vec<_>>();
+            let parsed = context
+                .tokenize(
+                    MtmdInputText {
+                        text: prompt.clone(),
+                        add_special: !templated_bos,
+                        parse_special: true,
+                    },
+                    &refs,
+                )
+                .map_err(|error| format!("cannot tokenize the multimodal prompt: {error}"))?;
+            let positions = usize::try_from(parsed.total_positions()).unwrap_or(usize::MAX);
+            let max_chunk = (0..parsed.len())
+                .filter_map(|index| parsed.get(index))
+                .map(|chunk| chunk.n_tokens())
+                .max();
+            let result = (
+                parsed.total_tokens(),
+                positions,
+                max_chunk.unwrap_or(1),
+                context.decode_use_non_causal(),
             );
-        }
-        let refs = bitmaps.iter().collect::<Vec<_>>();
-        let parsed = context
-            .tokenize(
-                MtmdInputText {
-                    text: prompt.clone(),
-                    add_special: !templated_bos,
-                    parse_special: true,
-                },
-                &refs,
-            )
-            .map_err(|error| format!("cannot tokenize the multimodal prompt: {error}"))?;
-        let positions = usize::try_from(parsed.total_positions()).unwrap_or(usize::MAX);
-        let max_chunk =
-            (0..parsed.len()).filter_map(|index| parsed.get(index)).map(|chunk| chunk.n_tokens()).max();
-        let result = (parsed.total_tokens(), positions, max_chunk.unwrap_or(1), context.decode_use_non_causal());
-        chunks = Some((parsed, bitmaps));
-        result
-    } else {
-        tokens = model.str_to_token(&prompt, add_bos).map_err(|error| error.to_string())?;
-        (tokens.len(), tokens.len(), 1, false)
-    };
+            chunks = Some((parsed, bitmaps));
+            result
+        } else {
+            tokens = model.str_to_token(&prompt, add_bos).map_err(|error| error.to_string())?;
+            (tokens.len(), tokens.len(), 1, false)
+        };
 
     let n_ctx = inner.n_ctx;
     if positions + 1 >= n_ctx as usize {
-        return Err(format!("the prompt ({positions} positions) does not fit the {n_ctx}-token context"));
+        return Err(format!(
+            "the prompt ({positions} positions) does not fit the {n_ctx}-token context"
+        ));
     }
     let room = n_ctx as usize - positions - 1;
-    let budget = turn
-        .options
-        .max_output_tokens
-        .map_or(room, |max| (max as usize).min(room));
+    let budget = turn.options.max_output_tokens.map_or(room, |max| (max as usize).min(room));
 
     let mut params = LlamaContextParams::default().with_n_ctx(NonZeroU32::new(n_ctx));
     if chunks.is_some() {
@@ -502,11 +506,11 @@ fn generate(
         let n_batch = 2048_u32.max(u32::try_from(max_chunk).unwrap_or(u32::MAX));
         params = params.with_n_batch(n_batch);
         if non_causal {
-            params = params.with_n_ubatch(n_batch).with_attention_type(LlamaAttentionType::NonCausal);
+            params =
+                params.with_n_ubatch(n_batch).with_attention_type(LlamaAttentionType::NonCausal);
         }
     }
-    let mut ctx =
-        model.new_context(inner.backend, params).map_err(|error| error.to_string())?;
+    let mut ctx = model.new_context(inner.backend, params).map_err(|error| error.to_string())?;
     if let Some(lora) = &inner.lora
         && lora.scale != 0.0
     {
@@ -531,7 +535,9 @@ fn generate(
             let last_chunk = chunk_index + 1 == chunk_count;
             for (index, token) in chunk.iter().enumerate() {
                 let wants_logits = last_chunk && index + 1 == chunk.len();
-                batch.add(*token, position, &[0], wants_logits).map_err(|error| error.to_string())?;
+                batch
+                    .add(*token, position, &[0], wants_logits)
+                    .map_err(|error| error.to_string())?;
                 position += 1;
             }
             ctx.decode(&mut batch).map_err(|error| error.to_string())?;

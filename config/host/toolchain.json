@@ -141,8 +141,8 @@
       "aphrody-infra",
       "aphrody-kernel"
     ],
-    "note": "aphrody-ovh is a library compiled into aphrody-infra; aphrody-ops and aphrody-workspace are Bun scripts under packages/infra/workspace and need a source checkout",
-    "windowsBuild": "APHRODY_LOCAL_CARGO=1 scripts/build/rust/cargo-serial.sh xwin build --release --target x86_64-pc-windows-msvc -p aphrody-infra -p aphrody-kernel (integrator; factory route otherwise), installed to %USERPROFILE%\\.local\\bin",
+    "note": "aphrody-ovh is a library compiled into aphrody-infra; the Bun package commands (yolo ops|workspace|optimize|update|ovh|google|doc-ai|browser) load their owner modules from a source checkout",
+    "windowsBuild": "APHRODY_LOCAL_CARGO=1 scripts/build/rust/cargo-serial.sh xwin build --release --target x86_64-pc-windows-msvc -p aphrody (the multi-call binary; aphrody-infra and aphrody-kernel are links to it) (integrator; factory route otherwise), installed to %USERPROFILE%\\.local\\bin",
     "windowsPrebuilt": [
       "aphrody-infra.exe",
       "aphrody-kernel.exe"
@@ -213,8 +213,7 @@
     "dbfr": "~/aphrody",
     "remote": "workspace (git@github.com:aphrody-labs/aphrody.git, blobless clone via forwarded agent)",
     "links": [
-      "~/.local/bin/aphrody-ops -> packages/infra/workspace/src/ops.ts",
-      "~/.local/bin/aphrody-workspace -> packages/infra/workspace/src/cli.ts"
+      "~/.local/bin/yolo -> ~/.yolo/bin/yolo (yolo ops|workspace|optimize|update... load packages/* from ~/aphrody or YOLO_APHRODY_ROOT)"
     ]
   },
   "uvTools": [

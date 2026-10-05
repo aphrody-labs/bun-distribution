@@ -101,9 +101,9 @@ export async function runWindowsPaths(args: string[]): Promise<number> {
   for (let index = 0; index < args.length; index += 1) {
     if (args[index] === "--root") root = args[++index] ?? "";
     else if (args[index] === "--json") json = true;
-    else throw new Error("usage: aphrody-ops windows-paths [--root <directory>] [--json]");
+    else throw new Error("usage: yolo ops windows-paths [--root <directory>] [--json]");
   }
-  if (!root) throw new Error("usage: aphrody-ops windows-paths [--root <directory>] [--json]");
+  if (!root) throw new Error("usage: yolo ops windows-paths [--root <directory>] [--json]");
   const findings = await scanWindowsPaths(root);
   if (json) console.log(JSON.stringify(findings, null, 2));
   else if (findings.length === 0)

@@ -7,7 +7,7 @@ function version(binary: string): string {
 }
 
 export function runRuntimeVersions(args: string[]): number {
-  // The pins live in config/system-packages.json (kept in step by `aphrody-update pins`).
+  // The pins live in config/system-packages.json (kept in step by `yolo update pins`).
   const pins = JSON.parse(
     readFileSync(new URL("../../../../config/system-packages.json", import.meta.url), "utf8"),
   ) as {
@@ -20,7 +20,7 @@ export function runRuntimeVersions(args: string[]): number {
     if (arg === "--bun") bunExpected = args[++index] ?? "";
     else if (arg === "--uv") uvExpected = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops runtime-versions [--bun <version>] [--uv <version>]");
+      console.log("Usage: yolo ops runtime-versions [--bun <version>] [--uv <version>]");
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }

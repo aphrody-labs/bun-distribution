@@ -12,7 +12,7 @@ function parseArgs(args: string[]): { repo: string; debug: boolean } {
     else if (arg === "--debug") debug = true;
     else if (arg === "--release") debug = false;
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops drive-daemon [--root <aphrody>] [--debug]");
+      console.log("Usage: yolo ops drive-daemon [--root <aphrody>] [--debug]");
       process.exit(0);
     } else throw new Error(`Unknown argument: ${arg}`);
   }

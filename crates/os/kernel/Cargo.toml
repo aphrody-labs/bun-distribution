@@ -12,7 +12,7 @@ workspace = true
 
 [features]
 default = ["builtins"]
-# The `aphrody-kernel` binary and its built-in subsystems. Higher layers that only host one
+# The `aphrody kernel` entry point (`aphrody_kernel::cli_main`) and its built-in subsystems. Higher layers that only host one
 # subsystem over the kernel transport (aphrody-web's browser plugin) disable it.
 builtins = [
     "dep:anyhow",
@@ -23,15 +23,6 @@ builtins = [
     "dep:aphrody-systemd",
     "dep:clap",
 ]
-
-[[bin]]
-name = "aphrody-kernel"
-path = "src/main.rs"
-required-features = ["builtins"]
-
-[[bin]]
-name = "aphrody-host-service"
-path = "src/host_service.rs"
 
 [dependencies]
 aphrody-subsystem = { workspace = true }
@@ -51,7 +42,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 serde = { workspace = true }
 
-# The binary's built-in subsystems (feature `builtins`).
+# The built-in subsystems (feature `builtins`).
 anyhow = { workspace = true, optional = true }
 aphrody-bun-docs = { workspace = true, optional = true }
 aphrody-compat = { workspace = true, optional = true }

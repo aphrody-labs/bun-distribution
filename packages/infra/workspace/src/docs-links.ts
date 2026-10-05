@@ -196,7 +196,7 @@ export async function runDocsLinks(args: string[]): Promise<number> {
     else if (arg === "--json") json = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops docs-links [--root <repository>] [--docs <directory>] [--scope docs|repository] [--exclude-file <root-relative path>] [--imported-config <json>] [--no-backtick-paths] [--web-routes] [--json]",
+        "Usage: yolo ops docs-links [--root <repository>] [--docs <directory>] [--scope docs|repository] [--exclude-file <root-relative path>] [--imported-config <json>] [--no-backtick-paths] [--web-routes] [--json]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

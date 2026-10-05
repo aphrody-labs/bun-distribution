@@ -54,7 +54,11 @@ impl InferenceBackend {
             None | Some("auto") => Ok(if compiled { Self::InProcess } else { Self::Spawn }),
             Some("spawn") => Ok(Self::Spawn),
             Some("in-process" | "in_process" | "inprocess") => {
-                if compiled { Ok(Self::InProcess) } else { Err(BackendError::NotCompiled) }
+                if compiled {
+                    Ok(Self::InProcess)
+                } else {
+                    Err(BackendError::NotCompiled)
+                }
             },
             Some(other) => Err(BackendError::Unknown(other.to_owned())),
         }
@@ -85,7 +89,10 @@ mod tests {
     #[test]
     fn spawn_is_always_available_as_an_explicit_choice() {
         for compiled in [true, false] {
-            assert_eq!(InferenceBackend::select(Some("SPAWN"), compiled), Ok(InferenceBackend::Spawn));
+            assert_eq!(
+                InferenceBackend::select(Some("SPAWN"), compiled),
+                Ok(InferenceBackend::Spawn)
+            );
         }
     }
 

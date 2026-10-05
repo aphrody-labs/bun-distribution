@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/m3-showcase",
   "version": "3.3.4",
-  "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable and a prepared canonical Tauri desktop shell.",
+  "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable shown by the aphrody-app desktop (aphrody-app --showcase).",
   "license": "Apache-2.0",
   "type": "module",
   "publishConfig": {
@@ -18,7 +18,6 @@
     "smoke": "m3-bun smoke",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test ./test && bun run test:dom",
-    "icons": "bun scripts/icons.ts",
     "tauri": "bun scripts/tauri.ts",
     "test:dom": "bun test --preload @aphrody/m3-config/test/dom ./test-dom"
   },

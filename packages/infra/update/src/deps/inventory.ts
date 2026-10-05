@@ -501,7 +501,7 @@ export function summarise(inv: Inventory, root: string): string {
     "<!-- SPDX-License-Identifier: Apache-2.0 -->",
     "# Dependency inventory",
     "",
-    `Generated ${inv.generated} by \`aphrody-update deps inventory\` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: \`${relative(root, join(root, "target/deps-inventory/inventory.json"))}\` (not committed).`,
+    `Generated ${inv.generated} by \`yolo update deps inventory\` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: \`${relative(root, join(root, "target/deps-inventory/inventory.json"))}\` (not committed).`,
     "",
     ...sect("Rust (Cargo.lock)", inv.rust),
     ...sect("Bun (bun.lock)", inv.bun),

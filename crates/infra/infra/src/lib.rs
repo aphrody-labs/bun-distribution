@@ -7,6 +7,7 @@
 
 pub mod api;
 pub mod catalog;
+pub mod cli;
 pub mod devenv;
 pub mod drive;
 pub mod lifecycle;
@@ -17,6 +18,8 @@ pub mod probe;
 pub mod reclaim;
 pub mod secrets;
 pub mod validate;
+
+pub use cli::cli_main;
 
 pub use drive::{
     DriveFileNode, DriveTreeNode, GitOverview, MountKind, VirtualDriveEngine, VirtualMount,

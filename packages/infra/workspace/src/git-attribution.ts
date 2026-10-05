@@ -35,7 +35,7 @@ function option(args: string[], name: string): string | undefined {
 export async function runGitAttribution(args: string[]): Promise<number> {
   if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--canonical-author] [--author-name <name>] [--author-email <email>] [--apply]",
+      "Usage: yolo ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--canonical-author] [--author-name <name>] [--author-email <email>] [--apply]",
     );
     return 0;
   }
@@ -60,13 +60,13 @@ export async function runGitAttribution(args: string[]): Promise<number> {
     const argument = args[index];
     if (!argument || !allowed.has(argument))
       throw new Error(
-        "Usage: aphrody-ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--canonical-author] [--author-name <name>] [--author-email <email>] [--apply]",
+        "Usage: yolo ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--canonical-author] [--author-name <name>] [--author-email <email>] [--apply]",
       );
     if (argument !== "--apply" && argument !== "--canonical-author") index += 1;
   }
   if (!repoOption || !branch)
     throw new Error(
-      "Usage: aphrody-ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--canonical-author] [--author-name <name>] [--author-email <email>] [--apply]",
+      "Usage: yolo ops git-attribution --repo <path> --branch <branch> [--since <ref>] [--canonical-author] [--author-name <name>] [--author-email <email>] [--apply]",
     );
   const repo = resolve(repoOption);
   const oldTip = (await git(repo, ["rev-parse", branch])).trim();

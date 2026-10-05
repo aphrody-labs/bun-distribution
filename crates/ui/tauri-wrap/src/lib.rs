@@ -35,7 +35,8 @@ mod policy;
 mod proxy;
 #[cfg(feature = "bundle")]
 mod serve;
-mod sidecar;
+/// Loopback sidecar process of the `sidecar` mode, also started by apps that host it themselves.
+pub mod sidecar;
 mod window;
 
 use std::sync::Arc;
@@ -44,7 +45,7 @@ use tauri::plugin::{Builder, TauriPlugin};
 use tauri::{AppHandle, Runtime};
 use url::Url;
 
-pub use config::{ConfigError, Engine, External, Mode, Origins, SCHEMA, WrapConfig};
+pub use config::{ConfigError, Engine, External, Mode, Origins, SCHEMA, Sidecar, WrapConfig};
 pub use policy::{Decision, Pattern, Policy};
 
 /// Plugin name.

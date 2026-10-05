@@ -1,4 +1,3 @@
-#!/usr/bin/env bun
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { translateMarkdown } from "./translator.js";
@@ -15,10 +14,10 @@ export const USAGE = `
 AI-First Documentation & Translation System CLI
 
 Usage:
-  doc-ai translate <file_or_dir> [lang]   Translate markdown (default lang: fr)
-  doc-ai generate <ts_file> [out_file]    Generate a Lit component API guide
-  doc-ai sync [lang]                       Translate all monorepo docs folders
-  doc-ai --help                            Show this help
+  yolo doc-ai translate <file_or_dir> [lang]   Translate markdown (default lang: fr)
+  yolo doc-ai generate <ts_file> [out_file]    Generate a Lit component API guide
+  yolo doc-ai sync [lang]                       Translate all monorepo docs folders
+  yolo doc-ai --help                            Show this help
 
 Commands:
   translate  Translate a single markdown file or every markdown file in a
@@ -330,16 +329,4 @@ export async function main(argv: readonly string[]): Promise<number> {
     console.error(`Execution failed: ${toMessage(err)}`);
     return 1;
   }
-}
-
-// Only auto-run when executed as a script, not when imported by tests.
-if (import.meta.main) {
-  main(process.argv.slice(2))
-    .then((code) => {
-      process.exitCode = code;
-    })
-    .catch((err: unknown) => {
-      console.error(`Fatal: ${toMessage(err)}`);
-      process.exitCode = 1;
-    });
 }

@@ -9,7 +9,7 @@ gate set, which is run locally (`cargo check/clippy/test`, `bun run typecheck`, 
 
 | Workflow | Trigger | What it runs |
 | --- | --- | --- |
-| `ci.yml` | push to `main`, pull requests, manual | Rust on `ubuntu-latest` and `windows-latest`: `cargo check --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and on Linux `cargo run -p aphrody-summary -- --check`. `cargo deny check` (EmbarkStudios/cargo-deny-action). Bun on both OSes: `bun install --frozen-lockfile`, `bun run typecheck`, `bun run test`. |
+| `ci.yml` | push to `main`, pull requests, manual | Rust on `ubuntu-latest` and `windows-latest`: `cargo check --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and on Linux `aphrody summary -- --check`. `cargo deny check` (EmbarkStudios/cargo-deny-action). Bun on both OSes: `bun install --frozen-lockfile`, `bun run typecheck`, `bun run test`. |
 | `python.yml` | changes under `py/` | `uv sync --locked --group dev`, `ruff check`, `ruff format --check`, `pytest -m "not live_api"` on Ubuntu and Windows. |
 | `security.yml` | push/PR on `main`, weekly | gitleaks, trufflehog, informational `cargo audit`, trivy filesystem scan. |
 | `dependabot-auto-merge.yml` | Dependabot pull requests | Auto-merges patch updates outside the deny-list. |

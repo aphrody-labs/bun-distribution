@@ -23,7 +23,7 @@ export async function runVendorLicenseAudit(args: string[]): Promise<number> {
       vendorRoots.push(value);
     } else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops vendor-license-audit [--root <repository>] --vendor <path> [...]",
+        "Usage: yolo ops vendor-license-audit [--root <repository>] --vendor <path> [...]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

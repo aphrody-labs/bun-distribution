@@ -18,6 +18,8 @@
 //! utilisables par les surfaces 2D de `nie-formats`.
 
 pub mod assets;
+#[cfg(feature = "fs")]
+mod cli;
 pub mod codex;
 /// Le design system du site : les couleurs de l'interface **dérivées** de la palette mesurée
 /// d'Aphrody, et la feuille `game-tokens.css` qu'elles produisent.
@@ -30,6 +32,9 @@ pub mod logo;
 pub mod pets;
 /// Mesure, comparaison et rastérisation — le socle de la skill `pixel-perfect`.
 pub mod pixel;
+
+#[cfg(feature = "fs")]
+pub use cli::{design_main, export_assets_main, pixel_main};
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};

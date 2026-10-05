@@ -5,5 +5,5 @@ def main [--aphrody: path, --os: path, --repo: string, --apply, --include-dirty]
     mut args = [workspace-repair --ai-root ($aphrody | path expand) --os-root ($os | path expand) --repo $repo]
     if $apply { $args = ($args | append --apply) }
     if $include_dirty { $args = ($args | append --include-dirty) }
-    ^aphrody-ops ...$args
+    ^yolo ops ...$args
 }

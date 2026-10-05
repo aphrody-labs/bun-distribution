@@ -40,6 +40,7 @@ pub mod api;
 pub mod archive;
 pub mod catalog;
 pub mod catalog_sync;
+pub mod cli;
 pub mod client;
 pub mod config;
 pub mod features;
@@ -66,6 +67,7 @@ pub use algorithm::{
 pub use api::{ListInfo, TimelineTweet, TweetResult, UserInfo};
 pub use catalog::{OpType, Operation};
 pub use catalog_sync::{SyncReport, sync_catalog_file};
+pub use cli::cli_main;
 pub use client::{RateLimit, XClient};
 pub use config::Config;
 pub use news::{NewsItem, NewsOptions};

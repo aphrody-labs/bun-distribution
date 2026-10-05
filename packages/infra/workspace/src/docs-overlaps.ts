@@ -59,7 +59,7 @@ export function runDocsOverlaps(args: string[]): number {
     else if (arg === "--threshold") threshold = Number(args[++index]);
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops docs-overlaps [--root <repository>] [--include <path-substring>]... [--exclude <path-substring>]... [--threshold <0..1>]",
+        "Usage: yolo ops docs-overlaps [--root <repository>] [--include <path-substring>]... [--exclude <path-substring>]... [--threshold <0..1>]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

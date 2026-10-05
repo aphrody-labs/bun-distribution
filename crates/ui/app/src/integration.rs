@@ -220,6 +220,9 @@ pub fn dispatch_open(app: &AppHandle, request: OpenRequest) {
 
 /// Handle the command line of a second launch (forwarded by the single-instance plugin).
 pub fn on_second_instance(app: &AppHandle, args: &[String], cwd: &str) {
+    if crate::showcase::requested(args) {
+        crate::showcase::open(app);
+    }
     let request = classify_args(args.iter().skip(1), Path::new(cwd), Path::is_file);
     if request.is_empty() {
         show_main(app);
@@ -483,6 +486,7 @@ pub fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
         true,
         &[
             &MenuItem::with_id(app, "menu_docs", "Aphrody Documentation", true, None::<&str>)?,
+            &MenuItem::with_id(app, "menu_showcase", "M3 Showcase", true, None::<&str>)?,
             &MenuItem::with_id(app, "menu_updates", "Check for Updates...", true, None::<&str>)?,
             &PredefinedMenuItem::separator(app)?,
             &PredefinedMenuItem::about(app, None, None)?,

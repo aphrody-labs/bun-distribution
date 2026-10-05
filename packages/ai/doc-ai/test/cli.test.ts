@@ -146,7 +146,12 @@ async function invokeOffline(args: string[], cwd: string, requireOnline = false)
   ])
     delete env[key];
   const child = Bun.spawn(
-    [process.execPath, path.resolve(import.meta.dir, "../src/cli.ts"), ...args],
+    [
+      process.execPath,
+      path.resolve(import.meta.dir, "../../../../apps/yolo/cli/src/index.ts"),
+      "doc-ai",
+      ...args,
+    ],
     {
       cwd,
       env,

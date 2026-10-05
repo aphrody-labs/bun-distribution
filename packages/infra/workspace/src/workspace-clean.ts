@@ -115,7 +115,7 @@ export async function runWorkspaceClean(args: string[]): Promise<number> {
       /* retained for old callers */
     } else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops workspace-clean [--root path] [--apply] [--json] [--out report.json]; default: dry run",
+        "Usage: yolo ops workspace-clean [--root path] [--apply] [--json] [--out report.json]; default: dry run",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

@@ -29,26 +29,27 @@ if [[ -f "$BXC_ROOT/bin/bxc" ]] && [[ "$(readlink -f "$BXC_ROOT/bin/bxc")" != "$
   ln -sfn "$BXC_ROOT/bin/bxc" "$LOCAL_BIN/bxc"
 fi
 
-echo "==> [2/6] Build Rust x-cli (optional)"
+echo "==> [2/6] Build Rust x-cli (optional; aphrody x via the multi-call binary)"
 if [[ "${BUILD_X_CLIENT:-0}" == "1" ]]; then
   command -v cargo >/dev/null || { echo 'BUILD_X_CLIENT requires Cargo' >&2; exit 1; }
   [[ -x "$CARGO_WRAPPER" ]] || { echo "missing serialized Cargo owner: $CARGO_WRAPPER" >&2; exit 1; }
-  (cd "$APHRODY_WEB_ROOT" && "$CARGO_WRAPPER" build --release --locked -p aphrody-x --bin x-cli)
+  (cd "$APHRODY_WEB_ROOT" && "$CARGO_WRAPPER" build --release --locked -p aphrody --bin aphrody)
   x_target="${APHRODY_CARGO_TARGET_DIR:-$(cd "$APHRODY_WEB_ROOT" && cargo metadata --format-version 1 --no-deps | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')}"
-  [[ -f "$x_target/release/x-cli" ]] || { echo "build produced no x-cli in $x_target/release" >&2; exit 1; }
-  install -m 755 "$x_target/release/x-cli" "$LOCAL_BIN/x-cli"
+  [[ -f "$x_target/release/aphrody" ]] || { echo "build produced no aphrody in $x_target/release" >&2; exit 1; }
+  # x-cli is the aphrody multi-call binary under its former name (dispatch on argv[0]).
+  install -m 755 "$x_target/release/aphrody" "$LOCAL_BIN/x-cli"
 fi
 
 echo "==> [3/6] aphrody + aphrody-mcp binaries"
 ai_target="$(cd "$APHRODY_ROOT" && cargo metadata --format-version 1 --no-deps 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])' || true)"
 APHRODY_RELEASE=""
 for d in "${ai_target:-$APHRODY_ROOT/target}/x86_64-unknown-linux-gnu/release" "${ai_target:-$APHRODY_ROOT/target}/release"; do
-  [[ -x "$d/aphrody-mcp" ]] && APHRODY_RELEASE="$d" && break
+  [[ -x "$d/aphrody" ]] && APHRODY_RELEASE="$d" && break
 done
 if [[ -n "$APHRODY_RELEASE" ]]; then
+  # aphrody-mcp is the aphrody multi-call binary under its former name (dispatch on argv[0]).
   for bin in aphrody-mcp aphrody; do
-    [[ -f "$APHRODY_RELEASE/$bin" ]] || continue
-    install -m 755 "$APHRODY_RELEASE/$bin" "$LOCAL_BIN/$bin"
+    install -m 755 "$APHRODY_RELEASE/aphrody" "$LOCAL_BIN/$bin"
     echo "    installed $LOCAL_BIN/$bin"
   done
 elif command -v aphrody-mcp &>/dev/null; then

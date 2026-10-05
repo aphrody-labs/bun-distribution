@@ -96,7 +96,15 @@ export const GATES: readonly Gate[] = [
   {
     id: "import-check",
     title: "vendored crates equal a fresh import of the pinned submodules",
-    command: ["bun", "run", "apps/yolo/cli/src/index.ts", "import", "--check", "--out", ".cache/vendor"],
+    command: [
+      "bun",
+      "run",
+      "apps/yolo/cli/src/index.ts",
+      "import",
+      "--check",
+      "--out",
+      ".cache/vendor",
+    ],
     surfaces: ["vendor.toml", "vendor.lock", "crates/**", "vendor"],
     precondition: (root) =>
       existsSync(join(root, ".cache/vendor"))
@@ -171,7 +179,7 @@ export const NOT_RUN_HEAVY: readonly NotRun[] = [
   },
   {
     id: "clippy",
-    title: "strict clippy on yolo-core and yolo-desktop",
+    title: "strict clippy on yolo-core and aphrody-app",
     reason: "heavy: compiles Tauri; runs through yolo ship",
   },
   {

@@ -7,7 +7,7 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
     const arg = args[index];
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops iecode-doctor [--root <iecode>]");
+      console.log("Usage: yolo ops iecode-doctor [--root <iecode>]");
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }

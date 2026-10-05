@@ -18,11 +18,10 @@ target is French. Identifier names are out of scope by design.
 ## 2. Install
 
 ```bash
-cargo install --locked aphrody-translate                                                 # crates.io
-cargo install --git https://github.com/aphrody-labs/aphrody --bin aphrody-translate   # canary category repository
+aphrody translate ...   # the `aphrody` multi-call binary; `aphrody-translate` is a link to it
 ```
 
-A workspace checkout also builds it via `cargo build --release -p aphrody-translate`.
+The crate is a library (`aphrody_translate::cli_main`); `aphrody` builds it.
 
 ## 3. Quick start
 

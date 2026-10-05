@@ -51,7 +51,3 @@ criterion = { workspace = true }
 [[bench]]
 name = "frame"
 harness = false
-
-[[bin]]
-name = "aphrody-canvas"
-path = "src/bin/aphrody-canvas.rs"

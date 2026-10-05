@@ -37,8 +37,8 @@ proves completion. [PLAN.md](../../plans/ai/PLAN.md) is the only active product 
 
 ```powershell
 $env:RUSTC_WRAPPER = ''
-cargo run -p aphrody-summary
-cargo run -p aphrody-summary -- --check
+aphrody summary
+aphrody summary -- --check
 bun run docs:check-links
 git diff --check
 ```

@@ -18,7 +18,7 @@ workspace = true
 default = []
 native = ["aphrody-rag/native"]
 rag = ["dep:aphrody-rag", "aphrody-rag/ort", "aphrody-rag/native", "aphrody-agent-runtime/rag", "aphrody-app-server/rag", "native"]
-train = ["dep:aphrody-train", "aphrody-train/registry"]
+train = ["aphrody-train/registry"]
 memory-lancedb = ["aphrody-memory/lancedb"]
 # Native Google Magika deep-learning file-type classification, exposed via
 # `aphrody re classify <path>`. Opt-in because it links the ONNX Runtime
@@ -143,7 +143,21 @@ thiserror                 = { workspace = true }
 aphrody-vpn               = { workspace = true }
 # `aphrody winclean` — in-process aphrody-winclean crate (Windows computer use + OS control).
 aphrody-winclean          = { workspace = true }
-aphrody-kernel            = { workspace = true }
+aphrody-kernel            = { workspace = true, features = ["builtins"] }
+# Former standalone binaries served in process by the multi-call dispatch (src/multicall.rs).
+aphrody-infra             = { workspace = true }
+aphrody-yolo              = { workspace = true }
+aphrody-wsl               = { workspace = true }
+aphrody-mcp               = { workspace = true }
+aphrody-web-engine        = { workspace = true }
+aphrody-m3-reproduce      = { workspace = true, features = ["cli"] }
+aphrody-render            = { workspace = true }
+aphrody-bindgen           = { workspace = true }
+aphrody-gemini-web        = { workspace = true }
+aphrody-jev               = { workspace = true, features = ["server"] }
+aphrody-embed             = { workspace = true, features = ["server"] }
+aphrody-summary           = { workspace = true }
+aphrody-skills            = { workspace = true }
 # Messaging (outbound connectors + bidirectional channels: Slack/Telegram/Matrix/Discord/X).
 # Native-only because reqwest + tokio do not compile on wasm32.
 aphrody-messaging         = { workspace = true }
@@ -257,7 +271,7 @@ aphrody-rollout           = { workspace = true }
 aphrody-exec-events       = { workspace = true }
 aphrody-rag               = { workspace = true, optional = true }
 aphrody-llama-server      = { workspace = true }
-aphrody-train             = { workspace = true, optional = true }
+aphrody-train             = { workspace = true }
 aphrody-app-server        = { workspace = true }
 aphrody-gateway           = { workspace = true }
 aphrody-tui               = { workspace = true }

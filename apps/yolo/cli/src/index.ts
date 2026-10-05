@@ -67,13 +67,17 @@ export const parseTsSource: Parse["parseTsSource"] = async (...args) =>
   (await vfsParse()).parseTsSource(...args);
 // The pure renderers are synchronous in the core API, so they load their module with a lazy `require`.
 export const renderStatusMarkdown: Status["renderStatusMarkdown"] = (...args) =>
-  (require("../../../../packages/engine/core/src/vendor/status") as Status).renderStatusMarkdown(...args);
+  (require("../../../../packages/engine/core/src/vendor/status") as Status).renderStatusMarkdown(
+    ...args,
+  );
 export const renderParseMarkdown: Parse["renderParseMarkdown"] = (...args) =>
   (require("../../../../packages/engine/core/src/vfs/parse") as Parse).renderParseMarkdown(...args);
 export const runBenchMetrics: Bench["runBenchMetrics"] = (...args) =>
   (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).runBenchMetrics(...args);
 export const renderBenchMarkdown: Bench["renderBenchMarkdown"] = (...args) =>
-  (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).renderBenchMarkdown(...args);
+  (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).renderBenchMarkdown(
+    ...args,
+  );
 
 let cachedRoot: string | undefined;
 /** The yolo home, resolved on first use (it walks parent directories, which `version` and `help` do not need). */
@@ -106,7 +110,14 @@ ${header}
   \x1b[32mawesome [stats|list|search|github|check]\x1b[0m Browse oven-sh/awesome-bun (README cached, no clone)
   \x1b[32mimport [--apply|--check]\x1b[0m Vendor the fork crates into crates/aphrody-* (see vendor.toml)
   \x1b[32mrename [opts] [dir..]\x1b[0m Mass boundary-aware rename (--preset aphrody | --from X --to Y, --apply, --paths)
-  \x1b[32minfra|ops|workspace|workflow|git|ssh ...\x1b[0m Aphrody control plane (aphrody-infra / aphrody-ops), same workflow
+  \x1b[32minfra|workflow|git|ssh ...\x1b[0m Aphrody control plane (aphrody-infra), same workflow
+  \x1b[32mops|workspace <operation> ...\x1b[0m Workspace operations and gates; unknown operations go to aphrody-infra
+  \x1b[32moptimize [--print] [--] <task>\x1b[0m Run the optimize-workspace skill through aphrody exec
+  \x1b[32mupdate check|pins|tools|cargo|deps|systemd|sources|rust|bun|uv|upstream|run\x1b[0m Pins, dependencies, upstream sources
+  \x1b[32movh status|profiles|dns|email|vps ...\x1b[0m OVHcloud DNS, email and VPS (mutations need --apply)
+  \x1b[32mgoogle drive|fonts ...\x1b[0m Google Drive projection and Fonts proxy (Gemini runtime: aphrody-google)
+  \x1b[32mdoc-ai translate|generate|sync\x1b[0m Markdown translation and Lit component API guides
+  \x1b[32mbrowser open|snapshot|click|fill|eval|screenshot|... [--cdp URL]\x1b[0m One CDP browser command (Obscura)
   \x1b[32mverify [--only a,b] [--changed] [--parallel N] [--json|--md] [--list|--last]\x1b[0m Run the repository gates as a parallel graph; JSON or Markdown evidence in var/verify
   \x1b[32mhost audit|reclaim|archive|services|tune|net|mount|journal --host vps|dbfr|local [--apply]\x1b[0m Manage a Linux server (plan by default, journaled, safety-checked)
   \x1b[32mship [--apply] [--prepare] [status|log|attach|stop]\x1b[0m Prepare or build on the factory; \x1b[32mhooks install\x1b[0m ships main/dev pushes
@@ -500,8 +511,6 @@ async function main(): Promise<void> {
     }
 
     case "infra":
-    case "ops":
-    case "workspace":
     case "workflow":
     case "git":
     case "ssh":
@@ -510,6 +519,19 @@ async function main(): Promise<void> {
       const { runAphrodyCommand } = await import("./aphrody");
       process.exitCode = await runAphrodyCommand(command, args.slice(1), rootDir());
       break;
+    }
+
+    // Bun owner packages, run in-process; they end the process like their former binaries did.
+    case "ops":
+    case "workspace":
+    case "optimize":
+    case "update":
+    case "ovh":
+    case "google":
+    case "doc-ai":
+    case "browser": {
+      const { runPackageCommand } = await import("./package-commands");
+      process.exit(await runPackageCommand(command, args.slice(1)));
     }
 
     case "host": {

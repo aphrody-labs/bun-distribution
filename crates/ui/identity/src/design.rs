@@ -492,7 +492,7 @@ pub fn feuille_css() -> String {
     let mut s = String::with_capacity(4096);
     s.push_str(
         "/* Couleurs derivees de la palette mesuree d'Aphrody (aphrody_identity::design).\n   \
-         NE PAS RETOUCHER A LA MAIN : regenerer par `cargo run -p aphrody-identity --bin design --`. */\n",
+         NE PAS RETOUCHER A LA MAIN : regenerer par `aphrody identity design`. */\n",
     );
     s.push_str(":root {\n");
     s.push_str(&bloc_couleurs());
@@ -601,7 +601,7 @@ const EN_TETE_CSS: &str = r"/*
  * game-tokens.css — la direction artistique du jeu, en variables CSS.
  *
  * FICHIER ENGENDRE — ne pas retoucher a la main.
- *   Regenerer :  cargo run -p aphrody-identity --bin design --
+ *   Regenerer :  aphrody identity design
  *   Source     :  crates/aphrody-identity/src/design.rs
  *   Verifier   :  cargo test -p aphrody-identity
  *

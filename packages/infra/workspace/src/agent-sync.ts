@@ -78,7 +78,7 @@ export async function runAgentSync(args: string[]): Promise<number> {
     else if (arg === "--no-memory") memory = false;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "aphrody-ops agent-sync [--root PATH] [--domain aphrody|dbfr|ie] [--watch] [--interval-secs 2] [--json] [--no-memory]\nSilent by default; requires a kernel running in the selected domain. One ingestion owner per domain.",
+        "yolo ops agent-sync [--root PATH] [--domain aphrody|dbfr|ie] [--watch] [--interval-secs 2] [--json] [--no-memory]\nSilent by default; requires a kernel running in the selected domain. One ingestion owner per domain.",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

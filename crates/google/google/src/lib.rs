@@ -9,6 +9,8 @@ pub use aphrody_gemini_runtime as gemini_runtime;
 pub use aphrody_gemini_web as gemini_web;
 pub use aphrody_model_client as model_client;
 pub mod atlas;
+mod cli;
+pub use cli::cli_main;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod detection;
 pub mod language_detect;

@@ -101,7 +101,7 @@ export async function runAutomationInventory(args: string[]): Promise<number> {
     } else if (arg === "--json") json = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops automation-inventory [--json] [--root <src>]\n       aphrody-ops automation-inventory --inline --help",
+        "Usage: yolo ops automation-inventory [--json] [--root <src>]\n       yolo ops automation-inventory --inline --help",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

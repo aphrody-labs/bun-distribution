@@ -13,10 +13,6 @@ keywords = ["bun", "nodejs", "migration", "codemod", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 publish = true
 
-[[bin]]
-name = "n2b"
-path = "src/main.rs"
-
 [dependencies]
 aphrody-n2b-core.workspace = true
 aphrody-toolchains.workspace = true

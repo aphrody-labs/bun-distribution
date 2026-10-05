@@ -72,7 +72,7 @@ out.tools = {
   nu_version: timeCmd(["nu", "--version"]),
 };
 out.cli = Object.fromEntries(
-  ["aphrody", "aphrody-ops", "aphrody-kernel", "yolo"].map((b) => [b, timeCmd([`${home}/.local/bin/${b}`, "--version"])]),
+  ["aphrody", "aphrody-kernel", "yolo"].map((b) => [b, timeCmd([`${home}/.local/bin/${b}`, "--version"])]),
 );
 async function mcpMedian(cmd: string[], cwd: string, call: { name: string; arguments: object }, n = 7) {
   const rs: Awaited<ReturnType<typeof mcp>>[] = [];

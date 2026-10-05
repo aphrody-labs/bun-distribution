@@ -11,10 +11,6 @@ description            = "Gemini web app (gemini.google.com) Boq RPC client — 
 [lints]
 workspace = true
 
-[[bin]]
-name = "aphrody-gemini-web"
-path = "src/main.rs"
-
 [dependencies]
 serde       = { workspace = true, features = ["derive"] }
 serde_json  = { workspace = true }

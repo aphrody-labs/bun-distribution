@@ -56,6 +56,8 @@
 pub mod auth;
 pub mod bootstrap;
 pub mod boq;
+#[cfg(not(target_family = "wasm"))]
+mod cli;
 pub mod client;
 pub mod error;
 pub mod models;
@@ -65,6 +67,8 @@ pub mod transport;
 pub mod types;
 
 pub use auth::{Auth, CookieJar, SessionCookie};
+#[cfg(not(target_family = "wasm"))]
+pub use cli::cli_main;
 pub use client::GeminiWebClient;
 pub use error::{GeminiError, Result};
 pub use models::{GeminiModel, ReasoningLevel};

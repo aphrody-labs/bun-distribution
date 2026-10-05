@@ -35,7 +35,7 @@ export async function runPowerShellSyntax(args: string[]): Promise<number> {
     else if (arg === "--runtime") selectedRuntime = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops powershell-syntax [--root <repository>] [--runtime <pwsh-or-powershell>]",
+        "Usage: yolo ops powershell-syntax [--root <repository>] [--runtime <pwsh-or-powershell>]",
       );
       return 0;
     } else throw new Error("Unknown argument: " + arg);

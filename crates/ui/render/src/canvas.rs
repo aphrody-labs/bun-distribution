@@ -37,7 +37,7 @@ pub enum CanvasError {
 }
 
 impl CanvasError {
-    /// Process exit code used by the `aphrody-canvas` binary.
+    /// Process exit code of `aphrody canvas`.
     #[must_use]
     pub const fn exit_code(&self) -> i32 {
         match self {

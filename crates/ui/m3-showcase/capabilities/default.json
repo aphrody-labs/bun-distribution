@@ -1,8 +1,0 @@
-{
-  "identifier": "default",
-  "description": "The loopback UI uses HTTP; no host IPC is granted to its origin.",
-  "windows": [
-    "main"
-  ],
-  "permissions": []
-}

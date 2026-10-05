@@ -5,5 +5,5 @@ def main [repo: path, branch: string, --since: string, --apply] {
     mut args = [git-attribution --repo ($repo | path expand) --branch $branch]
     if $since != null { $args = ($args | append --since | append $since) }
     if $apply { $args = ($args | append --apply) }
-    ^aphrody-ops ...$args
+    ^yolo ops ...$args
 }

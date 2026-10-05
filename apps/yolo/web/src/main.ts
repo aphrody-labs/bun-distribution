@@ -13,11 +13,11 @@ export interface BenchmarkResult {
 }
 
 export async function fetchSystemStats(): Promise<SystemStats> {
-  return await invoke<SystemStats>("get_system_stats");
+  return await invoke<SystemStats>("aphrody_system_stats");
 }
 
 export async function executeBenchmark(iterations: number): Promise<BenchmarkResult> {
-  return await invoke<BenchmarkResult>("run_benchmark", { iterations });
+  return await invoke<BenchmarkResult>("aphrody_benchmark", { iterations });
 }
 
 export function initApp(): void {
@@ -34,15 +34,6 @@ export function initApp(): void {
           Autonomous Bun-Driven Monorepo · Self-Generating Architecture · Direct Tauri 3 Rust IPC
         </p>
       </header>
-
-      <section style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-        <h2 style="font-size: 1.1rem; margin: 0 0 1rem 0; color: #334155;">Native Rust IPC Greet</h2>
-        <div style="display: flex; gap: 0.5rem; justify-content: center;">
-          <input id="greet-input" placeholder="Enter a name..." style="padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; width: 60%; font-size: 0.95rem;" />
-          <button id="greet-btn" style="padding: 0.6rem 1.2rem; border-radius: 8px; background: #2563eb; color: #ffffff; border: none; font-weight: 600; cursor: pointer;">Greet</button>
-        </div>
-        <div id="greet-msg" style="color: #16a34a; font-weight: 600; min-height: 1.5rem; margin-top: 1rem;"></div>
-      </section>
 
       <section style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
         <h2 style="font-size: 1.1rem; margin: 0 0 1rem 0; color: #334155;">System Architecture & Micro-Benchmark</h2>
@@ -90,22 +81,9 @@ export function initApp(): void {
     </main>
   `;
 
-  const input = document.getElementById("greet-input") as HTMLInputElement | null;
-  const greetBtn = document.getElementById("greet-btn");
-  const greetMsg = document.getElementById("greet-msg");
   const statsBtn = document.getElementById("stats-btn");
   const benchBtn = document.getElementById("bench-btn");
   const outputBox = document.getElementById("output-box");
-
-  async function handleGreet() {
-    const name = input?.value || "YOLO Developer";
-    try {
-      const response = await invoke<string>("greet", { name });
-      if (greetMsg) greetMsg.textContent = response;
-    } catch (err) {
-      if (greetMsg) greetMsg.textContent = String(err);
-    }
-  }
 
   async function handleStats() {
     try {
@@ -149,10 +127,6 @@ export function initApp(): void {
     }
   }
 
-  greetBtn?.addEventListener("click", () => void handleGreet());
-  input?.addEventListener("keydown", (e: KeyboardEvent) => {
-    if (e.key === "Enter") void handleGreet();
-  });
   statsBtn?.addEventListener("click", () => void handleStats());
   benchBtn?.addEventListener("click", () => void handleBench());
 }

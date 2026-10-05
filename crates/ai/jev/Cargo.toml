@@ -13,13 +13,9 @@ description            = "Typed client for TypeSafe Jev System One decisions (No
 [lib]
 crate-type = ["rlib"]
 
-[[bin]]
-name = "aphrody-jev"
-required-features = ["server"]
-
 [features]
 default = []
-# Jev-compatible HTTP server and the aphrody-jev binary.
+# Jev-compatible HTTP server and `cli_main` (the former aphrody-jev binary).
 server = ["dep:axum", "tokio/rt-multi-thread", "tokio/macros", "tokio/net"]
 
 [lints]

@@ -350,7 +350,7 @@ export async function runAgentLive(args: string[]): Promise<number> {
       if (!Number.isFinite(interval) || interval < 1)
         throw new Error("interval must be >= 1 second");
     } else if (arg === "--help" || arg === "-h") {
-      console.log("aphrody-ops agent-live [--root PATH] [--json] [--watch] [--interval-secs 30]");
+      console.log("yolo ops agent-live [--root PATH] [--json] [--watch] [--interval-secs 30]");
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }

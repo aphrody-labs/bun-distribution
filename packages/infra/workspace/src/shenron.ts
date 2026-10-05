@@ -4,14 +4,14 @@
 // backups) stays in this repository's Infra catalog.
 import { runRustBridge } from "./bridges.ts";
 
-const USAGE = "usage: aphrody-ops shenron <infra|service|deploy|dev-env> ...";
+const USAGE = "usage: yolo ops shenron <infra|service|deploy|dev-env> ...";
 
 export async function runShenron(args: string[]): Promise<number> {
   const [action, ...rest] = args;
   const inherit = { stdout: "inherit", stderr: "inherit" } as const;
   if (action === "infra") {
     if (!rest.length)
-      throw new Error("usage: aphrody-ops shenron infra <aphrody-infra arguments...>");
+      throw new Error("usage: yolo ops shenron infra <aphrody-infra arguments...>");
     return runRustBridge("aphrody-infra", rest, inherit);
   }
   if (action === "service") return runRustBridge("aphrody-infra", ["service", ...rest], inherit);
@@ -26,7 +26,7 @@ export async function runShenron(args: string[]): Promise<number> {
       rest.filter((argument) => argument === "--target").length !== 1
     )
       throw new Error(
-        "usage: aphrody-ops shenron deploy --target <infra-target> --release <path> [--apply]",
+        "usage: yolo ops shenron deploy --target <infra-target> --release <path> [--apply]",
       );
     return runRustBridge("aphrody-infra", ["deploy", "--stack", "shenron", ...rest], inherit);
   }

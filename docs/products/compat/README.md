@@ -22,7 +22,7 @@ No AI dependency. Exact membership and dependencies come from Cargo.toml.
 
 ## Start and references
 
-Use the pinned Rust/Bun toolchains and `RUSTC_WRAPPER=`. `cargo run -p aphrody-n2b -- --help`
+Use the pinned Rust/Bun toolchains and `RUSTC_WRAPPER=`. `aphrody n2b --help`
 shows the CLI; [AGENTS.md](../../reference/compat/AGENTS.md) owns the frozen contract, NHITL and gates.
 
 - [Documentation index](./_source/README.md), [Bun rules](../../reference/compat/BUN.md)

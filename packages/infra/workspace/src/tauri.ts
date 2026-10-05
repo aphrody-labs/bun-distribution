@@ -25,7 +25,7 @@ function parseArgs(args: string[]): { action: Action; bundles: string; repo: str
     else if (!arg.startsWith("--") && VALID_ACTIONS.includes(arg as Action)) action = arg as Action;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops tauri [check|build|run|dev|bundle] [--root <aphrody>] [--bundles <bundles>]",
+        "Usage: yolo ops tauri [check|build|run|dev|bundle] [--root <aphrody>] [--bundles <bundles>]",
       );
       process.exit(0);
     } else throw new Error(`Unknown argument: ${arg}`);
@@ -193,7 +193,7 @@ export async function runTauri(args: string[]): Promise<number> {
       const profileFlag = action === "dev" ? "--debug" : "--release";
       console.log(`[tauri] Staging Drive daemon (${profileFlag})...`);
       runSync(
-        ["aphrody-ops", "drive-daemon", "--root", repo, profileFlag],
+        [process.execPath, join(repo, "apps/yolo/cli/src/index.ts"), "ops", "drive-daemon", "--root", repo, profileFlag],
         repo,
         "Drive daemon preparation failed",
       );

@@ -114,7 +114,7 @@ export async function runCleanPublicAi(args: string[]): Promise<number> {
     const arg = args[i];
     if (arg === "--root") root = args[++i] ?? "";
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops clean-public-ai [--root <repo>]");
+      console.log("Usage: yolo ops clean-public-ai [--root <repo>]");
       console.log(
         "Scans public web surfaces and verifies no private AI branding/attributions leak.",
       );

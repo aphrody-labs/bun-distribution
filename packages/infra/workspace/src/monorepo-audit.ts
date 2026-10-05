@@ -125,7 +125,7 @@ function parseArgs(args: string[]) {
     else if (arg === "--quiet") quiet = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops monorepo-audit [--root path] [--bun path] [--only workspace,lockfile,security,knip,imports] [--jobs 1..5] [--json] [--quiet] [--docs terms] [--compile] [--outfile path]",
+        "Usage: yolo ops monorepo-audit [--root path] [--bun path] [--only workspace,lockfile,security,knip,imports] [--jobs 1..5] [--json] [--quiet] [--docs terms] [--compile] [--outfile path]",
       );
       process.exit(0);
     } else throw new Error(`Unknown argument: ${arg}`);

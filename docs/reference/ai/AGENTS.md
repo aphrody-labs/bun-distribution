@@ -36,7 +36,7 @@ cargo check  --workspace --all-targets
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test   --workspace
 cargo deny check
-cargo run -p aphrody-summary -- --check
+aphrody summary -- --check
 bun install --frozen-lockfile && bun run typecheck && bun run test
 git diff --check
 ```

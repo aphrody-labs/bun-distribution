@@ -1,4 +1,7 @@
+mod cli;
 mod rewrite;
+
+pub use cli::cli_main;
 
 use std::{fs, io::Write, path::Path};
 
@@ -15,10 +18,7 @@ pub struct Generator {
 
 impl Generator {
     pub fn new(builder: bindgen::Builder, library_name: impl Into<String>) -> Self {
-        Self {
-            builder,
-            library_names: vec![library_name.into()],
-        }
+        Self { builder, library_names: vec![library_name.into()] }
     }
 
     pub fn from_header(header: impl AsRef<Path>, library_name: impl Into<String>) -> Self {
@@ -63,10 +63,7 @@ impl Generator {
     pub fn write_to_file(self, path: impl AsRef<Path>) -> Result<()> {
         let source = self.generate()?;
         let path = path.as_ref();
-        if let Some(parent) = path
-            .parent()
-            .filter(|parent| !parent.as_os_str().is_empty())
-        {
+        if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
             fs::create_dir_all(parent)
                 .with_context(|| format!("failed to create {}", parent.display()))?;
         }

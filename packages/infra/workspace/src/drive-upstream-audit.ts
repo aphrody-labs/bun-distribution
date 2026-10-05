@@ -100,7 +100,7 @@ function parseOptions(args: string[]): Options {
       case "--help":
       case "-h":
         console.log(
-          "Usage: aphrody-ops drive-upstream-audit [--root <aphrody-ui>] [--revision <40-char-sha>] [--drive-root <path>] [--owner <owner>] [--json] [--list] [--fail-on-missing]",
+          "Usage: yolo ops drive-upstream-audit [--root <aphrody-ui>] [--revision <40-char-sha>] [--drive-root <path>] [--owner <owner>] [--json] [--list] [--fail-on-missing]",
         );
         process.exit(0);
       default:

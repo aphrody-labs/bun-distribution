@@ -6,6 +6,8 @@
 # m3/docs/plans/local-ai-gui-native-integration.md). Model management is in process through
 # aphrody-local-ai. Local models run in this process (feature `in-process`, on by default); the
 # executable still answers `__llama-daemon` (src/llama_daemon.rs) only for the spawn fallback.
+# It is also the Yolo desktop SDK host (`--host-info`, `--runtime-host`, src/runtime_host.rs) and opens the
+# M3 showcase window with `--showcase` (src/showcase.rs); it is the only desktop application.
 
 [package]
 name = "aphrody-app"
@@ -61,8 +63,12 @@ aphrody-local-ai = { workspace = true }
 aphrody-native = { workspace = true }
 aphrody-sprite-sheet = { workspace = true }
 aphrody-subsystem = { workspace = true }
+# Loopback sidecar of the M3 showcase window (src/showcase.rs); no wrap.json plugin is registered.
+aphrody-tauri-wrap = { workspace = true }
 aphrody-systemd = { workspace = true }
 async-trait = { workspace = true }
+# Host probe and micro-benchmark commands (aphrody_system_stats, aphrody_benchmark).
+yolo-core = { path = "../../engine/yolo-core", version = "1.0.0" }
 base64 = { workspace = true }
 # The process-wide TLS provider the `__llama-daemon` entry installs before any HTTP client exists.
 rustls = { workspace = true }

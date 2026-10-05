@@ -9,5 +9,5 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $argsList = @('tauri', $Action, '--root', $repo)
 if ($Bundles) { $argsList += @('--bundles', $Bundles) }
-& aphrody-ops @argsList
+& yolo ops @argsList
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

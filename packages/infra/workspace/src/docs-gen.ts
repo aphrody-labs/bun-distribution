@@ -2,7 +2,7 @@
 /**
  * One entry point for every generated document, so hand-written docs never carry counts.
  *
- *   aphrody-ops docs-gen [--root <repo>] [--check] [--deps] [--skip-ecosystem]
+ *   yolo ops docs-gen [--root <repo>] [--check] [--deps] [--skip-ecosystem]
  *
  * Writes (or, with --check, compares against the committed copy):
  *   docs/reference/workspace/STATE.md  crates, packages and apps per domain from `cargo metadata`,
@@ -10,7 +10,7 @@
  *   docs/README.md                     generated documentation index
  *   docs/reference/ai/llms.txt         llms.txt index of the canonical docs
  *   docs/ecosystem/*                   delegated to scripts/tools/workspace/ecosystem.ts
- *   docs/reference/infra/UPSTREAMS.md  delegated to `aphrody-update upstream docs`
+ *   docs/reference/infra/UPSTREAMS.md  delegated to `yolo update upstream docs`
  *   docs/reference/workspace/DEPS-INVENTORY.md  only with --deps (network, registry-dependent, never checked)
  *
  * `cargo metadata --no-deps` is read-only: it never builds.
@@ -418,7 +418,7 @@ export async function runDocsGen(args: string[]): Promise<number> {
     else if (arg === "--skip-ecosystem") ecosystem = false;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops docs-gen [--root <repository>] [--check] [--deps] [--skip-ecosystem]",
+        "Usage: yolo ops docs-gen [--root <repository>] [--check] [--deps] [--skip-ecosystem]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
@@ -452,7 +452,7 @@ export async function runDocsGen(args: string[]): Promise<number> {
   apply("docs/README.md", renderDocsIndex(root));
 
   const bun = process.execPath;
-  const upstreamArgs = ["packages/infra/update/src/cli.ts", "upstream", "docs", "--root", root];
+  const upstreamArgs = ["apps/yolo/cli/src/index.ts", "update", "upstream", "docs", "--root", root];
   if (delegate(root, "UPSTREAMS.md", [bun, ...upstreamArgs, ...(check ? [] : ["--apply"])]) !== 0)
     failures++;
   if (ecosystem) {
@@ -463,7 +463,8 @@ export async function runDocsGen(args: string[]): Promise<number> {
     if (
       delegate(root, "DEPS-INVENTORY.md", [
         bun,
-        "packages/infra/update/src/cli.ts",
+        "apps/yolo/cli/src/index.ts",
+        "update",
         "deps",
         "inventory",
         "--root",

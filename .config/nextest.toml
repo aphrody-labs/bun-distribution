@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Profile of `aphrody-update rust doctor` (stage `test`): run every test, keep going, and write a JUnit report to
+# Profile of `yolo update rust doctor` (stage `test`): run every test, keep going, and write a JUnit report to
 # target/nextest/doctor/junit.xml. One retry separates a flaky test (reported as a warning) from a failing one.
 # Six test threads match the six rustc jobs of scripts/build/rust/cargo-serial.sh.
 [profile.doctor]

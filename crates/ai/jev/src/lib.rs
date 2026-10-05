@@ -22,6 +22,8 @@
 //! target [`FAILOVER_TARGET`]. Responses that are not conforming primitives
 //! for the asked questions are rejected, never repaired.
 
+#[cfg(feature = "server")]
+mod cli;
 mod native;
 mod rag;
 #[cfg(feature = "server")]
@@ -35,6 +37,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(feature = "server")]
+pub use cli::cli_main;
 pub use native::NativeEngine;
 pub use rag::{GuardPolicy, PassageVerdict, filter_and_rerank, judge_passages};
 use serde::Deserialize;

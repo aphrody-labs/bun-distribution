@@ -1,6 +1,0 @@
-{
-  "identifier": "main-capability",
-  "description": "Shell e2e: core events plus the shell plugin.",
-  "windows": ["main"],
-  "permissions": ["core:default", "aphrody-shell-tauri:default"]
-}
