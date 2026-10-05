@@ -1,13 +1,3 @@
-[submodule "forks/tailwindcss"]
-	path = forks/tailwindcss
-	url = git@github-dev:aphrody-labs/tailwindcss.git
-	upstream = https://github.com/tailwindlabs/tailwindcss.git
-	shallow = true
-[submodule "forks/base-ui"]
-	path = forks/base-ui
-	url = git@github-dev:aphrody-labs/base-ui.git
-	upstream = https://github.com/mui/base-ui.git
-	shallow = true
 [submodule "forks/material-web"]
 	path = forks/material-web
 	url = git@github-dev:aphrody-labs/material-web.git
