@@ -162,3 +162,7 @@ hors du cloud.
 ## Téléchargements publics (download-server) — 2026-10-06
 
 `aphrody` (binaire unique, MCP `aphrody-mcp`), `yolo` et les plugins sont publiés sur https://downloads.aphrody.com (aussi aphrody.com) par `scripts/release/publish-downloads.ts` (`config/downloads.json`, [runbook](docs/operations/infra/DOWNLOADS.md)) : build fabrique de `8f891f0d4` (glibc max 2.39 vérifié), SHA-256 vérifié sur l'hôte puis depuis l'URL publique, `--version` et poignée de main MCP OK, releases GitHub sur dépôts privés existants. Limite : Windows (cargo-xwin installé sur la fabrique, build en cours), macOS et yolo Windows non publiés ; pas de signature (aucune clé définie).
+
+## `@aphrody/x` import Bun sur `aphrody-x` — 2026-10-06
+
+`crates/web/x` est l'implémentation unique de X : table d'opérations JSON (`ops`), batch avec checkpoint JSONL (`batch`), taxonomie d'erreurs partagée (`data/x-policy.json`). `aphrody-ffi` expose l'API job (Web ABI 5, `aphrody_web_x_*`), `@aphrody/bun/x` la marshalle, `@aphrody/x` n'est plus qu'un binding fin (`XClient`, `xBatch`, `Store`) plus l'orchestration (purges, radar, crawler). Gates : clippy `-D warnings`, 167 tests `aphrody-x` et 54 `aphrody-ffi` sur le VPS ; cdylib release (5 min 40) sans import au-delà de glibc 2.39, chargée sous WSL ; 172 tests Bun (`packages/interop/native`, `packages/web/x`, `packages/ai/xai`) via boucle locale. Non fait : paquet, installation, activation de l'artefact ; aucun appel réseau réel vers X.

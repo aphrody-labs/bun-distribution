@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+//
+// Coverage of the embedded GraphQL catalog against the live bundles and an optional live Premium
+// probe. The report is built by aphrody-x (native operation `coverage`); `resolveOperationQueryId`
+// documents the resolution order.
+
 import type { XClient } from "../core/client";
-import { allOperations, getOperation } from "../config/catalog";
-import { PREMIUM_GRAPHQL_OPS, X_SDK_COVERAGE } from "../config/x-surface";
-import { fetchLiveQueryIds } from "../tools/bundle-catalog";
-import { fetchAllPremiumGraphql } from "./premium";
+import { xSubmit } from "@aphrody/bun/x";
+import { xErrorFromInfo } from "../core/error";
+import { getOperation } from "../config/catalog";
 
 export interface CoverageReport {
   generated_at: string;
@@ -14,55 +18,25 @@ export interface CoverageReport {
   premium_fetch?: Record<string, { ok: boolean }>;
 }
 
-/** Compare embedded catalog vs live bundle + optional live Premium probe. */
+/** Compare the embedded catalog against the live bundles, and optionally probe Premium live. */
 export async function buildCoverageReport(
   client?: XClient,
   opts?: { probePremium?: boolean; checkQueryIds?: boolean },
 ): Promise<CoverageReport> {
-  const ops = allOperations();
-  const report: CoverageReport = {
-    generated_at: new Date().toISOString(),
-    catalog: {
-      total: ops.length,
-      queries: ops.filter((o) => o.operationType === "query").length,
-      mutations: ops.filter((o) => o.operationType === "mutation").length,
-    },
-    sdk_surface: X_SDK_COVERAGE,
-    premium_ops: PREMIUM_GRAPHQL_OPS,
+  const args = {
+    check_query_ids: opts?.checkQueryIds !== false,
+    probe_premium: Boolean(opts?.probePremium && client),
   };
-
-  if (opts?.checkQueryIds !== false) {
-    try {
-      const { ids } = await fetchLiveQueryIds(ops.map((o) => o.name));
-      const stale: string[] = [];
-      for (const op of ops) {
-        const live = ids[op.name];
-        if (live && live !== op.queryId) stale.push(op.name);
-      }
-      report.query_id_cache = {
-        live_bundle_ops: Object.keys(ids).length,
-        stale_vs_catalog: stale,
-      };
-    } catch {
-      /* network optional */
-    }
+  if (client) return client.call<CoverageReport>("coverage", args);
+  // No session: the report needs none (local catalog, live bundles); run it as a native job.
+  const envelope = await xSubmit<CoverageReport>(0, "coverage", args);
+  if (!envelope.ok) {
+    throw xErrorFromInfo(envelope.error);
   }
-
-  if (opts?.probePremium && client) {
-    const me = await client.whoami();
-    const raw = await fetchAllPremiumGraphql(client, me.screen_name, me.id);
-    report.premium_fetch = Object.fromEntries(
-      Object.entries(raw).map(([k, v]) => [k, { ok: v.ok }]),
-    );
-  }
-
-  return report;
+  return envelope.data;
 }
 
 /** Resolve queryId: runtime cache → catalog (documents resolution order). */
-export function resolveOperationQueryId(
-  opName: string,
-  runtimeId?: string,
-): string | undefined {
+export function resolveOperationQueryId(opName: string, runtimeId?: string): string | undefined {
   return runtimeId ?? getOperation(opName)?.queryId;
 }

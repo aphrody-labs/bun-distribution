@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+//
+// Premium surfaces. Parsing, fetching and the per-operation variable templates are aphrody-x
+// (crates/web/x/src/premium.rs); this file keeps the public names and types over the native
+// operations.
+
 import type { XClient } from "../core/client";
-import { PREMIUM_GRAPHQL_OPS } from "../config/x-surface";
+import { local } from "../core/local";
 
 /** Known upsell surface keys on x.com (from Upsells GraphQL). */
 export type UpsellSurfaceKey =
@@ -55,53 +60,17 @@ export interface PremiumAccountFlags {
 
 /** Parse `Upsells` → viewer_v2.upsell_config_for_surfaces. */
 export function parseUpsellsResponse(json: unknown): PremiumUpsells {
-  const configs: UpsellConfigEntry[] = [];
-  const surfaces =
-    (json as any)?.data?.viewer_v2?.user_results?.result?.upsell_config_for_surfaces?.configs;
-  if (!Array.isArray(surfaces)) {
-    return { configs, raw: json };
-  }
-  for (const item of surfaces) {
-    const key = item?.key as string;
-    const val = item?.value;
-    const def = val?.default_content;
-    const variant = val?.variant_config?.variants?.[0];
-    const content = variant ?? def;
-    configs.push({
-      key,
-      attribution_referrer: val?.attribution_params?.referrer,
-      destination: content?.destination,
-      is_hidden: def?.is_hidden,
-      variant_key: content?.key,
-      action_label:
-        content?.render_properties?.action_label ??
-        content?.render_properties?.cta?.action_label,
-      primary_label: content?.render_properties?.primary_label,
-    });
-  }
-  return { configs, raw: json };
+  const parsed = local<{ configs: UpsellConfigEntry[] }>("parse_upsells", { json });
+  return { configs: parsed.configs, raw: json };
 }
 
 /** Extract premium-related flags from Viewer + UserByScreenName payloads. */
 export function parsePremiumFlags(viewerJson: unknown, userJson?: unknown): PremiumAccountFlags {
-  const user =
-    (viewerJson as any)?.data?.viewer?.user_results?.result ??
-    (userJson as any)?.data?.user?.result;
-  const viewerRoot = (viewerJson as any)?.data;
-  return {
-    is_blue_verified: user?.is_blue_verified,
-    premium_gifting_eligible: user?.premium_gifting_eligible,
-    creator_subscriptions_count: user?.creator_subscriptions_count,
-    super_follow_eligible: user?.super_follow_eligible,
-    super_followers_count: viewerRoot?.viewer?.super_followers_count,
-    is_super_follow_subscriber: viewerRoot?.is_super_follow_subscriber,
-    can_access_payments: viewerRoot?.can_access_payments,
-  };
+  return local<PremiumAccountFlags>("parse_premium_flags", { viewer: viewerJson, user: userJson });
 }
 
 export async function fetchPremiumUpsells(client: XClient): Promise<PremiumUpsells> {
-  const json = await client.graphqlWaiting("Upsells", {});
-  return parseUpsellsResponse(json);
+  return client.call("premium_upsells");
 }
 
 export async function fetchPremiumBundle(
@@ -110,19 +79,7 @@ export async function fetchPremiumBundle(
   // Kept for the public signature; the bundle is resolved from the handle.
   _userId: string,
 ): Promise<{ upsells: PremiumUpsells; flags: PremiumAccountFlags; raw: Record<string, unknown> }> {
-  const [upsellsJson, viewerJson, userJson] = await Promise.all([
-    client.graphqlWaiting("Upsells", {}),
-    client.graphqlWaiting("Viewer", { withCommunitiesMemberships: true }),
-    client.graphqlWaiting("UserByScreenName", {
-      screen_name: handle,
-      withSafetyModeUserFields: true,
-    }),
-  ]);
-  return {
-    upsells: parseUpsellsResponse(upsellsJson),
-    flags: parsePremiumFlags(viewerJson, userJson),
-    raw: { Upsells: upsellsJson, Viewer: viewerJson, UserByScreenName: userJson },
-  };
+  return client.call("premium_bundle", { handle });
 }
 
 /** Variable templates for full Premium GraphQL coverage (see scripts/tools/web/x-premium-dump.ts). */
@@ -130,37 +87,14 @@ export function premiumGraphqlVariables(
   handle: string,
   userId: string,
 ): Record<string, Record<string, unknown>> {
-  return {
-    Upsells: {},
-    Viewer: { withCommunitiesMemberships: true },
-    UserByScreenName: { screen_name: handle, withSafetyModeUserFields: true },
-    UserCreatorSubscriptions: { userId, count: 50, includePromotedContent: false },
-    CreatorSubscriptionsTimeline: { userId, count: 50, includePromotedContent: false },
-    UserCreatorSubscribers: { userId, count: 50, includePromotedContent: false },
-    SuperFollowers: { userId, count: 50, includePromotedContent: false },
-    BlueVerifiedFollowers: { userId, count: 20, includePromotedContent: false },
-    UserArticlesTweets: { userId, count: 20, includePromotedContent: true, withVoice: true },
-    UsersVerifiedAvatars: { userIds: [userId] },
-    EnableVerifiedPhoneLabel: {},
-    DisableVerifiedPhoneLabel: {},
-  };
+  return local("premium_variables", { handle, user_id: userId });
 }
 
-/** Fetch every op in PREMIUM_GRAPHQL_OPS; failures are recorded, not thrown. */
+/** Fetch every operation of the Premium set; failures are recorded, not thrown. */
 export async function fetchAllPremiumGraphql(
   client: XClient,
   handle: string,
   userId: string,
 ): Promise<Record<string, { ok: true; data: unknown } | { ok: false; error: string }>> {
-  const vars = premiumGraphqlVariables(handle, userId);
-  const out: Record<string, { ok: true; data: unknown } | { ok: false; error: string }> = {};
-  for (const op of PREMIUM_GRAPHQL_OPS) {
-    try {
-      const data = await client.graphqlWaiting(op, vars[op] ?? {});
-      out[op] = { ok: true, data };
-    } catch (err: unknown) {
-      out[op] = { ok: false, error: err instanceof Error ? err.message : String(err) };
-    }
-  }
-  return out;
+  return client.call("premium_fetch_all", { handle, user_id: userId });
 }

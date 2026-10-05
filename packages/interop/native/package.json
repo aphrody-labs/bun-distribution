@@ -22,6 +22,7 @@
     "./src/*": "./src/*",
     "./cli": "./src/cli.ts",
     "./web": "./src/web.ts",
+    "./x": "./src/x.ts",
     "./n2b": "./src/n2b.ts",
     "./oxc": "./src/oxc.ts",
     "./zerocopy": "./src/zerocopy.ts",

@@ -9,16 +9,18 @@
 
 use std::{path::Path, time::Duration};
 
-use reqwest::multipart::{Form, Part};
+use reqwest::{
+    Method,
+    multipart::{Form, Part},
+};
 use serde_json::Value;
 
-use crate::{
-    Result, XError,
-    client::{XClient, check_api_errors, random_transaction_id},
-};
+use crate::{Result, XError, client::XClient};
 
-/// Legacy media upload endpoint (separate host from the GraphQL API).
-const UPLOAD_URL: &str = "https://upload.twitter.com/i/media/upload.json";
+/// Rate-limit table key of the whole upload endpoint.
+const UPLOAD_ENDPOINT: &str = "media_upload";
+/// An APPEND chunk may take far longer than an API call on a slow uplink.
+const APPEND_TIMEOUT: Duration = Duration::from_secs(300);
 /// Per-APPEND chunk size (X accepts up to ~5 MiB; 1 MiB is safe and steady).
 const CHUNK_SIZE: usize = 1024 * 1024;
 /// Max seconds to wait for async (video/GIF) processing before giving up.
@@ -90,14 +92,8 @@ impl XClient {
             ("media_type", kind.mime),
             ("media_category", kind.category),
         ];
-        let resp = self
-            .inner()
-            .post(UPLOAD_URL)
-            .header("x-client-transaction-id", random_transaction_id())
-            .form(&form)
-            .send()
-            .await?;
-        let json = read_json(resp).await?;
+        let resp = self.req(Method::POST, self.upload_url()).form(&form).send().await?;
+        let json = self.finish(UPLOAD_ENDPOINT, resp).await?;
         json.get("media_id_string")
             .and_then(Value::as_str)
             .map(ToOwned::to_owned)
@@ -125,13 +121,12 @@ impl XClient {
             .text("segment_index", segment_index.to_string())
             .part("media", part);
         let resp = self
-            .inner()
-            .post(UPLOAD_URL)
-            .header("x-client-transaction-id", random_transaction_id())
+            .req(Method::POST, self.upload_url())
+            .timeout(APPEND_TIMEOUT)
             .multipart(form)
             .send()
             .await?;
-        self.capture_rate_limit(resp.headers());
+        self.observe(UPLOAD_ENDPOINT, resp.headers());
         let status = resp.status();
         if !status.is_success() {
             let body = resp.text().await.unwrap_or_default();
@@ -148,14 +143,8 @@ impl XClient {
 
     async fn media_finalize(&self, media_id: &str) -> Result<Value> {
         let form = [("command", "FINALIZE"), ("media_id", media_id)];
-        let resp = self
-            .inner()
-            .post(UPLOAD_URL)
-            .header("x-client-transaction-id", random_transaction_id())
-            .form(&form)
-            .send()
-            .await?;
-        read_json(resp).await
+        let resp = self.req(Method::POST, self.upload_url()).form(&form).send().await?;
+        self.finish(UPLOAD_ENDPOINT, resp).await
     }
 
     /// Poll the STATUS command until video/GIF processing succeeds or fails.
@@ -188,30 +177,24 @@ impl XClient {
             waited += check_after;
 
             let resp = self
-                .inner()
-                .get(UPLOAD_URL)
+                .req(Method::GET, self.upload_url())
                 .query(&[("command", "STATUS"), ("media_id", media_id)])
                 .send()
                 .await?;
-            let json = read_json(resp).await?;
+            let json = self.finish(UPLOAD_ENDPOINT, resp).await?;
             info = json.get("processing_info").cloned();
         }
         Ok(())
     }
 
     async fn media_metadata(&self, media_id: &str, alt: &str) -> Result<()> {
-        let url = format!("{}/1.1/media/metadata/create.json", crate::client::API_BASE);
+        let url = format!("{}/1.1/media/metadata/create.json", self.api_base());
         let body = serde_json::json!({
             "media_id": media_id,
             "alt_text": { "text": alt }
         });
-        let resp = self
-            .inner()
-            .post(&url)
-            .header("x-client-transaction-id", random_transaction_id())
-            .json(&body)
-            .send()
-            .await?;
+        let resp = self.req(Method::POST, &url).json(&body).send().await?;
+        self.observe("1.1/media/metadata/create.json", resp.headers());
         // metadata/create returns 200 with empty body on success.
         let status = resp.status();
         if !status.is_success() {
@@ -226,21 +209,6 @@ impl XClient {
         }
         Ok(())
     }
-}
-
-async fn read_json(resp: reqwest::Response) -> Result<Value> {
-    let status = resp.status();
-    let json: Value = resp.json().await.unwrap_or(Value::Null);
-    if !status.is_success() {
-        if json.is_object() {
-            check_api_errors(&json)?;
-        }
-        return Err(XError::Api {
-            code: status.as_u16().into(),
-            message: format!("HTTP {status} from media upload"),
-        });
-    }
-    Ok(json)
 }
 
 #[cfg(test)]

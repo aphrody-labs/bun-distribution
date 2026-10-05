@@ -11,14 +11,53 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use time::{
+    OffsetDateTime,
+    format_description::well_known::{Rfc2822, Rfc3339},
+    macros::format_description,
+};
 
 /// A tweet author (the two fields the UI surfaces).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Author {
     /// Handle without the leading `@`.
+    #[serde(default)]
     pub username: String,
     /// Display name.
+    #[serde(default)]
     pub name: String,
+}
+
+/// One media attachment of a tweet (photo, video or animated GIF).
+///
+/// `url` is the best playable or viewable address: the highest-bitrate MP4 for a video or GIF,
+/// the HTTPS image URL otherwise; `preview_url` is always the still image.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Media {
+    /// Media id (`id_str`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    /// `photo`, `video` or `animated_gif`.
+    #[serde(default, rename = "type", skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    /// Best address (video variant when present, else the preview).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    /// Still image address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preview_url: Option<String>,
+    /// Highest-bitrate `video/mp4` variant, for videos and GIFs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub video_url: Option<String>,
+    /// Original width in pixels.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub width: Option<u64>,
+    /// Original height in pixels.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub height: Option<u64>,
+    /// Link shown in the tweet text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expanded_url: Option<String>,
 }
 
 /// A fully-parsed tweet, mirroring the reference client's JSON schema.
@@ -37,12 +76,16 @@ pub struct Tweet {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
     /// Reply count.
+    #[serde(default)]
     pub reply_count: u64,
     /// Retweet count.
+    #[serde(default)]
     pub retweet_count: u64,
     /// Like (favorite) count.
+    #[serde(default)]
     pub like_count: u64,
     /// Quote count.
+    #[serde(default)]
     pub quote_count: u64,
     /// View count (impressions), when present.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -57,10 +100,14 @@ pub struct Tweet {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lang: Option<String>,
     /// Whether this carries long-form note-tweet content.
+    #[serde(default)]
     pub is_note_tweet: bool,
     /// Embedded quoted tweet (depth-limited during extraction).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub quoted_tweet: Option<Box<Tweet>>,
+    /// Attached media (empty for a text-only tweet).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub media: Vec<Media>,
 }
 
 /// A parsed user (for follower/following/list-member timelines).
@@ -116,6 +163,36 @@ pub struct UserPage {
 const DEFAULT_QUOTE_DEPTH: u32 = 1;
 
 // ---------------------------------------------------------------------------
+// Timestamps
+// ---------------------------------------------------------------------------
+
+/// Parse a tweet or account timestamp to unix seconds.
+///
+/// X writes `created_at` as `Wed May 22 10:00:00 +0000 2026` (weekday and month first, the year
+/// last: not RFC 2822). RFC 3339 (`2026-06-01T00:00:00Z`) and RFC 2822 are accepted too, because
+/// archives and other tools use them. The weekday of the X form is ignored (the date decides).
+/// Returns `None` when no form matches.
+pub fn parse_timestamp(text: &str) -> Option<i64> {
+    let text = text.trim();
+    let without_weekday = match text.split_once(' ') {
+        Some((first, rest))
+            if first.len() == 3 && first.chars().all(|c| c.is_ascii_alphabetic()) =>
+        {
+            rest.trim_start()
+        },
+        _ => text,
+    };
+    let x_format = format_description!(
+        "[month repr:short] [day padding:none] [hour]:[minute]:[second] [offset_hour sign:mandatory][offset_minute] [year]"
+    );
+    OffsetDateTime::parse(without_weekday, &x_format)
+        .or_else(|_| OffsetDateTime::parse(text, &Rfc3339))
+        .or_else(|_| OffsetDateTime::parse(text, &Rfc2822))
+        .ok()
+        .map(OffsetDateTime::unix_timestamp)
+}
+
+// ---------------------------------------------------------------------------
 // Tweet extraction
 // ---------------------------------------------------------------------------
 
@@ -164,6 +241,53 @@ fn extract_note_text(tweet: &Value) -> Option<String> {
         .pointer("/note_tweet/note_tweet_results/result/text")
         .and_then(Value::as_str)
         .map(ToOwned::to_owned)
+}
+
+/// Extract the media attachments of a tweet (`extended_entities` first, then `entities`).
+fn extract_media(legacy: &Value) -> Vec<Media> {
+    let entities = legacy
+        .pointer("/extended_entities/media")
+        .or_else(|| legacy.pointer("/entities/media"))
+        .and_then(Value::as_array);
+    let Some(entities) = entities else {
+        return Vec::new();
+    };
+    entities
+        .iter()
+        .map(|m| {
+            let text = |key: &str| m.get(key).and_then(Value::as_str).map(ToOwned::to_owned);
+            let preview_url = text("media_url_https").or_else(|| text("media_url"));
+            let kind = text("type");
+            let video_url = if matches!(kind.as_deref(), Some("video" | "animated_gif")) {
+                m.pointer("/video_info/variants")
+                    .and_then(Value::as_array)
+                    .and_then(|variants| {
+                        // `rev` so that ties keep the first listed variant (max_by_key keeps the last).
+                        variants
+                            .iter()
+                            .rev()
+                            .filter(|v| {
+                                v.get("content_type").and_then(Value::as_str) == Some("video/mp4")
+                            })
+                            .max_by_key(|v| v.get("bitrate").and_then(Value::as_u64).unwrap_or(0))
+                    })
+                    .and_then(|v| v.get("url").and_then(Value::as_str))
+                    .map(ToOwned::to_owned)
+            } else {
+                None
+            };
+            Media {
+                id: text("id_str"),
+                kind,
+                url: video_url.clone().or_else(|| preview_url.clone()),
+                preview_url,
+                video_url,
+                width: m.pointer("/original_info/width").and_then(Value::as_u64),
+                height: m.pointer("/original_info/height").and_then(Value::as_u64),
+                expanded_url: text("expanded_url"),
+            }
+        })
+        .collect()
 }
 
 fn count_u64(legacy: &Value, key: &str) -> u64 {
@@ -234,6 +358,7 @@ pub fn parse_tweet_result(result: &Value, quote_depth: u32) -> Option<Tweet> {
         lang: legacy.get("lang").and_then(Value::as_str).map(ToOwned::to_owned),
         is_note_tweet,
         quoted_tweet,
+        media: extract_media(legacy),
     })
 }
 
@@ -607,5 +732,84 @@ mod tests {
         assert_eq!(page.users[0].followers_count, Some(100));
         assert_eq!(page.users[0].is_blue_verified, Some(true));
         assert_eq!(page.next_cursor.as_deref(), Some("UCUR"));
+    }
+
+    #[test]
+    fn text_only_tweet_has_no_media() {
+        let t = parse_tweet_result(&sample_tweet_result(), 1).unwrap();
+        assert!(t.media.is_empty());
+        // An empty list is not serialised, keeping stored JSON identical to the pre-media shape.
+        let value = serde_json::to_value(&t).unwrap();
+        assert!(value.get("media").is_none());
+    }
+
+    #[test]
+    fn extracts_photo_and_best_video_variant() {
+        let mut r = sample_tweet_result();
+        r["legacy"]["extended_entities"] = json!({ "media": [
+            {
+                "id_str": "11",
+                "type": "photo",
+                "media_url_https": "https://pbs.twimg.com/media/a.jpg",
+                "expanded_url": "https://x.com/aphrody_code/status/1/photo/1",
+                "original_info": { "width": 1200, "height": 800 }
+            },
+            {
+                "id_str": "12",
+                "type": "video",
+                "media_url_https": "https://pbs.twimg.com/ext_tw_video_thumb/b.jpg",
+                "video_info": { "variants": [
+                    { "content_type": "application/x-mpegURL", "url": "https://video.twimg.com/b.m3u8" },
+                    { "content_type": "video/mp4", "bitrate": 256000, "url": "https://video.twimg.com/low.mp4" },
+                    { "content_type": "video/mp4", "bitrate": 2176000, "url": "https://video.twimg.com/high.mp4" },
+                    { "content_type": "video/mp4", "bitrate": 2176000, "url": "https://video.twimg.com/tie.mp4" }
+                ] }
+            }
+        ] });
+        let t = parse_tweet_result(&r, 1).unwrap();
+        assert_eq!(t.media.len(), 2);
+        let photo = &t.media[0];
+        assert_eq!(photo.kind.as_deref(), Some("photo"));
+        assert_eq!(photo.url.as_deref(), Some("https://pbs.twimg.com/media/a.jpg"));
+        assert_eq!((photo.width, photo.height), (Some(1200), Some(800)));
+        assert!(photo.video_url.is_none());
+        let video = &t.media[1];
+        assert_eq!(video.video_url.as_deref(), Some("https://video.twimg.com/high.mp4"));
+        assert_eq!(video.url, video.video_url, "a video resolves to its best variant");
+        assert_eq!(
+            video.preview_url.as_deref(),
+            Some("https://pbs.twimg.com/ext_tw_video_thumb/b.jpg")
+        );
+    }
+
+    #[test]
+    fn falls_back_to_entities_media() {
+        let mut r = sample_tweet_result();
+        r["legacy"]["entities"] = json!({ "media": [
+            { "id_str": "7", "type": "photo", "media_url": "http://pbs.twimg.com/media/c.jpg" }
+        ] });
+        let t = parse_tweet_result(&r, 1).unwrap();
+        assert_eq!(t.media[0].preview_url.as_deref(), Some("http://pbs.twimg.com/media/c.jpg"));
+    }
+
+    #[test]
+    fn parses_the_timestamp_forms_x_and_its_tools_write() {
+        // 2026-05-22T10:00:00Z
+        let expected = 1_779_444_000;
+        assert_eq!(parse_timestamp("Fri May 22 10:00:00 +0000 2026"), Some(expected));
+        assert_eq!(parse_timestamp("Fri May 22 10:00:00 +0000 2026 "), Some(expected));
+        // The weekday is not trusted: fixtures and hand-written dates often get it wrong.
+        assert_eq!(parse_timestamp("Wed May 22 10:00:00 +0000 2026"), Some(expected));
+        assert_eq!(parse_timestamp("2026-05-22T10:00:00Z"), Some(expected));
+        assert_eq!(parse_timestamp("2026-05-22T12:00:00+02:00"), Some(expected));
+        assert_eq!(parse_timestamp("Fri, 22 May 2026 10:00:00 +0000"), Some(expected));
+        // A single-digit day, with or without zero padding.
+        assert_eq!(
+            parse_timestamp("Mon Jun 3 00:00:00 +0000 2024"),
+            parse_timestamp("Mon Jun 03 00:00:00 +0000 2024")
+        );
+        assert!(parse_timestamp("Mon Jun 3 00:00:00 +0000 2024").is_some());
+        assert_eq!(parse_timestamp("not a date"), None);
+        assert_eq!(parse_timestamp(""), None);
     }
 }

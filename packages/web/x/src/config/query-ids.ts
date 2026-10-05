@@ -1,186 +1,50 @@
 // SPDX-License-Identifier: Apache-2.0
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
-import { homedir } from "node:os";
+//
+// The queryId cache of the X client, owned by Rust (crates/web/x/src/runtime_query_ids.rs): a
+// disk snapshot refreshed from the live responsive-web bundles, merged (a refresh of one operation
+// never drops the others) and coalesced across concurrent callers. This class reads and refreshes
+// the cache of one client through the native operations `query_ids_*`.
 
-import { X_DISCOVERY_PAGES, X_DISCOVERY_UA } from "./x-surface";
-
-const DISCOVERY_PAGES = [...X_DISCOVERY_PAGES];
-const DISCOVERY_UA = X_DISCOVERY_UA;
+import type { XClient } from "../core/client";
+import { local } from "../core/local";
 
 export interface QueryIdSnapshot {
   fetched_at: number;
   ttl_secs: number;
   ids: Record<string, string>;
   bundles: string[];
+  /** Where the snapshot lives on disk. */
+  cache_path?: string;
+  /** Whether it is younger than its TTL. */
+  fresh?: boolean;
+  age_secs?: number;
+  count?: number;
 }
 
 export class QueryIdStore {
-  private cachePath: string;
-  private ttlSecs: number;
-  private cachedSnapshot: QueryIdSnapshot | null = null;
+  constructor(private readonly client: XClient) {}
 
-  constructor(cachePath?: string, ttlSecs = 24 * 60 * 60) {
-    this.cachePath = cachePath || this.defaultCachePath();
-    this.ttlSecs = ttlSecs;
-  }
-
-  private defaultCachePath(): string {
-    const home = homedir();
-    return join(home, ".config", "aphrody", "x", "query-ids-cache.json");
-  }
-
+  /** The cached queryId of an operation, if the cache knows it. */
   public get(operation: string): string | undefined {
-    const snap = this.snapshot();
-    return snap?.ids[operation];
+    return local<string | null>("query_ids_get", { operation }, this.client.id) ?? undefined;
   }
 
+  /** The cached snapshot (empty when nothing was fetched yet). */
   public snapshot(): QueryIdSnapshot | null {
-    if (this.cachedSnapshot) {
-      return this.cachedSnapshot;
-    }
-    if (existsSync(this.cachePath)) {
-      try {
-        const raw = readFileSync(this.cachePath, "utf-8");
-        this.cachedSnapshot = JSON.parse(raw) as QueryIdSnapshot;
-        return this.cachedSnapshot;
-      } catch {
-        return null;
-      }
-    }
-    return null;
+    return local<QueryIdSnapshot | null>("query_ids_snapshot", {}, this.client.id);
   }
 
   public isFresh(snap: QueryIdSnapshot): boolean {
+    if (snap.fresh !== undefined) return snap.fresh;
     const age = Math.floor(Date.now() / 1000) - snap.fetched_at;
     return age >= 0 && age <= snap.ttl_secs;
   }
 
-  public async refresh(targets: string[], force = false): Promise<QueryIdSnapshot> {
-    const current = this.snapshot();
-    if (!force && current && this.isFresh(current)) {
-      // Check if all targets are already in the cache
-      const hasAll = targets.every((t) => current.ids[t] !== undefined);
-      if (hasAll) {
-        return current;
-      }
-    }
-
-    console.log(`Refreshing live X queryIds for operations: ${targets.join(", ")}...`);
-    const bundleUrls = await this.discoverBundles();
-    const discovered = await this.fetchAndExtract(bundleUrls, targets);
-
-    if (Object.keys(discovered).length === 0) {
-      if (current) {
-        return current;
-      }
-      throw new Error("QueryId refresh found no operations. X.com layout may have changed.");
-    }
-
-    const ids: Record<string, string> = {};
-    for (const name of targets) {
-      if (discovered[name]) {
-        ids[name] = discovered[name];
-      }
-    }
-
-    const snapshot: QueryIdSnapshot = {
-      fetched_at: Math.floor(Date.now() / 1000),
-      ttl_secs: this.ttlSecs,
-      ids,
-      bundles: bundleUrls.map((u) => u.split("/").pop() || u),
-    };
-
-    // Save to disk
-    try {
-      const dir = join(this.cachePath, "..");
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
-      }
-      writeFileSync(this.cachePath, JSON.stringify(snapshot, null, 2) + "\n");
-    } catch (e: any) {
-      console.error(`Failed to save queryId cache to disk: ${e.message}`);
-    }
-
-    this.cachedSnapshot = snapshot;
-    return snapshot;
-  }
-
-  private async discoverBundles(): Promise<string[]> {
-    const bundleRe = /https:\/\/abs\.twimg\.com\/responsive-web\/client-web(?:-legacy)?\/[A-Za-z0-9.-]+\.js/g;
-    const bundles = new Set<string>();
-
-    for (const page of DISCOVERY_PAGES) {
-      try {
-        const resp = await fetch(page, {
-          headers: { "User-Agent": DISCOVERY_UA },
-        });
-        if (!resp.ok) continue;
-        const html = await resp.text();
-        const matches = html.matchAll(bundleRe);
-        for (const m of matches) {
-          bundles.add(m[0]);
-        }
-      } catch {
-        // Suppress individual page discovery errors
-      }
-    }
-
-    if (bundles.size === 0) {
-      throw new Error("No client bundles discovered; x.com layout may have changed.");
-    }
-    return Array.from(bundles);
-  }
-
-  private async fetchAndExtract(bundleUrls: string[], targets: string[]): Promise<Record<string, string>> {
-    const discovered: Record<string, string> = {};
-    const targetSet = new Set(targets);
-
-    // Fetch bundles concurrently in chunks of 5
-    const chunkSize = 5;
-    for (let i = 0; i < bundleUrls.length; i += chunkSize) {
-      if (Object.keys(discovered).length === targetSet.size) {
-        break;
-      }
-      const chunk = bundleUrls.slice(i, i + chunkSize);
-      const promises = chunk.map((url) =>
-        fetch(url, { headers: { "User-Agent": DISCOVERY_UA } })
-          .then((r) => (r.ok ? r.text() : ""))
-          .catch(() => "")
-      );
-
-      const results = await Promise.all(promises);
-      for (const js of results) {
-        if (!js) continue;
-        this.extractOperations(js, targetSet, discovered);
-      }
-    }
-    return discovered;
-  }
-
-  private extractOperations(js: string, targets: Set<string>, out: Record<string, string>): void {
-    // Regex matches: {queryId:"AAA",operationName:"BBB"}
-    const re1 = /\{queryId\s*:\s*["']([^"']+)["']\s*,\s*operationName\s*:\s*["']([^"']+)["']/g;
-    const re2 = /\{operationName\s*:\s*["']([^"']+)["']\s*,\s*queryId\s*:\s*["']([^"']+)["']/g;
-
-    const matches1 = js.matchAll(re1);
-    for (const [, qid, op] of matches1) {
-      if (qid === undefined || op === undefined) continue;
-      if (targets.has(op) && !out[op] && this.validQueryId(qid)) {
-        out[op] = qid;
-      }
-    }
-
-    const matches2 = js.matchAll(re2);
-    for (const [, op, qid] of matches2) {
-      if (qid === undefined || op === undefined) continue;
-      if (targets.has(op) && !out[op] && this.validQueryId(qid)) {
-        out[op] = qid;
-      }
-    }
-  }
-
-  private validQueryId(qid: string): boolean {
-    return qid.length > 0 && /^[A-Za-z0-9_-]+$/.test(qid);
+  /** Re-read the live bundles for `targets` (every catalog operation when empty) and persist. */
+  public refresh(targets: string[] = [], force = false): Promise<QueryIdSnapshot> {
+    return this.client.call("query_ids_refresh", {
+      operations: targets.length > 0 ? targets : undefined,
+      force,
+    });
   }
 }

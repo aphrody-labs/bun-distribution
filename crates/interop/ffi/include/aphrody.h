@@ -272,7 +272,7 @@ APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_get_chromium_cook
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_obscura_fetch(const char *url, uint8_t stealth, uint32_t timeout_ms);
 APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_obscura_fetch_submit(const char *url, uint8_t stealth, uint32_t timeout_ms);
 
-/* Web ABI v4 and native network operations. */
+/* Web ABI v5 and native network operations. */
 APHRODY_NODISCARD APHRODY_API uint32_t aphrody_web_bridge_abi_version(void);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_dns_recon(const char *domain_ptr);
 APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_dns_recon_submit(const char *domain_ptr, uint32_t timeout_ms);
@@ -289,6 +289,20 @@ APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_x_community_tweets_submit(con
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_community_info_and_tweets(const char *auth_token_ptr, const char *ct0_ptr, const char *community_id_ptr, uint32_t count);
 APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_x_community_info_and_tweets_submit(const char *auth_token_ptr, const char *ct0_ptr, const char *community_id_ptr, uint32_t count, uint32_t timeout_ms);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_algorithm_rank(const char *candidates_json_ptr, const char *context_json_ptr, uint32_t top_k);
+
+/* X native job API (Web ABI 5, src/web/x.rs). One generic JSON surface over the aphrody-x
+ * operation table: the operation names, their arguments and the result envelope
+ * {"ok","op","id","data"|"error","rate_limit","attempts","elapsed_ms"} are served by the "meta"
+ * operation. A client handle keeps the session inside the library (the cookies cross once, or are
+ * discovered as the CLI does). Job results are collected with aphrody_web_job_take; batch results
+ * with aphrody_web_x_batch_poll. Returned strings are released with aphrody_string_free. */
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_client_open(const char *session_json, const char *options_json);
+APHRODY_NODISCARD APHRODY_API int32_t aphrody_web_x_client_close(uint64_t client);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_call(uint64_t client, const char *op, const char *args_json);
+APHRODY_NODISCARD APHRODY_API uint64_t aphrody_web_x_submit(uint64_t client, const char *op, const char *args_json, const char *options_json);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_batch_submit(uint64_t client, const char *ops_json, const char *options_json);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_web_x_batch_poll(uint64_t batch, uint32_t max_items);
+APHRODY_NODISCARD APHRODY_API int32_t aphrody_web_x_batch_cancel(uint64_t batch);
 
 /* Web extraction and request helpers. Strings are NUL-terminated UTF-8; the
  * returned string is owned and released with aphrody_web_free_string. */

@@ -143,7 +143,7 @@ test("an installed package imports every public entry without checkout ancestors
   }
   await isolated(
     `
-    for (const name of ["index", "cli", "web", "svg", "render", "reproduce", "icons", "n2b", "oxc"])
+    for (const name of ["index", "cli", "web", "x", "svg", "render", "reproduce", "icons", "n2b", "oxc"])
       await import("./src/" + name + ".ts");
     const { nativeLibraryLoaded } = await import("./src/library.ts");
     if (nativeLibraryLoaded()) throw new Error("native code loaded on import");

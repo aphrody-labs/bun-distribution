@@ -46,7 +46,10 @@ function webBinary(): string {
   return existsSync(workspaceBinary) ? workspaceBinary : "aphrody-web";
 }
 
-async function fetchRendered(url: string, profile: WebReconProfile): Promise<Record<string, unknown>> {
+async function fetchRendered(
+  url: string,
+  profile: WebReconProfile,
+): Promise<Record<string, unknown>> {
   const args = [webBinary(), "fetch", url, "--dump", "artifact", "--quiet", "--timeout", "90"];
   if (profile === "stealth" || profile === "max") args.push("--stealth");
   const proc = Bun.spawn({ cmd: args, stdout: "pipe", stderr: "pipe" });
@@ -64,36 +67,47 @@ export async function runXWebRecon(
   profile: WebReconProfile = "max",
   urls: readonly string[] = X_RECON_URLS,
 ): Promise<XSurfaceReconReport> {
-  const entries = await Promise.all(urls.map(async (url): Promise<[string, ReconSummary]> => {
-    try {
-      if (profile !== "http" && profile !== "static") {
-        const raw = await fetchRendered(url, profile);
-        return [url, {
+  const entries = await Promise.all(
+    urls.map(async (url): Promise<[string, ReconSummary]> => {
+      try {
+        if (profile !== "http" && profile !== "static") {
+          const raw = await fetchRendered(url, profile);
+          return [
+            url,
+            {
+              url,
+              finalUrl: raw.url as string | undefined,
+              profile,
+              raw,
+            },
+          ];
+        }
+        const raw = await fetchNative(url);
+        if (raw.error || !raw.ok) {
+          return [url, { url, profile, error: raw.error ?? "native fetch failed", raw }];
+        }
+        return [
           url,
-          finalUrl: raw.url as string | undefined,
-          profile,
-          raw,
-        }];
+          {
+            url,
+            finalUrl: raw.url,
+            httpStatus: raw.status,
+            profile,
+            raw,
+          },
+        ];
+      } catch (error) {
+        return [
+          url,
+          {
+            url,
+            profile,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        ];
       }
-      const raw = await fetchNative(url);
-      if (raw.error || !raw.ok) {
-        return [url, { url, profile, error: raw.error ?? "native fetch failed", raw }];
-      }
-      return [url, {
-        url,
-        finalUrl: raw.url,
-        httpStatus: raw.status,
-        profile,
-        raw,
-      }];
-    } catch (error) {
-      return [url, {
-        url,
-        profile,
-        error: error instanceof Error ? error.message : String(error),
-      }];
-    }
-  }));
+    }),
+  );
 
   return {
     generated_at: new Date().toISOString(),

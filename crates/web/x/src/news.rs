@@ -76,7 +76,7 @@ pub struct NewsItem {
 }
 
 /// Parse a `K`/`M`/`B`-suffixed post count like "12.3K posts".
-fn parse_post_count(s: &str) -> Option<u64> {
+pub fn parse_post_count(s: &str) -> Option<u64> {
     let lower = s.to_lowercase();
     let idx = lower.find("post")?;
     let head = &s[..idx];
@@ -104,7 +104,7 @@ fn parse_post_count(s: &str) -> Option<u64> {
 }
 
 /// Parse one `itemContent` node into a [`NewsItem`], applying the AI filter.
-fn parse_news_item(
+pub fn parse_news_item(
     item_content: &Value,
     entry_id: &str,
     source: &str,
@@ -232,7 +232,12 @@ impl XClient {
 }
 
 /// Parse all news items from a `GenericTimelineById` response.
-fn parse_tab_items(data: &Value, source: &str, max_count: usize, ai_only: bool) -> Vec<NewsItem> {
+pub fn parse_tab_items(
+    data: &Value,
+    source: &str,
+    max_count: usize,
+    ai_only: bool,
+) -> Vec<NewsItem> {
     let mut items = Vec::new();
     let Some(instructions) =
         data.pointer("/data/timeline/timeline/instructions").and_then(Value::as_array)

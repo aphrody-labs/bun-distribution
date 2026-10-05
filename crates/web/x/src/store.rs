@@ -11,10 +11,11 @@
 use std::path::{Path, PathBuf};
 
 use rusqlite::{Connection, params};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::{
-    Result,
+    Result, XError,
     parse::{Tweet, User},
 };
 
@@ -94,8 +95,14 @@ impl Store {
         Self::open(&Self::default_path())
     }
 
-    /// Open (creating if needed) a store at `path`.
+    /// Open (creating if needed) a store at `path`; the path `:memory:` opens a private
+    /// in-memory database (tests, throw-away analysis).
     pub fn open(path: &Path) -> Result<Self> {
+        if path == Path::new(":memory:") {
+            let store = Self { conn: Connection::open_in_memory()? };
+            store.migrate()?;
+            return Ok(store);
+        }
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
@@ -366,12 +373,170 @@ impl Store {
         )
     }
 
+    /// Write everything in `batch` in one transaction (a crawl step or a sync page lands atomically,
+    /// and a thousand upserts cost one commit instead of a thousand). Returns the row counts.
+    pub fn ingest(&self, batch: &IngestBatch) -> Result<IngestCounts> {
+        let tx = self.conn.unchecked_transaction()?;
+        let mut counts = IngestCounts::default();
+        for user in &batch.users {
+            self.upsert_user(user)?;
+            counts.users += 1;
+        }
+        for tweet in &batch.tweets {
+            self.upsert_tweet(tweet)?;
+            counts.tweets += 1;
+        }
+        for edge in &batch.edges {
+            self.add_edge(&edge.account, &edge.kind, &edge.tweet_id)?;
+            counts.edges += 1;
+        }
+        for follow in &batch.follows {
+            self.add_follow(&follow.account, &follow.direction, &follow.user)?;
+            counts.follows += 1;
+        }
+        tx.commit()?;
+        Ok(counts)
+    }
+
+    /// Run one **read-only** statement and return its rows as JSON objects (at most `limit`).
+    ///
+    /// Only `SELECT`, `WITH`, `VALUES` and `EXPLAIN` statements that SQLite itself reports as read-only
+    /// are accepted (so no `PRAGMA`, `ATTACH` or write hidden in a CTE). `params` bind to `?` / `?N`
+    /// placeholders: numbers, strings, booleans and null.
+    pub fn query(&self, sql: &str, params: &[Value], limit: usize) -> Result<Vec<Value>> {
+        let head = sql.split_whitespace().next().unwrap_or("").to_ascii_lowercase();
+        if !matches!(head.as_str(), "select" | "with" | "values" | "explain") {
+            return Err(XError::Invalid(
+                "store_query accepts SELECT, WITH, VALUES and EXPLAIN statements only".into(),
+            ));
+        }
+        let mut stmt = self.conn.prepare(sql)?;
+        if !stmt.readonly() {
+            return Err(XError::Invalid("store_query accepts read-only statements only".into()));
+        }
+        let columns: Vec<String> = stmt.column_names().iter().map(|c| (*c).to_owned()).collect();
+        let bound: Vec<rusqlite::types::Value> = params.iter().map(to_sql_value).collect();
+        let mut rows = stmt.query(rusqlite::params_from_iter(bound))?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next()? {
+            if out.len() >= limit {
+                break;
+            }
+            let mut object = serde_json::Map::with_capacity(columns.len());
+            for (index, name) in columns.iter().enumerate() {
+                object.insert(name.clone(), from_sql_value(row.get_ref(index)?));
+            }
+            out.push(Value::Object(object));
+        }
+        Ok(out)
+    }
+
+    /// Every stored handle, lower-cased (a crawler's visited set).
+    pub fn known_usernames(&self) -> Result<Vec<String>> {
+        let mut stmt =
+            self.conn.prepare("SELECT DISTINCT lower(username) FROM users WHERE username <> ''")?;
+        let rows = stmt
+            .query_map([], |r| r.get::<_, String>(0))?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// Community ids already crawled (accounts named `community_<id>` in the timeline edges).
+    pub fn known_communities(&self) -> Result<Vec<String>> {
+        let mut stmt = self.conn.prepare(
+            r"SELECT DISTINCT account FROM edges WHERE kind = 'timeline' AND account LIKE 'community\_%' ESCAPE '\'",
+        )?;
+        let rows = stmt
+            .query_map([], |r| r.get::<_, String>(0))?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        Ok(rows
+            .into_iter()
+            .filter_map(|a| a.strip_prefix("community_").map(str::to_owned))
+            .collect())
+    }
+
     fn follow_set_query(&self, sql: &str, account: &str) -> Result<Vec<String>> {
         let mut stmt = self.conn.prepare(sql)?;
         let rows = stmt
             .query_map(params![account], |r| r.get::<_, String>(0))?
             .collect::<std::result::Result<Vec<_>, _>>()?;
         Ok(rows)
+    }
+}
+
+/// A membership edge to record: `account` has `tweet_id` in its `kind` collection.
+#[derive(Debug, Clone, Deserialize)]
+pub struct EdgeRow {
+    /// The account the collection belongs to.
+    pub account: String,
+    /// One of the [`edge`] kinds.
+    pub kind: String,
+    /// The tweet that belongs to it.
+    pub tweet_id: String,
+}
+
+/// A follow-graph edge to record.
+#[derive(Debug, Clone, Deserialize)]
+pub struct FollowRow {
+    /// The account whose graph this is.
+    pub account: String,
+    /// `"following"` or `"follower"`.
+    pub direction: String,
+    /// The other side.
+    pub user: User,
+}
+
+/// Rows written in one transaction by [`Store::ingest`].
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct IngestBatch {
+    /// Users to upsert (first, so edges reference known users).
+    pub users: Vec<User>,
+    /// Tweets to upsert.
+    pub tweets: Vec<Tweet>,
+    /// Membership edges.
+    pub edges: Vec<EdgeRow>,
+    /// Follow-graph edges.
+    pub follows: Vec<FollowRow>,
+}
+
+/// What [`Store::ingest`] wrote.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+pub struct IngestCounts {
+    /// Users upserted.
+    pub users: usize,
+    /// Tweets upserted.
+    pub tweets: usize,
+    /// Edges recorded.
+    pub edges: usize,
+    /// Follow edges recorded.
+    pub follows: usize,
+}
+
+fn to_sql_value(value: &Value) -> rusqlite::types::Value {
+    use rusqlite::types::Value as Sql;
+    match value {
+        Value::Null => Sql::Null,
+        Value::Bool(b) => Sql::Integer(i64::from(*b)),
+        Value::Number(n) => match n.as_i64() {
+            Some(i) => Sql::Integer(i),
+            None => Sql::Real(n.as_f64().unwrap_or(0.0)),
+        },
+        Value::String(s) => Sql::Text(s.clone()),
+        other => Sql::Text(other.to_string()),
+    }
+}
+
+fn from_sql_value(value: rusqlite::types::ValueRef<'_>) -> Value {
+    use rusqlite::types::ValueRef as Ref;
+    match value {
+        Ref::Null => Value::Null,
+        Ref::Integer(i) => Value::from(i),
+        Ref::Real(f) => serde_json::Number::from_f64(f).map_or(Value::Null, Value::Number),
+        Ref::Text(bytes) => Value::String(String::from_utf8_lossy(bytes).into_owned()),
+        Ref::Blob(bytes) => {
+            Value::String(bytes.iter().map(|b| format!("{b:02x}")).collect::<String>())
+        },
     }
 }
 
@@ -397,6 +562,7 @@ mod tests {
             lang: Some("en".into()),
             is_note_tweet: false,
             quoted_tweet: None,
+            media: Vec::new(),
         }
     }
 
@@ -462,5 +628,138 @@ mod tests {
         mutuals.sort();
         assert_eq!(mutuals, vec!["alice"]);
         assert_eq!(s.non_mutual_following("me").unwrap(), vec!["bob"]);
+    }
+
+    #[test]
+    fn open_memory_gives_a_private_database() {
+        let s = Store::open(Path::new(":memory:")).unwrap();
+        s.upsert_tweet(&sample_tweet("1", "in memory")).unwrap();
+        assert_eq!(s.stats("mem").unwrap().tweets, 1);
+        let other = Store::open(Path::new(":memory:")).unwrap();
+        assert_eq!(
+            other.stats("mem").unwrap().tweets,
+            0,
+            "each :memory: store is its own database"
+        );
+    }
+
+    fn user(id: &str, username: &str) -> User {
+        User {
+            id: id.into(),
+            username: username.into(),
+            name: username.into(),
+            description: None,
+            followers_count: None,
+            following_count: None,
+            is_blue_verified: None,
+            profile_image_url: None,
+            created_at: None,
+        }
+    }
+
+    #[test]
+    fn ingest_writes_everything_in_one_transaction() {
+        let s = mem_store();
+        let batch = IngestBatch {
+            users: vec![user("1", "Alice"), user("2", "bob")],
+            tweets: vec![sample_tweet("10", "first"), sample_tweet("11", "second")],
+            edges: vec![EdgeRow {
+                account: "me".into(),
+                kind: edge::TIMELINE.into(),
+                tweet_id: "10".into(),
+            }],
+            follows: vec![FollowRow {
+                account: "me".into(),
+                direction: "following".into(),
+                user: user("1", "Alice"),
+            }],
+        };
+        let counts = s.ingest(&batch).unwrap();
+        assert_eq!(counts, IngestCounts { users: 2, tweets: 2, edges: 1, follows: 1 });
+        let stats = s.stats("mem").unwrap();
+        assert_eq!((stats.tweets, stats.users, stats.edges, stats.follows), (2, 2, 1, 1));
+        // Idempotent: replaying the same batch changes nothing.
+        s.ingest(&batch).unwrap();
+        assert_eq!(s.stats("mem").unwrap().tweets, 2);
+        assert_eq!(s.known_usernames().unwrap().len(), 2);
+        assert!(s.known_usernames().unwrap().contains(&"alice".to_string()), "lower-cased");
+    }
+
+    #[test]
+    fn ingest_rolls_back_when_a_row_fails() {
+        let s = mem_store();
+        // Drop a table the batch needs so the second statement group fails.
+        s.conn.execute_batch("DROP TABLE follows").unwrap();
+        let batch = IngestBatch {
+            tweets: vec![sample_tweet("1", "kept?")],
+            follows: vec![FollowRow {
+                account: "me".into(),
+                direction: "following".into(),
+                user: user("1", "a"),
+            }],
+            ..IngestBatch::default()
+        };
+        assert!(s.ingest(&batch).is_err());
+        assert_eq!(
+            s.stats_without_follows(),
+            0,
+            "the tweet written before the failure is rolled back"
+        );
+    }
+
+    impl Store {
+        fn stats_without_follows(&self) -> i64 {
+            self.conn.query_row("SELECT COUNT(*) FROM tweets", [], |r| r.get(0)).unwrap()
+        }
+    }
+
+    #[test]
+    fn query_returns_json_rows_and_binds_parameters() {
+        let s = mem_store();
+        s.upsert_tweet(&sample_tweet("1", "alpha")).unwrap();
+        s.upsert_tweet(&sample_tweet("2", "beta")).unwrap();
+        let rows = s
+            .query(
+                "SELECT id, text, like_count FROM tweets WHERE id = ?1",
+                &[Value::String("2".into())],
+                10,
+            )
+            .unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0]["text"], "beta");
+        assert_eq!(rows[0]["like_count"], 3);
+        let limited = s.query("SELECT id FROM tweets ORDER BY id", &[], 1).unwrap();
+        assert_eq!(limited.len(), 1);
+        let cte = s.query("WITH t AS (SELECT 1 AS one) SELECT one FROM t", &[], 5).unwrap();
+        assert_eq!(cte[0]["one"], 1);
+    }
+
+    #[test]
+    fn query_refuses_everything_that_is_not_a_read() {
+        let s = mem_store();
+        for sql in [
+            "DELETE FROM tweets",
+            "PRAGMA journal_mode = DELETE",
+            "ATTACH DATABASE '/tmp/x.db' AS other",
+            "WITH t AS (SELECT 1) INSERT INTO tweets (id, json) SELECT 'a', '{}' FROM t",
+            "INSERT INTO tweets (id, json) VALUES ('a', '{}')",
+            "",
+        ] {
+            let error = s.query(sql, &[], 10).unwrap_err();
+            assert!(matches!(error, XError::Invalid(_) | XError::Db(_)), "{sql}: {error:?}");
+        }
+        assert_eq!(s.stats("mem").unwrap().tweets, 0);
+    }
+
+    #[test]
+    fn known_communities_strip_the_prefix() {
+        let s = mem_store();
+        s.add_edge("community_123", edge::TIMELINE, "1").unwrap();
+        s.add_edge("community_45", edge::TIMELINE, "2").unwrap();
+        s.add_edge("communityx", edge::TIMELINE, "3").unwrap();
+        s.add_edge("community_9", edge::AUTHORED, "4").unwrap();
+        let mut found = s.known_communities().unwrap();
+        found.sort();
+        assert_eq!(found, vec!["123".to_string(), "45".to_string()]);
     }
 }

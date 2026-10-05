@@ -26,7 +26,7 @@ use std::{
     collections::{HashMap, HashSet},
     path::PathBuf,
     sync::Mutex,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use regex::Regex;
@@ -43,6 +43,9 @@ const DEFAULT_TTL_SECS: u64 = 24 * 60 * 60;
 
 /// Concurrency for bundle fetches.
 const FETCH_CONCURRENCY: usize = 6;
+
+/// A refresh (or a failed refresh) newer than this answers later requests without a new download.
+const COALESCE_WINDOW: Duration = Duration::from_secs(30);
 
 /// Browser-like headers for public bundle/HTML fetches (no auth needed).
 const DISCOVERY_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, \
@@ -74,6 +77,13 @@ impl Snapshot {
     }
 }
 
+/// What the last refresh attempt left behind (single flight, see [`QueryIdStore::refresh`]).
+#[derive(Debug, Default)]
+struct Flight {
+    done: Option<(Instant, Snapshot)>,
+    failed_at: Option<Instant>,
+}
+
 /// Lazily-loaded, disk-backed query-id store.
 #[derive(Debug)]
 pub struct QueryIdStore {
@@ -81,6 +91,9 @@ pub struct QueryIdStore {
     ttl_secs: u64,
     mem: Mutex<Option<Snapshot>>,
     loaded: Mutex<bool>,
+    /// Pages scanned for bundle URLs; `None` means [`DISCOVERY_PAGES`].
+    discovery_pages: Option<Vec<String>>,
+    flight: tokio::sync::Mutex<Flight>,
 }
 
 impl Default for QueryIdStore {
@@ -92,7 +105,21 @@ impl Default for QueryIdStore {
 impl QueryIdStore {
     /// Construct a store with an explicit cache path and TTL.
     pub fn new(cache_path: PathBuf, ttl_secs: u64) -> Self {
-        Self { cache_path, ttl_secs, mem: Mutex::new(None), loaded: Mutex::new(false) }
+        Self {
+            cache_path,
+            ttl_secs,
+            mem: Mutex::new(None),
+            loaded: Mutex::new(false),
+            discovery_pages: None,
+            flight: tokio::sync::Mutex::new(Flight::default()),
+        }
+    }
+
+    /// Scan these pages for bundle URLs instead of the public x.com pages (loopback servers in
+    /// tests; an empty list disables discovery, so a refresh fails at once without any network).
+    pub fn with_discovery_pages(mut self, pages: Vec<String>) -> Self {
+        self.discovery_pages = Some(pages);
+        self
     }
 
     /// The resolved cache file path.
@@ -131,6 +158,13 @@ impl QueryIdStore {
     /// a no-op. Network/parse failures are surfaced as [`XError`]; a partial
     /// result (some ids found) is still persisted and considered success.
     ///
+    /// The ids found are **merged** into the cached ones: refreshing one operation keeps the others
+    /// (a one-operation refresh used to overwrite the whole cache).
+    ///
+    /// Refreshes are single flight: when a batch meets a rotated queryId on many operations at the
+    /// same time, the first caller downloads the bundles and the others reuse its result (also a
+    /// failure) for `COALESCE_WINDOW` instead of each fetching every bundle.
+    ///
     /// Discovery uses a dedicated unauthenticated, browser-like HTTP client:
     /// the bundle URLs only appear in the logged-out HTML shell, so sending the
     /// authenticated client's bearer/cookie/`application/json` headers makes
@@ -143,9 +177,40 @@ impl QueryIdStore {
             return Ok(snap);
         }
 
+        let mut flight = self.flight.lock().await;
+        if let Some((at, snap)) = &flight.done
+            && at.elapsed() < COALESCE_WINDOW
+            && targets.iter().all(|t| snap.ids.contains_key(*t))
+        {
+            return Ok(snap.clone());
+        }
+        if let Some(at) = flight.failed_at
+            && at.elapsed() < COALESCE_WINDOW
+        {
+            return Err(XError::Auth(
+                "queryId refresh failed a moment ago; not downloading the bundles again yet".into(),
+            ));
+        }
+
+        let outcome = self.discover(targets).await;
+        match &outcome {
+            Ok(snapshot) => {
+                flight.done = Some((Instant::now(), snapshot.clone()));
+                flight.failed_at = None;
+            },
+            Err(_) => flight.failed_at = Some(Instant::now()),
+        }
+        outcome
+    }
+
+    async fn discover(&self, targets: &[&str]) -> Result<Snapshot> {
         let client = discovery_client()?;
         let target_set: HashSet<String> = targets.iter().map(|s| (*s).to_owned()).collect();
-        let bundle_urls = discover_bundles(&client).await?;
+        let pages: Vec<String> = match &self.discovery_pages {
+            Some(pages) => pages.clone(),
+            None => DISCOVERY_PAGES.iter().map(|page| (*page).to_owned()).collect(),
+        };
+        let bundle_urls = discover_bundles(&client, &pages).await?;
         let discovered = fetch_and_extract(&client, &bundle_urls, &target_set).await;
 
         if discovered.is_empty() {
@@ -158,7 +223,7 @@ impl QueryIdStore {
             ));
         }
 
-        let mut ids = HashMap::new();
+        let mut ids = self.snapshot().map(|s| s.ids).unwrap_or_default();
         for name in targets {
             if let Some(qid) = discovered.get(*name) {
                 ids.insert((*name).to_owned(), qid.clone());
@@ -185,7 +250,10 @@ impl QueryIdStore {
             std::fs::create_dir_all(parent)?;
         }
         let json = serde_json::to_string_pretty(snapshot)?;
-        std::fs::write(&self.cache_path, format!("{json}\n"))?;
+        // Temporary file then rename: concurrent processes never read a half-written cache.
+        let tmp = self.cache_path.with_extension(format!("json.{}.tmp", std::process::id()));
+        std::fs::write(&tmp, format!("{json}\n"))?;
+        std::fs::rename(&tmp, &self.cache_path)?;
         Ok(())
     }
 
@@ -243,9 +311,10 @@ async fn fetch_text(client: &reqwest::Client, url: &str) -> Result<String> {
     Ok(resp.text().await?)
 }
 
-/// Public wrapper for catalog sync and diagnostics.
+/// Public wrapper for catalog sync and diagnostics (scans the public discovery pages).
 pub async fn discover_bundles_public(client: &reqwest::Client) -> Result<Vec<String>> {
-    discover_bundles(client).await
+    let pages: Vec<String> = DISCOVERY_PAGES.iter().map(|page| (*page).to_owned()).collect();
+    discover_bundles(client, &pages).await
 }
 
 /// Extract every operation/queryId pair from bundles (full catalog sync).
@@ -285,15 +354,31 @@ pub async fn fetch_and_extract_all(
     discovered
 }
 
+/// Every `{operationName: queryId}` pair of one bundle (first occurrence wins).
+pub fn extract_all_operations(bundle: &str) -> HashMap<String, String> {
+    let mut found: HashMap<String, String> = HashMap::new();
+    for (re, op_group, qid_group) in &operation_patterns() {
+        for caps in re.captures_iter(bundle) {
+            let (Some(op), Some(qid)) = (caps.get(*op_group), caps.get(*qid_group)) else {
+                continue;
+            };
+            if valid_query_id(qid.as_str()) {
+                found.entry(op.as_str().to_owned()).or_insert_with(|| qid.as_str().to_owned());
+            }
+        }
+    }
+    found
+}
+
 /// Scrape every client-web bundle URL referenced by the discovery pages.
-async fn discover_bundles(client: &reqwest::Client) -> Result<Vec<String>> {
+async fn discover_bundles(client: &reqwest::Client, pages: &[String]) -> Result<Vec<String>> {
     let bundle_re = Regex::new(
         r"https://abs\.twimg\.com/responsive-web/client-web(?:-legacy)?/[A-Za-z0-9.\-]+\.js",
     )
     .expect("static bundle regex is valid");
 
     let mut bundles: HashSet<String> = HashSet::new();
-    for page in DISCOVERY_PAGES {
+    for page in pages {
         if let Ok(html) = fetch_text(client, page).await {
             for m in bundle_re.find_iter(&html) {
                 bundles.insert(m.as_str().to_owned());
@@ -480,5 +565,36 @@ mod tests {
     fn default_cache_path_has_expected_suffix() {
         let p = default_cache_path();
         assert!(p.ends_with("query-ids-cache.json"));
+    }
+
+    #[tokio::test]
+    async fn a_refresh_without_discovery_pages_fails_offline_and_is_not_repeated() {
+        let dir = std::env::temp_dir().join(format!("aphx-qid-{}", uuid::Uuid::new_v4()));
+        let store =
+            QueryIdStore::new(dir.join("cache.json"), 3600).with_discovery_pages(Vec::new());
+        let first = store.refresh(&["CreateTweet"], true).await.unwrap_err();
+        assert!(first.to_string().contains("no client bundles"), "{first}");
+        // The failure is remembered for the coalescing window: no second download attempt.
+        let second = store.refresh(&["CreateTweet"], true).await.unwrap_err();
+        assert!(second.to_string().contains("a moment ago"), "{second}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn a_fresh_snapshot_short_circuits_without_force() {
+        let dir = std::env::temp_dir().join(format!("aphx-qid-{}", uuid::Uuid::new_v4()));
+        let store =
+            QueryIdStore::new(dir.join("cache.json"), 3600).with_discovery_pages(Vec::new());
+        store
+            .write_to_disk(&Snapshot {
+                fetched_at: now_epoch(),
+                ttl_secs: 3600,
+                ids: HashMap::from([("A".to_string(), "1".to_string())]),
+                bundles: vec![],
+            })
+            .unwrap();
+        let snap = store.refresh(&["A"], false).await.unwrap();
+        assert_eq!(snap.ids.get("A").map(String::as_str), Some("1"));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

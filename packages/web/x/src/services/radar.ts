@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { XClient } from "../core/client";
 import type { Tweet, TweetPage } from "../core/parse";
-import { walkTimelineTweets } from "../core/parse";
 import {
   RADAR_GRAPHQL_OPS,
   RADAR_QUERY_SOURCE,
@@ -89,16 +88,14 @@ export async function radarSearch(
   rawQuery: string,
   opts: RadarSearchOptions = {},
 ): Promise<TweetPage> {
-  const count = opts.count ?? 40;
-  const variables: Record<string, unknown> = {
+  return client.search(
     rawQuery,
-    count,
-    querySource: opts.querySource ?? RADAR_QUERY_SOURCE,
-    product: opts.product ?? "Latest",
-  };
-  if (opts.cursor) variables.cursor = opts.cursor;
-  const json = await client.graphqlWaiting("SearchTimeline", variables);
-  return walkTimelineTweets(json, opts.quoteDepth ?? 0);
+    opts.count ?? 40,
+    opts.cursor,
+    opts.product ?? "Latest",
+    opts.quoteDepth ?? 0,
+    { querySource: opts.querySource ?? RADAR_QUERY_SOURCE },
+  );
 }
 
 export async function radarSearchAll(
@@ -130,16 +127,8 @@ export async function radarMetrics(
   return computeMetrics(rawQuery, tweets);
 }
 
-export async function radarExplore(client: XClient): Promise<RadarExploreSnapshot> {
-  const [explore_page, explore_sidebar] = await Promise.all([
-    client.graphqlWaiting("ExplorePage", {}),
-    client.graphqlWaiting("ExploreSidebar", {}),
-  ]);
-  return {
-    explore_page,
-    explore_sidebar,
-    fetched_at: new Date().toISOString(),
-  };
+export function radarExplore(client: XClient): Promise<RadarExploreSnapshot> {
+  return client.call("explore");
 }
 
 export async function probeRadarAccess(client: XClient): Promise<{

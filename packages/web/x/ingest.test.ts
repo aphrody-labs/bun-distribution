@@ -20,9 +20,7 @@ describe("findAndUpsertUsers", () => {
 		result.entries.push(result.entries[0]);
 
 		expect(findAndUpsertUsers(result, store)).toBe(1);
-		expect(store.db.query("SELECT username FROM users").get()).toEqual({
-			username: "aphrody",
-		});
-		store.db.close();
+		expect(store.query("SELECT username FROM users")).toEqual([{ username: "aphrody" }]);
+		store.close();
 	});
 });

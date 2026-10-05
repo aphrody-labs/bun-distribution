@@ -25,7 +25,7 @@ use crate::{
 
 /// Locate the tweets file inside an archive: accept a direct file, or a
 /// directory containing `data/tweets.js` / `data/tweet.js` / `tweets.js`.
-fn resolve_tweets_file(input: &Path) -> Option<PathBuf> {
+pub fn resolve_tweets_file(input: &Path) -> Option<PathBuf> {
     if input.is_file() {
         return Some(input.to_path_buf());
     }
@@ -39,7 +39,7 @@ fn resolve_tweets_file(input: &Path) -> Option<PathBuf> {
 }
 
 /// Strip the `window.YTD.* = ` assignment prefix and parse the JSON array.
-fn parse_archive_array(raw: &str) -> Result<Vec<Value>> {
+pub fn parse_archive_array(raw: &str) -> Result<Vec<Value>> {
     let start =
         raw.find('[').ok_or_else(|| XError::Auth("archive file has no JSON array".into()))?;
     let end =
@@ -59,7 +59,7 @@ fn count_field(legacy: &Value, key: &str) -> u64 {
 }
 
 /// Convert one archive `{ "tweet": {legacy} }` element into a [`Tweet`].
-fn archive_tweet_to_tweet(elem: &Value, owner: &Author) -> Option<Tweet> {
+pub fn archive_tweet_to_tweet(elem: &Value, owner: &Author) -> Option<Tweet> {
     let legacy = elem.get("tweet").unwrap_or(elem);
     let id = legacy.get("id_str").and_then(Value::as_str)?.to_owned();
     let text = legacy
@@ -90,6 +90,7 @@ fn archive_tweet_to_tweet(elem: &Value, owner: &Author) -> Option<Tweet> {
         lang: legacy.get("lang").and_then(Value::as_str).map(ToOwned::to_owned),
         is_note_tweet: false,
         quoted_tweet: None,
+        media: Vec::new(),
     })
 }
 

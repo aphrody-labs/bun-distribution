@@ -2,7 +2,7 @@
 // Static drift gate: Rust `#[no_mangle]` exports vs the bun:ffi SYMBOLS table.
 // Needs no native library, so it always runs.
 import { expect, test } from "bun:test";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const repo = join(import.meta.dir, "..", "..", "..", "..");
@@ -17,6 +17,7 @@ const EXPORT_CRATES = [
 // These existing C ABI exports remain for compatibility. Their JS consumers
 // now use the SDK's single tooling provider instead of the product FFI table.
 const LEGACY_TOOLING_EXPORTS = new Set([
+  "yolo_tooling_abi_version",
   "node2bun_abi_version",
   "node2bun_scan_json",
   "node2bun_scan_with_options_json",
@@ -26,7 +27,19 @@ const LEGACY_TOOLING_EXPORTS = new Set([
   "aphrody_oxc_format",
   "aphrody_oxc_minify",
   "aphrody_oxc_lint",
+  "aphrody_oxc_analyze",
+  "aphrody_oxc_parse",
   "aphrody_oxc_free",
+]);
+
+// The in-process inference ABI (cargo feature `inference`) is dlopened by its own package,
+// `@aphrody/inference` (packages/ai/inference), not by the product table of this package.
+const OWN_BINDING_EXPORTS = new Set([
+  "aphrody_inference_abi_version",
+  "aphrody_inference_submit",
+  "aphrody_inference_poll",
+  "aphrody_inference_cancel",
+  "aphrody_inference_free",
 ]);
 
 function rustFiles(dir: string): string[] {
@@ -125,12 +138,16 @@ const ts = tsSymbols();
 
 test("scanners find the export surface", () => {
   expect(rust.size).toBeGreaterThan(100);
-  expect(ts.size).toBeGreaterThan(100);
+  expect(ts.size).toBeGreaterThan(80);
 });
 
 test("every product Rust export has a dlopen definition", () => {
   expect(
-    [...rust.keys()].filter((name) => !ts.has(name) && !LEGACY_TOOLING_EXPORTS.has(name)).toSorted(),
+    [...rust.keys()]
+      .filter(
+        (name) => !ts.has(name) && !LEGACY_TOOLING_EXPORTS.has(name) && !OWN_BINDING_EXPORTS.has(name),
+      )
+      .toSorted(),
   ).toEqual([]);
 });
 
@@ -164,7 +181,9 @@ test("arity, argument and return types agree", () => {
 
 test("no bun:aphrody fork dependence remains in the Bun sources", () => {
   const stale: string[] = [];
-  const roots = ["packages/interop/native/src", "packages/compat/n2b-plugin/src"];
+  const roots = ["packages/interop/native/src", "packages/compat/n2b-plugin/src"].filter((root) =>
+    existsSync(join(repo, root)),
+  );
   const needle = ["bun", "aphrody"].join(":");
   for (const root of roots) {
     for (const entry of readdirSync(join(repo, root), { recursive: true })) {

@@ -14,10 +14,7 @@ function pathArg(flag: string, fallback: string): string {
   return value;
 }
 
-const rustCatalog = pathArg("--rust-catalog-path", DEFAULT_CATALOG_PATH);
-const catalogPath = pathArg("--catalog-path", rustCatalog);
-const report = await syncCatalogFromBundles({
-  catalogPath,
-  ...(catalogPath !== rustCatalog ? { rustCatalogPath: rustCatalog } : {}),
-});
+// One catalog file, read by Rust and Bun alike (--rust-catalog-path is kept as an alias).
+const catalogPath = pathArg("--catalog-path", pathArg("--rust-catalog-path", DEFAULT_CATALOG_PATH));
+const report = await syncCatalogFromBundles({ catalogPath });
 console.log(JSON.stringify(report, null, 2));

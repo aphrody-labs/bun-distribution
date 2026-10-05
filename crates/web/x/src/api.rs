@@ -13,12 +13,13 @@
 //! X JS bundle when operations start returning HTTP 404, then rebuild the
 //! binary — no source change needed.
 
+use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::{
     Result, XError,
-    client::{API_BASE, XClient, check_api_errors},
+    client::{XClient, check_api_errors},
     features::CREATE_TWEET_FEATURES_KNOWN_GOOD,
     parse::{self, TweetPage, UserPage},
 };
@@ -223,32 +224,12 @@ impl XClient {
         text: &str,
         reply_to: Option<&str>,
     ) -> Result<TweetResult> {
-        let url = format!("{API_BASE}/1.1/statuses/update.json");
-        let mut form: Vec<(&str, String)> =
-            vec![("status", text.to_owned()), ("tweet_mode", "extended".to_owned())];
+        let mut form: Vec<(&str, &str)> = vec![("status", text), ("tweet_mode", "extended")];
         if let Some(reply_id) = reply_to {
-            form.push(("in_reply_to_status_id", reply_id.to_owned()));
-            form.push(("auto_populate_reply_metadata", "true".to_owned()));
+            form.push(("in_reply_to_status_id", reply_id));
+            form.push(("auto_populate_reply_metadata", "true"));
         }
-
-        let resp = self
-            .inner()
-            .post(&url)
-            .header("x-client-transaction-id", crate::client::random_transaction_id())
-            .form(&form)
-            .send()
-            .await?;
-        self.capture_rate_limit(resp.headers());
-        let status = resp.status();
-        let json: Value = resp.json().await.unwrap_or(Value::Null);
-        if !status.is_success() {
-            check_api_errors(&json)?;
-            return Err(XError::Api {
-                code: status.as_u16().into(),
-                message: format!("HTTP {status} from statuses/update.json"),
-            });
-        }
-        check_api_errors(&json)?;
+        let json = self.post_form("1.1/statuses/update.json", &form).await?;
 
         let id = json.get("id_str").and_then(Value::as_str).unwrap_or_default().to_owned();
         let full_text = json
@@ -431,178 +412,55 @@ impl XClient {
     }
 
     // -----------------------------------------------------------------------
-    // Follow / Unfollow (REST v1.1)
+    // Follow / Unfollow, Block / Unblock, Mute / Unmute (REST v1.1)
     // -----------------------------------------------------------------------
+
+    /// POST a `user_id` form to a REST v1.1 social-graph endpoint.
+    async fn user_action(&self, path: &str, user_id: &str) -> Result<()> {
+        self.post_form(path, &[("user_id", user_id)]).await.map(|_| ())
+    }
 
     /// Follow a user by their numeric user ID.
     ///
     /// Uses the REST v1.1 `POST /friendships/create.json` endpoint with
     /// `application/x-www-form-urlencoded` body (not GraphQL).
     pub async fn follow(&self, user_id: &str) -> Result<()> {
-        let url = format!("{}/1.1/friendships/create.json", API_BASE);
-        let params = [("user_id", user_id)];
-        let resp = self
-            .inner
-            .post(&url)
-            .header("content-type", "application/x-www-form-urlencoded")
-            .form(&params)
-            .send()
-            .await?;
-        self.capture_rate_limit(resp.headers());
-        let status = resp.status();
-        let json: Value = resp.json().await?;
-        if !status.is_success() {
-            check_api_errors(&json)?;
-            return Err(XError::Api {
-                code: status.as_u16().into(),
-                message: format!("HTTP {status}"),
-            });
-        }
-        check_api_errors(&json)?;
-        Ok(())
+        self.user_action("1.1/friendships/create.json", user_id).await
     }
 
     /// Unfollow a user by their numeric user ID.
     ///
     /// Uses the REST v1.1 `POST /friendships/destroy.json` endpoint.
     pub async fn unfollow(&self, user_id: &str) -> Result<()> {
-        let url = format!("{}/1.1/friendships/destroy.json", API_BASE);
-        let params = [("user_id", user_id)];
-        let resp = self
-            .inner
-            .post(&url)
-            .header("content-type", "application/x-www-form-urlencoded")
-            .form(&params)
-            .send()
-            .await?;
-        self.capture_rate_limit(resp.headers());
-        let status = resp.status();
-        let json: Value = resp.json().await?;
-        if !status.is_success() {
-            check_api_errors(&json)?;
-            return Err(XError::Api {
-                code: status.as_u16().into(),
-                message: format!("HTTP {status}"),
-            });
-        }
-        check_api_errors(&json)?;
-        Ok(())
+        self.user_action("1.1/friendships/destroy.json", user_id).await
     }
-
-    // -----------------------------------------------------------------------
-    // Block / Unblock (REST v1.1)
-    // -----------------------------------------------------------------------
 
     /// Block a user by their numeric user ID.
     ///
     /// Uses the REST v1.1 `POST /blocks/create.json` endpoint.
     pub async fn block(&self, user_id: &str) -> Result<()> {
-        let url = format!("{}/1.1/blocks/create.json", API_BASE);
-        let params = [("user_id", user_id)];
-        let resp = self
-            .inner
-            .post(&url)
-            .header("content-type", "application/x-www-form-urlencoded")
-            .form(&params)
-            .send()
-            .await?;
-        self.capture_rate_limit(resp.headers());
-        let status = resp.status();
-        let json: Value = resp.json().await?;
-        if !status.is_success() {
-            check_api_errors(&json)?;
-            return Err(XError::Api {
-                code: status.as_u16().into(),
-                message: format!("HTTP {status}"),
-            });
-        }
-        check_api_errors(&json)?;
-        Ok(())
+        self.user_action("1.1/blocks/create.json", user_id).await
     }
 
     /// Unblock a user by their numeric user ID.
     ///
     /// Uses the REST v1.1 `POST /blocks/destroy.json` endpoint.
     pub async fn unblock(&self, user_id: &str) -> Result<()> {
-        let url = format!("{}/1.1/blocks/destroy.json", API_BASE);
-        let params = [("user_id", user_id)];
-        let resp = self
-            .inner
-            .post(&url)
-            .header("content-type", "application/x-www-form-urlencoded")
-            .form(&params)
-            .send()
-            .await?;
-        self.capture_rate_limit(resp.headers());
-        let status = resp.status();
-        let json: Value = resp.json().await?;
-        if !status.is_success() {
-            check_api_errors(&json)?;
-            return Err(XError::Api {
-                code: status.as_u16().into(),
-                message: format!("HTTP {status}"),
-            });
-        }
-        check_api_errors(&json)?;
-        Ok(())
+        self.user_action("1.1/blocks/destroy.json", user_id).await
     }
-
-    // -----------------------------------------------------------------------
-    // Mute / Unmute (REST v1.1)
-    // -----------------------------------------------------------------------
 
     /// Mute a user by their numeric user ID.
     ///
     /// Uses the REST v1.1 `POST /mutes/users/create.json` endpoint.
     pub async fn mute(&self, user_id: &str) -> Result<()> {
-        let url = format!("{}/1.1/mutes/users/create.json", API_BASE);
-        let params = [("user_id", user_id)];
-        let resp = self
-            .inner
-            .post(&url)
-            .header("content-type", "application/x-www-form-urlencoded")
-            .form(&params)
-            .send()
-            .await?;
-        self.capture_rate_limit(resp.headers());
-        let status = resp.status();
-        let json: Value = resp.json().await?;
-        if !status.is_success() {
-            check_api_errors(&json)?;
-            return Err(XError::Api {
-                code: status.as_u16().into(),
-                message: format!("HTTP {status}"),
-            });
-        }
-        check_api_errors(&json)?;
-        Ok(())
+        self.user_action("1.1/mutes/users/create.json", user_id).await
     }
 
     /// Unmute a user by their numeric user ID.
     ///
     /// Uses the REST v1.1 `POST /mutes/users/destroy.json` endpoint.
     pub async fn unmute(&self, user_id: &str) -> Result<()> {
-        let url = format!("{}/1.1/mutes/users/destroy.json", API_BASE);
-        let params = [("user_id", user_id)];
-        let resp = self
-            .inner
-            .post(&url)
-            .header("content-type", "application/x-www-form-urlencoded")
-            .form(&params)
-            .send()
-            .await?;
-        self.capture_rate_limit(resp.headers());
-        let status = resp.status();
-        let json: Value = resp.json().await?;
-        if !status.is_success() {
-            check_api_errors(&json)?;
-            return Err(XError::Api {
-                code: status.as_u16().into(),
-                message: format!("HTTP {status}"),
-            });
-        }
-        check_api_errors(&json)?;
-        Ok(())
+        self.user_action("1.1/mutes/users/destroy.json", user_id).await
     }
 
     // -----------------------------------------------------------------------
@@ -718,7 +576,8 @@ impl XClient {
     /// ("This request looks automated"). The limit is not publicly documented
     /// but is generally in the hundreds per day for normal accounts.
     pub async fn send_dm(&self, recipient_id: &str, text: &str) -> Result<()> {
-        let url = format!("{}/1.1/dm/new2.json", API_BASE);
+        let path = "1.1/dm/new2.json";
+        let url = format!("{}/{path}", self.api_base());
         let body = json!({
             "conversation_id": format!("{}-{}", recipient_id, recipient_id),
             "recipient_ids": false,
@@ -730,19 +589,8 @@ impl XClient {
             "dm_users": false
         });
 
-        let resp = self.inner.post(&url).json(&body).send().await?;
-        self.capture_rate_limit(resp.headers());
-        let status = resp.status();
-        let json: Value = resp.json().await?;
-        if !status.is_success() {
-            check_api_errors(&json)?;
-            return Err(XError::Api {
-                code: status.as_u16().into(),
-                message: format!("HTTP {status}"),
-            });
-        }
-        check_api_errors(&json)?;
-        Ok(())
+        let resp = self.req(Method::POST, &url).json(&body).send().await?;
+        self.finish(path, resp).await.map(|_| ())
     }
 
     // -----------------------------------------------------------------------
@@ -750,7 +598,7 @@ impl XClient {
     // -----------------------------------------------------------------------
 
     /// Run a timeline-shaped GraphQL query and parse it into a [`TweetPage`].
-    async fn timeline_tweets(
+    pub async fn timeline_tweets(
         &self,
         op: &str,
         variables: Value,
@@ -761,7 +609,7 @@ impl XClient {
     }
 
     /// Run a user-list GraphQL query and parse it into a [`UserPage`].
-    async fn timeline_users(&self, op: &str, variables: Value) -> Result<UserPage> {
+    pub async fn timeline_users(&self, op: &str, variables: Value) -> Result<UserPage> {
         let json = self.graphql(op, variables, None).await?;
         Ok(parse::walk_timeline_users(&json))
     }
@@ -807,7 +655,7 @@ impl XClient {
     }
 
     /// Raw `TweetDetail` GraphQL call (shared by `get_tweet` / `thread`).
-    async fn tweet_detail_raw(&self, tweet_id: &str, cursor: Option<&str>) -> Result<Value> {
+    pub async fn tweet_detail_raw(&self, tweet_id: &str, cursor: Option<&str>) -> Result<Value> {
         let mut variables = json!({
             "focalTweetId": tweet_id,
             "with_rux_injections": false,
@@ -836,10 +684,24 @@ impl XClient {
         product: &str,
         quote_depth: u32,
     ) -> Result<TweetPage> {
+        self.search_with_source(query, count, cursor, product, "typed_query", quote_depth).await
+    }
+
+    /// [`XClient::search`] with an explicit `querySource` (`"typed_query"` for the search box,
+    /// `"radar"` for X Radar, `"recent_search_click"` ...).
+    pub async fn search_with_source(
+        &self,
+        query: &str,
+        count: u32,
+        cursor: Option<&str>,
+        product: &str,
+        query_source: &str,
+        quote_depth: u32,
+    ) -> Result<TweetPage> {
         let mut variables = json!({
             "rawQuery": query,
             "count": count,
-            "querySource": "typed_query",
+            "querySource": query_source,
             "product": product,
         });
         if let Some(c) = cursor {
@@ -868,6 +730,51 @@ impl XClient {
             variables["cursor"] = json!(c);
         }
         self.timeline_tweets("UserTweets", variables, quote_depth).await
+    }
+
+    /// A user's timeline **including replies** (`UserTweetsAndReplies`). `UserTweets` omits
+    /// them, so this is the only way to enumerate an account's own replies.
+    pub async fn user_tweets_and_replies(
+        &self,
+        user_id: &str,
+        count: u32,
+        cursor: Option<&str>,
+        quote_depth: u32,
+    ) -> Result<TweetPage> {
+        let mut variables = json!({
+            "userId": user_id,
+            "count": count,
+            "includePromotedContent": false,
+            "withCommunity": true,
+            "withVoice": true,
+            "withV2Timeline": true
+        });
+        if let Some(c) = cursor {
+            variables["cursor"] = json!(c);
+        }
+        self.timeline_tweets("UserTweetsAndReplies", variables, quote_depth).await
+    }
+
+    /// A user's media tab (`UserMedia`: posts carrying photos, videos or GIFs).
+    pub async fn user_media(
+        &self,
+        user_id: &str,
+        count: u32,
+        cursor: Option<&str>,
+        quote_depth: u32,
+    ) -> Result<TweetPage> {
+        let mut variables = json!({
+            "userId": user_id,
+            "count": count,
+            "includePromotedContent": false,
+            "withClientEventToken": false,
+            "withVoice": true,
+            "withV2Timeline": true
+        });
+        if let Some(c) = cursor {
+            variables["cursor"] = json!(c);
+        }
+        self.timeline_tweets("UserMedia", variables, quote_depth).await
     }
 
     /// Fetch the home timeline as a paginated [`TweetPage`].

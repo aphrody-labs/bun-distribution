@@ -38,16 +38,22 @@
 pub mod algorithm;
 pub mod api;
 pub mod archive;
+pub mod batch;
 pub mod catalog;
 pub mod catalog_sync;
 pub mod cli;
 pub mod client;
 pub mod config;
 pub mod features;
+pub mod ids;
 pub mod media;
+#[cfg(any(test, feature = "test-support"))]
+pub mod mock;
 pub mod news;
+pub mod ops;
 pub mod output;
 pub mod parse;
+pub mod policy;
 pub mod premium;
 pub mod runtime_query_ids;
 pub mod session;
@@ -68,11 +74,14 @@ pub use api::{ListInfo, TimelineTweet, TweetResult, UserInfo};
 pub use catalog::{OpType, Operation};
 pub use catalog_sync::{SyncReport, sync_catalog_file};
 pub use cli::cli_main;
-pub use client::{RateLimit, XClient};
+pub use client::{CallScope, RateLimit, XClient, XClientOptions, with_call_scope};
 pub use config::Config;
 pub use news::{NewsItem, NewsOptions};
 pub use output::OutputMode;
-pub use parse::{Author, Tweet, TweetPage, User, UserPage};
+pub use parse::{Author, Media, Tweet, TweetPage, User, UserPage, parse_timestamp};
+pub use policy::{
+    ErrorInfo, ErrorKind, Pacer, PacingOptions, RetryPolicy, classify as classify_error,
+};
 pub use premium::{
     PREMIUM_GRAPHQL_OPS, PRODUCT_SKUS, PremiumAccountFlags, PremiumUpsells, UpsellConfigEntry,
     parse_premium_flags, parse_upsells_response,
@@ -122,11 +131,38 @@ pub enum XError {
     #[error("unknown GraphQL operation: {0}")]
     UnknownOperation(String),
 
+    /// A request that cannot be served as written: a missing or malformed argument, an operation
+    /// name this crate does not know, a destination the credentials must not be sent to. Never
+    /// retried.
+    #[error("invalid request: {0}")]
+    Invalid(String),
+
     /// The operation is rate-limited and the caller's configured `max_wait`
     /// would be exceeded before the reset timestamp.  The caller should either
     /// increase `max_wait` or schedule the call after `reset_epoch`.
     #[error("rate limited until epoch {reset_epoch} (max_wait exceeded)")]
     RateLimited { reset_epoch: i64 },
+}
+
+impl XError {
+    /// The HTTP status of an [`XError::Api`] built from a non-success response without a structured
+    /// X error (`"HTTP 404 Not Found"`); `None` for X API codes and every other variant.
+    pub fn http_status(&self) -> Option<u16> {
+        match self {
+            Self::Api { code, message } if message.starts_with("HTTP ") => {
+                u16::try_from(*code).ok()
+            },
+            _ => None,
+        }
+    }
+
+    /// The X API error code (`errors[].code`) of an [`XError::Api`] that is not a bare HTTP status.
+    pub fn api_code(&self) -> Option<i64> {
+        match self {
+            Self::Api { code, message } if !message.starts_with("HTTP ") => Some(*code),
+            _ => None,
+        }
+    }
 }
 
 /// Convenience alias used throughout the crate.
@@ -138,21 +174,12 @@ pub type Result<T> = std::result::Result<T, XError>;
 /// `in_network` should be set to true for posts known to come from followed
 /// accounts (e.g. from a HomeTimeline vs SearchTimeline).
 ///
-/// Note: `created_at` in the source Tweet is a human string (e.g. X's legacy
-/// format). This converter attempts a best-effort parse using the `time` crate
-/// (already a dependency); if it fails the unix timestamp will be 0 (the ranker
-/// will still work but age-based filters will be less accurate).
+/// Note: `created_at` in the source Tweet is a human string. X writes it as
+/// `Wed Oct 10 20:19:24 +0000 2018` (not RFC 2822: weekday and month first, year last); that form,
+/// RFC 3339 and RFC 2822 are all understood by [`parse_timestamp`]. When none matches the unix
+/// timestamp is 0 (the ranker still works but its age filter is blind for that post).
 pub fn tweet_to_algo_candidate(tweet: &Tweet, in_network: bool) -> algorithm::PostCandidate {
-    let created_at = tweet
-        .created_at
-        .as_ref()
-        .and_then(|s| {
-            // X often uses: "Wed Oct 10 20:19:24 +0000 2018" (RFC 2822-ish)
-            // time crate can parse it with a format.
-            use time::format_description::well_known::Rfc2822;
-            time::OffsetDateTime::parse(s, &Rfc2822).ok().map(|dt| dt.unix_timestamp())
-        })
-        .unwrap_or(0);
+    let created_at = tweet.created_at.as_deref().and_then(parse_timestamp).unwrap_or(0);
 
     algorithm::PostCandidate {
         id: tweet.id.clone(),
@@ -166,8 +193,7 @@ pub fn tweet_to_algo_candidate(tweet: &Tweet, in_network: bool) -> algorithm::Po
         quote_count: tweet.quote_count,
         is_reply: tweet.in_reply_to_status_id.is_some(),
         is_repost: tweet.quoted_tweet.is_some(), // rough proxy
-        has_media: false,                        /* the summarized Tweet does not carry media
-                                                  * flags; set upstream if known */
+        has_media: !tweet.media.is_empty(),
         in_network,
     }
 }

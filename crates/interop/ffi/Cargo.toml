@@ -96,3 +96,5 @@ libm = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = { workspace = true }
+# The loopback HTTP server the X job API tests point the client at (no real host, no real cookie).
+aphrody-x = { workspace = true, features = ["test-support"] }

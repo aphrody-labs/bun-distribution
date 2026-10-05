@@ -21,7 +21,15 @@ import { chmodSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 import type { RateLimit } from "../core/client";
-import { XError } from "../core/parse";
+import {
+  AUTH_CODES,
+  AUTH_STATUSES,
+  RATE_LIMIT_CODES,
+  RATE_LIMIT_STATUSES,
+  TERMINAL_CODES,
+  TERMINAL_STATUSES,
+  XError,
+} from "../core/error";
 
 // ---------------------------------------------------------------------------
 // Windows
@@ -38,14 +46,14 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
 // ---------------------------------------------------------------------------
 
 /**
- * API error codes meaning "this target can never be mutated again": it is
- * gone, suspended, or the action has already been applied. Recorded as
- * `skipped`, never retried.
+ * The error taxonomy has one owner: Rust (crates/web/x/src/policy.rs), shared as data in
+ * crates/web/x/data/x-policy.json. An error that came through the native client carries its
+ * `kind`; the tables classify the ones that did not (hand-built, replayed from a journal).
+ *
+ * `TERMINAL_CODES`: "this target can never be mutated again" (gone, suspended, or the action
+ * was already applied): recorded as `skipped`, never retried. `AUTH_CODES`: the session itself is dead.
  */
-export const TERMINAL_CODES = new Set([34, 50, 63, 108, 144, 162, 179, 220, 425]);
-
-/** API error codes that mean the session itself is dead. */
-export const AUTH_CODES = new Set([32, 89, 99, 215]);
+export { AUTH_CODES, TERMINAL_CODES };
 
 export function errorCode(err: unknown): number {
   return err instanceof XError ? err.code : -1;
@@ -56,11 +64,20 @@ export function errorStatus(err: unknown): number | undefined {
 }
 
 export function isRateLimitError(err: unknown): boolean {
-  return errorCode(err) === 88 || errorStatus(err) === 429;
+  if (err instanceof XError && err.kind) return err.kind === "rate_limit";
+  const status = errorStatus(err);
+  return (
+    RATE_LIMIT_CODES.has(errorCode(err)) ||
+    (status !== undefined && RATE_LIMIT_STATUSES.has(status))
+  );
 }
 
 export function isTerminalError(err: unknown): boolean {
-  return TERMINAL_CODES.has(errorCode(err)) || errorStatus(err) === 404;
+  if (err instanceof XError && err.kind) return err.kind === "terminal";
+  const status = errorStatus(err);
+  return (
+    TERMINAL_CODES.has(errorCode(err)) || (status !== undefined && TERMINAL_STATUSES.has(status))
+  );
 }
 
 /**
@@ -72,8 +89,9 @@ export function isTerminalError(err: unknown): boolean {
  * maps this to exit code 77 so systemd can refuse to restart.
  */
 export function isAuthFailure(err: unknown): boolean {
+  if (err instanceof XError && err.kind) return err.kind === "auth";
   const status = errorStatus(err);
-  return AUTH_CODES.has(errorCode(err)) || status === 401 || status === 403;
+  return AUTH_CODES.has(errorCode(err)) || (status !== undefined && AUTH_STATUSES.has(status));
 }
 
 export function errorMessage(err: unknown): string {

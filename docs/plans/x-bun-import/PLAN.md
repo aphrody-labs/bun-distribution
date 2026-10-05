@@ -28,7 +28,7 @@ Seven exports are added; the five existing `aphrody_web_x_*` reads and their `_s
 | `aphrody_web_x_client_open(session_json, options_json) -> char*` | opens a client handle. `session_json` is `{auth_token, ct0, handle?, transaction_id?}`, `{cookie_string}`, or null for discovery exactly as the Rust crate does it (`X_COOKIE_STRING`, `~/.aphrody/x-session.json`, `X_AUTH_TOKEN` plus `X_CT0`). Options: `api_base`, `upload_base`, `timeout_ms`, `persist_session`, `query_ids_path`, `query_ids_ttl_secs`. Returns `{"ok":true,"client":N}` or an error envelope. |
 | `aphrody_web_x_client_close(client) -> i32` | releases the handle (1 closed, 0 unknown). |
 | `aphrody_web_x_call(client, op, args_json) -> char*` | synchronous call of a **local** operation (parsers, catalog, store, ranking, metadata). Network operations are refused. |
-| `aphrody_web_x_submit(client, op, args_json, timeout_ms) -> u64` | any operation as a job on the shared runtime; result through the existing `aphrody_web_job_take`. |
+| `aphrody_web_x_submit(client, op, args_json, options_json) -> u64` | any operation as a job on the shared runtime; result through the existing `aphrody_web_job_take`. `options_json`: `{id?, timeout_ms?, retry?}`. |
 | `aphrody_web_x_batch_submit(client, ops_json, options_json) -> u64` | many operations, bounded concurrency inside Rust. |
 | `aphrody_web_x_batch_poll(batch, max_items) -> char*` | drains finished items and the batch counters. |
 | `aphrody_web_x_batch_cancel(batch) -> i32` | stops dispatching, aborts in-flight operations, forgets the batch. |
@@ -91,6 +91,7 @@ and by the TypeScript purge engine through a JSON import, so no table is copied)
 | `algorithm.rs`, `lib.rs` | X timestamps (`Wed May 22 10:00:00 +0000 2026`) and RFC 3339 parse correctly; `has_media` set. |
 | new `policy.rs`, `ops.rs`, `batch.rs` | taxonomy, retry and pacing; the operation table; the batch driver with checkpoint. |
 | `news.rs`, `archive.rs`, `premium.rs`, `x_pro_deck.rs` | helpers made public for the pure operations. |
+| `ops.rs` (maintenance) | `bundles_discover`, `query_ids_live`, `bundle_extract` (live bundle discovery and extraction, so the TypeScript copy of that logic is deleted); `coverage` no longer fails offline (no `query_id_cache` then). |
 
 `crates/interop/ffi`: `src/web/x.rs` owns the handle registries and the seven exports; the five legacy exports delegate
 to the same operations; the cdylib defines the glibc 2.43 re-versioned libm functions (`src/glibc_compat.rs`) so a

@@ -15,6 +15,7 @@ mod native_http;
 mod net;
 mod net_aliases;
 mod text;
+mod x;
 
 pub use cookies::*;
 pub use dom::*;
@@ -27,10 +28,13 @@ pub use native_http::*;
 pub use net::*;
 pub use net_aliases::*;
 pub use text::*;
+pub use x::*;
 
 use std::ffi::c_char;
 
-pub const APHRODY_WEB_BRIDGE_ABI_VERSION: u32 = 4;
+/// Web bridge ABI. 5 adds the generic X job API (`aphrody_web_x_client_*`, `_call`, `_submit`,
+/// `_batch_*`); the existing exports are unchanged.
+pub const APHRODY_WEB_BRIDGE_ABI_VERSION: u32 = 5;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn aphrody_web_bridge_abi_version() -> u32 {
@@ -293,8 +297,8 @@ mod tests {
     }
 
     #[test]
-    fn web_v4_version_and_network_jobs_share_one_library() {
-        assert_eq!(aphrody_web_bridge_abi_version(), 4);
+    fn web_v5_version_and_network_jobs_share_one_library() {
+        assert_eq!(aphrody_web_bridge_abi_version(), 5);
         assert_eq!(web_internal_bridge_abi_version(), aphrody_web_bridge_abi_version());
 
         // SAFETY: null pointers are rejected before network or credential access.

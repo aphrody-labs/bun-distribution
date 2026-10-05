@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+//
+// X Pro (TweetDeck) decks and columns. The GraphQL calls and the account-sync parser are aphrody-x
+// (crates/web/x/src/x_pro_deck.rs and ops.rs); this file keeps the public names and types over the
+// native operations.
+
 import type { XClient } from "../core/client";
-import { GRYPHON_GRAPHQL_OPS } from "../config/x-pro-surface";
+import { local } from "../core/local";
 
 export interface XProDeckColumn {
   rest_id: string;
@@ -38,44 +43,16 @@ export interface ViewerAccountSyncResult {
   raw: unknown;
 }
 
-function dig<T = unknown>(obj: unknown, path: string[]): T | undefined {
-  let cur: unknown = obj;
-  for (const key of path) {
-    if (cur == null || typeof cur !== "object") return undefined;
-    cur = (cur as Record<string, unknown>)[key];
-  }
-  return cur as T | undefined;
-}
-
 export function parseViewerAccountSync(json: unknown): ViewerAccountSyncResult {
-  const viewer = dig<Record<string, unknown>>(json, ["data", "viewer_v2"]);
-  const decks = (viewer?.decks as XProDeck[] | undefined) ?? [];
-  return {
-    decks,
-    accountsync_client_config: viewer?.accountsync_client_config as
-      | XProAccountSync
-      | undefined,
-    accountsync_onboarding_state: dig(json, [
-      "data",
-      "accountsync_onboarding_state",
-    ]) as Record<string, unknown> | undefined,
-    raw: json,
-  };
+  return local<ViewerAccountSyncResult>("parse_viewer_account_sync", { json });
 }
 
-export async function viewerAccountSync(
-  client: XClient,
-): Promise<ViewerAccountSyncResult> {
-  const raw = await client.graphqlWaiting("ViewerAccountSync", {});
-  return parseViewerAccountSync(raw);
+export function viewerAccountSync(client: XClient): Promise<ViewerAccountSyncResult> {
+  return client.call("viewer_account_sync");
 }
 
-export async function getDeck(
-  client: XClient,
-  deckId: string,
-): Promise<XProDeck | null> {
-  const sync = await viewerAccountSync(client);
-  return sync.decks.find((d) => d.rest_id === deckId) ?? null;
+export function getDeck(client: XClient, deckId: string): Promise<XProDeck | null> {
+  return client.call("xpro_get_deck", { deck_id: deckId });
 }
 
 export async function createDeck(
@@ -83,90 +60,68 @@ export async function createDeck(
   name: string,
   columns: Array<{ pathname: string; width?: string }> = [],
 ): Promise<string | null> {
-  const raw = await client.graphqlWaiting("CreateDeck", { name, columns });
-  return dig<string>(raw, ["data", "deck_insert", "rest_id"]) ?? null;
+  const answer = await client.call<{ deck_id: string | null }>("xpro_create_deck", {
+    name,
+    columns,
+  });
+  return answer.deck_id ?? null;
 }
 
-export async function updateDeck(
+export function updateDeck(
   client: XClient,
   deckId: string,
   config: XProDeckConfig,
 ): Promise<unknown> {
-  return client.graphqlWaiting("UpdateDeck", { deckId, config });
+  return client.call("xpro_update_deck", { deck_id: deckId, config });
 }
 
-export async function removeDeck(
-  client: XClient,
-  deckId: string,
-): Promise<unknown> {
-  return client.graphqlWaiting("RemoveDeck", { deckId });
+export function removeDeck(client: XClient, deckId: string): Promise<unknown> {
+  return client.call("xpro_remove_deck", { deck_id: deckId });
 }
 
-export async function reorderDecks(
-  client: XClient,
-  deckIds: string[],
-): Promise<unknown> {
-  return client.graphqlWaiting("ReorderDecks", { deckIds });
+export function reorderDecks(client: XClient, deckIds: string[]): Promise<unknown> {
+  return client.call("xpro_reorder_decks", { deck_ids: deckIds });
 }
 
-export async function createColumn(
+export function createColumn(
   client: XClient,
   deckId: string,
   column: { pathname: string; width?: string; media_preview?: string },
 ): Promise<unknown> {
-  return client.graphqlWaiting("CreateColumn", { deckId, column });
+  return client.call("xpro_create_column", { deck_id: deckId, column });
 }
 
-export async function updateColumn(
+export function updateColumn(
   client: XClient,
   deckId: string,
   columnId: string,
   column: Partial<XProDeckColumn>,
 ): Promise<unknown> {
-  return client.graphqlWaiting("UpdateColumn", { deckId, columnId, column });
+  return client.call("xpro_update_column", { deck_id: deckId, column_id: columnId, column });
 }
 
-export async function removeColumn(
-  client: XClient,
-  deckId: string,
-  columnId: string,
-): Promise<unknown> {
-  return client.graphqlWaiting("RemoveColumn", { deckId, columnId });
+export function removeColumn(client: XClient, deckId: string, columnId: string): Promise<unknown> {
+  return client.call("xpro_remove_column", { deck_id: deckId, column_id: columnId });
 }
 
-export async function reorderColumns(
+export function reorderColumns(
   client: XClient,
   deckId: string,
   columnIds: string[],
 ): Promise<unknown> {
-  return client.graphqlWaiting("ReorderColumns", { deckId, columnIds });
+  return client.call("xpro_reorder_columns", { deck_id: deckId, column_ids: columnIds });
 }
 
-export async function importClientSyncColumns(client: XClient): Promise<unknown> {
-  return client.graphqlWaiting("GryphonImportClientSyncColumns", {});
+export function importClientSyncColumns(client: XClient): Promise<unknown> {
+  return client.call("xpro_import_client_sync_columns");
 }
 
-export async function probeXProAccess(client: XClient): Promise<{
+export function probeXProAccess(client: XClient): Promise<{
   ok: boolean;
   deck_count: number;
   active_deck_id?: string;
   graphql_ops: readonly string[];
   error?: string;
 }> {
-  try {
-    const sync = await viewerAccountSync(client);
-    return {
-      ok: true,
-      deck_count: sync.decks.length,
-      active_deck_id: sync.accountsync_client_config?.active_deck_id,
-      graphql_ops: GRYPHON_GRAPHQL_OPS,
-    };
-  } catch (err: unknown) {
-    return {
-      ok: false,
-      deck_count: 0,
-      graphql_ops: GRYPHON_GRAPHQL_OPS,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
+  return client.call("xpro_probe");
 }

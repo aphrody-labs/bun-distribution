@@ -90,55 +90,25 @@ async fn paginate_users<'a>(
 
 /// Extract a numeric tweet id from a URL or return the input if already numeric.
 fn extract_tweet_id(input: &str) -> Result<String> {
-    let trimmed = input.trim();
-    if trimmed.chars().all(|c| c.is_ascii_digit()) && !trimmed.is_empty() {
-        return Ok(trimmed.to_owned());
-    }
-    // .../status<id> or .../statuses<id>, ignoring query/fragment.
-    for marker in ["/status/", "/statuses/"] {
-        if let Some(rest) = trimmed.split(marker).nth(1) {
-            let id: String = rest.chars().take_while(char::is_ascii_digit).collect();
-            if !id.is_empty() {
-                return Ok(id);
-            }
-        }
-    }
-    Err(anyhow::anyhow!("could not extract a tweet id from: {input}"))
+    crate::ids::tweet_id(input)
+        .ok_or_else(|| anyhow::anyhow!("could not extract a tweet id from: {input}"))
 }
 
 /// Extract a numeric list id from a URL or return the input if already numeric.
 fn extract_list_id(input: &str) -> Result<String> {
-    let trimmed = input.trim();
-    if trimmed.chars().all(|c| c.is_ascii_digit()) && !trimmed.is_empty() {
-        return Ok(trimmed.to_owned());
-    }
-    if let Some(rest) = trimmed.split("/lists/").nth(1) {
-        let id: String = rest.chars().take_while(char::is_ascii_digit).collect();
-        if !id.is_empty() {
-            return Ok(id);
-        }
-    }
-    Err(anyhow::anyhow!("could not extract a list id from: {input}"))
+    crate::ids::list_id(input)
+        .ok_or_else(|| anyhow::anyhow!("could not extract a list id from: {input}"))
 }
 
 /// Extract a numeric community id from a URL like https://x.com/i/communities/123 or return as-is if numeric.
 fn extract_community_id(input: &str) -> Result<String> {
-    let trimmed = input.trim();
-    if trimmed.chars().all(|c| c.is_ascii_digit()) && !trimmed.is_empty() {
-        return Ok(trimmed.to_owned());
-    }
-    if let Some(rest) = trimmed.split("/communities/").nth(1) {
-        let id: String = rest.chars().take_while(char::is_ascii_digit).collect();
-        if !id.is_empty() {
-            return Ok(id);
-        }
-    }
-    Err(anyhow::anyhow!("could not extract a community id from: {input}"))
+    crate::ids::community_id(input)
+        .ok_or_else(|| anyhow::anyhow!("could not extract a community id from: {input}"))
 }
 
 /// Normalize a handle by stripping a leading `@`.
 fn normalize_handle(h: &str) -> &str {
-    h.trim().trim_start_matches('@')
+    crate::ids::handle(h)
 }
 
 #[derive(Parser)]

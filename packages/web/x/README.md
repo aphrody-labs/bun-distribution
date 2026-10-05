@@ -1,8 +1,8 @@
 # @aphrody/x
 
-Headless **X (Twitter)** client in pure TypeScript for Bun. Cookie-auth GraphQL + REST, no official API key required. Stealth, local state (SQLite store + FTS), catalog sync, and X function tools (`XTools`) that let Grok or any tool-calling model use X.
+Headless **X (Twitter)** client for Bun, built for mass scripting. It is a thin import over the Rust crate `aphrody-x` (`crates/web/x`), reached in process through the `aphrody-ffi` library (`@aphrody/bun/x`): the client, parsers, store, retry, rate-limit waiting, pacing and checkpoint are Rust, one implementation shared with the `aphrody x` CLI and the MCP tool. Cookie-auth GraphQL + REST, no official API key required. Local state (SQLite store + FTS), catalog sync, and X function tools (`XTools`) that let Grok or any tool-calling model use X.
 
-**Zero keys, fully native**: Uses real browser cookies (`auth_token` + `ct0`), query ID catalog synced from live X bundles, and the production stealth profiles from aphrody-web.
+**Zero keys, fully native**: Uses real browser cookies (`auth_token` + `ct0`) and a query ID catalog synced from live X bundles. The native library is opened by the first call, never on import.
 
 **Table of Contents**
 
@@ -10,6 +10,7 @@ Headless **X (Twitter)** client in pure TypeScript for Bun. Cookie-auth GraphQL 
 - [Auth (cookie-based, no X API key)](#auth-cookie-based-no-x-api-key)
 - [Usage](#usage)
   - [Basic](#basic)
+  - [Mass scripting (batch jobs)](#mass-scripting-batch-jobs)
   - [Ranking with local For You algo (no ML model needed)](#ranking-with-local-for-you-algo-no-ml-model-needed)
   - [X function tools (Grok and other tool-calling models)](#x-function-tools-grok-and-other-tool-calling-models)
 - [CLI (`aphrody-web x`)](#cli-aphrody-web-x)
@@ -27,26 +28,30 @@ Headless **X (Twitter)** client in pure TypeScript for Bun. Cookie-auth GraphQL 
 - **X function tools**: `XTools` + OpenAI-compatible tool definitions (`x_search`, `x_profile`, `x_whoami`, `x_tweets`, `x_news`, all in `xNativeTools`) fulfil model tool calls locally with the real XClient (stealth + store). Used by bxc's `grok-x-research` actor and by `@aphrody/xai` in aphrody-ai.
 - **Autonomous follow purge**: `purgeFollowing()` empties the whole following list, accounts that don't follow back first, with a three-brake rate governor (randomised pacing + rolling 15 min / 24 h budgets + `x-rate-limit-*` headers) and a resumable on-disk journal. See [Autonomous follow purge](#autonomous-follow-purge).
 - **Autonomous post purge**: `purgeTweets()` deletes your own tweets, replies and media below a like threshold, least-liked first, walking all three timelines. Shares the rate governor and resumable journal with the follow purge. See [Autonomous post purge](#autonomous-post-purge).
-- **Stealth & perf**: Integrates aphrody-web profiles (static/http/fast/stealth/max), cookie injection, HAR, etc. Pure TS (parallel Rust FFI in aphrody-web for speed).
+- **Mass scripting**: `xBatch` runs thousands of operations with bounded concurrency, retry, rate-limit waiting, pacing and a resumable JSONL checkpoint, all inside Rust. See [Mass scripting](#mass-scripting-batch-jobs).
+- **One implementation**: requests, cookie rotation, queryId recovery, parsing, the store and the error taxonomy live in `aphrody-x`; this package keeps the names, the types and the orchestration (purges, radar, crawler, cron, function tools).
 
-See `src/core/client.ts`, `src/algo.ts`, `src/tools/*` (`function-tools.ts` for `XTools`), `src/services/*`, `src/db/*`.
+See `src/core/client.ts` (the thin client), `src/batch.ts`, `src/algo.ts`, `src/tools/*` (`function-tools.ts` for `XTools`), `src/services/*`, `src/db/*`.
 
 ## Auth (cookie-based, no X API key)
 
 Uses `auth_token=...; ct0=...` (from logged-in X web session).
 
-Resolution (via `XSession`):
+Resolution, owned by Rust and identical to `aphrody x` (`new XClient()` with no argument):
 
-1. Explicit cookie string.
-2. Session file (`~/.config/x-cli/session.json` or env).
-3. `X_AUTH_TOKEN` / `X_CT0` env.
+1. `X_COOKIE_STRING`.
+2. Session file `~/.aphrody/x-session.json`.
+3. `X_AUTH_TOKEN` + `X_CT0` env.
 
 ```ts
 import { XClient, XSession } from "@aphrody/x";
 
-const session = XSession.loadOrEnv(); // or fromCookieString("auth_token=...; ct0=...")
-const client = new XClient(session);
+const client = new XClient(); // discovery, as above
+// or explicit: new XClient(XSession.fromCookieString("auth_token=...; ct0=..."))
+// or a session file (a rotated ct0 is written back to it by Rust): new XClient(XSession.load())
 ```
+
+The credentials cross the native boundary once, when the client opens; they are never part of a result or a checkpoint.
 
 **Cookie management**: Use aphrody-web CLI `aphrody-web cookies ...` or the tools in `src/cookies` (in root aphrody-web).
 
@@ -69,6 +74,38 @@ const tweets = await client.userTweets(profile.id, 20);
 const search = await client.search("bun runtime", 10); // Latest by default
 const news = await client.getNews(5);
 ```
+
+### Mass scripting (batch jobs)
+
+```ts
+import { XClient, xBatch } from "@aphrody/x";
+
+const client = new XClient();
+const run = xBatch(
+  client,
+  handles.map((handle) => ({ id: handle, op: "user_by_screen_name", args: { handle } })),
+  {
+    concurrency: 8,
+    checkpoint: "users.jsonl", // a rerun replays the final results instead of running them again
+    retry: { maxRetries: 3 },  // transient failures, idempotent operations only
+    onProgress: ({ completed, total }) => console.error(`${completed}/${total}`),
+  },
+);
+for await (const result of run) {
+  if (result.ok) save(result.data);
+  else console.error(result.id, result.error.kind, result.error.message);
+}
+console.log(run.summary); // { total, ok, failed, resumed, not_run, elapsed_ms, stopped_by }
+```
+
+Operations are the Rust method names in snake case (`create_tweet`, `like`, `user_tweets`, `get_news`,
+`graphql`, ...); `xLocal("meta")` serves the table with arguments, mutation and retry class. One failing
+operation never stops the others, except an `auth` failure (a dead session): dispatch stops and the rest is
+reported `not_run`. `error.kind` is `auth`, `terminal`, `rate_limit`, `transient`, `invalid` or `other`,
+classified once in Rust (`crates/web/x/data/x-policy.json`). Mutations can be paced with `pacing`
+(`minDelayMs`, `maxDelayMs`, `perWindow`, `perDay`, `reserve`). `signal` or `run.cancel()` aborts the
+operations in flight; the checkpoint keeps every completed result. A single call with the same machinery:
+`await client.call("search", { query: "bun", all: true, max_pages: 5 })`.
 
 ### Ranking with local For You algo (no ML model needed)
 
@@ -280,7 +317,7 @@ Building blocks are exported separately: `captureArchive`, `collectTimeline`,
 ## Advanced / Internal
 
 - **Store & state**: SQLite with tweet/user/community edges, FTS5 search, digest, archive import.
-- **Catalog & recon**: Dynamic query IDs from X JS bundles (`sync-x-catalog.ts`), surface recon, premium graph.
+- **Catalog & recon**: Dynamic query IDs from X JS bundles (`bun scripts/tools/web/x-catalog-sync.ts`, native `catalog_sync`), surface recon, premium graph.
 - **X Pro / Radar**: Decks, columns, radar search (see `src/services/x-pro-deck.ts`, `src/config/radar-surface.ts` and `docs/web/x/X_PRO.md`).
 
 ## MCP
@@ -305,7 +342,7 @@ consumes `@aphrody/x` via `workspace:*`.
 
 ## Relation to web and AI layers
 
-This is the pure-TS headless X client powering the `aphrody web x` CLI, recon, and MCP. The AI layer consumes it, never the reverse: `@aphrody/xai` depends on this package for `XTools` in its Grok agent loops (keyless SuperGrok OIDC + cookie X = zero external keys).
+This is the Bun face of the headless X client (Rust `aphrody-x`) powering the `aphrody web x` CLI, recon, and MCP. The AI layer consumes it, never the reverse: `@aphrody/xai` depends on this package for `XTools` in its Grok agent loops (keyless SuperGrok OIDC + cookie X = zero external keys).
 
 See:
 - Root `README.md` and `AGENTS.md`
@@ -318,7 +355,7 @@ See:
 
 ## Testing
 
-See `index.test.ts` for units (catalog, store, archive, algo/ranking, ingest/RAG), `function-tools.test.ts` for `XTools` and the tool definitions, and `unfollow.test.ts` / `purge-tweets.test.ts` for the purge engines (queue ordering, rate governor budgets, error taxonomy, read backoff, journal resume — all on an injected clock, no live calls). Integration tests skip without session.
+See `x-native.test.ts` for the client, batches, store and policy data over the real library (loopback server, skipped until the cdylib exists), `index.test.ts` for units (catalog, store, archive, algo/ranking, ingest/RAG), `function-tools.test.ts` for `XTools` and the tool definitions, and `unfollow.test.ts` / `purge-tweets.test.ts` for the purge engines (queue ordering, rate governor budgets, error taxonomy, read backoff, journal resume — all on an injected clock, no live calls). Integration tests skip without session.
 
 Run: `bun test packages/x`
 

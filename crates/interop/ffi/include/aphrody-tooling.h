@@ -37,6 +37,9 @@ APHRODY_NODISCARD APHRODY_API uint32_t aphrody_oxc_abi_version(void);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_oxc_format(const char *source, const char *filename);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_oxc_minify(const char *source, const char *filename);
 APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_oxc_lint(const char *source, const char *filename);
+/* Semantic analysis, and the official Oxc ESTree program (span positions are UTF-16 code units). */
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_oxc_analyze(const char *source, const char *filename);
+APHRODY_NODISCARD APHRODY_MALLOC APHRODY_API char *aphrody_oxc_parse(const char *source, const char *filename);
 APHRODY_API void aphrody_oxc_free(char *pointer);
 
 #ifdef __cplusplus

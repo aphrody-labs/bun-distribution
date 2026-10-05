@@ -89,7 +89,7 @@ the round limit is reached. For tests or an existing session, pass `{ client, xT
 as the second argument.
 
 Analyse of our stack:
-- `@aphrody/x`: native cookie-auth X/Twitter client maintained in the sibling Aphrody OS checkout and consumed here as a published package.
+- `@aphrody/x`: native cookie-auth X/Twitter client: a thin Bun import over the Rust crate `aphrody-x` (through the `aphrody-ffi` library), with batch jobs for mass scripting. It owns the X function tools; this package re-exports them and keeps no X client of its own.
 - `packages/xai`: this package, now with high-level fluent Chat (create/append/sample/stream) + low-level OpenAI compat, using the same keyless SuperGrok token.
 
 Use them together for agentic Grok: let Grok decide to call an `x_search` tool, then fulfill it with the native `XClient` from `@aphrody/x` (no extra keys, fully local/native).
@@ -108,7 +108,7 @@ Using built-in XTools (recommended):
 ```ts
 import { XaiClient, XTools, xSearchToolDef, xWhoamiToolDef, xTweetsToolDef, xNewsToolDef } from "@aphrody/xai";
 const grok = new XaiClient();
-const xTools = new XTools(); // reuses our native packages/x (cookie, store, stealth)
+const xTools = new XTools(); // the native X client: credentials discovered by Rust, no extra keys
 
 const chat = grok.createChat("grok-3", { tools: [xSearchToolDef, xWhoamiToolDef, xTweetsToolDef, xNewsToolDef] });
 // after Grok returns a tool_call e.g. for x_tweets or x_news:

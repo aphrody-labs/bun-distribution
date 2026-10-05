@@ -8,6 +8,20 @@ export const AuthorSchema = z.object({
 
 export type Author = z.infer<typeof AuthorSchema>;
 
+/** One media attachment of a tweet, as parsed by aphrody-x. */
+export const MediaSchema = z.object({
+  id: z.string().optional(),
+  type: z.string().optional(),
+  url: z.string().optional(),
+  preview_url: z.string().optional(),
+  video_url: z.string().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  expanded_url: z.string().optional(),
+});
+
+export type Media = z.infer<typeof MediaSchema>;
+
 export const TweetSchema: z.ZodType<any> = z.lazy(() =>
   z.object({
     id: z.string(),
@@ -25,7 +39,7 @@ export const TweetSchema: z.ZodType<any> = z.lazy(() =>
     lang: z.string().optional(),
     is_note_tweet: z.boolean().default(false),
     quoted_tweet: z.nullable(z.lazy(() => TweetSchema)).optional(),
-    media: z.array(z.any()).optional(),
+    media: z.array(MediaSchema).optional(),
   })
 );
 

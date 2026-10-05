@@ -1,15 +1,35 @@
 // SPDX-License-Identifier: Apache-2.0
 
-export { XSession, type XSessionData } from "./core/session";
+export { XSession, type XSessionData, type XSessionWire } from "./core/session";
 export { API_BASE } from "./core/client";
 export {
   XClient,
+  type XClientOptions,
+  type XClientCallOptions,
+  type XClientSession,
+  type XClientSessionInput,
+  type XSearchOptions,
   type RateLimit,
   type TweetResult,
   type UserInfo,
   type ListInfo,
   type TimelineTweet,
 } from "./core/client";
+// Mass scripting: bounded concurrency, retry, rate-limit waiting, pacing and checkpoint in Rust.
+export {
+  XBatch,
+  xBatch,
+  xLocal,
+  type XBatchOpInput,
+  type XBatchOptions,
+  type XBatchProgress,
+  type XBatchResult,
+  type XBatchRunOptions,
+  type XBatchRunSummary,
+  type XBatchSummary,
+  type XEnvelope,
+} from "./batch";
+export { type XErrorKind } from "./core/error";
 export { QueryIdStore, type QueryIdSnapshot } from "./config/query-ids";
 export {
   XError,
@@ -20,6 +40,7 @@ export {
   parseTweetResult,
   parseUserResult,
   type Author,
+  type Media,
   type Tweet,
   type TweetPage,
   type User,

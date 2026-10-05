@@ -10,6 +10,17 @@ export interface XSessionData {
   transaction_id?: string;
 }
 
+/**
+ * What the native client needs to know about a session: explicit tokens, or the session file they
+ * came from (a rotated `ct0` / `auth_token` is then written back to it by Rust).
+ */
+export type XSessionWire = XSessionData | { session_file: string };
+
+/**
+ * The credentials of an X account: a plain value object, constructible without the native library.
+ * Discovery of a session nobody passed (`X_COOKIE_STRING`, `~/.aphrody/x-session.json`,
+ * `X_AUTH_TOKEN` + `X_CT0`) and cookie rotation belong to Rust: `new XClient()`.
+ */
 export class XSession implements XSessionData {
   public auth_token: string;
   public ct0: string;
@@ -44,22 +55,6 @@ export class XSession implements XSessionData {
     } catch (e: any) {
       throw new Error(`Failed to load session file ${path}: ${e.message}`, { cause: e });
     }
-  }
-
-  /** Save the updated session back to disk using Bun.write */
-  public async save(): Promise<void> {
-    if (!this.filePath) return;
-    const raw = JSON.stringify(
-      {
-        auth_token: this.auth_token,
-        ct0: this.ct0,
-        handle: this.handle,
-        transaction_id: this.transaction_id,
-      },
-      null,
-      2
-    ) + "\n";
-    await Bun.write(this.filePath, raw);
   }
 
   /** Load credentials from environment variables X_AUTH_TOKEN and X_CT0 */
@@ -102,6 +97,17 @@ export class XSession implements XSessionData {
       throw new Error("Cookie string must contain both auth_token and ct0");
     }
     return new XSession({ auth_token, ct0 });
+  }
+
+  /** What the native client opens: the session file when there is one (rotation persists), else the tokens. */
+  public toWire(): XSessionWire {
+    if (this.filePath) return { session_file: this.filePath };
+    return {
+      auth_token: this.auth_token,
+      ct0: this.ct0,
+      ...(this.handle ? { handle: this.handle } : {}),
+      ...(this.transaction_id ? { transaction_id: this.transaction_id } : {}),
+    };
   }
 
   /** Format as cookie header value */

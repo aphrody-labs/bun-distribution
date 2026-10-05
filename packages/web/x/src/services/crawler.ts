@@ -53,31 +53,16 @@ export class Crawler {
 
   /** Read existing data from database to populate visited sets and avoid duplicates */
   private initializeQueues(): void {
-    // Populate visited users from DB
+    // Populate the visited sets from the store (native queries)
     try {
-      const dbUsers = this.store.db.query("SELECT username FROM users").all() as { username: string }[];
-      for (const u of dbUsers) {
-        if (u.username) {
-          this.visitedUsers.add(u.username.toLowerCase());
-        }
+      for (const username of this.store.knownUsernames()) {
+        if (username) this.visitedUsers.add(username.toLowerCase());
+      }
+      for (const id of this.store.knownCommunities()) {
+        if (id) this.visitedCommunities.add(id);
       }
     } catch {
-      // Table might not exist or be empty
-    }
-
-    // Populate visited communities from DB (extracted from community edges)
-    try {
-      const dbComms = this.store.db.query(
-        "SELECT DISTINCT account FROM edges WHERE kind = 'timeline' AND account LIKE 'community_%'"
-      ).all() as { account: string }[];
-      for (const c of dbComms) {
-        const id = c.account.replace(/^community_/, "");
-        if (id) {
-          this.visitedCommunities.add(id);
-        }
-      }
-    } catch {
-      // Table might not exist
+      // A store without data yet
     }
 
     // Load seeds

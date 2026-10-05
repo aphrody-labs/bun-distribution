@@ -44,7 +44,8 @@ export function loadLib(): FfiLibrary {
   return loadNativeLibrary();
 }
 
-function readOwnedString(
+/** @internal Read and release a string owned by the native library (shared by the sub-bindings). */
+export function readOwnedString(
   ptr: bigint | Pointer | null,
   free: (ptr: bigint | Pointer) => void = (value) => loadLib().symbols.aphrody_string_free(value),
 ): string {
@@ -60,7 +61,8 @@ function readOptionalOwnedString(ptr: bigint | Pointer | null): string | null {
   return ptr ? readOwnedString(ptr) : null;
 }
 
-function trackJob(id: number): number {
+/** @internal Register a submitted native job so closing the library with live jobs is refused. */
+export function trackJob(id: number): number {
   if (!Number.isSafeInteger(id) || id <= 0)
     throw new Error(`native job submission failed (id ${id})`);
   liveJobIds.add(id);

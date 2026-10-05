@@ -153,6 +153,19 @@ const SYMBOLS = {
     args: [FFIType.ptr, FFIType.ptr, FFIType.u32],
     returns: FFIType.ptr,
   },
+  aphrody_web_x_client_open: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+  aphrody_web_x_client_close: { args: [FFIType.u64_fast], returns: FFIType.i32 },
+  aphrody_web_x_call: { args: [FFIType.u64_fast, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+  aphrody_web_x_submit: {
+    args: [FFIType.u64_fast, FFIType.ptr, FFIType.ptr, FFIType.ptr],
+    returns: FFIType.u64_fast,
+  },
+  aphrody_web_x_batch_submit: {
+    args: [FFIType.u64_fast, FFIType.ptr, FFIType.ptr],
+    returns: FFIType.ptr,
+  },
+  aphrody_web_x_batch_poll: { args: [FFIType.u64_fast, FFIType.u32], returns: FFIType.ptr },
+  aphrody_web_x_batch_cancel: { args: [FFIType.u64_fast], returns: FFIType.i32 },
   bun_rs_version: {
     args: [],
     returns: "cstring",
