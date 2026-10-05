@@ -111,8 +111,14 @@ paquets `fork` déclarés).
 
 - [x] Contrat, ratchet et retrait de 50 entrées de catalogue mortes.
 - [x] Fork : `picocolors`, `tiny-invariant`, `dotenv` (+ `dotenv/config`), `uuid` servis en natif (source).
-- [ ] Activation : build du fork par la factory (`yolo ship`), installation du runtime, puis
-  `--fork-active` et retrait des déclarations `fork`.
+- [x] `bun-forge` (`apps/yolo/forge`, config [config/bun-forge.json](config/bun-forge.json)) : un
+  exécutable compilé (Bun embarqué, servi au build comme `bun` via `BUN_BE_BUN=1`) qui installe la chaîne
+  sur machine vierge (apt avec sudo ; LLVM 23.1.1, cmake, rustup dans son cache, sans root), crée une
+  partition temporaire par commit (loop ext4, tmpfs ou répertoire), y extrait un worktree du miroir partiel
+  et construit `scripts/build.ts --profile=release` ; `watch` construit chaque nouveau commit de la branche
+  surveillée (défaut `main` du fork ; nos absorptions vivent sur `yolo`) ; reçu JSON, binaire et sha256 par commit.
+- [ ] Activation : premier build complet du fork par `bun-forge` sur la factory, installation du runtime,
+  puis `--fork-active` et retrait des déclarations `fork`.
 - [ ] `native` : `postgres`/`pg` → `Bun.SQL`, `sharp` → `Bun.Image`, `playwright*` → `Bun.WebView`,
   `marked` → `Bun.markdown`, `dayjs`/`date-fns` → `Temporal`, `smol-toml` → `Bun.TOML`, `tsup` → `Bun.build`.
 - [ ] `gap` → fork : `lru-cache`, `p-queue`/`p-retry`/`bottleneck`, `pino`, `fuse.js`, `qrcode`,

@@ -186,6 +186,13 @@
         "yolo": "./src/index.ts",
       },
     },
+    "apps/yolo/forge": {
+      "name": "@aphrody/bun-forge",
+      "version": "0.1.0",
+      "bin": {
+        "bun-forge": "./src/main.ts",
+      },
+    },
     "apps/yolo/web": {
       "name": "@aphrody/yolo-web",
       "version": "0.1.0",
@@ -1773,6 +1780,8 @@
 
     "@aphrody/bun": ["@aphrody/bun@workspace:packages/interop/native"],
 
+    "@aphrody/bun-forge": ["@aphrody/bun-forge@workspace:apps/yolo/forge"],
+
     "@aphrody/bun-test-dom": ["@aphrody/bun-test-dom@workspace:packages/bun/test-dom"],
 
     "@aphrody/canvas": ["@aphrody/canvas@workspace:m3/packages/canvas"],
@@ -1784,8 +1793,6 @@
     "@aphrody/drive-client": ["@aphrody/drive-client@workspace:packages/os/drive-client"],
 
     "@aphrody/eslint-plugin-m3": ["@aphrody/eslint-plugin-m3@workspace:m3/packages/eslint-plugin-m3"],
-
-    "@aphrody/fonts-cdn": ["@aphrody/fonts-cdn@workspace:packages/web/fonts-cdn"],
 
     "@aphrody/fut": ["@aphrody/fut@workspace:packages/fut/fut"],
 
