@@ -138,12 +138,12 @@ PRs accepted. Please make sure to read the Contributing Guide before making a pu
     <tr>
       <td align="center" valign="middle">
         <a href="https://crabnebula.dev" target="_blank">
-          <img src="contributors/crabnebula.svg" alt="CrabNebula" width="283">
+          <img src="../../../assets/tauri/contributors/crabnebula.svg" alt="CrabNebula" width="283">
         </a>
       </td>
       <td align="center" valign="middle">
         <a href="https://rescue.co" target="_blank">
-            <img src="contributors/rescue.png" alt="Rescue.co" width="283" height="90">
+            <img src="../../../assets/tauri/contributors/rescue.png" alt="Rescue.co" width="283" height="90">
         </a>
       </td>
     </tr>

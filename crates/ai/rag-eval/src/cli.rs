@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 
-//! Command-line driver for the RAG evaluation harness.
+//! Command-line driver for the RAG evaluation harness (`aphrody rag-eval`).
 
-use std::{path::PathBuf, process::ExitCode, sync::Arc, time::Duration};
+use std::{ffi::OsString, path::PathBuf, sync::Arc, time::Duration};
 
 use aphrody_rag::{
     Embedder, LlamaServerEmbedder, LlamaServerReranker, OpenAiCompatEmbedder, RagSearcher,
     RagStore, Reranker, SearchMode,
 };
-use aphrody_rag_eval::{
+use crate::{
     EvalError, EvalOptions, EvalTarget, HttpTarget, LocalIndexTarget, McpTarget, parse_gold,
     run_eval,
 };
@@ -125,30 +125,42 @@ struct Args {
     json: bool,
 }
 
-#[tokio::main]
-async fn main() -> ExitCode {
+/// Entry point of the `rag-eval` tool: `argv[0]` is the invocation name; returns the process exit code.
+pub fn cli_main(argv: Vec<OsString>) -> i32 {
+    let args = Args::parse_from(argv);
+    let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+        Ok(runtime) => runtime,
+        Err(error) => {
+            eprintln!("Error: cannot start the async runtime: {error}");
+            return 1;
+        },
+    };
+    runtime.block_on(run(args))
+}
+
+async fn run(args: Args) -> i32 {
     // reqwest is built with `rustls-no-provider`: install the process-wide rustls
     // crypto provider before any HTTP client exists (building one without it panics).
     let _ = rustls::crypto::ring::default_provider().install_default();
-    let args = Args::parse();
+
 
     let gold_text = match tokio::fs::read_to_string(&args.gold).await {
         Ok(t) => t,
         Err(err) => {
             eprintln!("Error reading gold set {}: {err}", args.gold.display());
-            return ExitCode::from(1);
+            return 1;
         },
     };
 
     let cases = parse_gold(&gold_text);
     if cases.is_empty() {
         eprintln!("Error: no valid gold cases parsed from {}", args.gold.display());
-        return ExitCode::from(1);
+        return 1;
     }
 
     if !args.qps.is_finite() || args.qps < 0.001 {
         eprintln!("Error: --qps must be finite and at least 0.001.");
-        return ExitCode::from(2);
+        return 2;
     }
     let interval = Duration::from_secs_f64(1.0 / args.qps.min(2.0));
 
@@ -158,7 +170,7 @@ async fn main() -> ExitCode {
                 eprintln!(
                     "Error: --mcp-tool must be rag_search, shenron_rag_search, or aphrody_shenron_rag_search."
                 );
-                return ExitCode::from(2);
+                return 2;
             }
             Box::new(
                 McpTarget::new(mcp_endpoint_url(args.url.as_deref()))
@@ -170,21 +182,21 @@ async fn main() -> ExitCode {
             Ok(target) => Box::new(target),
             Err(message) => {
                 eprintln!("Error: {message} (exit code 2).");
-                return ExitCode::from(2);
+                return 2;
             },
         },
         "http" => match args.url.as_deref().filter(|url| !url.is_empty()) {
             Some(url) => Box::new(HttpTarget::new(url.to_owned()).with_rate_limit(interval)),
             None => {
                 eprintln!("Error: --target http requires --url <search endpoint> (exit code 2).");
-                return ExitCode::from(2);
+                return 2;
             },
         },
         other => {
             eprintln!(
                 "Error: unknown --target `{other}`; expected http, mcp or local (exit code 2)."
             );
-            return ExitCode::from(2);
+            return 2;
         },
     };
 
@@ -207,9 +219,9 @@ async fn main() -> ExitCode {
 
             if !summary.passed_gates {
                 eprintln!("Gate verification failed (exit code 3).");
-                ExitCode::from(3)
+                3
             } else {
-                ExitCode::SUCCESS
+                0
             }
         },
         Err(EvalError::ConditionMismatch { expected, observed }) => {
@@ -217,11 +229,11 @@ async fn main() -> ExitCode {
                 "Condition mismatch error: expected `{expected}`, observed `{observed}` (exit \
                  code 4)."
             );
-            ExitCode::from(4)
+            4
         },
         Err(err) => {
             eprintln!("Evaluation failed: {err}");
-            ExitCode::from(1)
+            1
         },
     }
 }

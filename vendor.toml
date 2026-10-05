@@ -50,7 +50,8 @@ exclude = ["crates/tauri-cli/src/main.rs"]
 name = "plugins-workspace"
 rustfmt = "default"
 crates = ["plugins/*"]
-exclude = ["plugins/*/examples/**", "plugins/*/tests/**"]
+# plugins/*/contributors: one shared assets/tauri/contributors (see the [[copy]] and README rewrite below).
+exclude = ["plugins/*/examples/**", "plugins/*/tests/**", "plugins/*/contributors/**"]
 
 [[source]]
 name = "wry"
@@ -70,6 +71,20 @@ rustfmt = "default"
 crates = [".", "node"]
 # src/main.rs: served by `aphrody create-tauri-app`, no standalone binary.
 exclude = ["worker/**", ".scripts/**", "*.sh", "*.ps1", "package.json", "CONTRIBUTING.md", "src/main.rs"]
+
+# Plugin README logos live once in assets/tauri/contributors (identical files in six plugins).
+[[copy]]
+from = "plugins-workspace:plugins/nfc/contributors"
+to = "assets/tauri/contributors"
+
+[[copy]]
+from = "plugins-workspace:plugins/haptics/contributors"
+to = "assets/tauri/contributors"
+
+[[rewrite]]
+files = "crates/aphrody-tauri-plugin-*/README.md"
+from = 'src="contributors/'
+to = 'src="../../../assets/tauri/contributors/'
 
 # Sources of the `tauri-examples` crate (its [[example]] entries live outside the crate).
 [[copy]]

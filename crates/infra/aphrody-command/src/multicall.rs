@@ -64,6 +64,7 @@ pub(crate) const TOOLS: &[Tool] = &[
     tool("llama-daemon", &["aphrody-llama-daemon"], Target::Entry(aphrody_llama_server::cli_main)),
     tool("n2b", &["n2b"], Target::Command("n2b")),
     // Tauri tooling (vendored crates; their standalone binaries are not built).
+    tool("rag-eval", &["aphrody-rag-eval"], Target::Entry(aphrody_rag_eval::cli_main)),
     tool("tauri", &["cargo-tauri"], Target::Entry(tauri)),
     tool("create-tauri-app", &["cargo-create-tauri-app"], Target::Entry(create_tauri_app)),
     // UI and build tooling.
@@ -83,7 +84,7 @@ through the links `aphrody self install-path` creates:
   infra, ovh, yolo, kernel, host-service, ssh, wsl, backend, mcp-server, web-engine, web-worker, x,
   gemini-web, google, translate-project, jev, embed, summary, skills, agent-home-memory,
   agent-train, llama-daemon, n2b, identity (design | export-assets | pixel), m3-reproduce,
-  canvas, bindgen, tauri (cargo-tauri), create-tauri-app";
+  canvas, bindgen, rag-eval, tauri (cargo-tauri), create-tauri-app";
 
 /// `aphrody ovh …` is `aphrody infra ovh …`: the OVHcloud control plane (DNS, email, VPS
 /// inspection, reboot and renewal).

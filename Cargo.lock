@@ -961,6 +961,7 @@ dependencies = [
  "aphrody-project-doc",
  "aphrody-prompts",
  "aphrody-rag",
+ "aphrody-rag-eval",
  "aphrody-re",
  "aphrody-render",
  "aphrody-rollout",
