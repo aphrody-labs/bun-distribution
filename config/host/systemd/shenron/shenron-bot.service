@@ -27,6 +27,8 @@ Environment=API_HOST=127.0.0.1
 Environment=API_PORT=5006
 Environment=PORT=5006
 Environment=A2A_COORD_DIR=/srv/shenron/shared/coord
+# Writable HOME under ProtectHome=read-only (Node-API modules of the compiled binary).
+Environment=HOME=/srv/shenron/shared/bot/home
 Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 Environment=BUN_CONFIG_MAX_HTTP_REQUESTS=2048
 Environment=BUN_RUNTIME_TRANSPILER_CACHE_PATH=/srv/shenron/shared/bot/bun-cache
@@ -73,7 +75,7 @@ SystemCallArchitectures=native
 # PostgreSQL) et `apps/site/public/wiki` (médias générés consommés par le site)
 # sont dans la release des liens vers /srv/shenron/shared/{bot/data,site/wiki} :
 # données mutables hors release, conservées d'une release à l'autre.
-ExecStartPre=+/bin/mkdir -p /srv/shenron/shared/bot/bun-cache /srv/shenron/shared/bot/data /srv/shenron/shared/bot/assets /srv/shenron/shared/site/wiki /srv/shenron/shared/coord
+ExecStartPre=+/usr/bin/install -d -o ubuntu -g ubuntu /srv/shenron/shared/bot/home /srv/shenron/shared/bot/bun-cache /srv/shenron/shared/bot/data /srv/shenron/shared/bot/assets /srv/shenron/shared/site/wiki /srv/shenron/shared/coord
 ReadWritePaths=/srv/shenron/shared/bot/data /srv/shenron/shared/bot /srv/shenron/shared/site/wiki /srv/shenron/shared/coord
 
 StandardOutput=journal

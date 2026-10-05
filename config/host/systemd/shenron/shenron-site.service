@@ -39,6 +39,9 @@ Environment=NEXT_DIST_DIR=.next-build
 Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 Environment=BUN_RUNTIME_TRANSPILER_CACHE_PATH=/srv/shenron/shared/site/bun-cache
 Environment=A2A_COORD_DIR=/srv/shenron/shared/coord
+# ProtectHome=read-only keeps ~ubuntu read-only; native Node-API modules (@swc/core,
+# loaded by next.config.ts) fail to initialise without a writable HOME.
+Environment=HOME=/srv/shenron/shared/site/home
 
 # `next` est résolu depuis la racine du workspace Bun de la release (hors
 # répertoire courant), jamais depuis un chemin `~`/maison : la release est le
@@ -83,7 +86,7 @@ SystemCallArchitectures=native
 # /srv/shenron/shared/site/next-cache (cache images/fetch conservé d'une
 # release à l'autre) ; le cache ISR de Next écrit aussi sous `.next-build/server`,
 # d'où l'écriture autorisée sur le `.next-build` de la release active.
-ExecStartPre=+/bin/mkdir -p /srv/shenron/shared/site/bun-cache /srv/shenron/shared/site/runtime-cache /srv/shenron/shared/site/image-cache /srv/shenron/shared/site/next-cache /srv/shenron/shared/coord
+ExecStartPre=+/usr/bin/install -d -o ubuntu -g ubuntu /srv/shenron/shared/site/home /srv/shenron/shared/site/bun-cache /srv/shenron/shared/site/runtime-cache /srv/shenron/shared/site/image-cache /srv/shenron/shared/site/next-cache /srv/shenron/shared/coord
 ReadWritePaths=/srv/shenron/shared/site /srv/shenron/shared/coord /srv/shenron/current/apps/site/.next-build
 
 StandardOutput=journal
