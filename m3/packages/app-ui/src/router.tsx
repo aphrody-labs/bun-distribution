@@ -21,8 +21,9 @@ import { ShellLayout } from "./ShellLayout";
 
 /**
  * Unified application routes for the Spacedrive M3 Shell:
- * - "/" and "/chat": Codex Chat (pixel-perfect Codex parity timeline + composer)
+ * - "/": the file explorer, the desktop's default surface (redirects to "/explorer")
  * - "/explorer": Spacedrive VDFS Native File Explorer
+ * - "/chat": Codex Chat (pixel-perfect Codex parity timeline + composer)
  * - "/models": Local Models Lifecycle & Hardware Telemetry
  * - "/settings": Desktop Preferences & Environment
  */
@@ -33,7 +34,7 @@ export const explorerRoutes = [
     children: [
       {
         index: true,
-        element: <CodexChatRoute />,
+        element: <Navigate to="/explorer" replace />,
       },
       {
         path: "chat",

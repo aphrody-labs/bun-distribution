@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "m3 dev",
     "build": "bun run build.ts",
-    "check": "oxlint --config .oxlintrc.json src/app.tsx && tsc --noEmit",
+    "check": "oxlint src/app.tsx && tsc --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test src",
     "brand": "bun run scripts/brand-theme.ts"
