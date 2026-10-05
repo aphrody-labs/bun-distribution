@@ -8,8 +8,8 @@ travail agent (J0 2 h, J1 8 h, J2 8 h, gel 2 h). Référence : le document « Pl
 section « Décision finale » (qui prime), puis « Plan d'exécution one shot », « Simplification : Obscura en
 plugin natif », « Points techniques délicats », « Risques ».
 
-CIBLE : le NOUVEAU monorepo aphrody-labs/yolo, créé en J0 depuis la branche `yolo` du fork
-aphrody-labs/bun. Worktrees et Cargo parallèle autorisés (un worktree par chantier, sccache partagé).
+CIBLE : le NOUVEAU monorepo aphrody-labs/yolo, créé en J0 depuis la branche `main` (`c439b6fbd`) du fork
+aphrody-labs/bun (la branche `yolo` n'existe plus). Worktrees et Cargo parallèle autorisés (un worktree par chantier, sccache partagé).
 Commits `aphrody-dev <contact@aphrody.com>` sans co-auteur ; aucun secret ni sortie de build commités ;
 aucune publication publique ; dépôt privé.
 
@@ -28,19 +28,19 @@ OBJECTIF (livrable unique, en une session) : un binaire `yolo` (alias `bun`) con
    recettes), README par crate, et du tag `oneshot-1`.
 
 J0 (toi seul, 2 h, 15 €) — scripts idempotents dans scripts/fusion/*.ts :
-- Créer le dépôt privé aphrody-labs/yolo ; pousser la branche `yolo` du fork bun comme `main` ; garder
+- Créer le dépôt privé aphrody-labs/yolo (le dépôt `yolo` actuel existe : à archiver en `yolo-legacy` avant, voir partie 4) ; pousser la branche `main` du fork bun (`c439b6fbd`) comme `main` ; garder
   .github/workflows, scripts/build, dockerhub (→ docker/), docs/, test/ tels quels.
 - rename.ts : `bun_x` → `aphrody-x` (Cargo.toml, use, scripts/build/*.ts, codegen, lints de source),
   `src/*` → `crates/core/*`, binaire `bun` → `yolo` + alias ; preuve : `cargo metadata` sans erreur puis
   `just build` = noyau inchangé, `just bench` = base de démarrage enregistrée dans docs/bench/baseline.json.
-- import-obscura.ts : `git fetch upstream && git merge --ff-only` sur aphrody-labs/obscura ; diff trois
+- import-obscura.ts : `git fetch upstream && git merge --ff-only` sur aphrody-labs/obscura (`main` est déjà aligné sur l'amont v0.2.4 `1fccab2c1` ; la branche `yolo` `dbea8a7c1` = `main` + 3 commits, à fusionner) ; diff trois
   voies avec la copie aphrody/crates/web/obscura-* (patches Aphrody dans patches/obscura/) ; import sous
-  crates/browser/{browser,page_runtime,dom,render,transport,cdp,mcp} ; crates en `[lints] workspace =
+  crates/browser/{browser,page_runtime,dom,render,transport,cdp,mcp} (la copie compte 9 crates : `obscura`, `-browser`, `-cdp`, `-dom`, `-js`, `-mcp`, `-net`, `-render`, `-ssrf`) ; crates en `[lints] workspace =
   false` + `#![allow(clippy::all, dead_code, unreachable_pub)]` ; tests Obscura sous feature `legacy-tests`.
 - Pins : taffy et cosmic-text dans vendor/ (deps/*.ts) ; `[workspace.dependencies]` fusionnées, une version
-  par crate (getrandom 0.4, thiserror 2, rustix 0.38, cssparser 0.36, selectors 0.33) ; cargo deny actif.
+  par crate (getrandom 0.4, thiserror 2, rustix 0.38, cssparser 0.36, selectors 0.33 : versions du `Cargo.lock` du fork Bun ; la copie Obscura est sur cssparser 0.37 / selectors 0.38) ; cargo deny actif.
 - Squelette : crates/core/realm-host (API vide documentée), crates/core/plugin-abi (ex yolo-runtime,
-  ABI v1), crates/core/io (traits Transport, Store, Clock, Fs, Process, Log), crates/plugins/obscura
+  ABI v1), crates/core/io (traits Transport, Store, Clock, Fs, Process, Log ; nom déjà pris par `bun_io` renommé, à trancher), crates/plugins/obscura
   (cdylib N-API napi-rs, manifeste), default-members = noyau.
 - Fichiers d'agent : CLAUDE.md, Justfile (build, plugin, check, smoke, bench, tiers), BROKEN.md vide,
   docs/decisions/0001-monorepo-yolo.md, .claude/prompts/oneshot-1.md (ce texte), FUSION.md (nommage,
@@ -51,8 +51,8 @@ J1 (5 agents en parallèle, un worktree chacun, `cargo check -p` par l'agent) :
 - B · Runtime de page JSC (60 €, 8 h, chemin critique) : d'abord aphrody-realm-host dans crates/core/jsc
   (realm isolé par page dans un Worker, table de fonctions hôtes, execute_script avec CachedBytecode,
   interruption watchdog, échange JSON/buffers) ; puis crates/browser/page_runtime : objet
-  globalThis.Deno.core servi par cette table, 70 ops portés dans l'ordre op_dom, op_eval, timers, op_fetch,
-  le reste ; 164 appels v8:: réécrits (Global → JsRef, TryCatch → JsResult, snapshot supprimé,
+  globalThis.Deno.core servi par cette table, 74 ops portés (76 `#[op2]`) dans l'ordre op_dom, op_eval, timers, op_fetch,
+  le reste ; 183 occurrences de v8:: réécrites (Global → JsRef, TryCatch → JsResult, snapshot supprimé,
   bootstrap.js évalué au démarrage du realm) ; crypto.subtle déléguée à WebCrypto ; unwrap/expect des ops
   convertis en erreurs. Arrêt : evaluate("1+1"), document.title après set_html, setTimeout qui tire.
 - A · Transport (30 €, 6 h) : crates/browser/transport sur aphrody-http (navigation, sous-ressources,
@@ -88,3 +88,24 @@ Rapport final attendu : sortie de `just smoke`, `just bench` avant/après, taill
 `cargo tree -i tokio` et `-i v8` vides, `just tiers` vert, lien du tag, BROKEN.md, budget consommé par
 chantier, liste des décisions prises sans l'humain (docs/decisions/).
 ```
+
+
+## Journal de vérification (2026-10-05)
+
+Statut : V = vérifié conforme, C = corrigé ou complété, N = non vérifiable ici. Sources : fork Bun `c439b6fbd`, forks Obscura et Tauri via l'API GitHub, copie locale `crates/web/obscura*` (`d21e0f54a`).
+
+| Affirmation | Valeur vérifiée | Statut | Source |
+| --- | --- | --- | --- |
+| Source du dépôt : branche `yolo` du fork bun | Branche absente ; `main` = `c439b6fbd` | C | API GitHub |
+| Créer le dépôt privé `aphrody-labs/yolo` | Existe déjà (privé, non archivé, branches `main`/`dev`/`vendor`) ; `yolo-legacy` absent | C | API GitHub |
+| Fork Obscura : `merge --ff-only` | `main` = amont v0.2.4 `1fccab2c1` ; `yolo` = `dbea8a7c1` (3 commits propres) | C | API GitHub |
+| Import de 7 crates sous `crates/browser` | La copie compte 9 crates (`obscura`, `-browser`, `-cdp`, `-dom`, `-js`, `-mcp`, `-net`, `-render`, `-ssrf`) | C | `cargo metadata` |
+| Versions uniques getrandom 0.4, thiserror 2, rustix 0.38, cssparser 0.36, selectors 0.33 | Valeurs du `Cargo.lock` du fork (0.4.2, 2.0.18, 0.38.44, 0.36.0, 0.33.0) ; Obscura est sur cssparser 0.37 / selectors 0.38 | V/C | `Cargo.lock`, `obscura-dom/Cargo.toml` |
+| `crates/core/plugin-abi` (ex `yolo-runtime`) | `crates/engine/yolo-runtime` existe dans `aphrody` | V | `cargo metadata` |
+| `crates/core/io` | Nom pris par `bun_io` | C | fork Bun |
+| `crates/core/jsc` + `execute_script` + `CachedBytecode` | `src/jsc/CachedBytecode.rs` présent ; crate `bun_jsc` | V | `git ls-tree` |
+| 70 ops à porter | 74 ops distincts, 76 `#[op2]` | C | `bootstrap.js`, `ops.rs` |
+| 164 appels `v8::` | 183 | C | `rg` |
+| `ureq` → `aphrody-http` (chantier E) | `obscura-render` utilise `ureq` 3 (workspace) | V | `obscura-render/Cargo.toml:44` |
+| WebKit `autobuild` en cache dès J0 | Cohérent avec le défaut `webkit: "prebuilt"` du fork | V | `config.ts:1295` |
+| Budget, durées, Opus 5.5, `hyperfine`, `just` | Estimations et consignes | N | — |

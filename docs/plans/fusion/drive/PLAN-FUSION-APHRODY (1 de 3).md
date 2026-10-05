@@ -6,18 +6,20 @@ Oct 5, 2026 · @aphrody-dev
 
 > **Mise à jour du 5 octobre (soir)** : la partie 4 (« audits et contexte vérifiés ») corrige les états et chiffres de cette partie (branche `main` unique du fork Bun à `c439b6fbd`, nom `aphrody-labs/yolo` déjà pris, fork Obscura à 107 commits de l’amont avec une branche `yolo` propre, V8 déjà présent dans `aphrody`, base glibc) et liste les décisions ouvertes. Elle ne change pas la Décision finale.
 
+> **Écart constaté (2026-10-05)** : cette partie a été revérifiée contre le code et l'infra le 5 octobre (journal en fin de fichier). Depuis le bandeau ci-dessus, le fork Obscura est remis à niveau (`main` = amont v0.2.4 `1fccab2c1` ; `yolo` = `main` + 3 commits) et la copie du monorepo l'a fusionné (`d21e0f54a`). Les chiffres d'Obscura décrivent le fork (amont v0.2.4) ; la copie du monorepo en diffère (note sous le tableau d'« État des lieux : Obscura »).
+
 ## Résumé exécutif
 
-Décision : le workspace unifié est **`aphrody-labs/aphrody`**, qui a déjà absorbé Obscura (`crates/web/obscura-*`), Tauri 3 alpha avec wry, tao et ses plugins (`crates/tauri/*`) et les crates d'indexation (`crates/web/web-*`). On y **ajoute les ~105 crates de Bun-Rust** (fork `aphrody-labs/bun`, branche `yolo`) sous `crates/bun/*`, toutes préfixées `aphrody-` et référencées par `workspace = true`, et on **retire V8** en portant le runtime de page d'Obscura sur JavaScriptCore. La fusion est exécutée en one shot par un workflow dynamique Opus 5.5 plafonné à 200 €, en 1 à 2 jours, casse assumée, divergence définitive avec les upstreams. Conséquence à accepter dès J0 : tout le dépôt `aphrody` passe du stable 1.98.1 au nightly `2026-09-15` exigé par Bun, et le binaire `bun` est produit par le script de build de Bun (ninja + WebKit précompilé) porté dans `scripts/build/bun/`, pas par un simple `cargo build`.
+Décision : le workspace unifié est **`aphrody-labs/aphrody`**, qui a déjà absorbé Obscura (`crates/web/obscura-*`), Tauri 3 alpha avec wry, tao et ses plugins (`crates/tauri/*`) et les crates d'indexation (`crates/web/web-*`). On y **ajoute les ~100 crates de Bun-Rust** (fork `aphrody-labs/bun`, branche `main`, tête `c439b6fbd` ; la branche `yolo` n'existe plus) sous `crates/bun/*`, toutes préfixées `aphrody-` et référencées par `workspace = true`, et on **retire V8** en portant le runtime de page d'Obscura sur JavaScriptCore. La fusion est exécutée en one shot par un workflow dynamique Opus 5.5 plafonné à 200 €, en 1 à 2 jours, casse assumée, divergence définitive avec les upstreams. Conséquence à accepter dès J0 : tout le dépôt `aphrody` passe du stable 1.98.1 au nightly `2026-09-15` exigé par Bun, et le binaire `bun` est produit par le script de build de Bun (ninja + WebKit précompilé) porté dans `scripts/build/bun/`, pas par un simple `cargo build`.
 
 Résultat attendu : un binaire `bun` qui est aussi le navigateur headless, exposé nativement dans Bun (`bun:browser` et `Bun.Browser` dans les scripts, sous-commande `bun browser` en CLI) sans installation ni dépendance externe. Obscura gagne JSC, les Workers, `aphrody-http` (H1/H2/H3), BoringSSL, c-ares et mimalloc ; Bun gagne un DOM, un moteur de rendu, un serveur CDP compatible Puppeteer/Playwright et un serveur MCP.
 
-Point de départ (5 octobre 2026) : Obscura = 10 crates, ~172 000 lignes de Rust, 16 900 lignes de `bootstrap.js`, V8 via `deno_core`, tokio, reqwest/rustls, `wreq` ; Bun-Rust (branche `yolo`) = ~105 crates, 1 528 fichiers Rust, 576 fichiers C++ de liaison WebKit, nightly `2026-09-15`, `-Zbuild-std`, `panic = "abort"`. 126 paquets communs, une dizaine de piles en double (HTTP, TLS, DNS, compression, boucle d'événements, crypto, WebSocket, CLI, logs, codecs image).
+Point de départ (5 octobre 2026) : Obscura (fork, amont v0.2.4) = 10 crates (la copie du monorepo en a 9), ~172 500 lignes de Rust, 17 900 lignes de `bootstrap.js`, V8 via `deno_core`, tokio, reqwest/rustls, `wreq` ; Bun-Rust (branche `main`, `c439b6fbd`) = 100 crates `bun_*` (99 membres + `bun_css_derive`), 1 528 fichiers Rust (~1,04 M de lignes), 576 fichiers C++ de liaison WebKit, nightly `2026-09-15`, `-Zbuild-std`, `panic = "abort"`. 126 paquets communs (par nom, entre les `Cargo.lock` d'Obscura et de Bun ; 98 à version identique), une dizaine de piles en double (HTTP, TLS, DNS, compression, boucle d'événements, crypto, WebSocket, CLI, logs, codecs image).
 
 Les cinq choix qui rendent le one shot possible :
 
 1. **Divergence totale assumée.** Plus aucun suivi d'`oven-sh/bun` ni de `h4ckf0r0day/obscura`. Renommage mécanique par script, lints de Bun désactivées sur les crates importées, tests existants laissés en l'état tant qu'ils ne compilent pas.
-2. **JSC direct.** `bootstrap.js` repris tel quel ; un objet `Deno.core.ops` servi par `aphrody-jsc` ; seuls les 164 appels `v8::` directs, le snapshot et le chargeur de modules sont réécrits. V8, `deno_core` et une seconde ICU n'entrent jamais dans le binaire.
+2. **JSC direct.** `bootstrap.js` repris tel quel ; un objet `Deno.core.ops` servi par `aphrody-jsc` ; seuls les 181 appels `v8::` directs (181 occurrences sur 151 lignes de 4 fichiers de `obscura-js`), le snapshot et le chargeur de modules sont réécrits. V8, `deno_core` et une seconde ICU n'entrent jamais dans le binaire.
 3. **Infrastructure Bun imposée d'emblée.** tokio, reqwest, hyper, rustls, ring, wreq, tungstenite, tracing, clap ne sont pas portés : chaque usage est remplacé, ou neutralisé par un stub qui renvoie une erreur explicite, pendant la vague d'intégration.
 4. **Parallélisme d'agents.** Cinq chantiers sur des chemins disjoints réservés dans .coord/claims le jour 1 (règle du CLAUDE.md d'Aphrody : pas de worktree ni de clone), une vague d'intégration et de compilation le jour 2 ; chaque agent n'a qu'une ou deux crates en portée ; seul l'intégrateur lance Cargo, en série, par `cargo check -p`.
 5. **Budget protégé.** 200 € répartis par chantier avec plafond et condition d'arrêt ; ce qui n'entre pas dans le budget est consigné dans `BROKEN.md`, pas rattrapé.
@@ -28,12 +30,14 @@ Ce qui sera très probablement cassé à la livraison : empreinte TLS stealth in
 
 **Verdict : nouveau monorepo frais, créé depuis le fork Bun, avec vendors épinglés et système de plugins. On n'absorbe pas tout dans `aphrody`.** Le monorepo s'appelle `aphrody-labs/yolo` (le nom que `GOAL.md` donne déjà au producteur du runtime ; l'actuel dépôt `yolo` est archivé en `yolo-legacy` et son contenu utile repris par cherry-pick). Toutes ses crates portent le préfixe `aphrody-`. Le binaire s'appelle `yolo` (c'est déjà le nom installé par `docs/DISTRIBUTION.md` dans `~/.yolo/bin`), et l'installateur pose un alias `bun` pour la compatibilité des scripts ; partout où ce plan écrit `bun browser`, `bun crawl`, `bun:browser`, lire `yolo browser`, `yolo crawl`, `yolo:browser` (les modules `bun:*` restent acceptés comme alias). `aphrody` reste le dépôt des produits et se vide de ses moteurs. Cette section prime sur toute phrase antérieure du plan qui dit le contraire.
 
+> **Écart constaté (2026-10-05)** : `aphrody-labs/yolo` existe déjà (privé, non archivé, 15,8 Mo, dernier push le 5 octobre 02:20 UTC) et `yolo-legacy` n'existe pas (404) : archivage et renommage restent à faire, avant de créer le nouveau `yolo` (redirections GitHub). `GOAL.md` nomme « Yolo » le producteur du runtime (pas le dépôt `aphrody-labs/yolo` en toutes lettres). `GOAL.md` et `CLAUDE.md` d'`aphrody` imposent aujourd'hui « V8 conservé jusqu'à la parité Obscura/JSC » : le retrait de V8 de ce plan les amende. `~/.yolo/bin/yolo` est aujourd'hui un exécutable autonome (Bun embarqué, `bun build --compile`), pas le runtime Bun-Rust.
+
 Pourquoi ce choix et pas l'absorption dans `aphrody` :
 
 | Critère décisif pour un agent | Monorepo frais depuis Bun | Absorption dans `aphrody` |
 | --- | --- | --- |
-| État au commit 0 | Build vert, 2 007 tests, CI, Docker, docs MDX hérités de Bun : chaque session part d'un dépôt qui compile et peut vérifier | J0 déplace 1,17 M de lignes sur un nightly et fusionne deux systèmes de build avant que quoi que ce soit compile : le pas le plus risqué du plan, et une ambiguïté « ça compile ? » héritée par toutes les sessions suivantes |
-| Taille du contexte | Noyau Bun + Obscura + plugins ≈ 2 000 fichiers Rust ; `CLAUDE.md` court ; `cargo check` en minutes | 2 M+ de lignes, 14 domaines sans rapport avec le runtime (ML 86 000 lignes, WinClean 18 000, Discord, Google) dans le même `cargo check` et le même `Cargo.lock` |
+| État au commit 0 | Build vert, 2 009 fichiers `*.test.ts` (sous `test/`), CI, Docker, docs MDX hérités de Bun : chaque session part d'un dépôt qui compile et peut vérifier | J0 déplace ~1,19 M de lignes de Rust (3 957 fichiers hors `vendor/`, dont ~950 000 dans les 235 membres du workspace) sur un nightly et fusionne deux systèmes de build avant que quoi que ce soit compile : le pas le plus risqué du plan, et une ambiguïté « ça compile ? » héritée par toutes les sessions suivantes |
+| Taille du contexte | Noyau Bun + Obscura + plugins ≈ 1 660 fichiers Rust (1 528 + 134 pour la copie d'Obscura, plugins hors compte) ; `CLAUDE.md` court ; `cargo check` en minutes | 2 M+ de lignes, 14 domaines sans rapport avec le runtime (ML 86 000 lignes, WinClean 18 000, Discord, Google) dans le même `cargo check` et le même `Cargo.lock` |
 | Vendoring | Les dépendances lourdes sont des pins (`deps/*.ts`, `git = … rev = …` sur les forks `aphrody-labs/{tauri,wry,tao,next.js}`), jamais des copies ; une mise à jour = un bump | `aphrody` a copié Tauri en entier (55 crates, 219 000 lignes) : c'est ce qui l'a fait grossir ; l'absorption de Bun ajouterait une troisième copie de piles déjà copiées |
 | Conventions pour agents | `REVIEW.md`, lints, `scripts/build`, worktrees autorisés, Cargo parallèle : les règles de Bun sont faites pour des PR automatisées | `CLAUDE.md` d'`aphrody` interdit worktrees, clones et Cargo aux chantiers (`cargo-serial.sh`, `.coord/claims`) : juste pour un dépôt produits partagé, bloquant pour un portage de moteur |
 | Propriété | Une frontière nette : `yolo` = moteur + plugins, `aphrody` = produits qui consomment le runtime précompilé et le SDK, exactement ce que `GOAL.md` et `PLAN.md` d'`aphrody` décrivent déjà | Une seule frontière floue où un correctif de produit peut reconstruire le moteur, ce que `GOAL.md` interdit explicitement |
@@ -43,27 +47,27 @@ Ce qui va où (définitif) :
 
 | Élément | Dans `yolo` | Dans `aphrody` | Comment |
 | --- | --- | --- | --- |
-| Bun-Rust (branche `yolo` du fork) | `crates/core/*` (ex `src/*`), renommé `aphrody-*` ; `scripts/build/*`, `.github/workflows/*`, `dockerhub/` → `docker/`, `docs/`, `test/` repris tels quels | — | `git push` de la branche `yolo` comme `main` du nouveau dépôt, puis script de renommage |
-| Obscura | `crates/browser/*` : code **première partie** (le port JSC le rend non rebasable), importé depuis le fork remis à jour + patches de la copie `aphrody` | Copie `crates/web/obscura-*` supprimée dès que `plugin-obscura` passe la fumigation | Fast-forward du fork, diff trois voies, import, port JSC (chantier B) |
-| Crawl, extraction, index | `crates/plugins/crawl` + `crates/web/{crawl,extract,index,detect}` (niveau 0/1) | Supprimés d'`aphrody` après le one shot 2 ; `aphrody-web-service` consomme `yolo:web` | Déplacement de répertoires + retrait de tokio/reqwest/rusqlite |
+| Bun-Rust (branche `main` du fork, `c439b6fbd` ; la branche `yolo` n'existe plus) | `crates/core/*` (ex `src/*`), renommé `aphrody-*` ; `scripts/build/*`, `.github/workflows/*`, `dockerhub/` → `docker/`, `docs/`, `test/` repris tels quels | — | `git push` de `main` du fork comme `main` du nouveau dépôt, puis script de renommage |
+| Obscura | `crates/browser/*` : code **première partie** (le port JSC le rend non rebasable), importé depuis le fork remis à jour + patches de la copie `aphrody` | Copie `crates/web/obscura-*` supprimée dès que `plugin-obscura` passe la fumigation | Fast-forward du fork (fait le 5 octobre : `main` = `1fccab2c1`), diff trois voies, import, port JSC (chantier B) |
+| Crawl, extraction, index | `crates/plugins/crawl` + `crates/web/web-{crawl,extract,index,detect}` (paquets `aphrody-web-*` ; niveau 0/1) | Supprimés d'`aphrody` après le one shot 2 ; `aphrody-web-service` consomme `yolo:web` | Déplacement de répertoires + retrait de tokio/reqwest/rusqlite |
 | Tauri 3, wry, tao | **Pins git** sur `aphrody-labs/tauri` (`crates/tauri-runtime`, `tauri-runtime-wry`), `aphrody-labs/wry`, `aphrody-labs/tao`, compilés uniquement par la feature `gui` et `plugin-tauri` (CLI, bundler, create-tauri-app : pins eux aussi) | `crates/tauri/*` (55 crates) supprimé ; les apps Tauri d'`aphrody` dépendent des mêmes pins | Les patches locaux d'`aphrody` sur Tauri sont poussés dans les forks `aphrody-labs/*`, pas gardés en copie |
 | wgpu | `crates/plugins/wgpu` + `aphrody-gpu-backend` ; wgpu 30 depuis crates.io | `crates/ui/render` (feature `gpu`) et `crates/native/gpu-backend` migrent vers `yolo` | Une seule version de wgpu, imposée par `yolo` |
 | Next.js 16 / Turbopack / SWC | `crates/plugins/next` : pins git sur le fork `aphrody-labs/next.js` (crates `turbopack-*`, `swc_core`) | `crates/compat/oxc-bridge` migre vers `yolo` | Jamais de copie du dépôt next.js |
 | CEF | `crates/plugins/cef` : pin git sur `aphrody-tauri-runtime-cef` déplacé dans le fork `aphrody-labs/tauri` | Supprimé d'`aphrody` | Build lourd confiné au plugin |
-| ABI runtime | `crates/core/plugin-abi` (ex `yolo-runtime` d'`aphrody`, ABI `v1`) | `crates/engine/*` supprimé | `yolo` publie l'ABI, `aphrody` la consomme |
-| Logique pure d'`aphrody` (82 crates de niveau 0) | Celles dont le moteur a besoin (`web-index`, `web-extract`, `m3-tokens`, `svg`, `softraster`, `search`) | Toutes les autres restent dans `aphrody`, mais sous les mêmes règles de niveau (`xtask tiers` tourne dans les deux dépôts) | Critère : une crate migre vers `yolo` quand un plugin ou le noyau l'importe ; sinon elle reste produit |
+| ABI runtime | `crates/core/plugin-abi` (ex `crates/engine/yolo-runtime` d'`aphrody`, ABI 1.4 aujourd'hui : `ABI_MAJOR = 1`, `ABI_MINOR = 4`) | `crates/engine/*` supprimé | `yolo` publie l'ABI, `aphrody` la consomme |
+| Logique pure d'`aphrody` (82 crates de niveau 0, sur 235 membres : ni tokio, reqwest, rusqlite, tauri, wasm-bindgen ni pyo3 en dépendance directe) | Celles dont le moteur a besoin (`web-index`, `web-extract`, `m3-tokens`, `svg`, `softraster`, `search`) | Toutes les autres restent dans `aphrody`, mais sous les mêmes règles de niveau (`xtask tiers` tourne dans les deux dépôts) | Critère : une crate migre vers `yolo` quand un plugin ou le noyau l'importe ; sinon elle reste produit |
 | Produits, IA, OS, infra, Google, Discord | — | Restent, et consomment `yolo` par le runtime précompilé (`~/.yolo`), les paquets `@aphrody/plugin-*` et des pins git sur les crates `aphrody-*` de `yolo` | Pas de dépendance inverse : `yolo` ne connaît jamais `aphrody` |
 
 Conventions du dépôt `yolo`, pensées pour Claude Code :
 
-1. **Un point d'entrée par action, et un seul** : `just build` (noyau), `just plugin <nom>`, `just check` (`cargo check` sur `default-members`), `just smoke` (les cinq commandes de fumigation, sortie comparée à `smoke/expected/`), `just bench` (`hyperfine` démarrage + taille), `just tiers` (classement 0/1/2 et refus de régression). Aucune commande n'existe hors du `Justfile`.
+1. **Un point d'entrée par action, et un seul** : `just build` (noyau), `just plugin <nom>`, `just check` (`cargo check` sur `default-members`), `just smoke` (les cinq commandes de fumigation, sortie comparée à `smoke/expected/`), `just bench` (`hyperfine` démarrage + taille), `just tiers` (classement 0/1/2 et refus de régression ; `xtask tiers` est à créer : seul `crates/os/drive/xtask` existe aujourd'hui). Aucune commande n'existe hors du `Justfile`.
 2. **`CLAUDE.md` de 100 lignes maximum** : arborescence, les six recettes `just`, les interdits (crates bannies, `todo!`, build WebKit), la politique de stubs et de `BROKEN.md`, l'identité de commit. Tout le reste vit dans `docs/` et est référencé, pas recopié.
 3. **Chaque crate a un `README.md` de dix lignes** : rôle, niveau (0/1/2), dépendances autorisées, propriétaire (noyau ou plugin), comment la tester seule. `xtask tiers` vérifie que le README et le `Cargo.toml` sont d'accord.
 4. **Les décisions vivent dans le dépôt** : `docs/decisions/NNNN-*.md` (ADR courts), `BROKEN.md` (état cassé connu, une ligne par item, fermé par un commit), `.claude/prompts/*.md` (les prompts de session versionnés, dont celui du one shot 1).
 5. **Scripts idempotents et rejouables** : `scripts/fusion/*.ts` (renommage, import d'Obscura, génération des stubs) se relancent sans effet de bord ; un agent qui doute relance le script au lieu de corriger à la main.
 6. **Worktrees et Cargo parallèle autorisés** : un worktree par chantier, `cargo check -p` par l'agent lui-même, sccache partagé ; l'intégrateur fusionne dans l'ordre B → C → A → E → D. Les contraintes de `.coord/claims` et `cargo-serial.sh` restent propres à `aphrody`.
 7. **Pins, pas de copies** : `scripts/build/deps/*.ts` pour le C/C++ (modèle Bun), `[workspace.dependencies]` avec `git = …, rev = …` pour le Rust des forks ; `just bump <dep>` ouvre la PR de mise à jour ; `cargo deny` refuse deux versions d'une même crate hors liste blanche.
-8. **Un seul `Cargo.lock`, un seul `rust-toolchain.toml`** (nightly `2026-09-15`, fork rust de Bun), `default-members` = noyau ; les plugins ne se compilent que par leur recette.
+8. **Un seul `Cargo.lock`, un seul `rust-toolchain.toml`** (nightly `2026-09-15`, celui du `rust-toolchain.toml` de Bun ; aucun fork de rustc n'y est déclaré), `default-members` = noyau ; les plugins ne se compilent que par leur recette.
 
 Conséquences immédiates sur le reste du plan : le J0 du one shot 1 devient la création du dépôt (push du fork, renommage, import d'Obscura, squelette `crates/plugins`, `Justfile`, `CLAUDE.md`, `BROKEN.md`) au lieu de la migration d'`aphrody` vers le nightly ; les chantiers A–E et la fumigation sont inchangés ; les sections « Le dépôt `aphrody` comme cible » et « Base commune du monorepo » se lisent désormais comme la description de `yolo` ; le nettoyage d'`aphrody` (suppression de `crates/tauri`, `crates/web/obscura-*`, `crates/engine`, bascule des pins) est un one shot à part, après le one shot 2, exécuté sous les règles du `CLAUDE.md` d'`aphrody`. Les prompts `GOAL-FUSION.md` et `PROMPT-ONESHOT-1.md` sont réécrits pour cette cible.
 
@@ -73,14 +77,14 @@ Le noyau `bun` reste le Bun-Rust d'origine, avec son démarrage de quelques mill
 
 | Ce qui entre dans le noyau `bun` (patches, petits) | Ce qui vit dans les plugins (gros) |
 | --- | --- |
-| **Hôte de realm** (`aphrody-realm-host`, ~500 lignes dans `crates/bun/jsc`) : créer un global object JSC isolé par page dans un Worker, y installer des fonctions hôtes fournies par un plugin (table de pointeurs C `(name, fn, arity)`), évaluer un script avec cache de bytecode, interrompre (watchdog), lire/écrire des valeurs par JSON ou buffers partagés. C'est le `Deno.core.ops` générique : il ne sait rien du DOM | `@aphrody/plugin-obscura` : `aphrody-page-runtime` (`bootstrap.js` + 70 ops branchés sur l'hôte de realm), `aphrody-dom`, `aphrody-render`, `aphrody-browser`, `aphrody-browser-transport`, `aphrody-cdp`, `aphrody-browser-mcp` ; expose `bun:browser`, `Bun.Browser`, `bun browser …` |
-| **Chargeur de plugins** : manifeste, signature Ed25519, cache `~/.bun/plugins`, `bun plugin add/remove/list`, enregistrement de sous-commandes CLI et de modules `bun:*` virtuels résolus vers un plugin ; chargement **paresseux** : rien n'est `dlopen` tant qu'une commande ou un `import` ne le demande pas | `@aphrody/plugin-crawl` : `aphrody-web-crawl`, `-extract`, `-index`, `-detect`, daemon TS, `FrontierStore` SQLite/Postgres/Redis ; expose `bun crawl …` et `bun:web` |
-| **Points d'extension déjà présents ou à élargir** : `Bun.WebView` accepte un backend fourni par plugin (`backend: "obscura"` = socket vers le CDP du plugin) ; `Bun.serve` et `uws` accessibles aux plugins par N-API pour le serveur CDP ; `aphrody-http` exporté aux plugins par une table de fonctions C stable (`aphrody_http_v1`) pour que le transport Obscura n'embarque pas sa propre pile réseau | `@aphrody/plugin-tauri`, `plugin-next`, `plugin-cef`, `plugin-wgpu`, `plugin-ml`, `plugin-x`, `plugin-discord` (sections suivantes) |
+| **Hôte de realm** (`aphrody-realm-host`, ~500 lignes dans `crates/bun/jsc`) : créer un global object JSC isolé par page dans un Worker, y installer des fonctions hôtes fournies par un plugin (table de pointeurs C `(name, fn, arity)`), évaluer un script avec cache de bytecode, interrompre (watchdog), lire/écrire des valeurs par JSON ou buffers partagés. C'est le `Deno.core.ops` générique : il ne sait rien du DOM | `@aphrody/plugin-obscura` : `aphrody-page-runtime` (`bootstrap.js` + 74 ops branchés sur l'hôte de realm), `aphrody-dom`, `aphrody-render`, `aphrody-browser`, `aphrody-browser-transport`, `aphrody-cdp`, `aphrody-browser-mcp` ; expose `bun:browser`, `Bun.Browser`, `bun browser …` |
+| **Chargeur de plugins** : manifeste, signature Ed25519, cache `~/.bun/plugins`, `bun plugin add/remove/list` (aucune sous-commande `bun plugin` n'existe dans le fork : à créer), enregistrement de sous-commandes CLI et de modules `bun:*` virtuels résolus vers un plugin ; chargement **paresseux** : rien n'est `dlopen` tant qu'une commande ou un `import` ne le demande pas | `@aphrody/plugin-crawl` : `aphrody-web-crawl`, `-extract`, `-index`, `-detect`, daemon TS, `FrontierStore` SQLite/Postgres/Redis ; expose `bun crawl …` et `bun:web` |
+| **Points d'extension déjà présents ou à élargir** : `Bun.WebView` accepte un backend fourni par plugin (`backend: "obscura"` = socket vers le CDP du plugin ; aujourd'hui le fork n'accepte que `"webkit"` (macOS) et `"chrome"` (client CDP, pipe ou `ws://`) : `"obscura"` est à ajouter) ; `Bun.serve` et `uws` accessibles aux plugins par N-API pour le serveur CDP ; `aphrody-http` exporté aux plugins par une table de fonctions C stable (`aphrody_http_v1`) pour que le transport Obscura n'embarque pas sa propre pile réseau | `@aphrody/plugin-tauri`, `plugin-next`, `plugin-cef`, `plugin-wgpu`, `plugin-ml`, `plugin-x`, `plugin-discord` (sections suivantes) |
 | **Budget de démarrage** gardé par mesure : `bun -e 1` et `bun run` d'un script vide comparés avant/après chaque patch du noyau (`hyperfine`, 100 exécutions) ; tout patch qui ajoute plus de 0,5 ms au démarrage ou 1 Mo au binaire est refusé ou déplacé dans un plugin | Les plugins payent leur propre démarrage : `plugin-obscura` précharge `bootstrap.js` depuis son cache de bytecode, et garde une réserve de realms prêts pour les pages suivantes |
 
 Conséquences pratiques :
 
-- Le workspace `aphrody` garde les mêmes crates aux mêmes endroits ; ce qui change est le `crate-type` des crates de tête (`cdylib` N-API sous `crates/plugins/obscura` et `crates/plugins/crawl`) et le fait que `bun run build:bun` ne les compile pas.
+- Le workspace `aphrody` garde les mêmes crates aux mêmes endroits ; ce qui change est le `crate-type` des crates de tête (`cdylib` N-API sous `crates/plugins/obscura` et `crates/plugins/crawl`) et le fait que `bun run build:release` (`bun scripts/build.ts --profile=release` ; il n'existe pas de script `build:bun`) ne les compile pas.
 - L'ABI entre noyau et plugins est versionnée (`aphrody_plugin_abi = 1`) et testée par un plugin témoin minuscule dans la CI ; N-API couvre les objets JS, les tables C couvrent les chemins chauds (ops DOM, HTTP, realm).
 - Les tests Obscura et la suite anti-détection tournent contre `bun` + plugin, jamais contre un binaire spécial.
 - La sortie du one shot 1 devient : noyau `bun` patché (hôte de realm + chargeur) et `@aphrody/plugin-obscura` qui passe la fumigation en cinq points ; les chantiers A–E ne changent pas de contenu, le chantier B gagne une première heure pour écrire l'hôte de realm dans le noyau avant de porter les ops dessus.
@@ -88,7 +92,7 @@ Conséquences pratiques :
 
 ## État des lieux : Obscura
 
-Obscura est un workspace de 10 crates (plus `test-support`), ~172 000 lignes de Rust, organisé en couches strictes : chaque crate n'appelle que la couche du dessous. Le fork `aphrody-labs/obscura` (commit `0cdd42e`, 1er octobre) n'a aucune modification propre ; il est 62 fichiers derrière l'upstream `h4ckf0r0day/obscura` (commits des 2 au 4 octobre).
+Obscura est un workspace de 10 crates (plus un dossier `test-support` sans manifeste), ~172 500 lignes de Rust (172 515 sur le fork), organisé en couches strictes : chaque crate n'appelle que la couche du dessous. Le fork `aphrody-labs/obscura` avait son `main` à `0cdd42e` (1er octobre, sans modification propre), 107 commits derrière l'upstream `h4ckf0r0day/obscura` ; il est remis à niveau : `main` = `1fccab2c1` (v0.2.4, 4 octobre), `yolo` = `main` + 3 commits propres (SSRF strict, correctif de test, fusion).
 
 | Crate | Rôle | Lignes Rust | Dépendances structurantes | Features |
 | --- | --- | --- | --- | --- |
@@ -97,26 +101,28 @@ Obscura est un workspace de 10 crates (plus `test-support`), ~172 000 lignes de 
 | `obscura-mcp` | Serveur Model Context Protocol (stdio et HTTP) | 3 556 | tokio, serde_json | `render`, `stealth` |
 | `obscura` | API Rust embarquable : `Browser`, `Page`, `Element`, `CookieStore`, interception | 2 284 | tokio `rt` | `api`, `render`, `stealth` |
 | `obscura-browser` | Type `Page`, navigation, cycle de vie, capture écran/PDF, interception | 12 319 | tokio, futures, image | `render`, `stealth` |
-| `obscura-js` | Runtime V8 : `bootstrap.js` (16 918 lignes) + 71 ops `#[op2]`, snapshot V8 généré au build, chargeur de modules, watchdog | 36 228 (dont ~18 000 de tests) | deno_core 0.412 (V8 150.4), RustCrypto (sha1/sha2/hmac/aes-gcm/pbkdf2/hkdf), getrandom 0.2, psl | `render`, `stealth` |
-| `obscura-net` | Client HTTP, client stealth, jarre à cookies, cache robots.txt, liste de 3 520 traqueurs | 6 711 | reqwest 0.12 + rustls + ring, wreq `=6.0.0-rc.29` + wreq-util `=3.0.0-rc.12` (BoringSSL), encoding_rs, async-trait, tempfile | `stealth` |
+| `obscura-js` | Runtime V8 : `bootstrap.js` (17 932 lignes) + 74 ops (`fn op_*` ; 76 `#[op2]`), snapshot V8 généré au build, chargeur de modules, watchdog | 36 300 (dont ~18 000 de tests) | deno_core 0.412 (V8 150.4), RustCrypto (sha1/sha2/hmac/aes-gcm/pbkdf2/hkdf), getrandom 0.2, psl | `render`, `stealth` |
+| `obscura-net` | Client HTTP, client stealth, jarre à cookies, cache robots.txt, liste de 3 520 traqueurs | 6 801 | reqwest 0.12 + rustls + ring, wreq `=6.0.0-rc.29` + wreq-util `=3.0.0-rc.12` (BoringSSL), encoding_rs, async-trait, tempfile | `stealth` |
 | `obscura-dom` | Arbre DOM, sélecteurs CSS | 5 782 | html5ever 0.39, selectors 0.26, cssparser 0.34, servo_arc | — |
 | `obscura-render` | Cascade CSS, mise en page retenue (taffy), façonnage du texte, peinture CPU, SVG, PDF | 77 036 | taffy 0.12 (vendorisé), cosmic-text `=0.14.2` (vendorisé), swash, tiny-skia, resvg/usvg 0.47, ureq 2 (chargeur synchrone), image | `paint` |
 | `obscura-ssrf` | Liste de refus SSRF partagée, opt-in réseau privé | 139 | aucune | — |
+
+> **Écart constaté (2026-10-05)** : ce tableau décrit le fork (amont v0.2.4 ; `Cargo.lock` : deno_core 0.412, V8 150.4.0, reqwest 0.12.28, wreq rc.29, html5ever 0.39). La copie du monorepo (`crates/web/obscura*`, `d21e0f54a`) a 9 crates (ni `obscura-cli` ni `obscura-worker` ; `obscura-ssrf` présent ; `obscura-mcp` y est une bibliothèque d'outils de 2 726 lignes), 163 686 lignes de Rust, 2 065 attributs `#[test]`, et des dépendances plus récentes : reqwest 0.13.5, wreq rc.31, html5ever 0.40, tokio-tungstenite 0.30, resvg 0.48, ureq 3, taffy du fork privé `aphrody-labs/taffy` ; deno_core 0.412 et V8 150.4.0 inchangés. Le type `Element` n'est pas ré-exporté par la crate `obscura` (il est renvoyé par `Page::query_selector`).
 
 Points qui pèsent sur la fusion :
 
 - **Toolchain** : Rust stable 1.75+, edition 2021, `resolver = "2"`, deux `[patch.crates-io]` (taffy, cosmic-text dans `vendor/`). Profil `release-dist` en `opt-level = "s"`, LTO fat, `strip`.
 - **`panic = "unwind"` est requis** : les ops enveloppent leur corps dans `catch_unwind` pour qu'une panique dégénère en erreur au lieu de traverser le cadre FFI de V8. Bun compile tout en `panic = "abort"`.
-- **Un seul isolate V8 par processus**, mono-thread par conception. Un `tokio::sync::Mutex` global (`v8_lock`, acquis par le dispatcher CDP) sérialise tout le travail JS ; le `scrape` parallèle passe par des processus `obscura-worker`. Plusieurs `ObscuraJsRuntime` peuvent néanmoins coexister sur un même thread (test `multi_isolate_teardown`).
+- **Un isolate V8 par page** (et non « un seul par processus ») : plusieurs `ObscuraJsRuntime` coexistent, y compris sur un même thread (test `multi_isolate_teardown`, présent dans la copie du monorepo, absent du fork). Depuis le 20 juillet (`9065f38`), le serveur CDP est un thread OS par connexion et le `tokio::sync::Mutex` `v8_lock` du dispatcher est par connexion, plus global ; la construction des isolates est sérialisée par un verrou à part (`runtime.rs`). Le `scrape` parallèle passe toujours par des processus `obscura-worker` (binaire du fork).
 - **Snapshot V8 au build** : `build.rs` exécute V8 sur la machine hôte pour sérialiser `bootstrap.js` ; en compilation croisée il faut un `mksnapshot` produit par le build GN de V8.
 - **Trois piles TLS** selon les features : rustls + ring (reqwest), BoringSSL via wreq (`prefix-symbols` sur Linux/Android seulement, pour éviter les collisions avec un OpenSSL système), et `ureq` pour le chargeur synchrone du rendu.
 - **Doublons internes** déjà présents dans son `Cargo.lock` : getrandom 0.2/0.3/0.4, thiserror 1 et 2, rustix 0.38 et 1.1, quatre versions de windows-sys, deux de phf, rand, hashbrown, bindgen.
 - **Tests** : tests unitaires lourds dans `obscura-js` (runtime, ops), tests d'intégration CDP et CLI, alias `cargo test-js` (nextest, `RUST_TEST_THREADS=1`), suite de conformité WPT, parcours d'obstacles et corpus réel dans le dépôt séparé `obscura-benchmark`.
-- **Pont JS ↔ Rust étroit** : `bootstrap.js` n'accède à Rust que par `globalThis.Deno.core` (70 ops distincts, un seul alias en tête de fichier). C'est ce qui rend un portage vers JSC envisageable.
+- **Pont JS ↔ Rust étroit** : `bootstrap.js` n'accède à Rust que par `globalThis.Deno.core` (75 noms `op_*` distincts, un seul alias `__obscuraCore` en tête de fichier, ligne 8). C'est ce qui rend un portage vers JSC envisageable.
 
-## État des lieux : Bun-Rust (`aphrody-labs/bun`, branche `yolo`)
+## État des lieux : Bun-Rust (`aphrody-labs/bun`, branche `main`)
 
-Le fork n'est plus le Bun Zig/C++ d'upstream : c'est un portage complet en Rust (commit `954db0c`, 5 octobre), avec un workspace de ~105 crates sous `src/` dont `bun_runtime` est la racine, et 576 fichiers C++ qui restent la colle vers WebKit/JavaScriptCore. Tout ce dont Obscura a besoin comme infrastructure y existe déjà, sauf le proxy SOCKS5.
+Le fork n'est plus le Bun Zig/C++ d'upstream : c'est un portage complet en Rust (`main`, tête `c439b6fbd` du 5 octobre ; `954db0c` en est un ancêtre, 8 commits derrière), avec un workspace de 99 membres (+ `bun_css_derive`) sous `src/` dont `bun_runtime` est la racine, et 576 fichiers C++ qui restent la colle vers WebKit/JavaScriptCore. Tout ce dont Obscura a besoin comme infrastructure y existe déjà, sauf le proxy SOCKS5.
 
 | Domaine | Ce que le fork fournit | Conséquence pour la fusion |
 | --- | --- | --- |
@@ -134,16 +140,18 @@ Le fork n'est plus le Bun Zig/C++ d'upstream : c'est un portage complet en Rust 
 | Build | `scripts/build.ts` (ninja) ; `rust.ts` planifie `cargo build -p bun_runtime --unit-graph` avec `-Zbuild-std=core,alloc,std,proc_macro,panic_abort`, `-Clinker-plugin-lto`, `-Ctarget-cpu` dérivé de `-march` ; le lien final est fait par ninja avec les objets C++ | Toute crate ajoutée passe par ce plan ; une bibliothèque précompilée (V8) doit être déclarée comme dépendance `deps/*.ts` |
 | Toolchain | `nightly-2026-09-15`, edition 2024, 11 cibles préinstallées + aarch64-freebsd via build-std, `panic = "abort"` en dev et release, `lto = "off"` + `codegen-units = 1` (ThinLTO au lien) | Obscura doit compiler sur ce nightly et vivre sans `catch_unwind` |
 | Lints | `[workspace.lints]` : `warnings`, `dead_code`, `unreachable_pub`, `unused_*` en `deny` ; `clippy.toml` interdit `std::fs`, `std::sync::Mutex`, `HashMap` std, `println!`, `str::find`, `std::thread::spawn`, `std::process::Command`… | Les crates Obscura n'y passent pas en l'état ; adoption crate par crate |
-| Tests et revue | 2 007 fichiers `*.test.ts` (runner `bun test`), 77 fichiers Rust avec `#[test]`, `rust:check`, `rust:clippy`, `rust:check-all` (toutes cibles), lints de source dans `test/internal/source-lints`, `REVIEW.md` et `.claude/docs/landing-prs.md` comme critères de merge | Les tests Obscura (Rust) et la suite anti-détection s'ajoutent à ce dispositif |
+| Tests et revue | 2 009 fichiers `*.test.ts` sous `test/` (runner `bun test`), 77 fichiers Rust avec `#[test]`, `rust:check`, `rust:clippy`, `rust:check-all` (toutes cibles), lints de source dans `test/internal/source-lints`, `REVIEW.md` et `.claude/docs/landing-prs.md` comme critères de merge | Les tests Obscura (Rust) et la suite anti-détection s'ajoutent à ce dispositif |
+
+> **Écart constaté (2026-10-05)** : `scripts/build/config.ts:1295` (`c439b6fbd`) fixe `webkit: partial.webkit ?? "prebuilt"` et 15 profils de `profiles.ts` sur 17 utilisent `"prebuilt"` (2 en `"local"`) (WebKit `5718a6ec…` téléchargé depuis `oven-sh/WebKit`) : la ligne « WebKit précompilé » de cette partie est exacte sur ce commit. L'affirmation de la partie 4 (§10.3, JSC/ICU compilés depuis les sources par défaut depuis la PR #41330) n'est pas confirmée par le checkout. Le fork ne contient aucun proxy SOCKS (seul `src/url/lib.rs` cite `socks`) : le trou signalé ci-dessus est confirmé.
 
 Deux faits de build conditionnent le pont V8 de la phase 1 :
 
 - `lol_html` montre la voie : une crate Rust externe est compilée comme rlib du workspace (pas de `staticlib`, qui dupliquerait `std`), récupérée dans `vendor/` par un script `deps/*.ts` et exclue des `members`. Les crates Obscura, elles, deviennent des membres à part entière.
-- La crate `v8` (rusty_v8) télécharge une archive statique précompilée par cible et embarque sa propre ICU ; la matrice CI de rusty_v8 v150.4.0 la publie pour Linux gnu et musl (x86_64, aarch64), riscv64, macOS (x86_64, arm64) et Windows x86_64 MSVC ; rien pour Android, FreeBSD ni Windows ARM64, trois cibles de Bun. Le pont V8 est donc une feature de build (`browser`) activée par cible, jamais une dépendance inconditionnelle de `bun_runtime`.
+- La crate `v8` (rusty_v8) télécharge une archive statique précompilée par cible et embarque sa propre ICU ; la matrice CI de rusty_v8 v150.4.0 la publie pour Linux gnu et musl (x86_64, aarch64), riscv64, macOS (x86_64, arm64) et Windows x86_64 MSVC ; rien pour Android, FreeBSD ni Windows ARM64, soit cinq des douze triples de Bun (Android x64/arm64, FreeBSD x64/arm64, Windows arm64) ; matrice rusty_v8 non vérifiable ici. Le pont V8 est donc une feature de build (`browser`) activée par cible, jamais une dépendance inconditionnelle de `bun_runtime`.
 
 ## Doublons, goulots d'étranglement et choix d'architecture
 
-Onze fonctions existent deux fois ; pour chacune la cible est la pile de Bun, renommée `aphrody-*`, sauf trois cas où Obscura garde la sienne (DOM, rendu, URL). Chaque ligne est un ordre de travail du one shot, affecté à une vague (J1 = chantiers parallèles, J2 = intégration).
+Seize fonctions existent deux fois (tableau ci-dessous, hors ligne « Versions croisées ») ; pour treize la cible est la pile de Bun, renommée `aphrody-*`, et dans trois cas Obscura garde la sienne (DOM, rendu, URL). Chaque ligne est un ordre de travail du one shot, affecté à une vague (J1 = chantiers parallèles, J2 = intégration).
 
 | Fonction | Obscura aujourd'hui | Bun-Rust aujourd'hui | Cible unifiée | Vague |
 | --- | --- | --- | --- | --- |
@@ -167,14 +175,14 @@ Onze fonctions existent deux fois ; pour chacune la cible est la pile de Bun, re
 
 Goulots d'étranglement levés par construction :
 
-1. **Le verrou V8 global** (un isolate par processus, `Mutex` dans le dispatcher CDP, processus `obscura-worker` pour `scrape`) disparaît : un realm de page par Worker JSC, N pages en parallèle dans un processus.
+1. **Le verrou V8 et le modèle processus** (un isolate par page, un thread OS par connexion CDP, un `Mutex` `v8_lock` par connexion, processus `obscura-worker` pour `scrape`) disparaissent : un realm de page par Worker JSC, N pages en parallèle dans un processus. Ce goulot est déjà plus étroit que ne le disait la version initiale (verrou global levé le 20 juillet) : le gain attendu est surévalué.
 2. **Deux boucles d'événements** : tokio n'est pas importé ; le moteur de page tourne sur un thread Worker et notifie le thread JS par `ConcurrentTask`.
 3. **Trois piles TLS et deux ICU** : une seule BoringSSL, une seule ICU, celles de WebKit et de Bun.
 4. **Le snapshot V8 au build** (`build.rs` exécutant V8 sur l'hôte, `mksnapshot` en compilation croisée) : remplacé par l'évaluation de `bootstrap.js` à la création du realm, avec cache de bytecode JSC si le budget le permet, sinon évaluation à chaque page (coût de démarrage accepté à la livraison).
 
 Choix d'architecture retenu : **JSC direct, divergence totale, infrastructure Bun imposée**. Les alternatives écartées : garder V8 comme pont (deux moteurs, deux ICU, archive rusty_v8 à intégrer au build ninja, `panic = "abort"` contre le protocole `catch_unwind` d'Obscura ; incompatible avec « un seul binaire » et inutile si l'on accepte la casse) ; vendoring + adaptateur mince (rien n'est dédupliqué) ; port progressif en mois (contraire au one shot).
 
-Sur « Bun-Rust peut-il être compatible avec deno_core ? » : pas au sens littéral, `deno_core` est V8 (`JsRuntime`, ops, snapshots, `v8::` partout). Ce qui est fait ici : `aphrody-jsc` fournit à `bootstrap.js` le même objet `globalThis.Deno.core` (70 ops en fonctions hôtes, `#[op2]` → `host_fn`). Les 164 appels `v8::` directs d'`obscura-js` (contextes, `Global`, `TryCatch`, compilation de scripts, watchdog `IsolateHandle`) sont la partie réécrite, pas les 70 ops ni le JS.
+Sur « Bun-Rust peut-il être compatible avec deno_core ? » : pas au sens littéral, `deno_core` est V8 (`JsRuntime`, ops, snapshots, `v8::` partout). Ce qui est fait ici : `aphrody-jsc` fournit à `bootstrap.js` le même objet `globalThis.Deno.core` (74 ops en fonctions hôtes, `#[op2]` → `host_fn`). Les 181 appels `v8::` directs d'`obscura-js` (contextes, `Global`, `TryCatch`, compilation de scripts, watchdog `IsolateHandle`) sont la partie réécrite, pas les 74 ops ni le JS.
 
 ## Architecture cible
 
@@ -184,7 +192,7 @@ Sur « Bun-Rust peut-il être compatible avec deno_core ? » : pas au sens litt�
         └───────────────┴──────────┬────────┴───────────────────┘
           aphrody-browser — Browser, Page, cycle de vie, interception, capture
                                    │
-   aphrody-page-runtime — bootstrap.js (16 900 lignes) + 70 ops sur JSC
+   aphrody-page-runtime — bootstrap.js (17 900 lignes) + 74 ops sur JSC
    (façade Deno.core.ops exposée par aphrody-jsc ; ni V8, ni deno_core, ni snapshot)
                   │                                    │
    aphrody-dom — html5ever, selectors       aphrody-render — taffy, cosmic-text, tiny-skia
@@ -199,7 +207,7 @@ Sur « Bun-Rust peut-il être compatible avec deno_core ? » : pas au sens litt�
 
 Les quatre surfaces (module JS, CLI, CDP, MCP) ne parlent qu'à `aphrody-browser` ; le moteur de page est un realm JavaScriptCore par page, exécuté dans un Worker ; tout ce qui est sous la ligne DOM/rendu est l'infrastructure existante de Bun, renommée.
 
-Règle de nommage, appliquée par script à tout le workspace : nom de paquet `aphrody-<nom>` (tirets), nom de bibliothèque `aphrody_<nom>` (soulignés, ce que `use` voit), dossier `src/<nom>`, déclaration unique dans `[workspace.dependencies]` et `aphrody-<nom>.workspace = true` partout. `bun_http` devient donc `aphrody-http` (`use aphrody_http::`), `bun_jsc` devient `aphrody-jsc`, et ainsi de suite pour les ~105 crates ; le binaire reste `bun`.
+Règle de nommage, appliquée par script à tout le workspace : nom de paquet `aphrody-<nom>` (tirets), nom de bibliothèque `aphrody_<nom>` (soulignés, ce que `use` voit), dossier `src/<nom>`, déclaration unique dans `[workspace.dependencies]` et `aphrody-<nom>.workspace = true` partout. `bun_http` devient donc `aphrody-http` (`use aphrody_http::`), `bun_jsc` devient `aphrody-jsc`, et ainsi de suite pour les ~100 crates ; le binaire reste `bun`.
 
 Correspondance des crates Obscura :
 
@@ -247,3 +255,61 @@ CLI : chaque commande Obscura devient une sous-commande `bun browser`, flags inc
 Modèle d'exécution : un moteur de page vit sur un thread Worker (une VM JSC dédiée), jamais sur le thread JS principal ; les appels depuis `bun:browser` sont des promesses résolues par `ConcurrentTask`. `scrape --concurrency 25` lance 25 Workers dans le processus. Le serveur CDP garde la sémantique actuelle (une session par cible) mais route chaque cible vers un Worker. Le code asynchrone d'Obscura (tokio) devient synchrone sur le thread du Worker : c'est la simplification qui rend le portage faisable en un jour, au prix d'un `fetch()` de page qui bloque son Worker le temps de la réponse.
 
 *(Suite dans la partie 2 : Plan d'exécution one shot, dépôt cible, service 24/7, mode graphique, apps Tauri, plugins, base commune du monorepo.)*
+
+## Journal de vérification (2026-10-05)
+
+Sources : `V` = `/home/aphro/aphrody/vendor/bun` (`main` `c439b6fbd`) ; `F` = clone du fork Obscura (scratchpad, `yolo` `dbea8a7`, amont v0.2.4) ; `C` = copie `crates/web/obscura*` ; `M` = monorepo ; `API` = `aphrody git api` (GET). Comptes par `Bun.Glob` (lignes physiques).
+
+| Affirmation d'origine | Valeur vérifiée | Source |
+| --- | --- | --- |
+| ~105 crates Bun-Rust | 100 : 99 membres + `bun_css_derive` (282 paquets au `Cargo.lock`) | `V/Cargo.toml` `members`, `V/Cargo.lock` |
+| 1 528 fichiers Rust | 1 528 (`src/**/*.rs`), ~1 039 737 lignes | `Bun.Glob` sur `V/src` |
+| 576 fichiers C++ | 576 (`src/**/*.{cpp,cc,cxx}`) | `Bun.Glob` |
+| 2 007 tests | 2 009 `*.test.ts` sous `test/` (2 018 dans l'arbre, 2 218 toutes extensions JS/TS) | `Bun.Glob` |
+| 77 fichiers Rust avec `#[test]` | 77 | `Bun.Glob` + lecture |
+| nightly `2026-09-15` | confirmé ; edition 2024 ; 11 cibles préinstallées + aarch64-freebsd via build-std | `V/rust-toolchain.toml`, `V/scripts/build/rust.ts` |
+| `panic = "abort"`, `lto = "off"`, `codegen-units = 1` | confirmé (dev et release) | `V/Cargo.toml:130-137` |
+| commit `954db0c`, branche `yolo` du fork | `main` à `c439b6fbd` ; `954db0c` ancêtre (8 commits) ; branche `yolo` : HTTP 404 | `API /repos/aphrody-labs/bun/compare/954db0c...c439b6fbd`, `/branches/yolo` |
+| fork Bun = amont + patches | `main` = amont + 6 commits, 1 commit amont en retard au moment de la mesure | `API compare oven-sh:main...aphrody-labs:main`, `git log upstream/main..main` |
+| 11 crates `*_jsc` | 11 + `bun_jsc` (12 noms en `_jsc`) | `V/Cargo.toml` |
+| 31 `*.classes.ts` | 31 (et 6 `*.bind.ts`) | `Bun.Glob` |
+| BoringSSL `41bf9b5` | confirmé (`41bf9b59c2eb…`, `oven-sh/boringssl`) | `V/scripts/build/deps/boringssl.ts:27` |
+| `lol_html` 2.7.2 ; `bun_css` cssparser 0.36 / selectors 0.33 | confirmé | `V/Cargo.lock` |
+| H1/H2/H3, `ProxyTunnel`, cache de sessions TLS, thread HTTP | confirmé (`H2Client.rs`, `H3Client.rs`, `h2_client/`, `h3_client/`, `ProxyTunnel.rs`, `session_cache.rs`, `HTTPThread.rs`) | `V/src/http` |
+| SOCKS5 absent | confirmé (aucun proxy SOCKS ; seul `src/url/lib.rs` cite `socks`) | `rg -i socks V/src` |
+| lints `deny` et `clippy.toml` | confirmé (`warnings`, `dead_code`, `unreachable_pub`, `unused_*` ; `std::fs`, `std::sync::Mutex`, `parking_lot::Mutex`, `HashMap` std, `println!`, `str::find`, `std::thread::spawn`, `std::process::Command`) | `V/Cargo.toml:179-205`, `V/clippy.toml` |
+| WebKit précompilé | confirmé : défaut `prebuilt` (15 profils sur 17) ; contredit la partie 4 §10.3 | `V/scripts/build/config.ts:1295`, `profiles.ts` |
+| `bun run build:bun` | inexistant ; commande réelle `bun run build:release` | `V/package.json`, `M/package.json` |
+| `Bun.WebView` accepte un backend plugin | faux aujourd'hui : `"webkit"` ou `"chrome"` seulement | `V/packages/bun-types/bun.d.ts:9740-9804` |
+| `bun plugin add/remove/list` | inexistant dans le fork | `rg` sur `V/src/cli` |
+| 126 paquets communs de `Cargo.lock` | 126 par nom (registre) entre `Cargo.lock` Obscura et Bun ; 98 à version identique ; 162 / 102 si l'on prend le `Cargo.lock` d'`aphrody` | `Bun.file` sur les trois `Cargo.lock` |
+| Obscura 10 crates | fork : 10 membres (+ dossier `test-support` sans manifeste) ; copie `aphrody` : 9 (pas de `obscura-cli`) | `F/Cargo.toml`, `cargo metadata --no-deps --offline` |
+| ~172 000 lignes Rust d'Obscura | fork 172 515 ; copie 163 686 | `Bun.Glob` |
+| lignes par crate (tableau) | exactes sauf `obscura-js` 36 300 (était 36 228) et `obscura-net` 6 801 (était 6 711) | `Bun.Glob` sur `F/crates` |
+| `bootstrap.js` 16 918 / 16 900 lignes | 17 932 (fork et copie identiques) | `Bun.file` |
+| 71 / 70 ops | 74 `fn op_*`, 76 `#[op2]` dans `ops.rs` ; 75 noms `op_*` distincts dans `bootstrap.js` ; alias unique `__obscuraCore` (l. 8) | `F/crates/obscura-js` |
+| 164 appels `v8::` | 181 occurrences (151 lignes ; `runtime.rs` 106, `ops.rs` 42, `frame.rs` 2, `v8_flags.rs` 1) | `rg` sur `F/crates/obscura-js` |
+| deno_core 0.412 / V8 150.4.0 | confirmé (fork et copie) | `Cargo.lock` des deux |
+| versions des dépendances Obscura (tokio 1.52, reqwest 0.12, wreq rc.29, html5ever 0.39, selectors 0.26, cssparser 0.34, taffy 0.12, cosmic-text 0.14.2, resvg 0.47, ureq 2, tokio-tungstenite 0.26) | confirmées pour le fork ; la copie : tokio 1.53.1, reqwest 0.13.5, wreq rc.31, html5ever 0.40, tokio-tungstenite 0.30, resvg 0.48, ureq 3 | `F/Cargo.lock`, `M/Cargo.toml`, `M/Cargo.lock` |
+| doublons internes (getrandom, thiserror, rustix, windows-sys, phf, rand, hashbrown, bindgen) | confirmés ; Obscura : strum 0.27, itertools 0.13, derive_more 0.99 ; Bun : strum 0.26, itertools 0.10, derive_more 2.1 | `F/Cargo.lock`, `V/Cargo.lock` |
+| 3 520 traqueurs | 3 520 | `obscura-net/src/pgl_domains.txt` |
+| Rust 1.75+, edition 2021, 2 `[patch.crates-io]`, `release-dist`, `panic = "unwind"`, alias `cargo test-js` | confirmé | `F/Cargo.toml`, `F/.cargo/config.toml`, `F/README.md:215` |
+| « un seul isolate V8 par processus », `v8_lock` global | faux depuis le 20 juillet : verrou par connexion, un thread OS par connexion, isolate par page | `F/crates/obscura-cdp/src/{dispatch,server}.rs`, commit `9065f38` |
+| fork Obscura `0cdd42e`, 62 fichiers derrière | `0cdd42e` (1er octobre) ok ; retard réel 107 commits ; `main` = `1fccab2c1` (v0.2.4) ; `yolo` = `main` + 3 | `API compare` |
+| Tauri « 55 crates, 219 000 lignes » | 55 membres / 56 dossiers ; 218 898 lignes `.rs` sous `crates/tauri` (217 964 dans les membres) ; tauri 3.0.0-alpha.4, wry 0.57.0, tao 0.37.1 | `cargo metadata`, `Bun.Glob` |
+| `crates/web/web-*` | existe : `web-{bridge,chromeium,crawl,detect,engine,extract,frames,index,service}` ; dossiers des cibles à écrire `web-crawl`… | `cargo metadata` |
+| « 82 crates de logique pure » | 82 sur 235 membres (dépendances directes normales + build, alias résolus) ; 74 si l'on compte les dev-deps | `cargo metadata` (script `Bun`) |
+| `aphrody` « 265 manifests, ~1,17 M lignes » | 266 `Cargo.toml` hors `vendor/`, `target/`, `node_modules/` ; 1 193 729 lignes `.rs` (3 957 fichiers) ; 235 membres du workspace, ~950 000 lignes | `Bun.Glob`, `cargo metadata` |
+| ML 86 000, WinClean 18 000, Discord, Google | ML 86 153 ; WinClean 18 256 ; Discord 652 ; Google 16 920 ; 14 dossiers de domaine sous `crates/` | `Bun.Glob` |
+| stable 1.98.1 | confirmé | `M/rust-toolchain.toml` |
+| `yolo-runtime` ABI `v1` | ABI 1.4 | `crates/engine/yolo-runtime/src/lib.rs:32-33` |
+| wgpu 30 ; `crates/ui/render` (feature `gpu`) ; `crates/native/gpu-backend` ; `crates/compat/oxc-bridge` | confirmé (wgpu 30.0.1) | `M/Cargo.toml:443`, `cargo metadata` |
+| forks `aphrody-labs/{tauri,wry,tao,next.js}` ; `tauri-runtime`, `tauri-runtime-wry` | confirmé (publics ; branche par défaut `dev` pour tauri/wry/tao, `canary` pour next.js ; `tao` `yolo` identique à `dev`) | `API` |
+| `GOAL.md` nomme `aphrody-labs/yolo` | « Yolo » nommé producteur (pas le dépôt) ; `aphrody-labs/yolo` existe, privé, non archivé ; `yolo-legacy` : 404 | `M/GOAL.md` §1, `API` |
+| `~/.yolo/bin` installé par `docs/DISTRIBUTION.md` | confirmé (`bin/yolo` = exécutable Bun compilé) | `M/docs/DISTRIBUTION.md` |
+| `xtask tiers` dans les deux dépôts | n'existe pas (seul `crates/os/drive/xtask`) | `fd xtask` |
+| « Onze fonctions » en double | 16 lignes de fonctions (+ « Versions croisées ») : 13 vers Bun, 3 gardées par Obscura | recompte du tableau |
+| `Element` dans l'API Rust d'Obscura | type existant mais non ré-exporté | `F/crates/obscura/src/lib.rs`, `page.rs` |
+| `CLAUDE.md` d'`aphrody` : pas de worktree/clone, Cargo réservé, `cargo-serial.sh`, `.coord/claims` | confirmé | `M/CLAUDE.md`, `scripts/build/rust/`, `.coord/` |
+
+Non vérifiables ici : matrice de publication de rusty_v8 v150.4.0 (hors sources autorisées) ; budgets de démarrage (0,5 ms, 1 Mo), durées d'exécution du one shot, plafond de 200 €, tailles et performances futures ; « Workers WebCore = une VM JSC par thread » (non recompté dans le code) ; toutes les conceptions à créer (`aphrody-realm-host`, `aphrody_plugin_abi`, `aphrody_http_v1`, `just`, `smoke/`, `BROKEN.md`) ; état de `plugins/` et du dépôt `yolo` hors API.

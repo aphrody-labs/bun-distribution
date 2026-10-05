@@ -21,8 +21,9 @@ gitGraph
    commit id: "aphrody: next patch"
 ```
 
-Since 2026-10-05 the fork has a single branch, **`main`** (also the GitHub default branch); the former
-`yolo` integration branch was fast-forwarded into it and deleted.
+Since 2026-10-05 the fork has a single Aphrody working branch, **`main`** (also the GitHub default branch); the former
+`yolo` integration branch was fast-forwarded into it and deleted. The fork also keeps hundreds of branches inherited from
+`oven-sh/bun` and the prototype branch `aphrody`; none of them feeds the pin.
 
 - `main` = upstream `oven-sh/bun:main` + the Aphrody patches, as commits on top (Tauri-aware type
   definitions [`packages/bun-types/tauri.d.ts`](../vendor/bun/packages/bun-types/tauri.d.ts), modules resolved
