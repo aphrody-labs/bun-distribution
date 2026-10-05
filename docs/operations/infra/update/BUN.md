@@ -108,8 +108,6 @@ Mirror of `config/deps/bun-holds.json` (bumps refused) and the npm entries of `c
 
 | Package | Held at | Reason | Released when |
 | --- | --- | --- | --- |
-| `graphql` | 16.x | `type-graphql` 2.0.0-rc.3 peers `graphql ^16.12.0`; the only consumer is `packages/fut/fut` (`FutResolver`) and two graphql copies break at runtime. yoga, envelop and graphql-tools already accept 17. | `type-graphql` ships a graphql 17 peer, or fut drops it |
-| `graphql-scalars` | 1.x | `type-graphql` peers `^1.25.0`, which 2.0.0 does not satisfy; 1.26.0 already allows graphql 17. | with `type-graphql` |
 | `undici-types` | 8.9.0 | `@types/node` 26.6.x depends on `undici-types ~8.9.0`; the catalog pin follows it so the workspace holds one copy (the old pin 7.24.6 made two). | `@types/node` moves |
 | `@aphrody/canvas` | catalog entry unused | First-party (`m3/packages/canvas`); consumers resolve it through `workspace:*`. The registry copy is not a source of truth (publishing is an owner decision). | never bumped through the catalog |
 | `jsdom` | 29.x | jsdom 30 declares `undici ^8.10.2` but the root override forces `undici ^7.30.0` (miniflare, `@ai-sdk/provider-utils`, `cheerio`, `shadcn` need 7). | the `undici` override can move to 8 |

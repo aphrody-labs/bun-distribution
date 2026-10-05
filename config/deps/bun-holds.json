@@ -3,18 +3,6 @@
   "note": "Bun/npm bumps that policy refuses until the blocker moves. `aphrody-update bun status|plan|apply` lists them as held and never bumps them. A hold stops releases above `maxMajor`, or above `maxVersion`. Advisory holds (security findings that no bump can fix) stay in advisory-holds.json. Re-check on every bump and remove an entry as soon as its blocker moves; the table in docs/operations/infra/update/BUN.md mirrors this file.",
   "holds": [
     {
-      "name": "graphql",
-      "maxMajor": 16,
-      "since": "2026-10-02",
-      "reason": "type-graphql 2.0.0-rc.3 (and rc.4) peers graphql ^16.12.0 and the only consumer is packages/fut/fut (FutResolver); two graphql copies break at runtime. Moves when type-graphql ships a graphql 17 peer or fut drops it."
-    },
-    {
-      "name": "graphql-scalars",
-      "maxMajor": 1,
-      "since": "2026-10-02",
-      "reason": "type-graphql peers graphql-scalars ^1.25.0, which 2.0.0 does not satisfy; 1.26.0 already allows graphql 17, so staying on 1.x costs nothing."
-    },
-    {
       "name": "undici-types",
       "maxVersion": "8.9.0",
       "since": "2026-10-02",

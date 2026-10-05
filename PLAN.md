@@ -117,9 +117,33 @@ paquets `fork` déclarés).
   partition temporaire par commit (loop ext4, tmpfs ou répertoire), y extrait un worktree du miroir partiel
   et construit `scripts/build.ts --profile=release` ; `watch` construit chaque nouveau commit de la branche
   surveillée (défaut `main` du fork ; nos absorptions vivent sur `yolo`) ; reçu JSON, binaire et sha256 par commit.
-- [ ] Activation : premier build complet du fork par `bun-forge` sur la factory, installation du runtime,
-  puis `--fork-active` et retrait des déclarations `fork`.
+- [~] Activation : premier build complet du fork par `bun-forge` sur la factory fait (yolo `954db0c0`,
+  7 min 10 s, Bun 1.4.3, les 5 spécifiers absorbés résolus en natif) ; restent l’installation du runtime
+  (glibc 2.43 : WSL Ubuntu 26.04), puis `--fork-active` et le retrait des déclarations `fork`.
 - [ ] `native` : `postgres`/`pg` → `Bun.SQL`, `sharp` → `Bun.Image`, `playwright*` → `Bun.WebView`,
   `marked` → `Bun.markdown`, `dayjs`/`date-fns` → `Temporal`, `smol-toml` → `Bun.TOML`, `tsup` → `Bun.build`.
-- [ ] `gap` → fork : `lru-cache`, `p-queue`/`p-retry`/`bottleneck`, `pino`, `fuse.js`, `qrcode`,
-  `@napi-rs/canvas`.
+- [ ] `gap` → fork : `pino`, `fuse.js`, `qrcode`, `@napi-rs/canvas` (`lru-cache`, `p-queue`, `p-retry`,
+  `bottleneck` sont partis avec FUT).
+
+## 7. Noyau et paquets installables (décision du 2026-10-05)
+
+Gestionnaire de paquets : Bun natif. `workspace:*` dans le monorepo ; les paquets installables sont publiés
+sous le scope npm `@aphrody` (`bun publish`, 51 paquets déjà publiés par le propriétaire) ; les dépôts
+frères privés consomment le canal d’archives adressées par sha256 de `aphrody-ops aphrody-packages prepare`
+(pin `config/aphrody-packages.json`, consommateurs : IECODE, FUT). Pas de second gestionnaire.
+
+- Noyau (monorepo, jamais installé seul) : engine (yolo-core), runtime SDK, paths, http, sql, update,
+  workspace, plugins, os, shell-web, test-dom, CLI `yolo`.
+- Paquets installables (indépendants, publiables) : `@aphrody/x`, `xai`, `google`, `doc-ai`, `ovh`,
+  `messaging`, `n2b-*`, `web-test`, `bun` (FFI), famille m3 ; `agent-browser` est à absorber dans
+  Aphrody Web (Rust).
+- Non-produit → dépôt propre : [x] FUT (`aphrody-labs/fut`, historique conservé, 148 tests verts en
+  autonomie sur le pin d’archives) ; [ ] Shenron et Koharu à trancher.
+- [ ] Retirer les doublons de mécanismes : crate morte `aphrody-marketplace`, `publish-workspaces.ts`,
+  pin SDK `config/sibling-checkouts.json` (remplacé par le canal d’archives), wrappers `bun install`
+  multiples (façade unique `yolo-core/pm`) ; scan `aphrody-packages` étendu à `m3/packages` et `crates/tauri`.
+- [ ] GitHub : archiver les dépôts absorbés (`yolo`, `aphrody-m3`, `nie-ui`, `plugin-*` → `plugins`) et les
+  forks intégrés ou purgés (tauri, tao, wry, plugins-workspace, create-tauri-app, next.js, tailwindcss,
+  base-ui, fonts, material-*) ; trancher `aphrody-py` contre `py/`.
+- [ ] npm : déprécier les paquets absorbés par Bun (`zstd`, `xml2`, `web-storage`, `web-notification`), renommés
+  (`bun-rs`), ou hors produit (scrapers d’épisodes, `bxc*`) ; jeton npm du propriétaire requis.
