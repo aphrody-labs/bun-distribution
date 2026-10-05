@@ -309,7 +309,7 @@ export class BunUpstreamTrackerEngine {
 
     let md = `# Bun Upstream Optimization & Intelligence Tracker\n\n`;
     md += `> **Source**: [oven-sh/bun](https://github.com/oven-sh/bun)  \n`;
-    md += `> **Target Fork**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (Branch: \`yolo\`)  \n`;
+    md += `> **Target Fork**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (Branch: \`main\`)  \n`;
     md += `> **Updated**: ${new Date().toISOString()}  \n`;
     md += `> **Engine**: \`scripts/tools/vendor/bun_upstream_tracker.ts\`\n\n`;
 
@@ -343,13 +343,13 @@ export class BunUpstreamTrackerEngine {
     md += `\`\`\`bash\n`;
     md += `# 1. Fetch latest upstream\n`;
     md += `git -C vendor/bun fetch upstream\n\n`;
-    md += `# 2. Switch to yolo branch\n`;
-    md += `git -C vendor/bun checkout yolo\n\n`;
+    md += `# 2. Switch to the fork main branch\n`;
+    md += `git -C vendor/bun checkout main\n\n`;
     md += `# 3. Cherry pick the commit (example for PR #33711)\n`;
     md += `git -C vendor/bun cherry-pick <commit-sha>\n\n`;
     md += `# 4. Verify test suite and push\n`;
     md += `bun x tsc --noEmit -p vendor/bun/packages/bun-types\n`;
-    md += `git -C vendor/bun push origin yolo\n`;
+    md += `git -C vendor/bun push origin main\n`;
     md += `\`\`\`\n`;
 
     return md;
