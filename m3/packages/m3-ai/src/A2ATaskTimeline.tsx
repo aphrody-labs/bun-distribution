@@ -3,7 +3,7 @@
  * @aphrody/m3-ai - A2ATaskTimeline
  *
  * Material Design 3 Agent-to-Agent Delegation Timeline:
- * - Chronological trace of task handoffs between agents (e.g., user -> agycli -> codex -> claude -> shenron).
+ * - Chronological trace of task handoffs between agents (e.g., user -> agycli -> codex -> claude -> rag).
  * - Displays delegation phase, envelope kind, file claims, and execution status.
  */
 

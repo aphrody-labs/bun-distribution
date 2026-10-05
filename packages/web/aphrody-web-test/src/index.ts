@@ -21,49 +21,32 @@
  */
 
 export {
-	test,
-	createTest,
-	describe,
-	it,
-	beforeAll,
-	afterAll,
-	beforeEach,
-	afterEach,
-	mock,
-	type WebTest,
-	type WebFixtures,
-	type FixtureBody,
+  test,
+  createTest,
+  describe,
+  it,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  mock,
+  type WebTest,
+  type WebFixtures,
+  type FixtureBody,
 } from "./runner.ts";
 
-export {
-	expect,
-	type LocatorMatchers,
-	type MatcherOptions,
-} from "./expect.ts";
+export { expect, type LocatorMatchers, type MatcherOptions } from "./expect.ts";
 
 export { TestPage, type TestPageOptions } from "./page.ts";
 
 export {
-	collectPageDiagnostics,
-	type DiagnosticsOptions,
-	type PageDiagnostics,
+  collectPageDiagnostics,
+  type DiagnosticsOptions,
+  type PageDiagnostics,
 } from "./diagnostics.ts";
 
-export {
-	WebLocator,
-	type CdpPage,
-	type FilterOptions,
-} from "./locator.ts";
+export { WebLocator, type CdpPage, type FilterOptions } from "./locator.ts";
 
-export {
-	defineConfig,
-	type WebTestConfig,
-	type UseOptions,
-	type ExpectConfig,
-} from "./config.ts";
+export { defineConfig, type WebTestConfig, type UseOptions, type ExpectConfig } from "./config.ts";
 
-export {
-	type ByRoleOptions,
-	type ResolvedQuery,
-	type TextMatcher,
-} from "./selectors.ts";
+export { type ByRoleOptions, type ResolvedQuery, type TextMatcher } from "./selectors.ts";

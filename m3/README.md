@@ -2,10 +2,11 @@
 
 Private UI framework monorepo of Aphrody-labs. Aphrody mounts this Git submodule
 at `m3/`; its product UI is `m3/packages/app-ui`. Yolo and IECODE keep their
-own pinned consumer mount points. Shenron UI lives here as `packages/shenron-ui`.
+own pinned consumer mount points. Shenron's UI lives in
+[aphrody-labs/shenron](https://github.com/aphrody-labs/shenron) and consumes these packages from npm.
 
 - `packages/*`: Bun workspace packages (`@aphrody/m3*`, `@aphrody/app-ui`,
-  `@shenron/ui`, `@rosegriffon/ui`, `@aphrody/material-design-icons`, ...). Private; consumed
+  `@rosegriffon/ui`, `@aphrody/material-design-icons`, ...). Private; consumed
   through Aphrody's workspace glob `m3/packages/*`, never published.
 - Framework: `docs/guides/FRAMEWORK.md` (package map, yolo orchestration, theme install per OS). Root scripts
   `build`, `serve`, `compile`, `test`, `lint`, `typecheck`, `install:theme` run through the yolo CLI.

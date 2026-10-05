@@ -153,7 +153,9 @@ async function probe(path: string, timeoutSeconds: number): Promise<string | nul
     stdout: "ignore",
     stderr: "pipe",
     timeout: timeoutSeconds * 1000,
-    env: { ...Bun.env, RUST_LOG: "error" },
+    // Hosts that add `ImportMetaEnv` globals (Vite/Next types) widen `Bun.env` with boolean
+    // fields that only exist in the types; the process environment holds strings.
+    env: { ...(Bun.env as Record<string, string | undefined>), RUST_LOG: "error" },
   });
   const [code, err] = await Promise.all([child.exited, new Response(child.stderr).text()]);
   return code === 0 ? null : (err.trim() || `exit ${code}`).slice(-2000);

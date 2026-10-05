@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { basename, resolve } from "node:path";
 import { npmName } from "./names.ts";
-import { EXAMPLE_NAME, scaffold, TEMPLATES, type ScaffoldRequest } from "./index.ts";
+import {
+  EXAMPLE_NAME,
+  ownerM3Version,
+  scaffold,
+  TEMPLATES,
+  type ScaffoldRequest,
+} from "./index.ts";
 
 const HELP = `aphrody-scaffold: the single project scaffolder of the UI stack.
 
@@ -46,7 +52,7 @@ async function main(argv: string[]): Promise<number> {
         modernizeM3: flags.has("m3"),
       };
     else if (template === "web")
-      request = { template, name, m3Version: flags.get("m3-version") ?? "3.3.3" };
+      request = { template, name, m3Version: flags.get("m3-version") ?? ownerM3Version() };
     else throw new Error(`unknown template ${template}`);
     const written = await scaffold(out, request);
     console.log(`${request.template}: ${written.length} files in ${out}`);

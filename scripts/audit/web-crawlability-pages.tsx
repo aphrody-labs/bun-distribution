@@ -74,8 +74,8 @@ import {
   TagPill,
 } from "../../m3/packages/m3-explorer/src/index.ts";
 import {
+  CaptionedReader,
   CollectionReader,
-  DatabookReader,
   MangaReader,
 } from "../../m3/packages/m3-reader/src/index.ts";
 import { M3Document, m3SchemeCss } from "../../m3/packages/m3-next/src/server.tsx";
@@ -560,7 +560,7 @@ function DatabookPage() {
         An illustrated databook with transcriptions, so the text of every plate is available without
         the image.
       </p>
-      <DatabookReader
+      <CaptionedReader
         title="Illustrated guide"
         pages={[
           {

@@ -7,7 +7,7 @@ onboarding, pet). Built on the M3 packages of this repository (`@aphrody/m3-*`, 
 
 Host-bound: the package is excluded from this repository's workspace (`!packages/app-ui`) and is
 installed, built and tested by the aphrody workspace, which provides its host dependencies
-(`@aphrody/drive-client`, `@aphrody/koharu-ui`, ...) and the crate assets it
+(`@aphrody/drive-client`, ...) and the crate assets it
 imports (`crates/ui/identity`, `crates/ui/app`).
 
 | Script | Does |

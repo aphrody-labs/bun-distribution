@@ -47,6 +47,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "sync-symbols": "bun scripts/sync-symbol-names.ts"
   },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*"
+  },
   "peerDependencies": {},
   "peerDependenciesMeta": {
     "oxlint": {

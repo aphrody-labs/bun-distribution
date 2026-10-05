@@ -86,9 +86,9 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
 
   it("strictly removes excluded groups, routes and disorderly footer buttons", () => {
     // Excluded routes/groups
-    expect(sidebarCode).toContain("lower !== 'overview'");
-    expect(sidebarCode).toContain("lower !== 'redundancy'");
-    expect(sidebarCode).toContain("lower !== 'favorites'");
+    expect(sidebarCode).toContain('lower !== "overview"');
+    expect(sidebarCode).toContain('lower !== "redundancy"');
+    expect(sidebarCode).toContain('lower !== "favorites"');
 
     // Footer must strictly have Jobs, Sync, and Settings; no disorderly Palette or customize triggers
     expect(sidebarCode).not.toContain("SpaceCustomizationPanel");
@@ -155,7 +155,7 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
     const mockThreads = [
       { id: "1", name: "Thread UI 1", cwd: "C:/src/aphrody", createdAt: 1000 },
       { id: "2", name: "Thread UI 2", cwd: "C:/src/aphrody", createdAt: 2000 },
-      { id: "3", name: "Thread Shenron 1", cwd: "C:/src/shenron", createdAt: 3000 },
+      { id: "3", name: "Thread Atlas 1", cwd: "C:/src/atlas", createdAt: 3000 },
     ];
 
     const groups = getProjectGroups(mockThreads, { aphrody: true });
@@ -165,8 +165,8 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
     expect(aphrodyGroup).toBeDefined();
     expect(aphrodyGroup?.threads).toHaveLength(2);
 
-    const shenronGroup = groups.find((g) => g.name === "shenron");
-    expect(shenronGroup).toBeDefined();
-    expect(shenronGroup?.threads).toHaveLength(1);
+    const atlasGroup = groups.find((g) => g.name === "atlas");
+    expect(atlasGroup).toBeDefined();
+    expect(atlasGroup?.threads).toHaveLength(1);
   });
 });

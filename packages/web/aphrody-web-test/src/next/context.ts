@@ -12,24 +12,24 @@
 
 /** The narrow CDP dispatch seam a Aphrody page exposes (`src/api/browser.ts`). */
 export interface CdpSend {
-	_send(method: string, params: Record<string, unknown>): Promise<unknown>;
+  _send(method: string, params: Record<string, unknown>): Promise<unknown>;
 }
 
 /** A cookie as returned to the caller (Playwright `cookies()` element). */
 export interface PwCookie {
-	name: string;
-	value: string;
-	domain?: string;
-	path?: string;
+  name: string;
+  value: string;
+  domain?: string;
+  path?: string;
 }
 
 /** A cookie to set (Playwright `addCookies` element / CDP `CookieParam`). */
 export interface PwCookieParam {
-	name: string;
-	value: string;
-	url?: string;
-	domain?: string;
-	path?: string;
+  name: string;
+  value: string;
+  url?: string;
+  domain?: string;
+  path?: string;
 }
 
 /**
@@ -38,13 +38,9 @@ export interface PwCookieParam {
  * `instant()` is unmodified.
  */
 export interface PlaywrightBrowserContext {
-	addCookies(cookies: PwCookieParam[]): Promise<void>;
-	cookies(): Promise<PwCookie[]>;
-	clearCookies(options?: {
-		name?: string;
-		domain?: string;
-		path?: string;
-	}): Promise<void>;
+  addCookies(cookies: PwCookieParam[]): Promise<void>;
+  cookies(): Promise<PwCookie[]>;
+  clearCookies(options?: { name?: string; domain?: string; path?: string }): Promise<void>;
 }
 
 /**
@@ -52,67 +48,63 @@ export interface PlaywrightBrowserContext {
  * from a `_send` seam, or via {@link adaptPage} from a Aphrody `TestPage`.
  */
 export class CdpCookieContext implements PlaywrightBrowserContext {
-	readonly #send: CdpSend;
+  readonly #send: CdpSend;
 
-	constructor(send: CdpSend) {
-		this.#send = send;
-	}
+  constructor(send: CdpSend) {
+    this.#send = send;
+  }
 
-	/** Maps onto `Network.setCookies` (the Aphrody shared cookie jar). */
-	async addCookies(cookies: PwCookieParam[]): Promise<void> {
-		await this.#send._send("Network.setCookies", { cookies });
-	}
+  /** Maps onto `Network.setCookies` (the Aphrody shared cookie jar). */
+  async addCookies(cookies: PwCookieParam[]): Promise<void> {
+    await this.#send._send("Network.setCookies", { cookies });
+  }
 
-	/** Maps onto `Network.getCookies` with no URL filter (whole jar). */
-	async cookies(): Promise<PwCookie[]> {
-		const result = (await this.#send._send("Network.getCookies", {})) as {
-			cookies?: PwCookie[];
-		};
-		return result.cookies ?? [];
-	}
+  /** Maps onto `Network.getCookies` with no URL filter (whole jar). */
+  async cookies(): Promise<PwCookie[]> {
+    const result = (await this.#send._send("Network.getCookies", {})) as {
+      cookies?: PwCookie[];
+    };
+    return result.cookies ?? [];
+  }
 
-	/**
-	 * Maps onto `Network.deleteCookies` / `Network.clearBrowserCookies`.
-	 * - no options -> wipe the jar;
-	 * - `name` set -> delete by name (+ optional domain/path scope);
-	 * - domain/path only -> enumerate the jar and delete each match by name.
-	 */
-	async clearCookies(options?: {
-		name?: string;
-		domain?: string;
-		path?: string;
-	}): Promise<void> {
-		if (!options || (!options.name && !options.domain && !options.path)) {
-			await this.#send._send("Network.clearBrowserCookies", {});
-			return;
-		}
-		if (options.name) {
-			await this.#send._send("Network.deleteCookies", {
-				name: options.name,
-				...(options.domain ? { domain: options.domain } : {}),
-				...(options.path ? { path: options.path } : {}),
-			});
-			return;
-		}
-		// Scope without a name: enumerate and delete each matching entry.
-		const all = await this.cookies();
-		for (const c of all) {
-			if (options.domain && c.domain !== options.domain) continue;
-			if (options.path && c.path !== options.path) continue;
-			await this.#send._send("Network.deleteCookies", {
-				name: c.name,
-				...(c.domain ? { domain: c.domain } : {}),
-			});
-		}
-	}
+  /**
+   * Maps onto `Network.deleteCookies` / `Network.clearBrowserCookies`.
+   * - no options -> wipe the jar;
+   * - `name` set -> delete by name (+ optional domain/path scope);
+   * - domain/path only -> enumerate the jar and delete each match by name.
+   */
+  async clearCookies(options?: { name?: string; domain?: string; path?: string }): Promise<void> {
+    if (!options || (!options.name && !options.domain && !options.path)) {
+      await this.#send._send("Network.clearBrowserCookies", {});
+      return;
+    }
+    if (options.name) {
+      await this.#send._send("Network.deleteCookies", {
+        name: options.name,
+        ...(options.domain ? { domain: options.domain } : {}),
+        ...(options.path ? { path: options.path } : {}),
+      });
+      return;
+    }
+    // Scope without a name: enumerate and delete each matching entry.
+    const all = await this.cookies();
+    for (const c of all) {
+      if (options.domain && c.domain !== options.domain) continue;
+      if (options.path && c.path !== options.path) continue;
+      await this.#send._send("Network.deleteCookies", {
+        name: c.name,
+        ...(c.domain ? { domain: c.domain } : {}),
+      });
+    }
+  }
 }
 
 /** A Aphrody page the adapter understands: a URL getter plus a CDP `_send` seam. */
 export interface WebPageLike {
-	url(): string;
-	/** Aphrody `TestPage` exposes this getter; falls back to a raw `_send`. */
-	_cdp?: CdpSend;
-	_send?: CdpSend["_send"];
+  url(): string;
+  /** Aphrody `TestPage` exposes this getter; falls back to a raw `_send`. */
+  _cdp?: CdpSend;
+  _send?: CdpSend["_send"];
 }
 
 /**
@@ -120,8 +112,8 @@ export interface WebPageLike {
  * `{ url(), context() }`.
  */
 export interface PlaywrightPage {
-	url(): string;
-	context(): PlaywrightBrowserContext;
+  url(): string;
+  context(): PlaywrightBrowserContext;
 }
 
 /**
@@ -131,18 +123,18 @@ export interface PlaywrightPage {
  * detection (a single shared jar) behaves like Playwright's context scope.
  */
 export function adaptPage(page: WebPageLike): PlaywrightPage {
-	const send: CdpSend =
-		page._cdp ??
-		(page._send
-			? { _send: page._send.bind(page) }
-			: (() => {
-					throw new TypeError(
-						"adaptPage: page exposes neither `_cdp` nor `_send` — pass a Aphrody TestPage or a CDP-backed page.",
-					);
-				})());
-	const ctx = new CdpCookieContext(send);
-	return {
-		url: () => page.url(),
-		context: () => ctx,
-	};
+  const send: CdpSend =
+    page._cdp ??
+    (page._send
+      ? { _send: page._send.bind(page) }
+      : (() => {
+          throw new TypeError(
+            "adaptPage: page exposes neither `_cdp` nor `_send` — pass a Aphrody TestPage or a CDP-backed page.",
+          );
+        })());
+  const ctx = new CdpCookieContext(send);
+  return {
+    url: () => page.url(),
+    context: () => ctx,
+  };
 }

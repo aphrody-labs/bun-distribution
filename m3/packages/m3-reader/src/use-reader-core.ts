@@ -2,7 +2,7 @@
 "use client";
 
 /**
- * Behaviour shared by `MangaReader` and `DatabookReader`: reading mode, fullscreen, the Swiper
+ * Behaviour shared by `MangaReader` and `CaptionedReader`: reading mode, fullscreen, the Swiper
  * handle and the scroll-position sync of the virtualized vertical mode.
  */
 

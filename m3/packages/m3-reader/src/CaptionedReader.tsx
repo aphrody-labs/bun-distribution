@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Lecteur de databook / interview — format manga + légende.
+ * Lecteur de planches légendées (recueil illustré, interview) — format manga + légende.
  *
  * Deux modes :
  *  - Vertical (défaut) : défilement webtoon, image puis texte en dessous.
@@ -47,7 +47,7 @@ import {
   virtualRowStyle,
 } from "./use-reader-core";
 
-export type DatabookReaderPage = {
+export type CaptionedReaderPage = {
   /** Numéro affiché (auto 1…N, modifiable côté admin). */
   number?: number | null;
   image?: string | null;
@@ -55,8 +55,8 @@ export type DatabookReaderPage = {
    * Transcription — présente pour les premières planches seulement.
    * Au-delà, la fiche envoie `text: null` et `aDuTexte: true`, et le lecteur
    * demande le texte au fournisseur de transcriptions au fil du défilement :
-   * embarquer les 313 transcriptions d'un Daizenshuu pesait 412 Ko de charge
-   * RSC pour une planche lue.
+   * embarquer les 313 transcriptions d'un recueil pesait 412 Ko de charge RSC
+   * pour une planche lue.
    */
   text?: string | null;
   /** La planche PORTE une transcription, même si elle n'est pas encore chargée. */
@@ -67,8 +67,8 @@ export type DatabookReaderPage = {
 
 export type ReaderTranscription = { text: string; page: number; verified: boolean };
 
-export type DatabookReaderProps = {
-  pages: DatabookReaderPage[];
+export type CaptionedReaderProps = {
+  pages: CaptionedReaderPage[];
   title: string;
   resolveAssetUrl?: (path: string) => string;
   imageSrc?: (url: string, width: number) => string;
@@ -89,7 +89,7 @@ type ResolvedPage = {
   verifiee: boolean;
 };
 
-function pageNumber(p: DatabookReaderPage, fallback: number): number {
+function pageNumber(p: CaptionedReaderPage, fallback: number): number {
   const raw = p.number as unknown;
   if (typeof raw === "number" && Number.isFinite(raw)) return Math.trunc(raw);
   if (typeof raw === "string" && String(raw).trim() && Number.isFinite(Number(raw))) {
@@ -99,7 +99,7 @@ function pageNumber(p: DatabookReaderPage, fallback: number): number {
 }
 
 function resolvePages(
-  pages: DatabookReaderPage[],
+  pages: CaptionedReaderPage[],
   resolveAssetUrl: (path: string) => string,
 ): ResolvedPage[] {
   const out: ResolvedPage[] = [];
@@ -134,7 +134,7 @@ const FENETRE_TEXTE = 6;
  * texte — jamais d'erreur jetée à la figure d'un lecteur qui feuillette.
  */
 function useTextesPlanches(
-  loadTranscriptions: DatabookReaderProps["loadTranscriptions"],
+  loadTranscriptions: CaptionedReaderProps["loadTranscriptions"],
   items: ResolvedPage[],
   current: number,
 ): Map<number, string> {
@@ -182,7 +182,7 @@ function useTextesPlanches(
   return charges;
 }
 
-export function DatabookReader({
+export function CaptionedReader({
   pages,
   title,
   resolveAssetUrl = (path) => path,
@@ -191,7 +191,7 @@ export function DatabookReader({
   loadTranscriptions,
   renderTranscription,
   preloadCount = 4,
-}: DatabookReaderProps): ReactElement {
+}: CaptionedReaderProps): ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const lightboxRef = useRef<HTMLDivElement>(null);
   const baseId = useId();
@@ -279,7 +279,7 @@ export function DatabookReader({
   // `slideChange` (`setCurrent(index)`), puis ce handler ajoutait +1 par-dessus.
   // `current` se décalait durablement de la planche affichée, si bien que la
   // transcription montrée à côté du scan était celle d'une AUTRE page (mesuré
-  // sur /wiki/databooks/305 : compteur « n°3 · 3/20 » sur la planche 2).
+  // sur un recueil de 20 planches : compteur « n°3 · 3/20 » sur la planche 2).
   useEffect(() => {
     const actif = lightbox || mode === "paged";
     if (!actif) return;
@@ -409,13 +409,13 @@ export function DatabookReader({
     <div
       ref={containerRef}
       className="m3-reader m3-reader-container m3-reader-scroll flex h-[84svh] min-h-[460px] w-full min-w-0 flex-col overflow-hidden rounded-xl bg-[var(--reader-surface)] [contain:inline-size] [&:fullscreen]:h-screen [&:fullscreen]:min-h-screen [&:fullscreen]:rounded-none"
-      data-databook-reader
-      data-m3-component="DatabookReader"
-      data-testid="databook-reader"
+      data-captioned-reader
+      data-m3-component="CaptionedReader"
+      data-testid="captioned-reader"
       role="region"
       aria-label={title}
     >
-      {/* Barre de contrôles Toriyama HUD */}
+      {/* Barre de contrôles (HUD) */}
       <div className="m3-reader-hud z-10 flex flex-nowrap items-center gap-2 px-3 py-2.5 sm:flex-wrap">
         <span className="mr-1 hidden min-w-0 max-w-[40ch] truncate font-sans text-[18px] font-extrabold uppercase tracking-wide text-[var(--reader-on-surface)] drop-shadow-[1px_1px_0px_#000] sm:block">
           {title}
@@ -484,7 +484,7 @@ export function DatabookReader({
             {/* Zone planche */}
             <div className="relative min-h-[52%] min-w-0 flex-[1.6] lg:h-full lg:min-h-0 lg:flex-[1.15]">
               <Swiper
-                key="databook-ltr"
+                key="captioned-ltr"
                 initialSlide={current}
                 dir="ltr"
                 modules={[Zoom, Virtual, Mousewheel]}
@@ -656,7 +656,7 @@ export function DatabookReader({
         )}
       </div>
 
-      {/* Bande de vignettes (databooks courts). */}
+      {/* Bande de vignettes (recueils courts). */}
       {mode === "paged" && total > 0 && total <= SHOW_STRIP_MAX && (
         <div className="z-10 flex items-center gap-4 overflow-x-auto border-t border-[var(--reader-outline)] bg-[var(--reader-surface)]/90 px-4 py-3 scrollbar-thin">
           <div className="mx-auto flex gap-2">
@@ -697,7 +697,7 @@ export function DatabookReader({
         </div>
       )}
 
-      {/* Saut direct pour les longs databooks. */}
+      {/* Saut direct pour les longs recueils. */}
       {mode === "paged" && total > SHOW_STRIP_MAX && (
         <form
           className="z-10 flex items-center justify-center gap-3 border-t-2 border-[var(--reader-outline)] bg-[var(--reader-surface)] px-4 py-3"
@@ -802,3 +802,10 @@ export function DatabookReader({
     </div>
   );
 }
+
+/** @deprecated Renamed {@link CaptionedReader}; this alias goes away in the next major release. */
+export const DatabookReader = CaptionedReader;
+/** @deprecated Renamed {@link CaptionedReaderPage}. */
+export type DatabookReaderPage = CaptionedReaderPage;
+/** @deprecated Renamed {@link CaptionedReaderProps}. */
+export type DatabookReaderProps = CaptionedReaderProps;

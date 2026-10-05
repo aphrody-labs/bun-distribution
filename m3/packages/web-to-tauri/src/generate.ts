@@ -257,7 +257,7 @@ export async function generateProject(
   }
   if (config.engine === "cef")
     notes.push(
-      "cef engine: generated but not compiled by the generator's own checks; Koharu is the only CEF app qualified in this repository",
+      "cef engine: generated but not compiled by the generator's own checks; no CEF app of this repository is qualified with it",
     );
   return { outDir: out, files: written, notes };
 }

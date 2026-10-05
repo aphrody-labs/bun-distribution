@@ -42,8 +42,8 @@ describe("Kunkun Parity - Search & Filtering", () => {
     },
     {
       id: "thread-def-456",
-      preview: "Shenron canon analysis of Toriyama manga",
-      cwd: "/home/user/src/shenron",
+      preview: "Atlas canon analysis of the archive",
+      cwd: "/home/user/src/atlas",
     },
     { id: "thread-ghi-789", preview: "Database optimization", cwd: "/home/user/data" },
   ];
@@ -55,7 +55,7 @@ describe("Kunkun Parity - Search & Filtering", () => {
   });
 
   test("Filters sessions by cwd path", () => {
-    const filtered = filterSessionsList(sampleSessions, "shenron");
+    const filtered = filterSessionsList(sampleSessions, "atlas");
     expect(filtered.length).toBe(1);
     expect(filtered[0].id).toBe("thread-def-456");
   });

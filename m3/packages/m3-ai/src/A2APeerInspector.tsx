@@ -3,7 +3,7 @@
  * @aphrody/m3-ai - A2APeerInspector
  *
  * Material Design 3 Agent-to-Agent (A2A 1.0) Fleet Inspector:
- * - Visualizes connected peer agents (codex, claude, agycli, shenron, nie, ocr, rag).
+ * - Visualizes connected peer agents (codex, claude, agycli, nie, ocr, rag, ...).
  * - Displays AgentCard interface, capabilities, and active tasks.
  * - Live inspection of .coord mailbox envelopes (ask, fact, ack, ping, error).
  * - File lock & resource claims view (.coord/claims).
@@ -71,14 +71,6 @@ const DEFAULT_PEERS: AgentPeer[] = [
     status: "idle",
     version: "3.7.0",
     skills: ["design-tokens", "docs-audit", "review"],
-  },
-  {
-    id: "shenron",
-    name: "Shenron Daemon",
-    role: "Database & RAG Pipeline Gate",
-    status: "idle",
-    version: "2.1.0",
-    skills: ["rag-index", "manga-publish", "embeddings"],
   },
 ];
 

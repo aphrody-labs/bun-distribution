@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SSR and hydration smoke test for CollectionReader. MangaReader and DatabookReader import
+// SSR and hydration smoke test for CollectionReader. MangaReader and CaptionedReader import
 // `swiper/react`, which imports `react` without declaring it as a peer, so Bun's isolated
 // linker cannot resolve it when they are loaded directly; they are not covered here.
 

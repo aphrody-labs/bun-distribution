@@ -4,7 +4,7 @@
  *
  * Provides type-safe, zero-hardcoding bilingual localization (EN/FR)
  * mapped to the real Aphrody OS backend capabilities (FFI, CLI, App-Server,
- * OS Kernel, Drive, Koharu, Shenron, Shell).
+ * OS Kernel, Drive, Shell).
  */
 import enCatalog from "./locales/en.json";
 import frCatalog from "./locales/fr.json";
@@ -16,7 +16,9 @@ export type I18nSchema = typeof enCatalog;
 
 export type Leaves<T> = T extends object
   ? {
-      [K in keyof T]: `${Exclude<K, symbol>}${Leaves<T[K]> extends never ? "" : `.${Leaves<T[K]>}`}`;
+      [
+        K in keyof T
+      ]: `${Exclude<K, symbol>}${Leaves<T[K]> extends never ? "" : `.${Leaves<T[K]>}`}`;
     }[keyof T]
   : never;
 
@@ -90,7 +92,11 @@ export function t(
       // Fallback to English catalog
       let fallbackNode: unknown = CATALOGS.en;
       for (const p of parts) {
-        if (fallbackNode && typeof fallbackNode === "object" && p in (fallbackNode as Record<string, unknown>)) {
+        if (
+          fallbackNode &&
+          typeof fallbackNode === "object" &&
+          p in (fallbackNode as Record<string, unknown>)
+        ) {
           fallbackNode = (fallbackNode as Record<string, unknown>)[p];
         } else {
           return key;

@@ -65,6 +65,9 @@
     "vendor:check": "bun scripts/vendor-upstream.ts --check",
     "prepack": "bun scripts/vendor-upstream.ts --check"
   },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*"
+  },
   "peerDependencies": {
     "@aphrody/bun": "^3.3.0"
   },

@@ -21,9 +21,9 @@ let reporter: Step = (_title, body) => body();
  * reporter so callers can restore it (nesting-safe).
  */
 export function setStepReporter(next: Step | null): Step {
-	const prev = reporter;
-	reporter = next ?? ((_title, body) => body());
-	return prev;
+  const prev = reporter;
+  reporter = next ?? ((_title, body) => body());
+  return prev;
 }
 
 /**
@@ -32,15 +32,12 @@ export function setStepReporter(next: Step | null): Step {
  * body directly, mirroring upstream's "can only be called from a test" guard.
  */
 export const step: Step = async (title, body) => {
-	try {
-		return await reporter(title, body);
-	} catch (e) {
-		if (
-			e instanceof Error &&
-			e.message.includes("can only be called from a test")
-		) {
-			return body();
-		}
-		throw e;
-	}
+  try {
+    return await reporter(title, body);
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("can only be called from a test")) {
+      return body();
+    }
+    throw e;
+  }
 };

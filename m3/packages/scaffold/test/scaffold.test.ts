@@ -11,6 +11,7 @@ import {
   exampleFiles,
   isUsableAppIcon,
   npmName,
+  ownerM3Version,
   parseHexColor,
   pngInfo,
   renderTemplate,
@@ -46,10 +47,12 @@ describe("pins", () => {
     expect(cargoVersion(manifest, "tauri-plugin-opener")).toBe(TAURI_3.pluginOpener);
     const config = JSON.parse(await Bun.file(join(root, "config/tauri-upstream.json")).text());
     expect(config.js.cli.version).toBe(TAURI_3.jsCli);
-    const catalog = JSON.parse(await Bun.file(join(root, "package.json")).text()).workspaces
-      .catalog;
-    expect(catalog["@aphrody/api"]).toBe(TAURI_3.jsApi);
-    expect(catalog["@aphrody/plugin-opener"]).toBe(TAURI_3.jsPluginOpener);
+    // The Tauri JS packages are workspace members (`workspace:*`), published under these versions.
+    const version = async (dir: string) =>
+      (JSON.parse(await Bun.file(join(root, dir, "package.json")).text()) as { version: string })
+        .version;
+    expect(await version("crates/tauri/aphrody-tauri-api")).toBe(TAURI_3.jsApi);
+    expect(await version("crates/tauri/aphrody-tauri-plugin-opener")).toBe(TAURI_3.jsPluginOpener);
   });
 
   it("are mirrored once: tauri-sync tracks this file and no other scaffolder", async () => {
@@ -122,7 +125,7 @@ describe("app template", () => {
 
 describe("web template", () => {
   it("is the m3 new project", () => {
-    const files = webFiles({ name: "my-app", m3Version: "3.3.3" });
+    const files = webFiles({ name: "my-app", m3Version: ownerM3Version() });
     expect(Object.keys(files).toSorted()).toEqual([
       ".gitignore",
       "bunfig.toml",
@@ -287,7 +290,7 @@ describe("writeFiles", () => {
   it("scaffold writes a native Bun template only in its declared private owner workspace", async () => {
     const outside = join(await fresh(), "proj");
     await expect(
-      scaffold(outside, { template: "web", name: "proj", m3Version: "3.3.3" }, "new"),
+      scaffold(outside, { template: "web", name: "proj", m3Version: ownerM3Version() }, "new"),
     ).rejects.toThrow("Aphrody/M3 private owner workspace required");
     expect(await Bun.file(join(outside, "package.json")).exists()).toBe(false);
     const dir = join(

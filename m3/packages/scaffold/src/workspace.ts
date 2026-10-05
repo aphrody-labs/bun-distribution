@@ -3,12 +3,14 @@ import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 
 export const PRIVATE_OWNER_ROOT = resolve(import.meta.dir, "../../..");
+/** The repository that folds the M3 owner into its single Bun workspace (`m3/apps/*`, ...). */
+const REPOSITORY_ROOT = resolve(PRIVATE_OWNER_ROOT, "..");
 
 /** Private packages resolve only in their declared source owner workspace. */
 export function assertPrivateOwnerWorkspace(outDir: string): void {
   const manifest = JSON.parse(
     readFileSync(resolve(PRIVATE_OWNER_ROOT, "package.json"), "utf8"),
-  ) as { name: string; private?: boolean; workspaces?: { packages?: string[] } };
+  ) as { name: string; private?: boolean };
   const requiredOwners = ["m3", "m3-bun", "m3-config", "m3-next-migrate"];
   if (
     manifest.name !== "aphrody-m3" ||
@@ -20,8 +22,11 @@ export function assertPrivateOwnerWorkspace(outDir: string): void {
     throw new Error(
       "Aphrody/M3 private owner workspace required; qualify native SDK source acquisition before scaffolding elsewhere",
     );
-  const destination = relative(PRIVATE_OWNER_ROOT, resolve(outDir)).replaceAll("\\", "/");
-  const patterns = manifest.workspaces?.packages ?? [];
+  const workspace = JSON.parse(readFileSync(resolve(REPOSITORY_ROOT, "package.json"), "utf8")) as {
+    workspaces?: { packages?: string[] };
+  };
+  const destination = relative(REPOSITORY_ROOT, resolve(outDir)).replaceAll("\\", "/");
+  const patterns = workspace.workspaces?.packages ?? [];
   const included = patterns.some(
     (pattern) => !pattern.startsWith("!") && new Bun.Glob(pattern).match(destination),
   );

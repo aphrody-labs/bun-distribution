@@ -266,7 +266,15 @@
         "@aphrody/material-design-icons": "workspace:*",
         "@aphrody/scaffold": "workspace:*",
         "@modelcontextprotocol/sdk": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
         "react-hook-form": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "typescript": "catalog:",
       },
     },
     "m3/apps/web": {
@@ -361,6 +369,9 @@
     "m3/packages/canvas": {
       "name": "@aphrody/canvas",
       "version": "1.0.9-aphrody.3",
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
       "optionalDependencies": {
         "@napi-rs/canvas-android-arm64": "catalog:",
         "@napi-rs/canvas-darwin-arm64": "catalog:",
@@ -384,6 +395,9 @@
     "m3/packages/eslint-plugin-m3": {
       "name": "@aphrody/eslint-plugin-m3",
       "version": "3.3.3",
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
       "peerDependencies": {
         "oxlint": "*",
       },
@@ -490,6 +504,9 @@
         "@aphrody/m3-fonts": "workspace:*",
         "@aphrody/m3-tokens": "workspace:*",
       },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
     },
     "m3/packages/m3-codemods": {
       "name": "@aphrody/m3-codemods",
@@ -498,6 +515,7 @@
         "jscodeshift": "catalog:",
       },
       "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
         "@types/jscodeshift": "catalog:",
       },
     },
@@ -515,6 +533,9 @@
       "dependencies": {
         "@aphrody/bun": "^3.3.0",
         "@material/material-color-utilities": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
       },
     },
     "m3/packages/m3-explorer": {
@@ -536,6 +557,9 @@
     "m3/packages/m3-fonts": {
       "name": "@aphrody/m3-fonts",
       "version": "3.3.4",
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
     },
     "m3/packages/m3-forms": {
       "name": "@aphrody/m3-forms",
@@ -819,12 +843,18 @@
       "bin": {
         "m3-svg-to-ico": "./scripts/svg-to-ico.ts",
       },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
     },
     "m3/packages/scaffold": {
       "name": "@aphrody/scaffold",
       "version": "1.0.0-canary",
       "bin": {
         "aphrody-scaffold": "./src/cli.ts",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
       },
     },
     "m3/packages/web-to-tauri": {

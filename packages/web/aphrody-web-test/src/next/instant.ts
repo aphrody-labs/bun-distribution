@@ -27,22 +27,18 @@
  * ```
  */
 
-import {
-	adaptPage,
-	type WebPageLike,
-	type PlaywrightPage,
-} from "./context.ts";
+import { adaptPage, type WebPageLike, type PlaywrightPage } from "./context.ts";
 import { step } from "./step.ts";
 
 export {
-	adaptPage,
-	CdpCookieContext,
-	type WebPageLike,
-	type CdpSend,
-	type PlaywrightBrowserContext,
-	type PlaywrightPage,
-	type PwCookie,
-	type PwCookieParam,
+  adaptPage,
+  CdpCookieContext,
+  type WebPageLike,
+  type CdpSend,
+  type PlaywrightBrowserContext,
+  type PlaywrightPage,
+  type PwCookie,
+  type PwCookieParam,
 } from "./context.ts";
 export { setStepReporter, step, type Step } from "./step.ts";
 
@@ -57,12 +53,12 @@ export const INSTANT_COOKIE = "next-instant-navigation-testing";
  * Type guard to check if an object is already a structural PlaywrightPage.
  */
 function isPlaywrightPage(target: unknown): target is PlaywrightPage {
-	return (
-		typeof target === "object" &&
-		target !== null &&
-		"context" in target &&
-		typeof (target as { context: unknown }).context === "function"
-	);
+  return (
+    typeof target === "object" &&
+    target !== null &&
+    "context" in target &&
+    typeof (target as { context: unknown }).context === "function"
+  );
 }
 
 /**
@@ -85,51 +81,47 @@ function isPlaywrightPage(target: unknown): target is PlaywrightPage {
  * ```
  */
 export async function instant<T>(
-	page: PlaywrightPage | WebPageLike,
-	fn: () => Promise<T>,
-	options?: { baseURL?: string },
+  page: PlaywrightPage | WebPageLike,
+  fn: () => Promise<T>,
+  options?: { baseURL?: string },
 ): Promise<T> {
-	const pw: PlaywrightPage = isPlaywrightPage(page)
-		? page
-		: adaptPage(page as WebPageLike);
+  const pw: PlaywrightPage = isPlaywrightPage(page) ? page : adaptPage(page as WebPageLike);
 
-	// Check for nested instant() calls. The cookie is scoped to the browser
-	// context, so we can detect nesting by checking if it's already set.
-	const existingCookies = await pw.context().cookies();
-	if (existingCookies.some((c) => c.name === INSTANT_COOKIE)) {
-		throw new Error(
-			"An instant() scope is already active. Nesting instant() " +
-				"calls is not supported. Did you forget to await the " +
-				"previous instant() call?",
-		);
-	}
+  // Check for nested instant() calls. The cookie is scoped to the browser
+  // context, so we can detect nesting by checking if it's already set.
+  const existingCookies = await pw.context().cookies();
+  if (existingCookies.some((c) => c.name === INSTANT_COOKIE)) {
+    throw new Error(
+      "An instant() scope is already active. Nesting instant() " +
+        "calls is not supported. Did you forget to await the " +
+        "previous instant() call?",
+    );
+  }
 
-	// Acquire the lock by setting the cookie via the browser context. This
-	// ensures the cookie is present even on the very first navigation. The
-	// cookie triggers the CookieStore change event in navigation-testing-lock.ts,
-	// which acquires the in-memory navigation lock.
-	const { hostname } = new URL(resolveURL(pw, options));
-	await step("Acquire Instant Lock", () =>
-		pw.context().addCookies([
-			{
-				name: INSTANT_COOKIE,
-				value: JSON.stringify([0, `p${Math.random()}`]),
-				domain: hostname,
-				path: "/",
-			},
-		]),
-	);
-	try {
-		return await fn();
-	} finally {
-		// Release the lock by clearing the cookie. Next.js may have updated the
-		// cookie value (e.g. from [0] to [1,null]) during the lock scope. We
-		// clear by name to remove the cookie regardless of its current value or
-		// which domain variant it was stored under.
-		await step("Release Instant Lock", () =>
-			pw.context().clearCookies({ name: INSTANT_COOKIE }),
-		);
-	}
+  // Acquire the lock by setting the cookie via the browser context. This
+  // ensures the cookie is present even on the very first navigation. The
+  // cookie triggers the CookieStore change event in navigation-testing-lock.ts,
+  // which acquires the in-memory navigation lock.
+  const { hostname } = new URL(resolveURL(pw, options));
+  await step("Acquire Instant Lock", () =>
+    pw.context().addCookies([
+      {
+        name: INSTANT_COOKIE,
+        value: JSON.stringify([0, `p${Math.random()}`]),
+        domain: hostname,
+        path: "/",
+      },
+    ]),
+  );
+  try {
+    return await fn();
+  } finally {
+    // Release the lock by clearing the cookie. Next.js may have updated the
+    // cookie value (e.g. from [0] to [1,null]) during the lock scope. We
+    // clear by name to remove the cookie regardless of its current value or
+    // which domain variant it was stored under.
+    await step("Release Instant Lock", () => pw.context().clearCookies({ name: INSTANT_COOKIE }));
+  }
 }
 
 /**
@@ -138,16 +130,13 @@ export async function instant<T>(
  * a descriptive error if neither is available (e.g. fresh page before any
  * navigation).
  */
-export function resolveURL(
-	page: PlaywrightPage,
-	options?: { baseURL?: string },
-): string {
-	const url = options?.baseURL ?? page.url();
-	if (url && url !== "about:blank") {
-		return url;
-	}
-	const error = new Error(
-		`Could not infer the base URL of the application.
+export function resolveURL(page: PlaywrightPage, options?: { baseURL?: string }): string {
+  const url = options?.baseURL ?? page.url();
+  if (url && url !== "about:blank") {
+    return url;
+  }
+  const error = new Error(
+    `Could not infer the base URL of the application.
 
 instant() needs to know the base URL so it can configure the
 browser before the first page load. If the page is already
@@ -176,9 +165,9 @@ Otherwise, you can fix this in one of two ways:
   await instant(page, async () => {
     // ...
   })`,
-	);
-	// Remove resolveURL and instant from the stack trace so the error points at
-	// the caller's code. (V8/Bun expose captureStackTrace; guard for safety.)
-	Error.captureStackTrace?.(error, instant);
-	throw error;
+  );
+  // Remove resolveURL and instant from the stack trace so the error points at
+  // the caller's code. (V8/Bun expose captureStackTrace; guard for safety.)
+  Error.captureStackTrace?.(error, instant);
+  throw error;
 }

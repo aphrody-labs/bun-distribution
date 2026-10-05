@@ -21,6 +21,7 @@
     "jscodeshift": "catalog:"
   },
   "devDependencies": {
+    "@aphrody/m3-config": "workspace:*",
     "@types/jscodeshift": "catalog:"
   },
   "engines": {

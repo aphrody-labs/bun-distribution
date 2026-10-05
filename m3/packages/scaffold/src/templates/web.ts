@@ -12,12 +12,17 @@ export interface WebTemplateOptions {
   m3Version: string;
 }
 
-export function webFiles({ name, m3Version }: WebTemplateOptions): FileMap {
-  const ownerVersion = (
+/** Version of `@aphrody/m3` in the private owner workspace: the only version `m3 new` writes. */
+export function ownerM3Version(): string {
+  return (
     JSON.parse(readFileSync(resolve(PRIVATE_OWNER_ROOT, "packages/m3/package.json"), "utf8")) as {
       version: string;
     }
   ).version;
+}
+
+export function webFiles({ name, m3Version }: WebTemplateOptions): FileMap {
+  const ownerVersion = ownerM3Version();
   if (m3Version !== ownerVersion)
     throw new Error(
       `The private M3 owner version is ${ownerVersion}; source acquisition is required for requested version ${m3Version}`,

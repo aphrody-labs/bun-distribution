@@ -227,7 +227,7 @@ export function MangaReader({
       role="region"
       aria-label={title}
     >
-      {/* Barre de contrôles Toriyama HUD */}
+      {/* Barre de contrôles (HUD) */}
       <div className="m3-reader-hud z-10 flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="min-w-0 max-w-[32ch] md:max-w-[45ch] truncate font-sans text-[18px] font-extrabold uppercase tracking-wide text-[var(--reader-on-surface)] drop-shadow-[1px_1px_0px_#000]">

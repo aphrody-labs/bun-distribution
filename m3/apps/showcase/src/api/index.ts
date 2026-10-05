@@ -14,7 +14,7 @@ import {
   m3SitemapXml,
   withM3,
 } from "@aphrody/m3-next";
-import { renderTemplate, TEMPLATES } from "@aphrody/scaffold";
+import { ownerM3Version, renderTemplate, TEMPLATES } from "@aphrody/scaffold";
 import { transformSource, type MigrationKind } from "@aphrody/m3-codemods";
 import lintPlugin from "@aphrody/eslint-plugin-m3";
 import googleSansCode from "@aphrody/m3-fonts/fonts/web/GoogleSansCode-latin.woff2" with { type: "file" };
@@ -107,7 +107,7 @@ async function discoverMcpTools(): Promise<unknown[]> {
         import("@modelcontextprotocol/sdk/inMemory.js"),
       ]);
       const server = createM3McpServer();
-      const client = new Client({ name: "m3-showcase", version: "3.3.3" });
+      const client = new Client({ name: "m3-showcase", version: ownerM3Version() });
       const [serverTransport, clientTransport] = InMemoryTransport.createLinkedPair();
       try {
         await server.connect(serverTransport);
@@ -282,7 +282,7 @@ export default defineM3Api({
   "/api/system": guarded(async (request) => {
     const url = new URL(request.url);
     const files = generate(themeInput(url), targetsFor(url));
-    const sample = renderTemplate({ template: "web", name: "m3-demo", m3Version: "3.3.3" });
+    const sample = renderTemplate({ template: "web", name: "m3-demo", m3Version: ownerM3Version() });
     return json({
       themeFiles: files.map((file) => ({
         target: file.target,

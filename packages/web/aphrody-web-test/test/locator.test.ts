@@ -37,144 +37,133 @@ let server: ReturnType<typeof Bun.serve>;
 let baseURL: string;
 
 beforeAll(() => {
-	// port: 0 → OS-assigned port, read back. No hardcoded port.
-	server = Bun.serve({
-		port: 0,
-		fetch() {
-			return new Response(HTML, {
-				headers: { "content-type": "text/html; charset=utf-8" },
-			});
-		},
-	});
-	baseURL = `http://localhost:${server.port}/`;
+  // port: 0 → OS-assigned port, read back. No hardcoded port.
+  server = Bun.serve({
+    port: 0,
+    fetch() {
+      return new Response(HTML, {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    },
+  });
+  baseURL = `http://localhost:${server.port}/`;
 });
 
 afterAll(() => {
-	server.stop(true);
+  server.stop(true);
 });
 
 describe("web-test locator + web-first expect over native CDP", () => {
-	test("navigates and reads the title", async ({ page }) => {
-		const resp = await page.goto(baseURL);
-		expect(resp.status).toBe(200);
-		expect(resp.ok).toBe(true);
-		expect(await page.title()).toBe("web-test fixture");
-	});
+  test("navigates and reads the title", async ({ page }) => {
+    const resp = await page.goto(baseURL);
+    expect(resp.status).toBe(200);
+    expect(resp.ok).toBe(true);
+    expect(await page.title()).toBe("web-test fixture");
+  });
 
-	test("lastResponse keeps the status of the last goto", async ({ page }) => {
-		expect(page.lastResponse()).toBeNull();
-		await page.goto(baseURL);
-		expect(page.lastResponse()?.status).toBe(200);
-	});
+  test("lastResponse keeps the status of the last goto", async ({ page }) => {
+    expect(page.lastResponse()).toBeNull();
+    await page.goto(baseURL);
+    expect(page.lastResponse()?.status).toBe(200);
+  });
 
-	test("collectPageDiagnostics reports availability instead of throwing", async () => {
-		const diagnostics = await collectPageDiagnostics(baseURL).catch(
-			(error: unknown) => ({ available: "threw", error }),
-		);
-		expect([true, false]).toContain(diagnostics.available as boolean);
-		if (diagnostics.available === false) expect(diagnostics.reason.length).toBeGreaterThan(0);
-	});
+  test("collectPageDiagnostics reports availability instead of throwing", async () => {
+    const diagnostics = await collectPageDiagnostics(baseURL).catch((error: unknown) => ({
+      available: "threw",
+      error,
+    }));
+    expect([true, false]).toContain(diagnostics.available as boolean);
+    if (diagnostics.available === false) expect(diagnostics.reason.length).toBeGreaterThan(0);
+  });
 
-	test("getByTestId resolves and has text", async ({ page }) => {
-		await page.goto(baseURL);
-		await expect(page.getByTestId("hdr")).toHaveText("Welcome Home");
-		await expect(page.getByTestId("hdr")).toContainText("Welcome");
-	});
+  test("getByTestId resolves and has text", async ({ page }) => {
+    await page.goto(baseURL);
+    await expect(page.getByTestId("hdr")).toHaveText("Welcome Home");
+    await expect(page.getByTestId("hdr")).toContainText("Welcome");
+  });
 
-	test("getByRole maps to native elements", async ({ page }) => {
-		await page.goto(baseURL);
-		await expect(page.getByRole("heading")).toHaveText("Welcome Home");
-		await expect(page.getByRole("link")).toHaveText("Continue");
-		await expect(page.getByRole("status")).toHaveText("Ready");
-	});
+  test("getByRole maps to native elements", async ({ page }) => {
+    await page.goto(baseURL);
+    await expect(page.getByRole("heading")).toHaveText("Welcome Home");
+    await expect(page.getByRole("link")).toHaveText("Continue");
+    await expect(page.getByRole("status")).toHaveText("Ready");
+  });
 
-	test("getByRole with name filters by accessible text", async ({ page }) => {
-		await page.goto(baseURL);
-		await expect(page.getByRole("button", { name: "Submit" })).toHaveCount(1);
-		await expect(page.getByRole("button", { name: "Submit" })).toHaveText(
-			"Submit",
-		);
-	});
+  test("getByRole with name filters by accessible text", async ({ page }) => {
+    await page.goto(baseURL);
+    await expect(page.getByRole("button", { name: "Submit" })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Submit" })).toHaveText("Submit");
+  });
 
-	test("toHaveCount over a CSS locator", async ({ page }) => {
-		await page.goto(baseURL);
-		await expect(page.locator(".item")).toHaveCount(3);
-		await expect(page.locator(".item").nth(1)).toHaveText("beta");
-		await expect(page.locator(".item").first()).toHaveText("alpha");
-		await expect(page.locator(".item").last()).toHaveText("gamma");
-	});
+  test("toHaveCount over a CSS locator", async ({ page }) => {
+    await page.goto(baseURL);
+    await expect(page.locator(".item")).toHaveCount(3);
+    await expect(page.locator(".item").nth(1)).toHaveText("beta");
+    await expect(page.locator(".item").first()).toHaveText("alpha");
+    await expect(page.locator(".item").last()).toHaveText("gamma");
+  });
 
-	test("filter({ hasText }) narrows the set", async ({ page }) => {
-		await page.goto(baseURL);
-		await expect(
-			page.locator(".item").filter({ hasText: "gamma" }),
-		).toHaveCount(1);
-	});
+  test("filter({ hasText }) narrows the set", async ({ page }) => {
+    await page.goto(baseURL);
+    await expect(page.locator(".item").filter({ hasText: "gamma" })).toHaveCount(1);
+  });
 
-	test("visibility: hidden element is not visible", async ({ page }) => {
-		await page.goto(baseURL);
-		await expect(page.getByTestId("hdr")).toBeVisible();
-		await expect(page.getByTestId("ghost")).toBeHidden();
-		expect(await page.getByTestId("ghost").isVisible()).toBe(false);
-	});
+  test("visibility: hidden element is not visible", async ({ page }) => {
+    await page.goto(baseURL);
+    await expect(page.getByTestId("hdr")).toBeVisible();
+    await expect(page.getByTestId("ghost")).toBeHidden();
+    expect(await page.getByTestId("ghost").isVisible()).toBe(false);
+  });
 
-	test("toBeEnabled / toBeDisabled reflect the disabled attribute", async ({
-		page,
-	}) => {
-		await page.goto(baseURL);
-		await expect(page.locator("#go")).toBeEnabled();
-		await expect(page.locator("#off")).toBeDisabled();
-	});
+  test("toBeEnabled / toBeDisabled reflect the disabled attribute", async ({ page }) => {
+    await page.goto(baseURL);
+    await expect(page.locator("#go")).toBeEnabled();
+    await expect(page.locator("#off")).toBeDisabled();
+  });
 
-	test("toHaveAttribute checks attribute presence and value", async ({
-		page,
-	}) => {
-		await page.goto(baseURL);
-		await expect(page.getByTestId("hdr")).toHaveAttribute("role", "heading");
-		await expect(page.locator("#q")).toHaveAttribute("placeholder", "Search…");
-	});
+  test("toHaveAttribute checks attribute presence and value", async ({ page }) => {
+    await page.goto(baseURL);
+    await expect(page.getByTestId("hdr")).toHaveAttribute("role", "heading");
+    await expect(page.locator("#q")).toHaveAttribute("placeholder", "Search…");
+  });
 
-	test("getByPlaceholder / getByLabel attribute locators", async ({ page }) => {
-		await page.goto(baseURL);
-		await expect(page.getByPlaceholder("Search…")).toHaveCount(1);
-		await expect(page.getByLabel("query")).toHaveAttribute("id", "q");
-	});
+  test("getByPlaceholder / getByLabel attribute locators", async ({ page }) => {
+    await page.goto(baseURL);
+    await expect(page.getByPlaceholder("Search…")).toHaveCount(1);
+    await expect(page.getByLabel("query")).toHaveAttribute("id", "q");
+  });
 
-	test(".not inverts a web-first matcher", async ({ page }) => {
-		await page.goto(baseURL);
-		await expect(page.locator(".item")).not.toHaveCount(2);
-		await expect(page.getByTestId("hdr")).not.toHaveText("Goodbye");
-	});
+  test(".not inverts a web-first matcher", async ({ page }) => {
+    await page.goto(baseURL);
+    await expect(page.locator(".item")).not.toHaveCount(2);
+    await expect(page.getByTestId("hdr")).not.toHaveText("Goodbye");
+  });
 
-	test("setContent drives the page without navigation", async ({ page }) => {
-		await page.goto(baseURL);
-		const url = page.url();
-		await page.setContent(
-			"<main><h2 data-testid='dyn'>Set Content Works</h2></main>",
-		);
-		expect(page.url()).toBe(url);
-		await expect(page.getByTestId("dyn")).toHaveText("Set Content Works");
-	});
+  test("setContent drives the page without navigation", async ({ page }) => {
+    await page.goto(baseURL);
+    const url = page.url();
+    await page.setContent("<main><h2 data-testid='dyn'>Set Content Works</h2></main>");
+    expect(page.url()).toBe(url);
+    await expect(page.getByTestId("dyn")).toHaveText("Set Content Works");
+  });
 
-	test("locator.textContent / getAttribute read element state", async ({
-		page,
-	}) => {
-		await page.goto(baseURL);
-		const hdr = page.getByTestId("hdr");
-		expect(await hdr.textContent()).toBe("Welcome Home");
-		expect(await hdr.getAttribute("role")).toBe("heading");
-		expect(await page.locator(".item").count()).toBe(3);
-	});
+  test("locator.textContent / getAttribute read element state", async ({ page }) => {
+    await page.goto(baseURL);
+    const hdr = page.getByTestId("hdr");
+    expect(await hdr.textContent()).toBe("Welcome Home");
+    expect(await hdr.getAttribute("role")).toBe("heading");
+    expect(await page.locator(".item").count()).toBe(3);
+  });
 
-	test("plain expect still falls through to bun:test", async () => {
-		expect(2 + 2).toBe(4);
-		expect([1, 2, 3]).toContain(2);
-		expect({ a: 1 }).toEqual({ a: 1 });
-	});
+  test("plain expect still falls through to bun:test", async () => {
+    expect(2 + 2).toBe(4);
+    expect([1, 2, 3]).toContain(2);
+    expect({ a: 1 }).toEqual({ a: 1 });
+  });
 
-	test("TestPage works standalone via await using", async () => {
-		await using page = await TestPage.create({ profile: "static" });
-		await page.goto(baseURL);
-		await expect(page.getByRole("heading")).toHaveText("Welcome Home");
-	});
+  test("TestPage works standalone via await using", async () => {
+    await using page = await TestPage.create({ profile: "static" });
+    await page.goto(baseURL);
+    await expect(page.getByRole("heading")).toHaveText("Welcome Home");
+  });
 });

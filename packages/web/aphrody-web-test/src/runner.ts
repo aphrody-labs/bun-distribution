@@ -11,14 +11,14 @@
  */
 
 import {
-	afterAll,
-	afterEach,
-	beforeAll,
-	beforeEach,
-	describe,
-	it,
-	mock,
-	test as bunTest,
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  it,
+  mock,
+  test as bunTest,
 } from "bun:test";
 import type { WebTestConfig } from "./config.ts";
 import { TestPage, type TestPageOptions } from "./page.ts";
@@ -27,8 +27,8 @@ export { afterAll, afterEach, beforeAll, beforeEach, describe, it, mock };
 
 /** The fixtures injected into a `test(name, async ({ page }) => …)` body. */
 export interface WebFixtures {
-	/** A fresh page under test, closed automatically after the test. */
-	page: TestPage;
+  /** A fresh page under test, closed automatically after the test. */
+  page: TestPage;
 }
 
 /** A Playwright-style test body taking the `{ page }` fixture. */
@@ -40,14 +40,14 @@ export type FixtureBody = (fixtures: WebFixtures) => void | Promise<void>;
  * memory; `skip` / `only` / `todo` / `each` come straight from `bun:test`.
  */
 export interface WebTest {
-	/** `timeout` (ms) is forwarded to `bun:test`, like its third argument. */
-	(name: string, body: FixtureBody, timeout?: number): void;
-	(name: string, body: () => void | Promise<void>, timeout?: number): void;
-	describe: typeof describe;
-	skip: typeof bunTest.skip;
-	only: typeof bunTest.only;
-	todo: typeof bunTest.todo;
-	each: typeof bunTest.each;
+  /** `timeout` (ms) is forwarded to `bun:test`, like its third argument. */
+  (name: string, body: FixtureBody, timeout?: number): void;
+  (name: string, body: () => void | Promise<void>, timeout?: number): void;
+  describe: typeof describe;
+  skip: typeof bunTest.skip;
+  only: typeof bunTest.only;
+  todo: typeof bunTest.todo;
+  each: typeof bunTest.each;
 }
 
 /**
@@ -57,13 +57,13 @@ export interface WebTest {
  * invoked, rather than dereferencing them at module-load time.
  */
 const skipFn = ((...args: Parameters<typeof bunTest.skip>) =>
-	bunTest.skip(...args)) as typeof bunTest.skip;
+  bunTest.skip(...args)) as typeof bunTest.skip;
 const onlyFn = ((...args: Parameters<typeof bunTest.only>) =>
-	bunTest.only(...args)) as typeof bunTest.only;
+  bunTest.only(...args)) as typeof bunTest.only;
 const todoFn = ((...args: Parameters<typeof bunTest.todo>) =>
-	bunTest.todo(...args)) as typeof bunTest.todo;
+  bunTest.todo(...args)) as typeof bunTest.todo;
 const eachFn = ((...args: Parameters<typeof bunTest.each>) =>
-	bunTest.each(...args)) as typeof bunTest.each;
+  bunTest.each(...args)) as typeof bunTest.each;
 
 /**
  * Builds a `test` function bound to `config`. The returned function accepts
@@ -71,44 +71,44 @@ const eachFn = ((...args: Parameters<typeof bunTest.each>) =>
  * case a {@link TestPage} is provisioned and disposed around the body.
  */
 export function createTest(config: WebTestConfig = {}): WebTest {
-	const pageOpts: TestPageOptions = {
-		profile: config.use?.profile ?? "static",
-		cdpUrl: config.use?.cdpUrl,
-		baseURL: config.use?.baseURL,
-		testIdAttribute: config.use?.testIdAttribute,
-	};
+  const pageOpts: TestPageOptions = {
+    profile: config.use?.profile ?? "static",
+    cdpUrl: config.use?.cdpUrl,
+    baseURL: config.use?.baseURL,
+    testIdAttribute: config.use?.testIdAttribute,
+  };
 
-	const fn = ((
-		name: string,
-		body: FixtureBody | (() => void | Promise<void>),
-		timeout?: number,
-	) => {
-		// Distinguish a fixture body (declares one arg) from a plain body.
-		const wantsFixtures = body.length >= 1;
-		if (!wantsFixtures) {
-			bunTest(name, body as () => void | Promise<void>, timeout);
-			return;
-		}
-		bunTest(
-			name,
-			async () => {
-				const page = await TestPage.create(pageOpts);
-				try {
-					await (body as FixtureBody)({ page });
-				} finally {
-					await page.close();
-				}
-			},
-			timeout,
-		);
-	}) as WebTest;
+  const fn = ((
+    name: string,
+    body: FixtureBody | (() => void | Promise<void>),
+    timeout?: number,
+  ) => {
+    // Distinguish a fixture body (declares one arg) from a plain body.
+    const wantsFixtures = body.length >= 1;
+    if (!wantsFixtures) {
+      bunTest(name, body as () => void | Promise<void>, timeout);
+      return;
+    }
+    bunTest(
+      name,
+      async () => {
+        const page = await TestPage.create(pageOpts);
+        try {
+          await (body as FixtureBody)({ page });
+        } finally {
+          await page.close();
+        }
+      },
+      timeout,
+    );
+  }) as WebTest;
 
-	fn.describe = describe;
-	fn.skip = skipFn;
-	fn.only = onlyFn;
-	fn.todo = todoFn;
-	fn.each = eachFn;
-	return fn;
+  fn.describe = describe;
+  fn.skip = skipFn;
+  fn.only = onlyFn;
+  fn.todo = todoFn;
+  fn.each = eachFn;
+  return fn;
 }
 
 /** The default `test`, bound to an empty config (`static` profile). */

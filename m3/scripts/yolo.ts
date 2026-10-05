@@ -32,13 +32,7 @@ export const yolo = (...args: string[]): Step => ({
 /** Test selection: every workspace package. The packages excluded from the workspace are named explicitly, since
  * `--filter "*"` alone still selects them: the host-bound ones (installed and tested by aphrody or iecode) and the
  * nested repository packages/nie-ui (its own workspace, install and `bun test`). */
-const EXCLUDED = [
-  "@aphrody/app-ui",
-  "@rosegriffon/ui",
-  "@shenron/ui",
-  "@aphrody/web-to-tauri",
-  "@aphrody/nie-ui",
-];
+const EXCLUDED = ["@aphrody/app-ui", "@rosegriffon/ui", "@aphrody/web-to-tauri", "@aphrody/nie-ui"];
 const ALL = ["--filter", "*", ...EXCLUDED.flatMap((name) => ["--filter", `!${name}`])];
 
 /** Lint scope: m3 packages (not the nested app submodules), apps and scripts. */

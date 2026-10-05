@@ -6,7 +6,7 @@ import type { ReactElement } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToStaticMarkup, renderToString } from "react-dom/server";
 
-import { DatabookReader } from "../src/DatabookReader";
+import { CaptionedReader, DatabookReader } from "../src/CaptionedReader";
 import { MangaReader } from "../src/MangaReader";
 
 async function hydrationErrors(element: ReactElement): Promise<unknown[]> {
@@ -22,9 +22,9 @@ async function hydrationErrors(element: ReactElement): Promise<unknown[]> {
 }
 
 const manga = <MangaReader title="Chapitre 1" pages={["p1.jpg", "p2.jpg"]} />;
-const databook = (
-  <DatabookReader
-    title="Daizenshuu"
+const captioned = (
+  <CaptionedReader
+    title="Recueil illustré"
     pages={[
       { number: 1, image: "a.jpg", text: "texte" },
       { number: 2, image: "b.jpg" },
@@ -37,15 +37,19 @@ describe("swiper-based readers", () => {
     expect(renderToStaticMarkup(manga)).toContain("Chapitre 1");
   });
 
-  test("DatabookReader renders its title on the server", () => {
-    expect(renderToStaticMarkup(databook)).toContain("Daizenshuu");
+  test("CaptionedReader renders its title on the server", () => {
+    expect(renderToStaticMarkup(captioned)).toContain("Recueil illustré");
+  });
+
+  test("DatabookReader stays a deprecated alias of CaptionedReader", () => {
+    expect(DatabookReader).toBe(CaptionedReader);
   });
 
   test("MangaReader hydrates without recoverable errors", async () => {
     expect(await hydrationErrors(manga)).toEqual([]);
   });
 
-  test("DatabookReader hydrates without recoverable errors", async () => {
-    expect(await hydrationErrors(databook)).toEqual([]);
+  test("CaptionedReader hydrates without recoverable errors", async () => {
+    expect(await hydrationErrors(captioned)).toEqual([]);
   });
 });

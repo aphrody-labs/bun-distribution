@@ -6,8 +6,8 @@
  * - 1:1 strict structural and key parity between English (EN) and French (FR)
  * - Zero missing or orphan translation keys
  * - No empty string values or unresolved placeholders
- * - Complete coverage of all 14 core system namespaces (common, nav, chat, files, models,
- *   settings, kernel, subsystems, drive, koharu, shenron, shell, ffi, errors)
+ * - Complete coverage of the 12 core system namespaces (common, nav, chat, files, models,
+ *   settings, kernel, subsystems, drive, shell, ffi, errors)
  *
  * Usage:
  *   bun scripts/audit/ui-i18n-audit.ts
@@ -17,7 +17,7 @@ import { join, resolve } from "node:path";
 import { EN_CATALOG, FR_CATALOG } from "../tools/ui/generate-i18n.ts";
 
 const REPO_ROOT = resolve(import.meta.dir, "../..");
-const LOCALES_DIR = join(REPO_ROOT, "packages", "ui", "m3", "src", "locales");
+const LOCALES_DIR = join(REPO_ROOT, "m3", "packages", "m3", "src", "locales");
 
 export interface AuditResult {
   valid: boolean;
@@ -116,7 +116,9 @@ export function runI18nAudit(): boolean {
   }
 
   if (result.valid) {
-    console.log("[i18n-audit] PASS: 100% symmetric key parity between EN and FR, zero hardcoded empty values.");
+    console.log(
+      "[i18n-audit] PASS: 100% symmetric key parity between EN and FR, zero hardcoded empty values.",
+    );
     return true;
   } else {
     console.error("[i18n-audit] FAIL: i18n catalogs are out of sync.");

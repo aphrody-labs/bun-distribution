@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from "react";
 import {
+  CaptionedReader,
   CollectionReader,
   MangaReader,
-  DatabookReader,
   type ReaderCollectionEdition,
 } from "@aphrody/m3-reader";
 // oxlint-disable-next-line import/no-unassigned-import -- reader styles provide the portable reader layout and reduced-motion rules
@@ -85,7 +85,7 @@ export default function Reader({ adaptive }: PageProps) {
                   onPageChange={setPage}
                 />
               ) : (
-                <DatabookReader key={chapter.id} pages={NOTES} title={chapter.label} />
+                <CaptionedReader key={chapter.id} pages={NOTES} title={chapter.label} />
               )
             }
           />
