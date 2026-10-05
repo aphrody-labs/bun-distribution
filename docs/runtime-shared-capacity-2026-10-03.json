@@ -1,0 +1,20 @@
+{
+  "schema": "aphrody.runtime-batch/1",
+  "date": "2026-10-03",
+  "baseline": "01300fb2f935f7fb85b135212c718131ae640ff5",
+  "trigger": "Aphrody concurrent engine startup failed with Busy: 4 operations already running after selecting SDK shared supervisor",
+  "change": "SDK-owned shared runtime uses 32 bounded operation slots, preserving room for processes plus concurrent readiness probes; explicit Runtime.load defaults remain unchanged",
+  "gates": {
+    "typecheck": "passed",
+    "changedFileOxlint": "passed --deny-warnings",
+    "changedFileOxfmt": "passed",
+    "sdkReleaseTests": {
+      "passed": 36,
+      "failed": 0
+    }
+  },
+  "limits": [
+    "TypeScript-only fix; no Rust gates repeated",
+    "Linux x64 SDK behavior qualified; no new target execution"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "schema": "yolo.delivery-metadata/1",
+  "observedAt": "2026-10-04T20:38:06.496Z",
+  "scope": "Delivery metadata only; concurrent native CLI, factory and UI work preserved",
+  "officialSource": {
+    "repository": "actions/runner-images",
+    "revision": "6d942e630479cd99a93dadfc766af11242bfa402",
+    "path": "README.md"
+  },
+  "changes": {
+    "macos": {
+      "x86_64-apple-darwin": "macos-15-intel",
+      "aarch64-apple-darwin": "macos-15"
+    },
+    "architectureGuard": "Rust host triple and Bun hostTarget() must match the declared matrix target before native build",
+    "scaffoldABI": "1.4"
+  },
+  "checks": {
+    "scaffold": {
+      "command": "bun test test/stack.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "assertions": 91,
+      "limitation": "Conditional installer case does not qualify current release assets"
+    },
+    "yaml": {
+      "command": "yq -o=json <workflow>; validate matrix and guard; bash -n; execute native guard",
+      "result": "pass",
+      "matrices": 2,
+      "targetsPerMatrix": 5,
+      "nativeTarget": "x86_64-unknown-linux-gnu",
+      "rejectedTarget": "aarch64-unknown-linux-gnu"
+    },
+    "abi": {
+      "command": "Compare templates/stack.toml runtime_abi to SDK EXPECTED_ABI_MAJOR/MINOR",
+      "result": "pass"
+    },
+    "documentation": {
+      "scopedLinks": "pass: Yolo 4 internal links; Aphrody 6 internal links",
+      "whitespace": "pass",
+      "mdBook": "pass",
+      "aphrodyConsistency": {
+        "command": "bun packages/infra/workspace/src/ops.ts docs check --skip-ecosystem",
+        "result": "fail",
+        "stale": ["docs/README.md", "docs/reference/workspace/documentation.json"],
+        "reason": "Generated output drift; paths claimed by runtime-sdk-acquisition and preserved"
+      },
+      "limitation": "Global documentation consistency not qualified"
+    }
+  },
+  "observations": [
+    {
+      "host": "vps",
+      "exitCode": 0,
+      "stdout": "Linux x86_64\nFilesystem        1B-blocks        Used    Available Use% Mounted on\n/dev/sda1      311227166720 37680709632 270320357376  13% /\n/dev/sdb1      321204289536  1827631104 319359881216   1% /srv\n1.4.2\nrustc 1.98.1 (48a229cea 2026-09-01)\ncargo 1.98.1 (797e8a9bc 2026-08-05)\nsccache 0.18.0\nUbuntu clang version 21.1.8 (6ubuntu1)\n1.13.2\ncmake version 4.2.3\nfactory-root-absent\n",
+      "stderr": "",
+      "readOnly": true
+    },
+    {
+      "host": "dbfr",
+      "exitCode": 0,
+      "stdout": "Linux x86_64\nFilesystem        1B-blocks        Used  Available Use% Mounted on\n/dev/sda1      102915489792 95671267328 7227445248  93% /\n/dev/sda1      102915489792 95671267328 7227445248  93% /\n1.4.2\nrustc 1.98.1 (48a229cea 2026-09-01)\ncargo 1.98.1 (797e8a9bc 2026-08-05)\nsccache 0.18.0\nUbuntu clang version 21.1.8 (6ubuntu1)\n1.13.2\ncmake version 4.2.3\nfactory-root-absent\n",
+      "stderr": "",
+      "readOnly": true
+    }
+  ],
+  "limits": [
+    "macOS jobs and native artifacts not executed by this batch",
+    "Current release install/upgrade/rollback remains under the autonomous-binary owner",
+    "Factory roots absent at probe time; source provenance and activation not established",
+    "Global desktop/browser/JSC/Windows supervision milestones remain open"
+  ],
+  "hashes": {
+    ".github/workflows/runtime.yml": "35cb9c74cebb862fc72c778cbd85841e2cb33481f172a03c1c1e785f3131f2c7",
+    ".github/workflows/release.yml": "a36b939a342327a2c1866db651a864812b0f3a726a5809d99286eca7726f8bb3",
+    "templates/stack.toml": "f3c5d8da63ae09a171f4ee2ad4620a3da199ffd8c8645a5da1b7c9aae3a6c83c",
+    "docs/CRITICAL-ISSUES-2026-10-04.md": "12a8c0c0162b3cd08e9e5e801bafb3867c615ad4ef994bca1021d904883e960e",
+    "aphrody:docs/operations/infra/DELIVERY-METADATA-2026-10-04.md": "fd56c780a078764ceb7f9e13ff11965fed7aa3aae258a339d7bbf5a8c602ab05"
+  },
+  "sourceRevisions": {
+    "yolo": "95666a115b60166969f888e97b21b0787a374d7b",
+    "aphrody": "dfd12d5084b12e9e6ce4521eb4e485450a046a2c"
+  }
+}

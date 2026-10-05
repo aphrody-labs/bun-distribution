@@ -1,0 +1,174 @@
+{
+  "schema": "yolo.package-manager.qualification/1",
+  "date": "2026-10-04",
+  "sourceHeadAtQualification": "1e9b76e199b6c07d8ad55aefc4fd080e6ee85911",
+  "dirty": true,
+  "milestone": {
+    "owner": "Yolo GOAL section 3",
+    "tranche": "Bun/uv/Cargo locked dependency acquisition",
+    "fullManagerComplete": false
+  },
+  "platform": "x86_64-unknown-linux-gnu",
+  "tools": {
+    "bun": "1.4.2",
+    "uv": "uv 0.12.23 (x86_64-unknown-linux-gnu)",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "typescript": "Version 7.0.2",
+    "oxlint": "Version: 1.86.0",
+    "oxfmt": "Version: 0.71.0"
+  },
+  "nativeSupervisor": {
+    "abi": "1.4",
+    "source": "0ade1c71ccb5",
+    "ownership": "existing runtime:process, owned child groups, abort/timeout/handle release"
+  },
+  "publicSurfaces": [
+    "@aphrody/yolo-core/pm",
+    "yolo mcp: yolo_package_sync",
+    "yolo api: POST /api/tools/call"
+  ],
+  "behavior": {
+    "default": "read-only preflight",
+    "tools": "installed global binaries only",
+    "locks": "Bun frozen, uv locked, Cargo fetch locked",
+    "cargo": "existing Aphrody cargo-serial.sh owner",
+    "scripts": "Bun lifecycle scripts disabled",
+    "pythonDownloads": false,
+    "parallelManagers": false,
+    "preflight": "all managers validated before any apply",
+    "failure": "subsequent managers skipped",
+    "sameRootConcurrency": "rejected within process"
+  },
+  "checks": [
+    {
+      "command": "bun test test/package-manager.test.ts",
+      "status": "pass",
+      "tests": 7,
+      "assertions": 39,
+      "evidence": [
+        "real global Bun installs local package offline",
+        "real uv creates isolated virtual environment offline",
+        "serialized Cargo fetch succeeds without building engines",
+        "locks unchanged",
+        "stale lock fails before later managers",
+        "real local HTTP download cancelled and competing sync rejected",
+        "MCP tool shares the plan"
+      ]
+    },
+    {
+      "command": "bun run --cwd packages/core test",
+      "status": "pass",
+      "tests": 134,
+      "files": 18,
+      "assertions": 1539
+    },
+    {
+      "command": "tsc --noEmit",
+      "status": "pass"
+    },
+    {
+      "command": "oxlint --deny-warnings (owned core/tests)",
+      "status": "pass"
+    },
+    {
+      "command": "oxfmt --check (owned core/tests)",
+      "status": "pass"
+    },
+    {
+      "command": "git diff --check",
+      "status": "pass"
+    },
+    {
+      "command": "/home/aphro/yolo/bin/yolo mcp (real stdio call, no terminal newline)",
+      "status": "pass",
+      "tool": "yolo_package_sync",
+      "result": {
+        "ok": true,
+        "applied": false,
+        "managers": [
+          "bun",
+          "cargo"
+        ]
+      }
+    },
+    {
+      "command": "bun test (whole concurrent checkout)",
+      "status": "fail",
+      "pass": 411,
+      "skip": 20,
+      "fail": 2,
+      "failures": [
+        "test/standalone.test.ts beforeAll compile: untracked concurrent supervisor-benchmark.ts conditional top-level await",
+        "test/installers.test.ts beforeAll compile: same concurrent benchmark module"
+      ],
+      "baselineSameFailures": true
+    },
+    {
+      "command": "/home/aphro/yolo/bin/yolo verify --only whitespace,docs --json",
+      "status": "pass",
+      "gates": [
+        {
+          "id": "whitespace",
+          "status": "pass"
+        },
+        {
+          "id": "docs",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "command": "/home/aphro/yolo/bin/yolo verify --only whitespace,typecheck,lint,fmt-check,docs --json",
+      "status": "pass",
+      "gates": [
+        {
+          "id": "whitespace",
+          "status": "pass"
+        },
+        {
+          "id": "typecheck",
+          "status": "pass"
+        },
+        {
+          "id": "lint",
+          "status": "pass"
+        },
+        {
+          "id": "fmt-check",
+          "status": "pass"
+        },
+        {
+          "id": "docs",
+          "status": "pass"
+        }
+      ]
+    }
+  ],
+  "supportingCoreChanges": [
+    "persistent shared MCP/API dependencies and canonical OpenAPI",
+    "strict tool arguments and HTTP path/origin checks",
+    "honor and drain monitor intervals, bounded doc/session caches",
+    "stable raw-byte scan and ledger fingerprints",
+    "complete packed/worktree vendor refs and source/runtime catalog provenance",
+    "real bounded inference/SSE/embeddings transport without simulated fallback",
+    "native Redis client, persisted vectors/training records, offline reconciliation and explicit persistence state",
+    "restore fixture YOLO_RUNTIME_HOME instead of contaminating later native tests"
+  ],
+  "limits": [
+    "Linux x64 dependency-acquisition tranche only; add/remove/update, engine selection, tool installation and other targets remain open",
+    "apply requires compatible installed native runtime and owner Cargo wrapper",
+    "plans require pre-existing native locks",
+    "offline memory overlay volatile across process restart; Redis KNN exact O(N), no ANN index",
+    "Gemma architecture profiles unverified; tests prove local HTTP transport, not weights/numeric tokenizer/model quality/training",
+    "new MCP source tools require starting the source server; the session configured MCP catalog is not automatically hot-reloaded",
+    "no engine build, registry publication, full native release or SSH build success asserted"
+  ],
+  "delivery": {
+    "sourceCommit": "1494e008d1aae3e7be5992e88584d75fa3a43012",
+    "branch": "dev",
+    "remote": "origin",
+    "sourcePush": "passed",
+    "remoteMain": "verified at source commit 1494e008d1aae3e7be5992e88584d75fa3a43012 by git ls-remote and native repo-sync status",
+    "factory": "source commit queued behind preserved running preparation; build completion not asserted"
+  }
+}

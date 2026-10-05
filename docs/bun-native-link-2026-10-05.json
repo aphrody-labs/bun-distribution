@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-05",
+  "scope": "Native Rust build-script dependencies in the Linux Bun fork final link",
+  "baselineRevision": "fa052eaccfd4dc072c7ead66767e87f0d53a0889",
+  "revision": "cf4e249669120828ca4c133ecd528195bb2cdc5c",
+  "files": [
+    {
+      "path": "scripts/build/bun.ts",
+      "sha256": "095ded93c87ed650bf774df1b95c01d3ac544dc22e8a3f464b23329ad735ae5b"
+    },
+    {
+      "path": "scripts/build/ninja.ts",
+      "sha256": "fa33c33f06bd6f5e504702bf997618df700173b7c7e363201e6463aa36c1d690"
+    },
+    {
+      "path": "scripts/build/rust.ts",
+      "sha256": "254799ea5eb5611d108a80c97c3badf9454866da34558388032aa8e44b0be38e"
+    },
+    {
+      "path": "scripts/build/timings.ts",
+      "sha256": "ce9c47cf7760d5deb9a692aa9dfd4a928d1edaef848938baa80a737701e8d6bc"
+    },
+    {
+      "path": "scripts/build/rust/native-link.ts",
+      "sha256": "df843a2ca011539c74dd0cfd73c967706be7845d1e9e07e423a5fe1c398680bb"
+    },
+    {
+      "path": "test/internal/build-rust-native-link.test.ts",
+      "sha256": "f8c4478fcdbe2be53c44193958c4fcbd93d35bfe20a5c20e0f74edc17e07ccea"
+    }
+  ],
+  "changes": [
+    "Pass target build-script library/search directives to the actual clang final link via a generated response file.",
+    "Ninja tracks source directives and response changes; host proc-macro dependencies and bundled static archives are excluded.",
+    "Reject unsupported Linux link contracts explicitly; preserve Cargo library order."
+  ],
+  "validation": {
+    "tests": 53,
+    "assertions": 128,
+    "failed": 0,
+    "command": "bun test test/internal/build-rust-native-link.test.ts test/internal/build-rust-units.test.ts test/internal/build-link-lazy-objects.test.ts test/internal/build-timings.test.ts",
+    "typecheck": "tsc --noEmit -p scripts/build/tsconfig.json: pass",
+    "lint": "oxlint strict scoped: pass",
+    "format": "Five changed files pass; timings.ts retains the same prior formatting difference at line 551 as baseline.",
+    "nativeFixture": "Clang 23 compiles a tiny shared library and consumer, links via the generated response and executes successfully; path spaces and comma in library name covered."
+  },
+  "limits": [
+    "System Bun executes edited TypeScript build-driver code directly; this is not rebuilt-fork runtime qualification.",
+    "The Bun engine, JSC/V8 coexistence, desktop plugin, React/Next build and embedded WebView are not built or qualified by these tests.",
+    "Global Bun test typechecking remains incompatible with the installed TS7 and existing harness; build-driver typechecking passes.",
+    "No new engine, process wrapper or ABI stub was introduced."
+  ]
+}

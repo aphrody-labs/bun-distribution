@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-05",
+  "scope": "One shared admission budget for Turbopack worker-pool facades",
+  "forkRevision": "d2f2220042934d7f131c8f494207d73e12240f5f",
+  "nextPackageVersion": "16.4.0-canary.58",
+  "generatedImportCommit": "cb27145",
+  "sourcePolicy": "Fork patches committed on yolo; native importer generated vendor history; dev merges generated changes. No engine sources moved into Aphrody.",
+  "changes": [
+    "Concurrency and bootup semaphores belong to PoolState keyed by cwd and entrypoint.",
+    "Repeated compatible facades reuse one budget; incompatible concurrency returns an explicit error instead of a second budget.",
+    "Cancelled and dropped reservations return to the shared owner."
+  ],
+  "files": [
+    {
+      "path": "crates/aphrody-turbopack-node/src/worker_pool/budget.rs",
+      "sha256": "bc137e1469307cb9e098d7ff9fe76b43a569365d6af799f39331a73af60b05bf"
+    },
+    {
+      "path": "crates/aphrody-turbopack-node/src/worker_pool/mod.rs",
+      "sha256": "c126c4bf2f4c08f2a6aaa93995bc84faccae5fbcef80ff599ca7a2a04c9a8225"
+    },
+    {
+      "path": "crates/aphrody-turbopack-node/src/worker_pool/operation.rs",
+      "sha256": "c15d11328da1537f9e5999594c1fbcd0170c7a15d39e2fbed5a6e17255db4fc7"
+    },
+    {
+      "path": "crates/aphrody-turbopack-node/src/worker_pool/worker_thread.rs",
+      "sha256": "da2a1cbc882e2adc819458ff2cceab90733d78a805d15b8354cd49b586fd3306"
+    }
+  ],
+  "validation": {
+    "budgetModule": {
+      "source": "crates/aphrody-turbopack-node/src/worker_pool/budget.rs",
+      "testsPassed": 5,
+      "compiler": "rustc 1.98.1 (48a229cea), edition 2024, -D warnings",
+      "dependency": "existing compiled Tokio 1.53.1; rlib SHA256 d3c41fee6cf833d3b1b8afae0a0fe016a1ec205bb153c4e6718d3d8fc6c485d6",
+      "serialization": "shared Aphrody Cargo flock; sccache for rustc; same-version clippy-driver -D warnings pass",
+      "notACopy": "The compiler reads the production module directly; no engine rebuild or replacement implementation."
+    },
+    "format": "four source files in fork and imported copy pass rustfmt check",
+    "import": "native yolo import generates byte-identical pool sources; pins in vendor.lock",
+    "registryTests": {
+      "written": 2,
+      "run": false,
+      "reason": "Require the full worker_pool crate/factory gate."
+    }
+  },
+  "factoryGatesRequired": {
+    "toolchain": "nightly-2026-08-20",
+    "package": "aphrody-turbopack-node",
+    "features": "--no-default-features --features worker_pool",
+    "commands": [
+      "check --lib --locked",
+      "test --lib --locked worker_pool:: -- --test-threads=1",
+      "clippy --lib --tests --locked -- -D warnings"
+    ]
+  },
+  "limits": [
+    "No complete Turbopack addon, Bun compatibility, React/Next application build or memory/throughput gain is qualified.",
+    "The full crate checks and two registry tests remain pending behind the active shared factory lock.",
+    "This removes the demonstrated per-facade budget duplication; it does not unify all JS engines or all dependencies."
+  ]
+}

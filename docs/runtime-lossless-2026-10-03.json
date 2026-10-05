@@ -1,0 +1,59 @@
+{
+  "schema": "aphrody.runtime-batch/1",
+  "date": "2026-10-03",
+  "owner": "aphrody-dev",
+  "scope": "Yolo ABI 1.4 lossless process output and joined native ownership",
+  "baseline": "83b7790",
+  "sourceDelivery": "completed owned batch; clean artifact rebuilt after commit",
+  "changes": [
+    "Bounded lossless raw stdout/stderr with lifetime budgets and explicit OutputLimit",
+    "Capture worker joins before process release/runtime unload; stop owned Unix group after leader exit",
+    "SDK live-handle checks including HTTP probes; copied byte buffers and stderr diagnostics callback",
+    "Producer artifact selects own build; embedded Git revision watches current branch ref",
+    "Production execution queue with consumer/target/activation acceptance"
+  ],
+  "gates": {
+    "rust": {
+      "runner": "APHRODY_LOCAL_CARGO=1 APHRODY_CARGO_JOBS=2 scripts/build/rust/cargo-serial.sh",
+      "localReason": "Yolo PLAN permits the light runtime locally; no heavy engine build; global lock and sccache preserved",
+      "tests": {
+        "runtime": 28,
+        "core": 3,
+        "fail": 0,
+        "skip": 0
+      },
+      "strictClippy": "passed yolo-runtime/yolo-core all-targets",
+      "hostCheck": "passed",
+      "metadataTargets": [
+        "x86_64-pc-windows-msvc",
+        "x86_64-apple-darwin",
+        "aarch64-apple-darwin",
+        "aarch64-unknown-linux-gnu"
+      ],
+      "runtimeBuild": "passed --profile runtime --locked"
+    },
+    "bun": {
+      "tests": 164,
+      "fail": 0,
+      "skip": 0,
+      "assertions": 1146,
+      "files": 8,
+      "typecheck": "passed",
+      "changedFileOxlint": "passed --deny-warnings",
+      "changedFileOxfmt": "passed"
+    },
+    "whitespace": "git diff --check passed"
+  },
+  "limits": [
+    "Runtime execution and packaged library qualified only on Linux x64",
+    "Windows direct-child stop only; Job Objects/process-tree runtime tests remain open",
+    "Escaped Unix groups are outside ownership; open escaped writer yields capture error and bounded reader shutdown",
+    "Desktop/headless integration and full Aphrody rollout remain open",
+    "No performance gains measured; no production activation"
+  ],
+  "guidance": {
+    "yoloFacts": "stale receipt; runtime work follows current owner plans and serialized runner source",
+    "contract": "~/.codex/YOLO-NHITL.md absent; owner AGENTS and explicit user authorization supply execution authority",
+    "pluginRefresh": "not performed; unrelated plugin code/knowledge outside this runtime batch"
+  }
+}

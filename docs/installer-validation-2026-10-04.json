@@ -1,0 +1,145 @@
+{
+  "schema": "yolo.installer-validation/1",
+  "date": "2026-10-04",
+  "observedAt": "2026-10-04T20:57:59.669Z",
+  "owner": "aphrody-dev",
+  "scope": "Native release validation before replacement; installer fixtures, not promotion of the current full release",
+  "worktree": {
+    "baseline": "4fe098ef207713edc2bca617c380371e0da9c239",
+    "branch": "dev",
+    "concurrentChangesPreserved": true
+  },
+  "sources": [
+    {
+      "path": "install.sh",
+      "sha256": "474a94d2af759649184bbb0d81fe42ddd0b950ee91db856659fee297d7d35dca"
+    },
+    {
+      "path": "install.ps1",
+      "sha256": "bcadef815fe740a315d81700b651906b7c6741591d0862252cb9a8bc2397f930"
+    },
+    {
+      "path": "test/installers.test.ts",
+      "sha256": "28f2780a9d3bca41b033b69b311c8f0124f2174bd7ebe5cdb67fa76fdcbd9e7c"
+    }
+  ],
+  "behavior": [
+    "Both archives are extracted and the crates directory is checked before touching an existing installation.",
+    "The release executable runs version, runtime install and runtime info in an isolated temporary runtime store before replacing code or SDK files.",
+    "Candidate failures preserve installed bytes and current/previous runtime pointers, including an external YOLO_RUNTIME_HOME.",
+    "Successful fixture installs preserve runtime history and support a verified native runtime rollback; fresh fixture installation also passes.",
+    "PowerShell restores YOLO_HOME and YOLO_RUNTIME_HOME after candidate validation."
+  ],
+  "validation": {
+    "testCommand": "bun test --timeout 30000 test/installers.test.ts test/upgrade.test.ts",
+    "tests": {
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "assertions": 145
+    },
+    "nativeTarget": "x86_64-unknown-linux-gnu",
+    "runtime": {
+      "abi": "1.4",
+      "sourceRevision": "0ade1c71ccb52bcc9d255188a252c28c5b789b48",
+      "librarySha256": "ae14394bcfb291b9da4a4aa79acdcac2193f30966ae5672f02adf9f6b3ec695e",
+      "acquisition": "Copied into disposable fixtures from the existing verified installation; no engine rebuild"
+    },
+    "tools": {
+      "bun": "1.4.2",
+      "powershell": "PowerShell 7.6.6 on Linux"
+    },
+    "environment": "Installer subprocesses use /usr/bin:/bin, offline fixture archives and isolated home/runtime/temp directories; the CLI is compiled once from current checkout sources",
+    "gates": [
+      {
+        "command": "tsc --noEmit",
+        "exitCode": 0
+      },
+      {
+        "command": "oxlint --deny-warnings test/installers.test.ts",
+        "exitCode": 0
+      },
+      {
+        "command": "oxfmt --check test/installers.test.ts",
+        "exitCode": 0
+      },
+      {
+        "command": "shellcheck install.sh",
+        "exitCode": 0
+      },
+      {
+        "command": "sh -n install.sh",
+        "exitCode": 0
+      },
+      {
+        "command": "pwsh -NoProfile -NonInteractive -Command '$null = [scriptblock]::Create((Get-Content -Raw install.ps1))'",
+        "exitCode": 0
+      }
+    ],
+    "nativeVerify": {
+      "tool": "mcp__yolo__yolo_verify",
+      "selectedGates": [
+        {
+          "id": "whitespace",
+          "command": [
+            "git",
+            "diff",
+            "--check"
+          ],
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "docs",
+          "command": [
+            "mdbook",
+            "build",
+            "docs"
+          ],
+          "status": "pass",
+          "exitCode": 0
+        }
+      ],
+      "ok": true,
+      "notRun": [
+        {
+          "id": "clippy",
+          "reason": "heavy: compiles Tauri; runs through yolo ship"
+        },
+        {
+          "id": "test-crates",
+          "reason": "heavy: runs through yolo ship"
+        },
+        {
+          "id": "check-workspace",
+          "reason": "heavy: runs through yolo ship"
+        },
+        {
+          "id": "deny",
+          "reason": "network advisory data; runs through yolo ship"
+        },
+        {
+          "id": "runtime-test",
+          "reason": "heavy: runs through yolo ship"
+        },
+        {
+          "id": "python-build",
+          "reason": "build yolo-pyo3 with Maturin through the serialized factory, install the verified wheel and sync the dev extra before python-native/python-test; local gates use the installed extension without rebuilding Cargo"
+        }
+      ]
+    },
+    "receiptIntegrity": "Three source SHA-256 entries verified; JSON parse and format passed",
+    "aphrodyTodo": "Four local Markdown links and scoped whitespace passed"
+  },
+  "limits": [
+    "PowerShell control flow executed on Linux with a Linux compiled CLI named yolo.exe; Windows-native installer execution, DLL locking and running-executable self-replacement remain unqualified.",
+    "The fixtures do not qualify complete SDK/template packaging, D0/D1/D2 release promotion, macOS or other architecture installation, or live activation.",
+    "Validation failures are caught before file replacement; filesystem errors, signals and power loss during replacement are not a transactional upgrade guarantee.",
+    "Global Aphrody docs consistency remains failed on three stale claimed outputs: docs/README.md, docs/reference/workspace/documentation.json and docs/llms.txt."
+  ],
+  "delivery": {
+    "publication": false,
+    "remote": "origin",
+    "branch": "dev"
+  }
+}

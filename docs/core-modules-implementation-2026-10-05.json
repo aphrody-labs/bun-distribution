@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-05",
+  "scope": "Implementation of approved core/provider boundaries; owned source hunks only, concurrent native providers preserved",
+  "baselineRevision": "73c941359854799fba7bd213e8e7f29eb896fa0f",
+  "workspace": {
+    "members": 117,
+    "previousDefaultMembers": 48,
+    "defaultMembers": [
+      "yolo-core",
+      "yolo-runtime"
+    ],
+    "importedDesktopCrates": 54,
+    "importedCompilerCrates": 59,
+    "sourcesMovedOrDeleted": false
+  },
+  "sourcePolicy": "Generated imports and pinned vendor sources remain in place. Core is selected explicitly; desktop/browser/compiler/Python are opt-in. No engine artifact is newly qualified by recipe definitions.",
+  "validation": {
+    "rust": {
+      "host": "Linux x64",
+      "wrapper": "/home/aphro/aphrody/scripts/build/rust/cargo-serial.sh",
+      "localDiagnostic": "APHRODY_LOCAL_CARGO=1; explicit scoped core qualification, sccache/resource guard retained",
+      "commands": [
+        {
+          "argv": [
+            "check",
+            "--locked",
+            "--offline",
+            "--all-targets"
+          ],
+          "exitCode": 0
+        },
+        {
+          "argv": [
+            "test",
+            "--locked",
+            "--offline",
+            "-p",
+            "yolo-core",
+            "-p",
+            "yolo-runtime"
+          ],
+          "exitCode": 0,
+          "passed": 37
+        },
+        {
+          "argv": [
+            "clippy",
+            "--locked",
+            "--offline",
+            "-p",
+            "yolo-core",
+            "-p",
+            "yolo-runtime",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exitCode": 0
+        },
+        {
+          "argv": [
+            "fmt",
+            "--check",
+            "-p",
+            "yolo-core",
+            "-p",
+            "yolo-runtime"
+          ],
+          "exitCode": 0
+        }
+      ]
+    },
+    "cargoMetadata": {
+      "locked": true,
+      "offline": true,
+      "workspaceMembers": 117,
+      "defaultMembers": [
+        "yolo-core",
+        "yolo-runtime"
+      ]
+    },
+    "upstreamFormat": {
+      "command": "cargo fmt --all --check",
+      "exitCode": 1,
+      "affectedFiles": 103,
+      "scope": "vendor/obscura only",
+      "action": "Preserved sources; retained as explicit upstream gate, separate from core format"
+    },
+    "aphrodyConsumer": {
+      "changed": false,
+      "existingNativeRuntimeVerification": "pass",
+      "installedNativeRevision": "0ade1c71ccb5",
+      "abi": "1.4",
+      "testsPassed": 14,
+      "assertions": 55,
+      "desktopInstalled": false,
+      "browserReplacementQualified": false
+    },
+    "ownedBunAndProfileGates": {
+      "owner": "/home/aphro/yolo/bin/yolo verify",
+      "startedAt": "2026-10-04T22:13:07.919Z",
+      "ok": true,
+      "gates": [
+        {
+          "id": "whitespace",
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "typecheck",
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "lint",
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "fmt-check",
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "test",
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "rust-fmt",
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "docs",
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "import-check",
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "python-lint",
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "python-native",
+          "status": "pass",
+          "exitCode": 0
+        },
+        {
+          "id": "python-test",
+          "status": "pass",
+          "exitCode": 0
+        }
+      ]
+    },
+    "profiles": {
+      "tests": 5,
+      "assertions": 80,
+      "result": "pass",
+      "proof": "real Just dispatch through recording wrappers, exact 59 compiler/44 prior imported-default selections, missing nightly and factory guards; no engine compilation"
+    },
+    "aphrodyHelp": {
+      "tests": 6,
+      "assertions": 31,
+      "result": "pass",
+      "capture": "one page, /home/aphro/yolo/bin/yolo --help only; dedicated installed-help directory, no global index replacement"
+    }
+  },
+  "limits": [
+    "Rust checks ran against the concurrent working tree; only owned changes are delivered.",
+    "Desktop, browser, compiler engines and non-Linux execution require their own factory/artifact qualification.",
+    "Aphrody direct Rust Obscura dependencies remain until provider parity and consumer gates pass.",
+    "The existing SSH preparation worker is preserved; queued work is not a completed build.",
+    "Global upstream format still reports external Obscura differences; no vendor source was reformatted."
+  ],
+  "targetClarification": "Full native desktop Bun fork; preserve JSC/WebKit and support V8 via Obscura, Tauri as optional desktop plugin, real embedded WebView backend, React/Next 16 build and uv absorption. Foundation only; no completed engine absorption or startup parity.",
+  "factoryObservation": {
+    "checkedAt": "2026-10-04T22:21:56Z",
+    "watcherJob4fe": "failed; complete; exit 1 at 2026-10-04T22:07:15.754Z",
+    "separatePreparation": "Still holds heavy lock while fetching design/aphrody-m3/forks/material-design-icons; preserved",
+    "checkout": "e65a36d59c; Bun expected fa052eac but remains 49c076eb pending hydration",
+    "requirementsMissing": [
+      "Rust nightly-2026-09-15",
+      "qualified Bun fork build artifact"
+    ],
+    "qualifiedNewBuild": false
+  }
+}

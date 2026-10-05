@@ -1,0 +1,33 @@
+{
+  "schema": "aphrody.runtime-batch/1",
+  "date": "2026-10-03",
+  "scope": "Reproducible committed SDK snapshot packaging; retired obsolete consumer patch",
+  "baseline": "0ade1c71ccb52bcc9d255188a252c28c5b789b48",
+  "changes": [
+    "Pack only allowlisted committed SDK sources and producer LICENSE at a full pinned revision",
+    "No engine source, hooks, native build or branch/worktree mutation",
+    "Content-addressed archives, atomic provenance, immutable conflict and symlink refusal",
+    "Obsolete agent-browser patch removed; current consumer qualification documented"
+  ],
+  "gates": {
+    "typecheck": "passed",
+    "oxlint": "changed files --deny-warnings passed",
+    "oxfmt": "passed",
+    "snapshotTests": {
+      "pass": 4,
+      "fail": 0,
+      "assertions": 16
+    },
+    "previousFullBunSuite": {
+      "pass": 168,
+      "fail": 0,
+      "scope": "before final publication guards and fourth regression; SDK component rerun after final changes"
+    },
+    "whitespace": "passed"
+  },
+  "limits": [
+    "Consumer bootstrap implementation is the next owned batch",
+    "Native runtime was not rebuilt for TypeScript packaging changes",
+    "No release registry publication or product activation"
+  ]
+}
