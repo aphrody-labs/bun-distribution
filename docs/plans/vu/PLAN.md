@@ -256,11 +256,11 @@ config/host/vps-cargo.json); no second build mechanism is added.
 | --- | --- | --- |
 | P0 | Inventory, native crate absorbed, `py/` deduplicated, name settled, forks pinned, plan, provenance, pins gate | done 2026-10-05 |
 | P1 | Decisions settled (section 9); private repository `aphrody-labs/vu` created | done 2026-10-05 |
-| P2 | `vps-cargo --repo` (done, `445a854fd`); repository seeded and pushed (private, `f9d6b3d`, `6de8f0d`: launcher, embedding, Bun scripts with 19 tests); T0 build on the build host: `uv`, `ruff`, `vu`, artifact, glibc audit, smoke, receipt; no activation | in progress: the build waits for the factory heavy lock |
-| P3 | `vu python` (embedded CPython) parity and the SDK wheel smoke inside the runtime | in progress (same batch as P2) |
+| P2 | `vps-cargo --repo` (done, `445a854fd`); repository seeded and pushed (private, `f9d6b3d`, `6de8f0d`: launcher, embedding, Bun scripts with 19 tests); T0 build on the build host: `uv`, `ruff`, `vu`, artifact, glibc audit, smoke, receipt; no activation | done 2026-10-05: receipt `7c3db189` of the `vu` repository (`df8a358`): uv 94 s, ruff 159 s, vu 161 s, tests 508 s, clippy 54 s, assemble 7 s, smoke 12 s; artifact `0.1.0-7c3db189`, 3 491 files, 1 049 links, 187 MB; glibc ceiling 2.39 (J15); no activation |
+| P3 | `vu python` (embedded CPython) parity and the SDK wheel smoke inside the runtime | done 2026-10-05: the smoke of the receipt proves `vu python` parity (sys.version, prefix, executable, path, extension modules), exit status and stdin, and the SDK wheel (`aphrody.aphrody_rust.cosine_similarity` returned 1.0 inside `vu python`) (J15) |
 | P4 | `yolo py` resolves and verifies the artifact, falls back to PATH | done 2026-10-05 (`caa20e186`, 17 tests); no artifact is installed, so the PATH fallback is the active mode |
 | P5 | Installation and activation through Infra's catalog and runbook; never implied by a source change | open (not executed here) |
-| P6 | Converge `packages/engine/python` and `crates/engine/yolo-pyo3` (second Python package and second PyO3 module crate) with the runtime; untrack the compiled `.so` | open |
+| P6 | Converge `packages/engine/python` and `crates/engine/yolo-pyo3` (second Python package and second PyO3 module crate) with the runtime; untrack the compiled `.so` | done 2026-10-06: the compiled `_yolo_native` extension is untracked and ignored; the two bindings stay separate by design (D17) |
 
 Execution order is the table order; each batch is committed and pushed (aphrody monorepo and, from P2, the private `vu`
 repository) before the next starts.
@@ -271,7 +271,7 @@ repository) before the next starts.
 | --- | --- | --- |
 | Internal API drift of uv-* and ruff_* crates | Descriptions "internal component crate"; `uv::main` documentation (J4) | T0 only (D3): the CLI is the contract; exact pins; forks to carry patches |
 | glibc mismatch between build host and WSL | 2.43 against 2.39 (J9); MEMORY.md records a factory-built binary refused by WSL | audit in every receipt (6.2); libm symbols or older sysroot if needed |
-| Build time and memory | check: 232 s and 92 s; release builds measured in P2 | factory locks, sccache; results recorded in the plan |
+| Build time and memory | check: 232 s and 92 s; release build times measured in P2 (J15); peak memory not measured | factory locks, sccache; results recorded in the plan |
 | Release builds hold the heavy lock | Other agents wait for the lock up to 1 800 s | each Cargo step is a separate job, so the lock is released between steps |
 | Toolchain deviation | uv and ruff pin 1.99.0 upstream; the build uses 1.98.1 (their MSRV is 1.97) | checked compile (J7); the receipt records the toolchain |
 | Licences | uv MIT OR Apache-2.0, ruff MIT, PyO3 MIT OR Apache-2.0, uv-pep440/508 Apache-2.0 OR BSD-2-Clause, astral-pubgrub and python-build-standalone MPL-2.0 (J1, J8) | recorded; not a blocking criterion (owner: the monorepo is multi-licensed); notices ship in the artifact |
@@ -304,6 +304,7 @@ Settled by the executing agent on the owner's order of 2026-10-05; each carries 
 | D14 | What stays Python product code | Everything unique under py/packages, py/apps, py/docs, py/uv.lock and the Python packaging qualification tools; the Rust-owned parts (binding, kernels) are not Python | Inventory: no Rust counterpart with parity evidence; thin adapters already delegate arithmetic to `aphrody_rust` |
 | D15 | py/tools/workspace (Bun supervisor) | Stays until the Yolo runtime SDK is installable in this checkout, then moves into `yolo py` | It is the bounded supervisor built on `@aphrody/runtime-sdk`; its tests cannot run here without an installed workspace, so a rewrite would be unverified |
 | D16 | Order of absorption | Section 7, table order | Each phase needs the previous artifact |
+| D17 | Converge `yolo-pyo3` with `rag-python`? | No: two modules stay (`yolo._yolo_native` over `yolo-core`, `aphrody.aphrody_rust` over `aphrody-rag-core`); both take PyO3 from `workspace.dependencies` (0.29.3); the compiled extension of `packages/engine/python` is untracked | Different capability owners and different wheels; a merged module would couple the Yolo engine release to the RAG kernels; the only duplication was the committed build output |
 
 ## 10. Staged follow-ups from the py fusion
 
@@ -337,6 +338,8 @@ and Bun scripts; raw outputs were kept in the session scratch space and are summ
 | J12 | The wheel built from the monorepo crate | `uv build --wheel` on the build host (maturin 1.14.1, rustc 1.98.1), installed-wheel verification (`py/tools/sdk/verify-wheel.py`, Python 3.14.4) | wheel 788 600 bytes with the CycloneDX SBOM; extension 1 161 480 bytes (old standalone crate: 790 160); 514 SDK tests passed, 31 skipped; `py/tools/packaging/qualify_aphrody.py` passed |
 | J13 | Forks and pins | `POST /forks` (202) and `POST /git/refs` (201); `scripts/audit/workspace/vu-pins.ts --online`; shallow clones of the pin branches on the build host | three forks, three branches, all at the pinned commits; heads of the clones equal the pins |
 | J14 | Repository and build host access | `POST /orgs/aphrody-labs/repos` (201, private, empty); `git ls-remote` of the new repository from the build host | `aphrody-labs/vu` is private; the build host fails with "gh: not found" in its credential helper and cannot read it |
+| J15 | First complete build of the runtime | `vu` repository `scripts/forge.ts` on the build host under the factory locks (receipt `receipts/7c3db189-2026-10-05T21-13-26-131Z.json`, schema `aphrody.vu-forge/1`); `bun test scripts` 20 passed; `vps-cargo --repo vu` clippy `-D warnings` and `cargo test --workspace` green on 2026-10-06 | all ten steps ok at `7c3db189` (rustc 1.98.1); `vu --version --json` reports vu 0.1.0, uv 0.12.23, ruff 0.16.10, Python 3.12.15, PyO3 0.29.3; glibc needs: vu, uv, ruff 2.39, libpython 2.17, highest 2.39 within the 2.39 of WSL |
+| J16 | `yolo py` against the real artifact | the artifact tarred on the build host (65 MB zstd), downloaded with `aphrody infra ssh sftp`, extracted under a scratch `VU_HOME` (`runtime/x86_64-unknown-linux-gnu/<version>-<rev8>`, `current` link); `yolo py status` and `--vu-full`; `uv sync --frozen` and `uv run pytest` of `py/` through the artifact's uv in a scratch environment (workspace members not installed, torch excluded) | quick and full manifest checks `verified` (bytecode caches excluded as derived data); `yolo py status` reports uv 0.12.23 (46b84fd0b), Python 3.12.15 and ruff 0.16.10 from the runtime; pytest 707 passed, 18 skipped, 3 failed (subprocess tests that import the installed `aphrody` wheel, not installable while the Cargo workspace is mid-edit by another batch); nothing installed under the real `~/.vu` (P5 stays open) |
 
 ## 12. Checklist
 
@@ -348,7 +351,7 @@ and Bun scripts; raw outputs were kept in the session scratch space and are summ
 - [x] Provenance in config/upstream-sources.json; pins gate and tests.
 - [x] Feasibility: `cargo check` of uv and ruff at the pins; probe binary linking uv, ruff and PyO3.
 - [x] Every decision settled (section 9); private repository created.
-- [ ] `vps-cargo --repo`; repository seeded; first `vu` build with a receipt; glibc audit; release build time and memory.
-- [ ] Embedded CPython parity test (`vu python` against `python`) and the SDK wheel smoke inside it.
-- [ ] `yolo py` consumes the verified artifact.
+- [x] `vps-cargo --repo`; repository seeded; first `vu` build with a receipt; glibc audit; release build times (peak memory not measured).
+- [x] Embedded CPython parity test (`vu python` against `python`) and the SDK wheel smoke inside it (J15).
+- [x] `yolo py` consumes the verified artifact: quick and full checks pass on the artifact pulled from the build host (J16).
 - [ ] Installation and activation through Infra (never claimed from source alone).

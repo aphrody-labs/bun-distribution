@@ -91,6 +91,8 @@ async function mapLimit<T, R>(
   let next = 0;
   const worker = async (): Promise<void> => {
     for (let index = next++; index < items.length; index = next++) {
+      // The workers are the concurrency: each one runs its items in sequence.
+      // eslint-disable-next-line no-await-in-loop
       results[index] = await fn(items[index] as T);
     }
   };
@@ -109,6 +111,14 @@ function readManifest(dir: string): VuManifest | string {
   } catch (error) {
     return `${MANIFEST_PATH} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`;
   }
+}
+
+/**
+ * Bytecode caches are derived data: CPython writes them into the runtime when it runs, so the manifest does not list
+ * them and a check neither requires nor flags them (the sources and binaries they derive from are checked).
+ */
+export function isDerivedPath(path: string): boolean {
+  return /(^|\/)__pycache__\//.test(path);
 }
 
 function listFiles(root: string, directory: string, out: string[]): void {
@@ -143,7 +153,9 @@ export async function verifyVuArtifact(
       problems.push(`the manifest lacks the capability ${capability}`);
   }
   const toCheck =
-    options.full === true ? Object.keys(manifest.files ?? {}) : [...REQUIRED_BINARIES];
+    options.full === true
+      ? Object.keys(manifest.files ?? {}).filter((file) => !isDerivedPath(file))
+      : [...REQUIRED_BINARIES];
   const checked = await mapLimit(toCheck, 32, async (file): Promise<string | null> => {
     const entry = manifest.files?.[file];
     if (entry === undefined) return `not listed: ${file}`;
@@ -158,7 +170,9 @@ export async function verifyVuArtifact(
     const present: string[] = [];
     listFiles(dir, dir, present);
     for (const file of present) {
-      if (file !== MANIFEST_PATH && !(file in manifest.files)) problems.push(`unlisted: ${file}`);
+      if (file !== MANIFEST_PATH && !isDerivedPath(file) && !(file in manifest.files)) {
+        problems.push(`unlisted: ${file}`);
+      }
     }
     for (const [link, linkTarget] of Object.entries(manifest.links ?? {})) {
       try {

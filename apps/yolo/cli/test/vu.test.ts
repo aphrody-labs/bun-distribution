@@ -6,6 +6,7 @@ import { runPythonCommand, resolveTools } from "../src/python";
 import {
   EXPECTED_CLI_MAJOR,
   hostTarget,
+  isDerivedPath,
   pathWithVu,
   resolveVu,
   verifyVuArtifact,
@@ -101,6 +102,15 @@ describe.skipIf(!supported)("vu runtime artifact", () => {
     expect(full.state === "invalid" && full.problems).toEqual(
       expect.arrayContaining(["size: lib/libpython3.12.so.1.0", "unlisted: stray.txt"]),
     );
+  });
+
+  it("ignores bytecode caches, which CPython writes into the runtime while it is used", async () => {
+    expect(isDerivedPath("lib/python3.12/__pycache__/os.cpython-312.pyc")).toBe(true);
+    expect(isDerivedPath("lib/python3.12/os.py")).toBe(false);
+    const dir = artifact();
+    mkdirSync(join(dir, "lib/__pycache__"), { recursive: true });
+    writeFileSync(join(dir, "lib/__pycache__/x.cpython-312.pyc"), "cache");
+    expect(await verifyVuArtifact(dir, { full: true })).toMatchObject({ state: "verified" });
   });
 
   it("reports a directory without a manifest as absent", async () => {
