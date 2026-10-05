@@ -5,13 +5,17 @@ version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/h4ckf0r0day/obscura"
+autotests = false
+
+[[test]]
+name = "integration"
 
 [features]
 default = []
 stealth = ["obscura-browser/stealth"]
 # Enable Page.captureScreenshot via obscura-render. Propagates render to
 # obscura-browser so Page::screenshot is available.
-render = ["obscura-browser/render", "dep:image", "dep:png"]
+render = ["obscura-browser/render", "dep:image", "dep:jpeg-encoder", "dep:png", "dep:fast_image_resize"]
 
 [dependencies]
 obscura-dom = { workspace = true }
@@ -29,12 +33,15 @@ base64 = { workspace = true }
 futures-util = { workspace = true }
 obscura-net = { workspace = true }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"], optional = true }
+jpeg-encoder = { version = "0.7.1", features = ["simd"], optional = true }
+fast_image_resize = { version = "6.1", optional = true }
 png = { version = "0.18", optional = true }
 
 [target.'cfg(target_env = "gnu")'.dependencies]
 libc = { workspace = true }
 
 [dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
 tokio-tungstenite = { workspace = true }
 futures-util = { workspace = true }
 

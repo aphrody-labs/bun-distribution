@@ -1,6 +1,20 @@
-obscura crates vendored from https://github.com/h4ckf0r0day/obscura at 1a3169da276d7720732c7b20535474942917fb83.
-Local addition: obscura-net/src/dns.rs (DnsRecon). Upstream code otherwise unmodified;
-manifests pin upstream dependency versions and edition 2021.
+obscura crates copied from https://github.com/h4ckf0r0day/obscura, upstream main 1fccab2c1ecd0f7eadc16d7a520ba227f9e7f782 (2026-10-04),
+merged on 2026-10-05 through the fork aphrody-labs/obscura branch yolo at dbea8a7c10fde49bac3e7d0795daddbd537ae7c7 (includes the fork SSRF commit 43ae887).
+Previous base: 1a3169da276d7720732c7b20535474942917fb83 (212 upstream commits merged). Method: three-way merge (old base / monorepo copy / new
+fork tree), all three formatted with the same rustfmt profile; conflicts resolved keeping both intentions.
+Added by this merge: crates/web/obscura-ssrf (shared SSRF deny-set, used by obscura-net and obscura-render paint), obscura-cdp tests/integration.rs
+(single registered test binary), obscura-dom/tests/support/allocations.rs (upstream crates/test-support/allocations.rs, shared by the obscura-render
+test through a #[path] include), obscura-net/src/operator_hint.rs, obscura-browser/src/idle_deadline.rs.
+Not imported: crates/obscura-cli (Aphrody ships its own CLI) and obscura-mcp stdio/HTTP server (see below).
+Local changes kept on top of upstream: obscura-net/src/dns.rs (DnsRecon), har.rs; obscura-net cookies.rs parsing through the cookie crate
+(parse_cookie; Expires bounds come from its parser, __Host-/__Secure- prefix, loopback-secure, IP domain and poison-tolerant lock rules ported from upstream);
+wreq_client validate_url at the start of send_single_headers_with_context; ensure_rustls_crypto_provider; obscura-mcp/src/aphrody.rs (in-process
+tools()/call() API, stdio and HTTP servers and build-version.rs removed); obscura-render paint.rs on ureq 3 (SsrfGuardResolver ported to the ureq 3 Resolver trait);
+html5ever/selectors 0.38/cssparser 0.37/hmac 0.13/aes-gcm 0.11/getrandom 0.4 API adaptations; (&*name.local) in place of name.local.as_ref().
+Local test fixes: cdp/js timing tests, NotoSansArabic fixture (below), reqwest::dns::Name construction without Clone (reqwest 0.13).
+Feature policy: obscura-render keeps athena-text 0.14.2 without shape-run-cache (the upstream cache reset in FontSystem::db_mut is missing from that release).
+Pending at merge time: aphrody-labs/taffy rev ed38f5bb lacks DetailedGridTracksInfo::end_offset (used by obscura-render dom.rs), the Style aspect-ratio leaf fix and the
+grid-without-context dispatch of upstream vendor/taffy; port them before building obscura-render.
 vendor/taffy is restored from upstream Obscura commit 1a3169da276d7720732c7b20535474942917fb83.
 Compared with crates.io taffy 0.12.1, 12 source files contain the upstream layout changes
 for intrinsic sizing and margin propagation used by obscura-render; keep this patch until

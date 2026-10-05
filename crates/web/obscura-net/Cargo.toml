@@ -13,6 +13,7 @@ default = []
 stealth = ["wreq", "wreq-util", "futures-util"]
 
 [dependencies]
+obscura-ssrf = { workspace = true }
 reqwest = { workspace = true }
 rustls = { workspace = true }
 tokio = { workspace = true }

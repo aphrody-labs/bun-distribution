@@ -232,6 +232,7 @@ obscura-cdp = { path = "crates/web/obscura-cdp", version = "0.1.0", features = [
 obscura-dom = { path = "crates/web/obscura-dom", version = "0.1.1", features = [] }
 obscura-js = { path = "crates/web/obscura-js", version = "0.1.0", features = [] }
 obscura-net = { path = "crates/web/obscura-net", version = "0.1.1", features = [] }
+obscura-ssrf = { path = "crates/web/obscura-ssrf", version = "0.1.0", features = [] }
 obscura-render = { path = "crates/web/obscura-render", version = "0.1.0", features = [] }
 octocrab = { version = "0.54", features = [] }
 once_cell = { version = "1", features = [] }
@@ -473,7 +474,7 @@ perf = { level = "warn", priority = -1 }
 # Integrated YAML implementation preserves the Mistral.rs 0.0.16 API and regex compatibility.
 serde-saphyr = { path = "crates/compat/serde-saphyr" }
 # Modified layout fork; preserve local fixes through a commit-locked Git dependency.
-taffy = { git = "ssh://git@github-dev/aphrody-labs/taffy.git", rev = "ed38f5bb36affbc6bfa35b01f0fc866585f0c37d" }
+taffy = { git = "ssh://git@github-dev/aphrody-labs/taffy.git", rev = "4cd8b38fc06e1dcec43c13b6962e6e1e87064ec8" }
 # Integrated Unicode implementation preserves the private C++ namespace alongside V8.
 simdutf = { path = "crates/native/simdutf" }
 # tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see config/tauri-upstream.json

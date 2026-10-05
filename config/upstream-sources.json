@@ -237,6 +237,24 @@
       "note": "ML base crates of Koharu 0.83.5 (tag 0.83.5, commit 52bb4f55e2266f72c1523562a583c827ec191ceb) (bindgen, config, runtime, llama, llama-sys, torch, torch-sys, diffusion, diffusion-sys) integrated under crates/ml as aphrody-* packages: crates.io holds older koharu-* releases under the upstream names. Divergence from the tag is not yet audited, so no patch is recorded. On-disk contracts kept: ~/.koharu/config.toml, the `koharu` runtime store and the libkoharu-torch shim of koharu-rs/torch releases. The Koharu product crates live in aphrody-labs/shenron.",
       "integratedPath": "crates/ml/llama",
       "upstreamPackageIdentityPreserved": false
+    },
+    {
+      "id": "obscura",
+      "kind": "crate",
+      "crate": "aphrody-obscura",
+      "version": "0.1.0",
+      "upstreamUrl": "https://github.com/h4ckf0r0day/obscura",
+      "upstreamCommit": "1fccab2c1ecd0f7eadc16d7a520ba227f9e7f782",
+      "forkUrl": "https://github.com/aphrody-labs/obscura",
+      "forkRef": "yolo",
+      "forkCommit": "dbea8a7c10fde49bac3e7d0795daddbd537ae7c7",
+      "pinned": true,
+      "role": "dependency",
+      "license": "Apache-2.0",
+      "patches": [],
+      "note": "Obscura headless browser crates (obscura, obscura-browser, obscura-cdp, obscura-dom, obscura-js, obscura-mcp, obscura-net, obscura-render, obscura-ssrf) copied under crates/web as aphrody-obscura (facade) and obscura-* packages. Base: upstream main 1fccab2c1ecd0f7eadc16d7a520ba227f9e7f782 (2026-10-04), merged through the fork aphrody-labs/obscura branch yolo (dbea8a7, includes the fork SSRF commit 43ae887). Local changes are kept by three-way merge and listed in docs/reference/web/crates/aphrody-obscura/OBSCURA-UPSTREAM.txt; no patch file is recorded. vendor/taffy stays in aphrody-labs/taffy (git) and cosmic-text resolves to athena-text from crates.io.",
+      "integratedPath": "crates/web/obscura",
+      "upstreamPackageIdentityPreserved": false
     }
   ]
 }

@@ -42,3 +42,5 @@ pub use dns::DnsRecon;
 // aphrody addition: RFC HAR 1.2 serialization and replay
 pub mod har;
 pub use har::{Har, HarEntry, HarLog, HarRequest, HarResponse};
+mod operator_hint;
+pub use operator_hint::private_network_error_hint;

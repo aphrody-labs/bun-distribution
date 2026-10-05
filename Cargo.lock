@@ -10984,6 +10984,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "fast_image_resize"
+version = "6.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9c50201dc184ba6553da1695aac20a042efffbe2d84542cee31917c86c3ab1e"
+dependencies = [
+ "cfg-if",
+ "document-features",
+ "num-traits",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "fast_rsync"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -15568,6 +15580,12 @@ dependencies = [
  "getrandom 0.4.3",
  "libc",
 ]
+
+[[package]]
+name = "jpeg-encoder"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0370574b86f7eca156b9f298392b5e69a23f8c86f3f865add60bbc2e79467a6"
 
 [[package]]
 name = "js-sys"
@@ -20478,8 +20496,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
+ "fast_image_resize",
  "futures-util",
  "image",
+ "jpeg-encoder",
  "libc",
  "obscura-browser",
  "obscura-dom",
@@ -20562,6 +20582,7 @@ dependencies = [
  "cookie",
  "encoding_rs",
  "futures-util",
+ "obscura-ssrf",
  "psl",
  "rcgen",
  "reqwest 0.13.5",
@@ -20590,6 +20611,7 @@ dependencies = [
  "image",
  "log",
  "obscura-dom",
+ "obscura-ssrf",
  "resvg 0.48.1",
  "swash",
  "taffy",
@@ -20599,6 +20621,10 @@ dependencies = [
  "usvg 0.48.1",
  "wuff",
 ]
+
+[[package]]
+name = "obscura-ssrf"
+version = "0.1.0"
 
 [[package]]
 name = "ocb3"
@@ -28141,7 +28167,7 @@ dependencies = [
 [[package]]
 name = "taffy"
 version = "0.12.1"
-source = "git+ssh://git@github-dev/aphrody-labs/taffy.git?rev=ed38f5bb36affbc6bfa35b01f0fc866585f0c37d#ed38f5bb36affbc6bfa35b01f0fc866585f0c37d"
+source = "git+ssh://git@github-dev/aphrody-labs/taffy.git?rev=4cd8b38fc06e1dcec43c13b6962e6e1e87064ec8#4cd8b38fc06e1dcec43c13b6962e6e1e87064ec8"
 dependencies = [
  "arrayvec",
  "grid",

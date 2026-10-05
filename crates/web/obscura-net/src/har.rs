@@ -5,9 +5,9 @@
 //! Provides native Rust types for capturing, serializing, and replaying
 //! browser and HTTP network traffic according to the HAR 1.2 specification.
 
-use std::collections::HashMap;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Root HAR object container.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -18,9 +18,7 @@ pub struct Har {
 impl Har {
     #[must_use]
     pub fn new(creator_name: impl Into<String>, creator_version: impl Into<String>) -> Self {
-        Self {
-            log: HarLog::new(creator_name, creator_version),
-        }
+        Self { log: HarLog::new(creator_name, creator_version) }
     }
 }
 
@@ -299,20 +297,12 @@ impl HarEntry {
 
         let req_headers = request_headers
             .iter()
-            .map(|(k, v)| HarHeader {
-                name: k.clone(),
-                value: v.clone(),
-                comment: None,
-            })
+            .map(|(k, v)| HarHeader { name: k.clone(), value: v.clone(), comment: None })
             .collect();
 
         let resp_headers = response_headers
             .iter()
-            .map(|(k, v)| HarHeader {
-                name: k.clone(),
-                value: v.clone(),
-                comment: None,
-            })
+            .map(|(k, v)| HarHeader { name: k.clone(), value: v.clone(), comment: None })
             .collect();
 
         let mime_type = response_headers
