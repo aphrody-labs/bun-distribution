@@ -94,7 +94,7 @@ if have bun || (( dry == 1 )); then
     cargo-nextest cargo-deny cargo-audit cargo-machete cargo-expand cargo-hack cargo-zigbuild cargo-xwin cargo-update hyperfine; do
     case "$crate" in
       du-dust) cmd=dust ;; bottom) cmd=btm ;; git-delta) cmd=delta ;; tealdeer) cmd=tldr ;;
-      cargo-*) cmd="$crate" ;; *) cmd="$crate" ;;
+      cargo-update) cmd=cargo-install-update ;; *) cmd="$crate" ;;
     esac
     have "$cmd" || missing="$missing $crate"
   done
