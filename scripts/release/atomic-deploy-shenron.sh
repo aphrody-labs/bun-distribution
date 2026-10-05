@@ -273,7 +273,11 @@ restore_backup() {
   if [[ -f "$backup/seed.created" ]]; then
     while IFS= read -r file; do [[ -z "$file" ]] || rm -f -- "$root/shared/$file"; done < "$backup/seed.created"
   fi
-  if [[ -d "$backup/seed" ]]; then cp -a -- "$backup/seed/." "$root/shared/"; fi
+  if [[ -d "$backup/seed" ]]; then
+    # The backup tree is root-made: restore content without handing shared/ to root.
+    cp -a --no-preserve=ownership -- "$backup/seed/." "$root/shared/"
+    (cd "$backup/seed" && find . -mindepth 1 -print0) | (cd "$root/shared" && xargs -0 -r chown -h -- "$run_as:$run_as")
+  fi
   previous="$(cat "$backup/previous-release")"
   if [[ -n "$previous" ]]; then
     ln -sfn -- "$previous" "$root/.current.rollback.$$"
@@ -497,7 +501,14 @@ for link in sys.argv[5:]:
             shutil.copy2(target, saved)
         else:
             created.append(str(relative))
-        target.parent.mkdir(parents=True, exist_ok=True)
+        missing = []
+        parent = target.parent
+        while not parent.exists():
+            missing.append(parent)
+            parent = parent.parent
+        for directory in reversed(missing):
+            directory.mkdir()
+            os.chown(directory, user.pw_uid, user.pw_gid)
         shutil.copy2(path, target)
         os.chown(target, user.pw_uid, user.pw_gid)
 (backup / 'seed.created').write_text(''.join(f'{name}\n' for name in created))
