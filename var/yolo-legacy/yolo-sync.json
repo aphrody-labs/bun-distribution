@@ -1,0 +1,29 @@
+{
+  "schema": "yolo.sync.beacon/1",
+  "generated_at": "2026-10-05T02:19:56.640Z",
+  "repositories": {
+    "yolo": {
+      "repo": "yolo",
+      "branch": "dev",
+      "commit": "048886bf92dd239889373d521cab1fc97054f68c",
+      "dirty": true,
+      "uncommittedCount": 2
+    },
+    "aphrody": {
+      "repo": "aphrody",
+      "branch": "main",
+      "commit": "03b5132da48e893c8972ae3c32a517d1a39d6cef",
+      "dirty": true,
+      "uncommittedCount": 172
+    }
+  },
+  "context_optimizations": {
+    "max_context_tokens": 4000,
+    "mcp_servers": [
+      "yolo",
+      "aphrody"
+    ],
+    "caching_layer": "memory",
+    "doc_routing": "bun-docs-router+context7"
+  }
+}

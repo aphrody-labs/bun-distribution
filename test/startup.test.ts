@@ -1,0 +1,69 @@
+import { describe, expect, it } from "bun:test";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { inspectPackages } from "../packages/core/src/vendor/status";
+import { isCompiled } from "../packages/core/src/vfs/home";
+import { SUPPORTED_TARGETS, hostTarget } from "../packages/runtime/src/artifact";
+import { hostTarget as leafHostTarget } from "../packages/runtime/src/target";
+import { COMPILE_FLAGS } from "../scripts/release/compile-flags";
+
+const cli = resolve(import.meta.dir, "../apps/yolo/cli/src/index.ts");
+
+describe("CLI start-up", () => {
+  it("version prints the same line and JSON through the lazy entry", () => {
+    const text = Bun.spawnSync(["bun", cli, "version"], { stdout: "pipe" }).stdout.toString();
+    expect(text).toMatch(/^yolo \S+ \(\S+, Bun \S+\)\n$/);
+    const json = JSON.parse(
+      Bun.spawnSync(["bun", cli, "version", "--json"], { stdout: "pipe" }).stdout.toString(),
+    );
+    expect(json.schema).toBe("yolo.version/1");
+    expect(json.target).toBe(hostTarget());
+    expect(json.bunVersion).toBe(Bun.version);
+  });
+
+  it("an unknown command still prints the help and exits 1", () => {
+    const run = Bun.spawnSync(["bun", cli, "no-such-command"], { stdout: "pipe", stderr: "pipe" });
+    expect(run.exitCode).toBe(1);
+    expect(run.stderr.toString()).toContain("Unknown command: no-such-command");
+    expect(run.stdout.toString()).toContain("YOLO Industrial Engine CLI");
+  });
+
+  it("hostTarget is shared by the leaf module and artifact", () => {
+    expect(leafHostTarget).toBe(hostTarget);
+    expect(Object.values(SUPPORTED_TARGETS)).toContain(hostTarget());
+  });
+
+  it("the source run is not the compiled executable", () => {
+    expect(isCompiled()).toBe(false);
+  });
+
+  it("release compiles with a bytecode cache and without cwd autoloads", () => {
+    expect(COMPILE_FLAGS).toEqual([
+      "--bytecode",
+      "--no-compile-autoload-dotenv",
+      "--no-compile-autoload-bunfig",
+    ]);
+  });
+});
+
+describe("status file counts", () => {
+  it("counts regular files, skips dot entries and stops past 250", async () => {
+    const vendor = mkdtempSync(join(tmpdir(), "yolo-vendor-"));
+    try {
+      mkdirSync(join(vendor, "tao/src/deep"), { recursive: true });
+      mkdirSync(join(vendor, "tao/.git"), { recursive: true });
+      for (const file of ["a.rs", "src/b.rs", "src/deep/c.rs", ".hidden", ".git/HEAD"]) {
+        writeFileSync(join(vendor, "tao", file), "x");
+      }
+      mkdirSync(join(vendor, "wry/src"), { recursive: true });
+      for (let i = 0; i < 300; i++) writeFileSync(join(vendor, "wry/src", `f${i}.rs`), "x");
+      const byName = new Map((await inspectPackages(vendor)).map((p) => [p.name, p]));
+      expect(byName.get("tao")?.filesCount).toBe(3);
+      expect(byName.get("wry")?.filesCount).toBe(251);
+      expect(byName.get("bun")?.exists).toBe(false);
+    } finally {
+      rmSync(vendor, { recursive: true, force: true });
+    }
+  });
+});

@@ -18,10 +18,10 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow.workspace = true
-aphrody-git = { path = "../git", version = "0.1.0" }
-aphrody-ssh = { path = "../ssh", version = "0.1.0" }
+aphrody-git = { workspace = true }
+aphrody-ssh = { workspace = true }
 aphrody-ovh = { path = "../ovh", version = "0.1.0" }
-aphrody-vpn = { path = "../vpn", version = "0.1.0" }
+aphrody-vpn = { workspace = true }
 aphrody-yolo = { path = "../yolo", version = "0.1.0" }
 base64.workspace = true
 chrono.workspace = true

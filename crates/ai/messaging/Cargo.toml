@@ -37,7 +37,7 @@ tokio-stream = { workspace = true }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio-rustls = { workspace = true }
 rustls       = { workspace = true, features = ["ring"] }
-webpki-roots = "1"
+webpki-roots = { workspace = true }
 # x-cli resolution for the X channel (`channels::x`): reuses the single bxc
 # discovery chain instead of growing a second one. Host-only, like bxc-bridge.
 aphrody-web-bridge   = { workspace = true }

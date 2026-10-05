@@ -1,0 +1,22 @@
+{
+  "schema": "yolo.sync.beacon/1",
+  "generated_at": "2026-10-05T04:25:19.729Z",
+  "repositories": {
+    "/home/aphro/aphrody": {
+      "repo": "/home/aphro/aphrody",
+      "branch": "main",
+      "commit": "007dffcc0ac5a1c00e8bd77c4406c6c297a96295",
+      "dirty": true,
+      "uncommittedCount": 76
+    }
+  },
+  "context_optimizations": {
+    "max_context_tokens": 4000,
+    "mcp_servers": [
+      "yolo",
+      "aphrody"
+    ],
+    "caching_layer": "memory",
+    "doc_routing": "bun-docs-router+context7"
+  }
+}

@@ -165,7 +165,7 @@ aphrody-re                = { workspace = true }
 # ONNX Runtime backend for the Magika classifier (`--features magika`). Default
 # features pull `download-binaries` (prebuilt runtime fetched at build time) so
 # `aphrody re classify` works out of the box once the feature is enabled.
-ort                       = { version = "=2.0.0-rc.12", optional = true }
+ort = { workspace = true, optional = true }
 # `aphrody forensics sqlite` — read-only SQLite schema dump (`--features
 # forensics`). Reuses the workspace-pinned `rusqlite` (0.37, `bundled`
 # libsqlite3 C source) so the command works without a system sqlite and shares
@@ -268,7 +268,7 @@ aphrody-agent-proto       = { workspace = true }
 
 # --- Windows-only deps (HKCU registry edit for `aphrody self install-path`) -
 [target.'cfg(target_os = "windows")'.dependencies]
-windows-sys = { version = "0.61", features = [
+windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_System_Registry",
     "Win32_UI_WindowsAndMessaging",

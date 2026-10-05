@@ -24,7 +24,7 @@ import type {
   TsParseResult,
   VendorSourceStatus,
   WorkspaceCargoSummary,
-} from "../../../packages/core/src/index";
+} from "../../../../packages/engine/core/src/index";
 
 export type {
   SubmoduleStatus,
@@ -40,11 +40,11 @@ export type {
 // Startup cost: `yolo version` is a preflight that wrappers run before every task, so this file loads nothing but the
 // home resolver. Every command module is imported by its `case` below, and the programmatic API below forwards to the
 // core module that defines it on first call (the core barrel alone costs ~11 ms to evaluate).
-const vendorStatus = () => import("../../../packages/core/src/vendor/status");
-const vendorCargo = () => import("../../../packages/core/src/vendor/cargo");
-const vendorCatalog = () => import("../../../packages/core/src/vendor/catalog");
-const vfsParse = () => import("../../../packages/core/src/vfs/parse");
-const sysBench = () => import("../../../packages/core/src/sys/benchmark");
+const vendorStatus = () => import("../../../../packages/engine/core/src/vendor/status");
+const vendorCargo = () => import("../../../../packages/engine/core/src/vendor/cargo");
+const vendorCatalog = () => import("../../../../packages/engine/core/src/vendor/catalog");
+const vfsParse = () => import("../../../../packages/engine/core/src/vfs/parse");
+const sysBench = () => import("../../../../packages/engine/core/src/sys/benchmark");
 type Status = Awaited<ReturnType<typeof vendorStatus>>;
 type Cargo = Awaited<ReturnType<typeof vendorCargo>>;
 type Catalog = Awaited<ReturnType<typeof vendorCatalog>>;
@@ -67,13 +67,13 @@ export const parseTsSource: Parse["parseTsSource"] = async (...args) =>
   (await vfsParse()).parseTsSource(...args);
 // The pure renderers are synchronous in the core API, so they load their module with a lazy `require`.
 export const renderStatusMarkdown: Status["renderStatusMarkdown"] = (...args) =>
-  (require("../../../packages/core/src/vendor/status") as Status).renderStatusMarkdown(...args);
+  (require("../../../../packages/engine/core/src/vendor/status") as Status).renderStatusMarkdown(...args);
 export const renderParseMarkdown: Parse["renderParseMarkdown"] = (...args) =>
-  (require("../../../packages/core/src/vfs/parse") as Parse).renderParseMarkdown(...args);
+  (require("../../../../packages/engine/core/src/vfs/parse") as Parse).renderParseMarkdown(...args);
 export const runBenchMetrics: Bench["runBenchMetrics"] = (...args) =>
-  (require("../../../packages/core/src/sys/benchmark") as Bench).runBenchMetrics(...args);
+  (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).runBenchMetrics(...args);
 export const renderBenchMarkdown: Bench["renderBenchMarkdown"] = (...args) =>
-  (require("../../../packages/core/src/sys/benchmark") as Bench).renderBenchMarkdown(...args);
+  (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).renderBenchMarkdown(...args);
 
 let cachedRoot: string | undefined;
 /** The yolo home, resolved on first use (it walks parent directories, which `version` and `help` do not need). */
@@ -273,7 +273,7 @@ async function main(): Promise<void> {
     case "bench": {
       if (args.includes("--supervisor")) {
         const { runSupervisorBenchCli } =
-          await import("../../../packages/core/src/sys/supervisor-benchmark");
+          await import("../../../../packages/engine/core/src/sys/supervisor-benchmark");
         process.exitCode = await runSupervisorBenchCli(args.slice(1));
         break;
       }

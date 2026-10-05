@@ -39,7 +39,7 @@ thiserror            = { workspace = true }
 # Content-addressed cache key: blake3 of file bytes (dedup identical files
 # across agents/profiles). `rayon` feature dropped — the inputs are small
 # bootstrap files, single-pass hashing is faster than the rayon fan-out.
-blake3               = { version = "1", default-features = false }
+blake3 = { workspace = true, default-features = false }
 # Grapheme-cluster aware streaming truncation (BudgetWriter). All targets.
 unicode-segmentation = { workspace = true }
 # Lock-free hot-swap of the live `Arc<AgentHome>`. All targets (the swap

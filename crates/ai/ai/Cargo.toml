@@ -14,19 +14,19 @@ publish = false
 workspace = true
 
 [dependencies]
-aphrody-router = { path = "../router", version = "1.0.0-canary" }
-aphrody-providers = { path = "../providers", version = "1.0.0-canary" }
-aphrody-models = { path = "../models", version = "1.0.0-canary" }
-aphrody-agent-runtime = { path = "../agent-runtime", version = "1.0.0-canary" }
-aphrody-agent-tools = { path = "../agent-tools", version = "1.0.0-canary" }
-aphrody-mcp-client = { path = "../mcp-client", version = "1.0.0-canary" }
-aphrody-rag = { path = "../rag", version = "1.0.0-canary" }
-aphrody-rag-core = { path = "../rag-core", version = "1.0.0-canary" }
-aphrody-session = { path = "../session", version = "1.0.0-canary" }
-aphrody-prompts = { path = "../prompts", version = "1.0.0-canary" }
-aphrody-context = { path = "../context", version = "1.0.0-canary" }
-aphrody-tools = { path = "../tools", version = "1.0.0-canary" }
-aphrody-toolcall = { path = "../toolcall", version = "1.0.0-canary" }
+aphrody-router = { workspace = true }
+aphrody-providers = { workspace = true }
+aphrody-models = { workspace = true }
+aphrody-agent-runtime = { workspace = true }
+aphrody-agent-tools = { workspace = true }
+aphrody-mcp-client = { workspace = true }
+aphrody-rag = { workspace = true }
+aphrody-rag-core = { workspace = true }
+aphrody-session = { workspace = true }
+aphrody-prompts = { workspace = true }
+aphrody-context = { workspace = true }
+aphrody-tools = { workspace = true }
+aphrody-toolcall = { workspace = true }
 aphrody-agent-home = { workspace = true }
 aphrody-memory = { workspace = true }
 aphrody-train = { workspace = true }

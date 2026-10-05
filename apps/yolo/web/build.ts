@@ -23,7 +23,7 @@ async function bundle() {
     return false;
   }
 
-  // Copy HTML template & assets (the favicon is the 32px icon of crates/yolo-desktop)
+  // Copy HTML template & assets (the favicon is the 32px icon of crates/engine/yolo-desktop)
   const htmlSrc = await Bun.file(resolve(import.meta.dir, "index.html")).text();
   await Bun.write(resolve(outdir, "index.html"), htmlSrc);
   await Bun.write(resolve(outdir, "favicon.png"), Bun.file(resolve(import.meta.dir, "favicon.png")));

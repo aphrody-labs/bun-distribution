@@ -14,8 +14,8 @@ description = "Core native engine and system benchmarking logic for YOLO Monorep
 
 [dependencies]
 rayon = { workspace = true }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 
 anyhow = { workspace = true, optional = true }
 blake3 = { workspace = true, optional = true }
@@ -44,4 +44,4 @@ default = []
 repository-tools = ["dep:anyhow", "dep:blake3", "dep:chrono", "dep:dashmap", "dep:dunce", "dep:notify", "dep:notify-debouncer-full", "dep:parking_lot", "dep:tracing", "dep:globset", "dep:ignore", "dep:regex", "dep:tokio", "dep:oxc_allocator", "dep:oxc_parser", "dep:oxc_span", "dep:oxc_ast", "dep:oxc_ast_visit"]
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2"
+libc = { workspace = true }

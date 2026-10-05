@@ -1,0 +1,77 @@
+name: Release
+
+# Pushing a tag vX.Y.Z builds the runtime, the standalone `yolo` executable and the installers for
+# every supported target, then publishes them as release assets (the one-command install reads them).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to (re)build the assets for, e.g. v0.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
+          - { os: macos-15-intel, target: x86_64-apple-darwin }
+          - { os: macos-15, target: aarch64-apple-darwin }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - name: Verify the native runner architecture
+        shell: bash
+        env:
+          EXPECTED_TARGET: ${{ matrix.target }}
+        run: |
+          host=$(rustc -vV | sed -n 's/^host: //p')
+          test "$host" = "$EXPECTED_TARGET"
+          bun -e 'import { hostTarget } from "./packages/runtime/src/artifact.ts"; if (hostTarget() !== process.env.EXPECTED_TARGET) throw new Error(`Bun target ${hostTarget()} differs from ${process.env.EXPECTED_TARGET}`);'
+      - run: cargo test --locked --no-default-features -p yolo-core -p yolo-runtime
+      - run: cargo build --locked --no-default-features --profile runtime -p yolo-runtime -p yolo-tooling
+      - run: bun run scripts/release/runtime_artifact.ts
+      - run: bun test test/runtime_sdk.test.ts test/runtime_release.test.ts
+      - run: bun run scripts/release/release.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.target }}
+          path: dist/release/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - uses: actions/download-artifact@v4
+        with:
+          path: parts
+      - name: Merge the per-target assets
+        run: bun run scripts/release/release_merge.ts release parts/*/*
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ inputs.tag || github.ref_name }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" release/* --clobber   # assets of a release created by hand are replaced
+          else
+            gh release create "$tag" release/* --title "yolo $tag" --generate-notes --verify-tag
+          fi

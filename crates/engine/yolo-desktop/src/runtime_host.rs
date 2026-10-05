@@ -383,7 +383,7 @@ pub fn run() -> Result<i32, Box<dyn std::error::Error>> {
     return Err("unknown desktop grant".into());
   }
   for origin in &policy.allowed_origins {
-    let url = url_for(&policy, origin)?;
+    let url = url_for(&policy, origin).map_err(|(code, message)| format!("{code}: {message}"))?;
     if origin != &url.origin().ascii_serialization() {
       return Err("desktop policy requires canonical URL origins".into());
     }

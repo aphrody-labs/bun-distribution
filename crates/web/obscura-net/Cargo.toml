@@ -24,12 +24,12 @@ anyhow = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }
 chrono = { workspace = true }
-async-trait = "0.1"
-encoding_rs = "0.8"
-tempfile = "3"
+async-trait = { workspace = true }
+encoding_rs = { workspace = true }
+tempfile = { workspace = true }
 psl = "2"
 cookie = { workspace = true }
-futures-util = { version = "0.3", optional = true }
+futures-util = { workspace = true, optional = true }
 # wreq and wreq-util are pre-release crates whose API changes between rc builds
 # (CertStore moved out of `tls`, `cert_store` renamed to `tls_cert_store`, the
 # Emulation builder reshuffled). A caret requirement let a fresh resolve pull a
@@ -45,7 +45,7 @@ socket2 = "0.6"
 # rustls also uses ring; adding aws-lc-rs would make provider auto-selection
 # panic). The workspace pin is rcgen 0.14 with `crypto`, `pem` and `ring` only.
 rcgen = { workspace = true }
-tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12", "logging"] }
+tokio-rustls = { workspace = true, default-features = false, features = ["ring", "tls12", "logging"] }
 
 # `prefix-symbols` renames BoringSSL exports to avoid clashes with system OpenSSL,
 # but the renaming is only correct on Linux and Android (per wreq's README).

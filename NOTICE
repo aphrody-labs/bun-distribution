@@ -1,0 +1,14 @@
+Yolo native JavaScript and TypeScript tooling
+
+N2B and toolchain support transferred from Aphrody.
+Copyright 2026 aphrody-code. Licensed under Apache-2.0.
+The public aphrody-n2b-* and aphrody-toolchains identities are retained.
+See LICENSES/Apache-2.0.txt and the source headers.
+
+Oxc is licensed under MIT.
+Copyright (c) 2024-present VoidZero Inc. & Contributors.
+Copyright (c) 2023 Boshen.
+See LICENSES/Oxc-MIT.txt.
+
+Source revisions, paths and adaptations are recorded in docs/JS-TS-TOOLING.md
+and docs/migration/n2b-oxc-2026-10-05.json.

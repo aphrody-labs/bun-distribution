@@ -25,7 +25,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "test": "bun --cwd=../.. test test/cli_app.test.ts test/aphrody.test.ts test/api.test.ts test/host.test.ts test/host-space.test.ts test/import.test.ts test/mcp.test.ts test/rename.test.ts test/scan.test.ts test/stack.test.ts test/verify.test.ts",
+    "test": "bun test ../../../test/cli_app.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   }
 }

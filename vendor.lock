@@ -1,0 +1,936 @@
+{
+  "version": 1,
+  "generator": "yolo import",
+  "sources": [
+    {
+      "name": "tauri",
+      "sha": "890a4e24143bf3957907dfe878c4b82c4b369846"
+    },
+    {
+      "name": "plugins-workspace",
+      "sha": "a50a1b7baf3bb5955eb95cf1595007382d276fb6"
+    },
+    {
+      "name": "wry",
+      "sha": "cab3eace983007a16f132c14a34d0a220c707bea"
+    },
+    {
+      "name": "tao",
+      "sha": "d19f4c12a0d881260a436d9ccf3e8f349c58e2a4"
+    },
+    {
+      "name": "create-tauri-app",
+      "sha": "c7692bb0dbd9b90a368c5af8fcd9081b5d600426"
+    },
+    {
+      "name": "next",
+      "sha": "d2f2220042934d7f131c8f494207d73e12240f5f"
+    }
+  ],
+  "crates": [
+    {
+      "name": "acl-tests",
+      "package": "aphrody-acl-tests",
+      "version": "0.1.0",
+      "source": "tauri",
+      "from": "crates/tests/acl",
+      "dir": "crates/vendor/aphrody-acl-tests"
+    },
+    {
+      "name": "auto-hash-map",
+      "package": "aphrody-auto-hash-map",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-auto-hash-map",
+      "dir": "crates/vendor/aphrody-auto-hash-map"
+    },
+    {
+      "name": "create-tauri-app",
+      "package": "aphrody-create-tauri-app",
+      "version": "4.7.4",
+      "source": "create-tauri-app",
+      "from": ".",
+      "dir": "crates/vendor/aphrody-create-tauri-app"
+    },
+    {
+      "name": "create-tauri-app-node",
+      "package": "aphrody-create-tauri-app-node",
+      "version": "0.0.0",
+      "source": "create-tauri-app",
+      "from": "node",
+      "dir": "crates/vendor/aphrody-create-tauri-app-node"
+    },
+    {
+      "name": "next-api",
+      "package": "aphrody-next-api",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "crates/next-api",
+      "dir": "crates/vendor/aphrody-next-api"
+    },
+    {
+      "name": "next-build",
+      "package": "aphrody-next-build",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "crates/next-build",
+      "dir": "crates/vendor/aphrody-next-build"
+    },
+    {
+      "name": "next-code-frame",
+      "package": "aphrody-next-code-frame",
+      "version": "0.0.1",
+      "source": "next",
+      "from": "crates/next-code-frame",
+      "dir": "crates/vendor/aphrody-next-code-frame"
+    },
+    {
+      "name": "next-core",
+      "package": "aphrody-next-core",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "crates/next-core",
+      "dir": "crates/vendor/aphrody-next-core"
+    },
+    {
+      "name": "next-custom-transforms",
+      "package": "aphrody-next-custom-transforms",
+      "version": "0.0.0",
+      "source": "next",
+      "from": "crates/next-custom-transforms",
+      "dir": "crates/vendor/aphrody-next-custom-transforms"
+    },
+    {
+      "name": "next-napi-bindings",
+      "package": "aphrody-next-napi-bindings",
+      "version": "0.0.0",
+      "source": "next",
+      "from": "crates/next-napi-bindings",
+      "dir": "crates/vendor/aphrody-next-napi-bindings"
+    },
+    {
+      "name": "next-taskless",
+      "package": "aphrody-next-taskless",
+      "version": "0.0.1",
+      "source": "next",
+      "from": "crates/next-taskless",
+      "dir": "crates/vendor/aphrody-next-taskless"
+    },
+    {
+      "name": "restart",
+      "package": "aphrody-restart",
+      "version": "0.1.0",
+      "source": "tauri",
+      "from": "crates/tests/restart",
+      "dir": "crates/vendor/aphrody-restart"
+    },
+    {
+      "name": "swc-ast-explorer",
+      "package": "aphrody-swc-ast-explorer",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-swc-ast-explorer",
+      "dir": "crates/vendor/aphrody-swc-ast-explorer"
+    },
+    {
+      "name": "tao",
+      "package": "aphrody-tao",
+      "version": "0.37.1",
+      "source": "tao",
+      "from": ".",
+      "dir": "crates/vendor/aphrody-tao"
+    },
+    {
+      "name": "tao-macros",
+      "package": "aphrody-tao-macros",
+      "version": "0.1.4",
+      "source": "tao",
+      "from": "tao-macros",
+      "dir": "crates/vendor/aphrody-tao-macros"
+    },
+    {
+      "name": "tauri",
+      "package": "aphrody-tauri",
+      "version": "3.0.0-alpha.4",
+      "source": "tauri",
+      "from": "crates/tauri",
+      "dir": "crates/vendor/aphrody-tauri"
+    },
+    {
+      "name": "tauri-build",
+      "package": "aphrody-tauri-build",
+      "version": "3.0.0-alpha.3",
+      "source": "tauri",
+      "from": "crates/tauri-build",
+      "dir": "crates/vendor/aphrody-tauri-build"
+    },
+    {
+      "name": "tauri-bundler",
+      "package": "aphrody-tauri-bundler",
+      "version": "3.0.0-alpha.3",
+      "source": "tauri",
+      "from": "crates/tauri-bundler",
+      "dir": "crates/vendor/aphrody-tauri-bundler"
+    },
+    {
+      "name": "tauri-cli",
+      "package": "aphrody-tauri-cli",
+      "version": "3.0.0-alpha.4",
+      "source": "tauri",
+      "from": "crates/tauri-cli",
+      "dir": "crates/vendor/aphrody-tauri-cli"
+    },
+    {
+      "name": "tauri-cli-node",
+      "package": "aphrody-tauri-cli-node",
+      "version": "0.0.0",
+      "source": "tauri",
+      "from": "packages/cli",
+      "dir": "crates/vendor/aphrody-tauri-cli-node"
+    },
+    {
+      "name": "tauri-codegen",
+      "package": "aphrody-tauri-codegen",
+      "version": "3.0.0-alpha.3",
+      "source": "tauri",
+      "from": "crates/tauri-codegen",
+      "dir": "crates/vendor/aphrody-tauri-codegen"
+    },
+    {
+      "name": "tauri-driver",
+      "package": "aphrody-tauri-driver",
+      "version": "3.0.0-alpha.1",
+      "source": "tauri",
+      "from": "crates/tauri-driver",
+      "dir": "crates/vendor/aphrody-tauri-driver"
+    },
+    {
+      "name": "tauri-examples",
+      "package": "aphrody-tauri-examples",
+      "version": "0.1.0",
+      "source": "tauri",
+      "from": "crates/tauri-examples",
+      "dir": "crates/vendor/aphrody-tauri-examples"
+    },
+    {
+      "name": "tauri-macos-sign",
+      "package": "aphrody-tauri-macos-sign",
+      "version": "3.0.0-alpha.2",
+      "source": "tauri",
+      "from": "crates/tauri-macos-sign",
+      "dir": "crates/vendor/aphrody-tauri-macos-sign"
+    },
+    {
+      "name": "tauri-macros",
+      "package": "aphrody-tauri-macros",
+      "version": "3.0.0-alpha.3",
+      "source": "tauri",
+      "from": "crates/tauri-macros",
+      "dir": "crates/vendor/aphrody-tauri-macros"
+    },
+    {
+      "name": "tauri-plugin",
+      "package": "aphrody-tauri-plugin",
+      "version": "3.0.0-alpha.3",
+      "source": "tauri",
+      "from": "crates/tauri-plugin",
+      "dir": "crates/vendor/aphrody-tauri-plugin"
+    },
+    {
+      "name": "tauri-plugin-autostart",
+      "package": "aphrody-tauri-plugin-autostart",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/autostart",
+      "dir": "crates/vendor/aphrody-tauri-plugin-autostart"
+    },
+    {
+      "name": "tauri-plugin-barcode-scanner",
+      "package": "aphrody-tauri-plugin-barcode-scanner",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/barcode-scanner",
+      "dir": "crates/vendor/aphrody-tauri-plugin-barcode-scanner"
+    },
+    {
+      "name": "tauri-plugin-biometric",
+      "package": "aphrody-tauri-plugin-biometric",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/biometric",
+      "dir": "crates/vendor/aphrody-tauri-plugin-biometric"
+    },
+    {
+      "name": "tauri-plugin-cli",
+      "package": "aphrody-tauri-plugin-cli",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/cli",
+      "dir": "crates/vendor/aphrody-tauri-plugin-cli"
+    },
+    {
+      "name": "tauri-plugin-clipboard-manager",
+      "package": "aphrody-tauri-plugin-clipboard-manager",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/clipboard-manager",
+      "dir": "crates/vendor/aphrody-tauri-plugin-clipboard-manager"
+    },
+    {
+      "name": "tauri-plugin-deep-link",
+      "package": "aphrody-tauri-plugin-deep-link",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/deep-link",
+      "dir": "crates/vendor/aphrody-tauri-plugin-deep-link"
+    },
+    {
+      "name": "tauri-plugin-dialog",
+      "package": "aphrody-tauri-plugin-dialog",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/dialog",
+      "dir": "crates/vendor/aphrody-tauri-plugin-dialog"
+    },
+    {
+      "name": "tauri-plugin-fs",
+      "package": "aphrody-tauri-plugin-fs",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/fs",
+      "dir": "crates/vendor/aphrody-tauri-plugin-fs"
+    },
+    {
+      "name": "tauri-plugin-geolocation",
+      "package": "aphrody-tauri-plugin-geolocation",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/geolocation",
+      "dir": "crates/vendor/aphrody-tauri-plugin-geolocation"
+    },
+    {
+      "name": "tauri-plugin-global-shortcut",
+      "package": "aphrody-tauri-plugin-global-shortcut",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/global-shortcut",
+      "dir": "crates/vendor/aphrody-tauri-plugin-global-shortcut"
+    },
+    {
+      "name": "tauri-plugin-haptics",
+      "package": "aphrody-tauri-plugin-haptics",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/haptics",
+      "dir": "crates/vendor/aphrody-tauri-plugin-haptics"
+    },
+    {
+      "name": "tauri-plugin-http",
+      "package": "aphrody-tauri-plugin-http",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/http",
+      "dir": "crates/vendor/aphrody-tauri-plugin-http"
+    },
+    {
+      "name": "tauri-plugin-localhost",
+      "package": "aphrody-tauri-plugin-localhost",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/localhost",
+      "dir": "crates/vendor/aphrody-tauri-plugin-localhost"
+    },
+    {
+      "name": "tauri-plugin-log",
+      "package": "aphrody-tauri-plugin-log",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/log",
+      "dir": "crates/vendor/aphrody-tauri-plugin-log"
+    },
+    {
+      "name": "tauri-plugin-nfc",
+      "package": "aphrody-tauri-plugin-nfc",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/nfc",
+      "dir": "crates/vendor/aphrody-tauri-plugin-nfc"
+    },
+    {
+      "name": "tauri-plugin-notification",
+      "package": "aphrody-tauri-plugin-notification",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/notification",
+      "dir": "crates/vendor/aphrody-tauri-plugin-notification"
+    },
+    {
+      "name": "tauri-plugin-opener",
+      "package": "aphrody-tauri-plugin-opener",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/opener",
+      "dir": "crates/vendor/aphrody-tauri-plugin-opener"
+    },
+    {
+      "name": "tauri-plugin-os",
+      "package": "aphrody-tauri-plugin-os",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/os",
+      "dir": "crates/vendor/aphrody-tauri-plugin-os"
+    },
+    {
+      "name": "tauri-plugin-persisted-scope",
+      "package": "aphrody-tauri-plugin-persisted-scope",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/persisted-scope",
+      "dir": "crates/vendor/aphrody-tauri-plugin-persisted-scope"
+    },
+    {
+      "name": "tauri-plugin-positioner",
+      "package": "aphrody-tauri-plugin-positioner",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/positioner",
+      "dir": "crates/vendor/aphrody-tauri-plugin-positioner"
+    },
+    {
+      "name": "tauri-plugin-process",
+      "package": "aphrody-tauri-plugin-process",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/process",
+      "dir": "crates/vendor/aphrody-tauri-plugin-process"
+    },
+    {
+      "name": "tauri-plugin-shell",
+      "package": "aphrody-tauri-plugin-shell",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/shell",
+      "dir": "crates/vendor/aphrody-tauri-plugin-shell"
+    },
+    {
+      "name": "tauri-plugin-single-instance",
+      "package": "aphrody-tauri-plugin-single-instance",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/single-instance",
+      "dir": "crates/vendor/aphrody-tauri-plugin-single-instance"
+    },
+    {
+      "name": "tauri-plugin-sql",
+      "package": "aphrody-tauri-plugin-sql",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/sql",
+      "dir": "crates/vendor/aphrody-tauri-plugin-sql"
+    },
+    {
+      "name": "tauri-plugin-store",
+      "package": "aphrody-tauri-plugin-store",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/store",
+      "dir": "crates/vendor/aphrody-tauri-plugin-store"
+    },
+    {
+      "name": "tauri-plugin-stronghold",
+      "package": "aphrody-tauri-plugin-stronghold",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/stronghold",
+      "dir": "crates/vendor/aphrody-tauri-plugin-stronghold"
+    },
+    {
+      "name": "tauri-plugin-updater",
+      "package": "aphrody-tauri-plugin-updater",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/updater",
+      "dir": "crates/vendor/aphrody-tauri-plugin-updater"
+    },
+    {
+      "name": "tauri-plugin-upload",
+      "package": "aphrody-tauri-plugin-upload",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/upload",
+      "dir": "crates/vendor/aphrody-tauri-plugin-upload"
+    },
+    {
+      "name": "tauri-plugin-websocket",
+      "package": "aphrody-tauri-plugin-websocket",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/websocket",
+      "dir": "crates/vendor/aphrody-tauri-plugin-websocket"
+    },
+    {
+      "name": "tauri-plugin-window-state",
+      "package": "aphrody-tauri-plugin-window-state",
+      "version": "3.0.0-alpha.2",
+      "source": "plugins-workspace",
+      "from": "plugins/window-state",
+      "dir": "crates/vendor/aphrody-tauri-plugin-window-state"
+    },
+    {
+      "name": "tauri-runtime",
+      "package": "aphrody-tauri-runtime",
+      "version": "3.0.0-alpha.3",
+      "source": "tauri",
+      "from": "crates/tauri-runtime",
+      "dir": "crates/vendor/aphrody-tauri-runtime"
+    },
+    {
+      "name": "tauri-runtime-cef",
+      "package": "aphrody-tauri-runtime-cef",
+      "version": "3.0.0-alpha.5",
+      "source": "tauri",
+      "from": "crates/tauri-runtime-cef",
+      "dir": "crates/vendor/aphrody-tauri-runtime-cef"
+    },
+    {
+      "name": "tauri-runtime-wry",
+      "package": "aphrody-tauri-runtime-wry",
+      "version": "3.0.0-alpha.4",
+      "source": "tauri",
+      "from": "crates/tauri-runtime-wry",
+      "dir": "crates/vendor/aphrody-tauri-runtime-wry"
+    },
+    {
+      "name": "tauri-schema-generator",
+      "package": "aphrody-tauri-schema-generator",
+      "version": "0.0.0",
+      "source": "tauri",
+      "from": "crates/tauri-schema-generator",
+      "dir": "crates/vendor/aphrody-tauri-schema-generator"
+    },
+    {
+      "name": "tauri-schema-worker",
+      "package": "aphrody-tauri-schema-worker",
+      "version": "0.0.0",
+      "source": "tauri",
+      "from": "crates/tauri-schema-worker",
+      "dir": "crates/vendor/aphrody-tauri-schema-worker"
+    },
+    {
+      "name": "tauri-utils",
+      "package": "aphrody-tauri-utils",
+      "version": "3.0.0-alpha.3",
+      "source": "tauri",
+      "from": "crates/tauri-utils",
+      "dir": "crates/vendor/aphrody-tauri-utils"
+    },
+    {
+      "name": "turbo-bincode",
+      "package": "aphrody-turbo-bincode",
+      "version": "0.0.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-bincode",
+      "dir": "crates/vendor/aphrody-turbo-bincode"
+    },
+    {
+      "name": "turbo-dyn-eq-hash",
+      "package": "aphrody-turbo-dyn-eq-hash",
+      "version": "0.0.1",
+      "source": "next",
+      "from": "turbopack/crates/turbo-dyn-eq-hash",
+      "dir": "crates/vendor/aphrody-turbo-dyn-eq-hash"
+    },
+    {
+      "name": "turbo-esregex",
+      "package": "aphrody-turbo-esregex",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-esregex",
+      "dir": "crates/vendor/aphrody-turbo-esregex"
+    },
+    {
+      "name": "turbo-frozenmap",
+      "package": "aphrody-turbo-frozenmap",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-frozenmap",
+      "dir": "crates/vendor/aphrody-turbo-frozenmap"
+    },
+    {
+      "name": "turbo-persistence",
+      "package": "aphrody-turbo-persistence",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-persistence",
+      "dir": "crates/vendor/aphrody-turbo-persistence"
+    },
+    {
+      "name": "turbo-persistence-tools",
+      "package": "aphrody-turbo-persistence-tools",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-persistence-tools",
+      "dir": "crates/vendor/aphrody-turbo-persistence-tools"
+    },
+    {
+      "name": "turbo-prehash",
+      "package": "aphrody-turbo-prehash",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-prehash",
+      "dir": "crates/vendor/aphrody-turbo-prehash"
+    },
+    {
+      "name": "turbo-rcstr",
+      "package": "aphrody-turbo-rcstr",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-rcstr",
+      "dir": "crates/vendor/aphrody-turbo-rcstr"
+    },
+    {
+      "name": "turbo-rcstr-macros",
+      "package": "aphrody-turbo-rcstr-macros",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-rcstr-macros",
+      "dir": "crates/vendor/aphrody-turbo-rcstr-macros"
+    },
+    {
+      "name": "turbo-tasks",
+      "package": "aphrody-turbo-tasks",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks",
+      "dir": "crates/vendor/aphrody-turbo-tasks"
+    },
+    {
+      "name": "turbo-tasks-backend",
+      "package": "aphrody-turbo-tasks-backend",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-backend",
+      "dir": "crates/vendor/aphrody-turbo-tasks-backend"
+    },
+    {
+      "name": "turbo-tasks-bytes",
+      "package": "aphrody-turbo-tasks-bytes",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-bytes",
+      "dir": "crates/vendor/aphrody-turbo-tasks-bytes"
+    },
+    {
+      "name": "turbo-tasks-env",
+      "package": "aphrody-turbo-tasks-env",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-env",
+      "dir": "crates/vendor/aphrody-turbo-tasks-env"
+    },
+    {
+      "name": "turbo-tasks-fetch",
+      "package": "aphrody-turbo-tasks-fetch",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-fetch",
+      "dir": "crates/vendor/aphrody-turbo-tasks-fetch"
+    },
+    {
+      "name": "turbo-tasks-fs",
+      "package": "aphrody-turbo-tasks-fs",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-fs",
+      "dir": "crates/vendor/aphrody-turbo-tasks-fs"
+    },
+    {
+      "name": "turbo-tasks-fuzz",
+      "package": "aphrody-turbo-tasks-fuzz",
+      "version": "0.0.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-fuzz",
+      "dir": "crates/vendor/aphrody-turbo-tasks-fuzz"
+    },
+    {
+      "name": "turbo-tasks-hash",
+      "package": "aphrody-turbo-tasks-hash",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-hash",
+      "dir": "crates/vendor/aphrody-turbo-tasks-hash"
+    },
+    {
+      "name": "turbo-tasks-macros",
+      "package": "aphrody-turbo-tasks-macros",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-macros",
+      "dir": "crates/vendor/aphrody-turbo-tasks-macros"
+    },
+    {
+      "name": "turbo-tasks-malloc",
+      "package": "aphrody-turbo-tasks-malloc",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-malloc",
+      "dir": "crates/vendor/aphrody-turbo-tasks-malloc"
+    },
+    {
+      "name": "turbo-tasks-testing",
+      "package": "aphrody-turbo-tasks-testing",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbo-tasks-testing",
+      "dir": "crates/vendor/aphrody-turbo-tasks-testing"
+    },
+    {
+      "name": "turbo-unix-path",
+      "package": "aphrody-turbo-unix-path",
+      "version": "0.0.1",
+      "source": "next",
+      "from": "turbopack/crates/turbo-unix-path",
+      "dir": "crates/vendor/aphrody-turbo-unix-path"
+    },
+    {
+      "name": "turbopack",
+      "package": "aphrody-turbopack",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack",
+      "dir": "crates/vendor/aphrody-turbopack"
+    },
+    {
+      "name": "turbopack-analyze",
+      "package": "aphrody-turbopack-analyze",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-analyze",
+      "dir": "crates/vendor/aphrody-turbopack-analyze"
+    },
+    {
+      "name": "turbopack-bench",
+      "package": "aphrody-turbopack-bench",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-bench",
+      "dir": "crates/vendor/aphrody-turbopack-bench"
+    },
+    {
+      "name": "turbopack-browser",
+      "package": "aphrody-turbopack-browser",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-browser",
+      "dir": "crates/vendor/aphrody-turbopack-browser"
+    },
+    {
+      "name": "turbopack-cli",
+      "package": "aphrody-turbopack-cli",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-cli",
+      "dir": "crates/vendor/aphrody-turbopack-cli"
+    },
+    {
+      "name": "turbopack-cli-utils",
+      "package": "aphrody-turbopack-cli-utils",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-cli-utils",
+      "dir": "crates/vendor/aphrody-turbopack-cli-utils"
+    },
+    {
+      "name": "turbopack-core",
+      "package": "aphrody-turbopack-core",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-core",
+      "dir": "crates/vendor/aphrody-turbopack-core"
+    },
+    {
+      "name": "turbopack-create-test-app",
+      "package": "aphrody-turbopack-create-test-app",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-create-test-app",
+      "dir": "crates/vendor/aphrody-turbopack-create-test-app"
+    },
+    {
+      "name": "turbopack-css",
+      "package": "aphrody-turbopack-css",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-css",
+      "dir": "crates/vendor/aphrody-turbopack-css"
+    },
+    {
+      "name": "turbopack-dev-server",
+      "package": "aphrody-turbopack-dev-server",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-dev-server",
+      "dir": "crates/vendor/aphrody-turbopack-dev-server"
+    },
+    {
+      "name": "turbopack-ecmascript",
+      "package": "aphrody-turbopack-ecmascript",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-ecmascript",
+      "dir": "crates/vendor/aphrody-turbopack-ecmascript"
+    },
+    {
+      "name": "turbopack-ecmascript-hmr-protocol",
+      "package": "aphrody-turbopack-ecmascript-hmr-protocol",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-ecmascript-hmr-protocol",
+      "dir": "crates/vendor/aphrody-turbopack-ecmascript-hmr-protocol"
+    },
+    {
+      "name": "turbopack-ecmascript-plugins",
+      "package": "aphrody-turbopack-ecmascript-plugins",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-ecmascript-plugins",
+      "dir": "crates/vendor/aphrody-turbopack-ecmascript-plugins"
+    },
+    {
+      "name": "turbopack-ecmascript-runtime",
+      "package": "aphrody-turbopack-ecmascript-runtime",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-ecmascript-runtime",
+      "dir": "crates/vendor/aphrody-turbopack-ecmascript-runtime"
+    },
+    {
+      "name": "turbopack-env",
+      "package": "aphrody-turbopack-env",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-env",
+      "dir": "crates/vendor/aphrody-turbopack-env"
+    },
+    {
+      "name": "turbopack-image",
+      "package": "aphrody-turbopack-image",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-image",
+      "dir": "crates/vendor/aphrody-turbopack-image"
+    },
+    {
+      "name": "turbopack-lightningcss-napi",
+      "package": "aphrody-turbopack-lightningcss-napi",
+      "version": "0.0.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-lightningcss-napi",
+      "dir": "crates/vendor/aphrody-turbopack-lightningcss-napi"
+    },
+    {
+      "name": "turbopack-mdx",
+      "package": "aphrody-turbopack-mdx",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-mdx",
+      "dir": "crates/vendor/aphrody-turbopack-mdx"
+    },
+    {
+      "name": "turbopack-nft",
+      "package": "aphrody-turbopack-nft",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-nft",
+      "dir": "crates/vendor/aphrody-turbopack-nft"
+    },
+    {
+      "name": "turbopack-node",
+      "package": "aphrody-turbopack-node",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-node",
+      "dir": "crates/vendor/aphrody-turbopack-node"
+    },
+    {
+      "name": "turbopack-nodejs",
+      "package": "aphrody-turbopack-nodejs",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-nodejs",
+      "dir": "crates/vendor/aphrody-turbopack-nodejs"
+    },
+    {
+      "name": "turbopack-resolve",
+      "package": "aphrody-turbopack-resolve",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-resolve",
+      "dir": "crates/vendor/aphrody-turbopack-resolve"
+    },
+    {
+      "name": "turbopack-static",
+      "package": "aphrody-turbopack-static",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-static",
+      "dir": "crates/vendor/aphrody-turbopack-static"
+    },
+    {
+      "name": "turbopack-swc-utils",
+      "package": "aphrody-turbopack-swc-utils",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-swc-utils",
+      "dir": "crates/vendor/aphrody-turbopack-swc-utils"
+    },
+    {
+      "name": "turbopack-test-utils",
+      "package": "aphrody-turbopack-test-utils",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-test-utils",
+      "dir": "crates/vendor/aphrody-turbopack-test-utils"
+    },
+    {
+      "name": "turbopack-trace-server",
+      "package": "aphrody-turbopack-trace-server",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-trace-server",
+      "dir": "crates/vendor/aphrody-turbopack-trace-server"
+    },
+    {
+      "name": "turbopack-trace-utils",
+      "package": "aphrody-turbopack-trace-utils",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-trace-utils",
+      "dir": "crates/vendor/aphrody-turbopack-trace-utils"
+    },
+    {
+      "name": "turbopack-tracing",
+      "package": "aphrody-turbopack-tracing",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-tracing",
+      "dir": "crates/vendor/aphrody-turbopack-tracing"
+    },
+    {
+      "name": "turbopack-wasm",
+      "package": "aphrody-turbopack-wasm",
+      "version": "0.1.0",
+      "source": "next",
+      "from": "turbopack/crates/turbopack-wasm",
+      "dir": "crates/vendor/aphrody-turbopack-wasm"
+    },
+    {
+      "name": "wry",
+      "package": "aphrody-wry",
+      "version": "0.57.0",
+      "source": "wry",
+      "from": ".",
+      "dir": "crates/vendor/aphrody-wry"
+    }
+  ]
+}

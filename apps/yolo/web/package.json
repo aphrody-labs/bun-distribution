@@ -11,8 +11,8 @@
     "build": "bun run build.ts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src/",
-    "tauri": "tauri --config ../../crates/yolo-desktop/tauri.conf.json",
-    "test": "bun --cwd=../.. test test/web.test.ts"
+    "tauri": "tauri --config ../../../crates/engine/yolo-desktop/tauri.conf.json",
+    "test": "bun --cwd=../../.. test test/web.test.ts"
   },
   "dependencies": {},
   "license": "MIT",

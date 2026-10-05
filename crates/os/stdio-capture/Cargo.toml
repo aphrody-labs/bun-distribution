@@ -24,7 +24,7 @@ tempfile = { workspace = true }
 rustix = { workspace = true, features = ["stdio"] }
 
 [target.'cfg(all(not(target_arch = "wasm32"), windows))'.dependencies]
-windows-sys = { version = "0.61", features = [
+windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_System_Console",
 ] }

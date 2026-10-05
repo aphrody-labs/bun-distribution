@@ -19,7 +19,7 @@ aphrody-infer = { workspace = true }
 aphrody-models = { workspace = true }
 aphrody-ocr-core = { workspace = true }
 image = { workspace = true, features = ["jpeg", "png"] }
-ndarray = "0.17"
+ndarray = { workspace = true }
 ort.workspace = true
 serde_yaml.workspace = true
 thiserror.workspace = true

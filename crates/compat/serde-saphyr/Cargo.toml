@@ -458,7 +458,7 @@ version = "0.8"
 version = "0.12"
 
 [dependencies.base64]
-version = ">=0.21.0, <=0.22.1"
+workspace = true
 
 [dependencies.encoding_rs_io]
 version = "0.1"
@@ -473,7 +473,7 @@ features = ["derive"]
 optional = true
 
 [dependencies.miette]
-version = "7"
+workspace = true
 features = ["fancy"]
 optional = true
 
@@ -484,18 +484,18 @@ version = "0.2"
 version = ">=0.2.0, <=0.2.19"
 
 [dependencies.regex]
-version = ">= 1.0, < 2.0"
+workspace = true
 
 [dependencies.saphyr-parser]
 version = "0.0.605"
 package = "saphyr-parser-bw"
 
 [dependencies.serde]
-version = "1"
+workspace = true
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1"
+workspace = true
 features = ["preserve_order"]
 
 [dependencies.smallvec]
@@ -510,23 +510,23 @@ optional = true
 version = "1.0"
 
 [dev-dependencies.anyhow]
-version = "1.0"
+workspace = true
 
 [dev-dependencies.chrono]
-version = "0.4"
+workspace = true
 
 [dev-dependencies.indoc]
-version = ">= 2.0.6, < 2.1"
+workspace = true
 
 [dev-dependencies.miette]
-version = "7"
+workspace = true
 features = ["fancy"]
 
 [dev-dependencies.regex]
-version = "1.12"
+workspace = true
 
 [dev-dependencies.serde]
-version = "1.0"
+workspace = true
 features = [
     "derive",
     "rc",

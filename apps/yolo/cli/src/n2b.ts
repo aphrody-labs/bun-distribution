@@ -5,7 +5,7 @@ import { parseArgs } from "node:util";
 import type {
   NodeProjectReport,
   ScanNodeProjectOptions,
-} from "../../../packages/core/src/compiler/native.ts";
+} from "../../../../packages/engine/core/src/compiler/native.ts";
 
 export const N2B_HELP = `Usage: yolo n2b [path] [options]
 
@@ -110,7 +110,7 @@ export async function runN2bCommand(args: readonly string[], cwd = process.cwd()
     if (!statSync(parsed.root).isDirectory()) {
       throw new TypeError("Project path must be a directory");
     }
-    const { NativeTooling } = await import("../../../packages/core/src/compiler/native.ts");
+    const { NativeTooling } = await import("../../../../packages/engine/core/src/compiler/native.ts");
     using tooling = new NativeTooling(
       parsed.libraryPath === undefined ? {} : { path: parsed.libraryPath },
     );
