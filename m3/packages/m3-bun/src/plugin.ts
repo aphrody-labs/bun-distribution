@@ -15,7 +15,7 @@
 import { m3Plugin, type M3PluginOptions } from "@aphrody/m3/plugin";
 import type { BunPlugin } from "bun";
 import { dirname } from "node:path";
-import { iconsRoot, parseIconSpecifier, readIcon } from "./icons.ts";
+import { iconsRoot, loadIcon, parseIconSpecifier } from "./icons.ts";
 import { tsM3Css } from "./theme-css.ts";
 
 const FONT_SHEETS: Record<string, string> = {
@@ -33,22 +33,39 @@ export interface M3BunPluginOptions extends M3PluginOptions {
 }
 
 /** What `m3Bun` adds to `m3Plugin`: icons and the standalone font sheets. Exported for `Bun.build` callers that compose themselves. */
-export function m3BunExtras(options: Pick<M3BunPluginOptions, "iconsRoot" | "configDir"> = {}): BunPlugin {
+export function m3BunExtras(
+  options: Pick<M3BunPluginOptions, "iconsRoot" | "configDir"> = {},
+): BunPlugin {
   return {
     name: "@aphrody/m3-bun",
     setup(build) {
-      build.onResolve({ filter: /^m3:icons\// }, (args) => ({ path: args.path.slice("m3:icons/".length), namespace: ICON_NAMESPACE }));
-      build.onLoad({ filter: /.*/, namespace: ICON_NAMESPACE }, (args) => {
-        const svg = readIcon(parseIconSpecifier(args.path), options.iconsRoot ?? iconsRoot(options.configDir ?? process.cwd()) ?? iconsRoot());
+      build.onResolve({ filter: /^m3:icons\// }, (args) => ({
+        path: args.path.slice("m3:icons/".length),
+        namespace: ICON_NAMESPACE,
+      }));
+      build.onLoad({ filter: /.*/, namespace: ICON_NAMESPACE }, async (args) => {
+        const svg = await loadIcon(
+          parseIconSpecifier(args.path),
+          options.iconsRoot ?? iconsRoot(options.configDir ?? process.cwd()) ?? iconsRoot(),
+        );
         return { contents: `export default ${JSON.stringify(svg)};\n`, loader: "js" };
       });
-      build.onResolve({ filter: /^m3:optional\// }, (args) => ({ path: args.path.slice("m3:optional/".length), namespace: OPTIONAL_NAMESPACE }));
+      build.onResolve({ filter: /^m3:optional\// }, (args) => ({
+        path: args.path.slice("m3:optional/".length),
+        namespace: OPTIONAL_NAMESPACE,
+      }));
       build.onLoad({ filter: /.*/, namespace: OPTIONAL_NAMESPACE }, (args) => {
         try {
           const resolved = Bun.resolveSync(args.path, options.configDir ?? process.cwd());
-          return { contents: `import * as namespace from ${JSON.stringify(resolved)};\nexport default namespace;\nexport const resolved = true;\n`, loader: "js" };
+          return {
+            contents: `import * as namespace from ${JSON.stringify(resolved)};\nexport default namespace;\nexport const resolved = true;\n`,
+            loader: "js",
+          };
         } catch {
-          return { contents: "export default null;\nexport const resolved = false;\n", loader: "js" };
+          return {
+            contents: "export default null;\nexport const resolved = false;\n",
+            loader: "js",
+          };
         }
       });
       // m3Plugin serves the font sheets from an Aphrody OS checkout; without one, `@aphrody/m3-fonts` does.
@@ -68,7 +85,10 @@ export function m3BunExtras(options: Pick<M3BunPluginOptions, "iconsRoot" | "con
 /** The complete plugin. */
 export function m3Bun(options: M3BunPluginOptions = {}): BunPlugin {
   const { iconsRoot: icons, ...m3Options } = options;
-  const extras = m3BunExtras({ ...(icons ? { iconsRoot: icons } : {}), ...(options.configDir ? { configDir: options.configDir } : {}) });
+  const extras = m3BunExtras({
+    ...(icons ? { iconsRoot: icons } : {}),
+    ...(options.configDir ? { configDir: options.configDir } : {}),
+  });
   const base = m3Plugin({ css: tsM3Css, ...m3Options });
   return {
     name: "@aphrody/m3-bun",

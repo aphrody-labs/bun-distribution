@@ -53,7 +53,7 @@ describe("helpers", () => {
   test("defineM3Bun is the identity and findWorkspaceRoot finds the monorepo", () => {
     const config = { port: 1 };
     expect(defineM3Bun(config)).toBe(config);
-    expect(findWorkspaceRoot(FIXTURE)).toBe(join(import.meta.dir, "../../.."));
+    expect(findWorkspaceRoot(FIXTURE)).toBe(join(import.meta.dir, "../../../.."));
     expect(findWorkspaceRoot("/")).toBeUndefined();
   });
 });

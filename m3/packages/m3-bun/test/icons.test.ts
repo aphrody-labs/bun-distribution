@@ -1,11 +1,29 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { iconFile, iconsRoot, parseIconSpecifier, readIcon } from "../src/icons.ts";
+import {
+  iconFile,
+  iconUrl,
+  iconVariant,
+  iconsRoot,
+  loadIcon,
+  parseIconSpecifier,
+  readIcon,
+} from "../src/icons.ts";
 
 describe("parseIconSpecifier", () => {
   test("name, style and variant query", () => {
-    expect(parseIconSpecifier("home")).toEqual({ name: "home", style: "outlined", fill: false, weight: 400 });
-    expect(parseIconSpecifier("rounded/arrow_back?fill=1&wght=300")).toEqual({ name: "arrow_back", style: "rounded", fill: true, weight: 300 });
+    expect(parseIconSpecifier("home")).toEqual({
+      name: "home",
+      style: "outlined",
+      fill: false,
+      weight: 400,
+    });
+    expect(parseIconSpecifier("rounded/arrow_back?fill=1&wght=300")).toEqual({
+      name: "arrow_back",
+      style: "rounded",
+      fill: true,
+      weight: 300,
+    });
   });
   test("bad names, styles and weights are errors", () => {
     expect(() => parseIconSpecifier("Home")).toThrow(/invalid icon name/);
@@ -14,10 +32,18 @@ describe("parseIconSpecifier", () => {
     expect(() => parseIconSpecifier("home?wght=450")).toThrow(/wght must be/);
   });
   test("file names follow the catalogue spelling", () => {
-    expect(iconFile({ name: "home", style: "outlined", fill: false, weight: 400 })).toBe("home_24px.svg");
-    expect(iconFile({ name: "home", style: "outlined", fill: true, weight: 400 })).toBe("home_fill1_24px.svg");
-    expect(iconFile({ name: "home", style: "outlined", fill: false, weight: 300 })).toBe("home_wght300_24px.svg");
-    expect(iconFile({ name: "home", style: "outlined", fill: true, weight: 300 })).toBe("home_wght300fill1_24px.svg");
+    expect(iconFile({ name: "home", style: "outlined", fill: false, weight: 400 })).toBe(
+      "home_24px.svg",
+    );
+    expect(iconFile({ name: "home", style: "outlined", fill: true, weight: 400 })).toBe(
+      "home_fill1_24px.svg",
+    );
+    expect(iconFile({ name: "home", style: "outlined", fill: false, weight: 300 })).toBe(
+      "home_wght300_24px.svg",
+    );
+    expect(iconFile({ name: "home", style: "outlined", fill: true, weight: 300 })).toBe(
+      "home_wght300fill1_24px.svg",
+    );
   });
 });
 
@@ -27,11 +53,57 @@ describe("readIcon", () => {
     const svg = readIcon({ name: "home", style: "outlined", fill: false, weight: 400 }, root);
     expect(svg).toStartWith("<svg");
     expect(svg).toContain('viewBox="0 -960 960 960"');
-    expect(readIcon({ name: "home", style: "rounded", fill: true, weight: 400 }, root)).not.toBe(svg);
-    expect(() => readIcon({ name: "no_such_symbol_xyz", style: "outlined", fill: false, weight: 400 }, root)).toThrow(/no icon outlined\/no_such_symbol_xyz_24px\.svg/);
+    expect(readIcon({ name: "home", style: "rounded", fill: true, weight: 400 }, root)).not.toBe(
+      svg,
+    );
+    expect(() =>
+      readIcon({ name: "no_such_symbol_xyz", style: "outlined", fill: false, weight: 400 }, root),
+    ).toThrow(/no icon outlined\/no_such_symbol_xyz_24px\.svg/);
   });
-  test("without a catalogue the error says how to get one", () => {
-    expect(() => readIcon({ name: "home", style: "outlined", fill: false, weight: 400 }, null)).toThrow(/forks\.ts sparse material-design-icons/);
+  test("without a catalogue readIcon points to loadIcon", () => {
+    expect(() =>
+      readIcon({ name: "home", style: "outlined", fill: false, weight: 400 }, null),
+    ).toThrow(/use loadIcon/);
+  });
+  test("CDN variants follow the gstatic layout", () => {
+    expect(iconVariant({ name: "home", style: "outlined", fill: false, weight: 400 })).toBe(
+      "default",
+    );
+    expect(iconVariant({ name: "home", style: "outlined", fill: true, weight: 300 })).toBe(
+      "wght300fill1",
+    );
+    expect(
+      iconUrl(
+        { name: "home", style: "rounded", fill: true, weight: 400 },
+        "https://cdn.aphrody.com/",
+      ),
+    ).toBe(
+      "https://cdn.aphrody.com/s/i/short-term/release/materialsymbolsrounded/home/fill1/24px.svg",
+    );
+  });
+  test("loadIcon fetches from the CDN once, then reads the disk cache", async () => {
+    const saved = Bun.env.M3_ICONS_CACHE;
+    const cache = `${Bun.env.TMPDIR ?? "/tmp"}/m3-icons-${process.pid}-${Date.now()}`;
+    Bun.env.M3_ICONS_CACHE = cache;
+    try {
+      const svg = await loadIcon(
+        { name: "home", style: "outlined", fill: false, weight: 400 },
+        null,
+      );
+      expect(svg).toStartWith("<svg");
+      expect(svg).toContain('viewBox="0 -960 960 960"');
+      expect(await Bun.file(`${cache}/outlined/home/default.svg`).exists()).toBe(true);
+      expect(
+        await loadIcon({ name: "home", style: "rounded", fill: true, weight: 400 }, null),
+      ).not.toBe(svg);
+      await expect(
+        loadIcon({ name: "no_such_symbol_xyz", style: "outlined", fill: false, weight: 400 }, null),
+      ).rejects.toThrow(/no icon outlined\/no_such_symbol_xyz_24px\.svg/);
+    } finally {
+      await Bun.$`rm -rf ${cache}`.quiet();
+      if (saved === undefined) delete Bun.env.M3_ICONS_CACHE;
+      else Bun.env.M3_ICONS_CACHE = saved;
+    }
   });
   test("M3_ICONS_ROOT wins", () => {
     const saved = Bun.env.M3_ICONS_ROOT;
