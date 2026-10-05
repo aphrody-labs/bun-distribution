@@ -59,7 +59,7 @@ exclude = ["plugins/*/examples/**", "plugins/*/tests/**", "plugins/*/contributor
 name = "wry"
 rustfmt = "rustfmt.toml"
 crates = ["."]
-exclude = ["bench/**", "audits/**", ".license_template"]
+exclude = ["bench/**", "audits/**", ".license_template", "examples/wgpu.rs"]
 
 [[source]]
 name = "tao"
@@ -133,6 +133,77 @@ to = ""
 files = "crates/aphrody-tauri-cli/src/helpers/config.rs"
 from = '''include_str!("../../config.schema.json")'''
 to = '''include_str!("../../../aphrody-tauri-schema-generator/schemas/config.schema.json")'''
+
+# One version per crate: the vendored crates follow the workspace pins so Cargo.lock keeps a single copy
+# (jsonschema, resvg, urlpattern, infer, json5, cargo_metadata, zip, whoami) and wry drops the wgpu 23 dev-dependency
+# of its wgpu example (wgpu 30 is the workspace GPU stack).
+[[rewrite]]
+files = "crates/aphrody-tauri-cli/Cargo.toml"
+from = '''json5 = "0.4"'''
+to = '''json5 = "1.3"'''
+
+[[rewrite]]
+files = "crates/aphrody-tauri-cli/Cargo.toml"
+from = '''jsonschema = { version = "0.49", default-features = false }'''
+to = '''jsonschema = { version = "0.58", default-features = false }'''
+
+[[rewrite]]
+files = "crates/aphrody-tauri-cli/Cargo.toml"
+from = '''resvg = "0.47"'''
+to = '''resvg = "0.48"'''
+
+[[rewrite]]
+files = "crates/aphrody-tauri-utils/Cargo.toml"
+from = '''json5 = { version = "0.4", optional = true }'''
+to = '''json5 = { version = "1.3", optional = true }'''
+
+[[rewrite]]
+files = "crates/aphrody-tauri-utils/Cargo.toml"
+from = '''cargo_metadata = { version = "0.19", optional = true }'''
+to = '''cargo_metadata = { version = "0.23", optional = true }'''
+
+[[rewrite]]
+files = "crates/aphrody-tauri-plugin-http/Cargo.toml"
+from = '''urlpattern = "0.3"'''
+to = '''urlpattern = "0.6"'''
+
+[[rewrite]]
+files = "crates/aphrody-tauri-plugin-updater/Cargo.toml"
+from = '''infer = "0.19"'''
+to = '''infer = "0.22"'''
+
+[[rewrite]]
+files = "crates/aphrody-tauri-plugin-updater/Cargo.toml"
+from = '''zip = { version = "4", default-features = false, optional = true }'''
+to = '''zip = { version = "8", default-features = false, optional = true }'''
+
+[[rewrite]]
+files = "crates/aphrody-create-tauri-app/Cargo.toml"
+from = '''whoami = { version = "1.6.0", default-features = false }'''
+to = '''whoami = { version = "2", default-features = false }'''
+
+[[rewrite]]
+files = "crates/aphrody-create-tauri-app/src/lib.rs"
+from = '''utils::to_valid_pkg_name(&whoami::username())'''
+to = '''utils::to_valid_pkg_name(&whoami::username().unwrap_or_default())'''
+
+[[rewrite]]
+files = "crates/aphrody-wry/Cargo.toml"
+from = '''wgpu = "23"
+'''
+to = ''''''
+
+# The v2 migration snapshots expect the versions of metadata-v2.json (tauri and tauri-runtime-wry alpha.4,
+# tauri-build alpha.3); the upstream snapshots lag one release behind. Order matters: alpha.3 first, then alpha.2.
+[[rewrite]]
+files = "crates/aphrody-tauri-cli/src/migrate/migrations/v2/snapshots/*Cargo.toml.snap"
+from = '''version = "3.0.0-alpha.3"'''
+to = '''version = "3.0.0-alpha.4"'''
+
+[[rewrite]]
+files = "crates/aphrody-tauri-cli/src/migrate/migrations/v2/snapshots/*Cargo.toml.snap"
+from = '''version = "3.0.0-alpha.2"'''
+to = '''version = "3.0.0-alpha.3"'''
 
 # Scaffolded apps depend on the Aphrody packages (the dependency keys stay `tauri`, `tauri-build`…).
 [[rewrite]]

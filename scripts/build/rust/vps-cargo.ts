@@ -187,6 +187,8 @@ export function remoteRunScript(
     APHRODY_CARGO_TARGET_DIR: config.remoteTargetDir,
   }).map(([key, value]) => `${key}=${shellQuote(value)}`);
   const body = [
+    // Deterministic file modes: tests assert 0o644/0o600 and the builder user's default umask is 002.
+    "umask 022",
     `cd ${shellQuote(config.remoteWorkspace)}`,
     `test "$(git rev-parse HEAD)" = ${sha} || { echo "checkout moved away from ${sha}" >&2; exit 2; }`,
     `export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`,

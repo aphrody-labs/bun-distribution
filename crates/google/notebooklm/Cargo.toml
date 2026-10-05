@@ -14,6 +14,7 @@ description            = "NotebookLM Boq RPC client — pure-HTTP, cookie/OAuth 
 workspace = true
 
 [dependencies]
+aphrody-boq = { workspace = true }
 serde       = { workspace = true, features = ["derive"] }
 serde_json  = { workspace = true }
 thiserror   = { workspace = true }

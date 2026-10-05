@@ -24,15 +24,7 @@ keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 aphrody-ai = { path = "crates/ai/ai", version = "1.0.0" }
 aphrody-softraster = { path = "crates/ui/softraster", version = "1.0.0-canary" }
 aphrody-sprite-sheet = { path = "crates/ui/sprite-sheet", version = "1.0.0-canary" }
-glam = { version = "0.33.9", default-features = false, features = ["std"] }
 crc32fast = { version = "1.5", default-features = false }
-image_dds = { version = "0.7", default-features = false }
-cridecoder = { version = "0.2.3", default-features = false }
-redis = { version = "0.27" }
-bcdec_rs = { version = "0.2.0" }
-mlua = { version = "0.11" }
-tree-sitter = { version = "0.26" }
-tree-sitter-lua = { version = "0.5" }
 image-compare = { version = "0.5" }
 palette = { version = "0.7", default-features = false }
 aphrody-oxc-bridge = { path = "crates/compat/oxc-bridge", version = "0.1.0" }
@@ -72,6 +64,7 @@ aphrody-app-protocol = { path = "crates/contracts/app-protocol", version = "1.0.
 aphrody-app-server = { path = "crates/ai/app-server", version = "1.0.0", features = [] }
 aphrody-backend = { path = "crates/os/backend", version = "1.0.0-canary", features = [] }
 aphrody-base = { path = "crates/os/base", version = "1.0.0-canary", features = [] }
+aphrody-boq = { path = "crates/google/boq", version = "1.0.0", features = [] }
 aphrody-capture = { path = "crates/os/capture", version = "1.0.0-canary", features = [] }
 aphrody-chat = { path = "crates/ai/chat", version = "1.0.0", features = [] }
 aphrody-config = { path = "crates/ai/config", version = "1.0.0", features = [] }
@@ -224,7 +217,7 @@ libm = "0.2.16"
 minijinja = "2.24.0"
 mistralrs = { version = "0.9.4", git = "https://github.com/EricLBuehler/mistral.rs.git", rev = "3f2515e9b5adc2ac44949c128c50a13b15721294", default-features = false }
 notify = { version = "8", features = [] }
-notify-debouncer-full = "0.7"
+notify-debouncer-full = "0.6"
 obscura-mcp = { path = "crates/web/obscura-mcp", version = "0.1.0", features = [] }
 obscura-browser = { path = "crates/web/obscura-browser", version = "0.1.0", features = [] }
 obscura = { path = "crates/web/obscura", version = "0.1.0", package = "aphrody-obscura" }
@@ -325,7 +318,6 @@ aphrody-bun-docs = { path = "crates/compat/bun-docs", version = "1.0.0-canary", 
 aphrody-shell = { path = "crates/shell/shell", version = "1.0.0-canary", features = [] }
 aes                = { version = "0.9.3" }
 argon2             = { version = "0.6" }
-byteorder          = { version = "1.5" }
 goblin             = { version = "0.10", default-features = false, features = ["std", "endian_fd", "pe32", "pe64", "elf32", "elf64"] }
 googletest         = { version = "0.14" }
 iced-x86           = { version = "1.21" }
@@ -335,12 +327,6 @@ memchr             = { version = "2" }
 rustix             = { version = "1.0", default-features = false, features = ["std", "fs", "event", "process", "net"] }
 sha1               = { version = "0.11.0" }
 uiautomation       = { version = "0.25.1", default-features = false }
-uu_cp              = { version = "0.10.0" }
-uu_mkdir           = { version = "0.10.0" }
-uu_mv              = { version = "0.10.0" }
-uu_touch           = { version = "0.10.0" }
-uu_uname           = { version = "0.10.0" }
-uu_whoami          = { version = "0.10.0" }
 vigem-rust         = { version = "0.2.0", default-features = false, features = ["x360"] }
 yara-x             = { version = "=1.7.0", default-features = false }
 zerocopy           = { version = "0.8", features = ["derive"] }
@@ -380,7 +366,6 @@ specta = { version = "=2.0.0-rc.25", features = ["derive", "url", "uuid"] }
 specta-typescript = "=0.0.12"
 tracing-core = "0.1.36"
 open = "5.4.3"
-rfd = "0.17.2"
 strum = { version = "0.28.0", features = ["derive"] }
 sys-locale = "0.3.2"
 zip = { version = "8.6.0", features = ["deflate"] }

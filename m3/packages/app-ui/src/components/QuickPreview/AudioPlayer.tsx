@@ -4,13 +4,7 @@ import { Icon, m3FocusRing } from "@aphrody/m3-primitives";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
 import type { File } from "@aphrody/drive-client";
 import { useServer } from "../../contexts/ServerContext";
-
-interface SubtitleCue {
-	index: number;
-	startTime: number;
-	endTime: number;
-	text: string;
-}
+import { parseSRT, type SubtitleCue } from "./srt";
 
 interface AudioPlayerProps {
 	src: string;
@@ -21,41 +15,6 @@ function formatTime(seconds: number): string {
 	const mins = Math.floor(seconds / 60);
 	const secs = Math.floor(seconds % 60);
 	return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
-
-function parseSRT(srtContent: string): SubtitleCue[] {
-	const cues: SubtitleCue[] = [];
-	const blocks = srtContent.trim().split(/\n\s*\n/);
-
-	for (const block of blocks) {
-		const lines = block.trim().split("\n");
-		if (lines.length < 3) continue;
-
-		const index = parseInt(lines[0], 10);
-		const timecodeMatch = lines[1].match(
-			/(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})/,
-		);
-
-		if (!timecodeMatch) continue;
-
-		const startTime =
-			parseInt(timecodeMatch[1]) * 3600 +
-			parseInt(timecodeMatch[2]) * 60 +
-			parseInt(timecodeMatch[3]) +
-			parseInt(timecodeMatch[4]) / 1000;
-
-		const endTime =
-			parseInt(timecodeMatch[5]) * 3600 +
-			parseInt(timecodeMatch[6]) * 60 +
-			parseInt(timecodeMatch[7]) +
-			parseInt(timecodeMatch[8]) / 1000;
-
-		const text = lines.slice(2).join("\n");
-
-		cues.push({ index, startTime, endTime, text });
-	}
-
-	return cues;
 }
 
 export function AudioPlayer({ src, file }: AudioPlayerProps) {

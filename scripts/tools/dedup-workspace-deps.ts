@@ -12,9 +12,16 @@ import { Glob } from "bun";
 
 // The FSL drive tree is a SEPARATE nested Cargo workspace: its members inherit
 // *its* [workspace.dependencies], not the root's, so root inheritance is invalid
-// there. *-sys crates pin for native ABI. Everything else — the Tauri fork
-// included — is fair game: the user assumes the right to diverge from upstream.
-const DENY_PATH = [/^crates\/os\/drive\//, /^crates\/ui\/drive\//];
+// there. Test fixtures and scaffold templates are data (a migration test feeds a
+// fixture manifest to the code under test): they keep their own pins. *-sys crates
+// pin for native ABI. Everything else — the Tauri fork included — is fair game:
+// the user assumes the right to diverge from upstream.
+const DENY_PATH = [
+  /^crates\/os\/drive\//,
+  /^crates\/ui\/drive\//,
+  /\/fixtures?\//,
+  /\/templates\//,
+];
 const DENY_NAME = [/-sys$/];
 
 const root = await Bun.file("Cargo.toml").text();

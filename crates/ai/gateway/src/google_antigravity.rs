@@ -23,16 +23,11 @@
 
 use std::env;
 
-use bytes::Bytes;
-use futures::{Stream, StreamExt};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::{
-    ChatChunk, ChatRequest, ChatResponse, ChunkStream, GatewayAdapter, GatewayError,
-    build_openai_body, extract_content, extract_model, extract_total_tokens, parse_sse_line,
-};
+use crate::{ChatRequest, ChatResponse, ChunkStream, GatewayAdapter, GatewayError, openai_compat};
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -165,85 +160,15 @@ impl GoogleAntigravityAdapter {
 #[async_trait::async_trait]
 impl GatewayAdapter for GoogleAntigravityAdapter {
     async fn chat(&self, mut req: ChatRequest) -> Result<ChatResponse, GatewayError> {
-        req.stream = false;
         req.model = normalize_antigravity_model_id(&req.model);
-        let url = self.endpoint_url()?;
-        let body = build_openai_body(&req);
-
-        let resp =
-            self.http_client().post(url).bearer_auth(&self.api_key).json(&body).send().await?;
-
-        let status = resp.status().as_u16();
-        if !resp.status().is_success() {
-            let text = resp.text().await.unwrap_or_default();
-            return Err(GatewayError::UpstreamStatus { status, body: text });
-        }
-
-        let v: serde_json::Value = resp.json().await?;
-        Ok(ChatResponse {
-            content: extract_content(&v).unwrap_or_default(),
-            model: extract_model(&v),
-            total_tokens: extract_total_tokens(&v),
-        })
+        openai_compat::chat(&self.http_client(), self.endpoint_url()?, &self.api_key, req).await
     }
 
     async fn chat_stream(&self, mut req: ChatRequest) -> Result<ChunkStream, GatewayError> {
-        req.stream = true;
         req.model = normalize_antigravity_model_id(&req.model);
-        let url = self.endpoint_url()?;
-        let body = build_openai_body(&req);
-
-        let resp =
-            self.http_client().post(url).bearer_auth(&self.api_key).json(&body).send().await?;
-
-        let status = resp.status().as_u16();
-        if !resp.status().is_success() {
-            let text = resp.text().await.unwrap_or_default();
-            return Err(GatewayError::UpstreamStatus { status, body: text });
-        }
-
-        Ok(Box::pin(sse_bytes_to_chunks(resp.bytes_stream())))
+        openai_compat::chat_stream(&self.http_client(), self.endpoint_url()?, &self.api_key, req)
+            .await
     }
-}
-
-// ---------------------------------------------------------------------------
-// SSE framing (copy of the openai_proxy helper — kept local to avoid widening
-// the crate's pub(crate) surface).
-// ---------------------------------------------------------------------------
-
-fn sse_bytes_to_chunks(
-    stream: impl Stream<Item = Result<Bytes, reqwest::Error>> + Send + 'static,
-) -> impl Stream<Item = Result<ChatChunk, GatewayError>> + Send {
-    let mut buf = String::new();
-    stream.flat_map(move |result| {
-        let items: Vec<Result<ChatChunk, GatewayError>> = match result {
-            Err(e) => vec![Err(GatewayError::Transport(e))],
-            Ok(bytes) => {
-                buf.push_str(&String::from_utf8_lossy(&bytes));
-                let mut chunks = Vec::new();
-                while let Some(nl) = buf.find('\n') {
-                    let line = buf[..nl].trim_end_matches('\r').to_owned();
-                    buf.drain(..=nl);
-                    match parse_sse_line(&line) {
-                        Ok(Some(c)) => {
-                            let done = c.finish;
-                            chunks.push(Ok(c));
-                            if done {
-                                break;
-                            }
-                        },
-                        Ok(None) => {},
-                        Err(e) => {
-                            chunks.push(Err(e));
-                            break;
-                        },
-                    }
-                }
-                chunks
-            },
-        };
-        futures::stream::iter(items)
-    })
 }
 
 // ---------------------------------------------------------------------------

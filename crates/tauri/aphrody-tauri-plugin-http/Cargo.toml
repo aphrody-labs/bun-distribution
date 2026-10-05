@@ -31,7 +31,7 @@ tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", pa
 schemars = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 url = { workspace = true }
-urlpattern = "0.3"
+urlpattern = "0.6"
 regex = { workspace = true }
 
 [dependencies]
@@ -41,7 +41,7 @@ tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphro
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync", "macros"] }
 tauri-plugin-fs = { version = "3.0.0-alpha.2", path = "../aphrody-tauri-plugin-fs", package = "aphrody-tauri-plugin-fs" }
-urlpattern = "0.3"
+urlpattern = "0.6"
 regex = { workspace = true }
 http = { workspace = true }
 # 0.12.16 is when `system-proxy` was added

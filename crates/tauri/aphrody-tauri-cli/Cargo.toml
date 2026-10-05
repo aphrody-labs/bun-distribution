@@ -52,7 +52,7 @@ colored = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
 # version should match tauri-utils for deduplication
-json5 = "0.4"
+json5 = "1.3"
 notify = { workspace = true }
 notify-debouncer-full = { workspace = true }
 shared_child = "1"
@@ -61,7 +61,7 @@ toml_edit = { workspace = true, features = ["serde"] }
 json-patch = "4"
 tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["isolation", "schema", "config-json5", "config-toml", "html-manipulation-2"] }
 toml = { workspace = true }
-jsonschema = { version = "0.49", default-features = false }
+jsonschema = { version = "0.58", default-features = false }
 handlebars = "6"
 include_dir = "0.7"
 dirs = { workspace = true }
@@ -90,7 +90,7 @@ serde-value = "0.7"
 itertools = "0.15"
 local-ip-address = "0.6"
 css-color = "0.2"
-resvg = "0.47"
+resvg = "0.48"
 dunce = { workspace = true }
 glob = { workspace = true }
 # 0.111 raised msrv to 1.91

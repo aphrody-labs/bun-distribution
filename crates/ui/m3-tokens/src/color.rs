@@ -12,6 +12,7 @@
 /// Fields follow the M3 naming convention: each *surface* role has a
 /// corresponding *on-* role that guarantees accessible contrast.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ColorRoles {
     // ── Primary ──────────────────────────────────────────────────────────────
     /// Key brand color; used for prominent UI elements.

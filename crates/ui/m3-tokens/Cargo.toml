@@ -22,10 +22,13 @@ std     = ["dep:base64"]
 embedded-fonts = []
 # PNG/JPEG decode for `image::decode_image` / `image::source_color_from_image_bytes`.
 image   = ["std", "dep:image"]
+# Serde derives for the token types shared with serialized snapshots (`ColorRoles`, `ThemeMode`).
+serde   = ["dep:serde"]
 
 [dependencies]
 base64 = { workspace = true, optional = true }
 image  = { workspace = true, optional = true, features = ["png", "jpeg"] }
+serde  = { workspace = true, optional = true, default-features = false, features = ["derive"] }
 
 [dev-dependencies]
 serde      = { workspace = true }

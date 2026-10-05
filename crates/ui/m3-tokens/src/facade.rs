@@ -119,9 +119,12 @@ pub mod platform {
     use super::layout::Breakpoint;
 
     /// Theme preference understood by every Aphrody frontend.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+    #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+    #[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
     pub enum ThemeMode {
         /// Follow the operating system preference.
+        #[default]
         System,
         /// Force the light scheme.
         Light,

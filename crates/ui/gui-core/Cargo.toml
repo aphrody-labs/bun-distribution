@@ -12,7 +12,7 @@ description = "Neutral GUI abstractions for Aphrody OS: WindowHost, SurfaceProvi
 workspace = true
 
 [dependencies]
-aphrody-m3-tokens = { workspace = true }
+aphrody-m3-tokens = { workspace = true, features = ["serde"] }
 raw-window-handle = "0.6"
 async-trait = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

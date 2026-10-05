@@ -321,205 +321,12 @@ pub trait SurfaceProvider: Send + Sync {
 
 // ── Theme Provisioning ───────────────────────────────────────────────────────
 
-/// Material Design 3 color roles serializable DTO.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ColorRolesDto {
-    /// Key brand color.
-    pub primary: u32,
-    /// Contrast color on primary.
-    pub on_primary: u32,
-    /// Container tinted with primary.
-    pub primary_container: u32,
-    /// Contrast color on primary container.
-    pub on_primary_container: u32,
-    /// Accent color.
-    pub secondary: u32,
-    /// Contrast color on secondary.
-    pub on_secondary: u32,
-    /// Container tinted with secondary.
-    pub secondary_container: u32,
-    /// Contrast color on secondary container.
-    pub on_secondary_container: u32,
-    /// Tertiary accent color.
-    pub tertiary: u32,
-    /// Contrast color on tertiary.
-    pub on_tertiary: u32,
-    /// Container tinted with tertiary.
-    pub tertiary_container: u32,
-    /// Contrast color on tertiary container.
-    pub on_tertiary_container: u32,
-    /// Error state color.
-    pub error: u32,
-    /// Contrast color on error.
-    pub on_error: u32,
-    /// Container for error states.
-    pub error_container: u32,
-    /// Contrast color on error container.
-    pub on_error_container: u32,
-    /// App background.
-    pub background: u32,
-    /// Contrast color on background.
-    pub on_background: u32,
-    /// Surface base color.
-    pub surface: u32,
-    /// Contrast color on surface.
-    pub on_surface: u32,
-    /// Variant surface color.
-    pub surface_variant: u32,
-    /// Contrast color on surface variant.
-    pub on_surface_variant: u32,
-    /// Outline boundary color.
-    pub outline: u32,
-    /// Subtle outline variant.
-    pub outline_variant: u32,
-    /// Shadow color.
-    pub shadow: u32,
-    /// Scrim overlay color.
-    pub scrim: u32,
-    /// Inverse surface.
-    pub inverse_surface: u32,
-    /// Contrast color on inverse surface.
-    pub inverse_on_surface: u32,
-    /// Inverse primary.
-    pub inverse_primary: u32,
-    /// Dimmed surface.
-    pub surface_dim: u32,
-    /// Brightened surface.
-    pub surface_bright: u32,
-    /// Surface container lowest.
-    pub surface_container_lowest: u32,
-    /// Surface container low.
-    pub surface_container_low: u32,
-    /// Standard surface container.
-    pub surface_container: u32,
-    /// Surface container high.
-    pub surface_container_high: u32,
-    /// Surface container highest.
-    pub surface_container_highest: u32,
-}
+/// Material Design 3 color roles; serializable (`aphrody-m3-tokens` `serde` feature), so the DTO and the
+/// token type are one type.
+pub type ColorRolesDto = aphrody_m3_tokens::color::ColorRoles;
 
-impl From<aphrody_m3_tokens::color::ColorRoles> for ColorRolesDto {
-    fn from(r: aphrody_m3_tokens::color::ColorRoles) -> Self {
-        Self {
-            primary: r.primary,
-            on_primary: r.on_primary,
-            primary_container: r.primary_container,
-            on_primary_container: r.on_primary_container,
-            secondary: r.secondary,
-            on_secondary: r.on_secondary,
-            secondary_container: r.secondary_container,
-            on_secondary_container: r.on_secondary_container,
-            tertiary: r.tertiary,
-            on_tertiary: r.on_tertiary,
-            tertiary_container: r.tertiary_container,
-            on_tertiary_container: r.on_tertiary_container,
-            error: r.error,
-            on_error: r.on_error,
-            error_container: r.error_container,
-            on_error_container: r.on_error_container,
-            background: r.background,
-            on_background: r.on_background,
-            surface: r.surface,
-            on_surface: r.on_surface,
-            surface_variant: r.surface_variant,
-            on_surface_variant: r.on_surface_variant,
-            outline: r.outline,
-            outline_variant: r.outline_variant,
-            shadow: r.shadow,
-            scrim: r.scrim,
-            inverse_surface: r.inverse_surface,
-            inverse_on_surface: r.inverse_on_surface,
-            inverse_primary: r.inverse_primary,
-            surface_dim: r.surface_dim,
-            surface_bright: r.surface_bright,
-            surface_container_lowest: r.surface_container_lowest,
-            surface_container_low: r.surface_container_low,
-            surface_container: r.surface_container,
-            surface_container_high: r.surface_container_high,
-            surface_container_highest: r.surface_container_highest,
-        }
-    }
-}
-
-impl From<ColorRolesDto> for aphrody_m3_tokens::color::ColorRoles {
-    fn from(r: ColorRolesDto) -> Self {
-        Self {
-            primary: r.primary,
-            on_primary: r.on_primary,
-            primary_container: r.primary_container,
-            on_primary_container: r.on_primary_container,
-            secondary: r.secondary,
-            on_secondary: r.on_secondary,
-            secondary_container: r.secondary_container,
-            on_secondary_container: r.on_secondary_container,
-            tertiary: r.tertiary,
-            on_tertiary: r.on_tertiary,
-            tertiary_container: r.tertiary_container,
-            on_tertiary_container: r.on_tertiary_container,
-            error: r.error,
-            on_error: r.on_error,
-            error_container: r.error_container,
-            on_error_container: r.on_error_container,
-            background: r.background,
-            on_background: r.on_background,
-            surface: r.surface,
-            on_surface: r.on_surface,
-            surface_variant: r.surface_variant,
-            on_surface_variant: r.on_surface_variant,
-            outline: r.outline,
-            outline_variant: r.outline_variant,
-            shadow: r.shadow,
-            scrim: r.scrim,
-            inverse_surface: r.inverse_surface,
-            inverse_on_surface: r.inverse_on_surface,
-            inverse_primary: r.inverse_primary,
-            surface_dim: r.surface_dim,
-            surface_bright: r.surface_bright,
-            surface_container_lowest: r.surface_container_lowest,
-            surface_container_low: r.surface_container_low,
-            surface_container: r.surface_container,
-            surface_container_high: r.surface_container_high,
-            surface_container_highest: r.surface_container_highest,
-        }
-    }
-}
-
-/// Preferred theme mode.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ThemeMode {
-    /// Follow system/desktop environment preferences.
-    #[default]
-    System,
-    /// Force light color scheme.
-    Light,
-    /// Force dark color scheme.
-    Dark,
-    /// High-contrast scheme for accessibility.
-    HighContrast,
-}
-
-impl From<aphrody_m3_tokens::facade::platform::ThemeMode> for ThemeMode {
-    fn from(mode: aphrody_m3_tokens::facade::platform::ThemeMode) -> Self {
-        match mode {
-            aphrody_m3_tokens::facade::platform::ThemeMode::System => Self::System,
-            aphrody_m3_tokens::facade::platform::ThemeMode::Light => Self::Light,
-            aphrody_m3_tokens::facade::platform::ThemeMode::Dark => Self::Dark,
-            aphrody_m3_tokens::facade::platform::ThemeMode::HighContrast => Self::HighContrast,
-        }
-    }
-}
-
-impl From<ThemeMode> for aphrody_m3_tokens::facade::platform::ThemeMode {
-    fn from(mode: ThemeMode) -> Self {
-        match mode {
-            ThemeMode::System => Self::System,
-            ThemeMode::Light => Self::Light,
-            ThemeMode::Dark => Self::Dark,
-            ThemeMode::HighContrast => Self::HighContrast,
-        }
-    }
-}
+/// Preferred theme mode (the `aphrody-m3-tokens` platform contract, serializable as `snake_case`).
+pub use aphrody_m3_tokens::facade::platform::ThemeMode;
 
 /// Serializable snapshot of the Material Design 3 theme.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -537,7 +344,7 @@ pub struct ThemeSnapshot {
 impl Default for ThemeSnapshot {
     fn default() -> Self {
         Self {
-            roles: ColorRolesDto::from(aphrody_m3_tokens::color::BASELINE),
+            roles: aphrody_m3_tokens::color::BASELINE,
             mode: ThemeMode::System,
             is_dark: false,
             contrast: 0.0,
@@ -549,7 +356,7 @@ impl ThemeSnapshot {
     /// Get the M3 tokens [`aphrody_m3_tokens::color::ColorRoles`] for this snapshot.
     #[must_use]
     pub fn color_roles(&self) -> aphrody_m3_tokens::color::ColorRoles {
-        self.roles.into()
+        self.roles
     }
 }
 
@@ -703,11 +510,11 @@ mod tests {
     #[test]
     fn theme_dto_and_conversions() {
         let baseline = aphrody_m3_tokens::color::BASELINE;
-        let dto = ColorRolesDto::from(baseline);
+        let dto: ColorRolesDto = baseline;
         assert_eq!(dto.primary, baseline.primary);
         assert_eq!(dto.surface, baseline.surface);
 
-        let back: aphrody_m3_tokens::color::ColorRoles = dto.into();
+        let back: aphrody_m3_tokens::color::ColorRoles = dto;
         assert_eq!(back, baseline);
 
         let snapshot =

@@ -60,6 +60,7 @@ describe("vps-cargo", () => {
     expect(script).toContain("APHRODY_BUILD_HOST=vps");
     expect(script).toContain("flock --close /srv/aphrody-build/locks/heavy.lock");
     expect(script).toContain("checkout moved away from");
+    expect(script).toContain("umask 022; cd ");
     expect(script).toContain('exit "$(cat /srv/aphrody-build/artifacts/wsl/job-1.exit)"');
   });
 

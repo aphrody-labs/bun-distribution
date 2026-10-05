@@ -211,7 +211,6 @@ objc2-foundation = { version = "0.3.2", default-features = false, features = [
 [dev-dependencies]
 pollster = { workspace = true }
 tao = { workspace = true }
-wgpu = "23"
 winit = "0.30"
 getrandom = "0.3"
 http-range = "0.1"

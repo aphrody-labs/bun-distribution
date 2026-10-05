@@ -19,6 +19,7 @@
 pub mod cloudflare;
 pub mod gemini_cli;
 pub mod google_antigravity;
+mod openai_compat;
 pub mod openai_proxy;
 pub mod server;
 pub mod vercel;
