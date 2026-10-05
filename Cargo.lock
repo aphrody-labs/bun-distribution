@@ -27856,7 +27856,6 @@ dependencies = [
 [[package]]
 name = "taffy"
 version = "0.12.1"
-source = "git+ssh://git@github-dev/aphrody-labs/taffy.git?rev=4cd8b38fc06e1dcec43c13b6962e6e1e87064ec8#4cd8b38fc06e1dcec43c13b6962e6e1e87064ec8"
 dependencies = [
  "arrayvec",
  "grid",

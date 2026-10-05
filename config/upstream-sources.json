@@ -21,7 +21,9 @@
       "kind": "git",
       "url": "https://github.com/tauri-apps/tauri",
       "ref": "v3",
-      "sparse": ["crates/tauri-driver"],
+      "sparse": [
+        "crates/tauri-driver"
+      ],
       "license": "Apache-2.0 OR MIT",
       "tier": "reference",
       "purpose": "Tauri 3 branch; only crates/tauri-driver is read (primary Tauri 3 WebDriver proxy).",
@@ -312,6 +314,21 @@
       "note": "Obscura headless browser crates (obscura, obscura-browser, obscura-cdp, obscura-dom, obscura-js, obscura-mcp, obscura-net, obscura-render, obscura-ssrf) copied under crates/web as aphrody-obscura (facade) and obscura-* packages. Base: upstream main 1fccab2c1ecd0f7eadc16d7a520ba227f9e7f782 (2026-10-04), merged through the fork aphrody-labs/obscura branch yolo (dbea8a7, includes the fork SSRF commit 43ae887). Local changes are kept by three-way merge and listed in docs/reference/web/crates/aphrody-obscura/OBSCURA-UPSTREAM.txt; no patch file is recorded. vendor/taffy stays in aphrody-labs/taffy (git) and cosmic-text resolves to athena-text from crates.io.",
       "integratedPath": "crates/web/obscura",
       "upstreamPackageIdentityPreserved": false
+    },
+    {
+      "id": "taffy-aphrody-fork",
+      "kind": "git",
+      "crate": "taffy",
+      "version": "0.12.1",
+      "upstreamUrl": "https://github.com/DioxusLabs/taffy",
+      "fork": "aphrody-labs/taffy (private)",
+      "forkRevision": "4cd8b38fc06e1dcec43c13b6962e6e1e87064ec8",
+      "pinned": true,
+      "role": "dependency",
+      "license": "MIT",
+      "note": "Layout fork carrying the upstream Obscura layout changes. Integrated from the pinned revision (src, Cargo.toml, LICENSE, README, MIGRATION.json) as a path patch of crates-io so a build needs no SSH alias to the private repository (cloud sessions, CI, factory). Re-import from the fork revision to update.",
+      "integratedPath": "crates/vendor/taffy",
+      "upstreamPackageIdentityPreserved": true
     }
   ]
 }

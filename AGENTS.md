@@ -88,9 +88,15 @@ Code graph: Graphify (`uv tool install graphifyy`, skill `/graphify`) indexes fi
 Bun gates (root `package.json`): `bun run bun:check`, `typecheck`, `lint`,
 `format:check`, `test` (all via `@aphrody/workspace`); web: `web:verify`.
 
-Cloud sessions (`CLAUDE_CODE_REMOTE=true`) run Cargo and Git directly through
-`scripts/build/rust/cargo-serial.sh`: no hook, no factory routing, any agent may build. A local WSL
-session does not run heavy Cargo itself (it crashes WSL): it runs
+Claude cloud session (`CLAUDE_CODE_REMOTE=true` or `APHRODY_CLOUD=1`, set by
+`.claude/hooks/session-start.sh`): the session is the build host. Cargo and Git run directly, Cargo through
+`scripts/build/rust/cargo-serial.sh` (jobs = CPU count, max 6); no hook, no factory routing. Bun is pinned to
+`packageManager`; `scripts/dev/cloud-setup.sh` adds Rust, uv, Graphify and the build tools in the background.
+Observed limits (2026-10-05): 4 CPU, 15 GB RAM, about 30 GB disk, so scoped `-p <crate>` gates; full-workspace and
+engine (V8, Tauri, WebKit) builds go to the VPS factory. The cloud and the local sessions exchange state through
+[the cloud sync journal](docs/operations/cloud/CLOUD-SYNC.md).
+
+A local WSL session does not run heavy Cargo itself (it crashes WSL): it runs
 `bun scripts/build/rust/vps-cargo.ts run -- <cargo args>` (exact WSL worktree built on the VPS under the
 factory locks, tmux sessions `vps-tunnel`/`vps-cargo`, `fetch` for artifacts) or the factory for pushed
 main revisions, with global sccache. Serialize Rust gates on a shared host; `APHRODY_CARGO_JOBS=1..6`

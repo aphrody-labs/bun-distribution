@@ -458,8 +458,8 @@ perf = { level = "warn", priority = -1 }
 [patch.crates-io]
 # Integrated YAML implementation preserves the Mistral.rs 0.0.16 API and regex compatibility.
 serde-saphyr = { path = "crates/compat/serde-saphyr" }
-# Modified layout fork; preserve local fixes through a commit-locked Git dependency.
-taffy = { git = "ssh://git@github-dev/aphrody-labs/taffy.git", rev = "4cd8b38fc06e1dcec43c13b6962e6e1e87064ec8" }
+# Modified layout fork (aphrody-labs/taffy @ 4cd8b38f, MIT), integrated so no SSH alias is needed (cloud sessions, CI).
+taffy = { path = "crates/vendor/taffy" }
 # Integrated Unicode implementation preserves the private C++ namespace alongside V8.
 simdutf = { path = "crates/native/simdutf" }
 # tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see config/tauri-upstream.json

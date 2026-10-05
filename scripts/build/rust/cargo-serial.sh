@@ -17,7 +17,8 @@ for arg in "$@"; do
 done
 case "$cargo_command" in
     build|b|check|c|test|t|clippy|rustdoc|doc|d|bench|run|r|install|rustc|nextest|xwin|zigbuild)
-        if [[ "$help_only" == false && -f "$factory_config" && "${APHRODY_BUILD_HOST:-}" != vps && "${APHRODY_LOCAL_CARGO:-0}" != 1 ]]; then
+        # The Claude cloud session is itself the build host: it never routes to the factory.
+        if [[ "$help_only" == false && -f "$factory_config" && "${APHRODY_BUILD_HOST:-}" != vps && "${APHRODY_LOCAL_CARGO:-0}" != 1 && "${CLAUDE_CODE_REMOTE:-}" != true && "${APHRODY_CLOUD:-0}" != 1 ]]; then
             # The Workspace build-factory owner interprets the factory contract.
             factory_route="$(bun "$source_root/packages/infra/workspace/src/build-factory.ts" status --route)"
             if [[ "$factory_route" == factory ]]; then
@@ -29,7 +30,12 @@ case "$cargo_command" in
         ;;
 esac
 
-jobs="${APHRODY_CARGO_JOBS:-6}"
+default_jobs=6
+if [[ "${CLAUDE_CODE_REMOTE:-}" == true || "${APHRODY_CLOUD:-0}" == 1 ]]; then
+    default_jobs="$(nproc)"
+    ((default_jobs > 6)) && default_jobs=6
+fi
+jobs="${APHRODY_CARGO_JOBS:-$default_jobs}"
 if [[ ! "$jobs" =~ ^[1-6]$ ]]; then
     echo "APHRODY_CARGO_JOBS must be an integer from 1 through 6" >&2
     exit 64
