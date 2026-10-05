@@ -6,6 +6,14 @@
     "**/examples/**",
     "**/*.min.js",
     "docs/migration/source-map.json",
-    "docs/migration/nested-source-map.json"
+    "docs/migration/nested-source-map.json",
+    "m3/forks/**",
+    "py/**",
+    "crates/turbopack/**",
+    "crates/tauri/**",
+    "crates/ui/app/ui-dist/**",
+    "crates/web/obscura-js/**",
+    "**/templates/**",
+    "vendor/**"
   ]
 }

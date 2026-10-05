@@ -57,7 +57,14 @@
     "apps/koharu/editor/dist/",
     "apps/koharu/editor/build/",
     "apps/koharu/editor/coverage/",
-    "apps/koharu/editor/lib/api/**/*.msw.ts"
+    "apps/koharu/editor/lib/api/**/*.msw.ts",
+    "m3/forks/**",
+    "crates/turbopack/**",
+    "crates/tauri/**",
+    "crates/ui/app/ui-dist/**",
+    "crates/web/obscura-js/**",
+    "**/templates/**",
+    "vendor/**"
   ],
   "overrides": [
     {
