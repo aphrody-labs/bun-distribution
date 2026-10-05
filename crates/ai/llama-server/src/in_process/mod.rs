@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! In-process llama.cpp engine over `koharu-llama`.
+//! In-process llama.cpp engine over `aphrody-llama`.
 //!
 //! [`InProcessLlama`] is a [`ModelClient`] over one GGUF file: the model stays loaded in this
 //! process, every turn gets its own context, decoding runs on a blocking thread and the decoded
@@ -7,7 +7,7 @@
 //! [`InProcessServer`] puts a loopback OpenAI-compatible endpoint on top of it, so the
 //! HTTP-shaped entry points keep working without any child process.
 //!
-//! `libllama` itself is installed and loaded at run time by `koharu-runtime`; nothing is linked.
+//! `libllama` itself is installed and loaded at run time by `aphrody-ml-runtime`; nothing is linked.
 
 pub mod router;
 pub mod server;
@@ -23,7 +23,7 @@ use aphrody_model_client::{
     ModelStreamEvent, Part, Role, ToolDecl,
 };
 use async_trait::async_trait;
-use koharu_llama::{
+use aphrody_llama::{
     llama_backend::LlamaBackend,
     llama_batch::LlamaBatch,
     mtmd::{
@@ -110,13 +110,13 @@ impl Default for LoadOptions {
 }
 
 /// The process-wide backend. Never dropped: `llama_backend_free` must not run while another
-/// owner (`koharu-ml`) may still use the library.
+/// owner of the same process may still use the library.
 static BACKEND: OnceCell<&'static LlamaBackend> = OnceCell::const_new();
 
 async fn backend() -> Result<&'static LlamaBackend, LlamaLoadError> {
     BACKEND
         .get_or_try_init(|| async {
-            koharu_runtime::Runtime::discover([koharu_runtime::Feature::Llama])
+            aphrody_ml_runtime::Runtime::discover([aphrody_ml_runtime::Feature::Llama])
                 .map_err(|error| LlamaLoadError::Runtime(format!("{error:#}")))?
                 .initialize()
                 .await
@@ -124,7 +124,7 @@ async fn backend() -> Result<&'static LlamaBackend, LlamaLoadError> {
             let backend = match LlamaBackend::init() {
                 Ok(backend) => backend,
                 // Initialised elsewhere in the process (the empty handle only proves it).
-                Err(koharu_llama::LlamaCppError::BackendAlreadyInitialized) => LlamaBackend {},
+                Err(aphrody_llama::LlamaCppError::BackendAlreadyInitialized) => LlamaBackend {},
                 Err(error) => return Err(LlamaLoadError::Backend(error.to_string())),
             };
             Ok::<_, LlamaLoadError>(&*Box::leak(Box::new(backend)))
@@ -156,7 +156,7 @@ struct Inner {
     gate: Arc<Semaphore>,
 }
 
-/// An in-process `ModelClient` over a GGUF model via `koharu-llama`.
+/// An in-process `ModelClient` over a GGUF model via `aphrody-llama`.
 #[derive(Clone)]
 pub struct InProcessLlama {
     inner: Arc<Inner>,
@@ -437,7 +437,7 @@ fn generate(
     // Base and instruction-less models ship no template; fall back to ChatML, as llama.cpp does.
     let template = match model.chat_template(None) {
         Ok(template) => template,
-        Err(_) => koharu_llama::model::LlamaChatTemplate::new("chatml")
+        Err(_) => aphrody_llama::model::LlamaChatTemplate::new("chatml")
             .map_err(|error| error.to_string())?,
     };
     let prompt = model

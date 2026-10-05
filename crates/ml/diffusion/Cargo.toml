@@ -1,0 +1,17 @@
+[package]
+name = "aphrody-diffusion"
+version = "0.83.5"
+edition = "2024"
+description = "Safe Rust bindings for stable-diffusion.cpp with runtime dynamic loading."
+license = "MIT OR Apache-2.0"
+authors = ["Mayo Takanashi <mayo@linux.com>", "Wangchong Zhou <fffonion@gmail.com>"]
+repository.workspace = true
+keywords = ["stable-diffusion", "diffusion", "image-generation", "machine-learning", "bindings"]
+categories = ["api-bindings", "multimedia::images", "science"]
+publish = true
+
+[dependencies]
+image = { workspace = true }
+aphrody-diffusion-sys = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

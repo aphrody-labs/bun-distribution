@@ -36,8 +36,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan Directeur Unique — Aphrody & Yolo Core Trinity",
-      "sha256": "8780f74353e55178c0416300323652008dcd2cd8ee94b7cf005629ce977ee6d8",
-      "bytes": 12373,
+      "sha256": "ea2bc40361b1dc1893b68e5cd58320fe11ccd0ade9f4b64d77e25c0d5920b9ab",
+      "bytes": 12520,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -216,8 +216,8 @@
     {
       "path": "crates/ai/engine-mistralrs/README.md",
       "title": "aphrody-engine-mistralrs",
-      "sha256": "f72fdb3856e3c054b18e11240756b406673a56beb7113ee8ff7214d8c5622166",
-      "bytes": 10888,
+      "sha256": "ee752050b088f7c0f5d39141c89abde443529721c37935bfdc32f0fff7ee73b8",
+      "bytes": 10898,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -236,8 +236,8 @@
     {
       "path": "crates/ai/mcp/README.md",
       "title": "aphrody-mcp",
-      "sha256": "8aa7a3eaa259a35f39196c014a4c44619e6ec0967d3e08b6527c609c0a855dc0",
-      "bytes": 8281,
+      "sha256": "fe11c95bbfaee3302cb2285c5c45e62cd6adc31dee4bd7b53cbf48a7cc543244",
+      "bytes": 8289,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -504,24 +504,24 @@
       "canonical": "crates/interop/ffi/bun/README-agent.md"
     },
     {
-      "path": "crates/koharu/UPSTREAM-README.md",
+      "path": "crates/ml/UPSTREAM-README.md",
       "title": "Features",
       "sha256": "1e4d3f408281c7da6aaef31445153c8a94e082061ebb55705a79b4542e53cd03",
       "bytes": 11094,
-      "domain": "koharu",
+      "domain": "ml",
       "status": "notice",
       "visibility": "private",
-      "canonical": "crates/koharu/UPSTREAM-README.md"
+      "canonical": "crates/ml/UPSTREAM-README.md"
     },
     {
-      "path": "crates/koharu/koharu-torch/README.md",
+      "path": "crates/ml/torch/README.md",
       "title": "tch-rs",
       "sha256": "945c170078fe84a1b84937fe9136bc0dbd40544a162bc9998e7cf3290a01b9ce",
       "bytes": 12290,
-      "domain": "koharu",
+      "domain": "ml",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "crates/koharu/koharu-torch/README.md"
+      "canonical": "crates/ml/torch/README.md"
     },
     {
       "path": "crates/native/native/README.md",
@@ -5296,8 +5296,8 @@
     {
       "path": "docs/architecture/rust-crate-naming.md",
       "title": "Rust crate naming across Aphrody and IECODE",
-      "sha256": "01217425d4ea16c5c6b7b24ed15def12f9b50b355c8d9c73feab5f25e8a54cab",
-      "bytes": 1643,
+      "sha256": "1d80cdd683860c63522e522dd33c894a8c4a56b563ae51412644b096d2772aa2",
+      "bytes": 1942,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -5496,8 +5496,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "c7da02f83c248a6b5e685954a97f0580320b401c5137912dc743a2316f7e18bf",
-      "bytes": 91705,
+      "sha256": "6e83461969a0ce3fbf88638b70ba119b9a0eea6d6f8626d92680a3978a45fef0",
+      "bytes": 91696,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -5506,8 +5506,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "bbdba474c4097f30f3ed3c78a494ceb007321fa56dae2463a86dc37fefc4dc24",
-      "bytes": 66873,
+      "sha256": "92c6bcf54e4e4a954463521ea1e136005884d7f45aa7e7d95c4d1287f2d095c5",
+      "bytes": 66850,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -9816,8 +9816,8 @@
     {
       "path": "docs/products/ai/crates/aphrody-mcp/README.md",
       "title": "aphrody-mcp",
-      "sha256": "ca25cd92c4b9aed51d107f5190a2141b0eda3a38099ff3a843e3c13c49b4bfd5",
-      "bytes": 9550,
+      "sha256": "f29be1a9498ba2349b47340fee04896911370306da0acc9db02f49be3c34fba1",
+      "bytes": 9558,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -15566,8 +15566,8 @@
     {
       "path": "docs/reference/infra/UPSTREAMS.md",
       "title": "Upstreams",
-      "sha256": "b648e8cabbfd71f3e6bbe5e26cc7f10af8564707de92a47893e24c8ab700a73d",
-      "bytes": 6329,
+      "sha256": "417e161963592ab11002266d6d9269e3d354985aacf85de67402c15030a079a3",
+      "bytes": 6392,
       "domain": "infra",
       "status": "notice",
       "visibility": "private",
@@ -41186,8 +41186,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "cd70453fc4d314d73469f24e238c8fdb3b6c27fa61bf24b16f3114742e5561ef",
-      "bytes": 54634,
+      "sha256": "89c3d673c415c8d3339950fbab3b2836111fad83c4f9268adfa7e5112be043b6",
+      "bytes": 54460,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

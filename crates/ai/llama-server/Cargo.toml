@@ -16,12 +16,12 @@ workspace = true
 [features]
 # Builds the fake `llama-server` used by the integration tests.
 test-support = []
-# In-process llama.cpp through `koharu-llama` (libllama / libmtmd are loaded at
+# In-process llama.cpp through `aphrody-llama` (libllama / libmtmd are loaded at
 # RUNTIME through libloading, nothing is linked): a `ModelClient` over a GGUF
 # file, embeddings, multimodal (mtmd), and a loopback OpenAI-compatible endpoint
 # so the HTTP-shaped entry points (`Supervisor::ensure`, `ManagedLlamaServer`)
 # keep working without spawning `llama-server`. Off by default: it needs
-# libclang at build time (koharu-llama-sys runs bindgen). With it on, the
+# libclang at build time (aphrody-llama-sys runs bindgen). With it on, the
 # supervisor/daemon/`--help` paths are an explicit opt-in
 # (`APHRODY_LLAMA_BACKEND=spawn`), see `Backend`.
 in-process = [
@@ -35,8 +35,8 @@ in-process = [
     "dep:chrono",
     "dep:encoding_rs",
     "dep:futures",
-    "dep:koharu-llama",
-    "dep:koharu-runtime",
+    "dep:aphrody-llama",
+    "dep:aphrody-ml-runtime",
     "dep:libloading",
     "dep:minijinja",
     "dep:minijinja-contrib",
@@ -75,8 +75,8 @@ bytes                   = { workspace = true, optional = true }
 chrono                  = { workspace = true, optional = true }
 encoding_rs             = { workspace = true, optional = true }
 futures                 = { workspace = true, optional = true }
-koharu-llama            = { workspace = true, optional = true }
-koharu-runtime          = { workspace = true, optional = true }
+aphrody-llama            = { workspace = true, optional = true }
+aphrody-ml-runtime          = { workspace = true, optional = true }
 libloading              = { workspace = true, optional = true }
 # `tojson` (used by every chat template that renders tools) is behind minijinja's `json` feature.
 minijinja               = { workspace = true, optional = true, features = ["json"] }

@@ -29,7 +29,6 @@ import { importedUpstreamMatcher, markdownLinkDestinations } from "./docs-links.
 
 export type Topic =
   | "spacedrive-spaceui"
-  | "koharu"
   | "agent-skills"
   | "tauri"
   | "gpu-render"
@@ -71,14 +70,14 @@ export interface ScopeConfig {
 export const UI_SCOPE: ScopeConfig = {
   name: "ui",
   includePaths: [
-    /^docs\/(architecture|apis|decisions|guides|operations|plans|products|reference|research)\/(ui|koharu)\//,
+    /^docs\/(architecture|apis|decisions|guides|operations|plans|products|reference|research)\/ui\//,
     /^docs\/rg\/azalee/,
     /^docs\/plans\/ai\/plans\/tauri-app\.md$/,
     /^docs\/architecture\/rust-crate-gpu-window-ownership\.md$/,
   ],
-  ownerRoots: [/^(packages\/ui|crates\/ui|packages\/koharu|crates\/koharu|apps\/koharu)\//],
+  ownerRoots: [/^(packages\/ui|crates\/ui)\//],
   mentionTerms:
-    /wgpu|webgpu|softraster|render3d|scene3d|md-3d-scene|tauri-3d|\btauri\b|material design|material-web|\bmd3\b|\bm3\b|material 3|material symbols|google design|google sans|material\.io|\bstitch\b|design\.md|spaceui|spacedrive|koharu/gi,
+    /wgpu|webgpu|softraster|render3d|scene3d|md-3d-scene|tauri-3d|\btauri\b|material design|material-web|\bmd3\b|\bm3\b|material 3|material symbols|google design|google sans|material\.io|\bstitch\b|design\.md|spaceui|spacedrive/gi,
   mentionThreshold: 5,
   excludePaths: [
     /(^|\/)node_modules\//,
@@ -93,9 +92,7 @@ export const UI_SCOPE: ScopeConfig = {
 };
 
 /** Owner trees whose copies outrank a docs/ copy (the AI plugin tree is excluded while it relocates). */
-export const OWNER_DUPLICATE_ROOTS: RegExp[] = [
-  /^(packages\/ui|crates\/ui|packages\/koharu|crates\/koharu|apps\/koharu)\//,
-];
+export const OWNER_DUPLICATE_ROOTS: RegExp[] = [/^(packages\/ui|crates\/ui)\//];
 
 /** First-party documentation across domains; imported trees are also excluded by their manifest. */
 export const ALL_SCOPE: ScopeConfig = {
@@ -312,7 +309,6 @@ export function domainOf(path: string): { domain: string; category: string; owne
 
 const TOPIC_RULES: Array<[RegExp, Topic]> = [
   [/(^|\/)ui\/drive\/|^crates\/web\/drive-server\/|spaceui|spacedrive/i, "spacedrive-spaceui"],
-  [/(^|\/)koharu(\/|-)|^(crates|packages|apps)\/koharu/i, "koharu"],
   [/\/skills\/|\/\.agents\/|\/agents\/|^config\/ai\/plugins\//i, "agent-skills"],
   [/tauri|desktop|native-desktop|(^|\/)gui\.md$/i, "tauri"],
   [/render|softraster|wgpu|webgpu|(^|\/)wasm\/|3d|gpu|scene3d/i, "gpu-render"],

@@ -9,7 +9,7 @@ Internal developer document; the crate is not published.
 
 Scope (decision D1 of `docs/plans/ai/native-integration-master.md`): mistral.rs is an optional
 git dependency pinned to rev `3f2515e9`, behind the `engine` feature, off by default. For plain
-GGUF files `koharu-llama` stays the preferred in-process path; this crate is for what llama.cpp
+GGUF files `aphrody-llama` stays the preferred in-process path; this crate is for what llama.cpp
 does not give: safetensors, ISQ, UQFF, paged attention, vision pipelines.
 
 ## Features and build weight
@@ -24,8 +24,9 @@ does not give: safetensors, ISQ, UQFF, paged attention, vision pipelines.
 The names are upstream's. `ring` and `code-execution` of `mistralrs` are not exposed.
 
 `engine` is heavy. It builds mistral.rs and its own pinned copy of candle (a git revision,
-next to the crates.io candle that `koharu-ml` builds) and its tokenizers, llguidance and
-minijinja stacks. No candle type crosses this crate's API, so the two candle copies never meet.
+apart from any crates.io candle another crate of the graph builds) and its tokenizers,
+llguidance and minijinja stacks. No candle type crosses this crate's API, so two candle copies
+never meet.
 `cuda` needs the CUDA toolkit at build time, `metal` and `accelerate` need macOS, `mkl` needs
 Intel MKL. None of it is in a default CLI build. Build through the serialized wrapper:
 

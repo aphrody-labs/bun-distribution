@@ -17,7 +17,7 @@
 //
 // Since the native-integration work there is a second, in-process way to run
 // the same GGUF files: `aphrody-llama-server` (feature `in-process`) drives
-// `koharu-llama`, which loads `libllama` / `libmtmd` at RUNTIME through
+// `aphrody-llama`, which loads `libllama` / `libmtmd` at RUNTIME through
 // `libloading`, so the hermetic-build argument above still holds (nothing is
 // linked). This module stays the one owner of "where is llama.cpp on this
 // machine", for both worlds: `resolve` finds the release binaries, and

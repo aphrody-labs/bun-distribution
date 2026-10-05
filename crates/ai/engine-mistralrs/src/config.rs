@@ -33,7 +33,7 @@ pub enum ModelSource {
         /// Repo id or local directory.
         id: String,
     },
-    /// GGUF weights (`GgufModelBuilder`). `aphrody-models` and `koharu-llama` stay
+    /// GGUF weights (`GgufModelBuilder`). `aphrody-models` and `aphrody-llama` stay
     /// the preferred GGUF path; this exists for GGUF files that need mistral.rs'
     /// features (paged attention, ISQ requantization, vision projector).
     Gguf {

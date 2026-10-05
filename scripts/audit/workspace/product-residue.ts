@@ -23,6 +23,8 @@ const EXCLUDED = [
   /(^|\/)CHANGELOG\.md$/,
   /\.lock$/,
   /^config\/product-residue\.baseline\.json$/,
+  // The audit names the products it looks for.
+  /^scripts\/audit\/workspace\/product-residue(\.test)?\.ts$/,
 ];
 
 export interface Finding {

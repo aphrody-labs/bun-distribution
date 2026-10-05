@@ -313,6 +313,12 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 292 comma
   - `aphrody winclean observe` — Observe a window (metadata + UI Automation tree + PNG) — `computer_observe`.
   - `aphrody winclean screenshot` — Capture the primary desktop — `computer_capture_screen`.
 
+### `aphrody-bindgen`
+
+Crate `aphrody-bindgen`, parser `crates/ml/bindgen/src/main.rs#Args`, 0 commands.
+
+_No subcommands (flags only)._
+
 ### `aphrody-google`
 
 Crate `aphrody-google`, parser `crates/google/google/src/main.rs#Cli`, 9 commands.
@@ -853,12 +859,6 @@ Crate `aphrody-yolo`, parser `crates/infra/yolo/src/main.rs#Cli`, 25 commands.
 - `aphrody-yolo grind` — Create one Rust-owned YOLO automation tick.
 - `aphrody-yolo autopilot` — Dispatch bounded unattended ticks through an installed agent harness.
 - `aphrody-yolo ingest` — Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard).
-
-### `koharu-bindgen`
-
-Crate `koharu-bindgen`, parser `crates/koharu/koharu-bindgen/src/main.rs#Args`, 0 commands.
-
-_No subcommands (flags only)._
 
 ### `n2b`
 

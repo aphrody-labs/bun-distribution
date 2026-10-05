@@ -23,7 +23,7 @@ Totals: **239 crates**, **93 packages**, **4 apps** (240 Rust, 96 Bun).
 | [google](#google) | 8 | 1 | 0 | 0 |
 | [infra](#infra) | 8 | 5 | 0 | 0 |
 | [interop](#interop) | 1 | 1 | 0 | 0 |
-| [koharu](#koharu) | 9 | 0 | 0 | 1 |
+| [ml](#ml) | 9 | 0 | 0 | 1 |
 | [native](#native) | 3 | 0 | 0 | 0 |
 | [os](#os) | 32 | 3 | 0 | 0 |
 | [packages](#packages) | 0 | 35 | 0 | 0 |
@@ -244,19 +244,19 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-ffi` | [crates/interop/ffi](../../../crates/interop/ffi) | rust crate | 1.0.0 | cdylib, rlib | yes | 0 | 2026-10-05 |
 | `@aphrody/bun` | [packages/interop/native](../../../packages/interop/native) | bun package | 3.3.4 | lib | yes | 0 | 2026-10-05 |
 
-## koharu
+## ml
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `koharu-bindgen` | [crates/koharu/koharu-bindgen](../../../crates/koharu/koharu-bindgen) | rust crate | 0.83.5 | bin, lib | no | 0 | 2026-09-29 |
-| `koharu-config` | [crates/koharu/koharu-config](../../../crates/koharu/koharu-config) | rust crate | 0.83.5 | lib | yes | 0 | 2026-09-29 |
-| `koharu-diffusion` | [crates/koharu/koharu-diffusion](../../../crates/koharu/koharu-diffusion) | rust crate | 0.83.5 | lib | yes | 0 | 2026-09-29 |
-| `koharu-diffusion-sys` | [crates/koharu/koharu-diffusion-sys](../../../crates/koharu/koharu-diffusion-sys) | rust crate | 0.83.5 | lib | no | 0 | 2026-09-29 |
-| `koharu-llama` | [crates/koharu/koharu-llama](../../../crates/koharu/koharu-llama) | rust crate | 0.83.5 | lib | yes | 0 | 2026-09-29 |
-| `koharu-llama-sys` | [crates/koharu/koharu-llama-sys](../../../crates/koharu/koharu-llama-sys) | rust crate | 0.83.5 | lib | no | 0 | 2026-09-29 |
-| `koharu-runtime` | [crates/koharu/koharu-runtime](../../../crates/koharu/koharu-runtime) | rust crate | 0.83.5 | lib | yes | 0 | 2026-09-29 |
-| `koharu-torch` | [crates/koharu/koharu-torch](../../../crates/koharu/koharu-torch) | rust crate | 0.83.5 | lib | yes | 1 | 2026-10-03 |
-| `koharu-torch-sys` | [crates/koharu/koharu-torch-sys](../../../crates/koharu/koharu-torch-sys) | rust crate | 0.83.5 | lib | no | 0 | 2026-09-29 |
+| `aphrody-bindgen` | [crates/ml/bindgen](../../../crates/ml/bindgen) | rust crate | 0.83.5 | bin, lib | no | 0 | uncommitted |
+| `aphrody-diffusion` | [crates/ml/diffusion](../../../crates/ml/diffusion) | rust crate | 0.83.5 | lib | yes | 0 | uncommitted |
+| `aphrody-diffusion-sys` | [crates/ml/diffusion-sys](../../../crates/ml/diffusion-sys) | rust crate | 0.83.5 | lib | no | 0 | uncommitted |
+| `aphrody-llama` | [crates/ml/llama](../../../crates/ml/llama) | rust crate | 0.83.5 | lib | yes | 0 | uncommitted |
+| `aphrody-llama-sys` | [crates/ml/llama-sys](../../../crates/ml/llama-sys) | rust crate | 0.83.5 | lib | no | 0 | uncommitted |
+| `aphrody-ml-config` | [crates/ml/ml-config](../../../crates/ml/ml-config) | rust crate | 0.83.5 | lib | yes | 0 | uncommitted |
+| `aphrody-ml-runtime` | [crates/ml/ml-runtime](../../../crates/ml/ml-runtime) | rust crate | 0.83.5 | lib | yes | 0 | uncommitted |
+| `aphrody-torch` | [crates/ml/torch](../../../crates/ml/torch) | rust crate | 0.83.5 | lib | yes | 1 | uncommitted |
+| `aphrody-torch-sys` | [crates/ml/torch-sys](../../../crates/ml/torch-sys) | rust crate | 0.83.5 | lib | no | 0 | uncommitted |
 
 ## native
 

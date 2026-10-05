@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/koharu/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "apps/cli", "crates/web/*", "crates/discord/*", "crates/engine/*", "crates/tauri/*"]
+members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/ml/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "apps/cli", "crates/web/*", "crates/discord/*", "crates/engine/*", "crates/tauri/*"]
 exclude = [
   "crates/contracts/schema",
   "crates/os/drive",
@@ -361,15 +361,15 @@ oxc_syntax         = { version = "0.152.0", git = "https://github.com/oxc-projec
 aphrody-n2b-native = { path = "crates/compat/n2b-native", version = "0.2.0", features = [] }
 libloading = "0.9.0"
 windows-sys = { version = "0.61", features = ["Win32_System_SystemInformation"] }
-koharu-bindgen = { path = "crates/koharu/koharu-bindgen", version = "0.83.5" }
-koharu-config = { path = "crates/koharu/koharu-config", version = "0.83.5" }
-koharu-diffusion = { path = "crates/koharu/koharu-diffusion", version = "0.83.5" }
-koharu-diffusion-sys = { path = "crates/koharu/koharu-diffusion-sys", version = "0.83.5" }
-koharu-llama = { path = "crates/koharu/koharu-llama", version = "0.83.5" }
-koharu-llama-sys = { path = "crates/koharu/koharu-llama-sys", version = "0.83.5" }
-koharu-runtime = { path = "crates/koharu/koharu-runtime", version = "0.83.5" }
-koharu-torch = { path = "crates/koharu/koharu-torch", version = "0.83.5" }
-koharu-torch-sys = { path = "crates/koharu/koharu-torch-sys", version = "0.83.5" }
+aphrody-bindgen = { path = "crates/ml/bindgen", version = "0.83.5" }
+aphrody-ml-config = { path = "crates/ml/ml-config", version = "0.83.5" }
+aphrody-diffusion = { path = "crates/ml/diffusion", version = "0.83.5" }
+aphrody-diffusion-sys = { path = "crates/ml/diffusion-sys", version = "0.83.5" }
+aphrody-llama = { path = "crates/ml/llama", version = "0.83.5" }
+aphrody-llama-sys = { path = "crates/ml/llama-sys", version = "0.83.5" }
+aphrody-ml-runtime = { path = "crates/ml/ml-runtime", version = "0.83.5" }
+aphrody-torch = { path = "crates/ml/torch", version = "0.83.5" }
+aphrody-torch-sys = { path = "crates/ml/torch-sys", version = "0.83.5" }
 webp = { version = "0.3.1" }
 backon = { version = "1.6.0", default-features = false, features = ["std", "tokio-sleep"] }
 ab_glyph = "0.2.32"

@@ -14,8 +14,8 @@ description            = "In-process mistral.rs inference backend for Aphrody: a
 workspace = true
 
 # Build weight: `engine` pulls mistral.rs (git, pinned) and its own pinned copy of
-# candle, next to the crates.io candle that `koharu-ml` already builds. No candle
-# type crosses this crate's API, so the two copies never meet. See README.md.
+# candle, apart from any crates.io candle another crate of the graph may build. No candle
+# type crosses this crate's API, so two copies never meet. See README.md.
 [features]
 default = []
 # The in-process engine. Off by default and never in default CLI builds.

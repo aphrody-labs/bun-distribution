@@ -2,16 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Makes every workspace crate publishable on crates.io (PLAN §8): drops `publish = false`, inherits repository and
 // license from the workspace (forks keep their upstream licence), derives a missing description from the crate's
-// first `//!` line, and gives path dependencies the version of their target. Crates leaving the repository
-// (crates/koharu) are skipped.
+// first `//!` line, and gives path dependencies the version of their target.
 //
 //   bun scripts/release/crates-io-prepare.ts [--apply]
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dir, "../..");
-// crates/koharu leaves the repository; [patch.crates-io] overlays keep upstream names and are never published.
-const SKIP = [/^crates\/koharu\//, /^crates\/compat\/serde-saphyr$/, /^crates\/native\/simdutf$/];
+// [patch.crates-io] overlays keep upstream names and are never published.
+const SKIP = [/^crates\/compat\/serde-saphyr$/, /^crates\/native\/simdutf$/];
 
 interface Meta {
   packages: {

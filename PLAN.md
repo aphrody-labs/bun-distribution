@@ -135,8 +135,8 @@ d’archives sha256 (`aphrody-ops aphrody-packages prepare`) est transitoire et 
 d’IECODE et de FUT.
 
 - Noyau (monorepo, jamais installé seul) : engine (yolo-core), runtime SDK, paths, http, sql, update,
-  workspace, plugins, os, shell-web, test-dom, CLI `yolo` ; crates Rust (dont le socle ML `koharu-*`,
-  à renommer `aphrody-*`).
+  workspace, plugins, os, shell-web, test-dom, CLI `yolo` ; crates Rust (dont le socle ML `crates/ml`,
+  ex-`koharu-*`, renommé `aphrody-*` le 2026-10-05).
 - Paquets installables (indépendants, publiés) : `@aphrody/x`, `xai`, `google`, `doc-ai`, `ovh`,
   `messaging`, `n2b-*`, `web-test`, `bun` (FFI), famille m3, `api` et `plugin-*` Tauri (sorties JS produites
   par `crates/tauri/build-js.ts`) ; `agent-browser` est à absorber dans Aphrody Web (Rust).
@@ -163,10 +163,10 @@ passent uniquement par ces registres : aucun lien en dur, aucune archive, aucun 
 
 - [ ] crates.io (316 crates) : métadonnées héritées du workspace (licence, dépôt, description), retrait des
   `publish = false` (177), versions sur les dépendances de chemin (52) ; audit `cargo package --list` (secrets,
-  chemins hôte, taille < 10 Mo) ; 14 noms déjà pris par l’amont (`koharu*`, `obscura`, `serde-saphyr`, `simdutf`,
+  chemins hôte, taille < 10 Mo) ; 14 noms déjà pris par l’amont (`koharu*` réglé par le renommage `aphrody-*` de `crates/ml`, `obscura`, `serde-saphyr`, `simdutf`,
   `tauri-plugin-mcp-bridge`) → dépendre de la version amont si nos correctifs sont résorbés, sinon renommer le
   fork ; `cargo publish --workspace --dry-run` sur la fabrique, puis envoi local `--no-verify` dans l’ordre topologique.
 - [ ] PyPI : paquets `py/` construits et publiés par `uv build` / `uv publish`.
 - [~] Shenron + Koharu → `aphrody-labs/shenron`, Bun + Rust : extraction faite (voir §7) ; la fusion UI/apps, l’app
   desktop Tauri 3 + Bun + Next 16, le RAG/backend propres, le MCP `dragonball.*` et l’installation Windows sont menés
-  dans ce dépôt. Le socle ML `koharu-*` (llama, torch, diffusion, runtime, config, bindgen) reste ici.
+  dans ce dépôt. Le socle ML reste ici sous `crates/ml` (`aphrody-{llama,llama-sys,torch,torch-sys,diffusion,diffusion-sys,bindgen,ml-runtime,ml-config}`, ex-`koharu-*`).

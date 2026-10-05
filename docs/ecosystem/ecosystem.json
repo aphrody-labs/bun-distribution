@@ -202,6 +202,15 @@
           "features": []
         },
         {
+          "name": "aphrody-bindgen",
+          "path": "crates/ml/bindgen",
+          "description": "Bindgen-based generator for dynamically loaded native-library bindings.",
+          "bins": [
+            "aphrody-bindgen"
+          ],
+          "features": []
+        },
+        {
           "name": "aphrody-bun",
           "path": "crates/ui/bun",
           "description": "High-performance native Rust plugin for Bun applications using bun:ffi.",
@@ -310,6 +319,20 @@
           "name": "aphrody-diagnostics",
           "path": "crates/os/diagnostics",
           "description": "Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-diffusion",
+          "path": "crates/ml/diffusion",
+          "description": "Safe Rust bindings for stable-diffusion.cpp with runtime dynamic loading.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-diffusion-sys",
+          "path": "crates/ml/diffusion-sys",
+          "description": "Low-level dynamically loaded FFI bindings for stable-diffusion.cpp.",
           "bins": [],
           "features": []
         },
@@ -596,6 +619,17 @@
           "features": []
         },
         {
+          "name": "aphrody-llama",
+          "path": "crates/ml/llama",
+          "description": "Safe Rust bindings for llama.cpp with runtime dynamic loading.",
+          "bins": [],
+          "features": [
+            "default",
+            "llguidance",
+            "sampler"
+          ]
+        },
+        {
           "name": "aphrody-llama-server",
           "path": "crates/ai/llama-server",
           "description": "Managed local inference: a supervisor for llama.cpp's `llama-server`, driven as an external binary (never linked). Reads GGUF facts, probes what the installed build supports, plans the launch (context, KV precision, MoE/layer placement, LoRA), runs the server under a detached idle-timeout daemon that holds the GPU lease, and gives clients attach-or-spawn access to an OpenAI-compatible endpoint plus the tokenize / LoRA hot-swap / props side channels.",
@@ -607,6 +641,13 @@
             "in-process",
             "test-support"
           ]
+        },
+        {
+          "name": "aphrody-llama-sys",
+          "path": "crates/ml/llama-sys",
+          "description": "Low-level dynamically loaded FFI bindings for llama.cpp.",
+          "bins": [],
+          "features": []
         },
         {
           "name": "aphrody-llm-infra",
@@ -727,6 +768,20 @@
           "name": "aphrody-messaging",
           "path": "crates/ai/messaging",
           "description": "Tier-1 messaging connectors (Telegram, Slack, Resend Email API, and native SMTP).",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-ml-config",
+          "path": "crates/ml/ml-config",
+          "description": "Extensible typed TOML configuration storage of the Aphrody ML base (~/.koharu/config.toml).",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-ml-runtime",
+          "path": "crates/ml/ml-runtime",
+          "description": "Runtime package discovery, downloading, and dynamic library loading for the Aphrody ML base.",
           "bins": [],
           "features": []
         },
@@ -1867,6 +1922,23 @@
           "features": []
         },
         {
+          "name": "aphrody-torch",
+          "path": "crates/ml/torch",
+          "description": "Rust bindings for LibTorch with a dynamically loaded C++ shim.",
+          "bins": [],
+          "features": [
+            "cuda-tests",
+            "image"
+          ]
+        },
+        {
+          "name": "aphrody-torch-sys",
+          "path": "crates/ml/torch-sys",
+          "description": "Low-level FFI bindings for the LibTorch C++ API.",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-train",
           "path": "crates/ai/train",
           "description": "Training surface for aphrody: exclusive GPU lease, job runner, streaming event protocol, and measured promotion gates (P10, docs/plans/codex-oss.md).",
@@ -2053,78 +2125,6 @@
           "bins": [
             "aphrody-yolo"
           ],
-          "features": []
-        },
-        {
-          "name": "koharu-bindgen",
-          "path": "crates/koharu/koharu-bindgen",
-          "description": "Bindgen-based generator for dynamically loaded native-library bindings.",
-          "bins": [
-            "koharu-bindgen"
-          ],
-          "features": []
-        },
-        {
-          "name": "koharu-config",
-          "path": "crates/koharu/koharu-config",
-          "description": "Extensible typed configuration storage for Koharu.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-diffusion",
-          "path": "crates/koharu/koharu-diffusion",
-          "description": "Safe Rust bindings for stable-diffusion.cpp with runtime dynamic loading.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-diffusion-sys",
-          "path": "crates/koharu/koharu-diffusion-sys",
-          "description": "Low-level dynamically loaded FFI bindings for stable-diffusion.cpp.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-llama",
-          "path": "crates/koharu/koharu-llama",
-          "description": "Safe Rust bindings for llama.cpp with runtime dynamic loading.",
-          "bins": [],
-          "features": [
-            "default",
-            "llguidance",
-            "sampler"
-          ]
-        },
-        {
-          "name": "koharu-llama-sys",
-          "path": "crates/koharu/koharu-llama-sys",
-          "description": "Low-level dynamically loaded FFI bindings for llama.cpp.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-runtime",
-          "path": "crates/koharu/koharu-runtime",
-          "description": "Runtime package discovery, downloading, and dynamic library loading for Koharu.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-torch",
-          "path": "crates/koharu/koharu-torch",
-          "description": "Rust bindings for LibTorch with a dynamically loaded C++ shim.",
-          "bins": [],
-          "features": [
-            "cuda-tests",
-            "image"
-          ]
-        },
-        {
-          "name": "koharu-torch-sys",
-          "path": "crates/koharu/koharu-torch-sys",
-          "description": "Low-level FFI bindings for the LibTorch C++ API.",
-          "bins": [],
           "features": []
         },
         {
@@ -5362,6 +5362,13 @@
           ]
         }
       ]
+    },
+    {
+      "binary": "aphrody-bindgen",
+      "crate": "aphrody-bindgen",
+      "repo": "aphrody",
+      "source": "crates/ml/bindgen/src/main.rs#Args",
+      "commands": []
     },
     {
       "binary": "aphrody-google",
@@ -8872,13 +8879,6 @@
           "children": []
         }
       ]
-    },
-    {
-      "binary": "koharu-bindgen",
-      "crate": "koharu-bindgen",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-bindgen/src/main.rs#Args",
-      "commands": []
     },
     {
       "binary": "n2b",
