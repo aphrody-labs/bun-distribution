@@ -248,7 +248,6 @@ def migrate_metadata() -> None:
         "packages/aphrody-train",
         "packages/embedding-fixtures",
         "packages/model-tools",
-        "packages/relecture-ocr",
         "packages/cli",
         "apps/meetings",
     ]
@@ -296,7 +295,6 @@ def migrate_metadata() -> None:
                     "aphrody_train",
                     "aphrody_cli",
                     "aphrody_meetings",
-                    "relecture_ocr",
                     "koharu_model_tools",
                     "aphrody_embedding_fixtures",
                 ]
@@ -324,7 +322,6 @@ def migrate_metadata() -> None:
             "packages/cli/src",
             "packages/model-tools/src",
             "packages/embedding-fixtures/src",
-            "packages/relecture-ocr/src",
             "apps/meetings/src",
         ],
         "ignore_missing_imports": True,
@@ -338,7 +335,6 @@ def migrate_metadata() -> None:
             "packages/cli/src",
             "packages/model-tools/src",
             "packages/embedding-fixtures/src",
-            "packages/relecture-ocr/src",
             "apps/meetings/src",
         ],
     }
@@ -434,7 +430,6 @@ def migrate_metadata() -> None:
         ROOT / "packages/aphrody-train/src/aphrody_train/py.typed",
         ROOT / "packages/embedding-fixtures/src/aphrody_embedding_fixtures/py.typed",
         ROOT / "packages/model-tools/src/koharu_model_tools/py.typed",
-        ROOT / "packages/relecture-ocr/src/relecture_ocr/py.typed",
         ROOT / "packages/cli/src/aphrody_cli/py.typed",
         ROOT / "apps/meetings/src/aphrody_meetings/py.typed",
     ]:
@@ -535,11 +530,6 @@ def migrate_contracts() -> None:
     package = SDK / "src/aphrody"
     replace(package / "rag/__init__.py", "    import networkx as nx\n", "")
     replace(package / "rag/__init__.py", "            import asyncio\n", "")
-    replace(
-        ROOT / "packages/relecture-ocr/src/relecture_ocr/server.py",
-        "zip(result.txts, result.scores, boxes)",
-        "zip(result.txts, result.scores, boxes, strict=True)",
-    )
     replace(
         ROOT / "tools/ai/scripts/test-hybrid-rag.py",
         "zip(a, b)",
@@ -1326,7 +1316,6 @@ The library alone does not depend on Fire or the meeting application.
 - `packages/aphrody-train/src/aphrody_train`: datasets, training and RAG APIs.
 - `packages/embedding-fixtures`: reproducible native fixture generators.
 - `packages/model-tools`: Koharu model exporters.
-- `packages/relecture-ocr`: Shenron loopback OCR service.
 - `apps/meetings`: audio meeting application built on the SDK.
 - `tools/`: operational, migration and packaging tools.
 - `packages/os/drive`: retained upstream Drive adapters with their provenance.

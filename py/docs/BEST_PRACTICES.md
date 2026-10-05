@@ -157,7 +157,6 @@ Every published package and workspace member must declare PEP 561 typing support
   - `packages/cli/src/aphrody_cli/py.typed`
   - `packages/embedding-fixtures/src/aphrody_embedding_fixtures/py.typed`
   - `packages/model-tools/src/koharu_model_tools/py.typed`
-  - `packages/relecture-ocr/src/relecture_ocr/py.typed`
   - `apps/meetings/src/aphrody_meetings/py.typed`
 
 ### Explicit Native Stubs (`.pyi`)

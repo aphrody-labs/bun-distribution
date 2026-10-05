@@ -38,7 +38,6 @@ and [Rust-Python research](docs/RAPPORT_RUST_PYTHON_RESEARCH.md).
 - `packages/aphrody-train/src/aphrody_train`: datasets, training and RAG APIs.
 - `packages/embedding-fixtures`: reproducible native fixture generators.
 - `packages/model-tools`: Koharu model exporters.
-- `packages/relecture-ocr`: Shenron loopback OCR service.
 - `apps/meetings`: audio meeting application built on the SDK.
 - `tools/`: operational, migration and packaging tools.
 - `vendor/`: removed 2026-10-05; Bun (`vendor/bun` at the repository root) is the only vendored source (`config/vendor.json`).

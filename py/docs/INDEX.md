@@ -30,7 +30,6 @@ This index categorizes all architectural guides, engineering standards, technica
 
 ## 3. Workspace Packages & Applications
 
-- **[Second-Reader OCR Service (Shenron)](../packages/relecture-ocr/README.md)**: High-precision document OCR and validation pipeline.
 - **[Infrastructure Python Tools](../tools/infra/README.md)**: Operational scripts, benchmarking utilities, and deployment tooling.
 - **[Python Environment Profiles](../environments/README.md)**: Target virtual environment specifications and pinned lock profiles.
 

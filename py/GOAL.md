@@ -21,7 +21,7 @@ liaison PyO3 du cœur natif (`packages/python`).
 | Élément | Constat | Source |
 | --- | --- | --- |
 | Espace de travail | uv >=0.12.22 (hôte 0.12.23), CPython 3.12, Bun 1.4+ | `pyproject.toml`, `uv --version` |
-| Paquets | `aphrody`, `aphrody-train`, `cli`, `embedding-fixtures`, `model-tools`, `os`, `relecture-ocr` ; app `meetings` | `ls packages apps` |
+| Paquets | `aphrody`, `aphrody-train`, `cli`, `embedding-fixtures`, `model-tools`, `os` ; app `meetings` | `ls packages apps` |
 | Validation | 695 tests unitaires passés, `bun run check` (roues isolées), `lint`, `fmt`, `typecheck` verts | `bun run check`, `bun run test` |
 | Branche | `main` synchronisée avec `origin/main` | `git status -sb` |
 

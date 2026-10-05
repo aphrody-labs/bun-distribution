@@ -107,8 +107,7 @@ aphrody-py/
 │   ├── aphrody-train/       # Model training, dataset generation, and evaluation harness
 │   ├── cli/                 # Unified Aphrody CLI frontend (aphrody_cli)
 │   ├── embedding-fixtures/  # Reference vector embeddings and evaluation gold standards
-│   ├── model-tools/         # Quantization, conversion, and validation utilities
-│   └── relecture-ocr/       # Second-reader OCR pipeline and document processing
+│   └── model-tools/         # Quantization, conversion, and validation utilities
 ├── apps/
 │   └── meetings/            # Meeting intelligence service, audio capture, and transcripts
 ├── tools/

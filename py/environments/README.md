@@ -11,8 +11,6 @@ package:
 - AI image, document and voice features use extras on `aphrody`.
 - Training acceleration is declared by `aphrody-train` with its CUDA index and
   optional `full` extra.
-- Shenron's `relecture-ocr` package uses RapidOCR with ONNX Runtime; model
-  inference is lazy and the HTTP service binds to loopback only.
 - Blender scripts run through the Blender interpreter and its bundled Python;
   they are not expected to run in the shared environment without `bpy`.
 - Ren'Py and game-native tools use their own embedded/native runtime contracts.
