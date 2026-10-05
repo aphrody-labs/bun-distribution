@@ -1,136 +1,101 @@
 // SPDX-License-Identifier: Apache-2.0
 // Merged from the former `aphrody-icons` crate (its `svg` feature is now always on: this module
-// lives in `aphrody-bun`, which is `std` and always used it). The font/CSS/codepoint assets are
-// in `crates/ui/bun/icons/`. The FFI wrappers (`bun_rs_icon_*`) stay in `../icons_ffi.rs`,
-// outside this module, so `unsafe` stays forbidden here.
+// lives in `aphrody-bun`, which is `std` and always used it). The FFI wrappers (`bun_rs_icon_*`)
+// stay in `../icons_ffi.rs`, outside this module, so `unsafe` stays forbidden here.
 #![forbid(unsafe_code)]
 // The code predates the stricter crate-level `deny(clippy::all)` of `bun_rs`; keep its original
 // (warn) level instead of turning every pre-existing style lint into a hard error.
 #![warn(clippy::all)]
 
-//! `bun_rs::icons` (package `aphrody-bun`; formerly the `aphrody-icons` crate): Material Design
-//! Icons (Material Symbols) natively embedded for Rust.
+//! `bun_rs::icons` (package `aphrody-bun`; formerly the `aphrody-icons` crate): the Google
+//! Material Symbols variable fonts (`Outlined`, `Rounded`, `Sharp`) embedded in the binary, so
+//! native renderers and WASM targets need neither filesystem IO nor HTTP to draw an icon.
 //!
-//! This module embeds the official Google Material Symbols (`Rounded`, `Outlined`, `Sharp`)
-//! as raw `WOFF2` bytes directly into the Rust binary. This allows native GPU renderers
-//! (`wgpu`, `vello`, `parley`) and WASM applications to load the fonts instantaneously
-//! without filesystem IO or external HTTP requests.
-//!
-//! It also exports the associated CSS for web-based GUI targets.
+//! The bytes come from `material-symbols@0.44.8`, pinned once in
+//! `m3/packages/m3-fonts/fonts.lock.json` and synced by `bun m3/scripts/fonts-sync.ts`; `build.rs`
+//! verifies them before embedding. A build without them (see [`available`]) still compiles and
+//! reports [`SvgError::FontsUnavailable`].
 
 mod svg;
 pub use svg::{Axes, Style, SvgError, icon_names, icon_path, icon_svg};
 
-/// Raw WOFF2 bytes for the `Material Symbols Rounded` variable font.
-pub const WOFF2_ROUNDED: &[u8] =
-    include_bytes!("../../icons/material-symbols/material-symbols-rounded.woff2");
-
-/// Raw WOFF2 bytes for the `Material Symbols Outlined` variable font.
-pub const WOFF2_OUTLINED: &[u8] =
-    include_bytes!("../../icons/material-symbols/material-symbols-outlined.woff2");
-
-/// Raw WOFF2 bytes for the `Material Symbols Sharp` variable font.
-pub const WOFF2_SHARP: &[u8] =
-    include_bytes!("../../icons/material-symbols/material-symbols-sharp.woff2");
-
-/// Raw bytes for `Material Icons Regular` font.
-pub const WOFF2_ICONS_REGULAR: &[u8] =
-    include_bytes!("../../icons/material-icons/material-icons-regular.woff2");
-
-/// Raw bytes for `Material Icons Outlined` font.
-pub const WOFF2_ICONS_OUTLINED: &[u8] =
-    include_bytes!("../../icons/material-icons/material-icons-outlined.woff2");
-
-/// Raw bytes for `Material Icons Round` font.
-pub const WOFF2_ICONS_ROUND: &[u8] =
-    include_bytes!("../../icons/material-icons/material-icons-round.woff2");
-
-/// Raw bytes for `Material Icons Sharp` font.
-pub const WOFF2_ICONS_SHARP: &[u8] =
-    include_bytes!("../../icons/material-icons/material-icons-sharp.woff2");
-
-/// Raw bytes for `Material Icons Two Tone` font.
-pub const WOFF2_ICONS_TWO_TONE: &[u8] =
-    include_bytes!("../../icons/material-icons/material-icons-two-tone.woff2");
-
-pub const CSS_ICONS_REGULAR: &str = include_str!("../../icons/material-icons/regular.css");
-pub const CSS_ICONS_OUTLINED: &str = include_str!("../../icons/material-icons/outlined.css");
-pub const CSS_ICONS_ROUND: &str = include_str!("../../icons/material-icons/round.css");
-pub const CSS_ICONS_SHARP: &str = include_str!("../../icons/material-icons/sharp.css");
-pub const CSS_ICONS_TWO_TONE: &str = include_str!("../../icons/material-icons/two-tone.css");
-
-/// CSS definitions for `Material Symbols Rounded`.
-pub const CSS_ROUNDED: &str = include_str!("../../icons/material-symbols/rounded.css");
-
-/// CSS definitions for `Material Symbols Outlined`.
-pub const CSS_OUTLINED: &str = include_str!("../../icons/material-symbols/outlined.css");
-
-/// CSS definitions for `Material Symbols Sharp`.
-pub const CSS_SHARP: &str = include_str!("../../icons/material-symbols/sharp.css");
-
-/// A helper enum representing the available Material Symbol and Icon styles.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
-pub enum SymbolStyle {
-    Rounded,
-    Outlined,
-    Sharp,
-    IconsRegular,
-    IconsOutlined,
-    IconsRound,
-    IconsSharp,
-    IconsTwoTone,
+/// Whether this build embeds the Material Symbols fonts, CSS and name list.
+pub const fn available() -> bool {
+    cfg!(aphrody_symbols)
 }
 
-impl SymbolStyle {
-    /// Returns the raw WOFF2 font data for the given style.
-    pub const fn woff2_data(&self) -> &'static [u8] {
-        match self {
-            Self::Rounded => WOFF2_ROUNDED,
-            Self::Outlined => WOFF2_OUTLINED,
-            Self::Sharp => WOFF2_SHARP,
-            Self::IconsRegular => WOFF2_ICONS_REGULAR,
-            Self::IconsOutlined => WOFF2_ICONS_OUTLINED,
-            Self::IconsRound => WOFF2_ICONS_ROUND,
-            Self::IconsSharp => WOFF2_ICONS_SHARP,
-            Self::IconsTwoTone => WOFF2_ICONS_TWO_TONE,
+#[cfg(aphrody_symbols)]
+mod embedded {
+    macro_rules! symbols_file {
+        ($include:ident, $name:literal) => {
+            $include!(concat!(env!("APHRODY_SYMBOLS_DIR"), "/", $name))
+        };
+    }
+
+    pub(super) const WOFF2_OUTLINED: &[u8] =
+        symbols_file!(include_bytes, "material-symbols-outlined.woff2");
+    pub(super) const WOFF2_ROUNDED: &[u8] =
+        symbols_file!(include_bytes, "material-symbols-rounded.woff2");
+    pub(super) const WOFF2_SHARP: &[u8] =
+        symbols_file!(include_bytes, "material-symbols-sharp.woff2");
+    pub(super) const CSS_OUTLINED: &str = symbols_file!(include_str, "outlined.css");
+    pub(super) const CSS_ROUNDED: &str = symbols_file!(include_str, "rounded.css");
+    pub(super) const CSS_SHARP: &str = symbols_file!(include_str, "sharp.css");
+    /// `index.d.ts` of the package: the `MaterialSymbols` tuple of every icon name it ships.
+    pub(super) const NAMES: &str = symbols_file!(include_str, "index.d.ts");
+}
+
+impl Style {
+    /// WOFF2 bytes of this variable font, `None` when the build does not embed them.
+    pub const fn woff2_data(self) -> Option<&'static [u8]> {
+        #[cfg(aphrody_symbols)]
+        {
+            Some(match self {
+                Self::Outlined => embedded::WOFF2_OUTLINED,
+                Self::Rounded => embedded::WOFF2_ROUNDED,
+                Self::Sharp => embedded::WOFF2_SHARP,
+            })
+        }
+        #[cfg(not(aphrody_symbols))]
+        {
+            let _ = self;
+            None
         }
     }
 
-    /// Returns the CSS snippet required to use this font style on the web.
-    pub const fn css(&self) -> &'static str {
-        match self {
-            Self::Rounded => CSS_ROUNDED,
-            Self::Outlined => CSS_OUTLINED,
-            Self::Sharp => CSS_SHARP,
-            Self::IconsRegular => CSS_ICONS_REGULAR,
-            Self::IconsOutlined => CSS_ICONS_OUTLINED,
-            Self::IconsRound => CSS_ICONS_ROUND,
-            Self::IconsSharp => CSS_ICONS_SHARP,
-            Self::IconsTwoTone => CSS_ICONS_TWO_TONE,
+    /// The package's CSS for this style, `None` when the build does not embed it.
+    pub const fn css(self) -> Option<&'static str> {
+        #[cfg(aphrody_symbols)]
+        {
+            Some(match self {
+                Self::Outlined => embedded::CSS_OUTLINED,
+                Self::Rounded => embedded::CSS_ROUNDED,
+                Self::Sharp => embedded::CSS_SHARP,
+            })
+        }
+        #[cfg(not(aphrody_symbols))]
+        {
+            let _ = self;
+            None
         }
     }
 
-    /// Returns the CSS `font-family` name for this style.
-    pub const fn font_family(&self) -> &'static str {
+    /// The CSS `font-family` name of this style.
+    pub const fn font_family(self) -> &'static str {
         match self {
-            Self::Rounded => "Material Symbols Rounded",
             Self::Outlined => "Material Symbols Outlined",
+            Self::Rounded => "Material Symbols Rounded",
             Self::Sharp => "Material Symbols Sharp",
-            Self::IconsRegular => "Material Icons",
-            Self::IconsOutlined => "Material Icons Outlined",
-            Self::IconsRound => "Material Icons Round",
-            Self::IconsSharp => "Material Icons Sharp",
-            Self::IconsTwoTone => "Material Icons Two Tone",
         }
     }
 
-    /// Returns the CSS snippet with the WOFF2 font natively embedded as base64.
-    pub fn base64_css(&self) -> String {
+    /// A `@font-face` rule and icon class with the WOFF2 font inlined as base64, `None` when
+    /// the build does not embed the font.
+    pub fn base64_css(self) -> Option<String> {
         use base64::prelude::*;
-        let data = self.woff2_data();
-        let encoded = BASE64_STANDARD.encode(data);
+        let encoded = BASE64_STANDARD.encode(self.woff2_data()?);
         let family = self.font_family();
-        format!(
+        Some(format!(
             "@font-face {{
               font-family: \"{family}\";
               font-style: normal;
@@ -155,9 +120,18 @@ impl SymbolStyle {
               text-rendering: optimizeLegibility;
               font-feature-settings: \"liga\";
             }}",
-            family = family,
-            encoded = encoded,
             class_name = family.to_lowercase().replace(' ', "-"),
-        )
+        ))
     }
+}
+
+/// Every icon name of the embedded package, from its `index.d.ts` (empty without the fonts).
+fn package_names() -> impl Iterator<Item = &'static str> {
+    #[cfg(aphrody_symbols)]
+    let source = embedded::NAMES;
+    #[cfg(not(aphrody_symbols))]
+    let source = "";
+    source
+        .lines()
+        .filter_map(|line| line.trim().trim_end_matches(',').strip_prefix('"')?.strip_suffix('"'))
 }

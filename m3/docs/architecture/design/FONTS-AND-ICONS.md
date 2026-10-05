@@ -11,7 +11,7 @@ typefaces and icons. Type scale and axes: [`TYPOGRAPHY.md`](./TYPOGRAPHY.md).
 | Web font format | WOFF2 subsets of the variable sources, every axis kept | `packages/m3-fonts` (`bun run subset`) |
 | Latin | One face per family cut to `LATIN_CORE_RANGES` | `src/fonts.css` |
 | Japanese | Separate sheet: kana/punctuation chunk + Windows-31J ideographs in 500-codepoint chunks, each with its own `unicode-range` | `src/fonts-jp.css` |
-| Material Symbols font | Opt-in sheet, never in the core sheet; UI icons are inline SVG from `@aphrody/m3-icons` | `src/fonts-symbols.css`, `crates/ui/bun/icons` |
+| Material Symbols font | Opt-in sheet, never in the core sheet; UI icons are inline SVG from `@aphrody/m3-icons` | `src/fonts-symbols.css`, `fonts.lock.json` (`material-symbols@0.44.8`, also embedded by `crates/ui/bun`) |
 | System fallbacks | Bundled faces, then platform faces per OS, then the generic family | `FONT_STACKS` in `packages/m3-fonts/src/index.ts` |
 | Delivery in Tauri | Fonts are part of `frontendDist` (`ui-dist`), embedded and served by the custom protocol; no `bundle.resources`, no `asset:` protocol | `@aphrody/m3` `buildM3` |
 | CSP | `font-src 'self' data:` (Bun inlines small fonts as `data:` URLs) | `crates/ui/app/tauri.conf.json` |

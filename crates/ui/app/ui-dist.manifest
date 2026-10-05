@@ -6,7 +6,7 @@
 # clone embeds the same bytes as before without any staging command. The destinations are
 # ignored by git (see .gitignore); the sources are the single canonical copies:
 #   m3/packages/m3-fonts/fonts/web/   Google Sans Flex, Roboto Flex, Noto Sans JP, M PLUS 1 Code
-#   crates/ui/bun/icons/material-symbols/   Material Symbols (the aphrody-bun icons module)
+#   m3/packages/m3-fonts/fonts/upstream/material-symbols/   Material Symbols (fonts.lock.json pin, also embedded by aphrody-bun)
 #   m3/packages/assets/{icons,images,sounds}/   @aphrody/assets (file-kind icons and sounds)
 # tests/ui_dist_assets.rs fails when an entry is not staged or differs from its source.
 fonts/Album-20.png m3/packages/assets/icons/Album-20.png
@@ -236,7 +236,7 @@ fonts/copy.mp3 m3/packages/assets/sounds/copy.mp3
 fonts/copy.ogg m3/packages/assets/sounds/copy.ogg
 fonts/job-done.mp3 m3/packages/assets/sounds/job-done.mp3
 fonts/job-done.ogg m3/packages/assets/sounds/job-done.ogg
-fonts/material-symbols-outlined.woff2 crates/ui/bun/icons/material-symbols/material-symbols-outlined.woff2
+fonts/material-symbols-outlined.woff2 m3/packages/m3-fonts/fonts/upstream/material-symbols/material-symbols-outlined.woff2
 fonts/pairing.mp3 m3/packages/assets/sounds/pairing.mp3
 fonts/pairing.ogg m3/packages/assets/sounds/pairing.ogg
 fonts/splat-trigger.mp3 m3/packages/assets/sounds/splat-trigger.mp3

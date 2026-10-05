@@ -2,8 +2,8 @@
 # M3 icons: Material Symbols as SVG
 
 UI icons are inline SVG generated from the Material Symbols variable fonts; no icon font is
-loaded at runtime. The fonts in `crates/ui/bun/icons/material-symbols/*.woff2`
-(`material-symbols` 0.44.8) are the only outline source.
+loaded at runtime. The `material-symbols` 0.44.8 fonts pinned in `packages/m3-fonts/fonts.lock.json`
+(synced by `bun scripts/fonts-sync.ts`, embedded by `crates/ui/bun/build.rs`) are the only outline source.
 
 ```
 crates/ui/bun, module `icons`        WOFF2 decode -> variable instance -> outline -> SVG path
@@ -20,7 +20,7 @@ packages/m3-icons                   <M3Icon>, <m3-icon>, generateIcons, m3IconPl
   `woff2` (`woff2-patched`, workspace dependency).
 - Names resolve through the font's own `GSUB` ligatures (feature `rlig`, reached through
   `LookupType 7` extension subtables), never through the published `.codepoints` tables, which
-  drift between font releases. The vendored `crates/ui/bun/icons/metadata/codepoints/*.txt` only list which names
+  drift between font releases. The package `index.d.ts` of the same release lists which names
   exist.
 - Coordinates follow Google's exports: `viewBox="0 -960 960 960"`, `x * 960/upem`,
   `y * -960/upem`; `size` never changes the viewBox.

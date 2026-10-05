@@ -2,9 +2,9 @@
 
 //! FFI surface for [`crate::icons`] (formerly the `aphrody-icons` crate, `svg` feature):
 //! pixel-perfect Material Symbols SVG path/document generation for `bun:ffi` and WebAssembly
-//! consumers. No icon font is shipped or loaded at runtime by the caller; the variable font
-//! bytes and the name -> codepoint tables live in `crates/ui/bun/icons/`, embedded at compile
-//! time by [`crate::icons`].
+//! consumers. No icon font is shipped or loaded at runtime by the caller: [`crate::icons`] embeds
+//! the pinned `material-symbols` fonts and name list at compile time, and both calls answer
+//! `{"ok":false}` with [`crate::icons::SvgError::FontsUnavailable`] in a build without them.
 
 use std::ffi::c_char;
 
@@ -47,6 +47,9 @@ pub fn icon_svg_json(request_json: &str) -> Result<String, String> {
     let request: IconRequest =
         serde_json::from_str(request_json).map_err(|e| format!("invalid request: {e}"))?;
     let style = parse_style(request.style.as_deref())?;
+    if !crate::icons::available() {
+        return Err(crate::icons::SvgError::FontsUnavailable.to_string());
+    }
     let axes = Axes {
         fill: request.fill.unwrap_or(0.0),
         weight: request.weight.unwrap_or(400.0),
@@ -90,7 +93,14 @@ pub unsafe extern "C" fn bun_rs_icon_names(style: *const u8, len: usize) -> *mut
     } else {
         // SAFETY: caller guarantees the pointer covers `len` bytes.
         let bytes = unsafe { std::slice::from_raw_parts(style, len) };
-        std::str::from_utf8(bytes).map_err(|e| e.to_string()).and_then(|s| parse_style(Some(s)))
+        std::str::from_utf8(bytes)
+            .map_err(|e| e.to_string())
+            .and_then(|s| parse_style(Some(s)))
+            .and_then(|style| {
+                crate::icons::available()
+                    .then_some(style)
+                    .ok_or_else(|| crate::icons::SvgError::FontsUnavailable.to_string())
+            })
     };
     let envelope = match result {
         Ok(style) => {

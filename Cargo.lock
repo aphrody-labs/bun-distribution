@@ -829,6 +829,7 @@ dependencies = [
  "read-fonts 0.44.0",
  "serde",
  "serde_json",
+ "sha2 0.11.0",
  "skrifa 0.47.0",
  "ts-rs",
  "woff2-patched",

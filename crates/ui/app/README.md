@@ -78,8 +78,8 @@ local canonical font during this build.
 
 `ui-dist/index.html`, `app.js`, `app.css` and the SVGs under `ui-dist/fonts/` are committed.
 The binary assets of `ui-dist/fonts/` (webfonts, file-kind icons, sounds) are not: `build.rs`
-copies them from their single canonical packages (`m3/packages/m3-fonts`,
-`crates/ui/bun/icons/material-symbols`, `m3/packages/assets`) into `ui-dist/fonts/` before
+copies them from their single canonical packages (`m3/packages/m3-fonts`, whose
+`fonts/upstream/material-symbols` also feeds aphrody-bun, and `m3/packages/assets`) into `ui-dist/fonts/` before
 `tauri::generate_context!()` embeds the directory, as listed in `ui-dist.manifest`. A clean
 clone therefore builds with no staging command; `cargo test -p aphrody-app --test
 ui_dist_assets` checks that every listed file is staged byte-for-byte and that every font

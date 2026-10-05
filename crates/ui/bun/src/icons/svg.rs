@@ -21,16 +21,14 @@
 //! both tags are accepted defensively. This was chosen over a fixed name -> Private Use Area
 //! codepoint table after empirically finding that Google's published `.codepoints` files (one
 //! per font *release*) drift out of sync with specific embedded font builds — e.g. `search`'s
-//! codepoint in the current upstream table has no `cmap` entry at all in the `material-symbols`
-//! 0.44.8 fonts vendored in `icons/` next to this module, because Google reassigns a few codepoints between
-//! releases as icons are added. Reading `GSUB` directly is exact for whatever font bytes are
-//! actually embedded, at the cost of implementing a small ligature-substitution-only subset of
-//! OpenType shaping (`LookupType 4`, optionally indirected through `LookupType 7`, single-script
-//! `liga` feature; Material Symbols does not need base "reordering" glyph shaping otherwise).
+//! codepoint in the upstream table has no `cmap` entry at all in the `material-symbols`
+//! 0.44.8 fonts embedded here, because Google reassigns a few codepoints between releases as
+//! icons are added. Reading `GSUB` directly is exact for whatever font bytes are actually
+//! embedded, at the cost of implementing a small ligature-substitution-only subset of OpenType
+//! shaping (`LookupType 4`, optionally indirected through `LookupType 7`, single-script `liga`
+//! feature; Material Symbols does not need base "reordering" glyph shaping otherwise).
 //!
-//! The official `google/material-design-icons` `.codepoints` tables (Apache-2.0, vendored
-//! under `icons/metadata/codepoints/`) are kept only as the *name list* for [`Style::icon_names`]
-//! (which names exist), not to resolve codepoints for rendering.
+//! [`Style::icon_names`] lists the names the same package release declares in its `index.d.ts`.
 
 use std::sync::{Arc, OnceLock};
 
@@ -52,37 +50,10 @@ pub enum Style {
 }
 
 impl Style {
-    const fn woff2(self) -> &'static [u8] {
-        match self {
-            Self::Outlined => super::WOFF2_OUTLINED,
-            Self::Rounded => super::WOFF2_ROUNDED,
-            Self::Sharp => super::WOFF2_SHARP,
-        }
-    }
-
-    const fn codepoints(self) -> &'static str {
-        match self {
-            Self::Outlined => include_str!("../../icons/metadata/codepoints/outlined.txt"),
-            Self::Rounded => include_str!("../../icons/metadata/codepoints/rounded.txt"),
-            Self::Sharp => include_str!("../../icons/metadata/codepoints/sharp.txt"),
-        }
-    }
-
     fn slot(self) -> &'static OnceLock<Arc<[u8]>> {
         static OUTLINED: OnceLock<Arc<[u8]>> = OnceLock::new();
         static ROUNDED: OnceLock<Arc<[u8]>> = OnceLock::new();
         static SHARP: OnceLock<Arc<[u8]>> = OnceLock::new();
-        match self {
-            Self::Outlined => &OUTLINED,
-            Self::Rounded => &ROUNDED,
-            Self::Sharp => &SHARP,
-        }
-    }
-
-    fn names_slot(self) -> &'static OnceLock<Vec<(&'static str, u32)>> {
-        static OUTLINED: OnceLock<Vec<(&'static str, u32)>> = OnceLock::new();
-        static ROUNDED: OnceLock<Vec<(&'static str, u32)>> = OnceLock::new();
-        static SHARP: OnceLock<Vec<(&'static str, u32)>> = OnceLock::new();
         match self {
             Self::Outlined => &OUTLINED,
             Self::Rounded => &ROUNDED,
@@ -95,7 +66,7 @@ impl Style {
         if let Some(bytes) = self.slot().get() {
             return Ok(bytes.clone());
         }
-        let mut cursor = std::io::Cursor::new(self.woff2());
+        let mut cursor = std::io::Cursor::new(self.woff2_data().ok_or(SvgError::FontsUnavailable)?);
         let ttf = woff2::convert_woff2_to_ttf(&mut cursor)
             .map_err(|e| SvgError::Woff2(format!("{e}")))?;
         let arc: Arc<[u8]> = Arc::from(ttf);
@@ -105,34 +76,20 @@ impl Style {
         Ok(self.slot().get().expect("just set").clone())
     }
 
-    /// Parsed `(name, codepoint)` table for this style, sorted lexicographically by name
-    /// (already true of the upstream `.codepoints` file; re-sorted defensively).
-    fn names(self) -> &'static [(&'static str, u32)] {
-        self.names_slot().get_or_init(|| {
-            let mut entries: Vec<(&'static str, u32)> = self
-                .codepoints()
-                .lines()
-                .filter_map(|line| {
-                    let mut parts = line.split_whitespace();
-                    let name = parts.next()?;
-                    let cp = u32::from_str_radix(parts.next()?, 16).ok()?;
-                    Some((name, cp))
-                })
-                .collect();
-            entries.sort_unstable_by_key(|(name, _)| *name);
-            entries
-        })
-    }
-
-    /// Resolves an icon name to its Private Use Area codepoint for this style.
-    pub fn codepoint_of(self, name: &str) -> Option<u32> {
-        let table = self.names();
-        table.binary_search_by_key(&name, |(n, _)| n).ok().map(|idx| table[idx].1)
-    }
-
-    /// Iterates every icon name known for this style, in lexicographic order.
+    /// Iterates every icon name of the embedded package, in lexicographic order (the three
+    /// styles of one release ship the same names; empty without the fonts).
     pub fn icon_names(self) -> impl Iterator<Item = &'static str> {
-        self.names().iter().map(|(name, _)| *name)
+        let _ = self;
+        static NAMES: OnceLock<Vec<&'static str>> = OnceLock::new();
+        NAMES
+            .get_or_init(|| {
+                let mut names: Vec<&'static str> = super::package_names().collect();
+                names.sort_unstable();
+                names.dedup();
+                names
+            })
+            .iter()
+            .copied()
     }
 }
 
@@ -168,6 +125,8 @@ impl Axes {
 /// Errors that can occur while decoding a font or rendering an icon.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum SvgError {
+    /// The build does not embed the Material Symbols fonts (see `build.rs`).
+    FontsUnavailable,
     Woff2(String),
     Font(String),
 }
@@ -175,6 +134,10 @@ pub enum SvgError {
 impl core::fmt::Display for SvgError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
+            Self::FontsUnavailable => f.write_str(
+                "Material Symbols fonts are not embedded: run `bun m3/scripts/fonts-sync.ts` or set \
+                 APHRODY_SYMBOLS_DIR, then rebuild aphrody-bun",
+            ),
             Self::Woff2(msg) => write!(f, "WOFF2 decode failed: {msg}"),
             Self::Font(msg) => write!(f, "font parse failed: {msg}"),
         }
