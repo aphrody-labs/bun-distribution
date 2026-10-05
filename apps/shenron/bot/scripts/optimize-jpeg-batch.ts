@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * optimize-jpeg-batch — sharp en parallèle pour batch JPEG (re-encode mozjpeg q=82).
- * Beaucoup plus rapide que `bunx sharp-cli` par fichier (init coût ~500ms).
+ * Beaucoup plus rapide que `sharp-cli` par fichier (init coût ~500ms).
  *
  * Usage: bun run scripts/optimize-jpeg-batch.ts apps/shenron/bot/public/db
  */

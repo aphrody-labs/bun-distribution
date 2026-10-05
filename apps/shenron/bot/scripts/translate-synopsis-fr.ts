@@ -7,7 +7,7 @@
  * (PG `bot.db_episodes.synopsis_fr` / `bot.db_movies.synopsis_fr`).
  *
  * PRÉREQUIS : avoir appliqué la migration schema avant de lancer ce script —
- *   DATABASE_URL=... bunx drizzle-kit push --config=drizzle.config.bot.ts
+ *   DATABASE_URL=... drizzle-kit push --config=drizzle.config.bot.ts
  *
  * SOURCE DE VÉRITÉ = Postgres bot.* (forward-sync SQLite→PG exclut le wiki
  * éditorial ; le reverse-sync PG→SQLite propage les traductions au bot).

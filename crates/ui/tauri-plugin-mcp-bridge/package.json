@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "tsc --project guest-js/tsconfig.json",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "bun run build"
   },
   "files": [
     "dist-js",

@@ -1,4 +1,4 @@
-// Machine-readable perf snapshot: CLI startup, global tool vs bunx, MCP latency/RSS, bun:ffi call overhead.
+// Machine-readable perf snapshot: CLI startup, global tool, MCP latency/RSS, bun:ffi call overhead.
 // Usage: bun scripts/audit/perf-surfaces.ts [out.json]. No Cargo; benchmarks existing binaries only.
 import { dlopen, FFIType } from "bun:ffi";
 import { readFileSync } from "node:fs";
@@ -64,15 +64,10 @@ const out: Record<string, unknown> = { date: new Date().toISOString().slice(0, 1
 const sample = `${root}/packages/infra/update`;
 out.tools = {
   oxlint_global: timeCmd(["oxlint", "--version"]),
-  oxlint_bunx: timeCmd(["bunx", "oxlint", "--version"]),
   oxfmt_global: timeCmd(["oxfmt", "--version"]),
-  oxfmt_bunx: timeCmd(["bunx", "oxfmt", "--version"]),
   tsc_global: timeCmd(["tsc", "--version"]),
-  tsc_bunx: timeCmd(["bunx", "tsc", "--version"]),
   tsc_typecheck_global: timeCmd(["tsc", "--noEmit", "-p", "."], sample, 5),
-  tsc_typecheck_bunx: timeCmd(["bunx", "--bun", "tsc", "--noEmit", "-p", "."], sample, 5),
   oxlint_lint_global: timeCmd(["oxlint", "src"], sample, 5),
-  oxlint_lint_bunx: timeCmd(["bunx", "oxlint", "src"], sample, 5),
   bun_version: timeCmd(["bun", "--version"]),
   nu_version: timeCmd(["nu", "--version"]),
 };

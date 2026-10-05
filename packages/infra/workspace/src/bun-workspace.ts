@@ -10,7 +10,7 @@
 //   pm       only the root declares `packageManager`
 //   engines  `engines.bun` equals the root minimum (derived from `packageManager`), no `engines.node`
 //   catalog  a dependency listed in the root catalog uses `catalog:`
-//   scripts  no npm / npx / pnpm / yarn / node in scripts
+//   scripts  no npm / npx / bunx / pnpm / yarn / node in scripts
 //   typecheck  a package with a tsconfig.json exposes a `typecheck` script
 //   m3       the M3 family shares the root `aphrody.m3Version` and the `@aphrody/m3-config` presets
 //            (docs/design/M3-PLAN.md)
@@ -56,7 +56,7 @@ export interface ManifestContext {
 
 type Manifest = Record<string, any>;
 const DEP_SECTIONS = ["dependencies", "devDependencies", "optionalDependencies"] as const;
-const FOREIGN_TOOL = /(^|[\s;&|(])(npx|npm|pnpm|yarn|node)(?=\s|$)/;
+const FOREIGN_TOOL = /(^|[\s;&|(])(npx|bunx|npm|pnpm|yarn|node)(?=\s|$)/;
 
 export function minimumBun(packageManager: string): string {
   const version = /^bun@(\d+\.\d+\.\d+)/.exec(packageManager)?.[1];
@@ -153,7 +153,7 @@ export function checkManifest(
       out.push({
         path,
         rule: "scripts",
-        message: `scripts.${name} runs ${tool}: use bun / bunx`,
+        message: `scripts.${name} runs ${tool}: use bun or the PATH binary directly`,
         fixable: false,
       });
   }

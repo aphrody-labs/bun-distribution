@@ -72,6 +72,7 @@ Agents use only the Aphrody MCP tools, the `yolo` CLI, Rust CLIs (`aphrody`, `ap
 `aphrody-ops`) and Bun (`bun`, `bun -e`, `bun <script>.ts`). No GNU shell utilities (grep, sed,
 awk, find, xargs, cat heredocs) and no Python for agent work: use MCP search/read/edit tools, the
 Edit tool or a Bun script. Python stays only as product code under `py/`, run through `uv`.
+Never npm, npx or bunx: call the binaries on PATH directly (oxlint, oxfmt, tsc).
 Remote work goes through `aphrody-infra ssh` or the MCP `infra_exec`, never raw ssh.
 
 ## Builds and validation
