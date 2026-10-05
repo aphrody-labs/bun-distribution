@@ -234,13 +234,14 @@ export class RateGovernor {
     }
 
     if (this.countSince(DAY_MS) >= this.perDay) {
-      const oldest = this.history[this.history.length - this.perDay];
+      // Absent only for a non-positive budget: wait a full window from now.
+      const oldest = this.history[this.history.length - this.perDay] ?? now;
       return { waitMs: Math.max(oldest + DAY_MS - now, 0) + 1_000, reason: "day-budget" };
     }
 
     if (this.countSince(WINDOW_MS) >= this.perWindow) {
       const inWindow = this.history.filter((t) => t > now - WINDOW_MS);
-      const oldest = inWindow[inWindow.length - this.perWindow];
+      const oldest = inWindow[inWindow.length - this.perWindow] ?? now;
       return { waitMs: Math.max(oldest + WINDOW_MS - now, 0) + 1_000, reason: "window-budget" };
     }
 
@@ -478,7 +479,8 @@ export async function runMutationQueue<T extends { id: string }>(
     }
     if (waited && waited !== "pace") d.log(`[purge] budget « ${waited} » — reprise`);
 
-    const item = d.queue[0];
+    const [item] = d.queue;
+    if (item === undefined) break;
     const name = d.label(item);
     let outcome: MutationOutcome | null = null;
     let rateLimitWaits = 0;

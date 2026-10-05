@@ -8,7 +8,7 @@
 import { mkdirSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { libraryFile, Runtime } from "../../packages/engine/runtime/src/index";
-import { sha256 } from "../../packages/core/src/sys/hash";
+import { sha256 } from "../../packages/engine/core/src/sys/hash";
 
 const root = resolve(import.meta.dir, "../..");
 // A producer packages its build, independently of whichever version the user installed.

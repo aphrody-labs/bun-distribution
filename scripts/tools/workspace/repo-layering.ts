@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Validate the active Cargo workspace dependency graph, using crate paths as nodes. */
-import { spawnSync } from "node:child_process";
 import { dirname, relative, resolve, sep } from "node:path";
 
 interface CargoDependency {
   name: string;
   path?: string;
+  /** `null` (normal), `"build"` or `"dev"`. */
+  kind?: string | null;
 }
 
 interface CargoPackage {
@@ -32,17 +33,21 @@ export interface WorkspaceGraph {
 export function loadCargoMetadata<P = CargoPackage>(
   dir: string,
 ): { packages: P[]; workspace_members: string[] } | { error: string } {
-  const result = spawnSync(
-    "cargo",
-    ["metadata", "--format-version", "1", "--no-deps", "--offline"],
-    { cwd: dir, encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: process.env },
+  const result = Bun.spawnSync(
+    ["cargo", "metadata", "--format-version", "1", "--no-deps", "--offline"],
+    {
+      cwd: dir,
+      env: process.env,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
   );
-  if (result.status !== 0) {
+  if (result.exitCode !== 0) {
     return {
-      error: `cargo metadata failed: ${(result.stderr ?? "").trim().split("\n").slice(-3).join(" | ")}`,
+      error: `cargo metadata failed: ${result.stderr.toString().trim().split("\n").slice(-3).join(" | ")}`,
     };
   }
-  return JSON.parse(result.stdout) as { packages: P[]; workspace_members: string[] };
+  return JSON.parse(result.stdout.toString()) as { packages: P[]; workspace_members: string[] };
 }
 
 /** A path is inside root only when it resolves to root or a descendant. */
@@ -82,7 +87,8 @@ export function graphFromMetadata(
     const from = byDirectory.get(resolve(dirname(pkg.manifest_path)));
     if (!from) continue;
     for (const dep of pkg.dependencies) {
-      if (!dep.path) continue;
+      // Cargo allows dev-dependency cycles (upstream Tauri tests its crates through `tauri`).
+      if (!dep.path || dep.kind === "dev") continue;
       const directory = resolve(dep.path);
       const to = byDirectory.get(directory);
       if (to && to !== from) {
@@ -159,9 +165,8 @@ export function cycles(nodes: readonly string[], edges: readonly Edge[]): string
 if (import.meta.main) {
   const args = process.argv.slice(2);
   const rootIndex = args.indexOf("--root");
-  const root = resolve(
-    rootIndex >= 0 && args[rootIndex + 1] ? args[rootIndex + 1] : resolve(import.meta.dir, "..", "..", ".."),
-  );
+  const rootArg = rootIndex >= 0 ? args[rootIndex + 1] : undefined;
+  const root = resolve(rootArg || resolve(import.meta.dir, "..", "..", ".."));
   const graph = collectEdges(root);
   const loops = cycles(graph.nodes, graph.edges);
   const result = { root, ...graph, cycles: loops };

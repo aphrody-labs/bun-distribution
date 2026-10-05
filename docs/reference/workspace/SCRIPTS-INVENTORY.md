@@ -366,3 +366,34 @@ Conservé : scripts/tools/shenron/scripts/ops/wiki-databooks-indexer.ts (import�
 - scripts/build/discord/packages/scripts/bin/generateSplitDocumentation.ts
 - scripts/build/discord/packages/scripts/tsup.config.ts
 - scripts/build/discord/packages/scripts/turbo/generators/templates/default/tsup.config.ts
+
+## Typage `scripts/` et retrait de `scripts/ops/`, 2026-10-05
+
+`tsc -p scripts/tsconfig.json` fait désormais partie du gate `typecheck` (script `typecheck` de
+`@aphrody/workspace`). Supprimés, sans appelant ou remplacés par leur propriétaire :
+
+- scripts/build/discord/** et scripts/audit/discord/** : kit de scripts amont discord.js (paquets
+  cibles retirés avec `upstream/discord`, aucune provenance dans `config/upstream-sources.json` ni
+  `config/vendor.json`)
+- scripts/inlineScripts.mts : script amont Base UI (`pnpm inline-scripts`, cible `packages/react/src`
+  absente)
+- scripts/build/ui/packages/m3-theme/scripts/{mcu-fixture,mcu-image-fixture}.ts : copies périmées de
+  `m3/packages/m3-theme/scripts/`
+- scripts/audit/web/apps/bxc/scripts/run-tests.ts, scripts/tools/web/apps/bxc/scripts/{ingest-inazuma,
+  measure-coldstart,refresh-embed-players,resolve-episode}.ts : sources bxc et scrapers absents du dépôt
+- scripts/tools/web/apps/bxc/scripts/x-coverage.ts : doublon de `scripts/tools/web/x-coverage.ts`
+- scripts/audit/live-candidates/web-db-count.ts : sonde de la base bxc, sans appelant
+- scripts/tools/os/scripts/absorb-upstream.ts : sans appelant, dépendance `smol-toml` absente ;
+  l’intégration amont passe par `scripts/tools/vendor/fetch.ts` et `config/vendor.json`
+- scripts/tools/workspace/learn-monorepo.ts et config/knowledge-scope.json : `knowledge:scan` non
+  déclaré ; catalogue `scripts/tools/workspace/ecosystem.ts` et `aphrody scan`
+- scripts/tools/workspace/maintain-crates.ts : remplacé par `aphrody-infra maintenance`
+- scripts/ops/ovh-dns.ts : remplacé par `aphrody infra ovh dns` (crate `aphrody-ovh`)
+- scripts/ops/purge-attribution.ts : remplacé par `aphrody git attribution`
+- scripts/ops/inspect-aphrody-web-db.sh : sans appelant
+- scripts/ops/repo-sync.ts : unité `rg-repo-sync.service` retirée du catalogue RG
+
+Déplacés (appelants mis à jour) : les scripts d’hôte de `scripts/ops/` vers `scripts/tools/infra/`
+(sauvegardes Shenron, provisionnement, certificats, ingestion RAG), les audits GitHub
+`gh-repo-intelligence.ts` et `github-account-audit.ts` vers `scripts/audit/workspace/`,
+`x-premium-dump.ts` vers `scripts/tools/web/`.

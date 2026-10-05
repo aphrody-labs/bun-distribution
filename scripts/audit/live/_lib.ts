@@ -115,8 +115,9 @@ export async function expectNoErrorMarkers(page: TestPage, label = page.url()): 
 /** Distinct `href`s of `<a>` elements inside `html`, resolved against `base`. */
 export function linksIn(html: string, base: string): string[] {
   const out = new Set<string>();
-  for (const match of visibleHtml(html).matchAll(/<a\b[^>]*\bhref="([^"]+)"/gi)) {
-    const raw = match[1].replaceAll("&amp;", "&");
+  for (const [, href] of visibleHtml(html).matchAll(/<a\b[^>]*\bhref="([^"]+)"/gi)) {
+    if (href === undefined) continue;
+    const raw = href.replaceAll("&amp;", "&");
     if (/^(mailto:|tel:|javascript:|#)/i.test(raw)) continue;
     try {
       const url = new URL(raw, base);
@@ -133,8 +134,9 @@ export function linksIn(html: string, base: string): string[] {
 /** `src` of `<img>` elements inside `html` (ignores data: URIs). */
 export function imagesIn(html: string, base: string): string[] {
   const out = new Set<string>();
-  for (const match of visibleHtml(html).matchAll(/<img\b[^>]*\bsrc="([^"]+)"/gi)) {
-    const raw = match[1].replaceAll("&amp;", "&");
+  for (const [, src] of visibleHtml(html).matchAll(/<img\b[^>]*\bsrc="([^"]+)"/gi)) {
+    if (src === undefined) continue;
+    const raw = src.replaceAll("&amp;", "&");
     if (raw.startsWith("data:")) continue;
     try {
       out.add(new URL(raw, base).href);

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /** Rank, group and audit owned GitHub repositories using the authenticated gh CLI. */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 type Repo = {
   nameWithOwner: string;
@@ -14,7 +14,8 @@ type Repo = {
   forkCount: number;
   updatedAt: string;
 };
-const root = new URL("..", import.meta.url).pathname.replace(/^\/(\w):/, "$1:").replace(/\/$/, "");
+// Repository root: this file lives in scripts/audit/workspace/.
+const root = resolve(import.meta.dir, "../../..");
 const run = async (args: string[]) => (await Bun.$`gh ${args}`.text()).trim();
 const repos = JSON.parse(
   await run([
@@ -77,10 +78,8 @@ const ranked = active
   .toSorted((a, b) => b.score - a.score || a.nameWithOwner.localeCompare(b.nameWithOwner));
 const groups = new Map<string, string[]>();
 for (const repo of active) {
-  const key = repo.nameWithOwner
-    .split("/")[1]
-    .toLowerCase()
-    .replace(/[-_.](cli|rs|cpp|csharp|py|ts)$/g, "");
+  const [, name = repo.nameWithOwner] = repo.nameWithOwner.split("/");
+  const key = name.toLowerCase().replace(/[-_.](cli|rs|cpp|csharp|py|ts)$/g, "");
   groups.set(key, [...(groups.get(key) ?? []), repo.nameWithOwner]);
 }
 const duplicates = [...groups]

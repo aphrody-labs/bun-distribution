@@ -22,8 +22,9 @@ const wdBlock = root.slice(root.indexOf("[workspace.dependencies]"));
 const wsVersion = new Map<string, string>();
 for (const line of wdBlock.split("\n")) {
   if (line.trim().startsWith("[") && !line.includes("workspace.dependencies")) break;
-  const m = line.match(/^([a-z0-9_-]+)\s*=\s*(?:\{[^}]*\bversion\s*=\s*)?"=?([0-9][0-9.]*)"/i);
-  if (m) wsVersion.set(m[1], m[2]);
+  const [, depName, depVersion] =
+    line.match(/^([a-z0-9_-]+)\s*=\s*(?:\{[^}]*\bversion\s*=\s*)?"=?([0-9][0-9.]*)"/i) ?? [];
+  if (depName && depVersion) wsVersion.set(depName, depVersion);
 }
 
 const apply = process.argv.includes("--apply");
@@ -41,17 +42,16 @@ for await (const rel of new Glob("crates/**/Cargo.toml").scan(".")) {
   const text = await Bun.file(rel).text();
   const lines = text.split("\n");
   let fileChanged = false;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const m = line.match(/^(\s*)([a-z0-9_-]+)\s*=\s*(\{.*\}|"[^"]*")\s*$/i);
-    if (!m) continue;
-    const [, indent, name, rhs] = m;
-    if (!wsVersion.has(name) || DENY_NAME.some((re) => re.test(name))) continue;
+  for (const [i, line] of lines.entries()) {
+    const [, indent, name, rhs] =
+      line.match(/^(\s*)([a-z0-9_-]+)\s*=\s*(\{.*\}|"[^"]*")\s*$/i) ?? [];
+    if (indent === undefined || !name || !rhs) continue;
+    const wsVer = wsVersion.get(name);
+    if (wsVer === undefined || DENY_NAME.some((re) => re.test(name))) continue;
     if (/workspace\s*=\s*true/.test(rhs)) continue;
     const verM = rhs.match(/version\s*=\s*"=?([0-9][0-9.]*)"|^"=?([0-9][0-9.]*)"$/);
     const localVer = verM?.[1] ?? verM?.[2];
     if (!localVer) continue; // git/path dep, leave it
-    const wsVer = wsVersion.get(name)!;
     // Preserve features / optional from the local table. `default-features = false`
     // CANNOT be set on an inheriting member — Cargo rejects it (it must live on the
     // [workspace.dependencies] entry). A member that disables default features has

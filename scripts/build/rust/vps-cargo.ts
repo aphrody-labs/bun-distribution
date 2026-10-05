@@ -234,6 +234,8 @@ async function sync(config: VpsCargoConfig, pull: boolean): Promise<string> {
         "push",
         "--quiet",
         "--force",
+        // The VPS checkout is seeded shallow: a thin pack may delta against bases it lacks.
+        "--no-thin",
         `${config.host}:${config.remoteWorkspace}`,
         `${sha}:${config.snapshotRef}`,
       ],

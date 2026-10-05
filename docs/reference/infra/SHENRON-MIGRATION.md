@@ -76,7 +76,7 @@ serveur). Le même jeton est fourni au bot et au site par
 `/etc/aphrody/shenron-compute-client.env` (`APHRODY_AI_HTTP_URL`,
 `APHRODY_AI_HTTP_TOKEN`, plus les alias `APHRODY_SHENRON_API_URL`/`_TOKEN`),
 écrit par `provision-aphrody-stack-env.sh --fresh-host` et vérifié par
-`scripts/ops/provision-shenron-ai-access.sh`. Ces valeurs ne vont pas dans la
+`scripts/tools/infra/provision-shenron-ai-access.sh`. Ces valeurs ne vont pas dans la
 release ; l'activation exige la présence des clés sans afficher leur valeur.
 
 Le moteur d'embeddings configuré par `APHRODY_AI_EMBED_MODEL` et

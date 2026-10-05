@@ -73,5 +73,5 @@ consumed privately through the contract in [`config/local-ai.json`](../../../../
   relationships are described in [`docs/reference/infra/TOPOLOGY.md`](../../../reference/infra/TOPOLOGY.md)).
 - Public routes authenticate at their application boundary and accept no secret in the URL.
 - Inter-service tokens live in root-owned environment files under `/etc/<plane>/` with mode
-  `0600`, provisioned by `scripts/ops/provision-aphrody-stack-env.sh`; they are rotated
+  `0600`, provisioned by `scripts/tools/infra/provision-aphrody-stack-env.sh`; they are rotated
   explicitly and never committed.

@@ -118,7 +118,8 @@ export class Crawler {
     // Mentions
     const mentionRegex = /@(\w+)/g;
     while ((match = mentionRegex.exec(text)) !== null) {
-      mentions.push(match[1].toLowerCase());
+      const mention = match[1];
+      if (mention) mentions.push(mention.toLowerCase());
     }
 
     return { hashtags, mentions };

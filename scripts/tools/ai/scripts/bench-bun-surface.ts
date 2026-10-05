@@ -43,6 +43,12 @@ function runCommand(command: string, args: string[], cwd: string = process.cwd()
   };
 }
 
+/** Integer value of capture `group`, or null when the pattern or the group did not match. */
+function captureInt(match: RegExpMatchArray | null, group: number): number | null {
+  const value = match?.[group];
+  return value === undefined ? null : Number.parseInt(value, 10);
+}
+
 function parseBunTestOutput(output: string) {
   const passMatch = output.match(/(\d+)\s+pass/);
   const failMatch = output.match(/(\d+)\s+fail/);
@@ -51,25 +57,27 @@ function parseBunTestOutput(output: string) {
   const durationMatch = output.match(/\[([\d.]+)m?s\]\s*$/m);
 
   return {
-    testsPassed: passMatch ? parseInt(passMatch[1], 10) : null,
-    testsFailed: failMatch ? parseInt(failMatch[1], 10) : 0,
-    expectCalls: expectMatch ? parseInt(expectMatch[1], 10) : null,
-    filesCount: filesMatch ? parseInt(filesMatch[2], 10) : null,
-    reportedDuration: durationMatch ? durationMatch[1] : null,
+    testsPassed: captureInt(passMatch, 1),
+    testsFailed: captureInt(failMatch, 1) ?? 0,
+    expectCalls: captureInt(expectMatch, 1),
+    filesCount: captureInt(filesMatch, 2),
+    reportedDuration: durationMatch?.[1] ?? null,
   };
 }
 
 function parseOxlintOutput(stdout: string, stderr: string) {
   const combined = stdout + "\n" + stderr;
   const summaryMatch = combined.match(/Found\s+(\d+)\s+warnings?\s+and\s+(\d+)\s+errors?/);
-  const finishedMatch = combined.match(/Finished in\s+([\d.]+m?s)\s+on\s+(\d+)\s+files with\s+(\d+)\s+rules/);
+  const finishedMatch = combined.match(
+    /Finished in\s+([\d.]+m?s)\s+on\s+(\d+)\s+files with\s+(\d+)\s+rules/,
+  );
 
   return {
-    warnings: summaryMatch ? parseInt(summaryMatch[1], 10) : null,
-    errors: summaryMatch ? parseInt(summaryMatch[2], 10) : null,
-    filesScanned: finishedMatch ? parseInt(finishedMatch[2], 10) : null,
-    rulesChecked: finishedMatch ? parseInt(finishedMatch[3], 10) : null,
-    reportedTime: finishedMatch ? finishedMatch[1] : null,
+    warnings: captureInt(summaryMatch, 1),
+    errors: captureInt(summaryMatch, 2),
+    filesScanned: captureInt(finishedMatch, 2),
+    rulesChecked: captureInt(finishedMatch, 3),
+    reportedTime: finishedMatch?.[1] ?? null,
   };
 }
 
@@ -81,7 +89,10 @@ async function main() {
   // gates are intentionally kept out of this Bun-only benchmark.
   // 1. bun run $APHRODY_HOME/scripts/profile-status.ts
   console.log("1/4 Exécution de profile-status.ts...");
-  const profileStatusRes = runCommand("bun", ["run", path.join(APHRODY_HOME, "scripts/profile-status.ts")]);
+  const profileStatusRes = runCommand("bun", [
+    "run",
+    path.join(APHRODY_HOME, "scripts/profile-status.ts"),
+  ]);
 
   // 2. oxlint -c .oxlintrc.json
   console.log("2/4 Exécution de oxlint...");
@@ -120,7 +131,9 @@ async function main() {
   // Suite additionnelle pour granularité maximale : packages/m3-tokens test
   console.log("Tests additionnels : packages/m3-tokens...");
   const m3TokensTestRes = runCommand("bun", ["--cwd", "packages/m3-tokens", "test"]);
-  const m3TokensMetrics = parseBunTestOutput(m3TokensTestRes.stdout + "\n" + m3TokensTestRes.stderr);
+  const m3TokensMetrics = parseBunTestOutput(
+    m3TokensTestRes.stdout + "\n" + m3TokensTestRes.stderr,
+  );
 
   const totalDurationMs = Math.round((performance.now() - totalStart) * 100) / 100;
 

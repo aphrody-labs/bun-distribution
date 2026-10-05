@@ -1,6 +1,6 @@
 # shenron-backup — sauvegarde du cache SQLite local borné de Shenron
 # (`apps/bot/data/bot.db`) par VACUUM INTO + gzip + rétention, via le script
-# d'exploitation `aphrody-infra/scripts/ops/backup-shenron-sqlite.sh` (déplacé
+# d'exploitation `aphrody-infra/scripts/tools/infra/backup-shenron-sqlite.sh` (déplacé
 # depuis le dépôt Shenron ; `SHENRON_ROOT` désigne la release à sauvegarder).
 # Prérequis hôte : checkout `aphrody-infra` sous /home/ubuntu/aphrody-infra.
 #
@@ -27,7 +27,7 @@ Environment=SHENRON_SQLITE_SRC=/srv/shenron/shared/bot/data/bot.db
 Environment=SHENRON_SQLITE_BACKUP_DIR=/srv/shenron/shared/backups/sqlite
 Environment=SHENRON_SQLITE_BACKUP_RETENTION_DAYS=14
 ExecStartPre=+/bin/mkdir -p /srv/shenron/shared/backups/sqlite
-ExecStart=/bin/bash /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-sqlite.sh
+ExecStart=/bin/bash /home/ubuntu/aphrody-infra/scripts/tools/infra/backup-shenron-sqlite.sh
 
 # Une sauvegarde ne doit jamais concurrencer la production pour le disque ou le CPU.
 Nice=10

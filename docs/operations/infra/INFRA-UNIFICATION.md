@@ -41,12 +41,12 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 |---|---|---|---|
 | **Shenron Media Bridge** | `shenron:deploy/install-media-vpn-proxy.sh`<br>`~/yolo/config/host/privoxy/shenron-media.conf`<br>`config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
 | **Shenron Crawl Sync** | `shenron:scripts/sync-bxc-crawls.ts` | `shenron/scripts/ops/sync-bxc-crawls-to-newvps.ts` | Synchronisation SQLite vers PostgreSQL via Bun pur. Modernisation de l'alias hôte (`vps`), modes `--dry-run` et `--json`. |
-| **Shenron Backups** | `scripts/ops/backup-shenron-pg.sh`<br>`scripts/ops/backup-shenron-sqlite.sh` | `shenron/scripts/backup-shenron-*.sh` | Dépotoir logique MVCC `pg_dump` compressé, manifestes SHA-256, purge différée après accusé de réception offsite Windows. |
+| **Shenron Backups** | `scripts/tools/infra/backup-shenron-pg.sh`<br>`scripts/tools/infra/backup-shenron-sqlite.sh` | `shenron/scripts/backup-shenron-*.sh` | Dépotoir logique MVCC `pg_dump` compressé, manifestes SHA-256, purge différée après accusé de réception offsite Windows. |
 | **NIE 3D Model Prewarm** | `scripts/nie/model-serve-prewarm.sh` (not in repo) | `nie/scripts/ops/model-serve-prewarm.sh` | Pré-chauffage du cache 3D (`nie-model-serve` :8792) pour les modèles GLB et Keshin critiques. Support `--json` et paramétrage du port. |
 | **NIE Sync Main** | `iecode/scripts/tools/sync-main.ts` | `nie/scripts/workspace-transfer.ts` | Synchronisation de checkout entre station de travail et VPS. |
 | **RG Release Assembly** | `iecode/scripts/rg/assemble-vps-release.sh`<br>`scripts/release/atomic-deploy-rg.sh` | `rg/scripts/ops/assemble-vps-release.sh` | Empaquetage d'artefact immuable Next.js 16 standalone sous Docker/Node 22 + Bun, génération de manifestes cryptographiques et bascule atomique. |
 | **Kernel & VPS Tuning** | `~/yolo/config/host/sysctl/99-aphrody-tuning.conf` (not in repo)<br>`~/yolo/config/host/aphrody-os/VPS-TUNING.md` | `aphrody/docs/aphrody-os/vps_tuning.md`<br>`aphrody-os/docs/vps_tuning.md` | Configuration sysctl unifiée (BBR, FQ, somaxconn, buffers TCP), optimisation VirtIO KVM. |
-| **DNS OVH & Domaines** | `scripts/ops/ovh-dns.ts`<br>`crates/infra/ovh`<br>`packages/aphrody-ovh` (not in repo) | Scripts shell et Python OVH disparates | Gestion unifiée DNSSEC, records A/AAAA/CNAME/MX, bascules d'apex et audits de zones en Bun et Rust natifs. |
+| **DNS OVH & Domaines** | `crates/infra/ovh` (`aphrody infra ovh dns`) | Scripts shell et Python OVH disparates | Gestion unifiée DNSSEC, records A/AAAA/CNAME/MX, bascules d'apex et audits de zones en Rust natif. |
 
 ---
 

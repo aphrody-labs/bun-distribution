@@ -12,25 +12,42 @@ import { readdir, stat, readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, relative, extname, resolve } from "node:path";
 
 const args = process.argv.slice(2);
-if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
-  console.log("Usage: bun scripts/forensics/map-google-local.ts <target-dir> [out-dir] [max-hash-bytes]");
-  process.exit(args.length === 0 ? 2 : 0);
+const [targetArg, outArg, hashArg] = args;
+if (targetArg === undefined || args.includes("--help") || args.includes("-h")) {
+  console.log(
+    "Usage: bun scripts/forensics/map-google-local.ts <target-dir> [out-dir] [max-hash-bytes]",
+  );
+  process.exit(targetArg === undefined ? 2 : 0);
 }
 
-const targetDir = resolve(args[0]);
-const outDir = resolve(args[1] || "var/data/google-local-map");
-const maxHashBytes = parseInt(args[2] || "1048576", 10);
+const targetDir = resolve(targetArg);
+const outDir = resolve(outArg || "var/data/google-local-map");
+const maxHashBytes = parseInt(hashArg || "1048576", 10);
 
 const SECRET_PATTERNS = [
-  "cookies", "login data", "web data", "credential", "token",
-  "local state", "leveldb", ".ldb", "manifest-", "session storage",
-  "local storage", "indexeddb", "network", "autofill", "password",
-  "user_history", "preferences.txtpb", "global_preferences"
+  "cookies",
+  "login data",
+  "web data",
+  "credential",
+  "token",
+  "local state",
+  "leveldb",
+  ".ldb",
+  "manifest-",
+  "session storage",
+  "local storage",
+  "indexeddb",
+  "network",
+  "autofill",
+  "password",
+  "user_history",
+  "preferences.txtpb",
+  "global_preferences",
 ];
 
 function isSecret(fullPath: string): boolean {
   const lower = fullPath.toLowerCase();
-  return SECRET_PATTERNS.some(pat => lower.includes(pat));
+  return SECRET_PATTERNS.some((pat) => lower.includes(pat));
 }
 
 interface FileEntry {
@@ -103,8 +120,8 @@ console.log(`[forensics] Scanning ${targetDir}...`);
 const fileEntries: FileEntry[] = [];
 await scanRecursive(targetDir, fileEntries);
 
-const hashedCount = fileEntries.filter(f => f.sha256 !== null).length;
-const secretCount = fileEntries.filter(f => f.secret_meta_only).length;
+const hashedCount = fileEntries.filter((f) => f.sha256 !== null).length;
+const secretCount = fileEntries.filter((f) => f.secret_meta_only).length;
 
 const payload = {
   scanned_at: new Date().toISOString(),
@@ -119,4 +136,6 @@ const payload = {
 
 const outFile = join(outDir, "tree.json");
 await writeFile(outFile, JSON.stringify(payload, null, 2), "utf8");
-console.log(`[forensics] Mapped ${fileEntries.length} files (${hashedCount} hashed, ${secretCount} secret-metadata-only) to ${outFile}`);
+console.log(
+  `[forensics] Mapped ${fileEntries.length} files (${hashedCount} hashed, ${secretCount} secret-metadata-only) to ${outFile}`,
+);

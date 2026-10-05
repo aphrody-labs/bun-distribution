@@ -73,12 +73,14 @@ critique.
 ## Connaissance monorepo
 
 ```bash
-bun run knowledge:scan
+bun scripts/tools/workspace/ecosystem.ts          # catalogue docs/ecosystem (--check en gate)
+aphrody scan tree                                 # taille et nombre de fichiers par groupe
+aphrody scan manifests                            # manifestes Cargo, package.json, pyproject
 ```
 
-Le scan est asynchrone et produit un manifeste borné dans `var/runs/`. Il
-cartographie les dépôts listés dans `config/knowledge-scope.json` : packages,
-scripts, crates, workflows, tests, docs, extensions et capabilities. Les arbres
-générés, assets lourds, bases, secrets et dépendances installées sont exclus. Le
-résultat est directement consommable par YOLO/RAG et chaque run garde ses
-preuves.
+Le catalogue `docs/ecosystem/` recense dépôts, crates, binaires, features, paquets
+Bun et uv, l’arbre exact des commandes clap et chaque outil MCP ; il est extrait de
+la source et `--check` échoue quand la sortie commitée a dérivé. L’ancien scan
+`bun run knowledge:scan` (`learn-monorepo.ts` et `config/knowledge-scope.json` (not in repo),
+retirés le 2026-10-05) supposait un superprojet à sous-modules que ce monorepo n’a
+plus.

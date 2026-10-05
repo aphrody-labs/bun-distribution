@@ -167,7 +167,7 @@ export class XClient {
     let cookieRotated = false;
     const setCookies = res.headers.getSetCookie?.() || [];
     for (const cookie of setCookies) {
-      const [keyval] = cookie.split(";");
+      const [keyval = ""] = cookie.split(";");
       const [key, val] = keyval.split("=").map((s) => s.trim());
       if (key === "auth_token" && val && this.session.auth_token !== val) {
         this.session.auth_token = val;

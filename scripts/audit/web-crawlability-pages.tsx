@@ -373,7 +373,7 @@ function Primitives() {
         "Feedback and status",
         <div className="flex flex-col gap-4">
           <Banner variant="info">Your changes were saved.</Banner>
-          <InfoBanner>
+          <InfoBanner icon="info">
             <InfoBannerText>Scheduled maintenance</InfoBannerText>
             <InfoBannerSubtext>
               The service will be read-only on Sunday between 02:00 and 03:00 UTC.

@@ -164,18 +164,16 @@ export class QueryIdStore {
     const re2 = /\{operationName\s*:\s*["']([^"']+)["']\s*,\s*queryId\s*:\s*["']([^"']+)["']/g;
 
     const matches1 = js.matchAll(re1);
-    for (const m of matches1) {
-      const qid = m[1];
-      const op = m[2];
+    for (const [, qid, op] of matches1) {
+      if (qid === undefined || op === undefined) continue;
       if (targets.has(op) && !out[op] && this.validQueryId(qid)) {
         out[op] = qid;
       }
     }
 
     const matches2 = js.matchAll(re2);
-    for (const m of matches2) {
-      const op = m[1];
-      const qid = m[2];
+    for (const [, op, qid] of matches2) {
+      if (qid === undefined || op === undefined) continue;
       if (targets.has(op) && !out[op] && this.validQueryId(qid)) {
         out[op] = qid;
       }

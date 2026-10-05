@@ -47,11 +47,6 @@
       "scope": "unclassified",
       "reason": ""
     },
-    "packages/engine/core/src/workspace/build-factory-jobs.ts": {
-      "count": 2,
-      "scope": "unclassified",
-      "reason": ""
-    },
     "packages/engine/core/test/vendor-catalog.test.ts": {
       "count": 1,
       "scope": "unclassified",
@@ -76,6 +71,11 @@
       "count": 1,
       "scope": "local",
       "reason": "Fresh Bun process isolates the native library consumer under test."
+    },
+    "packages/infra/workspace/src/docs-source.ts": {
+      "count": 1,
+      "scope": "local",
+      "reason": "Python API references come from the CPython ast module (python3 -I -c, stdin only); already present, detected since the Bun.spawn migration."
     },
     "packages/infra/workspace/src/infra-audit.ts": {
       "count": 2,
@@ -172,6 +172,11 @@
       "scope": "local",
       "reason": "uv import probe of a Python package owner (Python via uv by policy)."
     },
+    "scripts/dev/hooks/block-local-cargo.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "A bun -e command line is test data for the local-Cargo hook, never executed."
+    },
     "scripts/migration/shenron-env-transfer.sh": {
       "count": 2,
       "scope": "host",
@@ -191,16 +196,6 @@
       "count": 2,
       "scope": "host",
       "reason": "Host data migration run once through the Infra runbook; system CPython on the host."
-    },
-    "scripts/ops/prepare-aphrody-data-contract.sh": {
-      "count": 1,
-      "scope": "host",
-      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
-    },
-    "scripts/ops/provision-shenron-ai-access.sh": {
-      "count": 1,
-      "scope": "host",
-      "reason": "Calls the Bun binary under the VPS home, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
     },
     "scripts/release/atomic-deploy-aphrody-discord.sh": {
       "count": 3,
@@ -251,6 +246,16 @@
       "count": 2,
       "scope": "local",
       "reason": "Benchmark of the Python surface itself."
+    },
+    "scripts/tools/infra/prepare-aphrody-data-contract.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/tools/infra/provision-shenron-ai-access.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Calls the Bun binary under the VPS home, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
     },
     "scripts/tools/install-vps-adapter.sh": {
       "count": 4,

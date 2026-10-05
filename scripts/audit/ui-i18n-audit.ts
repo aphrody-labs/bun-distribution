@@ -88,8 +88,8 @@ export function auditCatalogPair(
 export function runI18nAudit(): boolean {
   console.log("[i18n-audit] Auditing Aphrody Desktop UI bilingual catalogs...");
 
-  let en = EN_CATALOG as Record<string, Record<string, string>>;
-  let fr = FR_CATALOG as Record<string, Record<string, string>>;
+  let en: Record<string, Record<string, string>> = EN_CATALOG;
+  let fr: Record<string, Record<string, string>> = FR_CATALOG;
 
   const enFile = join(LOCALES_DIR, "en.json");
   const frFile = join(LOCALES_DIR, "fr.json");

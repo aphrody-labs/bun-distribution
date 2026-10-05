@@ -23,7 +23,11 @@ interface CommandResult {
   stderr: string;
 }
 
-function runCommand(command: string, args: string[], cwd: string = path.join(REPO_ROOT, "py")): CommandResult {
+function runCommand(
+  command: string,
+  args: string[],
+  cwd: string = path.join(REPO_ROOT, "py"),
+): CommandResult {
   const fullCommand = `${command} ${args.join(" ")}`;
   const start = performance.now();
   const proc = spawnSync(command, args, {
@@ -47,8 +51,10 @@ function runCommand(command: string, args: string[], cwd: string = path.join(REP
 
 function parsePytestOutput(stdout: string, stderr: string) {
   const combined = stdout + "\n" + stderr;
-  const match = combined.match(/(\d+)\s+passed(?:,\s+(\d+)\s+skipped)?(?:,\s+(\d+)\s+failed)?(?:,\s+(\d+)\s+error[s]?)?\s+in\s+([\d.]+)s/);
-  
+  const match = combined.match(
+    /(\d+)\s+passed(?:,\s+(\d+)\s+skipped)?(?:,\s+(\d+)\s+failed)?(?:,\s+(\d+)\s+error[s]?)?\s+in\s+([\d.]+)s/,
+  );
+
   let passed = 0;
   let skipped = 0;
   let failed = 0;
@@ -56,22 +62,27 @@ function parsePytestOutput(stdout: string, stderr: string) {
   let durationSeconds: number | null = null;
 
   if (match) {
-    passed = parseInt(match[1], 10) || 0;
-    skipped = match[2] ? parseInt(match[2], 10) : 0;
-    failed = match[3] ? parseInt(match[3], 10) : 0;
-    errors = match[4] ? parseInt(match[4], 10) : 0;
-    durationSeconds = parseFloat(match[5]);
+    // Optional groups (skipped, failed, errors) are absent from the summary when zero.
+    const [, passedText = "0", skippedText = "0", failedText = "0", errorsText = "0", seconds] =
+      match;
+    passed = Number.parseInt(passedText, 10) || 0;
+    skipped = Number.parseInt(skippedText, 10);
+    failed = Number.parseInt(failedText, 10);
+    errors = Number.parseInt(errorsText, 10);
+    durationSeconds = seconds === undefined ? null : Number.parseFloat(seconds);
   }
 
   // Parse coverage if present
-  const covMatch = combined.match(/TOTAL\s+(\d+)\s+(\d+)\s+(\d+)%/);
-  const coverage = covMatch
-    ? {
-        totalStatements: parseInt(covMatch[1], 10),
-        missedStatements: parseInt(covMatch[2], 10),
-        coveragePercent: parseFloat(covMatch[3]),
-      }
-    : null;
+  const [, totalText, missedText, percentText] =
+    combined.match(/TOTAL\s+(\d+)\s+(\d+)\s+(\d+)%/) ?? [];
+  const coverage =
+    totalText !== undefined && missedText !== undefined && percentText !== undefined
+      ? {
+          totalStatements: Number.parseInt(totalText, 10),
+          missedStatements: Number.parseInt(missedText, 10),
+          coveragePercent: Number.parseFloat(percentText),
+        }
+      : null;
 
   return {
     passed,
@@ -169,13 +180,11 @@ async function main() {
         crate_name: "aphrody-rust",
         pyd_path: pydPath.replace(/\\/g, "/"),
         pyd_exists: pydExists,
-        has_rust: ffiCheckCmd.stdout.includes("HAS_RUST: True") || ffiCheckCmd.stdout.includes("HAS_RUST: true"),
+        has_rust:
+          ffiCheckCmd.stdout.includes("HAS_RUST: True") ||
+          ffiCheckCmd.stdout.includes("HAS_RUST: true"),
         ffi_check_exit_code: ffiCheckCmd.exitCode,
-        symbols: [
-          "cosine_similarity",
-          "reciprocal_rank_fusion",
-          "top_k_cosine_similarity",
-        ],
+        symbols: ["cosine_similarity", "reciprocal_rank_fusion", "top_k_cosine_similarity"],
       },
     },
     pytest_execution: {
@@ -191,7 +200,11 @@ async function main() {
         errors: pytestMetrics.errors,
       },
       coverage: pytestMetrics.coverage,
-      raw_summary: pytestCmd.stdout.split("\n").filter((l) => l.includes("passed")).slice(-1)[0] || "",
+      raw_summary:
+        pytestCmd.stdout
+          .split("\n")
+          .filter((l) => l.includes("passed"))
+          .slice(-1)[0] || "",
     },
     linters: {
       ruff_check: {

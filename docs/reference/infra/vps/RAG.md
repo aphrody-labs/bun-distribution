@@ -24,7 +24,7 @@ the pipelines. Restored from the retired `aphrody` monolith (`docs/reference/inf
   selects a local SQLite index instead ([DATABASES.md](./DATABASES.md)).
 - Web ingestion: `aphrody rag web-ingest` reads pages from the BXC Web API on loopback and writes
   only to the AI database; the operator wrapper is
-  [`scripts/ops/aphrody-rag-web-ingest.sh`](../../../../scripts/ops/aphrody-rag-web-ingest.sh).
+  [`scripts/tools/infra/aphrody-rag-web-ingest.sh`](../../../../scripts/tools/infra/aphrody-rag-web-ingest.sh).
 - Indexes and their embedding spaces are declared under `indexes` in `config/local-ai.json`.
   Querying an index with another model or dimension is forbidden (`mix-embedding-spaces`); a
   mismatch falls back to lexical search.

@@ -104,8 +104,6 @@ if (import.meta.main) {
     const result = await Bun.build({
       entrypoints: [join(uiRoot, entry)],
       target: "browser",
-      write: false,
-      logLevel: "silent",
       external: [
         "react",
         "react-dom",

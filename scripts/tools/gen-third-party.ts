@@ -17,12 +17,12 @@ const byLicense = new Map<string, string[]>();
 const glob = new Glob("crates/**/Cargo.toml");
 for await (const rel of glob.scan({ cwd: ROOT })) {
   const text = await Bun.file(`${ROOT}/${rel}`).text();
-  const m = text.match(/^license\s*=\s*"([^"]+)"/m);
-  const nameM = text.match(/^name\s*=\s*"([^"]+)"/m);
-  if (!m || !nameM) continue;
-  const list = byLicense.get(m[1]) ?? [];
-  list.push(nameM[1]);
-  byLicense.set(m[1], list);
+  const license = text.match(/^license\s*=\s*"([^"]+)"/m)?.[1];
+  const name = text.match(/^name\s*=\s*"([^"]+)"/m)?.[1];
+  if (!license || !name) continue;
+  const list = byLicense.get(license) ?? [];
+  list.push(name);
+  byLicense.set(license, list);
 }
 
 const upstream = await Bun.file(`${ROOT}/config/upstream-sources.json`).json();

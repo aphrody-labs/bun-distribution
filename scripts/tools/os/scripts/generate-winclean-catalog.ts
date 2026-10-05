@@ -18,6 +18,13 @@ function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
+/** First capture group of `pattern` in `source`; fails the check when it is absent. */
+function capture(source: string, pattern: RegExp, message: string): string {
+  const body = source.match(pattern)?.[1];
+  assert(body !== undefined, message);
+  return body;
+}
+
 const tools = ((await Bun.file(catalogPath).json()) as { tools: Tool[] }).tools;
 assert(Array.isArray(tools) && tools.length > 0, "empty WinClean catalog");
 const names = tools.map((tool) => tool.name);
@@ -27,33 +34,44 @@ for (const tool of tools) {
 }
 
 const rust = await Bun.file(rustPath).text();
-const rustArray = rust.match(/pub const TOOL_NAMES: \[&str; \d+\] = \[([\s\S]*?)\];/);
-assert(rustArray, "Rust generated TOOL_NAMES missing");
-const rustNames = [...rustArray[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+const rustArray = capture(
+  rust,
+  /pub const TOOL_NAMES: \[&str; \d+\] = \[([\s\S]*?)\];/,
+  "Rust generated TOOL_NAMES missing",
+);
+const rustNames = [...rustArray.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
 assert(
   JSON.stringify(rustNames) === JSON.stringify(names),
   "Rust generated tool names diverge from tools.json",
 );
 
 const bindings = await Bun.file(bindingsPath).text();
-const bunArray = bindings.match(/export const TOOL_NAMES = \[([\s\S]*?)\] as const;/);
-assert(bunArray, "Bun TOOL_NAMES missing");
-const bunNames = [...bunArray[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+const bunArray = capture(
+  bindings,
+  /export const TOOL_NAMES = \[([\s\S]*?)\] as const;/,
+  "Bun TOOL_NAMES missing",
+);
+const bunNames = [...bunArray.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
 assert(
   JSON.stringify(bunNames) === JSON.stringify(names),
   "Bun generated tool names diverge from tools.json",
 );
-const argsMap = bindings.match(/export type ToolArgsMap = \{([\s\S]*?)^\};/m);
-assert(argsMap, "Bun ToolArgsMap missing");
+const argsMap = capture(
+  bindings,
+  /export type ToolArgsMap = \{([\s\S]*?)^\};/m,
+  "Bun ToolArgsMap missing",
+);
 const mapping = new Map(
-  [...argsMap[1].matchAll(/^  "?(\w+)"?: (\w+);/gm)].map((match) => [match[1], match[2]]),
+  [...argsMap.matchAll(/^  "?(\w+)"?: (\w+);/gm)].flatMap(([, name, type]) =>
+    name && type ? [[name, type] as const] : [],
+  ),
 );
 const interfaces = new Map(
   [
     ...bindings
       .replace(/^export interface (\w+) \{\}$/gm, "export interface $1 {\n}")
       .matchAll(/^export interface (\w+) \{([\s\S]*?)^\}/gm),
-  ].map((match) => [match[1], match[2]]),
+  ].flatMap(([, name, body]) => (name && body !== undefined ? [[name, body] as const] : [])),
 );
 assert(mapping.size === tools.length, "Bun ToolArgsMap count diverges from tools.json");
 for (const tool of tools) {
@@ -62,11 +80,14 @@ for (const tool of tools) {
   const definition = interfaces.get(reference);
   assert(definition !== undefined, `Bun args interface missing for ${tool.name}`);
   const fields = new Map(
-    [...definition.matchAll(/^  (\w+)(\?)?:/gm)].map((match) => [match[1], Boolean(match[2])]),
+    [...definition.matchAll(/^  (\w+)(\?)?:/gm)].flatMap(([, name, optional]) =>
+      name ? [[name, optional !== undefined] as const] : [],
+    ),
   );
   const properties = tool.inputSchema.properties ?? {};
   assert(
-    JSON.stringify([...fields.keys()].toSorted()) === JSON.stringify(Object.keys(properties).toSorted()),
+    JSON.stringify([...fields.keys()].toSorted()) ===
+      JSON.stringify(Object.keys(properties).toSorted()),
     `Bun args fields diverge for ${tool.name}`,
   );
   const required = new Set(tool.inputSchema.required ?? []);

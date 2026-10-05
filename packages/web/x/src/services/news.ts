@@ -49,8 +49,9 @@ export function parsePostCount(s: string): number | null {
   const head = s.substring(0, idx);
   // Match digits, dots, spaces, K, M, B
   const tokens = head.match(/[\d.]+\s*[kKmMbB]?/g);
-  if (!tokens || tokens.length === 0) return null;
-  const token = tokens[tokens.length - 1].trim().toLowerCase();
+  const last = tokens?.at(-1);
+  if (last === undefined) return null;
+  const token = last.trim().toLowerCase();
 
   let mult = 1;
   let digits = token;

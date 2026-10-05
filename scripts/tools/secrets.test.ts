@@ -15,8 +15,8 @@ describe("Bun Native Secrets Engine", () => {
     expect(manifest.service).toBe("aphrody-web-api");
     expect(manifest.version).toBe(1);
     expect(manifest.crypto.algorithm).toBe("AES-256-GCM");
-    expect(manifest.data.DATABASE_URL.startsWith("ENC[AES256_GCM,")).toBe(true);
-    expect(manifest.data.JWT_SECRET.startsWith("ENC[AES256_GCM,")).toBe(true);
+    expect(manifest.data.DATABASE_URL).toStartWith("ENC[AES256_GCM,");
+    expect(manifest.data.JWT_SECRET).toStartWith("ENC[AES256_GCM,");
 
     const decrypted = await decryptManifest(manifest, passphrase);
     expect(decrypted.DATABASE_URL).toBe(raw.DATABASE_URL);

@@ -19,7 +19,7 @@ Recon source: `aphrody web recon` (profile **max**), x-premium-recon.ts (script 
 
 Path template: `https://x.com/i/api/graphql/{queryId}/{OperationName}`
 
-Use `fetchPremiumBundle()` or `bun run scripts/x-premium-dump.ts --also-store`.
+Use `fetchPremiumBundle()` or `bun scripts/tools/web/x-premium-dump.ts --also-store` (from the monorepo root).
 
 ## Payments & CDN (CSP / bundle)
 
@@ -46,8 +46,7 @@ Use `fetchPremiumBundle()` or `bun run scripts/x-premium-dump.ts --also-store`.
 ## CLI
 
 ```bash
-cd Aphrody Web && bun run scripts/x-premium-recon.ts
-cd Aphrody Web && bun run scripts/x-premium-dump.ts --also-store
+bun scripts/tools/web/x-premium-dump.ts --also-store   # from the monorepo root
 cargo run -p aphrody-x -- premium          # from rust-bridge/
 cargo run -p aphrody-x -- premium --raw
 ```

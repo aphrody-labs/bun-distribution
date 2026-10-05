@@ -20,7 +20,7 @@ import { join, resolve } from "node:path";
 const REPO_ROOT = resolve(import.meta.dir, "../../..");
 const LOCALES_DIR = join(REPO_ROOT, "m3", "packages", "m3", "src", "locales");
 
-export interface I18nSchema {
+export type I18nSchema = {
   common: Record<string, string>;
   nav: Record<string, string>;
   chat: Record<string, string>;
@@ -33,7 +33,7 @@ export interface I18nSchema {
   shell: Record<string, string>;
   ffi: Record<string, string>;
   errors: Record<string, string>;
-}
+};
 
 export const EN_CATALOG: I18nSchema = {
   common: {

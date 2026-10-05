@@ -2,7 +2,7 @@
 # Daily logical backup of the Shenron PostgreSQL database (shenron_site:
 # public + bot schemas). Hot pg_dump (MVCC-consistent snapshot), gzip -9,
 # SHA-256 manifest, 14-day age retention gated on the off-host acknowledgement
-# (`<dump>.offsite-verified`, written by scripts/ops/pull-shenron-pg-backup.ps1).
+# (`<dump>.offsite-verified`, written by scripts/tools/infra/pull-shenron-pg-backup.ps1).
 #
 # Owner: aphrody-infra (moved from shenron/scripts/backup-shenron-pg.sh; the
 # Shenron copy is frozen until the DBFR units are reinstalled from this repo).

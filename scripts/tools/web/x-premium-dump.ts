@@ -5,23 +5,17 @@
  *
  * Primary surface: https://x.com/i/premium → query **Upsells** (`viewer_v2.upsell_config_for_surfaces`)
  *
- * Usage:
- *   bun run scripts/x-premium-dump.ts
- *   bun run scripts/x-premium-dump.ts --out ~/yoyo/data/premium-dump
- *   bun run scripts/x-premium-dump.ts --also-store  # upsert raw_snapshots into yoyo.sqlite
+ * Usage (from the monorepo root):
+ *   bun scripts/tools/web/x-premium-dump.ts
+ *   bun scripts/tools/web/x-premium-dump.ts --out ~/yoyo/data/premium-dump
+ *   bun scripts/tools/web/x-premium-dump.ts --also-store  # upsert raw_snapshots into yoyo.sqlite
  */
 import { Database } from "bun:sqlite";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { XClient, XSession } from "@aphrody/x";
-
-const CATALOG_PATH = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "../../../../../../crates/web/x/data/x-graphql-catalog.json",
-);
+import { XClient, XSession } from "../../../packages/web/x/src/index.ts";
+import { DEFAULT_CATALOG_PATH as CATALOG_PATH } from "../../../packages/web/x/src/tools/bundle-catalog.ts";
 
 /** GraphQL ops tied to x.com/i/premium, subscriptions, or Blue Verified (2026 catalog). */
 const PREMIUM_OPS = [
@@ -59,7 +53,8 @@ function parseArgv(argv: string[]): CliOpts {
     else if (a === "--handle") opts.handle = argv[++i]?.replace(/^@/, "");
     else if (a === "--also-store") opts.alsoStore = true;
     else if (a === "--db") opts.dbPath = argv[++i] ?? opts.dbPath;
-    else if (a === "--blue-followers") opts.blueFollowersCount = parseInt(argv[++i], 10) || opts.blueFollowersCount;
+    else if (a === "--blue-followers")
+      opts.blueFollowersCount = Number.parseInt(argv[++i] ?? "", 10) || opts.blueFollowersCount;
     else if (a === "-h" || a === "--help") {
       console.log(`x-premium-dump — dump Premium GraphQL payloads
 
@@ -161,9 +156,10 @@ async function main(): Promise<void> {
       (report.results as Record<string, unknown>)[op] = {
         ok: true,
         bytes: JSON.stringify(r.data).length,
-        top_keys: r.data && typeof r.data === "object" && "data" in (r.data as object)
-          ? Object.keys((r.data as { data: Record<string, unknown> }).data)
-          : [],
+        top_keys:
+          r.data && typeof r.data === "object" && "data" in (r.data as object)
+            ? Object.keys((r.data as { data: Record<string, unknown> }).data)
+            : [],
       };
     } else {
       (report.results as Record<string, unknown>)[op] = { ok: false, error: r.error };
@@ -194,10 +190,16 @@ async function main(): Promise<void> {
       headers: { "user-agent": client.session ? "Mozilla/5.0" : "Mozilla/5.0" },
     });
     const html = await res.text();
-    const bundles = [...html.matchAll(/abs\.twimg\.com\/responsive-web\/client-web\/[^"']+\.js/g)].map((m) => `https://${m[0]}`);
+    const bundles = [
+      ...html.matchAll(/abs\.twimg\.com\/responsive-web\/client-web\/[^"']+\.js/g),
+    ].map((m) => `https://${m[0]}`);
     writeFileSync(
       join(opts.outDir, "_premium_page_meta.json"),
-      JSON.stringify({ status: res.status, bundle_count: bundles.length, bundles: bundles.slice(0, 20) }, null, 2),
+      JSON.stringify(
+        { status: res.status, bundle_count: bundles.length, bundles: bundles.slice(0, 20) },
+        null,
+        2,
+      ),
     );
   } catch {
     /* optional */
@@ -206,7 +208,10 @@ async function main(): Promise<void> {
   if (opts.alsoStore && existsSync(opts.dbPath)) {
     const db = new Database(opts.dbPath);
     for (const op of PREMIUM_OPS) {
-      const p = join(opts.outDir, `${op === "BlueVerifiedFollowers" ? "BlueVerifiedFollowers" : op}.json`);
+      const p = join(
+        opts.outDir,
+        `${op === "BlueVerifiedFollowers" ? "BlueVerifiedFollowers" : op}.json`,
+      );
       if (existsSync(p)) {
         storeSnapshot(db, handle, `premium_${op}`, JSON.parse(readFileSync(p, "utf-8")));
       }
@@ -254,8 +259,8 @@ async function buildGapReport(
     for (const op of catalogPremium) {
       const i = js.indexOf(`operationName:"${op}"`);
       if (i < 0) continue;
-      const m = js.slice(Math.max(0, i - 80), i + 40).match(/queryId:"([^"]+)"/);
-      if (m) bundleQids[op] = m[1];
+      const queryId = js.slice(Math.max(0, i - 80), i + 40).match(/queryId:"([^"]+)"/)?.[1];
+      if (queryId) bundleQids[op] = queryId;
     }
   } catch {
     /* optional */
@@ -279,7 +284,9 @@ async function buildGapReport(
 
   const ok = ops.filter((o) => results[o]?.ok);
   const failed = ops.filter((o) => results[o] && !results[o].ok);
-  const notDumpedFromCatalog = catalogPremium.filter((o) => !ops.includes(o as (typeof ops)[number]));
+  const notDumpedFromCatalog = catalogPremium.filter(
+    (o) => !ops.includes(o as (typeof ops)[number]),
+  );
 
   return {
     generated_at: new Date().toISOString(),
@@ -296,12 +303,7 @@ async function buildGapReport(
     fetch_ok: ok,
     fetch_failed: failed,
     stale_query_ids: staleQueryIds,
-    ui_only_identifiers: [
-      "PremiumPaywallOnLoad",
-      "FETCH_UPSELLS",
-      "Subscriptions",
-      "PremiumNav",
-    ],
+    ui_only_identifiers: ["PremiumPaywallOnLoad", "FETCH_UPSELLS", "Subscriptions", "PremiumNav"],
     notes: [] as string[],
     typename_sets: typenameSets,
   };

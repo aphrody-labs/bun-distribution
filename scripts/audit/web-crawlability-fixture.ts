@@ -15,6 +15,7 @@ import type { PageKind, SitePage } from "./web-crawlability.ts";
 export const FIXTURE_ORIGIN = "http://fixture.invalid";
 
 const UI = resolve(import.meta.dir, "../../m3/packages");
+const PAGES_MODULE = resolve(import.meta.dir, "web-crawlability-pages.tsx");
 let installed = false;
 
 /**
@@ -69,7 +70,10 @@ export interface FixtureRoute {
 /** Renders every fixture page (deterministic: no clock, no randomness, no network). */
 export async function renderFixtureSite(): Promise<SitePage[]> {
   installResolver();
-  const pages = (await import("./web-crawlability-pages.tsx")) as {
+  // Runtime-only module: the plugin above transpiles it and pins its react* imports to the UI
+  // packages' copies, which do not resolve from scripts/. Importing it by computed path keeps it
+  // out of the scripts type program; its contract is the shape below.
+  const pages = (await import(PAGES_MODULE)) as {
     renderPages(origin: string): Promise<SitePage[]>;
   };
   return await pages.renderPages(FIXTURE_ORIGIN);

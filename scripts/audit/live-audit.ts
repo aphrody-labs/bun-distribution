@@ -62,7 +62,15 @@ const option = (name: string) => {
 };
 const config = (await Bun.file(join(root, "config", "live-audit.json")).json()) as Config;
 const routes = (
-  (await Bun.file(join(process.env.YOLO_ROOT ?? join(homedir(), "yolo"), "config", "host", "nginx", "routes.json")).json()) as { routes: Route[] }
+  (await Bun.file(
+    join(
+      process.env.YOLO_ROOT ?? join(homedir(), "yolo"),
+      "config",
+      "host",
+      "nginx",
+      "routes.json",
+    ),
+  ).json()) as { routes: Route[] }
 ).routes;
 const onlySite = option("--site");
 const sites = config.sites.filter(
@@ -195,8 +203,9 @@ for (const site of sites) {
     const html = page.html;
     const marker = config.errorMarkers.find((text) => html.includes(text));
     if (marker) add("error", "page", site.host, `« ${marker} » sur ${page.url}`);
-    for (const match of html.matchAll(/\s(?:src|href|content)="([^"#]+)"/g)) {
-      const raw = match[1].replaceAll("&amp;", "&");
+    for (const [, captured] of html.matchAll(/\s(?:src|href|content)="([^"#]+)"/g)) {
+      if (captured === undefined) continue;
+      const raw = captured.replaceAll("&amp;", "&");
       if (!/^(https?:|\/)/.test(raw) || raw.startsWith("//")) continue;
       let url: URL;
       try {

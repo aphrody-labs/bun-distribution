@@ -28,19 +28,13 @@ consolidation.
 
 ## Retired Bun CLI and aliases
 
-`scripts/tools/workspace/maintain-crates.ts` is not currently runnable from this monorepo
-layout: its workspace resolver requires sibling directories named
-`aphrody-infra/` and `aphrody-shell/`, which are absent here. The former
-`bun run crates:build`, `bun run crates:scan`, `bun run crates:update`,
-`bun run crates:fix`, `bun run crates:clean` and `bun run crates:dispatch`
-aliases are not declared in the current root `package.json`. Do not use the
-old standalone build, dispatch or sibling-repository examples below this
-heading as current instructions; use the Rust CLI or Nushell entry point above.
-
-The old scanner implementation remains in the repository for migration
-reference. Its registry checks, YOLO dispatch, external Cargo tools and
-ignored `target/aphrody-crates-mrx/` (not in repo) reports have not been requalified against
-the current workspace layout.
+The former Bun scanner `scripts/tools/workspace/maintain-crates.ts` (not in repo) was removed
+on 2026-10-05: its workspace resolver required sibling `aphrody-infra/` and `aphrody-shell/`
+checkouts that this monorepo layout does not have, and `aphrody-infra maintenance` covers its
+scan, update, fix and clean modes. The former `bun run crates:build`, `bun run crates:scan`,
+`bun run crates:update`, `bun run crates:fix`, `bun run crates:clean` and
+`bun run crates:dispatch` aliases are not declared in the root `package.json`; use the Rust CLI
+or the Nushell entry point above. The old implementation remains in the git history.
 
 References: [Cargo metadata](https://doc.rust-lang.org/cargo/commands/cargo-metadata.html),
 [Cargo update](https://doc.rust-lang.org/cargo/commands/cargo-update.html),

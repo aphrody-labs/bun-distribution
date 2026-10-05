@@ -125,7 +125,7 @@ export async function fetchPremiumBundle(
   };
 }
 
-/** Variable templates for full Premium GraphQL coverage (see scripts/x-premium-dump.ts). */
+/** Variable templates for full Premium GraphQL coverage (see scripts/tools/web/x-premium-dump.ts). */
 export function premiumGraphqlVariables(
   handle: string,
   userId: string,

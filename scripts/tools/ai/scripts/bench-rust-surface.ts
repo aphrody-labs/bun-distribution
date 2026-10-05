@@ -46,6 +46,18 @@ function runCommand(command: string, args: string[], cwd: string = REPO_ROOT): C
   };
 }
 
+/** Float value of the first capture group, or null when the pattern did not match. */
+function captureFloat(match: RegExpMatchArray | null): number | null {
+  const value = match?.[1];
+  return value === undefined ? null : Number.parseFloat(value);
+}
+
+/** [passed, failed, ignored] of one `test result:` line; zeros when the line is absent. */
+function resultCounts(result: RegExpMatchArray | undefined): [number, number, number] {
+  const [, , passed = "0", failed = "0", ignored = "0"] = result ?? [];
+  return [Number.parseInt(passed, 10), Number.parseInt(failed, 10), Number.parseInt(ignored, 10)];
+}
+
 function parseCargoTestOutput(stdout: string, stderr: string) {
   const combined = stdout + "\n" + stderr;
   const testResults = [
@@ -54,22 +66,8 @@ function parseCargoTestOutput(stdout: string, stderr: string) {
     ),
   ];
 
-  let unitPassed = 0;
-  let unitFailed = 0;
-  let unitIgnored = 0;
-
-  if (testResults.length > 0) {
-    unitPassed = parseInt(testResults[0][2], 10);
-    unitFailed = parseInt(testResults[0][3], 10);
-    unitIgnored = parseInt(testResults[0][4], 10);
-  }
-
-  let docPassed = 0;
-  let docFailed = 0;
-  if (testResults.length > 1) {
-    docPassed = parseInt(testResults[1][2], 10);
-    docFailed = parseInt(testResults[1][3], 10);
-  }
+  const [unitPassed, unitFailed, unitIgnored] = resultCounts(testResults[0]);
+  const [docPassed, docFailed] = resultCounts(testResults[1]);
 
   const finishedMatch = combined.match(/Finished `test` profile .* target\(s\) in ([\d.]+)s/);
 
@@ -81,7 +79,7 @@ function parseCargoTestOutput(stdout: string, stderr: string) {
     docFailed,
     totalPassed: unitPassed + docPassed,
     totalFailed: unitFailed + docFailed,
-    buildTimeSeconds: finishedMatch ? parseFloat(finishedMatch[1]) : null,
+    buildTimeSeconds: captureFloat(finishedMatch),
   };
 }
 
@@ -92,7 +90,7 @@ function parseCargoCheckOutput(stdout: string, stderr: string) {
 
   return {
     warnings,
-    buildTimeSeconds: finishedMatch ? parseFloat(finishedMatch[1]) : null,
+    buildTimeSeconds: captureFloat(finishedMatch),
   };
 }
 

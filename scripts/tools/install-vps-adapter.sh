@@ -40,7 +40,7 @@ import hashlib, json, pathlib, sys
 manifest_path, root, revision = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), sys.argv[3]
 m = json.loads(manifest_path.read_text())
 expected = {'scripts/tools/install-vps-adapter.sh', 'scripts/release/atomic-deploy-shenron.sh', 'config/service-catalog.json', 'config/nginx-routes.json', 'config/secrets-contract.json'}
-if m.get('backupOwner') is True: expected.update({'scripts/ops/backup-shenron-sqlite.sh'})
+if m.get('backupOwner') is True: expected.update({'scripts/tools/infra/backup-shenron-sqlite.sh'})
 if m.get('schemaVersion') != 1 or m.get('repository') != 'aphrody-labs/aphrody' or m.get('stack') != 'shenron' or m.get('sourceCommit') != revision or set(m.get('files', {})) != expected:
     raise SystemExit('sealed adapter source manifest differs from requested revision/files')
 for relative, digest in m['files'].items():
@@ -83,7 +83,7 @@ stage = pathlib.Path(tempfile.mkdtemp(prefix='.adapter-package-', dir=destinatio
 try:
     files = {}
     selected = ['scripts/tools/install-vps-adapter.sh', 'scripts/release/atomic-deploy-shenron.sh', 'config/service-catalog.json', 'config/nginx-routes.json', 'config/secrets-contract.json']
-    if backup_owner: selected += ['scripts/ops/backup-shenron-sqlite.sh']
+    if backup_owner: selected += ['scripts/tools/infra/backup-shenron-sqlite.sh']
     for relative in selected:
         source = root / relative
         target = stage / relative; target.parent.mkdir(parents=True, exist_ok=True)
@@ -132,7 +132,7 @@ if $include_backup; then
   libexec="${APHRODY_ADAPTER_LIBEXEC:-/usr/local/libexec/aphrody-infra}"
   unit_dir="${APHRODY_ADAPTER_SYSTEMD:-/etc/systemd/system}"
   install -d -m 0755 "$libexec" "$unit_dir"
-  install -m 0755 "$infra/scripts/ops/backup-shenron-sqlite.sh" "$libexec/backup-shenron-sqlite.sh"
+  install -m 0755 "$infra/scripts/tools/infra/backup-shenron-sqlite.sh" "$libexec/backup-shenron-sqlite.sh"
   YOLO_ROOT="${YOLO_ROOT:-$HOME/aphrody}" bun "${YOLO_ROOT:-$HOME/aphrody}/packages/engine/core/src/host/cli.ts" compose-unit shenron-sqlite-replica-backup.service > "$unit_dir/shenron-sqlite-replica-backup.service"
   chmod 0644 "$unit_dir/shenron-sqlite-replica-backup.service"
   # The existing enabled timer is kept; lead reloads units as a separate gate.

@@ -79,7 +79,7 @@ bun "${YOLO_ROOT:-$HOME/yolo}/packages/core/src/host/cli.ts" compose-unit aphrod
 sudo install -d /etc/nginx/snippets && sudo install -m 0644 "${YOLO_ROOT:-$HOME/yolo}"/config/host/nginx/snippets/*.inc /etc/nginx/snippets/
 sudo install -o root -g root -m 0644 "${YOLO_ROOT:-$HOME/yolo}/config/host/nginx/aphrody/bot.aphrody.com.conf" \
   /etc/nginx/conf.d/bot.aphrody.com.conf
-sudo install -o root -g root -m 0755 scripts/ops/certbot-nginx-reload.sh \
+sudo install -o root -g root -m 0755 scripts/tools/infra/certbot-nginx-reload.sh \
   /etc/letsencrypt/renewal-hooks/deploy/aphrody-nginx-reload
 sudo nginx -t && sudo systemctl daemon-reload && sudo systemctl reload nginx
 ```
@@ -278,7 +278,7 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
    ```
 
    If those credentials are unavailable and all names resolve to the VPS,
-   `sudo bash scripts/ops/issue-aphrody-certificate-http.sh` bootstraps the
+   `sudo bash scripts/tools/infra/issue-aphrody-certificate-http.sh` bootstraps the
    same certificate with HTTP-01. The helper serves only the challenge path,
    validates and reloads Nginx, then removes its temporary vhost. The shipped
    Aphrody HTTP vhosts keep that challenge path at `/var/www/letsencrypt` so
