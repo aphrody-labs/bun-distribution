@@ -1,7 +1,7 @@
 # Aphrody HTTP transport
 
-`@aphrody/http` owns the portable HTTP/JSON mechanism used by the Shenron API,
-Aphrody compute and OCR clients. It has no production dependencies, environment
+`@aphrody/http` owns the portable HTTP/JSON mechanism used by Aphrody compute and
+OCR clients and by consumers such as the Shenron API. It has no production dependencies, environment
 lookup, subprocess, service or domain store.
 
 `requestJson(url, init, { timeoutMs, fetch?, readErrorBody?, emptyStatus? })`

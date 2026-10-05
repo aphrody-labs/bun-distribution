@@ -16,7 +16,7 @@ afterEach(async () => {
 test("install plans only the named repo units and refuses unknown names", async () => {
   const root = await mkdtemp(join(tmpdir(), "update-systemd-"));
   temporary.push(root);
-  const yolo = join(root, "yolo/packages/core/src/units");
+  const yolo = join(root, "yolo/packages/engine/core/src/units");
   await mkdir(yolo, { recursive: true });
   await writeFile(
     join(yolo, "index.ts"),

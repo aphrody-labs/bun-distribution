@@ -22,7 +22,7 @@ await using engine = await NativeInference.open({
   profile: "dbfr",
 });
 const result = await engine.chat({
-  messages: [{ role: "user", content: "Bonjour Shenron." }],
+  messages: [{ role: "user", content: "Bonjour." }],
   maxTokens: 128,
   signal: AbortSignal.timeout(60_000),
 });
@@ -33,11 +33,8 @@ selected profile's canonical Agent Home and requires its SOUL. Profiles never
 inherit another domain through `APHRODY_WORKSPACE`. A compatible, existing GGUF
 LoRA may be provided with `lora`; SOUL prompting is not weight fine-tuning.
 
-The bot defaults to this backend, profile `dbfr` and the pinned Gemma catalog ID.
-`APHRODY_NATIVE_CHAT_MODEL` and `APHRODY_NATIVE_LORA` select installed artifacts.
-`APHRODY_SHENRON_INFERENCE=http` explicitly selects the existing remote backend.
-Native failure does not silently select an HTTP provider. The shared grounded
-answer policy still supplies its established persona fallback on failure.
+Native failure does not silently select an HTTP provider: a consumer that wants a
+remote fallback chooses it explicitly (the Shenron bot documents its own variables).
 
 Run the actual model gate only with an installed qualified library and model:
 `APHRODY_NATIVE_INFERENCE_TEST=1 bun test test/native.integration.test.ts`.

@@ -1,6 +1,6 @@
 # Host prerequisite: an aphrody-infra checkout at /home/ubuntu/aphrody-infra on DBFR.
 # Audit 2026-09-24: DBFR has no such checkout and the installed unit still runs
-# the frozen copy under /home/ubuntu/shenron/scripts/; see docs/SHENRON-MIGRATION.md.
+# the frozen copy under /home/ubuntu/shenron/scripts/; see docs/reference/infra/SHENRON-MIGRATION.md.
 [Unit]
 Description=Daily logical backup of Shenron PostgreSQL data on DBFR
 After=postgresql@18-main.service

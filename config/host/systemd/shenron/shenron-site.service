@@ -1,7 +1,7 @@
 # shenron-site — site Next.js (dragonballfr.com), servi par `next start` sous Bun.
 #
 # Application Shenron sur son propre plan de release (voir
-# docs/SHENRON-MIGRATION.md) : `/srv/shenron/current` -> `/srv/shenron/releases/<sha>`,
+# docs/reference/infra/SHENRON-MIGRATION.md) : `/srv/shenron/current` -> `/srv/shenron/releases/<sha>`,
 # découplé du pointeur RG `/srv/rg/current`. Un seul process, aucun slot
 # bleu/vert : la bascule atomique du lien est portée par le déploiement, pas
 # par cette unité. Base PostgreSQL : `shenron_site` sur dbfr via

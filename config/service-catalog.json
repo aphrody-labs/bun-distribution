@@ -164,7 +164,7 @@
       "releaseRoot": "/srv/shenron/releases",
       "sharedRoot": "/srv/shenron/shared",
       "deployAdapter": "scripts/release/atomic-deploy-shenron.sh",
-      "note": "single Bun process (discordx + Bun.serve REST/GraphQL/OpenAPI); no separate shenron-api.service, see docs/SHENRON-MIGRATION.md",
+      "note": "single Bun process (discordx + Bun.serve REST/GraphQL/OpenAPI); no separate shenron-api.service, see docs/reference/infra/SHENRON-MIGRATION.md",
       "public": true
     },
     {
@@ -175,7 +175,7 @@
       "unit": "shenron-pg-tunnel.service",
       "health": "tcp://127.0.0.1:15433",
       "target": "dbfr:127.0.0.1:5432",
-      "note": "private PostgreSQL path VPS -> dbfr (shenron_site); 5432 never public, see docs/SHENRON-MIGRATION.md",
+      "note": "private PostgreSQL path VPS -> dbfr (shenron_site); 5432 never public, see docs/reference/infra/SHENRON-MIGRATION.md",
       "public": false
     },
     {

@@ -5,14 +5,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pipelineCatalog } from "../src/pipeline-catalog.ts";
 
-test("new domains run before the final Shenron product gate", async () => {
+test("known domains run bottom to top, then new domains in name order", async () => {
   const root = await mkdtemp(join(tmpdir(), "aphrody-pipeline-"));
   try {
     await Bun.write(
       join(root, "package.json"),
       JSON.stringify({ name: "aphrody-workspace", workspaces: ["packages/*/*"] }),
     );
-    for (const domain of ["os", "shell", "google", "ai", "future", "shenron"]) {
+    for (const domain of ["os", "shell", "google", "ai", "future", "alpha"]) {
       const dir = join(root, "packages", domain, "sample");
       await mkdir(dir, { recursive: true });
       await Bun.write(
@@ -24,8 +24,9 @@ test("new domains run before the final Shenron product gate", async () => {
     const stages = config.stages.map((stage) => stage.id);
     expect(stages.indexOf("bun-os")).toBeLessThan(stages.indexOf("bun-shell"));
     expect(stages.indexOf("bun-google")).toBeLessThan(stages.indexOf("bun-ai"));
-    expect(stages.indexOf("bun-future")).toBeLessThan(stages.indexOf("product-shenron-final"));
-    expect(stages.at(-1)).toBe("product-shenron-final");
+    expect(stages.indexOf("bun-ai")).toBeLessThan(stages.indexOf("bun-alpha"));
+    expect(stages.indexOf("bun-alpha")).toBeLessThan(stages.indexOf("bun-future"));
+    expect(stages.at(-1)).toBe("bun-future");
   } finally {
     await rm(root, { recursive: true, force: true });
   }

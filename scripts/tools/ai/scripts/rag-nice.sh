@@ -6,7 +6,7 @@
 # agents on this shared VPS. Canonical wrapper for docs/rag-unified-pattern.md §5.
 #
 #   usage: scripts/rag-nice.sh <lockname> <cmd> [args...]
-#   e.g.:  scripts/rag-nice.sh shenron-ragbuild bun --filter @shenron/bot run rag:build
+#   e.g.:  scripts/rag-nice.sh rag-index aphrody rag index .
 #
 # Behaviour:
 #   - single-flight per <lockname> via flock (a second run no-ops, exit 0)

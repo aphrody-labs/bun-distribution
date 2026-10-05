@@ -25,7 +25,7 @@
 // Usage:
 //   aphrody-ops agent-home --source <aphrody-root>            # write the context
 //   aphrody-ops agent-home --source <aphrody-root> --dry-run  # print it, touch nothing
-//   aphrody-ops agent-home --source <aphrody-root> --profile shenron   # workspace-shenron
+//   aphrody-ops agent-home --source <aphrody-root> --profile dbfr      # workspaces/dbfr
 
 import { spawnSync } from "@aphrody/update/process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -47,7 +47,11 @@ interface RepoSpec {
 const REPOS: readonly RepoSpec[] = [
   {
     dir: "aphrody",
-    role: "Monorepo Rust/Bun : fondations, infrastructure et applications, dont Shenron.",
+    role: "Monorepo Rust/Bun : fondations, infrastructure et capacités publiées.",
+  },
+  {
+    dir: "shenron",
+    role: "Produit Shenron (dragonballfr.com) et Koharu ; consomme Aphrody par npm et crates.io.",
   },
   { dir: "aphrody-py", role: "Workspace Python actif." },
   { dir: "iecode", role: "Workspace actif du domaine jeu." },

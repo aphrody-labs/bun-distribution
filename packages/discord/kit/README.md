@@ -1,6 +1,6 @@
 # @aphrody/discord-kit
 
-Shared Discord bot core kit for Aphrody monorepo applications (`@shenron/bot`, `@rosegriffon/bot`, `@rosegriffon/achillea-bot`).
+Shared Discord bot core kit, published as `@aphrody/discord-kit` and used by the Shenron and Rose Griffon bots.
 
 ## Features
 

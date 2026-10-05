@@ -14,18 +14,7 @@
     "format": "jsonl",
     "inbox": ".coord/inbox-from-<peer>.jsonl",
     "outbox": ".coord/outbox-to-<peer>.jsonl",
-    "envelope": [
-      "v",
-      "ts",
-      "id",
-      "from",
-      "to",
-      "kind",
-      "topic",
-      "body",
-      "re",
-      "channel_hint"
-    ],
+    "envelope": ["v", "ts", "id", "from", "to", "kind", "topic", "body", "re", "channel_hint"],
     "gitPolicy": "untracked-runtime-state",
     "retention": "operator-rotated; never contains secrets"
   },
@@ -55,7 +44,7 @@
       "authEnv": "SHENRON_A2A_TOKEN",
       "status": "retired",
       "retiredAt": "2026-09-25",
-      "supersededBy": "aphrody-mcp dragonball.a2a_* tools over the Shenron site /api/a2a registry"
+      "supersededBy": "shenron-mcp dragonball.a2a_* tools over the Shenron site /api/a2a registry (aphrody-labs/shenron)"
     },
     {
       "id": "codex",
@@ -96,7 +85,7 @@
   ],
   "policy": {
     "secrets": "authEnv names an operator-managed environment variable; values never live in Git",
-    "publicSurface": "Shenron's Aphrody-owned host publishes MCP, OAuth and A2A on mcp.dragonballfr.com; admin MCP tools require Bearer authorization"
+    "publicSurface": "Shenron (aphrody-labs/shenron) publishes MCP, OAuth and A2A on mcp.dragonballfr.com from the Infra-managed host; admin MCP tools require Bearer authorization"
   },
   "codingAgents": {
     "workspace": "repository-root",

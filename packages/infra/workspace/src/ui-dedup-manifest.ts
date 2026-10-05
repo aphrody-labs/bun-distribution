@@ -146,11 +146,6 @@ export async function runUiDedupManifest(args: string[]): Promise<number> {
         totalFiles: uiDistFiles.size,
         files: fingerprints(uiDistFiles),
       },
-      cluster4_koharu_internal_controls: {
-        status: "counts-stale",
-        decision:
-          "Earlier imported/unimported control counts predate removal of unused wrappers; remaining candidates need a fresh import and behavior inventory.",
-      },
       cluster5_m3_explorer_vs_app_ui: {
         status: "partial-integration",
         decision:

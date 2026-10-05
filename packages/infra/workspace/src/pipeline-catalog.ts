@@ -14,10 +14,8 @@ const DOMAIN_ORDER = [
   "google",
   "ai",
   "discord",
-  "koharu",
   "fut",
   "rg",
-  "shenron",
 ];
 export async function pipelineCatalog(root: string) {
   root = resolve(root);
@@ -80,17 +78,11 @@ export async function pipelineCatalog(root: string) {
     groups.set(domain, steps);
   }
   for (const domain of [
-    ...DOMAIN_ORDER.filter((domain) => domain !== "shenron"),
+    ...DOMAIN_ORDER,
     ...[...groups.keys()].filter((domain) => !DOMAIN_ORDER.includes(domain)).toSorted(),
-    "shenron",
   ]) {
     const steps = groups.get(domain);
-    if (steps?.length)
-      stages.push({
-        id: domain === "shenron" ? "product-shenron-final" : `bun-${domain}`,
-        parallel: false,
-        steps,
-      });
+    if (steps?.length) stages.push({ id: `bun-${domain}`, parallel: false, steps });
   }
   return {
     config: {

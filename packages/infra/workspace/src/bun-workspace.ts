@@ -130,17 +130,7 @@ export function checkManifest(
         });
         continue;
       }
-      // This reader is also consumed directly through file: by Shenron. Its
-      // explicit version must match the root catalog without requiring that
-      // catalog to resolve from a different workspace.
-      const externalReaderVersion =
-        manifest.name === "@aphrody/m3-reader" && spec === expectedCatalog;
-      if (
-        expectedCatalog &&
-        !catalogSpec &&
-        !spec.startsWith("workspace:") &&
-        !externalReaderVersion
-      ) {
+      if (expectedCatalog && !catalogSpec && !spec.startsWith("workspace:")) {
         out.push({
           path,
           rule: "catalog",

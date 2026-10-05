@@ -8,11 +8,7 @@
       "name": "tauri",
       "github": "tauri-apps/tauri",
       "context7": "/tauri-apps/tauri-docs",
-      "topics": [
-        "migrate",
-        "breaking changes",
-        "plugin permissions"
-      ]
+      "topics": ["migrate", "breaking changes", "plugin permissions"]
     },
     {
       "id": "wasm-bindgen",
@@ -20,28 +16,21 @@
       "name": "wasm-bindgen",
       "github": "rustwasm/wasm-bindgen",
       "context7": "/wasm-bindgen/wasm-bindgen",
-      "topics": [
-        "breaking changes",
-        "getrandom"
-      ]
+      "topics": ["breaking changes", "getrandom"]
     },
     {
       "id": "rio-vt",
       "ecosystem": "cargo",
       "name": "rio-vt",
       "github": "raphamorim/rio",
-      "topics": [
-        "changelog"
-      ]
+      "topics": ["changelog"]
     },
     {
       "id": "portable-pty",
       "ecosystem": "cargo",
       "name": "portable-pty",
       "github": "wezterm/wezterm",
-      "topics": [
-        "windows conpty"
-      ]
+      "topics": ["windows conpty"]
     },
     {
       "id": "xterm",
@@ -49,10 +38,7 @@
       "name": "@xterm/xterm",
       "github": "xtermjs/xterm.js",
       "context7": "/xtermjs/xterm.js",
-      "topics": [
-        "breaking changes",
-        "write callback flow control"
-      ]
+      "topics": ["breaking changes", "write callback flow control"]
     },
     {
       "id": "next",
@@ -60,9 +46,7 @@
       "name": "next",
       "github": "vercel/next.js",
       "context7": "/vercel/next.js",
-      "topics": [
-        "upgrade guide"
-      ]
+      "topics": ["upgrade guide"]
     },
     {
       "id": "discord.js",
@@ -70,9 +54,7 @@
       "name": "discord.js",
       "github": "discordjs/discord.js",
       "context7": "/discordjs/discord.js",
-      "topics": [
-        "breaking changes"
-      ]
+      "topics": ["breaking changes"]
     },
     {
       "id": "bun",
@@ -80,9 +62,7 @@
       "name": "bun",
       "github": "oven-sh/bun",
       "context7": "/oven-sh/bun",
-      "topics": [
-        "breaking changes"
-      ]
+      "topics": ["breaking changes"]
     },
     {
       "id": "uv",
@@ -91,32 +71,21 @@
       "github": "astral-sh/uv",
       "pypi": "uv",
       "context7": "/astral-sh/uv",
-      "topics": [
-        "breaking changes"
-      ]
+      "topics": ["breaking changes"]
     }
   ],
   "consumers": {
     "note": "Rust packages and Bun workspaces re-checked when one of these libraries changes.",
     "tauri": {
-      "cargo": [
-        "aphrody-shell-tauri",
-        "aphrody-app",
-        "koharu",
-        "aphrody-tauri-wrap"
-      ],
+      "cargo": ["aphrody-shell-tauri", "aphrody-app", "aphrody-tauri-wrap"],
       "bun": []
     },
     "xterm": {
-      "bun": [
-        "packages/shell/web"
-      ]
+      "bun": ["packages/shell/web"]
     }
   },
   "inventory": {
     "note": "Extra roots scanned for Python pins (requirements*.txt, uv.lock) besides the repository (installed environments only; upstream reference clones are third-party).",
-    "pythonRoots": [
-      "~/aphrody-py"
-    ]
+    "pythonRoots": ["~/aphrody-py"]
   }
 }

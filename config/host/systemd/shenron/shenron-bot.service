@@ -3,7 +3,7 @@
 # comme documenté par `docs/infra-vps.md` et `docs/INFRA-DELEGATION.md` côté
 # Shenron. Le catalogue infra a été aligné sur ce process unique : il n'existe
 # volontairement PAS de `shenron-api.service` séparé (décision enregistrée
-# dans `docs/SHENRON-MIGRATION.md`).
+# dans `docs/reference/infra/SHENRON-MIGRATION.md`).
 #
 # Installation :
 #   bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit shenron-bot.service | sudo tee /etc/systemd/system/shenron-bot.service >/dev/null
