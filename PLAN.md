@@ -127,23 +127,28 @@ paquets `fork` déclarés).
 
 ## 7. Noyau et paquets installables (décision du 2026-10-05)
 
-Gestionnaire de paquets : Bun natif. `workspace:*` dans le monorepo ; les paquets installables sont publiés
-sous le scope npm `@aphrody` (`bun publish`, 51 paquets déjà publiés par le propriétaire) ; les dépôts
-frères privés consomment le canal d’archives adressées par sha256 de `aphrody-ops aphrody-packages prepare`
-(pin `config/aphrody-packages.json`, consommateurs : IECODE, FUT). Pas de second gestionnaire.
+Gestionnaire de paquets : Bun natif, un seul canal. `workspace:*` dans le monorepo ; tout paquet consommé
+hors du monorepo est publié sur l’organisation npm `@aphrody` (propriétaire `yohan971`, `bun publish` depuis
+le monorepo, versions exactes, `workspace:`/`catalog:` réécrits par Bun) et installé par les dépôts frères
+comme n’importe quel paquet npm (exemption `minimumReleaseAgeExcludes` pour `@aphrody/*`). Le canal
+d’archives sha256 (`aphrody-ops aphrody-packages prepare`) est transitoire et disparaît après la migration
+d’IECODE et de FUT.
 
 - Noyau (monorepo, jamais installé seul) : engine (yolo-core), runtime SDK, paths, http, sql, update,
-  workspace, plugins, os, shell-web, test-dom, CLI `yolo`.
-- Paquets installables (indépendants, publiables) : `@aphrody/x`, `xai`, `google`, `doc-ai`, `ovh`,
-  `messaging`, `n2b-*`, `web-test`, `bun` (FFI), famille m3 ; `agent-browser` est à absorber dans
-  Aphrody Web (Rust).
-- Non-produit → dépôt propre : [x] FUT (`aphrody-labs/fut`, historique conservé, 148 tests verts en
-  autonomie sur le pin d’archives) ; [ ] Shenron et Koharu à trancher.
-- [ ] Retirer les doublons de mécanismes : crate morte `aphrody-marketplace`, `publish-workspaces.ts`,
-  pin SDK `config/sibling-checkouts.json` (remplacé par le canal d’archives), wrappers `bun install`
-  multiples (façade unique `yolo-core/pm`) ; scan `aphrody-packages` étendu à `m3/packages` et `crates/tauri`.
+  workspace, plugins, os, shell-web, test-dom, CLI `yolo` ; crates Rust (dont le socle ML `koharu-*`,
+  à renommer `aphrody-*`).
+- Paquets installables (indépendants, publiés) : `@aphrody/x`, `xai`, `google`, `doc-ai`, `ovh`,
+  `messaging`, `n2b-*`, `web-test`, `bun` (FFI), famille m3, `api` et `plugin-*` Tauri (sorties JS produites
+  par `crates/tauri/build-js.ts`) ; `agent-browser` est à absorber dans Aphrody Web (Rust).
+- Produits hors plateforme → dépôt propre (modèle Bun/Linux : aucun produit aval dans le dépôt) :
+  [x] FUT (`aphrody-labs/fut`, historique conservé, 148 tests verts en autonomie) ;
+  [ ] Shenron + frontal Koharu fusionnés (`aphrody-labs/shenron`, structure aplatie apps/packages/scripts/deploy).
+- [x] Doublons de mécanismes retirés (`8b94aa7d4`, session aphrody-1a) : crate `aphrody-marketplace`,
+  `publish-workspaces.ts`, pin SDK `sibling-checkouts`, wrappers `bun install` (façade `yolo-core/pm`).
+- [ ] Publication npm des paquets consommés par Shenron et FUT, puis migration d’IECODE et FUT vers npm.
+- [ ] `packages/` aplati (`packages/<nom>`, comme `bun/packages`) ; `py/` rendu à `aphrody-py`.
 - [ ] GitHub : archiver les dépôts absorbés (`yolo`, `aphrody-m3`, `nie-ui`, `plugin-*` → `plugins`) et les
   forks intégrés ou purgés (tauri, tao, wry, plugins-workspace, create-tauri-app, next.js, tailwindcss,
-  base-ui, fonts, material-*) ; trancher `aphrody-py` contre `py/`.
+  base-ui, fonts, material-*).
 - [ ] npm : déprécier les paquets absorbés par Bun (`zstd`, `xml2`, `web-storage`, `web-notification`), renommés
-  (`bun-rs`), ou hors produit (scrapers d’épisodes, `bxc*`) ; jeton npm du propriétaire requis.
+  (`bun-rs`), ou hors produit (scrapers d’épisodes, `bxc*`).
