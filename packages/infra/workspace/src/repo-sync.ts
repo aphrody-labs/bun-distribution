@@ -18,7 +18,7 @@ import {
   sourceSyncStateRoot,
   type SourceSyncConfig,
   type SyncReport,
-} from "../../../../scripts/source-sync.ts";
+} from "../../../../scripts/tools/workspace/source-sync.ts";
 import { runBuildFactory } from "./build-factory.ts";
 import { infraRoot } from "./runtime.ts";
 

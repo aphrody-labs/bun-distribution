@@ -140,7 +140,7 @@
         "Documentation": "file://%h/aphrody/README.md",
         "After": "network-online.target",
         "Wants": "network-online.target",
-        "ConditionPathExists": "%h/aphrody/scripts/source-sync.ts"
+        "ConditionPathExists": "%h/aphrody/scripts/tools/workspace/source-sync.ts"
       },
       "service": {
         "WorkingDirectory": "%h/aphrody",

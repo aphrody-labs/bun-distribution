@@ -12,7 +12,7 @@ import {
   qualifyHost,
   sourceInventory,
 } from "../src/infra-audit.ts";
-import { sensitiveInventoryPath } from "../../../../scripts/check-infra.ts";
+import { sensitiveInventoryPath } from "../../../../scripts/tools/infra/check-infra.ts";
 
 test("tracked inventory allows templates and SQL source but detects private runtime files", () => {
   expect(sensitiveInventoryPath("config/local-ai.env.example")).toBe(false);

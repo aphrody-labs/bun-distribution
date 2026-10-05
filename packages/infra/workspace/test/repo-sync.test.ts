@@ -13,7 +13,7 @@ import {
   type SyncOptions,
   type SyncReport,
   type SyncRepository,
-} from "../../../../scripts/source-sync.ts";
+} from "../../../../scripts/tools/workspace/source-sync.ts";
 import {
   FactoryBuildQueue,
   readRepoSyncStatus,
@@ -703,7 +703,7 @@ test.skipIf(process.platform === "win32")(
     const entry = join(value.root, "watch.ts");
     await writeFile(
       entry,
-      `import { runSourceSync } from ${JSON.stringify(join(import.meta.dir, "../../../../scripts/source-sync.ts"))};\nprocess.exit(await runSourceSync(["watch"], ${JSON.stringify(value.root)}));\n`,
+      `import { runSourceSync } from ${JSON.stringify(join(import.meta.dir, "../../../../scripts/tools/workspace/source-sync.ts"))};\nprocess.exit(await runSourceSync(["watch"], ${JSON.stringify(value.root)}));\n`,
     );
     const home = join(value.root, "protected");
     const child = Bun.spawn([process.execPath, entry], {
