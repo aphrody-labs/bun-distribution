@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # SVG — référence pour le propriétaire identity
 
-Pipeline applicatif canonique :
-[Shenron SVG](../../../../docs/architecture/shenron/pipeline-svg.md).
+Pipeline applicatif canonique : `docs/architecture/pipeline-svg.md` de
+[aphrody-labs/shenron](https://github.com/aphrody-labs/shenron).
 Mesures et doctrine de dessin restent chez ce propriétaire ; ce document ne
 maintient pas une seconde liste de versions, générateurs ou commandes de déploiement.
 

@@ -15,21 +15,6 @@ The trusted main window's core commands include:
 | `aphrody_rpc(request)` | JSON-RPC result | app-server sessions, turns and interruption |
 | `aphrody_shell_window(action)` | native window state | main-only window controls and navigation |
 
-Shenron's public, read-only grounded chat is available in the existing Chat
-surface with `/shenron <question>`. Its typed `aphrody_shenron_chat` command calls
-only `https://dragonballfr.com/api/chat`; it accepts no arbitrary URL or token.
-It does not represent an authenticated Shenron account or grant admin access.
-See [`../../docs/integrations/SHENRON.md`](../../../m3/docs/reference/integrations/SHENRON.md)
-for the API, FFI, auth, and database ownership decisions.
-
-The main window also exposes `koharu_rpc(method, params)`. The Koharu engine is
-directly linked in-process via `koharu-library`, eliminating subprocess overhead,
-stdio serialization, and external sidecar requirements. It dispatches commands
-directly in-process and emits live engine events as `koharu://event`. Both the editor
-and the Aphrody desktop shell share the unified Tauri 3 line (pinned `=3.0.0-alpha.3`),
-providing full M3 theming and zero-subprocess performance.
-
-
 The shell command takes its invoking `WebviewWindow`, accepts no target label and
 rejects every label except `main`. Remote Wry previews have no capability and
 cannot control desktop windows.

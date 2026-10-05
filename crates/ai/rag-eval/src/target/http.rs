@@ -18,7 +18,7 @@ use tracing::{debug, warn};
 use super::{EvalTarget, TargetResponse};
 use crate::error::{EvalError, Result};
 
-/// Wire format expected from shenron or compatible HTTP endpoints.
+/// Wire format expected from a compatible HTTP search endpoint (`hits` or `results`).
 #[derive(Debug, Deserialize)]
 struct HttpSearchResponse {
     #[serde(alias = "results")]

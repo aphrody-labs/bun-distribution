@@ -62,7 +62,8 @@ pub struct WikiImage {
     pub sha1: Option<String>,
 }
 
-/// Matches Shenron's `WikiPageDossierSchema`; absent content stays absent in serialized output.
+/// Wiki page dossier (shape of the `WikiPageDossierSchema` consumer contract); absent content
+/// stays absent in serialized output.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct WikiPageDossier {
     pub url: String,

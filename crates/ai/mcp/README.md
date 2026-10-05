@@ -62,29 +62,12 @@ Use `resultLimit` to request fewer pages. These limits bound the MCP response;
 `maxRequests` controls crawl work. Persistent SQLite frontier paths should be
 provided only when the caller intends to retain crawl state.
 
-### Dragon Ball (`dragonball.*`, feature `dragonball`, on by default)
+### Dragon Ball tools
 
-The Dragon Ball tools are served by `src/dragonball_tools.rs` and registered
-in `src/main.rs`. The former Bun `apps/shenron-mcp` is retired. The current
-registry includes `rag_search`, `rag_context`, `rag_ask`,
-`sources`, `data_coverage`, `wiki_{search,list,get,categories}`,
-`manga_{search,tomes,page,chapitre,planche,recherche,scanlate}`, `chronologie`,
-`bot_{stats,personas,leaderboard,commands}`, `news`,
-`databooks_{search,planches,get,scanlate}`, `canon_{check,references}`,
-`a2a_{send,task_status,task_list,agent_card}` and
-`admin_{databooks_deposit,bot_commands,bot_command_execute,services,service_action}`.
-Use MCP `tools/list` from the built server for the exact runtime schemas.
-
-- Backends: `SHENRON_API_URL` (bot), `SHENRON_SITE_API_URL` / `SHENRON_SITE_URL` (site).
-- Local RAG, persona and chat: `aphrody_rag::dragonball`. `local: true` or
-  `SHENRON_LOCAL_RAG=1` answers from the local corpus
-  (`APHRODY_DRAGONBALL_CORPUS`, `APHRODY_DRAGONBALL_DATASET_DIR`,
-  `APHRODY_CORPUS_CRAWL_DIR`, `APHRODY_DRAGONBALL_RAG_DB`, `APHRODY_HOME`);
-  `APHRODY_AUTO_FALLBACK=1` falls back to it when the bot API fails. The local
-  model comes from the `APHRODY_AI_CHAT_*` contract (`APHRODY_LOCAL_AI_CONFIG`
-  names the contract file).
-- Admin tools fail closed without `SHENRON_API_ADMIN_TOKEN` (bot) or
-  `SHENRON_DATABOOKS_API_TOKEN` (site).
+The `dragonball.*` tools left with the Shenron product: they are served by
+`shenron-mcp` (`crates/shenron-mcp` of
+[aphrody-labs/shenron](https://github.com/aphrody-labs/shenron)). This server keeps
+only the Aphrody AI gateway Shenron calls (`/api/v1/shenron/*`, below).
 
 ## Transports
 

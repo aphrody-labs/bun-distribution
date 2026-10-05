@@ -47,14 +47,6 @@ importing its module does not require a built native library.
 | `void aphrody_string_free(char *ptr)` | free a string this library returned. |
 | `const char *aphrody_last_error(void)` | last error on this thread (owned by lib, no free). |
 
-The same library also exposes Shenron's complete CLI entry point
-(`shenron_run`, `shenron_run_json`, `shenron_run_captured`), its RAG search and
-stats operations, sanitized auth status, and persona prompt/ask operations.
-Owned Shenron strings use `shenron_string_free`; its Bun `shenronLastError()`
-reads the shared thread-local `aphrody_last_error()` diagnostic. The separately
-versioned Manga surface provides bubble detection, typesetting, pipeline and
-scanlation operations, with returned strings released by `manga_string_free`.
-
 Arguments exclude the program name — a synthetic `argv[0]` is prepended
 internally — e.g. `["doctor", "--json"]`. The C header is `include/aphrody.h`.
 

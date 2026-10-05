@@ -225,43 +225,39 @@ pub async fn studio_a2a_fleet_status() -> Result<Value, String> {
         }
     }
 
-    // Peers
-    let peers = serde_json::json!([
-        {
-            "id": "agy",
-            "name": "Antigravity CLI (agy)",
-            "role": "Lead Systems & UI Agent",
-            "status": "busy",
-            "version": "2.0.0",
-            "skills": ["bun", "rust", "m3", "tauri", "ag-ui", "mcp-ui"],
-            "activeClaim": ".coord/claims/native-integration.json"
-        },
-        {
-            "id": "codex",
-            "name": "Codex CLI",
-            "role": "Backend & Systems Integrator",
-            "status": "busy",
-            "version": "1.4.0",
-            "skills": ["rust", "cargo", "torch", "cef", "bindings"],
-            "activeClaim": "crates/koharu/koharu-torch"
-        },
-        {
-            "id": "claude",
-            "name": "Claude Code",
-            "role": "Core Monorepo Architect",
-            "status": "idle",
-            "version": "3.7.0",
-            "skills": ["refactoring", "monorepo", "architecture", "coordination"]
-        },
-        {
-            "id": "shenron",
-            "name": "Shenron AI",
-            "role": "RAG & Knowledge Domain Agent",
-            "status": "idle",
-            "version": "2.1.0",
-            "skills": ["rag", "embeddings", "dragonball", "databooks", "ocr"]
+    // Peers: every agent named by a claim (`owner`) or an envelope (`from`/`to`); nothing
+    // is listed that the coordination directory does not show.
+    let mut ids = std::collections::BTreeSet::new();
+    for claim in &claims {
+        if let Some(owner) = claim["owner"].as_str() {
+            ids.insert(owner.to_owned());
         }
-    ]);
+    }
+    for envelope in &envelopes {
+        for key in ["from", "to"] {
+            if let Some(id) = envelope[key].as_str() {
+                ids.insert(id.to_owned());
+            }
+        }
+    }
+    let peers: Vec<Value> = ids
+        .into_iter()
+        .map(|id| {
+            let active: Vec<&str> = claims
+                .iter()
+                .filter(|claim| {
+                    claim["owner"].as_str() == Some(id.as_str())
+                        && claim["state"].as_str() == Some("active")
+                })
+                .filter_map(|claim| claim["task"].as_str())
+                .collect();
+            serde_json::json!({
+                "id": id,
+                "status": if active.is_empty() { "idle" } else { "busy" },
+                "activeClaims": active,
+            })
+        })
+        .collect();
 
     Ok(serde_json::json!({
         "peers": peers,

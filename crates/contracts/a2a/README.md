@@ -83,10 +83,11 @@ Apache-2.0. Copyright AGNTCY Contributors; aphrody-code packaging.
 ## Shenron TypeScript projection
 
 The coordination schema owns the base fields and envelope kinds. Regenerate
-Shenron's checked-in projection from the repository root:
+the checked-in projection of [aphrody-labs/shenron](https://github.com/aphrody-labs/shenron)
+from this repository root, with `SHENRON_ROOT` set to its checkout:
 
 ```bash
-cargo run -q -p aphrody-a2a --example export_coord_types --locked > packages/shenron/pipeline/src/aphrody/coord.generated.ts
+cargo run -q -p aphrody-a2a --example export_coord_types --locked > "$SHENRON_ROOT/packages/pipeline/src/aphrody/coord.generated.ts"
 ```
 
 Shenron extends this base with task verdicts/artifacts and preserves its legacy

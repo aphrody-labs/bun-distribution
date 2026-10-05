@@ -52,7 +52,7 @@ struct Args {
     #[arg(long, default_value = "http")]
     target: String,
 
-    /// Target endpoint URL (defaults to the public search or Aphrody MCP endpoint).
+    /// Target endpoint URL: required for `http`; `mcp` defaults to the local Aphrody MCP endpoint.
     #[arg(long)]
     url: Option<String>,
 
@@ -173,12 +173,13 @@ async fn main() -> ExitCode {
                 return ExitCode::from(2);
             },
         },
-        "http" => Box::new(
-            HttpTarget::new(args.url.clone().unwrap_or_else(|| {
-                "https://bot.dragonballfr.com/api/public/rag/search".to_owned()
-            }))
-            .with_rate_limit(interval),
-        ),
+        "http" => match args.url.as_deref().filter(|url| !url.is_empty()) {
+            Some(url) => Box::new(HttpTarget::new(url.to_owned()).with_rate_limit(interval)),
+            None => {
+                eprintln!("Error: --target http requires --url <search endpoint> (exit code 2).");
+                return ExitCode::from(2);
+            },
+        },
         other => {
             eprintln!(
                 "Error: unknown --target `{other}`; expected http, mcp or local (exit code 2)."
