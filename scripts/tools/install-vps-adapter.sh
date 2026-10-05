@@ -121,7 +121,7 @@ declare -A adapters=(
 if [[ "$stack" = shenron ]]; then
   adapters=([aphrody-infra-deploy-shenron]=atomic-deploy-shenron.sh)
 fi
-for name in "${!adapters[@]}"; do install -m 0755 "$infra/scripts/${adapters[$name]}" "$sbin/$name"; done
+for name in "${!adapters[@]}"; do install -m 0755 "$infra/scripts/release/${adapters[$name]}" "$sbin/$name"; done
 for catalog in service-catalog secrets-contract; do
   install -m 0644 "$infra/config/$catalog.json" "$share/$catalog.json"
 done

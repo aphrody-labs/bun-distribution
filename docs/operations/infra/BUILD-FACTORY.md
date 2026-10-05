@@ -99,7 +99,7 @@ Prepare the pinned IECODE archives before the root frozen install. Run serially:
 
 ```sh
 bun run --filter @shenron/bot compile
-bun scripts/build/shenron/scripts/ops/build-site-external.ts --release-dir artifacts/shenron-release
+bun scripts/build/build-site-external.ts --release-dir artifacts/shenron-release
 ```
 
 The first command compiles the bot; the second runs site owner prebuild and
