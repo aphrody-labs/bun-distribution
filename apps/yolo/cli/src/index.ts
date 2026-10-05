@@ -435,7 +435,7 @@ async function main(): Promise<void> {
     }
 
     case "desktop-runtime": {
-      const { runDesktopRelease } = await import("../../../scripts/tools/desktop-release");
+      const { runDesktopRelease } = await import("../../../../scripts/tools/desktop-release");
       process.exitCode = runDesktopRelease(args.slice(1));
       break;
     }

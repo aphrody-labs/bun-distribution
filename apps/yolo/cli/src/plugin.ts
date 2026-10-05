@@ -2,7 +2,7 @@
 import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import { generateUnifiedYoloPlugin } from "../../../packages/plugins/src/index";
+import { generateUnifiedYoloPlugin } from "../../../../packages/engine/plugins/src/index";
 
 export interface PluginInfo {
   name: string;
