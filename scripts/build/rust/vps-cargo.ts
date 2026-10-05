@@ -33,6 +33,10 @@ export type VpsCargoConfig = {
   remoteLogDir: string;
   remoteEnv: Record<string, string>;
   jobs: number;
+  /** Largest `--jobs` the host accepts (a production host stays below its core count). */
+  maxJobs?: number;
+  /** Per-host overrides merged over this config: secondary build hosts such as dbfr. */
+  hosts?: Record<string, Partial<Omit<VpsCargoConfig, "hosts">>>;
   forwards: { remote: Forward[]; local: Forward[] };
   gitDaemon: { listen: string; port: number; basePath: string; repository: string };
   snapshotRef: string;
@@ -53,8 +57,34 @@ export function shellQuote(value: string): string {
   return /^[A-Za-z0-9_./:=@%+,-]+$/.test(value) ? value : `'${value.replaceAll("'", `'\\''`)}'`;
 }
 
-export async function loadConfig(path = CONFIG_PATH): Promise<VpsCargoConfig> {
-  return (await Bun.file(path).json()) as VpsCargoConfig;
+export async function loadConfig(path = CONFIG_PATH, host?: string): Promise<VpsCargoConfig> {
+  const base = (await Bun.file(path).json()) as VpsCargoConfig;
+  if (host === undefined || host === base.host) return base;
+  const override = base.hosts?.[host];
+  if (!override) throw new Error(`unknown build host "${host}" (config/host/vps-cargo.json hosts)`);
+  return { ...base, ...override, remoteEnv: { ...base.remoteEnv, ...override.remoteEnv }, host };
+}
+
+/** True when the primary host's heavy lock is held: a build is running there. */
+export function heavyLockBusy(config: VpsCargoConfig): boolean {
+  const probe = Bun.spawnSync(
+    [...sshBase(config), config.host, `flock -n ${shellQuote(config.remoteHeavyLock)} true`],
+    { stdout: "ignore", stderr: "ignore" },
+  );
+  return probe.exitCode === 1;
+}
+
+/** `--host <name|auto>` or VPS_CARGO_HOST: the primary host, a named secondary, or the first idle one. */
+export async function selectConfig(options: readonly string[]): Promise<VpsCargoConfig> {
+  const requested = flag(options, "--host") ?? process.env["VPS_CARGO_HOST"];
+  const primary = await loadConfig();
+  if (requested === undefined || requested === primary.host) return primary;
+  if (requested !== "auto") return loadConfig(CONFIG_PATH, requested);
+  if (!heavyLockBusy(primary)) return primary;
+  const fallback = Object.keys(primary.hosts ?? {})[0];
+  if (!fallback) return primary;
+  console.log(`${primary.host} is busy, building on ${fallback}`);
+  return loadConfig(CONFIG_PATH, fallback);
 }
 
 /** Snapshot paths that look like secrets: the snapshot leaves the machine, so it fails closed. */
@@ -115,7 +145,9 @@ export function remoteSeedScript(config: VpsCargoConfig): string {
   const ws = shellQuote(config.remoteWorkspace);
   return [
     "set -euo pipefail",
-    `test -d ${ws}/.git || git clone --quiet --shared --no-checkout ${shellQuote(config.remoteSeed)} ${ws}`,
+    `mkdir -p ${shellQuote(config.remoteLockDir)} ${shellQuote(config.remoteLogDir)} ${shellQuote(config.remoteTargetDir)}`,
+    // A host without a factory seed checkout starts from an empty repository: the push is a full pack.
+    `test -d ${ws}/.git || { test -d ${shellQuote(config.remoteSeed)}/.git && git clone --quiet --shared --no-checkout ${shellQuote(config.remoteSeed)} ${ws} || git init --quiet ${ws}; }`,
   ].join("\n");
 }
 
@@ -335,8 +367,8 @@ const USAGE =
   "usage: vps-cargo <tunnel up|down|status | sync [--pull] | run [--jobs N] [--pull] -- <cargo args> | logs <job> | fetch --bin <name> [--profile p] [--dest d] | attach>";
 
 export async function main(argv: readonly string[]): Promise<number> {
-  const config = await loadConfig();
   const [command, ...rest] = argv;
+  const config = await selectConfig(rest);
   switch (command) {
     case "tunnel":
       return tunnel(config, rest[0]);
@@ -347,8 +379,10 @@ export async function main(argv: readonly string[]): Promise<number> {
       const separator = rest.indexOf("--");
       if (separator < 0 || separator === rest.length - 1) throw new Error(USAGE);
       const options = rest.slice(0, separator);
-      const jobs = Number(flag(options, "--jobs") ?? config.jobs);
-      if (!Number.isInteger(jobs) || jobs < 1 || jobs > 6) throw new Error("--jobs must be 1..6");
+      const limit = Math.min(6, config.maxJobs ?? 6);
+      const jobs = Number(flag(options, "--jobs") ?? Math.min(config.jobs, limit));
+      if (!Number.isInteger(jobs) || jobs < 1 || jobs > limit)
+        throw new Error(`--jobs must be 1..${limit} on ${config.host}`);
       const sha = await sync(config, options.includes("--pull"));
       const job = `${new Date().toISOString().replaceAll(/[:.]/g, "-")}-${sha.slice(0, 12)}`;
       console.log(`job ${job} (attach: bun scripts/build/rust/vps-cargo.ts attach)`);

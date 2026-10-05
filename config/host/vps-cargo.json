@@ -1,5 +1,5 @@
 {
-  "$comment": "WSL -> VPS Cargo tunnel (scripts/build/rust/vps-cargo.ts). Heavy Cargo never runs in WSL: the exact WSL worktree (HEAD + uncommitted, .gitignore respected) is snapshotted, sent to a dedicated VPS checkout and built there under the factory locks; logs and artifacts come back over the same SSH master.",
+  "$comment": "WSL -> VPS Cargo tunnel (scripts/build/rust/vps-cargo.ts). Heavy Cargo never runs in WSL: the exact WSL worktree (HEAD + uncommitted, .gitignore respected) is snapshotted, sent to a dedicated VPS checkout and built there under the factory locks; logs and artifacts come back over the same SSH master. dbfr is a secondary host (production: Postgres, Redis, nginx): `--host dbfr` or `--host auto` (falls back when the primary heavy lock is busy), 3 jobs at most, nice 10 under the factory resource guard.",
   "schemaVersion": 1,
   "host": "vps",
   "controlPath": "~/.ssh/cm/vps-cargo",
@@ -42,5 +42,26 @@
     "(^|/)id_(rsa|ed25519|ecdsa)(\\.pub)?$",
     "(^|/)credentials(\\.json)?$",
     "(^|/)secrets?\\.(json|toml|ya?ml)$"
-  ]
+  ],
+  "hosts": {
+    "dbfr": {
+      "host": "dbfr",
+      "controlPath": "~/.ssh/cm/dbfr-cargo",
+      "localSession": "dbfr-tunnel",
+      "remoteSession": "dbfr-cargo",
+      "remoteWorkspace": "/home/ubuntu/aphrody-build/workspaces/aphrody-wsl",
+      "remoteSeed": "/home/ubuntu/aphrody-build/workspaces/aphrody",
+      "remoteTargetDir": "/home/ubuntu/aphrody-build/cache/cargo/aphrody-wsl",
+      "remoteLockDir": "/home/ubuntu/aphrody-build/locks",
+      "remoteHeavyLock": "/home/ubuntu/aphrody-build/locks/heavy.lock",
+      "remoteLogDir": "/home/ubuntu/aphrody-build/artifacts/wsl",
+      "jobs": 3,
+      "maxJobs": 3,
+      "remoteEnv": {
+        "SCCACHE_DIR": "/home/ubuntu/aphrody-build/cache/sccache",
+        "BUN_INSTALL_CACHE_DIR": "/home/ubuntu/aphrody-build/cache/bun",
+        "SCCACHE_CACHE_SIZE": "8G"
+      }
+    }
+  }
 }
