@@ -1,1 +1,0 @@
-../../.claude/skills/create-plan/assets/Plans-template.md
