@@ -78,6 +78,11 @@ Bun CLI `yolo` (`yolo ops`, `yolo workspace`, `yolo update`…) and Bun. Python 
 `py/`, run through `uv`. Call the binaries on PATH directly (oxlint, oxfmt, tsc). Remote hosts go through
 `aphrody infra ssh` or the MCP `infra_exec`; the `vps-cargo` tunnel is the SSH master for remote Cargo from WSL.
 
+Code graph: Graphify (`uv tool install graphifyy`, skill `/graphify`) indexes first-party code locally and offline
+(no LLM, `.graphifyignore` skips vendored trees and docs). Build or refresh with `graphify update .`, then prefer
+`graphify query "<question>"`, `graphify explain "<node>"` or `graphify path "A" "B"` over broad greps when
+`graphify-out/graph.json` exists. The output is machine-local and git-ignored.
+
 ## Builds and validation
 
 Bun gates (root `package.json`): `bun run bun:check`, `typecheck`, `lint`,
