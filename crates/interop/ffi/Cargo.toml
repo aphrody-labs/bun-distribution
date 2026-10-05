@@ -22,7 +22,11 @@ crate-type = ["cdylib", "rlib"]
 workspace = true
 
 [features]
-default = []
+# `tooling` keeps the historical N2B/Oxc/yolo_tooling ABI in the default build; `inference`
+# adds the in-process llama boundary (aphrody_infer*) and is opt-in because it is heavy.
+default = ["tooling"]
+tooling = ["dep:aphrody-n2b-native", "dep:aphrody-oxc-bridge"]
+inference = ["dep:aphrody-llama-server", "dep:aphrody-model-client", "dep:aphrody-models", "dep:futures"]
 gpu = ["aphrody-bun/gpu"]
 native-stealth = ["obscura-net/stealth"]
 # Forward aphrody-command's opt-in command features so a feature-rich cdylib can be
@@ -50,8 +54,12 @@ browser   = ["yolo-runtime/browser"]
 aphrody-command = { workspace = true }
 aphrody-agent-home = { workspace = true }
 aphrody-bun = { workspace = true }
-aphrody-n2b-native = { workspace = true }
-aphrody-oxc-bridge = { workspace = true }
+aphrody-n2b-native = { workspace = true, optional = true }
+aphrody-oxc-bridge = { workspace = true, optional = true }
+aphrody-llama-server = { workspace = true, features = ["in-process"], optional = true }
+aphrody-model-client = { workspace = true, optional = true }
+aphrody-models = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
 # World/VFS/formats are qualified independently of absent authentic Wiki data.
 aphrody-rag-core = { workspace = true }
 aphrody-softraster = { workspace = true }

@@ -2,14 +2,14 @@
 
 # Native inference for Bun
 
-`NativeInference` loads the separate `aphrody-inference-ffi` library and uses
+`NativeInference` loads the `aphrody_ffi` library (cargo feature `inference` of `aphrody-ffi`) and uses
 Aphrody's existing `InProcessLlama` owner. Loading and generation run on native
 workers while Bun polls asynchronous jobs; Discord's event loop remains free.
 The bridge starts no model server or CLI process and performs no implicit model
 download. One resident model is allowed per library, with a bounded request queue.
 
-Build and qualify `crates/ai/inference-ffi` through the repository's serialized
-factory. Install its cdylib in the protected Aphrody `lib` store, or set the
+Build and qualify `crates/interop/ffi` with `--features inference` through the repository's serialized
+factory. Install `libaphrody_ffi` in the protected Aphrody `lib` store, or set the
 absolute `APHRODY_INFERENCE_LIBRARY` path. Its existing llama runtime dependencies
 must also be installed through their owner. Source presence does not establish
 an installed, compatible runtime.

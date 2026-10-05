@@ -12,7 +12,7 @@ const symbols = {
 } as const;
 
 function openLibrary() {
-  const filename = `${process.platform === "win32" ? "" : "lib"}aphrody_inference_ffi.${suffix}`;
+  const filename = `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${suffix}`;
   const path = process.env.APHRODY_INFERENCE_LIBRARY ?? statePath("lib", filename);
   if (!isAbsolute(path)) throw new Error("APHRODY_INFERENCE_LIBRARY must be an absolute path");
   const opened = dlopen(path, symbols);

@@ -54,7 +54,7 @@ const manifest = {
   compatibility: { abiMajor: Number(info.abi.split(".")[0]), negotiation: "yolo_abi_version" },
   toolchain: info.rustc,
   build: {
-    command: "cargo build --profile runtime -p yolo-runtime",
+    command: "cargo build --profile runtime -p aphrody-ffi --features browser,tooling",
     profile: "runtime (release + panic=unwind)",
     panicRecovery: info.panic_recovery,
   },

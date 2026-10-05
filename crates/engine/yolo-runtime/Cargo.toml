@@ -11,7 +11,8 @@ description = "Versioned C ABI of the precompiled YOLO native runtime (first sli
 
 [lib]
 name = "yolo_runtime"
-crate-type = ["cdylib", "rlib"]
+# The dynamic library is the single `aphrody_ffi` cdylib, which re-exports the yolo_* ABI.
+crate-type = ["rlib"]
 
 # Default ABI graph remains light. Browser releases opt into the pinned Obscura/V8 owner.
 [features]

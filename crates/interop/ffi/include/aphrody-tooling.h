@@ -4,12 +4,16 @@
 
 #include "aphrody.h"
 
+#define YOLO_TOOLING_ABI_VERSION 1u
 #define APHRODY_N2B_ABI_VERSION 2u
 #define APHRODY_OXC_ABI_VERSION 1u
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Grouped tooling provider ABI (cargo feature `tooling`). */
+APHRODY_NODISCARD APHRODY_API uint32_t yolo_tooling_abi_version(void);
 
 /* N2B report schema 2. Inputs are NUL-terminated UTF-8 strings.
  * A null root yields an owned JSON error. Null options select check mode.

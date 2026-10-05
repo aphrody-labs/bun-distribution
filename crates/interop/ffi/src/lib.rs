@@ -71,10 +71,20 @@ pub use bun_rs::*;
 
 // Preserve the native N2B and Oxc contracts inside this sole dynamic artifact.
 // Their original library owners provide implementations and destructors.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
 pub use aphrody_n2b_native::*;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
 pub use aphrody_oxc_bridge::*;
+#[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
+mod tooling;
+#[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
+pub use tooling::*;
+
+// Asynchronous in-process inference ABI (aphrody_inference_*), formerly aphrody-inference-ffi.
+#[cfg(all(feature = "inference", not(target_arch = "wasm32")))]
+mod inference;
+#[cfg(all(feature = "inference", not(target_arch = "wasm32")))]
+pub use inference::*;
 
 #[cfg(not(target_arch = "wasm32"))]
 mod native {

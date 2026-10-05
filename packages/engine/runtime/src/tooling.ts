@@ -146,7 +146,7 @@ export class NativeTooling {
         if (!path || !existsSync(path))
           throw new Error("Selected native tooling library is missing; selection preserved");
       } else {
-        const stem = process.platform === "win32" ? "yolo_tooling" : "libyolo_tooling";
+        const stem = process.platform === "win32" ? "aphrody_ffi" : "libaphrody_ffi";
         const pattern = new RegExp(`^${stem}(?:-[A-Za-z0-9_-]+)?\\.${suffix}$`);
         const embedded = Bun.embeddedFiles.flatMap((file) => {
           const name = (file as Blob & { name?: string }).name;
@@ -158,7 +158,7 @@ export class NativeTooling {
           name === undefined ? undefined : isAbsolute(name) ? name : join(dirname(Bun.main), name);
       }
       this.#library = nativeLibrary({
-        name: "yolo_tooling",
+        name: "aphrody_ffi",
         symbols: SYMBOLS,
         ...(path === undefined ? {} : { path }),
         searchDirs: [
@@ -172,7 +172,7 @@ export class NativeTooling {
           resolve(homedir(), "aphrody/target/debug"),
         ],
         buildHint:
-          "Install the qualified optional yolo-tooling provider or select YOLO_TOOLING_LIB.",
+          "Install the qualified aphrody_ffi library (feature `tooling`) or select YOLO_TOOLING_LIB.",
       });
     }
     const symbols = this.#library.load();

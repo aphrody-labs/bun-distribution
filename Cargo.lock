@@ -1291,6 +1291,9 @@ dependencies = [
  "aphrody-bun",
  "aphrody-command",
  "aphrody-gemini-web",
+ "aphrody-llama-server",
+ "aphrody-model-client",
+ "aphrody-models",
  "aphrody-n2b-native",
  "aphrody-oxc-bridge",
  "aphrody-rag-core",
@@ -1303,6 +1306,7 @@ dependencies = [
  "aphrody-x",
  "async-trait",
  "base64 0.23.1",
+ "futures",
  "mimalloc",
  "obscura-dom",
  "obscura-net",
@@ -1530,21 +1534,6 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.21",
  "tracing",
-]
-
-[[package]]
-name = "aphrody-inference-ffi"
-version = "1.0.0"
-dependencies = [
- "aphrody-agent-home",
- "aphrody-llama-server",
- "aphrody-model-client",
- "aphrody-models",
- "futures",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
 ]
 
 [[package]]
@@ -33784,14 +33773,6 @@ dependencies = [
  "tokio",
  "url",
  "yolo-core",
-]
-
-[[package]]
-name = "yolo-tooling"
-version = "1.0.0"
-dependencies = [
- "aphrody-n2b-native",
- "aphrody-oxc-bridge",
 ]
 
 [[package]]

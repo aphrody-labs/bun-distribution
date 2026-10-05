@@ -6,7 +6,7 @@ import { NativeTooling } from "../../packages/engine/runtime/src/tooling.ts";
 
 /** Qualify the host provider before embedding it; this never starts a compiler. */
 export async function toolingAsset(root: string, path = process.env.YOLO_TOOLING_LIB) {
-  const name = process.platform === "win32" ? "yolo_tooling.dll" : `libyolo_tooling.${suffix}`;
+  const name = process.platform === "win32" ? "aphrody_ffi.dll" : `libaphrody_ffi.${suffix}`;
   const library = path ? resolve(root, path) : join(root, "target/runtime", name);
   if (!library || !existsSync(library)) {
     throw new Error("Missing native tooling provider: set YOLO_TOOLING_LIB to a qualified library");

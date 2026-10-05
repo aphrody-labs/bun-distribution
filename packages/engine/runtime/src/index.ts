@@ -76,9 +76,9 @@ export interface LoadOptions {
 
 const BUFFER_BYTES = 24; // YoloBuffer { data: *mut u8, len: usize, cap: usize } on 64-bit targets
 
-/** File name Cargo gives the cdylib: `libyolo_runtime.so|dylib`, `yolo_runtime.dll` on Windows. */
+/** File name of the sole native cdylib (`aphrody-ffi`, which re-exports the yolo_* ABI): `libaphrody_ffi.so|dylib`, `aphrody_ffi.dll` on Windows. */
 export function libraryFile(): string {
-  return process.platform === "win32" ? "yolo_runtime.dll" : `libyolo_runtime.${suffix}`;
+  return process.platform === "win32" ? "aphrody_ffi.dll" : `libaphrody_ffi.${suffix}`;
 }
 
 /**

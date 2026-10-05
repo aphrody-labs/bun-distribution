@@ -14,9 +14,9 @@ bun install --frozen-lockfile
 "$factory_yolo_wrapper" check --locked -p yolo-runtime -p yolo-core
 "$factory_yolo_wrapper" test --locked -p yolo-runtime -p yolo-core
 "$factory_yolo_wrapper" clippy --locked -p yolo-runtime -p yolo-core --all-targets -- -D warnings
-"$factory_yolo_wrapper" build --locked --profile runtime -p yolo-runtime
+"$factory_yolo_wrapper" build --locked --profile runtime -p aphrody-ffi --features browser,tooling
 YOLO_CARGO_WRAPPER="$factory_yolo_wrapper" just yolo::qualify-tooling
-export YOLO_TOOLING_LIB="$factory_yolo_root/target/runtime/libyolo_tooling.so"
+export YOLO_TOOLING_LIB="$factory_yolo_root/target/runtime/libaphrody_ffi.so"
 bun scripts/release/runtime_artifact.ts
 bun test --timeout 30000 test/
 bun scripts/release/release.ts --out "dist/release/$factory_yolo_sha"

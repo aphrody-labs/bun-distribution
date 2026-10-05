@@ -86,9 +86,10 @@ restent des alias de compatibilité jusqu'à qualification.
   `a2a-duel-loop`, `rag-eval`, `tauri-e2e`) vont sous `examples/` ou `xtask`.
 - [ ] **CLI Bun** — replier `aphrody-ops`, `aphrody-optimize`, `aphrody-workspace`, `aphrody-update`,
   `aphrody-ovh`, `aphrody-google`, `pipeline`, `doc-ai`, `agent-browser` en sous-commandes de `yolo`.
-- [ ] **FFI** — un seul cdylib `aphrody_ffi` : intégrer `yolo-tooling` (24 L, ré-exporte n2b-native et
-  oxc-bridge), `aphrody-inference-ffi`, `yolo-desktop`, `aphrody-a2a-ui`, `aphrody-shell-web`,
-  `aphrody-m3-showcase` par features ; `yolo-runtime` est déjà une dépendance. `yolo-pyo3` et
+- [~] **FFI** — un seul cdylib C-ABI `aphrody_ffi` : `yolo-tooling` (feature `tooling`, défaut) et
+  `aphrody-inference-ffi` (feature `inference`) absorbés 2026-10-05, `yolo-runtime` réduit à `rlib` ; consommateurs
+  Bun repointés vers `libaphrody_ffi`. Restent hors C-ABI : `aphrody-a2a-ui`/`aphrody-shell-web` (wasm-bindgen),
+  cibles mobiles de `yolo-desktop`/`aphrody-m3-showcase` (fusion app desktop). `yolo-pyo3` et
   `py/packages/aphrody/native` restent des modules d'extension Python (PyO3), pas des cdylib C.
 - [~] **MCP** — un seul serveur `aphrody-mcp` : `aphrody-tauri-mcp` retiré (14 outils déjà servis par
   `aphrody-mcp`, appel `aphrody_webview_*` corrigé), `aphrody-mcp-smoke` → exemple `mcp_smoke`, boucles

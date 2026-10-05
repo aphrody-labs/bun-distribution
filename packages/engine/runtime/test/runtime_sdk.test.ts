@@ -14,7 +14,7 @@ const suite = available ? describe : describe.skip;
 
 describe("runtime SDK without the artifact", () => {
   it("explains how to obtain the library when it is missing", () => {
-    expect(() => Runtime.load({ libraryPath: "/nonexistent/libyolo_runtime.so" })).toThrow(
+    expect(() => Runtime.load({ libraryPath: "/nonexistent/libaphrody_ffi.so" })).toThrow(
       /cargo build --profile runtime/,
     );
   });
