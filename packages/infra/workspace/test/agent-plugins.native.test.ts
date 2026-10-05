@@ -36,7 +36,7 @@ for (const provider of ["codex", "claude", "agy"])
             );
             prepareStore(store, "aphrody-user", true);
             const mcp = join(root, "mcp.json");
-            writeFileSync(mcp, JSON.stringify({ command: "aphrody-kernel", args: ["mcp"] }));
+            writeFileSync(mcp, JSON.stringify({ command: "aphrody", args: ["kernel", "mcp"] }));
             const name = kind === "plugin" ? "example" : kind === "skill" ? "demo" : "fixture";
             const args = [
               "--provider",

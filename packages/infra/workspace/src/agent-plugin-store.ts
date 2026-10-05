@@ -169,7 +169,8 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
       );
       const servers = object(mcp.mcpServers ?? {});
       if (name === "aphrody" && servers.aphrody)
-        servers.aphrody = { type: "stdio", command: "aphrody-kernel", args: ["mcp"] };
+        // The single MCP endpoint: the kernel also proxies the yolo and m3 subsystems.
+        servers.aphrody = { type: "stdio", command: "aphrody", args: ["kernel", "mcp"] };
       for (const filename of [".mcp.json", "mcp_config.json", "mcp.json"])
         writeJson(join(path, filename), { mcpServers: servers }, apply, changes);
       claude.mcpServers = "./.mcp.json";

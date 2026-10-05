@@ -348,7 +348,11 @@ test("project agy MCP uses a registered plugin and removes only owned files", ()
   const source = join(f.root, "mcp.json");
   file(
     source,
-    JSON.stringify({ command: "aphrody-kernel", args: ["mcp"], env: { PRIVATE: "fixture-value" } }),
+    JSON.stringify({
+      command: "aphrody",
+      args: ["kernel", "mcp"],
+      env: { PRIVATE: "fixture-value" },
+    }),
   );
   const install = installationPlan(
     config,

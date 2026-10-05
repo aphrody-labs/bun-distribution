@@ -66,6 +66,8 @@ pub struct PluginSpec<'a> {
     pub env: &'a str,
     /// Executable name looked up when `env` is unset.
     pub binary: &'a str,
+    /// Arguments for the looked-up `binary` (an explicit `env` command runs without them).
+    pub args: &'a [String],
     /// Extra environment for the plugin process.
     pub child_env: &'a [(String, String)],
 }
@@ -185,20 +187,20 @@ impl McpProxySubsystem {
         spec: PluginSpec<'_>,
         occupied: &HashSet<String>,
     ) -> Result<Option<Arc<dyn SystemSubsystem>>, String> {
-        let PluginSpec { name, description, env, binary, child_env } = spec;
+        let PluginSpec { name, description, env, binary, args, child_env } = spec;
         let explicit = std::env::var(env).ok();
         if explicit.as_deref().is_some_and(|value| value.trim().is_empty()) {
             return Ok(None);
         }
-        let path = match explicit.as_ref() {
-            Some(command) => PathBuf::from(command),
+        let (path, args) = match explicit.as_ref() {
+            Some(command) => (PathBuf::from(command), &[][..]),
             None => match installed_binary(binary) {
-                Some(path) => path,
+                Some(path) => (path, args),
                 None => return Ok(None),
             },
         };
         let command = path.to_string_lossy();
-        let mut plugin = match Self::spawn_unfiltered(&command, &[], child_env).await {
+        let mut plugin = match Self::spawn_unfiltered(&command, args, child_env).await {
             Ok(plugin) => plugin,
             Err(error) if explicit.is_none() => {
                 eprintln!("aphrody-kernel: optional plugin {binary} unavailable: {error}");
@@ -647,6 +649,7 @@ printf '%s\n' '{"jsonrpc":"2.0","id":3,"result":{"tools":[],"nextCursor":"again"
             description: "test plugin",
             env,
             binary: "aphrody-kernel-no-such-plugin-5b1e0c7d",
+            args: &[],
             child_env: &[],
         };
         // PATH lookup finds no such binary: an optional plugin is skipped, not an error.

@@ -34,7 +34,7 @@ struct Cli {
     command: Command,
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 enum Command {
     /// Serve the kernel with the built-in subsystems on the local endpoint.
     Serve {
@@ -136,7 +136,27 @@ async fn builtin_kernel(
             description: "Obscura headless browser (aphrody-web plugin process).",
             env: "APHRODY_BROWSER_MCP_BIN",
             binary: "aphrody-browser-mcp",
+            args: Vec::new(),
             child_env,
+        });
+    }
+    // One MCP endpoint: the yolo Bun runtime tools and the M3 tools are proxied subsystems.
+    plugins.push(PluginEntry {
+        name: "yolo",
+        description: "Yolo Bun runtime tools (`yolo mcp` plugin process).",
+        env: "APHRODY_YOLO_MCP_BIN",
+        binary: "yolo",
+        args: vec!["mcp".to_owned()],
+        child_env: Vec::new(),
+    });
+    if let Some(server) = m3_mcp_server() {
+        plugins.push(PluginEntry {
+            name: "m3",
+            description: "Material 3 tokens, themes, symbols and docs (aphrody-m3 plugin process).",
+            env: "APHRODY_M3_MCP_BIN",
+            binary: "bun",
+            args: vec![server.to_string_lossy().into_owned()],
+            child_env: Vec::new(),
         });
     }
     for entry in plugins {
@@ -146,6 +166,7 @@ async fn builtin_kernel(
                 description: entry.description,
                 env: entry.env,
                 binary: entry.binary,
+                args: &entry.args,
                 child_env: &entry.child_env,
             },
             &occupied,
@@ -173,7 +194,22 @@ struct PluginEntry {
     description: &'static str,
     env: &'static str,
     binary: &'static str,
+    args: Vec<String>,
     child_env: Vec<(String, String)>,
+}
+
+/// The M3 MCP server script: `$APHRODY_M3_ROOT`, then `./m3`, then `~/aphrody/m3`.
+fn m3_mcp_server() -> Option<std::path::PathBuf> {
+    let roots = [
+        std::env::var_os("APHRODY_M3_ROOT").map(std::path::PathBuf::from),
+        std::env::current_dir().ok().map(|dir| dir.join("m3")),
+        crate::paths::home_dir().map(|home| home.join("aphrody/m3")),
+    ];
+    roots
+        .into_iter()
+        .flatten()
+        .map(|root| root.join("packages/m3-mcp/src/server.ts"))
+        .find(|server| server.is_file())
 }
 
 fn parse_object(text: &str) -> anyhow::Result<Value> {
@@ -323,6 +359,7 @@ async fn run(cli: Cli) -> anyhow::Result<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::assert_matches;
 
     #[test]
     fn parse_object_valid_and_invalid() {
@@ -344,10 +381,10 @@ mod tests {
     #[test]
     fn cli_parse_subcommands() {
         let tools_cli = Cli::try_parse_from(["aphrody-kernel", "tools"]).unwrap();
-        assert!(matches!(tools_cli.command, Command::Tools));
+        assert_matches!(tools_cli.command, Command::Tools);
 
         let skills_cli = Cli::try_parse_from(["aphrody-kernel", "skills"]).unwrap();
-        assert!(matches!(skills_cli.command, Command::Skills));
+        assert_matches!(skills_cli.command, Command::Skills);
 
         let call_cli =
             Cli::try_parse_from(["aphrody-kernel", "call", "ping", r#"{"test": 1}"#]).unwrap();
