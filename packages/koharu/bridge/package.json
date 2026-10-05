@@ -15,8 +15,8 @@
     "typecheck": "tsc --noEmit",
     "prepack": "bun run build",
     "dev": "nodemon --watch ../../../crates/koharu/koharu-canvas --watch ../../../crates/koharu/koharu-rasterizer --ext rs,toml --delay 250ms --on-change-only --exec \"bun run build:dev\"",
-    "build": "bun x wasm-pack@0.15.0 build ../../../crates/koharu/koharu-canvas --release --target web --out-dir ../../../packages/koharu/bridge/src/wasm --out-name koharu_canvas --no-pack && bun scripts/prepare-wasm.ts",
-    "build:dev": "bun x wasm-pack@0.15.0 build ../../../crates/koharu/koharu-canvas --dev --target web --out-dir ../../../packages/koharu/bridge/src/wasm --out-name koharu_canvas --no-pack && bun scripts/prepare-wasm.ts"
+    "build": "RUSTFLAGS=\"--remap-path-prefix=$HOME=~\" wasm-pack build ../../../crates/koharu/koharu-canvas --release --target web --out-dir ../../../packages/koharu/bridge/src/wasm --out-name koharu_canvas --no-pack && bun scripts/prepare-wasm.ts",
+    "build:dev": "RUSTFLAGS=\"--remap-path-prefix=$HOME=~\" wasm-pack build ../../../crates/koharu/koharu-canvas --dev --target web --out-dir ../../../packages/koharu/bridge/src/wasm --out-name koharu_canvas --no-pack && bun scripts/prepare-wasm.ts"
   },
   "dependencies": {
     "@aphrody/api": "workspace:*"
