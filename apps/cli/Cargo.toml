@@ -40,6 +40,11 @@ serde_json = { workspace = true }
 mimalloc = { workspace = true }
 aphrody-guard = { workspace = true }
 
+# glibc 2.43 versioned acosf/atan2f: the binary defines them (src/main.rs) so a build on a
+# newer host still starts on glibc 2.39 hosts (WSL Ubuntu 24.04).
+[target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
+libm = { workspace = true }
+
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 assert_cmd    = { workspace = true }
 predicates    = { workspace = true }

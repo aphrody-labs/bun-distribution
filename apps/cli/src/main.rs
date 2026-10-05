@@ -15,6 +15,23 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
+/// glibc 2.43 gave `acosf` and `atan2f` new symbol versions; a binary linked on a newer host
+/// imports `acosf@GLIBC_2.43` and no longer starts on glibc 2.39 (WSL Ubuntu 24.04). Defining
+/// them in the executable resolves every reference at link time, so no versioned import is
+/// left; `libm` is the musl implementation ported to Rust.
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+mod glibc_compat {
+    #[unsafe(no_mangle)]
+    extern "C" fn acosf(x: f32) -> f32 {
+        libm::acosf(x)
+    }
+
+    #[unsafe(no_mangle)]
+    extern "C" fn atan2f(y: f32, x: f32) -> f32 {
+        libm::atan2f(y, x)
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> std::process::ExitCode {
     // Opt-in process hardening (disable core dumps, block ptrace attach, strip

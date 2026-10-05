@@ -396,6 +396,7 @@ dependencies = [
  "aphrody-guard",
  "assert_cmd",
  "criterion",
+ "libm",
  "mimalloc",
  "predicates",
  "serde_json",
