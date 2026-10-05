@@ -1,6 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { blocksLocalCargo } from "./block-local-cargo";
+import { blocksLocalCargo, isCloudSession } from "./block-local-cargo";
+
+const local = {};
+
+test("lets the Claude cloud session build locally", () => {
+  expect(isCloudSession({ CLAUDE_CODE_REMOTE: "true" })).toBe(true);
+  expect(isCloudSession({ APHRODY_CLOUD: "1" })).toBe(true);
+  expect(isCloudSession({ CLAUDE_CODE_REMOTE: "false" })).toBe(false);
+  expect(blocksLocalCargo("cargo test -p aphrody-ovh", { CLAUDE_CODE_REMOTE: "true" })).toBe(false);
+  expect(blocksLocalCargo("cargo test -p aphrody-ovh", { APHRODY_CLOUD: "1" })).toBe(false);
+});
 
 test("blocks local heavy cargo, direct or serialized", () => {
   for (const command of [
@@ -12,7 +22,7 @@ test("blocks local heavy cargo, direct or serialized", () => {
     `bash -c "cargo build --release"`,
     "eval 'cargo test'",
   ]) {
-    expect(blocksLocalCargo(command)).toBe(true);
+    expect(blocksLocalCargo(command, local)).toBe(true);
   }
 });
 
@@ -29,6 +39,6 @@ test("allows light cargo and every remote route", () => {
     `bun -e 'console.log("cargo test")'`,
     `git commit -m "fix: cargo clippy findings"`,
   ]) {
-    expect(blocksLocalCargo(command)).toBe(false);
+    expect(blocksLocalCargo(command, local)).toBe(false);
   }
 });

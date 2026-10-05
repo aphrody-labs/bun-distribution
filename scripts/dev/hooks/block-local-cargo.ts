@@ -20,7 +20,16 @@ const REMOTE =
 // Quoted text is data (an edit pattern, a message), unless a shell runs it (`bash -c "…"`, `eval`).
 const QUOTED = /(?<!(?:-c|eval)\s+)(?:'[^']*'|"(?:[^"\\]|\\.)*"|`[^`]*`)/g;
 
-export function blocksLocalCargo(command: string): boolean {
+/** The Claude cloud session (or APHRODY_CLOUD=1) is itself the build host, not WSL: nothing is blocked there. */
+export function isCloudSession(env: Record<string, string | undefined> = process.env): boolean {
+  return env.CLAUDE_CODE_REMOTE === "true" || env.APHRODY_CLOUD === "1";
+}
+
+export function blocksLocalCargo(
+  command: string,
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  if (isCloudSession(env)) return false;
   if (REMOTE.test(command)) return false;
   const code = command.replace(QUOTED, "''");
   return LOCAL_CARGO.test(code) || LOCAL_SERIAL.test(code);

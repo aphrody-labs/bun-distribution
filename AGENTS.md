@@ -84,7 +84,15 @@ Remote work goes through `aphrody infra ssh` or the MCP `infra_exec`, never raw 
 Bun gates (root `package.json`): `bun run bun:check`, `typecheck`, `lint`,
 `format:check`, `test` (all via `@aphrody/workspace`); web: `web:verify`.
 
-Workers never start Cargo. Heavy Cargo never runs in WSL (it crashes it): the
+Claude cloud session (`CLAUDE_CODE_REMOTE=true` or `APHRODY_CLOUD=1`, set by
+`.claude/hooks/session-start.sh`): the session is the build host. Cargo runs locally through
+`scripts/build/rust/cargo-serial.sh` (jobs = CPU count, max 6), the `block-local-cargo` hook and the factory
+routing stand down, and Bun is pinned to `packageManager`. Limits: 4 CPU, 15 GB RAM, about 30 GB disk; scoped
+`-p <crate>` gates only, no full-workspace or engine (V8, Tauri, WebKit) builds. The workspace needs the private
+fork `aphrody-labs/taffy` (`ssh://git@github-dev/…` alias, owner machine only); until it is reachable over HTTPS
+Cargo cannot resolve the workspace in the cloud.
+
+Elsewhere (WSL, owner machines): workers never start Cargo. Heavy Cargo never runs in WSL (it crashes it): the
 integrating agent runs `bun scripts/build/rust/vps-cargo.ts run -- <cargo args>`
 (exact WSL worktree built on the VPS under the factory locks, tmux sessions
 `vps-tunnel`/`vps-cargo`, `fetch` for artifacts) or the factory for pushed main

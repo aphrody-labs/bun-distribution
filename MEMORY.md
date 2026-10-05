@@ -137,3 +137,18 @@ Relevé en lecture seule (aucun Cargo) avec `yolo`, `aphrody-workspace`, `gh` et
 | Nom et plan | `0cd1df3a8` : runtime `vu` (inverse littéral de `uv`), décision du propriétaire, une constante dans `docs/plans/vu/scaffold/vu.json` ; [plan](docs/plans/vu/PLAN.md) avec journal de vérification et décisions D1 à D10 | Dépôt `vu` non créé |
 | Forks | `aphrody-labs/uv` `vu-pin-0.12.23` (`46b84fd0`), `aphrody-labs/ruff` `vu-pin-0.16.10` (`3265ed1f`), `aphrody-labs/pyo3` `vu-pin-0.29.3` (`451d99fd`) ; les paquets crates.io portent les mêmes commits ; les verrous de uv et ruff n'ont ni source git ni pyo3 ; `scripts/audit/workspace/vu-pins.ts` (6 tests, `--online` vert) ; entrées `vu-*` de `config/upstream-sources.json` | Forks publics (règle GitHub), aucun correctif Aphrody ; les crates `uv-*` et `ruff_*` sont des composants internes, l'interface publique est la CLI |
 | Faisabilité | VPS, rustc 1.98.1, 4 jobs : vérification de uv 3 min 51, de ruff 1 min 32, d'un binaire d'essai uv + ruff + PyO3 dans un workspace de 804 paquets 3 min 29 | Pas de build release, pas d'édition de liens, glibc du binaire non mesurée (WSL 2.39, VPS 2.43) |
+
+## Espace cloud Claude comme hôte de travail — 2026-10-05
+
+Directive du propriétaire (session cloud, trois messages) : optimiser les projets, les configurer pour s'exécuter
+dans l'espace cloud Claude, lever l'interdiction Cargo dans cet espace, installer les plugins, le MCP Aphrody, ses
+clients et la toolchain, liberté d'action maximale, tout garder en mémoire. Les règles WSL/VPS restent valables
+hors du cloud.
+
+| Lot | Preuve | Limite |
+| --- | --- | --- |
+| Conteneur | 4 CPU, 15 Go de RAM, environ 30 Go de disque libre ; rustc/cargo 1.98.1 (installés par `rust-toolchain.toml`), clang, `ld.lld`, cmake, ninja, uv ; réseau : index crates.io, npm, PyPI et static.rust-lang.org joignables | `sccache`, `oxlint`, `oxfmt`, `aphrody` et `yolo` Rust absents ; builds du workspace complet, V8, Tauri, WebKit hors de portée du disque et des CPU |
+| Cargo levé dans le cloud | `block-local-cargo.ts` (`isCloudSession` : `CLAUDE_CODE_REMOTE=true` ou `APHRODY_CLOUD=1`), `cargo-serial.sh` (pas de route factory, jobs = nproc plafonné à 6), `AGENTS.md` ; `bun test scripts/dev/hooks/block-local-cargo.test.ts` : 3 pass ; hook rejoué en cloud (sortie 0) et hors cloud (sortie 2) | Aucun `cargo check` réussi : voir ligne suivante |
+| Blocage Cargo | `cargo fetch --locked` échoue : `Cargo.toml:462` dépend de `ssh://git@github-dev/aphrody-labs/taffy.git` (alias SSH de la machine du propriétaire) ; `aphrody-labs/taffy` ajouté à la session en lecture, mais le clone a été refusé par le classifieur d'auto-mode (« Untrusted Code Integration ») ; non contourné | Le workspace Rust ne se résout pas ici tant que ce fork n'est pas disponible ; décision du propriétaire attendue |
+| Bun et MCP | Bun 1.4.2 (`packageManager`) installé dans `~/.bun-1.4.2`, lien `~/.local/bin/bun` ; `bun install --frozen-lockfile` : 732 paquets, verrou inchangé ; `yolo` : `yolo version` OK, serveurs MCP `yolo mcp` (initialize et `tools/list`) et `m3-mcp` (initialize) répondent en stdio ; `.mcp.json` les déclare ; `.claude/hooks/session-start.sh` (inscrit dans `.claude/settings.json`) rejoué : sortie 0, idempotent | Serveur `aphrody-mcp` et plugins Rust non installés (binaire `aphrody` à compiler, dépend du blocage ci-dessus) ; `.mcp.json` ne se charge qu'au prochain démarrage de session ; aucun plugin Claude packagé dans le dépôt (seul `docs/research/.../adobe-connector/plugin.json`) |
+| Dépôt `bun` | PR draft aphrody-labs/bun#1 : fusion de l'amont `oven-sh/bun` (`13a98b0d`, spawnSync #44581), sans conflit | Ni build ni test (le build debug du fork dépasse ce conteneur) |
