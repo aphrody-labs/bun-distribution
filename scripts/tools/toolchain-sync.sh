@@ -32,6 +32,16 @@ for c in $(j '.binstall|join(" ")'); do
   cargo-binstall --no-confirm --disable-strategies compile --locked "$spec" 2>&1 | tail -1
 done
 
+# Host-scoped tools (hostTools.<host>): TOOLCHAIN_HOST names the host being synced.
+hj() { jq -r --arg h "${TOOLCHAIN_HOST:-}" "$1" "$M"; }
+if [ -n "${TOOLCHAIN_HOST:-}" ] && [ "$(hj '.hostTools[$h] != null')" = true ]; then
+  log "host tools ($TOOLCHAIN_HOST)"
+  sudo -n apt-get install -y --no-install-recommends $(hj '.hostTools[$h].apt // [] | join(" ")') >/dev/null
+  for c in $(hj '.hostTools[$h].binstall // [] | join(" ")'); do
+    cargo-binstall --no-confirm --disable-strategies compile --locked "$c" 2>&1 | tail -1
+  done
+fi
+
 log bun
 BUN=$(j .versions.bun)
 if [ "$(bun --version 2>/dev/null)" != "$BUN" ]; then curl -fsSL https://bun.sh/install | bash -s "bun-v$BUN" >/dev/null 2>&1; fi
