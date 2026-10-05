@@ -290,7 +290,7 @@
       "indexes": [],
       "readsToday": [],
       "surfaces": [],
-      "migration": "No AI consumption. nie-model-serve (:8790) serves IEVR GLB/3D assets and is not a model server."
+      "migration": "No AI consumption. nie-model-serve (:8792) serves IEVR GLB/3D assets and is not a model server."
     }
   },
   "forbidden": [

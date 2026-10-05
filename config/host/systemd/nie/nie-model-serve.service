@@ -1,9 +1,9 @@
 # Retired 2026-09-25: nie-model-serve was removed from vps (config/service-catalog.json status:retired; docs/PLAN.md). Kept as a redeploy template for the Aphrody convergence plan (superproject docs/architecture/APHRODY-CONVERGENCE.md).
-# nie-model-serve — derived game assets decoded on demand, 127.0.0.1:8790, published as
+# nie-model-serve — derived game assets decoded on demand, 127.0.0.1:8792, published as
 # `nie.aphrody.com/cdn/` (nginx/nie/aphrody-nie-cdn.conf, rate limited there) and at the root
 # of `cdn.rosegriffon.fr` (scripts/rg/nginx-gen.ts). Its raw and listing routes (`/raw/`,
 # `/vfs/`, `/depot/`, `/export/` without a derived format) carry no authentication, so both
-# vhosts answer 404 for them. It keeps 8790; the Aphrody E5 embedder does not share this port.
+# vhosts answer 404 for them. It uses 8792 (8790 is shenron-mcp-http since 2026-10-05); the Aphrody E5 embedder does not share this port.
 #
 # Ownership: this unit lives in yolo config/host (moved from nie `deploy/systemd/` on
 # 2026-09-23). nie owns the binary (`crates/tools/nie-model-serve`), its build and
@@ -14,7 +14,7 @@
 # Install (production act, follow the aphrody-infra deploy runbook):
 #   bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit nie-model-serve.service | sudo tee /etc/systemd/system/nie-model-serve.service >/dev/null
 #   sudo systemctl daemon-reload && sudo systemctl enable --now nie-model-serve
-#   curl -s http://127.0.0.1:8790/health               # "ok"
+#   curl -s http://127.0.0.1:8792/health               # "ok"
 #
 # --db : miroir SQLite des données de jeu. Sans lui, /story-scene
 # repond 503 « miroir SQLite absent » : la resolution automatique ne le trouve pas
@@ -48,7 +48,7 @@ ExecStart=/bin/sh -c 'exec "$NIE_REPO_ROOT/target/release/nie-model-serve" \
     --asset-cross-ref ${NIE_REPO_ROOT}/data/asset-cross-reference.json \
     --menu-cfg-dir ${NIE_REPO_ROOT}/data/common/gamedata/menu/cfg \
     --db ${NIE_REPO_ROOT}/var/mirror.sqlite \
-    --port 8790 --threads 10 --http-threads 12 --http-queue 128 --memory-cache-mib 1024'
+    --port 8792 --threads 10 --http-threads 12 --http-queue 128 --memory-cache-mib 1024'
 Environment=NIE_REPO_ROOT=/home/ubuntu/nie
 Environment=NIE_GAME_DIR=/home/ubuntu/.local/share/Steam/iecode/inazuma
 Environment=RUST_LOG=info

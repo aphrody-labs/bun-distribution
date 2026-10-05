@@ -42,7 +42,7 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 | **Shenron Media Bridge** | `shenron:deploy/install-media-vpn-proxy.sh`<br>`~/yolo/config/host/privoxy/shenron-media.conf`<br>`config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
 | **Shenron Crawl Sync** | `shenron:scripts/sync-bxc-crawls.ts` | `shenron/scripts/ops/sync-bxc-crawls-to-newvps.ts` | Synchronisation SQLite vers PostgreSQL via Bun pur. Modernisation de l'alias hôte (`vps`), modes `--dry-run` et `--json`. |
 | **Shenron Backups** | `scripts/ops/backup-shenron-pg.sh`<br>`scripts/ops/backup-shenron-sqlite.sh` | `shenron/scripts/backup-shenron-*.sh` | Dépotoir logique MVCC `pg_dump` compressé, manifestes SHA-256, purge différée après accusé de réception offsite Windows. |
-| **NIE 3D Model Prewarm** | `scripts/nie/model-serve-prewarm.sh` (not in repo) | `nie/scripts/ops/model-serve-prewarm.sh` | Pré-chauffage du cache 3D (`nie-model-serve` :8790) pour les modèles GLB et Keshin critiques. Support `--json` et paramétrage du port. |
+| **NIE 3D Model Prewarm** | `scripts/nie/model-serve-prewarm.sh` (not in repo) | `nie/scripts/ops/model-serve-prewarm.sh` | Pré-chauffage du cache 3D (`nie-model-serve` :8792) pour les modèles GLB et Keshin critiques. Support `--json` et paramétrage du port. |
 | **NIE Sync Main** | `iecode/scripts/tools/sync-main.ts` | `nie/scripts/workspace-transfer.ts` | Synchronisation de checkout entre station de travail et VPS. |
 | **RG Release Assembly** | `iecode/scripts/rg/assemble-vps-release.sh`<br>`scripts/release/atomic-deploy-rg.sh` | `rg/scripts/ops/assemble-vps-release.sh` | Empaquetage d'artefact immuable Next.js 16 standalone sous Docker/Node 22 + Bun, génération de manifestes cryptographiques et bascule atomique. |
 | **Kernel & VPS Tuning** | `~/yolo/config/host/sysctl/99-aphrody-tuning.conf` (not in repo)<br>`~/yolo/config/host/aphrody-os/VPS-TUNING.md` | `aphrody/docs/aphrody-os/vps_tuning.md`<br>`aphrody-os/docs/vps_tuning.md` | Configuration sysctl unifiée (BBR, FQ, somaxconn, buffers TCP), optimisation VirtIO KVM. |
@@ -103,7 +103,7 @@ aphrody-infra/
 | `shenron-mcp` | — | retiré 2026-09-25 | `5010` | — | `mcp.dragonballfr.com/` (retiré) | Remplacé par les outils `dragonball.*` d'`aphrody-mcp` (`aphrody-ai-http`, `127.0.0.1:8789/mcp`) |
 | `shenron-pg-tunnel` | Autossh / SSH | `vps` | `15433` | TCP | Interne (`dbfr:5432`) | Tunnel sécurisé vers PostgreSQL sur `dbfr` |
 | `nie-site` | Rust | retiré 2026-09-25 | `8085` | `/healthz` | `nie.aphrody.com/` | Catalogue et recherche VFS Inazuma (pas de release VPS) |
-| `nie-model-serve` | Rust | retiré 2026-09-25 | `8790` | `/health` | via Nginx `/cdn/` | Serveur de géométrie 3D GLB, animations et textures (pas de release VPS) |
+| `nie-model-serve` | Rust | retiré 2026-09-25 | `8792` | `/health` | via Nginx `/cdn/` | Serveur de géométrie 3D GLB, animations et textures (pas de release VPS) |
 
 ---
 

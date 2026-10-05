@@ -74,7 +74,7 @@
   "internal": [
     {
       "service": "nie-model-serve",
-      "upstream": "127.0.0.1:8790",
+      "upstream": "127.0.0.1:8792",
       "via": "nginx",
       "publicHost": "nie.aphrody.com",
       "paths": [
@@ -92,7 +92,7 @@
     },
     {
       "service": "nie-model-serve",
-      "upstream": "127.0.0.1:8790",
+      "upstream": "127.0.0.1:8792",
       "via": "nginx",
       "publicHost": "cdn.rosegriffon.fr",
       "paths": [

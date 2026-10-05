@@ -32,7 +32,7 @@
     "nie": {
       "role": "specialized-engine-and-3d-asset-plane",
       "website": { "runtime": "rust-http", "package": "nie-site", "unit": "nie-site.service", "port": 8085 },
-      "api": { "runtime": "rust-http", "package": "nie-model-serve", "unit": "nie-model-serve.service", "port": 8790 },
+      "api": { "runtime": "rust-http", "package": "nie-model-serve", "unit": "nie-model-serve.service", "port": 8792 },
       "mcp": "optional aphrody-mcp nie.* (disabled by default until NIE source crates join this monorepo; process boundary runs nie-mcp as a child; the IECODE agent plugin is stored in ~/plugins/iecode and restricted to IECODE)",
       "desktop": "none: IEVR features are web-only (nie-site + apps/nie-web). The Inacord Tauri app was removed on 2026-09-26; its generic pet/pixel commands moved to aphrody-app, which can reach game features through the opt-in aphrody-mcp nie.* capability",
       "data": { "primary": "none", "storage": "local-ievr-3d-assets", "localIndex": "sqlite (nie-index RE knowledge base and atlas, var/)", "optionalPostgres": "nie-pg schema nie (cfg.bin import, manual run)", "optionalRedis": "nie-index atlas mirror, opt-in via NIE_ATLAS_REDIS / --redis; no Redis service contract (OPEN-RESERVATIONS #3)", "schedules": "none (no nie timer or cron is declared or deployed)" }
