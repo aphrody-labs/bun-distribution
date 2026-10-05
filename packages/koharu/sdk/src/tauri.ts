@@ -4,7 +4,7 @@ import type { KoharuTransport, CommandName } from './index'
 export async function createTauriTransport(): Promise<KoharuTransport> {
   const [{ commands }, { Channel }] = await Promise.all([
     import('@koharu/bridge/protocol'),
-    import('@tauri-apps/api/core'),
+    import('@aphrody/api/core'),
   ])
   return {
     invoke(command: CommandName, args: readonly unknown[]): Promise<unknown> {

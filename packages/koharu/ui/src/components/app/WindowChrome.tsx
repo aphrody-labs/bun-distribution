@@ -1,6 +1,6 @@
 'use client'
 
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { getCurrentWindow } from '@aphrody/api/window'
 import { Copy, Minus, Square, X } from 'lucide-react'
 import { useEffect, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'

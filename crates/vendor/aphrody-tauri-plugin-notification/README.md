@@ -34,7 +34,7 @@ tauri-plugin-notification = { git = "https://github.com/tauri-apps/plugins-works
 You can install the JavaScript Guest bindings using your preferred JavaScript package manager:
 
 ```sh
-pnpm add @aphrody/plugin-notification
+bun run add @aphrody/plugin-notification
 # or
 npm add @aphrody/plugin-notification
 # or

@@ -1,6 +1,6 @@
 'use client'
 
-import { openUrl } from '@tauri-apps/plugin-opener'
+import { openUrl } from '@aphrody/plugin-opener'
 import { FilePlus2, FolderOpen, LoaderCircle, Settings } from 'lucide-react'
 import { useState, type ComponentProps } from 'react'
 import { useTranslation } from 'react-i18next'

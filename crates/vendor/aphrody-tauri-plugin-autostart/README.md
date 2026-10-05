@@ -34,7 +34,7 @@ tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspac
 You can install the JavaScript Guest bindings using your preferred JavaScript package manager:
 
 ```sh
-pnpm add @aphrody/plugin-autostart
+bun run add @aphrody/plugin-autostart
 # or
 npm add @aphrody/plugin-autostart
 # or

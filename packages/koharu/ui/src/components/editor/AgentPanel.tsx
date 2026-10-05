@@ -1,6 +1,6 @@
 'use client'
 
-import { Channel } from '@tauri-apps/api/core'
+import { Channel } from '@aphrody/api/core'
 import { Bot, CircleStop, LogOut, Send, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'

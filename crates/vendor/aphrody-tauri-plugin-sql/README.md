@@ -36,7 +36,7 @@ branch = "v2"
 You can install the JavaScript Guest bindings using your preferred JavaScript package manager:
 
 ```sh
-pnpm add @aphrody/plugin-sql
+bun run add @aphrody/plugin-sql
 # or
 npm add @aphrody/plugin-sql
 # or

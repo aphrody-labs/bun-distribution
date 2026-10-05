@@ -55,9 +55,9 @@ const nativeWindow = hoisted(() => ({
 const nativeOpenUrl = hoisted(() => vi.fn(async () => undefined))
 const nativeGetVersion = hoisted(() => vi.fn(async () => '0.62.0'))
 
-mock.module('@tauri-apps/api/window', () => ({ getCurrentWindow: () => nativeWindow }))
-mock.module('@tauri-apps/api/app', () => ({ getVersion: nativeGetVersion }))
-mock.module('@tauri-apps/plugin-opener', () => ({ openUrl: nativeOpenUrl }))
+mock.module('@aphrody/api/window', () => ({ getCurrentWindow: () => nativeWindow }))
+mock.module('@aphrody/api/app', () => ({ getVersion: nativeGetVersion }))
+mock.module('@aphrody/plugin-opener', () => ({ openUrl: nativeOpenUrl }))
 
 const emptyCredential = () => ({ configured: false, value: null, clear: false })
 

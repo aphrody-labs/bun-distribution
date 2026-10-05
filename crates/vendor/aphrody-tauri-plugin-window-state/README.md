@@ -34,7 +34,7 @@ tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-works
 You can install the JavaScript Guest bindings using your preferred JavaScript package manager:
 
 ```sh
-pnpm add @aphrody/plugin-window-state
+bun run add @aphrody/plugin-window-state
 # or
 npm add @aphrody/plugin-window-state
 # or

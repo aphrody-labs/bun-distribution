@@ -43,7 +43,7 @@ You can install the JavaScript Guest bindings using your preferred JavaScript pa
 > Note: If your JavaScript package manager cannot install packages from git monorepos, you can still use the code by manually copying the [Guest bindings](./guest-js/index.ts) into your source files.
 
 ```sh
-pnpm add @aphrody/plugin-stronghold
+bun run add @aphrody/plugin-stronghold
 # or
 npm add @aphrody/plugin-stronghold
 # or

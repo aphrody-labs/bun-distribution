@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { invoke, isTauri } from '@tauri-apps/api/core'
+import { invoke, isTauri } from '@aphrody/api/core'
 
 import { AgentPanel } from '@aphrody/koharu-ui/components/editor/AgentPanel'
 import { ShenronExportPanel } from '@aphrody/koharu-ui/components/ShenronExportPanel'

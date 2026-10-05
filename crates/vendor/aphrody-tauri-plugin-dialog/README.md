@@ -52,7 +52,7 @@ For more information, see [XDG Desktop Portal documentation](https://flatpak.git
 You can install the JavaScript Guest bindings using your preferred JavaScript package manager:
 
 ```sh
-pnpm add @aphrody/plugin-dialog
+bun run add @aphrody/plugin-dialog
 # or
 npm add @aphrody/plugin-dialog
 # or

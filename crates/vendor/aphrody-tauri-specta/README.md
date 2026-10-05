@@ -31,9 +31,9 @@ Follow the documentation links above for help getting started.
 Run the example:
 
 ```bash
-pnpm i
+bun install
 cd examples/app/
-pnpm tauri dev
+bun run tauri dev
 ```
 
 ### Running tests

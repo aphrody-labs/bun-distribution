@@ -1,6 +1,6 @@
 'use client'
 
-import { getVersion } from '@tauri-apps/api/app'
+import { getVersion } from '@aphrody/api/app'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 

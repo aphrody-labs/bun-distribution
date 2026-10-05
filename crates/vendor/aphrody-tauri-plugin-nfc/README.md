@@ -36,7 +36,7 @@ You can install the JavaScript Guest bindings using your preferred JavaScript pa
 <!-- Add the branch for installations using git! -->
 
 ```sh
-pnpm add @aphrody/plugin-nfc
+bun run add @aphrody/plugin-nfc
 # or
 npm add @aphrody/plugin-nfc
 # or

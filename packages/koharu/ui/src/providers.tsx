@@ -1,7 +1,7 @@
 'use client'
 
 import { QueryClientProvider } from '@tanstack/react-query'
-import { Channel } from '@tauri-apps/api/core'
+import { Channel } from '@aphrody/api/core'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { I18nextProvider } from 'react-i18next'
 

@@ -36,8 +36,6 @@
     "@base-ui/react": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-virtual": "^3.14.13",
-    "@tauri-apps/api": "catalog:",
-    "@tauri-apps/plugin-opener": "catalog:",
     "@koharu/bridge": "workspace:*",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
@@ -54,7 +52,9 @@
     "tailwind-merge": "catalog:",
     "zustand": "catalog:",
     "@koharu/sdk": "workspace:*",
-    "@shenron/pipeline": "workspace:*"
+    "@shenron/pipeline": "workspace:*",
+    "@aphrody/api": "workspace:*",
+    "@aphrody/plugin-opener": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.3.0",

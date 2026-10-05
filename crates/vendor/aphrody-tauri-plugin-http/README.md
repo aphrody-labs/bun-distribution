@@ -34,7 +34,7 @@ tauri-plugin-http = { git = "https://github.com/tauri-apps/plugins-workspace", b
 You can install the JavaScript Guest bindings using your preferred JavaScript package manager:
 
 ```sh
-pnpm add @aphrody/plugin-http
+bun run add @aphrody/plugin-http
 # or
 npm add @aphrody/plugin-http
 # or

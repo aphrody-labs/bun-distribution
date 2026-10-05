@@ -53,7 +53,7 @@ yarn create tauri-app
 ### PNPM:
 
 ```bash
-pnpm create tauri-app
+bun run create tauri-app
 ```
 
 ### Deno
@@ -65,7 +65,7 @@ deno run -A npm:create-tauri-app
 ### Bun:
 
 ```bash
-bunx create-tauri-app
+create-tauri-app
 ```
 
 <br>
@@ -156,11 +156,11 @@ npm create tauri-app@latest my-tauri-app -- --template svelte
 # yarn
 yarn create tauri-app my-tauri-app --template svelte
 # pnpm
-pnpm create tauri-app my-tauri-app --template svelte
+bun run create tauri-app my-tauri-app --template svelte
 # deno
 deno run -A npm:create-tauri-app --template svelte
 # Bun
-bunx create-tauri-app my-tauri-app --template svelte
+create-tauri-app my-tauri-app --template svelte
 ```
 
 Currently supported template presets include:

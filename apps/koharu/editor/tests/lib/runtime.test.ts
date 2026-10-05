@@ -13,7 +13,7 @@ import {
   type StartupState,
 } from '@koharu/bridge/protocol'
 
-mock.module('@tauri-apps/api/core', () => ({
+mock.module('@aphrody/api/core', () => ({
   Channel: class<T> {
     onmessage: (payload: T) => void
 

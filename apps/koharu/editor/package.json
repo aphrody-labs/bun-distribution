@@ -35,9 +35,9 @@
     "@testing-library/user-event": "^14.6.7",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "@tauri-apps/api": "catalog:",
-    "@tauri-apps/plugin-opener": "catalog:",
     "tailwindcss": "catalog:",
-    "i18next": "^26.4.2"
+    "i18next": "^26.4.2",
+    "@aphrody/api": "workspace:*",
+    "@aphrody/plugin-opener": "workspace:*"
   }
 }

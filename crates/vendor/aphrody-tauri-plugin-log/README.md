@@ -36,7 +36,7 @@ If you want the single instance mechanism to only trigger for semver compatible 
 Then you can install the JavaScript Guest bindings using your preferred JavaScript package manager:
 
 ```sh
-pnpm add @aphrody/plugin-log
+bun run add @aphrody/plugin-log
 # or
 npm add @aphrody/plugin-log
 # or

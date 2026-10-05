@@ -34,7 +34,7 @@ tauri-plugin-deep-link = { git = "https://github.com/tauri-apps/plugins-workspac
 You can install the JavaScript Guest bindings using your preferred JavaScript package manager:
 
 ```sh
-pnpm add @aphrody/plugin-deep-link
+bun run add @aphrody/plugin-deep-link
 # or
 npm add @aphrody/plugin-deep-link
 # or

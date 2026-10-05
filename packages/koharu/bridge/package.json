@@ -22,7 +22,7 @@
     "build:dev": "bun x wasm-pack@0.15.0 build ../../../crates/koharu/koharu-canvas --dev --target web --out-dir ../../../packages/koharu/bridge/src/wasm --out-name koharu_canvas --no-pack && bun scripts/prepare-wasm.ts"
   },
   "dependencies": {
-    "@tauri-apps/api": "catalog:"
+    "@aphrody/api": "workspace:*"
   },
   "devDependencies": {
     "nodemon": "catalog:"

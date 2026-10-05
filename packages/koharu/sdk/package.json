@@ -36,7 +36,7 @@
     "@aphrody/media": "workspace:*"
   },
   "peerDependencies": {
-    "@tauri-apps/api": "catalog:"
+    "@aphrody/api": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@tauri-apps/api": {
@@ -44,6 +44,6 @@
     }
   },
   "devDependencies": {
-    "@tauri-apps/api": "catalog:"
+    "@aphrody/api": "workspace:*"
   }
 }

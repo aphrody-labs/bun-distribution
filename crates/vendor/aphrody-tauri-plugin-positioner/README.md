@@ -36,7 +36,7 @@ tauri-plugin-positioner = { git = "https://github.com/tauri-apps/plugins-workspa
 You can install the JavaScript Guest bindings using your preferred JavaScript package manager:
 
 ```sh
-pnpm add @aphrody/plugin-positioner
+bun run add @aphrody/plugin-positioner
 # or
 npm add @aphrody/plugin-positioner
 # or

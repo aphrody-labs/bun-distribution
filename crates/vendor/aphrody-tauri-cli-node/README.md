@@ -32,7 +32,7 @@ To learn more about the details of how all of these pieces fit together, please 
 The preferred method is to install this module locally as a development dependency:
 
 ```
-$ pnpm add -D @aphrody/cli
+$ bun run add -D @aphrody/cli
 $ yarn add -D @aphrody/cli
 $ npm add -D @aphrody/cli
 ```
