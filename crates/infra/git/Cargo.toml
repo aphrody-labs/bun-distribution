@@ -17,6 +17,7 @@ ignore     = { workspace = true }
 octocrab   = { workspace = true }
 serde      = { workspace = true }
 serde_json = { workspace = true }
+serde_yaml = { workspace = true }
 tempfile   = { workspace = true }
 thiserror  = { workspace = true }
 url        = { workspace = true }

@@ -90,17 +90,17 @@ impl std::fmt::Debug for GitHubClient {
 }
 
 impl GitHubClient {
-    /// Build a client from `GH_TOKEN`/`GITHUB_TOKEN` and `GITHUB_API_URL`.
+    /// Build a client from `GH_TOKEN`/`GITHUB_TOKEN` and `GITHUB_API_URL`, falling back to
+    /// the GitHub CLI login of `APHRODY_GITHUB_USER` (or its active account) for that host.
     /// Anonymous access remains available for public read-only endpoints.
     pub fn from_env() -> Result<Self, Error> {
-        let token =
-            std::env::var("GH_TOKEN").ok().filter(|value| !value.trim().is_empty()).or_else(|| {
-                std::env::var("GITHUB_TOKEN").ok().filter(|value| !value.trim().is_empty())
-            });
         let api_base = std::env::var("GITHUB_API_URL")
             .ok()
             .filter(|value| !value.trim().is_empty())
             .unwrap_or_else(|| "https://api.github.com".to_owned());
+        let token = env_value("GH_TOKEN")
+            .or_else(|| env_value("GITHUB_TOKEN"))
+            .or_else(|| gh_cli_token(&api_base, env_value("APHRODY_GITHUB_USER").as_deref()));
         let graphql_url =
             std::env::var("GITHUB_GRAPHQL_URL").ok().filter(|value| !value.trim().is_empty());
         Self::new_with_graphql_url(token, api_base, graphql_url.as_deref())
@@ -259,9 +259,56 @@ fn ensure_same_origin(api_base: &str, graphql_url: &str) -> Result<(), Error> {
     Ok(())
 }
 
+fn env_value(name: &str) -> Option<String> {
+    std::env::var(name).ok().filter(|value| !value.trim().is_empty())
+}
+
+/// Token of a GitHub CLI login, read from `hosts.yml` without running `gh`.
+fn gh_cli_token(api_base: &str, user: Option<&str>) -> Option<String> {
+    let dir = env_value("GH_CONFIG_DIR").map(std::path::PathBuf::from).or_else(|| {
+        env_value("XDG_CONFIG_HOME").map(|base| std::path::PathBuf::from(base).join("gh")).or_else(
+            || env_value("HOME").map(|home| std::path::PathBuf::from(home).join(".config/gh")),
+        )
+    })?;
+    let text = std::fs::read_to_string(dir.join("hosts.yml")).ok()?;
+    hosts_token(&text, api_base, user)
+}
+
+fn hosts_token(hosts_yml: &str, api_base: &str, user: Option<&str>) -> Option<String> {
+    let host = url::Url::parse(api_base).ok()?.host_str()?.to_owned();
+    let host = if host == "api.github.com" { "github.com".to_owned() } else { host };
+    let hosts: serde_yaml::Value = serde_yaml::from_str(hosts_yml).ok()?;
+    let entry = hosts.get(host.as_str())?;
+    let account = user.or_else(|| entry.get("user").and_then(serde_yaml::Value::as_str))?;
+    let token = entry
+        .get("users")
+        .and_then(|users| users.get(account))
+        .and_then(|login| login.get("oauth_token"))
+        .and_then(serde_yaml::Value::as_str)
+        .or_else(|| {
+            (user.is_none() || entry.get("user").and_then(serde_yaml::Value::as_str) == user)
+                .then(|| entry.get("oauth_token").and_then(serde_yaml::Value::as_str))
+                .flatten()
+        })?;
+    (!token.trim().is_empty()).then(|| token.to_owned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const HOSTS: &str = "github.com:\n    users:\n        alice:\n            oauth_token: tok_alice\n        bob:\n            oauth_token: tok_bob\n    git_protocol: https\n    user: bob\n    oauth_token: tok_bob\n";
+
+    #[test]
+    fn gh_cli_token_follows_selected_or_active_account() {
+        assert_eq!(hosts_token(HOSTS, "https://api.github.com", None).as_deref(), Some("tok_bob"));
+        assert_eq!(
+            hosts_token(HOSTS, "https://api.github.com", Some("alice")).as_deref(),
+            Some("tok_alice")
+        );
+        assert_eq!(hosts_token(HOSTS, "https://api.github.com", Some("carol")), None);
+        assert_eq!(hosts_token(HOSTS, "https://ghe.example/api/v3", None), None);
+    }
 
     /// Install a rustls crypto provider once for this test binary.
     ///
