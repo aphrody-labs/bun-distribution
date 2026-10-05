@@ -1,0 +1,42 @@
+# shenron-cdn-sync — mirrors the public Shenron media of dbfr into the CDN root
+# /srv/shenron-cdn of the vps, served by nginx (nginx/shenron/*.conf). Pull over
+# WireGuard (dbfr = 10.8.0.3) with the dedicated key /home/ubuntu/.ssh/shenron_cdn_pull:
+# dbfr accepts it only from 10.8.0.1 and only as a read-only rsync rooted at
+# /srv/shenron (ssh/shenron-cdn-pull.authorized_keys); its host key is pinned in
+# /home/ubuntu/.ssh/shenron_cdn_known_hosts (ssh/shenron-cdn-known_hosts).
+#
+# Scope: wiki media, bot assets and generated public files only. Never databases
+# (shared/bot/data), caches, logs or secrets. Deletions on dbfr are mirrored, at most
+# 2000 per tree and run, so an emptied or unmounted source cannot wipe the CDN.
+# Release files (site public/ and Next chunks) are seeded per release, additive:
+#   R=releases/<release-sha>/apps/shenron/site
+#   rsync -rlt --safe-links --chmod=D755,F644 -e "$SSH" ubuntu@10.8.0.3:$R/public/ /srv/shenron-cdn/site/
+#   rsync -rlt --safe-links --chmod=D755,F644 -e "$SSH" ubuntu@10.8.0.3:$R/.next-build/static/ /srv/shenron-cdn/_next/static/
+#
+# Install (vps), from config/host:
+#   sudo install -d -o ubuntu -g ubuntu -m 755 /srv/shenron-cdn /srv/shenron-cdn/{wiki,assets,site,site-extra,_next,_next/static}
+#   install -m 600 /dev/null ~/.ssh/shenron_cdn_known_hosts && cat ssh/shenron-cdn-known_hosts > ~/.ssh/shenron_cdn_known_hosts
+#   ssh-keygen -t ed25519 -N "" -C shenron-cdn-pull@vps -f ~/.ssh/shenron_cdn_pull   (public half: ssh/shenron-cdn-pull.authorized_keys, appended on dbfr)
+#   bun $YOLO_ROOT/packages/engine/core/src/host/cli.ts compose-unit shenron-cdn-sync.service | sudo tee /etc/systemd/system/shenron-cdn-sync.service >/dev/null
+#   bun $YOLO_ROOT/packages/engine/core/src/host/cli.ts compose-unit shenron-cdn-sync.timer | sudo tee /etc/systemd/system/shenron-cdn-sync.timer >/dev/null
+#   sudo systemctl daemon-reload && sudo systemctl enable --now shenron-cdn-sync.timer
+# Rollback: disable the timer; /srv/shenron-cdn only holds copies.
+[Unit]
+Description=Shenron CDN: mirror public media from dbfr
+Wants=network-online.target
+After=network-online.target wg-quick@wg0.service
+
+[Service]
+Type=oneshot
+Environment="RSYNC_RSH=ssh -i /home/ubuntu/.ssh/shenron_cdn_pull -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/home/ubuntu/.ssh/shenron_cdn_known_hosts -o ConnectTimeout=10 -o ServerAliveInterval=30"
+ExecStart=/usr/bin/rsync -rlt --safe-links --chmod=D755,F644 --delete-after --max-delete=2000 --delay-updates --partial-dir=.rsync-partial --info=stats1 ubuntu@10.8.0.3:shared/site/wiki/ /srv/shenron-cdn/wiki/
+ExecStart=/usr/bin/rsync -rlt --safe-links --chmod=D755,F644 --delete-after --max-delete=2000 --delay-updates --partial-dir=.rsync-partial --info=stats1 ubuntu@10.8.0.3:shared/bot/assets/ /srv/shenron-cdn/assets/
+ExecStart=/usr/bin/rsync -rlt --safe-links --chmod=D755,F644 --delete-after --max-delete=2000 --delay-updates --partial-dir=.rsync-partial --info=stats1 ubuntu@10.8.0.3:shared/site/public-extra/ /srv/shenron-cdn/site-extra/
+# The first mirror moves ~31 GiB; later runs only transfer changes.
+TimeoutStartSec=6h
+Nice=10
+IOSchedulingClass=idle
+ReadWritePaths=/srv/shenron-cdn
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=shenron-cdn-sync

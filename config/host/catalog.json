@@ -326,6 +326,29 @@
       "pairs": "shenron-backup.service"
     },
     {
+      "service": "shenron-cdn-sync",
+      "unit": "shenron-cdn-sync.service",
+      "path": "systemd/shenron/shenron-cdn-sync.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "net-inet-only"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "cdn.dragonballfr.com"
+    },
+    {
+      "service": "shenron-cdn-sync",
+      "unit": "shenron-cdn-sync.timer",
+      "path": "systemd/shenron/shenron-cdn-sync.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "shenron-cdn-sync.service"
+    },
+    {
       "service": "shenron-bot",
       "unit": "shenron-bot.service",
       "path": "systemd/shenron/shenron-bot.service",
@@ -463,29 +486,29 @@
       "site": "00-default"
     },
     {
-      "file": "nginx/shenron/00-shenron-cache.conf.example",
+      "file": "nginx/shenron/00-shenron.conf",
       "ownerRepo": "aphrody",
-      "targetHost": "dbfr",
-      "site": "00-shenron-cache"
+      "targetHost": "vps",
+      "site": "00-shenron"
     },
     {
-      "file": "nginx/shenron/bot.dragonballfr.com.conf.example",
+      "file": "nginx/shenron/bot.dragonballfr.com.conf",
       "ownerRepo": "aphrody",
-      "targetHost": "dbfr",
+      "targetHost": "vps",
       "site": "bot.dragonballfr.com",
       "service": "shenron-bot"
     },
     {
-      "file": "nginx/shenron/cdn.dragonballfr.com.conf.example",
+      "file": "nginx/shenron/cdn.dragonballfr.com.conf",
       "ownerRepo": "aphrody",
-      "targetHost": "dbfr",
+      "targetHost": "vps",
       "site": "cdn.dragonballfr.com",
-      "service": "shenron-site"
+      "service": "shenron-cdn-sync"
     },
     {
-      "file": "nginx/shenron/dragonballfr.com.conf.example",
+      "file": "nginx/shenron/dragonballfr.com.conf",
       "ownerRepo": "aphrody",
-      "targetHost": "dbfr",
+      "targetHost": "vps",
       "site": "dragonballfr.com",
       "service": "shenron-site"
     }

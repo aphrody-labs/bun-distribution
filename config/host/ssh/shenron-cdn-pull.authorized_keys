@@ -1,0 +1,4 @@
+# Appended to /home/ubuntu/.ssh/authorized_keys on dbfr. Key of the vps shenron-cdn-sync unit
+# (systemd/shenron/shenron-cdn-sync.service): WireGuard source only, read-only rsync rooted at
+# /srv/shenron, no shell, no forwarding, no pty.
+from="10.8.0.1",command="/usr/bin/rrsync -ro /srv/shenron",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHyaI3orZmtXCvv8ItHvbBVEGHbPOq+QCicxIbmrHBxO shenron-cdn-pull@vps
