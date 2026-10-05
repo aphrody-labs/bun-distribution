@@ -168,6 +168,10 @@ pub fn parse_usn_record(buf: &[u8]) -> Option<(UsnEntry, usize)> {
 pub struct MftTree {
     nodes: HashMap<u128, UsnEntry>,
     children: HashMap<u128, Vec<u128>>,
+    /// Explicit root id for trees that are not the NTFS volume (e.g. a walkdir
+    /// scan rooted at an arbitrary directory). The NTFS root (record 5) is
+    /// always treated as root regardless of this.
+    root: Option<u128>,
 }
 
 impl MftTree {
@@ -223,6 +227,17 @@ impl MftTree {
         frn & RECORD_NUMBER_MASK == ROOT_RECORD_NUMBER
     }
 
+    /// Set an explicit root id (for non-NTFS trees such as a walkdir scan).
+    pub fn set_root(&mut self, frn: u128) {
+        self.root = Some(frn);
+    }
+
+    /// True if `frn` is a root of this tree: the NTFS record 5, or the explicit
+    /// root set by [`set_root`](Self::set_root).
+    fn is_root_frn(&self, frn: u128) -> bool {
+        Self::is_root(frn) || self.root == Some(frn)
+    }
+
     /// Walk up from `frn`; returns the name components (leaf last) and whether
     /// the chain reached the root. Cycles and over-long chains count as orphans.
     fn walk(&self, frn: u128) -> Option<(Vec<&str>, bool)> {
@@ -230,12 +245,12 @@ impl MftTree {
         let mut parts = Vec::new();
         let mut rooted = false;
         for _ in 0..=self.nodes.len() {
-            if Self::is_root(cur.frn) {
+            if self.is_root_frn(cur.frn) {
                 rooted = true;
                 break;
             }
             parts.push(cur.name.as_str());
-            if Self::is_root(cur.parent_frn) {
+            if self.is_root_frn(cur.parent_frn) {
                 rooted = true;
                 break;
             }

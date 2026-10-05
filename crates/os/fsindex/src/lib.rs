@@ -28,9 +28,11 @@ pub mod google;
 pub mod mft;
 #[cfg(windows)]
 pub mod ntfs_win;
+pub mod walk;
 
 pub use google::{GoogleFileHit, GoogleFilesDb};
 pub use mft::{MftTree, UsnEntry, UsnRecordHeader, parse_usn_record};
+pub use walk::build_tree_walk;
 
 use std::path::Path;
 
