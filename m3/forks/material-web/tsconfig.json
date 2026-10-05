@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.base.json",
+  "exclude": [
+    "scripts/",
+    "labs/gb/",
+    "tests-web/",
+    "test/",
+    "migration/",
+    "aphrody-build.ts",
+    "aphrody-css-minify.ts",
+    "test-dom.ts",
+    "types/"
+  ],
+  "files": ["types/css-imports.d.ts"]
+}

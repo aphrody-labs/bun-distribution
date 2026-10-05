@@ -1,0 +1,49 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Accordion: divided items; the panel animates its height through Base UI's `--accordion-panel-height`. */
+@layer components {
+  .m3-bui-accordion {
+    color: var(--md-sys-color-on-surface);
+  }
+  .m3-bui-accordion__item {
+    border-block-end: 1px solid var(--md-sys-color-outline-variant);
+  }
+  .m3-bui-accordion__header {
+    margin: 0;
+  }
+  .m3-bui-accordion__trigger {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    inline-size: 100%;
+    min-block-size: 56px;
+    padding: 0 24px;
+    border: 0;
+    background: transparent;
+    color: var(--md-sys-color-on-surface);
+    font: var(--m3-bui-font-title-medium);
+    letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+    text-align: start;
+    cursor: pointer;
+  }
+  .m3-bui-accordion__trigger:is(:disabled, [data-disabled]) {
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    cursor: default;
+  }
+  .m3-bui-accordion__panel {
+    box-sizing: border-box;
+    block-size: var(--accordion-panel-height);
+    padding-inline: 24px;
+    overflow: hidden;
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-body-medium);
+    letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+    transition: block-size var(--md-sys-motion-duration-medium2)
+      var(--md-sys-motion-easing-emphasized);
+  }
+  .m3-bui-accordion__panel[data-starting-style],
+  .m3-bui-accordion__panel[data-ending-style] {
+    block-size: 0;
+  }
+}

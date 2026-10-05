@@ -1,0 +1,60 @@
+{
+  "name": "@aphrody/m3-ai",
+  "version": "3.3.3",
+  "private": true,
+  "description": "Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives.",
+  "keywords": [
+    "material-3",
+    "md3",
+    "react",
+    "spaceui",
+    "tailwind"
+  ],
+  "license": "Apache-2.0 AND MIT",
+  "author": "aphrody-code",
+  "files": [
+    "dist",
+    "LICENSE.spaceui"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "import": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "typecheck": "tsc --noEmit",
+    "typecheck:fast": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@aphrody/ag-ui": "workspace:*",
+    "@aphrody/m3-motion": "workspace:*",
+    "@aphrody/m3-primitives": "workspace:*",
+    "@aphrody/mcp-ui": "catalog:",
+    "clsx": "catalog:",
+    "motion": "catalog:",
+    "react-markdown": "^10.1.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "tailwindcss": ">=4.1.0"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

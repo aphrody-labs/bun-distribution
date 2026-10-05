@@ -1,0 +1,101 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Select: an outlined trigger and a menu-like popup (surface, items and group labels from core.css). */
+@layer components {
+  .m3-bui-select__label {
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-body-small);
+    letter-spacing: var(--md-sys-typescale-body-small-tracking);
+  }
+  .m3-bui-select__trigger {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-inline-size: 210px;
+    min-block-size: 56px;
+    padding: 0 12px 0 16px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    background: transparent;
+    color: var(--md-sys-color-on-surface);
+    font: var(--m3-bui-font-body-large);
+    letter-spacing: var(--md-sys-typescale-body-large-tracking);
+    cursor: pointer;
+    outline: none;
+    user-select: none;
+    transition: border-color var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-select__trigger:hover {
+    border-color: var(--md-sys-color-on-surface);
+  }
+  .m3-bui-select__trigger:is(:focus-visible, [data-popup-open]) {
+    border-color: var(--md-sys-color-primary);
+    box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+  }
+  .m3-bui-select__trigger[data-invalid] {
+    border-color: var(--md-sys-color-error);
+  }
+  .m3-bui-select__trigger:is(:disabled, [data-disabled]) {
+    border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    cursor: default;
+  }
+  .m3-bui-select__value[data-placeholder] {
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .m3-bui-select__icon {
+    display: inline-grid;
+    place-items: center;
+    color: var(--md-sys-color-on-surface-variant);
+    transition: rotate var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
+  }
+  .m3-bui-select__trigger[data-popup-open] .m3-bui-select__icon {
+    rotate: 180deg;
+  }
+
+  .m3-bui-select__popup {
+    min-inline-size: var(--anchor-width);
+    max-block-size: var(--available-height);
+    overflow: hidden;
+  }
+  .m3-bui-select__list {
+    box-sizing: border-box;
+    max-block-size: var(--available-height);
+    padding: 8px 0;
+    overflow-y: auto;
+  }
+  .m3-bui-select__item {
+    padding-inline: 12px 16px;
+  }
+  .m3-bui-select__item-indicator {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 24px;
+    block-size: 24px;
+  }
+  .m3-bui-select__item-text {
+    flex: 1;
+  }
+  .m3-bui-select__group-label {
+    padding: 8px 16px;
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-label-small);
+    letter-spacing: var(--md-sys-typescale-label-small-tracking);
+  }
+  .m3-bui-select__separator {
+    block-size: 1px;
+    margin: 8px 0;
+    background: var(--md-sys-color-outline-variant);
+  }
+  .m3-bui-select__arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    block-size: 24px;
+    color: var(--md-sys-color-on-surface-variant);
+    cursor: default;
+  }
+}

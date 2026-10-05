@@ -1,0 +1,7 @@
+{
+  "name": "tailwindcss",
+  "upstream": "https://github.com/tailwindlabs/tailwindcss.git",
+  "forkOrigin": "git@github-dev:aphrody-labs/tailwindcss.git",
+  "internalizedFrom": "d5f915c3641fb3f7bd223d3c40b20e75b506bbe0",
+  "mode": "in-tree"
+}

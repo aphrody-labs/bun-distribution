@@ -1,0 +1,116 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Shared product surfaces; app.css owns the M3 tokens and the shell layout. */
+
+/* Prevent overscroll/rubber-band effect on macOS */
+html,
+body {
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+
+html.overlay-window,
+body.overlay-window,
+#root.overlay-window {
+  background: transparent !important;
+}
+
+/* Keep each pane's overflow discoverable and respect platform scrollbar sizing. */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: var(--md-sys-color-outline) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .audio-gradient::before {
+    animation: none;
+  }
+}
+
+/* Checkerboard pattern for transparent images */
+.checkerboard {
+  background-image:
+    linear-gradient(45deg, var(--md-sys-color-surface-container-highest) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--md-sys-color-surface-container-highest) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--md-sys-color-surface-container-highest) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--md-sys-color-surface-container-highest) 75%);
+  background-size: 20px 20px;
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0px;
+}
+
+/* Animated gradient for audio player background */
+.audio-gradient {
+  position: relative;
+  background: var(--md-sys-color-scrim);
+}
+
+.audio-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    -45deg,
+    var(--md-sys-color-tertiary),
+    var(--md-sys-color-primary),
+    var(--md-sys-color-secondary),
+    var(--md-sys-color-tertiary-container)
+  );
+  background-size: 400% 400%;
+  animation: audio-gradient-shift 15s var(--md-sys-motion-easing-standard) infinite;
+  opacity: 0.7;
+}
+
+.audio-gradient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 40%,
+    color-mix(in srgb, var(--md-sys-color-scrim) 80%, transparent) 100%
+  );
+  pointer-events: none;
+}
+
+.audio-gradient.paused::before {
+  animation-play-state: paused;
+}
+
+@keyframes audio-gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes barber-pole {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 28px 0;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Diagnostics have no product hit target; developers retain browser devtools. */
+.tsqd-open-btn-container {
+  display: none !important;
+}

@@ -1,0 +1,57 @@
+{
+  "name": "@aphrody/m3-reader",
+  "private": true,
+  "version": "3.3.3",
+  "description": "Material 3 manga and illustrated book readers for React",
+  "license": "Apache-2.0",
+  "type": "module",
+  "files": [
+    "dist",
+    "src",
+    "styles.css",
+    "dragon-ball.css"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./source": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./styles.css": "./styles.css",
+    "./dragon-ball.css": "./dragon-ball.css",
+    "./use-focus-trap": {
+      "types": "./src/use-focus-trap.ts",
+      "default": "./src/use-focus-trap.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "typecheck:fast": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.14.13",
+    "lucide-react": "^1.48.0",
+    "swiper": "^14.3.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "tailwindcss": ">=4.1.0"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

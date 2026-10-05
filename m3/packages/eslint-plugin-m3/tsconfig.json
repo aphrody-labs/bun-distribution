@@ -1,0 +1,10 @@
+{
+  "extends": "@aphrody/m3-config/tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noImplicitAny": false,
+    "declaration": false
+  },
+  "include": ["index.js", "rules", "data", "scripts", "test/run.ts"]
+}

@@ -1,0 +1,211 @@
+'use client';
+import * as React from 'react';
+import { useControlled } from '@base-ui/utils/useControlled';
+import { NOOP } from '@base-ui/utils/empty';
+import { useMenuFilterItem } from '../filter-root/MenuFilterContext';
+import { MenuCheckboxItemContext } from './MenuCheckboxItemContext';
+import { REGULAR_ITEM, useMenuItem } from '../item/useMenuItem';
+import { useCompositeListItem } from '../../internals/composite/list/useCompositeListItem';
+import { useMenuRootContext } from '../root/MenuRootContext';
+import { useRenderElement } from '../../internals/useRenderElement';
+import { useBaseUiId } from '../../internals/useBaseUiId';
+import type { BaseUIComponentProps, NonNativeButtonProps } from '../../internals/types';
+import { itemMapping } from '../utils/stateAttributesMapping';
+import { createChangeEventDetails } from '../../internals/createBaseUIEventDetails';
+import { REASONS } from '../../internals/reasons';
+import type { MenuRoot } from '../root/MenuRoot';
+
+const MenuCheckboxItemPlain = React.forwardRef(function MenuCheckboxItemPlain(
+  componentProps: MenuCheckboxItem.Props,
+  forwardedRef: React.ForwardedRef<HTMLElement>,
+) {
+  const {
+    render,
+    className,
+    id: idProp,
+    label,
+    nativeButton = false,
+    disabled: disabledProp = false,
+    closeOnClick = false,
+    checked = false,
+    onCheckedChange,
+    style,
+    ...elementProps
+  } = componentProps;
+
+  const { store } = useMenuRootContext();
+
+  const listItem = useCompositeListItem({ guess: true, label });
+  const id = useBaseUiId(idProp);
+
+  const rootDisabled = store.useState('disabled');
+  const highlighted = store.useState('isActive', listItem.index);
+  const nodeId = store.useState('floatingNodeId');
+  const itemProps = store.useState('itemProps');
+
+  const disabled = disabledProp || rootDisabled;
+
+  const { getItemProps, itemRef } = useMenuItem({
+    closeOnClick,
+    disabled,
+    highlighted,
+    id,
+    store,
+    nativeButton,
+    nodeId,
+    itemMetadata: REGULAR_ITEM,
+  });
+
+  const state: MenuCheckboxItemState = React.useMemo(
+    () => ({
+      disabled,
+      highlighted,
+      checked,
+    }),
+    [disabled, highlighted, checked],
+  );
+
+  function handleClick(event: React.MouseEvent) {
+    const details = createChangeEventDetails(REASONS.itemPress, event.nativeEvent, undefined, {
+      preventUnmountOnClose: NOOP,
+    });
+
+    onCheckedChange?.(!checked, details);
+  }
+
+  const element = useRenderElement('div', componentProps, {
+    state,
+    stateAttributesMapping: itemMapping,
+    props: [
+      itemProps,
+      {
+        role: 'menuitemcheckbox',
+        'aria-checked': checked,
+        onClick: handleClick,
+      },
+      elementProps,
+      getItemProps,
+    ],
+    ref: [itemRef, forwardedRef, listItem.ref],
+  });
+
+  return (
+    <MenuCheckboxItemContext.Provider value={state}>{element}</MenuCheckboxItemContext.Provider>
+  );
+});
+
+/**
+ * A menu item that toggles a setting on or off.
+ * Renders a `<div>` element.
+ *
+ * Documentation: [Base UI Menu](https://base-ui.com/react/components/menu)
+ */
+export const MenuCheckboxItem = React.forwardRef(function MenuCheckboxItem(
+  props: MenuCheckboxItem.Props,
+  forwardedRef: React.ForwardedRef<HTMLElement>,
+) {
+  const { checked: checkedProp, defaultChecked, onCheckedChange, ...plainProps } = props;
+
+  // Owned above the element so an uncontrolled item keeps its state while a filter hides it.
+  const [checked, setChecked] = useControlled({
+    controlled: checkedProp,
+    default: defaultChecked ?? false,
+    name: 'MenuCheckboxItem',
+    state: 'checked',
+  });
+
+  const filterItem = useMenuFilterItem(props, forwardedRef);
+
+  function handleCheckedChange(
+    nextChecked: boolean,
+    eventDetails: MenuCheckboxItem.ChangeEventDetails,
+  ) {
+    onCheckedChange?.(nextChecked, eventDetails);
+    if (!eventDetails.isCanceled) {
+      setChecked(nextChecked);
+    }
+  }
+
+  if (!filterItem.visible) {
+    return null;
+  }
+
+  return (
+    <MenuCheckboxItemPlain
+      {...plainProps}
+      checked={checked}
+      onCheckedChange={handleCheckedChange}
+      ref={filterItem.ref}
+    />
+  );
+});
+
+export interface MenuCheckboxItemState {
+  /**
+   * Whether the checkbox item should ignore user interaction.
+   */
+  disabled: boolean;
+  /**
+   * Whether the checkbox item is currently highlighted.
+   */
+  highlighted: boolean;
+  /**
+   * Whether the checkbox item is currently ticked.
+   */
+  checked: boolean;
+}
+
+export interface MenuCheckboxItemProps
+  extends NonNativeButtonProps, BaseUIComponentProps<'div', MenuCheckboxItemState> {
+  /**
+   * Whether the checkbox item is currently ticked.
+   *
+   * To render an uncontrolled checkbox item, use the `defaultChecked` prop instead.
+   */
+  checked?: boolean | undefined;
+  /**
+   * Whether the checkbox item is initially ticked.
+   *
+   * To render a controlled checkbox item, use the `checked` prop instead.
+   * @default false
+   */
+  defaultChecked?: boolean | undefined;
+  /**
+   * Event handler called when the checkbox item is ticked or unticked.
+   */
+  onCheckedChange?:
+    ((checked: boolean, eventDetails: MenuCheckboxItem.ChangeEventDetails) => void) | undefined;
+  /**
+   * The click handler for the menu item.
+   */
+  onClick?: BaseUIComponentProps<'div', MenuCheckboxItemState>['onClick'] | undefined;
+  /**
+   * Whether the component should ignore user interaction.
+   * @default false
+   */
+  disabled?: boolean | undefined;
+  /**
+   * Overrides the text used for keyboard text navigation and filtering.
+   * Falls back to the rendered text when not provided.
+   */
+  label?: string | undefined;
+  /**
+   * @ignore
+   */
+  id?: string | undefined;
+  /**
+   * Whether to close the menu when the item is clicked.
+   * @default false
+   */
+  closeOnClick?: boolean | undefined;
+}
+
+export type MenuCheckboxItemChangeEventReason = MenuRoot.ChangeEventReason;
+export type MenuCheckboxItemChangeEventDetails = MenuRoot.ChangeEventDetails;
+
+export namespace MenuCheckboxItem {
+  export type State = MenuCheckboxItemState;
+  export type Props = MenuCheckboxItemProps;
+  export type ChangeEventReason = MenuCheckboxItemChangeEventReason;
+  export type ChangeEventDetails = MenuCheckboxItemChangeEventDetails;
+}

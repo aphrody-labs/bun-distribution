@@ -1,0 +1,2 @@
+[serve.static]
+plugins = ["@aphrody/m3/plugin"]

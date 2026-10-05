@@ -1,0 +1,106 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Switch (`M3Switch`): 52x32dp track; the thumb grows 16, 24 and 28dp (pressed) and carries a 40dp state layer. */
+@layer components {
+  .m3-bui-switch {
+    --_thumb: 16px;
+    --_thumb-x: 6px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    inline-size: 52px;
+    block-size: 32px;
+    padding: 0;
+    border: 2px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-full);
+    background: var(--md-sys-color-surface-container-highest);
+    cursor: pointer;
+    transition:
+      background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+      border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-switch:focus-visible {
+    outline: 3px solid var(--md-sys-color-secondary);
+    outline-offset: 2px;
+  }
+  .m3-bui-switch[data-checked] {
+    --_thumb: 24px;
+    --_thumb-x: 22px;
+    background: var(--md-sys-color-primary);
+    border-color: var(--md-sys-color-primary);
+  }
+  .m3-bui-switch:active {
+    --_thumb: 28px;
+  }
+  .m3-bui-switch[data-checked]:active {
+    --_thumb-x: 20px;
+  }
+
+  .m3-bui-switch__thumb {
+    position: relative;
+    display: block;
+    flex: none;
+    inline-size: var(--_thumb);
+    block-size: var(--_thumb);
+    border-radius: var(--md-sys-shape-corner-full);
+    background: var(--md-sys-color-outline);
+    transform: translateX(var(--_thumb-x));
+    transition:
+      transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized),
+      inline-size var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized),
+      block-size var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized),
+      background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+  }
+  /* The thumb is always centred on its state layer: a 40dp circle around it. */
+  .m3-bui-switch__thumb::after {
+    content: "";
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: 40px;
+    block-size: 40px;
+    border-radius: 50%;
+    background: var(--md-sys-color-on-surface);
+    translate: -50% -50%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-switch[data-checked] .m3-bui-switch__thumb {
+    background: var(--md-sys-color-on-primary);
+  }
+  .m3-bui-switch[data-checked] .m3-bui-switch__thumb::after {
+    background: var(--md-sys-color-primary);
+  }
+  @media (hover: hover) {
+    .m3-bui-switch:hover .m3-bui-switch__thumb::after {
+      opacity: var(--md-sys-state-hover-state-layer-opacity);
+    }
+  }
+  .m3-bui-switch:focus-visible .m3-bui-switch__thumb::after {
+    opacity: var(--md-sys-state-focus-state-layer-opacity);
+  }
+  .m3-bui-switch:active .m3-bui-switch__thumb::after {
+    opacity: var(--md-sys-state-pressed-state-layer-opacity);
+  }
+
+  .m3-bui-switch[data-invalid] {
+    border-color: var(--md-sys-color-error);
+  }
+  .m3-bui-switch:is(:disabled, [data-disabled]) {
+    border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+    background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 12%, transparent);
+    cursor: default;
+  }
+  .m3-bui-switch[data-checked]:is(:disabled, [data-disabled]) {
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  }
+  .m3-bui-switch:is(:disabled, [data-disabled]) .m3-bui-switch__thumb {
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  }
+  .m3-bui-switch[data-checked]:is(:disabled, [data-disabled]) .m3-bui-switch__thumb {
+    background: var(--md-sys-color-surface);
+  }
+  .m3-bui-switch:is(:disabled, [data-disabled]) .m3-bui-switch__thumb::after {
+    opacity: 0;
+  }
+}

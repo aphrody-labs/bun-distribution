@@ -1,0 +1,27 @@
+{
+  "name": "__NAME__",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run scripts/supervise.ts",
+    "start": "bun run src/server.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src scripts test",
+    "fmt": "oxfmt --write src scripts test",
+    "fmt:check": "oxfmt --check src scripts test",
+    "build:bin": "bun run scripts/build-bin.ts",
+    "pack:deploy": "bun run scripts/pack-deploy.ts"
+  },
+  "dependencies": {
+    "@aphrody/runtime-sdk": "file:__YOLO__/packages/runtime"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

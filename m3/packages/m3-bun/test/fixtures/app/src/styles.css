@@ -1,0 +1,8 @@
+@import "m3:theme.css";
+
+body {
+  margin: 0;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font: 400 1rem/1.5 system-ui, sans-serif;
+}

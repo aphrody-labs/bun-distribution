@@ -1,0 +1,21 @@
+{
+  "name": "@aphrody/m3-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Single design/UI MCP server of aphrody-m3: packages, M3 tokens (lookup, validate), docs search, research links, templates, Material Symbols SVG, SVG to Tauri icons.",
+  "type": "module",
+  "exports": {
+    ".": "./src/server.ts"
+  },
+  "scripts": {
+    "start": "bun src/server.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@aphrody/m3-os-themes": "workspace:*",
+    "@aphrody/material-design-icons": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "zod": "^4.6.5"
+  }
+}

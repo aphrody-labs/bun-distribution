@@ -1,0 +1,71 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Checkbox (`M3Checkbox`; `M3CheckboxGroup` is `.m3-bui-group` in core.css). A 40dp target holds the 18dp box and the state layer. */
+@layer components {
+  .m3-bui-checkbox {
+    --m3-state: var(--md-sys-color-on-surface);
+    box-sizing: border-box;
+    display: inline-grid;
+    place-items: center;
+    inline-size: 40px;
+    block-size: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--md-sys-color-on-primary);
+    cursor: pointer;
+  }
+  .m3-bui-checkbox::before {
+    content: "";
+    position: absolute;
+    inset: 11px;
+    box-sizing: border-box;
+    border: 2px solid var(--md-sys-color-on-surface-variant);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    transition:
+      background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+      border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-checkbox:is([data-checked], [data-indeterminate]) {
+    --m3-state: var(--md-sys-color-primary);
+  }
+  .m3-bui-checkbox:is([data-checked], [data-indeterminate])::before {
+    background: var(--md-sys-color-primary);
+    border-color: var(--md-sys-color-primary);
+  }
+  .m3-bui-checkbox[data-invalid]::before {
+    border-color: var(--md-sys-color-error);
+  }
+  .m3-bui-checkbox[data-invalid]:is([data-checked], [data-indeterminate])::before {
+    background: var(--md-sys-color-error);
+  }
+  .m3-bui-checkbox:is(:disabled, [data-disabled]) {
+    cursor: default;
+  }
+  .m3-bui-checkbox:is(:disabled, [data-disabled])::before {
+    border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  }
+  .m3-bui-checkbox:is(:disabled, [data-disabled]):is([data-checked], [data-indeterminate])::before {
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  }
+
+  .m3-bui-checkbox__indicator {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 18px;
+    block-size: 18px;
+  }
+  .m3-bui-checkbox__indicator svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+  }
+  .m3-bui-checkbox__dash,
+  .m3-bui-checkbox__indicator[data-indeterminate] .m3-bui-checkbox__check {
+    display: none;
+  }
+  .m3-bui-checkbox__indicator[data-indeterminate] .m3-bui-checkbox__dash {
+    display: inline;
+  }
+}
