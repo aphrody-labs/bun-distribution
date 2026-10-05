@@ -59,12 +59,12 @@ Ce plan centralise et fusionne l'ensemble des axes directeurs du projet :
   - Validation des suites de tests TypeScript (135 tests réussis).
   - Validation de la suite de tests Python via `uv` (37 tests réussis).
 
-- [ ] **Phase 2 : Unification Native FFI**
+- [x] **Phase 2 : Unification Native FFI** (source; `cargo check -p aphrody-ffi` OK 2026-10-05, cdylib export non vérifié par nm)
   - Intégrer les exports `yolo_*` et `ffi_sum_squares` dans `crates/interop/ffi`.
   - Harmoniser le header C `crates/interop/ffi/include/aphrody.h`.
   - Vérifier la compilation Cargo (`cargo check -p aphrody-ffi`).
 
-- [ ] **Phase 3 : Consolidation des Consommateurs SDK**
+- [~] **Phase 3 : Consolidation des Consommateurs SDK** (le SDK charge la bibliothèque nommée par le manifest d'artefact ; aucune modification requise, requalification `bun:ffi` en attente)
   - Pointer le SDK `@aphrody/runtime` de manière transparente vers `aphrody_ffi`.
   - Requalifier le chargement dynamique sous Bun (`bun:ffi`).
 

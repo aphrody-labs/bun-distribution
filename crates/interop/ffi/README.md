@@ -141,3 +141,10 @@ repositories). This crate stays the engine and the ABI source of truth.
 Native only (Linux / Windows / macOS): the wrapped surface links tokio +
 reqwest + rustls, which do not build on wasm32. On `wasm32-*` the crate compiles
 to an empty module so `cargo check --target wasm32-unknown-unknown` stays green.
+
+## yolo_* runtime ABI
+
+`aphrody_ffi` re-exports the versioned `yolo_*` and `ffi_sum_squares` symbols of
+`crates/engine/yolo-runtime` (see `src/yolo.rs`; header pulled in by `include/aphrody.h`).
+`@aphrody/runtime` loads whichever library its verified artifact manifest names, so an
+`aphrody_ffi` artifact is a drop-in. Browser exports require the `browser` feature.

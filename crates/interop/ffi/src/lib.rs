@@ -54,6 +54,10 @@ mod web;
 #[cfg(not(target_arch = "wasm32"))]
 pub use web::*;
 
+// yolo_* runtime ABI retained in this cdylib (Phase 2 unification).
+#[cfg(not(target_arch = "wasm32"))]
+mod yolo;
+
 // Zero-copy exports (caller-owned buffers): CPU rasterizer and tool-call repair.
 #[cfg(not(target_arch = "wasm32"))]
 mod zerocopy;

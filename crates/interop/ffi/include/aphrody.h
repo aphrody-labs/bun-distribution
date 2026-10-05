@@ -99,6 +99,9 @@
 #  define APHRODY_MALLOC
 #endif
 
+/* yolo_* runtime ABI (versioned, owned by crates/engine/yolo-runtime). */
+#include "../../../engine/yolo-runtime/include/yolo_runtime.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

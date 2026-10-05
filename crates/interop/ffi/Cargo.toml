@@ -38,6 +38,8 @@ yara      = ["aphrody-command/yara"]
 ocr       = ["aphrody-command/ocr"]
 infer     = ["aphrody-command/infer"]
 jobs      = ["aphrody-command/jobs"]
+# Forwards the pinned Obscura/V8 browser exports of the yolo_* ABI.
+browser   = ["yolo-runtime/browser"]
 
 # The crate wraps the native `aphrody-command` surface (tokio + reqwest +
 # rustls), which does not link on wasm32. On wasm the crate compiles to an
@@ -63,6 +65,8 @@ aphrody-web-index = { workspace = true }
 aphrody-web-chromium = { workspace = true }
 aphrody-gemini-web = { workspace = true }
 aphrody-x = { workspace = true }
+# Versioned yolo_* C ABI (docs/RUNTIME-ABI.md), re-exported by this cdylib.
+yolo-runtime = { workspace = true }
 base64     = { workspace = true }
 # A dlopened library must not reserve mimalloc's initial-exec static TLS.
 mimalloc   = { workspace = true, features = ["local_dynamic_tls"] }
