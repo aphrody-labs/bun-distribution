@@ -20,7 +20,7 @@
   "homepage": "https://github.com/tauri-apps/tauri#readme",
   "type": "module",
   "main": "./dist/index.cjs",
-  "module": "./index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -41,7 +41,6 @@
     "typecheck": "tsc --noEmit",
     "build": "bun ../build-js.ts"
   },
-  "private": true,
   "engines": {
     "bun": ">=1.4.2"
   },
@@ -51,5 +50,8 @@
     "README.md",
     "LICENSE-APACHE-2.0",
     "LICENSE-MIT"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

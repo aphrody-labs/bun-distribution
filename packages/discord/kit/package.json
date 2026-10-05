@@ -1,9 +1,13 @@
 {
   "name": "@aphrody/discord-kit",
   "version": "0.1.0",
-  "private": true,
   "description": "Unified Discord bot core kit: pre-flight intent negotiation, memory-bounded caching, resilient interaction dispatching, lifecycle management and guards for Bun.",
   "license": "Apache-2.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.txt"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -19,21 +23,19 @@
       "import": "./dist/apps.mjs"
     }
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE.txt"
-  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown src/index.ts src/rest.ts src/apps.ts --format esm --dts",
     "test": "bun test test",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@aphrody/runtime-sdk": "workspace:*",
     "discord-api-types": "catalog:",
     "discord.js": "catalog:",
-    "discordx": "catalog:",
-    "@aphrody/runtime-sdk": "workspace:*"
+    "discordx": "catalog:"
   },
   "devDependencies": {
     "tsdown": "catalog:",

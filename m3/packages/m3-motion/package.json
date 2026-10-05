@@ -1,6 +1,5 @@
 {
   "name": "@aphrody/m3-motion",
-  "private": true,
   "version": "3.3.3",
   "description": "Material 3 animation plugin powered by Motion (formerly Framer Motion)",
   "homepage": "https://github.com/aphrody-code/material-web/tree/main/packages/m3-motion#readme",
@@ -15,7 +14,8 @@
     "directory": "packages/m3-motion"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "type": "module",
   "main": "./src/index.ts",
@@ -39,6 +39,9 @@
   },
   "dependencies": {
     "motion": "catalog:"
+  },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*"
   },
   "peerDependencies": {
     "motion": ">=12.0.0",

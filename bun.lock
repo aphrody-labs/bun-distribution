@@ -603,6 +603,9 @@
         "@tailwindcss/oxide": "catalog:",
         "motion": "catalog:",
       },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
       "peerDependencies": {
         "@aphrody/m3-bun": "workspace:*",
         "react": ">=18.0.0",
@@ -627,6 +630,9 @@
         "react-markdown": "catalog:",
         "rehype-raw": "catalog:",
         "remark-gfm": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -700,6 +706,9 @@
         "@aphrody/m3-primitives": "workspace:*",
         "clsx": "catalog:",
       },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
       "peerDependencies": {
         "react": ">=18.0.0",
         "react-dom": ">=18.0.0",
@@ -718,6 +727,7 @@
         "clsx": "catalog:",
       },
       "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
         "react-hook-form": "catalog:",
       },
       "peerDependencies": {
@@ -747,6 +757,7 @@
         "@aphrody/bun": "^3.3.0",
       },
       "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
         "lit": "catalog:",
       },
       "peerDependencies": {
@@ -774,6 +785,9 @@
       "dependencies": {
         "motion": "catalog:",
       },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
       "peerDependencies": {
         "motion": ">=12.0.0",
         "react": ">=18.0.0",
@@ -792,6 +806,7 @@
         "@aphrody/m3-tokens": "workspace:*",
       },
       "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "next": "catalog:",
@@ -818,6 +833,9 @@
       "dependencies": {
         "@aphrody/scaffold": "workspace:*",
         "react": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
       },
     },
     "m3/packages/m3-next/examples/app": {
@@ -892,6 +910,9 @@
         "sonner": "catalog:",
         "zod": "catalog:",
       },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
       "peerDependencies": {
         "react": ">=18.0.0",
         "react-dom": ">=18.0.0",
@@ -906,6 +927,9 @@
         "@aphrody/material-web": "catalog:",
         "@lit/react": "catalog:",
       },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
       "peerDependencies": {
         "react": ">=18.0.0",
         "react-dom": ">=18.0.0",
@@ -918,6 +942,9 @@
         "@tanstack/react-virtual": "catalog:",
         "lucide-react": "catalog:",
         "swiper": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
       },
       "peerDependencies": {
         "react": ">=18.0.0",
@@ -950,6 +977,7 @@
       },
       "devDependencies": {
         "@aphrody/bun": "^3.3.0",
+        "@aphrody/m3-config": "workspace:*",
         "@material/material-color-utilities": "catalog:",
       },
       "peerDependencies": {

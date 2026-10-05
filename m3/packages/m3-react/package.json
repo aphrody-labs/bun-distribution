@@ -79,6 +79,9 @@
     "@aphrody/material-web": "catalog:",
     "@lit/react": "catalog:"
   },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*"
+  },
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"

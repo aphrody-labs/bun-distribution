@@ -1,9 +1,12 @@
 {
   "name": "@aphrody/sql",
   "version": "0.1.0",
-  "private": true,
   "description": "Shared Bun database mechanics for Aphrody: env/URL resolution, Bun.SQL and Redis factories, bun:sqlite open policy with optional sqlite-vec",
   "license": "Apache-2.0",
+  "files": [
+    "src",
+    "README.md"
+  ],
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -12,6 +15,9 @@
     "./postgres": "./src/postgres.ts",
     "./redis": "./src/redis.ts",
     "./sqlite": "./src/sqlite.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "bun build src/index.ts --target bun --packages external --outdir dist",

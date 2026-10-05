@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/m3-forms",
-  "private": true,
   "version": "3.3.3",
+  "private": true,
   "description": "Material Design 3 form fields (react-hook-form) on @aphrody/m3-primitives: the SpaceUI (@spacedrive/forms) set, M3-styled.",
   "keywords": [
     "material-3",
@@ -43,6 +43,7 @@
     "clsx": "catalog:"
   },
   "devDependencies": {
+    "@aphrody/m3-config": "workspace:*",
     "react-hook-form": "catalog:"
   },
   "peerDependencies": {

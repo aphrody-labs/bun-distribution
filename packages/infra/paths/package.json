@@ -1,13 +1,18 @@
 {
   "name": "@aphrody/paths",
   "version": "0.1.0",
-  "private": true,
   "description": "Cross-platform path resolution for Aphrody workspaces and runtime data",
   "license": "Apache-2.0",
+  "files": [
+    "src"
+  ],
   "type": "module",
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "bun build src/index.ts --target bun --packages external --outdir dist",

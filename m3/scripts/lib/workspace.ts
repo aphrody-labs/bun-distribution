@@ -2,7 +2,7 @@
 // Workspace discovery shared by the root scripts: the packages and apps of the root manifest globs,
 // their dependency edges and a topological order.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
 export const REPO = resolve(dirname(import.meta.path), "../..");
 
@@ -24,14 +24,34 @@ export interface WorkspacePackage {
   };
 }
 
-/** Workspace members: the root `workspaces` globs minus its `!` exclusions. */
+type Manifest = { workspaces?: { packages?: string[] } | string[] };
+const manifestGlobs = (directory: string): string[] => {
+  const file = join(directory, "package.json");
+  if (!existsSync(file)) return [];
+  const { workspaces } = JSON.parse(readFileSync(file, "utf8")) as Manifest;
+  return Array.isArray(workspaces) ? workspaces : (workspaces?.packages ?? []);
+};
+
+/**
+ * Workspace globs of `root`. M3 is a member tree of the monorepo's single Bun workspace: without
+ * globs of its own it takes the parent manifest's globs under its directory, made relative to it.
+ */
+export function workspaceGlobs(directory: string): string[] {
+  const root = resolve(directory);
+  const own = manifestGlobs(root);
+  if (own.length) return own;
+  const parent = dirname(root);
+  const prefix = `${relative(parent, root).replaceAll("\\", "/")}/`;
+  return manifestGlobs(parent).flatMap((glob) => {
+    const negated = glob.startsWith("!");
+    const path = negated ? glob.slice(1) : glob;
+    return path.startsWith(prefix) ? [`${negated ? "!" : ""}${path.slice(prefix.length)}`] : [];
+  });
+}
+
+/** Workspace members: the `workspaces` globs minus their `!` exclusions. */
 export function workspacePackages(root: string = REPO): WorkspacePackage[] {
-  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
-    workspaces?: { packages?: string[] } | string[];
-  };
-  const globs = Array.isArray(manifest.workspaces)
-    ? manifest.workspaces
-    : (manifest.workspaces?.packages ?? []);
+  const globs = workspaceGlobs(root);
   const excluded = new Set(globs.filter((g) => g.startsWith("!")).map((g) => g.slice(1)));
   const result: WorkspacePackage[] = [];
   for (const glob of globs.filter((g) => !g.startsWith("!"))) {

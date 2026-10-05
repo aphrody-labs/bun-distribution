@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/bun",
   "version": "3.3.3",
-  "private": true,
   "description": "Native Rust FFI wrappers for Bun.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
@@ -39,9 +38,9 @@
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@aphrody/update": "workspace:*",
     "@aphrody/media": "workspace:*",
-    "@aphrody/runtime-sdk": "workspace:*"
+    "@aphrody/runtime-sdk": "workspace:*",
+    "@aphrody/update": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.2"

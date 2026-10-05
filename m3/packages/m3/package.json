@@ -94,16 +94,18 @@
     "@aphrody/m3-react": "workspace:*",
     "@aphrody/m3-theme": "workspace:*",
     "@aphrody/material-web": "catalog:",
+    "@aphrody/scaffold": "workspace:*",
     "@tailwindcss/node": "catalog:",
     "@tailwindcss/oxide": "catalog:",
-    "motion": "catalog:",
-    "@aphrody/scaffold": "workspace:*"
+    "motion": "catalog:"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*"
+  },
   "peerDependencies": {
+    "@aphrody/m3-bun": "workspace:*",
     "react": ">=18.0.0",
-    "react-dom": ">=18.0.0",
-    "@aphrody/m3-bun": "workspace:*"
+    "react-dom": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
