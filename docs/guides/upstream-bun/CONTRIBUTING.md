@@ -59,7 +59,7 @@ $ curl -fsSL https://bun.com/install | bash
 ```
 
 ```bash#npm
-$ npm install -g bun
+$ bun install -g bun
 ```
 
 ```bash#Homebrew
@@ -227,10 +227,10 @@ To save you time spent building a release build locally, we provide a way to run
 To run a release build from a pull request, you can use the `bun-pr` npm package:
 
 ```sh
-bunx bun-pr <pr-number>
-bunx bun-pr <branch-name>
-bunx bun-pr "https://github.com/oven-sh/bun/pull/1234566"
-bunx bun-pr --asan <pr-number> # Linux x64 only
+bun-pr <pr-number>
+bun-pr <branch-name>
+bun-pr "https://github.com/oven-sh/bun/pull/1234566"
+bun-pr --asan <pr-number> # Linux x64 only
 ```
 
 This will download the release build from the pull request and add it to `$PATH` as `bun-${pr-number}`. You can then run the build with `bun-${pr-number}`.

@@ -19,7 +19,7 @@ import type { CatalogModel } from '@/services/models/types'
 import { JAN_CODE_HF_REPO } from '@/constants/models'
 import { toast } from 'sonner'
 import { getModelToStart } from '@/utils/getModelToStart'
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import {
   Popover,
   PopoverTrigger,

@@ -21632,11 +21632,11 @@ pip install openai
 ```
 
 ```bash customLanguage="javascriptAISDK"
-npm install ai @ai-sdk/xai zod
+bun install ai @ai-sdk/xai zod
 ```
 
 ```bash customLanguage="javascriptOpenAISDK"
-npm install openai
+bun install openai
 ```
 
 ## Step 4: Make your first request

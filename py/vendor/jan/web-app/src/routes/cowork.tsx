@@ -15,7 +15,7 @@ import {
   useState,
 } from 'react'
 import { toast } from 'sonner'
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import { Bot, Command, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getLoadedModels } from '@janhq/tauri-plugin-llamacpp-api'

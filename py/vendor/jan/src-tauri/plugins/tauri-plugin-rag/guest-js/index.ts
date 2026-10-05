@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 
 export async function parseDocument(filePath: string, fileType: string): Promise<string> {
   // Send both snake_case and camelCase for compatibility across runtimes/builds

@@ -7,9 +7,9 @@
  * 3. Uses Tauri's built-in updater for download/install (with signature verification)
  */
 
-import { check, Update } from '@tauri-apps/plugin-updater'
-import { invoke } from '@tauri-apps/api/core'
-import { load } from '@tauri-apps/plugin-store'
+import { check, Update } from '@aphrody/plugin-updater'
+import { invoke } from '@aphrody/api/core'
+import { load } from '@aphrody/plugin-store'
 import type { UpdateInfo, UpdateProgressEvent } from './types'
 import { DefaultUpdaterService } from './default'
 
@@ -66,7 +66,7 @@ async function getNonceSeed(): Promise<string> {
 // Get current app version
 async function getCurrentVersion(): Promise<string> {
   try {
-    const { getVersion } = await import('@tauri-apps/api/app')
+    const { getVersion } = await import('@aphrody/api/app')
     return await getVersion()
   } catch {
     return '0.0.0'

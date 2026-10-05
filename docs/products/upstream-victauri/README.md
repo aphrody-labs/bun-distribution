@@ -105,7 +105,7 @@ In release builds, `init()` returns a no-op plugin — the server never starts, 
 Start your app, then run the smoke suite:
 
 ```bash
-pnpm tauri dev                                   # start your app
+bun run tauri dev                                   # start your app
 VICTAURI_E2E=1 cargo test --test smoke           # run tests
 ```
 

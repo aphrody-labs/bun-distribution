@@ -45,7 +45,7 @@ Dependency injection service with support for agnostic IOC.
 Version 16.6.0 or newer of Node.js is required
 
 ```
-npm install @discordx/di
+bun install @discordx/di
 yarn add @discordx/di
 ```
 

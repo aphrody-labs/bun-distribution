@@ -481,7 +481,7 @@ behaviors did — review if you relied on them:
   disable auth.)**
 - **npm `@4da/victauri-browser` no longer auto-registers** the native-messaging host on
   install. Opt in with `VICTAURI_BROWSER_AUTO_REGISTER=1` or run
-  `npx victauri-browser install <ext-id>`.
+  `victauri-browser install <ext-id>`.
 - **Browser extension:** the channel is now HMAC-authenticated (audit A4) and **requires a
   secure context** (https / localhost) — on a plain http:// origin the bridge fails closed.
   The **Firefox** extension now requires **Firefox 128+** (it relies on a `world: "MAIN"`

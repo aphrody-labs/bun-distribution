@@ -5,7 +5,7 @@ const { mockOnOpenUrl, mockGetCurrent } = vi.hoisted(() => ({
   mockGetCurrent: vi.fn(),
 }))
 
-vi.mock('@tauri-apps/plugin-deep-link', () => ({
+vi.mock('@aphrody/plugin-deep-link', () => ({
   onOpenUrl: mockOnOpenUrl,
   getCurrent: mockGetCurrent,
 }))

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('@tauri-apps/plugin-opener', () => ({
+vi.mock('@aphrody/plugin-opener', () => ({
   openPath: vi.fn(),
   revealItemInDir: vi.fn(),
 }))
 
-import { openPath, revealItemInDir } from '@tauri-apps/plugin-opener'
+import { openPath, revealItemInDir } from '@aphrody/plugin-opener'
 import { TauriOpenerService } from '../tauri'
 import { DefaultOpenerService } from '../default'
 

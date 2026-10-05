@@ -17,7 +17,7 @@ Latest variable icon fonts and CSS for Material Symbols.
 Install the [latest version][releases] using:
 
 ```sh
-npm install material-symbols@latest
+bun install material-symbols@latest
 ```
 
 ## Usage

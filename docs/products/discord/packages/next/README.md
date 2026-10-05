@@ -21,9 +21,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/next
+bun install @discordjs/next
 yarn add @discordjs/next
-pnpm add @discordjs/next
+bun run add @discordjs/next
 bun add @discordjs/next
 ```
 

@@ -54,7 +54,7 @@ fixedCode();
 ### Verification
 
 ```bash
-npm test -- path/to/test.ts
+bun test -- path/to/test.ts
 ```
 
 ### Investigation Log

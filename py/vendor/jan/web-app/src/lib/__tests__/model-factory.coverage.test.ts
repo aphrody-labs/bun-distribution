@@ -3,17 +3,17 @@ import { ModelFactory } from '../model-factory'
 
 const mockGlobalFetch = vi.fn()
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
-vi.mock('@tauri-apps/plugin-http', () => ({
+vi.mock('@aphrody/plugin-http', () => ({
   fetch: vi.fn().mockImplementation(async (input: any, init: any) => {
     return new Response('{}', { status: 200 })
   }),
 }))
 
-vi.mock('@tauri-apps/api/event', () => ({
+vi.mock('@aphrody/api/event', () => ({
   listen: vi.fn(),
 }))
 
@@ -214,14 +214,14 @@ describe('ModelFactory - coverage', () => {
   })
 
   it('creates llamacpp model', async () => {
-    const { invoke } = await import('@tauri-apps/api/core')
+    const { invoke } = await import('@aphrody/api/core')
     vi.mocked(invoke).mockResolvedValue({ port: 8080, api_key: 'test-key' })
     const model = await ModelFactory.createModel('llama-model', mkProvider('llamacpp'), {})
     expect(model).toBeDefined()
   })
 
   it('throws when no llamacpp session found', async () => {
-    const { invoke } = await import('@tauri-apps/api/core')
+    const { invoke } = await import('@aphrody/api/core')
     vi.mocked(invoke).mockResolvedValue(null)
     await expect(
       ModelFactory.createModel('llama-model', mkProvider('llamacpp'), {})
@@ -229,14 +229,14 @@ describe('ModelFactory - coverage', () => {
   })
 
   it('creates mlx model', async () => {
-    const { invoke } = await import('@tauri-apps/api/core')
+    const { invoke } = await import('@aphrody/api/core')
     vi.mocked(invoke).mockResolvedValue({ port: 9090, api_key: 'mlx-key' })
     const model = await ModelFactory.createModel('mlx-model', mkProvider('mlx'), {})
     expect(model).toBeDefined()
   })
 
   it('throws when no mlx session found', async () => {
-    const { invoke } = await import('@tauri-apps/api/core')
+    const { invoke } = await import('@aphrody/api/core')
     vi.mocked(invoke).mockResolvedValue(null)
     await expect(
       ModelFactory.createModel('mlx-model', mkProvider('mlx'), {})

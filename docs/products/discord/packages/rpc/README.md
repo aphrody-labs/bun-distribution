@@ -28,9 +28,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/rpc
+bun install @discordjs/rpc
 yarn add @discordjs/rpc
-pnpm add @discordjs/rpc
+bun run add @discordjs/rpc
 bun add @discordjs/rpc
 ```
 

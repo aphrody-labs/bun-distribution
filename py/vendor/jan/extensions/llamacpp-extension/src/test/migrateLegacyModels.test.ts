@@ -40,7 +40,7 @@ describe('migrateLegacyModels', () => {
 
     it('should skip non-yml files during migration', async () => {
       const { getJanDataFolderPath, joinPath, fs } = await import('@janhq/core')
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
 
       vi.mocked(getJanDataFolderPath).mockResolvedValue('/path/to/jan')
       vi.mocked(joinPath)
@@ -62,7 +62,7 @@ describe('migrateLegacyModels', () => {
 
     it('should skip yml files when model.yml already exists in directory', async () => {
       const { getJanDataFolderPath, joinPath, fs } = await import('@janhq/core')
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
 
       vi.mocked(getJanDataFolderPath).mockResolvedValue('/path/to/jan')
       vi.mocked(joinPath)
@@ -100,8 +100,8 @@ describe('migrateLegacyModels', () => {
 
     it('should migrate legacy model with valid configuration', async () => {
       const { getJanDataFolderPath, joinPath, fs } = await import('@janhq/core')
-      const { invoke } = await import('@tauri-apps/api/core')
-      const { basename } = await import('@tauri-apps/api/path')
+      const { invoke } = await import('@aphrody/api/core')
+      const { basename } = await import('@aphrody/api/path')
 
       vi.mocked(getJanDataFolderPath).mockResolvedValue('/path/to/jan')
 
@@ -146,7 +146,7 @@ describe('migrateLegacyModels', () => {
 
     it('should skip migration if legacy model file does not exist', async () => {
       const { getJanDataFolderPath, joinPath, fs } = await import('@janhq/core')
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
 
       vi.mocked(getJanDataFolderPath).mockResolvedValue('/path/to/jan')
       vi.mocked(joinPath)
@@ -178,8 +178,8 @@ describe('migrateLegacyModels', () => {
 
     it('should skip migration if new model config already exists', async () => {
       const { getJanDataFolderPath, joinPath, fs } = await import('@janhq/core')
-      const { invoke } = await import('@tauri-apps/api/core')
-      const { basename } = await import('@tauri-apps/api/path')
+      const { invoke } = await import('@aphrody/api/core')
+      const { basename } = await import('@aphrody/api/path')
 
       vi.mocked(getJanDataFolderPath).mockResolvedValue('/path/to/jan')
       vi.mocked(joinPath)
@@ -245,7 +245,7 @@ describe('migrateLegacyModels', () => {
   describe('list method integration with migrateLegacyModels', () => {
     it('should call migrateLegacyModels during list operation', async () => {
       const { getJanDataFolderPath, joinPath, fs } = await import('@janhq/core')
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
 
       // Mock the migrateLegacyModels method
       const migrateSpy = vi

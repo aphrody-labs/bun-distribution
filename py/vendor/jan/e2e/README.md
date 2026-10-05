@@ -68,7 +68,7 @@ deleted. `toggleFavorite`, `unstarAllThreads` and `getFavoriteThreads` survive i
 ## Running
 
 ```bash
-yarn install   # once, on a fresh clone -- see below
+bun install   # once, on a fresh clone -- see below
 yarn e2e       # from the repo root
 ```
 

@@ -50,7 +50,7 @@
 curl -fsSL https://opencode.ai/install | bash
 
 # Các trình quản lý gói (Package managers)
-npm i -g opencode-ai@latest        # hoặc bun/pnpm/yarn
+bun install -g opencode-ai@latest        # hoặc bun/pnpm/yarn
 scoop install opencode             # Windows
 choco install opencode             # Windows
 brew install anomalyco/tap/opencode # macOS và Linux (khuyên dùng, luôn cập nhật)

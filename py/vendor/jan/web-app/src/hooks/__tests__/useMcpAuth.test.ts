@@ -6,7 +6,7 @@ import type { MCPAuthStatus } from '@/services/mcp/types'
 const listeners: Array<(event: { payload: unknown }) => void> = []
 const unlisten = vi.fn()
 
-vi.mock('@tauri-apps/api/event', () => ({
+vi.mock('@aphrody/api/event', () => ({
   listen: vi.fn((_event: string, cb: (e: { payload: unknown }) => void) => {
     listeners.push(cb)
     return Promise.resolve(unlisten)

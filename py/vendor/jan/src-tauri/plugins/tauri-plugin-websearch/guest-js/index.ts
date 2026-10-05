@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import { SearchResult, FetchedPage } from './types'
 
 export { SearchResult, FetchedPage } from './types'

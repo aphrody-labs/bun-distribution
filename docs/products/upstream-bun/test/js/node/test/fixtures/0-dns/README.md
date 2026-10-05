@@ -14,7 +14,7 @@ Generating RSA private key, 2048 bit long modulus
 e is 65537 (0x10001)
 $ openssl rsa -in 0-dns-key.pem -RSAPublicKey_out -outform der -out 0-dns-rsapub.der
 writing RSA key
-$ npm install
+$ bun install
 0-dns@1.0.0 ~/node/test/fixtures/0-dns
 +-- asn1.js@4.9.1
 | +-- bn.js@4.11.6

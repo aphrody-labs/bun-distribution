@@ -8,24 +8,24 @@ const { mockStore } = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('@tauri-apps/plugin-updater', () => ({
+vi.mock('@aphrody/plugin-updater', () => ({
   check: vi.fn(),
 }))
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
-vi.mock('@tauri-apps/plugin-store', () => ({
+vi.mock('@aphrody/plugin-store', () => ({
   load: vi.fn().mockResolvedValue(mockStore),
 }))
 
-vi.mock('@tauri-apps/api/app', () => ({
+vi.mock('@aphrody/api/app', () => ({
   getVersion: vi.fn().mockResolvedValue('1.0.0'),
 }))
 
-import { check } from '@tauri-apps/plugin-updater'
-import { invoke } from '@tauri-apps/api/core'
+import { check } from '@aphrody/plugin-updater'
+import { invoke } from '@aphrody/api/core'
 import { TauriUpdaterService } from '../tauri'
 import { DefaultUpdaterService } from '../default'
 

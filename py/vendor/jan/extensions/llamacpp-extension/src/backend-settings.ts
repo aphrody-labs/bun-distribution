@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import { logger } from '@janhq/core'
 
 /**

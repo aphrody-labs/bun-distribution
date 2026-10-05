@@ -45,7 +45,7 @@ A powerful lava link player library written in [TypeScript](https://www.typescri
 Version 16.6.0 or newer of Node.js is required
 
 ```
-npm install @discordx/lava-player
+bun install @discordx/lava-player
 yarn add @discordx/lava-player
 ```
 

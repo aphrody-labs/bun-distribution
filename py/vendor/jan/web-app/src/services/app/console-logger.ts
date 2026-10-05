@@ -3,7 +3,7 @@ import {
   error as logError,
   info as logInfo,
   warn as logWarn,
-} from '@tauri-apps/plugin-log'
+} from '@aphrody/plugin-log'
 import { formatLogArg } from '@janhq/core'
 
 type ConsoleMethod = 'log' | 'info' | 'warn' | 'error' | 'debug'

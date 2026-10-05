@@ -47,7 +47,7 @@ This library allows you to use TypeScript decorators on **discord.js**, it simpl
 > Version 16.6.0 or newer of [Node.js](https://nodejs.org/) is required
 
 ```
-npm install discordx
+bun install discordx
 yarn add discordx
 ```
 

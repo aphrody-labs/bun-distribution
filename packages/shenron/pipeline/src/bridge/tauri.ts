@@ -51,9 +51,9 @@ export async function tauriInvoke<T>(
 		return window.__TAURI__.core.invoke<T>(command, args);
 	}
 
-	// Try dynamic import of @tauri-apps/api/core if available in bundle
+	// Try dynamic import of @aphrody/api/core if available in bundle
 	try {
-		const moduleName = "@tauri-apps/api/core";
+		const moduleName = "@aphrody/api/core";
 		const tauriCore = await import(/* @vite-ignore */ moduleName);
 		if (typeof tauriCore.invoke === "function") {
 			return await tauriCore.invoke(command, args);
@@ -81,7 +81,7 @@ export async function tauriListen<T>(
 	}
 
 	try {
-		const moduleName = "@tauri-apps/api/event";
+		const moduleName = "@aphrody/api/event";
 		const tauriEvent = await import(/* @vite-ignore */ moduleName);
 		if (typeof tauriEvent.listen === "function") {
 			return await tauriEvent.listen(event, (e: { payload: T }) => callback(e.payload));

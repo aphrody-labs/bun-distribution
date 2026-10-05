@@ -28,9 +28,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/collection
+bun install @discordjs/collection
 yarn add @discordjs/collection
-pnpm add @discordjs/collection
+bun run add @discordjs/collection
 ```
 
 ## Links

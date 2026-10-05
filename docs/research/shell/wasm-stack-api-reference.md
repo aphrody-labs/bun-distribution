@@ -131,10 +131,10 @@ No permission change: the Channel rides the existing `invoke` of `aphrody_shell_
 must instead build a Rust-side `Channel::new(|body| ...)` (documented in source: "consume
 channel messages in Rust") and pass it as the argument.
 
-JS side (v2 docs form; `Channel` import is `@tauri-apps/api/core`):
+JS side (v2 docs form; `Channel` import is `@aphrody/api/core`):
 
 ```ts
-import { invoke, Channel } from '@tauri-apps/api/core';
+import { invoke, Channel } from '@aphrody/api/core';
 const onOutput = new Channel<ArrayBuffer | { exit: number | null }>();
 onOutput.onmessage = (m) => {
   if (m instanceof ArrayBuffer) term.ingest(new Uint8Array(m));

@@ -54,7 +54,7 @@ Curated reference of high-performance technologies, libraries, and canary-grade 
 
 ## 6. Desktop UI: Tauri 3 Alpha
 
-- **[Tauri](https://github.com/tauri-apps/tauri)** (`v3.0.0-alpha.4` / `@tauri-apps/api 3.0.0-alpha.2`):
+- **[Tauri](https://github.com/tauri-apps/tauri)** (`v3.0.0-alpha.4` / `@aphrody/api 3.0.0-alpha.2`):
   - Lightweight system webview runtime generating compact binaries (<15 MB compared to >150 MB for Electron).
   - Direct IPC with zero serialization overhead between TypeScript interfaces and Rust backend actors.
   - Granular security access control lists (ACL) declared via structured schemas (`gen/schemas`).

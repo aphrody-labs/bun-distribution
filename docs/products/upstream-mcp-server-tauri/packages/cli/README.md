@@ -5,13 +5,13 @@ CLI wrapper for calling the Tauri MCP server tools directly from the terminal.
 ## Install
 
 ```bash
-npm install -g @hypothesi/tauri-mcp-cli
+bun install -g @hypothesi/tauri-mcp-cli
 ```
 
 Or run without a permanent install:
 
 ```bash
-npx @hypothesi/tauri-mcp-cli <command>
+@hypothesi/tauri-mcp-cli <command>
 ```
 
 ## Session Lifecycle
@@ -89,7 +89,7 @@ tauri-mcp driver-session status --json
 This package ships one bundled [Agent Skill](https://agentskills.io) so AI coding agents learn correct CLI usage automatically. After installing the package, wire it into your agent config:
 
 ```bash
-npx @tanstack/intent@latest install
+@tanstack/intent@latest install
 ```
 
 Bundled skill:

@@ -94,7 +94,7 @@ If it finds any, it runs:
 
 ```bash terminal icon="terminal"
 # Assuming bun detected imports to @/components/ui/accordion and @/components/ui/button
-bunx shadcn@canary add accordion button # and any other components
+shadcn@canary add accordion button # and any other components
 ```
 
 Since `shadcn/ui` itself uses TailwindCSS, `bun create` also adds the TailwindCSS dependencies to your `package.json` and configures `bunfig.toml` to use Bun's TailwindCSS plugin with `Bun.serve()`, as described earlier.
@@ -118,7 +118,7 @@ If you don't have a [local template](#from-a-local-template) with the same name,
 
 ```sh terminal icon="terminal"
 bun create remix
-bunx create-remix
+create-remix
 ```
 
 Refer to the `create-<template>` package's documentation for usage instructions. For `react` and `next`, Bun doesn't run a package; it only prints a message pointing to `react-app`/`vite` and `next-app`.

@@ -29,14 +29,14 @@ In a new directory, install the latest nightly ADK package:
 ```bash
 mkdir jan-js-demo && cd jan-js-demo
 npm init -y
-npm install "$(node -e "fetch('https://delta.jan.ai/adk-nightly/manifest.json').then(r => r.json()).then(m => console.log(m.packages.javascript.url))")"
+bun install "$(node -e "fetch('https://delta.jan.ai/adk-nightly/manifest.json').then(r => r.json()).then(m => console.log(m.packages.javascript.url))")"
 ```
   </Tabs.Tab>
   <Tabs.Tab>
 ```powershell
 mkdir jan-js-demo; cd jan-js-demo
 npm init -y
-npm install (node -e "fetch('https://delta.jan.ai/adk-nightly/manifest.json').then(r => r.json()).then(m => console.log(m.packages.javascript.url))")
+bun install (node -e "fetch('https://delta.jan.ai/adk-nightly/manifest.json').then(r => r.json()).then(m => console.log(m.packages.javascript.url))")
 ```
   </Tabs.Tab>
 </Tabs>

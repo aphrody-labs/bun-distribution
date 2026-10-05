@@ -12,7 +12,7 @@ const hoisted = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: hoisted.invoke,
 }))
 

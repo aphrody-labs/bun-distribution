@@ -7,8 +7,8 @@ title: Package Scripts
 An easy way to run scripts like a script to start your bot, a script to lint your bot's files, or whatever scripts you use is by storing them in your `package.json` file. After you store these scripts in your `package.json` file, you can run the `start` script to start your bot or the `lint` script to lint your code for errors.
 
 ```sh tab="npm"
-npm run start
-npm run lint
+bun run start
+bun run lint
 ```
 
 ```sh tab="yarn"
@@ -17,8 +17,8 @@ yarn run lint
 ```
 
 ```sh tab="pnpm"
-pnpm run start
-pnpm run lint
+bun run start
+bun run lint
 ```
 
 ```sh tab="bun"
@@ -40,7 +40,7 @@ yarn init -y
 ```
 
 ```sh tab="pnpm"
-pnpm init
+bun run init
 ```
 
 ```sh tab="bun"
@@ -102,7 +102,7 @@ Over at your `package.json` file, add the following line to the `scripts`:
 Now, whenever you run the `start` script in your bot's directory, it will run the `node .` command.
 
 ```sh tab="npm"
-npm run start
+bun run start
 ```
 
 ```sh tab="yarn"
@@ -110,7 +110,7 @@ yarn run start
 ```
 
 ```sh tab="pnpm"
-pnpm run start
+bun run start
 ```
 
 ```sh tab="bun"
@@ -140,7 +140,7 @@ Let's create another script to lint your code via the command line. Add the foll
 Now, whenever you run the `lint` script, ESLint will lint your `index.js` file.
 
 ```sh tab="npm"
-npm run lint
+bun run lint
 ```
 
 ```sh tab="yarn"
@@ -148,7 +148,7 @@ yarn run lint
 ```
 
 ```sh tab="pnpm"
-pnpm run lint
+bun run lint
 ```
 
 ```sh tab="bun"
@@ -177,7 +177,7 @@ Your `package.json` file should now look similar to the following:
 And that's it! You can always add more scripts now, running them with:
 
 ```sh tab="npm"
-npm run <script-name>
+bun run <script-name>
 ```
 
 ```sh tab="yarn"
@@ -185,7 +185,7 @@ yarn run <script-name>
 ```
 
 ```sh tab="pnpm"
-pnpm run <script-name>
+bun run <script-name>
 ```
 
 ```sh tab="bun"

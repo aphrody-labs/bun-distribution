@@ -1,4 +1,4 @@
-import { invoke, Channel } from '@tauri-apps/api/core'
+import { invoke, Channel } from '@aphrody/api/core'
 import {
   MemoryCatalogEntry,
   MonitorUpdate,

@@ -6,18 +6,18 @@ import {
   describeTransportError,
 } from '../model-factory'
 import type { ProviderObject } from '@janhq/core'
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 
 const mockGlobalFetch = vi.fn()
 
 // Mock the Tauri invoke function
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
 // Mock the Tauri HTTP plugin
-vi.mock('@tauri-apps/plugin-http', () => ({
+vi.mock('@aphrody/plugin-http', () => ({
   fetch: vi.fn(),
 }))
 

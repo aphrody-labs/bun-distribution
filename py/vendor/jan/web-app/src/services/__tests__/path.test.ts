@@ -8,7 +8,7 @@ const mockExtname = vi.fn()
 const mockJoin = vi.fn()
 const mockSep = vi.fn()
 
-vi.mock('@tauri-apps/api/path', () => ({
+vi.mock('@aphrody/api/path', () => ({
   basename: (...args: any[]) => mockBasename(...args),
   dirname: (...args: any[]) => mockDirname(...args),
   extname: (...args: any[]) => mockExtname(...args),

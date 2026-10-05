@@ -12,7 +12,7 @@ produce byte-identical output: tab indentation, double-quoted strings, and no co
 ## Installation
 
 ```sh
-npm install oxc-codegen
+bun install oxc-codegen
 ```
 
 `oxc-codegen` is ESM-only and requires Node.js `^20.19.0` or `>=22.12.0`.

@@ -21,7 +21,9 @@
       "apps/yolo/*",
       "m3/packages/*",
       "!m3/packages/rg-ui",
-      "packages/interop/*"
+      "packages/interop/*",
+      "crates/vendor/aphrody-tauri-api",
+      "crates/vendor/aphrody-tauri-plugin-*"
     ],
     "catalog": {
       "@types/bun": "1.4.2",
@@ -29,8 +31,6 @@
       "undici-types": "8.9.0",
       "typescript": "7.0.2",
       "fuse.js": "7.1.0",
-      "oxlint": "1.86.0",
-      "oxfmt": "0.71.0",
       "@happy-dom/global-registrator": "^20.14.5",
       "tsup": "^8.5.1",
       "react": "^19.3.0",
@@ -138,7 +138,6 @@
       "web-tree-sitter": "^0.27.0",
       "zustand": "^5.0.15",
       "valibot": "^1.5.0",
-      "@tauri-apps/api": "3.0.0-alpha.2",
       "nodemon": "^3.1.14",
       "mint": "4.2.948",
       "@tailwindcss/oxide": "^4.3.3",
@@ -146,7 +145,6 @@
       "@types/three": "^0.186.0",
       "@tailwindcss/node": "^4.3.3",
       "@base-ui/react": "^1.8.0",
-      "@tauri-apps/plugin-opener": "3.0.0-alpha.1",
       "@aphrody/runtime-sdk": "file:.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-155af9d2.tgz",
       "@ag-ui/core": "1.0.1",
       "@ag-ui/encoder": "1.0.1",
@@ -253,8 +251,6 @@
     "@types/react-dom": "catalog:",
     "@types/three": "catalog:",
     "cheerio": "catalog:",
-    "oxfmt": "catalog:",
-    "oxlint": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",
     "undici-types": "catalog:"

@@ -28,9 +28,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/builders
+bun install @discordjs/builders
 yarn add @discordjs/builders
-pnpm add @discordjs/builders
+bun run add @discordjs/builders
 ```
 
 ## Examples

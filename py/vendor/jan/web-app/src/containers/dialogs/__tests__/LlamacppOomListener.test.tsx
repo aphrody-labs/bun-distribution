@@ -8,7 +8,7 @@ import { useCoworkRun } from '@/hooks/useCoworkRun'
 let loadProgressHandler: ((event: { payload: unknown }) => void) | undefined
 let unloadHandler: ((event: { payload: unknown }) => void) | undefined
 
-vi.mock('@tauri-apps/api/event', () => ({
+vi.mock('@aphrody/api/event', () => ({
   listen: vi.fn((eventName: string, handler: (event: { payload: unknown }) => void) => {
     if (eventName === 'llamacpp-model-load-progress') {
       loadProgressHandler = handler

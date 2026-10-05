@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TauriHardwareService } from '../tauri'
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
@@ -53,7 +53,7 @@ describe('TauriHardwareService – coverage', () => {
 
   describe('refreshHardwareInfo', () => {
     it('invokes plugin:hardware|refresh_system_info', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(undefined)
 
       await svc.refreshHardwareInfo()

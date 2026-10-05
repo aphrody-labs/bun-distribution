@@ -18,6 +18,6 @@ export default defineConfig({
     IS_LINUX: JSON.stringify(process.platform === 'linux'),
   },
   inject: process.env.IS_DEV ? {} : {
-      fetch: ['@tauri-apps/plugin-http', 'fetch'],
+      fetch: ['@aphrody/plugin-http', 'fetch'],
   },
 })

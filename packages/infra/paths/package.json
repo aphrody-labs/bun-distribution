@@ -15,9 +15,7 @@
     "test": "bun test test",
     "typecheck": "tsc --noEmit --target esnext --module preserve --moduleResolution bundler --allowImportingTsExtensions --types bun src/index.ts"
   },
-  "devDependencies": {
-    "@aphrody/workspace": "workspace:*"
-  },
+  "devDependencies": {},
   "engines": {
     "bun": ">=1.4.2"
   }

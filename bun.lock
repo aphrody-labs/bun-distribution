@@ -17,8 +17,6 @@
         "@types/react-dom": "catalog:",
         "@types/three": "catalog:",
         "cheerio": "catalog:",
-        "oxfmt": "catalog:",
-        "oxlint": "catalog:",
         "turbo": "catalog:",
         "typescript": "catalog:",
         "undici-types": "catalog:",
@@ -41,9 +39,9 @@
         "react-i18next": "^17.0.15",
       },
       "devDependencies": {
+        "@aphrody/api": "workspace:*",
+        "@aphrody/plugin-opener": "workspace:*",
         "@tailwindcss/postcss": "catalog:",
-        "@tauri-apps/api": "catalog:",
-        "@tauri-apps/plugin-opener": "catalog:",
         "@testing-library/jest-dom": "catalog:",
         "@testing-library/react": "catalog:",
         "@testing-library/user-event": "^14.6.7",
@@ -192,6 +190,199 @@
       "name": "@aphrody/yolo-web",
       "version": "0.1.0",
     },
+    "crates/vendor/aphrody-tauri-api": {
+      "name": "@aphrody/api",
+      "version": "3.0.0-alpha.2",
+    },
+    "crates/vendor/aphrody-tauri-plugin-autostart": {
+      "name": "@aphrody/plugin-autostart",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-barcode-scanner": {
+      "name": "@aphrody/plugin-barcode-scanner",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-biometric": {
+      "name": "@aphrody/plugin-biometric",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-cli": {
+      "name": "@aphrody/plugin-cli",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-clipboard-manager": {
+      "name": "@aphrody/plugin-clipboard-manager",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-deep-link": {
+      "name": "@aphrody/plugin-deep-link",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-dialog": {
+      "name": "@aphrody/plugin-dialog",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-fs": {
+      "name": "@aphrody/plugin-fs",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-geolocation": {
+      "name": "@aphrody/plugin-geolocation",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-global-shortcut": {
+      "name": "@aphrody/plugin-global-shortcut",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-haptics": {
+      "name": "@aphrody/plugin-haptics",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-http": {
+      "name": "@aphrody/plugin-http",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-log": {
+      "name": "@aphrody/plugin-log",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-nfc": {
+      "name": "@aphrody/plugin-nfc",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-notification": {
+      "name": "@aphrody/plugin-notification",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-opener": {
+      "name": "@aphrody/plugin-opener",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-os": {
+      "name": "@aphrody/plugin-os",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-positioner": {
+      "name": "@aphrody/plugin-positioner",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-process": {
+      "name": "@aphrody/plugin-process",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-shell": {
+      "name": "@aphrody/plugin-shell",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-sql": {
+      "name": "@aphrody/plugin-sql",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-store": {
+      "name": "@aphrody/plugin-store",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-stronghold": {
+      "name": "@aphrody/plugin-stronghold",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-updater": {
+      "name": "@aphrody/plugin-updater",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-upload": {
+      "name": "@aphrody/plugin-upload",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-websocket": {
+      "name": "@aphrody/plugin-websocket",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
+    "crates/vendor/aphrody-tauri-plugin-window-state": {
+      "name": "@aphrody/plugin-window-state",
+      "version": "3.0.0-alpha.2",
+      "dependencies": {
+        "@aphrody/api": "^3.0.0-alpha.1",
+      },
+    },
     "m3/packages/admin-ui": {
       "name": "@aphrody/admin-ui",
       "version": "0.1.0",
@@ -231,6 +422,7 @@
       "name": "@aphrody/app-ui",
       "version": "0.1.0",
       "dependencies": {
+        "@aphrody/api": "workspace:*",
         "@aphrody/assets": "workspace:*",
         "@aphrody/drive-client": "workspace:*",
         "@aphrody/identity": "workspace:*",
@@ -242,6 +434,7 @@
         "@aphrody/m3-primitives": "workspace:*",
         "@aphrody/m3-theme": "workspace:*",
         "@aphrody/m3-tokens": "workspace:*",
+        "@aphrody/plugin-dialog": "workspace:*",
         "@dnd-kit/core": "catalog:",
         "@dnd-kit/sortable": "catalog:",
         "@dnd-kit/utilities": "catalog:",
@@ -254,8 +447,6 @@
         "@tanstack/react-query": "catalog:",
         "@tanstack/react-table": "catalog:",
         "@tanstack/react-virtual": "^3.13.12",
-        "@tauri-apps/api": "catalog:",
-        "@tauri-apps/plugin-dialog": "^2.4.0",
         "clsx": "catalog:",
         "d3": "^7.9.0",
         "fuse.js": "catalog:",
@@ -321,7 +512,7 @@
       "name": "@aphrody/eslint-plugin-m3",
       "version": "3.3.3",
       "peerDependencies": {
-        "oxlint": ">=1.0.0",
+        "oxlint": "*",
       },
       "optionalPeers": [
         "oxlint",
@@ -691,8 +882,6 @@
       "version": "0.1.0",
       "devDependencies": {
         "@types/bun": "catalog:",
-        "oxfmt": "catalog:",
-        "oxlint": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -909,9 +1098,6 @@
     "packages/infra/paths": {
       "name": "@aphrody/paths",
       "version": "0.1.0",
-      "devDependencies": {
-        "@aphrody/workspace": "workspace:*",
-      },
     },
     "packages/infra/sql": {
       "name": "@aphrody/sql",
@@ -960,7 +1146,7 @@
       "name": "@koharu/bridge",
       "version": "0.1.0",
       "dependencies": {
-        "@tauri-apps/api": "catalog:",
+        "@aphrody/api": "workspace:*",
       },
       "devDependencies": {
         "nodemon": "catalog:",
@@ -980,10 +1166,11 @@
         "@koharu/bridge": "workspace:*",
       },
       "devDependencies": {
-        "@tauri-apps/api": "catalog:",
+        "@aphrody/api": "workspace:*",
       },
       "peerDependencies": {
-        "@tauri-apps/api": "catalog:",
+        "@aphrody/api": "workspace:*",
+        "@tauri-apps/api": "*",
       },
       "optionalPeers": [
         "@tauri-apps/api",
@@ -993,15 +1180,15 @@
       "name": "@aphrody/koharu-ui",
       "version": "0.1.0",
       "dependencies": {
+        "@aphrody/api": "workspace:*",
         "@aphrody/m3-primitives": "workspace:*",
+        "@aphrody/plugin-opener": "workspace:*",
         "@base-ui/react": "catalog:",
         "@koharu/bridge": "workspace:*",
         "@koharu/sdk": "workspace:*",
         "@shenron/pipeline": "workspace:*",
         "@tanstack/react-query": "catalog:",
         "@tanstack/react-virtual": "^3.14.13",
-        "@tauri-apps/api": "catalog:",
-        "@tauri-apps/plugin-opener": "catalog:",
         "class-variance-authority": "catalog:",
         "clsx": "catalog:",
         "i18next": "^26.4.2",
@@ -1268,8 +1455,6 @@
     "@tailwindcss/postcss": "^4.3.3",
     "@tanstack/react-query": "^5.104.0",
     "@tanstack/react-table": "^9.2.4",
-    "@tauri-apps/api": "3.0.0-alpha.2",
-    "@tauri-apps/plugin-opener": "3.0.0-alpha.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@tiptap/core": "^3.31.3",
@@ -1323,8 +1508,6 @@
     "next-themes": "^0.4.6",
     "nodemon": "^3.1.14",
     "openapi-types": "^12.1.3",
-    "oxfmt": "0.71.0",
-    "oxlint": "1.86.0",
     "p-queue": "^9.3.3",
     "p-retry": "^8.0.1",
     "patreon-api.ts": "^0.20.0",
@@ -1422,6 +1605,8 @@
     "@aphrody/ag-ui": ["@aphrody/ag-ui@workspace:m3/packages/ag-ui"],
 
     "@aphrody/agent-browser": ["@aphrody/agent-browser@workspace:packages/web/agent-browser"],
+
+    "@aphrody/api": ["@aphrody/api@workspace:crates/vendor/aphrody-tauri-api"],
 
     "@aphrody/app-ui": ["@aphrody/app-ui@workspace:m3/packages/app-ui"],
 
@@ -1526,6 +1711,60 @@
     "@aphrody/ovh": ["@aphrody/ovh@workspace:packages/infra/ovh"],
 
     "@aphrody/paths": ["@aphrody/paths@workspace:packages/infra/paths"],
+
+    "@aphrody/plugin-autostart": ["@aphrody/plugin-autostart@workspace:crates/vendor/aphrody-tauri-plugin-autostart"],
+
+    "@aphrody/plugin-barcode-scanner": ["@aphrody/plugin-barcode-scanner@workspace:crates/vendor/aphrody-tauri-plugin-barcode-scanner"],
+
+    "@aphrody/plugin-biometric": ["@aphrody/plugin-biometric@workspace:crates/vendor/aphrody-tauri-plugin-biometric"],
+
+    "@aphrody/plugin-cli": ["@aphrody/plugin-cli@workspace:crates/vendor/aphrody-tauri-plugin-cli"],
+
+    "@aphrody/plugin-clipboard-manager": ["@aphrody/plugin-clipboard-manager@workspace:crates/vendor/aphrody-tauri-plugin-clipboard-manager"],
+
+    "@aphrody/plugin-deep-link": ["@aphrody/plugin-deep-link@workspace:crates/vendor/aphrody-tauri-plugin-deep-link"],
+
+    "@aphrody/plugin-dialog": ["@aphrody/plugin-dialog@workspace:crates/vendor/aphrody-tauri-plugin-dialog"],
+
+    "@aphrody/plugin-fs": ["@aphrody/plugin-fs@workspace:crates/vendor/aphrody-tauri-plugin-fs"],
+
+    "@aphrody/plugin-geolocation": ["@aphrody/plugin-geolocation@workspace:crates/vendor/aphrody-tauri-plugin-geolocation"],
+
+    "@aphrody/plugin-global-shortcut": ["@aphrody/plugin-global-shortcut@workspace:crates/vendor/aphrody-tauri-plugin-global-shortcut"],
+
+    "@aphrody/plugin-haptics": ["@aphrody/plugin-haptics@workspace:crates/vendor/aphrody-tauri-plugin-haptics"],
+
+    "@aphrody/plugin-http": ["@aphrody/plugin-http@workspace:crates/vendor/aphrody-tauri-plugin-http"],
+
+    "@aphrody/plugin-log": ["@aphrody/plugin-log@workspace:crates/vendor/aphrody-tauri-plugin-log"],
+
+    "@aphrody/plugin-nfc": ["@aphrody/plugin-nfc@workspace:crates/vendor/aphrody-tauri-plugin-nfc"],
+
+    "@aphrody/plugin-notification": ["@aphrody/plugin-notification@workspace:crates/vendor/aphrody-tauri-plugin-notification"],
+
+    "@aphrody/plugin-opener": ["@aphrody/plugin-opener@workspace:crates/vendor/aphrody-tauri-plugin-opener"],
+
+    "@aphrody/plugin-os": ["@aphrody/plugin-os@workspace:crates/vendor/aphrody-tauri-plugin-os"],
+
+    "@aphrody/plugin-positioner": ["@aphrody/plugin-positioner@workspace:crates/vendor/aphrody-tauri-plugin-positioner"],
+
+    "@aphrody/plugin-process": ["@aphrody/plugin-process@workspace:crates/vendor/aphrody-tauri-plugin-process"],
+
+    "@aphrody/plugin-shell": ["@aphrody/plugin-shell@workspace:crates/vendor/aphrody-tauri-plugin-shell"],
+
+    "@aphrody/plugin-sql": ["@aphrody/plugin-sql@workspace:crates/vendor/aphrody-tauri-plugin-sql"],
+
+    "@aphrody/plugin-store": ["@aphrody/plugin-store@workspace:crates/vendor/aphrody-tauri-plugin-store"],
+
+    "@aphrody/plugin-stronghold": ["@aphrody/plugin-stronghold@workspace:crates/vendor/aphrody-tauri-plugin-stronghold"],
+
+    "@aphrody/plugin-updater": ["@aphrody/plugin-updater@workspace:crates/vendor/aphrody-tauri-plugin-updater"],
+
+    "@aphrody/plugin-upload": ["@aphrody/plugin-upload@workspace:crates/vendor/aphrody-tauri-plugin-upload"],
+
+    "@aphrody/plugin-websocket": ["@aphrody/plugin-websocket@workspace:crates/vendor/aphrody-tauri-plugin-websocket"],
+
+    "@aphrody/plugin-window-state": ["@aphrody/plugin-window-state@workspace:crates/vendor/aphrody-tauri-plugin-window-state"],
 
     "@aphrody/plugins": ["@aphrody/plugins@workspace:packages/engine/plugins"],
 
@@ -2215,82 +2454,6 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.152.0", "", {}, "sha512-oM/5rLBm2tPkg0iBgkH/FOeR3PCDpY19GTgAZjMFM8h9WI9VW7cLgzp6nwtarYKmovavIQZ+Fe/RKX/8C8O/Rw=="],
 
-    "@oxfmt/binding-android-arm-eabi": ["@oxfmt/binding-android-arm-eabi@0.71.0", "", { "os": "android", "cpu": "arm" }, "sha512-l31EyBfB4egJeFua11aQFEUE9nnDtfpWCadqQovm0WL30t/yUHtdFl/5HyFXvd5xT8Ewh3U4TI9f30GowrQ1fw=="],
-
-    "@oxfmt/binding-android-arm64": ["@oxfmt/binding-android-arm64@0.71.0", "", { "os": "android", "cpu": "arm64" }, "sha512-E8q39SUZzSXQ08oZoFoTkxRADkdBNgL6De4qgZYr2O4JCunwqrZwAyCebxIF3yVHBafHM30WUkhTkDi+jNYZOw=="],
-
-    "@oxfmt/binding-darwin-arm64": ["@oxfmt/binding-darwin-arm64@0.71.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-pTteTrN88DicrmJ3DocBmpNDa6Umfh0iveEG8rnAlDFQpclmtDS7hnIvZbIEV9mDO0Ot1U0sjtoJQ1itd/ZMhQ=="],
-
-    "@oxfmt/binding-darwin-x64": ["@oxfmt/binding-darwin-x64@0.71.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-G5melRC3IiNEgXlNKJhSExJYQGAQIppHFp2cl/wFrqQcEwmc4k4TkrHaFTR29SDudjoW5AZq5cXPGJDqtlH/Yg=="],
-
-    "@oxfmt/binding-freebsd-x64": ["@oxfmt/binding-freebsd-x64@0.71.0", "", { "os": "freebsd", "cpu": "x64" }, "sha512-Hb1P5yKb9aiH2VSbm3Ml37mKjzqpunYet9krw/YK7V5JsAUJDQlju3Yk/dEqQvJD/usBvpi01Vbk9ZDNo0a8Cw=="],
-
-    "@oxfmt/binding-linux-arm-gnueabihf": ["@oxfmt/binding-linux-arm-gnueabihf@0.71.0", "", { "os": "linux", "cpu": "arm" }, "sha512-r7n4JEO+rkp0kaP3ia+0hv6FzK3PQIHqaF0jxGuhjJ4JHVX9ZVRbgpDVDW+OloyuJsRWpWFDKIHe8gfl1p/4mQ=="],
-
-    "@oxfmt/binding-linux-arm-musleabihf": ["@oxfmt/binding-linux-arm-musleabihf@0.71.0", "", { "os": "linux", "cpu": "arm" }, "sha512-EEynTF4nakgqDhVCmd3cHQCmTcw0BM8ea6eHigTdtZ3yxdsBNv+dYkt+OpDDZx1n/jzjI7J+Ht7IgkqFWuJUxQ=="],
-
-    "@oxfmt/binding-linux-arm64-gnu": ["@oxfmt/binding-linux-arm64-gnu@0.71.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-7VgJIrywCwR/G6YMv+HqsccUt8Z4q4mbM2xR+Ry/6AeMk4pCmZ9aO4Srd3mmrvVu8PsCZGP7oHEHSXWTmyloaQ=="],
-
-    "@oxfmt/binding-linux-arm64-musl": ["@oxfmt/binding-linux-arm64-musl@0.71.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-AOCaminv/+fhinUXKvtPZT4POhNYmN9GfvaJdgJa1AbvuzClWGwDIXfJg8eu3sYaVL2B68jNvmS7LZGAYa0z3A=="],
-
-    "@oxfmt/binding-linux-ppc64-gnu": ["@oxfmt/binding-linux-ppc64-gnu@0.71.0", "", { "os": "linux", "cpu": "ppc64" }, "sha512-0SHxuaa4QRLM7jfsd8wc6L7KdLg+FR6/ah9k1eAvcrK/Sni7oxchMvsjwUsyakVAta+wBVDkjJTr7/RFU0uUGA=="],
-
-    "@oxfmt/binding-linux-riscv64-gnu": ["@oxfmt/binding-linux-riscv64-gnu@0.71.0", "", { "os": "linux", "cpu": "none" }, "sha512-UNKj1+rPorTK6uSlQzpN96vDNbHbL/63zcpznweo0ImQdkDdtQCS7G3puxX++2cESPKT2B56Y6DICUmFTJde5A=="],
-
-    "@oxfmt/binding-linux-riscv64-musl": ["@oxfmt/binding-linux-riscv64-musl@0.71.0", "", { "os": "linux", "cpu": "none" }, "sha512-5cVXKj7a0mWu7GU6/bZgNyv+KtLgM5S9cnT26Os2/abj8pK/bklHsbdYEHGLLniGjNYkyzwem8mZciPCaDtilw=="],
-
-    "@oxfmt/binding-linux-s390x-gnu": ["@oxfmt/binding-linux-s390x-gnu@0.71.0", "", { "os": "linux", "cpu": "s390x" }, "sha512-lNpcMuZvyU1V/CY5h19hac03m4E4PLSYRckcxZOynSPojI4Mwt6nEu9wT/gVf0bclH3xGEWjwqApnSTgjkd2oA=="],
-
-    "@oxfmt/binding-linux-x64-gnu": ["@oxfmt/binding-linux-x64-gnu@0.71.0", "", { "os": "linux", "cpu": "x64" }, "sha512-5/Z6pUewQpknXqC4/ykK6Zc6RiteAnPem1Ci7K1RZLVF6w6MMjwHjR4vsjijW4Czidgv7HKeVglGjElADliT9w=="],
-
-    "@oxfmt/binding-linux-x64-musl": ["@oxfmt/binding-linux-x64-musl@0.71.0", "", { "os": "linux", "cpu": "x64" }, "sha512-uVdG2N/4GEbOeljpQ+xv+NeEwJWJGj0WaxSiSYnoiqIYy3RWrWd3rGUmxWXP1A8+ferNvvwFoDAtvgsDUvBuSw=="],
-
-    "@oxfmt/binding-openharmony-arm64": ["@oxfmt/binding-openharmony-arm64@0.71.0", "", { "os": "none", "cpu": "arm64" }, "sha512-1LwEZmSDRFKeBaGd/Hgj2xI3SmgGFpF4YtgkSx0sTYdTiZfHWbcFvRIBjL1YiDNdQd9Khda3Ij8CoqBULjskDg=="],
-
-    "@oxfmt/binding-win32-arm64-msvc": ["@oxfmt/binding-win32-arm64-msvc@0.71.0", "", { "os": "win32", "cpu": "arm64" }, "sha512-5tplmkeMXmza3PUptJQy25wCPJbIAg5g5r7zs+DI+7eEYOqbY+7roMdSH2zbDvv1Pb4oTDJ6NWYx9IRxBxXwhQ=="],
-
-    "@oxfmt/binding-win32-ia32-msvc": ["@oxfmt/binding-win32-ia32-msvc@0.71.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-T2LWgh3Vx4PYDjtcqRRGDyCsVxeF/VE5xTpUQiCm65bNLwMpRnJYj6Hlkf6qRM3+jxCIOqHD1kVHNQCCiAVMNQ=="],
-
-    "@oxfmt/binding-win32-x64-msvc": ["@oxfmt/binding-win32-x64-msvc@0.71.0", "", { "os": "win32", "cpu": "x64" }, "sha512-L06SVp7Hu1EQTkh3+PHnKK26dxVbEpOG2InMwCooTE4MA437b5FgfTleCCiGn4ykISHnHU6UHaIg7SiMO7rBHA=="],
-
-    "@oxlint/binding-android-arm-eabi": ["@oxlint/binding-android-arm-eabi@1.86.0", "", { "os": "android", "cpu": "arm" }, "sha512-63Ozq6yQn79B2UxjSZ9huJmI+3/ZPI7hxAe6TyFh9oQL447KnIMoffOdtog+h4KILbQr61ZRvFPW5gYbAUgpgQ=="],
-
-    "@oxlint/binding-android-arm64": ["@oxlint/binding-android-arm64@1.86.0", "", { "os": "android", "cpu": "arm64" }, "sha512-JdLGp44phbf/0Du236Dt06yfK6Qw8xhTFeDvHJdjk167r59OfP5+BL31mgMYVnswS8e+j6tFuccSY0QDC/lgCw=="],
-
-    "@oxlint/binding-darwin-arm64": ["@oxlint/binding-darwin-arm64@1.86.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-h+vkOr4ik6KLFCXdtNVEj9xfnXfNUpPoF95QjORdhiSpLqQePzcN81kGHjAgsw1/G7WBWK5KsFKbI2UK8EyzMA=="],
-
-    "@oxlint/binding-darwin-x64": ["@oxlint/binding-darwin-x64@1.86.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-wbglRuH5eKsp68keTOOeKDHU1astWSRYFsh2bwKQTAPb44rD6kVgzYI1ZrAJRTc6/7PH55ZXFCQx0rQXrj0UdA=="],
-
-    "@oxlint/binding-freebsd-x64": ["@oxlint/binding-freebsd-x64@1.86.0", "", { "os": "freebsd", "cpu": "x64" }, "sha512-yTQ7QSOlNfQsrfbeVweTiegQJLKPjUKgXp/JpGiFzza6Hp29S9LAoH77TM3L0RjK39iQRZB5lk5iq2t241Mfag=="],
-
-    "@oxlint/binding-linux-arm-gnueabihf": ["@oxlint/binding-linux-arm-gnueabihf@1.86.0", "", { "os": "linux", "cpu": "arm" }, "sha512-QYJGy0E2Tv8GAayyBIeHFTwQb8u+zrvrOYrifuDGZDr9ad5XsDhiMScpZymhS9fwWjqrgG2ZUwT4vpY0ISqp4Q=="],
-
-    "@oxlint/binding-linux-arm-musleabihf": ["@oxlint/binding-linux-arm-musleabihf@1.86.0", "", { "os": "linux", "cpu": "arm" }, "sha512-oQo83CafLT8p3qh0AGkN0tSUIh5Hm63mfDsoqUmBQUBnSZLNBAbyRaAftfGY5a0cKZ34dG6jAtMYgcY5kZqt5g=="],
-
-    "@oxlint/binding-linux-arm64-gnu": ["@oxlint/binding-linux-arm64-gnu@1.86.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-EM6wy5c2UM12qPb7iDJDBAZvHyfEJGH6iosFgaFiaRZpirz99//EHcUyD2KAskz07x1TULuiAtsojf4nvWWksw=="],
-
-    "@oxlint/binding-linux-arm64-musl": ["@oxlint/binding-linux-arm64-musl@1.86.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-vCiUQb9ZNzZalxYRU4mlZwUqT5f+c7Sk9DwUOplWHtik3Dl4r3DVnUB5tBeRuTAUe6MUVCTylNW7TkkN8J1oTw=="],
-
-    "@oxlint/binding-linux-ppc64-gnu": ["@oxlint/binding-linux-ppc64-gnu@1.86.0", "", { "os": "linux", "cpu": "ppc64" }, "sha512-T0AzE89yjTYmOhB/hb6i+rWTpe2mYt+xiguBhs9DEPIJTZ1H8OYqsE4VxJHHw2Wlq8Mztwvp2P8NV87ZOuhPRw=="],
-
-    "@oxlint/binding-linux-riscv64-gnu": ["@oxlint/binding-linux-riscv64-gnu@1.86.0", "", { "os": "linux", "cpu": "none" }, "sha512-s49r0K2f5Oc7fJoMUO1WkdhYK5Ob79uYRwWQ/XNoGysaOq3RUGmGUbHSuXiyydTTA+P9xEdDEnnlZVXiaSJhlw=="],
-
-    "@oxlint/binding-linux-riscv64-musl": ["@oxlint/binding-linux-riscv64-musl@1.86.0", "", { "os": "linux", "cpu": "none" }, "sha512-JIa2tYR8ayb3nvcMSZzn4O/xTy13S7MHllu7cBD+B5qDQXXSRy/Vwk1aNpiTjZmBJGwKCHOy/NvnY5Xcwg27uQ=="],
-
-    "@oxlint/binding-linux-s390x-gnu": ["@oxlint/binding-linux-s390x-gnu@1.86.0", "", { "os": "linux", "cpu": "s390x" }, "sha512-XwXMyBsAuWZkhZU74UNcfQKr1CJJAKnS80dZzOnjl6A4fKcf91IjFgidegQugMHA5SN8ulwDXEDV1yPntjXgQQ=="],
-
-    "@oxlint/binding-linux-x64-gnu": ["@oxlint/binding-linux-x64-gnu@1.86.0", "", { "os": "linux", "cpu": "x64" }, "sha512-C1WjukSyMnr66b+w1/tV8RFVv6d9v0MzDf4p9IxVXknqgmTHBgZh1pccN1eHzFr0b9Tbb3OXoPsAAdAuHAQfeA=="],
-
-    "@oxlint/binding-linux-x64-musl": ["@oxlint/binding-linux-x64-musl@1.86.0", "", { "os": "linux", "cpu": "x64" }, "sha512-ap6KLmvC38c6MdYzsIh25cXQupqYvjd37tMNftzrX1DCtkX1Gcf2B+S2B17dD4lKa5c5gJog7DQJyDo82PBKyw=="],
-
-    "@oxlint/binding-openharmony-arm64": ["@oxlint/binding-openharmony-arm64@1.86.0", "", { "os": "none", "cpu": "arm64" }, "sha512-996Q9w/2GLwNyy5Djs39Jt09aFlr4b7TPhoj7dvo5FHmcyiF68nPz73HNc5UAYKIYeK+M9JzPQ4Wg1r1dXvP6A=="],
-
-    "@oxlint/binding-win32-arm64-msvc": ["@oxlint/binding-win32-arm64-msvc@1.86.0", "", { "os": "win32", "cpu": "arm64" }, "sha512-9uTCHYTknNkug5+46ViSoUMuOuGWK61D87QnblU6CXaWKJC630Z7dbls61vdHxya/cR2ycQZ6Mm6ckgF6Cag5g=="],
-
-    "@oxlint/binding-win32-ia32-msvc": ["@oxlint/binding-win32-ia32-msvc@1.86.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-a47ga7EKVfMU8rO0i1m3mGwfNRj3FhQyt1d/ukO/E9u1HHF3KpR3tyb3VhuJBGEVPF8uR4exSyHUyx7xbE+uxw=="],
-
-    "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.86.0", "", { "os": "win32", "cpu": "x64" }, "sha512-az4dzifCRzES1crwu6pDFXzJTIanrdxXFL9TbiJWrx9LKcuacbR83aPvxDA1LKLNswi/RoqitC7Afcflhu3zBQ=="],
-
     "@paralleldrive/cuid2": ["@paralleldrive/cuid2@3.3.0", "", { "dependencies": { "@noble/hashes": "^2.0.1", "bignumber.js": "^9.3.1", "error-causes": "^3.0.2" }, "bin": { "cuid2": "bin/cuid2.js" } }, "sha512-OqiFvSOF0dBSesELYY2CAMa4YINvlLpvKOz/rv6NeZEqiyttlHgv98Juwv4Ch+GrEV7IZ8jfI2VcEoYUjXXCjw=="],
 
     "@parcel/watcher": ["@parcel/watcher@2.5.1", "", { "dependencies": { "detect-libc": "^1.0.3", "is-glob": "^4.0.3", "micromatch": "^4.0.5", "node-addon-api": "^7.0.0" }, "optionalDependencies": { "@parcel/watcher-android-arm64": "2.5.1", "@parcel/watcher-darwin-arm64": "2.5.1", "@parcel/watcher-darwin-x64": "2.5.1", "@parcel/watcher-freebsd-x64": "2.5.1", "@parcel/watcher-linux-arm-glibc": "2.5.1", "@parcel/watcher-linux-arm-musl": "2.5.1", "@parcel/watcher-linux-arm64-glibc": "2.5.1", "@parcel/watcher-linux-arm64-musl": "2.5.1", "@parcel/watcher-linux-x64-glibc": "2.5.1", "@parcel/watcher-linux-x64-musl": "2.5.1", "@parcel/watcher-win32-arm64": "2.5.1", "@parcel/watcher-win32-ia32": "2.5.1", "@parcel/watcher-win32-x64": "2.5.1" } }, "sha512-dfUnCxiN9H4ap84DvD2ubjw+3vUNpstxa0TneY/Paat8a3R4uQZDLSvWjmznAY/DoahqTHl9V46HF/Zs3F29pg=="],
@@ -2658,12 +2821,6 @@
     "@tanstack/table-core": ["@tanstack/table-core@9.2.4", "", { "dependencies": { "@tanstack/store": "^0.11.1" } }, "sha512-GwdDyGGr6UXAtubF14yAwcXvdaogqfsQgIk89Suebjxob/Rjq2xvfmXsjDF1rQmKmhHsJm9TOY7myxv3i6geJw=="],
 
     "@tanstack/virtual-core": ["@tanstack/virtual-core@3.17.11", "", {}, "sha512-+ILjvtHup6Y2hzQ6YzwMgX1Q+oQpxEGOXCEsCNaPoIP0VxMbizIBTmYTDtkerkIQS8/CbP1BRuyt8V/8BCsy1g=="],
-
-    "@tauri-apps/api": ["@tauri-apps/api@3.0.0-alpha.2", "", {}, "sha512-W5MTTRAsbNqxSO5hf6U6gHwtTfW0ZnEyIWkmn9L6XYWFcSi0n1JtVQAIsJ6EZHLpJkchGEFwSeVBy+IcrtXl4g=="],
-
-    "@tauri-apps/plugin-dialog": ["@tauri-apps/plugin-dialog@2.8.1", "", { "dependencies": { "@tauri-apps/api": "^2.12.0" } }, "sha512-/DtE3B62JgpYuWFL5ATXM6KOXUq7pca7cJWOgSqULhZsgyjLk0PWKek1dbRDvhNBW6flNsOfWphsKnb+738Dmw=="],
-
-    "@tauri-apps/plugin-opener": ["@tauri-apps/plugin-opener@3.0.0-alpha.1", "", { "dependencies": { "@tauri-apps/api": "^3.0.0-alpha.1" } }, "sha512-3QTvnEqaVXhDrf5N5rmoghReOc0kuSPHpNDgX6R3oWbOdwQBTCriCb2DIkE6uSukuHKFRCx2bjmHcQbr1Gb6GQ=="],
 
     "@testing-library/dom": ["@testing-library/dom@10.4.2", "", { "dependencies": { "@babel/code-frame": "^7.10.4", "@babel/runtime": "^7.12.5", "@types/aria-query": "^5.0.1", "aria-query": "5.3.0", "dom-accessibility-api": "^0.5.9", "lz-string": "^1.5.0", "picocolors": "1.1.1", "pretty-format": "^27.0.2" } }, "sha512-yzr2S9HyAIdhz2/6qHgbs665Q7PKVcDF05vsOlHPxG1mo36gKVesdYVeDLnXgfjJ03CrKRk08knc6+E/9m8v2Q=="],
 
@@ -4507,10 +4664,6 @@
 
     "own-keys": ["own-keys@1.0.2", "", { "dependencies": { "call-bound": "^1.0.4", "get-intrinsic": "^1.3.0", "object-keys": "^1.1.1", "safe-push-apply": "^1.0.0" } }, "sha512-19YVAg7T+WTrxggPukVq7DjTv6+PJ867TmhCvBsYwmbFCsZd344rq2Ld1p0wo8f8Qrrhgp82c6FJRqdXWtSEhg=="],
 
-    "oxfmt": ["oxfmt@0.71.0", "", { "dependencies": { "tinypool": "2.2.0" }, "optionalDependencies": { "@oxfmt/binding-android-arm-eabi": "0.71.0", "@oxfmt/binding-android-arm64": "0.71.0", "@oxfmt/binding-darwin-arm64": "0.71.0", "@oxfmt/binding-darwin-x64": "0.71.0", "@oxfmt/binding-freebsd-x64": "0.71.0", "@oxfmt/binding-linux-arm-gnueabihf": "0.71.0", "@oxfmt/binding-linux-arm-musleabihf": "0.71.0", "@oxfmt/binding-linux-arm64-gnu": "0.71.0", "@oxfmt/binding-linux-arm64-musl": "0.71.0", "@oxfmt/binding-linux-ppc64-gnu": "0.71.0", "@oxfmt/binding-linux-riscv64-gnu": "0.71.0", "@oxfmt/binding-linux-riscv64-musl": "0.71.0", "@oxfmt/binding-linux-s390x-gnu": "0.71.0", "@oxfmt/binding-linux-x64-gnu": "0.71.0", "@oxfmt/binding-linux-x64-musl": "0.71.0", "@oxfmt/binding-openharmony-arm64": "0.71.0", "@oxfmt/binding-win32-arm64-msvc": "0.71.0", "@oxfmt/binding-win32-ia32-msvc": "0.71.0", "@oxfmt/binding-win32-x64-msvc": "0.71.0" }, "peerDependencies": { "svelte": "^5.0.0", "vite-plus": "*" }, "optionalPeers": ["svelte", "vite-plus"], "bin": { "oxfmt": "bin/oxfmt" } }, "sha512-lUPUl0d/+Io5pDrsPXWs6rB4N/bpB78oj9CTDpnbulfDz+0r3XXcHPlQ7kRPJ2GjIT4nX+/mcqunOeP9BvsEtg=="],
-
-    "oxlint": ["oxlint@1.86.0", "", { "optionalDependencies": { "@oxlint/binding-android-arm-eabi": "1.86.0", "@oxlint/binding-android-arm64": "1.86.0", "@oxlint/binding-darwin-arm64": "1.86.0", "@oxlint/binding-darwin-x64": "1.86.0", "@oxlint/binding-freebsd-x64": "1.86.0", "@oxlint/binding-linux-arm-gnueabihf": "1.86.0", "@oxlint/binding-linux-arm-musleabihf": "1.86.0", "@oxlint/binding-linux-arm64-gnu": "1.86.0", "@oxlint/binding-linux-arm64-musl": "1.86.0", "@oxlint/binding-linux-ppc64-gnu": "1.86.0", "@oxlint/binding-linux-riscv64-gnu": "1.86.0", "@oxlint/binding-linux-riscv64-musl": "1.86.0", "@oxlint/binding-linux-s390x-gnu": "1.86.0", "@oxlint/binding-linux-x64-gnu": "1.86.0", "@oxlint/binding-linux-x64-musl": "1.86.0", "@oxlint/binding-openharmony-arm64": "1.86.0", "@oxlint/binding-win32-arm64-msvc": "1.86.0", "@oxlint/binding-win32-ia32-msvc": "1.86.0", "@oxlint/binding-win32-x64-msvc": "1.86.0" }, "peerDependencies": { "oxlint-tsgolint": ">=7.0.2003", "vite-plus": "*" }, "optionalPeers": ["oxlint-tsgolint", "vite-plus"], "bin": { "oxlint": "bin/oxlint" } }, "sha512-og0lhgvZfgGF//gOOmZXvtr+GmBbAGEnbEhv/QUg7UW2Wi4wHMnJbnMD+zuHgPdJxdklfgpPupdlAaAySyxrZg=="],
-
     "p-any": ["p-any@4.0.0", "", { "dependencies": { "p-cancelable": "^3.0.0", "p-some": "^6.0.0" } }, "sha512-S/B50s+pAVe0wmEZHmBs/9yJXeZ5KhHzOsgKzt0hRdgkoR3DxW9ts46fcsWi/r3VnzsnkKS7q4uimze+zjdryw=="],
 
     "p-cancelable": ["p-cancelable@3.0.0", "", {}, "sha512-mlVgR3PGuzlo0MmTdk4cXqXWlwQDLnONTAg6sm62XkMJEiRxN3GL3SffkYvqwonbkJBcrI7Uvv5Zh9yjvn2iUw=="],
@@ -5077,8 +5230,6 @@
 
     "tinyglobby": ["tinyglobby@0.2.17", "", { "dependencies": { "fdir": "^6.5.0", "picomatch": "^4.0.4" } }, "sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g=="],
 
-    "tinypool": ["tinypool@2.2.0", "", {}, "sha512-jBrmx4lYmaC9k/mgPbylxs7kBUxHtD8256up+HjLaDFfXScKJQyil+SWXSvhAtT7XHo+yTVlpB81PGmHP8oLSQ=="],
-
     "tinyqueue": ["tinyqueue@3.0.0", "", {}, "sha512-gRa9gwYU3ECmQYv3lslts5hxuIa90veaEcxDYuu3QGOIAEM2mOZkVHp48ANJuu1CURtRdHKUBY5Lm1tHV+sD4g=="],
 
     "tmp": ["tmp@0.2.7", "", {}, "sha512-e0votIpp4Uo2AJYSzVHV6xCcawuiez3DzqDAbrTc3YxBkplN6e+dM13ZeIcZnDg/QpSuU2zfZ3rzwY8ukEnaXw=="],
@@ -5512,8 +5663,6 @@
     "@tailwindcss/oxide-wasm32-wasi/@tybys/wasm-util": ["@tybys/wasm-util@0.10.4", "", { "dependencies": { "tslib": "^2.4.0" }, "bundled": true }, "sha512-W3c4gRigFS0T/Ma4qIYF3GDAc5AQdHb1yL5znJT1Zv1YaD9Kitx656wBjvr19qbiosmZT8lWDM5BEMynUqX65A=="],
 
     "@tailwindcss/oxide-wasm32-wasi/tslib": ["tslib@2.8.1", "", { "bundled": true }, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
-
-    "@tauri-apps/plugin-dialog/@tauri-apps/api": ["@tauri-apps/api@2.12.1", "", {}, "sha512-DeyFHa3wynpyoqTDikDEDGTJIq4LQ5USfolQGRmGIWT6JMADyxZBTDa5cAdT3tDg73rUXufPaCwN7aXBos4OnQ=="],
 
     "@testing-library/dom/aria-query": ["aria-query@5.3.0", "", { "dependencies": { "dequal": "^2.0.3" } }, "sha512-b0P0sZPKtyu8HkeRAfCq0IfURZK+SuwMjY1UXGBU27wpAiTwQAIlq56IbIO+ytk/JjS1fMR14ee5WBBfKi5J6A=="],
 

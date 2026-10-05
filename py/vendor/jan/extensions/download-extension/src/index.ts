@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
+import { invoke } from '@aphrody/api/core'
+import { listen } from '@aphrody/api/event'
 import { BaseExtension, events, logger } from '@janhq/core'
 
 export enum Settings {

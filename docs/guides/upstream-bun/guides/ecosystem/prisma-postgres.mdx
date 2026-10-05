@@ -28,7 +28,7 @@ mode: center
     	Use the Prisma CLI with `bunx` to initialize the schema and migration directory, with PostgreSQL as the database.
 
     	```bash terminal icon="terminal"
-    	bunx --bun prisma init --db
+    	prisma init --db
     	```
 
     	This creates a basic schema. Update it to use the Rust-free client optimized for Bun: open `prisma/schema.prisma` and modify the generator block, then add a `User` model.

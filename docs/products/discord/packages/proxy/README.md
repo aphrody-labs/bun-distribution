@@ -28,9 +28,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/proxy
+bun install @discordjs/proxy
 yarn add @discordjs/proxy
-pnpm add @discordjs/proxy
+bun run add @discordjs/proxy
 bun add @discordjs/proxy
 ```
 

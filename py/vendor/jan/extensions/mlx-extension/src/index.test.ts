@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import mlx_extension from './index'
 import { fs, getJanDataFolderPath, events } from '@janhq/core'
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import { unloadMlxModel } from '@janhq/tauri-plugin-mlx-api'
 import { readGgufMetadata } from '@janhq/tauri-plugin-llamacpp-api'
 

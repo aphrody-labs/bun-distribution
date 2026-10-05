@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { Minus, Square, X } from 'lucide-react'
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { invoke } from '@tauri-apps/api/core'
+import { getCurrentWebviewWindow } from '@aphrody/api/webviewWindow'
+import { invoke } from '@aphrody/api/core'
 import { Button } from '@/components/ui/button'
 import {
   useTitlebarLayout,

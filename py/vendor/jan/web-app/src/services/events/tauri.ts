@@ -2,7 +2,7 @@
  * Tauri Events Service - Desktop implementation
  */
 
-import { emit, listen } from '@tauri-apps/api/event'
+import { emit, listen } from '@aphrody/api/event'
 import type { EventOptions, UnlistenFn } from './types'
 import { DefaultEventsService } from './default'
 

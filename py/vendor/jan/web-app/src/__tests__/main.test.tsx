@@ -20,7 +20,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 // take_pending_webdata_reset returns null (no pending reset) by default
 const mockInvoke = vi.fn().mockResolvedValue(null)
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: (...args: unknown[]) => mockInvoke(...args),
 }))
 

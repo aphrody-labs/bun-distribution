@@ -2,7 +2,7 @@
  * Tauri Hardware Service - Desktop implementation
  */
 
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import type { HardwareData, SystemUsage, DeviceList } from './types'
 import { DefaultHardwareService } from './default'
 

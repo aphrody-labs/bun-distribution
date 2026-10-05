@@ -15,10 +15,10 @@ async function gatherStatic(): Promise<Omit<CoworkEnvironment, 'date'>> {
   let appVersion: string | null = null
   if (isPlatformTauri()) {
     try {
-      const osApi = await import('@tauri-apps/plugin-os')
+      const osApi = await import('@aphrody/plugin-os')
       os = osApi.platform()
       arch = osApi.arch()
-      const { getVersion } = await import('@tauri-apps/api/app')
+      const { getVersion } = await import('@aphrody/api/app')
       appVersion = await getVersion()
     } catch {
       // Web build or a missing plugin: the block simply omits these lines.

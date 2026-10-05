@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TauriAppService } from '../tauri'
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
@@ -43,7 +43,7 @@ describe('TauriAppService – coverage', () => {
 
   describe('factoryReset', () => {
     it('calls factory_reset without params when no keep flags', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(undefined)
 
       await svc.factoryReset()
@@ -52,7 +52,7 @@ describe('TauriAppService – coverage', () => {
     })
 
     it('calls factory_reset without params when both keep flags false', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(undefined)
 
       await svc.factoryReset({ keepAppData: false, keepModelsAndConfigs: false })
@@ -61,7 +61,7 @@ describe('TauriAppService – coverage', () => {
     })
 
     it('calls factory_reset with params when keepAppData true', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(undefined)
 
       await svc.factoryReset({ keepAppData: true, keepModelsAndConfigs: false })
@@ -74,7 +74,7 @@ describe('TauriAppService – coverage', () => {
     })
 
     it('calls factory_reset with params when keepModelsAndConfigs true', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(undefined)
 
       await svc.factoryReset({ keepAppData: false, keepModelsAndConfigs: true })
@@ -87,7 +87,7 @@ describe('TauriAppService – coverage', () => {
     })
 
     it('prunes model + setup localStorage on a full wipe', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(undefined)
       localStorage.setItem('model-provider', '{"providers":[]}')
       localStorage.setItem('last-used-model', 'ghost')
@@ -103,7 +103,7 @@ describe('TauriAppService – coverage', () => {
     })
 
     it('keeps model localStorage when models are preserved', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(undefined)
       localStorage.setItem('model-provider', '{"providers":[]}')
       localStorage.setItem('setup-completed', 'true')
@@ -117,7 +117,7 @@ describe('TauriAppService – coverage', () => {
 
     it('handles engine with no active models', async () => {
       // Re-mock to return null/empty from getLoadedModels
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(undefined)
 
       const { EngineManager } = await import('@janhq/core')
@@ -153,7 +153,7 @@ describe('TauriAppService – coverage', () => {
 
   describe('getServerStatus', () => {
     it('invokes get_server_status and returns boolean', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(true)
 
       const result = await svc.getServerStatus()
@@ -165,7 +165,7 @@ describe('TauriAppService – coverage', () => {
 
   describe('readYaml', () => {
     it('invokes read_yaml with path and returns parsed data', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       const mockData = { key: 'value' }
       vi.mocked(invoke).mockResolvedValue(mockData)
 
@@ -178,7 +178,7 @@ describe('TauriAppService – coverage', () => {
 
   describe('readLogs', () => {
     it('handles null return from invoke', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(null)
 
       const result = await svc.readLogs()

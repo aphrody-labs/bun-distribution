@@ -28,9 +28,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/formatters
+bun install @discordjs/formatters
 yarn add @discordjs/formatters
-pnpm add @discordjs/formatters
+bun run add @discordjs/formatters
 bun add @discordjs/formatters
 ```
 

@@ -66,7 +66,7 @@ export const useAppState = create<AppState>((set) => ({
 ### Tauri Integration
 
 ```tsx
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 
 const result = await invoke('command_name', { param: 'value' })
 ```

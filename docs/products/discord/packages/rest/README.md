@@ -28,9 +28,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/rest
+bun install @discordjs/rest
 yarn add @discordjs/rest
-pnpm add @discordjs/rest
+bun run add @discordjs/rest
 bun add @discordjs/rest
 ```
 
@@ -39,9 +39,9 @@ bun add @discordjs/rest
 Install all required dependencies:
 
 ```sh
-npm install @discordjs/rest discord-api-types
+bun install @discordjs/rest discord-api-types
 yarn add @discordjs/rest discord-api-types
-pnpm add @discordjs/rest discord-api-types
+bun run add @discordjs/rest discord-api-types
 bun add @discordjs/rest discord-api-types
 ```
 

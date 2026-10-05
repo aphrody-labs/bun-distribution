@@ -323,7 +323,7 @@ const ChatInput = memo(function ChatInput({
     const loadWorkingDir = async () => {
       try {
         // Try to get project home directory
-        const { homeDir } = await import('@tauri-apps/api/path')
+        const { homeDir } = await import('@aphrody/api/path')
         const home = await homeDir()
         setWorkingDir(home)
       } catch {
@@ -1578,7 +1578,7 @@ const ChatInput = memo(function ChatInput({
           const files: File[] = []
           for (const path of paths) {
             try {
-              const { convertFileSrc } = await import('@tauri-apps/api/core')
+              const { convertFileSrc } = await import('@aphrody/api/core')
               const fileUrl = convertFileSrc(path)
               const response = await fetch(fileUrl)
               if (!response.ok) throw new Error(response.statusText)
@@ -1712,7 +1712,7 @@ const ChatInput = memo(function ChatInput({
           const files: File[] = []
           for (const path of paths) {
             try {
-              const { convertFileSrc } = await import('@tauri-apps/api/core')
+              const { convertFileSrc } = await import('@aphrody/api/core')
               const fileUrl = convertFileSrc(path)
               const response = await fetch(fileUrl)
               if (!response.ok) throw new Error(response.statusText)
@@ -1759,7 +1759,7 @@ const ChatInput = memo(function ChatInput({
           for (const path of paths) {
             try {
               // Use Tauri's convertFileSrc to create a valid URL for the file
-              const { convertFileSrc } = await import('@tauri-apps/api/core')
+              const { convertFileSrc } = await import('@aphrody/api/core')
               const fileUrl = convertFileSrc(path)
 
               // Fetch the file as blob

@@ -2,7 +2,7 @@
  * Tauri MCP Service - Desktop implementation
  */
 
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import { MCPTool } from '@/types/completion'
 import { DEFAULT_MCP_SETTINGS } from '@/hooks/useMCPServers'
 import type { MCPServerConfig, MCPServers, MCPSettings } from '@/hooks/useMCPServers'

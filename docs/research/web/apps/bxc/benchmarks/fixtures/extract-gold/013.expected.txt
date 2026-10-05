@@ -320,7 +320,7 @@ You can install the fd-find package from the official repo:
 pkg install fd-find
 From npm
 On Linux and macOS, you can install the fd-find package:
-npm install -g fd-find
+bun install -g fd-find
 From source
 With Rust's package manager cargo, you can install fd via:
 cargo install fd-find

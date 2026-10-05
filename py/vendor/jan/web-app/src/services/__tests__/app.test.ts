@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TauriAppService } from '../app/tauri'
 
 // Mock dependencies
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
@@ -24,7 +24,7 @@ vi.mock('@janhq/core', async (importOriginal) => {
   }
 })
 
-vi.mock('@tauri-apps/api/event', () => ({
+vi.mock('@aphrody/api/event', () => ({
   emit: vi.fn(),
 }))
 
@@ -92,7 +92,7 @@ describe('TauriAppService', () => {
 
   describe('readLogs', () => {
     it('should read and parse logs', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       const mockLogs =
         '[2024-01-01][10:00:00Z][target][INFO] Test message\n[2024-01-01][10:01:00Z][target][ERROR] Error message'
       vi.mocked(invoke).mockResolvedValue(mockLogs)
@@ -106,7 +106,7 @@ describe('TauriAppService', () => {
     })
 
     it('should handle empty logs', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue('')
 
       const result = await appService.readLogs()
@@ -142,7 +142,7 @@ describe('TauriAppService', () => {
 
   describe('factoryReset', () => {
     it('should perform factory reset', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
 
       await appService.factoryReset()
 

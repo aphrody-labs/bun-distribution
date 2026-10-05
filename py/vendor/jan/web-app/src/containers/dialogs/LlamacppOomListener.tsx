@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { listen } from '@tauri-apps/api/event'
+import { listen } from '@aphrody/api/event'
 
 import { useAppState } from '@/hooks/useAppState'
 import { useCoworkRun } from '@/hooks/useCoworkRun'

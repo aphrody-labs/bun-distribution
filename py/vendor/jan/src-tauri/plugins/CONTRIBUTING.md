@@ -31,7 +31,7 @@ Assuming that your new plugin name is `my-plugin`
 
 ```bash
 # with npx
-npx @tauri-apps/cli plugin new my-plugin
+@tauri-apps/cli plugin new my-plugin
 
 # with cargo
 cargo tauri plugin new my-plugin
@@ -61,7 +61,7 @@ pub async fn my_command(param: String) -> Result<String, Error> {
 ```
 
 ```typescript
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 
 export async function myCommand(param: string): Promise<string> {
   return await invoke('plugin:my-plugin|my_command', { param })

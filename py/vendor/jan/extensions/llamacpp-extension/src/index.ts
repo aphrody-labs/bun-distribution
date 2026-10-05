@@ -34,8 +34,8 @@ import {
   settingsFileExists,
 } from './settings-store'
 
-import { listen } from '@tauri-apps/api/event'
-import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@aphrody/api/event'
+import { invoke } from '@aphrody/api/core'
 import {
   getProxyConfig,
   buildEmbedBatches,
@@ -66,7 +66,7 @@ import {
   setBackendSetting,
   removeBackendSetting,
 } from './backend-settings'
-import { basename } from '@tauri-apps/api/path'
+import { basename } from '@aphrody/api/path'
 import {
   asI32,
   loadLlamaModel,

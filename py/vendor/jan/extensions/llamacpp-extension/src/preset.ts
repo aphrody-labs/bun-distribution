@@ -14,7 +14,7 @@
  */
 
 import { fs, joinPath } from '@janhq/core'
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import type { LlamacppConfig, ModelConfig } from '@janhq/tauri-plugin-llamacpp-api'
 
 // ModelConfig is intentionally widened — model.yml may carry extra fields like

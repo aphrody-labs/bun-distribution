@@ -8,7 +8,7 @@ Use the VSCode debugger to debug your bot
 2. Install tsx as a dev dependency
 
 ```bash npm2yarn
-npm install --save-dev tsx
+bun install --save-dev tsx
 ```
 
 3. Copy paste this into your `launch.json` file

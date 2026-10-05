@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { IconExternalLink, IconLoader2 } from '@tabler/icons-react'
 import { useTranslation } from '@/i18n/react-i18next-compat'
 import { useCallback } from 'react'
-import { openUrl } from '@tauri-apps/plugin-opener'
+import { openUrl } from '@aphrody/plugin-opener'
 import { isPlatformTauri } from '@/lib/platform/utils'
 
 const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/jan-browser-mcp/mkciifcjehgnpaigoiaakdgabbpfppal'

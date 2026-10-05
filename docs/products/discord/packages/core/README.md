@@ -28,9 +28,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/core
+bun install @discordjs/core
 yarn add @discordjs/core
-pnpm add @discordjs/core
+bun run add @discordjs/core
 ```
 
 ## Example usage

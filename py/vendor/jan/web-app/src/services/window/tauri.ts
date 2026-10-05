@@ -2,7 +2,7 @@
  * Tauri Window Service - Desktop implementation
  */
 
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { WebviewWindow } from '@aphrody/api/webviewWindow'
 import type { WindowConfig, WebviewWindowInstance } from './types'
 import { DefaultWindowService } from './default'
 
@@ -172,7 +172,7 @@ export class TauriWindowService extends DefaultWindowService {
 
   private setupThemeListenerForWindow(window: WebviewWindow): void {
     // Listen to theme change events from Tauri backend
-    import('@tauri-apps/api/event')
+    import('@aphrody/api/event')
       .then(({ listen }) => {
         return listen<string>('theme-changed', async (event) => {
           const theme = event.payload

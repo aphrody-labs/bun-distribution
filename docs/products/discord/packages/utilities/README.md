@@ -60,7 +60,7 @@ Add useful features to discordx, If a feature isn't available, request it.
 Version 16.6.0 or newer of Node.js is required
 
 ```
-npm install @discordx/utilities
+bun install @discordx/utilities
 yarn add @discordx/utilities
 ```
 

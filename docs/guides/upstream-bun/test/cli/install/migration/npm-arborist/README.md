@@ -34,7 +34,7 @@ Each directory holds only what a `package-lock.json -> bun.lock` migration reads
 - `optional-engine-specification` (v2) - same tree as engine-specification, dep declared optional in package.json
 - `peer-dep-cycle-nested-with-sw` (v2) - peer dependency cycle with a nested copy, `name` on entries
 - `peer-dep-cycle-with-sw` (v2) - peer dependency cycle between hoisted entries
-- `pnpm` (v2) - npm lockfile written over a pnpm `.pnpm/` layout: link entries into `node_modules/.pnpm/...` keys, `{}` entries (link targets live in node_modules and are not copied)
+- `pnpm` (v2) - npm lockfile written over a bun run `.pnpm/` layout: link entries into `node_modules/.pnpm/...` keys, `{}` entries (link targets live in node_modules and are not copied)
 - `prune-lockfile-omit-dev` (v2) - extraneous entries plus a dev-only entry, none with `resolved`
 - `prune-lockfile-optional-peer` (v3) - v3; peerDependenciesMeta optional peer that is present in the tree (B8)
 - `prune-lockfile` (v2) - single extraneous entry without `resolved`

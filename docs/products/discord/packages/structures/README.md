@@ -28,9 +28,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/structures
+bun install @discordjs/structures
 yarn add @discordjs/structures
-pnpm add @discordjs/structures
+bun run add @discordjs/structures
 bun add @discordjs/structures
 ```
 

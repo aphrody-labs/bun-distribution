@@ -1,4 +1,4 @@
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { getCurrentWebviewWindow } from '@aphrody/api/webviewWindow'
 
 // @tauri-apps/api declares ResizeDirection locally but doesn't export it.
 type ResizeDirection =

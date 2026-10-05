@@ -23,7 +23,7 @@ minimumReleaseAgeExcludes = [
   "nodemailer",
   "undici",
   "@tauri-apps/cli",
-  "@tauri-apps/api",
+  "@aphrody/api",
   "@tauri-apps/cli-linux-x64-gnu",
   "@modelcontextprotocol/sdk",
   "@modelcontextprotocol/ext-apps",

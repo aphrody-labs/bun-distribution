@@ -42,7 +42,7 @@ vi.mock('@/lib/skillStore', () => ({
   invokeSkill: async (scope: { kind: string }, name: string, args: string) =>
     `${(scope.kind === 'store' ? backend.skills : backend.projectSkills).get(name)}\nArguments: ${args}`,
 }))
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: async (command: string) =>
     command === 'agent_skill_enabled_get' ? [] : null,
 }))

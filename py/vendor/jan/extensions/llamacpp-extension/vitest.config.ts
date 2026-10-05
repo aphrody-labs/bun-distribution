@@ -17,9 +17,9 @@ export default defineConfig({
       ),
       // The plugin carries its own @tauri-apps/api install, so aliasing
       // guest-js in would otherwise give it a second module instance that
-      // `vi.mock('@tauri-apps/api/core')` never intercepts -- the real invoke
+      // `vi.mock('@aphrody/api/core')` never intercepts -- the real invoke
       // would run and die on a missing window.__TAURI_INTERNALS__.
-      '@tauri-apps/api/core': resolveHere(
+      '@aphrody/api/core': resolveHere(
         './node_modules/@tauri-apps/api/core.js'
       ),
     },

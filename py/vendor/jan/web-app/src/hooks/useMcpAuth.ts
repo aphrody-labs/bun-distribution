@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { listen } from '@tauri-apps/api/event'
+import { listen } from '@aphrody/api/event'
 import { getServiceHub } from '@/hooks/useServiceHub'
 import type { MCPAuthStatus } from '@/services/mcp/types'
 

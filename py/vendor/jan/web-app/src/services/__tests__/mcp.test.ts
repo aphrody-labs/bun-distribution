@@ -5,10 +5,10 @@ import { DEFAULT_MCP_SETTINGS } from '@/hooks/useMCPServers'
 
 // Mock @tauri-apps/api/core so TauriMCPService.getToolsForServers and
 // getServerSummaries can be tested without a real Tauri runtime.
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 const mockInvoke = invoke as ReturnType<typeof vi.fn>
 
 // Mock the global window.core.api

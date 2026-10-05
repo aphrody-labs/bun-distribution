@@ -127,7 +127,7 @@ make dev
 ### 手动构建命令
 
 ```bash
-yarn install
+bun install
 yarn build:tauri:plugin:api
 yarn build:core
 yarn build:extensions

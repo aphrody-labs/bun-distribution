@@ -2,7 +2,7 @@
  * Tauri Deep Link Service - Desktop implementation
  */
 
-import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link'
+import { onOpenUrl, getCurrent } from '@aphrody/plugin-deep-link'
 import { DefaultDeepLinkService } from './default'
 
 export class TauriDeepLinkService extends DefaultDeepLinkService {

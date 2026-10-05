@@ -31,7 +31,7 @@ function makeMockWindow() {
   }
 }
 
-vi.mock('@tauri-apps/api/webviewWindow', () => {
+vi.mock('@aphrody/api/webviewWindow', () => {
   const Ctor = function (...args: unknown[]) {
     mockConstructor(...args)
     return makeMockWindow()
@@ -40,7 +40,7 @@ vi.mock('@tauri-apps/api/webviewWindow', () => {
   return { WebviewWindow: Ctor }
 })
 
-vi.mock('@tauri-apps/api/event', () => ({
+vi.mock('@aphrody/api/event', () => ({
   listen: vi.fn().mockResolvedValue(vi.fn()),
 }))
 

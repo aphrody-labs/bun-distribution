@@ -7,7 +7,7 @@ This package provides optional functions to assist in creating Oxlint JS plugins
 ## Installation
 
 ```bash
-npm install @oxlint/plugins
+bun install @oxlint/plugins
 ```
 
 ## Usage

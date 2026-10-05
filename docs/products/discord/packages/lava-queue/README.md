@@ -45,7 +45,7 @@ A powerful queue system for `@discordx/lava-player` library written in [TypeScri
 Version 16.6.0 or newer of Node.js is required
 
 ```
-npm install @discordx/lava-queue
+bun install @discordx/lava-queue
 yarn add @discordx/lava-queue
 ```
 

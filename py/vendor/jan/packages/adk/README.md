@@ -17,7 +17,7 @@ It is a preview and not on npm yet. Install the latest nightly build; no
 repository clone is required:
 
 ```bash
-npm install "$(node -e "fetch('https://delta.jan.ai/adk-nightly/manifest.json').then(r => r.json()).then(m => console.log(m.packages.javascript.url))")"
+bun install "$(node -e "fetch('https://delta.jan.ai/adk-nightly/manifest.json').then(r => r.json()).then(m => console.log(m.packages.javascript.url))")"
 ```
 
 The URL is versioned, so `package.json` pins that exact build. That build's

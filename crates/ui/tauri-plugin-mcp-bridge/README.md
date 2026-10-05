@@ -31,7 +31,7 @@ tauri-plugin-mcp-bridge = "0.2"
 If you want to call the plugin from your app's frontend code (not required for MCP server functionality):
 
 ```bash
-npm install --save-exact @hypothesi/tauri-plugin-mcp-bridge
+bun install --save-exact @hypothesi/tauri-plugin-mcp-bridge
 ```
 
 ## Usage
@@ -212,7 +212,7 @@ cargo build
 Or from the workspace root:
 
 ```bash
-npm run build:plugin
+bun run build:plugin
 ```
 
 ### Documentation
@@ -220,7 +220,7 @@ npm run build:plugin
 View the comprehensive Rust API documentation:
 
 ```bash
-npm run docs:rust
+bun run docs:rust
 ```
 
 Or directly:
@@ -235,7 +235,7 @@ cargo doc --open --no-deps
 Run the MCP server tests which include plugin integration tests:
 
 ```bash
-npm test
+bun test
 ```
 
 ## Permissions

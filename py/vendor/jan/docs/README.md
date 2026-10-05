@@ -37,7 +37,7 @@ Refer to the [Contributing Guide](https://github.com/janhq/jan/blob/main/CONTRIB
 
 ```bash
 cd jan/docs
-yarn install
+bun install
 yarn dev
 ```
 

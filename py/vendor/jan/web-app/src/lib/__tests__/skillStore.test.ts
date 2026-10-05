@@ -24,7 +24,7 @@ const { api, invoke, getJanDataFolder } = vi.hoisted(() => ({
 }))
 
 vi.mock('@janhq/tauri-plugin-agent-tools-api', () => api)
-vi.mock('@tauri-apps/api/core', () => ({ invoke }))
+vi.mock('@aphrody/api/core', () => ({ invoke }))
 vi.mock('@/hooks/useServiceHub', () => ({
   getServiceHub: () => ({ app: () => ({ getJanDataFolder }) }),
 }))

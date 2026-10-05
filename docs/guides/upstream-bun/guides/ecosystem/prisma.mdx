@@ -34,7 +34,7 @@ mode: center
     	Use the Prisma CLI with `bunx` to initialize the schema and migration directory. This guide uses a local SQLite database file. `prisma init` writes its connection string, `DATABASE_URL="file:./dev.db"`, to `.env`.
 
     	```bash terminal icon="terminal"
-    	bunx --bun prisma init --datasource-provider sqlite
+    	prisma init --datasource-provider sqlite
     	```
 
     	This creates a basic schema. Open `prisma/schema.prisma`, update the generator block to use the Rust-free client with the `bun` runtime, and add a `User` model.

@@ -50,7 +50,7 @@
 curl -fsSL https://opencode.ai/install | bash
 
 # Paketmanager
-npm i -g opencode-ai@latest        # oder bun/pnpm/yarn
+bun install -g opencode-ai@latest        # oder bun/pnpm/yarn
 scoop install opencode             # Windows
 choco install opencode             # Windows
 brew install anomalyco/tap/opencode # macOS und Linux (empfohlen, immer aktuell)

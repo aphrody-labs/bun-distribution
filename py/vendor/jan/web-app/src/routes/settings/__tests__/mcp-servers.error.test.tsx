@@ -167,7 +167,7 @@ vi.mock('@/i18n/react-i18next-compat', () => ({
   }),
 }))
 
-vi.mock('@tauri-apps/api/event', () => ({
+vi.mock('@aphrody/api/event', () => ({
   listen: vi.fn().mockResolvedValue(() => {}),
 }))
 

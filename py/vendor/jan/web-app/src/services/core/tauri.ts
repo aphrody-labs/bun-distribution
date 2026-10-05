@@ -2,7 +2,7 @@
  * Tauri Core Service - Desktop implementation
  */
 
-import { invoke, convertFileSrc } from '@tauri-apps/api/core'
+import { invoke, convertFileSrc } from '@aphrody/api/core'
 import type { ExtensionManifest } from '@/lib/extension'
 import type { InvokeArgs } from './types'
 import { DefaultCoreService } from './default'

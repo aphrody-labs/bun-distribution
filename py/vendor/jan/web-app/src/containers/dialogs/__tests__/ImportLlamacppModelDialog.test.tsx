@@ -34,7 +34,7 @@ vi.mock('@/hooks/useServiceHub', () => {
   }
 })
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: hoisted.invoke,
 }))
 

@@ -374,7 +374,7 @@ ici pour qu'on sache ce qui est une dette et ce qui est une décision.
 
 Ce fichier suit la spécification [DESIGN.md](https://github.com/google-labs-code/design.md)
 (front matter de tokens + prose de justification). Il se vérifie par
-`bunx @google/design.md lint DESIGN.md` — le linter contrôle les références de
+`@google/design.md lint DESIGN.md` — le linter contrôle les références de
 tokens et le contraste WCAG de chaque composant, et l'état attendu est **0
 erreur, 0 avertissement**. C'est ce contrôle qui a signalé les pastilles de
 rubrique en texte blanc sur vert, violet, rose et rouge (3,3 à 4,0:1, sous le

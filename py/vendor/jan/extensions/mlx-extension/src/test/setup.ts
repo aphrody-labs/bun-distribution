@@ -31,7 +31,7 @@ Object.defineProperty(globalThis, 'window', {
   writable: true,
 })
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 

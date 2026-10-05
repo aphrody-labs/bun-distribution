@@ -23,7 +23,7 @@ It's easy to create a simple Discord bot to begin your journey with the Discord 
 ```sh
 npm create discord-bot ./your/chosen/directory
 yarn create discord-bot ./your/chosen/directory
-pnpm create discord-bot ./your/chosen/directory
+bun run create discord-bot ./your/chosen/directory
 bun create discord-bot ./your/chosen/directory
 ```
 

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TauriMCPService } from '../tauri'
 import { DEFAULT_MCP_SETTINGS } from '@/hooks/useMCPServers'
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
@@ -93,7 +93,7 @@ describe('TauriMCPService – coverage', () => {
 
   describe('activateMCPServer', () => {
     it('invokes activate_mcp_server with name and config', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(undefined)
 
       const config = { command: 'node', args: ['server.js'] }
@@ -108,7 +108,7 @@ describe('TauriMCPService – coverage', () => {
 
   describe('deactivateMCPServer', () => {
     it('invokes deactivate_mcp_server with name', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(undefined)
 
       await svc.deactivateMCPServer('myServer')
@@ -121,7 +121,7 @@ describe('TauriMCPService – coverage', () => {
 
   describe('checkJanBrowserExtensionConnected', () => {
     it('invokes check_jan_browser_extension_connected', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue(true)
 
       const result = await svc.checkJanBrowserExtensionConnected()
@@ -198,7 +198,7 @@ describe('TauriMCPService – coverage', () => {
 
   describe('OAuth', () => {
     it('forwards each command with the server name', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       const status = {
         state: 'unauthenticated',
         canAuthenticate: true,

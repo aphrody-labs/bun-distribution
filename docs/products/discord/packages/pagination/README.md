@@ -45,7 +45,7 @@ Add pagination to discord bot using buttons or menu.
 Version 16.6.0 or newer of Node.js is required
 
 ```
-npm install @discordx/pagination
+bun install @discordx/pagination
 yarn add @discordx/pagination
 ```
 

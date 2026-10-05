@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react'
 import { checkOSDarkMode } from '../useTheme'
 
 // Mock Tauri API
-vi.mock('@tauri-apps/api/window', () => ({
+vi.mock('@aphrody/api/window', () => ({
   getCurrentWindow: () => ({
     setTheme: vi.fn().mockResolvedValue(undefined),
   }),

@@ -105,7 +105,7 @@ vi.mock('@/hooks/useAppState', () => ({
       ),
   },
 }))
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(async () => []) }))
+vi.mock('@aphrody/api/core', () => ({ invoke: vi.fn(async () => []) }))
 vi.mock('@janhq/tauri-plugin-llamacpp-api', () => ({
   getLoadedModels: vi.fn(async () => ['llama-local']),
   unloadLlamaModel: vi.fn(),

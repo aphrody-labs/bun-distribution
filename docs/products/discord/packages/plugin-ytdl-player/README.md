@@ -43,7 +43,7 @@ YTDL player plugin for discordx bots.
 # 💻 Installation
 
 ```
-npm install @discordx/plugin-ytdl-player
+bun install @discordx/plugin-ytdl-player
 ```
 
 # 📄 Usage

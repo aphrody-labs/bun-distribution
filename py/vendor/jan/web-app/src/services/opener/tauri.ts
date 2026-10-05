@@ -5,7 +5,7 @@
 import {
   openPath as osOpenPath,
   revealItemInDir as osRevealItemInDir,
-} from '@tauri-apps/plugin-opener'
+} from '@aphrody/plugin-opener'
 import { DefaultOpenerService } from './default'
 
 export class TauriOpenerService extends DefaultOpenerService {

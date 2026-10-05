@@ -18,8 +18,8 @@ React Components (fully type-safe!)
 
 ```typescript
 import { SpacedriveClient, SpacedriveProvider } from '@aphrody/drive-client';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { invoke } from '@aphrody/api/core';
+import { listen } from '@aphrody/api/event';
 
 // Create client
 const client = SpacedriveClient.fromTauri(invoke, listen);

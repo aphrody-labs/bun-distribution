@@ -47,7 +47,7 @@ Support esm and cjs at the same time
 Version 16.6.0 or newer of Node.js is required
 
 ```
-npm install @discordx/importer
+bun install @discordx/importer
 yarn add @discordx/importer
 ```
 

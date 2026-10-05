@@ -46,7 +46,7 @@ A **Model Context Protocol (MCP) server** that enables AI assistants like Claude
 Use [aix](https://aix.a1st.dev/cli/add/#aix-add-mcp) to add the server to your AI assistant:
 
 ```bash
-npx -y @a1st/aix add mcp tauri --command 'npx @hypothesi/tauri-mcp-server' --user
+@a1st/aix add mcp tauri --command '@hypothesi/tauri-mcp-server' --user
 ```
 
 Supported clients: `claude-code`, `cursor`, `windsurf`, `vscode`, `cline`, `roo-cline`, `claude`, `zed`, `goose`, `warp`, `codex`
@@ -61,7 +61,7 @@ Supported clients: `claude-code`, `cursor`, `windsurf`, `vscode`, `cline`, `roo-
 If you want to call the tools directly from a terminal instead of from an MCP client:
 
 ```bash
-npm install -g @hypothesi/tauri-mcp-cli
+bun install -g @hypothesi/tauri-mcp-cli
 tauri-mcp driver-session start --port 9223
 tauri-mcp webview-screenshot --file screenshot.png
 ```
@@ -206,16 +206,16 @@ Just type the command in your AI assistant to start a guided workflow.
 # Clone and install
 git clone https://github.com/hypothesi/mcp-server-tauri.git
 cd mcp-server-tauri
-npm install
+bun install
 
 # Build all packages
-npm run build
+bun run build
 
 # Run tests
-npm test
+bun test
 
 # Development mode
-npm run dev -w @hypothesi/tauri-mcp-server
+bun run dev -w @hypothesi/tauri-mcp-server
 ```
 
 <details>
@@ -238,10 +238,10 @@ mcp-server-tauri/
 
 ```bash
 # Release plugin (Cargo + npm)
-npm run release:plugin patch
+bun run release:plugin patch
 
 # Release server (npm only)
-npm run release:server patch
+bun run release:server patch
 ```
 
 See [specs/releasing.md](../../reference/upstream-mcp-server-tauri/specs/releasing.md) for details.

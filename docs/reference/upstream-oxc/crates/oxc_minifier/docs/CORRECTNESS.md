@@ -132,7 +132,7 @@ Real-world code testing:
 
 ```bash
 cd tasks/e2e
-pnpm test
+bun run test
 ```
 
 ### Idempotency Testing

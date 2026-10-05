@@ -57,17 +57,17 @@ vi.mock('@janhq/tauri-plugin-hardware-api', () => ({
 }));
 
 // Mock Tauri invoke function
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
-vi.mock('@tauri-apps/api/event', () => ({
+vi.mock('@aphrody/api/event', () => ({
   listen: vi.fn().mockResolvedValue(() => undefined),
   emit: vi.fn(),
 }))
 
 // Mock Tauri path API
-vi.mock('@tauri-apps/api/path', () => ({
+vi.mock('@aphrody/api/path', () => ({
   basename: vi.fn(),
   dirname: vi.fn(),
   join: vi.fn(),

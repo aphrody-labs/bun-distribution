@@ -3,15 +3,15 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
-vi.mock('@tauri-apps/plugin-http', () => ({
+vi.mock('@aphrody/plugin-http', () => ({
   fetch: vi.fn().mockImplementation(async () => new Response('{}', { status: 200 })),
 }))
 
-vi.mock('@tauri-apps/api/event', () => ({
+vi.mock('@aphrody/api/event', () => ({
   listen: vi.fn(),
 }))
 
@@ -89,8 +89,8 @@ vi.mock('@/lib/provider-api-keys', () => ({
 }))
 
 import { ModelFactory } from '../model-factory'
-import { invoke } from '@tauri-apps/api/core'
-import { fetch as httpFetch } from '@tauri-apps/plugin-http'
+import { invoke } from '@aphrody/api/core'
+import { fetch as httpFetch } from '@aphrody/plugin-http'
 
 function getOpts(): any {
   return (globalThis as any).__capturedModelOpts

@@ -26,7 +26,7 @@ import {
   logger,
 } from '@janhq/core'
 
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import {
   loadMlxModel,
   unloadMlxModel,

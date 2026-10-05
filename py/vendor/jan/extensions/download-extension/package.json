@@ -27,7 +27,7 @@
   ],
   "dependencies": {
     "@janhq/core": "workspace:*",
-    "@tauri-apps/api": "2.8.0"
+    "@aphrody/api": "3.0.0-alpha.2"
   },
   "bundleDependencies": [],
   "installConfig": {

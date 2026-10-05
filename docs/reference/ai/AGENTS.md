@@ -24,7 +24,7 @@ add repository constraints, not a separate approval workflow.
 
 ## Validation
 
-`npm run scan` remains a compatible entry point for `aphrody-ops repository-health`.
+`bun run scan` remains a compatible entry point for `aphrody-ops repository-health`.
 
 Documentation-only changes need links/anchors and `git diff --check`; use the
 repository documentation generator where required. For implementation/release

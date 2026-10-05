@@ -31,7 +31,7 @@ supply-chain delay. `minimumReleaseAgeExcludes` lists the packages that must tra
 | --- | --- |
 | `next`, `@next/env`, `@next/swc-*` | Security fixes ship as patch releases and must land on the day. The platform binaries must follow `next`. |
 | `nodemailer`, `undici` | Security fixes (SMTP and HTTP clients). |
-| `@tauri-apps/cli`, `@tauri-apps/api`, `@tauri-apps/cli-linux-x64-gnu` | The 3.0.0 alphas must track the Rust crates (`tauri sync`). |
+| `@tauri-apps/cli`, `@aphrody/api`, `@tauri-apps/cli-linux-x64-gnu` | The 3.0.0 alphas must track the Rust crates (`tauri sync`). |
 
 `aphrody-update bun` honours the gate: a release younger than the window is reported as `waiting`, and `apply` writes
 the newest release that is old enough (`pickEligible` from `tauri/sync.ts`, prereleases ignored when the latest is
@@ -164,6 +164,6 @@ failures already present before the bump).
 | minors and patches | | | `genkit` and `@genkit-ai/google-genai` 1.42.0, `@modelcontextprotocol/sdk` 1.31.0, `@sentry/nextjs` 11.1.0, `@shikijs/vitepress-twoslash` 4.4.3, `hono` 4.13.10, `valibot` 1.5.0, `@next/bundle-analyzer` 16.3.6, `@next/env` 16.3.8, `mint` 4.2.948, `next-intl` 4.14.7, `@ai-sdk/provider` 4.0.19, `postcss` 8.5.28, plus the lock refresh of `bun update -r`. |
 
 Not part of this pass: the Bun runtime (1.4.2 is latest), TypeScript 7.0.2, oxlint 1.86.0 and oxfmt 0.71.0 (all
-current), and the Tauri family (`tauri-sync --check` reports no drift; `@tauri-apps/plugin-opener` alpha.2 waits for the
+current), and the Tauri family (`tauri-sync --check` reports no drift; `@aphrody/plugin-opener` alpha.2 waits for the
 age window). The non-workspace mirrors `config/rg/package.json` (not in repo), `config/shenron/package.json` and
 `docs/reference/rg/root/package.json` (not in repo) keep their own ranges and are out of scope of the first-party manifest scan.

@@ -34,9 +34,9 @@ discord.js is a powerful [Node.js](https://nodejs.org) module that allows you to
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install discord.js
+bun install discord.js
 yarn add discord.js
-pnpm add discord.js
+bun run add discord.js
 bun add discord.js
 ```
 
@@ -51,9 +51,9 @@ bun add discord.js
 Install discord.js:
 
 ```sh
-npm install discord.js
+bun install discord.js
 yarn add discord.js
-pnpm add discord.js
+bun run add discord.js
 bun add discord.js
 ```
 

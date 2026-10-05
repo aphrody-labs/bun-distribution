@@ -45,7 +45,7 @@ discordx internal methods, can be used for external projects.
 Version 16.6.0 or newer of Node.js is required
 
 ```
-npm install @discordx/internal
+bun install @discordx/internal
 yarn add @discordx/internal
 ```
 

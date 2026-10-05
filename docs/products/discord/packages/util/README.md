@@ -25,9 +25,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/util
+bun install @discordjs/util
 yarn add @discordjs/util
-pnpm add @discordjs/util
+bun run add @discordjs/util
 bun add @discordjs/util
 ```
 

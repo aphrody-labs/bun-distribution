@@ -12,7 +12,7 @@ vi.mock('@janhq/core', () => ({
   },
 }))
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   convertFileSrc: vi.fn((path) => `asset://${path}`),
   invoke: vi.fn(),
 }))
@@ -135,14 +135,14 @@ describe('extension.ts', () => {
 
   describe('Extension loading', () => {
     it('should convert file source correctly', async () => {
-      const { convertFileSrc } = await import('@tauri-apps/api/core')
+      const { convertFileSrc } = await import('@aphrody/api/core')
       convertFileSrc('/path/to/extension.js')
       
       expect(convertFileSrc).toHaveBeenCalledWith('/path/to/extension.js')
     })
 
     it('should invoke tauri commands', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockResolvedValue('success')
       
       await invoke('test_command', { param: 'value' })

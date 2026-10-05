@@ -37,9 +37,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/voice
+bun install @discordjs/voice
 yarn add @discordjs/voice
-pnpm add @discordjs/voice
+bun run add @discordjs/voice
 bun add @discordjs/voice
 ```
 

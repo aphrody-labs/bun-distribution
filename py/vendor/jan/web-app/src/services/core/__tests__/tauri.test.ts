@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TauriCoreService } from '../tauri'
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
   convertFileSrc: vi.fn(),
 }))
 
-import { invoke, convertFileSrc } from '@tauri-apps/api/core'
+import { invoke, convertFileSrc } from '@aphrody/api/core'
 const mockInvoke = invoke as ReturnType<typeof vi.fn>
 const mockConvertFileSrc = convertFileSrc as ReturnType<typeof vi.fn>
 

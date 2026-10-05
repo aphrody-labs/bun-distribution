@@ -98,7 +98,7 @@ le nom historique `DISCORD_TOKEN` en repli. Les secrets sont copiés, jamais aff
 
 Sous Windows, Turbopack lance un processus `node` pour PostCSS / Tailwind. Sur ce poste
 Bun-only, l'erreur est `spawning node pooled process: program not found`, et
-`bunx --bun next` échoue sur les chemins absolus Windows. Le dev et le build du site se font
+`next` échoue sur les chemins absolus Windows. Le dev et le build du site se font
 donc dans le clone WSL `~/src/shenron`, synchronisé par `git pull`.
 
 ```bash

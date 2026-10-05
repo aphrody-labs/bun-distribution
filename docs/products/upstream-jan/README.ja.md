@@ -126,7 +126,7 @@ make dev
 ### 手動コマンド
 
 ```bash
-yarn install
+bun install
 yarn build
 yarn dev
 ```

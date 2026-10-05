@@ -2,7 +2,7 @@
  * Tauri Path Service - Desktop implementation
  */
 
-import { sep as getSep, join, dirname, basename, extname } from '@tauri-apps/api/path'
+import { sep as getSep, join, dirname, basename, extname } from '@aphrody/api/path'
 import { DefaultPathService } from './default'
 
 export class TauriPathService extends DefaultPathService {

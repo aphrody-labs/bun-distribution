@@ -45,7 +45,7 @@ Sélection stricte des technologies de pointe, bibliothèques haute performance 
 ---
 
 ## 6. Desktop UI : Tauri 3 Alpha
-- **[Tauri](https://github.com/tauri-apps/tauri)** (`v3.0.0-alpha.4` / `@tauri-apps/api 3.0.0-alpha.2`) :
+- **[Tauri](https://github.com/tauri-apps/tauri)** (`v3.0.0-alpha.4` / `@aphrody/api 3.0.0-alpha.2`) :
   - Webview native système ultralégère (moins de 15 Mo de binaire, contre 150+ Mo pour Electron).
   - IPC direct sans surcoût entre TypeScript et Rust via sérialisation JSON/binaire typée.
   - Système d'autorisations ACL par manifestes déclaratifs intégrés.

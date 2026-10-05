@@ -2,7 +2,7 @@
  * Tauri Dialog Service - Desktop implementation
  */
 
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import type { DialogOpenOptions } from './types'
 import { DefaultDialogService } from './default'
 

@@ -127,7 +127,7 @@ vi.mock('@/lib/provider-api-keys', () => ({
   providerRemoteApiKeyChain: (p: unknown) => h.providerRemoteApiKeyChain(p),
 }))
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: (...args: unknown[]) => h.invoke(...args),
 }))
 

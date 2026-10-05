@@ -27,7 +27,7 @@ your dependency file pins that exact build.
 Node.js 20+ and npm:
 
 ```bash
-npm install "$(node -e "fetch('https://delta.jan.ai/adk-nightly/manifest.json').then(r => r.json()).then(m => console.log(m.packages.javascript.url))")"
+bun install "$(node -e "fetch('https://delta.jan.ai/adk-nightly/manifest.json').then(r => r.json()).then(m => console.log(m.packages.javascript.url))")"
 ```
 
 In PowerShell, replace `"$(...)"` with `(...)`.

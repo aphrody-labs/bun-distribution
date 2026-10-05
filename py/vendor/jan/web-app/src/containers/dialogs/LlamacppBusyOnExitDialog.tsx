@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
+import { invoke } from '@aphrody/api/core'
+import { listen } from '@aphrody/api/event'
 import { forceStopEngine } from '@janhq/tauri-plugin-llamacpp-api'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'

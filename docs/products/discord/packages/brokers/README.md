@@ -28,9 +28,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/brokers
+bun install @discordjs/brokers
 yarn add @discordjs/brokers
-pnpm add @discordjs/brokers
+bun run add @discordjs/brokers
 ```
 
 ## Example usage

@@ -40,7 +40,7 @@ The `bun` command-line tool also implements a test runner, script runner, and No
 bun test                      # run tests
 bun run start                 # run the `start` script in `package.json`
 bun install <pkg>             # install a package
-bunx cowsay 'Hello, world!'   # execute a package
+cowsay 'Hello, world!'   # execute a package
 ```
 
 ## Install
@@ -59,7 +59,7 @@ curl -fsSL https://bun.com/install | bash
 powershell -c "irm bun.sh/install.ps1 | iex"
 
 # with npm
-npm install -g bun
+bun install -g bun
 
 # with Homebrew
 brew tap oven-sh/bun

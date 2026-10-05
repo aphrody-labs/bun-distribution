@@ -756,8 +756,8 @@ migration non entreprise). Détails : `design/aphrody-m3/docs/operations/tauri-u
   par crate Tauri (wry 0.57.0, tao 0.37.1). Runtime par défaut : wry ; CEF
   réservé à Koharu (`koharu`, `koharu-app`) ; features `dynamic-acl`/`specta`
   déplacées de la racine vers les crates Koharu.
-- FAIT : JS centralisé (`workspaces.catalog`) : `@tauri-apps/api` 3.0.0-alpha.2,
-  `@tauri-apps/plugin-opener` 3.0.0-alpha.1 (alpha.2 trop récente pour
+- FAIT : JS centralisé (`workspaces.catalog`) : `@aphrody/api` 3.0.0-alpha.2,
+  `@aphrody/plugin-opener` 3.0.0-alpha.1 (alpha.2 trop récente pour
   `minimumReleaseAge` 3 jours). `bun install --frozen-lockfile` réussi ;
   `tsc --noEmit` réussi pour `@koharu/bridge`, `@koharu/sdk`, `@koharu/ui`.
 - FAIT : `aphrody-app` migré et retiré de `exclude`. Changements imposés par

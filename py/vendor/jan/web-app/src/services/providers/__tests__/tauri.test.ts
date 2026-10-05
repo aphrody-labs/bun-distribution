@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock all external dependencies before imports
-vi.mock('@tauri-apps/plugin-http', () => ({
+vi.mock('@aphrody/plugin-http', () => ({
   fetch: vi.fn(),
 }))
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
@@ -70,8 +70,8 @@ vi.mock('@/lib/provider-api-keys', () => ({
   API_KEY_FALLBACKS_SETTING_KEY: 'api-key-fallbacks',
 }))
 
-import { fetch as fetchTauri } from '@tauri-apps/plugin-http'
-import { invoke } from '@tauri-apps/api/core'
+import { fetch as fetchTauri } from '@aphrody/plugin-http'
+import { invoke } from '@aphrody/api/core'
 import { EngineManager } from '@janhq/core'
 import { ExtensionManager } from '@/lib/extension'
 import { providerRemoteApiKeyChain } from '@/lib/provider-api-keys'

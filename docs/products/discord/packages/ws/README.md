@@ -28,9 +28,9 @@
 **Node.js 24.17.0 or newer is required.**
 
 ```sh
-npm install @discordjs/ws
+bun install @discordjs/ws
 yarn add @discordjs/ws
-pnpm add @discordjs/ws
+bun run add @discordjs/ws
 bun add @discordjs/ws
 ```
 

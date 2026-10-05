@@ -4,11 +4,11 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import type { ProviderObject } from '@janhq/core'
 import { ModelFactory } from '../model-factory'
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
-vi.mock('@tauri-apps/plugin-http', () => ({
+vi.mock('@aphrody/plugin-http', () => ({
   fetch: vi.fn(),
 }))
 

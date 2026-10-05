@@ -6,11 +6,11 @@ Object.defineProperty(globalThis, 'SETTINGS', {
   writable: true,
 })
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(),
 }))
 
-vi.mock('@tauri-apps/api/event', () => ({
+vi.mock('@aphrody/api/event', () => ({
   listen: vi.fn().mockResolvedValue(() => undefined),
   emit: vi.fn(),
 }))

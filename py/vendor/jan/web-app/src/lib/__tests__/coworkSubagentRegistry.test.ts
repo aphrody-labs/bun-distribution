@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }))
-vi.mock('@tauri-apps/api/core', () => ({ invoke }))
+vi.mock('@aphrody/api/core', () => ({ invoke }))
 
 import {
   listSubagents,

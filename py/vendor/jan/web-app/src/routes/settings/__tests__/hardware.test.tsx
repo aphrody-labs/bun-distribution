@@ -94,7 +94,7 @@ vi.mock('@/lib/utils', () => ({
   cn: (...classes: any[]) => classes.filter(Boolean).join(' '),
 }))
 vi.mock('@/utils/number', () => ({ toNumber: (n: number) => n }))
-vi.mock('@tauri-apps/api/webviewWindow', () => ({ WebviewWindow: vi.fn() }))
+vi.mock('@aphrody/api/webviewWindow', () => ({ WebviewWindow: vi.fn() }))
 vi.mock('@/constants/routes', () => ({ 
   route: { 
     settings: { 

@@ -62,9 +62,9 @@ trap 'cleanup' SIGINT
 
 # Run the linter and formatter for frontend
 # Use a background processes to avoid pnpm weird handling of CTRL+C
-pnpm run -r lint --fix &
+bun run --filter '*' lint --fix &
 wait
-pnpm run format &
+bun run format &
 wait
 
 # Format toml files

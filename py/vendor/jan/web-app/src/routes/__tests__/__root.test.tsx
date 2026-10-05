@@ -20,7 +20,7 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 // Tauri API
-vi.mock('@tauri-apps/api/webviewWindow', () => ({
+vi.mock('@aphrody/api/webviewWindow', () => ({
   getCurrentWebviewWindow: () => ({
     startDragging: vi.fn().mockResolvedValue(undefined),
   }),

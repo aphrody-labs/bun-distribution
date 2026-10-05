@@ -127,7 +127,7 @@ This handles everything: installs dependencies, builds core components, and laun
 ### Manual Commands
 
 ```bash
-yarn install
+bun install
 yarn build
 yarn dev
 ```

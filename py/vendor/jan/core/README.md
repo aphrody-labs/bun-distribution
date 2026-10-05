@@ -59,7 +59,7 @@ import * as core from '@janhq/core'
    1. Navigate to the extension directory.
    2. Install dependencies.
       ```bash
-      yarn install
+      bun install
       ```
    3. Compile the source code. The following command keeps running in the terminal and rebuilds the extension when you modify the source code.
       ```bash

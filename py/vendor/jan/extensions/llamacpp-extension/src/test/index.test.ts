@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import llamacpp_extension from '../index'
 import { fs, getJanDataFolderPath, joinPath } from '@janhq/core'
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import {
   readGgufMetadata,
   reloadEngineModels,
@@ -166,7 +166,7 @@ describe('llamacpp_extension', () => {
 
     it('should return model list when models exist', async () => {
       const { getJanDataFolderPath, joinPath, fs } = await import('@janhq/core')
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       
       // Set up providerPath first
       extension['providerPath'] = '/path/to/jan/llamacpp'
@@ -237,7 +237,7 @@ describe('llamacpp_extension', () => {
 
     it('should import model from URL', async () => {
       const { getJanDataFolderPath, joinPath, fs } = await import('@janhq/core')
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       const apiModule = await import('@janhq/tauri-plugin-llamacpp-api')
       vi.mocked(apiModule.readGgufMetadata).mockResolvedValue({
         version: 3,
@@ -270,7 +270,7 @@ describe('llamacpp_extension', () => {
 
   describe('load', () => {
     it('should throw error if model is already loaded', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockImplementation(async (cmd: string) => {
         if (cmd === 'plugin:llamacpp|find_session_by_model') {
           return {
@@ -288,7 +288,7 @@ describe('llamacpp_extension', () => {
 
     it('should load model successfully', async () => {
       const { getJanDataFolderPath, joinPath, fs } = await import('@janhq/core')
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
 
       vi.mocked(fs.existsSync).mockResolvedValue(true)
 
@@ -364,7 +364,7 @@ describe('llamacpp_extension', () => {
 
   describe('unload', () => {
     it('should throw error if no active session found', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockImplementation(async (cmd: string) => {
         if (cmd === 'plugin:llamacpp|find_session_by_model') {
           throw new Error('No active session found')
@@ -375,7 +375,7 @@ describe('llamacpp_extension', () => {
     })
 
     it('should unload model successfully', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       const apiModule = await import('@janhq/tauri-plugin-llamacpp-api')
 
       vi.mocked(invoke).mockImplementation(async (cmd: string) => {
@@ -405,7 +405,7 @@ describe('llamacpp_extension', () => {
 
   describe('chat', () => {
     it('should throw error if no active session found', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockImplementation(async (cmd: string) => {
         if (cmd === 'plugin:llamacpp|ensure_session_ready') {
           throw new Error('No active session found')
@@ -422,7 +422,7 @@ describe('llamacpp_extension', () => {
     })
 
     it('should handle non-streaming chat request', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
 
       vi.mocked(invoke).mockImplementation(async (cmd: string) => {
         if (cmd === 'plugin:llamacpp|ensure_session_ready') {
@@ -628,7 +628,7 @@ describe('llamacpp_extension', () => {
 
   describe('getLoadedModels', () => {
     it('should return list of loaded models', async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@aphrody/api/core')
       vi.mocked(invoke).mockImplementation(async (cmd: string) => {
         if (cmd === 'plugin:llamacpp|get_loaded_models') {
           return ['model1', 'model2']

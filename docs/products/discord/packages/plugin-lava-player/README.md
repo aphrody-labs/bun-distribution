@@ -43,7 +43,7 @@ lava player plugin for discordx bots.
 # 💻 Installation
 
 ```
-npm install @discordx/plugin-lava-player
+bun install @discordx/plugin-lava-player
 ```
 
 # ⚠️ Prerequisites

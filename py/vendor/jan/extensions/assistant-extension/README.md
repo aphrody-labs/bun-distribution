@@ -28,7 +28,7 @@ After you've cloned the repository to your local machine or codespace, you'll ne
 1. :hammer_and_wrench: Install the dependencies
 
    ```bash
-   yarn install
+   bun install
    ```
 
 1. :building_construction: Package the TypeScript for distribution

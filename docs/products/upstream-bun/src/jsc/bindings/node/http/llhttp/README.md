@@ -6,7 +6,7 @@ Keep this in sync with:
 - `packages/bun-types/overrides.d.ts`
 
 ```
-npm ci && make
+bun install && make
 ```
 
 then copy:

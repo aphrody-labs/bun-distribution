@@ -5,7 +5,7 @@ Bun is a fast all-in-one JavaScript runtime. https://bun.com
 ### Install
 
 ```sh
-npm install -g bun
+bun install -g bun
 ```
 
 ### Upgrade

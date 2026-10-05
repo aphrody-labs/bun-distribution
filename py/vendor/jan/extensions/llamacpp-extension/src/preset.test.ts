@@ -43,7 +43,7 @@ vi.mock('@janhq/core', () => ({
   joinPath: vi.fn(async (parts: string[]) => parts.join('/')),
 }))
 
-vi.mock('@tauri-apps/api/core', () => ({
+vi.mock('@aphrody/api/core', () => ({
   invoke: vi.fn(async (_cmd: string, args: { path: string }) => modelYamls[args.path]),
 }))
 

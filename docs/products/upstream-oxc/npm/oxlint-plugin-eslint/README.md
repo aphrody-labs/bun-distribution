@@ -13,7 +13,7 @@ More details in [Oxlint docs](https://oxc.rs/docs/guide/usage/linter/js-plugins)
 Install the package:
 
 ```sh
-npm install --save-dev oxlint-plugin-eslint
+bun install --save-dev oxlint-plugin-eslint
 ```
 
 Add to your Oxlint config:

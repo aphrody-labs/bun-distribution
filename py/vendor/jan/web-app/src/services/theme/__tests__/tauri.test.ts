@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('@tauri-apps/api/webviewWindow', () => ({
+vi.mock('@aphrody/api/webviewWindow', () => ({
   getAllWebviewWindows: vi.fn(),
 }))
-vi.mock('@tauri-apps/api/window', () => ({
+vi.mock('@aphrody/api/window', () => ({
   Theme: {},
 }))
 
-import { getAllWebviewWindows } from '@tauri-apps/api/webviewWindow'
+import { getAllWebviewWindows } from '@aphrody/api/webviewWindow'
 import { TauriThemeService } from '../tauri'
 
 const makeWindow = (label: string, setTheme = vi.fn().mockResolvedValue(undefined)) => ({

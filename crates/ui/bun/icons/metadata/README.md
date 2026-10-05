@@ -11,7 +11,7 @@ Metadata for Material Symbols.
 Install the [latest version][releases] using:
 
 ```sh
-npm install @material-symbols/metadata@latest
+bun install @material-symbols/metadata@latest
 ```
 
 ## Usage

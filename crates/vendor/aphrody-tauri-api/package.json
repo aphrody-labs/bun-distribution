@@ -1,0 +1,44 @@
+{
+  "name": "@aphrody/api",
+  "version": "3.0.0-alpha.2",
+  "description": "Tauri API definitions",
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/tauri"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tauri-apps/tauri.git"
+  },
+  "contributors": [
+    "Tauri Programme within The Commons Conservancy"
+  ],
+  "license": "Apache-2.0 OR MIT",
+  "bugs": {
+    "url": "https://github.com/tauri-apps/tauri/issues"
+  },
+  "homepage": "https://github.com/tauri-apps/tauri#readme",
+  "type": "module",
+  "main": "./index.cjs",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "import": "./index.js",
+      "require": "./index.cjs",
+      "types": "./index.d.ts"
+    },
+    "./*": {
+      "bun": "./src/*.ts",
+      "import": "./*.js",
+      "require": "./*.cjs",
+      "types": "./*.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "private": true
+}

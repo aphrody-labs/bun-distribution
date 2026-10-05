@@ -2,7 +2,7 @@
  * Tauri App Service - Desktop implementation
  */
 
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from '@aphrody/api/core'
 import { AppConfiguration } from '@janhq/core'
 import type { FactoryResetOptions, LogEntry } from './types'
 import { DefaultAppService } from './default'

@@ -7,7 +7,7 @@ Clone the code base into a local folder, `cd` into it, and install the dependenc
 ```bash
 git clone https://github.com/discordjs/discord.js.git
 cd discord.js/apps/guide
-pnpm --filter guide install
+bun run --filter guide install
 ```
 
 You can and should use `pnpm dev` to check your changes out locally before pushing them for review.

@@ -12,7 +12,7 @@ export function ThemeProvider() {
       document.documentElement.classList.remove('dark')
     }
     if (IS_LINUX && isPlatformTauri()) {
-      import('@tauri-apps/api/core')
+      import('@aphrody/api/core')
         .then(({ invoke }) => invoke('set_gtk_prefer_dark', { dark: isDark }))
         .catch((err) => console.error('set_gtk_prefer_dark failed:', err))
     }
@@ -39,8 +39,8 @@ export function ThemeProvider() {
       // XDG Desktop Portal. Source-of-truth is the Rust-side portal read +
       // SettingChanged signal, re-emitted as the `theme-changed` event.
       Promise.all([
-        import('@tauri-apps/api/event'),
-        import('@tauri-apps/api/core'),
+        import('@aphrody/api/event'),
+        import('@aphrody/api/core'),
       ])
         .then(async ([{ listen }, { invoke }]) => {
           const unlisten = await listen<string>('theme-changed', (event) => {

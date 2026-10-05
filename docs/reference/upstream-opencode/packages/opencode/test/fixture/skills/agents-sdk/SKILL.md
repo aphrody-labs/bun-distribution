@@ -51,7 +51,7 @@ npm ls agents  # Should show agents package
 If not installed:
 
 ```bash
-npm install agents
+bun install agents
 ```
 
 ## Wrangler Configuration

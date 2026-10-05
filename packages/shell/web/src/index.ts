@@ -143,7 +143,7 @@ export function sandboxTransport(
 /** Tauri bridge; `invoke`/`listen` come from `@tauri-apps/api` so this package stays dependency-free. */
 export interface TauriBridge {
   invoke(cmd: string, args?: Record<string, unknown>): Promise<unknown>;
-  /** Supply a `Channel` from `@tauri-apps/api/core` for streaming output. */
+  /** Supply a `Channel` from `@aphrody/api/core` for streaming output. */
   createChannel?(): { onmessage: (payload: TauriOutput) => void };
   listen(event: string, cb: (e: { payload: TauriOutput }) => void): Promise<() => void>;
 }

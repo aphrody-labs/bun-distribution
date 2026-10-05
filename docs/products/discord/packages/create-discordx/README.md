@@ -45,7 +45,7 @@ Create discordx apps with one command. Inspired by [create-next-app](https://git
 # 💻 Installation
 
 ```
-npx create-discordx
+create-discordx
 ```
 
 # 📜 Documentation

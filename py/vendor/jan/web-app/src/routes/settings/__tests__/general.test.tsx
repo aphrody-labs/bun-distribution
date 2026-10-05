@@ -217,16 +217,16 @@ vi.mock('@/hooks/useServiceHub', () => ({
 }))
 
 // Add tests for rfd dialog
-// vi.mock('@tauri-apps/plugin-dialog', () => ({
+// vi.mock('@aphrody/plugin-dialog', () => ({
 //   open: vi.fn(),
 // }))
 
-vi.mock('@tauri-apps/plugin-opener', () => ({
+vi.mock('@aphrody/plugin-opener', () => ({
   revealItemInDir: vi.fn(),
   openPath: vi.fn(),
 }))
 
-vi.mock('@tauri-apps/api/webviewWindow', () => {
+vi.mock('@aphrody/api/webviewWindow', () => {
   const MockWebviewWindow = vi
     .fn()
     .mockImplementation((label: string, options: any) => ({
@@ -240,7 +240,7 @@ vi.mock('@tauri-apps/api/webviewWindow', () => {
   }
 })
 
-vi.mock('@tauri-apps/api/event', () => ({
+vi.mock('@aphrody/api/event', () => ({
   emit: vi.fn(),
 }))
 

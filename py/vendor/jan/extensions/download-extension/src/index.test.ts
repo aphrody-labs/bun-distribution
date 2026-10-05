@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
+import { invoke } from '@aphrody/api/core'
+import { listen } from '@aphrody/api/event'
 import { logger } from '@janhq/core'
 import DownloadManager, { Settings } from './index'
 
