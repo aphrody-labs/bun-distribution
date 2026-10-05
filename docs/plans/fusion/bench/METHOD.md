@@ -1,6 +1,6 @@
 # Méthode du banc V8 / JSC : liste de comparabilité et seuils
 
-Version 1 du 2026-10-05, 22:19 (Europe/Paris), rédigée avant tout verdict ; annexe A ajoutée à 22:27. Tenue par l'arbitre `claude-bench-arbiter` ; journal en temps réel : partie 4 du plan, §13 (`docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md`). Reçu d'équivalence des symboles : `docs/plans/fusion/engine-equivalence-2026-10-05.json` (`scripts/audit/engine-equivalence.ts`).
+Version 1.1 du 2026-10-05, 22:49 (Europe/Paris) ; la version 1.0 de 22:19 a été rédigée avant tout verdict (voir « Révisions de la méthode » en fin de fichier). Tenue par l'arbitre `claude-bench-arbiter` ; journal en temps réel : partie 4 du plan, §13 (`docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md`). Reçu d'équivalence des symboles : `docs/plans/fusion/engine-equivalence-2026-10-05.json` (`scripts/audit/engine-equivalence.ts`).
 
 Règle d'or : **un chiffre `indicatif` ou `invalide` ne change jamais une décision du §12.** Un chiffre de vitesse ne peut jamais, seul, lever la directive « V8 conservé jusqu'à la parité » (§12 #8) : il peut seulement faire échouer le portage JSC sur un critère de performance. Seule la suite de parité (tests `runtime.rs`, `obscura-cdp`, 119 tests `Bun.WebView`, obstacles, WPT) et les sondes de capacité peuvent lever V8.
 
@@ -29,11 +29,11 @@ Limite assumée : le Deno officiel et Obscura consomment la même version de sou
 | C3 | Même source de charge, octet pour octet | sha256 du fichier ; entrées issues d'un PRNG à graine fixe ; sorties (sommes de contrôle) identiques sur les deux moteurs, sinon `invalide` |
 | C4 | Builds de production des deux côtés | pas de debug, pas d'ASAN ; reçu du forge `profile: release, lto: true` |
 | C5 | JIT dans le même état | défaut des deux (DFG/FTL contre Maglev/TurboFan) ou désactivé des deux (`BUN_JSC_useJIT=0` et `--v8-flags=--jitless`) ; variables et drapeaux consignés |
-| C6 | Échauffement puis ≥ 10 itérations mesurées | min, médiane, p95 ; la première itération (à froid) est rapportée à part |
-| C7 | Hôte calme, relevé avant et après | `uptime` (charge 1/5/15 min), gouverneur CPU (`n/d` si absent : WSL et VM n'en exposent pas), noyau, RAM libre, vol CPU ; verrous d'usine libres (`/srv/aphrody-build/locks`) ; `nice -n 10` ; les deux moteurs dans la même session sur le même hôte, exécutions entrelacées (A, B, A, B…) |
+| C6 | Échauffement puis ≥ 10 itérations mesurées | min, médiane, p95 ; la première itération (à froid) est rapportée à part ; stationnarité contrôlée (médiane de la 1re moitié des mesures contre la 2de : écart ≤ 5 % par moteur, ou dérive commune aux deux moteurs, auquel cas le rapport reste interprétable et les absolus non) ; 3 échauffements ne suffisent pas pour `compute` sous V8 (révision 1.1) |
+| C7 | Hôte calme, relevé avant et après | `uptime` (charge 1/5/15 min), gouverneur CPU (`n/d` si absent : WSL et VM n'en exposent pas), noyau, RAM libre, vol CPU ; verrous d'usine libres, vérifiés par `flock -n` sur chaque `*.lock` (le fichier existe toujours, sa présence ne prouve rien ; `/srv/aphrody-build/locks` sur le VPS, `/home/ubuntu/aphrody-build/locks` sur dbfr) ; `nice -n 10` ; les deux moteurs dans la même session sur le même hôte, exécutions entrelacées (A, B, A, B…) |
 | C8 | Démarrage processus, création d'isolat, création de realm supplémentaire et évaluation de `bootstrap.js` mesurés séparément | §4, mesures S1 à S4 |
 | C9 | Chemin chronométré sans API propre au runtime | uniquement ECMAScript et API Web identiques ; pas de `Bun.*`, `Deno.*`, `node:*` dans la boucle chronométrée ; E/S et chargement de module hors chronomètre. Sinon la mesure est de la voie « runtime » (R), jamais utilisée pour #8, #16, #17 |
-| C10 | RSS crête et réglages GC par défaut consignés | `process.memoryUsage().rss` / `Deno.memoryUsage().rss`, `VmHWM` |
+| C10 | RSS crête et réglages GC par défaut consignés | `process.memoryUsage().rss` / `Deno.memoryUsage().rss`, `VmHWM` lu dans l'enfant avant sa sortie ; **pas `resourceUsage().maxRSS` du parent** : sous Linux le `ru_maxrss` d'un enfant lancé par fork inclut le RSS du parent au moment du lancement (reproduit : enfant minuscule d'un parent de 260 Mo, 275 Mo rapportés ; 263,65234375 Mo identiques pour 10 couples charge/runtime dans le résultat de 22:25) (révision 1.1) |
 | C11 | Asymétrie de snapshot déclarée | V8 : snapshot de démarrage de `bootstrap.js` (17 932 lignes) restauré par `create_snapshot`/`startup_snapshot`, mesurable seulement avec le vrai runtime d'Obscura ; JSC : évaluation au démarrage avec ou sans cache de bytecode. Une comparaison « Deno sans snapshot » contre JSC ne dit rien du snapshot d'Obscura |
 | C12 | Capacités (limite de tas, arrêt) testées comme sondes PASS/FAIL, pas comme vitesse | §5 |
 | C13 | Intégrité des compétiteurs : fichiers de l'arbitre inchangés (sha256), pas de traitement spécial de la somme de contrôle, même complexité algorithmique | hachage avant et après ; relecture de la différence |
@@ -44,10 +44,10 @@ Verdicts : `valide` (C1 à C14 tous PASS), `indicatif` (utilisable comme indice 
 ## 3. Protocole commun
 
 1. Relever l'hôte avant : `uptime`, `/proc/loadavg`, `nproc`, mémoire, noyau, état des verrous, version de glibc.
-2. Hôte calme (proposé) : charge 1 min ≤ 0,17 par vCPU (≤ 2,0 sur les 12 vCPU du VPS), aucun processus tiers au-dessus de 10 % de CPU pendant les 60 s précédentes, vol CPU < 2 %, aucun `heavy.lock` ni `cargo-build.lock` tenu. Sinon : attendre, ou rendre le verdict `indicatif` (C7).
+2. Hôte calme (proposé) : charge 1 min ≤ 0,17 par vCPU (≤ 2,0 sur les 12 vCPU du VPS), aucun processus tiers au-dessus de 10 % de CPU pendant les 60 s précédentes, vol CPU < 2 %, aucun `heavy.lock` ni `cargo-build.lock` tenu (`flock -n`). Sinon : attendre, ou rendre le verdict `indicatif` (C7).
 3. Chaque moteur : ≥ 5 processus frais (proposé) ; dans chacun, échauffement (≥ 3 itérations jetées) puis ≥ 10 itérations mesurées. Démarrage processus : `hyperfine --warmup 5 --runs ≥ 30` (100 pour le budget du noyau, partie 1).
-4. Statistique : min, médiane, p95 et écart absolu médian (MAD). Une différence n'est rapportée comme réelle que si l'écart des médianes dépasse max(5 %, 3 × MAD) et que les plages [min, p95] ne se chevauchent pas (proposé).
-5. Relever l'hôte après ; si la charge a plus que doublé ou si le vol CPU dépasse 2 % : `invalide` pour cette session.
+4. Statistique : min, médiane, p95 et écart absolu médian (MAD). Une différence n'est rapportée comme réelle que si l'écart des médianes dépasse max(5 %, 3 × MAD) et que les plages [min, p95] ne se chevauchent pas (proposé ; règle de pré-contrôle de l'arène, conservatrice sur échantillons regroupés). Les itérations d'un même processus ne sont pas indépendantes : pour le verdict, l'unité statistique est le processus (médiane par processus, test exact de somme des rangs sur les médianes ; avec 5 processus par côté, p minimal 0,0079 quand les plages sont disjointes) (révision 1.1).
+5. Relever l'hôte après. La charge à 1 min relevée après la mesure inclut le banc lui-même (un fil actif ajoute environ 1) : elle ne sert pas de critère. Critères : vol CPU < 2 % de la durée, et temps CPU hors banc (`user` hors `nice` dans `/proc/stat`, le banc tournant à nice 10) ≤ 5 % d'un vCPU sur la durée ; sinon `invalide` pour cette session (révision 1.1 ; le critère d'origine « charge plus que doublée » comptait le banc).
 6. Une session de banc ≤ 5 minutes ; au plus trois sessions sans accord de `main`.
 
 ## 4. Métriques, décisions informées et seuils
@@ -64,6 +64,7 @@ Verdicts : `valide` (C1 à C14 tous PASS), `indicatif` (utilisable comme indice 
 | S6 | RSS par page (realm JSC contre isolat V8) | partie 3 « RSS par page » (mesuré en J2 sans objectif) | consigné ; ≤ 1,5 × V8 | > 2 × V8 | `proposé` |
 | S7 | Coût d'un appel d'op synchrone (10⁶ appels) : fonction hôte JSC contre op rapide `deno_core` | #17, §11.4 ligne fonctions hôtes | JSC ≤ 1,5 × V8 | > 3 × | `proposé` ; **non mesurable** avec les binaires Bun/Deno seuls : demande un harnais Rust sur le VPS (`obscura-js`) |
 | E1 | Voie moteur : charge pure (`arena/shared/compute.js` : nbody, fannkuch, collections, texte, tri), moyenne géométrique JSC/V8 sur les médianes | information pour #8 (jamais décisive) | ≤ 1,25 neutre | > 2,0 sur une charge : alerte documentée | `proposé` |
+| E2 | Voie moteur : intégrées ECMAScript (`json` : `JSON.stringify` + `JSON.parse`, source identique des deux côtés, `de5a0c2f7fca`), rapport JSC/V8 | information pour #8 (jamais décisive) | ≤ 1,25 neutre | > 2,0 sur une charge : alerte documentée | `proposé` |
 | R1 | Voie runtime (API `Bun.*` contre `Deno.*`) | aucune décision (compare des runtimes, pas des moteurs) | — | — | — |
 
 ## 5. Sondes de capacité (PASS/FAIL, pas de vitesse)
@@ -100,3 +101,9 @@ Sources : `vendor/bun/scripts/showcase/bun-core.ts` (54 vérifications) et `bun-
 | `bun-core.ts` · runtime (16) | « Bun.gc & heapStats », « bun:jsc serialize / describe / mémoire », « bun:jsc JIT », « Worker (thread JS + VM enfant) » | S2 (VM d'un Worker) ; lignes limite de tas et contextes | existence des API |
 | node (2) | « fs / path / Buffer / zlib / crypto / vm / child_process » | `node:vm` : contextes isolés, cache de bytecode, interruption ; essai d'une heure (#14), mesures S3 et S4 | à exercer pour de bon |
 | runtime (12 autres), net (7), compile (7), data (8), crypto (5), webcore (5), ffi (3), test (1) | — | voie R : bibliothèques de runtime | aucune décision V8/JSC |
+
+## Révisions de la méthode
+
+- **1.1 (2026-10-05, 22:49)**, après examen des bancs B1 et B2 sur dbfr ; aucun seuil de décision n'est modifié, aucun verdict déjà rendu n'est rendu plus favorable. (1) Critère d'hôte calme d'après-banc : la charge à 1 min inclut le banc, remplacée par le vol CPU et le temps CPU hors banc (§3, point 5) ; (2) unité statistique = le processus, test exact sur les médianes de processus (§3, point 4) ; (3) stationnarité contrôlée, 3 échauffements insuffisants sous V8 pour `compute` (C6) ; (4) RSS : ne pas lire `resourceUsage().maxRSS` du parent, lire `VmHWM` dans l'enfant (C10) ; (5) verrous d'usine testés par `flock -n`, pas par la présence du fichier (C7) ; (6) voie E2 ajoutée (`json`, source identique des deux côtés).
+  Le mode `--quick` de l'arène (3 mesures, 1 échauffement) est réservé à l'optimisation des concurrents et n'est jamais cité : il inverse le signe de `compute` par rapport à 10 mesures (journal §13, 22:47).
+- **1.0 (2026-10-05, 22:19)** : version initiale, écrite avant tout verdict.
