@@ -10,7 +10,6 @@
  * Only the process this script starts is stopped (by PID, with its child tree). The app keeps
  * using the real per-user data directories; it never enables autostart on its own.
  */
-import { spawn, spawnSync } from "node:child_process";
 import { mkdir, open } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
@@ -111,20 +110,22 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
   await mkdir(logDir, { recursive: true });
   const stdout = await open(join(logDir, "stdout.log"), "w");
   const stderr = await open(join(logDir, "stderr.log"), "w");
-  const child = spawn(exe, [], {
+  let exitCode: number | null = null;
+  const started = Date.now();
+  const child = Bun.spawn([exe], {
     env: {
       ...process.env,
       WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port} --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding`,
     },
-    stdio: ["ignore", stdout.fd, stderr.fd],
-  });
-  let exitCode: number | null = null;
-  const started = Date.now();
-  child.on("exit", (code, signal) => {
-    exitCode = code ?? -1;
-    console.log(
-      `process exited after ${((Date.now() - started) / 1000).toFixed(1)}s (code ${code}, signal ${signal})`,
-    );
+    stdin: "ignore",
+    stdout: stdout.fd,
+    stderr: stderr.fd,
+    onExit(_process, code, signal) {
+      exitCode = code ?? -1;
+      console.log(
+        `process exited after ${((Date.now() - started) / 1000).toFixed(1)}s (code ${code}, signal ${signal})`,
+      );
+    },
   });
   console.log(`started ${exe} (pid ${child.pid}); logs in ${logDir}`);
 
@@ -148,9 +149,9 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
   const alive = exitCode === null;
 
   for (const ws of sockets) ws.close();
-  if (alive && child.pid !== undefined) {
+  if (alive) {
     if (process.platform === "win32")
-      spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"]);
+      Bun.spawnSync(["taskkill", "/PID", String(child.pid), "/T", "/F"]);
     else child.kill("SIGTERM");
   }
   await stdout.close();

@@ -39,7 +39,6 @@ export * as host from "./host";
 export * as units from "./units";
 export * as pm from "./pm";
 export * as python from "./python";
-export * as workspace from "./workspace";
 export {
   planPackageSync,
   syncPackages,

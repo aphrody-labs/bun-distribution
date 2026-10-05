@@ -88,8 +88,11 @@ restent des alias de compatibilité jusqu'à qualification.
   sous-processus. Démos/tests → `examples/` (`paint_file`, `a2a_duel_loop`, `mcp_smoke`, `shell_e2e`).
   Restent : outillage amont Tauri (`cargo-tauri`, `tauri-driver`, …), `rag-eval` (claim purge).
 - [~] **CLI Bun** — `yolo` absorbe `ops`, `workspace`, `optimize`, `update`, `google` (drive, fonts),
-  `doc-ai`, `browser` (agent-browser) in-process ; `aphrody-ovh` Bun retiré au profit de `aphrody ovh`.
-  Les liens `aphrody-{ops,optimize,workspace}` restent exécutables tant que des consommateurs les appellent.
+  `doc-ai`, `browser` (agent-browser), `forge` (ex-`bun-forge`, bin retiré) et `m3` in-process : `yolo m3` = CLI
+  framework, `yolo m3 next|bun|os-themes|next-migrate|svg-to-ico|web-to-tauri|scaffold` = outils des paquets m3
+  (leurs `bin` npm restent pour les consommateurs externes ; usages internes repointés). `aphrody-ovh` Bun
+  retiré au profit de `aphrody ovh`. Les liens `aphrody-{ops,optimize,workspace}` restent exécutables tant que
+  des consommateurs les appellent.
 - [~] **App desktop** — une seule app `aphrody-app` : `yolo-desktop` (hôte runtime `--runtime-host`,
   protocole `yolo.desktop/1` inchangé) et `m3-showcase` (`--showcase`, sidecar Bun) absorbés,
   `tauri-e2e` → exemple `shell_e2e`.
@@ -100,15 +103,16 @@ restent des alias de compatibilité jusqu'à qualification.
   `py/packages/aphrody/native` restent des modules d'extension Python (PyO3), pas des cdylib C.
 - [~] **MCP** — un seul serveur `aphrody-mcp` : `aphrody-tauri-mcp` retiré (14 outils déjà servis par
   `aphrody-mcp`, appel `aphrody_webview_*` corrigé), `aphrody-mcp-smoke` → exemple `mcp_smoke`, boucles
-  stdio/HTTP mortes d'`obscura-mcp` retirées (bibliothèque d'outils seule) ; restent `aphrody-kernel mcp`
-  (point d'entrée plugin, proxie `aphrody-mcp`), `yolo mcp` et `m3-mcp` (Bun) ; `mcp-client` et `mcp-oauth`
-  restent des bibliothèques.
+  stdio/HTTP mortes d'`obscura-mcp` retirées (bibliothèque d'outils seule). Un seul point d'entrée plugin :
+  `aphrody kernel mcp` proxie `aphrody-mcp` et attache `yolo mcp` (`yolo_*`) et `m3-mcp` (`m3_*`) comme
+  sous-systèmes (désactivables par `APHRODY_{YOLO,M3}_MCP_BIN=` vide) ; les plugins `aphrody`/`yolo` ne
+  déclarent plus que ce serveur. `mcp-client` et `mcp-oauth` restent des bibliothèques.
 - Gate : chaque fusion est qualifiée par `cargo check`/tests via la factory (révision épinglée) ou
   `bun test`, puis l'ancien crate/package est supprimé. Aucune fusion sans gate.
 
 ## 6. Bun au centre (directive propriétaire du 2026-10-05)
 
-Bun est le runtime central ; le fork `aphrody-labs/bun` (branche `yolo`, `vendor/bun`, pin dans
+Bun est le runtime central ; le fork `aphrody-labs/bun` (branche unique `main` : amont + correctifs Aphrody, `vendor/bun`, pin dans
 `config/vendor.json`) absorbe les bibliothèques JS/TS au niveau du résolveur, comme Bun le fait déjà
 pour `ws`, `undici` et `node-fetch` (`src/js/thirdparty` + `src/resolve_builtins/HardcodedModule.rs`).
 Ce qui ne sert ni la production ni ce but sort du dépôt.
@@ -126,7 +130,7 @@ paquets `fork` déclarés).
   sur machine vierge (apt avec sudo ; LLVM 23.1.1, cmake, rustup dans son cache, sans root), crée une
   partition temporaire par commit (loop ext4, tmpfs ou répertoire), y extrait un worktree du miroir partiel
   et construit `scripts/build.ts --profile=release` ; `watch` construit chaque nouveau commit de la branche
-  surveillée (`yolo`, branche de production et branche par défaut du fork ; `main` = miroir amont) ; reçu JSON, binaire et sha256 par commit.
+  surveillée (`main`, branche unique et par défaut du fork depuis le 2026-10-05 : amont + correctifs Aphrody) ; reçu JSON, binaire et sha256 par commit.
 - [~] Activation : premier build complet du fork par `bun-forge` sur la factory fait (yolo `954db0c0`,
   7 min 10 s, Bun 1.4.3, les 5 spécifiers absorbés résolus en natif) ; restent l’installation du runtime
   (glibc 2.43 : WSL Ubuntu 26.04), puis `--fork-active` et le retrait des déclarations `fork`.

@@ -114,6 +114,27 @@
       "targetHost": "vps"
     },
     {
+      "service": "aphrody-ovh-watch",
+      "unit": "aphrody-ovh-watch.service",
+      "path": "systemd/aphrody/aphrody-ovh-watch.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "net-inet-only"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-ovh-watch",
+      "unit": "aphrody-ovh-watch.timer",
+      "path": "systemd/aphrody/aphrody-ovh-watch.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "aphrody-ovh-watch.service"
+    },
+    {
       "service": "nie-model-serve",
       "unit": "nie-model-serve.service",
       "path": "systemd/nie/nie-model-serve.service",

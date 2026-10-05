@@ -6,7 +6,6 @@ import { basename, join, relative, resolve, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 import { suffix } from "bun:ffi";
-import { spawn, spawnSync } from "node:child_process";
 
 interface CargoPackage {
   id: string;
@@ -29,24 +28,20 @@ async function execute(
 ): Promise<{ stdout: string; stderr: string; code: number }> {
   signal.throwIfAborted();
   // Each invocation owns its process group, including Cargo/rustc descendants.
-  const child = spawn(command[0]!, command.slice(1), {
+  const child = Bun.spawn(command, {
     cwd,
     env,
     detached: process.platform !== "win32",
-    stdio: ["ignore", "pipe", inheritStderr ? "inherit" : "pipe"],
-  });
-  let stdout = "";
-  let stderr = "";
-  child.stdout?.setEncoding("utf8").on("data", (chunk: string) => {
-    stdout += chunk;
-  });
-  child.stderr?.setEncoding("utf8").on("data", (chunk: string) => {
-    stderr += chunk;
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: inheritStderr ? "inherit" : "pipe",
   });
   const stop = () => {
-    if (!child.pid) return;
     if (process.platform === "win32") {
-      spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+      Bun.spawnSync(["taskkill", "/PID", String(child.pid), "/T", "/F"], {
+        stdout: "ignore",
+        stderr: "ignore",
+      });
     } else {
       try {
         process.kill(-child.pid, "SIGKILL");
@@ -57,13 +52,14 @@ async function execute(
   };
   signal.addEventListener("abort", stop, { once: true });
   try {
-    const code = await new Promise<number>((resolveExit, reject) => {
-      child.once("error", reject);
-      child.once("close", (exitCode) => resolveExit(exitCode ?? 1));
-      if (signal.aborted) stop();
-    });
+    if (signal.aborted) stop();
+    const [stdout, stderr] = await Promise.all([
+      new Response(child.stdout).text(),
+      child.stderr instanceof ReadableStream ? new Response(child.stderr).text() : "",
+      child.exited,
+    ]);
     signal.throwIfAborted();
-    return { stdout, stderr, code };
+    return { stdout, stderr, code: child.exitCode ?? 1 };
   } finally {
     signal.removeEventListener("abort", stop);
     if (child.exitCode === null && child.signalCode === null) stop();

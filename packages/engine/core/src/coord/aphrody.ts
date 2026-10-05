@@ -12,7 +12,6 @@
  */
 import { diskDecision, diskProbeCommand, resolveMinFree } from "../fleet/space";
 import { parsePolicy } from "../fleet/safety";
-import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -35,9 +34,12 @@ export function onPath(bin: string): boolean {
 }
 
 function run(cmd: readonly string[], cwd: string, env: NodeJS.ProcessEnv = {}): number {
-  const [bin, ...rest] = cmd as [string, ...string[]];
-  const result = spawnSync(bin, rest, { cwd, stdio: "inherit", env: { ...process.env, ...env } });
-  return result.status ?? 1;
+  const result = Bun.spawnSync([...cmd], {
+    cwd,
+    stdio: ["inherit", "inherit", "inherit"],
+    env: { ...process.env, ...env },
+  });
+  return result.exitCode ?? 1;
 }
 
 interface Factory {
@@ -75,7 +77,9 @@ export function buildFactoryInfo(): (Factory & { cacheRoot?: string }) | null {
 }
 
 const git = (cwd: string, ...args: string[]): string =>
-  spawnSync("git", args, { cwd, encoding: "utf8" }).stdout.trim();
+  Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" })
+    .stdout.toString()
+    .trim();
 
 export function remotePaths(factory: Factory, sha: string) {
   // sibling of the other first-party workspaces: <workspaces>/yolo
@@ -375,10 +379,15 @@ async function runShip(args: readonly string[], yoloRoot: string): Promise<numbe
     const logDir = join(yoloRoot, "var/ship");
     mkdirSync(logDir, { recursive: true });
     const fd = openSync(join(logDir, `${sha.slice(0, 12)}.log`), "a");
-    const child = spawn(
-      process.execPath,
-      [...process.argv.slice(1).filter((a) => a !== "--detach"), "--apply", "--sha", sha],
-      { cwd: yoloRoot, detached: true, stdio: ["ignore", fd, fd] },
+    const child = Bun.spawn(
+      [
+        process.execPath,
+        ...process.argv.slice(1).filter((a) => a !== "--detach"),
+        "--apply",
+        "--sha",
+        sha,
+      ],
+      { cwd: yoloRoot, detached: true, stdin: "ignore", stdout: fd, stderr: fd },
     );
     child.unref();
     console.log(`yolo ship ${sha.slice(0, 12)} started in the background (var/ship)`);

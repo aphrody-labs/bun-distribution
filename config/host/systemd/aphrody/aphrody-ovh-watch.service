@@ -13,6 +13,9 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
+# aphrody infra writes its run manifests under <working directory>/var/runs.
+StateDirectory=aphrody-ovh-watch
+WorkingDirectory=/var/lib/aphrody-ovh-watch
 EnvironmentFile=/etc/aphrody/ovh.env
 EnvironmentFile=-/etc/aphrody/notify.env
 # Exit status: 0 healthy, 1 alerts (notified), 2 error.
@@ -24,10 +27,9 @@ SyslogIdentifier=aphrody-ovh-watch
 # No restart; timer handles scheduling.
 RemainAfterExit=no
 
-# Sandbox: no state mutation, no access to home directories.
-ProtectSystem=strict
+# Sandbox (with the run-as-ubuntu, sandbox-base and net-inet-only drop-ins): only the state
+# directory is writable, home directories are hidden.
 ProtectHome=yes
-ReadWritePaths=/var/log/journal
 
 [Install]
 WantedBy=multi-user.target

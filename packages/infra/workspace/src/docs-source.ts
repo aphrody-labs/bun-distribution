@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFile, realpath } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
@@ -160,25 +159,19 @@ print(json.dumps(dict(doc=ast.get_docstring(tree, clean=False), items=items)))
 `;
 
 async function pythonReference(text: string): Promise<string> {
-  const stdout = await new Promise<string>((resolveOutput, reject) => {
-    const child = spawn("python3", ["-I", "-c", PYTHON_AST], { stdio: ["pipe", "pipe", "pipe"] });
-    let output = "";
-    let error = "";
-    child.stdout.setEncoding("utf8").on("data", (chunk: string) => {
-      output += chunk;
-    });
-    child.stderr.setEncoding("utf8").on("data", (chunk: string) => {
-      error += chunk;
-    });
-    child.on("error", reject);
-    child.stdin.on("error", reject);
-    child.on("close", (code) =>
-      code === 0
-        ? resolveOutput(output)
-        : reject(new Error(`Python AST extraction failed: ${error.trim()}`)),
-    );
-    child.stdin.end(text);
+  const child = Bun.spawn(["python3", "-I", "-c", PYTHON_AST], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "pipe",
   });
+  child.stdin.write(text);
+  void child.stdin.end();
+  const [stdout, error, code] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  if (code !== 0) throw new Error(`Python AST extraction failed: ${error.trim()}`);
   const parsed = JSON.parse(stdout) as {
     doc: string | null;
     items: Array<{ name: string; line: number; signature: string; doc: string | null }>;

@@ -44,6 +44,20 @@ release du codegen `bundle-modules.ts`. Limites : aucun build ni `bun bd test` d
 local échoue faute des dépendances natives `vendor/lolhtml` du build Bun) ; runtime installé = Bun 1.4.2
 officiel, donc absorption non active.
 
+Synchro amont 2026-10-05 : `aphrody-labs/bun:main` avancé de 31 commits sur `oven-sh/bun` (`9bd19c98e`,
+API `merge-upstream`, avance rapide) ; `yolo` avait 5 commits propres et 7 de retard (base `aa8307619`) ;
+aucun fichier commun, fusion `c439b6fbd` (aphrody-dev) poussée sans forcer → `yolo` 6 devant, 0 derrière.
+Amont intégré : mimalloc 3.5.3, WebKit (mémoire des threads JSC inactifs), TLS fetch par connexion,
+correctifs SQL postgres/mysql. Limites : non qualifié (`yolo forge build` pas encore lancé sur le VPS) ;
+pin `config/vendor.json` laissé à `954db0c03` jusqu'à qualification.
+Branche unique (demande propriétaire « merge tout sur main », 2026-10-05) : `main` du fork avancé
+rapidement sur `c439b6fbd`, branche par défaut GitHub `yolo` → `main`, `yolo` supprimée ; `bun-forge`
+(`config/bun-forge.json`), `yolo.just` et le moteur `scripts/tools/vendor/bun_upstream_sync.ts` suivent `main`
+(fusion de `upstream/main` dans `main`). Monorepo : `dedup/single-surface`, `wip/pre-consolidation-20261005`
+et `yolo` fusionnés (`13b20f268`, contenu de `main` conservé : déjà déplacé ou remplacé), seuls manques
+récupérés (`af891361f` : `deny.toml`, frontends des exemples Tauri m3, index des templates) ; toutes les
+autres branches locales et distantes supprimées, il ne reste que `main`.
+
 ## M3 and app transport — 2026-10-05
 
 Owner-directed relocation: `m3/` replaces `design/aphrody-m3/`. Git history,

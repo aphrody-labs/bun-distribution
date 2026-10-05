@@ -37,8 +37,7 @@
     "./monitor": "./src/monitor/index.ts",
     "./pm": "./src/pm/index.ts",
     "./compiler": "./src/compiler/index.ts",
-    "./python": "./src/python/index.ts",
-    "./workspace": "./src/workspace/index.ts"
+    "./python": "./src/python/index.ts"
   },
   "publishConfig": {
     "access": "public"
