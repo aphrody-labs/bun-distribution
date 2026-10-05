@@ -2,7 +2,6 @@
 name = "obscura-mcp"
 description = "Aphrody platform crate obscura-mcp."
 version = "0.1.0"
-build = "build.rs"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/h4ckf0r0day/obscura"

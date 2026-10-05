@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Debug bridge for Tauri 3 apps, driven by `aphrody-web` and `aphrody-tauri-mcp`. It was the
+//! Debug bridge for Tauri 3 apps, driven by `aphrody-web` and the `aphrody_tauri_*` tools of
+//! `aphrody-mcp`. It was the
 //! `aphrody-tauri-debug` crate; the discovery file schema `aphrody-tauri-debug/1` and the
 //! `APHRODY_TAURI_DEBUG*` variables are wire contracts and keep their names.
 //!
@@ -22,7 +23,7 @@
 //! `APHRODY_TAURI_DEBUG_PORT` is set), rejects non-loopback `Host`/`Origin` headers and requires a
 //! random per-process token. The URL, token and process id are written to a `0600` discovery file
 //! under `<APHRODY_HOME or ~/.aphrody>/web/tauri-debug/`, which `@aphrody/agent-browser/tauri`
-//! and `aphrody-tauri-mcp` read. No capability or permission is needed in the host app.
+//! and `aphrody-mcp` read. No capability or permission is needed in the host app.
 //!
 //! An app that only wants the bridge depends on the crate with
 //! `default-features = false, features = ["debug-bridge"]`: the bundle server and its HTTP stack

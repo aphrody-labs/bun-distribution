@@ -1,14 +1,14 @@
 // aphrody addition (not upstream): an in-process API over this crate's MCP
 // surface, so a host MCP server (aphrody-mcp) can publish and run every
-// Obscura browser tool without the stdio/HTTP JSON-RPC loop. It reuses the
-// crate's own `dispatch`, so tool behaviour stays exactly upstream's.
+// Obscura browser tool in process; the upstream stdio/HTTP JSON-RPC loops are
+// removed (aphrody-mcp is the only MCP server). Tool handlers stay upstream's.
 //
 // `BrowserState` holds a V8 isolate and is `!Send`: callers keep it on one
 // thread (a current-thread runtime / LocalSet).
 
 use serde_json::{Value, json};
 
-use crate::{BrowserState, dispatch};
+use crate::{BrowserState, handle_tool_call};
 
 /// Every tool this build serves, as MCP tool descriptors
 /// (`name`, `description`, `inputSchema`). Includes `browser_screenshot` and
@@ -28,7 +28,7 @@ pub fn tools() -> Vec<Value> {
 /// (`{ content: [...], isError? }`), or a JSON-RPC error message.
 pub async fn call(state: &mut BrowserState, name: &str, arguments: Value) -> Result<Value, String> {
     let params = json!({ "name": name, "arguments": arguments });
-    let response = dispatch("tools/call", json!(0), &params, state).await;
+    let response = handle_tool_call(json!(0), &params, state).await;
     if let Some(error) = response.error {
         return Err(error.message);
     }

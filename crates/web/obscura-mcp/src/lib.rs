@@ -3,7 +3,6 @@
 // limit (128) overflows. Bumping for this crate only.
 #![recursion_limit = "512"]
 
-pub mod http;
 // aphrody addition: in-process API for host MCP servers (see aphrody.rs).
 pub mod aphrody;
 
@@ -14,26 +13,14 @@ use anyhow::Result;
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use obscura_browser::{BrowserContext, Page};
 use obscura_dom::NodeId;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::{Value, json};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 /// Cap on text returned to the agent unless the caller passes a larger
 /// `max_chars`. Agents waste context on multi-KB raw page dumps; this
 /// keeps a single tool call from burning a window's worth of tokens.
 /// Override via tool args.
 const DEFAULT_TEXT_LIMIT: usize = 4000;
-
-#[derive(Deserialize)]
-struct RpcMessage {
-    #[allow(dead_code)]
-    jsonrpc: String,
-    #[serde(default)]
-    id: Option<Value>,
-    method: String,
-    #[serde(default)]
-    params: Value,
-}
 
 #[derive(Serialize)]
 struct RpcResponse {
@@ -155,10 +142,6 @@ impl BrowserState {
         self.tabs.remove(tab_id).is_some()
     }
 
-    fn has_active_page_runtime(&self) -> bool {
-        self.active_tab.as_ref().and_then(|tab_id| self.tabs.get(tab_id)).is_some_and(Page::has_js)
-    }
-
     /// Advance the active page by one wake-driven browser task and immediately
     /// consume any navigation that task queued. MCP owns its pages continuously,
     /// so leaving either half for the next tool call strands timers, fetches,
@@ -223,105 +206,6 @@ impl BrowserState {
         }
         Ok(format!("[data-obscura-ref=\"{r}\"]"))
     }
-}
-
-pub(crate) async fn dispatch(
-    method: &str,
-    id: Value,
-    params: &Value,
-    state: &mut BrowserState,
-) -> RpcResponse {
-    match method {
-        "initialize" => handle_initialize(id, params),
-        "ping" => RpcResponse::ok(id, json!({})),
-        "tools/list" => handle_tools_list(id),
-        "tools/call" => handle_tool_call(id, params, state).await,
-        "resources/list" => RpcResponse::ok(id, json!({"resources": []})),
-        "prompts/list" => RpcResponse::ok(id, json!({"prompts": []})),
-        _ => RpcResponse::err(id, -32601, format!("Unknown method: {method}")),
-    }
-}
-
-pub async fn run(proxy: Option<String>, user_agent: Option<String>, stealth: bool) -> Result<()> {
-    let stdin = tokio::io::stdin();
-    let stdout = tokio::io::stdout();
-    let mut reader = BufReader::new(stdin);
-    let mut writer = stdout;
-
-    let mut state = BrowserState::new(proxy, user_agent, stealth);
-    let mut runtime_pump_armed = false;
-
-    loop {
-        // MCP stdio transport: newline-delimited JSON (one message per line)
-        let mut line = String::new();
-        let n = if runtime_pump_armed {
-            tokio::select! {
-                biased;
-                read = reader.read_line(&mut line) => Some(read?),
-                pump_result = state.advance_active_page_tasks() => {
-                    match pump_result {
-                        Ok(reached_idle) => runtime_pump_armed = !reached_idle,
-                        Err(error) => {
-                            runtime_pump_armed = false;
-                            eprintln!("MCP page task failed: {error}");
-                        }
-                    }
-                    None
-                }
-            }
-        } else {
-            Some(reader.read_line(&mut line).await?)
-        };
-        let Some(n) = n else {
-            continue;
-        };
-        if n == 0 {
-            return Ok(());
-        }
-
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            continue;
-        }
-
-        let msg: RpcMessage = match serde_json::from_str(trimmed) {
-            Ok(m) => m,
-            Err(_) => continue,
-        };
-
-        // Notifications (no id) need no response
-        if msg.id.is_none() {
-            continue;
-        }
-
-        let id = msg.id.clone().unwrap_or(Value::Null);
-        let response = dispatch(&msg.method, id, &msg.params, &mut state).await;
-        runtime_pump_armed = state.has_active_page_runtime();
-
-        let mut body = serde_json::to_string(&response)?;
-        body.push('\n');
-        writer.write_all(body.as_bytes()).await?;
-        writer.flush().await?;
-    }
-}
-
-fn handle_initialize(id: Value, params: &Value) -> RpcResponse {
-    let _client_version = params.get("protocolVersion").and_then(Value::as_str).unwrap_or("");
-    RpcResponse::ok(
-        id,
-        json!({
-            "protocolVersion": "2024-11-05",
-            "capabilities": {
-                "tools": {}
-            },
-            "serverInfo": {
-                "name": "obscura-mcp",
-                // Same build version the CLI reports (tag-derived at release time),
-                // so MCP clients see the version the binary was actually cut from.
-                "version": env!("OBSCURA_BUILD_VERSION")
-            }
-        }),
-    )
 }
 
 fn handle_tools_list(id: Value) -> RpcResponse {

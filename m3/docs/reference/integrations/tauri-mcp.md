@@ -3,7 +3,7 @@
 
 ## Ownership and transport
 
-The desktop (`aphrody-app`) owns Tauri webview inspection and interaction. At startup it registers the `tauri` subsystem with the per-user Aphrody kernel; an already-running kernel receives both the existing window subsystem and the webview subsystem over independent IPC sessions. The kernel remains the tool router. `aphrody-mcp` consumes the live kernel catalog and exposes these operations with the `aphrody_tauri_` prefix. `aphrody-tauri-mcp` is a standalone stdio adapter for MCP consumers that need just these tools.
+The desktop (`aphrody-app`) owns Tauri webview inspection and interaction. At startup it registers the `tauri` subsystem with the per-user Aphrody kernel; an already-running kernel receives both the existing window subsystem and the webview subsystem over independent IPC sessions. The kernel remains the tool router. `aphrody-mcp` consumes the live kernel catalog and exposes these operations with the `aphrody_tauri_` prefix.
 
 ## Tools
 

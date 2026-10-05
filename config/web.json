@@ -65,8 +65,8 @@
     "server": "aphrody-mcp",
     "cargoFeature": "native-browser",
     "toolPrefix": "browser_",
-    "tauriServer": "aphrody-tauri-mcp",
-    "tauriToolPrefix": "tauri_"
+    "tauriServer": "aphrody-mcp",
+    "tauriToolPrefix": "aphrody_tauri_"
   },
   "tauriDebug": {
     "plugin": "aphrody-tauri-wrap",

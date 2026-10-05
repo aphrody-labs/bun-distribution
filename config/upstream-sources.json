@@ -47,7 +47,7 @@
       "license": "Apache-2.0",
       "tier": "reference",
       "purpose": "Rust-native Tauri MCP; read for its hardening and tool surface.",
-      "consumers": "config/tauri-upstream.json debuggers; aphrody-tauri-mcp design",
+      "consumers": "config/tauri-upstream.json debuggers; aphrody-mcp Tauri tools design",
       "observedCommit": "bb17a652963a58e99df661e7d50e67517b6136ae"
     },
     {

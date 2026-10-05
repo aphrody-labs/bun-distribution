@@ -1875,16 +1875,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-mcp-smoke"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "aphrody-memory"
 version = "1.0.0"
 dependencies = [
@@ -3212,19 +3202,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
-]
-
-[[package]]
-name = "aphrody-tauri-mcp"
-version = "1.0.0-canary"
-dependencies = [
- "anyhow",
- "aphrody-kernel",
- "clap",
- "rmcp",
- "serde",
- "serde_json",
- "tokio",
 ]
 
 [[package]]

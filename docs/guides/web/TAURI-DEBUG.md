@@ -105,7 +105,7 @@ bridge.close();
 - A CDP facade over the bridge so `AgentBrowser` and `@aphrody/web-test` can attach to a WebKitGTK
   window unchanged; the bridge exposes JavaScript evaluation, so a shim for `Runtime.evaluate`,
   `Page.captureScreenshot` and DOM queries is feasible but was not written.
-- `aphrody-tauri-mcp` still forwards to the per-user kernel only; a backend that reads the discovery
+- The `aphrody_tauri_*` tools of `aphrody-mcp` still forward to the per-user kernel only; a backend that reads the discovery
   files would give MCP clients the bridge tools.
 - Windows and macOS code paths of the patch are unverified; mobile targets are dropped from the
   patched crate (`crate-type = ["rlib"]`).

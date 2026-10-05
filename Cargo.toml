@@ -425,7 +425,6 @@ prettyplease = "0.3.0"
 quote = "1.0.47"
 
 aphrody-m3-reproduce = { path = "crates/ui/m3-reproduce", version = "1.0.0-canary" }
-aphrody-tauri-mcp = { path = "crates/ui/tauri-mcp", version = "1.0.0-canary" }
 aphrody-tauri-wrap = { path = "crates/ui/tauri-wrap", version = "1.0.0-canary", default-features = false }
 aphrody-render = { path = "crates/ui/render", version = "1.0.0-canary" }
 aphrody-svg = { path = "crates/ui/svg", version = "1.0.0-canary", default-features = false }

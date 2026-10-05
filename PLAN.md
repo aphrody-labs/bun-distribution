@@ -90,9 +90,11 @@ restent des alias de compatibilité jusqu'à qualification.
   oxc-bridge), `aphrody-inference-ffi`, `yolo-desktop`, `aphrody-a2a-ui`, `aphrody-shell-web`,
   `aphrody-m3-showcase` par features ; `yolo-runtime` est déjà une dépendance. `yolo-pyo3` et
   `py/packages/aphrody/native` restent des modules d'extension Python (PyO3), pas des cdylib C.
-- [ ] **MCP** — un seul serveur `aphrody-mcp` : intégrer `aphrody-google-mcp`, `obscura-mcp`,
-  `aphrody-tauri-mcp` (orphelins, aucun consommateur) et `aphrody-mcp-smoke` (test) ; `mcp-client` et
-  `mcp-oauth` restent des bibliothèques.
+- [~] **MCP** — un seul serveur `aphrody-mcp` : `aphrody-tauri-mcp` retiré (14 outils déjà servis par
+  `aphrody-mcp`, appel `aphrody_webview_*` corrigé), `aphrody-mcp-smoke` → exemple `mcp_smoke`, boucles
+  stdio/HTTP mortes d'`obscura-mcp` retirées (bibliothèque d'outils seule) ; restent `aphrody-kernel mcp`
+  (point d'entrée plugin, proxie `aphrody-mcp`), `yolo mcp` et `m3-mcp` (Bun) ; `mcp-client` et `mcp-oauth`
+  restent des bibliothèques.
 - Gate : chaque fusion est qualifiée par `cargo check`/tests via la factory (révision épinglée) ou
   `bun test`, puis l'ancien crate/package est supprimé. Aucune fusion sans gate.
 

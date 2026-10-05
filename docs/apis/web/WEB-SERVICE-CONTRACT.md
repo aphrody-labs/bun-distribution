@@ -73,8 +73,8 @@ thread with a 180 s call timeout and one shared page. Environment:
 Additional web tools: `aphrody_web_crawl` (robots on by default),
 `universal_web_fetch`, `aphrody_web_extract_html`, `aphrody_detect_frameworks`.
 
-Desktop webviews are a separate surface: `aphrody-tauri-mcp` publishes
-`tauri_*` tools for the Aphrody Tauri apps (see
+Desktop webviews are a separate surface: `aphrody-mcp` publishes
+`aphrody_tauri_*` tools for the Aphrody Tauri apps (see
 [Tauri debug guide](../../guides/web/TAURI-DEBUG.md)). They are never mixed with
 `aphrody_browser_*`, which only drive remote pages.
 

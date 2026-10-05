@@ -9,9 +9,9 @@ use rmcp::model::{CallToolRequestParams, CallToolResult, ContentBlock, Tool};
 use serde_json::{Value, json};
 use tokio::sync::Mutex;
 
-const PREFIX: &str = "aphrody_tauri_";
+const PREFIX: &str = "aphrody_";
 const TIMEOUT: Duration = Duration::from_secs(25);
-const SETUP_INSTRUCTIONS: &str = "Aphrody Tauri MCP is already installed as aphrody-tauri-mcp. Configure the MCP command with args ['server']; the desktop app registers its Tauri subsystem in the per-user Aphrody kernel. Use tauri_window_list, tauri_driver_session and tauri_manage_window before targeting a webview.";
+const SETUP_INSTRUCTIONS: &str = "Aphrody Tauri tools are served by aphrody-mcp (and the aphrody-kernel MCP); the desktop app registers its Tauri subsystem in the per-user Aphrody kernel. Use aphrody_tauri_window_list, aphrody_tauri_driver_session and aphrody_tauri_manage_window before targeting a webview.";
 const TOOL_DEFINITIONS: &[(&str, &str, &str)] = &[
     ("aphrody_tauri_window_list", "List local Aphrody Tauri windows.", r#"{"type":"object"}"#),
     (
@@ -126,17 +126,30 @@ async fn catalog() -> Result<Vec<Tool>, String> {
         .request("tools/list", json!({}), TIMEOUT)
         .await
         .map_err(|error| error.to_string())?;
-    let tools: Vec<Tool> = raw.get("tools").and_then(Value::as_array).into_iter().flatten()
-        .filter(|tool|tool.get("name").and_then(Value::as_str).is_some_and(|name|name.starts_with("tauri_")))
+    let tools: Vec<Tool> = raw
+        .get("tools")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|tool| tool.get("name").and_then(Value::as_str).is_some_and(is_kernel_tool))
         .cloned()
-        .filter_map(|tool| serde_json::from_value(json!({
-            "name": format!("{PREFIX}{}",tool["name"].as_str().unwrap_or_default().trim_start_matches("tauri_")),
-            "description": tool["description"],
-            "inputSchema": tool["inputSchema"]
-        })).ok()).collect();
+        .filter_map(|tool| {
+            serde_json::from_value(json!({
+                "name": format!("{PREFIX}{}", tool["name"].as_str().unwrap_or_default()),
+                "description": tool["description"],
+                "inputSchema": tool["inputSchema"]
+            }))
+            .ok()
+        })
+        .collect();
     *SYNC_CATALOG.write().map_err(|_| "Tauri catalog lock poisoned".to_owned())? = tools.clone();
     *cache = Some(tools.clone());
     Ok(tools)
+}
+
+/// Kernel-side names owned by the desktop Tauri subsystem.
+fn is_kernel_tool(name: &str) -> bool {
+    name.starts_with("tauri_") || name.starts_with("webview_")
 }
 
 pub(crate) async fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
@@ -163,12 +176,13 @@ pub(crate) async fn owns(name: &str) -> bool {
 
 pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let name = request.name.as_ref();
-    let Some(internal) = name.strip_prefix(PREFIX) else {
+    let Some(internal) = name.strip_prefix(PREFIX).filter(|internal| is_kernel_tool(internal))
+    else {
         return error(format!("unknown Tauri tool {name}"));
     };
     let arguments =
         request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
-    if internal == "get_setup_instructions" {
+    if internal == "tauri_get_setup_instructions" {
         return CallToolResult::success(vec![ContentBlock::text(SETUP_INSTRUCTIONS)]);
     }
     let client = match connect().await {
@@ -176,11 +190,7 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
         Err(reason) => return error(format!("{name}: Aphrody kernel unavailable ({reason})")),
     };
     let result = client
-        .request(
-            "tools/call",
-            json!({"name":format!("tauri_{}", if internal == "driver_session" { "driver_session" } else { internal }),"arguments":arguments}),
-            TIMEOUT,
-        )
+        .request("tools/call", json!({"name": internal, "arguments": arguments}), TIMEOUT)
         .await;
     match result {
         Ok(raw) => serde_json::from_value(raw)

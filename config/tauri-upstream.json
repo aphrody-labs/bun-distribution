@@ -245,7 +245,7 @@
         "treeSha256": "e14977a353d1505ccacc1a013f050414a9518b596ea07e72e64744621b0b76c5",
         "role": "secondary",
         "tauriSupport": "Tauri 2 only (workspace tauri = \"2\", victauri-plugin enables the wry feature that Tauri 3 removed; uses plugin Builder::js_init_script renamed in Tauri 3 alpha.2). No Tauri 3 branch.",
-        "notes": "Rust-native design closest to aphrody-tauri-mcp (rmcp, axum, embedded streamable-HTTP MCP on 127.0.0.1:7373, Bearer token on by default, DNS-rebinding Host check, 403 on browser-initiated Sec-Fetch-Site: cross-site requests, rate limits, whole server behind cfg(debug_assertions)). Young project (created 2026-04-25, 5 stars, AI-assisted authorship per its branch names): read for its hardening and tool surface, do not depend on it for release gates.",
+        "notes": "Rust-native design closest to the aphrody-mcp Tauri tools (rmcp, axum, embedded streamable-HTTP MCP on 127.0.0.1:7373, Bearer token on by default, DNS-rebinding Host check, 403 on browser-initiated Sec-Fetch-Site: cross-site requests, rate limits, whole server behind cfg(debug_assertions)). Young project (created 2026-04-25, 5 stars, AI-assisted authorship per its branch names): read for its hardening and tool surface, do not depend on it for release gates.",
         "access": "reference upstream `victauri`: aphrody git upstream read victauri <path> (no local checkout since 2026-10-02)"
       }
     ],
