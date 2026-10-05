@@ -1,7 +1,0 @@
-{
-  "owner": "claude",
-  "state": "complete",
-  "task": "Global toolchain sync on WSL, Windows, vps, dbfr (manifest, scripts, doc)",
-  "started": "2026-10-04T12:00:00+02:00",
-  "paths": ["config/infra/toolchain.json", "scripts/tools/toolchain-sync.sh", "scripts/tools/toolchain-sync.ps1", "docs/operations/infra/TOOLCHAIN-SYNC.md"]
-}

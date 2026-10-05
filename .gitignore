@@ -124,3 +124,26 @@ Thumbs.db
 /plugins/
 .serena/
 /vendor
+
+# Hardening: logs, merge leftovers, worktrees and toolchain state.
+*.log
+!docs/**/*.log
+*.orig
+*.rej
+*.bak
+*.tmp
+*.old
+npm-debug.log*
+.claude/worktrees/
+.claude/jobs/
+.codex/sessions/
+**/target-*/
+.sccache/
+.uv-cache/
+.bun/
+.turbo/
+.next/
+.parcel-cache/
+*.tgz
+!**/fixtures/**/*.tgz
+!**/test/**/*.tgz
