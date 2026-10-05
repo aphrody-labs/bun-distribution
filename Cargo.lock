@@ -709,6 +709,7 @@ dependencies = [
  "aphrody-coreutils",
  "aphrody-diagnostics",
  "aphrody-drive",
+ "aphrody-fsindex",
  "aphrody-identity",
  "aphrody-kernel",
  "aphrody-llama-server",

@@ -49,6 +49,8 @@ aphrody-compat = { workspace = true }
 aphrody-diagnostics = { workspace = true }
 aphrody-coreutils = { workspace = true }
 aphrody-drive = { workspace = true }
+# Apache-2.0 fast file index (MFT/walk tree, FTS search) behind the explorer commands in src/explorer.rs.
+aphrody-fsindex = { workspace = true }
 aphrody-shell-tauri = { workspace = true }
 aphrody-identity = { workspace = true }
 aphrody-kernel = { workspace = true }

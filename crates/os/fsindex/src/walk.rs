@@ -32,6 +32,10 @@ pub fn build_tree_walk(root: &Path) -> MftTree {
     for entry in WalkDir::new(root).into_iter().filter_map(Result::ok) {
         let path = entry.path();
         let id = *ids.entry(path.to_path_buf()).or_insert_with(|| {
+            // Never hand out an id that MftTree treats as the NTFS root (record number 5).
+            while MftTree::is_root(next) {
+                next += 1;
+            }
             let v = next;
             next += 1;
             v

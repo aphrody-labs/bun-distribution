@@ -17,6 +17,7 @@
 
 pub mod broker;
 pub mod desktop;
+pub mod explorer;
 pub mod identity;
 pub mod integration;
 pub mod llama_daemon;
@@ -852,6 +853,9 @@ pub fn run() {
                 integration::aphrody_install_update,
                 aphrody_fs_read_dir,
                 aphrody_fs_read_text,
+                explorer::aphrody_explorer_index_build,
+                explorer::aphrody_explorer_search,
+                explorer::aphrody_explorer_tree,
                 models::aphrody_hardware_telemetry,
                 models::aphrody_model_catalog,
                 models::aphrody_model_list,
