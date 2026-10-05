@@ -82,6 +82,14 @@
         "setHeapSizeLimit": 0,
         "NearHeapLimit": 23,
         "heapSizeLimit": 1
+      },
+      "adjacent": {
+        "why": "At the WebKit pin 5718a6ec, Heap.cpp uses Options::gcMaxHeapSize as a GC-request threshold on bytes allocated in the cycle: it bounds garbage, not live memory, and has no callback or termination.",
+        "jsc": {
+          "gcMaxHeapSize": 1,
+          "forceRAMSize": 1,
+          "maxHeapSizeAsRAMSizeMultiple": 1
+        }
       }
     },
     {
@@ -123,8 +131,8 @@
     {
       "id": "locale",
       "name": "Process default ICU locale",
-      "status": "covered",
-      "note": "WTF::overrideUserPreferredLanguages replaces icu::set_default_locale.",
+      "status": "jsc-only",
+      "note": "WTF::overrideUserPreferredLanguages is declared and exported by WTF but no Bun source calls it: the embedder (realm host) must call it. bun:jsc.setTimeZone sets the time zone, not the locale.",
       "v8": {
         "set_default_locale": 1
       },
@@ -133,8 +141,16 @@
         "defaultLanguage": 3
       },
       "bun": {
-        "overrideUserPreferredLanguages": 0,
-        "defaultLanguage": 5
+        "overrideUserPreferredLanguages": 0
+      },
+      "adjacent": {
+        "why": "bun:jsc.setTimeZone calls WTF::setTimeZoneOverride: a time-zone override, not the default locale.",
+        "jsc": {
+          "setTimeZoneOverride": 2
+        },
+        "bun": {
+          "setTimeZone": 13
+        }
       }
     },
     {
@@ -206,6 +222,65 @@
       "bun": {
         "ThrowScope": 660,
         "CatchScope": 1
+      }
+    }
+  ],
+  "mitigations": [
+    {
+      "id": "heap-limit",
+      "name": "Poll the heap from the host, then terminate",
+      "status": "available",
+      "note": "bun:jsc exports heapStats, memoryUsage and percentAvailableMemoryInUse; the host would poll and call the termination path. Existence only: probe P1 of docs/plans/fusion/bench/METHOD.md must exercise it.",
+      "jsc": {
+        "JSGetMemoryUsageStatistics": 1,
+        "extraMemorySize": 6,
+        "notifyNeedTermination": 5
+      },
+      "bun": {
+        "percentAvailableMemoryInUse": 1,
+        "functionMemoryUsageStatistics": 3,
+        "functionCreateMemoryFootprint": 3
+      }
+    },
+    {
+      "id": "contexts",
+      "name": "Frame realms through ShadowRealm or node:vm contexts",
+      "status": "available",
+      "note": "Alternatives to JSContextGroup/JSGlobalContextCreateInGroup for one realm per frame.",
+      "jsc": {
+        "ShadowRealmObject": 8,
+        "useShadowRealm": 2
+      },
+      "bun": {
+        "ShadowRealm": 21,
+        "NodeVMGlobalObject": 81
+      }
+    },
+    {
+      "id": "code-cache",
+      "name": "Bytecode cache reachable from JS (node:vm cachedData)",
+      "status": "available",
+      "note": "Enables the one-hour node:vm trial of decision 14 before any Rust port.",
+      "jsc": {
+        "CachedBytecode": 50
+      },
+      "bun": {
+        "produceCachedData": 17,
+        "cachedData": 73
+      }
+    },
+    {
+      "id": "flags",
+      "name": "JSC options settable by environment",
+      "status": "available",
+      "note": "BUN_JSC_<option> sets a JSC option; useJIT=0 gives the interpreter-only lane required by METHOD C5.",
+      "jsc": {
+        "useJIT": 41,
+        "Options::useJIT": 35
+      },
+      "bun": {
+        "BUN_JSC_": 31,
+        "Options::setOption": 1
       }
     }
   ],

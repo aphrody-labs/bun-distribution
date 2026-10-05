@@ -3,7 +3,9 @@
 // revisions in use: the V8 symbols Obscura calls, the JSC/WTF headers of the WebKit prebuilt that Bun
 // links (read on the VPS build cache, WEBKIT_VERSION pin) and the symbols the Bun fork already uses.
 // Every probe is a fixed-string ripgrep; a capability is `covered` only when the V8 usage, a JSC header
-// symbol and a Bun source symbol are all found.
+// symbol and a Bun source symbol are all found (`jsc-only`: declared by JSC but unused by the Bun fork, so
+// the embedder must call it; `bun-only`: only Bun's own V8 shim mentions it; `gap`: neither).
+// ADJACENT lists near-misses that are not equivalents; MITIGATIONS lists building blocks (existence only).
 //   bun scripts/audit/engine-equivalence.ts [--write]
 import { $ } from "bun";
 import { join } from "node:path";
@@ -78,8 +80,9 @@ const CAPABILITIES: Capability[] = [
     name: "Process default ICU locale",
     v8: ["set_default_locale"],
     jsc: ["overrideUserPreferredLanguages", "defaultLanguage"],
-    bun: ["overrideUserPreferredLanguages", "defaultLanguage"],
-    note: "WTF::overrideUserPreferredLanguages replaces icu::set_default_locale.",
+    // `defaultLanguage` only appears in Bun as `nullptr, // defaultLanguage` method-table slots: it is not a usage.
+    bun: ["overrideUserPreferredLanguages"],
+    note: "WTF::overrideUserPreferredLanguages is declared and exported by WTF but no Bun source calls it: the embedder (realm host) must call it. bun:jsc.setTimeZone sets the time zone, not the locale.",
   },
   {
     id: "modules",
@@ -112,6 +115,55 @@ const CAPABILITIES: Capability[] = [
     jsc: ["ThrowScope", "CatchScope"],
     bun: ["ThrowScope", "CatchScope"],
     note: "JSC::ThrowScope and CatchScope replace v8::TryCatch.",
+  },
+];
+
+// Near-misses: symbols that exist but are NOT an equivalent (kept out of the status logic on purpose).
+const ADJACENT: Record<string, { jsc?: string[]; bun?: string[]; why: string }> = {
+  "heap-limit": {
+    jsc: ["gcMaxHeapSize", "forceRAMSize", "maxHeapSizeAsRAMSizeMultiple"],
+    why: "At the WebKit pin 5718a6ec, Heap.cpp uses Options::gcMaxHeapSize as a GC-request threshold on bytes allocated in the cycle: it bounds garbage, not live memory, and has no callback or termination.",
+  },
+  locale: {
+    jsc: ["setTimeZoneOverride"],
+    bun: ["setTimeZone"],
+    why: "bun:jsc.setTimeZone calls WTF::setTimeZoneOverride: a time-zone override, not the default locale.",
+  },
+};
+
+// Mitigations: presence of building blocks for a gap or for a partial equivalent (existence only, behaviour untested).
+const MITIGATIONS: { id: string; name: string; jsc: string[]; bun: string[]; note: string }[] = [
+  {
+    id: "heap-limit",
+    name: "Poll the heap from the host, then terminate",
+    jsc: ["JSGetMemoryUsageStatistics", "extraMemorySize", "notifyNeedTermination"],
+    bun: [
+      "percentAvailableMemoryInUse",
+      "functionMemoryUsageStatistics",
+      "functionCreateMemoryFootprint",
+    ],
+    note: "bun:jsc exports heapStats, memoryUsage and percentAvailableMemoryInUse; the host would poll and call the termination path. Existence only: probe P1 of docs/plans/fusion/bench/METHOD.md must exercise it.",
+  },
+  {
+    id: "contexts",
+    name: "Frame realms through ShadowRealm or node:vm contexts",
+    jsc: ["ShadowRealmObject", "useShadowRealm"],
+    bun: ["ShadowRealm", "NodeVMGlobalObject"],
+    note: "Alternatives to JSContextGroup/JSGlobalContextCreateInGroup for one realm per frame.",
+  },
+  {
+    id: "code-cache",
+    name: "Bytecode cache reachable from JS (node:vm cachedData)",
+    jsc: ["CachedBytecode"],
+    bun: ["produceCachedData", "cachedData"],
+    note: "Enables the one-hour node:vm trial of decision 14 before any Rust port.",
+  },
+  {
+    id: "flags",
+    name: "JSC options settable by environment",
+    jsc: ["useJIT", "Options::useJIT"],
+    bun: ["BUN_JSC_", "Options::setOption"],
+    note: "BUN_JSC_<option> sets a JSC option; useJIT=0 gives the interpreter-only lane required by METHOD C5.",
   },
 ];
 
@@ -156,10 +208,20 @@ const receipt = await Promise.all(
       ? "v8-unused"
       : found(jsc) && found(bun)
         ? "covered"
-        : found(bun)
-          ? "bun-only"
-          : "gap";
-    return { id: c.id, name: c.name, status, note: c.note, v8, jsc, bun };
+        : found(jsc)
+          ? "jsc-only"
+          : found(bun)
+            ? "bun-only"
+            : "gap";
+    const adj = ADJACENT[c.id];
+    const adjacent = adj
+      ? {
+          why: adj.why,
+          jsc: adj.jsc ? await symbols(adj.jsc, "jsc") : undefined,
+          bun: adj.bun ? await symbols(adj.bun, "bun") : undefined,
+        }
+      : undefined;
+    return { id: c.id, name: c.name, status, note: c.note, v8, jsc, bun, adjacent };
   }),
 );
 for (const r of receipt)
@@ -168,6 +230,33 @@ for (const r of receipt)
     r.id.padEnd(15),
     JSON.stringify({ v8: r.v8, jsc: r.jsc, bun: r.bun }),
   );
+
+const mitigations = await Promise.all(
+  MITIGATIONS.map(async (m) => {
+    const [jsc, bun] = await Promise.all([symbols(m.jsc, "jsc"), symbols(m.bun, "bun")]);
+    return {
+      id: m.id,
+      name: m.name,
+      status: found(jsc) && found(bun) ? "available" : "incomplete",
+      note: m.note,
+      jsc,
+      bun,
+    };
+  }),
+);
+for (const m of mitigations)
+  console.log(
+    m.status.padEnd(9),
+    `${m.id}/mitigation`.padEnd(15),
+    JSON.stringify({ jsc: m.jsc, bun: m.bun }),
+  );
+for (const r of receipt)
+  if (r.adjacent)
+    console.log(
+      "adjacent ".padEnd(9),
+      r.id.padEnd(15),
+      JSON.stringify({ jsc: r.adjacent.jsc, bun: r.adjacent.bun }),
+    );
 
 // Bun also ships a V8 C++ API shim over JSC (node-addon compatibility). rusty_v8 links the real V8, so the
 // shim cannot run Obscura's engine layer; it is probed to record which Obscura-used V8 C++ calls it implements.
@@ -203,6 +292,6 @@ if (process.argv.includes("--write")) {
   };
   await Bun.write(
     join(ROOT, "docs/plans/fusion/engine-equivalence-2026-10-05.json"),
-    JSON.stringify({ pins, capabilities: receipt, bunV8Shim }, null, 2) + "\n",
+    JSON.stringify({ pins, capabilities: receipt, mitigations, bunV8Shim }, null, 2) + "\n",
   );
 }
