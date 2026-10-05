@@ -1,9 +1,10 @@
 [package]
 name = "aphrody-tauri-schema-generator"
+description = "Hosts the schema for the Tauri configuration file."
+license = "Apache-2.0 OR MIT"
+repository.workspace = true
 version = "0.0.0"
 edition = "2024"
-publish = false
-
 [[bin]]
 name = "tauri-schema-generator"
 path = "src/main.rs"

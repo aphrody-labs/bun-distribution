@@ -1,8 +1,9 @@
 [package]
 name = "aphrody-turbopack-lightningcss-napi"
+description = "Aphrody platform crate aphrody-turbopack-lightningcss-napi."
+repository.workspace = true
 version = "0.0.0"
 edition = "2021"
-publish = false
 license = "MPL-2.0"
 
 [lib]

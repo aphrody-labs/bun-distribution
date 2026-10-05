@@ -11,8 +11,6 @@ description.workspace = true
 keywords.workspace = true
 categories.workspace = true
 # Internal docs tool (regenerates docs/SUMMARY.md); not part of the crates.io release set.
-publish = false
-
 [lib]
 name = "aphrody_summary"
 path = "src/lib.rs"

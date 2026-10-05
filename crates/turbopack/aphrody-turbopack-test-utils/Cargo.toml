@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbopack-test-utils"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -22,10 +23,10 @@ bincode = { version = "2.0.1", features = ["serde"] }
 regex = { version = "1.12.3", features = ["pattern"] }
 serde = { version = "1.0.228", features = ["derive"] }
 similar = "2.2.0"
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
-turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
-turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
-turbopack-cli-utils = { path = "../aphrody-turbopack-cli-utils", package = "aphrody-turbopack-cli-utils" }
-turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs", version = "0.1.0" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash", version = "0.1.0" }
+turbopack-cli-utils = { path = "../aphrody-turbopack-cli-utils", package = "aphrody-turbopack-cli-utils", version = "0.1.0" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core", version = "0.1.0" }
 rustc-hash = "2.1.1"

@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbopack-cli-utils"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -24,8 +25,8 @@ async-trait = "0.1.64"
 owo-colors = "4.2.2"
 rustc-hash = "2.1.1"
 serde = { version = "1.0.228", features = ["derive"] }
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
-turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
-turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
-turbopack-resolve = { path = "../aphrody-turbopack-resolve", package = "aphrody-turbopack-resolve" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs", version = "0.1.0" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core", version = "0.1.0" }
+turbopack-resolve = { path = "../aphrody-turbopack-resolve", package = "aphrody-turbopack-resolve", version = "0.1.0" }

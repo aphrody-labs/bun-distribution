@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbopack-trace-server"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -32,8 +33,8 @@ rustc-hash = "2.1.1"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_new"] }
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, version = "0.1.0" }
 tungstenite = { version = "0.21.0" }
-turbopack-trace-utils = { path = "../aphrody-turbopack-trace-utils", package = "aphrody-turbopack-trace-utils" }
+turbopack-trace-utils = { path = "../aphrody-turbopack-trace-utils", package = "aphrody-turbopack-trace-utils", version = "0.1.0" }
 zstd = { version = "0.13.0" }

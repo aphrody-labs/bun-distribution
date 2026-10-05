@@ -62,7 +62,7 @@ swift-rs = { version = "1.0.8", optional = true, features = ["build"] }
 getrandom = { version = "0.3", features = ["std"] }
 serial_test = "3.5"
 # For doc tests
-tauri = { path = "../aphrody-tauri", package = "aphrody-tauri" }
+tauri = { path = "../aphrody-tauri", package = "aphrody-tauri", version = "3.0.0-alpha.4" }
 tempfile = "3.15.0"
 
 [features]

@@ -1,5 +1,7 @@
 [package]
 name = "aphrody-turbo-persistence"
+description = "Aphrody platform crate aphrody-turbo-persistence."
+repository.workspace = true
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
@@ -18,7 +20,7 @@ verbose_log = []
 
 [dependencies]
 anyhow = "1.0.100"
-auto-hash-map = { path = "../aphrody-auto-hash-map", package = "aphrody-auto-hash-map" }
+auto-hash-map = { path = "../aphrody-auto-hash-map", package = "aphrody-auto-hash-map", version = "0.1.0" }
 bitfield = "0.19.4"
 byteorder = "1.5.0"
 crc32fast = "1.5.0"
@@ -50,7 +52,7 @@ rand = "0.10.1"
 rayon = "1.10.0"
 rstest = "0.16.0"
 tempfile = "3.20.0"
-turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, features = ["custom_allocator"] }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, features = ["custom_allocator"], version = "0.1.0" }
 
 [[bin]]
 name = "sst_inspect"

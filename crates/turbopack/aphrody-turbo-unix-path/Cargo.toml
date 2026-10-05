@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbo-unix-path"
+repository.workspace = true
 version = "0.0.1"
 description = "TBD"
 license = "MIT"

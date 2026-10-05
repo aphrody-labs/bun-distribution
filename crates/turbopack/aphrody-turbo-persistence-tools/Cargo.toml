@@ -1,5 +1,7 @@
 [package]
 name = "aphrody-turbo-persistence-tools"
+description = "Aphrody platform crate aphrody-turbo-persistence-tools."
+repository.workspace = true
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
@@ -10,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.100"
-turbo-persistence = { path = "../aphrody-turbo-persistence", package = "aphrody-turbo-persistence" }
+turbo-persistence = { path = "../aphrody-turbo-persistence", package = "aphrody-turbo-persistence", version = "0.1.0" }
 
 [lints.clippy]
 too_many_arguments = "allow"

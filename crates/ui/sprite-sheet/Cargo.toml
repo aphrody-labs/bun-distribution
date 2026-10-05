@@ -10,8 +10,6 @@ repository.workspace   = true
 license.workspace      = true
 description            = "Sprite atlas to web sheet (CSS image/mask classes, standalone SVG symbols, JSON manifest); no_std + alloc, no input format."
 
-publish = false
-
 [lints]
 workspace = true
 

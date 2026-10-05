@@ -1,6 +1,8 @@
 [package]
 edition = "2024"
 name = "aphrody-create-tauri-app-node"
+description = "Aphrody platform crate aphrody-create-tauri-app-node."
+repository.workspace = true
 version = "0.0.0"
 license = "Apache-2.0 OR MIT"
 rust-version = "1.88"
@@ -12,7 +14,7 @@ crate-type = ["cdylib"]
 [dependencies]
 napi = "3"
 napi-derive = "3"
-create-tauri-app = { path = "../aphrody-create-tauri-app", package = "aphrody-create-tauri-app" }
+create-tauri-app = { path = "../aphrody-create-tauri-app", package = "aphrody-create-tauri-app", version = "4.7.4" }
 
 [build-dependencies]
 napi-build = "2.3"

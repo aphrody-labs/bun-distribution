@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-shell-sandbox-host-e2b"
+repository.workspace = true
 version = "1.0.0-canary"
 edition.workspace = true
 license.workspace = true

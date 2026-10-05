@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-auto-hash-map"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -23,7 +24,7 @@ shrink-to-fit = { version = "0.2.10", features = ["hashbrown"] }
 
 [dev-dependencies]
 criterion = { version = "4.3.0", package = "codspeed-criterion-compat" }
-turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, version = "0.1.0" }
 
 [[bench]]
 name = "tiny_vec"

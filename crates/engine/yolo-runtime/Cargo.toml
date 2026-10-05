@@ -7,7 +7,6 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
-publish = false
 description = "Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark)"
 
 [lib]
@@ -26,7 +25,7 @@ tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 base64 = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
-yolo-core = { path = "../yolo-core" }
+yolo-core = { path = "../yolo-core", version = "1.0.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

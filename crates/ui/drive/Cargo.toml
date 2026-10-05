@@ -17,7 +17,6 @@ license = "FSL-1.1-ALv2"
 authors.workspace = true
 homepage.workspace = true
 repository.workspace = true
-publish = false
 # Tauri plugin convention: `links` names the plugin, tauri-build reads its permission files
 # through `DEP_APHRODY_DRIVE_PERMISSION_FILES_PATH`.
 links = "aphrody-drive"

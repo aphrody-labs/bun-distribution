@@ -1,5 +1,7 @@
 [package]
 name = "aphrody-turbo-rcstr"
+description = "Aphrody platform crate aphrody-turbo-rcstr."
+repository.workspace = true
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
@@ -14,15 +16,15 @@ napi = ["dep:napi"]
 [dependencies]
 bincode = { version = "2.0.1", features = ["serde"] }
 triomphe = { git = "https://github.com/sokra/triomphe", branch = "sokra/unstable" }
-turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash", version = "0.1.0" }
 serde = { version = "1.0.228", features = ["derive"] }
 new_debug_unreachable = "1.0.6"
 shrink-to-fit = "0.2.10"
 rustc-hash = "2.1.1"
 bytes-str = "0.2.7"
 smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_new"] }
-turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode" }
-turbo-rcstr-macros = { path = "../aphrody-turbo-rcstr-macros", package = "aphrody-turbo-rcstr-macros" }
+turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode", version = "0.0.0" }
+turbo-rcstr-macros = { path = "../aphrody-turbo-rcstr-macros", package = "aphrody-turbo-rcstr-macros", version = "0.1.0" }
 unty = "0.0.4"
 
 napi = { version = "3.10.0", default-features = false, features = ["napi3", "serde-json", "tokio_rt", "error_anyhow", "napi4", "napi5"], optional = true }

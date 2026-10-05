@@ -9,8 +9,6 @@ authors.workspace = true
 homepage.workspace = true
 repository.workspace = true
 description = "Native MCP adapter for Aphrody Tauri desktop webview inspection."
-publish = false
-
 [lints]
 workspace = true
 

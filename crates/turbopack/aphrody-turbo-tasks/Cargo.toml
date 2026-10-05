@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbo-tasks"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -38,7 +39,7 @@ unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzz
 [dependencies]
 anyhow = "1.0.100"
 async-trait = "0.1.64"
-auto-hash-map = { path = "../aphrody-auto-hash-map", package = "aphrody-auto-hash-map" }
+auto-hash-map = { path = "../aphrody-auto-hash-map", package = "aphrody-auto-hash-map", version = "0.1.0" }
 bincode = { version = "2.0.1", features = ["serde"] }
 concurrent-queue = "2.5.0"
 dashmap = "7.0.0-rc2"
@@ -63,13 +64,13 @@ tokio = { version = "1.52.1", features = ["full"] }
 tokio-util = { version = "0.7.18", features = ["io", "rt"] }
 tracing = "0.1.44"
 triomphe = { git = "https://github.com/sokra/triomphe", branch = "sokra/unstable", features = ["unsize", "unstable"] }
-turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode" }
-turbo-dyn-eq-hash = { path = "../aphrody-turbo-dyn-eq-hash", package = "aphrody-turbo-dyn-eq-hash" }
-turbo-frozenmap = { path = "../aphrody-turbo-frozenmap", package = "aphrody-turbo-frozenmap" }
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
-turbo-tasks-macros = { path = "../aphrody-turbo-tasks-macros", package = "aphrody-turbo-tasks-macros" }
-turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false }
+turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode", version = "0.0.0" }
+turbo-dyn-eq-hash = { path = "../aphrody-turbo-dyn-eq-hash", package = "aphrody-turbo-dyn-eq-hash", version = "0.0.1" }
+turbo-frozenmap = { path = "../aphrody-turbo-frozenmap", package = "aphrody-turbo-frozenmap", version = "0.1.0" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash", version = "0.1.0" }
+turbo-tasks-macros = { path = "../aphrody-turbo-tasks-macros", package = "aphrody-turbo-tasks-macros", version = "0.1.0" }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, version = "0.1.0" }
 unsize = "1.1.0"
 
 # Only used by the benchmarks, which don't run on wasm. Gated by target so that

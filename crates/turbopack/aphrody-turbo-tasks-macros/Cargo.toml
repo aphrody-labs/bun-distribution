@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbo-tasks-macros"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"

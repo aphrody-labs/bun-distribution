@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbo-dyn-eq-hash"
+repository.workspace = true
 version = "0.0.1"
 description = "TBD"
 license = "MIT"

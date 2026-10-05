@@ -6,9 +6,6 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-publish = false
-
-
 [[bin]]
 name = "aphrody-yolo"
 path = "src/main.rs"

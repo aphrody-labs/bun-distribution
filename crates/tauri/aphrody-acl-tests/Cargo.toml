@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-acl-tests"
+description = "Aphrody platform crate aphrody-acl-tests."
 version = "0.1.0"
 authors = ["Tauri Programme within The Commons Conservancy"]
 homepage = "https://tauri.app/"
@@ -8,8 +9,6 @@ categories = ["gui", "web-programming"]
 license = "Apache-2.0 OR MIT"
 edition = "2024"
 rust-version = "1.95"
-publish = false
-
 [lib]
 name = "acl_tests"
 

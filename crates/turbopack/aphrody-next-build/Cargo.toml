@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-next-build"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -17,6 +18,6 @@ too_many_arguments = "allow"
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
 
 [dependencies]
-next-core = { path = "../aphrody-next-core", package = "aphrody-next-core" }
-turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+next-core = { path = "../aphrody-next-core", package = "aphrody-next-core", version = "0.1.0" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core", version = "0.1.0" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }

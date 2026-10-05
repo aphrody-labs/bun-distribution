@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 [package]
 name = "aphrody-telemetry"
-publish                = false
 version = "1.0.0-canary"
 edition.workspace      = true
 rust-version.workspace = true

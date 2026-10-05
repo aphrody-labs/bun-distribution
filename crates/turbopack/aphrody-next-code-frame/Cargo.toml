@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-next-code-frame"
+repository.workspace = true
 version = "0.0.1"
 description = "Fast, scalable code frame rendering for Next.js error reporting"
 license = "MIT"

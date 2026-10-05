@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbopack-browser"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -34,13 +35,13 @@ serde_qs = "1.1.1"
 tracing = "0.1.44"
 urlencoding = "2.1.2"
 
-turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode" }
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
-turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
-turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
-turbopack = { path = "../aphrody-turbopack", package = "aphrody-turbopack" }
-turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
-turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript" }
-turbopack-ecmascript-runtime = { path = "../aphrody-turbopack-ecmascript-runtime", package = "aphrody-turbopack-ecmascript-runtime" }
-turbopack-resolve = { path = "../aphrody-turbopack-resolve", package = "aphrody-turbopack-resolve" }
+turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode", version = "0.0.0" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs", version = "0.1.0" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash", version = "0.1.0" }
+turbopack = { path = "../aphrody-turbopack", package = "aphrody-turbopack", version = "0.1.0" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core", version = "0.1.0" }
+turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript", version = "0.1.0" }
+turbopack-ecmascript-runtime = { path = "../aphrody-turbopack-ecmascript-runtime", package = "aphrody-turbopack-ecmascript-runtime", version = "0.1.0" }
+turbopack-resolve = { path = "../aphrody-turbopack-resolve", package = "aphrody-turbopack-resolve", version = "0.1.0" }

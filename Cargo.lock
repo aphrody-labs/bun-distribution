@@ -1153,6 +1153,7 @@ dependencies = [
  "aphrody-n2b",
  "aphrody-native",
  "aphrody-notebooklm",
+ "aphrody-obscura",
  "aphrody-ocr",
  "aphrody-project-doc",
  "aphrody-prompts",
@@ -1193,7 +1194,6 @@ dependencies = [
  "jsonschema 0.58.4",
  "miette 7.6.0",
  "mimalloc",
- "obscura",
  "obscura-net",
  "ort",
  "predicates",
@@ -1616,10 +1616,10 @@ dependencies = [
  "aphrody-gemini-runtime",
  "aphrody-gemini-web",
  "aphrody-model-client",
+ "aphrody-obscura",
  "chrono",
  "clap",
  "futures",
- "obscura",
  "obscura-dom",
  "regex",
  "reqwest 0.13.5",
@@ -2534,6 +2534,20 @@ dependencies = [
  "nu-std",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "aphrody-obscura"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "obscura-browser",
+ "obscura-net",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "url",
 ]
 
 [[package]]
@@ -3821,6 +3835,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-tauri-plugin-mcp-bridge"
+version = "0.13.0"
+dependencies = [
+ "aphrody-tauri",
+ "aphrody-tauri-plugin",
+ "aphrody-tauri-runtime-wry",
+ "base64 0.22.1",
+ "block2 0.5.1",
+ "block2 0.6.2",
+ "cairo-rs 0.18.5",
+ "futures-util",
+ "gio 0.18.4",
+ "image",
+ "jni 0.21.1",
+ "objc2 0.5.2",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.2.2",
+ "objc2-foundation 0.3.2",
+ "objc2-ui-kit 0.2.2",
+ "objc2-web-kit 0.2.2",
+ "objc2-web-kit 0.3.2",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-tungstenite 0.26.2",
+ "uuid 1.26.1",
+ "webkit2gtk",
+ "webview2-com",
+ "windows 0.62.2",
+ "windows-core 0.62.2",
+]
+
+[[package]]
 name = "aphrody-tauri-plugin-nfc"
 version = "3.0.0-alpha.2"
 dependencies = [
@@ -4255,6 +4304,7 @@ name = "aphrody-tauri-wrap"
 version = "1.0.0-canary"
 dependencies = [
  "aphrody-tauri",
+ "aphrody-tauri-plugin-mcp-bridge",
  "axum 0.8.9",
  "http 1.5.0",
  "open",
@@ -4262,7 +4312,6 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
- "tauri-plugin-mcp-bridge",
  "tokio",
  "url",
  "uuid 1.26.1",
@@ -5554,11 +5603,11 @@ dependencies = [
 name = "aphrody-web-bridge"
 version = "1.0.0-canary"
 dependencies = [
+ "aphrody-obscura",
  "aphrody-translate",
  "aphrody-web-extract",
  "aphrody-web-service",
  "dirs 7.0.0",
- "obscura",
  "obscura-dom",
  "obscura-net",
  "reqwest 0.13.5",
@@ -24175,20 +24224,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "obscura"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "obscura-browser",
- "obscura-net",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "tokio",
- "url",
-]
-
-[[package]]
 name = "obscura-browser"
 version = "0.1.0"
 dependencies = [
@@ -35009,41 +35044,6 @@ checksum = "03b7eb4d0d43724ba9ba6a6717420ee68aee377816a3edbb45db8c18862b1431"
 dependencies = [
  "byteorder",
  "png 0.17.16",
-]
-
-[[package]]
-name = "tauri-plugin-mcp-bridge"
-version = "0.13.0"
-dependencies = [
- "aphrody-tauri",
- "aphrody-tauri-plugin",
- "aphrody-tauri-runtime-wry",
- "base64 0.22.1",
- "block2 0.5.1",
- "block2 0.6.2",
- "cairo-rs 0.18.5",
- "futures-util",
- "gio 0.18.4",
- "image",
- "jni 0.21.1",
- "objc2 0.5.2",
- "objc2 0.6.4",
- "objc2-app-kit 0.3.2",
- "objc2-foundation 0.2.2",
- "objc2-foundation 0.3.2",
- "objc2-ui-kit 0.2.2",
- "objc2-web-kit 0.2.2",
- "objc2-web-kit 0.3.2",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tokio-tungstenite 0.26.2",
- "uuid 1.26.1",
- "webkit2gtk",
- "webview2-com",
- "windows 0.62.2",
- "windows-core 0.62.2",
 ]
 
 [[package]]

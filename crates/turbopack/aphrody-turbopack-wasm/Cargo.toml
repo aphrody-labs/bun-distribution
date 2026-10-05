@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbopack-wasm"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -21,12 +22,12 @@ anyhow = "1.0.100"
 bincode = { version = "2.0.1", features = ["serde"] }
 indoc = "2.0.0"
 serde = { version = "1.0.228", features = ["derive"] }
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
-turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
-turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
-turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
-turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs", version = "0.1.0" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash", version = "0.1.0" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core", version = "0.1.0" }
+turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript", version = "0.1.0" }
 # `wat` and `wasmparser` version in lockstep: `wat` pulls `wast`, which depends on a
 # `wasm-encoder` that in turn pins a `wasmparser`. Keeping both on the 239 family lets that
 # `wasmparser` be the same one wasmtime already links, so only one copy is built. Bumping either

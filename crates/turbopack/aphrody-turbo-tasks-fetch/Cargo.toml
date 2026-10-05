@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbo-tasks-fetch"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -21,10 +22,10 @@ async-trait = "0.1.64"
 quick_cache = "0.6.14"
 serde = { version = "1.0.228", features = ["derive"] }
 tokio = "1.52.1"
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
-turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
-turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs", version = "0.1.0" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core", version = "0.1.0" }
 
 # Enable specific tls features per-target.
 #
@@ -73,5 +74,5 @@ rustc-hash = "2.1.1"
 [dev-dependencies]
 mockito = { version = "1.7.0", default-features = false }
 tokio = { version = "1.52.1", features = ["full"] }
-turbo-tasks-testing = { path = "../aphrody-turbo-tasks-testing", package = "aphrody-turbo-tasks-testing" }
-turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend" }
+turbo-tasks-testing = { path = "../aphrody-turbo-tasks-testing", package = "aphrody-turbo-tasks-testing", version = "0.1.0" }
+turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend", version = "0.1.0" }

@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbopack-trace-utils"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -24,4 +25,4 @@ tokio = { version = "1.52.1", features = ["macros", "signal", "sync", "rt"] }
 thread_local = "1.1.8"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.16"
-turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, version = "0.1.0" }

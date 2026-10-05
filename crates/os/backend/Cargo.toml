@@ -1,6 +1,5 @@
 [package]
 name = "aphrody-backend"
-publish               = false
 version = "1.0.0-canary"
 edition.workspace     = true
 rust-version.workspace = true

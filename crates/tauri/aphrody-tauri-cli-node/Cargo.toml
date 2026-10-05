@@ -1,6 +1,9 @@
 [package]
 edition = "2024"
 name = "aphrody-tauri-cli-node"
+description = "Aphrody platform crate aphrody-tauri-cli-node."
+license = "Apache-2.0 OR MIT"
+repository.workspace = true
 version = "0.0.0"
 
 [lib]
@@ -10,7 +13,7 @@ crate-type = ["cdylib"]
 [dependencies]
 napi = "3.12.2"
 napi-derive = "3.6.3"
-tauri-cli = { path = "../aphrody-tauri-cli", package = "aphrody-tauri-cli", default-features = false }
+tauri-cli = { path = "../aphrody-tauri-cli", package = "aphrody-tauri-cli", default-features = false, version = "3.0.0-alpha.4" }
 log = "0.4.21"
 
 [build-dependencies]

@@ -1,10 +1,10 @@
 [package]
 name = "yolo-tooling"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version = "1.97"
 license.workspace = true
-publish = false
 description = "Optional native N2B and Oxc C ABI provider for Yolo and Aphrody."
 
 [lib]

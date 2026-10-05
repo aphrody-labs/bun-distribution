@@ -1,9 +1,10 @@
 [package]
 edition = "2024"
 name = "aphrody-next-custom-transforms"
+description = "Aphrody platform crate aphrody-next-custom-transforms."
+license = "MIT"
+repository.workspace = true
 version = "0.0.0"
-publish = false
-
 [lib]
 name = "next_custom_transforms"
 
@@ -37,9 +38,9 @@ styled_components = "18.0.0"
 styled_jsx = "18.0.0"
 swc_emotion = "18.0.0"
 swc_relay = "18.0.0"
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
 urlencoding = "2.1.2"
-next-taskless = { path = "../aphrody-next-taskless", package = "aphrody-next-taskless" }
+next-taskless = { path = "../aphrody-next-taskless", package = "aphrody-next-taskless", version = "0.0.1" }
 
 react_remove_properties = "18.0.0"
 remove_console = "18.0.0"
@@ -49,4 +50,4 @@ preset_env_base = "9.0.0"
 testing = "27.0.0"
 swc_core = { version = "79.0.0", default-features = false, features = ["ecma_loader_lru", "ecma_loader_parking_lot", "parallel_rayon", "testing_transform", "__plugin_transform_host", "__plugin_transform_host_schema_v1"] }
 swc_plugin_backend_wasmtime = "16.0.0"
-turbopack-ecmascript-plugins = { path = "../aphrody-turbopack-ecmascript-plugins", package = "aphrody-turbopack-ecmascript-plugins", default-features = false }
+turbopack-ecmascript-plugins = { path = "../aphrody-turbopack-ecmascript-plugins", package = "aphrody-turbopack-ecmascript-plugins", default-features = false, version = "0.1.0" }

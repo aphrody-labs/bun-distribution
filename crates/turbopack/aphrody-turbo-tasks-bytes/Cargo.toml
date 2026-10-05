@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbo-tasks-bytes"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -21,4 +22,4 @@ bincode = { version = "2.0.1", features = ["serde"] }
 bytes = "1.11.1"
 futures = "0.3.31"
 serde = { version = "1.0.228", features = ["derive"] }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }

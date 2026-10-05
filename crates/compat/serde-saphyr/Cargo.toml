@@ -10,9 +10,10 @@
 # See Cargo.toml.orig for the original contents.
 
 [package]
-publish = false
 edition = "2024"
 name = "serde-saphyr"
+# [patch.crates-io] overlay of the upstream crate: keeps the upstream name and is never published.
+publish = false
 version = "0.0.16"
 build = false
 autolib = false

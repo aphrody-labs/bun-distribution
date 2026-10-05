@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbo-tasks-fuzz"
+repository.workspace = true
 version = "0.0.0"
 description = "A collection of fuzzers for `turbo-tasks`"
 license = "MIT"
@@ -21,7 +22,7 @@ clap = { version = "4.5.2", features = ["derive"] }
 rand = { version = "0.10.1", features = ["thread_rng"] }
 rustc-hash = "2.1.1"
 tokio = "1.52.1"
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
-turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend" }
-turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }
+turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend", version = "0.1.0" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs", version = "0.1.0" }

@@ -1,6 +1,5 @@
 [package]
-publish = false
-name = "tauri-plugin-mcp-bridge"
+name = "aphrody-tauri-plugin-mcp-bridge"
 version = "0.13.0"
 description = "MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection"
 authors = ["hypothesi"]

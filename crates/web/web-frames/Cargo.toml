@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 [package]
 name = "aphrody-web-frames"
+repository.workspace = true
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
 description = "MPEG-7 ColorLayout frame indexing and trace.moe client for Aphrody Web"
 
 [dependencies]

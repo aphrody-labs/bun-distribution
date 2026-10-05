@@ -10,8 +10,6 @@ authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 readme = "README.md"
-publish = false
-
 [lints]
 workspace = true
 

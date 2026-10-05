@@ -1,9 +1,10 @@
 [package]
 edition = "2024"
 name = "aphrody-next-napi-bindings"
+description = "Aphrody platform crate aphrody-next-napi-bindings."
+license = "MIT"
+repository.workspace = true
 version = "0.0.0"
-publish = false
-
 [lib]
 name = "next_napi_bindings"
 crate-type = ["cdylib"]
@@ -49,9 +50,9 @@ futures-util = "0.3.31"
 owo-colors = "4.2.2"
 napi = { version = "3.10.0", default-features = false, features = ["napi3", "serde-json", "tokio_rt", "error_anyhow", "napi4", "napi5"] }
 napi-derive = "3.5.8"
-next-code-frame = { path = "../aphrody-next-code-frame", package = "aphrody-next-code-frame" }
-next-custom-transforms = { path = "../aphrody-next-custom-transforms", package = "aphrody-next-custom-transforms", default-features = false }
-next-taskless = { path = "../aphrody-next-taskless", package = "aphrody-next-taskless" }
+next-code-frame = { path = "../aphrody-next-code-frame", package = "aphrody-next-code-frame", version = "0.0.1" }
+next-custom-transforms = { path = "../aphrody-next-custom-transforms", package = "aphrody-next-custom-transforms", default-features = false, version = "0.0.0" }
+next-taskless = { path = "../aphrody-next-taskless", package = "aphrody-next-taskless", version = "0.0.1" }
 rand = "0.10.1"
 rustc-hash = "2.1.1"
 serde = "1"
@@ -69,24 +70,24 @@ regex = "1.12.3"
 swc_core = { version = "79.0.0", default-features = false, features = ["ecma_loader_lru", "ecma_loader_parking_lot", "parallel_rayon", "base", "base_module", "common_concurrent", "ecma_ast", "ecma_ast_serde", "ecma_codegen", "ecma_helpers_inline", "ecma_loader_node", "ecma_minifier", "ecma_parser", "ecma_parser_typescript", "ecma_transforms", "ecma_transforms_optimization", "ecma_transforms_react", "ecma_transforms_typescript", "ecma_utils", "ecma_visit"] }
 
 # Turbopack.
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", features = ["napi"] }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
-turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend" }
-turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
-turbo-unix-path = { path = "../aphrody-turbo-unix-path", package = "aphrody-turbo-unix-path" }
-next-api = { path = "../aphrody-next-api", package = "aphrody-next-api", features = ["worker_pool"] }
-next-build = { path = "../aphrody-next-build", package = "aphrody-next-build" }
-next-core = { path = "../aphrody-next-core", package = "aphrody-next-core" }
-turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
-turbopack-ecmascript-hmr-protocol = { path = "../aphrody-turbopack-ecmascript-hmr-protocol", package = "aphrody-turbopack-ecmascript-hmr-protocol" }
-turbopack-trace-utils = { path = "../aphrody-turbopack-trace-utils", package = "aphrody-turbopack-trace-utils" }
-turbopack-trace-server = { path = "../aphrody-turbopack-trace-server", package = "aphrody-turbopack-trace-server" }
-turbopack-node = { path = "../aphrody-turbopack-node", package = "aphrody-turbopack-node", default-features = false, features = ["worker_pool"] }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", features = ["napi"], version = "0.1.0" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }
+turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend", version = "0.1.0" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs", version = "0.1.0" }
+turbo-unix-path = { path = "../aphrody-turbo-unix-path", package = "aphrody-turbo-unix-path", version = "0.0.1" }
+next-api = { path = "../aphrody-next-api", package = "aphrody-next-api", features = ["worker_pool"], version = "0.1.0" }
+next-build = { path = "../aphrody-next-build", package = "aphrody-next-build", version = "0.1.0" }
+next-core = { path = "../aphrody-next-core", package = "aphrody-next-core", version = "0.1.0" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core", version = "0.1.0" }
+turbopack-ecmascript-hmr-protocol = { path = "../aphrody-turbopack-ecmascript-hmr-protocol", package = "aphrody-turbopack-ecmascript-hmr-protocol", version = "0.1.0" }
+turbopack-trace-utils = { path = "../aphrody-turbopack-trace-utils", package = "aphrody-turbopack-trace-utils", version = "0.1.0" }
+turbopack-trace-server = { path = "../aphrody-turbopack-trace-server", package = "aphrody-turbopack-trace-server", version = "0.1.0" }
+turbopack-node = { path = "../aphrody-turbopack-node", package = "aphrody-turbopack-node", default-features = false, features = ["worker_pool"], version = "0.1.0" }
 
 mdxjs = { version = "1.0.4", features = ["serializable"] }
 
 swc_ecma_react_compiler = "25.0.0"
-turbopack-lightningcss-napi = { path = "../aphrody-turbopack-lightningcss-napi", package = "aphrody-turbopack-lightningcss-napi" }
+turbopack-lightningcss-napi = { path = "../aphrody-turbopack-lightningcss-napi", package = "aphrody-turbopack-lightningcss-napi", version = "0.0.0" }
 lightningcss = { version = "1.0.0-alpha.72", features = ["serde", "visitor", "into_owned", "browserslist"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -98,7 +99,7 @@ swc_plugin_backend_wasmtime = "16.0.0"
 # `full` pulls in `process` and `signal`, which don't exist on wasi.
 tokio = { version = "1.52.1", features = ["full"] }
 
-turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, features = ["custom_allocator"] }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, features = ["custom_allocator"], version = "0.1.0" }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = "0.60"
@@ -108,7 +109,7 @@ windows-sys = "0.60"
 getrandom = { version = "0.2.9", default-features = false, features = ["js"] }
 iana-time-zone = { version = "*", features = ["fallback"] }
 # `turbo-tasks-malloc`'s `custom_allocator` feature uses mimalloc, which isn't compatible with wasm
-turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, version = "0.1.0" }
 
 # wasi-only dependencies.
 [target.wasm32-wasip1-threads.dependencies]

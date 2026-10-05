@@ -1,13 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 [package]
 name = "aphrody-discord-compiler"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 description = "Native Rust + Bun compiler and AST orchestrator for Discord bots in Aphrody."
-publish = false
-
 [dependencies]
 aphrody-oxc-bridge = { workspace = true }
 colored = { workspace = true }

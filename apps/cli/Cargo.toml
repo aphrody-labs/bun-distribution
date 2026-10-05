@@ -1,6 +1,5 @@
 [package]
 name = "aphrody"
-publish               = false  # flip to true once base/backend/a2a-* are on crates.io
 version.workspace     = true
 edition.workspace     = true
 rust-version.workspace = true

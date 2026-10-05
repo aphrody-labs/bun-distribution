@@ -228,7 +228,7 @@ notify = { version = "8", features = [] }
 notify-debouncer-full = "0.7"
 obscura-mcp = { path = "crates/web/obscura-mcp", version = "0.1.0", features = [] }
 obscura-browser = { path = "crates/web/obscura-browser", version = "0.1.0", features = [] }
-obscura = { path = "crates/web/obscura", version = "0.1.0" }
+obscura = { path = "crates/web/obscura", version = "0.1.0", package = "aphrody-obscura" }
 obscura-cdp = { path = "crates/web/obscura-cdp", version = "0.1.0", features = [] }
 obscura-dom = { path = "crates/web/obscura-dom", version = "0.1.1", features = [] }
 obscura-js = { path = "crates/web/obscura-js", version = "0.1.0", features = [] }
@@ -452,7 +452,7 @@ tauri-plugin-autostart = { package = "aphrody-tauri-plugin-autostart", path = "c
 tauri-plugin-deep-link = { package = "aphrody-tauri-plugin-deep-link", path = "crates/tauri/aphrody-tauri-plugin-deep-link", version = "=3.0.0-alpha.2" }
 tauri-plugin-fs = { package = "aphrody-tauri-plugin-fs", path = "crates/tauri/aphrody-tauri-plugin-fs", version = "=3.0.0-alpha.2" }
 # Integrated debug bridge implementation, preserving Tauri 3 and security patches.
-tauri-plugin-mcp-bridge = { path = "crates/ui/tauri-plugin-mcp-bridge", version = "0.13.0" }
+tauri-plugin-mcp-bridge = { path = "crates/ui/tauri-plugin-mcp-bridge", version = "0.13.0", package = "aphrody-tauri-plugin-mcp-bridge" }
 tauri-specta = { package = "aphrody-tauri-specta", path = "crates/tauri/aphrody-tauri-specta", version = "2.0.0-rc.25", features = ["derive", "typescript"] }
 atomicwrites = "0.4.4"
 fs4 = "1.1.0"

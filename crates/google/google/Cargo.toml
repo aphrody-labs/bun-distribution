@@ -9,8 +9,6 @@ homepage.workspace = true
 repository.workspace = true
 license.workspace = true
 description = "Canonical Rust facade for Aphrody Google Cloud, Gemini, Web and Antigravity integrations."
-publish = false
-
 [[bin]]
 name = "aphrody-google"
 path = "src/main.rs"

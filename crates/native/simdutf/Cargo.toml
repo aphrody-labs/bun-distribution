@@ -10,10 +10,11 @@
 # See Cargo.toml.orig for the original contents.
 
 [package]
-publish = false
 edition = "2021"
 rust-version = "1.78.0"
 name = "simdutf"
+# [patch.crates-io] overlay of the upstream crate: keeps the upstream name and is never published.
+publish = false
 version = "0.7.0"
 build = "build.rs"
 autolib = false

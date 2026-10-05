@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbopack"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -30,22 +31,22 @@ serde_json = "1.0.149"
 tokio = "1.52.1"
 tracing = "0.1.44"
 
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-esregex = { path = "../aphrody-turbo-esregex", package = "aphrody-turbo-esregex" }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
-turbo-tasks-env = { path = "../aphrody-turbo-tasks-env", package = "aphrody-turbo-tasks-env" }
-turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
-turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
-turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
-turbopack-css = { path = "../aphrody-turbopack-css", package = "aphrody-turbopack-css" }
-turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript" }
-turbopack-ecmascript-runtime = { path = "../aphrody-turbopack-ecmascript-runtime", package = "aphrody-turbopack-ecmascript-runtime" }
-turbopack-env = { path = "../aphrody-turbopack-env", package = "aphrody-turbopack-env" }
-turbopack-mdx = { path = "../aphrody-turbopack-mdx", package = "aphrody-turbopack-mdx" }
-turbopack-node = { path = "../aphrody-turbopack-node", package = "aphrody-turbopack-node", default-features = false }
-turbopack-resolve = { path = "../aphrody-turbopack-resolve", package = "aphrody-turbopack-resolve" }
-turbopack-static = { path = "../aphrody-turbopack-static", package = "aphrody-turbopack-static" }
-turbopack-wasm = { path = "../aphrody-turbopack-wasm", package = "aphrody-turbopack-wasm" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-esregex = { path = "../aphrody-turbo-esregex", package = "aphrody-turbo-esregex", version = "0.1.0" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }
+turbo-tasks-env = { path = "../aphrody-turbo-tasks-env", package = "aphrody-turbo-tasks-env", version = "0.1.0" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs", version = "0.1.0" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash", version = "0.1.0" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core", version = "0.1.0" }
+turbopack-css = { path = "../aphrody-turbopack-css", package = "aphrody-turbopack-css", version = "0.1.0" }
+turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript", version = "0.1.0" }
+turbopack-ecmascript-runtime = { path = "../aphrody-turbopack-ecmascript-runtime", package = "aphrody-turbopack-ecmascript-runtime", version = "0.1.0" }
+turbopack-env = { path = "../aphrody-turbopack-env", package = "aphrody-turbopack-env", version = "0.1.0" }
+turbopack-mdx = { path = "../aphrody-turbopack-mdx", package = "aphrody-turbopack-mdx", version = "0.1.0" }
+turbopack-node = { path = "../aphrody-turbopack-node", package = "aphrody-turbopack-node", default-features = false, version = "0.1.0" }
+turbopack-resolve = { path = "../aphrody-turbopack-resolve", package = "aphrody-turbopack-resolve", version = "0.1.0" }
+turbopack-static = { path = "../aphrody-turbopack-static", package = "aphrody-turbopack-static", version = "0.1.0" }
+turbopack-wasm = { path = "../aphrody-turbopack-wasm", package = "aphrody-turbopack-wasm", version = "0.1.0" }
 
 [dev-dependencies]
-turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend" }
+turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend", version = "0.1.0" }

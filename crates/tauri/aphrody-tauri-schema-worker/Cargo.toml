@@ -1,9 +1,10 @@
 [package]
 name = "aphrody-tauri-schema-worker"
+description = "Aphrody platform crate aphrody-tauri-schema-worker."
+license = "Apache-2.0 OR MIT"
+repository.workspace = true
 version = "0.0.0"
 edition = "2024"
-publish = false
-
 [lib]
 name = "tauri_schema_worker"
 crate-type = ["cdylib"]

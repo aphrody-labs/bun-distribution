@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [package]
 name = "aphrody-gui-core"
+repository.workspace = true
 version = "1.0.0-canary"
 edition.workspace = true
 license.workspace = true

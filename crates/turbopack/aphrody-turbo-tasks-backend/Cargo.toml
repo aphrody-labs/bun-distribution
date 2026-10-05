@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbo-tasks-backend"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -43,7 +44,7 @@ trace_prepare_tasks = []
 [dependencies]
 anyhow = "1.0.100"
 bincode = { version = "2.0.1", features = ["serde"] }
-auto-hash-map = { path = "../aphrody-auto-hash-map", package = "aphrody-auto-hash-map" }
+auto-hash-map = { path = "../aphrody-auto-hash-map", package = "aphrody-auto-hash-map", version = "0.1.0" }
 bitfield = "0.19.4"
 crossbeam-utils = "0.8"
 dashmap = { version = "7.0.0-rc2", features = ["raw-api"] }
@@ -62,18 +63,18 @@ serde_path_to_error = "0.1.20"
 smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_new"] }
 tokio = "1.52.1"
 tracing = "0.1.44"
-turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode" }
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
-turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
-turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false }
+turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode", version = "0.0.0" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash", version = "0.1.0" }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, version = "0.1.0" }
 thread_local = "1.1.8"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-turbo-persistence = { path = "../aphrody-turbo-persistence", package = "aphrody-turbo-persistence" }
+turbo-persistence = { path = "../aphrody-turbo-persistence", package = "aphrody-turbo-persistence", version = "0.1.0" }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-turbo-persistence = { path = "../aphrody-turbo-persistence", package = "aphrody-turbo-persistence", default-features = false }
+turbo-persistence = { path = "../aphrody-turbo-persistence", package = "aphrody-turbo-persistence", default-features = false, version = "0.1.0" }
 
 [dev-dependencies]
 async-trait = "0.1.64"
@@ -83,12 +84,12 @@ regex = "1.12.3"
 tempfile = "3.20.0"
 triomphe = { git = "https://github.com/sokra/triomphe", branch = "sokra/unstable" }
 thiserror = "1.0.48"
-turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, features = ["custom_allocator"] }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, features = ["custom_allocator"], version = "0.1.0" }
 rstest = "0.16.0"
-turbo-tasks-testing = { path = "../aphrody-turbo-tasks-testing", package = "aphrody-turbo-tasks-testing" }
+turbo-tasks-testing = { path = "../aphrody-turbo-tasks-testing", package = "aphrody-turbo-tasks-testing", version = "0.1.0" }
 # The read-outcome tests assert on the counters, so they need them compiled in. Only for tests —
 # normal builds of this crate get the default (disabled) turbo-tasks.
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", features = ["inline_execution_stats"] }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", features = ["inline_execution_stats"], version = "0.1.0" }
 
 # Only used by the benchmarks, which don't run on wasm. Gated by target so that
 # `cargo test -p turbo-tasks-backend --lib --target wasm32-wasip1-threads` can build: criterion pulls

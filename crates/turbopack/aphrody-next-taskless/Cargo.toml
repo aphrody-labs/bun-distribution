@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-next-taskless"
+repository.workspace = true
 version = "0.0.1"
 description = "TBD"
 license = "MIT"
@@ -19,4 +20,4 @@ unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzz
 anyhow = "1.0.100"
 regex = "1.12.3"
 serde_json = "1.0.149"
-turbo-unix-path = { path = "../aphrody-turbo-unix-path", package = "aphrody-turbo-unix-path" }
+turbo-unix-path = { path = "../aphrody-turbo-unix-path", package = "aphrody-turbo-unix-path", version = "0.0.1" }

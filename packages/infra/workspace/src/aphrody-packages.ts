@@ -422,7 +422,8 @@ export async function publishOrder(root: string, names: string[]): Promise<strin
 export interface PublishOutcome {
   name: string;
   version: string;
-  status: "published" | "current" | "ready" | "blocked" | "failed";
+  /** `staged`: the registry holds the version for owner approval (npm staged publishing). */
+  status: "published" | "staged" | "current" | "ready" | "blocked" | "failed";
   detail?: string;
 }
 
@@ -527,6 +528,7 @@ export async function publishAphrodyPackages(options: {
       const state = await registryShasum(name, manifest.version, registry);
       if (state.exists) {
         if (state.shasum === shasum) outcome("current");
+        else if (!state.shasum) outcome("staged", "awaiting owner approval on the registry");
         else
           outcome(
             "blocked",
@@ -545,12 +547,17 @@ export async function publishAphrodyPackages(options: {
         stdout: "pipe",
         stderr: "pipe",
       });
-      if (published.exitCode === 0) outcome("published");
-      else
+      const output = `${published.stdout.toString()}${published.stderr.toString()}`.trim();
+      if (published.exitCode !== 0)
+        outcome(/previously staged version/.test(output) ? "staged" : "failed", output.slice(-400));
+      else {
+        // Staged versions stay invisible until approved, so success is confirmed on the registry.
+        const after = await registryShasum(name, manifest.version, registry);
         outcome(
-          "failed",
-          `${published.stdout.toString()}${published.stderr.toString()}`.trim().slice(-400),
+          after.exists && after.shasum === shasum ? "published" : "staged",
+          after.exists ? undefined : "awaiting owner approval on the registry",
         );
+      }
     } finally {
       await rm(stage, { recursive: true, force: true });
     }
@@ -578,6 +585,7 @@ export async function runAphrodyPackages(args: string[]): Promise<number> {
       console.log(
         `${item.status.padEnd(9)} ${item.name}@${item.version}${item.detail ? `  ${item.detail}` : ""}`,
       );
+    // Staged versions are published work awaiting the owner; only refusals fail the command.
     return outcomes.some((item) => item.status === "failed" || item.status === "blocked") ? 1 : 0;
   }
   if (action !== "prepare") {

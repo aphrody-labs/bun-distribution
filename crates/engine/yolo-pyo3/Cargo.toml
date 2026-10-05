@@ -12,5 +12,5 @@ name = "_yolo_native"
 crate-type = ["cdylib"]
 
 [dependencies]
-yolo-core = { path = "../yolo-core" }
+yolo-core = { path = "../yolo-core", version = "1.0.0" }
 pyo3 = { workspace = true }

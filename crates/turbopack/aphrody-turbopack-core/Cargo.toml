@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbopack-core"
+repository.workspace = true
 version = "0.1.0"
 description = "TBD"
 license = "MIT"
@@ -19,7 +20,7 @@ unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzz
 [dependencies]
 anyhow = "1.0.100"
 async-trait = "0.1.64"
-auto-hash-map = { path = "../aphrody-auto-hash-map", package = "aphrody-auto-hash-map" }
+auto-hash-map = { path = "../aphrody-auto-hash-map", package = "aphrody-auto-hash-map", version = "0.1.0" }
 bincode = { version = "2.0.1", features = ["serde"] }
 bitfield = "0.19.4"
 browserslist-rs = "0.20.0"
@@ -43,16 +44,16 @@ smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_n
 swc_sourcemap = "10.0.2"
 swc_core = { version = "79.0.0", default-features = false, features = ["ecma_loader_lru", "ecma_loader_parking_lot", "parallel_rayon", "ecma_preset_env", "common"] }
 tracing = "0.1.44"
-turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode" }
-turbo-esregex = { path = "../aphrody-turbo-esregex", package = "aphrody-turbo-esregex" }
-turbo-frozenmap = { path = "../aphrody-turbo-frozenmap", package = "aphrody-turbo-frozenmap" }
-turbo-prehash = { path = "../aphrody-turbo-prehash", package = "aphrody-turbo-prehash" }
-turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
-turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
-turbo-tasks-env = { path = "../aphrody-turbo-tasks-env", package = "aphrody-turbo-tasks-env" }
-turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
-turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
-turbo-unix-path = { path = "../aphrody-turbo-unix-path", package = "aphrody-turbo-unix-path" }
+turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode", version = "0.0.0" }
+turbo-esregex = { path = "../aphrody-turbo-esregex", package = "aphrody-turbo-esregex", version = "0.1.0" }
+turbo-frozenmap = { path = "../aphrody-turbo-frozenmap", package = "aphrody-turbo-frozenmap", version = "0.1.0" }
+turbo-prehash = { path = "../aphrody-turbo-prehash", package = "aphrody-turbo-prehash", version = "0.1.0" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr", version = "0.1.0" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks", version = "0.1.0" }
+turbo-tasks-env = { path = "../aphrody-turbo-tasks-env", package = "aphrody-turbo-tasks-env", version = "0.1.0" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs", version = "0.1.0" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash", version = "0.1.0" }
+turbo-unix-path = { path = "../aphrody-turbo-unix-path", package = "aphrody-turbo-unix-path", version = "0.0.1" }
 url = "2.2.2"
 urlencoding = "2.1.2"
 uuid = "1.18.1"
@@ -60,8 +61,8 @@ uuid = "1.18.1"
 [dev-dependencies]
 rstest = "0.16.0"
 tokio = "1.52.1"
-turbo-tasks-testing = { path = "../aphrody-turbo-tasks-testing", package = "aphrody-turbo-tasks-testing" }
-turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend" }
+turbo-tasks-testing = { path = "../aphrody-turbo-tasks-testing", package = "aphrody-turbo-tasks-testing", version = "0.1.0" }
+turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend", version = "0.1.0" }
 tempfile = "3.20.0"
 
 [features]

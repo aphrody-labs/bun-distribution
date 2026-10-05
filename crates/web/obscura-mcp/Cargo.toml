@@ -1,7 +1,7 @@
 [package]
 name = "obscura-mcp"
+description = "Aphrody platform crate obscura-mcp."
 version = "0.1.0"
-publish = false
 build = "build.rs"
 edition = "2021"
 license = "Apache-2.0"

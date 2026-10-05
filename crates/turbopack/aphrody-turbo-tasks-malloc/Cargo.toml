@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbo-tasks-malloc"
+repository.workspace = true
 version = "0.1.0"
 description = "A wrapper around mimalloc or the system allocator that tracks allocations"
 license = "MIT"

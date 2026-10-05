@@ -1,13 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 [package]
 name = "aphrody-web-crawl"
+repository.workspace = true
 description = "Shared persistent crawl frontier and bounded Rust crawler for Aphrody Web."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
-
 [dependencies]
 aphrody-web-extract = { workspace = true }
 obscura-dom = { workspace = true }

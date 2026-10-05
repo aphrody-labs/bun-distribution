@@ -17,8 +17,6 @@ license.workspace = true
 authors.workspace = true
 homepage.workspace = true
 repository.workspace = true
-publish = false
-
 [lib]
 name = "aphrody_app_lib"
 crate-type = ["rlib"]

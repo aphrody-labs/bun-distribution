@@ -2,7 +2,6 @@
 name = "aphrody-tauri-examples"
 version = "0.1.0"
 description = "Tauri desktop application examples (wry and CEF runtimes)"
-publish = false
 authors = ["Tauri Programme within The Commons Conservancy"]
 homepage = "https://tauri.app/"
 repository = "https://github.com/aphrody-labs/yolo"

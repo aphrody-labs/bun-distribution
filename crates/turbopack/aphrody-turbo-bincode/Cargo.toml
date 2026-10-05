@@ -1,5 +1,6 @@
 [package]
 name = "aphrody-turbo-bincode"
+repository.workspace = true
 version = "0.0.0"
 description = "Utilities for bincode used in turbo-tasks and turbopack"
 license = "MIT"
@@ -21,5 +22,5 @@ indexmap = "2.14.0"
 mime = "0.3.16"
 serde = { version = "1.0.228", features = ["derive"] }
 smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_new"] }
-turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash", version = "0.1.0" }
 unty = "0.0.4"
