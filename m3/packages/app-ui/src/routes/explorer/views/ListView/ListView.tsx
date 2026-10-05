@@ -16,7 +16,7 @@ import {
 } from "./useTable";
 import type { DirectorySortBy } from "@aphrody/drive-client";
 import { useExplorerFiles } from "../../hooks/useExplorerFiles";
-import { DragSelect } from "./DragSelect";
+import { DragSelect } from "../DragSelect";
 import { useEmptySpaceContextMenu } from "../../hooks/useEmptySpaceContextMenu";
 
 export const ListView = memo(function ListView() {

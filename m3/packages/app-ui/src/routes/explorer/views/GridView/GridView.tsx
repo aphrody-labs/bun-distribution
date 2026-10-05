@@ -5,7 +5,7 @@ import { useSelection } from "../../SelectionContext";
 import { FileCard } from "./FileCard";
 import type { File } from "@aphrody/drive-client";
 import { useExplorerFiles } from "../../hooks/useExplorerFiles";
-import { DragSelect } from "./DragSelect";
+import { DragSelect } from "../DragSelect";
 import { useEmptySpaceContextMenu } from "../../hooks/useEmptySpaceContextMenu";
 
 const VIRTUALIZATION_THRESHOLD = 0; // Disabled - always virtualize
