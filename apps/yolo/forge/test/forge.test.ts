@@ -32,7 +32,7 @@ describe("arguments", () => {
     const o = parseArgs(["build"], { HOME: "/home/x" });
     expect(o.command).toBe("build");
     expect(o.config.repository).toBe(DEFAULT_CONFIG.repository);
-    expect(o.config.branch).toBe("main");
+    expect(o.config.branch).toBe("yolo");
     expect(o.home).toBe("/home/x/.cache/bun-forge");
     expect(o.artifacts).toBe("/home/x/.cache/bun-forge/artifacts");
   });

@@ -116,7 +116,7 @@ paquets `fork` déclarés).
   sur machine vierge (apt avec sudo ; LLVM 23.1.1, cmake, rustup dans son cache, sans root), crée une
   partition temporaire par commit (loop ext4, tmpfs ou répertoire), y extrait un worktree du miroir partiel
   et construit `scripts/build.ts --profile=release` ; `watch` construit chaque nouveau commit de la branche
-  surveillée (défaut `main` du fork ; nos absorptions vivent sur `yolo`) ; reçu JSON, binaire et sha256 par commit.
+  surveillée (`yolo`, branche de production et branche par défaut du fork ; `main` = miroir amont) ; reçu JSON, binaire et sha256 par commit.
 - [~] Activation : premier build complet du fork par `bun-forge` sur la factory fait (yolo `954db0c0`,
   7 min 10 s, Bun 1.4.3, les 5 spécifiers absorbés résolus en natif) ; restent l’installation du runtime
   (glibc 2.43 : WSL Ubuntu 26.04), puis `--fork-active` et le retrait des déclarations `fork`.

@@ -1,12 +1,19 @@
 {
   "schemaVersion": 1,
-  "description": "bun-forge: builds the aphrody-labs/bun fork from a fresh Linux machine, one temporary checkout per commit of the watched branch. Embedded into the compiled executable; flags and BUN_FORGE_* variables override it.",
+  "description": "bun-forge: builds the aphrody-labs/bun fork from a fresh Linux machine, one temporary checkout per commit of the watched branch. `yolo` is the fork production line (default branch, absorbed modules); `main` mirrors oven-sh/bun. Embedded into the compiled executable; flags and BUN_FORGE_* variables override it.",
   "repository": "https://github.com/aphrody-labs/bun.git",
-  "branch": "main",
+  "branch": "yolo",
   "profile": "release",
   "lto": true,
-  "scratch": { "mode": "auto", "size": "96G" },
-  "watch": { "intervalSeconds": 120, "everyCommit": true, "historyDepth": 200 },
+  "scratch": {
+    "mode": "auto",
+    "size": "96G"
+  },
+  "watch": {
+    "intervalSeconds": 120,
+    "everyCommit": true,
+    "historyDepth": 200
+  },
   "toolchain": {
     "llvm": {
       "major": 23,
