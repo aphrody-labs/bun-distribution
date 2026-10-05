@@ -80,8 +80,11 @@ Remote work goes through `aphrody-infra ssh` or the MCP `infra_exec`, never raw 
 Bun gates (root `package.json`): `bun run bun:check`, `typecheck`, `lint`,
 `format:check`, `test` (all via `@aphrody/workspace`); web: `web:verify`.
 
-Workers never start Cargo. The integrating agent uses
-`scripts/build/rust/cargo-serial.sh`, the configured factory and global sccache.
+Workers never start Cargo. Heavy Cargo never runs in WSL (it crashes it): the
+integrating agent runs `bun scripts/build/rust/vps-cargo.ts run -- <cargo args>`
+(exact WSL worktree built on the VPS under the factory locks, tmux sessions
+`vps-tunnel`/`vps-cargo`, `fetch` for artifacts) or the factory for pushed main
+revisions, both through `scripts/build/rust/cargo-serial.sh` and global sccache.
 Serialize Rust gates; no resource-guard bypass, shared cache cleanup or parallel
 engine builds. `APHRODY_CARGO_JOBS=1..6` tunes within the guard.
 

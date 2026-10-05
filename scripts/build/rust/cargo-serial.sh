@@ -21,7 +21,7 @@ case "$cargo_command" in
             # The Workspace build-factory owner interprets the factory contract.
             factory_route="$(bun "$source_root/packages/infra/workspace/src/build-factory.ts" status --route)"
             if [[ "$factory_route" == factory ]]; then
-                echo "Heavy Cargo execution belongs to the VPS factory; use aphrody-ops build-factory run --repo aphrody --revision <full-sha> -- scripts/build/rust/cargo-serial.sh <arguments>." >&2
+                echo "Heavy Cargo never runs in WSL. Exact worktree state: bun scripts/build/rust/vps-cargo.ts run -- <arguments>; pushed main revision: aphrody-ops build-factory run --repo aphrody --revision <full-sha> -- scripts/build/rust/cargo-serial.sh <arguments>." >&2
                 echo "APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic." >&2
                 exit 64
             fi

@@ -1,0 +1,46 @@
+{
+  "$comment": "WSL -> VPS Cargo tunnel (scripts/build/rust/vps-cargo.ts). Heavy Cargo never runs in WSL: the exact WSL worktree (HEAD + uncommitted, .gitignore respected) is snapshotted, sent to a dedicated VPS checkout and built there under the factory locks; logs and artifacts come back over the same SSH master.",
+  "schemaVersion": 1,
+  "host": "vps",
+  "controlPath": "~/.ssh/cm/vps-cargo",
+  "localSession": "vps-tunnel",
+  "remoteSession": "vps-cargo",
+  "remoteWorkspace": "/srv/aphrody-build/workspaces/aphrody-wsl",
+  "remoteSeed": "/srv/aphrody-build/workspaces/aphrody",
+  "remoteTargetDir": "/srv/aphrody-build/cache/cargo/aphrody-wsl",
+  "remoteLockDir": "/srv/aphrody-build/locks",
+  "remoteHeavyLock": "/srv/aphrody-build/locks/heavy.lock",
+  "remoteLogDir": "/srv/aphrody-build/artifacts/wsl",
+  "remoteEnv": {
+    "APHRODY_BUILD_HOST": "vps",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_GIT_FETCH_WITH_CLI": "true",
+    "SCCACHE_DIR": "/srv/aphrody-build/cache/sccache",
+    "BUN_INSTALL_CACHE_DIR": "/srv/aphrody-build/cache/bun"
+  },
+  "jobs": 6,
+  "forwards": {
+    "remote": [
+      {
+        "bind": "127.0.0.1:19418",
+        "to": "127.0.0.1:9418",
+        "purpose": "VPS fetches the WSL snapshot from the local git daemon: git fetch git://127.0.0.1:19418/aphrody refs/wsl/snapshot"
+      }
+    ],
+    "local": []
+  },
+  "gitDaemon": {
+    "listen": "127.0.0.1",
+    "port": 9418,
+    "basePath": "~",
+    "repository": "aphrody"
+  },
+  "snapshotRef": "refs/wsl/snapshot",
+  "refuseSnapshotPaths": [
+    "(^|/)\\.env(\\..*)?$",
+    "\\.(pem|key|p12|pfx)$",
+    "(^|/)id_(rsa|ed25519|ecdsa)(\\.pub)?$",
+    "(^|/)credentials(\\.json)?$",
+    "(^|/)secrets?\\.(json|toml|ya?ml)$"
+  ]
+}
