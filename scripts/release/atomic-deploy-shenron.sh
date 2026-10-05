@@ -33,6 +33,8 @@ nginx_conf="${SHENRON_NGINX_CONF:-/etc/nginx/conf.d/shenron.conf}"
 probe_attempts="${SHENRON_PROBE_ATTEMPTS:-30}"
 run_as="${SHENRON_RUN_AS:-ubuntu}"
 bun="${SHENRON_BUN:-$(command -v bun || true)}"
+# sudo resets PATH: fall back to the service user's Bun (the units run /home/<user>/.bun/bin/bun).
+[[ -x "$bun" ]] || bun="$(getent passwd "$run_as" | cut -d: -f6)/.bun/bin/bun"
 [[ -x "$bun" ]] || { echo "Bun not found: set SHENRON_BUN to its absolute path" >&2; exit 2; }
 current="$root/current"
 releases="$root/releases"
