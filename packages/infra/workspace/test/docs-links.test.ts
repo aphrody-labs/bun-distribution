@@ -30,6 +30,11 @@ test("generated migration index and URL metadata resolve actual local files", as
     const migration = join(root, "docs/migration");
     await mkdir(migration, { recursive: true });
     await writeFile(join(migration, "document-import.json"), "{}");
+    // The generated index always links the repository navigation and inventories.
+    await writeFile(join(migration, "source-map.json"), "{}");
+    await writeFile(join(root, "docs/llms.txt"), "");
+    await mkdir(join(root, "docs/reference/workspace"), { recursive: true });
+    await writeFile(join(root, "docs/reference/workspace/documentation.json"), "{}");
     const entries = [
       {
         source: "owner/Guide (draft)[1].md",

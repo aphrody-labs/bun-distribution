@@ -37,12 +37,15 @@ export function parseIconSpecifier(tail: string): IconRequest {
   const [pathPart = "", query = ""] = tail.split("?", 2);
   const parts = pathPart.split("/").filter(Boolean);
   const name = parts.pop();
-  if (!name || !/^[a-z0-9_]+$/.test(name)) throw new Error(`m3-bun: invalid icon name in m3:icons/${tail}`);
+  if (!name || !/^[a-z0-9_]+$/.test(name))
+    throw new Error(`m3-bun: invalid icon name in m3:icons/${tail}`);
   const style = (parts.pop() ?? "outlined") as IconStyle;
-  if (!(ICON_STYLES as readonly string[]).includes(style) || parts.length > 0) throw new Error(`m3-bun: m3:icons/${tail}: style must be one of ${ICON_STYLES.join(", ")}`);
+  if (!(ICON_STYLES as readonly string[]).includes(style) || parts.length > 0)
+    throw new Error(`m3-bun: m3:icons/${tail}: style must be one of ${ICON_STYLES.join(", ")}`);
   const params = new URLSearchParams(query);
   const weight = Number(params.get("wght") ?? 400);
-  if (![100, 200, 300, 400, 500, 600, 700].includes(weight)) throw new Error(`m3-bun: m3:icons/${tail}: wght must be 100..700`);
+  if (![100, 200, 300, 400, 500, 600, 700].includes(weight))
+    throw new Error(`m3-bun: m3:icons/${tail}: wght must be 100..700`);
   return { name, style, fill: params.get("fill") === "1", weight };
 }
 
@@ -53,8 +56,12 @@ export function iconFile({ name, fill, weight }: IconRequest): string {
 
 /** The SVG markup of an icon, or a build error that names the file. */
 export function readIcon(request: IconRequest, root: string | null = iconsRoot() ?? null): string {
-  if (!root) throw new Error("m3-bun: the Material Symbols catalogue is not available: set M3_ICONS_ROOT (the fork is no longer vendored)");
+  if (!root)
+    throw new Error(
+      "m3-bun: the Material Symbols catalogue is not available: set M3_ICONS_ROOT (the fork is no longer vendored)",
+    );
   const file = join(root, request.name, `materialsymbols${request.style}`, iconFile(request));
-  if (!existsSync(file)) throw new Error(`m3-bun: no icon ${request.style}/${iconFile(request)} in ${root}`);
+  if (!existsSync(file))
+    throw new Error(`m3-bun: no icon ${request.style}/${iconFile(request)} in ${root}`);
   return readFileSync(file, "utf8").trim();
 }
