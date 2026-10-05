@@ -171,6 +171,8 @@ test.skipIf(process.platform !== "linux")(
           ...process.env,
           PATH: binaryDirectory + ":" + process.env.PATH,
           RUSTC_WRAPPER: "/inherited-wrapper",
+          // A private lock keeps the fake build from queueing behind real Cargo work on the host.
+          APHRODY_CARGO_LOCK_DIR: join(root, "lock"),
         },
         stdout: "pipe",
         stderr: "pipe",

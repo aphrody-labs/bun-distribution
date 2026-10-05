@@ -7,7 +7,45 @@ use aphrody_secrets::{SecretStore, SecretValue};
 use futures_util::TryStreamExt as _;
 use hf_hub::HFClient;
 /// Official repository-kind selector, shared with the pinned library.
-pub use hf_hub::{RepoTypeAny, repository::RepoInfo};
+pub use hf_hub::RepoTypeAny;
+use hf_hub::repository::{DatasetInfo, KernelInfo, ModelInfo, SpaceInfo};
+
+/// Repository metadata of any kind, carrying the official per-kind info types.
+/// hf-hub 1.0 exposes typed `info()` calls only, so the runtime-tagged union lives here.
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub enum RepoInfo {
+    /// Model metadata, boxed because [`ModelInfo`] dwarfs the other variants.
+    Model(Box<ModelInfo>),
+    /// Dataset metadata.
+    Dataset(DatasetInfo),
+    /// Space metadata.
+    Space(SpaceInfo),
+    /// Kernel metadata.
+    Kernel(KernelInfo),
+}
+
+impl RepoInfo {
+    /// Repository id, in the form `owner/name`.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        match self {
+            Self::Model(info) => &info.id,
+            Self::Dataset(info) => &info.id,
+            Self::Space(info) => &info.id,
+            Self::Kernel(info) => &info.id,
+        }
+    }
+
+    /// Model metadata, when this describes a model repository.
+    #[must_use]
+    pub fn as_model(&self) -> Option<&ModelInfo> {
+        match self {
+            Self::Model(info) => Some(info),
+            _ => None,
+        }
+    }
+}
 
 /// Errors deliberately exclude remote bodies and secret-store error strings.
 #[derive(Debug, thiserror::Error)]
@@ -147,13 +185,38 @@ impl Hub {
         if revision.is_empty() || revision.len() > 256 || revision.chars().any(char::is_control) {
             return Err(HubError::InvalidRequest);
         }
-        self.client
-            .repository(kind, owner, name)
-            .info()
-            .revision(revision)
-            .send()
-            .await
-            .map_err(|_| HubError::Request)
+        let client = &self.client;
+        let info = match kind {
+            RepoTypeAny::Model => client
+                .model(owner, name)
+                .info()
+                .revision(revision)
+                .send()
+                .await
+                .map(|v| RepoInfo::Model(Box::new(v))),
+            RepoTypeAny::Dataset => client
+                .dataset(owner, name)
+                .info()
+                .revision(revision)
+                .send()
+                .await
+                .map(RepoInfo::Dataset),
+            RepoTypeAny::Space => client
+                .space(owner, name)
+                .info()
+                .revision(revision)
+                .send()
+                .await
+                .map(RepoInfo::Space),
+            RepoTypeAny::Kernel => client
+                .kernel(owner, name)
+                .info()
+                .revision(revision)
+                .send()
+                .await
+                .map(RepoInfo::Kernel),
+        };
+        info.map_err(|_| HubError::Request)
     }
 
     /// Search a bounded metadata page (1–100 results); never download payloads.

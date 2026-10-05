@@ -3,7 +3,7 @@
 /**
  * host-netbench: comparable before/after measurement of a web host's network path.
  *
- *   bun scripts/audit/infra/host-netbench.ts --target vps --client dbfr [--url URL]... [--seconds N]
+ *   bun scripts/audit/infra/host-netbench.ts --target vps --client dbfr --url URL [--url URL]... [--seconds N]
  *       [--connections N] [--freeze UNIT]... [--label NAME] [--out FILE.json]
  *
  * The load comes from another host (`oha` on --client) so it crosses the target's real NIC.
@@ -32,17 +32,18 @@ function parseArgs(argv: string[]): Options {
   const one = (name: string): string | undefined => all(name)[0];
   const target = one("--target");
   const client = one("--client");
-  if (!target || !client) {
+  // The measured URLs belong to the product served by the target, so the caller names them.
+  const urls = all("--url");
+  if (!target || !client || !urls.length) {
     console.error(
-      "usage: host-netbench --target <host> --client <host> [--url URL]... [--seconds N] [--connections N] [--freeze UNIT]... [--label NAME] [--out FILE]",
+      "usage: host-netbench --target <host> --client <host> --url URL [--url URL]... [--seconds N] [--connections N] [--freeze UNIT]... [--label NAME] [--out FILE]",
     );
     process.exit(2);
   }
-  const urls = all("--url");
   return {
     target,
     client,
-    urls: urls.length ? urls : ["https://cdn.dragonballfr.com/health"],
+    urls,
     seconds: Number(one("--seconds") ?? 15),
     connections: Number(one("--connections") ?? 128),
     freeze: all("--freeze"),
