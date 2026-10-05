@@ -153,6 +153,9 @@ aphrody-web-engine        = { workspace = true }
 aphrody-m3-reproduce      = { workspace = true, features = ["cli"] }
 aphrody-render            = { workspace = true }
 aphrody-bindgen           = { workspace = true }
+# `aphrody tauri` and `aphrody create-tauri-app`: the vendored Tauri CLIs served in process.
+tauri-cli                 = { path = "../../tauri/aphrody-tauri-cli", package = "aphrody-tauri-cli", version = "3.0.0-alpha.4" }
+create-tauri-app          = { path = "../../tauri/aphrody-create-tauri-app", package = "aphrody-create-tauri-app", version = "4.7.4" }
 aphrody-gemini-web        = { workspace = true }
 aphrody-jev               = { workspace = true, features = ["server"] }
 aphrody-embed             = { workspace = true, features = ["server"] }

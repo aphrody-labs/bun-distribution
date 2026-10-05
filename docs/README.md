@@ -71,7 +71,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [contracts](plans/contracts/) | 1 | [PLAN — aphrody-contracts](plans/contracts/PLAN.md) |
 | plans | [convergence](plans/convergence/) | 1 | - |
 | plans | [discord](plans/discord/) | 2 | [Aphrody Discord plan](plans/discord/PLAN.md) |
-| plans | [fusion](plans/fusion/) | 13 | - |
+| plans | [fusion](plans/fusion/) | 14 | - |
 | plans | [infra](plans/infra/) | 4 | [Aphrody Infra plan](plans/infra/PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
@@ -147,4 +147,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 8 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 4549 files.
+Total: 4550 files.

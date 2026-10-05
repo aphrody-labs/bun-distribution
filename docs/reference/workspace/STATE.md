@@ -367,7 +367,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-acl-tests` | [crates/tauri/aphrody-acl-tests](../../../crates/tauri/aphrody-acl-tests) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-create-tauri-app` | [crates/tauri/aphrody-create-tauri-app](../../../crates/tauri/aphrody-create-tauri-app) | rust crate | 4.7.4 | bin, lib | yes | 0 | 2026-10-05 |
+| `aphrody-create-tauri-app` | [crates/tauri/aphrody-create-tauri-app](../../../crates/tauri/aphrody-create-tauri-app) | rust crate | 4.7.4 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-create-tauri-app-node` | [crates/tauri/aphrody-create-tauri-app-node](../../../crates/tauri/aphrody-create-tauri-app-node) | rust crate | 0.0.0 | cdylib | no | 0 | 2026-10-05 |
 | `aphrody-restart` | [crates/tauri/aphrody-restart](../../../crates/tauri/aphrody-restart) | rust crate | 0.1.0 | bin | yes | 0 | 2026-10-05 |
 | `aphrody-tao` | [crates/tauri/aphrody-tao](../../../crates/tauri/aphrody-tao) | rust crate | 0.37.1 | lib | yes | 4 | 2026-10-05 |
@@ -376,7 +376,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/api` | [crates/tauri/aphrody-tauri-api](../../../crates/tauri/aphrody-tauri-api) | bun package | 3.0.0-alpha.2 | lib | no | 0 | 2026-10-05 |
 | `aphrody-tauri-build` | [crates/tauri/aphrody-tauri-build](../../../crates/tauri/aphrody-tauri-build) | rust crate | 3.0.0-alpha.3 | lib | yes | 1 | 2026-10-05 |
 | `aphrody-tauri-bundler` | [crates/tauri/aphrody-tauri-bundler](../../../crates/tauri/aphrody-tauri-bundler) | rust crate | 3.0.0-alpha.3 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-tauri-cli` | [crates/tauri/aphrody-tauri-cli](../../../crates/tauri/aphrody-tauri-cli) | rust crate | 3.0.0-alpha.4 | bin, lib | yes | 2 | 2026-10-05 |
+| `aphrody-tauri-cli` | [crates/tauri/aphrody-tauri-cli](../../../crates/tauri/aphrody-tauri-cli) | rust crate | 3.0.0-alpha.4 | lib | yes | 2 | 2026-10-05 |
 | `aphrody-tauri-cli-node` | [crates/tauri/aphrody-tauri-cli-node](../../../crates/tauri/aphrody-tauri-cli-node) | rust crate | 0.0.0 | cdylib | no | 0 | 2026-10-05 |
 | `aphrody-tauri-codegen` | [crates/tauri/aphrody-tauri-codegen](../../../crates/tauri/aphrody-tauri-codegen) | rust crate | 3.0.0-alpha.3 | lib | yes | 1 | 2026-10-05 |
 | `aphrody-tauri-driver` | [crates/tauri/aphrody-tauri-driver](../../../crates/tauri/aphrody-tauri-driver) | rust crate | 3.0.0-alpha.1 | bin | no | 0 | 2026-10-05 |

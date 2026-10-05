@@ -3426,7 +3426,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "f59ab47142c4bcf1f131b5a64113378ed3f896b2ee13977ee6002fb6f82b8489",
+      "sha256": "e25392ebaef8af133be4462678fca098a23410e4343671ed448a68cbb5ce91cf",
       "bytes": 11440,
       "domain": "",
       "status": "generated",
@@ -9646,8 +9646,8 @@
     {
       "path": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md",
       "title": "Plan de fusion Obscura × Bun — partie 4 de 4 : audits et contexte vérifiés",
-      "sha256": "7a02c9769e3113c46fd0ecacc44973df3fcde5d3f17cde2944b49659c150297b",
-      "bytes": 39216,
+      "sha256": "ae86e011bfc6ce0a62e5fcc01796ca4cf506cbe29f2c2db6e6ca5538818ac5c6",
+      "bytes": 43088,
       "domain": "fusion",
       "status": "canonical",
       "visibility": "private",
@@ -41346,8 +41346,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "34bb5e0ad374bfe529cd1534ab5662f288d2824130da79f1bec1dd419f95b86e",
-      "bytes": 53559,
+      "sha256": "18d48de3d9d00ad8603559b252eb699ace671dc6917d6c7e442b79e09f945908",
+      "bytes": 53549,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

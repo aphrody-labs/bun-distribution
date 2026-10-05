@@ -15,10 +15,6 @@ rust-version = "1.85"
 [lib]
 name = "create_tauri_app"
 
-[[bin]]
-name = "cargo-create-tauri-app"
-path = "src/main.rs"
-
 [dependencies]
 anyhow = { workspace = true }
 dialoguer = "0.12"

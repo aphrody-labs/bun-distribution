@@ -63,6 +63,9 @@ pub(crate) const TOOLS: &[Tool] = &[
     tool("agent-train", &["aphrody-agent-train"], Target::Entry(aphrody_train::cli_main)),
     tool("llama-daemon", &["aphrody-llama-daemon"], Target::Entry(aphrody_llama_server::cli_main)),
     tool("n2b", &["n2b"], Target::Command("n2b")),
+    // Tauri tooling (vendored crates; their standalone binaries are not built).
+    tool("tauri", &["cargo-tauri"], Target::Entry(tauri)),
+    tool("create-tauri-app", &["cargo-create-tauri-app"], Target::Entry(create_tauri_app)),
     // UI and build tooling.
     tool("identity", &[], Target::Entry(identity)),
     tool("m3-reproduce", &["aphrody-m3-reproduce"], Target::Entry(aphrody_m3_reproduce::cli_main)),
@@ -80,7 +83,7 @@ through the links `aphrody self install-path` creates:
   infra, ovh, yolo, kernel, host-service, ssh, wsl, backend, mcp-server, web-engine, web-worker, x,
   gemini-web, google, translate-project, jev, embed, summary, skills, agent-home-memory,
   agent-train, llama-daemon, n2b, identity (design | export-assets | pixel), m3-reproduce,
-  canvas, bindgen";
+  canvas, bindgen, tauri (cargo-tauri), create-tauri-app";
 
 /// `aphrody ovh …` is `aphrody infra ovh …`: the OVHcloud control plane (DNS, email, VPS
 /// inspection, reboot and renewal).
@@ -88,6 +91,43 @@ fn ovh(args: Vec<OsString>) -> i32 {
     let mut argv = vec![OsString::from("aphrody-infra"), OsString::from("ovh")];
     argv.extend(args.into_iter().skip(1));
     aphrody_infra::cli_main(argv)
+}
+
+/// `aphrody tauri …` / `cargo tauri …`: the Tauri CLI. `args[0]` is the invocation name; `cargo tauri` passes a
+/// redundant `tauri` first argument that is dropped.
+fn tauri(args: Vec<OsString>) -> i32 {
+    let mut rest = args.into_iter().peekable();
+    let first = rest.next();
+    let bin_name = if first.as_deref().and_then(invocation_name) == Some("cargo-tauri") {
+        if rest.peek().and_then(|arg| arg.to_str()) == Some("tauri") {
+            rest.next();
+            "cargo tauri"
+        } else {
+            "cargo-tauri"
+        }
+    } else {
+        "aphrody tauri"
+    };
+    tauri_cli::run(rest, Some(bin_name.to_owned()));
+    0
+}
+
+/// `aphrody create-tauri-app …` / `cargo create-tauri-app …`: the Tauri project scaffolder.
+fn create_tauri_app(args: Vec<OsString>) -> i32 {
+    let mut rest = args.into_iter().peekable();
+    let first = rest.next();
+    let (bin_name, manager) = if first.as_deref().and_then(invocation_name) == Some("cargo-create-tauri-app") {
+        if rest.peek().and_then(|arg| arg.to_str()) == Some("create-tauri-app") {
+            rest.next();
+            ("cargo create-tauri-app", Some("cargo".to_owned()))
+        } else {
+            ("cargo-create-tauri-app", Some("cargo".to_owned()))
+        }
+    } else {
+        ("aphrody create-tauri-app", None)
+    };
+    create_tauri_app::run(rest, Some(bin_name.to_owned()), manager);
+    0
 }
 
 /// `aphrody identity design|export-assets|pixel …`: the three former `aphrody-identity` binaries.

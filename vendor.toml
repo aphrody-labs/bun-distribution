@@ -41,6 +41,8 @@ crates = [
   "crates/tests/restart",
   "packages/cli",
 ]
+# The Tauri CLI is served by `aphrody tauri` (multi-call binary): no standalone `cargo-tauri` binary.
+exclude = ["crates/tauri-cli/src/main.rs"]
 # Not vendored on purpose (see `yolo import --scan`): the migrate fixtures, cef-rollback, the
 # benchmark crates and the example apps under examples/ (frontends, mobile projects).
 
@@ -66,7 +68,8 @@ exclude = ["audits/**", ".gitmodules"]
 name = "create-tauri-app"
 rustfmt = "default"
 crates = [".", "node"]
-exclude = ["worker/**", ".scripts/**", "*.sh", "*.ps1", "package.json", "CONTRIBUTING.md"]
+# src/main.rs: served by `aphrody create-tauri-app`, no standalone binary.
+exclude = ["worker/**", ".scripts/**", "*.sh", "*.ps1", "package.json", "CONTRIBUTING.md", "src/main.rs"]
 
 # Sources of the `tauri-examples` crate (its [[example]] entries live outside the crate).
 [[copy]]
@@ -83,6 +86,24 @@ to = "../../examples/tauri/"
 files = "examples/tauri/**/*.rs"
 from = "../../examples/"
 to = "../../examples/tauri/"
+
+[[rewrite]]
+files = "crates/aphrody-tauri-cli/Cargo.toml"
+from = '''[[bin]]
+name = "cargo-tauri"
+path = "src/main.rs"
+
+'''
+to = ""
+
+[[rewrite]]
+files = "crates/aphrody-create-tauri-app/Cargo.toml"
+from = '''[[bin]]
+name = "cargo-create-tauri-app"
+path = "src/main.rs"
+
+'''
+to = ""
 
 # One config schema: the generator crate owns it; the CLI embeds that copy instead of a second generated file.
 [[rewrite]]
