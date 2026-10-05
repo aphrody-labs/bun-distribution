@@ -13,7 +13,7 @@ import {
   type FileEntry,
   type ScanReport,
   type ScanOptions,
-} from "../../../packages/core/src/vfs/scan";
+} from "../../../../packages/engine/core/src/vfs/scan";
 
 export {
   scanDirectory,

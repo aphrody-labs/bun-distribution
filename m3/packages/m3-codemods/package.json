@@ -16,10 +16,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "jscodeshift": "^17.3.0"
+    "jscodeshift": "catalog:"
   },
   "devDependencies": {
-    "@types/jscodeshift": "^17.3.0"
+    "@types/jscodeshift": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

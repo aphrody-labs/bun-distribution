@@ -36,7 +36,7 @@
     "@aphrody/runtime-sdk": "workspace:*"
   },
   "devDependencies": {
-    "tsdown": "^0.23.0",
+    "tsdown": "catalog:",
     "typescript": "catalog:"
   },
   "engines": {

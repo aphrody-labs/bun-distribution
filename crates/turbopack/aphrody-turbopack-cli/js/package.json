@@ -11,6 +11,6 @@
     "@vercel/turbopack-ecmascript-runtime": "*"
   },
   "devDependencies": {
-    "@types/node": "^18.11.11"
+    "@types/node": "catalog:"
   }
 }

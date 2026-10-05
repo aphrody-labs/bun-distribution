@@ -161,8 +161,8 @@
     "@shenron/config": "workspace:*",
     "@shenron/ui": "workspace:*",
     "@tanstack/react-query": "catalog:",
-    "@tiptap/react": "^3.31.3",
-    "@uiw/react-color": "^2.10.3",
+    "@tiptap/react": "catalog:",
+    "@uiw/react-color": "catalog:",
     "date-fns": "catalog:",
     "drizzle-orm": "catalog:",
     "lucide-react": "catalog:",
@@ -176,5 +176,8 @@
   },
   "peerDependencies": {
     "react-dom": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

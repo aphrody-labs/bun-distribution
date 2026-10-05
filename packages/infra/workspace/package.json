@@ -87,7 +87,7 @@
     "@aphrody/paths": "workspace:*",
     "@aphrody/runtime-sdk": "workspace:*",
     "@aphrody/update": "workspace:*",
-    "@typescript/typescript6": "^6.0.2",
+    "@typescript/typescript6": "catalog:",
     "ts-morph": "catalog:"
   },
   "engines": {

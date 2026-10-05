@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "description": "Third-party and fork sources fetched on demand by `bun scripts/tools/vendor/fetch.ts`: pinned, shallow, blobless and sparse. Fetched trees are git-ignored; nothing here is vendored into the repository.",
+  "sources": [
+    {
+      "name": "material-web",
+      "path": "m3/forks/material-web",
+      "url": "git@github-dev:aphrody-labs/material-web.git",
+      "upstream": "https://github.com/material-components/material-web.git",
+      "ref": "a06811ee5dad1a670d99e5faf14cdf7082a70a10",
+      "sparse": ["ts", "scripts", "tokens", "testing", "internal", "types", "labs"],
+      "rootFiles": true
+    },
+    {
+      "name": "material-color-utilities",
+      "path": "m3/forks/material-color-utilities",
+      "url": "git@github-dev:aphrody-labs/material-color-utilities.git",
+      "upstream": "https://github.com/material-foundation/material-color-utilities.git",
+      "ref": "51f0744f9cfbbef63f45c1058c2a883c5656b0fe",
+      "sparse": ["typescript"],
+      "rootFiles": true
+    },
+    {
+      "name": "material-design-icons",
+      "path": "m3/forks/material-design-icons",
+      "url": "git@github-dev:aphrody-labs/material-design-icons.git",
+      "upstream": "https://github.com/google/material-design-icons.git",
+      "ref": "737e3324305806514d7909874fa1818ae1808232",
+      "sparseScript": "m3/packages/material-design-icons/scripts/sync-catalogue.ts"
+    },
+    {
+      "name": "fonts",
+      "path": "m3/forks/fonts",
+      "url": "git@github-dev:aphrody-labs/fonts.git",
+      "upstream": "https://github.com/google/fonts.git",
+      "ref": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+      "sparse": [
+        "ofl/googlesansflex",
+        "ofl/googlesanscode",
+        "ofl/robotoflex",
+        "ofl/robotomono",
+        "ofl/notosansjp",
+        "ofl/mplus1code"
+      ]
+    },
+    {
+      "name": "gemma",
+      "path": "py/vendor/gemma",
+      "url": "https://github.com/google-deepmind/gemma.git",
+      "ref": "c490becf42d18a3337a6ef351c24dfc77896e6d4",
+      "sparse": ["gemma"],
+      "rootFiles": true
+    },
+    {
+      "name": "gemma-tuner-multimodal",
+      "path": "py/vendor/gemma-tuner-multimodal",
+      "url": "https://github.com/mattmireles/gemma-tuner-multimodal.git",
+      "ref": "24230eb9b635cb50511bf4eb28a67fe24a594d47",
+      "rootFiles": true
+    }
+  ]
+}

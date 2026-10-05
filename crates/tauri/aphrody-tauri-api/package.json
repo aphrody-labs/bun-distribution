@@ -40,5 +40,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "bun": ">=1.4.2"
+  }
 }

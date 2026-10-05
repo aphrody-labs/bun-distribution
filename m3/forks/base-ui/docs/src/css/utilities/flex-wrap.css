@@ -1,9 +1,0 @@
-@layer utilities {
-  .bui-fw-n {
-    flex-wrap: nowrap;
-  }
-
-  .bui-fw-w {
-    flex-wrap: wrap;
-  }
-}

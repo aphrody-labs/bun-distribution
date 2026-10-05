@@ -62,7 +62,7 @@ describe("@aphrody/m3-fonts upstream sources (fonts.lock.json)", () => {
   });
 
   test.skipIf(!forkMaterialised)(
-    `the tracked variable sources come from forks/fonts at the pinned commit${forkMaterialised ? "" : " [skipped: forks/fonts not initialised; bun scripts/forks.ts sparse fonts --apply]"}`,
+    `the tracked variable sources come from forks/fonts at the pinned commit${forkMaterialised ? "" : " [skipped: forks/fonts not initialised; bun scripts/tools/vendor/fetch.ts fetch fonts]"}`,
     () => {
       for (const t of lock.tracked) expect(sha256(join(fork, t.path)), t.path).toBe(t.sha256);
     },

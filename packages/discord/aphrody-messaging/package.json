@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
-    "tsdown": "^0.23.0",
+    "tsdown": "catalog:",
     "typescript": "catalog:"
   },
   "dependencies": {

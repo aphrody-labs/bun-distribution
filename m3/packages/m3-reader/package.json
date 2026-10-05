@@ -42,9 +42,9 @@
     "typecheck:fast": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.14.13",
-    "lucide-react": "^1.48.0",
-    "swiper": "^14.3.0"
+    "@tanstack/react-virtual": "catalog:",
+    "lucide-react": "catalog:",
+    "swiper": "catalog:"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

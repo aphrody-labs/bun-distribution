@@ -66,8 +66,8 @@
   },
   "dependencies": {
     "@aphrody/assets": "workspace:*",
-    "tiny-invariant": "^1.3.3",
-    "type-fest": "^4.30.0",
+    "tiny-invariant": "catalog:",
+    "type-fest": "catalog:",
     "valibot": "catalog:",
     "zustand": "catalog:"
   },

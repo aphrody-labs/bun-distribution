@@ -22,6 +22,12 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@aphrody/api": "^3.0.0-alpha.1"
+    "@aphrody/api": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "scripts": {
+    "typecheck": "tsgo -p tsconfig.json --noEmit"
   }
 }

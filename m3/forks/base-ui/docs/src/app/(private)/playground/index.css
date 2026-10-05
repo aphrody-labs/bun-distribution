@@ -1,9 +1,0 @@
-@import 'tailwindcss' source('.');
-
-@source "./**/*.tsx";
-
-@layer base {
-  html {
-    color-scheme: light dark;
-  }
-}

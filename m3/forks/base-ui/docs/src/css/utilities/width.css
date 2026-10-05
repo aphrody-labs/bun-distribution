@@ -1,9 +1,0 @@
-@layer utilities {
-  .bui-w-10 {
-    width: 2.5rem;
-  }
-
-  .bui-w-full {
-    width: 100%;
-  }
-}

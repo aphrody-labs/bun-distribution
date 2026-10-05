@@ -34,9 +34,9 @@
   },
   "dependencies": {
     "@aphrody/sql": "workspace:*",
-    "@paralleldrive/cuid2": "^3.3.0",
+    "@paralleldrive/cuid2": "catalog:",
     "drizzle-orm": "catalog:",
-    "postgres": "^3.4.9",
+    "postgres": "catalog:",
     "@shenron/config": "workspace:*"
   },
   "shenron": {

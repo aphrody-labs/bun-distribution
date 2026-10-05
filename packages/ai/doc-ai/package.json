@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "catalog:",
-    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/api": "catalog:",
     "ai": "catalog:",
     "zod": "catalog:"
   },

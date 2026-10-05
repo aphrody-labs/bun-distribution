@@ -17,5 +17,8 @@
     "icons:sync": "bun scripts/sync-catalogue.ts",
     "icons:check": "bun scripts/sync-catalogue.ts --check",
     "icons:export": "bun scripts/export-theme.ts"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }

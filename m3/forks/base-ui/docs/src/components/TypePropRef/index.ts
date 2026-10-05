@@ -1,1 +1,0 @@
-export { TypePropRef } from './TypePropRef';

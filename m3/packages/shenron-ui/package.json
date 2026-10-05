@@ -97,8 +97,8 @@
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "lucide-react": "catalog:",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
+    "react-markdown": "catalog:",
+    "remark-gfm": "catalog:",
     "tailwind-merge": "catalog:",
     "@aphrody/m3-reader": "workspace:*"
   },
@@ -111,7 +111,7 @@
     "@types/react-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "postcss": "8.5.28",
+    "postcss": "catalog:",
     "@tailwindcss/postcss": "catalog:",
     "tailwindcss": "catalog:",
     "@shenron/config": "workspace:*"

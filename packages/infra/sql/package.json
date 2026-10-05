@@ -20,7 +20,7 @@
     "lint": "oxlint -c ../../../.oxlintrc.json src test"
   },
   "dependencies": {
-    "sqlite-vec": "^0.1.9"
+    "sqlite-vec": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

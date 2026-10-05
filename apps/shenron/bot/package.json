@@ -50,8 +50,8 @@
     "@aphrody/paths": "workspace:*",
     "@discordx/di": "catalog:",
     "@discordx/pagination": "catalog:",
-    "@napi-rs/canvas": "1.0.9",
-    "@pothos/core": "^4.15.1",
+    "@napi-rs/canvas": "catalog:",
+    "@pothos/core": "catalog:",
     "@shenron/api": "workspace:*",
     "@shenron/auth": "workspace:*",
     "@shenron/config": "workspace:*",
@@ -59,24 +59,24 @@
     "@shenron/images": "workspace:*",
     "@shenron/pipeline": "workspace:*",
     "better-auth": "catalog:",
-    "dayjs": "^1.11.23",
+    "dayjs": "catalog:",
     "discord.js": "catalog:",
     "discordx": "catalog:",
     "drizzle-orm": "catalog:",
     "graphql": "catalog:",
     "graphql-yoga": "catalog:",
-    "pino": "^10.3.1",
-    "pino-pretty": "^13.1.3",
-    "postgres": "^3.4.9",
+    "pino": "catalog:",
+    "pino-pretty": "catalog:",
+    "postgres": "catalog:",
     "reflect-metadata": "catalog:",
     "sharp": "catalog:",
-    "sqlite-vec": "^0.1.9",
+    "sqlite-vec": "catalog:",
     "tsyringe": "catalog:",
     "zod": "catalog:",
     "@aphrody/media": "workspace:*"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.11"
+    "drizzle-kit": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.2"

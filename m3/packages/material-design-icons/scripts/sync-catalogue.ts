@@ -26,7 +26,7 @@ const git = (...a: string[]) => {
 
 if (!existsSync(join(FORK, ".git")) && !existsSync(join(FORK, "..", "..", ".git"))) {
   console.error(
-    "forks/material-design-icons is not initialised: run `git submodule update --init forks/material-design-icons`",
+    "forks/material-design-icons is not initialised: run `bun scripts/tools/vendor/fetch.ts fetch material-design-icons`",
   );
   process.exit(1);
 }
