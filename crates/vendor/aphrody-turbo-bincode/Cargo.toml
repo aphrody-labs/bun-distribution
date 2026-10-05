@@ -1,0 +1,25 @@
+[package]
+name = "aphrody-turbo-bincode"
+version = "0.0.0"
+description = "Utilities for bincode used in turbo-tasks and turbopack"
+license = "MIT"
+edition = "2024"
+
+[lib]
+name = "turbo_bincode"
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+bincode = { version = "2.0.1", features = ["serde"] }
+either = "1.15.0"
+indexmap = "2.14.0"
+mime = "0.3.16"
+serde = { version = "1.0.228", features = ["derive"] }
+smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_new"] }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
+unty = "0.0.4"

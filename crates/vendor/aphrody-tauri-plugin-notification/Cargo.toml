@@ -1,0 +1,55 @@
+[package]
+name = "aphrody-tauri-plugin-notification"
+version = "3.0.0-alpha.2"
+description = "Send desktop and mobile notifications on your Tauri application."
+edition = "2024"
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+rust-version = "1.95"
+repository = "https://github.com/aphrody-labs/yolo"
+links = "tauri-plugin-notification"
+exclude = [
+  "/banner.png",
+  "/guest-js",
+  "/package.json",
+  "/rollup.config.js",
+  "/test",
+  "/tsconfig.json",
+]
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu", "x86_64-linux-android"]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "Only works for installed apps. Shows powershell name & icon in development." }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "full", notes = "" }
+ios = { level = "full", notes = "" }
+
+[lib]
+name = "tauri_plugin_notification"
+
+[build-dependencies]
+tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+log = "0.4.21"
+thiserror = "2"
+rand = "0.9"
+time = { version = "0.3", features = ["serde", "parsing", "formatting"] }
+url = { version = "2", features = ["serde"] }
+serde_repr = "0.1"
+
+[target."cfg(any(target_os = \"macos\", windows, target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
+notify-rust = "4.11"
+
+[features]
+# Deprecated: tauri 2.12 no longer supports Windows 7, so this feature does nothing.
+windows7-compat = []
+# Kept so the implicit features of the removed optional dependencies still resolve.
+win7-notifications = []
+windows-version = []

@@ -1,0 +1,19 @@
+[package]
+name = "aphrody-acl-tests"
+version = "0.1.0"
+authors = ["Tauri Programme within The Commons Conservancy"]
+homepage = "https://tauri.app/"
+repository = "https://github.com/aphrody-labs/yolo"
+categories = ["gui", "web-programming"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+rust-version = "1.95"
+publish = false
+
+[lib]
+name = "acl_tests"
+
+[dev-dependencies]
+tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
+serde_json = "1"
+insta = "1"

@@ -1,0 +1,41 @@
+[package]
+name = "aphrody-tauri-plugin-positioner"
+version = "3.0.0-alpha.2"
+description = "Position your windows at well-known locations."
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+rust-version = "1.95"
+repository = "https://github.com/aphrody-labs/yolo"
+links = "tauri-plugin-positioner"
+exclude = [
+  "/banner.png",
+  "/guest-js",
+  "/package.json",
+  "/rollup.config.js",
+  "/tsconfig.json",
+]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "" }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "none", notes = "" }
+ios = { level = "none", notes = "" }
+
+[lib]
+name = "tauri_plugin_positioner"
+
+[build-dependencies]
+tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+log = "0.4.21"
+thiserror = "2"
+serde_repr = "0.1"
+
+[features]
+tray-icon = ["tauri/tray-icon"]

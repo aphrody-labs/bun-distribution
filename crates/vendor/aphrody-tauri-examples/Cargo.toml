@@ -1,0 +1,77 @@
+[package]
+name = "aphrody-tauri-examples"
+version = "0.1.0"
+description = "Tauri desktop application examples (wry and CEF runtimes)"
+publish = false
+authors = ["Tauri Programme within The Commons Conservancy"]
+homepage = "https://tauri.app/"
+repository = "https://github.com/aphrody-labs/yolo"
+categories = ["gui", "web-programming"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+rust-version = "1.95"
+
+[lib]
+name = "tauri_examples"
+
+[dependencies]
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["unstable"] }
+tauri-runtime-wry = { version = "~3.0.0-alpha.4", path = "../aphrody-tauri-runtime-wry", package = "aphrody-tauri-runtime-wry", default-features = false, optional = true }
+tauri-runtime-cef = { version = "~3.0.0-alpha.5", path = "../aphrody-tauri-runtime-cef", package = "aphrody-tauri-runtime-cef", default-features = false, optional = true }
+tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+http = "1"
+http-range = "0.1.5"
+getrandom = "0.3"
+percent-encoding = "2"
+
+[build-dependencies]
+tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
+
+[features]
+default = ["wry"]
+wry = ["dep:tauri-runtime-wry"]
+cef = ["dep:tauri-runtime-cef"]
+isolation = ["tauri/isolation"]
+
+[[example]]
+name = "commands"
+path = "../../examples/tauri/commands/main.rs"
+
+[[example]]
+name = "helloworld"
+path = "../../examples/tauri/helloworld/main.rs"
+
+[[example]]
+name = "drag"
+path = "../../examples/tauri/drag/main.rs"
+
+[[example]]
+name = "multiwebview"
+path = "../../examples/tauri/multiwebview/main.rs"
+
+[[example]]
+name = "multiwindow"
+path = "../../examples/tauri/multiwindow/main.rs"
+
+[[example]]
+name = "run-return"
+path = "../../examples/tauri/run-return/main.rs"
+
+[[example]]
+name = "splashscreen"
+path = "../../examples/tauri/splashscreen/main.rs"
+
+[[example]]
+name = "state"
+path = "../../examples/tauri/state/main.rs"
+
+[[example]]
+name = "streaming"
+path = "../../examples/tauri/streaming/main.rs"
+
+[[example]]
+name = "isolation"
+path = "../../examples/tauri/isolation/main.rs"
+required-features = ["isolation"]

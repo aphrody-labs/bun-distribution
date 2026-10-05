@@ -1,0 +1,52 @@
+[package]
+name = "aphrody-turbopack-tracing"
+version = "0.1.0"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+autobenches = false
+
+[lib]
+name = "turbopack_tracing"
+bench = false
+
+[features]
+test_persistent_cache = []
+bench_against_node_nft = []
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+turbopack = { path = "../aphrody-turbopack", package = "aphrody-turbopack" }
+
+[dev-dependencies]
+anyhow = "1.0.100"
+rustc-hash = "2.1.1"
+regex = "1.12.3"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false }
+turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
+turbopack-resolve = { path = "../aphrody-turbopack-resolve", package = "aphrody-turbopack-resolve" }
+turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript" }
+turbopack-node = { path = "../aphrody-turbopack-node", package = "aphrody-turbopack-node", default-features = false, features = ["process_pool"] }
+
+criterion = { version = "4.3.0", package = "codspeed-criterion-compat", features = ["async_tokio"] }
+difference = "2.0"
+similar = "2.2.0"
+rstest = "0.16.0"
+rstest_reuse = "0.5.0"
+tokio = "1.52.1"
+
+[[bench]]
+name = "mod"
+harness = false

@@ -1,0 +1,94 @@
+[package]
+name = "aphrody-turbo-tasks"
+version = "0.1.0"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+
+[lib]
+name = "turbo_tasks"
+bench = false
+
+[features]
+default = []
+tokio_tracing = ["tokio/tracing"]
+hanging_detection = []
+task_id_details = []
+task_dirty_cause = []
+verify_determinism = []
+# Counts what reads do when they can't get a value straight away: queue pushes, claim attempts and
+# their outcomes, and waits for a task a worker is already running. Reported by
+# `TurboTasks::inline_execution_stats()`, and printed on shutdown with
+# `TURBO_ENGINE_INLINE_STATS=1`.
+#
+# Off by default: the counters sit on the read-miss path, so a build that doesn't want the numbers
+# shouldn't pay for them. With the feature off there are no counters and no atomics at all.
+inline_execution_stats = []
+
+# TODO(bgw): This feature is here to unblock turning on local tasks by default. It's only turned on
+# in unit tests. This will be removed very soon.
+non_operation_vc_strongly_consistent = []
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+anyhow = "1.0.100"
+async-trait = "0.1.64"
+auto-hash-map = { path = "../aphrody-auto-hash-map", package = "aphrody-auto-hash-map" }
+bincode = { version = "2.0.1", features = ["serde"] }
+concurrent-queue = "2.5.0"
+dashmap = "7.0.0-rc2"
+either = "1.15.0"
+erased-serde = "0.4.5"
+event-listener = "5.4.0"
+fixedbitset = "0.5.7"
+futures = "0.3.31"
+indexmap = { version = "2.14.0", features = ["serde"] }
+parking_lot = { version = "0.12.1", features = ["serde"] }
+pin-project-lite = "0.2.17"
+rayon = "1.10.0"
+regex = "1.12.3"
+rustc-hash = "2.1.1"
+scattered-collect = "0.10.0"
+serde = { version = "1.0.228", features = ["derive", "rc"] }
+serde_json = "1.0.149"
+shrink-to-fit = { version = "0.2.10", features = ["indexmap", "serde_json", "smallvec", "nightly"] }
+smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_new", "serde", "impl_bincode"] }
+thiserror = "1.0.48"
+tokio = { version = "1.52.1", features = ["full"] }
+tokio-util = { version = "0.7.18", features = ["io", "rt"] }
+tracing = "0.1.44"
+triomphe = { git = "https://github.com/sokra/triomphe", branch = "sokra/unstable", features = ["unsize", "unstable"] }
+turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode" }
+turbo-dyn-eq-hash = { path = "../aphrody-turbo-dyn-eq-hash", package = "aphrody-turbo-dyn-eq-hash" }
+turbo-frozenmap = { path = "../aphrody-turbo-frozenmap", package = "aphrody-turbo-frozenmap" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
+turbo-tasks-macros = { path = "../aphrody-turbo-tasks-macros", package = "aphrody-turbo-tasks-macros" }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false }
+unsize = "1.1.0"
+
+# Only used by the benchmarks, which don't run on wasm. Gated by target so that
+# `cargo test -p turbo-tasks --lib --target wasm32-wasip1-threads` can build: criterion pulls in
+# rayon, which refuses to compile for wasi, and cargo resolves dev-dependencies even for `--lib`.
+[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
+criterion = { version = "4.3.0", package = "codspeed-criterion-compat", features = ["async_tokio"] }
+
+# `parking_lot_core` picks its thread parker in `thread_parker/mod.rs`. The working wasm parker
+# (`wasm_atomic.rs`, built on `memory_atomic_wait32` / `memory_atomic_notify`) is selected only under
+# `all(feature = "nightly", target_family = "wasm", target_feature = "atomics")`; otherwise it falls
+# back to `wasm.rs`, whose `park()` is `panic!("Parking not supported on this platform")`.
+#
+# `wasm32-wasip1-threads` does have `target_feature = "atomics"`, so enabling the feature here is what
+# makes contended locks block instead of panicking. Feature unification means declaring it once for
+# wasm covers the whole wasm build; the feature is not enabled for any other target.
+[target.'cfg(target_family = "wasm")'.dependencies]
+parking_lot = { version = "0.12.1", features = ["nightly"] }
+
+[[bench]]
+name = "mod"
+harness = false

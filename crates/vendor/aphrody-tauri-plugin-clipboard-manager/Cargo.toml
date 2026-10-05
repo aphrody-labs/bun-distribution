@@ -1,0 +1,44 @@
+[package]
+name = "aphrody-tauri-plugin-clipboard-manager"
+version = "3.0.0-alpha.2"
+description = "Read and write to the system clipboard."
+edition = "2024"
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+rust-version = "1.95"
+repository = "https://github.com/aphrody-labs/yolo"
+links = "tauri-plugin-clipboard-manager"
+exclude = [
+  "/banner.png",
+  "/guest-js",
+  "/package.json",
+  "/rollup.config.js",
+  "/tsconfig.json",
+]
+
+[package.metadata.docs.rs]
+
+targets = ["x86_64-unknown-linux-gnu", "x86_64-linux-android"]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "" }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "partial", notes = "Only plain-text content support" }
+ios = { level = "partial", notes = "Only plain-text content support" }
+
+[lib]
+name = "tauri_plugin_clipboard_manager"
+
+[build-dependencies]
+tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+log = "0.4.21"
+thiserror = "2"
+
+[target."cfg(any(target_os = \"macos\", windows, target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
+arboard = { version = "3", features = ["wayland-data-control"] }

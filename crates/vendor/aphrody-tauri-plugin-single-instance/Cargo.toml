@@ -1,0 +1,49 @@
+[package]
+name = "aphrody-tauri-plugin-single-instance"
+version = "3.0.0-alpha.2"
+description = "Ensure a single instance of your tauri app is running."
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+rust-version = "1.95"
+repository = "https://github.com/aphrody-labs/yolo"
+exclude = ["/banner.png", "/examples"]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "" }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "none", notes = "" }
+ios = { level = "none", notes = "" }
+
+[lib]
+name = "tauri_plugin_single_instance"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+tracing = "0.1"
+thiserror = "2"
+tauri-plugin-deep-link = { version = "3.0.0-alpha.2", path = "../aphrody-tauri-plugin-deep-link", package = "aphrody-tauri-plugin-deep-link", optional = true }
+semver = { version = "1", optional = true }
+tokio = { version = "1", features = ["net"] }
+
+[target."cfg(target_os = \"windows\")".dependencies.windows-sys]
+version = "0.60"
+features = [
+  "Win32_System_Threading",
+  "Win32_System_DataExchange",
+  "Win32_Foundation",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_Security",
+  "Win32_System_LibraryLoader",
+  "Win32_Graphics_Gdi",
+]
+
+[target."cfg(target_os = \"linux\")".dependencies]
+zbus = "5.9"
+
+[features]
+semver = ["dep:semver"]
+deep-link = ["dep:tauri-plugin-deep-link"]

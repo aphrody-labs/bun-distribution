@@ -1,0 +1,77 @@
+[package]
+name = "aphrody-turbo-tasks-fetch"
+version = "0.1.0"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+
+[lib]
+name = "turbo_tasks_fetch"
+bench = false
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+anyhow = "1.0.100"
+async-trait = "0.1.64"
+quick_cache = "0.6.14"
+serde = { version = "1.0.228", features = ["derive"] }
+tokio = "1.52.1"
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
+
+# Enable specific tls features per-target.
+#
+# Be careful when selecting tls backend. If you must verify ALL build targets of
+# next-swc to ensure it works. next-swc have various platforms, some don't
+# support native-tls (using openssl-sys) and some aren't buildable with rustls.
+#
+# The TLS backend used must match with the construction of `request::Client` in
+# `src/client.rs`.
+
+# On macOS, use the default rustls configuration (uses aws-lc-rs).
+[target.'cfg(target_os = "macos")'.dependencies]
+reqwest = { version = "0.13.2", default-features = false, features = ["rustls"] }
+
+# On Linux (all architectures) and Windows x86-64, use ring for rustls.
+# - Linux: aws-lc-rs has cross-compilation issues in our CI:
+#   https://github.com/aws/aws-lc-rs/issues/673
+# - On Linux, linking with the native SSL library can be distro-dependent, so
+#   it's easier for us to statically link ring or aws-lc-rs.
+# - Windows: aws-lc-sys requires NASM and CMake which we don't have installed in
+#   CI, and would complicate the development environment setup. We could
+#   possibly switch to always using `native-tls` on Windows in the future.
+[target.'cfg(any(target_os = "linux", all(windows, not(target_arch = "aarch64"))))'.dependencies]
+reqwest = { version = "0.13.2", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+
+# On Linux, we need to add webpki-roots, in case the user is building a bare-bones docker image that
+# does not contain any root certs (e.g. `oven/bun:slim`). See footnote #2 here:
+# https://github.com/rustls/rustls-platform-verifier/tree/93f729c6309680486d33f982e3ba3c42b976f774?tab=readme-ov-file#user-content-fn-3-7402e7116652999a2e8c2860b94080eb
+#
+# It would be more ideal to use the smaller `webpki-roots` crate instead of `webpki-root-certs`, but
+# API limitations of reqwest require us to get the full certificate:
+# https://github.com/seanmonstar/reqwest/discussions/2906#discussioncomment-15483148
+[target.'cfg(target_os = "linux")'.dependencies]
+webpki-root-certs = "1"
+
+# On Windows ARM64, use native-tls because rustls with ring has build issues.
+[target.'cfg(all(windows, target_arch = "aarch64"))'.dependencies]
+reqwest = { version = "0.13.2", default-features = false, features = ["native-tls"] }
+
+# On wasm there is no usable HTTP client (see `src/wasm_reqwest.rs`), so `reqwest` is not a
+# dependency there and the local stand-in is used instead. It only needs a hash map.
+[target.'cfg(target_family = "wasm")'.dependencies]
+rustc-hash = "2.1.1"
+
+[dev-dependencies]
+mockito = { version = "1.7.0", default-features = false }
+tokio = { version = "1.52.1", features = ["full"] }
+turbo-tasks-testing = { path = "../aphrody-turbo-tasks-testing", package = "aphrody-turbo-tasks-testing" }
+turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend" }

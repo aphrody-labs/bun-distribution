@@ -1,0 +1,47 @@
+[package]
+name = "aphrody-turbo-rcstr"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+name = "turbo_rcstr"
+
+[features]
+atom_size_128 = ["turbo-rcstr-macros/atom_size_128"]
+napi = ["dep:napi"]
+
+[dependencies]
+bincode = { version = "2.0.1", features = ["serde"] }
+triomphe = { git = "https://github.com/sokra/triomphe", branch = "sokra/unstable" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
+serde = { version = "1.0.228", features = ["derive"] }
+new_debug_unreachable = "1.0.6"
+shrink-to-fit = "0.2.10"
+rustc-hash = "2.1.1"
+bytes-str = "0.2.7"
+smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_new"] }
+turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode" }
+turbo-rcstr-macros = { path = "../aphrody-turbo-rcstr-macros", package = "aphrody-turbo-rcstr-macros" }
+unty = "0.0.4"
+
+napi = { version = "3.10.0", default-features = false, features = ["napi3", "serde-json", "tokio_rt", "error_anyhow", "napi4", "napi5"], optional = true }
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+scattered-collect = "0.10.0"
+
+[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
+# Only used by the benchmarks, which don't run on wasm. Gated by target so that
+# `cargo test -p turbo-rcstr --lib --target wasm32-wasip1-threads` can build: criterion pulls in
+# rayon, which refuses to compile for wasi, and cargo resolves dev-dependencies even for `--lib`.
+criterion = { version = "4.3.0", package = "codspeed-criterion-compat" }
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[[bench]]
+name = "mod"
+harness = false

@@ -37,16 +37,16 @@ fn load(root: &Path, relative: &str) -> Result<Value> {
 }
 
 /// Host config (systemd units, nginx sites) lives in yolo: `$YOLO_ROOT/config/host`,
-/// default `$HOME/yolo` (`%USERPROFILE%\yolo` on Windows).
+/// default `$HOME/aphrody` (`%USERPROFILE%\aphrody` on Windows).
 pub fn host_systemd_root() -> PathBuf {
     host_config_root().join("systemd")
 }
 
-/// `$YOLO_ROOT/config/host` (default `$HOME/yolo`): systemd units, nginx sites and routes.
+/// `$YOLO_ROOT/config/host` (default `$HOME/aphrody`): systemd units, nginx sites and routes.
 pub fn host_config_root() -> PathBuf {
     let yolo = std::env::var_os("YOLO_ROOT").map(PathBuf::from).unwrap_or_else(|| {
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
-        PathBuf::from(home.unwrap_or_default()).join("yolo")
+        PathBuf::from(home.unwrap_or_default()).join("aphrody")
     });
     yolo.join("config/host")
 }

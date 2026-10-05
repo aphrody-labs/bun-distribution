@@ -27,7 +27,7 @@ done
 for peer in windows desktop; do
     install -m 600 "$windows_dir/linux-$peer.json" "$config_dir/$peer.json"
 done
-bun "${APHRODY_YOLO_ROOT:-$HOME/yolo}/packages/core/src/units/cli.ts" render --out "$HOME/.config/systemd/user" aphrody-kernel.service 'aphrody-host-bridge@.service'
+bun "${APHRODY_YOLO_ROOT:-$HOME/aphrody}/packages/engine/core/src/units/cli.ts" render --out "$HOME/.config/systemd/user" aphrody-kernel.service 'aphrody-host-bridge@.service'
 sudo install -d -o root -g root -m 755 /usr/local/lib/aphrody/host-bridge
 sudo install -o root -g root -m 755 "$binary_dir/aphrody-kernel" /usr/local/lib/aphrody/host-bridge/aphrody-kernel.new
 sudo mv -f /usr/local/lib/aphrody/host-bridge/aphrody-kernel.new /usr/local/lib/aphrody/host-bridge/aphrody-kernel
@@ -55,7 +55,7 @@ os.replace(temporary, root / 'auth.json')
 PY
 # The checked-in unit describes aphro's workstation; render its socket group
 # for the invoking owner when installed on another WSL account.
-sed "s/^Group=aphro$/Group=$owner_group/;s/chgrp aphro /chgrp $owner_group /" "${YOLO_ROOT:-$HOME/yolo}/config/host/systemd/aphrody/aphrody-privileged-kernel.service" | sudo tee /etc/systemd/system/aphrody-privileged-kernel.service >/dev/null
+sed "s/^Group=aphro$/Group=$owner_group/;s/chgrp aphro /chgrp $owner_group /" "${YOLO_ROOT:-$HOME/aphrody}/config/host/systemd/aphrody/aphrody-privileged-kernel.service" | sudo tee /etc/systemd/system/aphrody-privileged-kernel.service >/dev/null
 sudo systemctl daemon-reload
 sudo systemctl enable aphrody-privileged-kernel.service
 sudo systemctl restart aphrody-privileged-kernel.service

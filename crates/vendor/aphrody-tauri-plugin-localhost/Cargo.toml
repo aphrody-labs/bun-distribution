@@ -1,0 +1,29 @@
+[package]
+name = "aphrody-tauri-plugin-localhost"
+version = "3.0.0-alpha.2"
+description = "Expose your apps assets through a localhost server instead of the default custom protocol."
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+rust-version = "1.95"
+repository = "https://github.com/aphrody-labs/yolo"
+exclude = ["/banner.png"]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "" }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "none", notes = "" }
+ios = { level = "none", notes = "" }
+
+[lib]
+name = "tauri_plugin_localhost"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+log = "0.4.21"
+thiserror = "2"
+tiny_http = "0.12"
+http = "1"

@@ -1,0 +1,16 @@
+[package]
+name = "aphrody-turbo-prehash"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+name = "turbo_prehash"
+
+[dependencies]
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }

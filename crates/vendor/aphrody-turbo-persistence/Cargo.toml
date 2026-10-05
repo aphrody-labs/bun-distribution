@@ -1,0 +1,69 @@
+[package]
+name = "aphrody-turbo-persistence"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+name = "turbo_persistence"
+
+[features]
+default = ["mmap"]
+mmap = ["dep:memmap2"]
+verify_sst_content = []
+strict_checks = []
+stats = ["quick_cache/stats"]
+print_stats = ["stats"]
+verbose_log = []
+
+[dependencies]
+anyhow = "1.0.100"
+auto-hash-map = { path = "../aphrody-auto-hash-map", package = "aphrody-auto-hash-map" }
+bitfield = "0.19.4"
+byteorder = "1.5.0"
+crc32fast = "1.5.0"
+dashmap = "7.0.0-rc2"
+either = "1.15.0"
+fs-err = "3.1.1"
+jiff = { version = "0.2.10", features = ["serde"] }
+lz4_flex = { version = "0.14.0", default-features = false, features = ["std", "checked-decode"] }
+memmap2 = { version = "0.9.5", optional = true }
+nohash-hasher = "0.2.0"
+parking_lot = "0.12.1"
+# See https://github.com/vercel/next.js/issues/91708 for why we need the legacy_x86_64_support feature
+qfilter = { version = "=0.3.0-alpha.4", features = ["serde", "legacy_x86_64_support"] }
+postcard = { version = "1.0.4", features = ["alloc", "use-std"] }
+zerocopy = { version = "0.8", features = ["derive"] }
+quick_cache = "0.6.14"
+rustc-hash = "2.1.1"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_new"] }
+thread_local = "1.1.8"
+tracing = "0.1.44"
+xxhash-rust = { version = "0.8.12", features = ["xxh3"] }
+zstd = "0.13.2"
+
+[dev-dependencies]
+criterion = { version = "4.3.0", package = "codspeed-criterion-compat" }
+rand = "0.10.1"
+rayon = "1.10.0"
+rstest = "0.16.0"
+tempfile = "3.20.0"
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, features = ["custom_allocator"] }
+
+[[bin]]
+name = "sst_inspect"
+path = "src/bin/sst_inspect.rs"
+required-features = ["mmap"]
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[[bench]]
+name = "mod"
+harness = false
+required-features = ["mmap"]

@@ -1,0 +1,43 @@
+[package]
+name = "aphrody-tauri-plugin-store"
+version = "3.0.0-alpha.2"
+description = "Simple, persistent key-value store."
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+rust-version = "1.95"
+repository = "https://github.com/aphrody-labs/yolo"
+links = "tauri-plugin-store"
+exclude = [
+  "/banner.png",
+  "/examples",
+  "/guest-js",
+  "/package.json",
+  "/rollup.config.js",
+  "/tsconfig.json",
+]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "" }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "full", notes = "" }
+ios = { level = "full", notes = "" }
+
+[lib]
+name = "tauri_plugin_store"
+
+[build-dependencies]
+tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+tracing = "0.1"
+thiserror = "2"
+dunce = "1"
+tokio = { version = "1", features = ["sync", "time", "macros"] }
+
+[dev-dependencies]
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["test"] }

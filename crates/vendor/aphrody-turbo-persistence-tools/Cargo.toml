@@ -1,0 +1,19 @@
+[package]
+name = "aphrody-turbo-persistence-tools"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[[bin]]
+name = "turbo-persistence-tools"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.100"
+turbo-persistence = { path = "../aphrody-turbo-persistence", package = "aphrody-turbo-persistence" }
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }

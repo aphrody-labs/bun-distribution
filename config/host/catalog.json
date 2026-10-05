@@ -1,0 +1,475 @@
+{
+  "$comment": "Single index of host config (systemd units, nginx sites). Declared intent: live state is audited through aphrody-infra. Units compose shared drop-ins at install time (bun packages/core/src/host/cli.ts).",
+  "schemaVersion": 1,
+  "hostRootEnv": "YOLO_ROOT",
+  "dropIns": {
+    "dir": "systemd/shared",
+    "files": [
+      "net-inet-only.conf",
+      "run-as-ubuntu.conf",
+      "sandbox-base.conf",
+      "sandbox-home-ro.conf",
+      "sandbox-kernel.conf",
+      "syscall-service.conf"
+    ]
+  },
+  "unitDropIns": [
+    {
+      "unit": "nginx.service",
+      "path": "systemd/shared/nginx.service.d",
+      "hosts": [
+        "vps"
+      ]
+    },
+    {
+      "unit": "privoxy.service",
+      "path": "systemd/shenron/privoxy.service.d",
+      "hosts": [
+        "vps"
+      ]
+    }
+  ],
+  "nginxSnippets": {
+    "dir": "nginx/snippets",
+    "files": [
+      "proxy-client-ip.inc",
+      "proxy-upstream.inc"
+    ]
+  },
+  "serviceCatalogs": {
+    "aphrody": "aphrody:config/service-catalog.json",
+    "aphrody-routes": "nginx/routes.json",
+    "rg": "rg/service-catalog.json",
+    "rg-routes": "rg/nginx-routes.json",
+    "nie": "nie/service-catalog.json"
+  },
+  "inventory": {
+    "dir": "inventory",
+    "files": [
+      "2026-09-30-bun-transfer.json",
+      "2026-09-30-oxc-transfer.json",
+      "aphrody-discord-dev-2026-09-29.md",
+      "build-factory-2026-10-03.json",
+      "targets.json",
+      "vps-source.json",
+      "vps-unit-catalog.json"
+    ],
+    "toolchain": "toolchain.json"
+  },
+  "units": [
+    {
+      "service": "aphrody-compute-dbfr-tunnel",
+      "unit": "aphrody-compute-dbfr-tunnel.service",
+      "path": "systemd/aphrody/aphrody-compute-dbfr-tunnel.service",
+      "dropIns": [
+        "sandbox-base",
+        "sandbox-home-ro"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-discord-dev",
+      "unit": "aphrody-discord-dev.service",
+      "path": "systemd/aphrody/aphrody-discord-dev.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "sandbox-kernel"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "bot.aphrody.com"
+    },
+    {
+      "service": "aphrody-privileged-kernel",
+      "unit": "aphrody-privileged-kernel.service",
+      "path": "systemd/aphrody/aphrody-privileged-kernel.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "wsl"
+    },
+    {
+      "service": "aphrody-web-api",
+      "unit": "aphrody-web-api.service",
+      "path": "systemd/aphrody/aphrody-web-api.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "nie-model-serve",
+      "unit": "nie-model-serve.service",
+      "path": "systemd/nie/nie-model-serve.service",
+      "dropIns": [
+        "run-as-ubuntu"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "retired-2026-09-25"
+    },
+    {
+      "service": "nie-site",
+      "unit": "nie-site.service",
+      "path": "systemd/nie/nie-site.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-kernel"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "retired-2026-09-25",
+      "site": "nie-cdn"
+    },
+    {
+      "service": "rg-achillea-bot",
+      "unit": "rg-achillea-bot.service",
+      "path": "systemd/rg/rg-achillea-bot.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "sandbox-kernel",
+        "net-inet-only"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-api",
+      "unit": "rg-api.service",
+      "path": "systemd/rg/rg-api.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-bot",
+      "unit": "rg-bot.service",
+      "path": "systemd/rg/rg-bot.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "sandbox-kernel",
+        "syscall-service"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-cdn",
+      "unit": "rg-cdn.service",
+      "path": "systemd/rg/rg-cdn.service",
+      "dropIns": [
+        "run-as-ubuntu"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-cron",
+      "unit": "rg-cron.service",
+      "path": "systemd/rg/rg-cron.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "sandbox-kernel",
+        "syscall-service"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-infra-monitor",
+      "unit": "rg-infra-monitor.service",
+      "path": "systemd/rg/rg-infra-monitor.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "net-inet-only"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-infra-monitor",
+      "unit": "rg-infra-monitor.timer",
+      "path": "systemd/rg/rg-infra-monitor.timer",
+      "dropIns": [],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "pairs": "rg-infra-monitor.service",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-realtime",
+      "unit": "rg-realtime.service",
+      "path": "systemd/rg/rg-realtime.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "net-inet-only"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-sauvegarde",
+      "unit": "rg-sauvegarde.service",
+      "path": "systemd/rg/rg-sauvegarde.service",
+      "dropIns": [],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-sauvegarde",
+      "unit": "rg-sauvegarde.timer",
+      "path": "systemd/rg/rg-sauvegarde.timer",
+      "dropIns": [],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "pairs": "rg-sauvegarde.service",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-storage",
+      "unit": "rg-storage.service",
+      "path": "systemd/rg/rg-storage.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "net-inet-only"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "rg-website",
+      "unit": "rg-website.service",
+      "path": "systemd/rg/rg-website.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "sandbox-kernel",
+        "syscall-service",
+        "net-inet-only"
+      ],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03",
+      "site": "rosegriffon.com"
+    },
+    {
+      "service": "rg-zram-swap",
+      "unit": "rg-zram-swap.service",
+      "path": "systemd/rg/rg-zram-swap.service",
+      "dropIns": [],
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "status": "shutdown-requested-2026-10-03"
+    },
+    {
+      "service": "shenron-backup",
+      "unit": "shenron-backup.service",
+      "path": "systemd/shenron/shenron-backup.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "shenron-backup",
+      "unit": "shenron-backup.timer",
+      "path": "systemd/shenron/shenron-backup.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "shenron-backup.service"
+    },
+    {
+      "service": "shenron-bot",
+      "unit": "shenron-bot.service",
+      "path": "systemd/shenron/shenron-bot.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "syscall-service"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "site": "bot.dragonballfr.com"
+    },
+    {
+      "service": "shenron-pg-backup",
+      "unit": "shenron-pg-backup.service",
+      "path": "systemd/shenron/shenron-pg-backup.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-pg-backup",
+      "unit": "shenron-pg-backup.timer",
+      "path": "systemd/shenron/shenron-pg-backup.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "pairs": "shenron-pg-backup.service"
+    },
+    {
+      "service": "shenron-pg-tunnel",
+      "unit": "shenron-pg-tunnel.service",
+      "path": "systemd/shenron/shenron-pg-tunnel.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-site",
+      "unit": "shenron-site.service",
+      "path": "systemd/shenron/shenron-site.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-home-ro",
+        "sandbox-kernel",
+        "syscall-service"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "site": "dragonballfr.com"
+    },
+    {
+      "service": "shenron-sqlite-replica-backup",
+      "unit": "shenron-sqlite-replica-backup.service",
+      "path": "systemd/shenron/shenron-sqlite-replica-backup.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-sqlite-replica-backup",
+      "unit": "shenron-sqlite-replica-backup.timer",
+      "path": "systemd/shenron/shenron-sqlite-replica-backup.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "pairs": "shenron-sqlite-replica-backup.service"
+    }
+  ],
+  "nginx": [
+    {
+      "file": "nginx/aphrody/aphrody-apex.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "aphrody-apex"
+    },
+    {
+      "file": "nginx/aphrody/aphrody-cdn-static.inc",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "aphrody-cdn-static"
+    },
+    {
+      "file": "nginx/aphrody/aphrody-llms.inc",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "aphrody-llms"
+    },
+    {
+      "file": "nginx/aphrody/aphrody.com.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "aphrody.com"
+    },
+    {
+      "file": "nginx/aphrody/bot.aphrody.com.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "bot.aphrody.com",
+      "service": "aphrody-discord-dev"
+    },
+    {
+      "file": "nginx/nie/aphrody-nie-cdn.conf",
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "site": "aphrody-nie-cdn"
+    },
+    {
+      "file": "nginx/rg/00-rg-cache.conf",
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "site": "00-rg-cache"
+    },
+    {
+      "file": "nginx/shared/00-default.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "00-default"
+    },
+    {
+      "file": "nginx/shenron/00-shenron-cache.conf.example",
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "site": "00-shenron-cache"
+    },
+    {
+      "file": "nginx/shenron/bot.dragonballfr.com.conf.example",
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "site": "bot.dragonballfr.com",
+      "service": "shenron-bot"
+    },
+    {
+      "file": "nginx/shenron/cdn.dragonballfr.com.conf.example",
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "site": "cdn.dragonballfr.com",
+      "service": "shenron-site"
+    },
+    {
+      "file": "nginx/shenron/dragonballfr.com.conf.example",
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "site": "dragonballfr.com",
+      "service": "shenron-site"
+    }
+  ]
+}

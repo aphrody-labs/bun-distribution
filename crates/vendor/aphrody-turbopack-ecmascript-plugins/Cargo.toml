@@ -1,0 +1,55 @@
+[package]
+name = "aphrody-turbopack-ecmascript-plugins"
+version = "0.1.0"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+autobenches = false
+
+[lib]
+name = "turbopack_ecmascript_plugins"
+bench = false
+
+[features]
+transform_emotion = []
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+anyhow = "1.0.100"
+async-trait = "0.1.64"
+bincode = { version = "2.0.1", features = ["serde"] }
+either = "1.15.0"
+indexmap = "2.14.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+tracing = "0.1.44"
+rustc-hash = "2.1.1"
+
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
+turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript" }
+
+styled_components = "18.0.0"
+styled_jsx = "18.0.0"
+swc_core = { version = "79.0.0", default-features = false, features = ["ecma_loader_lru", "ecma_loader_parking_lot", "parallel_rayon", "ecma_ast", "ecma_visit", "common"] }
+swc_emotion = "18.0.0"
+swc_relay = "18.0.0"
+
+# SWC's plugin host is native-only, so its features must not be enabled for wasm.
+#
+# `swc_core/__plugin_transform_host` turns on `swc/plugin`, which pulls in the plugin runner and
+# `tokio`'s multi-thread runtime, and compiles SWC's `target_arch = "wasm32"` plugin path. SWC does
+# not support executing wasm plugins from inside wasm (see
+# https://github.com/swc-project/swc/issues/3934), and hosting them needs the wasmtime backend gated
+# out below, so enabling these for wasm builds code that can never run.
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+swc_core = { version = "79.0.0", default-features = false, features = ["ecma_loader_lru", "ecma_loader_parking_lot", "parallel_rayon", "__plugin_transform_host", "__plugin_transform_host_schema_v1"] }
+# wasmtime cannot be hosted inside wasm (no JIT, and `wasi-common` needs native filesystem APIs).
+swc_plugin_backend_wasmtime = "16.0.0"

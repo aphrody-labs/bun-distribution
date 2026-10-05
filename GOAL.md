@@ -2,7 +2,7 @@
 # GOAL — Aphrody
 
 Directive propriétaire du 2026-10-04, réécrite et vérifiée contre l'état réel du poste
-(commandes citées en fin de document). Pendants : [Yolo](../yolo/GOAL.md) pour la bibliothèque
+(commandes citées en fin de document). Pendants : [Yolo](GOAL.md) pour la bibliothèque
 partagée et [aphrody-py](../aphrody-py/GOAL.md) pour la surface Python IA/ML.
 
 ## 1. Rôle
@@ -111,7 +111,7 @@ aphrody.com est le point d'entrée de développement et de déploiement de :
 
 ## 9. Ordre d'exécution et fin
 
-1. Valider ce GOAL et celui de [Yolo](../yolo/GOAL.md).
+1. Valider ce GOAL et celui de [Yolo](GOAL.md).
 2. Effectuer un scan complet de `main`, sous-modules compris, sur du code entièrement commité.
 3. Compiler et installer réellement les binaires et dépendances.
 4. Mettre à jour ensuite seulement, une fois vérifiés : README, PLAN, AGENTS.md, docs, scripts, configuration MCP et plugins d'Aphrody et de Yolo.

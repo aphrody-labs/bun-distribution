@@ -2,7 +2,7 @@
   "$comment": "Private developer-tool SDK acquisition only. No neighbor checkout is a published Python runtime dependency.",
   "yolo": {
     "repository": "https://github.com/aphrody-labs/yolo.git",
-    "path": "../yolo",
+    "path": "..",
     "rev": "27403350547d36ef208068df929bc4e2eeb22218",
     "envOverride": "APHRODY_YOLO_ROOT",
     "sdk": {

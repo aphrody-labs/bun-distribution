@@ -1,0 +1,28 @@
+# rg-realtime.service — unified Realtime SSE API, reached through /realtime/v1/.
+[Unit]
+Description=Rose Griffon unified Realtime SSE API (Bun)
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/rg/current
+EnvironmentFile=/etc/rg-realtime.env
+Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
+Environment=RG_REALTIME_HOST=127.0.0.1
+Environment=RG_REALTIME_PORT=8812
+ExecStart=/home/ubuntu/.bun/bin/bun apps/realtime/server.ts
+Restart=always
+RestartSec=3s
+PrivateDevices=true
+RestrictSUIDSGID=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+MemoryHigh=512M
+MemoryMax=1G
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rg-realtime
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody privileged Linux kernel
+After=local-fs.target
+
+[Service]
+Type=simple
+User=root
+Group=aphro
+RuntimeDirectory=aphrody
+RuntimeDirectoryMode=0750
+UMask=0077
+Environment=APHRODY_WEB_MCP_BIN=
+ExecStart=/usr/local/lib/aphrody/host-bridge/aphrody-kernel --socket /run/aphrody/privileged.sock --auth-file /etc/aphrody/host-bridge/auth.json serve --no-browser
+ExecStartPost=/usr/bin/timeout 10 /bin/sh -c 'until test -S /run/aphrody/privileged.sock; do sleep 0.05; done; chgrp aphro /run/aphrody/privileged.sock; chmod 660 /run/aphrody/privileged.sock'
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

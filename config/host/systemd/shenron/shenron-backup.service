@@ -1,0 +1,40 @@
+# shenron-backup — sauvegarde du cache SQLite local borné de Shenron
+# (`apps/bot/data/bot.db`) par VACUUM INTO + gzip + rétention, via le script
+# d'exploitation `aphrody-infra/scripts/ops/backup-shenron-sqlite.sh` (déplacé
+# depuis le dépôt Shenron ; `SHENRON_ROOT` désigne la release à sauvegarder).
+# Prérequis hôte : checkout `aphrody-infra` sous /home/ubuntu/aphrody-infra.
+#
+# Portée : SQLite est un CACHE local borné, pas la source de vérité — celle-ci
+# est PostgreSQL, sauvegardé par `shenron-pg-backup.timer` sur `dbfr`
+# (config/scheduler-policy.json). Cette unité ne duplique donc pas la source de
+# vérité ; elle ne couvre que le cache SQLite distinct de Shenron.
+#
+# Les snapshots résident hors des releases sous le stockage partagé durable.
+#
+# Installation :
+#   bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit shenron-backup.service | sudo tee /etc/systemd/system/shenron-backup.service >/dev/null
+#   bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit shenron-backup.timer | sudo tee /etc/systemd/system/shenron-backup.timer >/dev/null
+#   sudo systemctl daemon-reload && sudo systemctl enable --now shenron-backup.timer
+[Unit]
+Description=Sauvegarde SQLite Shenron (VACUUM INTO + gzip + rétention)
+After=network.target shenron-bot.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/shenron/current
+Environment=SHENRON_ROOT=/srv/shenron/current
+Environment=SHENRON_SQLITE_SRC=/srv/shenron/shared/bot/data/bot.db
+Environment=SHENRON_SQLITE_BACKUP_DIR=/srv/shenron/shared/backups/sqlite
+Environment=SHENRON_SQLITE_BACKUP_RETENTION_DAYS=14
+ExecStartPre=+/bin/mkdir -p /srv/shenron/shared/backups/sqlite
+ExecStart=/bin/bash /home/ubuntu/aphrody-infra/scripts/ops/backup-shenron-sqlite.sh
+
+# Une sauvegarde ne doit jamais concurrencer la production pour le disque ou le CPU.
+Nice=10
+IOSchedulingClass=idle
+
+ReadWritePaths=/srv/shenron/shared/backups/sqlite
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=shenron-backup

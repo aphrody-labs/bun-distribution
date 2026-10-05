@@ -1,0 +1,22 @@
+[package]
+name = "aphrody-turbo-unix-path"
+version = "0.0.1"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+
+[lib]
+name = "turbo_unix_path"
+bench = false
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_new"] }
+
+[dev-dependencies]
+rstest = "0.16.0"

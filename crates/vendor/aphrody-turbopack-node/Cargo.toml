@@ -1,0 +1,65 @@
+[package]
+name = "aphrody-turbopack-node"
+version = "0.1.0"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+autobenches = false
+
+[lib]
+name = "turbopack_node"
+bench = false
+
+[features]
+default = ["process_pool"]
+# enable "HMR" for embedded assets
+dynamic_embed_contents = ["turbo-tasks-fs/dynamic_embed_contents"]
+process_pool = ["tokio/full"]
+worker_pool = ["tokio/sync", "napi", "napi-derive", "turbo-rcstr/napi"]
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+anyhow = "1.0.100"
+async-stream = "0.3.4"
+async-trait = "0.1.64"
+dashmap = "7.0.0-rc2"
+base64 = "0.22.1"
+bincode = { version = "2.0.1", features = ["serde"] }
+bytes = "1.11.1"
+const_format = "0.2.30"
+either = { version = "1.15.0", features = ["serde"] }
+futures = "0.3.31"
+futures-retry = "0.6.0"
+indoc = "2.0.0"
+owo-colors = "4.2.2"
+parking_lot = "0.12.1"
+regex = "1.12.3"
+rustc-hash = "2.1.1"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+serde_with = { version = "3.18.0", features = ["base64"] }
+tokio = { version = "1.52.1", optional = true }
+tracing = "0.1.44"
+turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
+turbo-tasks-bytes = { path = "../aphrody-turbo-tasks-bytes", package = "aphrody-turbo-tasks-bytes" }
+turbo-tasks-env = { path = "../aphrody-turbo-tasks-env", package = "aphrody-turbo-tasks-env" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
+turbopack-cli-utils = { path = "../aphrody-turbopack-cli-utils", package = "aphrody-turbopack-cli-utils" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
+turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript" }
+turbopack-resolve = { path = "../aphrody-turbopack-resolve", package = "aphrody-turbopack-resolve" }
+napi = { version = "3.10.0", default-features = false, features = ["napi3", "serde-json", "tokio_rt", "error_anyhow", "napi4", "napi5"], optional = true }
+napi-derive = { version = "3.5.8", optional = true }
+
+[dev-dependencies]
+rustc-hash = "2.1.1"
+turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend" }
+turbo-tasks-testing = { path = "../aphrody-turbo-tasks-testing", package = "aphrody-turbo-tasks-testing" }

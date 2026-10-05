@@ -1,0 +1,22 @@
+[package]
+name = "aphrody-next-taskless"
+version = "0.0.1"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+
+[lib]
+name = "next_taskless"
+bench = false
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+anyhow = "1.0.100"
+regex = "1.12.3"
+serde_json = "1.0.149"
+turbo-unix-path = { path = "../aphrody-turbo-unix-path", package = "aphrody-turbo-unix-path" }

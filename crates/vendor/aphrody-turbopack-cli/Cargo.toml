@@ -1,0 +1,87 @@
+[package]
+name = "aphrody-turbopack-cli"
+version = "0.1.0"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+autobenches = false
+
+[[bin]]
+name = "turbopack-cli"
+path = "src/main.rs"
+bench = false
+
+[lib]
+name = "turbopack_cli"
+bench = false
+
+[[bench]]
+name = "mod"
+harness = false
+
+[[bench]]
+name = "small_apps"
+harness = false
+
+[features]
+default = ["custom_allocator"]
+serializable = []
+tokio_console = [
+  "dep:console-subscriber",
+  "tokio/tracing",
+  "turbo-tasks/tokio_tracing",
+]
+profile = []
+custom_allocator = ["turbo-tasks-malloc/custom_allocator"]
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+anyhow = "1.0.100"
+bincode = { version = "2.0.1", features = ["serde"] }
+clap = { version = "4.5.2", features = ["derive", "env"] }
+console-subscriber = { version = "0.4.1", optional = true }
+futures = "0.3.31"
+owo-colors = "4.2.2"
+rustc-hash = "2.1.1"
+serde = { version = "1.0.228", features = ["derive"] }
+swc_core = { version = "79.0.0", default-features = false, features = ["ecma_loader_lru", "ecma_loader_parking_lot", "parallel_rayon"] }
+tokio = { version = "1.52.1", features = ["full"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.16", features = ["json"] }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
+turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend" }
+turbo-tasks-env = { path = "../aphrody-turbo-tasks-env", package = "aphrody-turbo-tasks-env" }
+turbo-unix-path = { path = "../aphrody-turbo-unix-path", package = "aphrody-turbo-unix-path" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false }
+turbopack = { path = "../aphrody-turbopack", package = "aphrody-turbopack" }
+turbopack-browser = { path = "../aphrody-turbopack-browser", package = "aphrody-turbopack-browser" }
+turbopack-cli-utils = { path = "../aphrody-turbopack-cli-utils", package = "aphrody-turbopack-cli-utils" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
+turbopack-css = { path = "../aphrody-turbopack-css", package = "aphrody-turbopack-css" }
+turbopack-dev-server = { path = "../aphrody-turbopack-dev-server", package = "aphrody-turbopack-dev-server" }
+turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript" }
+turbopack-ecmascript-plugins = { path = "../aphrody-turbopack-ecmascript-plugins", package = "aphrody-turbopack-ecmascript-plugins", default-features = false, features = ["transform_emotion"] }
+turbopack-ecmascript-runtime = { path = "../aphrody-turbopack-ecmascript-runtime", package = "aphrody-turbopack-ecmascript-runtime" }
+turbopack-env = { path = "../aphrody-turbopack-env", package = "aphrody-turbopack-env" }
+turbopack-node = { path = "../aphrody-turbopack-node", package = "aphrody-turbopack-node", default-features = false, features = ["process_pool"] }
+turbopack-nodejs = { path = "../aphrody-turbopack-nodejs", package = "aphrody-turbopack-nodejs" }
+turbopack-resolve = { path = "../aphrody-turbopack-resolve", package = "aphrody-turbopack-resolve" }
+turbopack-trace-utils = { path = "../aphrody-turbopack-trace-utils", package = "aphrody-turbopack-trace-utils" }
+webbrowser = "1.0.6"
+
+[build-dependencies]
+anyhow = "1.0.100"
+vergen-gitcl = { version = "1.0.8", features = ["cargo"] }
+
+[dev-dependencies]
+criterion = { version = "4.3.0", package = "codspeed-criterion-compat", features = ["async_tokio"] }
+regex = "1.12.3"
+turbopack-bench = { path = "../aphrody-turbopack-bench", package = "aphrody-turbopack-bench" }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false, features = ["custom_allocator"] }

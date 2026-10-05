@@ -1,0 +1,44 @@
+# shenron-pg-tunnel — accès privé du VPS à PostgreSQL `shenron_site` sur dbfr.
+#
+# PostgreSQL de dbfr n'écoute que sur 127.0.0.1:5432 (pg_hba loopback
+# uniquement) et 5432 n'est jamais ouvert publiquement
+# (docs/PRODUCTION-ALLOCATION.md). Le lien WireGuard historique (wg0,
+# 10.8.0.0/24) n'est pas actif côté VPS ; le chemin privé retenu est donc un
+# tunnel SSH local supervisé par systemd : 127.0.0.1:15433 (VPS) ->
+# 127.0.0.1:5432 (dbfr). Les fichiers d'environnement Shenron
+# (`/etc/rose-griffon/shenron-{site,bot}.env`) pointent `DATABASE_URL` vers
+# 127.0.0.1:15433. Le port 15432 reste libre pour d'autres usages ponctuels.
+#
+# Prérequis : alias SSH `dbfr` dans ~ubuntu/.ssh/config (clé sans passphrase,
+# known_hosts épinglé) — déjà présent sur le VPS.
+#
+# Installation :
+#   bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit shenron-pg-tunnel.service | sudo tee /etc/systemd/system/shenron-pg-tunnel.service >/dev/null
+#   sudo systemctl daemon-reload && sudo systemctl enable --now shenron-pg-tunnel.service
+[Unit]
+Description=Shenron — tunnel SSH privé vers PostgreSQL dbfr (127.0.0.1:15433)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ssh -NT \
+    -o BatchMode=yes \
+    -o ExitOnForwardFailure=yes \
+    -o ServerAliveInterval=15 \
+    -o ServerAliveCountMax=3 \
+    -o TCPKeepAlive=yes \
+    -L 127.0.0.1:15433:127.0.0.1:5432 \
+    dbfr
+Restart=always
+RestartSec=3
+
+MemoryMax=128M
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=shenron-pg-tunnel
+
+[Install]
+WantedBy=multi-user.target

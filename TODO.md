@@ -7,7 +7,7 @@ et routage de fabrique actifs dans les checkouts partagés.
 - [x] Aligner le scaffold sur l'ABI 1.4 du producteur et du SDK.
 - [x] Remplacer les runners macOS retirés/dépréciés et refuser une architecture différente.
 - [x] Exécuter les gates du scaffold, YAML, liens, whitespace et mdBook.
-- [x] Consigner les sondes SSH et les limites dans le [reçu](../yolo/docs/delivery-metadata-2026-10-04.json).
+- [x] Consigner les sondes SSH et les limites dans le [reçu](./docs/delivery-metadata-2026-10-04.json).
 - [x] Revoir le staging et livrer le lot Yolo : `a6bcfd4`, poussé sur `origin/dev`.
 
 Le reçu Aphrody et ce TODO sont livrés ensemble sur la branche `main` existante.
@@ -28,7 +28,7 @@ Les lots concurrents conservent leurs claims ; leur état n'est pas une preuve d
 
 Portée : `yolo/install.sh`, `yolo/install.ps1`, tests et reçu dédiés ; aucun
 changement dans les répertoires sources exclus ni dans les lots concurrents.
-Preuve : [reçu Yolo](../yolo/docs/installer-validation-2026-10-04.json), 23 tests
+Preuve : [reçu Yolo](./docs/installer-validation-2026-10-04.json), 23 tests
 passés, aucun échec ni skip. Installations fraîches et rollback runtime Linux
 vérifiés sur fixtures ; Windows natif et promotion de release restent ouverts.
 

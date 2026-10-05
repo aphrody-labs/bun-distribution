@@ -7,10 +7,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INFRA_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-YOLO_ROOT="${YOLO_ROOT:-$HOME/yolo}"
+YOLO_ROOT="${YOLO_ROOT:-$HOME/aphrody}"
 DROPIN="$YOLO_ROOT/config/host/systemd/shenron/privoxy.service.d/shenron-media.conf"
-CONFIG="${YOLO_ROOT:-$HOME/yolo}/config/host/privoxy/shenron-media.conf"
-ENV_EXAMPLE="${YOLO_ROOT:-$HOME/yolo}/config/host/privoxy/shenron-media-proxy.env.example"
+CONFIG="${YOLO_ROOT:-$HOME/aphrody}/config/host/privoxy/shenron-media.conf"
+ENV_EXAMPLE="${YOLO_ROOT:-$HOME/aphrody}/config/host/privoxy/shenron-media-proxy.env.example"
 
 if [[ ! -f "$DROPIN" ]]; then
   echo "✗ Systemd drop-in not found: $DROPIN" >&2

@@ -11,7 +11,7 @@ set -euo pipefail
 # adapter refuses a bundle pinned to another aphrody-infra commit. Reinstall
 # after changing any adapter or config/{service-catalog,secrets-contract}.json
 # or yolo config/host/nginx/routes.json (installed as nginx-routes.json).
-yolo_routes="${YOLO_ROOT:-$HOME/yolo}/config/host/nginx/routes.json"
+yolo_routes="${YOLO_ROOT:-$HOME/aphrody}/config/host/nginx/routes.json"
 infra="${APHRODY_ADAPTER_SOURCE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 sbin="${APHRODY_ADAPTER_SBIN:-/usr/local/sbin}"
 share="${APHRODY_ADAPTER_SHARE:-/usr/local/share/aphrody-infra}"
@@ -133,7 +133,7 @@ if $include_backup; then
   unit_dir="${APHRODY_ADAPTER_SYSTEMD:-/etc/systemd/system}"
   install -d -m 0755 "$libexec" "$unit_dir"
   install -m 0755 "$infra/scripts/ops/backup-shenron-sqlite.sh" "$libexec/backup-shenron-sqlite.sh"
-  YOLO_ROOT="${YOLO_ROOT:-$HOME/yolo}" bun "${YOLO_ROOT:-$HOME/yolo}/packages/core/src/host/cli.ts" compose-unit shenron-sqlite-replica-backup.service > "$unit_dir/shenron-sqlite-replica-backup.service"
+  YOLO_ROOT="${YOLO_ROOT:-$HOME/aphrody}" bun "${YOLO_ROOT:-$HOME/aphrody}/packages/engine/core/src/host/cli.ts" compose-unit shenron-sqlite-replica-backup.service > "$unit_dir/shenron-sqlite-replica-backup.service"
   chmod 0644 "$unit_dir/shenron-sqlite-replica-backup.service"
   # The existing enabled timer is kept; lead reloads units as a separate gate.
 fi

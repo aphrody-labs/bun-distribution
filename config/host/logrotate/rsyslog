@@ -1,0 +1,43 @@
+# Rotation des journaux système — quotidienne, sept jours conservés.
+#
+# POURQUOI CE FICHIER EST VERSIONNÉ
+# L'audit du 14/8/2026 a trouvé /var/log à 508 Mio, dont 102 Mio pour le seul
+# /var/log/syslog et 20 Mio pour syslog.1 : la rotation était hebdomadaire avec quatre
+# copies gardées, soit près d'un mois de journaux non compressés en ligne sur un disque
+# occupé à 97 %. La rotation quotidienne divise par sept la taille du fichier courant,
+# et `maxsize` déclenche une rotation anticipée si une boucle d'erreurs le fait gonfler
+# avant l'heure — c'est exactement ce qui s'était produit avec iecode-cdn et ses 28 722
+# redémarrages.
+#
+# `rotate 7` conserve autant de jours qu'avant en durée (quatre semaines devient une
+# semaine), ce qui est le bon compromis ici : les journaux systemd, eux, gardent leur
+# propre historique (`journalctl --disk-usage` ≈ 113 Mio), et l'archive froide reçoit
+# les sauvegardes. Un incident se diagnostique dans les heures qui suivent, pas un mois
+# après.
+/var/log/syslog
+/var/log/mail.log
+/var/log/kern.log
+/var/log/auth.log
+/var/log/user.log
+/var/log/cron.log
+{
+	# `su` manquait, et logrotate REFUSAIT donc de tourner auth.log, user.log et
+	# cron.log : « parent directory has insecure permissions » — /var/log est en
+	# 775 root:syslog, ce que logrotate considère comme non sûr sans identité explicite.
+	# Ces trois journaux, dont celui des authentifications, ne tournaient donc pas du
+	# tout : ils grossissaient sans fin et sans que personne ne le voie, l'erreur
+	# n'apparaissant que dans la sortie d'une exécution manuelle.
+	su root syslog
+	create 640 syslog adm
+	rotate 7
+	daily
+	maxsize 100M
+	missingok
+	notifempty
+	compress
+	delaycompress
+	sharedscripts
+	postrotate
+		/usr/lib/rsyslog/rsyslog-rotate
+	endscript
+}

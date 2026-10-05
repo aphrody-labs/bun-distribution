@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/koharu/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "apps/cli", "crates/web/*", "crates/discord/*", "crates/engine/*"]
+members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/koharu/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "apps/cli", "crates/web/*", "crates/discord/*", "crates/engine/*", "crates/vendor/*"]
 exclude = [
   "crates/contracts/schema",
   "crates/os/drive",
+  "crates/vendor/aphrody-tauri-plugin-sql",
 ]
 
 [workspace.package]
@@ -429,28 +430,28 @@ jieba-rs = "0.11.0"
 fontique = "0.11.1"
 pollster = "1.0.1"
 vello = "0.10.0"
-tauri = { version = "=3.0.0-alpha.4", default-features = false, features = ["compression"] }
-tauri-build = "=3.0.0-alpha.3"
-tauri-runtime-wry = { version = "=3.0.0-alpha.4", default-features = false, features = ["x11"] }
-tauri-runtime-cef = { version = "=3.0.0-alpha.5" }
-tauri-plugin-log = "=3.0.0-alpha.2"
-tauri-plugin-opener = "=3.0.0-alpha.2"
-tauri-plugin-process = "=3.0.0-alpha.2"
-tauri-plugin-single-instance = "=3.0.0-alpha.2"
-tauri-plugin-window-state = "=3.0.0-alpha.2"
-tauri-plugin-os = "=3.0.0-alpha.2"
-tauri-plugin-dialog = "=3.0.0-alpha.2"
-tauri-plugin-clipboard-manager = "=3.0.0-alpha.2"
-tauri-plugin-notification = "=3.0.0-alpha.2"
-tauri-plugin-store = "=3.0.0-alpha.2"
-tauri-plugin-updater = "=3.0.0-alpha.2"
-tauri-plugin-global-shortcut = "=3.0.0-alpha.2"
-tauri-plugin-autostart = "=3.0.0-alpha.2"
-tauri-plugin-deep-link = "=3.0.0-alpha.2"
-tauri-plugin-fs = "=3.0.0-alpha.2"
+tauri = { package = "aphrody-tauri", path = "crates/vendor/aphrody-tauri", version = "=3.0.0-alpha.4", default-features = false, features = ["compression"] }
+tauri-build = { package = "aphrody-tauri-build", path = "crates/vendor/aphrody-tauri-build", version = "=3.0.0-alpha.3" }
+tauri-runtime-wry = { package = "aphrody-tauri-runtime-wry", path = "crates/vendor/aphrody-tauri-runtime-wry", version = "=3.0.0-alpha.4", default-features = false, features = ["x11"] }
+tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", path = "crates/vendor/aphrody-tauri-runtime-cef", version = "=3.0.0-alpha.5" }
+tauri-plugin-log = { package = "aphrody-tauri-plugin-log", path = "crates/vendor/aphrody-tauri-plugin-log", version = "=3.0.0-alpha.2" }
+tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", path = "crates/vendor/aphrody-tauri-plugin-opener", version = "=3.0.0-alpha.2" }
+tauri-plugin-process = { package = "aphrody-tauri-plugin-process", path = "crates/vendor/aphrody-tauri-plugin-process", version = "=3.0.0-alpha.2" }
+tauri-plugin-single-instance = { package = "aphrody-tauri-plugin-single-instance", path = "crates/vendor/aphrody-tauri-plugin-single-instance", version = "=3.0.0-alpha.2" }
+tauri-plugin-window-state = { package = "aphrody-tauri-plugin-window-state", path = "crates/vendor/aphrody-tauri-plugin-window-state", version = "=3.0.0-alpha.2" }
+tauri-plugin-os = { package = "aphrody-tauri-plugin-os", path = "crates/vendor/aphrody-tauri-plugin-os", version = "=3.0.0-alpha.2" }
+tauri-plugin-dialog = { package = "aphrody-tauri-plugin-dialog", path = "crates/vendor/aphrody-tauri-plugin-dialog", version = "=3.0.0-alpha.2" }
+tauri-plugin-clipboard-manager = { package = "aphrody-tauri-plugin-clipboard-manager", path = "crates/vendor/aphrody-tauri-plugin-clipboard-manager", version = "=3.0.0-alpha.2" }
+tauri-plugin-notification = { package = "aphrody-tauri-plugin-notification", path = "crates/vendor/aphrody-tauri-plugin-notification", version = "=3.0.0-alpha.2" }
+tauri-plugin-store = { package = "aphrody-tauri-plugin-store", path = "crates/vendor/aphrody-tauri-plugin-store", version = "=3.0.0-alpha.2" }
+tauri-plugin-updater = { package = "aphrody-tauri-plugin-updater", path = "crates/vendor/aphrody-tauri-plugin-updater", version = "=3.0.0-alpha.2" }
+tauri-plugin-global-shortcut = { package = "aphrody-tauri-plugin-global-shortcut", path = "crates/vendor/aphrody-tauri-plugin-global-shortcut", version = "=3.0.0-alpha.2" }
+tauri-plugin-autostart = { package = "aphrody-tauri-plugin-autostart", path = "crates/vendor/aphrody-tauri-plugin-autostart", version = "=3.0.0-alpha.2" }
+tauri-plugin-deep-link = { package = "aphrody-tauri-plugin-deep-link", path = "crates/vendor/aphrody-tauri-plugin-deep-link", version = "=3.0.0-alpha.2" }
+tauri-plugin-fs = { package = "aphrody-tauri-plugin-fs", path = "crates/vendor/aphrody-tauri-plugin-fs", version = "=3.0.0-alpha.2" }
 # Integrated debug bridge implementation, preserving Tauri 3 and security patches.
 tauri-plugin-mcp-bridge = { path = "crates/ui/tauri-plugin-mcp-bridge", version = "0.13.0" }
-tauri-specta = { version = "2.0.0-rc.25", git = "https://github.com/koharu-rs/tauri-specta", tag = "v2.0.0-rc.25-koharu.1", features = ["derive", "typescript"] }
+tauri-specta = { package = "aphrody-tauri-specta", path = "crates/vendor/aphrody-tauri-specta", version = "2.0.0-rc.25", features = ["derive", "typescript"] }
 atomicwrites = "0.4.4"
 fs4 = "1.1.0"
 postcard = { version = "1.1.3", features = ["use-std"] }
@@ -494,7 +495,13 @@ grass = "0.13"
 aphrody-drive = { path = "crates/ui/drive", version = "1.0.0-canary" }
 tokio-util = { version = "0.7", features = ["io"] }
 swift-rs = { version = "1.0" }
-tauri-plugin = { version = "=3.0.0-alpha.3" }
+tauri-plugin = { package = "aphrody-tauri-plugin", path = "crates/vendor/aphrody-tauri-plugin", version = "=3.0.0-alpha.3" }
+tauri-utils = { package = "aphrody-tauri-utils", path = "crates/vendor/aphrody-tauri-utils", version = "3.0.0-alpha.3" }
+tauri-runtime = { package = "aphrody-tauri-runtime", path = "crates/vendor/aphrody-tauri-runtime", version = "3.0.0-alpha.3" }
+tauri-macros = { package = "aphrody-tauri-macros", path = "crates/vendor/aphrody-tauri-macros", version = "3.0.0-alpha.3" }
+tauri-codegen = { package = "aphrody-tauri-codegen", path = "crates/vendor/aphrody-tauri-codegen", version = "3.0.0-alpha.3" }
+wry = { package = "aphrody-wry", path = "crates/vendor/aphrody-wry", version = "0.57.0" }
+tao = { package = "aphrody-tao", path = "crates/vendor/aphrody-tao", version = "0.37.1" }
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
 unused_must_use = "deny"
@@ -515,7 +522,6 @@ taffy = { git = "ssh://git@github-dev/aphrody-labs/taffy.git", rev = "ed38f5bb36
 # Integrated Unicode implementation preserves the private C++ namespace alongside V8.
 simdutf = { path = "crates/native/simdutf" }
 # tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see config/tauri-upstream.json
-tauri-plugin-dialog = { path = "crates/ui/tauri-plugin-dialog" }
 
 # Build footprint (2026-10-02): full DWARF for 191 members and ~2,300 dependencies made target/debug ~250 GiB and
 # kept the WSL disk saturated during links. Line tables keep file:line backtraces and profiler symbols for workspace

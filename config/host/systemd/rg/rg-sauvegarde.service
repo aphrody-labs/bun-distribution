@@ -1,0 +1,26 @@
+[Unit]
+# Sauvegarde vérifiée des bases Postgres, locale puis hors machine.
+#
+# Le script existait déjà (`backup-postgres.sh`) mais rien ne l'appelait : au 14 août 2026,
+# la base `rg` — comptes, commandes, adhésions, wiki — n'avait aucune sauvegarde et les
+# derniers fichiers du disque, datés du 14 mai, faisaient 385 octets, c'est-à-dire vides.
+# D'où cette unité : ce qui n'est pas planifié n'est pas fait.
+Description=Sauvegarde Postgres vérifiée (dump, restauration de contrôle, envoi hors machine)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/aphrody-infra
+ExecStart=/home/ubuntu/.bun/bin/bun /home/ubuntu/aphrody-infra/scripts/rg/sauvegarde.ts
+# La restauration de contrôle crée une base jetable : lui laisser du temps sans bloquer
+# indéfiniment si Postgres ne répond plus.
+TimeoutStartSec=1800
+# Une sauvegarde ne doit jamais concurrencer la production pour le disque ou le CPU.
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target
+

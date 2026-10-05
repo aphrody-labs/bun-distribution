@@ -1,19 +1,15 @@
 {
   "schemaVersion": 1,
-  "owners": ["aphrody-labs", "aphrody-dev", "yohan971", "rose-griffon"],
+  "owners": [
+    "aphrody-labs",
+    "aphrody-dev",
+    "yohan971",
+    "rose-griffon"
+  ],
   "pollIntervalMs": 60000,
   "debounceMs": 250,
   "commandTimeoutMs": 30000,
   "repositories": [
-    {
-      "id": "yolo",
-      "path": "../yolo",
-      "remote": "origin",
-      "sourceBranch": "dev",
-      "destinationBranch": "main",
-      "fastForward": false,
-      "buildCommand": ["bash", "scripts/release/factory-current.sh"]
-    },
     {
       "id": "aphrody",
       "path": ".",

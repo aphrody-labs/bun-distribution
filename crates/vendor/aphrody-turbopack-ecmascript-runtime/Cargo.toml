@@ -1,0 +1,34 @@
+[package]
+name = "aphrody-turbopack-ecmascript-runtime"
+version = "0.1.0"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+autobenches = false
+
+[lib]
+name = "turbopack_ecmascript_runtime"
+bench = false
+
+[features]
+# enable "HMR" for embedded assets
+dynamic_embed_contents = ["turbo-tasks-fs/dynamic_embed_contents"]
+# enable test utilities such as `RuntimeType::Dummy`
+test = []
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+anyhow = "1.0.100"
+indoc = "2.0.0"
+serde = { version = "1.0.228", features = ["derive"] }
+
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
+turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript" }

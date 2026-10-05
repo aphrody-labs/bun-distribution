@@ -1,0 +1,39 @@
+[package]
+name = "aphrody-turbopack-trace-server"
+version = "0.1.0"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+autobenches = false
+
+[lib]
+name = "turbopack_trace_server"
+
+[features]
+default = ["custom_allocator"]
+custom_allocator = ["turbo-tasks-malloc/custom_allocator"]
+
+[[bin]]
+name = "turbo-trace-server"
+path = "src/main.rs"
+bench = false
+
+[dependencies]
+anyhow = "1.0.100"
+either = "1.15.0"
+flate2 = "1.0.28"
+hashbrown = { version = "0.15.4", features = ["raw-entry"] }
+indexmap = { version = "2.14.0", features = ["serde"] }
+itertools = "0.10.5"
+postcard = "1.0.4"
+rayon = "1.10.0"
+rustc-demangle = "0.1"
+rustc-hash = "2.1.1"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+smallvec = { version = "1.15.1", features = ["const_generics", "union", "const_new"] }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+turbo-tasks-malloc = { path = "../aphrody-turbo-tasks-malloc", package = "aphrody-turbo-tasks-malloc", default-features = false }
+tungstenite = { version = "0.21.0" }
+turbopack-trace-utils = { path = "../aphrody-turbopack-trace-utils", package = "aphrody-turbopack-trace-utils" }
+zstd = { version = "0.13.0" }

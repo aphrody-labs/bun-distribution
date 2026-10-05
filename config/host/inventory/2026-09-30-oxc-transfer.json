@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "before": {
+    "observed_at": "2026-09-30T19:55:20.670676+00:00",
+    "repo": {
+      "id": 1216990215,
+      "node_id": "R_kgDOSInMBw",
+      "full_name": "aphrody-code/oxc",
+      "private": true,
+      "fork": false,
+      "default_branch": "main",
+      "permissions": {
+        "admin": true,
+        "maintain": true,
+        "push": true,
+        "triage": true,
+        "pull": true
+      },
+      "visibility": "private"
+    },
+    "upstreamRemote": "https://github.com/oxc-project/oxc.git",
+    "parent": null,
+    "refs": {
+      "main": "31d5266e150ff17af52f0c2fc798cc27dc9a5a59"
+    },
+    "mainProtected": false,
+    "rulesets": {
+      "error": "gh: Upgrade to GitHub Pro or make this repository public to enable this feature. (HTTP 403)"
+    },
+    "actions_permissions": {
+      "enabled": true,
+      "allowed_actions": "all",
+      "sha_pinning_required": false
+    },
+    "actions_secrets": [],
+    "webhooks": [],
+    "target_collision": {
+      "error": "gh: Not Found (HTTP 404)"
+    }
+  },
+  "after": {
+    "observed_at": "2026-09-30T19:58:52.061678+00:00",
+    "repo": {
+      "id": 1216990215,
+      "node_id": "R_kgDOSInMBw",
+      "full_name": "aphrody-labs/oxc",
+      "private": true,
+      "fork": false,
+      "default_branch": "main",
+      "permissions": {
+        "admin": true,
+        "maintain": true,
+        "push": true,
+        "triage": true,
+        "pull": true
+      },
+      "visibility": "private"
+    },
+    "parent": null,
+    "refs": {
+      "main": "31d5266e150ff17af52f0c2fc798cc27dc9a5a59"
+    },
+    "mainProtected": false,
+    "rulesets": {
+      "error": "gh: Upgrade to GitHub Pro or make this repository public to enable this feature. (HTTP 403)"
+    },
+    "actions_permissions": {
+      "enabled": true,
+      "allowed_actions": "all",
+      "sha_pinning_required": false
+    },
+    "actions_secrets": [],
+    "webhooks": [],
+    "redirect_id": 1216990215,
+    "checks": {
+      "same_id": true,
+      "same_refs": true,
+      "same_visibility": true,
+      "same_fork_state": true,
+      "same_main_protection": true,
+      "same_secrets": true,
+      "same_hooks": true,
+      "redirect": true
+    }
+  },
+  "validation": {
+    "localOrigin": "https://github.com/aphrody-labs/oxc.git",
+    "upstreamOrigin": "https://github.com/oxc-project/oxc.git",
+    "githubForkRelationship": false,
+    "sourceProvenance": "Existing private standalone mirror, not a GitHub fork. Git upstream remote retained.",
+    "rulesetsFeatureAvailable": false,
+    "rulesetsReason": "Private repository rulesets require upgraded billing; no visibility or billing changes made.",
+    "fullRegistryInventoryComplete": false
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "{% package_name %}",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run dev.ts",
+    "build": "tsc && bun run build.ts",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "{% if v2 %}^3.0.0-alpha{% else %}^1{% endif %}"{% if v2 %},
+    "@tauri-apps/plugin-opener": "^3.0.0-alpha"{% endif %}
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "{% if v2 %}^3.0.0-alpha{% else %}^1{% endif %}",
+    "@types/bun": "^1.4.2",
+    "typescript": "~6.0.3"
+  }
+}

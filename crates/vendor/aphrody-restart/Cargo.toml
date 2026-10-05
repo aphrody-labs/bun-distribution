@@ -1,0 +1,22 @@
+[package]
+name = "aphrody-restart"
+version = "0.1.0"
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+
+[[bin]]
+name = "restart"
+path = "src/main.rs"
+
+[dependencies.tauri]
+version = "3.0.0-alpha.4"
+path = "../aphrody-tauri"
+package = "aphrody-tauri"
+default-features = false
+
+[dev-dependencies]
+tempfile = "3"
+
+[features]
+process-relaunch-dangerous-allow-symlink-macos = []

@@ -8,7 +8,7 @@ import { acquireNativeRuntime, runNativeRuntime } from "./native-runtime.ts";
 
 const consumer = resolve(import.meta.dir, "../../../..");
 const sourceSdk = join(consumer, ".cache/yolo-packages");
-const yolo = resolve(consumer, "../yolo/bin/yolo");
+const yolo = resolve(consumer, "bin/yolo");
 const target = "x86_64-unknown-linux-gnu";
 const nativeHome = join(homedir(), ".yolo/runtime", target);
 const older = join(nativeHome, "0.1.0-3d585c67");

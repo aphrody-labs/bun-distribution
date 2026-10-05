@@ -138,7 +138,7 @@ if (!(await Bun.file(join(privateDir, "tls.key")).exists())) {
   ]);
   await chmod(join(privateDir, "tls.key"), 0o600);
 }
-const yoloRoot = process.env.YOLO_ROOT ?? process.env.APHRODY_YOLO_ROOT ?? join(homedir(), "yolo");
+const yoloRoot = process.env.YOLO_ROOT ?? process.env.APHRODY_YOLO_ROOT ?? join(homedir(), "aphrody");
 const configPath = join(privateDir, "nginx.conf");
 await Bun.write(
   configPath,

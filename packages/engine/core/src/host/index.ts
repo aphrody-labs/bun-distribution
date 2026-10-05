@@ -29,9 +29,9 @@ export interface HostCatalog {
   inventory?: { dir: string; files: string[]; toolchain: string };
 }
 
-/** `$YOLO_ROOT`, default `$HOME/yolo`; Windows uses `%USERPROFILE%\yolo`. */
+/** `$YOLO_ROOT`, default `$HOME/aphrody`; Windows uses `%USERPROFILE%\aphrody`. */
 export function yoloRoot(env: Record<string, string | undefined> = process.env): string {
-  return env.YOLO_ROOT || join(env.HOME || env.USERPROFILE || homedir(), "yolo");
+  return env.YOLO_ROOT || join(env.HOME || env.USERPROFILE || homedir(), "aphrody");
 }
 export const hostRoot = (env?: Record<string, string | undefined>) =>
   join(yoloRoot(env), "config", "host");

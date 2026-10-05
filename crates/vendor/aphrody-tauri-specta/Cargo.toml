@@ -1,0 +1,45 @@
+[package]
+name = "aphrody-tauri-specta"
+description = "Completely typesafe Tauri commands"
+version = "2.0.0-rc.25"
+authors = ["Oscar Beaumont <oscar@otbeaumont.me>"]
+edition = "2024"
+license = "MIT"
+include = ["/src", "/README.md", "/LICENCE"]
+repository = "https://github.com/specta-rs/tauri-specta"
+documentation = "https://docs.rs/tauri-specta/latest/tauri-specta"
+keywords = ["async", "specta", "rspc", "typescript", "typesafe"]
+categories = ["web-programming", "asynchronous"]
+
+# /bin/sh RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --all-features
+[package.metadata."docs.rs"]
+all-features = true
+rustc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = []
+derive = ["dep:tauri-specta-macros"]
+javascript = ["dep:specta-typescript"]
+typescript = ["dep:specta-typescript"]
+
+[lib]
+name = "tauri_specta"
+
+[dependencies]
+# Public
+specta = { version = "=2.0.0-rc.25", features = ["derive", "function"] }
+specta-typescript = { version = "0.0.12", optional = true }
+tauri-specta-macros = { package = "aphrody-tauri-specta-macros", version = "=2.0.0-rc.25", optional = true, path = "./macros" }
+serde = "1"
+serde_json = "1"
+thiserror = "2"
+tauri = { package = "aphrody-tauri", version = "=3.0.0-alpha.4", path = "../aphrody-tauri", default-features = false, features = ["specta"] }
+
+# Private
+heck = "0.5"
+specta-serde = "0.0.12"
+specta-util = "0.0.12"
+
+[dev-dependencies]
+tauri = { package = "aphrody-tauri", version = "=3.0.0-alpha.4", path = "../aphrody-tauri", default-features = false, features = ["test"] }

@@ -2,7 +2,7 @@
   "$comment": "Pinned sibling source checkouts. Prepare producer-owned local archives before installing consumers; no registry publication and no cross-repository workspace membership.",
   "yolo": {
     "repository": "https://github.com/aphrody-labs/yolo.git",
-    "path": "../yolo",
+    "path": ".",
     "rev": "1e9b76e199b6c07d8ad55aefc4fd080e6ee85911",
     "envOverride": "APHRODY_YOLO_ROOT",
     "sdk": {

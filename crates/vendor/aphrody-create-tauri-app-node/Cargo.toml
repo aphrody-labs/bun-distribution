@@ -1,0 +1,18 @@
+[package]
+edition = "2024"
+name = "aphrody-create-tauri-app-node"
+version = "0.0.0"
+license = "Apache-2.0 OR MIT"
+rust-version = "1.88"
+
+[lib]
+name = "create_tauri_app_node"
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = "3"
+napi-derive = "3"
+create-tauri-app = { path = "../aphrody-create-tauri-app", package = "aphrody-create-tauri-app" }
+
+[build-dependencies]
+napi-build = "2.3"

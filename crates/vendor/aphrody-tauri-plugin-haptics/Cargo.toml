@@ -1,0 +1,38 @@
+[package]
+name = "aphrody-tauri-plugin-haptics"
+description = "Haptic feedback and vibrations on Android and iOS"
+version = "3.0.0-alpha.2"
+edition = "2024"
+rust-version = "1.95"
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/aphrody-labs/yolo"
+links = "tauri-plugin-haptics"
+exclude = ["/guest-js", "/package.json", "/rollup.config.js", "/tsconfig.json"]
+
+[package.metadata.docs.rs]
+targets = ["x86_64-linux-android"]
+
+[package.metadata.platforms.support]
+windows = { level = "none", notes = "" }
+linux = { level = "none", notes = "" }
+macos = { level = "none", notes = "" }
+android = { level = "full", notes = "" }
+ios = { level = "full", notes = "" }
+
+[lib]
+name = "tauri_plugin_haptics"
+
+[build-dependencies]
+tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+log = "0.4.21"
+thiserror = "2"
+specta = { version = "^2.0.0-rc.16", optional = true }
+
+[features]
+specta = ["dep:specta", "tauri/specta"]

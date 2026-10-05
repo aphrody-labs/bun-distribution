@@ -1,0 +1,131 @@
+# Reproducible import of the Tauri-stack forks into crates/vendor/aphrody-*  (see docs/VENDORING.md)
+# `yolo import` reads the committed HEAD of each submodule under vendor/ and rewrites the crates.
+
+prefix = "aphrody-"
+repository = "https://github.com/aphrody-labs/yolo"
+out = "crates/vendor"
+
+# File globs (relative to each source repository) never imported.
+exclude = [
+  "**/target/**",
+  "**/node_modules/**",
+  "**/Cargo.lock",
+  "**/.github/**",
+  "**/.changes/**",
+  "**/renovate.json",
+  "**/pnpm-lock.yaml",
+  "**/pnpm-workspace.yaml",
+]
+
+[[source]]
+name = "tauri"
+rustfmt = "rustfmt.toml"
+crates = [
+  "crates/tauri",
+  "crates/tauri-build",
+  "crates/tauri-bundler",
+  "crates/tauri-cli",
+  "crates/tauri-codegen",
+  "crates/tauri-driver",
+  "crates/tauri-macos-sign",
+  "crates/tauri-macros",
+  "crates/tauri-plugin",
+  "crates/tauri-examples",
+  "crates/tauri-schema-worker",
+  "crates/tauri-runtime",
+  "crates/tauri-runtime-cef",
+  "crates/tauri-runtime-wry",
+  "crates/tauri-schema-generator",
+  "crates/tauri-utils",
+  "crates/tests/acl",
+  "crates/tests/restart",
+  "packages/cli",
+]
+# Not vendored on purpose (see `yolo import --scan`): the migrate fixtures, cef-rollback, the
+# benchmark crates and the example apps under examples/ (frontends, mobile projects).
+
+[[source]]
+name = "plugins-workspace"
+rustfmt = "default"
+crates = ["plugins/*"]
+exclude = ["plugins/*/examples/**", "plugins/*/tests/**"]
+
+[[source]]
+name = "wry"
+rustfmt = "rustfmt.toml"
+crates = ["."]
+exclude = ["bench/**", "audits/**", ".license_template"]
+
+[[source]]
+name = "tao"
+rustfmt = "rustfmt.toml"
+crates = [".", "tao-macros"]
+exclude = ["audits/**", ".gitmodules"]
+
+[[source]]
+name = "create-tauri-app"
+rustfmt = "default"
+crates = [".", "node"]
+exclude = ["worker/**", ".scripts/**", "*.sh", "*.ps1", "package.json", "CONTRIBUTING.md"]
+
+[[source]]
+name = "next"
+rustfmt = ".rustfmt.toml"
+crates = [
+  "crates/next-api",
+  "crates/next-build",
+  "crates/next-code-frame",
+  "crates/next-core",
+  "crates/next-custom-transforms",
+  "crates/next-napi-bindings",
+  "crates/next-taskless",
+  "turbopack/crates/*",
+]
+exclude_crates = ["turbopack/crates/*-tests", "turbopack/crates/*/fuzz"]
+exclude = ["**/tests/**", "**/fixtures/**", "**/fuzz/**"]
+
+# Sources of the `tauri-examples` crate (its [[example]] entries live outside the crate).
+[[copy]]
+from = "tauri:examples"
+to = "examples/tauri"
+exclude = ["api/**", "cef/**", "file-associations/**", "resources/**"]
+
+[[rewrite]]
+files = "crates/aphrody-tauri-examples/**"
+from = "../../examples/"
+to = "../../examples/tauri/"
+
+[[rewrite]]
+files = "examples/tauri/**/*.rs"
+from = "../../examples/"
+to = "../../examples/tauri/"
+
+# The sibling rewrite makes this line longer than rustfmt's max width.
+[[rewrite]]
+files = "crates/aphrody-tauri-schema-generator/build.rs"
+from = '''    write_if_changed(out.join("../aphrody-tauri-cli/config.schema.json"), config_schema)?;'''
+to = '''    write_if_changed(
+      out.join("../aphrody-tauri-cli/config.schema.json"),
+      config_schema,
+    )?;'''
+
+# Scaffolded apps depend on the Aphrody packages (the dependency keys stay `tauri`, `tauri-build`…).
+[[rewrite]]
+files = "crates/aphrody-create-tauri-app/templates/_base_/src-tauri/Cargo.toml.lte"
+from = 'tauri-build = { version = "3.0.0-alpha", features = [] }'
+to = 'tauri-build = { package = "aphrody-tauri-build", version = "3.0.0-alpha", features = [] }'
+
+[[rewrite]]
+files = "crates/aphrody-create-tauri-app/templates/_base_/src-tauri/Cargo.toml.lte"
+from = 'tauri = { version = "3.0.0-alpha", features = [] }'
+to = 'tauri = { package = "aphrody-tauri", version = "3.0.0-alpha", features = [] }'
+
+[[rewrite]]
+files = "crates/aphrody-create-tauri-app/templates/_base_/src-tauri/Cargo.toml.lte"
+from = 'tauri-plugin-opener = "3.0.0-alpha"'
+to = 'tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", version = "3.0.0-alpha" }'
+
+[[rewrite]]
+files = "crates/aphrody-create-tauri-app/src/deps.rs"
+from = "cargo install tauri-cli --version ^3.0.0-alpha --locked"
+to = "cargo install aphrody-tauri-cli --version ^3.0.0-alpha --locked"

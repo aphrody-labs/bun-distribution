@@ -1,0 +1,84 @@
+# shenron-bot — bot Discord DBZ ET API publique (REST/GraphQL/OpenAPI) de
+# Shenron : un seul workload Bun (Bun.serve interne au process discordx),
+# comme documenté par `docs/infra-vps.md` et `docs/INFRA-DELEGATION.md` côté
+# Shenron. Le catalogue infra a été aligné sur ce process unique : il n'existe
+# volontairement PAS de `shenron-api.service` séparé (décision enregistrée
+# dans `docs/SHENRON-MIGRATION.md`).
+#
+# Installation :
+#   bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit shenron-bot.service | sudo tee /etc/systemd/system/shenron-bot.service >/dev/null
+#   sudo systemctl daemon-reload && sudo systemctl enable --now shenron-bot.service
+[Unit]
+Description=Shenron — bot Discord DBZ + API publique (Bun + discordx, port 5006)
+After=network-online.target shenron-pg-tunnel.service
+Wants=network-online.target shenron-pg-tunnel.service
+StartLimitBurst=20
+StartLimitIntervalSec=600
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/shenron/current/apps/bot
+
+EnvironmentFile=-/etc/rose-griffon/shenron-bot.env
+EnvironmentFile=-/etc/aphrody/shenron-compute-client.env
+Environment=NODE_ENV=production
+# API REST/GraphQL/OpenAPI servie par le même process (apps/bot/src/lib/env.ts).
+Environment=API_HOST=127.0.0.1
+Environment=API_PORT=5006
+Environment=PORT=5006
+Environment=A2A_COORD_DIR=/srv/shenron/shared/coord
+Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=BUN_CONFIG_MAX_HTTP_REQUESTS=2048
+Environment=BUN_RUNTIME_TRANSPILER_CACHE_PATH=/srv/shenron/shared/bot/bun-cache
+Environment=BUN_JSC_forceRAMSize=2147483648
+Environment=UV_THREADPOOL_SIZE=12
+
+# Binaire natif autonome compilé via `aphrody discord compile shenron` (ou `bun run discord:compile shenron`).
+# Aucun runtime Bun ni répertoire node_modules n'est requis sur l'hôte.
+ExecStart=/srv/shenron/current/apps/bot/dist/shenron
+
+ExecStop=/bin/kill -SIGTERM $MAINPID
+TimeoutStopSec=30
+KillMode=mixed
+KillSignal=SIGTERM
+SuccessExitStatus=143
+
+Restart=always
+RestartSec=5
+
+# AUCUN plafond mémoire serré : historique de reclaim cgroup gelant
+# l'event-loop côté application (discord + HTTP + SQLite + canvas partagés).
+MemoryAccounting=true
+MemoryLow=1G
+MemoryHigh=10G
+MemoryMax=12G
+MemorySwapMax=2G
+LimitNOFILE=131072
+OOMScoreAdjust=-500
+CPUWeight=200
+IOWeight=200
+
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+
+# `apps/bot/data` (SQLite local borné, cache, jamais la source de vérité
+# PostgreSQL) et `apps/site/public/wiki` (médias générés consommés par le site)
+# sont dans la release des liens vers /srv/shenron/shared/{bot/data,site/wiki} :
+# données mutables hors release, conservées d'une release à l'autre.
+ExecStartPre=+/bin/mkdir -p /srv/shenron/shared/bot/bun-cache /srv/shenron/shared/bot/data /srv/shenron/shared/bot/assets /srv/shenron/shared/site/wiki /srv/shenron/shared/coord
+ReadWritePaths=/srv/shenron/shared/bot/data /srv/shenron/shared/bot /srv/shenron/shared/site/wiki /srv/shenron/shared/coord
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=shenron-bot
+
+[Install]
+WantedBy=multi-user.target

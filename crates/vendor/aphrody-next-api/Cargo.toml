@@ -1,0 +1,68 @@
+[package]
+name = "aphrody-next-api"
+version = "0.1.0"
+description = "TBD"
+license = "MIT"
+edition = "2024"
+autobenches = false
+
+[lib]
+name = "next_api"
+bench = false
+
+[features]
+default = ["process_pool"]
+process_pool = ["next-core/process_pool", "turbopack-node/process_pool"]
+worker_pool = ["next-core/worker_pool", "turbopack-node/worker_pool"]
+
+[lints.clippy]
+too_many_arguments = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(rust_analyzer)", "cfg(fuzzing)", "cfg(codspeed)"] }
+
+[dependencies]
+anyhow = "1.0.100"
+async-trait = "0.1.64"
+bincode = { version = "2.0.1", features = ["serde"] }
+byteorder = "1.5.0"
+either = "1.15.0"
+futures = "0.3.31"
+itertools = "0.10.5"
+indexmap = "2.14.0"
+next-core = { path = "../aphrody-next-core", package = "aphrody-next-core" }
+regex = "1.12.3"
+roaring = "0.11.4"
+rustc-hash = "2.1.1"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+swc_core = { version = "79.0.0", default-features = false, features = ["ecma_loader_lru", "ecma_loader_parking_lot", "parallel_rayon"] }
+tracing = "0.1.44"
+tokio = "1.52.1"
+turbo-bincode = { path = "../aphrody-turbo-bincode", package = "aphrody-turbo-bincode" }
+turbo-rcstr = { path = "../aphrody-turbo-rcstr", package = "aphrody-turbo-rcstr" }
+turbo-tasks = { path = "../aphrody-turbo-tasks", package = "aphrody-turbo-tasks" }
+turbo-tasks-hash = { path = "../aphrody-turbo-tasks-hash", package = "aphrody-turbo-tasks-hash" }
+turbo-tasks-env = { path = "../aphrody-turbo-tasks-env", package = "aphrody-turbo-tasks-env" }
+turbo-tasks-fs = { path = "../aphrody-turbo-tasks-fs", package = "aphrody-turbo-tasks-fs" }
+turbo-unix-path = { path = "../aphrody-turbo-unix-path", package = "aphrody-turbo-unix-path" }
+turbopack = { path = "../aphrody-turbopack", package = "aphrody-turbopack" }
+turbopack-analyze = { path = "../aphrody-turbopack-analyze", package = "aphrody-turbopack-analyze" }
+turbopack-browser = { path = "../aphrody-turbopack-browser", package = "aphrody-turbopack-browser" }
+turbopack-core = { path = "../aphrody-turbopack-core", package = "aphrody-turbopack-core" }
+turbopack-css = { path = "../aphrody-turbopack-css", package = "aphrody-turbopack-css" }
+turbopack-ecmascript = { path = "../aphrody-turbopack-ecmascript", package = "aphrody-turbopack-ecmascript" }
+turbopack-node = { path = "../aphrody-turbopack-node", package = "aphrody-turbopack-node", default-features = false }
+turbopack-nodejs = { path = "../aphrody-turbopack-nodejs", package = "aphrody-turbopack-nodejs" }
+turbopack-resolve = { path = "../aphrody-turbopack-resolve", package = "aphrody-turbopack-resolve" }
+turbopack-wasm = { path = "../aphrody-turbopack-wasm", package = "aphrody-turbopack-wasm" }
+urlencoding = "2.1.2"
+
+[dev-dependencies]
+tokio = "1.52.1"
+tempfile = "3.20.0"
+turbo-tasks-backend = { path = "../aphrody-turbo-tasks-backend", package = "aphrody-turbo-tasks-backend" }
+
+[build-dependencies]
+anyhow = "1.0.100"
+vergen = { version = "9.0.6", features = ["cargo"] }

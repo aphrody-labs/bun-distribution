@@ -14,7 +14,7 @@ const help = `Usage: aphrody-workspace code-edit <search|replace|add-before|add-
   --transform FILE                Existing jscodeshift codemod
   --paths                         YOLO: rename file paths too
   --journal FILE                  YOLO: restore a rename journal
-  --yolo-root PATH                APHRODY_YOLO_ROOT or ~/yolo
+  --yolo-root PATH                APHRODY_YOLO_ROOT or ~/aphrody
   --apply                         Write files; default previews only
   --help                          Show help
 
@@ -44,7 +44,7 @@ export function parseCodeEdit(argv: string[]): EditOptions {
     globs: [],
     apply: false,
     paths: false,
-    yoloRoot: resolve(process.env.APHRODY_YOLO_ROOT ?? `${userHome()}/yolo`),
+    yoloRoot: resolve(process.env.APHRODY_YOLO_ROOT ?? `${userHome()}/aphrody`),
   };
   if (argv.includes("--help") || argv.includes("-h")) return { ...options, operation: "help" };
   for (let i = 1; i < argv.length; i++) {

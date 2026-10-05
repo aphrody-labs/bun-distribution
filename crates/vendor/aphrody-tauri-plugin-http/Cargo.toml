@@ -1,0 +1,81 @@
+[package]
+name = "aphrody-tauri-plugin-http"
+version = "3.0.0-alpha.2"
+description = "Access an HTTP client written in Rust."
+edition = "2024"
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+rust-version = "1.95"
+repository = "https://github.com/aphrody-labs/yolo"
+links = "tauri-plugin-http"
+exclude = [
+  "/banner.png",
+  "/guest-js",
+  "/package.json",
+  "/rollup.config.js",
+  "/tsconfig.json",
+]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "" }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "full", notes = "" }
+ios = { level = "full", notes = "" }
+
+[lib]
+name = "tauri_plugin_http"
+
+[build-dependencies]
+tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+url = "2"
+urlpattern = "0.3"
+regex = "1"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+thiserror = "2"
+tokio = { version = "1", features = ["sync", "macros"] }
+tauri-plugin-fs = { version = "3.0.0-alpha.2", path = "../aphrody-tauri-plugin-fs", package = "aphrody-tauri-plugin-fs" }
+urlpattern = "0.3"
+regex = "1"
+http = "1"
+# 0.12.16 is when `system-proxy` was added
+reqwest = { version = "0.12.16", default-features = false }
+url = "2"
+data-url = "0.3"
+cookie_store = { version = "0.22", optional = true, features = ["serde"] }
+bytes = { version = "1.9", optional = true }
+tracing = { version = "0.1", optional = true }
+
+[features]
+default = ["rustls-tls", "http2", "charset", "system-proxy", "cookies"]
+multipart = ["reqwest/multipart"]
+json = ["reqwest/json"]
+stream = ["reqwest/stream"]
+native-tls = ["reqwest/native-tls"]
+native-tls-vendored = ["reqwest/native-tls-vendored"]
+native-tls-alpn = ["reqwest/native-tls-alpn"]
+rustls-tls = ["reqwest/rustls-tls"]
+rustls-tls-manual-roots = ["reqwest/rustls-tls-manual-roots"]
+rustls-tls-webpki-roots = ["reqwest/rustls-tls-webpki-roots"]
+rustls-tls-native-roots = ["reqwest/rustls-tls-native-roots"]
+blocking = ["reqwest/blocking"]
+cookies = ["reqwest/cookies", "dep:cookie_store", "dep:bytes"]
+gzip = ["reqwest/gzip"]
+brotli = ["reqwest/brotli"]
+deflate = ["reqwest/deflate"]
+zstd = ["reqwest/zstd"]
+trust-dns = ["reqwest/trust-dns"]
+socks = ["reqwest/socks"]
+http2 = ["reqwest/http2"]
+charset = ["reqwest/charset"]
+system-proxy = ["reqwest/system-proxy"]
+
+unsafe-headers = []
+tracing = ["dep:tracing"]
+dangerous-settings = []
