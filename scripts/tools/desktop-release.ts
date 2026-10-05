@@ -8,7 +8,7 @@ import {
   rollbackDesktopArtifact,
   verifyDesktopArtifact,
   verifyInstalledDesktopArtifact,
-} from "../../packages/runtime/src/desktop-artifact";
+} from "../../packages/engine/runtime/src/desktop-artifact";
 
 export function runDesktopRelease(args: readonly string[]): number {
   const action = args[0] ?? "help";

@@ -21,6 +21,8 @@ export interface BuildFactoryConfig {
   repositories: Record<string, string>;
   rust: { maxJobs: number };
   commandTimeoutSeconds?: number;
+  /** Local activation of built binaries (defaults: ~/.local/bin, ~/.local/lib/aphrody). */
+  install?: unknown;
 }
 
 function shellQuote(value: string): string {
@@ -285,7 +287,8 @@ async function declaredFactorySource(
   repository: string,
   revision: string,
 ): Promise<FactorySource> {
-  const { loadSourceSyncConfig } = await import("../../../../scripts/tools/workspace/source-sync.ts");
+  const { loadSourceSyncConfig } =
+    await import("../../../../scripts/tools/workspace/source-sync.ts");
   const config = await loadSourceSyncConfig(root);
   const source = config.repositories.find((entry) => entry.id === repository);
   if (!source || source.destinationBranch !== "main")
@@ -378,7 +381,7 @@ export async function routeHeavyBuild(
     );
   const plan = buildFactoryPlan(config, "aphrody", revision, command);
   console.error(`Build factory: ${plan.repository} ${revision} on ${plan.target}`);
-  return (
+  const built = (
     await runInfra({
       args: plan.transport,
       cwd: root,
@@ -387,6 +390,20 @@ export async function routeHeavyBuild(
       env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds) },
     })
   ).exitCode;
+  // Routed release builds activate their binaries locally; APHRODY_FACTORY_INSTALL=0 opts out.
+  if (built !== 0 || process.env.APHRODY_FACTORY_INSTALL === "0" || !isReleaseBuild(command))
+    return built;
+  return installFactoryBuild(config, "aphrody", revision, command, [], root);
+}
+
+function isReleaseBuild(command: readonly string[]): boolean {
+  const build = command.findIndex((arg) => arg === "build" || arg === "b");
+  return (
+    build !== -1 &&
+    command
+      .slice(build + 1)
+      .some((arg) => arg === "--release" || arg === "-r" || arg === "--profile=release")
+  );
 }
 
 interface FactoryJobTransport {
@@ -494,13 +511,72 @@ async function runFactoryJobTransport(plan: FactoryJobTransport, root: string): 
   }
 }
 
+/** Quiet terminal-state poll of a detached job; transport errors are retried until the deadline. */
+async function waitFactoryJob(
+  config: BuildFactoryConfig,
+  jobId: string,
+  root: string,
+  deadlineSeconds: number,
+): Promise<"succeeded" | "failed" | "indeterminate"> {
+  const { factoryJobStatusPlan } = await import("./build-factory-jobs.ts");
+  const plan = factoryJobStatusPlan(config, jobId);
+  const deadline = Date.now() + deadlineSeconds * 1000;
+  for (;;) {
+    // oxlint-disable-next-line no-await-in-loop -- polling is sequential by definition.
+    const result = await runInfra({
+      args: plan.transport,
+      cwd: root,
+      env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: "60" },
+    }).catch(() => null);
+    if (result?.exitCode === 0) {
+      const status = (() => {
+        try {
+          return JSON.parse(result.stdout).status as string;
+        } catch {
+          return "";
+        }
+      })();
+      if (status === "succeeded" || status === "failed" || status === "indeterminate")
+        return status;
+    }
+    if (Date.now() > deadline) return "indeterminate";
+    // oxlint-disable-next-line no-await-in-loop -- polling interval.
+    await Bun.sleep(30_000);
+  }
+}
+
+/** Download, verify, probe and atomically link the binaries a successful factory build produced. */
+async function installFactoryBuild(
+  config: BuildFactoryConfig,
+  repository: string,
+  revision: string,
+  command: readonly string[],
+  only: readonly string[],
+  root: string,
+): Promise<number> {
+  const { factoryArtifacts, factoryInstallConfig, infraRemote, installFactoryArtifacts } =
+    await import("./build-factory-install.ts");
+  const artifacts = await factoryArtifacts(config, repository, command, root, only);
+  const records = await installFactoryArtifacts(
+    artifacts,
+    revision,
+    infraRemote(config.target, (args) =>
+      runInfra({ args, cwd: root, env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: "900" } }),
+    ),
+    factoryInstallConfig(config.install),
+  );
+  const success = records.every((record) => record.status !== "refused");
+  console.log(JSON.stringify({ operation: "install", success, revision, records }, null, 2));
+  return success ? 0 : 1;
+}
+
 /** Plan by default; run dispatches exclusively through the installed Infra SSH owner. */
 async function runBuildFactoryAction(args: string[], root: string): Promise<number> {
   const separator = args.indexOf("--");
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> [--submodules <gitlink[,gitlink]>] [--detach --job <stable-id>] -- <owner command> [arguments...]\n       aphrody-ops build-factory prepare --repo <aphrody|yolo|aphrody-py> --revision <full-git-sha> [--apply] [--no-submodules | --submodules <gitlink[,gitlink]>]\n       aphrody-ops build-factory status [--route]\n       aphrody-ops build-factory status --job <stable-id> [--tail <0..200>]\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\n--submodules prepares/verifies only selected root-tree gitlinks and their recursive descendants, plus parent source files/index. Unselected gitlinks are preserved; whole repository cleanliness is not asserted. Combine the same scope with plan/run. Selected scope cannot be combined with --no-submodules. Detached jobs retain the selected source scope in their request fingerprint.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
+      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> [--submodules <gitlink[,gitlink]>] [--detach --job <stable-id>] -- <owner command> [arguments...]\n       aphrody-ops build-factory prepare --repo <aphrody|yolo|aphrody-py> --revision <full-git-sha> [--apply] [--no-submodules | --submodules <gitlink[,gitlink]>]\n       aphrody-ops build-factory status [--route]\n       aphrody-ops build-factory status --job <stable-id> [--tail <0..200>]\n       aphrody-ops build-factory run ... --install [--bin a,b] -- <cargo build command>\n       aphrody-ops build-factory install --repo <repo> --revision <sha> [--job <id>] [--bin a,b] -- <cargo build command>\n--install (run, including --detach which then waits for the job) and install download each derived binary over SFTP, verify its SHA-256 against the factory copy, refuse it unless `<bin> --version` runs on this host (glibc/ABI), then atomically relink it in install.binDir (default ~/.local/bin, on PATH) from install.libRoot/factory-<rev12>/. Previous links are recorded in install.stateFile for rollback.\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\n--submodules prepares/verifies only selected root-tree gitlinks and their recursive descendants, plus parent source files/index. Unselected gitlinks are preserved; whole repository cleanliness is not asserted. Combine the same scope with plan/run. Selected scope cannot be combined with --no-submodules. Detached jobs retain the selected source scope in their request fingerprint.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
     );
     return 0;
   }
@@ -534,8 +610,8 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     const { factoryJobStatusPlan } = await import("./build-factory-jobs.ts");
     return runFactoryJobTransport(factoryJobStatusPlan(config, jobId, { tailLines }), root);
   }
-  if (action !== "plan" && action !== "run" && action !== "prepare")
-    throw new Error("Expected build-factory plan, run or prepare");
+  if (action !== "plan" && action !== "run" && action !== "prepare" && action !== "install")
+    throw new Error("Expected build-factory plan, run, prepare or install");
   let repository = "aphrody";
   let revision = "";
   let command: string[] = [];
@@ -544,6 +620,8 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   let submodules: readonly string[] | undefined;
   let detach = false;
   let jobId = "";
+  let install = action === "install";
+  let only: string[] = [];
   const seen = new Set<string>();
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i]!;
@@ -563,7 +641,17 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
       apply = true;
       continue;
     }
-    if (action !== "prepare" && arg === "--detach") {
+    if (action === "run" && arg === "--install") {
+      install = true;
+      continue;
+    }
+    if ((action === "run" || action === "install") && arg === "--bin") {
+      const value = rest[++i];
+      if (!value || value.startsWith("--")) throw new Error("--bin requires a value");
+      only = value.split(",").filter(Boolean);
+      continue;
+    }
+    if (action !== "prepare" && action !== "install" && arg === "--detach") {
       detach = true;
       continue;
     }
@@ -583,8 +671,9 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
       if (scope.kind === "gitlinks") submodules = scope.paths;
     } else jobId = value;
   }
-  if (detach !== Boolean(jobId))
+  if (action !== "install" && detach !== Boolean(jobId))
     throw new Error("Detached jobs require both --detach and an explicit --job <stable-id>");
+  if (only.length && !install) throw new Error("--bin selects binaries for --install");
   const config = await readFactoryConfig(root);
   if (!config) throw new Error("config/build-factory.json is absent");
   if (action === "prepare") {
@@ -623,6 +712,11 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     return result.exitCode;
   }
   const plan = buildFactoryPlan(config, repository, revision, command, { submodules });
+  if (action === "install") {
+    if (jobId && (await waitFactoryJob(config, jobId, root, 0)) !== "succeeded")
+      throw new Error(`Factory job ${jobId} has not succeeded; nothing installed`);
+    return installFactoryBuild(config, repository, revision, command, only, root);
+  }
   if (detach) {
     const { factoryJobPlan } = await import("./build-factory-jobs.ts");
     const job = factoryJobPlan(config, plan, jobId);
@@ -645,16 +739,23 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
       );
       return 0;
     }
-    return runFactoryJobTransport(
+    const submitted = await runFactoryJobTransport(
       { ...job, repository: plan.repository, revision: plan.revision },
       root,
     );
+    if (submitted !== 0 || !install) return submitted;
+    const status = await waitFactoryJob(config, jobId, root, plan.commandTimeoutSeconds);
+    if (status !== "succeeded") {
+      console.log(JSON.stringify({ operation: "install", success: false, jobId, status }));
+      return 1;
+    }
+    return installFactoryBuild(config, repository, revision, command, only, root);
   }
   if (action === "plan") {
     console.log(JSON.stringify({ executed: false, ...plan }, null, 2));
     return 0;
   }
-  return (
+  const built = (
     await runInfra({
       args: plan.transport,
       cwd: root,
@@ -663,6 +764,8 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
       env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(plan.commandTimeoutSeconds) },
     })
   ).exitCode;
+  if (built !== 0 || !install) return built;
+  return installFactoryBuild(config, repository, revision, command, only, root);
 }
 
 export async function runBuildFactory(args: string[], root = infraRoot()): Promise<number> {

@@ -39,7 +39,8 @@ export function checkPluginFacts(store: string, only?: string): FactRecord[] {
             !source.evidence.length
           )
             throw new Error("Each source needs root and evidence paths");
-          const root = resolve(source.root);
+          // Relative roots are plugin-local, so a portable plugin needs no host path.
+          const root = resolve(plugin.path, source.root);
           for (const item of source.evidence) {
             if (typeof item !== "string") throw new Error("Evidence paths must be strings");
             const path = resolve(root, item);

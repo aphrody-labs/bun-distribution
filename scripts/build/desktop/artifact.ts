@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import {
   inspectDesktopBinary,
   writeDesktopManifest,
-} from "../../../packages/runtime/src/desktop-artifact";
+} from "../../../packages/engine/runtime/src/desktop-artifact";
 
 export function packageDesktop(options: {
   root: string;

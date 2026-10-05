@@ -23,7 +23,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
-import { hostTarget, verifyArtifact } from "../../packages/runtime/src/artifact";
+import { hostTarget, verifyArtifact } from "../../packages/engine/runtime/src/artifact";
 import { COMPILE_FLAGS } from "./compile-flags";
 import { toolingAsset } from "./tooling-asset";
 
@@ -87,9 +87,13 @@ cpSync(join(root, "templates"), join(stage, "templates"), {
   recursive: true,
   filter: (src) => !src.endsWith("awesome-audit.json"),
 });
-cpSync(join(root, "crates/engine/yolo-desktop/icons"), join(stage, "crates/engine/yolo-desktop/icons"), {
-  recursive: true,
-});
+cpSync(
+  join(root, "crates/engine/yolo-desktop/icons"),
+  join(stage, "crates/engine/yolo-desktop/icons"),
+  {
+    recursive: true,
+  },
+);
 writeFileSync(join(stage, "VERSION"), `${version}\n`);
 cpSync(join(root, "LICENSE"), join(stage, "LICENSE"));
 cpSync(join(root, "NOTICE"), join(stage, "NOTICE"));
@@ -124,7 +128,7 @@ await run(["tar", "-czf", join(dir, crates), "-C", crateStage, "."]);
 for (const script of ["install.sh", "install.ps1"]) cpSync(join(root, script), join(dir, script));
 const files = readdirSync(dir)
   .filter((f) => f !== "SHA256SUMS" && f !== "release.json")
-  .sort();
+  .toSorted();
 writeFileSync(
   join(dir, "SHA256SUMS"),
   `${files.map((f) => `${sha256(join(dir, f))}  ${f}`).join("\n")}\n`,

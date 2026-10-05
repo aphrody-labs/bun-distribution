@@ -169,7 +169,7 @@ export async function discover(root: string, scanSkip: string[]): Promise<Discov
       }
     }
   });
-  return [...found.values()].sort((a, b) => a.dir.localeCompare(b.dir));
+  return [...found.values()].toSorted((a, b) => a.dir.localeCompare(b.dir));
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -297,7 +297,7 @@ export type AuditReport = {
   warnings: Violation[];
 };
 
-const FIRST_PARTY: ProjectKind[] = [
+const FIRST_PARTY: ReadonlySet<ProjectKind> = new Set<ProjectKind>([
   "app",
   "library",
   "plugin",
@@ -305,7 +305,7 @@ const FIRST_PARTY: ProjectKind[] = [
   "generator",
   "integration",
   "js-package",
-];
+]);
 const LEGACY_SIBLING =
   /(?:\.\.\/)+aphrody-(?:ui|ai|koharu|infra|py)\b|\bbun\s+--cwd\s+\.\.\/aphrody-/;
 
@@ -406,7 +406,7 @@ export async function audit(root: string, registry: Registry): Promise<AuditRepo
   }
 
   // Duplication rules for first-party projects (upstream trees keep their own manifests).
-  for (const project of registry.projects.filter((entry) => FIRST_PARTY.includes(entry.kind))) {
+  for (const project of registry.projects.filter((entry) => FIRST_PARTY.has(entry.kind))) {
     const cargo = join(root, project.path, "Cargo.toml");
     if (existsSync(cargo)) {
       for (const dep of tauriCargoDeps(await readFile(cargo, "utf8"))) {

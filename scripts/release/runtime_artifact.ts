@@ -7,7 +7,7 @@
  */
 import { mkdirSync } from "node:fs";
 import { basename, resolve } from "node:path";
-import { libraryFile, Runtime } from "../../packages/runtime/src/index";
+import { libraryFile, Runtime } from "../../packages/engine/runtime/src/index";
 import { sha256 } from "../../packages/core/src/sys/hash";
 
 const root = resolve(import.meta.dir, "../..");
