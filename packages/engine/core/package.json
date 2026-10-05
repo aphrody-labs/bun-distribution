@@ -22,6 +22,7 @@
     "./runtime": "./src/runtime/index.ts",
     "./verify": "./src/verify/index.ts",
     "./server": "./src/server/index.ts",
+    "./edge-proxy": "./src/server/edge-proxy.ts",
     "./mcp": "./src/mcp/index.ts",
     "./fleet": "./src/fleet/index.ts",
     "./scaffold": "./src/scaffold/index.ts",

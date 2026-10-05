@@ -13,6 +13,27 @@ if (Bun.argv[2] === "drive") {
 	process.exit();
 }
 
+if (Bun.argv[2] === "fonts") {
+	const args = Bun.argv.slice(4);
+	const opt = (name: string, fallback: string) => {
+		const i = args.indexOf(`--${name}`);
+		return i >= 0 && args[i + 1] ? args[i + 1]! : fallback;
+	};
+	if (Bun.argv[3] !== "serve") {
+		console.error("usage: aphrody-google fonts serve [--port 8796] [--cache <dir>] [--origin https://cdn.aphrody.com] [--all-families]");
+		process.exit(2);
+	}
+	const { serveFontsProxy } = await import("../src/fonts-proxy.ts");
+	const server = serveFontsProxy({
+		port: Number(opt("port", Bun.env.FONTS_PROXY_PORT ?? "8796")),
+		cacheDir: opt("cache", Bun.env.FONTS_PROXY_CACHE ?? "/srv/aphrody-cdn/google"),
+		origin: opt("origin", Bun.env.FONTS_PROXY_ORIGIN ?? "https://cdn.aphrody.com"),
+		families: args.includes("--all-families") ? null : undefined,
+	});
+	console.log(`aphrody-fonts-proxy on ${server.url}`);
+	await new Promise(() => {});
+}
+
 async function resolveBinary(): Promise<string> {
 	const configured = Bun.env.APHRODY_GOOGLE_BIN;
 	if (configured && await Bun.file(configured).exists()) return configured;
