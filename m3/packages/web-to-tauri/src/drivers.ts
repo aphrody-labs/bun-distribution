@@ -2,7 +2,7 @@
 /**
  * Capture side of the parity check: one driver per way of reaching a page. The reference side is
  * a CDP endpoint (the `aphrody-web` engine or any Chromium); the wrapped side is the Tauri debug
- * bridge (wry) or the CDP port of a CEF app. Both run `PARITY_SNAPSHOT_BODY` so the snapshots are
+ * bridge or the CDP port of the CEF app. Both run `PARITY_SNAPSHOT_BODY` so the snapshots are
  * comparable.
  */
 import { WebCdpPage } from "@aphrody/agent-browser/cdp";
@@ -40,7 +40,7 @@ export async function cdpDriver(endpoint?: string, label = "cdp"): Promise<Snaps
   };
 }
 
-/** Evaluates in the first window of a running debug-enabled wry app. */
+/** Evaluates in the first window of a running debug-enabled app. */
 export async function bridgeDriver(exe?: string, label = "tauri-bridge"): Promise<SnapshotDriver> {
   const { bridge } = await TauriBridge.connectToRunning(exe);
   return {

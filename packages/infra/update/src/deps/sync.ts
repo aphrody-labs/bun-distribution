@@ -390,7 +390,7 @@ async function fix(c: Ctx, applyFixes: boolean, record = false): Promise<number>
       (l) =>
         lastChanged.includes(l.name) ||
         lastChanged.some(
-          (n) => l.ecosystem === "cargo" && /^(tauri|wry|tao)/.test(n) && l.id === "tauri",
+          (n) => l.ecosystem === "cargo" && n.startsWith("tauri") && l.id === "tauri",
         ),
     )
     .map((l) => l.id);

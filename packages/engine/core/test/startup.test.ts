@@ -51,16 +51,17 @@ describe("status file counts", () => {
   it("counts regular files, skips dot entries and stops past 250", async () => {
     const vendor = mkdtempSync(join(tmpdir(), "yolo-vendor-"));
     try {
-      mkdirSync(join(vendor, "tao/src/deep"), { recursive: true });
-      mkdirSync(join(vendor, "tao/.git"), { recursive: true });
+      mkdirSync(join(vendor, "create-tauri-app/src/deep"), { recursive: true });
+      mkdirSync(join(vendor, "create-tauri-app/.git"), { recursive: true });
       for (const file of ["a.rs", "src/b.rs", "src/deep/c.rs", ".hidden", ".git/HEAD"]) {
-        writeFileSync(join(vendor, "tao", file), "x");
+        writeFileSync(join(vendor, "create-tauri-app", file), "x");
       }
-      mkdirSync(join(vendor, "wry/src"), { recursive: true });
-      for (let i = 0; i < 300; i++) writeFileSync(join(vendor, "wry/src", `f${i}.rs`), "x");
+      mkdirSync(join(vendor, "plugins-workspace/src"), { recursive: true });
+      for (let i = 0; i < 300; i++)
+        writeFileSync(join(vendor, "plugins-workspace/src", `f${i}.rs`), "x");
       const byName = new Map((await inspectPackages(vendor)).map((p) => [p.name, p]));
-      expect(byName.get("tao")?.filesCount).toBe(3);
-      expect(byName.get("wry")?.filesCount).toBe(251);
+      expect(byName.get("create-tauri-app")?.filesCount).toBe(3);
+      expect(byName.get("plugins-workspace")?.filesCount).toBe(251);
       expect(byName.get("bun")?.exists).toBe(false);
     } finally {
       rmSync(vendor, { recursive: true, force: true });

@@ -11,14 +11,6 @@
       "sha": "a50a1b7baf3bb5955eb95cf1595007382d276fb6"
     },
     {
-      "name": "wry",
-      "sha": "cab3eace983007a16f132c14a34d0a220c707bea"
-    },
-    {
-      "name": "tao",
-      "sha": "3fcda65f3f5a7c9ad164a622d2b98e4b5e313554"
-    },
-    {
       "name": "create-tauri-app",
       "sha": "c7692bb0dbd9b90a368c5af8fcd9081b5d600426"
     }
@@ -55,22 +47,6 @@
       "source": "tauri",
       "from": "crates/tests/restart",
       "dir": "crates/tauri/aphrody-restart"
-    },
-    {
-      "name": "tao",
-      "package": "aphrody-tao",
-      "version": "0.37.1",
-      "source": "tao",
-      "from": ".",
-      "dir": "crates/tauri/aphrody-tao"
-    },
-    {
-      "name": "tao-macros",
-      "package": "aphrody-tao-macros",
-      "version": "0.1.4",
-      "source": "tao",
-      "from": "tao-macros",
-      "dir": "crates/tauri/aphrody-tao-macros"
     },
     {
       "name": "tauri",
@@ -119,14 +95,6 @@
       "source": "tauri",
       "from": "crates/tauri-codegen",
       "dir": "crates/tauri/aphrody-tauri-codegen"
-    },
-    {
-      "name": "tauri-driver",
-      "package": "aphrody-tauri-driver",
-      "version": "3.0.0-alpha.1",
-      "source": "tauri",
-      "from": "crates/tauri-driver",
-      "dir": "crates/tauri/aphrody-tauri-driver"
     },
     {
       "name": "tauri-examples",
@@ -417,14 +385,6 @@
       "dir": "crates/tauri/aphrody-tauri-runtime-cef"
     },
     {
-      "name": "tauri-runtime-wry",
-      "package": "aphrody-tauri-runtime-wry",
-      "version": "3.0.0-alpha.4",
-      "source": "tauri",
-      "from": "crates/tauri-runtime-wry",
-      "dir": "crates/tauri/aphrody-tauri-runtime-wry"
-    },
-    {
       "name": "tauri-schema-generator",
       "package": "aphrody-tauri-schema-generator",
       "version": "0.0.0",
@@ -447,14 +407,6 @@
       "source": "tauri",
       "from": "crates/tauri-utils",
       "dir": "crates/tauri/aphrody-tauri-utils"
-    },
-    {
-      "name": "wry",
-      "package": "aphrody-wry",
-      "version": "0.57.0",
-      "source": "wry",
-      "from": ".",
-      "dir": "crates/tauri/aphrody-wry"
     }
   ]
 }

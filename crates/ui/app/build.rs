@@ -30,7 +30,7 @@ fn main() {
     // Must run before `tauri::generate_context!()` expands (it walks `ui-dist` once).
     stage_ui_dist_assets();
 
-    // Tao retains control of DPI awareness, including its PerMonitorV2 fallback.
+    // The CEF runtime keeps control of DPI awareness; the manifest carries CEF's compatibility section.
     let windows = tauri_build::WindowsAttributes::new()
         .app_manifest(include_str!("windows-app-manifest.xml"));
     tauri_build::try_build(tauri_build::Attributes::new().windows_attributes(windows))

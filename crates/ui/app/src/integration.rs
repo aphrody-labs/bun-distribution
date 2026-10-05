@@ -2,8 +2,8 @@
 //! Desktop integration: loading screen, system tray, desktop pet, desktop widget, autostart,
 //! "Open with Aphrody" (file associations) and `aphrody://` deep links.
 //!
-//! Every surface is a webview window declared in `tauri.conf.json` (hidden at start) and
-//! rendered by `@aphrody/app-ui` through its `?view=` parameter:
+//! Every surface is a webview window declared in `tauri.conf.json` (hidden at start, parked off-screen
+//! so CEF never flashes it, see [`crate::parking`]) and rendered by `@aphrody/app-ui` through its `?view=` parameter:
 //!
 //! - `splash` shows the animated pet until the main window reports ready
 //!   ([`aphrody_app_ready`]), with a [`SPLASH_TIMEOUT`] fallback so a broken UI still opens.
@@ -12,11 +12,12 @@
 //!   pointer position so the sprite can look at it. Clicking the sprite focuses the main window.
 //! - `widget` is a small transparent always-on-bottom quick-actions/status card.
 //!
-//! Pet and widget visibility persist in the `desktop.json` store; autostart is owned by
+//! Pet and widget visibility and position persist in the `desktop.json` store; autostart is owned by
 //! `tauri-plugin-autostart`, which launches the app with [`AUTOSTART_FLAG`] so that a session
 //! start brings up the pet and tray without the main window.
 
 use std::{
+    collections::HashMap,
     path::{Path, PathBuf},
     sync::Mutex,
     time::Duration,
@@ -33,6 +34,8 @@ use tauri_plugin_fs::FsExt as _;
 use tauri_plugin_notification::NotificationExt as _;
 use tauri_plugin_store::StoreExt as _;
 use tauri_plugin_updater::UpdaterExt as _;
+
+use crate::parking;
 
 /// Main shell window label.
 pub const MAIN: &str = "main";
@@ -56,6 +59,8 @@ const STORE: &str = "desktop.json";
 const SPLASH_TIMEOUT: Duration = Duration::from_secs(30);
 /// Pointer polling period for the pet hit-testing and gaze.
 const CURSOR_POLL: Duration = Duration::from_millis(40);
+/// Polling period while the pet is hidden or parked (it only has to notice the pet coming back).
+const CURSOR_IDLE_POLL: Duration = Duration::from_millis(400);
 
 /// Persisted desktop integration preferences.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -154,6 +159,8 @@ pub struct Integration {
     pending: Mutex<Vec<OpenRequest>>,
     hit: Mutex<Option<HitRect>>,
     tray: Mutex<Option<TrayItems>>,
+    /// Last position of the pet and the widget, by label (physical pixels), until it is persisted.
+    positions: Mutex<HashMap<String, (i32, i32)>>,
 }
 
 fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
@@ -236,7 +243,14 @@ fn set_surface(app: &AppHandle, label: &str, on: bool) {
         log::error!("window `{label}` is not declared");
         return;
     };
-    let result = if on { window.show() } else { window.hide() };
+    let result = if on {
+        // A hidden window is parked off-screen: put it where it belongs first.
+        parking::reveal(&window, |window| place_surface(app, window))
+    } else {
+        note_moved_window(app, &window);
+        flush_positions(app);
+        window.hide()
+    };
     if let Err(error) = result {
         log::error!("{label} visibility: {error}");
     }
@@ -517,9 +531,12 @@ fn spawn_cursor_poller(app: AppHandle) {
                 let Some(pet) = app.get_webview_window(PET) else {
                     return;
                 };
-                if !pet.is_visible().unwrap_or(false) {
+                let parked = pet.outer_position().is_ok_and(|at| parking::is_parked(at.x, at.y));
+                if parked || !pet.is_visible().unwrap_or(false) {
                     ignoring = None;
                     last = None;
+                    // Nothing to track while the pet is away: poll slowly, idle costs power.
+                    std::thread::sleep(CURSOR_IDLE_POLL);
                     continue;
                 }
                 let (Ok(cursor), Ok(origin), Ok(scale)) =
@@ -551,24 +568,105 @@ fn spawn_cursor_poller(app: AppHandle) {
         .unwrap_or_else(|error| log::error!("pet cursor poller: {error}"));
 }
 
-/// Put the pet at the bottom-right of the primary monitor's work area the first time it shows
-/// (window-state restores the user's later positions).
-fn place_pet_default(pet: &WebviewWindow) {
-    let Ok(position) = pet.outer_position() else {
-        return;
-    };
-    if position.x != 0 || position.y != 0 {
+/// A work area or window rectangle: x, y, width, height in physical pixels.
+type Rect = (i32, i32, u32, u32);
+
+/// Where a surface first appears: the pet at the bottom-right of the work area, the widget at its
+/// bottom-left, both with a margin.
+fn default_position(label: &str, area: Rect, size: (u32, u32)) -> (i32, i32) {
+    let (left, top, width, height) = area;
+    let fit = |extent: u32, window: u32| i32::try_from(extent.saturating_sub(window)).unwrap_or(0);
+    let y = top + fit(height, size.1);
+    if label == WIDGET {
+        (left + 24, y.saturating_sub(24).max(top))
+    } else {
+        (left + fit(width, size.0 + 48), y)
+    }
+}
+
+/// Whether the top-left corner of a window lies inside one of the work areas.
+fn on_screen(areas: &[Rect], position: (i32, i32)) -> bool {
+    areas.iter().any(|&(left, top, width, height)| {
+        let right = left.saturating_add(i32::try_from(width).unwrap_or(i32::MAX));
+        let bottom = top.saturating_add(i32::try_from(height).unwrap_or(i32::MAX));
+        position.0 >= left && position.0 < right && position.1 >= top && position.1 < bottom
+    })
+}
+
+fn position_key(label: &str) -> String {
+    format!("{label}_position")
+}
+
+fn saved_position(app: &AppHandle, label: &str) -> Option<(i32, i32)> {
+    let store = app.store(STORE).ok()?;
+    let value = store.get(position_key(label))?;
+    let pair = value.as_array()?;
+    let coordinate = |index: usize| pair.get(index)?.as_i64().and_then(|n| i32::try_from(n).ok());
+    Some((coordinate(0)?, coordinate(1)?))
+}
+
+/// Remember where the user left the pet or the widget. The parking spot is never remembered.
+pub fn note_moved(app: &AppHandle, label: &str, x: i32, y: i32) {
+    if matches!(label, PET | WIDGET) && !parking::is_parked(x, y) {
+        lock(&app.state::<Integration>().positions).insert(label.to_owned(), (x, y));
+    }
+}
+
+fn note_moved_window(app: &AppHandle, window: &WebviewWindow) {
+    if let Ok(position) = window.outer_position() {
+        note_moved(app, window.label(), position.x, position.y);
+    }
+}
+
+/// Persist the remembered pet and widget positions (on hide and at exit).
+pub fn flush_positions(app: &AppHandle) {
+    let positions = lock(&app.state::<Integration>().positions).clone();
+    if positions.is_empty() {
         return;
     }
-    let (Ok(Some(monitor)), Ok(size)) = (pet.primary_monitor(), pet.outer_size()) else {
+    match app.store(STORE) {
+        Ok(store) => {
+            for (label, (x, y)) in positions {
+                store.set(position_key(&label), serde_json::json!([x, y]));
+            }
+            if let Err(error) = store.save() {
+                log::error!("surface positions save: {error}");
+            }
+        },
+        Err(error) => log::error!("desktop preferences store: {error}"),
+    }
+}
+
+/// Put a surface where it belongs before it shows: its remembered spot while that is still on a
+/// monitor, else its default corner of the primary work area. A surface that is already on screen
+/// stays where it is.
+fn place_surface(app: &AppHandle, window: &WebviewWindow) {
+    let Ok(position) = window.outer_position() else {
         return;
     };
-    let area = monitor.work_area();
-    let x = area.position.x
-        + i32::try_from(area.size.width.saturating_sub(size.width + 48)).unwrap_or(0);
-    let y =
-        area.position.y + i32::try_from(area.size.height.saturating_sub(size.height)).unwrap_or(0);
-    let _ = pet.set_position(PhysicalPosition::new(x, y));
+    if window.is_visible().unwrap_or(false) && !parking::is_parked(position.x, position.y) {
+        return;
+    }
+    let Ok(size) = window.outer_size() else {
+        return;
+    };
+    let rect = |monitor: &tauri::Monitor| {
+        let area = monitor.work_area();
+        (area.position.x, area.position.y, area.size.width, area.size.height)
+    };
+    let areas: Vec<Rect> =
+        window.available_monitors().unwrap_or_default().iter().map(rect).collect();
+    let target = saved_position(app, window.label())
+        .filter(|&saved| on_screen(&areas, saved))
+        .or_else(|| {
+            let primary = window.primary_monitor().ok().flatten()?;
+            Some(default_position(window.label(), rect(&primary), (size.width, size.height)))
+        });
+    if let Some((x, y)) = target
+        && let Err(error) = window.set_position(PhysicalPosition::new(x, y))
+    {
+        log::error!("{} placement: {error}", window.label());
+    }
 }
 
 /// Wire the tray, the surfaces, deep links and the startup open request. Called from `setup`.
@@ -605,9 +703,6 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
         });
     }
 
-    if let Some(pet) = app.get_webview_window(PET) {
-        place_pet_default(&pet);
-    }
     spawn_cursor_poller(app.clone());
     if prefs.pet {
         set_surface(app, PET, true);
@@ -624,7 +719,11 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
     }
     show_main(app);
     if let Some(splash) = app.get_webview_window(SPLASH)
-        && let Err(error) = splash.show()
+        && let Err(error) = parking::reveal(&splash, |window| {
+            if let Err(error) = window.center() {
+                log::error!("splash centering: {error}");
+            }
+        })
     {
         log::error!("splash show: {error}");
     }
@@ -818,7 +917,10 @@ pub fn aphrody_widget(
 mod tests {
     use std::path::Path;
 
-    use super::{HitRect, IntegrationAction, OpenRequest, PetAction, WidgetAction, classify_args};
+    use super::{
+        HitRect, IntegrationAction, OpenRequest, PET, PetAction, WIDGET, WidgetAction,
+        classify_args, default_position, on_screen, parking,
+    };
 
     #[test]
     fn classify_args_splits_links_files_and_noise() {
@@ -879,5 +981,31 @@ mod tests {
             Ok(IntegrationAction::SetAutostart { on: true })
         ));
         assert!(serde_json::from_str::<IntegrationAction>(r#"{"action":"set_pet"}"#).is_err());
+    }
+
+    #[test]
+    fn surfaces_open_in_their_default_corner() {
+        let area = (0, 0, 1920, 1040);
+        // The pet sits bottom-right with a 48 px margin, the widget bottom-left with 24 px.
+        assert_eq!(default_position(PET, area, (180, 196)), (1920 - 180 - 48, 1040 - 196));
+        assert_eq!(default_position(WIDGET, area, (300, 172)), (24, 1040 - 172 - 24));
+        // A second monitor to the right keeps its own origin.
+        assert_eq!(
+            default_position(PET, (1920, 0, 1920, 1080), (180, 196)),
+            (1920 + 1920 - 228, 884)
+        );
+        // A window larger than the work area never goes before the origin.
+        assert_eq!(default_position(PET, (0, 0, 100, 100), (180, 196)), (0, 0));
+    }
+
+    #[test]
+    fn a_remembered_position_is_used_only_while_it_is_on_a_monitor() {
+        let areas = [(0, 0, 1920, 1040), (1920, 0, 1280, 1024)];
+        assert!(on_screen(&areas, (10, 10)));
+        assert!(on_screen(&areas, (2000, 500)));
+        assert!(!on_screen(&areas, (3200, 0)));
+        assert!(!on_screen(&areas, (-1, 0)));
+        assert!(!on_screen(&areas, (parking::PARK, parking::PARK)));
+        assert!(!on_screen(&[], (0, 0)));
     }
 }

@@ -33,17 +33,9 @@ tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace",
 
 ### Linux XDG Desktop Portal Support
 
-By default, this plugin uses gtk to show dialogs, however since `v2.5.0` you can switch to using [XDG Desktop Portal](https://flatpak.github.io/xdg-desktop-portal/) by adding the following to your `Cargo.toml` file:
+On Linux this plugin uses the [XDG Desktop Portal](https://flatpak.github.io/xdg-desktop-portal/) (the `xdg-portal` feature, enabled by default). GTK 3 dialogs are not offered, so no GTK 3 library is linked.
 
-```toml
-[dependencies]
-tauri-plugin-dialog = { version = "2.5.0", default-features = false, features = ["xdg-portal"] }
-# alternatively with Git:
-tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2", default-features = false, features = ["xdg-portal"] }
-
-```
-
-Do note if you use the `xdg-portal` feature, you need to ensure that [`zenity`](https://gitlab.gnome.org/GNOME/zenity) and an [XDG Desktop Portal backend](https://flatpak.github.io/xdg-desktop-portal#using-portals) is installed with your program.
+Do note you need to ensure that [`zenity`](https://gitlab.gnome.org/GNOME/zenity) and an [XDG Desktop Portal backend](https://flatpak.github.io/xdg-desktop-portal#using-portals) is installed with your program.
 
 For more information, see [XDG Desktop Portal documentation](https://flatpak.github.io/xdg-desktop-portal/) and [`rfd` documentation](https://docs.rs/rfd/latest/rfd#xdg-desktop-portal-backend).
 

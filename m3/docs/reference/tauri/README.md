@@ -2,8 +2,7 @@
 
 # Tauri documentation hub
 
-Current line: Tauri 3 alpha (`tauri =3.0.0-alpha.3`, runtime `tauri-runtime-wry` by default,
-`tauri-runtime-cef` for generated CEF projects), pinned in the root `Cargo.toml` and described in
+Current line: Tauri 3 alpha (`tauri =3.0.0-alpha.3`, the one runtime `tauri-runtime-cef`), pinned in the root `Cargo.toml` and described in
 [`docs/operations/ui/tauri-upstream.md`](../../operations/tauri-upstream.md) and
 [`config/tauri-apps.json`](https://github.com/aphrody-labs/aphrody/blob/main/config/tauri-apps.json) (registry of every Tauri project).
 Tauri 2 pages below are kept as historical or compatibility context and carry a banner. Parent map:
@@ -15,7 +14,7 @@ Tauri 2 pages below are kept as historical or compatibility context and carry a 
 | --- | --- | --- | --- |
 | [Desktop integration (aphrody-app)](../DESKTOP-INTEGRATION.md) | How the Tauri 3 desktop integrates with Windows and Linux: installers, updates, deep links, tray, desktop pet and widget. | active | 2026-10-01 |
 | [Desktop GUI contract](../GUI.md) | Desktop webview boundary and user areas hosted by the Tauri 3 app in crates/ui/app. | active | 2026-10-01 |
-| [Native desktop and distribution boundary](../NATIVE-DESKTOP.md) | Tauri 3 (tauri-runtime-wry) is the current host for Aphrody's public Chat, Files, Models and Settings webview. | active | 2026-10-01 |
+| [Native desktop and distribution boundary](../NATIVE-DESKTOP.md) | Tauri 3 (tauri-runtime-cef) is the current host for Aphrody's public Chat, Files, Models and Settings webview. | active | 2026-10-01 |
 | [Tauri 3 integration](aphrody-integration.md) | How crates/ui/app hosts the UI and reaches the rest of Aphrody. | active | 2026-10-01 |
 | [Tauri 3 plugins and capabilities](plugins.md) | The plugins in use, capabilities and security boundaries. | active | 2026-10-01 |
 

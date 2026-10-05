@@ -35,9 +35,7 @@ describe("YOLO apps/cli Suite (Zero External Dependencies, 100% Native Bun)", ()
       "next",
       "obscura",
       "plugins-workspace",
-      "tao",
       "tauri",
-      "wry",
     ]);
 
     for (const status of statuses) {

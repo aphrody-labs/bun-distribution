@@ -1124,46 +1124,6 @@
       "canonical": "crates/tauri/aphrody-create-tauri-app/templates/template-yew/README.md"
     },
     {
-      "path": "crates/tauri/aphrody-tao-macros/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "38c452151cbe9c34675747c8f6ee1f608fc14dc7e4bca63eb630f008c21a2864",
-      "bytes": 1434,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tao-macros/CHANGELOG.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tao/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "c7e3b110898b45d697e5550a57d89ad8e081027f892b67c97ea5a594431ff4af",
-      "bytes": 139710,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tao/CHANGELOG.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tao/README.md",
-      "title": "Cargo Features",
-      "sha256": "4e146f3b5b6997cb709a97b417f69516f43ff0c35cbb636c55158160ecfa5090",
-      "bytes": 2814,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tao/README.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tao/examples/README.md",
-      "title": "Examples",
-      "sha256": "8692a5f5102c1f3fda375915f3bceb5e8435a5fe6d04a7ad973c4cae7772f66b",
-      "bytes": 1813,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tao/examples/README.md"
-    },
-    {
       "path": "crates/tauri/aphrody-tauri-api/README.md",
       "title": "@aphrody/api",
       "sha256": "b94b34eac0cca25c10dec491dad34203cb1e3a47efd39b25decf857395d7369d",
@@ -1442,26 +1402,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "crates/tauri/aphrody-tauri-codegen/README.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-driver/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "cad5e233009eeed05486859e1e83469e016f8066a54f5412919553927d296cab",
-      "bytes": 6625,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-driver/CHANGELOG.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-driver/README.md",
-      "title": "tauri-driver (pre-alpha)",
-      "sha256": "4abf5dbd7d6054aa1850bbcc67dd22b0d3eeed0d73e6ef759bb3d8b77d53fe15",
-      "bytes": 1617,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-driver/README.md"
     },
     {
       "path": "crates/tauri/aphrody-tauri-macos-sign/CHANGELOG.md",
@@ -2514,26 +2454,6 @@
       "canonical": "crates/tauri/aphrody-tauri-runtime-cef/CHANGELOG.md"
     },
     {
-      "path": "crates/tauri/aphrody-tauri-runtime-wry/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "55aabbb1855572801aefc24307e68e726c65db5a62ddd4ee5f9cf10ee0940be4",
-      "bytes": 141404,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-runtime-wry/CHANGELOG.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-runtime-wry/README.md",
-      "title": "tauri-runtime-wry",
-      "sha256": "cf468efdcd6eb86ef6a2c0b1fbe6aca80f0df6a9d3016f77c0bfdb64dc4091c0",
-      "bytes": 3193,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-runtime-wry/README.md"
-    },
-    {
       "path": "crates/tauri/aphrody-tauri-runtime/CHANGELOG.md",
       "title": "Changelog",
       "sha256": "7581047d56a2480c089579dbf4b8f03ac6c8aa530cc9acd2bc101287865769a4",
@@ -2742,46 +2662,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "crates/tauri/aphrody-tauri/src/event/event-system-spec.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-wry/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "0a90dc50dd6a32964a8a60f1693b0ca294285b99966d3627c56defe154592401",
-      "bytes": 154537,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-wry/CHANGELOG.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-wry/MOBILE.md",
-      "title": "Mobile Setup for Wry",
-      "sha256": "7e4311eb2128c6605b51b3f4c3578f8e49c2595ada41986a8bc09bf20950fd08",
-      "bytes": 10747,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-wry/MOBILE.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-wry/README.md",
-      "title": "Examples",
-      "sha256": "cfa18c4d0e5a72d02b71e28c381de76d870d2adac8acf7b077071a5431ee536d",
-      "bytes": 10518,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-wry/README.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-wry/SECURITY.md",
-      "title": "Security Policy",
-      "sha256": "84ed305e72c0348770feb82dacd98478ad7fc024eedd29e9e9794025f8e04bfe",
-      "bytes": 664,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-wry/SECURITY.md"
     },
     {
       "path": "crates/ui/a2a-ui/README.md",

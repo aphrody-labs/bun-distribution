@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Native desktop and distribution boundary
 
-Tauri 3 (`tauri-runtime-wry`) is the current host for Aphrody's public Chat, Files, Models and Settings webview.
+Tauri 3 (`tauri-runtime-cef`: CEF + tauri-winit + GTK 4) is the current host for Aphrody's public Chat, Files, Models and Settings webview.
 Rust M3, rendering and window crates remain reusable foundations, not a commitment to build
 an Aphrody-owned operating-system shell or browser from scratch.
 

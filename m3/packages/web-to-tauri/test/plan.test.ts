@@ -83,8 +83,8 @@ describe("planConversion of a site", () => {
     const byId = new Map(plan.risks.map((risk) => [risk.id, risk]));
     expect(byId.get("api-and-backend")?.mitigation.kind).toBe("applied");
     expect(byId.get("service-worker")).toMatchObject({
-      severity: "medium",
-      mitigation: { kind: "manual" },
+      severity: "low",
+      mitigation: { kind: "applied" },
     });
     expect(byId.get("sign-in-providers")?.mitigation.kind).toBe("applied");
     // The fixture posts to the origin it redirects through, which is already in the app.
@@ -120,7 +120,7 @@ describe("planConversion of a site", () => {
     expect(() => planConversion(probe, { mode: "sidecar" })).toThrow("project directory");
   });
 
-  it("selects Chromium when the page needs a Chromium-only API, and asks for review when it is forced off", () => {
+  it("selects Chromium whatever the page needs, and refuses the retired wry engine", () => {
     const needy: SiteProbe = {
       ...probe,
       signals: [...probe.signals, { id: "web-usb", where: "app.js" }],
@@ -130,9 +130,8 @@ describe("planConversion of a site", () => {
     expect(auto.risks.find((risk) => risk.id === "chromium-only-apis")?.mitigation.kind).toBe(
       "applied",
     );
-    const forced = planConversion(needy, { engine: "wry" });
-    expect(forced.verdict).toBe("needs-review");
-    expect(forced.risks.find((risk) => risk.id === "chromium-only-apis")?.severity).toBe("high");
+    expect(planConversion(probe).config.engine).toBe("cef");
+    expect(() => planConversion(needy, { engine: "wry" as never })).toThrow("retired");
   });
 });
 

@@ -26,7 +26,7 @@ features = [
   "dynamic-acl",
   "isolation",
   # the default target is Linux, where the GTK APIs are only available with a GTK version selected
-  "gtk3",
+  "gtk4",
 ]
 default-target = "x86_64-unknown-linux-gnu"
 targets = [
@@ -105,7 +105,6 @@ tray-icon = { version = "0.25", default-features = false, features = [
 
 # linux
 [target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
-gtk = { version = "0.18", features = ["v3_24"], optional = true }
 gtk4 = { package = "gtk4", version = "0.11.4", optional = true }
 
 # darwin
@@ -189,23 +188,21 @@ common-controls-v6 = [
   "tray-icon?/muda-common-controls-v6",
   "muda/common-controls-v6",
 ]
-# the Linux tray backend defaults to ksni (pure D-Bus StatusNotifierItem), which does not
-# require a GTK version to be selected - see the `linux-libappindicator` feature to opt out.
+# the Linux tray backend is ksni (pure D-Bus StatusNotifierItem), which does not require a GTK version
+# to be selected; libappindicator (GTK3) is not offered.
 tray-icon = ["dep:tray-icon", "tray-icon?/ksni"]
 tracing = ["dep:tracing", "tauri-macros/tracing"]
 test = []
 compression = ["tauri-macros/compression", "tauri-utils/compression"]
-gtk3 = ["dep:gtk", "muda/gtk3"]
 gtk4 = ["dep:gtk4", "muda/gtk4"]
 linux-libxdo = ["tray-icon?/muda-libxdo", "muda/libxdo"]
-linux-libappindicator = ["tray-icon?/libappindicator"]
 isolation = ["tauri-utils/isolation", "tauri-macros/isolation", "uuid"]
 custom-protocol = ["tauri-macros/custom-protocol"]
 # TODO: Remove these flags in v3 and/or enable them by default behind a mobile flag https://github.com/tauri-apps/tauri/issues/12384
 native-tls = ["reqwest/native-tls"]
 native-tls-vendored = ["reqwest/native-tls-vendored"]
 rustls-tls = ["reqwest/rustls-no-provider", "dep:rustls"]
-# the runtime crate (e.g. `tauri-runtime-wry`) must also enable its `devtools` feature
+# the runtime crate (e.g. `tauri-runtime-cef`) must also enable its `devtools` feature
 devtools = ["tauri-runtime/devtools"]
 process-relaunch-dangerous-allow-symlink-macos = [
   "tauri-utils/process-relaunch-dangerous-allow-symlink-macos",

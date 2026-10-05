@@ -18,9 +18,8 @@ exclude = [
 ]
 
 [features]
-default = ["gtk3"]
+default = ["xdg-portal"]
 xdg-portal = ["rfd/xdg-portal", "rfd/tokio", "rfd/wayland"]
-gtk3 = ["rfd/gtk3"]
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu", "x86_64-linux-android"]

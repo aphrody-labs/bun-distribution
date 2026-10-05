@@ -125,10 +125,9 @@ and the configured Aphrody Web Browser MCP provider. `web_browser_fetch` routes 
 Without the provider, those profiles report an unavailable backend instead of
 silently returning Obscura output under a curl profile name.
 
-Tauri/Wry is the desktop webview lane. `window_open` creates an interactive
+Tauri/CEF is the desktop webview lane. `window_open` creates an interactive
 preview window for an `http` or `https` URL with no Aphrody desktop capability.
-It is useful for human-visible inspection and keeps the system WebView2/WebKit
-runtime warm; it is deliberately not used for crawling, extraction, automation
+It is useful for human-visible inspection; it is deliberately not used for crawling, extraction, automation
 or artifact production. Those operations remain in the deterministic Obscura/V8
 lane above.
 

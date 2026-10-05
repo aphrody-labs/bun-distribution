@@ -6,16 +6,13 @@
  */
 export const TAURI_3 = {
   tauri: "3.0.0-alpha.4",
-  runtimeWry: "3.0.0-alpha.4",
+  runtimeCef: "3.0.0-alpha.5",
   build: "3.0.0-alpha.3",
   pluginOpener: "3.0.0-alpha.2",
   jsApi: "3.0.0-alpha.2",
   jsPluginOpener: "3.0.0-alpha.2",
   jsCli: "3.0.0-alpha.4",
 } as const;
-
-/** `tauri-runtime-cef` line written into generated CEF projects (`--engine cef`). */
-export const TAURI_CEF = "3.0.0-alpha.4";
 
 /** JSON schema URL of `tauri.conf.json`, tagged with the pinned Tauri release. */
 export function tauriSchemaUrl(version: string = TAURI_3.tauri): string {

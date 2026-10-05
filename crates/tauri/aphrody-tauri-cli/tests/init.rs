@@ -6,6 +6,7 @@ use std::fs;
 use std::process::Command;
 
 #[test]
+#[ignore = "drives the standalone cargo-tauri binary, which Aphrody does not build: the CLI is `aphrody tauri` (multi-call)"]
 fn init_non_interactive_works() {
   let temp_dir = tempfile::tempdir().unwrap();
   let dir = temp_dir.path();

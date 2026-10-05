@@ -22,7 +22,7 @@ pub enum Mode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Engine {
-    Wry,
+    /// The one desktop runtime. `wry` (system webview) is retired and refused.
     Cef,
 }
 
@@ -176,7 +176,7 @@ mod tests {
     fn remote() -> String {
         r#"{
           "schema": "aphrody-web-to-tauri/1", "name": "Demo", "identifier": "io.aphrody.wrapped.demo",
-          "mode": "remote", "engine": "wry", "start": "https://example.com/",
+          "mode": "remote", "engine": "cef", "start": "https://example.com/",
           "origins": { "app": ["https://example.com"], "auth": [], "embeds": [], "external": "system" },
           "window": { "title": null, "width": 1280, "height": 800, "minWidth": null, "minHeight": null,
                       "syncTitle": true, "zoomHotkeys": true, "dragDrop": false },
@@ -189,7 +189,7 @@ mod tests {
     fn parses_a_remote_config() {
         let config = WrapConfig::parse(&remote()).unwrap();
         assert_eq!(config.mode, Mode::Remote);
-        assert_eq!(config.engine, Engine::Wry);
+        assert_eq!(config.engine, Engine::Cef);
         assert_eq!(config.origins.external, External::System);
         assert!(config.window.title.is_none());
         assert!(!config.window.drag_drop);

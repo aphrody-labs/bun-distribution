@@ -81,12 +81,15 @@ restent des alias de compatibilité jusqu'à qualification.
 
 - [~] **CLI Rust** — binaire multi-call unique `aphrody` (`crates/infra/aphrody-command/src/multicall.rs`) :
   `aphrody <outil> …` ou ancien nom en lien (`aphrody self install-path`) pour infra, ovh, yolo, kernel,
-  host-service, ssh, wsl, backend, mcp-server, web-engine, web-worker, x, gemini-web, google,
-  translate-project, jev, embed, summary, skills, agent-home-memory, agent-train, llama-daemon, n2b,
+  host-service, ssh, wsl, backend, mcp-server, web-engine, web-worker, x, bxc (+ `bxc-mcp`), gemini-web,
+  google, translate-project, jev, embed, summary, skills, agent-home-memory, agent-train, llama-daemon, n2b,
   identity, m3-reproduce, canvas, bindgen ; leurs `[[bin]]` sont retirés (`cli_main` en lib), le faux
   pilier `aphrody infra` est remplacé par le vrai plan de contrôle, `aphrody google` n'a plus de
-  sous-processus. Démos/tests → `examples/` (`paint_file`, `a2a_duel_loop`, `mcp_smoke`, `shell_e2e`).
-  Restent : outillage amont Tauri (`cargo-tauri`, `tauri-driver`, …), `rag-eval` (claim purge).
+  sous-processus. `bxc` (Bun x Chrome) et `n2b` (Node 2 Bun), absorbés et réécrits en Rust, ne sont plus que des noms
+  du binaire unique ([parité](docs/migration/bxc-n2b-unification-2026-10-05.md)) ; `aphrody package` ne rapporte et
+  ne répare que les liens ; le pont exécutable `aphrody-web-bridge` est supprimé (fetch et session dans
+  `aphrody-web-service`). Démos/tests → `examples/` (`paint_file`, `a2a_duel_loop`, `mcp_smoke`, `shell_e2e`).
+  Restent : outillage amont Tauri (`cargo-tauri`, …), `rag-eval` (claim purge).
 - [~] **CLI Bun** — `yolo` absorbe `ops`, `workspace`, `optimize`, `update`, `google` (drive, fonts),
   `doc-ai`, `browser` (agent-browser), `forge` (ex-`bun-forge`, bin retiré) et `m3` in-process : `yolo m3` = CLI
   framework, `yolo m3 next|bun|os-themes|next-migrate|svg-to-ico|web-to-tauri|scaffold` = outils des paquets m3
@@ -95,7 +98,9 @@ restent des alias de compatibilité jusqu'à qualification.
   des consommateurs les appellent.
 - [~] **App desktop** — une seule app `aphrody-app` : `yolo-desktop` (hôte runtime `--runtime-host`,
   protocole `yolo.desktop/1` inchangé) et `m3-showcase` (`--showcase`, sidecar Bun) absorbés,
-  `tauri-e2e` → exemple `shell_e2e`.
+  `tauri-e2e` → exemple `shell_e2e`. Un seul runtime desktop (décision 21, ordre du 2026-10-05) :
+  `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4) ; wry, tao, `tauri-runtime-wry`, `tauri-driver` et la pile GTK 3 /
+  WebKitGTK sont retirés ([plan](docs/plans/tauri-cef/PLAN.md), [inventaire](docs/plans/tauri-cef/INVENTORY.md)).
 - [~] **FFI** — un seul cdylib C-ABI `aphrody_ffi` : `yolo-tooling` (feature `tooling`, défaut) et
   `aphrody-inference-ffi` (feature `inference`) absorbés 2026-10-05, `yolo-runtime` réduit à `rlib` ; consommateurs
   Bun repointés vers `libaphrody_ffi`. Restent hors C-ABI : `aphrody-a2a-ui`/`aphrody-shell-web` (wasm-bindgen),

@@ -171,12 +171,7 @@ pub fn bundle_project(settings: &Settings) -> crate::Result<Vec<PathBuf>> {
       // quick-sharun checks for the NO_STRIP env but libcef.so is 1.5GB so we make sure it's stripped anyway.
       let _ = Command::new("strip").arg(&dest).output_ok();
     }
-    let locales = [
-      "en-US.pak",
-      "en-US_FEMININE.pak",
-      "en-US_MASCULINE.pak",
-      "en-US_NEUTER.pak",
-    ];
+    let locales = crate::bundle::linux::cef_locales(&cef_path.join("locales"));
 
     for f in locales {
       fs::copy(

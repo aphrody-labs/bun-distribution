@@ -369,8 +369,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-create-tauri-app` | [crates/tauri/aphrody-create-tauri-app](../../../crates/tauri/aphrody-create-tauri-app) | rust crate | 4.7.4 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-create-tauri-app-node` | [crates/tauri/aphrody-create-tauri-app-node](../../../crates/tauri/aphrody-create-tauri-app-node) | rust crate | 0.0.0 | cdylib | no | 0 | 2026-10-05 |
 | `aphrody-restart` | [crates/tauri/aphrody-restart](../../../crates/tauri/aphrody-restart) | rust crate | 0.1.0 | bin | yes | 0 | 2026-10-05 |
-| `aphrody-tao` | [crates/tauri/aphrody-tao](../../../crates/tauri/aphrody-tao) | rust crate | 0.37.1 | lib | yes | 4 | 2026-10-05 |
-| `aphrody-tao-macros` | [crates/tauri/aphrody-tao-macros](../../../crates/tauri/aphrody-tao-macros) | rust crate | 0.1.4 | proc-macro | yes | 0 | 2026-10-05 |
 | `aphrody-tauri` | [crates/tauri/aphrody-tauri](../../../crates/tauri/aphrody-tauri) | rust crate | 3.0.0-alpha.4 | lib | yes | 27 | 2026-10-05 |
 | `@aphrody/api` | [crates/tauri/aphrody-tauri-api](../../../crates/tauri/aphrody-tauri-api) | bun package | 3.0.0-alpha.2 | lib | no | 0 | 2026-10-05 |
 | `aphrody-tauri-build` | [crates/tauri/aphrody-tauri-build](../../../crates/tauri/aphrody-tauri-build) | rust crate | 3.0.0-alpha.3 | lib | yes | 1 | 2026-10-05 |
@@ -378,7 +376,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-tauri-cli` | [crates/tauri/aphrody-tauri-cli](../../../crates/tauri/aphrody-tauri-cli) | rust crate | 3.0.0-alpha.4 | lib | yes | 2 | 2026-10-05 |
 | `aphrody-tauri-cli-node` | [crates/tauri/aphrody-tauri-cli-node](../../../crates/tauri/aphrody-tauri-cli-node) | rust crate | 0.0.0 | cdylib | no | 0 | 2026-10-05 |
 | `aphrody-tauri-codegen` | [crates/tauri/aphrody-tauri-codegen](../../../crates/tauri/aphrody-tauri-codegen) | rust crate | 3.0.0-alpha.3 | lib | yes | 1 | 2026-10-05 |
-| `aphrody-tauri-driver` | [crates/tauri/aphrody-tauri-driver](../../../crates/tauri/aphrody-tauri-driver) | rust crate | 3.0.0-alpha.1 | bin | no | 0 | 2026-10-05 |
 | `aphrody-tauri-examples` | [crates/tauri/aphrody-tauri-examples](../../../crates/tauri/aphrody-tauri-examples) | rust crate | 0.1.0 | lib | no | 0 | 2026-10-05 |
 | `aphrody-tauri-macos-sign` | [crates/tauri/aphrody-tauri-macos-sign](../../../crates/tauri/aphrody-tauri-macos-sign) | rust crate | 3.0.0-alpha.2 | lib | no | 0 | 2026-10-05 |
 | `aphrody-tauri-macros` | [crates/tauri/aphrody-tauri-macros](../../../crates/tauri/aphrody-tauri-macros) | rust crate | 3.0.0-alpha.3 | proc-macro | no | 0 | 2026-10-05 |
@@ -441,13 +438,11 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/plugin-window-state` | [crates/tauri/aphrody-tauri-plugin-window-state](../../../crates/tauri/aphrody-tauri-plugin-window-state) | bun package | 3.0.0-alpha.2 | lib | no | 0 | 2026-10-05 |
 | `aphrody-tauri-runtime` | [crates/tauri/aphrody-tauri-runtime](../../../crates/tauri/aphrody-tauri-runtime) | rust crate | 3.0.0-alpha.3 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-tauri-runtime-cef` | [crates/tauri/aphrody-tauri-runtime-cef](../../../crates/tauri/aphrody-tauri-runtime-cef) | rust crate | 3.0.0-alpha.5 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-tauri-runtime-wry` | [crates/tauri/aphrody-tauri-runtime-wry](../../../crates/tauri/aphrody-tauri-runtime-wry) | rust crate | 3.0.0-alpha.4 | lib | yes | 4 | 2026-10-05 |
 | `aphrody-tauri-schema-generator` | [crates/tauri/aphrody-tauri-schema-generator](../../../crates/tauri/aphrody-tauri-schema-generator) | rust crate | 0.0.0 | bin | no | 0 | 2026-10-05 |
 | `aphrody-tauri-schema-worker` | [crates/tauri/aphrody-tauri-schema-worker](../../../crates/tauri/aphrody-tauri-schema-worker) | rust crate | 0.0.0 | cdylib | no | 0 | 2026-10-05 |
 | `aphrody-tauri-specta` | [crates/tauri/aphrody-tauri-specta](../../../crates/tauri/aphrody-tauri-specta) | rust crate | 2.0.0-rc.25 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-tauri-specta-macros` | [crates/tauri/aphrody-tauri-specta/macros](../../../crates/tauri/aphrody-tauri-specta/macros) | rust crate | 2.0.0-rc.25 | proc-macro | no | 0 | 2026-10-05 |
 | `aphrody-tauri-utils` | [crates/tauri/aphrody-tauri-utils](../../../crates/tauri/aphrody-tauri-utils) | rust crate | 3.0.0-alpha.3 | lib | yes | 1 | 2026-10-05 |
-| `aphrody-wry` | [crates/tauri/aphrody-wry](../../../crates/tauri/aphrody-wry) | rust crate | 0.57.0 | lib | yes | 3 | 2026-10-05 |
 
 ## ui
 
@@ -482,7 +477,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `obscura-net` | [crates/web/obscura-net](../../../crates/web/obscura-net) | rust crate | 0.1.1 | lib | yes | 0 | 2026-10-05 |
 | `obscura-render` | [crates/web/obscura-render](../../../crates/web/obscura-render) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-05 |
 | `obscura-ssrf` | [crates/web/obscura-ssrf](../../../crates/web/obscura-ssrf) | rust crate | 0.1.0 | lib | no | 0 | 2026-10-05 |
-| `aphrody-web-bridge` | [crates/web/web-bridge](../../../crates/web/web-bridge) | rust crate | 1.0.0-canary | rlib | yes | 0 | 2026-10-05 |
 | `aphrody-web-chromium` | [crates/web/web-chromium](../../../crates/web/web-chromium) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-web-crawl` | [crates/web/web-crawl](../../../crates/web/web-crawl) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-web-detect` | [crates/web/web-detect](../../../crates/web/web-detect) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |

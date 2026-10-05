@@ -139,7 +139,7 @@ Précision après lecture du dépôt Tauri (la cible est la branche `v3` : crate
 | `tauri` (cœur, 3.0.0-alpha.4, 37 085 lignes) | IPC `invoke`, ACL, plugins, bundler ; dépend de tokio et reqwest 0.13 (non optionnels) ; tray-icon avec `ksni` sous Linux | **Non repris** : tokio et reqwest sont exclus du binaire ; l'IPC est réécrit sur `Bun.tauri` (forme `IpcMessage`) et les permissions sur `bunfig.toml` |
 | `tauri-runtime-cef` (3.0.0-alpha.5, 20 445 lignes) | Chromium embarqué | `plugin-cef` seulement : le rôle « moteur embarqué sans dépendance » est tenu par le moteur Obscura |
 
-> **Écart constaté (2026-10-05)** : la décision « `tauri` (cœur) non repris, `tauri-runtime-wry` en pin, tokio et reqwest exclus du binaire » ne tient pas en l'état : `crates/tauri/aphrody-tauri-runtime-wry/Cargo.toml` dépend de `tauri` (`aphrody-tauri`, feature `gtk3`), qui tire `tokio` et `reqwest 0.13` non optionnels (`aphrody-tauri/Cargo.toml:51,91`). Le pin de `tauri-runtime-wry` fait donc entrer tokio, sauf correctif de dépendance optionnelle dans le fork `aphrody-labs/tauri` (voir partie 4, §10.2).
+> **Écart constaté (2026-10-05)** : la décision « `tauri` (cœur) non repris, `tauri-runtime-wry` en pin, tokio et reqwest exclus du binaire » ne tient pas en l'état : le `Cargo.toml` d’`aphrody-tauri-runtime-wry` (crate retirée le 2026-10-05, décision 21) dépendait de `tauri` (`aphrody-tauri`, feature `gtk3`), qui tire `tokio` et `reqwest 0.13` non optionnels (`aphrody-tauri/Cargo.toml:51,91`). Le pin de `tauri-runtime-wry` fait donc entrer tokio, sauf correctif de dépendance optionnelle dans le fork `aphrody-labs/tauri` (voir partie 4, §10.2).
 
 Trois implémentations des traits `tauri-runtime`, choisies par option à l'exécution comme `Builder::runtime()` en Tauri 3 :
 

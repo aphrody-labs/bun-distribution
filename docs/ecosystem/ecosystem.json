@@ -1278,30 +1278,6 @@
           "features": []
         },
         {
-          "name": "aphrody-tao",
-          "path": "crates/tauri/aphrody-tao",
-          "description": "Cross-platform window manager library.",
-          "bins": [],
-          "features": [
-            "dbus",
-            "default",
-            "rwh_04",
-            "rwh_05",
-            "rwh_06",
-            "serde",
-            "x11"
-          ]
-        },
-        {
-          "name": "aphrody-tao-macros",
-          "path": "crates/tauri/aphrody-tao-macros",
-          "description": "Proc macros for tao",
-          "bins": [],
-          "features": [
-            "default"
-          ]
-        },
-        {
           "name": "aphrody-task-runner",
           "path": "crates/os/task-runner",
           "description": "Parallel DAG task executor with dependency ordering, retries, timeouts, concurrency caps and NDJSON-friendly event stream for aphrody background pipelines.",
@@ -1414,15 +1390,6 @@
             "config-toml",
             "isolation"
           ]
-        },
-        {
-          "name": "aphrody-tauri-driver",
-          "path": "crates/tauri/aphrody-tauri-driver",
-          "description": "Webdriver server for Tauri applications",
-          "bins": [
-            "tauri-driver"
-          ],
-          "features": []
         },
         {
           "name": "aphrody-tauri-examples",
@@ -1781,22 +1748,6 @@
           ]
         },
         {
-          "name": "aphrody-tauri-runtime-wry",
-          "path": "crates/tauri/aphrody-tauri-runtime-wry",
-          "description": "Wry bindings to the Tauri runtime",
-          "bins": [],
-          "features": [
-            "common-controls-v6",
-            "dbus",
-            "default",
-            "devtools",
-            "macos-proxy",
-            "tracing",
-            "unstable",
-            "x11"
-          ]
-        },
-        {
           "name": "aphrody-tauri-schema-generator",
           "path": "crates/tauri/aphrody-tauri-schema-generator",
           "description": "Hosts the schema for the Tauri configuration file.",
@@ -2077,28 +2028,6 @@
           "description": "Rust-owned compatibility surface for 166 WinClean Windows tools.",
           "bins": [],
           "features": []
-        },
-        {
-          "name": "aphrody-wry",
-          "path": "crates/tauri/aphrody-wry",
-          "description": "Cross-platform WebView rendering library",
-          "bins": [],
-          "features": [
-            "default",
-            "devtools",
-            "gdkx11",
-            "javascriptcore-rs",
-            "linux-body",
-            "mac-proxy",
-            "os-webview",
-            "serde",
-            "soup3",
-            "tracing",
-            "webkit2gtk",
-            "webkit2gtk-sys",
-            "x11",
-            "x11-dl"
-          ]
         },
         {
           "name": "aphrody-wsl",
@@ -9807,11 +9736,6 @@
       "repo": "aphrody"
     },
     {
-      "binary": "tauri-driver",
-      "crate": "aphrody-tauri-driver",
-      "repo": "aphrody"
-    },
-    {
       "binary": "tauri-schema-generator",
       "crate": "aphrody-tauri-schema-generator",
       "repo": "aphrody"
@@ -11941,7 +11865,7 @@
     "aphrodyRepos": 1,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 240,
+    "crates": 235,
     "binaries": 45,
     "bunPackages": 127,
     "pythonPackages": 8,

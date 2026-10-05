@@ -17,7 +17,7 @@ apt() { sudo -n env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l apt-get "$
 apt update -qq
 apt install -y -qq build-essential pkg-config libssl-dev libtool make just cmake ninja-build ccache nasm perl \
   python3 golang nodejs ruby-full libatomic1 xz-utils unzip curl git gh lsb-release software-properties-common gnupg mold \
-  libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup-3.0-dev libxdo-dev patchelf tmux
+  libgtk-4-dev libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libgbm1 libxkbcommon-dev libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libpango-1.0-0 libcairo2 libasound2-dev librsvg2-dev libxdo-dev patchelf tmux
 
 if ! command -v "clang-$LLVM" >/dev/null && [ ! -x "/usr/lib/llvm-$LLVM/bin/clang" ]; then
   say "LLVM $LLVM (apt.llvm.org)"

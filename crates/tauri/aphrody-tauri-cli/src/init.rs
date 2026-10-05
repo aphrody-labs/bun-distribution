@@ -306,7 +306,7 @@ fn render_tauri_config(
 
 /// Builds the template variables for the Tauri crate dependencies of the generated `Cargo.toml`.
 ///
-/// `tauri_dep`, `tauri_build_dep` and `tauri_runtime_wry_dep` are always set. The crates are the
+/// `tauri_dep`, `tauri_build_dep` and `tauri_runtime_cef_dep` are always set. The crates are the
 /// Aphrody packages (`aphrody-tauri`, …) while the dependency keys keep the upstream names, so
 /// `use tauri::…` and `tauri/custom-protocol` keep working.
 ///
@@ -327,8 +327,8 @@ fn tauri_dependencies_data(
     data.insert("tauri_dep", path_dep("aphrody-tauri"));
     data.insert("tauri_build_dep", path_dep("aphrody-tauri-build"));
     data.insert(
-      "tauri_runtime_wry_dep",
-      path_dep("aphrody-tauri-runtime-wry"),
+      "tauri_runtime_cef_dep",
+      path_dep("aphrody-tauri-runtime-cef"),
     );
   } else {
     let version_dep = |package: &str, version: &str| {
@@ -342,8 +342,8 @@ fn tauri_dependencies_data(
       version_dep("aphrody-tauri-build", &metadata.tauri_build),
     );
     data.insert(
-      "tauri_runtime_wry_dep",
-      version_dep("aphrody-tauri-runtime-wry", &metadata.tauri_runtime_wry),
+      "tauri_runtime_cef_dep",
+      version_dep("aphrody-tauri-runtime-cef", &metadata.tauri_runtime_cef),
     );
   }
   data
@@ -447,9 +447,9 @@ mod tests {
       "crates/aphrody-tauri-build",
     );
     assert_path_dependency(
-      dependency(manifest, "dependencies", "tauri-runtime-wry"),
+      dependency(manifest, "dependencies", "tauri-runtime-cef"),
       tauri_path,
-      "crates/aphrody-tauri-runtime-wry",
+      "crates/aphrody-tauri-runtime-cef",
     );
     assert!(
       !manifest.contains_key("patch"),
@@ -482,12 +482,12 @@ mod tests {
     );
     assert!(!tauri_build.contains_key("path"));
 
-    let tauri_runtime_wry = dependency(&manifest, "dependencies", "tauri-runtime-wry");
+    let tauri_runtime_cef = dependency(&manifest, "dependencies", "tauri-runtime-cef");
     assert_eq!(
-      tauri_runtime_wry.get("version").and_then(|v| v.as_str()),
-      Some(metadata.tauri_runtime_wry.as_str())
+      tauri_runtime_cef.get("version").and_then(|v| v.as_str()),
+      Some(metadata.tauri_runtime_cef.as_str())
     );
-    assert!(!tauri_runtime_wry.contains_key("path"));
+    assert!(!tauri_runtime_cef.contains_key("path"));
 
     assert!(!manifest.contains_key("patch"));
   }

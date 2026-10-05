@@ -36,7 +36,8 @@
         "shadow": false,
         "alwaysOnTop": true,
         "skipTaskbar": true,
-        "center": true,
+        "x": -32000,
+        "y": -32000,
         "visible": false,
         "focus": false
       },
@@ -52,6 +53,8 @@
         "shadow": false,
         "alwaysOnTop": true,
         "skipTaskbar": true,
+        "x": -32000,
+        "y": -32000,
         "visible": false,
         "focus": false
       },
@@ -67,6 +70,8 @@
         "shadow": false,
         "alwaysOnBottom": true,
         "skipTaskbar": true,
+        "x": -32000,
+        "y": -32000,
         "visible": false,
         "focus": false
       },
@@ -82,6 +87,8 @@
         "shadow": false,
         "alwaysOnTop": true,
         "skipTaskbar": true,
+        "x": -32000,
+        "y": -32000,
         "visible": false,
         "focus": false
       }
@@ -93,7 +100,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["deb", "rpm", "nsis", "msi", "app", "dmg"],
     "category": "DeveloperTool",
     "publisher": "aphrody-code",
     "copyright": "Copyright 2026 aphrody-code",
@@ -114,10 +121,6 @@
     ],
     "resources": {},
     "windows": {
-      "webviewInstallMode": {
-        "type": "downloadBootstrapper",
-        "silent": true
-      },
       "nsis": {
         "installMode": "currentUser",
         "installerIcon": "icons/icon.ico",
@@ -181,11 +184,47 @@
       "deb": {
         "desktopTemplate": "linux/aphrody.desktop",
         "depends": [
-          "libwebkit2gtk-4.1-0 (>= 2.40.0)",
-          "libayatana-appindicator3-1",
+          "libnss3",
+          "libnspr4",
+          "libatk1.0-0",
+          "libatk-bridge2.0-0",
+          "libcups2",
+          "libdrm2",
+          "libgbm1",
+          "libxkbcommon0",
+          "libxcomposite1",
+          "libxdamage1",
+          "libxfixes3",
+          "libxrandr2",
+          "libpango-1.0-0",
+          "libcairo2",
+          "libasound2t64 | libasound2",
           "librsvg2-2",
           "libssl3"
-        ]
+        ],
+        "recommends": ["xdg-desktop-portal"]
+      },
+      "rpm": {
+        "depends": [
+          "nss",
+          "nspr",
+          "atk",
+          "at-spi2-atk",
+          "cups-libs",
+          "libdrm",
+          "mesa-libgbm",
+          "libxkbcommon",
+          "libXcomposite",
+          "libXdamage",
+          "libXfixes",
+          "libXrandr",
+          "pango",
+          "cairo",
+          "alsa-lib",
+          "librsvg2",
+          "openssl-libs"
+        ],
+        "recommends": ["xdg-desktop-portal"]
       }
     }
   },

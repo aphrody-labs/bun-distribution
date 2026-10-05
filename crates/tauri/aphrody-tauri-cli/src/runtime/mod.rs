@@ -4,7 +4,8 @@
 
 //! The webview runtime an application links, and everything the CLI does differently because of it.
 //!
-//! The runtime is selected by depending on its crate (`tauri-runtime-wry` or `tauri-runtime-cef`),
+//! The runtime is selected by depending on its crate (`tauri-runtime-cef`; the `tauri-runtime-wry` arm is
+//! upstream's and only serves third-party projects, Aphrody ships no wry runtime),
 //! so it is detected from the app manifest. Every runtime-specific behavior (system package dependencies,
 //! installer steps, code signing entitlements, what to ship with the bundle, how to run the app in dev mode)
 //! is defined here, so the rest of the CLI only asks the [`Runtime`] what it needs.
@@ -63,8 +64,13 @@ impl Runtime {
   /// to be declared as dependencies of the Debian and RPM packages.
   #[cfg(target_os = "linux")]
   pub fn linux_dependencies(self) -> &'static [LinuxDependency] {
-    // `tauri` itself uses GTK on Linux, whatever the runtime
+    // `tauri` itself uses GTK 4 on Linux with the CEF runtime (`tauri-winit` GTK 4 backend)
     const GTK: LinuxDependency = LinuxDependency {
+      deb_package: "libgtk-4-1",
+      library: "libgtk-4.so.1",
+    };
+    // the upstream wry runtime is GTK 3; no Aphrody crate links it
+    const GTK3: LinuxDependency = LinuxDependency {
       deb_package: "libgtk-3-0",
       library: "libgtk-3.so.0",
     };
@@ -74,7 +80,7 @@ impl Runtime {
     };
 
     match self {
-      Self::Wry => &[WEBKIT2GTK, GTK],
+      Self::Wry => &[WEBKIT2GTK, GTK3],
       // CEF is shipped with the app
       Self::Cef | Self::Other => &[GTK],
     }

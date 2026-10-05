@@ -21,10 +21,13 @@ through APT and no service, unit, nginx or database setting was touched.
 
 ## Not installed, on purpose
 
-The GTK 3 / WebKitGTK development libraries (`libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, …) are excluded from
-server hosts by `config/system-packages.json` (`policy: minimum-host-surface`, `excluded.desktop`). DBFR keeps
-that surface, so packages whose dependency graph reaches `gdk-sys`, `gtk-sys`, `gtk4-sys` or `webkit2gtk-sys`
-cannot build there.
+The desktop development libraries are excluded from server hosts by `config/system-packages.json`
+(`policy: minimum-host-surface`, `excluded.desktop`). Since decision 21 (2026-10-05) the one desktop runtime is
+`tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4): the GTK 3 / WebKitGTK libraries (`libgtk-3-dev`,
+`libwebkit2gtk-4.1-dev`, …) left the dependency graph and the host list, and the libraries a desktop build needs are
+`libgtk-4-dev` and the Chromium libraries of `workstationLinux`. DBFR keeps its minimum surface, so packages whose
+dependency graph reaches `gdk4-sys` or `gtk4-sys` (`desktopSysCrates`) cannot build there; the VPS builds them with
+`CEF_PATH=/srv/aphrody-build/cache/cef`.
 
 ## Routing (`scripts/build/rust/vps-cargo.ts`, `config/host/vps-cargo.json`)
 
@@ -34,9 +37,12 @@ by `Cargo.lock` hash): normal and build edges decide plain `check`/`build`/`clip
 
 - `--host dbfr` with such a package fails before any transfer and names the packages.
 - `--host auto` stays on the VPS (and waits for its lock) instead of falling back to DBFR.
-- With the 2026-10-05 lock, 42 workspace members need the libraries for plain builds (`aphrody-app`,
-  `aphrody-tao`, `aphrody-wry`, `aphrody-tauri`, the Tauri plugins and runtimes, `aphrody-drive`, …) and 14 more
-  through dev dependencies (`aphrody`, `aphrody-command`, `aphrody-ffi`, `aphrody-tauri-cli`, …).
+- With the lock after the CEF-only migration (`cargo metadata`, Linux target, 231 members), 39 workspace members need
+  the libraries for plain builds (`aphrody-app`, `aphrody-tauri`, `aphrody-tauri-runtime-cef`, the Tauri plugins,
+  `aphrody-drive`, `aphrody-tauri-wrap`, …) and 14 more through dev dependencies (`aphrody`, `aphrody-command`,
+  `aphrody-ffi`, `aphrody-tauri-cli`, …). Before the migration the count was 42 plus 14 (`aphrody-tao`,
+  `aphrody-wry` and the wry runtime reached the GTK 3 `-sys` crates). `gtk`, `gdk`, `webkit2gtk`, `libappindicator`,
+  `wry` and `tao` no longer appear in the graph.
 
 ## Measured
 

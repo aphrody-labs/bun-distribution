@@ -11,7 +11,7 @@ start when the file is invalid. Guide: [`docs/guides/ui/WEB-TO-TAURI.md`](../gui
 | `schema` | `"aphrody-web-to-tauri/1"` | refused when different |
 | `name`, `identifier` | string | product name; reverse-DNS identifier (`io.aphrody.wrapped.<host>`) |
 | `mode` | `remote` \| `bundle` \| `sidecar` | see the guide; `bundle` needs `bundle`, `sidecar` needs `sidecar`; `bundle` also needs a runtime built with the `bundle` Cargo feature (default), else the app refuses to start |
-| `engine` | `wry` \| `cef` | system webview or Chromium |
+| `engine` | `cef` | Chromium: the one desktop runtime (`wry`, the system webview, is retired and refused) |
 | `start` | string | `remote`: absolute `http(s)` URL. Others: a path appended to the loopback origin |
 | `origins.app` | string[] | patterns that stay in the app |
 | `origins.auth` | string[] | sign-in and payment pages, allowed in-app including popups |

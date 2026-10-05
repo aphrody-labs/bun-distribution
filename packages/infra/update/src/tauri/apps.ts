@@ -30,7 +30,7 @@ export type RegistryProject = {
   kind: ProjectKind;
   path: string;
   package?: string;
-  runtime?: "wry" | "cef";
+  runtime?: "cef";
   workspace?: "member" | "excluded" | "upstream";
   confs?: string[];
   /** Part of the `cargo check -p` gate run by tauri-sync. */

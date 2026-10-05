@@ -42,7 +42,7 @@ describe("pins", () => {
   it("stay on the Tauri line pinned by the root workspace", async () => {
     const manifest = await Bun.file(join(root, "Cargo.toml")).text();
     expect(cargoVersion(manifest, "tauri")).toBe(TAURI_3.tauri);
-    expect(cargoVersion(manifest, "tauri-runtime-wry")).toBe(TAURI_3.runtimeWry);
+    expect(cargoVersion(manifest, "tauri-runtime-cef")).toBe(TAURI_3.runtimeCef);
     expect(cargoVersion(manifest, "tauri-build")).toBe(TAURI_3.build);
     expect(cargoVersion(manifest, "tauri-plugin-opener")).toBe(TAURI_3.pluginOpener);
     const config = JSON.parse(await Bun.file(join(root, "config/tauri-upstream.json")).text());
@@ -64,7 +64,7 @@ describe("pins", () => {
 });
 
 describe("app template", () => {
-  it("generates a Tauri 3 project with an explicit wry runtime", () => {
+  it("generates a Tauri 3 project on the CEF runtime", () => {
     const files = appFiles({ name: "Demo App", target: "tauri" });
     const pkg = JSON.parse(text(files["package.json"]));
     expect(pkg.dependencies["@aphrody/api"]).toBe(TAURI_3.jsApi);
@@ -74,14 +74,17 @@ describe("app template", () => {
 
     const cargo = text(files["src-tauri/Cargo.toml"]);
     expect(cargoVersion(cargo, "tauri")).toBe(TAURI_3.tauri);
-    expect(cargoVersion(cargo, "tauri-runtime-wry")).toBe(TAURI_3.runtimeWry);
+    expect(cargoVersion(cargo, "tauri-runtime-cef")).toBe(TAURI_3.runtimeCef);
+    expect(cargo).not.toContain("wry");
     expect(cargoVersion(cargo, "tauri-build")).toBe(TAURI_3.build);
     expect(cargoVersion(cargo, "tauri-plugin-opener")).toBe(TAURI_3.pluginOpener);
     expect(cargo).toContain('name = "demo-app"');
     expect(cargo).not.toMatch(/version = "2\./);
 
     const main = text(files["src-tauri/src/main.rs"]);
-    expect(main).toContain(".runtime(Wry::default())");
+    expect(main).toContain("#[tauri_runtime_cef::cef_entry_point]");
+    expect(main).toContain(".runtime(cef)");
+    expect(main).not.toContain("Wry");
     expect(main).toContain("tauri_plugin_opener::init()");
 
     const conf = JSON.parse(text(files["src-tauri/tauri.conf.json"]));
@@ -228,19 +231,21 @@ describe("tauriShell", () => {
     expect(() => tauriShell({ ...base, debugBridge: true })).toThrow("runtime plugin");
   });
 
-  it("selects the CEF runtime without the wry-only debug bridge", () => {
-    const files = tauriShell({ ...base, engine: "cef", debugBridge: { path: "x" } });
+  it("always selects the CEF runtime, with the debug bridge available", () => {
+    const files = tauriShell({ ...base, debugBridge: { path: "x" } });
     expect(text(files["src-tauri/Cargo.toml"])).toContain("tauri-runtime-cef");
     expect(text(files["src-tauri/Cargo.toml"])).not.toContain("tauri-runtime-wry");
-    expect(text(files["src-tauri/Cargo.toml"])).not.toContain("debug-bridge");
+    expect(text(files["src-tauri/Cargo.toml"])).toContain("debug-bridge");
     expect(text(files["src-tauri/src/main.rs"])).toContain("#[tauri_runtime_cef::cef_entry_point]");
+    expect(files["src-tauri/src/lib.rs"]).toBeUndefined();
   });
 
-  it("builds a plain wry app chain", () => {
-    const main = text(tauriShell(base)["src-tauri/src/main.rs"]);
-    expect(main).toContain(
-      "let builder = tauri::Builder::default()\n        .runtime(Wry::default());",
+  it("builds a plain CEF app chain and no mobile library", () => {
+    const files = tauriShell(base);
+    expect(text(files["src-tauri/src/main.rs"])).toContain(
+      "let builder = tauri::Builder::<CefRuntime>::new()\n        .runtime(cef);",
     );
+    expect(text(files["src-tauri/Cargo.toml"])).not.toContain("staticlib");
   });
 });
 

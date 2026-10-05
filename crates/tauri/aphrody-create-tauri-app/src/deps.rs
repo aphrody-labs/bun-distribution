@@ -87,11 +87,12 @@ fn is_webview2_installed() -> bool {
     target_os = "openbsd",
     target_os = "netbsd"
 ))]
-fn is_webkit2gtk_installed(tauri_version: TauriVersion) -> bool {
+fn is_gtk_installed(tauri_version: TauriVersion) -> bool {
+    // v1 projects link the system webview (webkit2gtk); v2 and later use CEF with GTK 4.
     Command::new("pkg-config")
         .arg(match tauri_version {
             TauriVersion::V1 => "webkit2gtk-4.0",
-            TauriVersion::V2 => "webkit2gtk-4.1",
+            TauriVersion::V2 => "gtk4",
         })
         .output()
         .map(|o| o.status.success())
@@ -146,7 +147,18 @@ pub fn print_missing_deps(
         target_os = "netbsd"
     ))]
     let (webkit2gtk_installed, rsvg2_installed) =
-        (is_webkit2gtk_installed(tauri_version), is_rsvg2_installed());
+        (is_gtk_installed(tauri_version), is_rsvg2_installed());
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd"
+    ))]
+    let (gtk_name, gtk_and_rsvg_name) = match tauri_version {
+        TauriVersion::V1 => ("webkit2gtk", "webkit2gtk & rsvg2"),
+        TauriVersion::V2 => ("gtk4", "gtk4 & rsvg2"),
+    };
 
     let deps: &[Dep<'_>] = &[
         Dep {
@@ -219,7 +231,8 @@ pub fn print_missing_deps(
                 "Visit {BLUE}{BOLD}https://go.microsoft.com/fwlink/p/?LinkId=2124703{RESET}"
             ),
             exists: &is_webview2_installed,
-            skip: false,
+            // v2 and later use CEF, which ships its own Chromium.
+            skip: matches!(tauri_version, TauriVersion::V2),
         },
         #[cfg(any(
             target_os = "linux",
@@ -229,7 +242,7 @@ pub fn print_missing_deps(
             target_os = "netbsd"
         ))]
         Dep {
-            name: "webkit2gtk & rsvg2",
+            name: gtk_and_rsvg_name,
             instruction: format!(
                 "Visit {BLUE}{BOLD}{}{RESET}",
                 match tauri_version {
@@ -249,7 +262,7 @@ pub fn print_missing_deps(
             target_os = "netbsd"
         ))]
         Dep {
-            name: "webkit2gtk",
+            name: gtk_name,
             instruction: format!(
                 "Visit {BLUE}{BOLD}{}{RESET}",
                 match tauri_version {

@@ -26,9 +26,9 @@ The generator picks, in order, the mode that leaves the most unchanged.
 A URL is always `remote`. `bundle` and `sidecar` exist for offline or self-contained apps and cost
 you the public origin (see "Risks that cannot be removed").
 
-The engine is the system webview (`wry`: WebView2, WKWebView, WebKitGTK) unless the probe finds a
-Chromium-only API (File System Access, WebUSB/Serial/Bluetooth/HID, WebGPU, EyeDropper, speech
-recognition); then it is `cef` (Chromium, as Koharu does).
+The engine is always `cef` (Chromium): the system-webview engine (`wry`) is retired, `--engine wry` is refused.
+The probe still lists the Chromium-only APIs the page uses (File System Access, WebUSB/Serial/Bluetooth/HID,
+WebGPU, EyeDropper, speech recognition) as informational risks.
 
 ## What the generated app does
 
@@ -50,7 +50,7 @@ The loopback server of the `bundle` mode (axum, reqwest, rustls, tokio) is the c
 Cargo feature, on by default. The generator keeps it only for a `bundle` project: a `remote` or
 `sidecar` app depends on `aphrody-tauri-wrap` with `default-features = false` (the sidecar is std
 only), so it does not compile the HTTP stack. A build without the feature refuses `mode: bundle`
-at startup ("this build has no bundle server: enable the `bundle` feature"). The `wry` apps also get
+at startup ("this build has no bundle server: enable the `bundle` feature"). Every app also gets
 a `debug-bridge` feature that forwards to `aphrody-tauri-wrap/debug-bridge`
 ([TAURI-DEBUG](https://github.com/aphrody-labs/aphrody/blob/main/docs/guides/web/TAURI-DEBUG.md)).
 
@@ -61,14 +61,14 @@ severity and a mitigation: `applied` (the project handles it), `flag` (set the n
 `manual` (a person has to decide). The verdict is `needs-review` when a blocker or an unmitigated
 high risk remains; `--strict` turns that into exit code 2.
 
-- Engine differences: a page tuned for Chrome can differ in WebKit. Service workers (WKWebView
-  limits them to app-bound domains), Web Notifications and third-party cookies are the usual ones.
-- Sign-in: Google and Apple may refuse an embedded webview. Callback URLs registered for the
+- Engine differences: the embedded Chromium is a recent CEF build, but it reports an application user
+  agent, and Web Notifications and third-party cookies follow Chromium's own policy.
+- Sign-in: Google and Apple may refuse an embedded browser. Callback URLs registered for the
   public origin do not follow a loopback origin (`bundle`, `sidecar`): use `remote`, or a fixed
   `--port` that you register.
 - A `bundle` proxies HTTP only; WebSocket upgrades return 501. `__Host-` and `__Secure-` cookies
   cannot be re-scoped to plain loopback.
-- Frames: WebKitGTK and WKWebView send iframe loads through the same navigation hook as the page,
+- Frames: CEF sends iframe loads through the same navigation hook as the page,
   so a frame from an origin that is not listed would open in the system browser.
 - `remote` needs a connection at launch.
 
@@ -82,8 +82,8 @@ did not run, never `pass`:
    sent to the system browser is a regression.
 2. **Snapshot compare** (needs both sides running): title, final path, visible text similarity,
    accessibility tree and request set of the same paths, captured with one script on the original
-   (a CDP endpoint, `--reference-cdp`) and on the wrapped app (`--bridge` for wry apps built with
-   `--features debug-bridge` and `APHRODY_TAURI_DEBUG=1`; `--app-cdp` for a CEF app started with
+   (a CDP endpoint, `--reference-cdp`) and on the wrapped app (`--bridge` for apps built with
+   `--features debug-bridge` and `APHRODY_TAURI_DEBUG=1`; `--app-cdp` for the app started with
    `APHRODY_WRAP_CDP_PORT`). An API request the browser made and the app did not is a regression.
 
 Pixel-level parity is not checked.

@@ -27,7 +27,7 @@ USAGE
 OPTIONS
   --name <text>            product name (default: manifest name, title or package name)
   --mode auto|remote|bundle|sidecar   (default auto: a URL is remote, a directory is bundle or sidecar)
-  --engine auto|wry|cef    (default auto: cef only when the page needs Chromium-only APIs)
+  --engine auto|cef        (cef is the one engine; wry is retired)
   --allow-origin <pattern> extra in-app origin, repeatable (https://*.example.com)
   --external system|inapp|deny   other sites: system browser (default), same window, blocked
   --user-agent <text>      fixed user agent
@@ -87,8 +87,7 @@ function planOptions(args: Args): PlanOptions {
   const external = one(args, "external") as ExternalLinks | undefined;
   if (mode && !["auto", "remote", "bundle", "sidecar"].includes(mode))
     throw new Error(`unknown mode ${mode}`);
-  if (engine && !["auto", "wry", "cef"].includes(engine))
-    throw new Error(`unknown engine ${engine}`);
+  if (engine && !["auto", "cef"].includes(engine)) throw new Error(`unknown engine ${engine}`);
   if (external && !["system", "inapp", "deny"].includes(external))
     throw new Error(`unknown --external ${external}`);
   const port = one(args, "port");

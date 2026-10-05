@@ -37,8 +37,8 @@ databases are migrated only explicitly, with checksums, never at startup.
 
 ## Webviews
 
-- Linux: WebKitGTK 4.1 (GTK3), which lags Chromium on some `:has()` / container-query edges;
-  verify components there, not only on WebView2.
-- Windows: WebView2. macOS is best effort; mobile is out of scope.
-- The GTK/WebKitGTK C libraries are LGPL but dynamically linked from the distro; the Rust
-  bindings are MIT, so the Apache-2.0 binary stays clean.
+- Every platform: CEF (Chromium 152, shipped with the app) through `tauri-runtime-cef`; one engine, so a
+  component that renders on one platform renders on the others. Linux windows are GTK 4 over X11/XWayland.
+  macOS is best effort; mobile is out of scope (CEF has no mobile).
+- The GTK 4 C libraries are LGPL but dynamically linked from the distro; the Rust bindings are MIT, so the
+  Apache-2.0 binary stays clean. Chromium's own licences ship in the CEF notices of the desktop artifact.

@@ -43,7 +43,7 @@ Windows process-tree shutdown and runtime behavior on other targets still need
 execution qualification.
 
 Optional clients load without activating either engine. Desktop opens a separately
-installed `yolo-desktop` system-WebView host through the shared process supervisor.
+installed `yolo-desktop` CEF host through the shared process supervisor.
 Import `@aphrody/runtime-sdk/desktop` and call `desktop.open` with explicit
 `grants` and exact `allowedOrigins`; dispose the session to close its windows and
 join its host. Verified desktop installation helpers are exported from
@@ -59,5 +59,5 @@ joins the native workers before library unload.
 
 These SDK APIs do not establish native rendering or distribution qualification.
 An ABI 1.4 core artifact lacks browser capabilities, and desktop requires its own
-verified native executable plus the platform WebView prerequisites. Native provider
+verified native executable (it ships its CEF payload) plus the platform GTK 4 prerequisites on Linux. Native provider
 and target support remain subject to their actual build and execution gates.

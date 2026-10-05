@@ -27,7 +27,6 @@ crates = [
   "crates/tauri-bundler",
   "crates/tauri-cli",
   "crates/tauri-codegen",
-  "crates/tauri-driver",
   "crates/tauri-macos-sign",
   "crates/tauri-macros",
   "crates/tauri-plugin",
@@ -35,7 +34,6 @@ crates = [
   "crates/tauri-schema-worker",
   "crates/tauri-runtime",
   "crates/tauri-runtime-cef",
-  "crates/tauri-runtime-wry",
   "crates/tauri-schema-generator",
   "crates/tauri-utils",
   "crates/tests/acl",
@@ -54,18 +52,6 @@ crates = ["plugins/*"]
 # plugins/*/contributors: one shared assets/tauri/contributors (see the [[copy]] and README rewrite below).
 # plugins/*/SECURITY.md: identical upstream policy, kept once as crates/tauri/SECURITY.md.
 exclude = ["plugins/*/examples/**", "plugins/*/tests/**", "plugins/*/contributors/**", "plugins/*/SECURITY.md"]
-
-[[source]]
-name = "wry"
-rustfmt = "rustfmt.toml"
-crates = ["."]
-exclude = ["bench/**", "audits/**", ".license_template", "examples/wgpu.rs"]
-
-[[source]]
-name = "tao"
-rustfmt = "rustfmt.toml"
-crates = [".", "tao-macros"]
-exclude = ["audits/**", ".gitmodules"]
 
 [[source]]
 name = "create-tauri-app"
@@ -135,8 +121,7 @@ from = '''include_str!("../../config.schema.json")'''
 to = '''include_str!("../../../aphrody-tauri-schema-generator/schemas/config.schema.json")'''
 
 # One version per crate: the vendored crates follow the workspace pins so Cargo.lock keeps a single copy
-# (jsonschema, resvg, urlpattern, infer, json5, cargo_metadata, zip, whoami) and wry drops the wgpu 23 dev-dependency
-# of its wgpu example (wgpu 30 is the workspace GPU stack).
+# (jsonschema, resvg, urlpattern, infer, json5, cargo_metadata, zip, whoami).
 [[rewrite]]
 files = "crates/tauri/aphrody-tauri-cli/Cargo.toml"
 from = '''json5 = "0.4"'''
@@ -187,13 +172,7 @@ files = "crates/tauri/aphrody-create-tauri-app/src/lib.rs"
 from = '''utils::to_valid_pkg_name(&whoami::username())'''
 to = '''utils::to_valid_pkg_name(&whoami::username().unwrap_or_default())'''
 
-[[rewrite]]
-files = "crates/tauri/aphrody-wry/Cargo.toml"
-from = '''wgpu = "23"
-'''
-to = ''''''
-
-# The v2 migration snapshots expect the versions of metadata-v2.json (tauri and tauri-runtime-wry alpha.4,
+# The v2 migration snapshots expect the versions of metadata-v2.json (tauri and tauri-runtime-wry alpha.4 of the upstream migration,
 # tauri-build alpha.3); the upstream snapshots lag one release behind. Order matters: alpha.3 first, then alpha.2.
 [[rewrite]]
 files = "crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/snapshots/*Cargo.toml.snap"
@@ -225,3 +204,1431 @@ to = 'tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", version =
 files = "crates/tauri/aphrody-create-tauri-app/src/deps.rs"
 from = "cargo install tauri-cli --version ^3.0.0-alpha --locked"
 to = "cargo install aphrody-tauri-cli --version ^3.0.0-alpha --locked"
+
+# ---- One desktop runtime: tauri-runtime-cef (CEF + tauri-winit + GTK 4), owner order 2026-10-05, decision 21 ----
+# wry, tao, tao-macros, tauri-runtime-wry and tauri-driver are no longer imported (sources and crates above). The
+# rules below carry every Aphrody change to the vendored crates that remain, so `yolo import` reproduces the tree:
+# the gtk3 feature, GTK 3 optional dependency and libappindicator feature of aphrody-tauri; the xdg-portal default of
+# the dialog plugin; the #16189 fix (patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch, three hunks in
+# aphrody-tauri-runtime-cef); the French locale paks of the Linux bundlers; CEF scaffolds, templates, GTK 4 probes and
+# prerequisites of the CLI and create-tauri-app; the CEF-only examples. Each rule matches exactly one place.
+
+# crates/tauri/aphrody-create-tauri-app/src/deps.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-create-tauri-app/src/deps.rs"
+from = '''    target_os = "netbsd"
+))]
+fn is_webkit2gtk_installed(tauri_version: TauriVersion) -> bool {
+    Command::new("pkg-config")
+        .arg(match tauri_version {
+            TauriVersion::V1 => "webkit2gtk-4.0",
+            TauriVersion::V2 => "webkit2gtk-4.1",
+        })
+        .output()
+'''
+to = '''    target_os = "netbsd"
+))]
+fn is_gtk_installed(tauri_version: TauriVersion) -> bool {
+    // v1 projects link the system webview (webkit2gtk); v2 and later use CEF with GTK 4.
+    Command::new("pkg-config")
+        .arg(match tauri_version {
+            TauriVersion::V1 => "webkit2gtk-4.0",
+            TauriVersion::V2 => "gtk4",
+        })
+        .output()
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-create-tauri-app/src/deps.rs"
+from = '''    ))]
+    let (webkit2gtk_installed, rsvg2_installed) =
+        (is_webkit2gtk_installed(tauri_version), is_rsvg2_installed());
+
+    let deps: &[Dep<'_>] = &[
+'''
+to = '''    ))]
+    let (webkit2gtk_installed, rsvg2_installed) =
+        (is_gtk_installed(tauri_version), is_rsvg2_installed());
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd"
+    ))]
+    let (gtk_name, gtk_and_rsvg_name) = match tauri_version {
+        TauriVersion::V1 => ("webkit2gtk", "webkit2gtk & rsvg2"),
+        TauriVersion::V2 => ("gtk4", "gtk4 & rsvg2"),
+    };
+
+    let deps: &[Dep<'_>] = &[
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-create-tauri-app/src/deps.rs"
+from = '''            ),
+            exists: &is_webview2_installed,
+            skip: false,
+        },
+        #[cfg(any(
+'''
+to = '''            ),
+            exists: &is_webview2_installed,
+            // v2 and later use CEF, which ships its own Chromium.
+            skip: matches!(tauri_version, TauriVersion::V2),
+        },
+        #[cfg(any(
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-create-tauri-app/src/deps.rs"
+from = '''        ))]
+        Dep {
+            name: "webkit2gtk & rsvg2",
+            instruction: format!(
+                "Visit {BLUE}{BOLD}{}{RESET}",
+'''
+to = '''        ))]
+        Dep {
+            name: gtk_and_rsvg_name,
+            instruction: format!(
+                "Visit {BLUE}{BOLD}{}{RESET}",
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-create-tauri-app/src/deps.rs"
+from = '''        ))]
+        Dep {
+            name: "webkit2gtk",
+            instruction: format!(
+                "Visit {BLUE}{BOLD}{}{RESET}",
+'''
+to = '''        ))]
+        Dep {
+            name: gtk_name,
+            instruction: format!(
+                "Visit {BLUE}{BOLD}{}{RESET}",
+'''
+
+
+# crates/tauri/aphrody-create-tauri-app/templates/_base_/src-tauri/Cargo.toml.lte
+[[rewrite]]
+files = "crates/tauri/aphrody-create-tauri-app/templates/_base_/src-tauri/Cargo.toml.lte"
+from = '''# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "{% lib_name %}"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+{% endif %}{% if v1 %}[build-dependencies]
+'''
+to = '''# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "{% lib_name %}"
+crate-type = ["rlib"]
+
+{% endif %}{% if v1 %}[build-dependencies]
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-create-tauri-app/templates/_base_/src-tauri/Cargo.toml.lte"
+from = '''[dependencies]
+tauri = { package = "aphrody-tauri", version = "3.0.0-alpha", features = [] }
+tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", version = "3.0.0-alpha" }{% endif %}
+serde = { version = "1", features = ["derive"] }
+'''
+to = '''[dependencies]
+tauri = { package = "aphrody-tauri", version = "3.0.0-alpha", features = [] }
+tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", version = "3.0.0-alpha" }
+tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", version = "3.0.0-alpha" }{% endif %}
+serde = { version = "1", features = ["derive"] }
+'''
+
+
+# crates/tauri/aphrody-create-tauri-app/templates/_base_/src-tauri/src/??v2??lib.rs.lte
+[[rewrite]]
+files = "crates/tauri/aphrody-create-tauri-app/templates/_base_/src-tauri/src/??v2??lib.rs.lte"
+from = '''}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![greet])
+'''
+to = '''}
+
+pub fn run() {
+    tauri::Builder::default()
+        .runtime(tauri_runtime_cef::Cef::default())
+        .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![greet])
+'''
+
+
+# crates/tauri/aphrody-create-tauri-app/templates/_base_/src-tauri/src/main.rs.lte
+[[rewrite]]
+files = "crates/tauri/aphrody-create-tauri-app/templates/_base_/src-tauri/src/main.rs.lte"
+from = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+{% if v2 %}fn main() {
+    {% lib_name %}::run()
+}{% else %}// Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
+'''
+to = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+{% if v2 %}// CEF runs its helper processes from this same executable (see `cef_entry_point`).
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+    {% lib_name %}::run()
+}{% else %}// Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
+'''
+
+
+# crates/tauri/aphrody-tauri-bundler/src/bundle/linux/appimage/sharun_cef.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-bundler/src/bundle/linux/appimage/sharun_cef.rs"
+from = '''      let _ = Command::new("strip").arg(&dest).output_ok();
+    }
+    let locales = [
+      "en-US.pak",
+      "en-US_FEMININE.pak",
+      "en-US_MASCULINE.pak",
+      "en-US_NEUTER.pak",
+    ];
+
+    for f in locales {
+'''
+to = '''      let _ = Command::new("strip").arg(&dest).output_ok();
+    }
+    let locales = crate::bundle::linux::cef_locales(&cef_path.join("locales"));
+
+    for f in locales {
+'''
+
+
+# crates/tauri/aphrody-tauri-bundler/src/bundle/linux/debian.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-bundler/src/bundle/linux/debian.rs"
+from = '''      }
+    }
+    // TODO: Check if/when we need the other lang files
+    let locales = [
+      "en-US.pak",
+      "en-US_FEMININE.pak",
+      "en-US_MASCULINE.pak",
+      "en-US_NEUTER.pak",
+    ];
+
+    let cef_path = cef_path.join("locales");
+    let share_dir = share_dir.join("locales");
+    fs::create_dir_all(&share_dir)?;
+'''
+to = '''      }
+    }
+    let cef_path = cef_path.join("locales");
+    let locales = super::cef_locales(&cef_path);
+    let share_dir = share_dir.join("locales");
+    fs::create_dir_all(&share_dir)?;
+'''
+
+
+# crates/tauri/aphrody-tauri-bundler/src/bundle/linux/mod.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-bundler/src/bundle/linux/mod.rs"
+from = '''pub mod freedesktop;
+pub mod rpm;
+'''
+to = '''pub mod freedesktop;
+pub mod rpm;
+
+/// Locale paks every CEF package ships: `en-US` is Chromium's fallback locale.
+pub(crate) const CEF_REQUIRED_LOCALES: [&str; 4] = [
+  "en-US.pak",
+  "en-US_FEMININE.pak",
+  "en-US_MASCULINE.pak",
+  "en-US_NEUTER.pak",
+];
+
+/// French paks (and their grammatical gender variants), shipped when the CEF distribution has them so
+/// Chromium's own strings (context menus, form validation, error pages) follow a French session.
+/// The runtime's `locale` stays unset: Chromium picks the pak from the system locale and falls back
+/// to `en-US`.
+pub(crate) const CEF_OPTIONAL_LOCALES: [&str; 4] = [
+  "fr.pak",
+  "fr_FEMININE.pak",
+  "fr_MASCULINE.pak",
+  "fr_NEUTER.pak",
+];
+
+/// The locale paks of `locales_dir` to ship: the required ones, then the optional ones that exist.
+pub(crate) fn cef_locales(locales_dir: &std::path::Path) -> Vec<&'static str> {
+  CEF_REQUIRED_LOCALES
+    .into_iter()
+    .chain(
+      CEF_OPTIONAL_LOCALES
+        .into_iter()
+        .filter(|name| locales_dir.join(name).is_file()),
+    )
+    .collect()
+}
+'''
+
+
+# crates/tauri/aphrody-tauri-bundler/src/bundle/linux/rpm.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-bundler/src/bundle/linux/rpm.rs"
+from = '''      builder.with_file(temp_file, fileopts).unwrap();
+    }
+    let locales = [
+      "en-US.pak",
+      "en-US_FEMININE.pak",
+      "en-US_MASCULINE.pak",
+      "en-US_NEUTER.pak",
+    ];
+
+    let cef_path = cef_path.join("locales");
+    let cef_resource_dir = cef_resource_dir.join("locales");
+
+'''
+to = '''      builder.with_file(temp_file, fileopts).unwrap();
+    }
+    let cef_path = cef_path.join("locales");
+    let locales = super::cef_locales(&cef_path);
+    let cef_resource_dir = cef_resource_dir.join("locales");
+
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/metadata-v2.json
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/metadata-v2.json"
+from = '''  "tauri-build": "3.0.0-alpha.3",
+  "tauri-plugin": "3.0.0-alpha.3",
+  "tauri-runtime-wry": "3.0.0-alpha.4"
+}
+'''
+to = '''  "tauri-build": "3.0.0-alpha.3",
+  "tauri-plugin": "3.0.0-alpha.3",
+  "tauri-runtime-cef": "3.0.0-alpha.5",
+  "tauri-runtime-wry": "3.0.0-alpha.4"
+}
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/src/info/env_system.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/info/env_system.rs"
+from = '''  target_os = "netbsd"
+))]
+fn webkit2gtk_ver() -> Option<String> {
+  pkg_conf_version("webkit2gtk-4.1")
+}
+#[cfg(any(
+'''
+to = '''  target_os = "netbsd"
+))]
+fn gtk4_ver() -> Option<String> {
+  pkg_conf_version("gtk4")
+}
+#[cfg(any(
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/info/env_system.rs"
+from = '''    ))]
+    SectionItem::new().action(|| {
+          webkit2gtk_ver()
+            .map(|v| (format!("webkit2gtk-4.1: {v}"), Status::Success))
+            .unwrap_or_else(|| {
+              (
+                format!(
+                  "webkit2gtk-4.1: {}\nVisit {} to learn more about tauri prerequisites",
+                  "not installed".red(),
+                  "https://v2.tauri.app/start/prerequisites/".cyan()
+'''
+to = '''    ))]
+    SectionItem::new().action(|| {
+          gtk4_ver()
+            .map(|v| (format!("gtk4: {v}"), Status::Success))
+            .unwrap_or_else(|| {
+              (
+                format!(
+                  "gtk4: {}\nVisit {} to learn more about tauri prerequisites",
+                  "not installed".red(),
+                  "https://v2.tauri.app/start/prerequisites/".cyan()
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/src/info/packages_rust.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/info/packages_rust.rs"
+from = '''      "tauri",
+      "tauri-build",
+      "tauri-runtime-wry",
+      "tauri-runtime-cef",
+      "wry",
+      "tao",
+      "cef",
+    ] {
+'''
+to = '''      "tauri",
+      "tauri-build",
+      "tauri-runtime-cef",
+      "cef",
+    ] {
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/src/init.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/init.rs"
+from = '''/// Builds the template variables for the Tauri crate dependencies of the generated `Cargo.toml`.
+///
+/// `tauri_dep`, `tauri_build_dep` and `tauri_runtime_wry_dep` are always set. The crates are the
+/// Aphrody packages (`aphrody-tauri`, …) while the dependency keys keep the upstream names, so
+/// `use tauri::…` and `tauri/custom-protocol` keep working.
+'''
+to = '''/// Builds the template variables for the Tauri crate dependencies of the generated `Cargo.toml`.
+///
+/// `tauri_dep`, `tauri_build_dep` and `tauri_runtime_cef_dep` are always set. The crates are the
+/// Aphrody packages (`aphrody-tauri`, …) while the dependency keys keep the upstream names, so
+/// `use tauri::…` and `tauri/custom-protocol` keep working.
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/init.rs"
+from = '''    data.insert("tauri_build_dep", path_dep("aphrody-tauri-build"));
+    data.insert(
+      "tauri_runtime_wry_dep",
+      path_dep("aphrody-tauri-runtime-wry"),
+    );
+  } else {
+'''
+to = '''    data.insert("tauri_build_dep", path_dep("aphrody-tauri-build"));
+    data.insert(
+      "tauri_runtime_cef_dep",
+      path_dep("aphrody-tauri-runtime-cef"),
+    );
+  } else {
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/init.rs"
+from = '''    );
+    data.insert(
+      "tauri_runtime_wry_dep",
+      version_dep("aphrody-tauri-runtime-wry", &metadata.tauri_runtime_wry),
+    );
+  }
+'''
+to = '''    );
+    data.insert(
+      "tauri_runtime_cef_dep",
+      version_dep("aphrody-tauri-runtime-cef", &metadata.tauri_runtime_cef),
+    );
+  }
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/init.rs"
+from = '''    );
+    assert_path_dependency(
+      dependency(manifest, "dependencies", "tauri-runtime-wry"),
+      tauri_path,
+      "crates/aphrody-tauri-runtime-wry",
+    );
+    assert!(
+'''
+to = '''    );
+    assert_path_dependency(
+      dependency(manifest, "dependencies", "tauri-runtime-cef"),
+      tauri_path,
+      "crates/aphrody-tauri-runtime-cef",
+    );
+    assert!(
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/init.rs"
+from = '''    assert!(!tauri_build.contains_key("path"));
+
+    let tauri_runtime_wry = dependency(&manifest, "dependencies", "tauri-runtime-wry");
+    assert_eq!(
+      tauri_runtime_wry.get("version").and_then(|v| v.as_str()),
+      Some(metadata.tauri_runtime_wry.as_str())
+    );
+    assert!(!tauri_runtime_wry.contains_key("path"));
+
+    assert!(!manifest.contains_key("patch"));
+'''
+to = '''    assert!(!tauri_build.contains_key("path"));
+
+    let tauri_runtime_cef = dependency(&manifest, "dependencies", "tauri-runtime-cef");
+    assert_eq!(
+      tauri_runtime_cef.get("version").and_then(|v| v.as_str()),
+      Some(metadata.tauri_runtime_cef.as_str())
+    );
+    assert!(!tauri_runtime_cef.contains_key("path"));
+
+    assert!(!manifest.contains_key("patch"));
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/src/lib.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/lib.rs"
+from = '''  #[serde(rename = "tauri-plugin")]
+  tauri_plugin: String,
+  #[serde(rename = "tauri-runtime-wry")]
+  tauri_runtime_wry: String,
+'''
+to = '''  #[serde(rename = "tauri-plugin")]
+  tauri_plugin: String,
+  #[serde(rename = "tauri-runtime-cef")]
+  tauri_runtime_cef: String,
+  /// Only the v2 migration (third-party projects) selects wry; Aphrody apps and plugins use CEF.
+  #[serde(rename = "tauri-runtime-wry")]
+  tauri_runtime_wry: String,
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/src/plugin/init.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/plugin/init.rs"
+from = '''    // The generated manifests depend on the Aphrody packages while keeping the upstream
+    // dependency keys (`tauri`, `tauri-plugin`, …), so the plugin code is unchanged.
+    let (tauri_dep, tauri_example_dep, tauri_build_dep, tauri_plugin_dep, tauri_runtime_wry_dep) =
+      if let Some(tauri_path) = options.tauri_path {
+        let path = |package: &str| resolve_tauri_path(&tauri_path, &format!("crates/{package}"));
+'''
+to = '''    // The generated manifests depend on the Aphrody packages while keeping the upstream
+    // dependency keys (`tauri`, `tauri-plugin`, …), so the plugin code is unchanged.
+    let (tauri_dep, tauri_example_dep, tauri_build_dep, tauri_plugin_dep, tauri_runtime_cef_dep) =
+      if let Some(tauri_path) = options.tauri_path {
+        let path = |package: &str| resolve_tauri_path(&tauri_path, &format!("crates/{package}"));
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/plugin/init.rs"
+from = '''          ),
+          format!(
+            r#"{{  package = "aphrody-tauri-runtime-wry", path = {:?} }}"#,
+            path("aphrody-tauri-runtime-wry")
+          ),
+        )
+'''
+to = '''          ),
+          format!(
+            r#"{{  package = "aphrody-tauri-runtime-cef", path = {:?} }}"#,
+            path("aphrody-tauri-runtime-cef")
+          ),
+        )
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/plugin/init.rs"
+from = '''          ),
+          format!(
+            r#"{{ package = "aphrody-tauri-runtime-wry", version = "{}" }}"#,
+            metadata.tauri_runtime_wry
+          ),
+        )
+'''
+to = '''          ),
+          format!(
+            r#"{{ package = "aphrody-tauri-runtime-cef", version = "{}" }}"#,
+            metadata.tauri_runtime_cef
+          ),
+        )
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/plugin/init.rs"
+from = '''    data.insert("tauri_build_dep", to_json(tauri_build_dep));
+    data.insert("tauri_plugin_dep", to_json(tauri_plugin_dep));
+    data.insert("tauri_runtime_wry_dep", to_json(tauri_runtime_wry_dep));
+    data.insert("author", to_json(options.author));
+
+'''
+to = '''    data.insert("tauri_build_dep", to_json(tauri_build_dep));
+    data.insert("tauri_plugin_dep", to_json(tauri_plugin_dep));
+    data.insert("tauri_runtime_cef_dep", to_json(tauri_runtime_cef_dep));
+    data.insert("author", to_json(options.author));
+
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/src/runtime/mod.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/runtime/mod.rs"
+from = '''//! The webview runtime an application links, and everything the CLI does differently because of it.
+//!
+//! The runtime is selected by depending on its crate (`tauri-runtime-wry` or `tauri-runtime-cef`),
+//! so it is detected from the app manifest. Every runtime-specific behavior (system package dependencies,
+//! installer steps, code signing entitlements, what to ship with the bundle, how to run the app in dev mode)
+'''
+to = '''//! The webview runtime an application links, and everything the CLI does differently because of it.
+//!
+//! The runtime is selected by depending on its crate (`tauri-runtime-cef`; the `tauri-runtime-wry` arm is
+//! upstream's and only serves third-party projects, Aphrody ships no wry runtime),
+//! so it is detected from the app manifest. Every runtime-specific behavior (system package dependencies,
+//! installer steps, code signing entitlements, what to ship with the bundle, how to run the app in dev mode)
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/runtime/mod.rs"
+from = '''  #[cfg(target_os = "linux")]
+  pub fn linux_dependencies(self) -> &'static [LinuxDependency] {
+    // `tauri` itself uses GTK on Linux, whatever the runtime
+    const GTK: LinuxDependency = LinuxDependency {
+      deb_package: "libgtk-3-0",
+      library: "libgtk-3.so.0",
+'''
+to = '''  #[cfg(target_os = "linux")]
+  pub fn linux_dependencies(self) -> &'static [LinuxDependency] {
+    // `tauri` itself uses GTK 4 on Linux with the CEF runtime (`tauri-winit` GTK 4 backend)
+    const GTK: LinuxDependency = LinuxDependency {
+      deb_package: "libgtk-4-1",
+      library: "libgtk-4.so.1",
+    };
+    // the upstream wry runtime is GTK 3; no Aphrody crate links it
+    const GTK3: LinuxDependency = LinuxDependency {
+      deb_package: "libgtk-3-0",
+      library: "libgtk-3.so.0",
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/src/runtime/mod.rs"
+from = "\n    match self {\n      Self::Wry => &[WEBKIT2GTK, GTK],\n      // CEF is shipped with the app\n      Self::Cef | Self::Other => &[GTK],\n"
+to = "\n    match self {\n      Self::Wry => &[WEBKIT2GTK, GTK3],\n      // CEF is shipped with the app\n      Self::Cef | Self::Other => &[GTK],\n"
+
+
+# crates/tauri/aphrody-tauri-cli/templates/app/src-tauri/Cargo.crate-manifest
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/app/src-tauri/Cargo.crate-manifest"
+from = '''[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+'''
+to = '''[lib]
+name = "app_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/app/src-tauri/Cargo.crate-manifest"
+from = '''log = "0.4"
+tauri = {{  tauri_dep  }}
+tauri-runtime-wry = {{  tauri_runtime_wry_dep  }}
+tauri-plugin-log = { package = "aphrody-tauri-plugin-log", version = "3.0.0-alpha.2" }
+'''
+to = '''log = "0.4"
+tauri = {{  tauri_dep  }}
+tauri-runtime-cef = {{  tauri_runtime_cef_dep  }}
+tauri-plugin-log = { package = "aphrody-tauri-plugin-log", version = "3.0.0-alpha.2" }
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/templates/app/src-tauri/src/lib.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/app/src-tauri/src/lib.rs"
+from = '''#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+  tauri::Builder::default()
+    .runtime(tauri_runtime_wry::Wry::default())
+    .setup(|app| {
+      if cfg!(debug_assertions) {
+'''
+to = '''pub fn run() {
+  tauri::Builder::default()
+    .runtime(tauri_runtime_cef::Cef::default())
+    .setup(|app| {
+      if cfg!(debug_assertions) {
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/templates/app/src-tauri/src/main.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/app/src-tauri/src/main.rs"
+from = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+fn main() {
+  app_lib::run();
+'''
+to = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+// CEF runs the renderer, GPU and utility processes from this same executable: the entry point
+// hands those processes to Chromium before the application starts.
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  app_lib::run();
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app/src-tauri/Cargo.crate-manifest
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app/src-tauri/Cargo.crate-manifest"
+from = '''[lib]
+name = "tauri_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+'''
+to = '''[lib]
+name = "tauri_app_lib"
+crate-type = ["rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app/src-tauri/Cargo.crate-manifest"
+from = '''[dependencies]
+tauri = {{ tauri_example_dep }}
+tauri-runtime-wry = {{ tauri_runtime_wry_dep }}
+tauri-plugin-{{ plugin_name }} = { path = "../../../" }
+'''
+to = '''[dependencies]
+tauri = {{ tauri_example_dep }}
+tauri-runtime-cef = {{ tauri_runtime_cef_dep }}
+tauri-plugin-{{ plugin_name }} = { path = "../../../" }
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app/src-tauri/src/lib.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app/src-tauri/src/lib.rs"
+from = '''}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .runtime(tauri_runtime_wry::Wry::default())
+        .invoke_handler(tauri::generate_handler![greet])
+        .plugin(tauri_plugin_{{ plugin_name_snake_case }}::init())
+'''
+to = '''}
+
+pub fn run() {
+    tauri::Builder::default()
+        .runtime(tauri_runtime_cef::Cef::default())
+        .invoke_handler(tauri::generate_handler![greet])
+        .plugin(tauri_plugin_{{ plugin_name_snake_case }}::init())
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app/src-tauri/src/main.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app/src-tauri/src/main.rs"
+from = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+fn main() {
+  tauri_app_lib::run();
+'''
+to = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+// CEF runs its helper processes from this same executable (see `cef_entry_point`).
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  tauri_app_lib::run();
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla/src-tauri/Cargo.crate-manifest
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla/src-tauri/Cargo.crate-manifest"
+from = '''[lib]
+name = "tauri_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+'''
+to = '''[lib]
+name = "tauri_app_lib"
+crate-type = ["rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla/src-tauri/Cargo.crate-manifest"
+from = '''[dependencies]
+tauri = {{ tauri_example_dep }}
+tauri-runtime-wry = {{ tauri_runtime_wry_dep }}
+tauri-plugin-{{ plugin_name }} = { path = "../../../" }
+'''
+to = '''[dependencies]
+tauri = {{ tauri_example_dep }}
+tauri-runtime-cef = {{ tauri_runtime_cef_dep }}
+tauri-plugin-{{ plugin_name }} = { path = "../../../" }
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla/src-tauri/src/lib.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla/src-tauri/src/lib.rs"
+from = '''#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+  tauri::Builder::default()
+    .runtime(tauri_runtime_wry::Wry::default())
+    .plugin(tauri_plugin_{{ plugin_name_snake_case }}::init())
+    .run(tauri::generate_context!())
+'''
+to = '''pub fn run() {
+  tauri::Builder::default()
+    .runtime(tauri_runtime_cef::Cef::default())
+    .plugin(tauri_plugin_{{ plugin_name_snake_case }}::init())
+    .run(tauri::generate_context!())
+'''
+
+
+# crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla/src-tauri/src/main.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla/src-tauri/src/main.rs"
+from = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+fn main() {
+  tauri_app_lib::run();
+'''
+to = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+// CEF runs its helper processes from this same executable (see `cef_entry_point`).
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  tauri_app_lib::run();
+'''
+
+
+# crates/tauri/aphrody-tauri-examples/Cargo.toml
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-examples/Cargo.toml"
+from = '''name = "aphrody-tauri-examples"
+version = "0.1.0"
+description = "Tauri desktop application examples (wry and CEF runtimes)"
+authors = ["Tauri Programme within The Commons Conservancy"]
+homepage = "https://tauri.app/"
+'''
+to = '''name = "aphrody-tauri-examples"
+version = "0.1.0"
+description = "Tauri desktop application examples (CEF runtime)"
+authors = ["Tauri Programme within The Commons Conservancy"]
+homepage = "https://tauri.app/"
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-examples/Cargo.toml"
+from = '''[dependencies]
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["unstable"] }
+tauri-runtime-wry = { version = "~3.0.0-alpha.4", path = "../aphrody-tauri-runtime-wry", package = "aphrody-tauri-runtime-wry", default-features = false, optional = true }
+tauri-runtime-cef = { version = "~3.0.0-alpha.5", path = "../aphrody-tauri-runtime-cef", package = "aphrody-tauri-runtime-cef", default-features = false, optional = true }
+tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
+serde = { workspace = true, features = ["derive"] }
+'''
+to = '''[dependencies]
+tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["unstable"] }
+tauri-runtime-cef = { version = "~3.0.0-alpha.5", path = "../aphrody-tauri-runtime-cef", package = "aphrody-tauri-runtime-cef", default-features = false }
+tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
+serde = { workspace = true, features = ["derive"] }
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-examples/Cargo.toml"
+from = "\n[features]\ndefault = [\"wry\"]\nwry = [\"dep:tauri-runtime-wry\"]\ncef = [\"dep:tauri-runtime-cef\"]\nisolation = [\"tauri/isolation\"]\n\n"
+to = "\n[features]\nisolation = [\"tauri/isolation\"]\n\n"
+
+
+# crates/tauri/aphrody-tauri-examples/src/lib.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-examples/src/lib.rs"
+from = '''//! Tauri desktop application examples.
+//!
+//! Run with `cargo run --example <name>` (wry runtime, the default)
+//! or `cargo run --example <name> --features cef` (CEF runtime).
+'''
+to = '''//! Tauri desktop application examples.
+//!
+//! Run with `cargo run --example <name>`: the one desktop runtime is CEF (`tauri-runtime-cef`).
+'''
+
+
+# crates/tauri/aphrody-tauri-plugin-dialog/Cargo.toml
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-plugin-dialog/Cargo.toml"
+from = "\n[features]\ndefault = [\"gtk3\"]\nxdg-portal = [\"rfd/xdg-portal\", \"rfd/tokio\", \"rfd/wayland\"]\ngtk3 = [\"rfd/gtk3\"]\n\n[package.metadata.docs.rs]\n"
+to = "\n[features]\ndefault = [\"xdg-portal\"]\nxdg-portal = [\"rfd/xdg-portal\", \"rfd/tokio\", \"rfd/wayland\"]\n\n[package.metadata.docs.rs]\n"
+
+
+# crates/tauri/aphrody-tauri-plugin-dialog/README.md
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-plugin-dialog/README.md"
+from = '''### Linux XDG Desktop Portal Support
+
+By default, this plugin uses gtk to show dialogs, however since `v2.5.0` you can switch to using [XDG Desktop Portal](https://flatpak.github.io/xdg-desktop-portal/) by adding the following to your `Cargo.toml` file:
+
+```toml
+[dependencies]
+tauri-plugin-dialog = { version = "2.5.0", default-features = false, features = ["xdg-portal"] }
+# alternatively with Git:
+tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2", default-features = false, features = ["xdg-portal"] }
+
+```
+
+Do note if you use the `xdg-portal` feature, you need to ensure that [`zenity`](https://gitlab.gnome.org/GNOME/zenity) and an [XDG Desktop Portal backend](https://flatpak.github.io/xdg-desktop-portal#using-portals) is installed with your program.
+
+For more information, see [XDG Desktop Portal documentation](https://flatpak.github.io/xdg-desktop-portal/) and [`rfd` documentation](https://docs.rs/rfd/latest/rfd#xdg-desktop-portal-backend).
+'''
+to = '''### Linux XDG Desktop Portal Support
+
+On Linux this plugin uses the [XDG Desktop Portal](https://flatpak.github.io/xdg-desktop-portal/) (the `xdg-portal` feature, enabled by default). GTK 3 dialogs are not offered, so no GTK 3 library is linked.
+
+Do note you need to ensure that [`zenity`](https://gitlab.gnome.org/GNOME/zenity) and an [XDG Desktop Portal backend](https://flatpak.github.io/xdg-desktop-portal#using-portals) is installed with your program.
+
+For more information, see [XDG Desktop Portal documentation](https://flatpak.github.io/xdg-desktop-portal/) and [`rfd` documentation](https://docs.rs/rfd/latest/rfd#xdg-desktop-portal-backend).
+'''
+
+
+# crates/tauri/aphrody-tauri-plugin-dialog/src/lib.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-plugin-dialog/src/lib.rs"
+from = '''//! ## Cargo features
+//!
+//! - **gtk3** *(enabled by default)*: Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS
+//! - **xdg-portal**:  Uses XDG Desktop Portal instead of GTK on Linux & BSDs
+
+#![doc(
+'''
+to = '''//! ## Cargo features
+//!
+//! - **xdg-portal** *(enabled by default)*: Uses XDG Desktop Portal on Linux & BSDs; has no effect on Windows and macOS. GTK 3 dialogs are not offered.
+
+#![doc(
+'''
+
+
+# crates/tauri/aphrody-tauri-runtime-cef/src/external_message_pump/linux.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-runtime-cef/src/external_message_pump/linux.rs"
+from = '''  closure_marshal: None,
+};
+'''
+to = '''  closure_marshal: None,
+};
+
+/// Destroys the work source Chromium's `base::MessagePumpGlib` attached to the default
+/// GLib context, returning how many sources were destroyed.
+///
+/// With `external_message_pump` CEF runs the UI thread on `MessagePumpExternal`, a
+/// `MessagePumpForUI` (`MessagePumpGlib` on Linux) whose `Run` never enters the GLib
+/// loop. The base-class constructor still attaches its work source to
+/// `g_main_context_default()`, and `MessagePumpGlib::HandlePrepare` returns a timeout of 0
+/// while `state_` is null, which it is outside that `Run`. Every blocking
+/// `g_main_context_iteration` the host makes therefore returns at once and the main
+/// thread spins at 100% of a core. Scheduling reaches this pump through
+/// `OnScheduleMessagePumpWork` instead, so the source has nothing left to do.
+/// `MessagePumpGlib`'s destructor destroys it again, which GLib treats as a no-op.
+///
+/// The source is recognised as the one whose `prepare` lives in libcef, at
+/// `G_PRIORITY_DEFAULT_IDLE` (`kPriorityWork`), polling a single pipe (its wakeup pipe;
+/// Chromium's X11 event source polls the X socket). Must run on the thread that owns
+/// the default context, after `cef::initialize`.
+///
+/// Aphrody patch for tauri-apps/tauri#16189 (reporter's fix), see
+/// `patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch`.
+pub(crate) fn destroy_chromium_work_source() -> usize {
+  let Some(cef_base) = module_base(cef::sys::cef_initialize as *const libc::c_void) else {
+    return 0;
+  };
+
+  let mut destroyed = 0;
+  unsafe {
+    let context = ffi::g_main_context_default();
+    // Source ids are allocated sequentially; a fresh attach yields the next one.
+    let probe = ffi::g_idle_source_new();
+    let upper = ffi::g_source_attach(probe, context);
+    ffi::g_source_destroy(probe);
+    ffi::g_source_unref(probe);
+
+    for id in 1..upper {
+      let source = ffi::g_main_context_find_source_by_id(context, id);
+      if source.is_null() || (*source).source_funcs.is_null() {
+        continue;
+      }
+      let Some(prepare) = (*(*source).source_funcs).prepare else {
+        continue;
+      };
+      if module_base(prepare as *const libc::c_void) != Some(cef_base)
+        || ffi::g_source_get_priority(source) != ffi::G_PRIORITY_DEFAULT_IDLE
+      {
+        continue;
+      }
+      let poll_fds = (*source).poll_fds;
+      if poll_fds.is_null() || !(*poll_fds).next.is_null() {
+        continue;
+      }
+      let fd = (*((*poll_fds).data as *const ffi::GPollFD)).fd;
+      let mut stat: libc::stat = mem::zeroed();
+      if libc::fstat(fd, &mut stat) != 0 || (stat.st_mode & libc::S_IFMT) != libc::S_IFIFO {
+        continue;
+      }
+      ffi::g_source_destroy(source);
+      destroyed += 1;
+    }
+  }
+  destroyed
+}
+
+fn module_base(address: *const libc::c_void) -> Option<*mut libc::c_void> {
+  let mut info: libc::Dl_info = unsafe { mem::zeroed() };
+  (unsafe { libc::dladdr(address, &mut info) } != 0).then_some(info.dli_fbase)
+}
+'''
+
+
+# crates/tauri/aphrody-tauri-runtime-cef/src/external_message_pump/mod.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-runtime-cef/src/external_message_pump/mod.rs"
+from = '''))]
+mod linux;
+#[cfg(target_os = "macos")]
+mod macos;
+'''
+to = '''))]
+mod linux;
+#[cfg(any(
+  target_os = "linux",
+  target_os = "dragonfly",
+  target_os = "freebsd",
+  target_os = "netbsd",
+  target_os = "openbsd"
+))]
+pub(crate) use linux::destroy_chromium_work_source;
+#[cfg(target_os = "macos")]
+mod macos;
+'''
+
+
+# crates/tauri/aphrody-tauri-runtime-cef/src/runtime.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-runtime-cef/src/runtime.rs"
+from = '''    pre_cef_signals.restore();
+
+    #[cfg(target_os = "macos")]
+    let app_delegate = if !is_helper {
+'''
+to = '''    pre_cef_signals.restore();
+
+    #[cfg(any(
+      target_os = "linux",
+      target_os = "dragonfly",
+      target_os = "freebsd",
+      target_os = "openbsd",
+      target_os = "netbsd"
+    ))]
+    if crate::external_message_pump::destroy_chromium_work_source() == 0 {
+      log::warn!("Chromium's GLib work source was not found; the event loop may not block");
+    }
+
+    #[cfg(target_os = "macos")]
+    let app_delegate = if !is_helper {
+'''
+
+
+# crates/tauri/aphrody-tauri/Cargo.toml
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri/Cargo.toml"
+from = '''  "isolation",
+  # the default target is Linux, where the GTK APIs are only available with a GTK version selected
+  "gtk3",
+]
+default-target = "x86_64-unknown-linux-gnu"
+'''
+to = '''  "isolation",
+  # the default target is Linux, where the GTK APIs are only available with a GTK version selected
+  "gtk4",
+]
+default-target = "x86_64-unknown-linux-gnu"
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri/Cargo.toml"
+from = '''# linux
+[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
+gtk = { version = "0.18", features = ["v3_24"], optional = true }
+gtk4 = { package = "gtk4", version = "0.11.4", optional = true }
+
+'''
+to = '''# linux
+[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
+gtk4 = { package = "gtk4", version = "0.11.4", optional = true }
+
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri/Cargo.toml"
+from = '''  "muda/common-controls-v6",
+]
+# the Linux tray backend defaults to ksni (pure D-Bus StatusNotifierItem), which does not
+# require a GTK version to be selected - see the `linux-libappindicator` feature to opt out.
+tray-icon = ["dep:tray-icon", "tray-icon?/ksni"]
+tracing = ["dep:tracing", "tauri-macros/tracing"]
+test = []
+compression = ["tauri-macros/compression", "tauri-utils/compression"]
+gtk3 = ["dep:gtk", "muda/gtk3"]
+gtk4 = ["dep:gtk4", "muda/gtk4"]
+linux-libxdo = ["tray-icon?/muda-libxdo", "muda/libxdo"]
+linux-libappindicator = ["tray-icon?/libappindicator"]
+isolation = ["tauri-utils/isolation", "tauri-macros/isolation", "uuid"]
+custom-protocol = ["tauri-macros/custom-protocol"]
+'''
+to = '''  "muda/common-controls-v6",
+]
+# the Linux tray backend is ksni (pure D-Bus StatusNotifierItem), which does not require a GTK version
+# to be selected; libappindicator (GTK3) is not offered.
+tray-icon = ["dep:tray-icon", "tray-icon?/ksni"]
+tracing = ["dep:tracing", "tauri-macros/tracing"]
+test = []
+compression = ["tauri-macros/compression", "tauri-utils/compression"]
+gtk4 = ["dep:gtk4", "muda/gtk4"]
+linux-libxdo = ["tray-icon?/muda-libxdo", "muda/libxdo"]
+isolation = ["tauri-utils/isolation", "tauri-macros/isolation", "uuid"]
+custom-protocol = ["tauri-macros/custom-protocol"]
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri/Cargo.toml"
+from = '''native-tls-vendored = ["reqwest/native-tls-vendored"]
+rustls-tls = ["reqwest/rustls-no-provider", "dep:rustls"]
+# the runtime crate (e.g. `tauri-runtime-wry`) must also enable its `devtools` feature
+devtools = ["tauri-runtime/devtools"]
+process-relaunch-dangerous-allow-symlink-macos = [
+'''
+to = '''native-tls-vendored = ["reqwest/native-tls-vendored"]
+rustls-tls = ["reqwest/rustls-no-provider", "dep:rustls"]
+# the runtime crate (e.g. `tauri-runtime-cef`) must also enable its `devtools` feature
+devtools = ["tauri-runtime/devtools"]
+process-relaunch-dangerous-allow-symlink-macos = [
+'''
+
+
+# crates/tauri/aphrody-tauri/build.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri/build.rs"
+from = '''  alias("mobile", mobile);
+
+  // the `gtk` crate alias (`gtk` 0.18 for GTK3, `gtk4` for GTK4) only exists when one of the
+  // GTK features is enabled, so every `gtk::` usage must be gated on this alias instead of
+  // just on the target OS.
+  let gtk_target = matches!(
+    target_os.to_str().unwrap(),
+    "linux" | "dragonfly" | "freebsd" | "netbsd" | "openbsd"
+  );
+  let gtk3 = has_feature(&mut checked_features, "gtk3");
+  let gtk4 = has_feature(&mut checked_features, "gtk4");
+  let gtk = gtk_target && (gtk3 || gtk4);
+  alias("gtk", gtk);
+  // whether the menu APIs have a platform backend to talk to: muda falls back to a no-op
+'''
+to = '''  alias("mobile", mobile);
+
+  // the `gtk` crate alias (`gtk4`) only exists when the GTK feature is enabled, so every
+  // `gtk::` usage must be gated on this alias instead of just on the target OS.
+  let gtk_target = matches!(
+    target_os.to_str().unwrap(),
+    "linux" | "dragonfly" | "freebsd" | "netbsd" | "openbsd"
+  );
+  let gtk4 = has_feature(&mut checked_features, "gtk4");
+  let gtk = gtk_target && gtk4;
+  alias("gtk", gtk);
+  // whether the menu APIs have a platform backend to talk to: muda falls back to a no-op
+'''
+
+
+# crates/tauri/aphrody-tauri/src/lib.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri/src/lib.rs"
+from = '''//! - **test**: Enables the [`mod@test`] module exposing unit test helpers.
+//! - **linux-libxdo**: Enables linking to libxdo which enables Cut, Copy, Paste and SelectAll menu items to work on Linux.
+//! - **linux-libappindicator**: Uses libappindicator instead of the default ksni (StatusNotifierItem) backend for the tray icon on Linux, adding a runtime dependency on libayatana-appindicator.
+//! - **gtk3**: Selects GTK 3 for the Linux GTK APIs (`Window::gtk_window`, `Window::default_vbox` and the menu integration). Enabled by GTK3 runtime crates such as `tauri-runtime-wry`.
+//! - **gtk4**: Selects GTK 4 for the Linux GTK APIs (`Window::gtk_window`, `Window::default_vbox` and the menu integration). Enabled by GTK4 runtime crates such as `tauri-runtime-cef`.
+//!   Enabling both selects GTK 4, and the GTK APIs then fail with [`Error::GtkVersionMismatch`] under a GTK3 runtime. Link runtime crates that agree on the GTK version: GTK 3 and GTK 4 cannot be initialized in the same process, so a Linux binary can only ever run one of them.
+//! - **isolation**: Enables the isolation pattern. Enabled by default if the `app > security > pattern > use` config option is set to `isolation` on the `tauri.conf.json` file.
+//! - **custom-protocol**: Feature managed by the Tauri CLI. When enabled, Tauri assumes a production environment instead of a development one.
+'''
+to = '''//! - **test**: Enables the [`mod@test`] module exposing unit test helpers.
+//! - **linux-libxdo**: Enables linking to libxdo which enables Cut, Copy, Paste and SelectAll menu items to work on Linux.
+//! - **gtk4**: Selects GTK 4 for the Linux GTK APIs (`Window::gtk_window`, `Window::default_vbox` and the menu integration). Enabled by GTK4 runtime crates such as `tauri-runtime-cef`.
+//! - **isolation**: Enables the isolation pattern. Enabled by default if the `app > security > pattern > use` config option is set to `isolation` on the `tauri.conf.json` file.
+//! - **custom-protocol**: Feature managed by the Tauri CLI. When enabled, Tauri assumes a production environment instead of a development one.
+'''
+
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri/src/lib.rs"
+from = '''#![cfg_attr(docsrs, feature(doc_cfg))]
+
+// `gtk3` and `gtk4` are additive cargo features but the crate can only bind one GTK version, so
+// GTK 4 wins when both are enabled - the same precedence muda and tray-icon use. Cargo unifies
+// features, so this is what a build graph containing both a GTK3 runtime (`tauri-runtime-wry`) and
+// a GTK4 one (`tauri-runtime-cef`) resolves to; `Window::gtk_version_matches` then keeps the GTK
+// APIs from handing objects of the wrong version to the bindings compiled here.
+#[cfg(all(
+  any(
+'''
+to = '''#![cfg_attr(docsrs, feature(doc_cfg))]
+
+// GTK 4 is the only GTK version this crate binds (the one runtime is `tauri-runtime-cef`);
+// `Window::gtk_version_matches` still refuses objects of another GTK version.
+#[cfg(all(
+  any(
+'''
+
+
+# m3/examples/tauri/commands/main.rs
+[[rewrite]]
+files = "m3/examples/tauri/commands/main.rs"
+from = '''}
+
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+fn main() {
+  #[cfg(feature = "cef")]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  #[cfg(not(feature = "cef"))]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
+
+  builder
+'''
+to = '''}
+
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+
+  builder
+'''
+
+
+# m3/examples/tauri/drag/main.rs
+[[rewrite]]
+files = "m3/examples/tauri/drag/main.rs"
+from = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+fn main() {
+  #[cfg(not(feature = "cef"))]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
+  #[cfg(feature = "cef")]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  builder
+'''
+to = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  builder
+'''
+
+
+# m3/examples/tauri/helloworld/main.rs
+[[rewrite]]
+files = "m3/examples/tauri/helloworld/main.rs"
+from = '''}
+
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+fn main() {
+  #[cfg(not(feature = "cef"))]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
+  #[cfg(feature = "cef")]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  builder
+'''
+to = '''}
+
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  builder
+'''
+
+
+# m3/examples/tauri/isolation/main.rs
+[[rewrite]]
+files = "m3/examples/tauri/isolation/main.rs"
+from = '''}
+
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+fn main() {
+  #[cfg(feature = "cef")]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  #[cfg(not(feature = "cef"))]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
+
+  builder
+'''
+to = '''}
+
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+
+  builder
+'''
+
+
+# m3/examples/tauri/multiwebview/main.rs
+[[rewrite]]
+files = "m3/examples/tauri/multiwebview/main.rs"
+from = '''use tauri::{LogicalPosition, LogicalSize, WebviewUrl};
+
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+fn main() {
+  #[cfg(not(feature = "cef"))]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
+  #[cfg(feature = "cef")]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  builder
+'''
+to = '''use tauri::{LogicalPosition, LogicalSize, WebviewUrl};
+
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  builder
+'''
+
+
+# m3/examples/tauri/multiwindow/main.rs
+[[rewrite]]
+files = "m3/examples/tauri/multiwindow/main.rs"
+from = '''use tauri::{Runtime, WebviewWindowBuilder};
+
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+fn main() {
+  #[cfg(feature = "cef")]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  #[cfg(not(feature = "cef"))]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
+
+  builder
+'''
+to = '''use tauri::{Runtime, WebviewWindowBuilder};
+
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+
+  builder
+'''
+
+
+# m3/examples/tauri/run-return/main.rs
+[[rewrite]]
+files = "m3/examples/tauri/run-return/main.rs"
+from = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+fn main() {
+  #[cfg(feature = "cef")]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  #[cfg(not(feature = "cef"))]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
+
+  let app = builder
+'''
+to = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+
+  let app = builder
+'''
+
+
+# m3/examples/tauri/splashscreen/main.rs
+[[rewrite]]
+files = "m3/examples/tauri/splashscreen/main.rs"
+from = '''}
+
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+fn main() {
+  #[cfg(feature = "cef")]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  #[cfg(not(feature = "cef"))]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
+
+  builder
+'''
+to = '''}
+
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+
+  builder
+'''
+
+
+# m3/examples/tauri/state/main.rs
+[[rewrite]]
+files = "m3/examples/tauri/state/main.rs"
+from = '''}
+
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+fn main() {
+  #[cfg(feature = "cef")]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  #[cfg(not(feature = "cef"))]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
+
+  builder
+'''
+to = '''}
+
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+
+  builder
+'''
+
+
+# m3/examples/tauri/streaming/main.rs
+[[rewrite]]
+files = "m3/examples/tauri/streaming/main.rs"
+from = '''}
+
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+fn main() {
+  download_video();
+
+  #[cfg(feature = "cef")]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+  #[cfg(not(feature = "cef"))]
+  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
+
+  builder
+'''
+to = '''}
+
+#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  download_video();
+
+  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
+
+  builder
+'''
+
+# crates/tauri/aphrody-tauri-cli/tests/init.rs
+[[rewrite]]
+files = "crates/tauri/aphrody-tauri-cli/tests/init.rs"
+from = '''#[test]
+fn init_non_interactive_works() {
+'''
+to = '''#[test]
+#[ignore = "drives the standalone cargo-tauri binary, which Aphrody does not build: the CLI is `aphrody tauri` (multi-call)"]
+fn init_non_interactive_works() {
+'''

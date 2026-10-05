@@ -78,7 +78,7 @@ check-workspace: check-upstream
 
 # Test the former desktop/default-member selection explicitly, including upstream helpers.
 test-upstream:
-    "{{cargo_owner}}" nextest run --locked --no-fail-fast --lib --bins --tests -p 'aphrody-tauri' -p 'aphrody-tauri-build' -p 'aphrody-tauri-codegen' -p 'aphrody-tauri-driver' -p 'aphrody-tauri-macros' -p 'aphrody-tauri-plugin' -p 'aphrody-tauri-plugin-*' -p 'aphrody-tauri-runtime' -p 'aphrody-tauri-runtime-wry' -p 'aphrody-tauri-utils' -p aphrody-acl-tests -p aphrody-create-tauri-app -p aphrody-tao -p aphrody-tao-macros -p aphrody-wry
+    "{{cargo_owner}}" nextest run --locked --no-fail-fast --lib --bins --tests -p 'aphrody-tauri' -p 'aphrody-tauri-build' -p 'aphrody-tauri-codegen' -p 'aphrody-tauri-macros' -p 'aphrody-tauri-plugin' -p 'aphrody-tauri-plugin-*' -p 'aphrody-tauri-runtime' -p 'aphrody-tauri-utils' -p aphrody-acl-tests -p aphrody-create-tauri-app
 
 # Default gates cover the minimal core; provider/upstream gates are explicit below.
 ci: check deny-ci test-all

@@ -16,10 +16,11 @@
     "CARGO_INCREMENTAL": "0",
     "CARGO_NET_GIT_FETCH_WITH_CLI": "true",
     "SCCACHE_DIR": "/srv/aphrody-build/cache/sccache",
-    "BUN_INSTALL_CACHE_DIR": "/srv/aphrody-build/cache/bun"
+    "BUN_INSTALL_CACHE_DIR": "/srv/aphrody-build/cache/bun",
+    "CEF_PATH": "/srv/aphrody-build/cache/cef"
   },
   "jobs": 6,
-  "desktopSysCrates": ["gdk-sys", "gtk-sys", "gtk4-sys", "webkit2gtk-sys"],
+  "desktopSysCrates": ["gdk4-sys", "gtk4-sys"],
   "forwards": {
     "remote": [
       {

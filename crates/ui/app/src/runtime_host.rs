@@ -1,7 +1,7 @@
-//! Isolated system-WebView host of the light desktop SDK (`aphrody-app --runtime-host`, protocol
+//! Isolated CEF host of the light desktop SDK (`aphrody-app --runtime-host`, protocol
 //! `yolo.desktop/1`). It was the `yolo-desktop` crate; the executable now is the single desktop app.
-//! The UI event loop stays on the
-//! process main thread; clients receive no Rust objects or WebView engine dependencies.
+//! The UI event loop stays on the process main thread; clients receive no Rust objects or browser
+//! engine dependencies. Each session runs on its own throwaway CEF profile directory.
 use std::collections::{BTreeSet, VecDeque};
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
@@ -363,22 +363,20 @@ pub fn host_info() -> Value {
       "name": "yolo-desktop", "version": env!("CARGO_PKG_VERSION"),
       "protocol": "yolo.desktop/1", "target": env!("YOLO_DESKTOP_TARGET"),
       "git_rev": env!("YOLO_DESKTOP_GIT_REV"), "rustc": env!("YOLO_DESKTOP_RUSTC"),
-      "panic_recovery": cfg!(panic = "unwind"), "engine": "system-webview"
+      "panic_recovery": cfg!(panic = "unwind"), "engine": "cef"
     })
 }
 
-/// Wayland and WSL display tuning: hardware composition must not crash on DMA-BUF protocols or
-/// NVIDIA/WSL drivers. Call it at the start of `main`, before any thread or WebKitGTK exists.
+/// Linux display tuning for NVIDIA/WSL drivers: the explicit-sync path of XWayland must not crash the
+/// compositor. CEF runs on X11 (XWayland under Wayland), so no WebKitGTK variable applies. Call it at
+/// the start of `main`, before any thread or CEF exists.
 pub fn tune_linux_display() {
     #[cfg(target_os = "linux")]
     {
-        for (name, value) in
-            [("__NV_DISABLE_EXPLICIT_SYNC", "1"), ("WEBKIT_DISABLE_DMABUF_RENDERER", "1")]
-        {
-            if std::env::var_os(name).is_none() {
-                // SAFETY: called from the process main thread before any other thread is spawned.
-                unsafe { std::env::set_var(name, value) };
-            }
+        const NAME: &str = "__NV_DISABLE_EXPLICIT_SYNC";
+        if std::env::var_os(NAME).is_none() {
+            // SAFETY: called from the process main thread before any other thread is spawned.
+            unsafe { std::env::set_var(NAME, "1") };
         }
     }
 }
@@ -413,7 +411,8 @@ pub fn run(mut context: tauri::Context) -> Result<i32, Box<dyn std::error::Error
     let events = Arc::new(Mutex::new(Events::default()));
     let policy = Arc::new(policy);
     context.config_mut().app.windows.clear();
-    let app = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default()).setup(move |app| {
+    let session = crate::cef::session_dir();
+    let app = tauri::Builder::default().runtime(crate::cef::runtime_host(&session)?).setup(move |app| {
     let app = app.handle().clone();
     *lock(&setup_worker) = Some(thread::Builder::new().name("yolo-desktop-control".into()).spawn(move || {
       while !setup_stopping.load(Ordering::Acquire) {
@@ -442,8 +441,11 @@ pub fn run(mut context: tauri::Context) -> Result<i32, Box<dyn std::error::Error
         _ => {},
     });
     stopping.store(true, Ordering::Release);
-    if let Some(worker) = lock(&worker).take() {
-        worker.join().map_err(|_| "desktop control worker panicked")?;
+    let joined = lock(&worker).take().map(|worker| worker.join());
+    // The profile only lives for this session; best effort, the OS temp cleaner takes the rest.
+    let _ = std::fs::remove_dir_all(&session);
+    if let Some(Err(_)) = joined {
+        return Err("desktop control worker panicked".into());
     }
     Ok(code)
 }

@@ -139,15 +139,8 @@ pub fn bundle_project(settings: &Settings) -> crate::Result<Vec<PathBuf>> {
         Command::new("strip").arg(file_dest).output_ok()?;
       }
     }
-    // TODO: Check if/when we need the other lang files
-    let locales = [
-      "en-US.pak",
-      "en-US_FEMININE.pak",
-      "en-US_MASCULINE.pak",
-      "en-US_NEUTER.pak",
-    ];
-
     let cef_path = cef_path.join("locales");
+    let locales = super::cef_locales(&cef_path);
     let share_dir = share_dir.join("locales");
     fs::create_dir_all(&share_dir)?;
 

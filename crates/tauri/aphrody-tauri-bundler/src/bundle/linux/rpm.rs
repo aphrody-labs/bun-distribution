@@ -274,14 +274,8 @@ pub fn bundle_project(settings: &Settings) -> crate::Result<Vec<PathBuf>> {
       }
       builder.with_file(temp_file, fileopts).unwrap();
     }
-    let locales = [
-      "en-US.pak",
-      "en-US_FEMININE.pak",
-      "en-US_MASCULINE.pak",
-      "en-US_NEUTER.pak",
-    ];
-
     let cef_path = cef_path.join("locales");
+    let locales = super::cef_locales(&cef_path);
     let cef_resource_dir = cef_resource_dir.join("locales");
 
     for f in locales {

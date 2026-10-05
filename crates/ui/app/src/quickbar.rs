@@ -2,12 +2,14 @@
 //! System-wide quick ask bar.
 //!
 //! A second frameless, transparent, always-on-top webview window (`quickbar`, declared in
-//! `tauri.conf.json`, hidden at start) that the global `Alt+Space` shortcut toggles. It hides
+//! `tauri.conf.json`, hidden at start and parked off-screen, see [`crate::parking`]) that the global `Alt+Space` shortcut toggles. It hides
 //! again when it loses focus or when the UI asks for it (Escape, close, minimize). The bar
 //! talks to the agent through the same allow-listed commands as the main window
 //! (`aphrody_rpc`, `aphrody_session_stream`), so it adds no new agent path.
 
 use tauri::{AppHandle, Manager, PhysicalPosition, Runtime, WebviewWindow};
+
+use crate::parking;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 /// Label of the quick ask window in `tauri.conf.json`.
@@ -38,11 +40,13 @@ pub fn toggle<R: Runtime>(app: &AppHandle<R>) {
         log::error!("quick ask window `{LABEL}` is not declared");
         return;
     };
-    let result = if window.is_visible().unwrap_or(false) {
+    // A bar that was never shown is parked off-screen but mapped, so visibility alone is not enough.
+    let on_screen = window.is_visible().unwrap_or(false)
+        && !window.outer_position().is_ok_and(|at| parking::is_parked(at.x, at.y));
+    let result = if on_screen {
         window.hide()
     } else {
-        place(&window);
-        window.show().and_then(|()| window.set_focus())
+        parking::reveal(&window, place).and_then(|()| window.set_focus())
     };
     if let Err(error) = result {
         log::error!("quick ask toggle: {error}");

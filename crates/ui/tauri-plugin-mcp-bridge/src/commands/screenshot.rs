@@ -3,14 +3,10 @@
 use serde_json::Value;
 use tauri::{command, Runtime, WebviewWindow};
 
-/// Native screenshot command using platform-specific APIs.
+/// Screenshot command of the one desktop runtime (CEF).
 ///
 /// This command takes a screenshot of the **current viewport** (visible area) of the webview
-/// using native platform APIs:
-/// - macOS/iOS: Uses WKWebView's takeSnapshot (viewport only)
-/// - Windows: Uses WebView2's CapturePreview (viewport by default)
-/// - Linux: Uses webkit_web_view_get_snapshot with WEBKIT_SNAPSHOT_REGION_VISIBLE
-/// - Android: Uses WebView.draw() to capture the visible viewport
+/// with the Chrome DevTools Protocol (`Page.captureScreenshot`, from the compositor surface).
 ///
 /// **Note**: This captures only what's currently visible in the viewport.
 /// The agent should scroll content into view before taking screenshots if needed.

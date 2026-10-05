@@ -26,7 +26,7 @@ The plugins in use and what each one does are listed in
   to Aphrody at runtime.
 - Secondary windows get their own capability files (`desktop-surfaces.json`, `quickbar.json`);
   their native actions go through label-checked commands.
-- Everything is bound to the local origin. Remote Wry previews get no capability and the app
+- Everything is bound to the local origin. Remote CEF previews get no capability and the app
   loads only first-party assets.
 - If a scoped plugin (`fs`, `opener`) is widened, it keeps explicit path/URL scopes; never a
   blanket `allow-*`.

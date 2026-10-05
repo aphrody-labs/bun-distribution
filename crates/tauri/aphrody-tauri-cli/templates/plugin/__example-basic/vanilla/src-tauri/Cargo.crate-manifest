@@ -10,7 +10,7 @@ rust-version = "1.95"
 
 [lib]
 name = "tauri_app_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+crate-type = ["rlib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -19,5 +19,5 @@ tauri-build = {{ tauri_build_dep }}
 
 [dependencies]
 tauri = {{ tauri_example_dep }}
-tauri-runtime-wry = {{ tauri_runtime_wry_dep }}
+tauri-runtime-cef = {{ tauri_runtime_cef_dep }}
 tauri-plugin-{{ plugin_name }} = { path = "../../../" }

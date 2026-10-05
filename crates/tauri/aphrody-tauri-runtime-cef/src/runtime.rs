@@ -3356,6 +3356,17 @@ impl<T: UserEvent> CefRuntime<T> {
     ))]
     pre_cef_signals.restore();
 
+    #[cfg(any(
+      target_os = "linux",
+      target_os = "dragonfly",
+      target_os = "freebsd",
+      target_os = "openbsd",
+      target_os = "netbsd"
+    ))]
+    if crate::external_message_pump::destroy_chromium_work_source() == 0 {
+      log::warn!("Chromium's GLib work source was not found; the event loop may not block");
+    }
+
     #[cfg(target_os = "macos")]
     let app_delegate = if !is_helper {
       use crate::platform::macos::AppDelegateEvent;

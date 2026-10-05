@@ -67,8 +67,8 @@ pub fn forward_request_headers(headers: &HeaderMap, backend: &Url, loopback: &st
 }
 
 /// Re-scopes one `Set-Cookie` to the loopback origin: `Domain` is dropped (it names the public
-/// host), `Secure` and `Partitioned` are dropped (WebKit refuses `Secure` cookies over plain
-/// HTTP), and `SameSite=None`, which needs `Secure`, becomes `Lax`. Names starting with
+/// host), `Secure` and `Partitioned` are dropped (a loopback origin is plain HTTP, and a `Secure`
+/// cookie is not guaranteed to be kept there), and `SameSite=None`, which needs `Secure`, becomes `Lax`. Names starting with
 /// `__Host-` or `__Secure-` require `Secure` and cannot be re-scoped; they pass unchanged.
 #[must_use]
 pub fn rewrite_set_cookie(value: &str) -> String {

@@ -19,10 +19,7 @@ pub fn items(frontend_dir: Option<&PathBuf>, tauri_dir: Option<&Path>) -> Vec<Se
     for dep in [
       "tauri",
       "tauri-build",
-      "tauri-runtime-wry",
       "tauri-runtime-cef",
-      "wry",
-      "tao",
       "cef",
     ] {
       let crate_version = crate_version(tauri_dir, manifest.as_ref(), lock.as_ref(), dep);

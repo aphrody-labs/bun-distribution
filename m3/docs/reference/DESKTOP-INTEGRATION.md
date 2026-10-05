@@ -9,7 +9,7 @@ and `crates/ui/app/capabilities/`.
 ## Plugins
 
 The desktop shell consumes the centralized Tauri 3 line (`tauri = "=3.0.0-alpha.3"`,
-`tauri-runtime-wry = "=3.0.0-alpha.3"`, `tauri-plugin-* = "=3.0.0-alpha.2"`).
+`tauri-runtime-cef = "=3.0.0-alpha.5"`, `tauri-plugin-* = "=3.0.0-alpha.2"`).
 The root `Cargo.toml` declares the shared dependencies; no upstream source tree
 is vendored under `crates/`.
 
@@ -76,10 +76,8 @@ Settings > Desktop integration.
 `bun aphrody-ops tauri bundle` (NSIS on Windows, deb + AppImage on Linux):
 
 - NSIS: per-user install (`currentUser`, no elevation), Start menu folder `Aphrody`, installer
-  and uninstaller icon `icons/icon.ico`, English and French, LZMA; WebView2 through the silent
-  download bootstrapper.
-- deb: runtime `depends` (WebKitGTK 4.1, Ayatana AppIndicator for the tray, librsvg, OpenSSL 3)
-  and the desktop template above. AppImage is built from the same tree.
+  and uninstaller icon `icons/icon.ico`, English and French, LZMA; no WebView2 step (CEF ships its own Chromium).
+- deb and rpm: runtime `depends` (GTK 4, the Chromium libraries nss/nspr/atk/cups/drm/gbm/xkb/X11, librsvg, OpenSSL 3; the bundler adds GTK 4 itself), `recommends` `xdg-desktop-portal` (file dialogs), the desktop template above and the setuid `chrome-sandbox`. The tray is a StatusNotifierItem over D-Bus (ksni), no AppIndicator. AppImage is not built: bundling is broken upstream (tauri-apps/tauri#16204).
 - The `aphrody` CLI ships as the sidecar `binaries/aphrody-<triple>` (`externalBin` in
   `tauri.drive.conf.json`), staged by `aphrody-ops tauri` from `../aphrody-ai` (`--locked`) or
   `APHRODY_SIDECAR_SOURCE`. `broker.rs` prefers it over `PATH`; `APHRODY_BIN` overrides both.
@@ -108,7 +106,7 @@ Settings > Desktop integration.
   commands before `setup` has called `manage()`; a `state()` call then panics and aborts the
   process on Windows. Manage state before any window can call in.
 - Green unit tests do not prove the app renders. To verify, launch the built executable with
-  `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=<port>`, check every webview
+  `APHRODY_CEF_REMOTE_DEBUGGING_PORT=<port>` (loopback opt-in), check every webview
   over CDP (non-empty body, no `Runtime.exceptionThrown`) and keep the process alive for 60 s.
   Process liveness alone proves nothing.
 - Window and tray icons set from Rust must be embedded (`include_image!`,

@@ -10,8 +10,8 @@ export const WRAP_SCHEMA = "aphrody-web-to-tauri/1" as const;
  */
 export type WrapMode = "remote" | "bundle" | "sidecar";
 
-/** `wry` is the system webview; `cef` is Chromium (for pages that need Chromium-only APIs). */
-export type WrapEngine = "wry" | "cef";
+/** The one Aphrody desktop runtime: Chromium (CEF). The system-webview engine (`wry`) is retired. */
+export type WrapEngine = "cef";
 
 /** What happens to a navigation that leaves the app: system browser, same window, or blocked. */
 export type ExternalLinks = "system" | "inapp" | "deny";
@@ -22,9 +22,9 @@ export interface WrapOrigins {
   /** Identity providers and payment pages: allowed in-app, including popups with an opener. */
   auth: string[];
   /**
-   * Third-party frames (video, maps, captcha): allowed in-app. WebKitGTK and WKWebView send iframe
-   * loads through the same navigation hook as the top-level page, so a frame that is not listed
-   * here would be treated as a link that leaves the app.
+   * Third-party frames (video, maps, captcha): allowed in-app. CEF sends iframe loads through the
+   * same navigation hook as the top-level page, so a frame that is not listed here would be
+   * treated as a link that leaves the app.
    */
   embeds: string[];
   external: ExternalLinks;

@@ -18,8 +18,8 @@ const mk = (source: string, srcDir: string, name: string, version: string): Crat
 const tauri = mk("tauri", "crates/tauri", "tauri", "3.0.0-alpha.4");
 const plugin = mk("plugins", "plugins/fs", "tauri-plugin-fs", "3.0.0-alpha.2");
 const cli = mk("tauri", "crates/tauri-cli", "tauri-cli", "3.0.0-alpha.4");
-const driver = mk("tauri", "crates/tauri-driver", "tauri-driver", "3.0.0-alpha.1");
-const all = [tauri, plugin, cli, driver];
+const restart = mk("tauri", "crates/tests/restart", "restart", "0.1.0");
+const all = [tauri, plugin, cli, restart];
 
 function context(crate: CrateInfo, files: string[] = []): TransformContext {
   return {
@@ -122,18 +122,18 @@ tauri = { path = ".", features = ["test"] }
 
   it("keeps binary names and adds an explicit [[bin]] for an implicit main.rs", () => {
     const text = `[package]
-name = "tauri-driver"
-version = "3.0.0-alpha.1"
+name = "restart"
+version = "0.1.0"
 
 [dependencies]
 serde = "1"
 `;
     const { text: out } = transformManifest(
       text,
-      context(driver, ["crates/tauri-driver/src/main.rs"]),
+      context(restart, ["crates/tests/restart/src/main.rs"]),
     );
     const m = parse(out);
-    expect(m.bin).toEqual([{ name: "tauri-driver", path: "src/main.rs" }]);
+    expect(m.bin).toEqual([{ name: "restart", path: "src/main.rs" }]);
     expect(m.lib).toBeUndefined();
   });
 

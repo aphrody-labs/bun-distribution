@@ -154,8 +154,6 @@ export async function generateProject(
     throw new GenerateError(`aphrody-tauri-wrap crate not found at ${wrapCrate}`);
   }
   const tauriDir = join(out, "src-tauri");
-  // The debug bridge is a feature of the wrap crate itself (`aphrody_tauri_wrap::debug`), wry only.
-  const withDebug = config.engine === "wry";
 
   // Icon: the site's own when it is a usable PNG, otherwise a solid colour from its theme.
   let icon: Uint8Array | null = null;
@@ -181,7 +179,6 @@ export async function generateProject(
   const files: FileMap = tauriShell({
     name: config.name,
     identifier: config.identifier,
-    engine: config.engine,
     build: { frontendDist: "../dist" },
     window: { mode: "runtime" },
     csp: null,
@@ -196,7 +193,9 @@ export async function generateProject(
       // loads the deployed origin and `sidecar` spawns the project's own server with std only.
       features: config.mode === "bundle" ? undefined : [],
     },
-    debugBridge: withDebug,
+    // The debug bridge is a feature of the wrap crate itself (`aphrody_tauri_wrap::debug`); on CEF its
+    // screenshot goes through the DevTools protocol.
+    debugBridge: true,
     externalBin: config.mode === "sidecar" ? ["binaries/server"] : undefined,
     icon,
   });
@@ -255,10 +254,9 @@ export async function generateProject(
       notes.push("Cargo.lock copied from the repository so dependency versions match its pins");
     }
   }
-  if (config.engine === "cef")
-    notes.push(
-      "cef engine: generated but not compiled by the generator's own checks; no CEF app of this repository is qualified with it",
-    );
+  notes.push(
+    "cef engine: generated but not compiled by the generator's own checks; the first build downloads the CEF distribution (about 1 GB, set CEF_PATH to share it)",
+  );
   return { outDir: out, files: written, notes };
 }
 

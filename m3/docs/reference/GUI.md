@@ -3,7 +3,7 @@
 
 ## Product boundary
 
-The desktop webview is hosted by the Tauri 3 (`tauri-runtime-wry`) app in `crates/ui/app`.
+The desktop webview is hosted by the Tauri 3 (`tauri-runtime-cef`) app in `crates/ui/app`.
 Its user areas are Chat, Files, Models and
 Settings. Keep browser navigation, shell/PTY/terminal sessions, SSH host consoles,
 system diagnostics and infrastructure administration outside this webview. The

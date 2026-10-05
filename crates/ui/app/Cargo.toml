@@ -73,7 +73,8 @@ base64 = { workspace = true }
 # The process-wide TLS provider the `__llama-daemon` entry installs before any HTTP client exists.
 rustls = { workspace = true }
 tauri = { workspace = true, features = ["dynamic-acl", "image-ico", "tray-icon"] }
-tauri-runtime-wry = { workspace = true }
+# The one desktop runtime (CEF + tauri-winit + GTK4); `src/cef.rs` configures it.
+tauri-runtime-cef = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

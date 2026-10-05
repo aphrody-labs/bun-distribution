@@ -9,8 +9,8 @@
  * carry the loopback URL and the per-process token. The token is only ever sent to the
  * loopback URL of the same file and is never logged by this module.
  *
- * Runtime support is documented in `docs/guides/web/TAURI-DEBUG.md`: wry/WebKitGTK apps use this
- * bridge; CEF apps (Koharu) should attach `WebCdpPage` to the CEF remote-debugging port instead.
+ * Runtime support is documented in `docs/guides/web/TAURI-DEBUG.md`: the one desktop runtime is CEF; apps use
+ * this bridge, or attach `WebCdpPage` to the CEF remote-debugging port (an opt-in of the launcher).
  */
 import { existsSync, readdirSync, readFileSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
@@ -361,7 +361,7 @@ export class TauriBridge {
     );
   }
 
-  /** Native screenshot as `{ dataUrl, imageWidth, imageHeight, cssWidth, cssHeight }` (Linux/wry, Windows, macOS). */
+  /** Native screenshot as `{ dataUrl, imageWidth, imageHeight, cssWidth, cssHeight }` (CEF DevTools protocol, every platform). */
   screenshot(
     options: {
       format?: "png" | "jpeg";

@@ -196,7 +196,8 @@ test("the committed config parses and lists every tracked crate", async () => {
   ).text();
   const config = parseConfig(text);
   expect(config.line).toBe(3);
-  expect(config.rust.crates).toContain("tauri-runtime-wry");
+  expect(config.rust.crates).toContain("tauri-runtime-cef");
+  expect(config.rust.crates).not.toContain("tauri-runtime-wry");
   expect(config.patches.map((patch) => patch.id)).toContain("tauri-plugin-dialog-manager-import");
   expect(() => parseConfig('{"schemaVersion":2}')).toThrow();
 });

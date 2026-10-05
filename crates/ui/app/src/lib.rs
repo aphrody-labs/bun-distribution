@@ -16,9 +16,11 @@
 //! serving it with the window subsystem.
 
 pub mod broker;
+pub mod cef;
 pub mod desktop;
 pub mod explorer;
 pub mod identity;
+pub mod parking;
 pub mod integration;
 pub mod llama_daemon;
 pub mod models;
@@ -573,7 +575,7 @@ fn aphrody_fs_read_text(path: String) -> Result<serde_json::Value, String> {
 /// Material shell theme preference.
 ///
 /// `system` delegates the choice to the host OS. The state command reports the
-/// effective light or dark theme selected by Tauri/Wry.
+/// effective light or dark theme selected by Tauri/CEF.
 #[derive(Debug, Clone, Copy, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 enum ShellTheme {
@@ -589,7 +591,7 @@ enum ShellTheme {
 ///
 /// The command takes the invoking window instead of a caller-provided label.
 /// Together with the main-only Tauri capability and [`shell_window`], this
-/// keeps remote Wry previews from controlling any desktop window.
+/// keeps remote CEF previews from controlling any desktop window.
 #[derive(Debug, Clone, Copy, serde::Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case")]
 enum ShellWindowAction {
@@ -731,7 +733,7 @@ fn context() -> tauri::Context {
     tauri::generate_context!()
 }
 
-/// Run the isolated system-WebView host of the light desktop SDK (`--runtime-host`).
+/// Run the isolated CEF host of the light desktop SDK (`--runtime-host`).
 ///
 /// # Errors
 ///
@@ -744,8 +746,8 @@ pub fn run_runtime_host() -> Result<i32, Box<dyn std::error::Error>> {
 /// Build and run the desktop application.
 pub fn run() {
     tauri::Builder::default()
-        // Tauri 3 has no implicit runtime: the system webview (wry) is the Aphrody default.
-        .runtime(tauri_runtime_wry::Wry::default())
+        // Tauri 3 has no implicit runtime: Chromium Embedded Framework is the one Aphrody runtime.
+        .runtime(cef::runtime())
         // single-instance must be the first plugin: a second launch focuses this window.
         // Its callback forwards the second launch's files and `aphrody://` links to this window.
         .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
@@ -754,7 +756,9 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .plugin(
             tauri_plugin_window_state::Builder::default()
-                .with_denylist(&[quickbar::LABEL, integration::SPLASH])
+                // Every window that starts hidden is parked off-screen (see `parking`): tracking
+                // it would persist the parking spot. The pet and the widget keep their own position.
+                .with_denylist(&parking::HIDDEN_AT_START)
                 // Visibility is owned by the splash flow and the pet/widget preferences.
                 .with_state_flags(
                     tauri_plugin_window_state::StateFlags::all()
@@ -841,6 +845,9 @@ pub fn run() {
             }
         })
         .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Moved(position) = event {
+                integration::note_moved(window.app_handle(), window.label(), position.x, position.y);
+            }
             if window.label() == integration::MAIN
                 && let tauri::WindowEvent::CloseRequested { api, .. } = event
             {
@@ -928,6 +935,7 @@ pub fn run() {
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
                 showcase::stop(app);
+                integration::flush_positions(app);
             }
             // The agent runs in this process: closing its input lets it join every session, so
             // each rollout is flushed before the process ends (bounded, a stuck turn is dropped).

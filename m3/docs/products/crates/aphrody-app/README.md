@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # aphrody-app — Aphrody Tauri desktop host
 
-`aphrody-app` is the Tauri v2/Wry shell in the root Aphrody OS Cargo workspace.
+`aphrody-app` is the Tauri 3 CEF shell in the root Aphrody OS Cargo workspace.
 It owns the native main window, a local app-server broker, the local kernel
 subsystems and the desktop-only Drive bridge. The agent remains out of process:
 the broker starts `aphrody app-server` and speaks JSON-RPC over stdio.
@@ -15,7 +15,7 @@ The trusted main window's core commands include:
 | `aphrody_shell_window(action)` | native window state | main-only window controls and navigation |
 
 The shell command takes its invoking `WebviewWindow`, accepts no target label and
-rejects every label except `main`. Remote Wry previews have no capability and
+rejects every label except `main`. Remote CEF previews have no capability and
 cannot control desktop windows.
 
 ## Canonical runtime layout
@@ -55,7 +55,7 @@ Plugin rationale: `docs/reference/ui/tauri/plugins.md`. Integration design:
 ## Build, run and package on Windows
 
 `../../packages/app-ui/` is the sole frontend source package. Bun builds it to ignored
-`ui-dist/` before Tauri packages the Wry shell. It reuses the canonical
+`ui-dist/` before Tauri packages the CEF shell. It reuses the canonical
 `@aphrody/m3-theme/spaceui.css`, `@aphrody/m3-ai` and
 `@aphrody/m3-primitives` surfaces. Material Symbols are copied from the one
 local canonical font during this build.

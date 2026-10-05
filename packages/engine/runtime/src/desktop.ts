@@ -1,6 +1,6 @@
 /**
- * Light client of the precompiled system-WebView host. Process supervision stays in the
- * C ABI runtime; Tauri, Tao, Wry and WebView libraries are confined to the desktop artifact.
+ * Light client of the precompiled CEF desktop host. Process supervision stays in the
+ * C ABI runtime; Tauri, CEF and GTK 4 are confined to the desktop artifact.
  */
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";

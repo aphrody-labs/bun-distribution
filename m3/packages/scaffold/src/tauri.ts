@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * The Tauri 3 shell of every generated project: `src-tauri/` with the pinned crates, an explicit
- * runtime, a capability file and an icon. One generator for the migrated app, the wrapped site and
+ * The Tauri 3 shell of every generated project: `src-tauri/` with the pinned crates, the CEF runtime
+ * (the one Aphrody desktop runtime), a capability file and an icon. One generator for the migrated app, the wrapped site and
  * the canonical example, so the pins and the lean feature set live in one place.
  */
 import type { FileMap } from "./files.ts";
 import { crateName } from "./names.ts";
 import { solidIconPng } from "./png.ts";
-import { TAURI_3, TAURI_CEF, tauriSchemaUrl } from "./pins.ts";
-
-export type TauriEngine = "wry" | "cef";
+import { TAURI_3, tauriSchemaUrl } from "./pins.ts";
 
 export interface TauriShellOptions {
   /** `productName`. */
@@ -18,9 +16,6 @@ export interface TauriShellOptions {
   version?: string;
   /** Cargo package name; derived from `name` by default. */
   crate?: string;
-  engine?: TauriEngine;
-  /** Adds the library entry point required by Tauri Android/iOS hosts (wry only). */
-  mobile?: boolean;
   build: {
     frontendDist: string;
     devUrl?: string;
@@ -47,7 +42,7 @@ export interface TauriShellOptions {
    */
   runtimePlugin?: { crate: string; path: string; init: string; features?: string[] };
   /**
-   * Optional `debug-bridge` feature (wry only) for parity checks, hosted by `aphrody-tauri-wrap`
+   * Optional `debug-bridge` feature for parity checks, hosted by `aphrody-tauri-wrap`
    * (`aphrody_tauri_wrap::debug`). `true` reuses the `aphrody-tauri-wrap` runtime plugin; `{ path }`
    * (the wrap crate directory) is for a shell that has no such runtime plugin and adds the crate as
    * an optional dependency without its default features.
@@ -90,7 +85,7 @@ function runtimePluginLine(plugin: NonNullable<TauriShellOptions["runtimePlugin"
 function debugBridgeMode(
   options: TauriShellOptions,
 ): { kind: "runtime" } | { kind: "optional"; path: string } | null {
-  if ((options.engine ?? "wry") !== "wry" || !options.debugBridge) return null;
+  if (!options.debugBridge) return null;
   if (options.runtimePlugin?.crate === DEBUG_HOST_CRATE) return { kind: "runtime" };
   if (typeof options.debugBridge === "object") {
     return { kind: "optional", path: options.debugBridge.path };
@@ -130,7 +125,8 @@ export function tauriConf(options: TauriShellOptions): Record<string, unknown> {
     },
     bundle: {
       active: true,
-      targets: "all",
+      // AppImage bundling is broken on the CEF runtime (tauri-apps/tauri#16204): deb and rpm ship.
+      targets: ["deb", "rpm", "nsis", "msi", "app", "dmg"],
       icon: ["icons/icon.png"],
       ...(options.externalBin ? { externalBin: options.externalBin } : {}),
     },
@@ -139,11 +135,7 @@ export function tauriConf(options: TauriShellOptions): Record<string, unknown> {
 }
 
 export function cargoToml(options: TauriShellOptions): string {
-  const engine = options.engine ?? "wry";
-  const runtime =
-    engine === "cef"
-      ? `tauri-runtime-cef = { version = "=${TAURI_CEF}", features = ["macos-private-api"] }`
-      : `tauri-runtime-wry = { version = "=${TAURI_3.runtimeWry}", default-features = false, features = ["x11"] }`;
+  const runtime = `tauri-runtime-cef = { version = "=${TAURI_3.runtimeCef}", features = ["macos-private-api"] }`;
   const debug = debugBridgeMode(options);
   const lines = [
     "# SPDX-License-Identifier: Apache-2.0",
@@ -157,19 +149,10 @@ export function cargoToml(options: TauriShellOptions): string {
     "[workspace]",
     "",
   ];
-  if (options.mobile) {
-    if (engine !== "wry") throw new Error("Tauri mobile requires the wry host");
-    lines.push(
-      "[lib]",
-      `name = "${(options.crate ?? crateName(options.name)).replaceAll("-", "_")}_lib"`,
-      'crate-type = ["staticlib", "cdylib", "rlib"]',
-      "",
-    );
-  }
   lines.push("[features]", 'custom-protocol = ["tauri/custom-protocol"]');
   if (debug) {
     lines.push(
-      "# Debug bridge used by the parity check (wry only): APHRODY_TAURI_DEBUG=1 cargo run --features debug-bridge",
+      "# Debug bridge used by the parity check: APHRODY_TAURI_DEBUG=1 cargo run --features debug-bridge",
       debug.kind === "runtime"
         ? `debug-bridge = ["${DEBUG_HOST_CRATE}/debug-bridge"]`
         : `debug-bridge = ["dep:${DEBUG_HOST_CRATE}", "${DEBUG_HOST_CRATE}/debug-bridge"]`,
@@ -206,30 +189,25 @@ export function cargoToml(options: TauriShellOptions): string {
 }
 
 export function mainRs(options: TauriShellOptions): string {
-  if (options.mobile) {
-    const library = `${(options.crate ?? crateName(options.name)).replaceAll("-", "_")}_lib`;
-    return `// SPDX-License-Identifier: Apache-2.0
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-fn main() {
-    ${library}::run();
-}
-`;
-  }
-  const engine = options.engine ?? "wry";
   const plugins = [
     ...(options.openerPlugin ? ["tauri_plugin_opener::init()"] : []),
     ...(options.runtimePlugin ? [options.runtimePlugin.init] : []),
   ];
-  const pluginLines = plugins.map((plugin) => `        .plugin(${plugin})\n`).join("");
   const chain = [
-    "tauri::Builder::default()",
-    ".runtime(Wry::default())",
+    "tauri::Builder::<CefRuntime>::new()",
+    ".runtime(cef)",
     ...plugins.map((plugin) => `.plugin(${plugin})`),
   ].join("\n        ");
   const header =
     '// Prevents additional console window on Windows in release\n#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]\n';
-  if (engine === "cef") {
-    return `${header}
+  const bridge = debugBridgeMode(options)
+    ? `    #[cfg(feature = "debug-bridge")]
+    let builder = builder.plugin(aphrody_tauri_wrap::debug::init());
+`
+    : "";
+  // CEF runs the renderer, GPU and utility processes from this same executable: `cef_entry_point`
+  // hands them to Chromium before the application starts.
+  return `${header}
 use tauri_runtime_cef::{Cef, CefRuntime};
 
 #[tauri_runtime_cef::cef_entry_point]
@@ -245,22 +223,6 @@ fn main() {
         }),
         None => cef,
     };
-    tauri::Builder::<CefRuntime>::new()
-        .runtime(cef)
-${pluginLines}        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
-}
-`;
-  }
-  const bridge = debugBridgeMode(options)
-    ? `    #[cfg(feature = "debug-bridge")]
-    let builder = builder.plugin(aphrody_tauri_wrap::debug::init());
-`
-    : "";
-  return `${header}
-use tauri_runtime_wry::Wry;
-
-fn main() {
     let builder = ${chain};
 ${bridge}    builder
         .run(tauri::generate_context!())
@@ -283,17 +245,6 @@ export function capability(options: TauriShellOptions): Record<string, unknown> 
   };
 }
 
-/** Mobile and desktop share one lifecycle entry point; binaries call this library. */
-export function libRs(options: TauriShellOptions): string {
-  if ((options.engine ?? "wry") !== "wry") throw new Error("Tauri mobile requires the wry host");
-  return mainRs({ ...options, mobile: false })
-    .replace(
-      /\/\/ Prevents additional console window on Windows in release\n#!\[cfg_attr\(not\(debug_assertions\), windows_subsystem = "windows"\)\]\n/,
-      "// SPDX-License-Identifier: Apache-2.0\n",
-    )
-    .replace("fn main()", "#[cfg_attr(mobile, tauri::mobile_entry_point)]\npub fn run()");
-}
-
 /** `src-tauri/**` files of the shell. Paths are relative to the project root. */
 export function tauriShell(options: TauriShellOptions): FileMap {
   return {
@@ -301,7 +252,6 @@ export function tauriShell(options: TauriShellOptions): FileMap {
     "src-tauri/Cargo.toml": cargoToml(options),
     "src-tauri/build.rs": "fn main() {\n    tauri_build::build()\n}\n",
     "src-tauri/src/main.rs": mainRs(options),
-    ...(options.mobile ? { "src-tauri/src/lib.rs": libRs(options) } : {}),
     "src-tauri/capabilities/default.json": `${JSON.stringify(capability(options), null, 2)}\n`,
     "src-tauri/icons/icon.png": options.icon ?? solidIconPng(),
   };

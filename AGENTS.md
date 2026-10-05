@@ -18,8 +18,9 @@ Keep private repositories, credentials, domain conversations and data private.
 ## Architecture
 
 Follow PLAN's ABI, ownership, permissions, panic/unwind and compatibility
-contracts. Preserve V8 until required Obscura/JSC parity; system WebViews keep
-their engines. Remote pages receive no implicit privileged Bun/host access.
+contracts. Preserve V8 until required Obscura/JSC parity. The desktop app has one
+runtime, `tauri-runtime-cef` (CEF + tauri-winit + GTK 4; no wry, tao or system
+WebView). Remote pages receive no implicit privileged Bun/host access.
 
 Workspace/Infra owns orchestration, inventories, factories, release and hosts.
 Reuse existing capability owners; no competing stack or copied Yolo engine.

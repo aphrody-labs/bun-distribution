@@ -36,12 +36,9 @@ fn get(counter: State<'_, Counter>) -> isize {
   *counter.0.lock().unwrap()
 }
 
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
+#[tauri_runtime_cef::cef_entry_point]
 fn main() {
-  #[cfg(feature = "cef")]
   let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
 
   builder
     .manage(Counter(Mutex::new(0)))

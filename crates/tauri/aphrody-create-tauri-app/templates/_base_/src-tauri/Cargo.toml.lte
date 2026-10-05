@@ -12,7 +12,7 @@ edition = "2024"
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "{% lib_name %}"
-crate-type = ["staticlib", "cdylib", "rlib"]
+crate-type = ["rlib"]
 
 {% endif %}{% if v1 %}[build-dependencies]
 tauri-build = { version = "1", features = [] }
@@ -23,6 +23,7 @@ tauri-build = { package = "aphrody-tauri-build", version = "3.0.0-alpha", featur
 
 [dependencies]
 tauri = { package = "aphrody-tauri", version = "3.0.0-alpha", features = [] }
+tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", version = "3.0.0-alpha" }
 tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", version = "3.0.0-alpha" }{% endif %}
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

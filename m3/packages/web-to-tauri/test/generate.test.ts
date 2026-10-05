@@ -62,14 +62,16 @@ describe("generateProject: remote", () => {
     );
     const main = await read(out, "src-tauri/src/main.rs");
     expect(main).toContain('.plugin(aphrody_tauri_wrap::init(include_str!("../wrap.json")))');
-    expect(main).toContain(".runtime(Wry::default())");
+    expect(main).toContain("#[tauri_runtime_cef::cef_entry_point]");
+    expect(main).toContain(".runtime(cef)");
   });
 
   it("pins the Tauri line of the single scaffolder and points at the runtime crate", async () => {
     const { out } = await generate();
     const cargo = await read(out, "src-tauri/Cargo.toml");
     expect(cargo).toContain(`tauri = { version = "=${TAURI_3.tauri}"`);
-    expect(cargo).toContain(`tauri-runtime-wry = { version = "=${TAURI_3.runtimeWry}"`);
+    expect(cargo).toContain(`tauri-runtime-cef = { version = "=${TAURI_3.runtimeCef}"`);
+    expect(cargo).not.toContain("tauri-runtime-wry");
     // A remote app loads the deployed origin: no bundle server, so no HTTP stack in the build.
     expect(cargo).toMatch(
       /aphrody-tauri-wrap = \{ path = "[^"]*crates\/ui\/tauri-wrap", default-features = false \}/,
@@ -86,7 +88,9 @@ describe("generateProject: remote", () => {
 
   it("uses the icon of the site when it is a usable PNG", async () => {
     const { out, result } = await generate();
-    const icon = new Uint8Array(await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer());
+    const icon = new Uint8Array(
+      await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer(),
+    );
     expect(pngInfo(icon)).toMatchObject({ width: 512, colorType: 6 });
     expect(isUsableAppIcon(icon)).toBe(true);
     expect(result.notes.join(" ")).not.toContain("placeholder");
@@ -97,7 +101,9 @@ describe("generateProject: remote", () => {
     dirs.push(join(out, ".."));
     const probe = { ...(await probeUrl(`${site.a}/home`)), icons: [], manifest: null };
     const result = await generateProject(planConversion(probe), out, { copyLock: false });
-    const icon = new Uint8Array(await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer());
+    const icon = new Uint8Array(
+      await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer(),
+    );
     expect(isUsableAppIcon(icon)).toBe(true);
     expect(Array.from(icon.subarray(0, 8))).toEqual([
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
@@ -113,8 +119,8 @@ describe("generateProject: remote", () => {
     expect(result.notes.join(" ")).toContain("Cargo.lock");
   });
 
-  it("generates the Chromium variant with a debug-only DevTools port", async () => {
-    const { out } = await generate({ engine: "cef" });
+  it("generates the Chromium app with a debug-only DevTools port", async () => {
+    const { out } = await generate();
     const cargo = await read(out, "src-tauri/Cargo.toml");
     expect(cargo).toContain("tauri-runtime-cef");
     expect(cargo).not.toContain("tauri-runtime-wry");
@@ -215,7 +221,9 @@ describe("generateProject: directories", () => {
     await mkdir(join(src, "public"), { recursive: true });
     await writeFile(join(src, "public/icon.png"), solidIconPng(256, [1, 2, 3, 255]));
     await generateProject(planConversion(await probeDirectory(src)), out, { copyLock: false });
-    const icon = new Uint8Array(await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer());
+    const icon = new Uint8Array(
+      await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer(),
+    );
     expect(Array.from(icon)).toEqual(Array.from(solidIconPng(256, [1, 2, 3, 255])));
   });
 });

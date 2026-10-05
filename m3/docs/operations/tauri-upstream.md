@@ -18,10 +18,9 @@ git branch, except the local patches listed below.
 Tauri 3 has no implicit runtime. Every binary calls
 `Builder::default().runtime(...)` exactly once.
 
-- Default: `tauri-runtime-wry` (system webview, lowest memory). Used by
-  `aphrody-app` and `aphrody-model-view`.
-- CEF: `tauri-runtime-cef` is kept only for Koharu (`koharu`, `koharu-app`).
-  It is a deliberate exception, not the default.
+- The one runtime (owner order 2026-10-05, [plan](../../../docs/plans/tauri-cef/PLAN.md)): `tauri-runtime-cef`
+  (CEF + `tauri-winit` + GTK 4). Used by `aphrody-app` and every other Aphrody desktop app; `wry`, `tao`,
+  `tauri-runtime-wry`, `tauri-driver` and the GTK 3 / WebKitGTK stack were removed.
 
 `tauri::AppHandle` defaults to the type-erased `tauri::DynRuntime`; code that
 used `tauri::Wry` as a type now uses `tauri::DynRuntime`.
@@ -36,9 +35,9 @@ Root `package.json` `workspaces.catalog` holds `@aphrody/api` and
 
 | Set                                                                 | Version                           |
 | ------------------------------------------------------------------- | --------------------------------- |
-| `tauri`, `tauri-runtime-wry`                                        | 3.0.0-alpha.3                     |
+| `tauri`                                                             | 3.0.0-alpha.4                     |
 | `tauri-build`, `tauri-plugin`, all `tauri-plugin-*`                 | 3.0.0-alpha.2                     |
-| `tauri-runtime-cef`                                                 | 3.0.0-alpha.4                     |
+| `tauri-runtime-cef`                                                 | 3.0.0-alpha.5 (`cef =152.3.0`)    |
 | `tauri-specta` (git tag `v2.0.0-rc.25-koharu.1`)                    | 2.0.0-rc.25                       |
 | `@aphrody/api` / `@aphrody/plugin-opener` / `@tauri-apps/cli` | 3.0.0-alpha.2 / alpha.1 / alpha.3 |
 
@@ -95,14 +94,14 @@ project in the registry in the same change that adds it.
 | `tauri-specta-tauri3`                | `koharu-rs/tauri-specta` tag `v2.0.0-rc.25-koharu.1`: one commit allowing `tauri >= 3.0.0-alpha.0`.                                                                                                                                                                                     | Upstream `specta-rs/tauri-specta` accepts Tauri 3.                   |
 
 Retired (verified 2026-10-01): `aphrody-code/tauri` rev `89499afc` (only change:
-`no_redirection_bitmap`, already in Tauri 3 `tauri-runtime-wry`) and
+`no_redirection_bitmap`, shipped by Tauri 3 before the wry runtime was removed) and
 `aphrody-code/plugins-workspace` rev `5baf71a4` (identical to upstream `v2`,
 no local change).
 
 ## Tauri 3 changes applied to `aphrody-app`
 
 - `tauri::Wry` becomes `tauri::DynRuntime`; the runtime is set with
-  `.runtime(tauri_runtime_wry::Wry::default())`.
+  `.runtime(tauri_runtime_cef::Cef::default())` (see `crates/ui/app/src/cef.rs`).
 - `tauri-plugin-autostart`: `ManagerExt::autolaunch` is now `autostart`.
 - `tauri-plugin-fs`: `fs:allow-read-text-file` was removed; use
   `fs:allow-read-file`.

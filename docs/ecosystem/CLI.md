@@ -1008,6 +1008,5 @@ Crate `aphrody-x`, parser `crates/web/x/src/main.rs#Cli`, 70 commands.
 - `pixel` (aphrody / `aphrody-identity`)
 - `restart` (aphrody / `aphrody-restart`)
 - `serde-saphyr` (aphrody / `serde-saphyr`)
-- `tauri-driver` (aphrody / `aphrody-tauri-driver`)
 - `tauri-schema-generator` (aphrody / `aphrody-tauri-schema-generator`)
 - `yolo-desktop` (aphrody / `yolo-desktop`)

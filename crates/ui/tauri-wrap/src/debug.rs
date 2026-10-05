@@ -6,7 +6,7 @@
 //!
 //! ```rust,ignore
 //! tauri::Builder::default()
-//!     .runtime(tauri_runtime_wry::Wry::default())
+//!     .runtime(tauri_runtime_cef::Cef::default())
 //!     .plugin(aphrody_tauri_wrap::debug::init())
 //! ```
 //!

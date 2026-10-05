@@ -5,21 +5,8 @@ use image::imageops::FilterType;
 use image::ImageFormat;
 use tauri::{Runtime, WebviewWindow};
 
-// Platform-specific modules
-#[cfg(target_os = "macos")]
-mod macos;
-
-#[cfg(target_os = "windows")]
-mod windows;
-
-#[cfg(target_os = "linux")]
-mod linux;
-
-#[cfg(target_os = "ios")]
-mod ios;
-
-#[cfg(target_os = "android")]
-mod android;
+// The one desktop runtime is CEF: every platform captures through the DevTools protocol.
+mod cef;
 
 /// Environment variable name for default max width
 const ENV_MAX_WIDTH: &str = "TAURI_MCP_SCREENSHOT_MAX_WIDTH";
@@ -121,15 +108,7 @@ fn resize_if_needed(
     Ok(buffer.into_inner())
 }
 
-/// Platform-specific screenshot implementation trait
-pub trait PlatformScreenshot {
-    /// Capture a screenshot of the current viewport
-    fn capture_viewport(
-        window: &WebviewWindow<impl Runtime>,
-    ) -> Result<Screenshot, ScreenshotError>;
-}
-
-/// Capture a screenshot of the current viewport using platform-specific APIs
+/// Capture a screenshot of the current viewport through the CEF DevTools protocol
 pub async fn capture_viewport_screenshot<R: Runtime>(
     window: &WebviewWindow<R>,
     format: &str,
@@ -146,30 +125,7 @@ pub async fn capture_viewport_screenshot<R: Runtime>(
     let css_width = physical_size.width as f64 / scale_factor;
     let css_height = physical_size.height as f64 / scale_factor;
 
-    // Dispatch to platform-specific implementation
-    #[cfg(target_os = "macos")]
-    let screenshot = macos::capture_viewport(window)?;
-
-    #[cfg(target_os = "windows")]
-    let screenshot = windows::capture_viewport(window)?;
-
-    #[cfg(target_os = "linux")]
-    let screenshot = linux::capture_viewport(window)?;
-
-    #[cfg(target_os = "ios")]
-    let screenshot = ios::capture_viewport(window)?;
-
-    #[cfg(target_os = "android")]
-    let screenshot = android::capture_viewport(window)?;
-
-    #[cfg(not(any(
-        target_os = "macos",
-        target_os = "windows",
-        target_os = "linux",
-        target_os = "ios",
-        target_os = "android"
-    )))]
-    return Err(ScreenshotError::PlatformUnsupported);
+    let screenshot = cef::capture_viewport(window).await?;
 
     // Apply max_width constraint if specified (param or env var)
     let effective_max_width = get_effective_max_width(max_width);

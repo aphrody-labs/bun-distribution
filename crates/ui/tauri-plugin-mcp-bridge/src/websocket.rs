@@ -820,6 +820,8 @@ async fn handle_connection<R: Runtime>(
     security: Security,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let expected_token = security.token.clone();
+    // `ErrorResponse` is the error type tungstenite's handshake callback imposes.
+    #[allow(clippy::result_large_err)]
     let check = move |request: &Request, response: Response| -> Result<Response, ErrorResponse> {
         let header = |name: &str| request.headers().get(name).and_then(|value| value.to_str().ok());
         let target = request

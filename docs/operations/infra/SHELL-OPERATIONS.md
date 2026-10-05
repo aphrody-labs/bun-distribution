@@ -11,7 +11,7 @@ shell subsystem; applications and agents are clients.
 - Windows, WSL, Linux and VPS select `aphrody-kernel` as the launcher.
 - Nushell is the default command language and `aphrody-terminal-backend` owns
   PTY/stream transport.
-- Tauri/Wry and terminal UI consume the same kernel subsystem; they do not
+- Tauri/CEF and terminal UI consume the same kernel subsystem; they do not
   create a second shell authority.
 - `cmd.exe`, PowerShell and `pwsh.exe` remain compatibility tools only for
   host-specific setup scripts. They are not application runtimes.

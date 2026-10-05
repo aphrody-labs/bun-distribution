@@ -106,7 +106,7 @@ ${header}
   \x1b[32mdocs [query] [--json|--md]\x1b[0m Search or inspect version-matched Bun documentation in vendor/bun/docs
   \x1b[32mversion [--json] | doctor [--json|--md]\x1b[0m Installed version, target; check the installation
   \x1b[32mruntime install|list|verify|rollback|info\x1b[0m  Manage installed runtime artifacts
-  \x1b[32mdesktop-runtime package|install|verify|rollback|info\x1b[0m  Manage native system-WebView artifacts
+  \x1b[32mdesktop-runtime package|install|verify|rollback|info\x1b[0m  Manage native CEF desktop artifacts
   \x1b[32mupgrade [--check|--release-dir DIR]\x1b[0m Install a verified release; \x1b[32muninstall [--yes]\x1b[0m removes ~/.yolo
   \x1b[32mcreate <dir> [--with web,desktop]\x1b[0m Scaffold an Aphrody stack project (Bun + runtime SDK + Tauri) from templates/
   \x1b[32mawesome [stats|list|search|github|check]\x1b[0m Browse oven-sh/awesome-bun (README cached, no clone)

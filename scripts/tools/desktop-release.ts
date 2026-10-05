@@ -22,7 +22,7 @@ export function runDesktopRelease(args: readonly string[]): number {
   };
   if (action === "help" || args.includes("--help")) {
     console.log(
-      "yolo desktop-runtime package|install|verify|rollback|info [artifact] [--root SOURCE] [--binary EXE] [--output DIR] [--home DIR] [--allow-dirty]",
+      "yolo desktop-runtime package|install|verify|rollback|info [artifact] [--root SOURCE] [--binary EXE] [--cef-dir DIR] [--output DIR] [--home DIR] [--allow-dirty] [--no-strip]",
     );
     return 0;
   }
@@ -33,7 +33,9 @@ export function runDesktopRelease(args: readonly string[]): number {
         root: option("root") ?? process.cwd(),
         ...(option("binary") === undefined ? {} : { executable: option("binary")! }),
         ...(option("output") === undefined ? {} : { output: option("output")! }),
+        ...(option("cef-dir") === undefined ? {} : { cefDir: option("cef-dir")! }),
         allowDirty: args.includes("--allow-dirty"),
+        strip: !args.includes("--no-strip"),
       });
       return 0;
     }

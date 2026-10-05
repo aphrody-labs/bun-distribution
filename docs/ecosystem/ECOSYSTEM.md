@@ -164,8 +164,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-supervisor` | crates/ai/supervisor | Multi-agent control plane for aphrody: spawns and tracks N named engine sessions, routes submissions to a chosen agent, fans-in every agent's event stream into one tagged channel, and drives lifecycle (list / interrupt / shutdown) plus per-agent autonomy policy. The orchestration layer above aphrody-engine. |  |  |
 | `aphrody-svg` | crates/ui/svg | The single SVG owner of the Aphrody ecosystem: parse, sanitize, optimize, normalize viewBox, M3 theming, sprite sheets, glyph outlines to SVG paths, rasterize to PNG/ICO and pixel diff. |  | default, glyph, m3, raster |
 | `aphrody-systemd` | crates/os/systemd | Rust implementation of systemd init, service manager, unit dependency DAG, process watchdog and journal for Aphrody OS. |  |  |
-| `aphrody-tao` | crates/tauri/aphrody-tao | Cross-platform window manager library. |  | dbus, default, rwh_04, rwh_05, rwh_06, serde, x11 |
-| `aphrody-tao-macros` | crates/tauri/aphrody-tao-macros | Proc macros for tao |  | default |
 | `aphrody-task-runner` | crates/os/task-runner | Parallel DAG task executor with dependency ordering, retries, timeouts, concurrency caps and NDJSON-friendly event stream for aphrody background pipelines. |  |  |
 | `aphrody-tauri` | crates/tauri/aphrody-tauri | Make tiny, secure apps for all desktop platforms with Tauri |  | common-controls-v6, compression, config-json5, config-toml, custom-protocol, data-url, default, devtools, dynamic-acl, gtk3, gtk4, http-range, image, image-ico, image-png, isolation, linux-libappindicator, linux-libxdo, native-tls, native-tls-vendored, process-relaunch-dangerous-allow-symlink-macos, protocol-asset, rustls-tls, specta, test, tracing, tray-icon, unstable, uuid, webview-data-url, webview2-com |
 | `aphrody-tauri-build` | crates/tauri/aphrody-tauri-build | build time code to pair with https://crates.io/crates/tauri |  | codegen, config-json, config-json5, config-toml, default, isolation, quote, tauri-codegen |
@@ -173,7 +171,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-tauri-cli` | crates/tauri/aphrody-tauri-cli | Command line interface for building Tauri apps | `cargo-tauri` | default, native-tls, native-tls-vendored, platform-certs, rustls |
 | `aphrody-tauri-cli-node` | crates/tauri/aphrody-tauri-cli-node | Aphrody platform crate aphrody-tauri-cli-node. |  | default, native-tls, native-tls-vendored |
 | `aphrody-tauri-codegen` | crates/tauri/aphrody-tauri-codegen | code generation meant to be consumed inside of `tauri` through `tauri-build` or `tauri-macros` |  | brotli, compression, config-json5, config-toml, isolation |
-| `aphrody-tauri-driver` | crates/tauri/aphrody-tauri-driver | Webdriver server for Tauri applications | `tauri-driver` |  |
 | `aphrody-tauri-examples` | crates/tauri/aphrody-tauri-examples | Tauri desktop application examples (wry and CEF runtimes) |  | cef, default, isolation, wry |
 | `aphrody-tauri-macos-sign` | crates/tauri/aphrody-tauri-macos-sign | Code signing utilities for macOS and iOS apps |  |  |
 | `aphrody-tauri-macros` | crates/tauri/aphrody-tauri-macros | Macros for the tauri crate. |  | compression, config-json5, config-toml, custom-protocol, isolation, tracing |
@@ -211,7 +208,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-tauri-plugin-window-state` | crates/tauri/aphrody-tauri-plugin-window-state | Save window positions and sizes and restore them when the app is reopened. |  |  |
 | `aphrody-tauri-runtime` | crates/tauri/aphrody-tauri-runtime | Runtime for Tauri applications |  | default, devtools |
 | `aphrody-tauri-runtime-cef` | crates/tauri/aphrody-tauri-runtime-cef | Tauri runtime interface for Chromium Embedded Framework |  | default, devtools, unstable |
-| `aphrody-tauri-runtime-wry` | crates/tauri/aphrody-tauri-runtime-wry | Wry bindings to the Tauri runtime |  | common-controls-v6, dbus, default, devtools, macos-proxy, tracing, unstable, x11 |
 | `aphrody-tauri-schema-generator` | crates/tauri/aphrody-tauri-schema-generator | Hosts the schema for the Tauri configuration file. | `tauri-schema-generator` |  |
 | `aphrody-tauri-schema-worker` | crates/tauri/aphrody-tauri-schema-worker | Aphrody platform crate aphrody-tauri-schema-worker. |  |  |
 | `aphrody-tauri-specta` | crates/tauri/aphrody-tauri-specta | Completely typesafe Tauri commands |  | default, derive, javascript, typescript |
@@ -233,7 +229,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-vision` | crates/ai/vision | Visual transcription over local GGUF vision models: caption, dense-region description, full-page OCR and VQA. |  | capture, default |
 | `aphrody-voice` | crates/ai/voice | Voice I/O (TTS + STT) provider traits + ElevenLabs/Whisper adapters + Discord shim. |  | local-whisper |
 | `aphrody-vpn` | crates/infra/vpn | Native Mullvad VPN controller and auto-proxy/geo-unblock driver for Aphrody and agy. |  |  |
-| `aphrody-web-bridge` | crates/web/web-bridge | Aphrody Web bridge: in-process Rust content conversion, native DOM/DNS compatibility and browser subprocess. |  | default, stealth |
 | `aphrody-web-chromium` | crates/web/web-chromium | Aphrody Web Chromium profile reader: cookie store parsing and decryption. |  |  |
 | `aphrody-web-crawl` | crates/web/web-crawl | Shared persistent crawl frontier and bounded Rust crawler for Aphrody Web. |  |  |
 | `aphrody-web-detect` | crates/web/web-detect | Native technology and challenge detection for Aphrody Web |  |  |
@@ -243,7 +238,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-web-index` | crates/web/web-index | HNSW approximate nearest-neighbour index with scalar int8 quantisation and mmap persistence |  |  |
 | `aphrody-web-service` | crates/web/web-service | Canonical web execution contract for Aphrody OS: OXC analysis, Bun tooling and Obscura V8 pages. |  | default, render, stealth |
 | `aphrody-winclean` | crates/os/winclean | Rust-owned compatibility surface for 166 WinClean Windows tools. |  |  |
-| `aphrody-wry` | crates/tauri/aphrody-wry | Cross-platform WebView rendering library |  | default, devtools, gdkx11, javascriptcore-rs, linux-body, mac-proxy, os-webview, serde, soup3, tracing, webkit2gtk, webkit2gtk-sys, x11, x11-dl |
 | `aphrody-wsl` | crates/os/aphrody-wsl | Pinned WSL, Linux kernel, WSLg and Aphrody OS distribution build workbench | `aphrody-wsl` |  |
 | `aphrody-x` | crates/web/x | X / Twitter native GraphQL + REST client (cookie auth, no API key required) | `x-cli` |  |
 | `aphrody-yolo` | crates/infra/yolo | Sovereign autonomous runtime core for Aphrody ecosystem. | `aphrody-yolo` |  |

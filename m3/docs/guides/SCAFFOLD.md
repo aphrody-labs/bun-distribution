@@ -13,7 +13,7 @@ Every project the UI stack generates goes through it.
 
 `tauriShell` writes `src-tauri/` (Cargo.toml, build.rs, main.rs, tauri.conf.json, capability, icon)
 for the `app` template and for the projects `web-to-tauri` generates, so the Tauri 3 pins, the
-explicit wry/CEF runtime, the lean feature set and the placeholder icon live in one place.
+explicit CEF runtime (`tauri-runtime-cef`, the one desktop runtime), the lean feature set and the placeholder icon live in one place.
 
 - **Pins**: `src/pins.ts` is the only `TAURI_3` literal. `config/tauri-upstream.json` `mirrors`
   lists it, `bun run tauri:sync` checks and rewrites it. `m3-next-migrate` and `web-to-tauri`

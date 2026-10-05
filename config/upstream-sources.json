@@ -22,12 +22,12 @@
       "url": "https://github.com/tauri-apps/tauri",
       "ref": "v3",
       "sparse": [
-        "crates/tauri-driver"
+        "crates/tauri-runtime-cef"
       ],
       "license": "Apache-2.0 OR MIT",
       "tier": "reference",
-      "purpose": "Tauri 3 branch; only crates/tauri-driver is read (primary Tauri 3 WebDriver proxy).",
-      "consumers": "config/tauri-upstream.json debuggers; docs/guides/web/TAURI-DEBUG.md",
+      "purpose": "Tauri 3 branch; only crates/tauri-runtime-cef is read: the one desktop runtime (CEF + tauri-winit + GTK 4). The local patch for tauri-apps/tauri#16189 (patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch, base 3.0.0-alpha.5) is re-checked against it; drop the patch once upstream merges a fix.",
+      "consumers": "config/tauri-upstream.json patches (tauri-runtime-cef-glib-work-source) and debuggers; docs/guides/web/TAURI-DEBUG.md; vendor.toml",
       "observedCommit": "a8703ee487c659efbebb27c799752d523a6d09a1"
     },
     {
@@ -180,17 +180,6 @@
       "purpose": "Prebuilt CPython 3.12.15 (default, the py workspace baseline) and 3.14.8 distributions (install_only_stripped and full archives) that the vu runtime embeds; consumed as release assets pinned by sha256, not forked.",
       "consumers": "docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json",
       "note": "MPL-2.0 covers the build system; the distributions carry CPython (PSF-2.0) and the licences of their bundled libraries. The install_only_stripped sha256 equals the digest pinned by uv 0.12.23 (crates/uv-python/download-metadata.json). Minimum glibc of the gnu targets: 2.17 (running.rst)."
-    },
-    {
-      "id": "graphify",
-      "kind": "git",
-      "url": "https://github.com/Graphify-Labs/graphify",
-      "ref": "v8",
-      "observedCommit": "5c7b84792f453582676548185aaec3824d51dfe2",
-      "license": "Apache-2.0",
-      "tier": "reference",
-      "purpose": "Code-graph extractor (tree-sitter, nodes and EXTRACTED/INFERRED edges, communities, query/path/explain) absorbed natively as crates/ai/code-graph; version 0.9.77 is the installed parity oracle (uv tool install graphifyy). Read through aphrody git api, no clone and no public fork; LICENSE, LICENSE-MIT and NOTICE terms preserved in the port.",
-      "consumers": "docs/plans/agent-home-pipeline/PLAN.md; crates/ai/code-graph (planned, integrated entry added with the crate)"
     }
   ],
   "integrated": [

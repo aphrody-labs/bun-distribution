@@ -13,7 +13,7 @@ Rules: root `CLAUDE.md`. Workers never run Cargo; the lead runs one check at a t
 | VT state (Rio `rio-vt` 0.5.28) | `crates/shell/terminal-core` | Real. `TerminalState::{new,ingest,resize,take_replies,snapshot,styled_snapshot}`. Compiles for wasm. Selection, scrollback, damage, graphics not exposed (ENGINE-SELECTION.md). |
 | WASM bindings | `crates/shell/web` | Real: `WebTerminal`, `WebShell`, `resize_frame`, `data_frame`. `LocalShell` (`local.rs`) is a toy line editor with 9 builtins (help echo clear env set history version exit). No pipes, no quoting, no files, no coreutils, no scripting. |
 | Tauri PTY plugin | `crates/shell/tauri` | Real: 4 `#[tauri::command]` over native PTY, mock-app test. |
-| Real webview e2e | `crates/ui/app/examples/shell_e2e.rs`, `scripts/build/shell/tauri-e2e.sh` | Real (WebKitGTK on Broadway). |
+| Real webview e2e | `crates/ui/app/examples/shell_e2e.rs`, `scripts/build/shell/tauri-e2e.sh` | Real (CEF under Xvfb since decision 21; WebKitGTK on Broadway before, not re-run). |
 | TS transports | `packages/shell/web/src/index.ts` | Real: `webSocketTransport`, `tauriTransport`, `localTransport`, `attach`. Tests: `shell-web.test.ts`, `browser.test.ts` (headless Chrome), `live-backend.test.ts` (live PTY). |
 | Native PTY + WS server | `crates/shell/terminal-backend` | Real (portable-pty, 1598 lines). Native only. |
 | Nushell | `crates/shell/nu` (nu 0.115.1, features `brotli`, `os`, `rmp-serde`, `sqlite`) | Real, native only. Not built for wasm; wasm viability is unproven. |

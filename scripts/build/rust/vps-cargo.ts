@@ -55,7 +55,7 @@ export type VpsCargoConfig = {
   /** Largest `--jobs` the host accepts (a production host stays below its core count). */
   maxJobs?: number;
   /**
-   * False when the host has no GTK/WebKitGTK development libraries (a production server keeps a minimum
+   * False when the host has no GTK 4 development libraries (the CEF desktop runtime; a production server keeps a minimum
    * surface, config/system-packages.json): packages that need them stay on the primary host. Default true.
    */
   desktopLibraries?: boolean;
@@ -135,7 +135,7 @@ export function heavyLockBusy(config: VpsCargoConfig): boolean {
   return probe.exitCode === 1;
 }
 
-/** Workspace packages that need the GTK/WebKitGTK development libraries: for plain builds, and with test/dev targets. */
+/** Workspace packages that need the GTK 4 (CEF runtime) development libraries: for plain builds, and with test/dev targets. */
 export type DesktopRequirements = { build: Set<string>; all: Set<string> };
 
 type CargoMetadata = {
@@ -299,9 +299,7 @@ async function ensureHostCanBuild(
   if (cargoArgs.length === 0) return candidate;
   const offenders = desktopOffenders(
     cargoArgs,
-    await worktreeDesktopRequirements(
-      primary.desktopSysCrates ?? ["gdk-sys", "gtk-sys", "gtk4-sys", "webkit2gtk-sys"],
-    ),
+    await worktreeDesktopRequirements(primary.desktopSysCrates ?? ["gdk4-sys", "gtk4-sys"]),
   );
   if (offenders.length === 0) return candidate;
   const sample = `${offenders.slice(0, 3).join(", ")}${offenders.length > 3 ? `, … (${offenders.length})` : ""}`;
@@ -312,7 +310,7 @@ async function ensureHostCanBuild(
     return primary;
   }
   throw new Error(
-    `${candidate.host} has no GTK/WebKitGTK development libraries (minimum host surface); needed by ${sample}. Use --host ${primary.host} or select other packages.`,
+    `${candidate.host} has no GTK 4 development libraries (minimum host surface); needed by ${sample}. Use --host ${primary.host} or select other packages.`,
   );
 }
 

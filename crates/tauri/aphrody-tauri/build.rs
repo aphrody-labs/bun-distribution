@@ -261,16 +261,14 @@ fn main() {
   alias("desktop", !mobile);
   alias("mobile", mobile);
 
-  // the `gtk` crate alias (`gtk` 0.18 for GTK3, `gtk4` for GTK4) only exists when one of the
-  // GTK features is enabled, so every `gtk::` usage must be gated on this alias instead of
-  // just on the target OS.
+  // the `gtk` crate alias (`gtk4`) only exists when the GTK feature is enabled, so every
+  // `gtk::` usage must be gated on this alias instead of just on the target OS.
   let gtk_target = matches!(
     target_os.to_str().unwrap(),
     "linux" | "dragonfly" | "freebsd" | "netbsd" | "openbsd"
   );
-  let gtk3 = has_feature(&mut checked_features, "gtk3");
   let gtk4 = has_feature(&mut checked_features, "gtk4");
-  let gtk = gtk_target && (gtk3 || gtk4);
+  let gtk = gtk_target && gtk4;
   alias("gtk", gtk);
   // whether the menu APIs have a platform backend to talk to: muda falls back to a no-op
   // implementation on Linux/BSD when no GTK version is selected.

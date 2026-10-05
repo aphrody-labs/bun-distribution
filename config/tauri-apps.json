@@ -14,7 +14,7 @@
       "kind": "app",
       "path": "crates/ui/app",
       "package": "aphrody-app",
-      "runtime": "wry",
+      "runtime": "cef",
       "workspace": "member",
       "confs": [
         "tauri.conf.json",
@@ -54,7 +54,7 @@
       "package": "aphrody-tauri-wrap",
       "workspace": "member",
       "gate": true,
-      "note": "Runtime plugin of web-to-tauri: navigation policy, downloads, loopback server with backend proxy (feature bundle, default), sidecar (std only). Reads src-tauri/wrap.json; shares policy-cases.json with the TypeScript policy. Also hosts the feature-gated (debug-bridge) Tauri 3 debug bridge aphrody_tauri_wrap::debug for aphrody-web and aphrody-mcp (aphrody_tauri_* tools): wraps the patched upstream tauri-plugin-mcp-bridge (patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch); loopback, per-process token, 0600 discovery file, debug builds only. Enabled in aphrody-model-view through its debug-bridge feature."
+      "note": "Runtime plugin of web-to-tauri: navigation policy, downloads, loopback server with backend proxy (feature bundle, default), sidecar (std only). Reads src-tauri/wrap.json; shares policy-cases.json with the TypeScript policy. Also hosts the feature-gated (debug-bridge) Tauri 3 debug bridge aphrody_tauri_wrap::debug for aphrody-web and aphrody-mcp (aphrody_tauri_* tools): wraps the patched upstream tauri-plugin-mcp-bridge (screenshot through the CEF DevTools protocol) (patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch); loopback, per-process token, 0600 discovery file, debug builds only. Enabled in aphrody-model-view through its debug-bridge feature."
     },
     {
       "id": "m3-next-migrate",
@@ -73,7 +73,7 @@
       "kind": "plugin",
       "path": "crates/shell/tauri",
       "package": "aphrody-shell-tauri",
-      "runtime": "wry",
+      "runtime": "cef",
       "workspace": "member",
       "gate": true,
       "note": "Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client."

@@ -2,7 +2,7 @@
 //! Real-webview end-to-end host of the `aphrody-shell-tauri` plugin (it was the
 //! `aphrody-shell-tauri-e2e` crate).
 //!
-//! The page of `examples/shell_e2e/frontend` runs the WASM shell through a real system webview
+//! The page of `examples/shell_e2e/frontend` runs the WASM shell through a real CEF webview
 //! and the permission-checked plugin IPC, then reports its result through `report`, which prints
 //! it and exits. The desktop's own `main` window and capability are reused: only the assets are
 //! swapped for the directory named by `APHRODY_SHELL_E2E_FRONTEND`, which
@@ -57,6 +57,7 @@ fn report(text: String) {
 
 // `tauri::generate_context!()` expands to code that calls `std::process::exit`.
 #[allow(clippy::exit)]
+#[tauri_runtime_cef::cef_entry_point]
 fn main() {
     let Some(frontend) = std::env::var_os("APHRODY_SHELL_E2E_FRONTEND") else {
         eprintln!(
@@ -72,7 +73,7 @@ fn main() {
     config.app.security.csp = None;
     config.app.security.dev_csp = None;
     tauri::Builder::default()
-        .runtime(tauri_runtime_wry::Wry::default())
+        .runtime(aphrody_app_lib::cef::runtime())
         .plugin(aphrody_shell_tauri::init())
         .on_page_load(|_, payload| eprintln!("page {:?} {}", payload.event(), payload.url()))
         .invoke_handler(tauri::generate_handler![report])

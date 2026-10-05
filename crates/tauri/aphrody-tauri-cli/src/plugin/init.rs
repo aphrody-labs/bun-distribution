@@ -102,7 +102,7 @@ pub fn command(mut options: Options) -> Result<()> {
   } else {
     // The generated manifests depend on the Aphrody packages while keeping the upstream
     // dependency keys (`tauri`, `tauri-plugin`, …), so the plugin code is unchanged.
-    let (tauri_dep, tauri_example_dep, tauri_build_dep, tauri_plugin_dep, tauri_runtime_wry_dep) =
+    let (tauri_dep, tauri_example_dep, tauri_build_dep, tauri_plugin_dep, tauri_runtime_cef_dep) =
       if let Some(tauri_path) = options.tauri_path {
         let path = |package: &str| resolve_tauri_path(&tauri_path, &format!("crates/{package}"));
         (
@@ -123,8 +123,8 @@ pub fn command(mut options: Options) -> Result<()> {
             path("aphrody-tauri-plugin")
           ),
           format!(
-            r#"{{  package = "aphrody-tauri-runtime-wry", path = {:?} }}"#,
-            path("aphrody-tauri-runtime-wry")
+            r#"{{  package = "aphrody-tauri-runtime-cef", path = {:?} }}"#,
+            path("aphrody-tauri-runtime-cef")
           ),
         )
       } else {
@@ -146,8 +146,8 @@ pub fn command(mut options: Options) -> Result<()> {
             metadata.tauri_plugin
           ),
           format!(
-            r#"{{ package = "aphrody-tauri-runtime-wry", version = "{}" }}"#,
-            metadata.tauri_runtime_wry
+            r#"{{ package = "aphrody-tauri-runtime-cef", version = "{}" }}"#,
+            metadata.tauri_runtime_cef
           ),
         )
       };
@@ -162,7 +162,7 @@ pub fn command(mut options: Options) -> Result<()> {
     data.insert("tauri_example_dep", to_json(tauri_example_dep));
     data.insert("tauri_build_dep", to_json(tauri_build_dep));
     data.insert("tauri_plugin_dep", to_json(tauri_plugin_dep));
-    data.insert("tauri_runtime_wry_dep", to_json(tauri_runtime_wry_dep));
+    data.insert("tauri_runtime_cef_dep", to_json(tauri_runtime_cef_dep));
     data.insert("author", to_json(options.author));
 
     if options.tauri {

@@ -86,11 +86,11 @@ case "$(uname)" in
       echo "Installing dependencies with apt..."
 
       # Tauri dependencies
-      set -- build-essential curl wget file openssl libssl-dev libgtk-3-dev librsvg2-dev \
-        libwebkit2gtk-4.1-dev libayatana-appindicator3-dev libxdo-dev libdbus-1-dev
-
-      # Webkit2gtk requires gstreamer plugins for video playback to work
-      set -- "$@" gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+      # (one desktop runtime: CEF + tauri-winit + GTK 4; no WebKitGTK, no GTK 3)
+      set -- build-essential curl wget file openssl libssl-dev libgtk-4-dev librsvg2-dev \
+        libxdo-dev libdbus-1-dev libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
+        libgbm1 libxkbcommon-dev libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libpango-1.0-0 \
+        libcairo2 libasound2-dev xdg-desktop-portal
 
       # C/C++ build dependencies, required to build some *-sys crates
       set -- "$@" llvm-dev libclang-dev clang nasm perl cmake
@@ -105,10 +105,9 @@ case "$(uname)" in
       echo "Installing dependencies with pacman..."
 
       # Tauri dependencies
-      set -- base-devel curl wget file openssl gtk3 librsvg webkit2gtk-4.1 libayatana-appindicator xdotool dbus
-
-      # Webkit2gtk requires gstreamer plugins for video playback to work
-      set -- "$@" gst-plugins-base gst-plugins-good gst-plugins-ugly
+      set -- base-devel curl wget file openssl gtk4 librsvg nss nspr at-spi2-core cups libdrm mesa \
+        libxkbcommon libxcomposite libxdamage libxfixes libxrandr pango cairo alsa-lib xdotool dbus \
+        xdg-desktop-portal
 
       # C/C++ build dependencies, required to build some *-sys crates
       set -- "$@" clang nasm perl cmake
@@ -129,11 +128,9 @@ case "$(uname)" in
       fi
 
       # Tauri dependencies
-      set -- openssl webkit2gtk4.1-devel openssl-devel curl wget file libappindicator-gtk3-devel librsvg2-devel libxdo-devel dbus-devel
-
-      # Webkit2gtk requires gstreamer plugins for video playback to work
-      set -- "$@" gstreamer1-devel gstreamer1-plugins-base-devel gstreamer1-plugins-good \
-        gstreamer1-plugins-good-extras gstreamer1-plugins-ugly-free
+      set -- openssl gtk4-devel openssl-devel curl wget file librsvg2-devel libxdo-devel dbus-devel \
+        nss nspr atk at-spi2-atk cups-libs libdrm mesa-libgbm libxkbcommon libXcomposite libXdamage \
+        libXfixes libXrandr pango cairo alsa-lib xdg-desktop-portal
 
       # C/C++ build dependencies, required to build some *-sys crates
       set -- "$@" clang clang-devel nasm perl-core cmake
@@ -148,11 +145,8 @@ case "$(uname)" in
       echo "Alpine suport is experimental" >&2
 
       # Tauri dependencies
-      set -- build-base curl wget file openssl-dev gtk+3.0-dev librsvg-dev \
-        webkit2gtk-4.1-dev libayatana-indicator-dev xdotool-dev dbus-dev
-
-      # Webkit2gtk requires gstreamer plugins for video playback to work
-      set -- "$@" gst-plugins-base-dev gst-plugins-good gst-plugins-ugly
+      set -- build-base curl wget file openssl-dev gtk4.0-dev librsvg-dev \
+        nss nspr xdotool-dev dbus-dev xdg-desktop-portal
 
       # C/C++ build dependencies, required to build some *-sys crates
       set -- "$@" llvm16-dev clang16 nasm perl cmake
@@ -167,11 +161,8 @@ case "$(uname)" in
       echo "Solus support is experimental" >&2
 
       # Tauri dependencies
-      set -- curl wget file openssl openssl-devel libgtk-3-devel librsvg-devel \
-        libwebkit-gtk41-devel libayatana-appindicator-devel xdotool-devel dbus-devel
-
-      # Webkit2gtk requires gstreamer plugins for video playback to work
-      set -- "$@" gstreamer-1.0-plugins-good gstreamer-1.0-plugins-ugly gstreamer-1.0-devel gstreamer-1.0-plugins-base-devel
+      set -- curl wget file openssl openssl-devel libgtk-4-devel librsvg-devel \
+        nss nspr xdotool-devel dbus-devel xdg-desktop-portal
 
       # C/C++ build dependencies, required to build some *-sys crates
       set -- "$@" llvm-devel llvm-clang-devel llvm-clang nasm perl cmake

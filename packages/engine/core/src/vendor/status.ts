@@ -111,16 +111,7 @@ function countFiles(dir: string, limit: number): number {
  */
 export async function inspectPackages(vendorDir?: string): Promise<readonly SubmoduleStatus[]> {
   const vDir = vendorDir ?? resolve(yoloHome(), "vendor");
-  const pkgs = [
-    "bun",
-    "obscura",
-    "tauri",
-    "plugins-workspace",
-    "create-tauri-app",
-    "wry",
-    "tao",
-    "next",
-  ];
+  const pkgs = ["bun", "obscura", "tauri", "plugins-workspace", "create-tauri-app", "next"];
   const results: SubmoduleStatus[] = [];
 
   for (const name of pkgs) {

@@ -168,20 +168,20 @@ function chooseMode(probe: Probe, requested: WrapMode | "auto", reasons: string[
   );
 }
 
-function chooseEngine(probe: Probe, requested: WrapEngine | "auto", reasons: string[]): WrapEngine {
-  const apis = chromiumApis(probe);
-  if (requested !== "auto") {
-    reasons.push(`${requested} engine: requested`);
-    return requested;
-  }
-  if (apis.length > 0) {
-    reasons.push(
-      `cef engine: the page uses Chromium-only APIs (${apis.join(", ")}) that the system webviews do not all provide`,
+/** CEF is the one desktop runtime: there is no engine to choose, only a request to refuse. */
+function chooseEngine(probe: Probe, requested: string, reasons: string[]): WrapEngine {
+  if (requested !== "auto" && requested !== "cef") {
+    throw new PlanError(
+      `engine ${requested} is retired: Aphrody ships one desktop runtime, Chromium (CEF)`,
     );
-    return "cef";
   }
-  reasons.push("wry engine: no Chromium-only API found, the system webview is lighter on memory");
-  return "wry";
+  const apis = chromiumApis(probe);
+  reasons.push(
+    apis.length > 0
+      ? `cef engine: the one desktop runtime; the page uses Chromium-only APIs (${apis.join(", ")}) it provides`
+      : "cef engine: the one desktop runtime",
+  );
+  return "cef";
 }
 
 function risk(
@@ -198,49 +198,30 @@ function risk(
 /** Everything that can still differ from the original once the plan is applied. */
 export function assessRisks(probe: Probe, config: WrapConfig): Risk[] {
   const risks: Risk[] = [];
-  const engine = config.engine;
   const mode = config.mode;
   const chromium = chromiumApis(probe);
   if (chromium.length > 0) {
     risks.push(
-      engine === "cef"
-        ? risk(
-            "chromium-only-apis",
-            "low",
-            "ui",
-            `uses ${chromium.join(", ")}`,
-            "applied",
-            "the Chromium (CEF) engine is selected",
-          )
-        : risk(
-            "chromium-only-apis",
-            "high",
-            "ui",
-            `uses ${chromium.join(", ")}, which WebKitGTK/WKWebView do not all provide`,
-            "manual",
-            "select the cef engine or accept the difference",
-          ),
+      risk(
+        "chromium-only-apis",
+        "low",
+        "ui",
+        `uses ${chromium.join(", ")}`,
+        "applied",
+        "the Chromium (CEF) engine provides them",
+      ),
     );
   }
   if (hasSignal(probe, "service-worker")) {
     risks.push(
-      engine === "cef"
-        ? risk(
-            "service-worker",
-            "low",
-            "platform",
-            "registers a service worker",
-            "applied",
-            "Chromium runs it like the browser does",
-          )
-        : risk(
-            "service-worker",
-            "medium",
-            "platform",
-            "registers a service worker; WKWebView limits them to app-bound domains and WebKitGTK support varies",
-            "manual",
-            "online behaviour is unchanged, offline caching may differ; use the cef engine to match Chromium",
-          ),
+      risk(
+        "service-worker",
+        "low",
+        "platform",
+        "registers a service worker",
+        "applied",
+        "Chromium runs it like the browser does",
+      ),
     );
   }
   if (hasSignal(probe, "notifications")) {
@@ -249,7 +230,7 @@ export function assessRisks(probe: Probe, config: WrapConfig): Risk[] {
         "notifications",
         "medium",
         "platform",
-        "uses the Web Notifications API, absent from WebKitGTK and WKWebView",
+        "uses the Web Notifications API, which CEF does not wire to the desktop notification centre",
         "manual",
         "needs a native notification bridge (tauri-plugin-notification) limited to the app origin; not generated",
       ),
@@ -294,7 +275,7 @@ export function assessRisks(probe: Probe, config: WrapConfig): Risk[] {
             "user-agent-sniffing",
             "medium",
             "ui",
-            "branches on the user agent; the system webview reports a different one than Chrome",
+            "branches on the user agent; the embedded Chromium reports an application user agent, not the browser's",
             "flag",
             "set --user-agent to the string the page expects",
           ),
@@ -391,15 +372,15 @@ function siteRisks(probe: SiteProbe, config: WrapConfig): Risk[] {
       ),
     );
     const strict = probe.idps.filter((idp) => idp.id === "google" || idp.id === "apple");
-    if (strict.length > 0 && config.engine === "wry") {
+    if (strict.length > 0) {
       risks.push(
         risk(
           "embedded-webview-sign-in",
           "medium",
           "auth",
-          `${strict.map((idp) => idp.id).join(", ")} may refuse sign-in in an embedded webview`,
+          `${strict.map((idp) => idp.id).join(", ")} may refuse sign-in in an embedded browser`,
           "manual",
-          "test the sign-in flow; use the cef engine or a system-browser callback if it is refused",
+          "test the sign-in flow; use a system-browser callback if it is refused",
         ),
       );
     }
@@ -429,7 +410,7 @@ function siteRisks(probe: SiteProbe, config: WrapConfig): Risk[] {
         "ui",
         `loads third-party frames (${[...probe.frameOrigins, ...probe.embeds.map((embed) => embed.id)].slice(0, 4).join(", ")})`,
         "applied",
-        "their origins are allowed in-app; WebKitGTK and WKWebView send frame loads through the navigation hook, a frame created later by script from an unlisted origin would open in the system browser",
+        "their origins are allowed in-app; CEF sends frame loads through the navigation hook, a frame created later by script from an unlisted origin would open in the system browser",
       ),
     );
   }
@@ -441,7 +422,7 @@ function siteRisks(probe: SiteProbe, config: WrapConfig): Risk[] {
         "auth",
         "sets SameSite=None cookies",
         "manual",
-        "WebKit-based webviews restrict third-party cookies; cross-site embedded flows may differ from Chrome",
+        "Chromium restricts third-party cookies by its own policy; cross-site embedded flows may differ from the browser",
       ),
     );
   }
