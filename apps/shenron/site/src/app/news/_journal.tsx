@@ -20,8 +20,7 @@
 import Link from "next/link";
 import { cache } from "react";
 import { desc } from "drizzle-orm";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateCourte, dateLongue } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { posts as postsTable } from "@/db/schema";
 import { publicPostFilter } from "@/lib/posts";
@@ -210,7 +209,7 @@ export async function JournalIndex({ page }: { page: number }) {
 											<>
 												{post.publishedAt && (
 													<time dateTime={post.publishedAt.toISOString()}>
-														{format(post.publishedAt, "d MMM yyyy", { locale: fr })}
+														{dateCourte(post.publishedAt)}
 													</time>
 												)}
 												<span aria-hidden>·</span>
@@ -322,7 +321,7 @@ function LeadArticle({
 					{post.author?.username && <span>{post.author.username}</span>}
 					{post.publishedAt && (
 						<time dateTime={post.publishedAt.toISOString()}>
-							{format(post.publishedAt, "d MMMM yyyy", { locale: fr })}
+							{dateLongue(post.publishedAt)}
 						</time>
 					)}
 					<span aria-hidden>·</span>

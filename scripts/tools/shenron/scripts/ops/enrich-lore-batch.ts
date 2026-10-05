@@ -1,4 +1,4 @@
-import { Client } from 'pg';
+import { SQL } from 'bun';
 
 
 
@@ -141,15 +141,14 @@ const battles = [
 async function main() {
   const connectionString = process.env.DATABASE_URL?.trim();
   if (!connectionString) throw new Error("DATABASE_URL is required.");
-  const client = new Client({ connectionString });
-  await client.connect();
+  const client = new SQL(connectionString);
   
   let hasError = false;
   
   // Locations
   for (const loc of locations) {
     try {
-      await client.query(`
+      await client.unsafe(`
         UPDATE bot.db_locations 
         SET article = $1, article_sources = $2, article_updated_at = extract(epoch from now()) 
         WHERE id = $3
@@ -164,7 +163,7 @@ async function main() {
   // Tournaments
   for (const t of tournaments) {
     try {
-      await client.query(`
+      await client.unsafe(`
         UPDATE bot.db_tournaments 
         SET article = $1, article_sources = $2, article_updated_at = extract(epoch from now()) 
         WHERE id = $3
@@ -179,7 +178,7 @@ async function main() {
   // Battles
   for (const b of battles) {
     try {
-      await client.query(`
+      await client.unsafe(`
         UPDATE bot.db_battles 
         SET article = $1, article_sources = $2, article_updated_at = extract(epoch from now()) 
         WHERE id = $3
@@ -191,7 +190,7 @@ async function main() {
     }
   }
 
-  await client.end();
+  await client.close();
   
   if (hasError) {
     process.exit(1);

@@ -5,7 +5,11 @@ import * as path from 'node:path'
 import { env } from 'node:process'
 import { promisify } from 'node:util'
 
-import * as semver from 'semver'
+/** Loose `major.minor.patch` from a version such as `11.0` (what semver.coerce returned). */
+const coerce = (/** @type {string} */ version) => {
+	const [major = '0', minor = '0', patch = '0'] = String(version).match(/\d+(?:\.\d+){0,2}/)?.[0].split('.') ?? []
+	return `${major}.${minor}.${patch}`
+}
 
 import { linuxLibs, windowsDLLs } from './shared.mjs'
 
@@ -113,12 +117,7 @@ export async function patchTauri(root, nativeDeps, targets, args) {
 			(targets.includes('aarch64-apple-darwin') ||
 				(targets.length === 0 && process.arch === 'arm64')) &&
 			(macOSMinimumVersion == null ||
-				semver.lt(
-					/** @type {import('semver').SemVer} */ (semver.coerce(macOSMinimumVersion)),
-					/** @type {import('semver').SemVer} */ (
-						semver.coerce(macOSArm64MinimumVersion)
-					)
-				))
+				Bun.semver.order(coerce(macOSMinimumVersion), coerce(macOSArm64MinimumVersion)) < 0)
 		) {
 			macOSMinimumVersion = macOSArm64MinimumVersion
 			console.log(

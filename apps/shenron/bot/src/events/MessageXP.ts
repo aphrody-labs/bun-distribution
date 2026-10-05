@@ -23,7 +23,6 @@ import { MessageTemplateService } from "~/services/MessageTemplateService";
 import { ModerationService } from "~/services/ModerationService";
 import { SettingsService } from "~/services/SettingsService";
 import { logger } from "~/lib/logger";
-import dayjs from "dayjs";
 
 @Discord()
 @Bot("shenron")
@@ -104,11 +103,13 @@ export class MessageXPEvent {
 		if (!announce) return;
 
 		// Quête quotidienne — message rendu par le template `daily_quest`.
-		const today = dayjs(now).startOf("day").valueOf();
+		const today = new Date(now).setHours(0, 0, 0, 0);
 		const lastQuest = user.lastDailyQuestAt?.getTime() ?? 0;
 		const isNewDay = lastQuest < today;
 		if (isNewDay) {
-			const yesterdayDelta = today - dayjs(now).subtract(1, "day").startOf("day").valueOf();
+			const yesterday = new Date(now);
+			yesterday.setDate(yesterday.getDate() - 1);
+			const yesterdayDelta = today - yesterday.setHours(0, 0, 0, 0);
 			const streak = lastQuest >= today - yesterdayDelta ? user.dailyStreak + 1 : 1;
 			const dailyZeni = applyZeniRace(
 				user.race,

@@ -59,7 +59,6 @@
     "@shenron/images": "workspace:*",
     "@shenron/pipeline": "workspace:*",
     "better-auth": "catalog:",
-    "dayjs": "catalog:",
     "discord.js": "catalog:",
     "discordx": "catalog:",
     "drizzle-orm": "catalog:",

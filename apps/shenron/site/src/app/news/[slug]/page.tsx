@@ -7,8 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateCourte, dateLongue } from "@/lib/dates";
 import type { Metadata } from "next";
 import type { Article, WithContext } from "schema-dts";
 
@@ -232,7 +231,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 						{post.author?.username && <span>Par {post.author.username}</span>}
 						{post.publishedAt && (
 							<time dateTime={post.publishedAt.toISOString()}>
-								{format(post.publishedAt, "d MMMM yyyy", { locale: fr })}
+								{dateLongue(post.publishedAt)}
 							</time>
 						)}
 						<span aria-hidden>·</span>
@@ -378,7 +377,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 										</Link>
 									</h3>
 									<p className="ed-meta mt-2">
-										{p.publishedAt && format(p.publishedAt, "d MMM yyyy", { locale: fr })} ·{" "}
+										{p.publishedAt && dateCourte(p.publishedAt)} ·{" "}
 										{p.readingMinutes} min
 									</p>
 								</article>

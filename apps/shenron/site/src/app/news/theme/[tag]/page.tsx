@@ -5,8 +5,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateCourte } from "@/lib/dates";
 import type { Metadata } from "next";
 
 import { publicPostFilter } from "@/lib/posts";
@@ -165,7 +164,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
 							<>
 								{post.publishedAt && (
 									<time dateTime={post.publishedAt.toISOString()}>
-										{format(post.publishedAt, "d MMM yyyy", { locale: fr })}
+										{dateCourte(post.publishedAt)}
 									</time>
 								)}
 								<span aria-hidden>·</span>

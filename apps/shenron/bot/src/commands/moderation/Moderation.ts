@@ -31,7 +31,6 @@ import { canModerate, canManageRole } from "~/lib/hierarchy";
 import { gifFor } from "~/lib/sanction-gif";
 import { parseDuration, formatDuration, notifyMember } from "~/lib/sanction-helpers";
 import type { GuildBasedChannel, Collection, Snowflake } from "discord.js";
-import dayjs from "dayjs";
 
 @Discord()
 @Bot("shenron")
@@ -298,13 +297,13 @@ export class ModerationCommands {
 		}
 		await this.mod.log("MUTE", target.id, interaction.user.id, reason, { durationMs: ms });
 
-		const until = dayjs().add(ms, "ms");
+		const until = new Date(Date.now() + ms);
 		const embed = sanctionEmbed({
 			target,
 			moderator: interaction.user,
 			action: "mute",
 			reason,
-			duration: `${formatDuration(ms)} (jusqu'à ${until.format("DD/MM HH:mm")})`,
+			duration: `${formatDuration(ms)} (jusqu'à ${until.toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })})`,
 			gifUrl: await gifFor("mute"),
 		});
 		const dmOk = await notifyMember(

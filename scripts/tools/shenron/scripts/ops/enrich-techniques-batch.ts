@@ -1,4 +1,4 @@
-import { Client } from 'pg';
+import { SQL } from 'bun';
 import * as fs from 'fs';
 import { homedir } from 'node:os';
 import * as path from 'path';
@@ -253,11 +253,10 @@ async function main() {
   let pgHasError = false;
   if (connectionString) {
     try {
-      const client = new Client({ connectionString });
-      await client.connect();
-      await client.query(`ALTER TABLE bot.db_techniques ADD COLUMN IF NOT EXISTS article TEXT;`);
-      await client.query(`ALTER TABLE bot.db_techniques ADD COLUMN IF NOT EXISTS article_sources TEXT;`);
-      await client.query(`ALTER TABLE bot.db_techniques ADD COLUMN IF NOT EXISTS article_updated_at TIMESTAMP;`);
+      const client = new SQL(connectionString);
+      await client.unsafe(`ALTER TABLE bot.db_techniques ADD COLUMN IF NOT EXISTS article TEXT;`);
+      await client.unsafe(`ALTER TABLE bot.db_techniques ADD COLUMN IF NOT EXISTS article_sources TEXT;`);
+      await client.unsafe(`ALTER TABLE bot.db_techniques ADD COLUMN IF NOT EXISTS article_updated_at TIMESTAMP;`);
       console.log("Colonnes article ajoutées à PostgreSQL.");
 
       console.log("Connecté à PostgreSQL.");
@@ -265,7 +264,7 @@ async function main() {
       for (const tech of techniques) {
         for (const id of tech.ids) {
           try {
-            await client.query(`
+            await client.unsafe(`
               UPDATE bot.db_techniques 
               SET article = $1, article_sources = $2, article_updated_at = NOW() 
               WHERE id = $3
@@ -277,7 +276,7 @@ async function main() {
           }
         }
       }
-      await client.end();
+      await client.close();
     } catch(e) {
       console.error("Erreur de connexion à PostgreSQL:", e);
       pgHasError = true;

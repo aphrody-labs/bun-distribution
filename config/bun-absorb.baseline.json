@@ -2,17 +2,13 @@
   "schemaVersion": 1,
   "imports": {
     "@paralleldrive/cuid2": 3,
-    "date-fns": 8,
-    "dayjs": 2,
+    "date-fns": 4,
     "marked": 1,
-    "pg": 3,
     "playwright": 1,
     "playwright-core": 2,
     "postgres": 252,
-    "semver": 1,
     "sharp": 37,
     "smol-toml": 1,
-    "tsup": 1,
     "vitest": 2
   }
 }

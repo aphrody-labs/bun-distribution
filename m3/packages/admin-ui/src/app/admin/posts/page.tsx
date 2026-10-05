@@ -1,12 +1,12 @@
 import { db } from "@/lib/db";
 import Link from "next/link";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import { Crayon, Document, Etoile, Plus } from "@/components/icones";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PostStatus } from "@/db/schema";
+
+const dateCourte = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 
 export const dynamic = "force-dynamic";
 
@@ -139,7 +139,7 @@ export default async function AdminPosts({
                     <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-white/50">
                       <span>{post.author?.username ?? "—"}</span>
                       <span aria-hidden>·</span>
-                      <span>{format(date, "d MMM yyyy", { locale: fr })}</span>
+                      <span>{dateCourte.format(date)}</span>
                       <span aria-hidden>·</span>
                       <span>{post.readingMinutes} min</span>
                       {post.tags?.length > 0 && (

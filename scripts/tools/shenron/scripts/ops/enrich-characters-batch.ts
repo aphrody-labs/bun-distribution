@@ -1,4 +1,4 @@
-import { Client } from 'pg';
+import { SQL } from 'bun';
 import * as fs from 'fs';
 import { homedir } from 'node:os';
 import * as path from 'path';
@@ -83,14 +83,13 @@ async function main() {
     process.exit(1);
   }
 
-  const client = new Client({ connectionString });
-  await client.connect();
+  const client = new SQL(connectionString);
 
   let hasError = false;
   
   for (const char of characters) {
     try {
-      await client.query(`
+      await client.unsafe(`
         UPDATE bot.db_characters 
         SET article = $1, article_sources = $2, article_updated_at = $4 
         WHERE id = $3
@@ -102,7 +101,7 @@ async function main() {
     }
   }
 
-  await client.end();
+  await client.close();
   
   if (hasError) {
     process.exit(1);
