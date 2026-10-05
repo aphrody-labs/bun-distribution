@@ -152,3 +152,19 @@ d’IECODE et de FUT.
   base-ui, fonts, material-*).
 - [ ] npm : déprécier les paquets absorbés par Bun (`zstd`, `xml2`, `web-storage`, `web-notification`), renommés
   (`bun-rs`), ou hors produit (scrapers d’épisodes, `bxc*`).
+
+## 8. Tout Aphrody publié (directive propriétaire du 2026-10-05)
+
+Tout Aphrody est public, installable et publiable : Bun sur npm `@aphrody` (session aphrody-1a, commande
+`aphrody-ops aphrody-packages publish`), Rust sur crates.io, Python sur PyPI. Les consommateurs (dont Shenron)
+passent uniquement par ces registres : aucun lien en dur, aucune archive, aucun import relatif inter-dépôts.
+
+- [ ] crates.io (316 crates) : métadonnées héritées du workspace (licence, dépôt, description), retrait des
+  `publish = false` (177), versions sur les dépendances de chemin (52) ; audit `cargo package --list` (secrets,
+  chemins hôte, taille < 10 Mo) ; 14 noms déjà pris par l’amont (`koharu*`, `obscura`, `serde-saphyr`, `simdutf`,
+  `tauri-plugin-mcp-bridge`) → dépendre de la version amont si nos correctifs sont résorbés, sinon renommer le
+  fork ; `cargo publish --workspace --dry-run` sur la fabrique, puis envoi local `--no-verify` dans l’ordre topologique.
+- [ ] PyPI : paquets `py/` construits et publiés par `uv build` / `uv publish`.
+- [ ] Shenron + Koharu (fork créé comme backend manga et traduction de Shenron) → `aphrody-labs/shenron`, Bun + Rust,
+  sans régression ni doublon : site, bot, pipeline, éditeur et crates Koharu, app desktop native sur le fork Bun,
+  RAG et backend propres exploitant Aphrody, inférence LLM CPU via Aphrody, chat M3 AI et dashboard admin M3.
