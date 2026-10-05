@@ -11,7 +11,7 @@
 import {
   Channel,
   invoke,
-  PermissionState,
+  type PermissionState,
   checkPermissions as checkPluginPermissions
 } from '@aphrody/api/core'
 

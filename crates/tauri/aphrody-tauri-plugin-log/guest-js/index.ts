@@ -118,7 +118,7 @@ function getCallerLocation(stack?: string) {
 
     const traces = stack.split('\n').map((line) => line.split('@'))
     const filtered = traces.filter(([name, location]) => {
-      return name.length > 0 && location !== '[native code]'
+      return (name?.length ?? 0) > 0 && location !== '[native code]'
     })
     // Find the third line (caller's caller of the current location)
     return filtered[2]?.filter((v) => v.length > 0).join('@')

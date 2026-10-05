@@ -99,6 +99,6 @@ export async function selectionFeedback(): Promise<Result<null, Error>> {
   return commands.selectionFeedback()
 }
 
-export { ImpactFeedbackStyle, NotificationFeedbackType } from './bindings'
+export type { ImpactFeedbackStyle, NotificationFeedbackType } from './bindings'
 
 // export { events };

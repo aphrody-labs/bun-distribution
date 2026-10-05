@@ -157,3 +157,7 @@ npm-debug.log*
 
 # Machine state gathered by scripts/tools/portable (config/portable.json); never committed.
 /.portable/
+
+# JavaScript build output of the Tauri fork packages (crates/tauri/build-js.ts)
+/crates/tauri/*/dist/
+/crates/tauri/*/dist-js/

@@ -19,29 +19,37 @@
   },
   "homepage": "https://github.com/tauri-apps/tauri#readme",
   "type": "module",
-  "main": "./index.cjs",
+  "main": "./dist/index.cjs",
   "module": "./index.js",
-  "types": "./index.d.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "bun": "./src/index.ts",
-      "import": "./index.js",
-      "require": "./index.cjs",
-      "types": "./index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./*": {
       "bun": "./src/*.ts",
-      "import": "./*.js",
-      "require": "./*.cjs",
-      "types": "./*.d.ts"
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js",
+      "require": "./dist/*.cjs"
     },
     "./package.json": "./package.json"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "bun ../build-js.ts"
   },
   "private": true,
   "engines": {
     "bun": ">=1.4.2"
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE-APACHE-2.0",
+    "LICENSE-MIT"
+  ]
 }

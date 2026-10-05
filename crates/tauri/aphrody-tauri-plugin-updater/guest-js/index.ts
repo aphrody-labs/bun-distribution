@@ -245,7 +245,7 @@ class Update extends Resource {
    * }
    * ```
    */
-  async close(): Promise<void> {
+  override async close(): Promise<void> {
     await this.downloadedBytes?.close()
     await super.close()
   }

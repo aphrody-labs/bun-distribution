@@ -11,9 +11,9 @@
 
 import { invoke } from '@aphrody/api/core'
 
-window.alert = function (message: string) {
+window.alert = function (message?: string) {
   void invoke('plugin:dialog|message', {
-    message: message.toString()
+    message: String(message)
   })
 }
 
