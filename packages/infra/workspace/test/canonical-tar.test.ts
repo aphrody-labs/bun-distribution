@@ -69,13 +69,23 @@ write(os.path.join(out, "symlink.tgz"), tarfile.PAX_FORMAT, entries(long_name)[:
 let directory = "";
 beforeAll(async () => {
   directory = await mkdtemp(join(tmpdir(), "canonical-tar-"));
-  // CPython is `python3` on POSIX; Windows has `python` (or uv's managed interpreter) instead.
-  const launchers = [["python3"], ["python"], ["uv", "run", "--no-project", "python"]];
+  // The oracle bytes are those of CPython >= 3.12 (`requires-python` of py/): uv resolves an installed
+  // interpreter of that range first, since the distribution `python3` can be older (3.11 in Ubuntu 24.04
+  // cloud containers). `python3` and `python` follow for POSIX and Windows hosts without uv.
+  const launchers = [
+    ["uv", "run", "--no-project", "--python", ">=3.12", "python"],
+    ["python3"],
+    ["python"],
+  ];
   let failure = "no CPython interpreter found";
   for (const launcher of launchers) {
-    const oracle = Bun.spawnSync([...launcher, "-I", "-c", ORACLE, directory], { stderr: "pipe" });
-    if (oracle.exitCode === 0) return;
-    failure = oracle.stderr.toString();
+    try {
+      const oracle = Bun.spawnSync([...launcher, "-I", "-c", ORACLE, directory], { stderr: "pipe" });
+      if (oracle.exitCode === 0) return;
+      failure = oracle.stderr.toString();
+    } catch (error) {
+      failure = String(error);
+    }
   }
   throw new Error(failure);
 });
