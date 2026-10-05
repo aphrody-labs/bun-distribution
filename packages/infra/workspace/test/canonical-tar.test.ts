@@ -80,7 +80,9 @@ beforeAll(async () => {
   let failure = "no CPython interpreter found";
   for (const launcher of launchers) {
     try {
-      const oracle = Bun.spawnSync([...launcher, "-I", "-c", ORACLE, directory], { stderr: "pipe" });
+      const oracle = Bun.spawnSync([...launcher, "-I", "-c", ORACLE, directory], {
+        stderr: "pipe",
+      });
       if (oracle.exitCode === 0) return;
       failure = oracle.stderr.toString();
     } catch (error) {
