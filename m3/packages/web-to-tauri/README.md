@@ -9,6 +9,6 @@ page, its API or its backend can see. Guide:
 [`crates/ui/tauri-wrap`](../../../crates/ui/tauri-wrap).
 
 ```sh
-bun run ui:wrap plan https://example.com
-bun run ui:wrap convert https://example.com --out ../example-app
+yolo m3 web-to-tauri plan https://example.com          # npm bin: web-to-tauri plan ...
+yolo m3 web-to-tauri convert https://example.com --out ../example-app
 ```

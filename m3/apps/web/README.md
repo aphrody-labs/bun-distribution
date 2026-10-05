@@ -10,9 +10,9 @@ package's scripts (`scripts/yolo.ts`):
 
 | Root script | yolo | Package script |
 | --- | --- | --- |
-| `bun run serve` | `yolo web dev` | `dev`: `m3 dev` |
-| `bun run build` | `yolo web build` | `build`: `m3 build` into `dist/` |
-| `bun run compile` | `yolo tauri build` | `compile`: `m3 compile` (single executable) |
+| `bun run serve` | `yolo web dev` | `dev`: `yolo m3 dev` |
+| `bun run build` | `yolo web build` | `build`: `yolo m3 build` into `dist/` |
+| `bun run compile` | `yolo tauri build` | `compile`: `yolo m3 compile` (single executable) |
 
 `bun run test` (`test/web.test.ts`) builds the app with the deterministic sheet generator and checks
 the emitted HTML, favicon, script and stylesheet; `bun run typecheck` runs `tsc`.

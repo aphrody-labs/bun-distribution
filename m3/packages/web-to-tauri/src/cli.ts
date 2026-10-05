@@ -126,8 +126,8 @@ function printPlan(plan: ConversionPlan): void {
     );
 }
 
-async function main(): Promise<number> {
-  const args = parseArgs(process.argv.slice(2));
+async function main(argv: string[]): Promise<number> {
+  const args = parseArgs(argv);
   const json = args.bool.has("json");
   if (args.command === "help" || args.bool.has("help")) {
     console.log(HELP);
@@ -211,10 +211,14 @@ async function main(): Promise<number> {
   return 1;
 }
 
-main().then(
-  (code) => process.exit(code),
-  (error) => {
+/** `web-to-tauri <argv>` (`yolo m3 web-to-tauri <argv>`): resolves to the exit status; errors are reported, not thrown. */
+export async function runWebToTauri(argv: string[]): Promise<number> {
+  try {
+    return await main(argv);
+  } catch (error) {
     console.error(`web-to-tauri: ${error instanceof Error ? error.message : error}`);
-    process.exit(1);
-  },
-);
+    return 1;
+  }
+}
+
+if (import.meta.main) process.exit(await runWebToTauri(process.argv.slice(2)));

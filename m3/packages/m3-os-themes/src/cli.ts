@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-// bun packages/m3-os-themes/src/cli.ts <install|generate|uninstall> --target windows|gnome|cosmic|chromium|all
+// m3-os-themes <install|generate|uninstall> --target windows|gnome|cosmic|chromium|all
 //   --seed <hex> --mode light|dark|auto [--name N] [--out DIR] [--variant V] [--dry-run|--apply]
+// In the Aphrody checkout: `yolo m3 os-themes ...` (runOsThemes, in-process).
 // `generate` writes only into --out. `install`/`uninstall` are dry-run unless --apply (then they run the generated scripts).
 import { mkdirSync, writeFileSync, chmodSync, lstatSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -188,8 +189,11 @@ export function run(argv: string[], exec: Exec = defaultExec): CliResult {
   return { code, out };
 }
 
-if (import.meta.main) {
-  const r = run(process.argv.slice(2));
+/** `m3-os-themes <argv>` (`yolo m3 os-themes <argv>`): prints the report and returns the exit status. */
+export function runOsThemes(argv: string[]): number {
+  const r = run(argv);
   console.log(r.out.join("\n"));
-  process.exit(r.code);
+  return r.code;
 }
+
+if (import.meta.main) process.exit(runOsThemes(process.argv.slice(2)));

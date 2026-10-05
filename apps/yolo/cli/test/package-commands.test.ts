@@ -3,9 +3,12 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import {
+  M3_TOOLS,
   PACKAGE_COMMANDS,
+  type PackageRunner,
   isPackageCommand,
   packageRoot,
+  resolvePackageCommand,
   runPackageCommand,
 } from "../src/package-commands";
 
@@ -45,13 +48,52 @@ describe("yolo package commands", () => {
     expect(isPackageCommand("toString")).toBe(false);
   });
 
-  it("every command names an owner module that exports its runner", async () => {
-    for (const [name, { module, run }] of Object.entries(PACKAGE_COMMANDS)) {
+  it("every command and tool names an owner module that exports its runner", async () => {
+    const runners: [string, PackageRunner][] = [
+      ...Object.entries(PACKAGE_COMMANDS),
+      ...Object.entries(M3_TOOLS).map(([tool, runner]): [string, PackageRunner] => [
+        `m3 ${tool}`,
+        runner,
+      ]),
+    ];
+    for (const [name, { module, run }] of runners) {
       const path = join(root, module);
       expect(existsSync(path), `${name}: ${module}`).toBe(true);
+      // oxlint-disable-next-line no-await-in-loop -- one owner module at a time keeps failures attributable.
       const loaded = (await import(path)) as Record<string, unknown>;
       expect(typeof loaded[run], `${name}: ${module} exports ${run}`).toBe("function");
     }
+  });
+
+  it("yolo m3 resolves a tool by its first argument and everything else to the framework CLI", async () => {
+    // Resolution rule: a first argument naming a tool selects it; tool names never shadow an m3 framework command.
+    const framework = (await import(join(root, PACKAGE_COMMANDS.m3.module))) as {
+      COMMANDS: readonly string[];
+    };
+    for (const tool of Object.keys(M3_TOOLS)) expect(framework.COMMANDS).not.toContain(tool);
+    const next = resolvePackageCommand("m3", ["next", "dev", "--port", "3001"]);
+    expect(next).toMatchObject({
+      label: "m3 next",
+      module: M3_TOOLS.next.module,
+      args: ["dev", "--port", "3001"],
+    });
+    for (const args of [[], ["dev"], ["new", "next"], ["--help"], ["toString"]]) {
+      expect(resolvePackageCommand("m3", args)).toMatchObject({
+        label: "m3",
+        module: PACKAGE_COMMANDS.m3.module,
+        args,
+      });
+    }
+    expect(resolvePackageCommand("ops", ["next"])).toMatchObject({ label: "ops", args: ["next"] });
+    expect(resolvePackageCommand("ovh", [])).toBeUndefined();
+  });
+
+  it("servers and watchers keep the process alive; one-shot commands end it", () => {
+    expect(resolvePackageCommand("m3", ["dev"])?.keepAlive).toBe(true);
+    expect(resolvePackageCommand("m3", ["bun", "serve"])?.keepAlive).toBe(true);
+    expect(resolvePackageCommand("forge", ["watch"])?.keepAlive).toBe(true);
+    expect(resolvePackageCommand("m3", ["scaffold", "list"])?.keepAlive).toBeUndefined();
+    expect(resolvePackageCommand("browser", ["open"])?.keepAlive).toBeUndefined();
   });
 
   it("dispatches in-process with the literal arguments and returns the runner status", async () => {
@@ -85,6 +127,16 @@ describe("yolo package commands", () => {
       [["google", "--help"], "yolo google <drive|fonts>"],
       [["doc-ai", "--help"], "yolo doc-ai translate"],
       [["browser", "--version"], "@aphrody/agent-browser"],
+      [["forge", "--help"], "yolo forge doctor"],
+      [["forge", "version"], "bun-forge 0.1.0"],
+      [["m3", "--help"], "Tools (yolo m3 <tool> ...):"],
+      [["m3", "help"], "m3 new <dir>"],
+      [["m3", "next", "--help"], "usage: m3-next"],
+      [["m3", "bun", "help"], "m3-bun dev"],
+      [["m3", "os-themes"], "m3-os-themes <install|generate|uninstall>"],
+      [["m3", "next-migrate", "--help"], "next-migrate [OPTIONS]"],
+      [["m3", "web-to-tauri", "help"], "web-to-tauri probe"],
+      [["m3", "scaffold", "list"], "example"],
     ];
     for (const [args, expected] of cases) {
       const result = yolo(...args);
@@ -100,5 +152,14 @@ describe("yolo package commands", () => {
     expect(isPackageCommand("ovh")).toBe(false);
     expect(yolo("browser", "mcp").status).toBe(2);
     expect(yolo("update", "no-such-module").status).toBe(2);
+    const forge = yolo("forge", "deploy");
+    expect(forge.status).toBe(2);
+    expect(forge.stderr).toContain("yolo forge: unknown command: deploy");
+    const icons = yolo("m3", "svg-to-ico");
+    expect(icons.status).toBe(2);
+    expect(icons.stderr).toContain("usage: svg-to-ico");
+    const m3 = yolo("m3", "no-such-command");
+    expect(m3.status).toBe(1);
+    expect(m3.stderr).toContain("yolo m3: unknown command no-such-command");
   });
 });

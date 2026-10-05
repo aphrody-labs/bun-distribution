@@ -4,10 +4,10 @@
 //
 //   bun scripts/yolo-example.ts <build|serve|start|export|bench|check> [--example app|tauri] [--json]
 //
-// yolo's `web` verb runs `bun run build|dev` in `$YOLO_HOME/apps/web`. This script points YOLO_HOME at a directory whose
-// `apps/web` is the example (a symlink under the temp dir; nothing is written into yolo or this repository) and runs
-// `bun $YOLO_ROOT/apps/cli/src/index.ts web build|dev`. The example scripts run `m3-next`, so Next, Turbopack workers
-// included, runs on Bun; no Node is involved.
+// yolo's `web` verb runs `bun run build|dev` in `$YOLO_HOME/apps/yolo/web`. This script points YOLO_HOME at a directory
+// whose `apps/yolo/web` is the example (a symlink under the temp dir; nothing is written into this repository) and runs
+// `bun $YOLO_ROOT/apps/yolo/cli/src/index.ts web build|dev` (YOLO_ROOT: this Aphrody checkout by default). The example
+// scripts run `yolo m3 next`, so Next, Turbopack workers included, runs on Bun; no Node is involved.
 //
 //   build    yolo web build            (cold: `.next` removed first)
 //   serve    yolo web dev              (dev server, curl every route)
@@ -26,12 +26,12 @@ import {
   symlinkSync,
   unlinkSync,
 } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const PKG = resolve(import.meta.dir, "..");
-export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? join(homedir(), "yolo");
-export const YOLO_CLI = join(YOLO_ROOT, "apps/cli/src/index.ts");
+export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? resolve(PKG, "../../..");
+export const YOLO_CLI = join(YOLO_ROOT, "apps/yolo/cli/src/index.ts");
 
 export type Example = "app" | "tauri";
 export const exampleDir = (name: Example): string => join(PKG, "examples", name);
@@ -51,14 +51,14 @@ export const ROUTES: Record<Example, [string, number][]> = {
   ],
 };
 
-/** A YOLO_HOME whose `apps/web` is the example; created under the temp dir, repaired when it points elsewhere. */
+/** A YOLO_HOME whose `apps/yolo/web` is the example; created under the temp dir, repaired when it points elsewhere. */
 export function yoloHome(
   example: Example,
   root: string = join(tmpdir(), `m3-next-yolo-${process.getuid?.() ?? 0}`),
 ): string {
   const home = join(root, example);
-  const web = join(home, "apps", "web");
-  mkdirSync(join(home, "apps"), { recursive: true });
+  const web = join(home, "apps", "yolo", "web");
+  mkdirSync(join(home, "apps", "yolo"), { recursive: true });
   const target = exampleDir(example);
   try {
     if (lstatSync(web).isSymbolicLink() && readlinkSync(web) === target) return home;

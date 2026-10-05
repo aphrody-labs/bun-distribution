@@ -62,10 +62,14 @@ async function main(argv: string[]): Promise<number> {
   return command === undefined || command === "help" || command === "--help" ? 0 : 1;
 }
 
-main(process.argv.slice(2)).then(
-  (code) => process.exit(code),
-  (error) => {
+/** `aphrody-scaffold <argv>` (`yolo m3 scaffold <argv>`): resolves to the exit status; errors are reported, not thrown. */
+export async function runScaffold(argv: string[]): Promise<number> {
+  try {
+    return await main(argv);
+  } catch (error) {
     console.error(`aphrody-scaffold: ${error instanceof Error ? error.message : error}`);
-    process.exit(1);
-  },
-);
+    return 1;
+  }
+}
+
+if (import.meta.main) process.exit(await runScaffold(process.argv.slice(2)));

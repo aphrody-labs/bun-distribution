@@ -13,7 +13,7 @@ Tauri webview loads.
 | `@aphrody/m3-next/client` | `'use client'`                     | `M3ThemeProvider`, `M3NextThemeProvider`, `useM3Theme`, `useM3ThemeToggle`                                                                        |
 | `@aphrody/m3-next/proxy`  | `proxy.ts`                         | `createM3Proxy`: every page request carries a valid theme cookie                                                                                  |
 | `@aphrody/m3-next/m3.css` | CSS                                | tokens, expressive tokens, colour roles and the Tailwind preset (`@aphrody/m3-tailwind`)                                                          |
-| `m3-next` (bin)           | Bun                                | runs the app's Next on Bun: `m3-next dev \| build \| start`                                                                                       |
+| `m3-next` (bin)           | Bun                                | runs the app's Next on Bun: `m3-next dev \| build \| start` (in the Aphrody checkout: `yolo m3 next`)                                             |
 
 ## Set up
 
@@ -111,6 +111,6 @@ bun scripts/bundle-report.ts --examples    # bundle sizes (docs/reports/M3-NEXT-
 bun run test                               # unit tests, then the DOM tests (happy-dom preload)
 ```
 
-`yolo web build|dev` runs `bun run build|dev` in `$YOLO_HOME/apps/web`; `scripts/yolo-example.ts` points `YOLO_HOME` at a temporary
-directory whose `apps/web` is the example (a symlink under the temp dir), so nothing is written into yolo or this repository.
+`yolo web build|dev` runs `bun run build|dev` in `$YOLO_HOME/apps/yolo/web`; `scripts/yolo-example.ts` points `YOLO_HOME` at a temporary
+directory whose `apps/yolo/web` is the example (a symlink under the temp dir), so nothing is written into yolo or this repository.
 Migrating an existing app to this stack: `@aphrody/m3-next-migrate` (`next-migrate codemod all <dir>`).

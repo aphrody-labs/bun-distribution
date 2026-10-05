@@ -82,6 +82,8 @@ export const renderBenchMarkdown: Bench["renderBenchMarkdown"] = (...args) =>
 let cachedRoot: string | undefined;
 /** The yolo home, resolved on first use (it walks parent directories, which `version` and `help` do not need). */
 const rootDir = (): string => (cachedRoot ??= yoloHome());
+/** The checkout enclosing the working directory, else the working directory (ai, mcp, api). */
+const workspaceRoot = (): string => findCheckout() ?? process.cwd();
 
 export function printHelp(): void {
   const header = "\x1b[1m\x1b[36mYOLO Industrial Engine CLI\x1b[0m (100% Native Bun Powered)";
@@ -117,6 +119,8 @@ ${header}
   \x1b[32mgoogle drive|fonts ...\x1b[0m Google Drive projection and Fonts proxy (Gemini runtime: aphrody google)
   \x1b[32mdoc-ai translate|generate|sync\x1b[0m Markdown translation and Lit component API guides
   \x1b[32mbrowser open|snapshot|click|fill|eval|screenshot|... [--cdp URL]\x1b[0m One CDP browser command (Obscura)
+  \x1b[32mforge doctor|bootstrap|build|watch|status|unit\x1b[0m Build the aphrody-labs/bun fork (toolchain, per-commit scratch, receipts)
+  \x1b[32mm3 [dev|build|compile|desktop|tokens|check|new]\x1b[0m M3 framework CLI; \x1b[32mm3 next|bun|os-themes|next-migrate|svg-to-ico|web-to-tauri|scaffold ...\x1b[0m its package tools
   \x1b[32mverify [--only a,b] [--changed] [--parallel N] [--json|--md] [--list|--last]\x1b[0m Run the repository gates as a parallel graph; JSON or Markdown evidence in var/verify
   \x1b[32mhost audit|reclaim|archive|services|tune|net|mount|journal --host vps|dbfr|local [--apply]\x1b[0m Manage a Linux server (plan by default, journaled, safety-checked)
   \x1b[32mship [--apply] [--prepare] [status|log|attach|stop]\x1b[0m Prepare or build on the factory; \x1b[32mhooks install\x1b[0m ships main/dev pushes
@@ -168,8 +172,6 @@ async function main(): Promise<void> {
     cachedRoot = checkout;
     process.env["YOLO_HOME"] = checkout;
   }
-
-  const workspaceRoot = (): string => findCheckout() ?? process.cwd();
 
   switch (command) {
     case "n2b": {
@@ -520,16 +522,22 @@ async function main(): Promise<void> {
       break;
     }
 
-    // Bun owner packages, run in-process; they end the process like their former binaries did.
+    // Bun owner packages, run in-process. They end the process like their former binaries did, except a successful
+    // keep-alive command (a server or watcher such as `m3 dev` or `forge watch`), which lives on its handles.
     case "ops":
     case "workspace":
     case "optimize":
     case "update":
     case "google":
     case "doc-ai":
-    case "browser": {
-      const { runPackageCommand } = await import("./package-commands");
-      process.exit(await runPackageCommand(command, args.slice(1)));
+    case "browser":
+    case "forge":
+    case "m3": {
+      const { resolvePackageCommand, runPackageCommand } = await import("./package-commands");
+      const status = await runPackageCommand(command, args.slice(1));
+      if (status !== 0 || !resolvePackageCommand(command, args.slice(1))?.keepAlive)
+        process.exit(status);
+      break;
     }
 
     case "host": {

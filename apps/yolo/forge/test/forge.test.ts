@@ -21,6 +21,7 @@ import {
   toolUrl,
   versionIn,
 } from "../src/plan.ts";
+import { runForge } from "../src/main.ts";
 
 const A = "a".repeat(40);
 const B = "b".repeat(40);
@@ -32,7 +33,7 @@ describe("arguments", () => {
     const o = parseArgs(["build"], { HOME: "/home/x" });
     expect(o.command).toBe("build");
     expect(o.config.repository).toBe(DEFAULT_CONFIG.repository);
-    expect(o.config.branch).toBe("yolo");
+    expect(o.config.branch).toBe("main");
     expect(o.home).toBe("/home/x/.cache/bun-forge");
     expect(o.artifacts).toBe("/home/x/.cache/bun-forge/artifacts");
   });
@@ -80,7 +81,17 @@ describe("arguments", () => {
     expect(() => parseArgs(["build", "--scratch", "ram"], {})).toThrow("--scratch");
     expect(() => parseArgs(["build", "--jobs", "0"], {})).toThrow("--jobs");
     expect(() => parseArgs(["build", "--nope"], {})).toThrow("unknown option");
+    expect(() => parseArgs(["toString"], {})).toThrow("unknown command");
     expect(parseArgs([], {}).command).toBe("help");
+    expect(parseArgs(["-h"], {}).command).toBe("help");
+    expect(parseArgs(["--help"], {}).command).toBe("help");
+    expect(parseArgs(["--version"], {}).command).toBe("version");
+  });
+
+  test("the yolo runner returns exit statuses instead of exiting", async () => {
+    expect(await runForge(["version"])).toBe(0);
+    expect(await runForge(["deploy"])).toBe(2);
+    expect(await runForge(["build", "--jobs", "0"])).toBe(2);
   });
 });
 
@@ -242,8 +253,8 @@ describe("build environment", () => {
   });
 
   test("systemd unit runs watch with the forge home", () => {
-    const unit = systemdUnit("/usr/local/bin/bun-forge", "/srv/forge", "builder");
-    expect(unit).toContain("ExecStart=/usr/local/bin/bun-forge watch");
+    const unit = systemdUnit("/usr/local/bin/yolo forge", "/srv/forge", "builder");
+    expect(unit).toContain("ExecStart=/usr/local/bin/yolo forge watch");
     expect(unit).toContain("Environment=BUN_FORGE_HOME=/srv/forge");
     expect(unit).toContain("User=builder");
   });

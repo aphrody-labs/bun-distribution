@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Run Next.js 16 on Bun with no Node on the machine:
 //
-//   m3-next dev | build | start [next arguments]
+//   m3-next dev | build | start [next arguments]        (in the Aphrody checkout: yolo m3 next ...)
 //
 // `bun --bun next ...` makes Next itself run on Bun, but Turbopack spawns `node` for the PostCSS and loader workers and
 // finds the system one (or none). This runner puts a `node` that is Bun first on PATH, so the whole build, Turbopack
@@ -20,11 +20,20 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
 
+/**
+ * This Bun. A compiled program hosting the runner (`yolo m3 next` from a compiled yolo) is not `bun` itself, so the `bun`
+ * on PATH stands in for it.
+ */
+export function bunExecutable(): string {
+  const compiled = Bun.main.startsWith("/$bunfs/") || Bun.main.startsWith("B:/~BUN/");
+  return compiled ? (Bun.which("bun") ?? process.execPath) : process.execPath;
+}
+
 /** Directory holding a `node` that is this Bun, created on first use (and repaired when it points elsewhere). */
 export function bunNodeShim(
   dir: string = join(tmpdir(), `m3-next-bun-node-${process.getuid?.() ?? 0}`),
 ): string {
-  const bun = process.execPath;
+  const bun = bunExecutable();
   const link = join(dir, process.platform === "win32" ? "node.exe" : "node");
   mkdirSync(dir, { recursive: true });
   if (process.platform === "win32") {
@@ -59,7 +68,7 @@ export function nextCommand(
   shim: string = bunNodeShim(),
 ): NextCommand {
   return {
-    cmd: [process.execPath, "--bun", nextBin(cwd), ...args],
+    cmd: [bunExecutable(), "--bun", nextBin(cwd), ...args],
     env: {
       ...process.env,
       PATH: `${shim}${delimiter}${process.env["PATH"] ?? ""}`,
@@ -68,15 +77,17 @@ export function nextCommand(
   };
 }
 
-if (import.meta.main) {
-  const args = process.argv.slice(2);
-  if (args.length === 0 || args[0] === "-h" || args[0] === "--help") {
+/** `m3-next <argv>` (`yolo m3 next <argv>`): runs the app's Next and resolves to its exit status. */
+export async function runM3Next(argv: string[]): Promise<number> {
+  if (argv.length === 0 || argv[0] === "-h" || argv[0] === "--help") {
     console.log(
       "usage: m3-next <dev|build|start|...> [next arguments]\nRuns the app's Next.js on Bun, Turbopack workers included.",
     );
-    process.exit(args.length === 0 ? 2 : 0);
+    return argv.length === 0 ? 2 : 0;
   }
-  const { cmd, env } = nextCommand(args);
+  const { cmd, env } = nextCommand(argv);
   const child = Bun.spawn(cmd, { env, stdio: ["inherit", "inherit", "inherit"] });
-  process.exit(await child.exited);
+  return await child.exited;
 }
+
+if (import.meta.main) process.exit(await runM3Next(process.argv.slice(2)));

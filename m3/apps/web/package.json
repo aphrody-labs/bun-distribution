@@ -7,9 +7,9 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "bun ../../packages/m3/bin/m3.ts dev",
-    "build": "bun ../../packages/m3/bin/m3.ts build",
-    "compile": "bun ../../packages/m3/bin/m3.ts compile",
+    "dev": "bun ../../../apps/yolo/cli/src/index.ts m3 dev",
+    "build": "bun ../../../apps/yolo/cli/src/index.ts m3 build",
+    "compile": "bun ../../../apps/yolo/cli/src/index.ts m3 compile",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun ../../scripts/fonts-sync.ts --quiet && bun test"
   },

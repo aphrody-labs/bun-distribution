@@ -52,16 +52,17 @@ HTTP parity requires the additional cases recorded in the
 
 ## Run, build and package
 
-From the application directory, with the workspace dependencies already installed:
+From the application directory, with the workspace dependencies already installed (an app
+outside the Aphrody checkout runs the npm bin `m3-bun` with the same arguments):
 
 ```sh
-m3-bun dev
-m3-bun build
-m3-bun serve
-m3-bun compile
-m3-bun smoke
-m3-bun package
-m3-bun deploy docker systemd nginx
+yolo m3 bun dev
+yolo m3 bun build
+yolo m3 bun serve
+yolo m3 bun compile
+yolo m3 bun smoke
+yolo m3 bun package
+yolo m3 bun deploy docker systemd nginx
 ```
 
 Development uses Bun HMR. Production serves the build directory and API from

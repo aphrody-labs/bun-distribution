@@ -2,14 +2,14 @@
 
 # One scaffolder for the UI stack
 
-Owner: `packages/scaffold` (`@aphrody/scaffold`, CLI `aphrody-scaffold`, `bun run ui:scaffold`).
+Owner: `packages/scaffold` (`@aphrody/scaffold`, CLI `yolo m3 scaffold`; npm bin `aphrody-scaffold`).
 Every project the UI stack generates goes through it.
 
 | Template | Output | Used by |
 | --- | --- | --- |
 | `web` | Bun + M3 web project | `m3 new` (`@aphrody/m3`) |
 | `app` | Vite + React app with the Next.js shims, desktop (Tauri 3) or web | `next-migrate` (`@aphrody/m3-next-migrate`) |
-| `example` | the canonical example: `app` + Tauri 3 + M3 + README | docs, CI, `aphrody-scaffold example <dir>` |
+| `example` | the canonical example: `app` + Tauri 3 + M3 + README | docs, CI, `yolo m3 scaffold example <dir>` |
 
 `tauriShell` writes `src-tauri/` (Cargo.toml, build.rs, main.rs, tauri.conf.json, capability, icon)
 for the `app` template and for the projects `web-to-tauri` generates, so the Tauri 3 pins, the

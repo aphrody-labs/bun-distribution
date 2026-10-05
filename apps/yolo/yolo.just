@@ -153,9 +153,9 @@ qualify-python: rust-fmt-python-check check-python clippy-python test-python
 # `rustup run` without --install refuses an absent toolchain instead of acquiring it.
 qualify-upstream: rust-fmt-upstream-check check-upstream test-upstream
 
-# The Bun fork builds through bun-forge (apps/yolo/forge): toolchain, per-commit scratch partition, receipt.
+# The Bun fork builds through `yolo forge` (apps/yolo/forge): toolchain, per-commit scratch partition, receipt.
 qualify-bun *args:
-    bun apps/yolo/forge/src/main.ts build --branch yolo {{args}}
+    bun apps/yolo/cli/src/index.ts forge build --branch main {{args}}
 
 # Native Workspace owner pins the source revision and serializes heavy provider builds.
 [positional-arguments]

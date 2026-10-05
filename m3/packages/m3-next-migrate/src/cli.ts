@@ -51,22 +51,20 @@ EXAMPLES:
 ${CODEMOD_HELP}`);
 }
 
-async function main() {
-  const args = process.argv.slice(2);
-
+async function main(args: string[]): Promise<number> {
   if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
     printHelp();
-    process.exit(0);
+    return 0;
   }
 
-  if (args[0] === "codemod" || args[0] === "pages-hints") process.exit(await runCodemodCli(args));
+  if (args[0] === "codemod" || args[0] === "pages-hints") return await runCodemodCli(args);
 
   if (args.includes("-v") || args.includes("--version")) {
     console.log(
       ((await Bun.file(new URL("../package.json", import.meta.url)).json()) as { version: string })
         .version,
     );
-    process.exit(0);
+    return 0;
   }
 
   let sourcePath = "";
@@ -114,7 +112,7 @@ async function main() {
 
   if (!sourcePath) {
     console.error("Error: <SOURCE_PATH> is required.");
-    process.exit(1);
+    return 1;
   }
 
   const resolvedSource = resolve(process.cwd(), sourcePath);
@@ -129,7 +127,7 @@ async function main() {
 
     if (jsonOutput) {
       console.log(JSON.stringify({ ...result, requirements }, null, 2));
-      return;
+      return 0;
     }
 
     if (!dryRun && targetPath) {
@@ -156,7 +154,7 @@ async function main() {
     } else {
       console.log(result.code);
     }
-    return;
+    return 0;
   }
 
   // Scan only mode
@@ -171,7 +169,7 @@ async function main() {
 
     if (jsonOutput) {
       console.log(JSON.stringify({ stats, hierarchy, requirements }, null, 2));
-      return;
+      return 0;
     }
 
     console.log(`\n=== Next.js 16 Scan Audit: ${resolvedSource} ===\n`);
@@ -208,7 +206,7 @@ async function main() {
     console.log(
       `\nInspect the migration with: next-migrate ${sourcePath} <DEST> --target ${target} --m3 --dry-run\n`,
     );
-    return;
+    return 0;
   }
 
   if (!targetPath) {
@@ -232,7 +230,7 @@ async function main() {
 
   if (jsonOutput) {
     console.log(JSON.stringify(report, null, 2));
-    return;
+    return 0;
   }
 
   console.log(`\n=== Migration Report ===`);
@@ -268,9 +266,17 @@ async function main() {
   } else {
     console.log(`  bun run dev`);
   }
+  return 0;
 }
 
-main().catch((err) => {
-  console.error("Migration failed:", err);
-  process.exit(1);
-});
+/** `next-migrate <argv>` (`yolo m3 next-migrate <argv>`): resolves to the exit status; a failure is reported, not thrown. */
+export async function runNextMigrate(argv: string[]): Promise<number> {
+  try {
+    return await main(argv);
+  } catch (err) {
+    console.error("Migration failed:", err);
+    return 1;
+  }
+}
+
+if (import.meta.main) process.exit(await runNextMigrate(process.argv.slice(2)));

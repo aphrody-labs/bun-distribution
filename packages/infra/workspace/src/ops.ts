@@ -2,7 +2,6 @@
 // Load only the selected operation so unrelated products do not own its dependencies.
 import type { PackageOperation } from "./packages.ts";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 /** `yolo ops <operation> [arguments...]`: run one Workspace operation and return its exit status. */
 export async function runOps(argv: readonly string[]): Promise<number> {
@@ -259,21 +258,7 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   if (operation === "stack-dedup") {
     return await (await import("./stack-dedup.ts")).runStackDedup(rest);
   }
-  // UI scaffolding CLIs: one process each, arguments passed through.
-  const UI_CLIS: Record<string, string> = {
-    "web-to-tauri": "../../../ui/web-to-tauri/src/cli.ts",
-    scaffold: "../../../ui/scaffold/src/cli.ts",
-  };
-  if (operation !== undefined && operation in UI_CLIS) {
-    const entry = new URL(UI_CLIS[operation]!, import.meta.url);
-    const child = Bun.spawn([process.execPath, fileURLToPath(entry), ...rest], {
-      cwd: process.cwd(),
-      stdin: "inherit",
-      stdout: "inherit",
-      stderr: "inherit",
-    });
-    return await child.exited;
-  }
+  // The UI scaffolding CLIs (web-to-tauri, scaffold) are `yolo m3 web-to-tauri|scaffold`.
   if (operation === "drive-daemon") {
     return await (await import("./drive-daemon.ts")).runDriveDaemon(rest);
   }

@@ -7,10 +7,10 @@ Owner: `packages/web-to-tauri` (probe, plan, generate, parity), `crates/ui/tauri
 generated `wrap.json`: [`docs/apis/ui/WRAP-CONFIG.md`](../apis/WRAP-CONFIG.md).
 
 ```sh
-bun run ui:wrap plan    https://example.com            # what would be generated, and the risks
-bun run ui:wrap convert https://example.com --out ../example-app
-bun run ui:wrap convert ./my-vite-app --out ../my-app --backend https://api.example.com
-bun run ui:wrap parity  ../example-app --bridge        # needs the running app, see "Parity"
+yolo m3 web-to-tauri plan    https://example.com     # what would be generated, and the risks
+yolo m3 web-to-tauri convert https://example.com --out ../example-app
+yolo m3 web-to-tauri convert ./my-vite-app --out ../my-app --backend https://api.example.com
+yolo m3 web-to-tauri parity  ../example-app --bridge # needs the running app, see "Parity"
 ```
 
 ## Rule: change nothing the page, its API or its backend can see

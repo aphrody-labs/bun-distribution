@@ -14,7 +14,7 @@ wanted blobs and writes them with an exact-path sparse checkout.
 | `bun run icons:sync`                                         | Materialise every symbol x outlined/rounded/sharp x regular/fill at 24px (4 150 symbols, 24 900 files, ~160 MB). `--weights 300,500`, `--sizes 20,40,48`, `--grades 200,-25` add variants.                      |
 | `bun run icons:check`                                        | Exit 0 when the catalogue is fully materialised.                                                                                                                                                                |
 | `bun run icons:export --out dist/icons`                      | Write `names.json`, six `sprite-<style>[-fill].svg` sprites and a freedesktop theme (`index.theme`, `scalable/material/*` for the whole catalogue, 51 standard names mapped onto it) for GNOME, COSMIC and KDE. |
-| `bun run icons:ico <symbol\|file.svg> --out src-tauri/icons` | `tauri icon` pipeline: `icon.ico`, `icon.icns`, PNG set.                                                                                                                                                        |
+| `bun run icons:ico <symbol\|file.svg> --out src-tauri/icons` | `tauri icon` pipeline: `icon.ico`, `icon.icns`, PNG set (`yolo m3 svg-to-ico`; npm bin `m3-svg-to-ico`).                                                                                                        |
 
 ```ts
 import { symbolNames, readSymbolSvg, hasSymbol } from "@aphrody/material-design-icons";

@@ -16,6 +16,8 @@ m3-bun deploy docker systemd nginx vercel fly cloudflare coolify vscode windows 
 m3-bun smoke                   # run the executable (yolo runtime when installed), GET /, /healthz, /api/m3/info
 ```
 
+Inside the Aphrody checkout the same commands run as `yolo m3 bun <command>`.
+
 ## The plugin
 
 `@aphrody/m3-bun/plugin` is `@aphrody/m3`'s plugin (Tailwind v4, Sass, `m3:*` token sheets, `?url`) plus what a

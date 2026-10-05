@@ -12,7 +12,7 @@ imports (`crates/ui/identity`, `crates/ui/app`).
 
 | Script | Does |
 | --- | --- |
-| `bun run dev` | `m3 dev` on port 1421 (`tauri.conf.json` `build.devUrl`) |
+| `bun run dev` | `yolo m3 dev` on port 1421 (`tauri.conf.json` `build.devUrl`) |
 | `bun run build` | `build.ts`: `m3 build --tauri` into `crates/ui/app/ui-dist` |
 | `bun run test` | `bun test src` (layout parity, chat, history, brand theme, ...) |
 | `bun run typecheck` | `tsc --noEmit` |

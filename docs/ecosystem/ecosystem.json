@@ -2287,9 +2287,7 @@
           "name": "@aphrody/agent-browser",
           "path": "packages/web/agent-browser",
           "description": "Aphrody Web Bun client: CDP browser automation (agent-browser), engine lifecycle, web service client (fetch, scrape, crawl, sessions) and config reader, backed by the native aphrody-web engine.",
-          "bins": [
-            "agent-browser"
-          ]
+          "bins": []
         },
         {
           "name": "@aphrody/api",
@@ -2318,10 +2316,8 @@
         {
           "name": "@aphrody/bun-forge",
           "path": "apps/yolo/forge",
-          "description": "One executable that builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
-          "bins": [
-            "bun-forge"
-          ]
+          "description": "yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
+          "bins": []
         },
         {
           "name": "@aphrody/bun-test-dom",
@@ -2419,9 +2415,7 @@
           "name": "@aphrody/doc-ai",
           "path": "packages/ai/doc-ai",
           "description": "AI-first documentation and automatic translation system",
-          "bins": [
-            "doc-ai"
-          ]
+          "bins": []
         },
         {
           "name": "@aphrody/drive-client",
@@ -2439,9 +2433,7 @@
           "name": "@aphrody/google",
           "path": "packages/google/google",
           "description": "Canonical Bun facade for Aphrody Google Cloud and Gemini.",
-          "bins": [
-            "aphrody-google"
-          ]
+          "bins": []
         },
         {
           "name": "@aphrody/http",
@@ -2595,7 +2587,7 @@
         {
           "name": "@aphrody/m3-showcase",
           "path": "m3/apps/showcase",
-          "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable and a prepared canonical Tauri desktop shell.",
+          "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable shown by the aphrody-app desktop (aphrody-app --showcase).",
           "bins": []
         },
         {
@@ -2669,10 +2661,8 @@
         {
           "name": "@aphrody/ovh",
           "path": "packages/infra/ovh",
-          "description": "Unified OVH cloud engine for Aphrody Infra: DNS, VPS, Email, and multi-profile operations in pure Bun",
-          "bins": [
-            "aphrody-ovh"
-          ]
+          "description": "OVH cloud library for Aphrody Infra: DNS, VPS, Email, and multi-profile operations in pure Bun (command line: aphrody ovh)",
+          "bins": []
         },
         {
           "name": "@aphrody/paths",
@@ -2878,9 +2868,7 @@
           "name": "@aphrody/update",
           "path": "packages/infra/update",
           "description": "Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks",
-          "bins": [
-            "aphrody-update"
-          ]
+          "bins": []
         },
         {
           "name": "@aphrody/web-test",
@@ -2906,11 +2894,7 @@
           "name": "@aphrody/workspace",
           "path": "packages/infra/workspace",
           "description": "Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations",
-          "bins": [
-            "aphrody-ops",
-            "aphrody-optimize",
-            "aphrody-workspace"
-          ]
+          "bins": []
         },
         {
           "name": "@aphrody/x",

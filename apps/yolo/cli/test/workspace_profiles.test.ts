@@ -1,3 +1,4 @@
+/* oxlint-disable eslint/no-await-in-loop -- recipes run one after another against one fixture */
 import { afterEach, expect, test } from "bun:test";
 import { chmod, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -107,7 +108,7 @@ function packages(args: string[]): string[] {
   return args.flatMap((value, index) => (value === "-p" ? [args[index + 1]!] : []));
 }
 
-profileTest("the Bun recipe dispatches to bun-forge, which owns toolchain and pins", async () => {
+profileTest("the Bun recipe dispatches to yolo forge, which owns toolchain and pins", async () => {
   const setup = await fixture();
   const bun = await bunFixture(setup);
   const result = await runRecipes(setup, ["qualify-bun", "--dry-run"], setup.dir);
@@ -118,7 +119,7 @@ profileTest("the Bun recipe dispatches to bun-forge, which owns toolchain and pi
     .map((line) => JSON.parse(line));
   expect(probes).toEqual([
     {
-      args: ["apps/yolo/forge/src/main.ts", "build", "--branch", "yolo", "--dry-run"],
+      args: ["apps/yolo/cli/src/index.ts", "forge", "build", "--branch", "main", "--dry-run"],
       cwd: setup.dir,
     },
   ]);
@@ -185,7 +186,7 @@ profileTest(
         expect(args[args.indexOf("--features") + 1]).toBe("browser,tooling");
       } else {
         expect(args).not.toContain("--features");
-        expect(packages(args).sort()).toEqual(["yolo-core", "yolo-runtime"]);
+        expect(packages(args).toSorted()).toEqual(["yolo-core", "yolo-runtime"]);
       }
     }
     expect(commands[1]!.slice(-3)).toEqual(["--", "-D", "warnings"]);

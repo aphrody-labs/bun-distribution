@@ -7,7 +7,7 @@ A Next.js 16 app on the M3 stack: App Router, Cache Components (`use cache`, a s
 (`@aphrody/m3-baseui`) rendered from a Server Component, `next/font/local` mapped onto the M3 typefaces, and a route handler.
 
 ```sh
-bun run build      # next build, on Bun (Turbopack workers included): `m3-next build`
+bun run build      # next build, on Bun (Turbopack workers included): `yolo m3 next build`
 bun run start      # next start
 bun run dev        # next dev
 bun run test       # configuration and files, without starting Next

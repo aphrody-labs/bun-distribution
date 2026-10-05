@@ -37,6 +37,8 @@ COMMANDS:
   google drive|fonts ... Google Drive projection and Fonts proxy (Gemini runtime: aphrody google)
   doc-ai translate|generate|sync Markdown translation and Lit component API guides
   browser open|snapshot|click|fill|eval|screenshot|... [--cdp URL] One CDP browser command (Obscura)
+  forge doctor|bootstrap|build|watch|status|unit Build the aphrody-labs/bun fork (toolchain, per-commit scratch, receipts)
+  m3 [dev|build|compile|desktop|tokens|check|new] M3 framework CLI; m3 next|bun|os-themes|next-migrate|svg-to-ico|web-to-tauri|scaffold ... its package tools
   verify [--only a,b] [--changed] [--parallel N] [--json|--md] [--list|--last] Run the repository gates as a parallel graph; JSON or Markdown evidence in var/verify
   host audit|reclaim|archive|services|tune|net|mount|journal --host vps|dbfr|local [--apply] Manage a Linux server (plan by default, journaled, safety-checked)
   ship [--apply] [--prepare] [status|log|attach|stop] Prepare or build on the factory; hooks install ships main/dev pushes
@@ -262,6 +264,55 @@ and translation uses a structure-preserving offline pipeline.
 
 ```
 yolo browser <open|snapshot|click|fill|type|press|hover|select|get|eval|wait|screenshot|pdf> [args] [--url URL] [--cdp WS_URL] [--session ID]
+```
+
+## yolo forge -h
+
+```
+yolo forge — builds the aphrody-labs/bun fork on a fresh Linux machine.
+
+  yolo forge doctor                      what the machine has and lacks
+  yolo forge bootstrap                   install the toolchain (apt with sudo; LLVM, cmake, rustup into the cache)
+  yolo forge build [--rev <sha>]         build one commit (default: head of the branch) in a temporary scratch space
+  yolo forge watch [--once] [--latest]   build every new commit of the branch, oldest first
+  yolo forge status | unit               last builds | systemd unit running `watch`
+
+Options: --repository <url> --branch <name> --profile <p> --lto on|off --jobs <n>
+         --scratch auto|loop|tmpfs|dir --scratch-size <96G> --interval <s> --home <dir> --artifacts <dir>
+         --keep (leave the scratch space) --tests (run test/js/first_party with the new binary) --dry-run
+Environment: BUN_FORGE_HOME, BUN_FORGE_ARTIFACTS, BUN_FORGE_REPOSITORY, BUN_FORGE_BRANCH.
+A compiled host (yolo or the standalone executable) embeds Bun; the build's `bun` is that executable (BUN_BE_BUN=1).
+```
+
+## yolo m3 -h
+
+```
+m3 — the @aphrody Material Design 3 framework CLI
+
+Usage:
+  m3 dev      [--port <n>] [--no-hmr] [--config <file>]
+  m3 build    [--tauri [<dir>]] [--outdir <dir>] [--dev] [--config <file>]
+  m3 compile  [--target <t>] [--outfile <file>] [--dev] [--config <file>]
+  m3 desktop  [--dev|--build] [--config <file>]
+  m3 tokens   [--sheet tokens|tailwind|spaceui|scheme] [--seed <hex>] [--variant <name>] [--dark]
+              [--contrast <n>] [--out <file>]
+  m3 tokens --bundle <dir> [--seed <hex>] [--variant <name>] [--contrast <n>] [--root <dir>]
+  m3 check
+  m3 new <dir>
+
+new requires the Aphrody/M3 private source owner workspace; use an apps/* member (for example m3 new apps/my-app).
+dev, build, compile and desktop read m3.config.ts from the working directory.
+compile builds the UI and links it with the Bun runtime into one executable that serves it (and the app's API):
+it runs @aphrody/m3-bun, which must be installed next to this package.
+
+Tools (yolo m3 <tool> ...):
+  next           Next.js 16 on Bun, Turbopack workers included: dev | build | start [next args] [m3-next]
+  bun            Build, serve, compile, package and deploy configs of an M3 app [m3-bun]
+  os-themes      M3 OS themes: install | generate | uninstall (dry-run unless --apply) [m3-os-themes]
+  next-migrate   Next.js 16 migration, codemods and pages-hints [m3-next-migrate, next-migrate]
+  svg-to-ico     Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]
+  web-to-tauri   Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]
+  scaffold       The single project scaffolder: list | example | new [aphrody-scaffold]
 ```
 
 ## yolo host -h

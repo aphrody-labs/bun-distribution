@@ -1,11 +1,8 @@
 {
   "name": "@aphrody/bun-forge",
   "version": "0.1.0",
-  "description": "One executable that builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
+  "description": "yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
   "license": "Apache-2.0",
-  "bin": {
-    "bun-forge": "./src/main.ts"
-  },
   "type": "module",
   "publishConfig": {
     "access": "public"

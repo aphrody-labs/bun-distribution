@@ -1,7 +1,8 @@
 /**
- * `yolo ops|workspace|optimize|update|google|doc-ai|browser`: the command lines of the Bun owner packages,
+ * `yolo ops|workspace|optimize|update|google|doc-ai|browser|forge|m3`: the command lines of the Bun owner packages,
  * folded into yolo. Each command imports its owner's CLI module in-process and returns the runner's exit status;
- * the owners keep their code and no longer publish a binary of their own.
+ * the owners keep their code. Internal packages no longer publish a binary of their own; the npm-published m3
+ * packages keep theirs for external consumers, and the repository calls them through `yolo m3 <tool>`.
  *
  * The module path is computed, so a compiled yolo does not bundle the owners (and their dependencies): it loads
  * them from the Aphrody checkout at run time.
@@ -12,14 +13,68 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { findCheckout, isCompiled } from "./home";
 
-export interface PackageCommand {
+export interface PackageRunner {
   /** Owner CLI module, relative to the checkout root. */
   readonly module: string;
   /** Exported runner `(argv: string[]) => number | Promise<number>`. */
   readonly run: string;
   /** One-line description for `yolo help`. */
   readonly summary: string;
+  /**
+   * A successful run may leave a server or a watcher running (`m3 dev`, `m3 bun serve`, `forge watch`): yolo then
+   * lets the process live on its handles and ends it only on failure. Other commands end the process on return.
+   */
+  readonly keepAlive?: boolean;
 }
+
+export interface PackageCommand extends PackageRunner {
+  /**
+   * Tools selected by the first argument (`yolo m3 next dev`). Any other first argument, or none, goes to the
+   * command's own runner. Tool names never shadow a command of that runner (tested).
+   */
+  readonly tools?: Readonly<Record<string, PackageRunner>>;
+}
+
+/** `yolo m3 <tool>`: the CLIs of the m3 packages besides the framework's own `m3` (their npm `bin` in brackets). */
+export const M3_TOOLS = {
+  next: {
+    module: "m3/packages/m3-next/bin/m3-next.ts",
+    run: "runM3Next",
+    summary:
+      "Next.js 16 on Bun, Turbopack workers included: dev | build | start [next args] [m3-next]",
+  },
+  bun: {
+    module: "m3/packages/m3-bun/src/cli.ts",
+    run: "runCli",
+    summary: "Build, serve, compile, package and deploy configs of an M3 app [m3-bun]",
+    keepAlive: true,
+  },
+  "os-themes": {
+    module: "m3/packages/m3-os-themes/src/cli.ts",
+    run: "runOsThemes",
+    summary: "M3 OS themes: install | generate | uninstall (dry-run unless --apply) [m3-os-themes]",
+  },
+  "next-migrate": {
+    module: "m3/packages/m3-next-migrate/src/cli.ts",
+    run: "runNextMigrate",
+    summary: "Next.js 16 migration, codemods and pages-hints [m3-next-migrate, next-migrate]",
+  },
+  "svg-to-ico": {
+    module: "m3/packages/material-design-icons/scripts/svg-to-ico.ts",
+    run: "runSvgToIco",
+    summary: "Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]",
+  },
+  "web-to-tauri": {
+    module: "m3/packages/web-to-tauri/src/cli.ts",
+    run: "runWebToTauri",
+    summary: "Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]",
+  },
+  scaffold: {
+    module: "m3/packages/scaffold/src/cli.ts",
+    run: "runScaffold",
+    summary: "The single project scaffolder: list | example | new [aphrody-scaffold]",
+  },
+} as const satisfies Record<string, PackageRunner>;
 
 export const PACKAGE_COMMANDS = {
   ops: {
@@ -58,12 +113,49 @@ export const PACKAGE_COMMANDS = {
     run: "runAgentBrowser",
     summary: "One CDP browser command on the Obscura endpoint, as a JSON line",
   },
+  forge: {
+    module: "apps/yolo/forge/src/main.ts",
+    run: "runForge",
+    summary: "Build the aphrody-labs/bun fork: doctor | bootstrap | build | watch | status | unit",
+    keepAlive: true,
+  },
+  m3: {
+    module: "m3/packages/m3/src/cli.ts",
+    run: "runCli",
+    summary:
+      "M3 framework CLI (dev, build, compile, desktop, tokens, check, new) and the m3 package tools",
+    keepAlive: true,
+    tools: M3_TOOLS,
+  },
 } as const satisfies Record<string, PackageCommand>;
 
 export type PackageCommandName = keyof typeof PACKAGE_COMMANDS;
 
 export function isPackageCommand(name: string): name is PackageCommandName {
   return Object.hasOwn(PACKAGE_COMMANDS, name);
+}
+
+export interface ResolvedPackageCommand extends PackageRunner {
+  /** `m3` or `m3 next`: the yolo command line that selected this runner, for messages. */
+  readonly label: string;
+  /** Arguments passed to the runner (the tool name removed). */
+  readonly args: string[];
+  /** The tools of the command, when the command's own runner was selected. */
+  readonly tools?: Readonly<Record<string, PackageRunner>>;
+}
+
+/** The runner `yolo <name> ...args` reaches: a tool when the first argument names one, else the command's own. */
+export function resolvePackageCommand(
+  name: string,
+  args: readonly string[],
+): ResolvedPackageCommand | undefined {
+  if (!isPackageCommand(name)) return undefined;
+  const command: PackageCommand = PACKAGE_COMMANDS[name];
+  const [first, ...rest] = args;
+  if (command.tools && first !== undefined && Object.hasOwn(command.tools, first)) {
+    return { ...command.tools[first]!, label: `${name} ${first}`, args: rest };
+  }
+  return { ...command, label: name, args: [...args] };
 }
 
 /**
@@ -79,35 +171,46 @@ export function packageRoot(cwd: string = process.cwd()): string {
 
 type Runner = (argv: string[]) => number | Promise<number>;
 
+const isHelpRequest = (args: readonly string[]): boolean =>
+  args.length === 0 || (args.length === 1 && ["help", "--help", "-h"].includes(args[0]!));
+
 /** Runs `yolo <name> ...args` in-process and returns the exit status. */
 export async function runPackageCommand(
   name: string,
   args: readonly string[],
   root: string = packageRoot(),
 ): Promise<number> {
-  if (!isPackageCommand(name)) {
+  const resolved = resolvePackageCommand(name, args);
+  if (resolved === undefined) {
     console.error(`yolo: ${name} is not a package command`);
     return 2;
   }
-  const { module, run } = PACKAGE_COMMANDS[name];
+  const { label, module, run, tools } = resolved;
   const path = join(root, module);
   if (!existsSync(path)) {
     console.error(
-      `yolo ${name}: ${module} is missing under ${root}; run inside an Aphrody checkout or set YOLO_APHRODY_ROOT`,
+      `yolo ${label}: ${module} is missing under ${root}; run inside an Aphrody checkout or set YOLO_APHRODY_ROOT`,
     );
     return 127;
   }
   const owner = (await import(pathToFileURL(path).href)) as Record<string, unknown>;
   const runner = owner[run];
   if (typeof runner !== "function") {
-    console.error(`yolo ${name}: ${module} does not export ${run}()`);
+    console.error(`yolo ${label}: ${module} does not export ${run}()`);
     return 70;
   }
+  let status: number;
   try {
-    const status = await (runner as Runner)([...args]);
-    return typeof status === "number" ? status : 0;
+    const returned = await (runner as Runner)(resolved.args);
+    status = typeof returned === "number" ? returned : 0;
   } catch (error) {
-    console.error(`yolo ${name}: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`yolo ${label}: ${error instanceof Error ? error.message : String(error)}`);
     return 1;
   }
+  if (status === 0 && tools && isHelpRequest(resolved.args)) {
+    console.log(`\nTools (yolo ${name} <tool> ...):`);
+    for (const [tool, { summary }] of Object.entries(tools))
+      console.log(`  ${tool.padEnd(14)} ${summary}`);
+  }
+  return status;
 }

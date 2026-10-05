@@ -5,8 +5,10 @@
 Generates and installs Material 3 OS themes from a seed colour. Colour roles come from
 `@aphrody/m3-tokens/dynamic-color` (light and dark), so the OS matches the web UI.
 
+In the Aphrody checkout (the npm bin `m3-os-themes` takes the same arguments):
+
 ```sh
-bun packages/m3-os-themes/src/cli.ts <install|generate|uninstall> \
+yolo m3 os-themes <install|generate|uninstall> \
   --target windows|gnome|cosmic|chromium|all --seed '#6750a4' --mode light|dark|auto \
   [--name Aphrody] [--variant tonalSpot] [--out dir] [--icons dir] [--dry-run] [--apply]
 ```

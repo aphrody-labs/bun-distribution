@@ -17,6 +17,8 @@ next-migrate codemod all ./my-app --apply       # write
 next-migrate pages-hints ./my-app               # Pages Router -> App Router plan, nothing rewritten
 ```
 
+Inside the Aphrody checkout, `yolo m3 next-migrate` takes the same arguments.
+
 | Group     | Codemod                                                            | Does                                                                                                                                                                                                                                                              |
 | --------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | next16    | `next-config`                                                      | `experimental.dynamicIO`, `ppr` -> `cacheComponents`; `experimental.turbo` -> `turbopack`; `typedRoutes`, `reactCompiler`, `serverComponentsExternalPackages` -> `serverExternalPackages`; drops `eslint` and removed flags; `images.domains` -> `remotePatterns` |
@@ -74,16 +76,16 @@ Next.js 16 introduces React 19, Server Actions, Async Request APIs (`await param
 
 ```bash
 # Scan a Next.js 16 codebase and audit used features
-bun run next-migrate ./my-next-app --scan-only
+next-migrate ./my-next-app --scan-only
 
 # Migrate an entire Next.js 16 project to Tauri v2
-bun run next-migrate ./my-next-app ./desktop-app --target tauri
+next-migrate ./my-next-app ./desktop-app --target tauri
 
 # Migrate to a Bun / Vite web SPA
-bun run next-migrate ./my-next-app ./web-app --target vite
+next-migrate ./my-next-app ./web-app --target vite
 
 # Migrate a single component file
-bun run next-migrate ./components/Hero.tsx ./dist/Hero.tsx
+next-migrate ./components/Hero.tsx ./dist/Hero.tsx
 ```
 
 ---

@@ -1,25 +1,33 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-//! bun-forge — one executable that builds the aphrody-labs/bun fork on a fresh Linux machine.
+//! bun-forge — builds the aphrody-labs/bun fork on a fresh Linux machine. Run it as `yolo forge <command>`; the yolo CLI
+//! loads this module in-process and calls `runForge`. `bun run compile` still links a standalone executable.
 //!
-//!   bun-forge doctor                      what the machine has and lacks
-//!   bun-forge bootstrap                   install the toolchain (apt with sudo; LLVM, cmake, rustup into the cache)
-//!   bun-forge build [--rev <sha>]         build one commit (default: head of the branch) in a temporary scratch space
-//!   bun-forge watch [--once] [--latest]   build every new commit of the branch, oldest first
-//!   bun-forge status | unit               last builds | systemd unit running `watch`
+//!   yolo forge doctor                      what the machine has and lacks
+//!   yolo forge bootstrap                   install the toolchain (apt with sudo; LLVM, cmake, rustup into the cache)
+//!   yolo forge build [--rev <sha>]         build one commit (default: head of the branch) in a temporary scratch space
+//!   yolo forge watch [--once] [--latest]   build every new commit of the branch, oldest first
+//!   yolo forge status | unit               last builds | systemd unit running `watch`
 //!
 //! Options: --repository <url> --branch <name> --profile <p> --lto on|off --jobs <n>
 //!          --scratch auto|loop|tmpfs|dir --scratch-size <96G> --interval <s> --home <dir> --artifacts <dir>
 //!          --keep (leave the scratch space) --tests (run test/js/first_party with the new binary) --dry-run
 //! Environment: BUN_FORGE_HOME, BUN_FORGE_ARTIFACTS, BUN_FORGE_REPOSITORY, BUN_FORGE_BRANCH.
-//! The compiled executable embeds Bun and config/bun-forge.json; the build's `bun` is this executable (BUN_BE_BUN=1).
+//! A compiled host (yolo or the standalone executable) embeds Bun; the build's `bun` is that executable (BUN_BE_BUN=1).
 
 import { ForgeError, parseArgs } from "./plan.ts";
 import { bootstrap, build, doctor, status, unit, watch } from "./run.ts";
 
 const VERSION = "0.1.0";
 const HELP =
-  "bun-forge — one executable that builds the aphrody-labs/bun fork on a fresh Linux machine.\n\n  bun-forge doctor                      what the machine has and lacks\n  bun-forge bootstrap                   install the toolchain (apt with sudo; LLVM, cmake, rustup into the cache)\n  bun-forge build [--rev <sha>]         build one commit (default: head of the branch) in a temporary scratch space\n  bun-forge watch [--once] [--latest]   build every new commit of the branch, oldest first\n  bun-forge status | unit               last builds | systemd unit running `watch`\n\nOptions: --repository <url> --branch <name> --profile <p> --lto on|off --jobs <n>\n         --scratch auto|loop|tmpfs|dir --scratch-size <96G> --interval <s> --home <dir> --artifacts <dir>\n         --keep (leave the scratch space) --tests (run test/js/first_party with the new binary) --dry-run\nEnvironment: BUN_FORGE_HOME, BUN_FORGE_ARTIFACTS, BUN_FORGE_REPOSITORY, BUN_FORGE_BRANCH.\nThe compiled executable embeds Bun and config/bun-forge.json; the build's `bun` is this executable (BUN_BE_BUN=1).";
+  "yolo forge — builds the aphrody-labs/bun fork on a fresh Linux machine.\n\n  yolo forge doctor                      what the machine has and lacks\n  yolo forge bootstrap                   install the toolchain (apt with sudo; LLVM, cmake, rustup into the cache)\n  yolo forge build [--rev <sha>]         build one commit (default: head of the branch) in a temporary scratch space\n  yolo forge watch [--once] [--latest]   build every new commit of the branch, oldest first\n  yolo forge status | unit               last builds | systemd unit running `watch`\n\nOptions: --repository <url> --branch <name> --profile <p> --lto on|off --jobs <n>\n         --scratch auto|loop|tmpfs|dir --scratch-size <96G> --interval <s> --home <dir> --artifacts <dir>\n         --keep (leave the scratch space) --tests (run test/js/first_party with the new binary) --dry-run\nEnvironment: BUN_FORGE_HOME, BUN_FORGE_ARTIFACTS, BUN_FORGE_REPOSITORY, BUN_FORGE_BRANCH.\nA compiled host (yolo or the standalone executable) embeds Bun; the build's `bun` is that executable (BUN_BE_BUN=1).";
+
+/** The command systemd runs to reach this forge: the standalone program, or `yolo forge` when yolo hosts it. */
+function selfCommand(): string {
+  const compiled = Bun.main.startsWith("/$bunfs/") || Bun.main.startsWith("B:/~BUN/");
+  const program = compiled ? process.execPath : `${Bun.which("bun") ?? "bun"} ${Bun.main}`;
+  return import.meta.main ? program : `${program} forge`;
+}
 
 async function main(argv: string[]): Promise<number> {
   const options = parseArgs(argv, process.env);
@@ -44,18 +52,21 @@ async function main(argv: string[]): Promise<number> {
       status(options);
       return 0;
     case "unit":
-      unit(options);
+      unit(options, selfCommand());
       return 0;
   }
 }
 
-if (import.meta.main) {
+/** `yolo forge <argv>`: the exit status; refused input and system errors are reported and end with status 2. */
+export async function runForge(argv: string[]): Promise<number> {
   try {
-    process.exitCode = await main(Bun.argv.slice(2));
+    return await main(argv);
   } catch (e) {
     const system = e instanceof Error && typeof (e as NodeJS.ErrnoException).code === "string";
     if (!(e instanceof ForgeError) && !system) throw e;
-    console.error(`bun-forge: ${(e as Error).message}`);
-    process.exitCode = 2;
+    console.error(`yolo forge: ${(e as Error).message}`);
+    return 2;
   }
 }
+
+if (import.meta.main) process.exitCode = await runForge(Bun.argv.slice(2));

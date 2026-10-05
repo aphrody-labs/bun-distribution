@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Side effects of bun-forge: probing and installing the toolchain, the commit mirror, scratch space, the build itself,
 //! smoke checks, artifacts and the watch loop.
+/* oxlint-disable eslint/no-await-in-loop -- scratch commands, builds and watch rounds run one after another on purpose */
 
 import {
   closeSync,
@@ -273,7 +274,7 @@ export async function bootstrap(options: Options, logFile?: string): Promise<Too
       `missing tools: ${t.missingBinaries.join(" ")} (install them with the system package manager)`,
     );
   if (!t.llvmDir || !t.cmakeVersion || !t.rustup)
-    fail("toolchain incomplete after bootstrap; run `bun-forge doctor`");
+    fail("toolchain incomplete after bootstrap; run `yolo forge doctor`");
   return t;
 }
 
@@ -597,13 +598,7 @@ export function status(options: Options): void {
   );
 }
 
-export function unit(options: Options): void {
-  const compiled = Bun.main.startsWith("/$bunfs/");
-  console.log(
-    systemdUnit(
-      compiled ? process.execPath : `${Bun.which("bun") ?? "bun"} ${Bun.main}`,
-      options.home,
-      userInfo().username,
-    ),
-  );
+/** Prints the systemd unit; `command` is how this forge is invoked (`yolo forge` or the standalone executable). */
+export function unit(options: Options, command: string): void {
+  console.log(systemdUnit(command, options.home, userInfo().username));
 }

@@ -4,8 +4,8 @@
   "description": "Static export of a Next.js 16 app for a Tauri webview: no server, no proxy, no cookies read on the server; the theme preference lives in the browser.",
   "type": "module",
   "scripts": {
-    "dev": "bun ../../bin/m3-next.ts dev",
-    "build": "bun ../../bin/m3-next.ts build",
+    "dev": "bun ../../../../../apps/yolo/cli/src/index.ts m3 next dev",
+    "build": "bun ../../../../../apps/yolo/cli/src/index.ts m3 next build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test ./test/"
   },

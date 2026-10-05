@@ -32,9 +32,9 @@ The wrapper sets `YOLO_HOME` to this repository, so Yolo's `web|desktop|tauri` c
 
 | Script | Runs |
 | --- | --- |
-| `bun run build` | `yolo web build` (apps/web `build` = `m3 build`), then `scripts/build.ts build --no-apps` for the default package scope |
-| `bun run serve` | `yolo web dev` (apps/web `dev` = `m3 dev`, HMR) |
-| `bun run compile` | `yolo tauri build`, then apps/web `compile` (`m3 compile`, delegated to `@aphrody/m3-bun` for the executable) |
+| `bun run build` | `yolo web build` (apps/web `build` = `yolo m3 build`), then `scripts/build.ts build --no-apps` for the default package scope |
+| `bun run serve` | `yolo web dev` (apps/web `dev` = `yolo m3 dev`, HMR) |
+| `bun run compile` | `yolo tauri build`, then apps/web `compile` (`yolo m3 compile`, delegated to `@aphrody/m3-bun` for the executable) |
 | `bun run test` | Yolo preflight (`yolo version --json`), the root script suites, then workspace `test` scripts in parallel, followed by export, asset and documentation link checks |
 | `bun run lint` | Yolo preflight, then `oxlint` over `packages/m3*`, apps and scripts |
 | `bun run typecheck` | Yolo preflight, then `scripts/build.ts typecheck` with its default scope and cache |

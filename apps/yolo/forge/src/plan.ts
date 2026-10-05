@@ -58,13 +58,16 @@ const COMMANDS: Command[] = [
   "version",
 ];
 
+const ALIASES: Record<string, Command> = { "-h": "help", "--help": "help", "--version": "version" };
+
 export function parseArgs(argv: string[], env: Record<string, string | undefined>): Options {
   const config: ForgeConfig = structuredClone(DEFAULT_CONFIG);
   const first = argv[0];
   const command: Command =
     first === undefined
       ? "help"
-      : (COMMANDS.find((c) => c === first) ?? fail(`unknown command: ${first}`));
+      : (COMMANDS.find((c) => c === first) ??
+        (Object.hasOwn(ALIASES, first) ? ALIASES[first]! : fail(`unknown command: ${first}`)));
   const home =
     env.BUN_FORGE_HOME ??
     join(env.XDG_CACHE_HOME ?? join(env.HOME ?? "/tmp", ".cache"), "bun-forge");
@@ -462,7 +465,8 @@ export function recordBuild(
   return { last: receipt.revision, builds };
 }
 
-export function systemdUnit(executable: string, home: string, user: string): string {
+/** The unit running `<command> watch`; `command` is the forge invocation (`yolo forge` or the standalone executable). */
+export function systemdUnit(command: string, home: string, user: string): string {
   return `[Unit]
 Description=bun-forge: build aphrody-labs/bun on every commit of the watched branch
 After=network-online.target
@@ -472,7 +476,7 @@ Wants=network-online.target
 Type=simple
 User=${user}
 Environment=BUN_FORGE_HOME=${home}
-ExecStart=${executable} watch
+ExecStart=${command} watch
 Restart=on-failure
 RestartSec=60
 Nice=10

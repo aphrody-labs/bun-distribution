@@ -13,7 +13,7 @@
     "bench": "bun scripts/yolo.ts bench",
     "bench:check": "bun scripts/yolo.ts bench:check",
     "fmt:check": "oxfmt --check packages apps scripts",
-    "icons:ico": "bun packages/material-design-icons/scripts/svg-to-ico.ts",
+    "icons:ico": "bun ../apps/yolo/cli/src/index.ts m3 svg-to-ico",
     "bundle-size": "bun scripts/bundle-size.ts",
     "check": "bun scripts/check-exports.ts && bun scripts/check-assets.ts && bun scripts/check-links.ts",
     "fonts:sync": "bun scripts/fonts-sync.ts",
