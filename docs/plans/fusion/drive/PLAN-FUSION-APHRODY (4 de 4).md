@@ -89,18 +89,62 @@ Recommandation de l'audit : l'option 1 (elle prolonge la consolidation faite le 
 7. **Patches Tauri restants** (plugin dialog, préfixe ACL) : à pousser dans `aphrody-labs/plugins-workspace` avant la bascule en pins.
 8. **V8 dans `aphrody` pendant la transition** : couper `native-browser` et `render` par défaut au 2 bis, ou dès maintenant.
 
+## 10. Résultats des recherches approfondies (5 octobre, sources datées dans les rapports)
+
+Trois recherches sans accès aux dépôts : Obscura (versions, issues, PR), Tauri v3 (changelog, migration, issues), dépôts externes utiles. Les points qui **corrigent ou complètent** les parties 1-3 :
+
+### 10.1 Obscura amont (v0.2.4, `1fccab2`)
+- **Pas de v3** : versions 0.x, pas de changelog ni de milestone ; v0.2.4 (4 octobre) suit v0.2.3 (base de notre copie) avec 212 commits en 14 jours, rythme d'une release toutes les deux semaines. Aucune roadmap déclarée ; promesse « Apache-2.0, no feature gating, ever ».
+- **Chiffres à jour** (même méthode aux trois révisions) : `bootstrap.js` 17 933 lignes (plan : 16 918), 73 ops (70), 183 occurrences `v8::` (164), 1 035 `tokio::` (+18 %).
+- **Correction** : « un seul isolate V8 par processus, verrou `v8_lock` global » est faux depuis juillet (`v8_lock.rs` supprimé le 20/07) : un isolate par page, un thread OS par connexion CDP, un verrou par connexion. Conséquence : le « goulot V8 levé par construction » de la partie 1 est surévalué.
+- **Rien d'amont** sur JSC/QuickJS/abstraction moteur, V8 optionnel, runtime sans tokio ou pipe CDP : l'amont renforce V8 (#1031, #1135, #1197). La divergence est définitive ; chaque correctif de `obscura-js` devient un portage manuel.
+- **CDP** : WebSocket TCP seulement ; jeton par `Authorization: Bearer` (obligatoire hors loopback) ; toute requête avec en-tête `Origin` refusée (403) : **à vérifier** pour le backend `"obscura"` de `Bun.WebView`. `Target.getTargets` vide pour une nouvelle connexion (#543/#570) : la fumigation Puppeteer doit utiliser `newPage()`.
+- **SSRF** : #861 (liste CIDR autorisée) entre en conflit avec notre commit SSRF ; #852/#868 (`198.18.0.0/15` bloquée) casse WSL2 avec Clash fake-ip. **Perf** : le coût du pont JS domine (×3 à ×9, #1155/#1156) : à prendre en compte pour les fonctions hôtes du chantier B. Ouvertes utiles : #1152 (HTTP/2), #1158 (stockage persistant `redb`), #1080 (vrai `WebSocket` de page).
+- **Parité avant retrait de V8** : `obscura-benchmark` la chiffre (obstacles 33/33, WPT Core 83,3 %, 69 fixtures de rendu) ; `yolo browser fetch` doit garder la syntaxe de `obscura fetch`.
+- **Fait ce jour** : fork `aphrody-labs/obscura` `yolo` = amont `main` + 3 commits propres (SSRF, correctif de test, fusion), `main` aligné ; copie du monorepo remise à niveau (commit `d21e0f54a`, 1757 tests release verts) ; fork privé `aphrody-labs/taffy` `4cd8b38` porte `DetailedGridTracksInfo::end_offset` et les correctifs de mise en page amont. **Reste** : reporter `shape-run-cache` de cosmic-text dans `athena-text` (feature laissée éteinte).
+
+### 10.2 Tauri v3
+- **Calendrier** : cinq alphas du 12 septembre au 1er octobre (`tauri` alpha.4) ; ni beta ni stable annoncées, jalon 3.0 avec 12 éléments ouverts (GTK4/WebKitGTK 6.0, refonte des listeners #16077, canal soumis à l'ACL #16037). **Viser une révision épinglée, pas une stable.** Les mainteneurs confirment que `tauri-runtime` casse son API à chaque mineur (#16209) : pins par révision git exacte.
+- **Point bloquant pour l'invariant « tokio hors du noyau »** : épingler `tauri-runtime-wry` en v3 fait entrer le crate `tauri` complet (tokio et reqwest 0.13 non optionnels). Le couplage tient à `tauri_ext.rs` (307 lignes), au paramètre par défaut de `WryRuntime` (`lib.rs:2713`) et à deux appels Android : une dépendance optionnelle derrière une feature dans le fork `aphrody-labs/tauri` (~30 lignes) règle le problème.
+- **Corrections à la partie 3** : `tauri-runtime` v3 ne dépend plus de gtk/webkit2gtk et fait 6 164 lignes (pas 2 874) ; le message IPC v3 contient aussi `options.headers` et `__TAURI_INVOKE_KEY__`, `@tauri-apps/api` attend `__TAURI_INTERNALS__` (8 membres) : le stub `tauri.d.ts` du fork Bun est incomplet ; le « +100 Mo » de CEF n'est pas vérifié (SDK ≈ 1 Go par plateforme).
+- **Permissions** : toute la résolution `allow-*/deny-*` vit dans `tauri_utils::acl` (sans tokio, reprenable par pin) ; seul le contrôle à l'exécution (`RuntimeAuthority`, 2 033 lignes) est dans `tauri`.
+- **Hôte de fenêtres obligatoire** : la boucle tao exige le thread principal sous macOS ; wry lie webkit2gtk au lien (pas de chargement dynamique) : le noyau ne démarre sans webkit2gtk que si wry vit à part. **Protocole hôte** : une ABI courte (modèle de la branche amont `feat/bindings` / `tauri-ffi` : file d'événements, poignées `u64`, ACL synthétisée, expérimentale : design, pas code) plutôt qu'un proxy de ~210 méthodes de traits.
+- **IPC** : option A (réécrire côté Bun) ou **option B (garder `tauri` complet dans le seul binaire hôte de `@aphrody/plugin-tauri`) : ACL, canaux, plugins officiels et `@tauri-apps/api` marchent tels quels ; recommandée pour le one shot 3.** CEF reste un hôte séparé en fin de séquence (dépend de `tauri`, GTK4 incompatible avec wry dans un processus, sans sandbox sous Windows). `tauri-bundler` est une bibliothèque synchrone sans tokio, utilisable pour `yolo crawl app`.
+- **Forks** : le patch tao du fork `tauri` est inopérant (`[[patch.unused]]`, tao reste à crates.io 0.37.0) : `cargo update -p tao` sur le build host ; le patch dialog local = PR amont plugins-workspace#3655 (ouverte), à cherry-picker ; les cinq forks sont publics.
+
+### 10.3 Dépôts externes et faits sur le fork Bun (recommandations par chantier)
+- **Amont Bun déjà en Rust** (PR #30412 fusionnée le 2026-05-14, v1.4.0 le 2026-08-20) : le fork = amont + 6 commits. **Ne diverger que dans `crates/browser` et `crates/plugins`** ; couper l'amont du noyau coûte cher.
+- **JSC/ICU compilés depuis les sources par défaut** depuis la PR #41330 (2026-09-06) : « WebKit précompilé / préchauffer `autobuild` » (J0, checklist) est périmé ; précompilé possible avec `--webkit=prebuilt`.
+- **Chantier A (TLS)** : l'empreinte Chrome complète existe en PR amont #40275 (ouverte) : JA3, GREASE, permutation des extensions, ALPS, compression de certificat, ECH GREASE, ML-KEM ; le BoringSSL de Bun expose déjà ces API. Un cherry-pick remplace le travail de A. Reste HTTP/2 (modèle `0x676e67/http2`) et SOCKS5 (amont #16812) ; mesure avec `pingly` (Rust) plutôt que tls.peet.ws.
+- **Chantier B (realm JSC)** : `node:vm` de Bun contient déjà global objects isolés, cache de bytecode (`produceCachedData`) et interruption (`NodeVMRunTermination`) : **un essai d'une heure** (`vm.createContext` + ops fournis par N-API) valide `bootstrap.js` sur JSC avant tout Rust. Les plugins n'ont aucun accès direct à JSC (le binaire n'exporte que `napi*`, `uv_*`, une cale V8) : l'hôte de realm doit vivre dans le noyau, exposé par une table C versionnée (confirme la partie 1).
+- **Filet « état vert » sans V8** : la façade `deno_v8` de Deno (PR #36194) bascule `deno_core` vers QuickJS par feature Cargo ; le `Cargo.lock` d'`aphrody` contient déjà `deno_core 0.412 → deno_v8 0.4 → v8x`. Pas de JIT : la cible reste JSC. `v8x` en mode JSC ne marche que sur macOS (382/429 tests `deno_core`) : table de correspondance V8 → JSC, pas dépendance ; `obscura-android-port` (méthode de conversion des ops) et Rong (interruption) servent de référence.
+- **Chantier D / WebView** : `Bun.WebView` sait se connecter à un serveur CDP existant (`backend.url`) : le backend `"obscura"` hors processus n'exige pas de transport pipe ; le backend Chrome est interdit dans un Worker.
+- **Concurrent** : Moli (Rust, Apache/MIT) annonce 81,9 % sur Lexbench contre 44,9 % pour Obscura (chiffres de Moli, non mesurés ici ; lié à V8 aussi) : garder Obscura pour le one shot 1, mesurer les deux, emprunter les composants découplés (types CDP, conformité WPT). Licences : Lightpanda et crw (AGPL), JA4+ (FoxIO, usage commercial interdit) en référence seulement ; JA4 seul est BSD-3 ; Cottontail, `blackboardsh/jsc`, ferridriver sans licence.
+- **Desktop** : `tauri-runtime-verso` = précédent du modèle « processus hôte » ; webviewjs (wry dans le processus) gèle sous Linux/GTK (#52). D'Electrobun : IPC chiffré par webview, correctifs bsdiff, bundle zstd ; signature des plugins : format minisign de l'updater Tauri.
+- **Crawl (one shot 2)** : algorithmes de `spider` (MIT), API URL Frontier comme contrat du `FrontierStore`, patron « un trait, trois backends » d'apalis sur `Bun.sql`/`Bun.redis`.
+- **Versions** : la copie d'Obscura épingle `wreq 6.0.0-rc.31` (pas rc.29) ; en amont la ligne est devenue `wreq 0.16` avec `btls` comme backend TLS.
+
+### 10.4 Décisions ouvertes ajoutées au §8
+9. Correctif de dépendance optionnelle dans le fork `aphrody-labs/tauri` (tokio/reqwest derrière feature) : oui/non.
+10. IPC desktop : option A (réécrite côté Bun) ou B (`tauri` complet dans l'hôte de plugin) ; recommandation de l'audit : B.
+11. Protocole hôte de fenêtres : ABI courte (`tauri-ffi`) ou proxy complet des traits ; recommandation : ABI courte.
+12. Rythme des rebases d'ici GTK4/WebKitGTK 6.0 (pins par révision exacte).
+13. Chantier A : cherry-pick de la PR Bun #40275 (empreinte TLS) plutôt que réécriture.
+14. Chantier B : essai `node:vm` d'une heure avant le portage Rust.
+15. Prérequis machine : l'amont compile JSC/ICU depuis les sources ; dbfr rejoint la chaîne de build en secours (`--host auto`, 3 jobs) mais le noyau Bun reste un travail du VPS ou du serveur dédié.
+
 ## 9. Checklist de démarrage mise à jour
 
 - [x] Préfixe `aphrody-` pour toutes les crates (Décision finale).
 - [x] Build vert du fork avant toute modification : `c439b6fbd`, release LTO, reçu `bun-forge` (§1). Reste le build debug et `cargo check --workspace` sur le fork vierge.
 - [x] Fork Bun synchronisé sur l'amont, une seule branche `main`.
 - [x] Tauri, plugins-workspace, wry, create-tauri-app : forks à jour, imports identiques.
-- [ ] tao : 2 commits amont (§7).
-- [ ] Obscura : remise à niveau du fork (107 commits) et fusion trois voies dans la copie (§7) ; relever la base de mesures (latence `fetch`, RSS, taille, obstacles).
+- [x] tao : 2 commits amont intégrés (fork et monorepo, `1fc288873`).
+- [x] Obscura : fork remis à niveau (107 commits) et copie du monorepo fusionnée (`d21e0f54a`) ; reste à relever la base de mesures (latence `fetch`, RSS, taille, obstacles).
 - [ ] Repointer les références à l'ancien `yolo` (§1), puis archiver/renommer en `yolo-legacy` ; créer le dépôt privé `yolo` ; accès push de la session.
 - [ ] Trancher les décisions du §8.
 - [ ] Base glibc de distribution du binaire.
-- [ ] Préchauffer WebKit `autobuild` et `scripts/build/deps` sur la machine d'exécution (déjà chauds sur le VPS dans `/srv/aphrody-build/cache/bun-forge`).
+- [ ] Caches de build de la machine d'exécution : l'amont compile JSC/ICU depuis les sources (précompilé = `--webkit=prebuilt`) ; les caches `bun-forge` du VPS sont chauds (`/srv/aphrody-build/cache/bun-forge`).
 - [ ] `FUSION.md`, prompts des six agents, plafonds de dépense, pages de fumigation, 30 min humaines en fin de J0 et J2.
 - [ ] `LICENSES/obscura-APACHE-2.0`, provenance d'Obscura, de taffy et des polices dans `config/upstream-sources.json` et `THIRD-PARTY.md`.
 
