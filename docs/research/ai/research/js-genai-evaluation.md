@@ -4,6 +4,7 @@
 # Evaluation: `googleapis/js-genai` (Google Gen AI SDK) for aphrody
 
 **Date:** 2026-05-26
+**Correction 2026-10-05:** the `byok/` adapters cited below were never declared by the gateway crate (never compiled since their import in `827bf08a9`) and were removed. Every `byok/gemini.rs` reference is historical, and the statements that a BYOK adapter already exists did not hold for the compiled crate.
 **Scope:** Read-only cross-reference. Maps the canonical API surface of the
 official Google Gen AI SDK for TS/JS (`googleapis/js-genai`, the successor to
 `@google/generative-ai`) against aphrody's Rust Gemini crates, and extracts an
@@ -18,7 +19,7 @@ adopting its API-key auth model.
 **Sources (aphrody, read-only cross-ref):** `crates/google/gemini-runtime/`,
 `crates/google/gemini-web/`, `crates/ai/mcp/`, `crates/aphrody-images/` (not in repo),
 `crates/google/antigravity/`, `crates/infra/aphrody-command/src/agy_backend.rs`,
-`crates/ai/gateway/src/byok/gemini.rs`.
+`crates/ai/gateway/src/byok/gemini.rs` (not in repo).
 
 ---
 
@@ -46,7 +47,7 @@ patterns** (they are identical across all transports — same `GenerateContentRe
 JSON, same method *suffixes* `:generateContent` / `:streamGenerateContent?alt=sse`
 / `:embedContent` / `:predict` / `:predictLongRunning`). Do **not** adopt its
 API-key header injection for the default path. A BYOK API-key adapter already
-exists and is correctly isolated (`crates/ai/gateway/src/byok/gemini.rs`).
+exists and is correctly isolated (`crates/ai/gateway/src/byok/gemini.rs` (not in repo)).
 
 ---
 

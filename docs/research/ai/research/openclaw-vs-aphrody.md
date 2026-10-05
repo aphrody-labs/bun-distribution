@@ -1,6 +1,7 @@
 # OpenClaw vs aphrody — Comparative Audit
 
 **Audit date:** 2026-05-23
+**Correction 2026-10-05:** rows that cited the gateway `byok/` adapters now cite the live code. That module was never declared by the gateway crate (never compiled since its import in `827bf08a9`) and was removed.
 **openclaw clone:** `var/openclaw` (not in repo) @ `4f0c9020` (`feat(diagnostics): trace gateway secret preparation (#83019)`)
 **aphrody:** this repo (`C:\src\aphrody`), Rust-only, branch `main`
 **Method:** on-disk verification only (`ls`/`grep`/`cat` real). No web claims.
@@ -26,8 +27,8 @@ out-of-scope-by-design, not a gap.
 
 | Provider | openclaw | aphrody | Evidence (aphrody) | Improvement |
 |----------|----------|---------|--------------------|-------------|
-| **Google / Gemini** | `extensions/google`, `googlechat` | ✅ keyless OAuth + cookie + CLI + BYOK | `crates/google/gemini-runtime`, `gemini-web`, `antigravity-sdk`, `aphrody-gateway/src/byok/gemini.rs`, `google_antigravity.rs`, `gemini_cli.rs` | Keyless: agy token (Credential Manager via antigravity-sdk), `gemini-web` cookie auth, Vertex/Cloud-Code OAuth, `gemini-cli` gated. Streaming SSE normalized. |
-| **Anthropic / Claude** | `extensions/anthropic`, `anthropic-vertex` | ✅ BYOK Messages API | `crates/ai/gateway/src/byok/anthropic.rs` (360 LOC), `byok/mod.rs` | Native SSE streaming, tool_use accumulation, SSRF guard, `NormalizedChunk` model. Wire shape explicitly mirrors openclaw daemon route `/api/proxy/anthropic/stream`. |
+| **Google / Gemini** | `extensions/google`, `googlechat` | ✅ keyless OAuth + cookie + CLI + BYOK | `crates/google/gemini-runtime`, `gemini-web`, `antigravity-sdk`, `google_antigravity.rs`, `gemini_cli.rs` | Keyless: agy token (Credential Manager via antigravity-sdk), `gemini-web` cookie auth, Vertex/Cloud-Code OAuth, `gemini-cli` gated. Streaming SSE normalized. |
+| **Anthropic / Claude** | `extensions/anthropic`, `anthropic-vertex` | ✅ Messages API streaming client | `crates/ai/model-client/src/anthropic.rs` | Native SSE streaming decoded into neutral stream events, `tool_use`/`tool_result` blocks, signed thinking replay. |
 | Image gen | `comfy`, `fal`, `runway`, `image-generation-core` | ✅ Google Nano Banana Pro + Adobe Firefly | `crates/aphrody-images` (not in repo), `aphrody-firefly`, the `aphrody-bun` icons module, `aphrody-identity` logo; MCP `gemini_image`, `firefly_generate` | Nano Banana Pro (gemini-3-pro-image-preview, Vertex global) + Firefly S2S OAuth. |
 | Video gen | `video-generation-core`, `runway` | ✅ Veo | MCP `gemini_video`; `cli/src/main.rs` veo refs | Google Veo via Gemini. |
 | Deep research | (none first-class) | ✅ | MCP `gemini_deep_research`; `notebooklm/src/research.rs` | NotebookLM + Gemini deep-research — net-new capability. |
@@ -62,7 +63,7 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 
 | Subsystem | openclaw | Apple-specific? | aphrody equivalent | Evidence | Status |
 |-----------|----------|-----------------|--------------------|----------|--------|
-| Gateway / control plane | `src/gateway` | no | `crates/ai/gateway` | `byok/`, `cloudflare.rs`, `vercel.rs`, `lib.rs` | ✅ |
+| Gateway / control plane | `src/gateway` | no | `crates/ai/gateway` | `cloudflare.rs`, `vercel.rs`, `lib.rs` | ✅ |
 | Multi-agent routing | `src/routing` | no | `crates/ai/router` | `router/src/lib.rs` | ✅ |
 | Sessions | `src/sessions` | no | `crates/ai/session` | `session/src/lib.rs` | ✅ |
 | Memory / RAG | `extensions/memory-*`, `memory-lancedb`, `memory-wiki` | no | `crates/ai/memory` | `lancedb.rs`, `hnsw.rs`, `honcho.rs`/`honcho_v3.rs`, `mem0.rs`/`mem0_v3.rs`, `jsonl.rs`, `eviction.rs` | ✅ (richer: LanceDB + HNSW + Honcho/mem0 v3) |
@@ -73,7 +74,7 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 | Tools | `src/tools` (browser, canvas, cron, sessions) | no | `crates/ai/tools` | `tools/src/builtin`, `aphrody-terminal-browser` | ✅ |
 | MCP | `src/mcp` (channel/tools serve) | no | `crates/ai/mcp`→`aphrody-mcp` bin, `aphrody-mcp` (OAuth/PKCE) | `aphrody-mcp/src/{pkce,registration,discovery}.rs`, `google_mcp` | ✅ (50+ tools incl. OAuth flow) |
 | Cron / scheduling | `src/cron` (large) | no | `crates/os/cron` | `cron/src/lib.rs` | ⚠️ thin (see GAPS) |
-| Auth / secrets | `src/secrets`, auth-profiles | no | `crates/os/secrets`, `aphrody-gateway/byok` | `secrets/src/lib.rs` | ✅ |
+| Auth / secrets | `src/secrets`, auth-profiles | no | `crates/os/secrets` | `secrets/src/lib.rs` | ✅ |
 | Config | `src/config` | no | `crates/os/settings` | `settings/src/lib.rs` | ✅ |
 | CLI / onboarding | `openclaw onboard/pairing/doctor` | no | `cli` `oc-onboard/oc-pairing/oc-reset/oc-uninstall/doctor` | `cli/src/oc_cmd.rs` (897 LOC) | ✅ (explicit openclaw-compat surface) |
 | DM pairing / allowlist | `dmPolicy`, `pairing approve` | no | `oc-pairing` (`~/.aphrody/pairing.json`) | `cli/src/oc_cmd.rs:340-468` | ✅ |

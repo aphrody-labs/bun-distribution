@@ -28,7 +28,7 @@ security policy.
 | Tools and MCP | `aphrody-agent-tools`, `aphrody-mcp-client` and related owners provide tool execution and integrations. Schemas, permissions, cancellation, failures and results must be checked for the delivered subset. |
 | Sessions and history | Resume, fork, rollouts and thread lifecycle operations exist. Restart, interrupted writes and client reconciliation require durable-state evidence. |
 | App-server | A subset of the shared app-server contract is implemented. Stdio and HTTP SSE `/events` exist; current queue draining uses 10 ms stdio and 50 ms SSE timers. These intervals are implementation observations, not measured end-to-end latency. |
-| Native UI and terminal | UI and shell belong to sibling owners. The [GUI method map](../../../../design/aphrody-m3/docs/reference/GUI.md) describes target integration; much of that map still needs implementation and installed-user-flow proof. |
+| Native UI and terminal | UI and shell belong to sibling owners. The [GUI method map](../../../../m3/docs/reference/GUI.md) describes target integration; much of that map still needs implementation and installed-user-flow proof. |
 | Targets and distribution | Historical focused checks and model runs establish their recorded scope only. Supported artifacts need the current install, runtime, licensing and platform acceptance gates. |
 | Execution policy | Explicit full-access execution can qualify the first coding slice. Restricted sandbox modes and approvals require backend enforcement and denial/error tests before exposure. A policy type or process group is insufficient. |
 

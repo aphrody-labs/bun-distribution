@@ -78,7 +78,7 @@ crate::register_core_action!(LibraryCreateAction, "libraries.create");
 
 ### **Registry System**
 
-- **Location**: `core/src/ops/registry.rs`
+- **Location**: `core/src/infra/wire/registry.rs`
 - **Mechanism**: Uses the `inventory` crate for compile-time registration
 - **Global Maps**: `QUERIES` and `ACTIONS` hashmaps populated at startup
 - **Handler Functions**: Generic handlers that decode payloads, execute operations, and encode results

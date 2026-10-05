@@ -9,7 +9,7 @@ le gestionnaire conserve le résultat de chaque probe et son chemin de binaire.
 
 ## Sources locales
 
-- [Plugins](../../../../design/aphrody-m3/docs/reference/tauri/plugins.md)
+- [Plugins](../../../../m3/docs/reference/tauri/plugins.md)
 - [Skills](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/skills.md)
 - [Enregistrements JSON](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/json_configs.md)
 - [MCP](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/mcp_servers.md)
