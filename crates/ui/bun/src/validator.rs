@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use aphrody_m3_tokens::scheme::Role;
+
 use crate::symbols::MATERIAL_SYMBOLS;
 
 pub struct Issue {
@@ -9,58 +11,6 @@ pub struct Issue {
     pub line: usize,
     pub matched: String,
 }
-
-const M3_ROLES: &[&str] = &[
-    "background",
-    "on-background",
-    "surface",
-    "surface-dim",
-    "surface-bright",
-    "surface-container-lowest",
-    "surface-container-low",
-    "surface-container",
-    "surface-container-high",
-    "surface-container-highest",
-    "on-surface",
-    "surface-variant",
-    "on-surface-variant",
-    "inverse-surface",
-    "inverse-on-surface",
-    "outline",
-    "outline-variant",
-    "shadow",
-    "scrim",
-    "surface-tint",
-    "primary",
-    "on-primary",
-    "primary-container",
-    "on-primary-container",
-    "inverse-primary",
-    "secondary",
-    "on-secondary",
-    "secondary-container",
-    "on-secondary-container",
-    "tertiary",
-    "on-tertiary",
-    "tertiary-container",
-    "on-tertiary-container",
-    "error",
-    "on-error",
-    "error-container",
-    "on-error-container",
-    "primary-fixed",
-    "primary-fixed-dim",
-    "on-primary-fixed",
-    "on-primary-fixed-variant",
-    "secondary-fixed",
-    "secondary-fixed-dim",
-    "on-secondary-fixed",
-    "on-secondary-fixed-variant",
-    "tertiary-fixed",
-    "tertiary-fixed-dim",
-    "on-tertiary-fixed",
-    "on-tertiary-fixed-variant",
-];
 
 fn find_line_number(content: &str, byte_offset: usize) -> usize {
     let mut line = 1;
@@ -145,7 +95,7 @@ pub fn validate_m3_spec(code: &str) -> (i32, Vec<Issue>) {
             }
             if end > role_start {
                 let role = &line[role_start..end];
-                if !M3_ROLES.contains(&role) {
+                if !Role::ALL.iter().any(|r| r.name() == role) {
                     issues.push(Issue {
                         level: "error",
                         rule: "m3/valid-color-role",
