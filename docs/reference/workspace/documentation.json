@@ -6,7 +6,7 @@
     {
       "path": "AGENTS.md",
       "title": "Aphrody repository instructions",
-      "sha256": "a0a644a50fb7e1ba4a63b68494530fee082de9f3492918786099935f7c59e72f",
+      "sha256": "5954700da53c1364eaebbfae46163f4848e6bcb7b26c3ebde1dd9a9c3bc56d2e",
       "bytes": 6648,
       "domain": "",
       "status": "canonical",
@@ -36,8 +36,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan Directeur Unique — Aphrody & Yolo Core Trinity",
-      "sha256": "2497a538ba9badc6f22d0759010fe15c9a18384b32a8289d12ab6d9066ce0987",
-      "bytes": 14709,
+      "sha256": "4dd84a5586e05757cf4edf63d1f6c5ecfd698439ee62abf7a5d861975f141b33",
+      "bytes": 14730,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3166,7 +3166,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "e24e9c9e828e7b9202cb76c1e44b705cfcdb08bb11ee81567dfbdbac2ddfd525",
+      "sha256": "57f119a8aa5b367420ef41a355df916e43f1a08aca9716ac1b044402a429cb93",
       "bytes": 11617,
       "domain": "",
       "status": "generated",
@@ -9406,8 +9406,8 @@
     {
       "path": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md",
       "title": "Plan de fusion Obscura × Bun — partie 4 de 4 : audits et contexte vérifiés",
-      "sha256": "358cc27a74d63ea33b5e8e12c5695fe42023faed163950a66364fa757c3b2f8b",
-      "bytes": 47799,
+      "sha256": "288eafac98f8f121ae4e11678336a7b137c0b16ca282521cdddc59f8083d4fe9",
+      "bytes": 47825,
       "domain": "fusion",
       "status": "canonical",
       "visibility": "private",
@@ -9514,26 +9514,6 @@
       "canonical": "docs/plans/infra/sql-convergence-handoff.md"
     },
     {
-      "path": "docs/plans/ir/INVENTORY-py-vs-aphrody.md",
-      "title": "Inventory: py/ against the rest of the Aphrody monorepo",
-      "sha256": "fc5888e892fec07e405479e0263b07ae548841a35002e8b90c2459cc1eac559f",
-      "bytes": 13648,
-      "domain": "ir",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/plans/ir/INVENTORY-py-vs-aphrody.md"
-    },
-    {
-      "path": "docs/plans/ir/PLAN.md",
-      "title": "ir: the Aphrody Python runtime (draft)",
-      "sha256": "6699759d3a154d638ab5eb7999f1ef697383cca6076e4026997cc79423fde1c7",
-      "bytes": 652,
-      "domain": "ir",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/plans/ir/PLAN.md"
-    },
-    {
       "path": "docs/plans/native/PLAN.md",
       "title": "PLAN — aphrody-native",
       "sha256": "2c438c3149e140321f5254cc8b21e427dc65f1ef112b82fac5bbaa19b84b1ad8",
@@ -9612,6 +9592,26 @@
       "status": "imported",
       "visibility": "private",
       "canonical": "docs/plans/upstream-oxc/crates/oxc_minifier/docs/ROADMAP.md"
+    },
+    {
+      "path": "docs/plans/vu/INVENTORY-py-vs-aphrody.md",
+      "title": "Inventory: py/ against the rest of the Aphrody monorepo",
+      "sha256": "e13581cd7302a43e95c01a9a0c82fa435f55cf36cbd9a38587032b7ecf0f9a10",
+      "bytes": 13648,
+      "domain": "vu",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/vu/INVENTORY-py-vs-aphrody.md"
+    },
+    {
+      "path": "docs/plans/vu/PLAN.md",
+      "title": "vu: the Aphrody Python runtime (draft)",
+      "sha256": "1689c318ec9b3d958565e3db6510905f52bfed56e60a3c5e80e9a3393f01abce",
+      "bytes": 1001,
+      "domain": "vu",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/vu/PLAN.md"
     },
     {
       "path": "docs/plans/web/apps/bxc/MEGA-PLAN.md",
@@ -41106,8 +41106,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "90e971204943a5c515cc814697d729d3fa61f9bdf52c22593118dbe866958795",
-      "bytes": 53513,
+      "sha256": "2343fd500ee62899e72bfc4fef19f2275c20ea9d605e0c12ff7ff3334289926e",
+      "bytes": 53632,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -46636,7 +46636,7 @@
     {
       "path": "py/PLAN.md",
       "title": "Python workspace modernization",
-      "sha256": "7b9790c4bcfbcc72fa0892ab8f27fa39c50adc18d1156546c8e342005033f527",
+      "sha256": "03ae609e989b3d6f0f4218aa93bd894c3b45d9abdabc136442a2abdb493541ac",
       "bytes": 3375,
       "domain": "",
       "status": "canonical",
@@ -46646,7 +46646,7 @@
     {
       "path": "py/README.md",
       "title": "Aphrody Python",
-      "sha256": "22b8192588b9188591574e8683e273a323002e9f8bb00d36bf6d6cfb5389b981",
+      "sha256": "b85fe8929cab8e707c20aacdfcb3385c47f713229bfccc92ca79d68347f66fc8",
       "bytes": 3657,
       "domain": "",
       "status": "canonical",
@@ -46826,8 +46826,8 @@
     {
       "path": "py/docs/sdk/native-build.md",
       "title": "Building the native SDK",
-      "sha256": "2fadecf275a2273ba3e952a2aaecac0fe6f3d08356248aaa0089d5604885cf65",
-      "bytes": 3855,
+      "sha256": "951387d84648f6b3bf6465678d2c9ccaa9ce1b118fb6d224fb9c5785475b27b7",
+      "bytes": 3854,
       "domain": "",
       "status": "canonical",
       "visibility": "private",

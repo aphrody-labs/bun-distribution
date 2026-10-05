@@ -30,7 +30,7 @@ Ce plan centralise et fusionne l'ensemble des axes directeurs du projet :
 | **Yolo Core & Runtime** | Moteur de supervision, benchmarking matériel, isolation processus | `crates/engine/yolo-core`, `crates/engine/yolo-runtime` |
 | **Interop FFI Unique** | Bibliothèque C-ABI unifiée (`libaphrody_ffi.so`) chargeant CLI, runtime, M3 tokens et tooling | `crates/interop/ffi` |
 | **M3 UI & Design System** | Tokens Material 3, composants, Canvas et rendu graphique pur | `m3/`, `crates/ui/*` |
-| **Python IA / ML SDK** | Extension native PyO3 (`_yolo_native` / `aphrody_rust`), RAG, embeddings ; runtime `ir` (uv + ruff + PyO3, [plan](docs/plans/ir/PLAN.md)) | `py/` (fusionné dans le monorepo le 2026-10-05), `crates/engine/yolo-pyo3`, `crates/ai/rag-python` (seul propriétaire du binding `aphrody-rust`) |
+| **Python IA / ML SDK** | Extension native PyO3 (`_yolo_native` / `aphrody_rust`), RAG, embeddings ; runtime `vu` (uv + ruff + PyO3 + CPython intégrés, [plan](docs/plans/vu/PLAN.md)) | `py/` (fusionné dans le monorepo le 2026-10-05), `crates/engine/yolo-pyo3`, `crates/ai/rag-python` (seul propriétaire du binding `aphrody-rust`) |
 | **Obscura / Web Engine** | Navigation headless, extraction de données, profils stealth, HAR | `crates/web/*` |
 
 ---
@@ -166,7 +166,7 @@ d’IECODE et de FUT.
 - [x] Doublons de mécanismes retirés (`8b94aa7d4`, session aphrody-1a) : crate `aphrody-marketplace`,
   `publish-workspaces.ts`, pin SDK `sibling-checkouts`, wrappers `bun install` (façade `yolo-core/pm`).
 - [ ] Publication npm des paquets consommés par Shenron et FUT, puis migration d’IECODE et FUT vers npm.
-- [ ] `packages/` aplati (`packages/<nom>`, comme `bun/packages`). `py/` n'est plus rendu à `aphrody-py` : directive du 2026-10-05, `py/` est fusionné dans Aphrody (inventaire et déduplication : [docs/plans/ir](docs/plans/ir/PLAN.md)).
+- [ ] `packages/` aplati (`packages/<nom>`, comme `bun/packages`). `py/` n'est plus rendu à `aphrody-py` : directive du 2026-10-05, `py/` est fusionné dans Aphrody (inventaire et déduplication : [docs/plans/vu](docs/plans/vu/PLAN.md)).
 - [ ] GitHub : archiver les dépôts absorbés (`yolo`, `aphrody-m3`, `nie-ui`, `plugin-*` → `plugins`) et les
   forks intégrés ou purgés (tauri, tao, wry, plugins-workspace, create-tauri-app, next.js, tailwindcss,
   base-ui, fonts, material-*).

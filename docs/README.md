@@ -73,13 +73,13 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [discord](plans/discord/) | 2 | [Aphrody Discord plan](plans/discord/PLAN.md) |
 | plans | [fusion](plans/fusion/) | 14 | - |
 | plans | [infra](plans/infra/) | 4 | [Aphrody Infra plan](plans/infra/PLAN.md) |
-| plans | [ir](plans/ir/) | 2 | [`ir`: the Aphrody Python runtime (draft)](plans/ir/PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
 | plans | [runtime](plans/runtime/) | 3 | - |
 | plans | [shell](plans/shell/) | 1 | - |
 | plans | [upstream-bun](plans/upstream-bun/) vendored upstream copy | 1 | - |
 | plans | [upstream-oxc](plans/upstream-oxc/) vendored upstream copy | 1 | - |
+| plans | [vu](plans/vu/) | 2 | [`vu`: the Aphrody Python runtime (draft)](plans/vu/PLAN.md) |
 | plans | [web](plans/web/) | 6 | - |
 | plans | [workspace](plans/workspace/) | 1 | [Aphrody — FFI unique et consolidation Rust, Python, Bun](plans/workspace/PLAN.md) |
 | products | [ai](products/ai/) | 29 | [Aphrody AI](products/ai/README.md) |

@@ -8,7 +8,7 @@
  *   yolo py build                    builds the aphrody wheel (crates/ai/rag-python via maturin) into py/dist
  *                                    (--engine: maturin develop of packages/engine/python)
  *
- * py/ is the fused Python workspace (docs/plans/ir/PLAN.md). The wheel build compiles Rust: run it on
+ * py/ is the fused Python workspace (docs/plans/vu/PLAN.md). The wheel build compiles Rust: run it on
  * the serialized build host, never in WSL.
  */
 import { existsSync } from "node:fs";

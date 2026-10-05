@@ -65,5 +65,5 @@ Edit `crates/ai/rag-python` or `crates/ai/rag-core` directly, keep `aphrody_rust
 gates, then rebuild and verify the wheel with `tools/sdk/verify-wheel.py`. No generated
 Rust source exists in this package any more.
 
-The longer-term direction (an `ir` runtime that embeds CPython through PyO3 and ships uv and
-ruff as libraries) is described in [docs/plans/ir/PLAN.md](../../../docs/plans/ir/PLAN.md).
+The longer-term direction (a `vu` runtime that embeds CPython through PyO3 and ships uv and
+ruff as libraries) is described in [docs/plans/vu/PLAN.md](../../../docs/plans/vu/PLAN.md).

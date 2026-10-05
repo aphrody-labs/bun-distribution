@@ -4,7 +4,7 @@
 A uv workspace for Python libraries, applications and tools, fused into the Aphrody
 monorepo on 2026-10-05 (it was the separate `aphrody-py` repository). The Rust source is owned by the
 monorepo: the SDK wheel builds `crates/ai/rag-python` in place. The longer-term direction is the
-`ir` runtime ([plan](../docs/plans/ir/PLAN.md)).
+`vu` runtime ([plan](../docs/plans/vu/PLAN.md)).
 
 ## Development
 
