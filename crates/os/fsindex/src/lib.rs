@@ -20,13 +20,17 @@
 //! # }
 //! ```
 
-// Unsafe is confined to the Windows FFI in `everything` (dynamic SDK loading).
+// Unsafe is confined to the Windows FFI in `everything` (dynamic SDK loading) and `ntfs_win` (NTFS FSCTLs).
 #![deny(unsafe_code)]
 
 pub mod everything;
 pub mod google;
+pub mod mft;
+#[cfg(windows)]
+pub mod ntfs_win;
 
 pub use google::{GoogleFileHit, GoogleFilesDb};
+pub use mft::{MftTree, UsnEntry, UsnRecordHeader, parse_usn_record};
 
 use std::path::Path;
 

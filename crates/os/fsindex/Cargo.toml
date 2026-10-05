@@ -22,8 +22,8 @@ walkdir    = { workspace = true }
 rusqlite   = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-# Dynamic loading of the voidtools Everything SDK (`everything` module).
-windows    = { workspace = true, features = ["Win32_Foundation", "Win32_System_LibraryLoader"] }
+# Dynamic loading of the voidtools Everything SDK (`everything` module); NTFS MFT/USN controls (`ntfs_win`).
+windows    = { workspace = true, features = ["Win32_Foundation", "Win32_System_LibraryLoader", "Win32_System_Ioctl", "Win32_Storage_FileSystem", "Win32_System_IO"] }
 
 [dev-dependencies]
 tempfile   = { workspace = true }
