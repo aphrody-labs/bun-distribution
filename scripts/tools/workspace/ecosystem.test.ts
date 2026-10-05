@@ -175,17 +175,17 @@ test("pyproject name, description and scripts", () => {
   expect(py).toEqual({ name: "aphrody-ocr", description: "OCR", scripts: ["a", "b"] });
 });
 
-const root = resolve(import.meta.dir, "..", "..");
+const root = resolve(import.meta.dir, "..", "..", "..", "..");
 const activeRootsPresent = ["aphrody", "aphrody-py", "iecode"].every((repo) =>
   existsSync(join(root, repo)),
 );
 
 describe.skipIf(!activeRootsPresent)("ecosystem catalog", () => {
-  test("committed docs/ecosystem output is up to date (run: bun scripts/ecosystem.ts)", () => {
+  test("committed docs/ecosystem output is up to date (run: bun scripts/tools/workspace/ecosystem.ts)", () => {
     const eco = collect(root);
     expect(eco.repos.flatMap((r) => r.errors)).toEqual([]);
     expect(eco.cli.some((b) => b.binary === "aphrody" && b.commands.length > 0)).toBe(true);
     expect(eco.counts.mcpTools).toBeGreaterThan(0);
-    expect(staleFiles(join(import.meta.dir, "..", "docs", "ecosystem"), render(eco))).toEqual([]);
+    expect(staleFiles(join(import.meta.dir, "..", "..", "..", "docs", "ecosystem"), render(eco))).toEqual([]);
   }, 180_000);
 });

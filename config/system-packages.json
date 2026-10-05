@@ -121,7 +121,7 @@
     "reason": "Installes par les toolchain managers ou fournis par Aphrody; ne pas dupliquer via APT."
   },
   "workstationLinux": {
-    "note": "Bibliothèques natives de compilation des apps Linux desktop/Tauri; installées par scripts/bootstrap.sh, absentes des hôtes serveur.",
+    "note": "Bibliothèques natives de compilation des apps Linux desktop/Tauri; installées par scripts/dev/bootstrap.sh, absentes des hôtes serveur.",
     "packages": [
       "libgtk-3-dev",
       "libwebkit2gtk-4.1-dev",

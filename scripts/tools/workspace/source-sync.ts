@@ -62,7 +62,7 @@ export interface SyncReport {
   rows: SyncRow[];
 }
 type GitResult = { code: number; stdout: string };
-const sourceRoot = resolve(import.meta.dir, "..");
+const sourceRoot = resolve(import.meta.dir, "..", "..", "..");
 
 async function git(
   repo: string,
@@ -508,7 +508,7 @@ function persistReport(root: string, report: SyncReport): void {
   appendFileSync(log, data, { mode: 0o600 });
 }
 const usage =
-  "Usage: aphrody-ops repo-sync <plan|once|watch> [--apply] [--repo NAME] [--json]\n       bun scripts/source-sync.ts [--apply --push] [--watch] [--interval SECONDS] [--repo NAME] [--json]";
+  "Usage: aphrody-ops repo-sync <plan|once|watch> [--apply] [--repo NAME] [--json]\n       bun scripts/tools/workspace/source-sync.ts [--apply --push] [--watch] [--interval SECONDS] [--repo NAME] [--json]";
 export interface SourceSyncCallbacks {
   onReport?: (report: SyncReport, config: SourceSyncConfig) => void | Promise<void>;
   onStop?: () => void | Promise<void>;

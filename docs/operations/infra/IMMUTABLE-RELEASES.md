@@ -17,9 +17,9 @@ per-service contracts; for example, the Discord development env is
 | Plane | Root | Contents | Adapter (installed name) | 2026-10-02 declared status |
 | --- | --- | --- | --- |
 | Aphrody | `/srv/aphrody` | historical five services from `aphrody-web` and `aphrody-ai` | historical adapter (`aphrody-infra-deploy-aphrody`) | retired |
-| Shenron | `/srv/shenron` | `shenron-site` and `shenron-bot` | `scripts/atomic-deploy-shenron.sh` (`aphrody-infra-deploy-shenron`) | active in catalog |
-| RG | `/srv/rg` | RG applications assembled on VPS | `scripts/atomic-deploy-rg.sh` (`aphrody-infra-deploy-rg`) | active in catalog |
-| Aphrody Discord dev | `/srv/aphrody-discord` | Bun bundle from pinned `aphrody-discord` commit | `scripts/build-aphrody-discord-release.sh` + `scripts/atomic-deploy-aphrody-discord.sh` | active in catalog; development service |
+| Shenron | `/srv/shenron` | `shenron-site` and `shenron-bot` | `scripts/release/atomic-deploy-shenron.sh` (`aphrody-infra-deploy-shenron`) | active in catalog |
+| RG | `/srv/rg` | RG applications assembled on VPS | `scripts/release/atomic-deploy-rg.sh` (`aphrody-infra-deploy-rg`) | active in catalog |
+| Aphrody Discord dev | `/srv/aphrody-discord` | Bun bundle from pinned `aphrody-discord` commit | `scripts/build/build-aphrody-discord-release.sh` + `scripts/release/atomic-deploy-aphrody-discord.sh` | active in catalog; development service |
 
 ### VPS observation (2026-10-02, read-only)
 
@@ -50,7 +50,7 @@ discover arbitrary units. Installed binary/catalog and current source views
 can differ, so reconcile their revisions before relying on results. The root
 monorepo CLI is defined in
 [`crates/infra/infra/src/main.rs`](../../../crates/infra/infra/src/main.rs);
-the separate Bun host monitor is `bun scripts/infra-status.ts status`. These
+the separate Bun host monitor is `bun scripts/tools/infra/infra-status.ts status`. These
 commands have different scope and output. Invoke Cargo builds/runs through
 `scripts/build/rust/cargo-serial.sh` as required by repository rules.
 
@@ -87,8 +87,8 @@ sudo nginx -t && sudo systemctl daemon-reload && sudo systemctl reload nginx
 The vhost retains the HTTP-01 challenge path for unattended Certbot renewal; the
 deploy hook reloads Nginx after Certbot installs a renewed certificate.
 Build from a clean, pinned Aphrody Discord checkout with
-`scripts/build-aphrody-discord-release.sh`, copy the artifact to the VPS, then
-activate it with `scripts/atomic-deploy-aphrody-discord.sh`. Activation requires
+`scripts/build/build-aphrody-discord-release.sh`, copy the artifact to the VPS, then
+activate it with `scripts/release/atomic-deploy-aphrody-discord.sh`. Activation requires
 a valid certificate and env file, waits for the Gateway to reach READY, probes
 local and public HTTPS health, and restores the previous release on failure.
 After HTTPS validation, the app's interaction endpoint is set through Discord's
@@ -117,7 +117,7 @@ with the same checks passing. A fresh authorized OAuth callback remains open.
 
 The historical **all-in-one bundle** pins all three to one superproject commit and
 activates them in order Aphrody → Shenron → RG through
-`scripts/atomic-deploy-bundle.sh` (`aphrody-infra-deploy-bundle`). Every
+`scripts/release/atomic-deploy-bundle.sh` (`aphrody-infra-deploy-bundle`). Every
 adapter checks checksums and preconditions before touching anything, keeps the
 previous release, and restores the previous `current`, units, vhost and service
 states on any failure. `aphrody-infra deploy --target vps --stack
@@ -208,7 +208,7 @@ submodule layout (`aphrody-src`, `prepare-release-workspace.sh`) was retired; th
 compute release is built from one monorepo commit:
 
 ```bash
-bash scripts/build-aphrody-stack-release.sh --compute-only "$PWD" "$(git rev-parse HEAD)"
+bash scripts/build/build-aphrody-stack-release.sh --compute-only "$PWD" "$(git rev-parse HEAD)"
 ```
 
 ```
@@ -293,7 +293,7 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
    expired: refresh it before use). Never log it.
 7. **Adapters.** On the VPS, `git -C ~/aphrody-infra fetch && git
    -C ~/aphrody-infra checkout --detach INFRA_SHA` (the bundle's
-   `aphrody-infra` pin), then `sudo bash scripts/install-vps-adapter.sh`: it
+   `aphrody-infra` pin), then `sudo bash scripts/tools/install-vps-adapter.sh`: it
    installs the four adapters, the catalog snapshots and `ADAPTER.json`, and
    removes the retired site-only `aphrody-infra-deploy`.
 8. **RG release.** `git -C ../rg fetch && git -C ../rg

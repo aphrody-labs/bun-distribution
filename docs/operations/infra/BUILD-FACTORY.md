@@ -159,7 +159,7 @@ or proxy routing only after DBFR is qualified.
 From a clean committed VPS factory checkout, export the existing installer:
 
 ```sh
-bash scripts/install-vps-adapter.sh --stack shenron --package ~/.cache/aphrody/shenron-adapter-FULL_SHA
+bash scripts/tools/install-vps-adapter.sh --stack shenron --package ~/.cache/aphrody/shenron-adapter-FULL_SHA
 ```
 
 Transfer that small sealed directory directly VPS-to-DBFR into

@@ -262,7 +262,7 @@ Arrêt sur SIGTERM, en moins de `TimeoutStopSec=30` :
 - Il n'y a pas de bleu/vert. La passerelle est un singleton, et `shenron-site-b` est retiré.
   Le basculement se fait sur un slot unique avec `proxy_cache_use_stale error timeout updating
   http_502 http_503` sur `dragonballfr.com`, pour que le cache nginx serve pendant le redémarrage.
-- Nouvel adaptateur `scripts/atomic-deploy-shenron.sh`, sur le modèle de
+- Nouvel adaptateur `scripts/release/atomic-deploy-shenron.sh`, sur le modèle de
   `atomic-deploy-aphrody-stack.sh:10,47-109`. Étapes :
   1. Vérifier le sha256.
   2. Déposer la release dans `releases/<sha>` et lancer `bun install --frozen-lockfile`.

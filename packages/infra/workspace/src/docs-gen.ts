@@ -9,7 +9,7 @@
  *                                      the Bun workspaces and the git log
  *   docs/README.md                     generated documentation index
  *   docs/reference/ai/llms.txt         llms.txt index of the canonical docs
- *   docs/ecosystem/*                   delegated to scripts/ecosystem.ts
+ *   docs/ecosystem/*                   delegated to scripts/tools/workspace/ecosystem.ts
  *   docs/reference/infra/UPSTREAMS.md  delegated to `aphrody-update upstream docs`
  *   docs/reference/workspace/DEPS-INVENTORY.md  only with --deps (network, registry-dependent, never checked)
  *
@@ -456,7 +456,7 @@ export async function runDocsGen(args: string[]): Promise<number> {
   if (delegate(root, "UPSTREAMS.md", [bun, ...upstreamArgs, ...(check ? [] : ["--apply"])]) !== 0)
     failures++;
   if (ecosystem) {
-    const ecoArgs = ["scripts/ecosystem.ts", ...(check ? ["--check"] : [])];
+    const ecoArgs = ["scripts/tools/workspace/ecosystem.ts", ...(check ? ["--check"] : [])];
     if (delegate(root, "docs/ecosystem", [bun, ...ecoArgs]) !== 0) failures++;
   }
   if (deps && !check) {

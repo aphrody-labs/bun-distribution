@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=oneshot
 WorkingDirectory=/home/ubuntu/aphrody-infra
 Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/usr/bin/env bun scripts/infra-status.ts status --json --strict
+ExecStart=/usr/bin/env bun scripts/tools/infra/infra-status.ts status --json --strict
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true

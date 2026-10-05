@@ -664,7 +664,7 @@
   "deploy": {
     "adapter": "cargo run -p aphrody-infra -- deploy --stack bundle",
     "target": "vps",
-    "bundle": "scripts/build-aphrody-stack-release.sh (WSL Ubuntu-24.04, ext4 superproject clone): Aphrody stack + Shenron artifact + RG pin; NIE and IECode ship no VPS release",
+    "bundle": "scripts/build/build-aphrody-stack-release.sh (WSL Ubuntu-24.04, ext4 superproject clone): Aphrody stack + Shenron artifact + RG pin; NIE and IECode ship no VPS release",
     "requires": [
       "all stages green",
       "SMOKE.json attestation",
@@ -672,7 +672,7 @@
       "health probes",
       "rollback slot"
     ],
-    "then": "live stage: scripts/live-audit.ts must report 0 errors (routes, pages, links, assets, render, server journal)"
+    "then": "live stage: scripts/audit/live-audit.ts must report 0 errors (routes, pages, links, assets, render, server journal)"
   },
   "cdn": {
     "owner": "aphrody-infra",

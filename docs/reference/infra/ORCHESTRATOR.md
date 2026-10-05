@@ -48,9 +48,9 @@ catalog timestamp is never treated as live state. Runtime claims require the liv
 adapters (`ssh`, `wsl.exe`, `systemctl`) to succeed. `sync` and `deploy` are
 plan-only unless `--apply` is explicit; dirty worktrees are never reset.
 
-The VPS deploy adapters are installed by `scripts/install-vps-adapter.sh` as
+The VPS deploy adapters are installed by `scripts/tools/install-vps-adapter.sh` as
 `/usr/local/sbin/aphrody-infra-deploy-{aphrody,shenron,rg,bundle}` (reviewed
-copies of `scripts/atomic-deploy-aphrody-stack.sh`, `atomic-deploy-shenron.sh`,
+copies of `scripts/release/atomic-deploy-aphrody-stack.sh`, `atomic-deploy-shenron.sh`,
 `atomic-deploy-rg.sh` and `atomic-deploy-bundle.sh`, with
 `/usr/local/share/aphrody-infra/ADAPTER.json` recording the infra commit). Each
 accepts only a release below its own root, verifies checksums and preconditions,
@@ -63,7 +63,7 @@ probes loopback and HTTPS routes and restores the previous `current` on failure
 - `aphrody-web`: public site, Web API, BXC browser engine and render FFI.
 - `aphrody-ui`: M3 design system, the agent console (`ui-dist`) and `@aphrody/bun`.
 - `aphrody-os`: kernel, sandbox, services and WinClean (not deployed on the VPS).
-- The separate `scripts/infra-status.ts` Bun monitor reports its implemented host checks and probes; lifecycle/status commands are native Rust. Neither is a full discovery of arbitrary host units.
+- The separate `scripts/tools/infra/infra-status.ts` Bun monitor reports its implemented host checks and probes; lifecycle/status commands are native Rust. Neither is a full discovery of arbitrary host units.
 - RG: RG services and the imported resource monitor.
 - Niers: data/build checkout and service-specific assets.
 - `aphrody-infra`: target matrix, run evidence, environment checks, SSH/Git

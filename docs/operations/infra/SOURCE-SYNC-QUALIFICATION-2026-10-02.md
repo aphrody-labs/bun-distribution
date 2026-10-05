@@ -31,7 +31,7 @@ executable name found the Aphrody kernel, rust-analyzer, and the source sync
 directory and current monorepo respectively. These are host observations, not
 a complete package or deployment qualification.
 
-Commands used: `bun scripts/source-sync.ts --json`, an invalid `--repo` probe,
+Commands used: `bun scripts/tools/workspace/source-sync.ts --json`, an invalid `--repo` probe,
 `systemctl --user status/is-active/is-enabled aphrody-source-sync.service`,
 `journalctl --user -u aphrody-source-sync.service`, `df -h`, `df -i`, `uname`,
 `command -v`, `nu --version`, and `ps` with executable names only.

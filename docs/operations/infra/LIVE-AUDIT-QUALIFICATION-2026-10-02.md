@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Native Web live audit qualification — 2026-10-02
 
-`scripts/live-audit.ts` now calls the installed `aphrody-web crawl` binary with
+`scripts/audit/live-audit.ts` now calls the installed `aphrody-web crawl` binary with
 bounded depth and request counts, and consumes its `aphrody-web.crawl/1` JSON
 report with captured HTML. It uses the monorepo `@aphrody/web-test` `TestPage`
 for browser page checks. The retired BXC checkout and BXC SQLite database are

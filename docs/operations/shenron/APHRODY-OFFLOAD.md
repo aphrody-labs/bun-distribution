@@ -28,8 +28,8 @@ inférieure au seuil de 80 %. Ces constats ne constituent pas une activation.
 Préparer les sources depuis un commit contenant le mode compute, puis construire :
 
 ```bash
-bash scripts/build-aphrody-stack-release.sh --compute-only --plan "$PWD" "$(git rev-parse HEAD)"
-bash scripts/build-aphrody-stack-release.sh --compute-only "$PWD" "$(git rev-parse HEAD)"
+bash scripts/build/build-aphrody-stack-release.sh --compute-only --plan "$PWD" "$(git rev-parse HEAD)"
+bash scripts/build/build-aphrody-stack-release.sh --compute-only "$PWD" "$(git rev-parse HEAD)"
 ```
 
 Le constructeur vérifie les sources externes avec leur propriétaire existant,

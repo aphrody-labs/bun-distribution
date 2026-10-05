@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Monorepo Cargo graph qualification — 2026-10-02
 
-The former `scripts/repo-layering.ts` check read retired sibling category
+The former `scripts/tools/workspace/repo-layering.ts` check read retired sibling category
 repositories and its test skipped in the active monorepo. It now reads the
 root Cargo workspace metadata, indexes workspace crates by their repository
 paths, checks path dependencies and cycles, and records external upstream paths

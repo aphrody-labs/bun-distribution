@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [CmdletBinding()]
 param(
-    [string]$AphrodyRoot = (Join-Path $PSScriptRoot '..'),
+    [string]$AphrodyRoot = (Join-Path $PSScriptRoot '..\..'),
     [string]$HomeDirectory = $(if ($env:APHRODY_HOME) { $env:APHRODY_HOME } else { Join-Path $HOME '.aphrody' }),
     [string]$Target,
     [string]$Remote,

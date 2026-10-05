@@ -33,8 +33,8 @@ parent of their own `scripts/` directory, so an explicit root argument is not
 needed for the normal checkout.
 
 ```powershell
-pwsh -NoProfile -File scripts/install-google-stack.ps1 [-Target <triple>] [-SkipBuild]
-pwsh -NoProfile -File scripts/update-google-stack.ps1 [-Target <triple>] [-SkipFetch] [-SkipBuild]
+pwsh -NoProfile -File scripts/tools/install-google-stack.ps1 [-Target <triple>] [-SkipBuild]
+pwsh -NoProfile -File scripts/tools/update-google-stack.ps1 [-Target <triple>] [-SkipFetch] [-SkipBuild]
 ```
 
 Install builds `aphrody-google` through `scripts/build/rust/cargo-serial.ps1`
@@ -58,7 +58,7 @@ and the sibling Python workspace. It also checks that no literal provider key
 assignments are present in their source trees.
 
 ```powershell
-pwsh -NoProfile -File scripts/verify-google-pipeline.ps1 [-StaticOnly]
+pwsh -NoProfile -File scripts/audit/verify-google-pipeline.ps1 [-StaticOnly]
 ```
 
 The script defaults to the monorepo and `../aphrody-py`. `-StaticOnly` stops

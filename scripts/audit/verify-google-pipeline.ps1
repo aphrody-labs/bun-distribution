@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 [CmdletBinding()]
 param(
-    [string]$AphrodyRoot = (Join-Path $PSScriptRoot '..'),
-    [string]$PythonRoot = (Join-Path $PSScriptRoot '..\..\aphrody-py'),
+    [string]$AphrodyRoot = (Join-Path $PSScriptRoot '..\..'),
+    [string]$PythonRoot = (Join-Path $PSScriptRoot '..\..\..\aphrody-py'),
     [switch]$StaticOnly
 )
 

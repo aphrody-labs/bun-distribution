@@ -28,7 +28,7 @@
       "kind": "reference-build-host",
       "os": "Ubuntu-24.04 / WSL2",
       "releaseWorkspace": {
-        "build": "scripts/build-aphrody-stack-release.sh --compute-only MONOREPO COMMIT",
+        "build": "scripts/build/build-aphrody-stack-release.sh --compute-only MONOREPO COMMIT",
         "bundles": "$APHRODY_RELEASE_ROOT/bundles",
         "cargoTarget": "$APHRODY_RELEASE_ROOT/target",
         "forbidden": [

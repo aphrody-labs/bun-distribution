@@ -81,11 +81,11 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 
 ### configure-gcp-runtime.ps1
 
-- `scripts/configure-gcp-runtime.ps1`
+- `scripts/tools/configure-gcp-runtime.ps1`
 
 ### configure-gcp-runtime.sh
 
-- `scripts/configure-gcp-runtime.sh`
+- `scripts/tools/configure-gcp-runtime.sh`
 
 ### dev
 
@@ -95,7 +95,7 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 
 ### gen-local-ai-env.test.ts
 
-- `scripts/gen-local-ai-env.test.ts`
+- `scripts/tools/infra/gen-local-ai-env.test.ts`
 
 ### iecode
 
@@ -103,11 +103,11 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 
 ### learn-monorepo.ts
 
-- `scripts/learn-monorepo.ts`
+- `scripts/tools/workspace/learn-monorepo.ts`
 
 ### live-audit-report.test.ts
 
-- `scripts/live-audit-report.test.ts`
+- `scripts/audit/live-audit-report.test.ts`
 
 ### nie
 
@@ -133,19 +133,19 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 
 ### smoke-bxc-ffi.ts
 
-- `scripts/smoke-bxc-ffi.ts`
+- `scripts/audit/smoke-bxc-ffi.ts`
 
 ### smoke-bxc-standalone.sh
 
-- `scripts/smoke-bxc-standalone.sh`
+- `scripts/audit/smoke-bxc-standalone.sh`
 
 ### smoke-bxc-systemd.sh
 
-- `scripts/smoke-bxc-systemd.sh`
+- `scripts/audit/smoke-bxc-systemd.sh`
 
 ### test-atomic-deploy-bundle.sh
 
-- `scripts/test-atomic-deploy-bundle.sh`
+- `scripts/release/test-atomic-deploy-bundle.sh`
 
 ### tools
 
@@ -256,7 +256,7 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 
 ### winclean-pipeline.ps1
 
-- `scripts/winclean-pipeline.ps1`
+- `scripts/tools/winclean-pipeline.ps1`
 
 ## Sans référence et imports relatifs cassés (non exécutables en l'état)
 

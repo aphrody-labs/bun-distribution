@@ -224,7 +224,7 @@
     "monorepo:layout": "bun packages/infra/workspace/src/ops.ts workspace-layout --root . && bun packages/infra/workspace/src/ops.ts docs-gen --root . --check --skip-ecosystem",
     "monorepo:state": "bun packages/infra/workspace/src/ops.ts repository-state --root .",
     "monorepo:clean": "bun packages/infra/workspace/src/ops.ts workspace-clean --root .",
-    "layering:check": "bun scripts/repo-layering.ts",
+    "layering:check": "bun scripts/tools/workspace/repo-layering.ts",
     "paths:audit": "bun packages/infra/workspace/src/ops.ts path-audit",
     "paths:fix": "bun packages/infra/workspace/src/ops.ts path-audit --apply",
     "env:example:sync": "bun scripts/audit/workspace/env-inventory.ts",

@@ -3,7 +3,7 @@ import { join, relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 type Entry = { path: string; kind: "file" | "dir"; size?: number };
-const infra = resolve(import.meta.dir, "..");
+const infra = resolve(import.meta.dir, "..", "..", "..");
 const scope = JSON.parse(await Bun.file(join(infra, "config", "knowledge-scope.json")).text()) as {
   repositoryDiscovery: { standaloneFallback: string; includeUnpinnedLocalCheckouts: boolean };
   exclude: string[];

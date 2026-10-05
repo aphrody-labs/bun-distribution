@@ -154,7 +154,7 @@
       { "line": 2, "old": "aphrody-x-algorithm", "new": "aphrody-x (`algorithm` module)", "note": "comment only" }
     ],
     "generated": [
-      "docs/ecosystem/ECOSYSTEM.md, ecosystem.json: regenerate (`bun scripts/ecosystem.ts`), they still list aphrody-web, aphrody-web-media, aphrody-x-algorithm",
+      "docs/ecosystem/ECOSYSTEM.md, ecosystem.json: regenerate (`bun scripts/tools/workspace/ecosystem.ts`), they still list aphrody-web, aphrody-web-media, aphrody-x-algorithm",
       "docs/migration source-map / short-paths records: add the aliases above (crates/web/web-media -> crates/web/web-extract/src/media, crates/web/x-algorithm -> crates/web/x/src/algorithm.rs, crates/web/web -> crates/ui/app/src/web_subsystem.rs)"
     ]
   },

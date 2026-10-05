@@ -13,14 +13,14 @@ aphrody-infra dev-env --target dbfr --apply
 aphrody-infra dev-env --target wsl-ubuntu-24.04 --apply
 
 # Sur l'hôte Linux lui-même (façade Nushell, même implémentation)
-nu scripts/setup.nu --target wsl
-nu scripts/setup.nu --target vps --apply
+nu scripts/dev/setup.nu --target wsl
+nu scripts/dev/setup.nu --target vps --apply
 ```
 
 The optional interactive developer suite is separate from server provisioning.
 Review missing Rust CLI commands and Nu plugin registrations with
-`nu scripts/setup.nu --developer-cli`, then install prebuilt crates.io releases
-and register the plugins using `nu scripts/setup.nu --developer-cli --apply`.
+`nu scripts/dev/setup.nu --developer-cli`, then install prebuilt crates.io releases
+and register the plugins using `nu scripts/dev/setup.nu --developer-cli --apply`.
 The tool and plugin package mappings live in `config/developer-cli-tools.json`;
 they are installed globally and never added to an Aphrody workspace build.
 

@@ -145,7 +145,7 @@
       "service": {
         "WorkingDirectory": "%h/aphrody",
         "Environment": "PATH=%h/.local/bin:%h/.bun/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin",
-        "ExecStart": "%h/.bun/bin/bun scripts/source-sync.ts --apply --watch --interval 60 --repo aphrody --repo aphrody-py --repo iecode",
+        "ExecStart": "%h/.bun/bin/bun scripts/tools/workspace/source-sync.ts --apply --watch --interval 60 --repo aphrody --repo aphrody-py --repo iecode",
         "Restart": "always",
         "RestartSec": "10s",
         "Nice": "15",

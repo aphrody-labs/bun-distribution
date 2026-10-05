@@ -21,14 +21,14 @@ to use the shared Cargo lock. Check `--help` and the target owner's current
 gates before applying a change.
 
 For the cross-repository dependency/source inventory, the current Nushell entry
-point is `nu scripts/scan-ui-crates.nu --skip-ui`. It avoids reading the
+point is `nu scripts/tools/workspace/scan-ui-crates.nu --skip-ui`. It avoids reading the
 separately owned `aphrody-ui` checkout. Review its report as candidates; a
 repeated lockfile version or identical source file alone does not prove a safe
 consolidation.
 
 ## Retired Bun CLI and aliases
 
-`scripts/maintain-crates.ts` is not currently runnable from this monorepo
+`scripts/tools/workspace/maintain-crates.ts` is not currently runnable from this monorepo
 layout: its workspace resolver requires sibling directories named
 `aphrody-infra/` and `aphrody-shell/`, which are absent here. The former
 `bun run crates:build`, `bun run crates:scan`, `bun run crates:update`,

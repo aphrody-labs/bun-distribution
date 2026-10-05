@@ -2,7 +2,7 @@
 /**
  * Live production audit, run after every deploy (pipeline stage `live`).
  *
- *   bun scripts/live-audit.ts [--site <host>] [--skip-crawl] [--ssh <alias>] [--json]
+ *   bun scripts/audit/live-audit.ts [--site <host>] [--skip-crawl] [--ssh <alias>] [--json]
  *
  * 1. routes  — every public route of yolo config/host/nginx/routes.json answers < 400 on its probe path.
  * 2. crawl   — the native Aphrody Web crawler scans each active site of
@@ -47,7 +47,7 @@ type Route = {
 };
 type Finding = { level: "error" | "warning"; check: string; site: string; detail: string };
 
-const root = resolve(import.meta.dir, "..");
+const root = resolve(import.meta.dir, "..", "..");
 const webBin = process.env.APHRODY_WEB_BIN ?? "aphrody-web";
 const crawlState = join(
   process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state"),
@@ -242,7 +242,7 @@ for (const site of sites) {
   });
 
   // 5. key pages through the monorepo's native Web test owner.
-  const { TestPage } = await import("../packages/web/aphrody-web-test/src/index.ts");
+  const { TestPage } = await import("../../packages/web/aphrody-web-test/src/index.ts");
   for (const spec of site.pages) {
     let page: Awaited<ReturnType<typeof TestPage.create>> | undefined;
     try {

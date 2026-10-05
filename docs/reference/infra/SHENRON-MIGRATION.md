@@ -48,7 +48,7 @@ backups et probes.
   `yolo/config/host/nginx/routes.json` ; les vhosts sont des gabarits reviewables sous
   `nginx/*.conf.example`, concaténés en `nginx/shenron.conf` (not in repo) dans le bundle et
   installés par l'adaptateur ;
-- déploiement : `scripts/atomic-deploy-shenron.sh` (`assemble` puis
+- déploiement : `scripts/release/atomic-deploy-shenron.sh` (`assemble` puis
   `activate`, rollback vers le `current` précédent), seul ou comme deuxième
   étape du bundle tout-en-un (`docs/operations/infra/IMMUTABLE-RELEASES.md`).
 
@@ -99,7 +99,7 @@ seuls ne prouvent pas que ces services sont actifs.
 
 La cible initiale plaçait Shenron sous `/srv/rg/current/apps/shenron`, c'est-à-dire
 à l'intérieur de la release RG immuable, basculée par le déploiement RG
-(`scripts/atomic-deploy-rg.sh`) indépendamment de Shenron. Chaque bascule RG
+(`scripts/release/atomic-deploy-rg.sh`) indépendamment de Shenron. Chaque bascule RG
 aurait fait disparaître Shenron, et un déploiement Shenron aurait dû écrire dans
 une release RG scellée. Shenron possède donc sa propre racine :
 
@@ -135,7 +135,7 @@ valide (`nginx -t`) et le restaure en cas d'échec. `mcp.dragonballfr.com` est
 retiré avec `shenron-mcp` (2026-09-25). La page 50x de marque est installée
 dans `/var/www/shenron/50x.html`.
 
-Adaptateur (2026-09-26) : `scripts/atomic-deploy-shenron.sh assemble
+Adaptateur (2026-09-26) : `scripts/release/atomic-deploy-shenron.sh assemble
 BUNDLE/shenron` construit `/srv/shenron/releases/<sha complet>` sans toucher au
 service ; `activate` vérifie le catalogue installé (rôle `shenron-site`,
 `shenron-bot` ; `shenron-pg-tunnel` et le timer de backup restent hors
@@ -144,7 +144,7 @@ d'environnement des unités, les liens `shared/`, puis bascule `current`,
 redémarre, sonde `:5011/api/health`, `:5006/health` et les routes HTTPS et
 restaure tout (y compris les fichiers de seed rafraîchis) en cas d'échec ;
 `restore BACKUP` rejoue la sauvegarde d'une activation. Testé par
-`scripts/test-atomic-deploy-shenron.sh`.
+`scripts/release/test-atomic-deploy-shenron.sh`.
 
 État mesuré le 2026-09-23 après restauration :
 - release `63426cfb` active sous `/srv/shenron/current` ;
@@ -196,8 +196,8 @@ filebrowser, watchdog et superviseurs propres à Shenron sont retirées du plan.
 
 - ~~Adaptateur de déploiement Shenron~~ — **fermé le 2026-09-26** : l'ancien
   `scripts/atomic-deploy.sh` (not in repo) (site Aphrody seul) est supprimé ; Shenron a son
-  adaptateur `scripts/atomic-deploy-shenron.sh` sur sa propre racine, RG le
-  sien (`scripts/atomic-deploy-rg.sh`, release active `5691ba4b`), et
+  adaptateur `scripts/release/atomic-deploy-shenron.sh` sur sa propre racine, RG le
+  sien (`scripts/release/atomic-deploy-rg.sh`, release active `5691ba4b`), et
   `aphrody-infra deploy --stack shenron|bundle` les pilote.
 - **Privoxy / proxy média Shenron** (`shenron/deploy/privoxy/shenron-media*`) :
   hors périmètre de cette tâche, signalé côté Shenron

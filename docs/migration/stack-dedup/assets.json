@@ -1698,7 +1698,7 @@
    "action": "mirror of crates/ui/app/README.md: copy the new paragraph after \"local canonical font during this build.\" (docs are lead-owned)"
   },
   {
-   "file": "optional: scripts/build-aphrody-stack-release.sh",
+   "file": "optional: scripts/build/build-aphrody-stack-release.sh",
    "action": "none required: it only checks that index.html, app.js, app.css are tracked, which is unchanged"
   },
   {

@@ -1,7 +1,7 @@
 # rg-website.service — rosegriffon.fr (Next 16 standalone, Bun runtime).
 #
 # Formerly `website-web.service` (slot A) + `website-web-b.service` (slot B blue/green).
-# Blue/green is retired: scripts/atomic-deploy-rg.sh switches /srv/rg/current to an
+# Blue/green is retired: scripts/release/atomic-deploy-rg.sh switches /srv/rg/current to an
 # immutable release and rolls back on failed readiness. The service reads that frozen
 # release, never a checkout, so a running build cannot pull a route chunk from under it.
 [Unit]

@@ -1,5 +1,5 @@
 # rg-cdn.service — upload/image origin behind cdn.rosegriffon.fr. Installed from an
-# immutable RG release by scripts/atomic-deploy-rg.sh.
+# immutable RG release by scripts/release/atomic-deploy-rg.sh.
 # Canonical port 8801 (config/service-catalog.json). systemd applies EnvironmentFile=
 # after Environment=, so /etc/rose-griffon/rg-cdn.env must not set PORT or CDN_HOST.
 [Unit]

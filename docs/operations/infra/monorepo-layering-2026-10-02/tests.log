@@ -1,13 +1,13 @@
-$ bun test scripts/repo-layering.test.ts scripts/ecosystem.test.ts
+$ bun test scripts/tools/workspace/repo-layering.test.ts scripts/tools/workspace/ecosystem.test.ts
 bun test v1.4.2 (744846f84)
 
-scripts/repo-layering.test.ts:
+scripts/tools/workspace/repo-layering.test.ts:
 (pass) monorepo Cargo graph > resolves workspace crate edges and records upstream paths separately [0.51ms]
 (pass) monorepo Cargo graph > detects missing workspace nodes and crate cycles [0.45ms]
 (pass) monorepo Cargo graph > does not confuse a sibling prefix with a path inside the repository [0.03ms]
 (pass) monorepo Cargo graph > the active Cargo workspace graph is complete and acyclic [84.37ms]
 
-scripts/ecosystem.test.ts:
+scripts/tools/workspace/ecosystem.test.ts:
 (pass) clap extraction > builds the exact tree, honouring renames, hide, aliases and cfg [1.58ms]
 (pass) clap extraction > kebab-cases like clap [0.02ms]
 (pass) MCP extraction > rmcp tool routers [0.24ms]
@@ -15,7 +15,7 @@ scripts/ecosystem.test.ts:
 (pass) MCP extraction > JSON catalogs require an inputSchema [0.10ms]
 (pass) MCP extraction > Bun registerTool and .tool registrations [0.14ms]
 (pass) pyproject name, description and scripts [0.11ms]
-(pass) ecosystem catalog > committed docs/ecosystem output is up to date (run: bun scripts/ecosystem.ts) [1015.22ms]
+(pass) ecosystem catalog > committed docs/ecosystem output is up to date (run: bun scripts/tools/workspace/ecosystem.ts) [1015.22ms]
 
  12 pass
  0 fail

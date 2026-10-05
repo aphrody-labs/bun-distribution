@@ -1,5 +1,5 @@
 # rg-api.service — Rose Griffon unified API (Elysia + Kysely). Installed from an
-# immutable RG release by scripts/atomic-deploy-rg.sh; never edit on the host.
+# immutable RG release by scripts/release/atomic-deploy-rg.sh; never edit on the host.
 [Unit]
 Description=Rose Griffon unified API (Elysia + Kysely)
 After=network-online.target

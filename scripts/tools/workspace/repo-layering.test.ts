@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
 import { collectEdges, cycles, graphFromMetadata, inside } from "./repo-layering.ts";
 
-const root = resolve(import.meta.dir, "..");
+const root = resolve(import.meta.dir, "..", "..", "..");
 
 const fixture = {
   packages: [

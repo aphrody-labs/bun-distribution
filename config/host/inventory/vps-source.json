@@ -25,7 +25,7 @@
     "observed_at": "2026-09-26T16:44:41Z",
     "adapters": {
       "/usr/local/sbin/aphrody-infra-deploy": { "sha256": "c1834eb1c2b762436f02a5d452947a25d6d3897f3ddc768086cc2d177c33cf45", "source": "scripts/atomic-deploy.sh (site-only, removed from the repository; install-vps-adapter.sh deletes it)" },
-      "/usr/local/sbin/aphrody-infra-deploy-rg": { "sha256": "d2fba88e20235096af9d153f102894ebc8d632f107172f22c1761a026f951631", "source": "scripts/atomic-deploy-rg.sh" }
+      "/usr/local/sbin/aphrody-infra-deploy-rg": { "sha256": "d2fba88e20235096af9d153f102894ebc8d632f107172f22c1761a026f951631", "source": "scripts/release/atomic-deploy-rg.sh" }
     },
     "catalog_snapshots": {
       "/usr/local/share/aphrody-infra/service-catalog.json": "85239151ab8e7c0ae1728edfd8b051f624c4e88b8c4004727acbee4d2e7f73af",

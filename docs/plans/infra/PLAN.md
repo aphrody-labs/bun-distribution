@@ -141,7 +141,7 @@ Existing RG/Shenron deployments and adapters do not prove bundle activation.
   Complete package visibility requires the `read:packages` GitHub scope.
 - Continue adopting Compat's `aphrody-toolchains`, remove redundant subprocesses where
   an owner API exists, and triage fork/vendor/documentation duplication.
-- Run `nu scripts/scan-ui-crates.nu --skip-ui` from Infra to identify first-party
+- Run `nu scripts/tools/workspace/scan-ui-crates.nu --skip-ui` from Infra to identify first-party
   crate/source duplicates, local dependency candidates for crates.io publication,
   vendor/third-party footprint across Aphrody owners and generated output sizes;
   migrate only after owner/API/license review and consumer validation. The
@@ -469,7 +469,7 @@ sections current and store operational detail in its existing runbook.
   `1a3169da276d7720732c7b20535474942917fb83` was API-verified and fetched into ignored
   `target/research/obscura-upstream` (not in repo); the digest covered 382 files. Reports are local research
   artifacts and do not prove a permanent external archive.
-- **2026-09-28:** added `scripts/source-sync.ts`, `workspace-git-audit` and package workflow aliases.
+- **2026-09-28:** added `scripts/tools/workspace/source-sync.ts`, `workspace-git-audit` and package workflow aliases.
   Source sync plans by default; apply fetches all remotes and only fast-forwards clean branches.
   Pushes require an explicit flag, exact Aphrody author/local identity and an Aphrody-owned remote.
   Dirty/diverged worktrees and submodules are preserved. A 60-second local polling mode is

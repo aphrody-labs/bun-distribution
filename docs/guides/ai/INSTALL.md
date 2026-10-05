@@ -72,7 +72,7 @@ aphrody doctor
 
 - déploiement (`aphrody-mcp`, agent stack, site Python) : propriété de `aphrody-infra` ;
   le VPS n'exécute plus Aphrody ;
-- application desktop : le commentaire de `scripts/deploy.sh` décrit le build séparé ;
+- application desktop : le commentaire de `scripts/release/deploy.sh` décrit le build séparé ;
 - installation de CLI gérés : `aphrody package --help`.
 
 ## Désinstaller

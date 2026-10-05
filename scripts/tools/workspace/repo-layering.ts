@@ -160,7 +160,7 @@ if (import.meta.main) {
   const args = process.argv.slice(2);
   const rootIndex = args.indexOf("--root");
   const root = resolve(
-    rootIndex >= 0 && args[rootIndex + 1] ? args[rootIndex + 1] : resolve(import.meta.dir, ".."),
+    rootIndex >= 0 && args[rootIndex + 1] ? args[rootIndex + 1] : resolve(import.meta.dir, "..", "..", ".."),
   );
   const graph = collectEdges(root);
   const loops = cycles(graph.nodes, graph.edges);

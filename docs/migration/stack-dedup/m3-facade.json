@@ -97,7 +97,7 @@
       "optional, line 989: doc comment `/// Export the canonical aphrody logo (`assets/aphrody.webp`).` is a user-visible help string; the generated docs/ecosystem/CLI.md and ecosystem.json copy it"
     ],
     "no edit needed in apps/cli for aphrody-m3": "apps/cli depends on aphrody-m3-tokens only (Cargo.toml:191); no aphrody_m3:: path exists in apps/, crates/ai, crates/os, crates/interop, crates/koharu, crates/shell",
-    "regenerate": "`bun scripts/ecosystem.ts` regenerates docs/ecosystem/ECOSYSTEM.md, ecosystem.json, CLI.md (they still list aphrody-m3 at crates/ui/m3 and aphrody-logo at crates/ui/logo)",
+    "regenerate": "`bun scripts/tools/workspace/ecosystem.ts` regenerates docs/ecosystem/ECOSYSTEM.md, ecosystem.json, CLI.md (they still list aphrody-m3 at crates/ui/m3 and aphrody-logo at crates/ui/logo)",
     "docs left as historical (not edited)": [
       "design/aphrody-m3/docs/plans/design/M3-PLAN.md:17 and :99 (`cargo test -p aphrody-m3-tokens -p aphrody-m3` is now `cargo test -p aphrody-m3-tokens`)",
       "design/aphrody-m3/docs/plans/design/M3-MULTI-HOST-PLAN.md:26, docs/plans/nie/PLAN.md:98",

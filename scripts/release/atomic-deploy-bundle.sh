@@ -109,7 +109,7 @@ if json.loads((bundle / 'rg' / 'release.json').read_text()).get('commit') != rep
 installed = json.loads(pathlib.Path(sys.argv[2]).read_text())
 if installed.get('infraCommit') != repos['aphrody-infra']:
     raise SystemExit(f"installed adapters come from aphrody-infra {installed.get('infraCommit')}, "
-                     f"bundle pins {repos['aphrody-infra']}: run scripts/install-vps-adapter.sh at the pinned commit")
+                     f"bundle pins {repos['aphrody-infra']}: run scripts/tools/install-vps-adapter.sh at the pinned commit")
 print(manifest['id'], repos['shenron'], repos['rg'])
 PY
 ) || exit 2

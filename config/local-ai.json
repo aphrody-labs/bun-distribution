@@ -3,7 +3,7 @@
   "name": "aphrody-local-ai",
   "owner": "aphrody-infra",
   "description": "Single contract exposing the local/open-source AI stack of the aphrody-ai repository to shenron, aphrody-os, aphrody-ui, aphrody-web, rg and nie. Consumers read the canonical env names; legacy aliases stay readable until each consumer has migrated.",
-  "generated": { "envExample": "config/local-ai.env.example", "generator": "scripts/gen-local-ai-env.ts" },
+  "generated": { "envExample": "config/local-ai.env.example", "generator": "scripts/tools/infra/gen-local-ai-env.ts" },
   "modelAuthority": {
     "sourceRepo": "aphrody-ai",
     "catalog": "crates/aphrody-models/catalog.json",

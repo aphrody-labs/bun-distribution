@@ -42,7 +42,7 @@
     "config/infra/inventory/targets.json",
     "config/infra/inventory/vps-source.json",
     "config/infra/inventory/vps-unit-catalog.json",
-    "scripts/check-infra.ts",
+    "scripts/tools/infra/check-infra.ts",
     "scripts/rg/infra.ts",
     "scripts/shenron/install-media-vpn-proxy.sh",
     "scripts/audit/live/_lib.ts"

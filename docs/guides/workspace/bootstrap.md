@@ -24,7 +24,7 @@ Depuis PowerShell :
 Depuis Ubuntu/WSL :
 
 ```bash
-bash scripts/clone-and-bootstrap.sh "$HOME/aphrody"
+bash scripts/dev/clone-and-bootstrap.sh "$HOME/aphrody"
 ```
 
 Ces lanceurs clonent `aphrody`, le workspace Python `aphrody-py` et le checkout
@@ -54,7 +54,7 @@ un prérequis universel : consulter les dépendances de la capacité sélectionn
 Depuis la racine du checkout :
 
 ```bash
-bash scripts/bootstrap.sh
+bash scripts/dev/bootstrap.sh
 ```
 
 Le script installe les paquets de base listés dans

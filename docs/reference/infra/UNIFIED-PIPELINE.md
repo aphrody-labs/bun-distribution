@@ -43,7 +43,7 @@ compilation du site par release.
 
 L’ancien stage `release` exécutait `verify:release` d'`aphrody-ai` puis
 `release:bundle` d'`aphrody-infra`, c'est-à-dire
-`scripts/build-aphrody-stack-release.sh` : depuis un clone propre du
+`scripts/build/build-aphrody-stack-release.sh` : depuis un clone propre du
 superprojet `aphrody-src` sur ext4 dans WSL Ubuntu-24.04 (préparé par
 `scripts/prepare-release-workspace.sh`, sous-modules à leur gitlink), il
 construit le bundle unique de la VPS — la release Aphrody (cinq services, smoke

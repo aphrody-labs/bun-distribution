@@ -92,27 +92,27 @@
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     },
-    "scripts/atomic-deploy-aphrody-discord.sh": {
+    "scripts/release/atomic-deploy-aphrody-discord.sh": {
       "count": 3,
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     },
-    "scripts/atomic-deploy-aphrody-stack.sh": {
+    "scripts/release/atomic-deploy-aphrody-stack.sh": {
       "count": 3,
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     },
-    "scripts/atomic-deploy-bundle.sh": {
+    "scripts/release/atomic-deploy-bundle.sh": {
       "count": 7,
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     },
-    "scripts/atomic-deploy-rg.sh": {
+    "scripts/release/atomic-deploy-rg.sh": {
       "count": 2,
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     },
-    "scripts/atomic-deploy-shenron.sh": {
+    "scripts/release/atomic-deploy-shenron.sh": {
       "count": 9,
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
@@ -132,7 +132,7 @@
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
     },
-    "scripts/install-vps-adapter.sh": {
+    "scripts/tools/install-vps-adapter.sh": {
       "count": 4,
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
@@ -172,12 +172,12 @@
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     },
-    "scripts/test-atomic-deploy-bundle.sh": {
+    "scripts/release/test-atomic-deploy-bundle.sh": {
       "count": 2,
       "scope": "test",
       "reason": "Exercises a host or Python owner exactly as shipped."
     },
-    "scripts/test-atomic-deploy-shenron.sh": {
+    "scripts/release/test-atomic-deploy-shenron.sh": {
       "count": 2,
       "scope": "test",
       "reason": "Exercises a host or Python owner exactly as shipped."
@@ -192,7 +192,7 @@
       "scope": "local",
       "reason": "Benchmark of the Python surface itself."
     },
-    "scripts/verify-google-pipeline.ps1": {
+    "scripts/audit/verify-google-pipeline.ps1": {
       "count": 1,
       "scope": "local",
       "reason": "uv import probe of a Python package owner (Python via uv by policy)."

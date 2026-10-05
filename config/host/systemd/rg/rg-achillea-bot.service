@@ -1,6 +1,6 @@
 # rg-achillea-bot.service — Achillea: Discord + REST API + Socket.IO, with the
 # ranked/Colyseus server as a supervised child. Formerly `achillea-bot.service`.
-# Installed from an immutable RG release by scripts/atomic-deploy-rg.sh.
+# Installed from an immutable RG release by scripts/release/atomic-deploy-rg.sh.
 [Unit]
 Description=Achillea bot, API, Socket.IO and ranked
 After=network-online.target

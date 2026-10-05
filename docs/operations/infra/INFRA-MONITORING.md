@@ -2,7 +2,7 @@
 # Infrastructure monitoring
 
 Two distinct tools report on Infra state. The root Bun monitor
-[`scripts/infra-status.ts`](../../../scripts/infra-status.ts) reports checks,
+[`scripts/tools/infra/infra-status.ts`](../../../scripts/infra-status.ts) reports checks,
 selected host resources and probes. The native `aphrody-infra` CLI reports
 catalogued host services and lifecycle state. Neither replaces a complete live
 host inventory or application-level readiness checks.
@@ -12,9 +12,9 @@ host inventory or application-level readiness checks.
 Run it from the monorepo root:
 
 ```bash
-bun scripts/infra-status.ts status
-bun scripts/infra-status.ts status --json
-bun scripts/infra-status.ts status --deep
+bun scripts/tools/infra/infra-status.ts status
+bun scripts/tools/infra/infra-status.ts status --json
+bun scripts/tools/infra/infra-status.ts status --deep
 ```
 
 `--deep` enables the bounded deeper checks implemented by the script. There

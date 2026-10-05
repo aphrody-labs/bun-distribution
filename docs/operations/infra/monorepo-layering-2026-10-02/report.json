@@ -19,8 +19,8 @@
       "command": [
         "bun",
         "test",
-        "scripts/repo-layering.test.ts",
-        "scripts/ecosystem.test.ts"
+        "scripts/tools/workspace/repo-layering.test.ts",
+        "scripts/tools/workspace/ecosystem.test.ts"
       ],
       "exitCode": 0,
       "durationMs": 1202,
@@ -43,10 +43,10 @@
         "--allowImportingTsExtensions",
         "--types",
         "bun",
-        "scripts/repo-layering.ts",
-        "scripts/repo-layering.test.ts",
-        "scripts/ecosystem.ts",
-        "scripts/ecosystem.test.ts"
+        "scripts/tools/workspace/repo-layering.ts",
+        "scripts/tools/workspace/repo-layering.test.ts",
+        "scripts/tools/workspace/ecosystem.ts",
+        "scripts/tools/workspace/ecosystem.test.ts"
       ],
       "exitCode": 0,
       "durationMs": 92,
@@ -58,10 +58,10 @@
       "command": [
         "bunx",
         "oxlint",
-        "scripts/repo-layering.ts",
-        "scripts/repo-layering.test.ts",
-        "scripts/ecosystem.ts",
-        "scripts/ecosystem.test.ts"
+        "scripts/tools/workspace/repo-layering.ts",
+        "scripts/tools/workspace/repo-layering.test.ts",
+        "scripts/tools/workspace/ecosystem.ts",
+        "scripts/tools/workspace/ecosystem.test.ts"
       ],
       "exitCode": 0,
       "durationMs": 83,
@@ -75,10 +75,10 @@
         "oxfmt",
         "--check",
         "package.json",
-        "scripts/repo-layering.ts",
-        "scripts/repo-layering.test.ts",
-        "scripts/ecosystem.ts",
-        "scripts/ecosystem.test.ts"
+        "scripts/tools/workspace/repo-layering.ts",
+        "scripts/tools/workspace/repo-layering.test.ts",
+        "scripts/tools/workspace/ecosystem.ts",
+        "scripts/tools/workspace/ecosystem.test.ts"
       ],
       "exitCode": 0,
       "durationMs": 37,
@@ -89,7 +89,7 @@
       "name": "ecosystem",
       "command": [
         "bun",
-        "scripts/ecosystem.ts",
+        "scripts/tools/workspace/ecosystem.ts",
         "--check"
       ],
       "exitCode": 0,

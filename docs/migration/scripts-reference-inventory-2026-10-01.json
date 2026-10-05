@@ -34,27 +34,27 @@
     "scripts/assets/cdn.test.ts"
    ]
   },
-  "scripts/atomic-deploy-aphrody-discord.sh": {
+  "scripts/release/atomic-deploy-aphrody-discord.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/atomic-deploy-aphrody-stack.sh": {
+  "scripts/release/atomic-deploy-aphrody-stack.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/atomic-deploy-bundle.sh": {
+  "scripts/release/atomic-deploy-bundle.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/atomic-deploy-rg.sh": {
+  "scripts/release/atomic-deploy-rg.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/atomic-deploy-shenron.sh": {
+  "scripts/release/atomic-deploy-shenron.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
@@ -402,12 +402,12 @@
     "scripts/build/web/packages/x/src/tools/web-recon.ts"
    ]
   },
-  "scripts/build-aphrody-discord-release.sh": {
+  "scripts/build/build-aphrody-discord-release.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/build-aphrody-stack-release.sh": {
+  "scripts/build/build-aphrody-stack-release.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
@@ -439,27 +439,27 @@
     "scripts/check-aphrody-stack-units.sh"
    ]
   },
-  "scripts/check-infra.ts": {
+  "scripts/tools/infra/check-infra.ts": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/configure-gcp-runtime.ps1": {
+  "scripts/tools/configure-gcp-runtime.ps1": {
    "files": 1,
    "noPathReference": [
-    "scripts/configure-gcp-runtime.ps1"
+    "scripts/tools/configure-gcp-runtime.ps1"
    ],
    "noPathOrManifestBasenameReference": [
-    "scripts/configure-gcp-runtime.ps1"
+    "scripts/tools/configure-gcp-runtime.ps1"
    ]
   },
-  "scripts/configure-gcp-runtime.sh": {
+  "scripts/tools/configure-gcp-runtime.sh": {
    "files": 1,
    "noPathReference": [
-    "scripts/configure-gcp-runtime.sh"
+    "scripts/tools/configure-gcp-runtime.sh"
    ],
    "noPathOrManifestBasenameReference": [
-    "scripts/configure-gcp-runtime.sh"
+    "scripts/tools/configure-gcp-runtime.sh"
    ]
   },
   "scripts/dev": {
@@ -490,30 +490,30 @@
     "scripts/dev/ui/drive/scripts/autoformat.sh"
    ]
   },
-  "scripts/ecosystem.test.ts": {
+  "scripts/tools/workspace/ecosystem.test.ts": {
    "files": 1,
    "noPathReference": [
-    "scripts/ecosystem.test.ts"
+    "scripts/tools/workspace/ecosystem.test.ts"
    ],
    "noPathOrManifestBasenameReference": [
-    "scripts/ecosystem.test.ts"
+    "scripts/tools/workspace/ecosystem.test.ts"
    ]
   },
-  "scripts/ecosystem.ts": {
+  "scripts/tools/workspace/ecosystem.ts": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/gen-local-ai-env.test.ts": {
+  "scripts/tools/infra/gen-local-ai-env.test.ts": {
    "files": 1,
    "noPathReference": [
-    "scripts/gen-local-ai-env.test.ts"
+    "scripts/tools/infra/gen-local-ai-env.test.ts"
    ],
    "noPathOrManifestBasenameReference": [
-    "scripts/gen-local-ai-env.test.ts"
+    "scripts/tools/infra/gen-local-ai-env.test.ts"
    ]
   },
-  "scripts/gen-local-ai-env.ts": {
+  "scripts/tools/infra/gen-local-ai-env.ts": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
@@ -523,7 +523,7 @@
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/infra-status.ts": {
+  "scripts/tools/infra/infra-status.ts": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
@@ -533,35 +533,35 @@
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/install-google-stack.ps1": {
+  "scripts/tools/install-google-stack.ps1": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/install-vps-adapter.sh": {
+  "scripts/tools/install-vps-adapter.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/learn-monorepo.ts": {
+  "scripts/tools/workspace/learn-monorepo.ts": {
    "files": 1,
    "noPathReference": [
-    "scripts/learn-monorepo.ts"
+    "scripts/tools/workspace/learn-monorepo.ts"
    ],
    "noPathOrManifestBasenameReference": [
-    "scripts/learn-monorepo.ts"
+    "scripts/tools/workspace/learn-monorepo.ts"
    ]
   },
-  "scripts/live-audit.ts": {
+  "scripts/audit/live-audit.ts": {
    "files": 1,
    "noPathReference": [
-    "scripts/live-audit.ts"
+    "scripts/audit/live-audit.ts"
    ],
    "noPathOrManifestBasenameReference": [
-    "scripts/live-audit.ts"
+    "scripts/audit/live-audit.ts"
    ]
   },
-  "scripts/maintain-crates.ts": {
+  "scripts/tools/workspace/maintain-crates.ts": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
@@ -654,12 +654,12 @@
     "scripts/release/web/apps/bxc/scripts/publish-workspaces.ts"
    ]
   },
-  "scripts/repo-layering.test.ts": {
+  "scripts/tools/workspace/repo-layering.test.ts": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/repo-layering.ts": {
+  "scripts/tools/workspace/repo-layering.ts": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
@@ -755,36 +755,36 @@
     "scripts/rg/seo-bxc-audit.ts"
    ]
   },
-  "scripts/scan-ui-crates.nu": {
+  "scripts/tools/workspace/scan-ui-crates.nu": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/secrets.test.ts": {
+  "scripts/tools/secrets.test.ts": {
    "files": 1,
    "noPathReference": [
-    "scripts/secrets.test.ts"
+    "scripts/tools/secrets.test.ts"
    ],
    "noPathOrManifestBasenameReference": [
-    "scripts/secrets.test.ts"
+    "scripts/tools/secrets.test.ts"
    ]
   },
-  "scripts/secrets.ts": {
+  "scripts/tools/secrets.ts": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/secure-cookie-layout.ps1": {
+  "scripts/tools/secure-cookie-layout.ps1": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/secure-cookie-layout.sh": {
+  "scripts/tools/secure-cookie-layout.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/setup.nu": {
+  "scripts/dev/setup.nu": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
@@ -799,37 +799,37 @@
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/smoke-bxc-ffi.ts": {
+  "scripts/audit/smoke-bxc-ffi.ts": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/smoke-bxc-standalone.sh": {
+  "scripts/audit/smoke-bxc-standalone.sh": {
    "files": 1,
    "noPathReference": [
-    "scripts/smoke-bxc-standalone.sh"
+    "scripts/audit/smoke-bxc-standalone.sh"
    ],
    "noPathOrManifestBasenameReference": [
-    "scripts/smoke-bxc-standalone.sh"
+    "scripts/audit/smoke-bxc-standalone.sh"
    ]
   },
-  "scripts/smoke-bxc-systemd.sh": {
+  "scripts/audit/smoke-bxc-systemd.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/source-sync.ts": {
+  "scripts/tools/workspace/source-sync.ts": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/test-atomic-deploy-bundle.sh": {
+  "scripts/release/test-atomic-deploy-bundle.sh": {
    "files": 1,
    "noPathReference": [
-    "scripts/test-atomic-deploy-bundle.sh"
+    "scripts/release/test-atomic-deploy-bundle.sh"
    ],
    "noPathOrManifestBasenameReference": [
-    "scripts/test-atomic-deploy-bundle.sh"
+    "scripts/release/test-atomic-deploy-bundle.sh"
    ]
   },
   "scripts/test-atomic-deploy-rg.sh": {
@@ -837,7 +837,7 @@
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/test-atomic-deploy-shenron.sh": {
+  "scripts/release/test-atomic-deploy-shenron.sh": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
@@ -1760,17 +1760,17 @@
     "scripts/tools/web/apps/bxc/scripts/x-pro-recon.ts"
    ]
   },
-  "scripts/update-google-stack.ps1": {
+  "scripts/tools/update-google-stack.ps1": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/verify-google-pipeline.ps1": {
+  "scripts/audit/verify-google-pipeline.ps1": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []
   },
-  "scripts/winclean-pipeline.ps1": {
+  "scripts/tools/winclean-pipeline.ps1": {
    "files": 1,
    "noPathReference": [],
    "noPathOrManifestBasenameReference": []

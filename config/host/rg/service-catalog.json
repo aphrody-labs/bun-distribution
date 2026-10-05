@@ -67,7 +67,7 @@
       "health": "http://127.0.0.1:8801/health",
       "port": 8801,
       "workingDirectory": "/srv/rg/current/apps/cdn",
-      "note": "Declared in systemd/rg-cdn.service (which itself says 'canonical port 8801, config/service-catalog.json') but was missing from this catalog until 2026-09-26. Confirmed from rg's own source (apps/api/src/index.ts imports handleCdn from ../../cdn/server and mounts it in-process on rg-api:8800, with its own comment 'remplace rg-cdn:8801'): the unified rg-api deployment absorbs this logic in-process rather than proxying to :8801, which is why the live scripts/rg/nginx-gen.ts never references this port. The standalone apps/cdn binary and this systemd unit are an alternate/older standalone deployment mode of the same code. Retired 2026-09-26: the unit is disabled on vps and the active RG release (5691ba4b) does not list it; the RG release roster (scripts/rg/assemble-vps-release.sh, scripts/atomic-deploy-rg.sh) skips retired services, and the unit template stays as the redeploy shape. Owner requested full RG runtime shutdown; host swap retained for build stability.",
+      "note": "Declared in systemd/rg-cdn.service (which itself says 'canonical port 8801, config/service-catalog.json') but was missing from this catalog until 2026-09-26. Confirmed from rg's own source (apps/api/src/index.ts imports handleCdn from ../../cdn/server and mounts it in-process on rg-api:8800, with its own comment 'remplace rg-cdn:8801'): the unified rg-api deployment absorbs this logic in-process rather than proxying to :8801, which is why the live scripts/rg/nginx-gen.ts never references this port. The standalone apps/cdn binary and this systemd unit are an alternate/older standalone deployment mode of the same code. Retired 2026-09-26: the unit is disabled on vps and the active RG release (5691ba4b) does not list it; the RG release roster (scripts/rg/assemble-vps-release.sh, scripts/release/atomic-deploy-rg.sh) skips retired services, and the unit template stays as the redeploy shape. Owner requested full RG runtime shutdown; host swap retained for build stability.",
       "public": false,
       "status": "retired",
       "retiredAt": "2026-09-26",
@@ -155,7 +155,7 @@
     "releasePlanes": {
       "rg": {
         "current": "/srv/rg/current",
-        "adapter": "scripts/atomic-deploy-rg.sh"
+        "adapter": "scripts/release/atomic-deploy-rg.sh"
       }
     },
     "applicationRoots": {

@@ -17,9 +17,9 @@ The Bun modules that serve multiple repositories are documented in
 | `yolo/config/host/systemd/shared/nginx.service.d/*.conf` | nginx restart policy and CPU/IO priority | `rg/infra/systemd` |
 | `yolo/config/host/systemd/shenron/privoxy.service.d/*.conf` | Privoxy restart & WireGuard dependency drop-in | `shenron/deploy/privoxy/` |
 | `systemd/rg-watchdog@.{service,timer}` (not in repo) + `iecode/scripts/rg/ops/rg-watchdog.sh` | Per-service HTTP/memory watchdog template | `rg` |
-| `systemd/rg-infra-monitor.{service,timer}` (not in repo) + `scripts/infra-status.ts` | Bun status/check/plan monitor | Formerly split across `rg`, `aphrody` (`stack.ts`) |
+| `systemd/rg-infra-monitor.{service,timer}` (not in repo) + `scripts/tools/infra/infra-status.ts` | Bun status/check/plan monitor | Formerly split across `rg`, `aphrody` (`stack.ts`) |
 | `systemd/rg-repo-sync.{service,timer}` (not in repo) + `scripts/ops/repo-sync.ts` | Explicit rg/nie Git sync, no autocommit — [REPO-SYNC.md](../../../reference/infra/ops/REPO-SYNC.md) | `rg` |
-| `yolo/config/host/systemd/aphrody/aphrody-source-sync.service` + `scripts/source-sync.ts` | User service for first-party source fetch and fast-forward sync; preserves dirty and divergent worktrees | Aphrody development workstation |
+| `yolo/config/host/systemd/aphrody/aphrody-source-sync.service` + `scripts/tools/workspace/source-sync.ts` | User service for first-party source fetch and fast-forward sync; preserves dirty and divergent worktrees | Aphrody development workstation |
 | `scripts/ops/ovh.py`, `scripts/ops/ovh-dns.ts` | OVH DNS API clients — [OVH.md](../../../reference/infra/ops/OVH.md); OVHcloud runbook [../ovh/README.md](../ovh/README.md) | `nie`, `shenron` |
 | `scripts/nie/model-serve-prewarm.sh` (not in repo) | Historical prewarm helper for the retired NIE VPS service (:8790) | `nie/scripts/ops/` |
 | `scripts/shenron/sync-bxc-crawls.ts` | BXC SQLite -> PostgreSQL crawl sync | `shenron/scripts/ops/` |

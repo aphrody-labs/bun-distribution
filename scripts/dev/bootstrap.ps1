@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param([switch]$SkipSources, [switch]$SkipPython, [switch]$SkipNativeTools, [switch]$Canary)
 $ErrorActionPreference = 'Stop'
-$root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 Set-Location $root
 
 function Require-Command([string]$Name) {

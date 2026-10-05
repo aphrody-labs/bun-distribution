@@ -333,7 +333,7 @@ impl DeployStack {
         }
     }
 
-    /// Adapter installed by `scripts/install-vps-adapter.sh`.
+    /// Adapter installed by `scripts/tools/install-vps-adapter.sh`.
     fn adapter(self) -> &'static str {
         match self {
             Self::Aphrody | Self::AphrodyCompute => "/usr/local/sbin/aphrody-infra-deploy-aphrody",
@@ -1312,7 +1312,7 @@ fn deploy(
     println!("{}", serde_json::to_string_pretty(&detail)?);
     if apply {
         let release = release.context("--release est obligatoire avec --apply")?;
-        // The only installed adapters (scripts/install-vps-adapter.sh) live on the vps; never
+        // The only installed adapters (scripts/tools/install-vps-adapter.sh) live on the vps; never
         // silently route another target's deploy there.
         if target != "vps" {
             bail!(

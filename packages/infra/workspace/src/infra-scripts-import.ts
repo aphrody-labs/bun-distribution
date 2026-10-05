@@ -11,7 +11,7 @@ const SCRIPT_PATHS = [
   "scripts/ops/backup-shenron-pg.sh",
   "scripts/ops/backup-shenron-sqlite.sh",
   "scripts/ops/repo-sync.ts",
-  "scripts/source-sync.ts",
+  "scripts/tools/workspace/source-sync.ts",
 ] as const;
 
 type SourceEntry = {

@@ -26,7 +26,7 @@ Archived snapshot: **2026-09-25**. Historical project path: `~/src/aphrody-ai` (
 - `export RUSTC_WRAPPER=` / `$env:RUSTC_WRAPPER=''` (sccache absent → build fail)
 - Release bins: `target/release/{aphrody,aphrody-mcp}`
 - **One** `cargo build --release` at a time (LTO)
-- Install: `scripts/deploy.sh` or `install -m 755` (not `cp` while binary running)
+- Install: `scripts/release/deploy.sh` or `install -m 755` (not `cp` while binary running)
 
 ## MCP
 

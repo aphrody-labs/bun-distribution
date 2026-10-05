@@ -64,7 +64,7 @@ aphrody-infra quality lint --repo <catalogued-repo> --run --json
 - Aphrody Bun fork operations and pin
 - [GitHub organization ownership and repository transfer](../../reference/infra/GITHUB-OWNERSHIP.md)
 - [GitHub identity, CI, release and upstream automation plan](../../plans/infra/GITHUB-AUTONOMY-PLAN.md)
-- `nu scripts/scan-ui-crates.nu --skip-ui` (from any working directory; optional
+- `nu scripts/tools/workspace/scan-ui-crates.nu --skip-ui` (from any working directory; optional
   `--ui-root path`; `--skip-ui` never opens the UI repository or dependency targets into UI)
   compares first-party Aphrody crate names and Rust sources,
   and inventories workspace and crate-level path dependencies across first-party repos,
@@ -76,7 +76,7 @@ aphrody-infra quality lint --repo <catalogued-repo> --run --json
   `.git`, `target`, `node_modules`, `dist`, `.bun-cache`, `.venv`, `venv`, `.tox` and `.nox` while
   locating vendor roots. Lockfile multiplicity is a triage signal; confirm active target
   reachability with `cargo tree -d` before consolidation.
-- `nu scripts/scan-ui-crates.nu --skip-ui` performs the read-only Rust
+- `nu scripts/tools/workspace/scan-ui-crates.nu --skip-ui` performs the read-only Rust
   dependency/source inventory without opening the separately owned UI checkout.
   Cargo maintenance is exposed by `aphrody-infra maintenance`; use `--help` for
   current action and repository constraints. The old `crates:scan`,
@@ -89,8 +89,8 @@ aphrody-infra quality lint --repo <catalogued-repo> --run --json
 - [Generated ecosystem](../../ecosystem/ECOSYSTEM.md), [CLI](../../ecosystem/CLI.md), [MCP](../../ecosystem/MCP-TOOLS.md)
 
 Optional interactive developer tools are separate from server provisioning:
-`nu scripts/setup.nu --developer-cli` reports missing commands;
-`nu scripts/setup.nu --developer-cli --apply` installs prebuilt Rust CLI releases
+`nu scripts/dev/setup.nu --developer-cli` reports missing commands;
+`nu scripts/dev/setup.nu --developer-cli --apply` installs prebuilt Rust CLI releases
 and the declared Nu plugin binaries from crates.io, then registers those plugins
 with the local Nu installation. The inventory is
 `config/developer-cli-tools.json`; none of these tools are workspace dependencies.

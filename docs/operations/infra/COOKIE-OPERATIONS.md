@@ -24,9 +24,9 @@ pour un VPS.
 
 ## Préparation
 
-Windows : `pwsh -File scripts/secure-cookie-layout.ps1`
+Windows : `pwsh -File scripts/tools/secure-cookie-layout.ps1`
 
-Linux/WSL/VPS : `bash scripts/secure-cookie-layout.sh`
+Linux/WSL/VPS : `bash scripts/tools/secure-cookie-layout.sh`
 
 Ces scripts ne lisent ni n'affichent le contenu des fichiers. Ils créent le
 répertoire, imposent les permissions du propriétaire et exportent

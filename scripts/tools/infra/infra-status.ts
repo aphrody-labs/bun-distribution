@@ -17,7 +17,7 @@
 import { homedir } from "node:os";
 import { readFile } from "node:fs/promises";
 
-const INFRA_ROOT = process.env.APHRODY_INFRA_ROOT ?? `${import.meta.dir}/..`;
+const INFRA_ROOT = process.env.APHRODY_INFRA_ROOT ?? `${import.meta.dir}/../../..`;
 const CATALOG_PATH = process.env.APHRODY_SERVICE_CATALOG ?? `${INFRA_ROOT}/config/service-catalog.json`;
 const catalog = JSON.parse(await readFile(CATALOG_PATH, "utf8")) as Catalog;
 const json = process.argv.includes("--json");
@@ -379,7 +379,7 @@ async function status() {
 let exitCode: number;
 if (command === "status") exitCode = await status();
 else {
-	console.error("usage: bun scripts/infra-status.ts [status] [--json] [--strict] [--deep]");
+	console.error("usage: bun scripts/tools/infra/infra-status.ts [status] [--json] [--strict] [--deep]");
 	exitCode = 2;
 }
 process.exit(exitCode);

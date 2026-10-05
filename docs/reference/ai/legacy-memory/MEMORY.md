@@ -32,7 +32,7 @@ repository is now `aphrody-ai`. Treat the closeout notes below as history.
 - `CARGO_CONFIG=~/aphrody/.cargo/config.linux-vps.toml`
 - Release bins: `target/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/{aphrody,aphrody-mcp}`
 - **One** `cargo build --release` at a time (LTO)
-- Install: `scripts/deploy.sh` or `install -m 755` (not `cp` while binary running)
+- Install: `scripts/release/deploy.sh` or `install -m 755` (not `cp` while binary running)
 - [Sibling builds & versions](../memory/sibling-repo-build-and-versions.md) — `CARGO_TARGET_DIR` sends n2b/bxc builds into aphrody's target; bxc version is compile-baked; n2b 0.6.1 / bxc 0.6.2
 
 ## MCP

@@ -5,7 +5,7 @@
   "verification": {
     "verified-upstream-copy": "git blob SHA-1 of the file (raw, or after CRLF<->LF normalisation) equals a blob of the upstream repository tree at the head recorded in docs/migration/source-map.json (GitHub git/trees API); canonical = upstream:<owner/repo>@<commit>:<path>",
     "exact-duplicate": "sha256 equal after CRLF->LF normalisation",
-    "stale-generated-copy": "older output of scripts/ecosystem.ts, superseded by docs/ecosystem (read by crates/infra/infra)",
+    "stale-generated-copy": "older output of scripts/tools/workspace/ecosystem.ts, superseded by docs/ecosystem (read by crates/infra/infra)",
     "empty-stub": "no body text besides headings; content remains in git history"
   },
   "kept_unverified_upstream_copies": {
@@ -23402,25 +23402,25 @@
       "path": "docs/reference/infra/ecosystem/CLI.md",
       "canonical": "docs/ecosystem/CLI.md",
       "sha256": "47c98cd3e68934ecf9fca18d7e7e513ff12bf469f03dbc5b034bfe1b8be47632",
-      "kind": "stale-generated-copy (not byte-identical; docs/ecosystem is the scripts/ecosystem.ts output read by aphrody-infra)"
+      "kind": "stale-generated-copy (not byte-identical; docs/ecosystem is the scripts/tools/workspace/ecosystem.ts output read by aphrody-infra)"
     },
     {
       "path": "docs/reference/infra/ecosystem/ECOSYSTEM.md",
       "canonical": "docs/ecosystem/ECOSYSTEM.md",
       "sha256": "f9d344ce62171ea04cd945d8b07175ca3c886b215e5618e81221cf1603493d04",
-      "kind": "stale-generated-copy (not byte-identical; docs/ecosystem is the scripts/ecosystem.ts output read by aphrody-infra)"
+      "kind": "stale-generated-copy (not byte-identical; docs/ecosystem is the scripts/tools/workspace/ecosystem.ts output read by aphrody-infra)"
     },
     {
       "path": "docs/reference/infra/ecosystem/MCP-TOOLS.md",
       "canonical": "docs/ecosystem/MCP-TOOLS.md",
       "sha256": "f68399f74889b2d9edad824b8f97e914e7e7341c0d6bf1c0ca4b2c2bf12ae4e4",
-      "kind": "stale-generated-copy (not byte-identical; docs/ecosystem is the scripts/ecosystem.ts output read by aphrody-infra)"
+      "kind": "stale-generated-copy (not byte-identical; docs/ecosystem is the scripts/tools/workspace/ecosystem.ts output read by aphrody-infra)"
     },
     {
       "path": "docs/reference/infra/ecosystem/ecosystem.json",
       "canonical": "docs/ecosystem/ecosystem.json",
       "sha256": "0a24199ffcbdeeff2e8f1f7a37fc442c6991885c919d81e9b8153ec37bcf33e4",
-      "kind": "stale-generated-copy (not byte-identical; docs/ecosystem is the scripts/ecosystem.ts output read by aphrody-infra)"
+      "kind": "stale-generated-copy (not byte-identical; docs/ecosystem is the scripts/tools/workspace/ecosystem.ts output read by aphrody-infra)"
     },
     {
       "path": "docs/apis/discord/packages/formatters/docs/README.md",

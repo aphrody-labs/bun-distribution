@@ -13,7 +13,7 @@ describe("Infra Python consolidation destinations", () => {
   });
 
   test("keeps Infra shell control scripts in their owner for now", () => {
-    expect(isInfraPythonScript("scripts/atomic-deploy-aphrody-stack.sh", { kind: "script" })).toBe(
+    expect(isInfraPythonScript("scripts/release/atomic-deploy-aphrody-stack.sh", { kind: "script" })).toBe(
       false,
     );
   });

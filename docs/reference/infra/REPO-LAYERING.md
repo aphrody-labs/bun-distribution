@@ -8,7 +8,7 @@ The command fails on a missing workspace target, metadata error, or crate
 cycle. `--json` prints all nodes, edges, external path sources, and errors.
 The [test](../../../scripts/repo-layering.test.ts) exercises both a fixture
 graph and the current workspace. The ecosystem catalog reads the same Cargo
-metadata, and `bun scripts/ecosystem.ts --check` validates its generated view.
+metadata, and `bun scripts/tools/workspace/ecosystem.ts --check` validates its generated view.
 
 Cross-domain dependencies are allowed when the crate graph is acyclic. The
 historical category repository layer numbers below do not govern the monorepo.

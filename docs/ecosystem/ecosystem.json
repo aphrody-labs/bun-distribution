@@ -1,5 +1,5 @@
 {
-  "generator": "scripts/ecosystem.ts",
+  "generator": "scripts/tools/workspace/ecosystem.ts",
   "repos": [
     {
       "name": "aphrody",

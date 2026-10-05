@@ -9,7 +9,7 @@ compute_release() {
   if [[ "${1:-}" = --plan ]]; then plan=true; shift; fi
   [[ $# -le 2 ]] || { echo 'usage: build-aphrody-stack-release.sh --compute-only [--plan] [MONOREPO [COMMIT]]' >&2; return 2; }
   local repo pin out target id stage work binary
-  repo="$(realpath -e -- "${1:-$(dirname -- "${BASH_SOURCE[0]}")/..}")"
+  repo="$(realpath -e -- "${1:-$(dirname -- "${BASH_SOURCE[0]}")/../..}")"
   pin="${2:-$(git -C "$repo" rev-parse HEAD)}"
   [[ "$(uname -s)" = Linux && "$(uname -m)" = x86_64 ]] || { echo 'Linux x86_64 build host required' >&2; return 2; }
   [[ "$pin" =~ ^[0-9a-f]{40}$ ]] && git -C "$repo" cat-file -e "$pin^{commit}" || { echo 'invalid source commit' >&2; return 2; }

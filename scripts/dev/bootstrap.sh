@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Full Ubuntu/WSL developer bootstrap for a fresh Aphrody checkout.
 set -euo pipefail
-root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 skip_sources=0
 skip_python=0
 install_canary=0

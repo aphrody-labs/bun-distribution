@@ -10,7 +10,7 @@
 # détail du partage.
 #
 # Installation :
-#   Installé depuis la release immuable par scripts/atomic-deploy-rg.sh.
+#   Installé depuis la release immuable par scripts/release/atomic-deploy-rg.sh.
 Description=Rose Griffon Discord Bot (Bun + discordx — slash commands)
 After=network-online.target
 Wants=network-online.target

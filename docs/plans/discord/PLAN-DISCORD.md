@@ -160,7 +160,7 @@ Les facades provisoires ont des usages mesurés et une échéance de retrait.
    Vérifier installation depuis le registre, transitifs et provenance; pinner
    chaque consommateur sur version publiée ou SHA immuable.
 2. Bâtir la release Discord depuis un SHA figé avec
-   `scripts/build-aphrody-discord-release.sh`. Respecter les
+   `scripts/build/build-aphrody-discord-release.sh`. Respecter les
    préconditions de l'adaptateur Infra : checksums, secrets hors release,
    rollback. Tester d'abord la guilde de développement, puis santé Gateway,
    interactions signées, commandes, OAuth, renouvellement TLS et journaux.

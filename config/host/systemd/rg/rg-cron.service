@@ -6,7 +6,7 @@
 # lui-même : il n'y a pas de timer systemd par tâche.
 #
 # Installation :
-#   Installé depuis la release immuable par scripts/atomic-deploy-rg.sh.
+#   Installé depuis la release immuable par scripts/release/atomic-deploy-rg.sh.
 Description=Rose Griffon Cron Daemon (Bun + Bun.cron)
 After=network-online.target
 Wants=network-online.target

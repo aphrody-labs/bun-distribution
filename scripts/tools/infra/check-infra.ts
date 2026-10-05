@@ -25,7 +25,7 @@ type Route = {
   paths?: string[];
 };
 
-const repo = resolve(import.meta.dir, "..");
+const repo = resolve(import.meta.dir, "..", "..", "..");
 const yoloRoot = process.env.YOLO_ROOT ?? join(homedir(), "yolo");
 
 function fail(message: string): never {
@@ -176,7 +176,7 @@ async function main(): Promise<void> {
   const exitCode = await child.exited;
   if (exitCode !== 0) {
     fail(
-      "config/local-ai.env.example drifted from config/local-ai.json (run bun scripts/gen-local-ai-env.ts).",
+      "config/local-ai.env.example drifted from config/local-ai.json (run bun scripts/tools/infra/gen-local-ai-env.ts).",
     );
   }
   console.log("infra-check: ok");

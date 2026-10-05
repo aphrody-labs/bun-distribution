@@ -14,5 +14,5 @@ Configured YOLO/NHITL markers describe execution mode; they do not replace crede
   Historical deployment reports do not prove current service health.
 - Documentation: check links/anchors and `git diff --check`. Implementation and
   deployment: run the relevant [validation gates](../../products/infra/README.md#validation) and live probes.
-- Generate ecosystem catalogues with `scripts/ecosystem.ts` when capability inventory
+- Generate ecosystem catalogues with `scripts/tools/workspace/ecosystem.ts` when capability inventory
   changes; do not hand-edit or regenerate them for prose-only changes.

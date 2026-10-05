@@ -1111,7 +1111,7 @@
     "file": "docs/plans/infra/GITHUB-AUTONOMY-PLAN.md",
     "link": "../scripts/source-sync.ts",
     "candidates": [
-     "scripts/source-sync.ts"
+     "scripts/tools/workspace/source-sync.ts"
     ]
    },
    {

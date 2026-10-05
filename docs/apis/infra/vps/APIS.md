@@ -32,7 +32,7 @@ the retired `aphrody` monolith (docs/vps/APIS.md) and updated to the category re
 
 ## 2. BXC browser-automation API (`aphrody-web-api`)
 
-Built by `scripts/build-aphrody-stack-release.sh` from `aphrody-web/apps/bxc/src/server/index.ts`
+Built by `scripts/build/build-aphrody-stack-release.sh` from `aphrody-web/apps/bxc/src/server/index.ts`
 (`bun build --compile`). The route table is the `ENDPOINTS` list in
 `aphrody-web/apps/bxc/src/server/app.ts`; `GET /` returns it as JSON.
 

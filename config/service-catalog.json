@@ -112,7 +112,7 @@
       "workingDirectory": "/srv/shenron/current/apps/site",
       "releaseRoot": "/srv/shenron/releases",
       "sharedRoot": "/srv/shenron/shared",
-      "deployAdapter": "scripts/atomic-deploy-shenron.sh",
+      "deployAdapter": "scripts/release/atomic-deploy-shenron.sh",
       "note": "Next.js site: /api/health (liveness), /api/health/live (alias) and /api/health/ready (readiness)",
       "public": true
     },
@@ -150,7 +150,7 @@
       "workingDirectory": "/srv/shenron/current/apps/bot",
       "releaseRoot": "/srv/shenron/releases",
       "sharedRoot": "/srv/shenron/shared",
-      "deployAdapter": "scripts/atomic-deploy-shenron.sh",
+      "deployAdapter": "scripts/release/atomic-deploy-shenron.sh",
       "note": "single Bun process (discordx + Bun.serve REST/GraphQL/OpenAPI); no separate shenron-api.service, see docs/SHENRON-MIGRATION.md",
       "public": true
     },
@@ -193,15 +193,15 @@
     "releasePlanes": {
       "aphrody": {
         "current": "/srv/aphrody/current",
-        "adapter": "scripts/atomic-deploy-aphrody-stack.sh"
+        "adapter": "scripts/release/atomic-deploy-aphrody-stack.sh"
       },
       "shenron": {
         "current": "/srv/shenron/current",
-        "adapter": "scripts/atomic-deploy-shenron.sh"
+        "adapter": "scripts/release/atomic-deploy-shenron.sh"
       },
       "bundle": {
         "root": "/srv/aphrody-infra",
-        "adapter": "scripts/atomic-deploy-bundle.sh",
+        "adapter": "scripts/release/atomic-deploy-bundle.sh",
         "order": ["aphrody", "shenron"]
       }
     },
