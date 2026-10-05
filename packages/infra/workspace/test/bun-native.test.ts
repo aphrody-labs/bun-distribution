@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { chmod, cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import { createHash } from "node:crypto";
-import { tmpdir } from "node:os";
+import { availableParallelism, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { suffix } from "bun:ffi";
 
@@ -183,7 +183,10 @@ test.skipIf(process.platform !== "linux")(
       | undefined;
     try {
       descendants = JSON.parse(await waitForMarker(marker, Date.now() + 10_000));
-      expect(descendants?.jobs).toBe(process.env.APHRODY_CARGO_JOBS ?? "6");
+      // cargo-serial.sh defaults to 6 jobs, or to the CPU count (max 6) in a Claude cloud session.
+      const cloud = process.env.CLAUDE_CODE_REMOTE === "true" || process.env.APHRODY_CLOUD === "1";
+      const defaultJobs = cloud ? String(Math.min(availableParallelism(), 6)) : "6";
+      expect(descendants?.jobs).toBe(process.env.APHRODY_CARGO_JOBS ?? defaultJobs);
       expect(descendants?.incremental).toBe("0");
       child.kill("SIGTERM");
       const [stdout, stderr, code] = await Promise.all([

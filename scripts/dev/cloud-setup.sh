@@ -81,9 +81,16 @@ if ! have cargo-binstall; then
   run bash -c "curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
 fi
 if have cargo-binstall || (( dry == 1 )); then
-  for pair in just:just sccache:sccache cargo-nextest:cargo-nextest nu:nu fd:fd-find rg:ripgrep bat:bat; do
+  for pair in just:just sccache:sccache cargo-nextest:cargo-nextest nu:nu fd:fd-find rg:ripgrep bat:bat sd:sd; do
     have "${pair%%:*}" || run cargo binstall -y --locked --disable-strategies compile "${pair##*:}"
   done
+fi
+# `sd` is required by the workspace code-edit tests; it is small, so compile it when no prebuilt binary is served.
+have sd || run cargo install sd --locked
+
+step "Bun lint and format tools (workspace gates)"
+if have bun || (( dry == 1 )); then
+  have oxlint && have oxfmt || run bun add -g oxlint oxfmt
 fi
 
 step "repository dependencies"
