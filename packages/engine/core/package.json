@@ -36,7 +36,8 @@
     "./monitor": "./src/monitor/index.ts",
     "./pm": "./src/pm/index.ts",
     "./compiler": "./src/compiler/index.ts",
-    "./python": "./src/python/index.ts"
+    "./python": "./src/python/index.ts",
+    "./workspace": "./src/workspace/index.ts"
   },
   "scripts": {
     "test": "bun --cwd=../.. test test/core.test.ts test/units.test.ts test/ledger.test.ts test/host-config.test.ts test/redis_monitor.test.ts test/startup.test.ts test/gemma4.test.ts test/gemma4-inference.test.ts test/redis_vector.test.ts test/redis_native.test.ts test/mcp.test.ts test/api.test.ts test/core-transport.test.ts test/vfs-consistency.test.ts test/ledger-content.test.ts test/vendor-status.test.ts test/vendor-catalog.test.ts test/package-manager.test.ts",
