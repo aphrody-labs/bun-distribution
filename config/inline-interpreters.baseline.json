@@ -172,11 +172,6 @@
       "scope": "local",
       "reason": "uv import probe of a Python package owner (Python via uv by policy)."
     },
-    "scripts/dev/hooks/block-local-cargo.test.ts": {
-      "count": 1,
-      "scope": "test",
-      "reason": "A bun -e command line is test data for the local-Cargo hook, never executed."
-    },
     "scripts/migration/shenron-env-transfer.sh": {
       "count": 2,
       "scope": "host",

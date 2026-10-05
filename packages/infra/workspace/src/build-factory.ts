@@ -345,6 +345,7 @@ export function heavyBuildStatus(
   };
   const local = (reason: string) => ({ ...status, route: "local" as const, reason });
   if (!config) return local("config/build-factory.json is absent");
+  if (env.CLAUDE_CODE_REMOTE === "true") return local("Claude Code cloud session: builds run in the session");
   if (config.executionOnlyTargets?.includes(config.target)) {
     if (localCargo && host !== config.target)
       return local("APHRODY_LOCAL_CARGO=1 selects a scoped local diagnostic");

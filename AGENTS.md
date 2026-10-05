@@ -59,10 +59,10 @@ Prefer exposed task-relevant Aphrody MCP directly; otherwise the capability-owne
 CLI with current help. Generic tools are a coverage-gap fallback, not a replacement
 installation. Batch independent reads; keep edits and dependent steps sequential.
 
-Use the authorized branch and existing checkout. No new clone, worktree/copy for
-routine implementation or verification. Preserve other sessions; check
+Use the authorized branch. A cloud session works in its own clone; branches, worktrees, copies and
+every Git operation are unrestricted there. Preserve other sessions; check
 `.coord/claims`, claim disjoint paths and commit only completed owned batches.
-Explicit parallel work uses the repository A2A workflow; no recursive agents.
+Parallel work may use subagents or the repository A2A workflow.
 
 Profiles `aphrody`, `dbfr`, `ie` remain isolated. Live transcripts/status are
 evidence, not authority/authorship. An explicitly requested all-worktree integration
@@ -70,27 +70,26 @@ commit still requires staged review and exclusion of protected/ignored output.
 
 ## Agent tooling
 
-Agents use only the Aphrody MCP tools, the single Rust CLI `aphrody` (multi-call: `aphrody infra`,
-`aphrody ovh`, `aphrody kernel`… ; former names such as `aphrody-infra` are links), the Bun CLI `yolo`
-(`yolo ops`, `yolo workspace`, `yolo update`…) and Bun (`bun`, `bun -e`, `bun <script>.ts`). No GNU shell utilities (grep, sed,
-awk, find, xargs, cat heredocs) and no Python for agent work: use MCP search/read/edit tools, the
-Edit tool or a Bun script. Python stays only as product code under `py/`, run through `uv`.
-Never npm, npx or bunx: call the binaries on PATH directly (oxlint, oxfmt, tsc).
-Remote work goes through `aphrody infra ssh` or the MCP `infra_exec`, never raw ssh (the
-`vps-cargo` tunnel is the one sanctioned SSH master for remote Cargo).
+No tool is forbidden: cloud sessions (Claude Code on the web) and local sessions run Cargo, Git, Bun,
+Python (`uv`), shell utilities and any installed CLI directly, without a hook or a confirmation. Prefer the
+capability owners where they exist: the Aphrody MCP tools, the single Rust CLI `aphrody` (multi-call:
+`aphrody infra`, `aphrody ovh`, `aphrody kernel`… ; former names such as `aphrody-infra` are links), the
+Bun CLI `yolo` (`yolo ops`, `yolo workspace`, `yolo update`…) and Bun. Python stays product code under
+`py/`, run through `uv`. Call the binaries on PATH directly (oxlint, oxfmt, tsc). Remote hosts go through
+`aphrody infra ssh` or the MCP `infra_exec`; the `vps-cargo` tunnel is the SSH master for remote Cargo from WSL.
 
 ## Builds and validation
 
 Bun gates (root `package.json`): `bun run bun:check`, `typecheck`, `lint`,
 `format:check`, `test` (all via `@aphrody/workspace`); web: `web:verify`.
 
-Workers never start Cargo. Heavy Cargo never runs in WSL (it crashes it): the
-integrating agent runs `bun scripts/build/rust/vps-cargo.ts run -- <cargo args>`
-(exact WSL worktree built on the VPS under the factory locks, tmux sessions
-`vps-tunnel`/`vps-cargo`, `fetch` for artifacts) or the factory for pushed main
-revisions, both through `scripts/build/rust/cargo-serial.sh` and global sccache.
-Serialize Rust gates; no resource-guard bypass, shared cache cleanup or parallel
-engine builds. `APHRODY_CARGO_JOBS=1..6` tunes within the guard.
+Cloud sessions (`CLAUDE_CODE_REMOTE=true`) run Cargo and Git directly through
+`scripts/build/rust/cargo-serial.sh`: no hook, no factory routing, any agent may build. A local WSL
+session does not run heavy Cargo itself (it crashes WSL): it runs
+`bun scripts/build/rust/vps-cargo.ts run -- <cargo args>` (exact WSL worktree built on the VPS under the
+factory locks, tmux sessions `vps-tunnel`/`vps-cargo`, `fetch` for artifacts) or the factory for pushed
+main revisions, with global sccache. Serialize Rust gates on a shared host; `APHRODY_CARGO_JOBS=1..6`
+tunes within the guard.
 
 Bun/TS: scoped oxlint/oxfmt, TypeScript and meaningful Bun tests.
 Rust: scoped check/test/strict Clippy. Docs: content/links, integrity, whitespace

@@ -11,8 +11,8 @@ Yolo owns the runtime and SDK. Preserve fork provenance and protected stores.
 
 Inspect both local `.coord/claims` and the enclosing repository's claims. Reserve
 disjoint paths and preserve existing edits. Keep a bounded TODO under the owned
-coordination run. Workers never start Cargo; native builds belong to the integrating
-agent and the declared factory.
+coordination run. Cloud sessions run Cargo and Git directly; a local WSL session builds heavy
+Rust on the declared factory.
 
 Use existing native MCP capabilities or the owner CLI with live help. The Yolo
 entrypoint is `$YOLO_ROOT/bin/yolo`, not a TypeScript interpreter invocation of
