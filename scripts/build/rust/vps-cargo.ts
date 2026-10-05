@@ -21,7 +21,7 @@
  */
 import { $ } from "bun";
 import { mkdir } from "node:fs/promises";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 export type Forward = { bind: string; to: string; purpose?: string };
@@ -54,6 +54,13 @@ export type VpsCargoConfig = {
   jobs: number;
   /** Largest `--jobs` the host accepts (a production host stays below its core count). */
   maxJobs?: number;
+  /**
+   * False when the host has no GTK/WebKitGTK development libraries (a production server keeps a minimum
+   * surface, config/system-packages.json): packages that need them stay on the primary host. Default true.
+   */
+  desktopLibraries?: boolean;
+  /** Crates whose presence in a package's dependency closure means the desktop libraries are needed. */
+  desktopSysCrates?: string[];
   /** Per-host overrides merged over this config: secondary build hosts such as dbfr. */
   hosts?: Record<string, Partial<Omit<VpsCargoConfig, "hosts" | "repositories">>>;
   /** External repositories, by name, for `--repo`: primary host only. */
@@ -128,17 +135,212 @@ export function heavyLockBusy(config: VpsCargoConfig): boolean {
   return probe.exitCode === 1;
 }
 
+/** Workspace packages that need the GTK/WebKitGTK development libraries: for plain builds, and with test/dev targets. */
+export type DesktopRequirements = { build: Set<string>; all: Set<string> };
+
+type CargoMetadata = {
+  packages: { id: string; name: string }[];
+  workspace_members: string[];
+  resolve: {
+    nodes: { id: string; deps: { pkg: string; dep_kinds?: { kind: string | null }[] }[] }[];
+  };
+};
+
+/**
+ * Which workspace members reach one of `sysCrates` through their dependency graph (`cargo metadata`, Linux
+ * target): `build` follows normal and build dependencies (check, build, clippy), `all` also dev dependencies
+ * (test, `--all-targets`).
+ */
+export function desktopRequirements(
+  metadata: CargoMetadata,
+  sysCrates: readonly string[],
+): DesktopRequirements {
+  const name = new Map(metadata.packages.map((p) => [p.id, p.name] as const));
+  const reaching = (kinds: ReadonlySet<string>) => {
+    const parents = new Map<string, string[]>();
+    for (const node of metadata.resolve.nodes) {
+      for (const dep of node.deps) {
+        if (!(dep.dep_kinds ?? []).some((k) => kinds.has(k.kind ?? "normal"))) continue;
+        const list = parents.get(dep.pkg) ?? [];
+        list.push(node.id);
+        parents.set(dep.pkg, list);
+      }
+    }
+    const seen = new Set(
+      metadata.resolve.nodes
+        .filter((n) => sysCrates.includes(name.get(n.id) ?? ""))
+        .map((n) => n.id),
+    );
+    const stack = [...seen];
+    for (let id = stack.pop(); id !== undefined; id = stack.pop()) {
+      for (const parent of parents.get(id) ?? []) {
+        if (!seen.has(parent)) {
+          seen.add(parent);
+          stack.push(parent);
+        }
+      }
+    }
+    return new Set(
+      metadata.workspace_members.filter((id) => seen.has(id)).map((id) => name.get(id) ?? id),
+    );
+  };
+  return {
+    build: reaching(new Set(["normal", "build"])),
+    all: reaching(new Set(["normal", "build", "dev"])),
+  };
+}
+
+const DEV_TARGET_FLAGS = new Set([
+  "--all-targets",
+  "--tests",
+  "--benches",
+  "--examples",
+  "--test",
+  "--bench",
+  "--example",
+]);
+const DEV_SUBCOMMANDS = new Set(["test", "bench", "nextest"]);
+
+/** What a cargo command line selects: its packages, whether it is workspace-wide, and whether it compiles dev targets. */
+export function cargoSelection(cargoArgs: readonly string[]) {
+  const packages: string[] = [];
+  const excluded: string[] = [];
+  let workspace = false;
+  let devTargets = false;
+  let subcommand = "";
+  for (let i = 0; i < cargoArgs.length; i++) {
+    const arg = cargoArgs[i] as string;
+    if (arg === "--") break;
+    const next = cargoArgs[i + 1] ?? "";
+    if (arg === "-p" || arg === "--package") (packages.push(next), i++);
+    else if (arg.startsWith("--package=")) packages.push(arg.slice("--package=".length));
+    else if (arg === "--exclude") (excluded.push(next), i++);
+    else if (arg.startsWith("--exclude=")) excluded.push(arg.slice("--exclude=".length));
+    else if (arg === "--workspace" || arg === "--all") workspace = true;
+    else if (DEV_TARGET_FLAGS.has(arg) || /^--(test|bench|example)=/.test(arg)) devTargets = true;
+    else if (!subcommand && !arg.startsWith("-") && !arg.startsWith("+")) subcommand = arg;
+  }
+  if (DEV_SUBCOMMANDS.has(subcommand)) devTargets = true;
+  return { subcommand, packages, excluded, workspace, devTargets };
+}
+
+/** `name`, `name@version` or a glob such as `aphrody-tauri-*` against one package name. */
+export function matchesPackageSpec(spec: string, name: string): boolean {
+  const bare = spec.split(/[@:]/, 1)[0] as string;
+  if (!/[*?[]/.test(bare)) return bare === name;
+  const regex = bare
+    .replace(/[.+^${}()|\\]/g, "\\$&")
+    .replace(/\*/g, ".*")
+    .replace(/\?/g, ".");
+  return new RegExp(`^${regex}$`).test(name);
+}
+
+/** The packages of this cargo command line that need the desktop libraries (empty: any host can build it). */
+export function desktopOffenders(
+  cargoArgs: readonly string[],
+  requirements: DesktopRequirements,
+): string[] {
+  const selection = cargoSelection(cargoArgs);
+  const needed = selection.devTargets ? requirements.all : requirements.build;
+  const scoped = selection.packages.length > 0 && !selection.workspace;
+  return [...needed]
+    .filter((pkg) =>
+      scoped
+        ? selection.packages.some((spec) => matchesPackageSpec(spec, pkg))
+        : !selection.excluded.some((spec) => matchesPackageSpec(spec, pkg)),
+    )
+    .sort();
+}
+
+/** The cargo arguments of a `run` command line (everything after the first `--`). */
+function cargoArgsOf(options: readonly string[]): string[] {
+  const separator = options.indexOf("--");
+  return separator < 0 ? [] : options.slice(separator + 1);
+}
+
+/** Desktop requirements of the worktree, from `cargo metadata` (light, offline), cached by Cargo.lock hash. */
+async function worktreeDesktopRequirements(
+  sysCrates: readonly string[],
+): Promise<DesktopRequirements> {
+  const lock = await Bun.file(join(ROOT, "Cargo.lock")).text();
+  const key = new Bun.CryptoHasher("sha256")
+    .update(lock)
+    .update(sysCrates.join(","))
+    .digest("hex")
+    .slice(0, 16);
+  const cache = join(tmpdir(), `vps-cargo-desktop-${key}.json`);
+  const cached = Bun.file(cache);
+  if (await cached.exists()) {
+    const saved = (await cached.json()) as { build: string[]; all: string[] };
+    return { build: new Set(saved.build), all: new Set(saved.all) };
+  }
+  const json =
+    await $`cargo metadata --offline --format-version 1 --filter-platform x86_64-unknown-linux-gnu`
+      .cwd(ROOT)
+      .quiet()
+      .text();
+  const requirements = desktopRequirements(JSON.parse(json) as CargoMetadata, sysCrates);
+  await Bun.write(
+    cache,
+    JSON.stringify({ build: [...requirements.build], all: [...requirements.all] }),
+  );
+  return requirements;
+}
+
+/** A host without the desktop libraries refuses (explicit `--host`) or yields (`auto`) to packages that need them. */
+async function ensureHostCanBuild(
+  candidate: VpsCargoConfig,
+  primary: VpsCargoConfig,
+  options: readonly string[],
+  requested: string,
+): Promise<VpsCargoConfig> {
+  if (candidate.desktopLibraries !== false) return candidate;
+  const cargoArgs = cargoArgsOf(options);
+  if (cargoArgs.length === 0) return candidate;
+  const offenders = desktopOffenders(
+    cargoArgs,
+    await worktreeDesktopRequirements(
+      primary.desktopSysCrates ?? ["gdk-sys", "gtk-sys", "gtk4-sys", "webkit2gtk-sys"],
+    ),
+  );
+  if (offenders.length === 0) return candidate;
+  const sample = `${offenders.slice(0, 3).join(", ")}${offenders.length > 3 ? `, … (${offenders.length})` : ""}`;
+  if (requested === "auto") {
+    console.log(
+      `${candidate.host} has no desktop libraries (needed by ${sample}): staying on ${primary.host}`,
+    );
+    return primary;
+  }
+  throw new Error(
+    `${candidate.host} has no GTK/WebKitGTK development libraries (minimum host surface); needed by ${sample}. Use --host ${primary.host} or select other packages.`,
+  );
+}
+
 /** `--host <name|auto>` or VPS_CARGO_HOST: the primary host, a named secondary, or the first idle one. */
 export async function selectConfig(options: readonly string[]): Promise<VpsCargoConfig> {
   const requested = flag(options, "--host") ?? process.env["VPS_CARGO_HOST"];
   const primary = await loadConfig();
   if (requested === undefined || requested === primary.host) return primary;
-  if (requested !== "auto") return loadConfig(CONFIG_PATH, requested);
+  if (requested !== "auto") {
+    return ensureHostCanBuild(
+      await loadConfig(CONFIG_PATH, requested),
+      primary,
+      options,
+      requested,
+    );
+  }
   if (!heavyLockBusy(primary)) return primary;
   const fallback = Object.keys(primary.hosts ?? {})[0];
   if (!fallback) return primary;
+  const candidate = await ensureHostCanBuild(
+    await loadConfig(CONFIG_PATH, fallback),
+    primary,
+    options,
+    requested,
+  );
+  if (candidate.host !== fallback) return candidate;
   console.log(`${primary.host} is busy, building on ${fallback}`);
-  return loadConfig(CONFIG_PATH, fallback);
+  return candidate;
 }
 
 /** Snapshot paths that look like secrets: the snapshot leaves the machine, so it fails closed. */

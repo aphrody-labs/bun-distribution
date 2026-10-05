@@ -19,6 +19,7 @@
     "BUN_INSTALL_CACHE_DIR": "/srv/aphrody-build/cache/bun"
   },
   "jobs": 6,
+  "desktopSysCrates": ["gdk-sys", "gtk-sys", "gtk4-sys", "webkit2gtk-sys"],
   "forwards": {
     "remote": [
       {
@@ -64,6 +65,7 @@
       "remoteLockDir": "/home/ubuntu/aphrody-build/locks",
       "remoteHeavyLock": "/home/ubuntu/aphrody-build/locks/heavy.lock",
       "remoteLogDir": "/home/ubuntu/aphrody-build/artifacts/wsl",
+      "desktopLibraries": false,
       "jobs": 3,
       "maxJobs": 3,
       "remoteEnv": {

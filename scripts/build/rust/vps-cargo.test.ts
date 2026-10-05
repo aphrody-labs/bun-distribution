@@ -5,9 +5,13 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  cargoSelection,
+  desktopOffenders,
+  desktopRequirements,
   expandHome,
   gitDaemonCommand,
   loadConfig,
+  matchesPackageSpec,
   remoteCheckoutScript,
   remoteRunScript,
   remoteSeedScript,
@@ -124,5 +128,91 @@ describe("vps-cargo", () => {
     } finally {
       await rm(repo, { recursive: true, force: true });
     }
+  });
+});
+
+describe("desktop-library routing", () => {
+  // app --normal--> gtk-sys; cli --dev--> app; lib has no desktop dependency.
+  const metadata = {
+    packages: [
+      { id: "app", name: "app" },
+      { id: "cli", name: "cli" },
+      { id: "lib", name: "lib" },
+      { id: "gtk-sys", name: "gtk-sys" },
+    ],
+    workspace_members: ["app", "cli", "lib"],
+    resolve: {
+      nodes: [
+        { id: "app", deps: [{ pkg: "gtk-sys", dep_kinds: [{ kind: null }] }] },
+        {
+          id: "cli",
+          deps: [
+            { pkg: "app", dep_kinds: [{ kind: "dev" }] },
+            { pkg: "lib", dep_kinds: [{ kind: null }] },
+          ],
+        },
+        { id: "lib", deps: [] },
+        { id: "gtk-sys", deps: [] },
+      ],
+    },
+  };
+  const requirements = desktopRequirements(metadata, ["gtk-sys"]);
+
+  test("normal and build dependencies decide plain builds, dev dependencies only test targets", () => {
+    expect([...requirements.build]).toEqual(["app"]);
+    expect([...requirements.all].sort()).toEqual(["app", "cli"]);
+  });
+
+  test("reads packages, exclusions, workspace and dev targets from a cargo command line", () => {
+    expect(cargoSelection(["check", "-p", "a", "--package=b", "--exclude", "c"])).toEqual({
+      subcommand: "check",
+      packages: ["a", "b"],
+      excluded: ["c"],
+      workspace: false,
+      devTargets: false,
+    });
+    expect(
+      cargoSelection([
+        "+nightly",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings",
+      ]),
+    ).toMatchObject({
+      subcommand: "clippy",
+      workspace: true,
+      devTargets: true,
+    });
+    expect(cargoSelection(["test", "-p", "x"]).devTargets).toBe(true);
+    expect(cargoSelection(["check", "--", "--all-targets"]).devTargets).toBe(false);
+  });
+
+  test("package specs accept versions and globs", () => {
+    expect(matchesPackageSpec("aphrody-tauri", "aphrody-tauri")).toBe(true);
+    expect(matchesPackageSpec("aphrody-tauri@3.0.0", "aphrody-tauri")).toBe(true);
+    expect(matchesPackageSpec("aphrody-tauri-plugin-*", "aphrody-tauri-plugin-fs")).toBe(true);
+    expect(matchesPackageSpec("aphrody-tauri-plugin-*", "aphrody-tauri")).toBe(false);
+  });
+
+  test("a package that needs the desktop libraries is reported, others are not", () => {
+    expect(desktopOffenders(["check", "-p", "app"], requirements)).toEqual(["app"]);
+    expect(desktopOffenders(["check", "-p", "lib"], requirements)).toEqual([]);
+    // cli only needs them through its dev dependencies.
+    expect(desktopOffenders(["check", "-p", "cli"], requirements)).toEqual([]);
+    expect(desktopOffenders(["check", "-p", "cli", "--all-targets"], requirements)).toEqual([
+      "cli",
+    ]);
+    expect(desktopOffenders(["test", "-p", "cli"], requirements)).toEqual(["cli"]);
+  });
+
+  test("workspace-wide runs are offenders unless every desktop package is excluded", () => {
+    expect(desktopOffenders(["check", "--workspace"], requirements)).toEqual(["app"]);
+    expect(desktopOffenders(["check"], requirements)).toEqual(["app"]);
+    expect(desktopOffenders(["check", "--workspace", "--exclude", "app"], requirements)).toEqual(
+      [],
+    );
   });
 });
