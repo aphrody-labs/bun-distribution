@@ -211,7 +211,7 @@ volumes:
 ```bash
 # Terminal 1: Web dev server (hot reload)
 cd apps/web
-pnpm dev  # → http://localhost:3000
+bun run dev  # → http://localhost:3000
 
 # Terminal 2: API server
 cargo run -p sd-server

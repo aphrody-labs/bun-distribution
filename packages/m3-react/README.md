@@ -174,7 +174,7 @@ documenté : `events: {}`.
 
 ## Détail compilation
 
-`bunx tsc --noEmit` compile **toute la chaîne** (les wrappers _et_ les sources `.ts` de
+`tsc --noEmit` compile **toute la chaîne** (les wrappers _et_ les sources `.ts` de
 `material-web/` qu'ils importent). Trois ajustements ont été nécessaires côté `tsconfig.json` /
 shims, **sans toucher** à `material-web/src` :
 

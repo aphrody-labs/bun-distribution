@@ -103,9 +103,9 @@ autres imports/JSX MUI sont laissés intacts (migration par lots).
 Complément léger pour **inventorier** ce qui reste à migrer et appliquer des fix triviaux.
 
 ```bash
-bunx @ast-grep/cli scan                      # rapport sur tout le projet (depuis ce dossier)
-bunx @ast-grep/cli scan src/                  # rapport ciblé
-bunx @ast-grep/cli scan --filter '^fix-divider$' --update-all   # applique le fix Divider
+@ast-grep/cli scan                      # rapport sur tout le projet (depuis ce dossier)
+@ast-grep/cli scan src/                  # rapport ciblé
+@ast-grep/cli scan --filter '^fix-divider$' --update-all   # applique le fix Divider
 ```
 
 | Règle                   | Type              | Effet                                                                            |

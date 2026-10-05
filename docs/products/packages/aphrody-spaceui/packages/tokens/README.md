@@ -8,7 +8,7 @@ This package is CSS-first for Tailwind v4, with optional raw color exports for p
 ```bash
 bun add @spacedrive/tokens
 # or
-npm install @spacedrive/tokens
+bun install @spacedrive/tokens
 ```
 
 ## Usage

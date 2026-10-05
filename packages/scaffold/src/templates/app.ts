@@ -58,7 +58,7 @@ export function appFiles(options: AppTemplateOptions): FileMap {
           }
         : {}),
       ...(tauri
-        ? { "@tauri-apps/api": TAURI_3.jsApi, "@tauri-apps/plugin-opener": TAURI_3.jsPluginOpener }
+        ? { "@aphrody/api": TAURI_3.jsApi, "@aphrody/plugin-opener": TAURI_3.jsPluginOpener }
         : {}),
     },
     devDependencies: {

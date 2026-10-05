@@ -31,8 +31,8 @@ used `tauri::Wry` as a type now uses `tauri::DynRuntime`.
 Root `Cargo.toml` `[workspace.dependencies]` is the only place with a Tauri
 version; members use `workspace = true` and add only features
 (`dynamic-acl`/`specta` for Koharu, `tray-icon`/`image-ico` for `aphrody-app`).
-Root `package.json` `workspaces.catalog` holds `@tauri-apps/api` and
-`@tauri-apps/plugin-opener`; packages use `catalog:`.
+Root `package.json` `workspaces.catalog` holds `@aphrody/api` and
+`@aphrody/plugin-opener`; packages use `catalog:`.
 
 | Set                                                                 | Version                           |
 | ------------------------------------------------------------------- | --------------------------------- |
@@ -40,7 +40,7 @@ Root `package.json` `workspaces.catalog` holds `@tauri-apps/api` and
 | `tauri-build`, `tauri-plugin`, all `tauri-plugin-*`                 | 3.0.0-alpha.2                     |
 | `tauri-runtime-cef`                                                 | 3.0.0-alpha.4                     |
 | `tauri-specta` (git tag `v2.0.0-rc.25-koharu.1`)                    | 2.0.0-rc.25                       |
-| `@tauri-apps/api` / `@tauri-apps/plugin-opener` / `@tauri-apps/cli` | 3.0.0-alpha.2 / alpha.1 / alpha.3 |
+| `@aphrody/api` / `@aphrody/plugin-opener` / `@tauri-apps/cli` | 3.0.0-alpha.2 / alpha.1 / alpha.3 |
 
 `plugin-opener` JS stays at alpha.1 while alpha.2 is younger than the repository
 `minimumReleaseAge` (3 days, `bunfig.toml`); the sync script reports it as

@@ -48,8 +48,8 @@ describe("pins", () => {
     expect(config.js.cli.version).toBe(TAURI_3.jsCli);
     const catalog = JSON.parse(await Bun.file(join(root, "package.json")).text()).workspaces
       .catalog;
-    expect(catalog["@tauri-apps/api"]).toBe(TAURI_3.jsApi);
-    expect(catalog["@tauri-apps/plugin-opener"]).toBe(TAURI_3.jsPluginOpener);
+    expect(catalog["@aphrody/api"]).toBe(TAURI_3.jsApi);
+    expect(catalog["@aphrody/plugin-opener"]).toBe(TAURI_3.jsPluginOpener);
   });
 
   it("are mirrored once: tauri-sync tracks this file and no other scaffolder", async () => {
@@ -64,10 +64,10 @@ describe("app template", () => {
   it("generates a Tauri 3 project with an explicit wry runtime", () => {
     const files = appFiles({ name: "Demo App", target: "tauri" });
     const pkg = JSON.parse(text(files["package.json"]));
-    expect(pkg.dependencies["@tauri-apps/api"]).toBe(TAURI_3.jsApi);
-    expect(pkg.dependencies["@tauri-apps/plugin-opener"]).toBe(TAURI_3.jsPluginOpener);
+    expect(pkg.dependencies["@aphrody/api"]).toBe(TAURI_3.jsApi);
+    expect(pkg.dependencies["@aphrody/plugin-opener"]).toBe(TAURI_3.jsPluginOpener);
     expect(pkg.devDependencies["@tauri-apps/cli"]).toBe(TAURI_3.jsCli);
-    expect(pkg.dependencies["@tauri-apps/plugin-shell"]).toBeUndefined();
+    expect(pkg.dependencies["@aphrody/plugin-shell"]).toBeUndefined();
 
     const cargo = text(files["src-tauri/Cargo.toml"]);
     expect(cargoVersion(cargo, "tauri")).toBe(TAURI_3.tauri);

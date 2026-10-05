@@ -110,8 +110,8 @@ consumer at `apps/koharu/editor` demonstrates the package in a separate
 standalone host, not in Aphrody's app shell.
 
 The bridge, SDK peer dependency, extracted UI package and example now resolve
-`@tauri-apps/api`, `@tauri-apps/plugin-opener` and
-`@tauri-apps/plugin-process` from the Tauri v2 family. The old generated
+`@aphrody/api`, `@aphrody/plugin-opener` and
+`@aphrody/plugin-process` from the Tauri v2 family. The old generated
 Koharu command names remain unchanged and are not implemented by Aphrody's
 `koharu_rpc` JSONL broker. The original standalone Koharu Rust desktop host
 still targets Tauri v3 alpha; its runtime compatibility with these v2
