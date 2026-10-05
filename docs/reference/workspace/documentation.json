@@ -114,6 +114,16 @@
       "canonical": "config/host/inventory/aphrody-discord-dev-2026-09-29.md"
     },
     {
+      "path": "config/host/legacy-rg/README.md",
+      "title": "Decommissioned rg host configuration (2026-10-03)",
+      "sha256": "f86eab2ec5ba31f57ca41b2fb3a6e34872484aa0d3988291dda9842dd8918710",
+      "bytes": 513,
+      "domain": "host",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "config/host/legacy-rg/README.md"
+    },
+    {
       "path": "config/host/privoxy/README.md",
       "title": "Privoxy & WireGuard Mullvad HTTP Bridge",
       "sha256": "36fd0c9d56919350fef78c5cfc3acbd958aad79be0f2ab95a9e1da73bf437ea1",
@@ -122,16 +132,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "config/host/privoxy/README.md"
-    },
-    {
-      "path": "config/infra/host/legacy-rg/README.md",
-      "title": "Decommissioned rg host configuration (2026-10-03)",
-      "sha256": "f86eab2ec5ba31f57ca41b2fb3a6e34872484aa0d3988291dda9842dd8918710",
-      "bytes": 513,
-      "domain": "infra",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "config/infra/host/legacy-rg/README.md"
     },
     {
       "path": "crates/ai/agent-home/templates/AGENTS.md",
@@ -3316,8 +3316,8 @@
     {
       "path": "docs/BUN_FORK.md",
       "title": "Aphrody Bun Fork — Architecture, Synchronization & Optimization Hub",
-      "sha256": "637e017814819da3006d2e58dc0948726398e77d8c9de4d5cffacd105b1092fc",
-      "bytes": 4589,
+      "sha256": "666d58de3cf71a3a1130a65a0cbb2a1c7649ee65f5474532a51d327f5de54cce",
+      "bytes": 4739,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -9606,8 +9606,8 @@
     {
       "path": "docs/plans/fusion/drive/GOAL-FUSION.md",
       "title": "GOAL — directive de fusion (décision du 2026-10-05)",
-      "sha256": "49f2c17a80c167aacec13c69ed3f0886b5937a22f9cc5ddee5b78a321ff0f2a7",
-      "bytes": 4903,
+      "sha256": "bf6994ea7a94a864c4e680a35730acc41a324ee60c26ab22c78ab7ec4d7ea0a5",
+      "bytes": 8367,
       "domain": "fusion",
       "status": "canonical",
       "visibility": "private",
@@ -9616,8 +9616,8 @@
     {
       "path": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (1 de 3).md",
       "title": "Plan de fusion Obscura × Bun — partie 1 de 3",
-      "sha256": "d913a9f67273671010f85defb2c6b3366a9f6be2e1e4557ddd0b2854a9a47d1f",
-      "bytes": 36697,
+      "sha256": "62556690cba492a7935c5f66c1f0e2e27572735a56dda93b08d353ad05e3c89a",
+      "bytes": 49511,
       "domain": "fusion",
       "status": "canonical",
       "visibility": "private",
@@ -9626,8 +9626,8 @@
     {
       "path": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (2 de 3).md",
       "title": "Plan de fusion Obscura × Bun — partie 2 de 3",
-      "sha256": "055ade3d0504a1e3253f9c0769955d2475afdbeffe76d57c5dbd0775dbbd96ff",
-      "bytes": 42307,
+      "sha256": "9aa82962b4eeda8fb48f70c7d22d402dd533f1057e3305befbe1de84155d58f7",
+      "bytes": 61555,
       "domain": "fusion",
       "status": "canonical",
       "visibility": "private",
@@ -9636,8 +9636,8 @@
     {
       "path": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (3 de 3).md",
       "title": "Plan de fusion Obscura × Bun — partie 3 de 3",
-      "sha256": "536e19290a4a9296a5030ad1d1e8e565b0329d6944b5cd0dab4bf9b9572c10bd",
-      "bytes": 38194,
+      "sha256": "9c0b4e69715841c87dc0cc47d7c200e9f36c9ea6038d4e633d59817f54c7c6b3",
+      "bytes": 55192,
       "domain": "fusion",
       "status": "canonical",
       "visibility": "private",
@@ -9646,8 +9646,8 @@
     {
       "path": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md",
       "title": "Plan de fusion Obscura × Bun — partie 4 de 4 : audits et contexte vérifiés",
-      "sha256": "37d9b10185d1caa7d840197eef6fac6619070d2bf502543076bb9fa37222785b",
-      "bytes": 33211,
+      "sha256": "7a02c9769e3113c46fd0ecacc44973df3fcde5d3f17cde2944b49659c150297b",
+      "bytes": 39216,
       "domain": "fusion",
       "status": "canonical",
       "visibility": "private",
@@ -9656,8 +9656,8 @@
     {
       "path": "docs/plans/fusion/drive/PROMPT-ONESHOT-1.md",
       "title": "Prompt de session — one shot 1 : monorepo yolo, binaire + plugin Obscura",
-      "sha256": "3cdc47858dc5c6dbcb4b477e517adb0b2903dd7e4ec4bb356e1ca8603f135257",
-      "bytes": 7421,
+      "sha256": "3bd7dc6a3904d10b3dbe6612519eb54931b735e0058089f8a5d730c18fabeec4",
+      "bytes": 9939,
       "domain": "fusion",
       "status": "canonical",
       "visibility": "private",
@@ -9676,8 +9676,8 @@
     {
       "path": "docs/plans/fusion/drive/README.md",
       "title": "Aphrody — Plan de fusion Obscura × Bun (dossier de projet)",
-      "sha256": "11e0744e21fa6dbbbb1f634cd7d0a58bb1da28232da577b89764fe595b481af9",
-      "bytes": 2658,
+      "sha256": "ddf8ef4e528f3c5f1440c7c60dc49256b4e52bff34f6a6f79ddc78ff6700b611",
+      "bytes": 4270,
       "domain": "fusion",
       "status": "canonical",
       "visibility": "private",
@@ -43514,16 +43514,6 @@
       "canonical": "m3/docs/products/drive/packages/ts-client/README.md"
     },
     {
-      "path": "m3/docs/products/drive/packages/ts-client/tests/integration/README.md",
-      "title": "TypeScript Integration Tests with Rust Bridge",
-      "sha256": "7890d5e2e894c7591874483a6dc847941dfcd833d458dc789147868a6f4f79ad",
-      "bytes": 8477,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "packages/os/drive-client/tests/integration/README.md"
-    },
-    {
       "path": "m3/docs/products/examples/m3-spaceui-showcase/README.md",
       "title": "m3-spaceui-showcase",
       "sha256": "c8aad393838decc9742df6427d84a8206b11f3b7b476aa460a910f94cb6b1ccc",
@@ -47294,15 +47284,6 @@
         "m3/packages/assets/UPSTREAM-CHANGELOG.spaceui.md"
       ],
       "canonical": "m3/docs/reference/packages/aphrody-spaceui/packages/icons/CHANGELOG.md",
-      "action": "retain"
-    },
-    {
-      "sha256": "7890d5e2e894c7591874483a6dc847941dfcd833d458dc789147868a6f4f79ad",
-      "paths": [
-        "m3/docs/products/drive/packages/ts-client/tests/integration/README.md",
-        "packages/os/drive-client/tests/integration/README.md"
-      ],
-      "canonical": "packages/os/drive-client/tests/integration/README.md",
       "action": "retain"
     }
   ],

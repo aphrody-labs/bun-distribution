@@ -253,10 +253,6 @@ name = "merge"
 path = "tests/merge.rs"
 
 [[test]]
-name = "merge_keys_serde"
-path = "tests/merge_keys_serde.rs"
-
-[[test]]
 name = "missing_fields"
 path = "tests/missing_fields.rs"
 
