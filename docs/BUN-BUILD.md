@@ -27,6 +27,6 @@ highway, libwebp and the other upstream pins.
 
 ## Next steps (build factory only, no heavy local build)
 
-1. Keep `deps/webkit.ts` on the Bun fork `yolo` branch on the upstream `oven-sh/WebKit` prebuilt releases (the
+1. Keep `deps/webkit.ts` on the Bun fork `main` branch on the upstream `oven-sh/WebKit` prebuilt releases (the
    `aphrody-labs/WebKit` fork was deleted); a tuned WebKit build is a build-factory artifact, not a fork.
 2. Pin the tuned Rust/LLVM toolchain releases; measure with a reproducible benchmark before claiming any speedup.

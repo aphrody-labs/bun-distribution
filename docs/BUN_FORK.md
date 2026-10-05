@@ -3,37 +3,35 @@
 > **Repository Nexus**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun)
 > **Upstream Authority**: [oven-sh/bun](https://github.com/oven-sh/bun)
 > **Organization**: `aphrody-labs`
-> **Submodule Path**: [`vendor/bun`](../vendor/bun)
-> **Active Fork Branch**: `yolo`
-> **Pristine Upstream Branch**: `main`
-> **Sync & Drift Engine**: [`scripts/tools/vendor/bun_upstream_sync.ts`](../scripts/vendor/bun_upstream_sync.ts)
-> **PR & Issue Tracker Engine**: [`scripts/tools/vendor/bun_upstream_tracker.ts`](../scripts/vendor/bun_upstream_tracker.ts)
+> **Checkout Path**: `vendor/bun` (pin: `config/vendor.json`, not a Git submodule)
+> **Fork Branch**: `main` (single and default branch: upstream `main` plus the Aphrody patches)
+> **Sync & Drift Engine**: [`scripts/tools/vendor/bun_upstream_sync.ts`](../scripts/tools/vendor/bun_upstream_sync.ts)
+> **PR & Issue Tracker Engine**: [`scripts/tools/vendor/bun_upstream_tracker.ts`](../scripts/tools/vendor/bun_upstream_tracker.ts)
 > **Tracker Live Dashboard**: [BUN_UPSTREAM_TRACKER.md](BUN_UPSTREAM_TRACKER.md)
 
 ---
 
-## 1. Fork Architecture & Dual-Branch Protocol
+## 1. Fork Architecture: one branch
 
 ```mermaid
 gitGraph
-   commit id: "upstream-v1.4.2"
-   branch yolo
-   checkout main
-   commit id: "fetch: zlib rfc1950 (#33711)"
-   commit id: "build: rm dead flag (#44370)"
-   checkout yolo
-   commit id: "yolo: kernel & bunfig"
-   merge main id: "sync: auto-merge & drift-fix"
+   commit id: "upstream"
+   commit id: "aphrody: bun-types, absorbed modules"
+   commit id: "merge upstream/main"
+   commit id: "aphrody: next patch"
 ```
 
-1. **`main` (Pristine Upstream Mirror)**:
-   - Tracks `upstream/main` directly.
-   - Updated strictly via fast-forward or clean upstream merges.
-   - Pushed continuously to `origin/main` (`aphrody-labs/bun:main`).
-2. **`yolo` (High-Performance Fork Integration Branch)**:
-   - Contains Tauri-aware type definitions: [`packages/bun-types/tauri.d.ts`](../vendor/bun/packages/bun-types/tauri.d.ts).
-   - Optional `patches/bun/*.patch` files (root of this repo) are reapplied by `bun:drift-fix --reapply-patches` after upstream refactors.
-   - Tracked and pushed to `origin/yolo` (`aphrody-labs/bun:yolo`).
+Since 2026-10-05 the fork has a single branch, **`main`** (also the GitHub default branch); the former
+`yolo` integration branch was fast-forwarded into it and deleted.
+
+- `main` = upstream `oven-sh/bun:main` + the Aphrody patches, as commits on top (Tauri-aware type
+  definitions [`packages/bun-types/tauri.d.ts`](../vendor/bun/packages/bun-types/tauri.d.ts), modules resolved
+  as built-ins, Rust native dependencies of the Linux linker).
+- Upstream arrives by merge (`upstream/main` into `main`), never by rebase or force push.
+- Optional `patches/bun/*.patch` files (root of this repo) are reapplied by the sync engine with
+  `--apply --reapply-patches` when the fork checks fail after an upstream refactor.
+- `bun-forge` (`yolo forge`, `config/bun-forge.json`) watches and builds `main`; `config/vendor.json` pins the
+  qualified commit.
 
 ---
 
@@ -48,14 +46,19 @@ gitGraph
 
 ## 3. Automation Toolchain & CLI Commands
 
-Root `package.json` provides native entry points:
+The engines run directly with Bun (no `package.json` aliases):
 
 | Command | Action | Description |
 | :--- | :--- | :--- |
-| `bun run bun:sync` | Auto-Sync Upstream | Fetches `upstream`, fast-forwards `main`, pushes to `origin/main`, merges into `yolo`, runs tests. |
-| `bun run bun:drift-fix` | Drift Auto-Repair | Resolves conflicts on lockfiles, completions, and re-applies Aphrody patches if diverged. |
-| `bun run bun:track` | Upstream Intelligence | Scans upstream PRs and issues for performance optimizations, memory fixes, and crashes. |
-| `bun run bun:dry-run` | Sync Simulation | Reports commit distances, upstream drift status without modifying working tree. |
+| `bun scripts/tools/vendor/bun_upstream_sync.ts --dry-run` | Sync Simulation | Reports commit distances and drift from local refs, without fetching or touching the working tree. Needs `upstream/main` and `main` (or `origin/main`). |
+| `bun scripts/tools/vendor/bun_upstream_sync.ts --apply` | Auto-Sync Upstream | Fetches `upstream`, merges `upstream/main` into `main`, runs the fork checks, pushes `origin/main` (never forced). |
+| `bun scripts/tools/vendor/bun_upstream_sync.ts --apply --auto-fix` | Drift Auto-Repair | Resolves conflicts on lockfiles and completions, re-applies Aphrody patches if diverged. |
+| `bun scripts/tools/vendor/bun_upstream_tracker.ts` | Upstream Intelligence | Scans upstream PRs and issues for performance optimizations, memory fixes, and crashes. |
+
+`vendor/bun` is a shallow, blobless checkout: without local refs, measure drift server side
+(`aphrody git api "/repos/oven-sh/bun/compare/main...aphrody-labs:bun:main"`), then let the engine
+fetch and merge (`--apply`, commits as `aphrody-dev`, never forced). A new `main` head is qualified by
+`yolo forge build` on the build host before `config/vendor.json` moves.
 
 ---
 
@@ -74,8 +77,9 @@ Based on automated upstream tracking:
 
 ---
 
-## 5. Submodule Pointer Integrity
+## 5. Pin Integrity
 
-The monorepo tracks `vendor/bun` at the active `yolo` branch commit:
-- Current Commit: see `git submodule status vendor/bun`
-- Verification: `git submodule status vendor/bun`
+`vendor/bun` is not a Git submodule: `config/vendor.json` pins the qualified `main` commit, fetched by
+`bun scripts/tools/vendor/fetch.ts`.
+- Current pin: the `ref` of the `bun` entry in `config/vendor.json`
+- Verification: `git -C vendor/bun rev-parse HEAD` against that `ref`

@@ -1,7 +1,7 @@
 # Bun Upstream Optimization & Intelligence Tracker
 
 > **Source**: [oven-sh/bun](https://github.com/oven-sh/bun)  
-> **Target Fork**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (Branch: `yolo`)  
+> **Target Fork**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (Branch: `main`)  
 > **Updated**: 2026-10-03T05:28:10.621Z  
 > **Engine**: `scripts/tools/vendor/bun_upstream_tracker.ts`
 

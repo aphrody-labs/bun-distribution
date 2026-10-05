@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Third-party and fork sources fetched on demand by `bun scripts/tools/vendor/fetch.ts`: pinned, shallow and blobless. Fetched trees are git-ignored; nothing here is vendored into the repository. Bun (aphrody-labs/bun, branch yolo) is the only vendored source.",
+  "description": "Third-party and fork sources fetched on demand by `bun scripts/tools/vendor/fetch.ts`: pinned, shallow and blobless. Fetched trees are git-ignored; nothing here is vendored into the repository. Bun (aphrody-labs/bun, branch main) is the only vendored source.",
   "sources": [
     {
       "name": "bun",
