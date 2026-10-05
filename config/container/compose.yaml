@@ -1,0 +1,77 @@
+# SPDX-License-Identifier: Apache-2.0
+# Aphrody services in containers. From the repository root:
+#   docker compose -f config/container/compose.yaml up --build api
+#   docker compose -f config/container/compose.yaml run --rm dev            # interactive build shell
+#   docker compose -f config/container/compose.yaml run --rm -T mcp         # MCP over stdio for a client
+# Secrets come from the environment or an untracked env file (config/container/.env), never from the image.
+
+name: aphrody
+
+x-build: &build
+  context: ../..
+  dockerfile: config/container/Dockerfile
+
+services:
+  api:
+    build:
+      <<: *build
+      target: runtime
+    image: aphrody:runtime
+    command: ["api"]
+    environment:
+      YOLO_API_TOKEN: ${YOLO_API_TOKEN:?set YOLO_API_TOKEN}
+      PORT: "8999"
+    ports:
+      # Published on the host loopback only; put a reverse proxy with TLS in front for anything wider.
+      - "127.0.0.1:8999:8999"
+    volumes:
+      - aphrody-home:/home/aphrody/.aphrody
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const r = await fetch('http://127.0.0.1:8999/health'); process.exit(r.ok ? 0 : 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  mcp:
+    build:
+      <<: *build
+      target: runtime
+    image: aphrody:runtime
+    command: ["mcp"]
+    stdin_open: true
+    volumes:
+      - aphrody-home:/home/aphrody/.aphrody
+    profiles: [tools]
+
+  dev:
+    build:
+      <<: *build
+      target: dev
+    image: aphrody:dev
+    command: ["shell"]
+    stdin_open: true
+    tty: true
+    working_dir: /app
+    volumes:
+      # The checkout is bind mounted over the image copy; caches live in named volumes so they survive rebuilds.
+      - ../..:/app
+      - aphrody-home:/home/aphrody/.aphrody
+      - cargo-registry:/home/aphrody/.cargo/registry
+      - cargo-git:/home/aphrody/.cargo/git
+      - cargo-target:/app/target
+      - bun-cache:/home/aphrody/.bun/install/cache
+    environment:
+      APHRODY_CLOUD: "1"
+    profiles: [dev]
+
+volumes:
+  aphrody-home:
+  cargo-registry:
+  cargo-git:
+  cargo-target:
+  bun-cache:

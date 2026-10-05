@@ -1,0 +1,23 @@
+# Build context for config/container/Dockerfile: sources only, never output, caches, secrets or private data.
+.git
+**/node_modules
+**/target
+/dist
+/var
+/.cache
+/.turbo
+/graphify-out
+**/.next
+**/coverage
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+**/credentials*
+**/cookies*
+**/*.sqlite
+**/*.db
+**/*.gguf
+**/*.safetensors

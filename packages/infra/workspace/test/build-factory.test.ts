@@ -278,6 +278,7 @@ test("execution-only hosts reject plans and never implicitly enable local builds
   ).toBe("factory");
   expect(heavyBuildStatus(runtimeOnly, {}).reason).toContain("new factory host");
   expect(heavyBuildStatus(runtimeOnly, { CLAUDE_CODE_REMOTE: "true" }).route).toBe("local");
+  expect(heavyBuildStatus(runtimeOnly, { APHRODY_CLOUD: "1" }).route).toBe("local");
 });
 
 test.skipIf(process.platform === "win32")(
