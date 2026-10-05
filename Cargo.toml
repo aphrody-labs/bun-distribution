@@ -36,12 +36,9 @@ tree-sitter-lua = { version = "0.5" }
 image-compare = { version = "0.5" }
 palette = { version = "0.7", default-features = false }
 aphrody-oxc-bridge = { path = "crates/compat/oxc-bridge", version = "0.1.0" }
-rustc-hash = "2"
-oxc_codegen = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a", default-features = false }
-oxc_formatter = { version = "0.71.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
-oxc_linter = { version = "1.86.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
-oxc_minifier = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
-oxc_semantic = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
+oxc_codegen = { version = "0.152.0", default-features = false }
+oxc_minifier = { version = "0.152.0" }
+oxc_semantic = { version = "0.152.0" }
 aphrody-bun = { path = "crates/ui/bun", version = "1.0.0-canary" }
 aphrody-discord-compiler = { path = "crates/discord/aphrody-discord-compiler", version = "1.0.0" }
 tokio-postgres-rustls = { version = "0.14", default-features = false, features = ["ring", "native-certs"] }
@@ -235,10 +232,10 @@ octocrab = { version = "0.54", features = [] }
 once_cell = { version = "1", features = [] }
 opendal = { version = "0.59", default-features = false, features = ["executors-tokio", "services-fs"] }
 ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std", "api-24", "ndarray", "tracing"] }
-oxc_allocator = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
-oxc_ast = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
-oxc_parser = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
-oxc_span = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
+oxc_allocator = { version = "0.152.0" }
+oxc_ast = { version = "0.152.0" }
+oxc_parser = { version = "0.152.0" }
+oxc_span = { version = "0.152.0" }
 parking_lot = "0.12.5"
 predicates = { version = "3", features = [] }
 pretty_assertions = { version = "1", features = [] }
@@ -356,8 +353,8 @@ nu-parser = { version = "0.116.0", default-features = false }
 nu-protocol = { version = "0.116.0", default-features = false, features = ["brotli", "os", "rmp-serde", "sqlite"] }
 nu-std = { version = "0.116.0", default-features = false, features = ["sqlite"] }
 crossbeam-channel  = { version = "0.5" }
-oxc_ast_visit      = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
-oxc_syntax         = { version = "0.152.0", git = "https://github.com/oxc-project/oxc.git", rev = "8c5a04ea0d5ca56e0d2d925f51f6b45669aa5e2a" }
+oxc_ast_visit      = { version = "0.152.0" }
+oxc_syntax         = { version = "0.152.0" }
 aphrody-n2b-native = { path = "crates/compat/n2b-native", version = "0.2.0", features = [] }
 libloading = "0.9.0"
 windows-sys = { version = "0.61", features = ["Win32_System_SystemInformation"] }
@@ -381,7 +378,7 @@ rfd = "0.17.2"
 strum = { version = "0.28.0", features = ["derive"] }
 sys-locale = "0.3.2"
 zip = { version = "8.6.0", features = ["deflate"] }
-hf-hub = { version = "1.1.0", git = "https://github.com/huggingface/hf-hub", rev = "473de9430b0fbc544fb1d91102180eb713f8dc87" }
+hf-hub = "1.0.0"
 encoding_rs = "0.8.41"
 enumflags2 = "0.7.12"
 reqwest-middleware = "0.5.2"

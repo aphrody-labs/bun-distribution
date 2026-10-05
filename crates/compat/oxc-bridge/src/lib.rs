@@ -1,24 +1,22 @@
 //! Aphrody's in-process Oxc bridge for the Bun fork.
 //! The C ABI owns every returned string; callers release it with `aphrody_oxc_free`.
+//! Parsing, analysis and minification run in-process on the crates.io Oxc crates. Formatting and linting
+//! delegate to the `oxfmt` and `oxlint` binaries (overridable through `APHRODY_OXFMT` / `APHRODY_OXLINT`),
+//! because Oxc does not publish its formatter and linter crates.
 
 use std::{
   ffi::{CStr, CString, c_char},
+  io::Write,
   path::Path,
-  sync::Arc,
+  process::{Command, Stdio},
+  sync::atomic::{AtomicU64, Ordering},
 };
 
 use oxc_allocator::Allocator;
 use oxc_codegen::{Codegen, CodegenOptions};
-use oxc_formatter::{JsFormatOptions, format};
-use oxc_linter::{
-  ConfigStore, ConfigStoreBuilder, ContextSubHost, ContextSubHostOptions, ExternalPluginStore,
-  LintOptions, Linter, ModuleRecord,
-};
 use oxc_minifier::{Minifier, MinifierOptions};
 use oxc_parser::Parser;
-use oxc_semantic::SemanticBuilder;
 use oxc_span::SourceType;
-use rustc_hash::FxHashMap;
 
 mod analysis;
 
@@ -27,16 +25,59 @@ pub extern "C" fn aphrody_oxc_abi_version() -> u32 {
   1
 }
 
+/// Oxc tool binary: the `env` override, else `name` resolved on PATH.
+fn tool(env: &str, name: &str) -> String {
+  std::env::var(env).unwrap_or_else(|_| name.to_owned())
+}
+
+/// Bare file name of `filename`, after checking its extension selects JS/TS syntax.
+fn file_name(filename: &str) -> Result<&str, String> {
+  let path = Path::new(filename);
+  SourceType::from_path(path).map_err(|error| error.to_string())?;
+  path
+    .file_name()
+    .and_then(|name| name.to_str())
+    .ok_or_else(|| format!("{filename} has no file name"))
+}
+
+fn failure(program: &str, output: &std::process::Output) -> String {
+  let stderr = String::from_utf8_lossy(&output.stderr);
+  let text = if stderr.trim().is_empty() { String::from_utf8_lossy(&output.stdout) } else { stderr };
+  let text = text.trim();
+  if text.is_empty() { format!("{program} exited with {}", output.status) } else { text.to_owned() }
+}
+
+/// Formats with Oxc's default options: oxfmt runs from the temporary directory, away from project configs.
+fn format_source(source: &str, filename: &str) -> Result<String, String> {
+  let name = file_name(filename)?;
+  let program = tool("APHRODY_OXFMT", "oxfmt");
+  let mut child = Command::new(&program)
+    .arg(format!("--stdin-filepath={name}"))
+    .current_dir(std::env::temp_dir())
+    .stdin(Stdio::piped())
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .spawn()
+    .map_err(|error| format!("{program}: {error}"))?;
+  let mut stdin = child.stdin.take().ok_or("oxfmt stdin is unavailable")?;
+  let output = std::thread::scope(|scope| {
+    let writer = scope.spawn(move || stdin.write_all(source.as_bytes()));
+    let output = child.wait_with_output();
+    writer.join().map_err(|_| "oxfmt stdin writer panicked".to_owned())?.map_err(|error| error.to_string())?;
+    output.map_err(|error| error.to_string())
+  })?;
+  if !output.status.success() {
+    return Err(failure(&program, &output));
+  }
+  String::from_utf8(output.stdout).map_err(|error| error.to_string())
+}
+
 fn operation(source: &str, filename: &str, minify: bool) -> Result<String, String> {
+  if !minify {
+    return format_source(source, filename);
+  }
   let kind = SourceType::from_path(Path::new(filename)).map_err(|error| error.to_string())?;
   let allocator = Allocator::default();
-  if !minify {
-    let formatted = format(&allocator, source, kind, JsFormatOptions::default())
-      .map_err(|error| error.to_string())?
-      .print()
-      .map_err(|error| error.to_string())?;
-    return Ok(formatted.into_code());
-  }
   let parsed = Parser::new(&allocator, source, kind).parse();
   if let Some(error) = parsed.diagnostics.first() {
     return Err(error.to_string());
@@ -52,49 +93,42 @@ fn operation(source: &str, filename: &str, minify: bool) -> Result<String, Strin
   )
 }
 
+static SCRATCH: AtomicU64 = AtomicU64::new(0);
+
+/// Lints with Oxc's default rule set: oxlint has no stdin mode, so the source goes through a private
+/// scratch directory that holds no project configuration.
 fn lint(source: &str, filename: &str) -> Result<Vec<String>, String> {
-  let path = Path::new(filename);
-  let kind = SourceType::from_path(path).map_err(|error| error.to_string())?;
-  let allocator = Allocator::default();
-  let parsed = Parser::new(&allocator, source, kind).parse();
-  if !parsed.diagnostics.is_empty() {
-    return Ok(
-      parsed
-        .diagnostics
-        .into_iter()
-        .map(|error| error.to_string())
+  let name = file_name(filename)?;
+  let program = tool("APHRODY_OXLINT", "oxlint");
+  let dir = std::env::temp_dir().join(format!(
+    "aphrody-oxlint-{}-{}",
+    std::process::id(),
+    SCRATCH.fetch_add(1, Ordering::Relaxed)
+  ));
+  std::fs::create_dir_all(&dir).map_err(|error| error.to_string())?;
+  let outcome = (|| {
+    std::fs::write(dir.join(name), source).map_err(|error| error.to_string())?;
+    let output = Command::new(&program)
+      .args(["--format=json", name])
+      .current_dir(&dir)
+      .stdin(Stdio::null())
+      .output()
+      .map_err(|error| format!("{program}: {error}"))?;
+    // oxlint exits 1 when it reports errors; the JSON report is the result either way.
+    let report: serde_json::Value =
+      serde_json::from_slice(&output.stdout).map_err(|_| failure(&program, &output))?;
+    let diagnostics = report["diagnostics"]
+      .as_array()
+      .ok_or_else(|| format!("{program}: report has no diagnostics array"))?;
+    Ok(
+      diagnostics
+        .iter()
+        .map(|diagnostic| diagnostic["message"].as_str().unwrap_or_default().to_owned())
         .collect(),
-    );
-  }
-  let semantic = SemanticBuilder::new_linter()
-    .build(&parsed.program)
-    .semantic;
-  let module_record = Arc::new(ModuleRecord::new(path, &parsed.module_record, &semantic));
-  let mut external_plugins = ExternalPluginStore::default();
-  let config = ConfigStoreBuilder::default()
-    .build(&mut external_plugins)
-    .map_err(|error| error.to_string())?;
-  let linter = Linter::new(
-    LintOptions::default(),
-    ConfigStore::new(config, FxHashMap::default(), external_plugins),
-    None,
-  );
-  Ok(
-    linter
-      .run(
-        path,
-        vec![ContextSubHost::new(
-          semantic,
-          module_record,
-          0,
-          ContextSubHostOptions::default(),
-        )],
-        &allocator,
-      )
-      .into_iter()
-      .map(|message| message.error.to_string())
-      .collect(),
-  )
+    )
+  })();
+  let _ = std::fs::remove_dir_all(&dir);
+  outcome
 }
 
 fn run(source: *const c_char, filename: *const c_char, minify: bool) -> *mut c_char {
@@ -263,6 +297,34 @@ mod tests {
     assert!(minified["code"].as_str().unwrap().contains("console.log"));
     assert_eq!(linted["ok"], true);
     assert!(linted["diagnostics"].is_array());
+  }
+
+  fn installed(env: &str, name: &str) -> bool {
+    Command::new(tool(env, name))
+      .arg("--version")
+      .output()
+      .is_ok_and(|output| output.status.success())
+  }
+
+  #[test]
+  fn formatting_and_lint_delegate_to_oxfmt_and_oxlint() {
+    let filename = CString::new("fixture.js").unwrap();
+    let source = CString::new("const x=1").unwrap();
+    let formatted = response(unsafe { aphrody_oxc_format(source.as_ptr(), filename.as_ptr()) });
+    if installed("APHRODY_OXFMT", "oxfmt") {
+      assert_eq!(formatted["code"], "const x = 1;\n");
+    } else {
+      assert!(formatted["error"].as_str().unwrap().contains("oxfmt"));
+    }
+    let bad = CString::new("const = ;").unwrap();
+    let linted = response(unsafe { aphrody_oxc_lint(bad.as_ptr(), filename.as_ptr()) });
+    if installed("APHRODY_OXLINT", "oxlint") {
+      assert!(!linted["diagnostics"].as_array().unwrap().is_empty());
+      let clean = response(unsafe { aphrody_oxc_lint(source.as_ptr(), filename.as_ptr()) });
+      assert_eq!(clean["diagnostics"], serde_json::json!([]));
+    } else {
+      assert!(linted["error"].as_str().unwrap().contains("oxlint"));
+    }
   }
 
   #[test]
