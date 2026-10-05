@@ -190,3 +190,34 @@ Lignes citant `v8::` : `runtime.rs` 106, `ops.rs` 42, `frame.rs` 2, `v8_flags.rs
 3. **Règle de dépôt** : `CLAUDE.md` impose de conserver V8 jusqu'à la parité Obscura/JSC requise ; le plan ne supprime donc V8 qu'après réussite de la suite de parité (334 tests de `runtime.rs` et les tests `obscura-cdp`) sur JSC.
 4. **Points à mesurer avant décision** (non vérifiés) : coût de démarrage sans snapshot (évaluation de 17 932 lignes de JS à chaque isolate), existence d'un moyen de limiter le tas sous JSC, comportement des modules ES (`import()`, 2 usages dans `bootstrap.js`).
 5. **Sécurité** : le watchdog et la limite de tas sont les garde-fous contre les scripts hostiles ; aucun équivalent JSC ne doit manquer au moment de retirer V8.
+
+### 11.4 Équivalence V8 ↔ JSC vérifiée sur les révisions exactes (2026-10-05)
+
+**Révisions figées et forkées** (dépôts `aphrody-labs`, créés le 2026-10-05, branches d'épinglage ajoutées) :
+
+| Composant | Révision exacte | Fork |
+|---|---|---|
+| WebKit/JSC lié par notre Bun (`WEBKIT_VERSION`, build `c439b6fbd`) | `oven-sh/WebKit` `5718a6ec579b98362ea7276a426deedcc6281ef5` | `aphrody-labs/WebKit`, branche `bun-pin` |
+| V8 d'Obscura (`deno_core 0.412` → crate `v8 150.4.0`) | `denoland/rusty_v8` tag `v150.4.0` = `5c15a6995c9bb4bacd3e341b59fff32c909c80bf` | `aphrody-labs/rusty_v8`, branche `obscura-pin-v150.4.0` |
+
+Les en-têtes JSC lus viennent du préconstruit du VPS (`/srv/aphrody-build/cache/bun-forge/build-cache/webkit-5718a6ec579b9836-lto/include`), c'est-à-dire de ce que `bun-forge` lie réellement ; le crate `v8-150.4.0` est dans le registre Cargo du VPS. Les forks sont des miroirs de dépôts publics (WebKit est volumineux : aucun clone local).
+
+**Vérification** : `scripts/audit/engine-equivalence.ts` (sondes `rg` à chaînes fixes : symbole V8 appelé par `obscura-js`, symbole déclaré dans les en-têtes JSC sur le VPS, symbole utilisé par les sources du fork Bun ; reçu `docs/plans/fusion/engine-equivalence-2026-10-05.json`). Un équivalent n'est « couvert » que si les trois côtés sont trouvés.
+
+| Capacité | Résultat | Équivalent trouvé |
+|---|---|---|
+| Plusieurs contextes dans une VM (frames) | **couvert** | `JSContextGroupCreate`, `JSGlobalContextCreateInGroup` |
+| Cache de code compilé | **couvert** | `CachedBytecode` (50 occurrences dans les en-têtes, 66 dans Bun), `generateCachedModuleByteCodeFromSourceCode` |
+| Arrêt d'un script (watchdog) | **couvert** | `VM::notifyNeedTermination`, `JSContextGroupSetExecutionTimeLimit` |
+| Locale ICU par défaut | **couvert** | `WTF::overrideUserPreferredLanguages`, `defaultLanguage` |
+| Chargeur de modules ES | **couvert** | `JSModuleLoader`, `moduleLoaderResolve` |
+| Fonctions hôtes (74 ops synchrones) | **couvert** | `JSC_DEFINE_HOST_FUNCTION`, `JSObjectMakeFunctionWithCallback` |
+| Microtâches | **couvert** | `drainMicrotasks`, `MicrotaskQueue` |
+| Exceptions | **couvert** | `ThrowScope`, `CatchScope` |
+| Drapeaux du moteur | **couvert** (traduction) | `Options::initialize`, variables `BUN_JSC_*` ; les chaînes de drapeaux V8 ne se transposent pas 1:1 |
+| Snapshot de démarrage | **trou** | aucun symbole `StartupSnapshot`/`SnapshotCreator` ni dans JSC ni dans Bun : `bootstrap.js` (17 932 lignes) est évalué au démarrage, atténué par le cache de bytecode |
+| Limite de tas (rappel proche de la limite) | **trou** | aucun en-tête JSC ; la couche de compatibilité V8 de Bun stocke le rappel sans jamais le déclencher (« JSC grows its heap without a near-limit hook ») : sondage du coût mémoire ou correctif WebKit à prévoir |
+
+**Fait nouveau** : le fork Bun contient déjà une couche d'API C++ V8 au-dessus de JSC (`src/jsc/bindings/v8`, 82 fichiers, ≈ 7 400 lignes, pour les addons natifs Node). Elle n'est **pas** une solution de remplacement pour Obscura : `rusty_v8` lie le vrai V8 et appelle son C++, pas cette couche ; et elle n'implémente aucun des appels utilisés par Obscura sauf `FunctionTemplate::New` et `HandleScope` (0 occurrence de `Isolate::TerminateExecution`, `Context::New`, `ScriptCompiler::CachedData`, `SnapshotCreator`, `TryCatch`, `GetHeapStatistics`).
+
+**Remplacement automatique** : la correspondance ci-dessus est lisible par machine (reçu JSON, symbole V8 → symbole JSC → symbole Bun). Aucune réécriture automatique du code d'Obscura n'a été exécutée : elle dépend de l'interface `JsEngine` du §11.3 et des deux trous (snapshot, limite de tas), à trancher avant. Le script se relance après chaque bump du pin WebKit ou de `rusty_v8` pour détecter un équivalent qui disparaît.
