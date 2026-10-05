@@ -4,7 +4,10 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::client::OvhClient;
+use crate::{
+    client::OvhClient,
+    services::{RenewOrder, RenewQuote, ServicesManager},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VpsInfo {
@@ -34,6 +37,85 @@ pub struct VpsStatus {
     pub state: String,
     pub ping: bool,
     pub up: bool,
+}
+
+/// Billing state of a VPS (`/vps/{name}/serviceInfos`): an expired service refuses every
+/// operational call with HTTP 460 until it is renewed.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VpsBilling {
+    pub service_id: u64,
+    pub status: String,
+    pub expiration: String,
+    pub automatic_renew: bool,
+    pub delete_at_expiration: bool,
+}
+
+/// True when OVH refused a call because the service has expired (HTTP 460).
+pub fn is_expired_error(error: &anyhow::Error) -> bool {
+    error.to_string().contains("HTTP 460")
+}
+
+/// Parse an ISO 8601 date string (YYYY-MM-DD) and compute days until expiration from today.
+/// Returns negative if already expired.
+fn days_until_expiration(expiration_date: &str) -> Option<i64> {
+    use chrono::NaiveDate;
+    use std::str::FromStr;
+
+    let exp = NaiveDate::from_str(expiration_date).ok()?;
+    let today = chrono::Local::now().naive_local().date();
+    Some((exp - today).num_days())
+}
+
+/// Health status of a VPS billing state.
+#[derive(Debug, Clone)]
+pub struct VpsHealthStatus {
+    pub service_name: String,
+    pub is_healthy: bool,
+    pub alerts: Vec<String>,
+}
+
+impl VpsHealthStatus {
+    /// Create a health report for a VPS.
+    pub fn new(
+        service_name: String,
+        billing: &VpsBilling,
+        state: Option<&str>,
+        alert_threshold_days: i64,
+    ) -> Self {
+        let mut alerts = Vec::new();
+
+        // Check expiration
+        if billing.status == "expired" {
+            alerts.push("Service expiré".to_string());
+        } else if let Some(days) = days_until_expiration(&billing.expiration) {
+            if days <= 0 {
+                alerts.push("Service expiré".to_string());
+            } else if days <= alert_threshold_days {
+                alerts.push(format!(
+                    "Expiration dans {} jour{}",
+                    days,
+                    if days == 1 { "" } else { "s" }
+                ));
+            }
+        }
+
+        // Check deleteAtExpiration flag
+        if billing.delete_at_expiration && billing.status != "expired" {
+            alerts.push("Suppression à expiration: OUI (risqué)".to_string());
+        }
+
+        // Check manual renewal
+        if !billing.automatic_renew && billing.status != "expired" {
+            alerts.push("Renouvellement manuel (alerte requise)".to_string());
+        }
+
+        // Check if stopped (only if we have state info)
+        if let Some("stopped") = state {
+            alerts.push("État: ARRÊTÉ".to_string());
+        }
+
+        Self { service_name, is_healthy: alerts.is_empty(), alerts }
+    }
 }
 
 pub struct VpsManager<'a> {
@@ -125,6 +207,35 @@ impl<'a> VpsManager<'a> {
         })
     }
 
+    pub async fn billing(&self, service_name: &str) -> Result<VpsBilling> {
+        let raw: serde_json::Value =
+            self.client.get(&format!("/vps/{service_name}/serviceInfos")).await?;
+        let renew = raw.get("renew");
+        let flag = |key: &str| renew.and_then(|r| r.get(key)).and_then(|v| v.as_bool());
+        Ok(VpsBilling {
+            service_id: raw.get("serviceId").and_then(|v| v.as_u64()).unwrap_or(0),
+            status: raw.get("status").and_then(|v| v.as_str()).unwrap_or("unknown").to_string(),
+            expiration: raw.get("expiration").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            automatic_renew: flag("automatic").unwrap_or(false),
+            delete_at_expiration: flag("deleteAtExpiration").unwrap_or(false),
+        })
+    }
+
+    /// Price one renewal `period` (ISO 8601, e.g. `P1M`) with a dry-run order: nothing is ordered.
+    pub async fn renew_quote(&self, service_id: u64, period: &str) -> Result<RenewQuote> {
+        ServicesManager::new(self.client).renew_quote(service_id, Some(period)).await
+    }
+
+    /// Create the renewal order of a quote. It stays unpaid until [`Self::pay_order`].
+    pub async fn renew(&self, service_id: u64, quote: &RenewQuote) -> Result<RenewOrder> {
+        ServicesManager::new(self.client).renew(service_id, quote).await
+    }
+
+    /// Pay an order with the account's default registered payment method (else the first one).
+    pub async fn pay_order(&self, order_id: u64) -> Result<u64> {
+        ServicesManager::new(self.client).pay_order(order_id).await
+    }
+
     pub async fn reboot(&self, service_name: &str, apply: bool) -> Result<Option<u64>> {
         if !apply {
             return Ok(None);
@@ -133,5 +244,107 @@ impl<'a> VpsManager<'a> {
             self.client.post(&format!("/vps/{service_name}/reboot"), None).await?;
         let id = task.get("id").and_then(|v| v.as_u64());
         Ok(id)
+    }
+
+    /// Start a stopped VPS (POST /vps/{serviceName}/start).
+    pub async fn start(&self, service_name: &str) -> Result<Option<u64>> {
+        let task: serde_json::Value =
+            self.client.post(&format!("/vps/{service_name}/start"), None).await?;
+        let id = task.get("id").and_then(|v| v.as_u64());
+        Ok(id)
+    }
+
+    /// Update the deleteAtExpiration flag on a VPS service (PUT /vps/{serviceName}/serviceInfos).
+    /// This call is rejected by OVH if the service is expired.
+    pub async fn set_delete_at_expiration(
+        &self,
+        service_name: &str,
+        delete_at_expiration: bool,
+    ) -> Result<()> {
+        let _: serde_json::Value = self
+            .client
+            .put(
+                &format!("/vps/{service_name}/serviceInfos"),
+                Some(
+                    serde_json::json!({ "renew": { "deleteAtExpiration": delete_at_expiration } }),
+                ),
+            )
+            .await?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn healthy_vps_has_no_alerts() {
+        let billing = VpsBilling {
+            service_id: 123,
+            status: "active".to_string(),
+            expiration: "2027-01-01".to_string(),
+            automatic_renew: true,
+            delete_at_expiration: false,
+        };
+        let health = VpsHealthStatus::new("vps-test".to_string(), &billing, Some("running"), 14);
+        assert!(health.is_healthy);
+        assert!(health.alerts.is_empty());
+    }
+
+    #[test]
+    fn alerts_on_manual_renewal() {
+        let billing = VpsBilling {
+            service_id: 123,
+            status: "active".to_string(),
+            expiration: "2027-01-01".to_string(),
+            automatic_renew: false,
+            delete_at_expiration: false,
+        };
+        let health = VpsHealthStatus::new("vps-test".to_string(), &billing, Some("running"), 14);
+        assert!(!health.is_healthy);
+        assert!(health.alerts.iter().any(|a| a.contains("Renouvellement manuel")));
+    }
+
+    #[test]
+    fn alerts_on_delete_at_expiration() {
+        let billing = VpsBilling {
+            service_id: 123,
+            status: "active".to_string(),
+            expiration: "2027-01-01".to_string(),
+            automatic_renew: true,
+            delete_at_expiration: true,
+        };
+        let health = VpsHealthStatus::new("vps-test".to_string(), &billing, Some("running"), 14);
+        assert!(!health.is_healthy);
+        assert!(health.alerts.iter().any(|a| a.contains("Suppression à expiration")));
+    }
+
+    #[test]
+    fn alerts_on_stopped_state() {
+        let billing = VpsBilling {
+            service_id: 123,
+            status: "active".to_string(),
+            expiration: "2027-01-01".to_string(),
+            automatic_renew: true,
+            delete_at_expiration: false,
+        };
+        let health = VpsHealthStatus::new("vps-test".to_string(), &billing, Some("stopped"), 14);
+        assert!(!health.is_healthy);
+        assert!(health.alerts.iter().any(|a| a.contains("ARRÊTÉ")));
+    }
+
+    #[test]
+    fn alerts_on_expired_service() {
+        let billing = VpsBilling {
+            service_id: 123,
+            status: "expired".to_string(),
+            expiration: "2026-09-01".to_string(),
+            automatic_renew: false,
+            delete_at_expiration: true,
+        };
+        let health = VpsHealthStatus::new("vps-test".to_string(), &billing, Some("stopped"), 14);
+        assert!(!health.is_healthy);
+        assert!(health.alerts.iter().any(|a| a.contains("Service expiré")));
     }
 }

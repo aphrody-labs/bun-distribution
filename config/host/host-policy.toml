@@ -43,5 +43,13 @@ governor = "performance"
 thp = "madvise"
 swappiness = 10
 
+[billing]
+# OVH VPS service policy: renewal, expiration alerts.
+# `aphrody ovh services watch` (every service) and `aphrody ovh vps watch` check against these
+# thresholds daily (systemd timer aphrody-ovh-watch).
+vps_renewal = "automatic"
+vps_delete_at_expiration = false
+vps_alert_threshold_days = 14
+
 # [hosts.vps.services]
 # keep = ["shenron-pg-tunnel"]
