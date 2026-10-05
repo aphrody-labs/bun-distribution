@@ -36,41 +36,41 @@ isolation = ["tauri/isolation"]
 
 [[example]]
 name = "commands"
-path = "../../examples/tauri/commands/main.rs"
+path = "../../../m3/examples/tauri/commands/main.rs"
 
 [[example]]
 name = "helloworld"
-path = "../../examples/tauri/helloworld/main.rs"
+path = "../../../m3/examples/tauri/helloworld/main.rs"
 
 [[example]]
 name = "drag"
-path = "../../examples/tauri/drag/main.rs"
+path = "../../../m3/examples/tauri/drag/main.rs"
 
 [[example]]
 name = "multiwebview"
-path = "../../examples/tauri/multiwebview/main.rs"
+path = "../../../m3/examples/tauri/multiwebview/main.rs"
 
 [[example]]
 name = "multiwindow"
-path = "../../examples/tauri/multiwindow/main.rs"
+path = "../../../m3/examples/tauri/multiwindow/main.rs"
 
 [[example]]
 name = "run-return"
-path = "../../examples/tauri/run-return/main.rs"
+path = "../../../m3/examples/tauri/run-return/main.rs"
 
 [[example]]
 name = "splashscreen"
-path = "../../examples/tauri/splashscreen/main.rs"
+path = "../../../m3/examples/tauri/splashscreen/main.rs"
 
 [[example]]
 name = "state"
-path = "../../examples/tauri/state/main.rs"
+path = "../../../m3/examples/tauri/state/main.rs"
 
 [[example]]
 name = "streaming"
-path = "../../examples/tauri/streaming/main.rs"
+path = "../../../m3/examples/tauri/streaming/main.rs"
 
 [[example]]
 name = "isolation"
-path = "../../examples/tauri/isolation/main.rs"
+path = "../../../m3/examples/tauri/isolation/main.rs"
 required-features = ["isolation"]

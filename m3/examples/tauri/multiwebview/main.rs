@@ -61,7 +61,7 @@ fn main() {
       Ok(())
     })
     .run(tauri::generate_context!(
-      "../../examples/tauri/multiwebview/tauri.conf.json"
+      "../../../m3/examples/tauri/multiwebview/tauri.conf.json"
     ))
     .expect("error while running tauri application");
 }

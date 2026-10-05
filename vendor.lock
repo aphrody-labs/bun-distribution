@@ -30,7 +30,7 @@
       "version": "0.1.0",
       "source": "tauri",
       "from": "crates/tests/acl",
-      "dir": "crates/vendor/aphrody-acl-tests"
+      "dir": "crates/tauri/aphrody-acl-tests"
     },
     {
       "name": "create-tauri-app",
@@ -38,7 +38,7 @@
       "version": "4.7.4",
       "source": "create-tauri-app",
       "from": ".",
-      "dir": "crates/vendor/aphrody-create-tauri-app"
+      "dir": "crates/tauri/aphrody-create-tauri-app"
     },
     {
       "name": "create-tauri-app-node",
@@ -46,7 +46,7 @@
       "version": "0.0.0",
       "source": "create-tauri-app",
       "from": "node",
-      "dir": "crates/vendor/aphrody-create-tauri-app-node"
+      "dir": "crates/tauri/aphrody-create-tauri-app-node"
     },
     {
       "name": "restart",
@@ -54,7 +54,7 @@
       "version": "0.1.0",
       "source": "tauri",
       "from": "crates/tests/restart",
-      "dir": "crates/vendor/aphrody-restart"
+      "dir": "crates/tauri/aphrody-restart"
     },
     {
       "name": "tao",
@@ -62,7 +62,7 @@
       "version": "0.37.1",
       "source": "tao",
       "from": ".",
-      "dir": "crates/vendor/aphrody-tao"
+      "dir": "crates/tauri/aphrody-tao"
     },
     {
       "name": "tao-macros",
@@ -70,7 +70,7 @@
       "version": "0.1.4",
       "source": "tao",
       "from": "tao-macros",
-      "dir": "crates/vendor/aphrody-tao-macros"
+      "dir": "crates/tauri/aphrody-tao-macros"
     },
     {
       "name": "tauri",
@@ -78,7 +78,7 @@
       "version": "3.0.0-alpha.4",
       "source": "tauri",
       "from": "crates/tauri",
-      "dir": "crates/vendor/aphrody-tauri"
+      "dir": "crates/tauri/aphrody-tauri"
     },
     {
       "name": "tauri-build",
@@ -86,7 +86,7 @@
       "version": "3.0.0-alpha.3",
       "source": "tauri",
       "from": "crates/tauri-build",
-      "dir": "crates/vendor/aphrody-tauri-build"
+      "dir": "crates/tauri/aphrody-tauri-build"
     },
     {
       "name": "tauri-bundler",
@@ -94,7 +94,7 @@
       "version": "3.0.0-alpha.3",
       "source": "tauri",
       "from": "crates/tauri-bundler",
-      "dir": "crates/vendor/aphrody-tauri-bundler"
+      "dir": "crates/tauri/aphrody-tauri-bundler"
     },
     {
       "name": "tauri-cli",
@@ -102,7 +102,7 @@
       "version": "3.0.0-alpha.4",
       "source": "tauri",
       "from": "crates/tauri-cli",
-      "dir": "crates/vendor/aphrody-tauri-cli"
+      "dir": "crates/tauri/aphrody-tauri-cli"
     },
     {
       "name": "tauri-cli-node",
@@ -110,7 +110,7 @@
       "version": "0.0.0",
       "source": "tauri",
       "from": "packages/cli",
-      "dir": "crates/vendor/aphrody-tauri-cli-node"
+      "dir": "crates/tauri/aphrody-tauri-cli-node"
     },
     {
       "name": "tauri-codegen",
@@ -118,7 +118,7 @@
       "version": "3.0.0-alpha.3",
       "source": "tauri",
       "from": "crates/tauri-codegen",
-      "dir": "crates/vendor/aphrody-tauri-codegen"
+      "dir": "crates/tauri/aphrody-tauri-codegen"
     },
     {
       "name": "tauri-driver",
@@ -126,7 +126,7 @@
       "version": "3.0.0-alpha.1",
       "source": "tauri",
       "from": "crates/tauri-driver",
-      "dir": "crates/vendor/aphrody-tauri-driver"
+      "dir": "crates/tauri/aphrody-tauri-driver"
     },
     {
       "name": "tauri-examples",
@@ -134,7 +134,7 @@
       "version": "0.1.0",
       "source": "tauri",
       "from": "crates/tauri-examples",
-      "dir": "crates/vendor/aphrody-tauri-examples"
+      "dir": "crates/tauri/aphrody-tauri-examples"
     },
     {
       "name": "tauri-macos-sign",
@@ -142,7 +142,7 @@
       "version": "3.0.0-alpha.2",
       "source": "tauri",
       "from": "crates/tauri-macos-sign",
-      "dir": "crates/vendor/aphrody-tauri-macos-sign"
+      "dir": "crates/tauri/aphrody-tauri-macos-sign"
     },
     {
       "name": "tauri-macros",
@@ -150,7 +150,7 @@
       "version": "3.0.0-alpha.3",
       "source": "tauri",
       "from": "crates/tauri-macros",
-      "dir": "crates/vendor/aphrody-tauri-macros"
+      "dir": "crates/tauri/aphrody-tauri-macros"
     },
     {
       "name": "tauri-plugin",
@@ -158,7 +158,7 @@
       "version": "3.0.0-alpha.3",
       "source": "tauri",
       "from": "crates/tauri-plugin",
-      "dir": "crates/vendor/aphrody-tauri-plugin"
+      "dir": "crates/tauri/aphrody-tauri-plugin"
     },
     {
       "name": "tauri-plugin-autostart",
@@ -166,7 +166,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/autostart",
-      "dir": "crates/vendor/aphrody-tauri-plugin-autostart"
+      "dir": "crates/tauri/aphrody-tauri-plugin-autostart"
     },
     {
       "name": "tauri-plugin-barcode-scanner",
@@ -174,7 +174,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/barcode-scanner",
-      "dir": "crates/vendor/aphrody-tauri-plugin-barcode-scanner"
+      "dir": "crates/tauri/aphrody-tauri-plugin-barcode-scanner"
     },
     {
       "name": "tauri-plugin-biometric",
@@ -182,7 +182,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/biometric",
-      "dir": "crates/vendor/aphrody-tauri-plugin-biometric"
+      "dir": "crates/tauri/aphrody-tauri-plugin-biometric"
     },
     {
       "name": "tauri-plugin-cli",
@@ -190,7 +190,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/cli",
-      "dir": "crates/vendor/aphrody-tauri-plugin-cli"
+      "dir": "crates/tauri/aphrody-tauri-plugin-cli"
     },
     {
       "name": "tauri-plugin-clipboard-manager",
@@ -198,7 +198,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/clipboard-manager",
-      "dir": "crates/vendor/aphrody-tauri-plugin-clipboard-manager"
+      "dir": "crates/tauri/aphrody-tauri-plugin-clipboard-manager"
     },
     {
       "name": "tauri-plugin-deep-link",
@@ -206,7 +206,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/deep-link",
-      "dir": "crates/vendor/aphrody-tauri-plugin-deep-link"
+      "dir": "crates/tauri/aphrody-tauri-plugin-deep-link"
     },
     {
       "name": "tauri-plugin-dialog",
@@ -214,7 +214,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/dialog",
-      "dir": "crates/vendor/aphrody-tauri-plugin-dialog"
+      "dir": "crates/tauri/aphrody-tauri-plugin-dialog"
     },
     {
       "name": "tauri-plugin-fs",
@@ -222,7 +222,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/fs",
-      "dir": "crates/vendor/aphrody-tauri-plugin-fs"
+      "dir": "crates/tauri/aphrody-tauri-plugin-fs"
     },
     {
       "name": "tauri-plugin-geolocation",
@@ -230,7 +230,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/geolocation",
-      "dir": "crates/vendor/aphrody-tauri-plugin-geolocation"
+      "dir": "crates/tauri/aphrody-tauri-plugin-geolocation"
     },
     {
       "name": "tauri-plugin-global-shortcut",
@@ -238,7 +238,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/global-shortcut",
-      "dir": "crates/vendor/aphrody-tauri-plugin-global-shortcut"
+      "dir": "crates/tauri/aphrody-tauri-plugin-global-shortcut"
     },
     {
       "name": "tauri-plugin-haptics",
@@ -246,7 +246,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/haptics",
-      "dir": "crates/vendor/aphrody-tauri-plugin-haptics"
+      "dir": "crates/tauri/aphrody-tauri-plugin-haptics"
     },
     {
       "name": "tauri-plugin-http",
@@ -254,7 +254,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/http",
-      "dir": "crates/vendor/aphrody-tauri-plugin-http"
+      "dir": "crates/tauri/aphrody-tauri-plugin-http"
     },
     {
       "name": "tauri-plugin-localhost",
@@ -262,7 +262,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/localhost",
-      "dir": "crates/vendor/aphrody-tauri-plugin-localhost"
+      "dir": "crates/tauri/aphrody-tauri-plugin-localhost"
     },
     {
       "name": "tauri-plugin-log",
@@ -270,7 +270,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/log",
-      "dir": "crates/vendor/aphrody-tauri-plugin-log"
+      "dir": "crates/tauri/aphrody-tauri-plugin-log"
     },
     {
       "name": "tauri-plugin-nfc",
@@ -278,7 +278,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/nfc",
-      "dir": "crates/vendor/aphrody-tauri-plugin-nfc"
+      "dir": "crates/tauri/aphrody-tauri-plugin-nfc"
     },
     {
       "name": "tauri-plugin-notification",
@@ -286,7 +286,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/notification",
-      "dir": "crates/vendor/aphrody-tauri-plugin-notification"
+      "dir": "crates/tauri/aphrody-tauri-plugin-notification"
     },
     {
       "name": "tauri-plugin-opener",
@@ -294,7 +294,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/opener",
-      "dir": "crates/vendor/aphrody-tauri-plugin-opener"
+      "dir": "crates/tauri/aphrody-tauri-plugin-opener"
     },
     {
       "name": "tauri-plugin-os",
@@ -302,7 +302,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/os",
-      "dir": "crates/vendor/aphrody-tauri-plugin-os"
+      "dir": "crates/tauri/aphrody-tauri-plugin-os"
     },
     {
       "name": "tauri-plugin-persisted-scope",
@@ -310,7 +310,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/persisted-scope",
-      "dir": "crates/vendor/aphrody-tauri-plugin-persisted-scope"
+      "dir": "crates/tauri/aphrody-tauri-plugin-persisted-scope"
     },
     {
       "name": "tauri-plugin-positioner",
@@ -318,7 +318,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/positioner",
-      "dir": "crates/vendor/aphrody-tauri-plugin-positioner"
+      "dir": "crates/tauri/aphrody-tauri-plugin-positioner"
     },
     {
       "name": "tauri-plugin-process",
@@ -326,7 +326,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/process",
-      "dir": "crates/vendor/aphrody-tauri-plugin-process"
+      "dir": "crates/tauri/aphrody-tauri-plugin-process"
     },
     {
       "name": "tauri-plugin-shell",
@@ -334,7 +334,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/shell",
-      "dir": "crates/vendor/aphrody-tauri-plugin-shell"
+      "dir": "crates/tauri/aphrody-tauri-plugin-shell"
     },
     {
       "name": "tauri-plugin-single-instance",
@@ -342,7 +342,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/single-instance",
-      "dir": "crates/vendor/aphrody-tauri-plugin-single-instance"
+      "dir": "crates/tauri/aphrody-tauri-plugin-single-instance"
     },
     {
       "name": "tauri-plugin-sql",
@@ -350,7 +350,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/sql",
-      "dir": "crates/vendor/aphrody-tauri-plugin-sql"
+      "dir": "crates/tauri/aphrody-tauri-plugin-sql"
     },
     {
       "name": "tauri-plugin-store",
@@ -358,7 +358,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/store",
-      "dir": "crates/vendor/aphrody-tauri-plugin-store"
+      "dir": "crates/tauri/aphrody-tauri-plugin-store"
     },
     {
       "name": "tauri-plugin-stronghold",
@@ -366,7 +366,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/stronghold",
-      "dir": "crates/vendor/aphrody-tauri-plugin-stronghold"
+      "dir": "crates/tauri/aphrody-tauri-plugin-stronghold"
     },
     {
       "name": "tauri-plugin-updater",
@@ -374,7 +374,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/updater",
-      "dir": "crates/vendor/aphrody-tauri-plugin-updater"
+      "dir": "crates/tauri/aphrody-tauri-plugin-updater"
     },
     {
       "name": "tauri-plugin-upload",
@@ -382,7 +382,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/upload",
-      "dir": "crates/vendor/aphrody-tauri-plugin-upload"
+      "dir": "crates/tauri/aphrody-tauri-plugin-upload"
     },
     {
       "name": "tauri-plugin-websocket",
@@ -390,7 +390,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/websocket",
-      "dir": "crates/vendor/aphrody-tauri-plugin-websocket"
+      "dir": "crates/tauri/aphrody-tauri-plugin-websocket"
     },
     {
       "name": "tauri-plugin-window-state",
@@ -398,7 +398,7 @@
       "version": "3.0.0-alpha.2",
       "source": "plugins-workspace",
       "from": "plugins/window-state",
-      "dir": "crates/vendor/aphrody-tauri-plugin-window-state"
+      "dir": "crates/tauri/aphrody-tauri-plugin-window-state"
     },
     {
       "name": "tauri-runtime",
@@ -406,7 +406,7 @@
       "version": "3.0.0-alpha.3",
       "source": "tauri",
       "from": "crates/tauri-runtime",
-      "dir": "crates/vendor/aphrody-tauri-runtime"
+      "dir": "crates/tauri/aphrody-tauri-runtime"
     },
     {
       "name": "tauri-runtime-cef",
@@ -414,7 +414,7 @@
       "version": "3.0.0-alpha.5",
       "source": "tauri",
       "from": "crates/tauri-runtime-cef",
-      "dir": "crates/vendor/aphrody-tauri-runtime-cef"
+      "dir": "crates/tauri/aphrody-tauri-runtime-cef"
     },
     {
       "name": "tauri-runtime-wry",
@@ -422,7 +422,7 @@
       "version": "3.0.0-alpha.4",
       "source": "tauri",
       "from": "crates/tauri-runtime-wry",
-      "dir": "crates/vendor/aphrody-tauri-runtime-wry"
+      "dir": "crates/tauri/aphrody-tauri-runtime-wry"
     },
     {
       "name": "tauri-schema-generator",
@@ -430,7 +430,7 @@
       "version": "0.0.0",
       "source": "tauri",
       "from": "crates/tauri-schema-generator",
-      "dir": "crates/vendor/aphrody-tauri-schema-generator"
+      "dir": "crates/tauri/aphrody-tauri-schema-generator"
     },
     {
       "name": "tauri-schema-worker",
@@ -438,7 +438,7 @@
       "version": "0.0.0",
       "source": "tauri",
       "from": "crates/tauri-schema-worker",
-      "dir": "crates/vendor/aphrody-tauri-schema-worker"
+      "dir": "crates/tauri/aphrody-tauri-schema-worker"
     },
     {
       "name": "tauri-utils",
@@ -446,7 +446,7 @@
       "version": "3.0.0-alpha.3",
       "source": "tauri",
       "from": "crates/tauri-utils",
-      "dir": "crates/vendor/aphrody-tauri-utils"
+      "dir": "crates/tauri/aphrody-tauri-utils"
     },
     {
       "name": "wry",
@@ -454,7 +454,7 @@
       "version": "0.57.0",
       "source": "wry",
       "from": ".",
-      "dir": "crates/vendor/aphrody-wry"
+      "dir": "crates/tauri/aphrody-wry"
     }
   ]
 }

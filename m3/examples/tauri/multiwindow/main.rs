@@ -26,7 +26,7 @@ fn main() {
 }
 
 fn generate_context<R: Runtime>() -> tauri::Context<R> {
-  let mut context = tauri::generate_context!("../../examples/tauri/multiwindow/tauri.conf.json");
+  let mut context = tauri::generate_context!("../../../m3/examples/tauri/multiwindow/tauri.conf.json");
   for cmd in [
     "plugin:event|listen",
     "plugin:event|emit",

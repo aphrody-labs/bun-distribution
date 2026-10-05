@@ -19,7 +19,7 @@ fn main() {
     .menu(tauri::menu::Menu::default)
     .invoke_handler(tauri::generate_handler![greet])
     .run(tauri::generate_context!(
-      "../../examples/tauri/helloworld/tauri.conf.json"
+      "../../../m3/examples/tauri/helloworld/tauri.conf.json"
     ))
     .expect("error while running tauri application");
 }

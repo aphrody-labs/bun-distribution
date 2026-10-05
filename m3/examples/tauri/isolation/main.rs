@@ -19,7 +19,7 @@ fn main() {
   builder
     .invoke_handler(tauri::generate_handler![ping])
     .run(tauri::generate_context!(
-      "../../examples/tauri/isolation/tauri.conf.json"
+      "../../../m3/examples/tauri/isolation/tauri.conf.json"
     ))
     .expect("error while running tauri application");
 }

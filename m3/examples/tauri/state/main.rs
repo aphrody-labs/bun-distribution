@@ -47,7 +47,7 @@ fn main() {
     .manage(Counter(Mutex::new(0)))
     .invoke_handler(tauri::generate_handler![increment, decrement, reset, get])
     .run(tauri::generate_context!(
-      "../../examples/tauri/state/tauri.conf.json"
+      "../../../m3/examples/tauri/state/tauri.conf.json"
     ))
     .expect("error while running tauri application");
 }

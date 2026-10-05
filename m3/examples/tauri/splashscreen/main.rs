@@ -29,7 +29,7 @@ fn main() {
     .menu(tauri::menu::Menu::default)
     .invoke_handler(tauri::generate_handler![close_splashscreen])
     .run(tauri::generate_context!(
-      "../../examples/tauri/splashscreen/tauri.conf.json"
+      "../../../m3/examples/tauri/splashscreen/tauri.conf.json"
     ))
     .expect("error while running tauri application");
 }

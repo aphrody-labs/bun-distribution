@@ -213,7 +213,7 @@ fn main() {
       }
     })
     .run(tauri::generate_context!(
-      "../../examples/tauri/streaming/tauri.conf.json"
+      "../../../m3/examples/tauri/streaming/tauri.conf.json"
     ))
     .expect("error while running tauri application");
 }

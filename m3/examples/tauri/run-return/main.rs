@@ -13,7 +13,7 @@ fn main() {
 
   let app = builder
     .build(tauri::generate_context!(
-      "../../examples/tauri/run-return/tauri.conf.json"
+      "../../../m3/examples/tauri/run-return/tauri.conf.json"
     ))
     .expect("error while building tauri application");
 

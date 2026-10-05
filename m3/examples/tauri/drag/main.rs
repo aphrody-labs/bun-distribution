@@ -16,7 +16,7 @@ fn main() {
 }
 
 fn generate_context<R: tauri::Runtime>() -> tauri::Context<R> {
-  let mut context = tauri::generate_context!("../../examples/tauri/drag/tauri.conf.json");
+  let mut context = tauri::generate_context!("../../../m3/examples/tauri/drag/tauri.conf.json");
   for cmd in [
     "plugin:window|start_dragging",
     "plugin:window|internal_toggle_maximize",
