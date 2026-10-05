@@ -145,7 +145,6 @@
       "@types/three": "^0.186.0",
       "@tailwindcss/node": "^4.3.3",
       "@base-ui/react": "^1.8.0",
-      "@aphrody/runtime-sdk": "file:.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-155af9d2.tgz",
       "@ag-ui/core": "1.0.1",
       "@ag-ui/encoder": "1.0.1",
       "@ag-ui/proto": "1.0.1",

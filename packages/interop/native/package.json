@@ -41,7 +41,7 @@
   "dependencies": {
     "@aphrody/update": "workspace:*",
     "@aphrody/media": "workspace:*",
-    "@aphrody/runtime-sdk": "catalog:"
+    "@aphrody/runtime-sdk": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.2"

@@ -33,7 +33,7 @@
     "discord-api-types": "catalog:",
     "discord.js": "catalog:",
     "discordx": "catalog:",
-    "@aphrody/runtime-sdk": "catalog:"
+    "@aphrody/runtime-sdk": "workspace:*"
   },
   "devDependencies": {
     "tsdown": "^0.23.0",

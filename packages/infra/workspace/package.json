@@ -85,7 +85,7 @@
   "dependencies": {
     "@aphrody/os": "workspace:*",
     "@aphrody/paths": "workspace:*",
-    "@aphrody/runtime-sdk": "catalog:",
+    "@aphrody/runtime-sdk": "workspace:*",
     "@aphrody/update": "workspace:*",
     "@typescript/typescript6": "^6.0.2",
     "ts-morph": "catalog:"

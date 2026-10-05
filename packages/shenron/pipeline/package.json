@@ -86,7 +86,7 @@
     "sharp": "catalog:",
     "sqlite-vec": "^0.1.9",
     "zod": "catalog:",
-    "@aphrody/runtime-sdk": "catalog:",
+    "@aphrody/runtime-sdk": "workspace:*",
     "@aphrody/http": "workspace:*",
     "@aphrody/media": "workspace:*",
     "@koharu/sdk": "workspace:*",

@@ -32,7 +32,7 @@
     "lint": "oxlint"
   },
   "dependencies": {
-    "@aphrody/runtime-sdk": "catalog:"
+    "@aphrody/runtime-sdk": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.2"
