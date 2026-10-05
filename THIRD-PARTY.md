@@ -50,6 +50,7 @@ Vendored under their capability owner with provenance in
 | tauri-plugin-dialog | https://github.com/tauri-apps/plugins-workspace | 3.0.0-alpha.2 | Apache-2.0 OR MIT | `crates/tauri/aphrody-tauri-plugin-dialog` |
 | serde-saphyr | https://github.com/bourumir-wyngs/serde-saphyr | 0.0.16 | MIT OR Apache-2.0 | `crates/compat/serde-saphyr` |
 | koharu-ml-base | https://github.com/koharu-rs/koharu | 0.83.5 | MIT OR Apache-2.0 | `crates/ml/llama` |
+| obscura | https://github.com/h4ckf0r0day/obscura | 0.1.0 | Apache-2.0 | `crates/web/obscura` |
 
 ## Upstream reference sources
 
@@ -60,7 +61,7 @@ Build-recipe inputs tracked for provenance (not vendored source):
 | mcp-server-tauri | https://github.com/hypothesi/mcp-server-tauri | main | Cargo.toml tauri-plugin-mcp-bridge; config/tauri-upstream.json |
 | tauri | https://github.com/tauri-apps/tauri | v3 | config/tauri-upstream.json debuggers; docs/guides/web/TAURI-DEBUG.md |
 | tauri-plugin-webdriver | https://github.com/Choochmeque/tauri-plugin-webdriver | main | config/tauri-upstream.json debuggers |
-| victauri | https://github.com/4DA-Systems/Victauri | main | config/tauri-upstream.json debuggers; aphrody-tauri-mcp design |
+| victauri | https://github.com/4DA-Systems/Victauri | main | config/tauri-upstream.json debuggers; aphrody-mcp Tauri tools design |
 | WSL | https://github.com/microsoft/WSL.git | master | config/os/wsl-build.json; crates/os/aphrody-wsl |
 | WSL2-Linux-Kernel | https://github.com/microsoft/WSL2-Linux-Kernel.git | linux-msft-wsl-6.18.y | config/os/wsl-build.json; crates/os/aphrody-wsl |
 | linux-stable | https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git | v7.2.9 | config/os/wsl-build.json; crates/os/aphrody-wsl |
@@ -68,4 +69,8 @@ Build-recipe inputs tracked for provenance (not vendored source):
 | mistral.rs | https://github.com/EricLBuehler/mistral.rs.git | master | Cargo.toml workspace dependency mistralrs; docs/plans/ai/native-integration-mast |
 | terminal | https://github.com/microsoft/terminal.git | main | config/os/wsl-build.json |
 | wslg | https://github.com/microsoft/wslg.git | main | config/os/wsl-build.json; scripts/build/os/build-wslg.py |
+| vu-uv | https://github.com/astral-sh/uv | 0.12.23 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
+| vu-ruff | https://github.com/astral-sh/ruff | 0.16.10 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
+| vu-pyo3 | https://github.com/PyO3/pyo3 | v0.29.3 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
+| vu-python-build-standalone | https://github.com/astral-sh/python-build-standalone | 20261003 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 

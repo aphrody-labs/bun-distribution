@@ -56,8 +56,8 @@
     {
       "path": "THIRD-PARTY.md",
       "title": "Third-party licenses and sources",
-      "sha256": "29838b86cb84db0e3a8ac7fcf5eaf070567d8f5656a5042d52198885e321c7ac",
-      "bytes": 4003,
+      "sha256": "8b9191332b43b4e0bc476fd77c5e6bbb1f90ccaf7840609696818112b385959a",
+      "bytes": 4608,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3166,8 +3166,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "57f119a8aa5b367420ef41a355df916e43f1a08aca9716ac1b044402a429cb93",
-      "bytes": 11617,
+      "sha256": "0a9a161c81df5f6f64df33d16b02d77ca85b5b69b3d91691da791a680ba65027",
+      "bytes": 11609,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -9605,13 +9605,23 @@
     },
     {
       "path": "docs/plans/vu/PLAN.md",
-      "title": "vu: the Aphrody Python runtime (draft)",
-      "sha256": "1689c318ec9b3d958565e3db6510905f52bfed56e60a3c5e80e9a3393f01abce",
-      "bytes": 1001,
+      "title": "vu: the Aphrody Python runtime",
+      "sha256": "5f7a84f0a5d2f9212994cb7168c56b483f1b1419d08e4229ade7fdbf36901f3d",
+      "bytes": 31521,
       "domain": "vu",
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/vu/PLAN.md"
+    },
+    {
+      "path": "docs/plans/vu/scaffold/README.md",
+      "title": "Scaffold of the planned vu repository",
+      "sha256": "da8b62e240eeac22afeef74e7d4e0d6850ae36c4fc4d9d73771437c154d9b6ba",
+      "bytes": 1345,
+      "domain": "vu",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/vu/scaffold/README.md"
     },
     {
       "path": "docs/plans/web/apps/bxc/MEGA-PLAN.md",
@@ -15486,8 +15496,8 @@
     {
       "path": "docs/reference/infra/UPSTREAMS.md",
       "title": "Upstreams",
-      "sha256": "ac8c2e6ac038b66d5f08e3b8659371683abddf90f3a01b98d95b345814250379",
-      "bytes": 6427,
+      "sha256": "7e85cf9837520d15eef3f710a8390c8e01d076dd55c5dd05476d5bd12fb12ba8",
+      "bytes": 8930,
       "domain": "infra",
       "status": "notice",
       "visibility": "private",
@@ -41106,8 +41116,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "2343fd500ee62899e72bfc4fef19f2275c20ea9d605e0c12ff7ff3334289926e",
-      "bytes": 53632,
+      "sha256": "90e971204943a5c515cc814697d729d3fa61f9bdf52c22593118dbe866958795",
+      "bytes": 53513,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

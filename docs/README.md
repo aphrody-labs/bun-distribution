@@ -79,7 +79,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [shell](plans/shell/) | 1 | - |
 | plans | [upstream-bun](plans/upstream-bun/) vendored upstream copy | 1 | - |
 | plans | [upstream-oxc](plans/upstream-oxc/) vendored upstream copy | 1 | - |
-| plans | [vu](plans/vu/) | 2 | [`vu`: the Aphrody Python runtime (draft)](plans/vu/PLAN.md) |
+| plans | [vu](plans/vu/) | 8 | [`vu`: the Aphrody Python runtime](plans/vu/PLAN.md) |
 | plans | [web](plans/web/) | 6 | - |
 | plans | [workspace](plans/workspace/) | 1 | [Aphrody — FFI unique et consolidation Rust, Python, Bun](plans/workspace/PLAN.md) |
 | products | [ai](products/ai/) | 29 | [Aphrody AI](products/ai/README.md) |
@@ -149,4 +149,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 8 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 4552 files.
+Total: 4558 files.

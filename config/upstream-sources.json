@@ -121,6 +121,63 @@
       "purpose": "WSLg; system distro build recipe input.",
       "consumers": "config/os/wsl-build.json; scripts/build/os/build-wslg.py",
       "observedCommit": "6942bb534b537302a7a22617261d9274db3cfa37"
+    },
+    {
+      "id": "vu-uv",
+      "kind": "git",
+      "url": "https://github.com/astral-sh/uv",
+      "ref": "0.12.23",
+      "observedCommit": "46b84fd0bfec23b72f29e8e2185ba68a65052f48",
+      "forkUrl": "https://github.com/aphrody-labs/uv",
+      "forkRef": "vu-pin-0.12.23",
+      "forkCommit": "46b84fd0bfec23b72f29e8e2185ba68a65052f48",
+      "license": "MIT OR Apache-2.0",
+      "tier": "build",
+      "purpose": "uv 0.12.23 (resolver, installer, Python manager; crates uv-* 0.0.90) pinned for the vu runtime of the planned vu monorepo; the fork carries no Aphrody patch yet.",
+      "consumers": "docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json",
+      "note": "Fork aphrody-labs/uv created 2026-10-05, branch vu-pin-0.12.23 at the release commit. crates.io uv 0.12.23 and uv-* 0.0.90 carry .cargo_vcs_info.json sha1 46b84fd0 (verified). Cargo.lock: 737 packages, no git source, no ruff and no pyo3. The uv-* crates are internal components upstream; the CLI is the public interface."
+    },
+    {
+      "id": "vu-ruff",
+      "kind": "git",
+      "url": "https://github.com/astral-sh/ruff",
+      "ref": "0.16.10",
+      "observedCommit": "3265ed1f944c98bb4c04d632fbefb1257cdb583d",
+      "forkUrl": "https://github.com/aphrody-labs/ruff",
+      "forkRef": "vu-pin-0.16.10",
+      "forkCommit": "3265ed1f944c98bb4c04d632fbefb1257cdb583d",
+      "license": "MIT",
+      "tier": "build",
+      "purpose": "ruff 0.16.10 (linter, formatter; the ty crates live in the same tree) pinned for the vu runtime of the planned vu monorepo; the fork carries no Aphrody patch yet.",
+      "consumers": "docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json",
+      "note": "Fork aphrody-labs/ruff created 2026-10-05, branch vu-pin-0.16.10 at the release commit. crates.io ruff 0.16.10 and ruff_* 0.0.16 carry .cargo_vcs_info.json sha1 3265ed1f (verified). Cargo.lock: 558 packages, no git source, no pyo3. ty 0.0.84 vendors ruff 11aaa39f, 107 commits older: no separate branch."
+    },
+    {
+      "id": "vu-pyo3",
+      "kind": "git",
+      "url": "https://github.com/PyO3/pyo3",
+      "ref": "v0.29.3",
+      "observedCommit": "451d99fdcdcddf159e8e0a1186960b332cdb5d7c",
+      "forkUrl": "https://github.com/aphrody-labs/pyo3",
+      "forkRef": "vu-pin-0.29.3",
+      "forkCommit": "451d99fdcdcddf159e8e0a1186960b332cdb5d7c",
+      "license": "MIT OR Apache-2.0",
+      "tier": "build",
+      "purpose": "PyO3 0.29.3, the version of the Aphrody workspace Cargo.lock, pinned for the CPython embedding of the vu runtime.",
+      "consumers": "docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json",
+      "note": "Fork aphrody-labs/pyo3 created 2026-10-05, branch vu-pin-0.29.3 at tag v0.29.3. crates.io pyo3 and pyo3-ffi 0.29.3 carry .cargo_vcs_info.json sha1 451d99fd (verified). Static embedding of libpython is not first-class upstream. Checked by scripts/audit/workspace/vu-pins.ts."
+    },
+    {
+      "id": "vu-python-build-standalone",
+      "kind": "git",
+      "url": "https://github.com/astral-sh/python-build-standalone",
+      "ref": "20261003",
+      "observedCommit": "5e46737f6480fc315ebfea83866910cbfcc772f0",
+      "license": "MPL-2.0",
+      "tier": "build",
+      "purpose": "Prebuilt CPython 3.12.15 (default, the py workspace baseline) and 3.14.8 distributions (install_only_stripped and full archives) that the vu runtime embeds; consumed as release assets pinned by sha256, not forked.",
+      "consumers": "docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json",
+      "note": "MPL-2.0 covers the build system; the distributions carry CPython (PSF-2.0) and the licences of their bundled libraries. The install_only_stripped sha256 equals the digest pinned by uv 0.12.23 (crates/uv-python/download-metadata.json). Minimum glibc of the gnu targets: 2.17 (running.rst)."
     }
   ],
   "integrated": [

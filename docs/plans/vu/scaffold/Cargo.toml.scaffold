@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: Apache-2.0
+# Scaffold of the root manifest of the planned vu monorepo (aphrody-labs/vu). It is named *.scaffold so
+# that Cargo and the workspace scanners of this repository ignore it; it becomes `Cargo.toml` in the new
+# repository. Nothing here is built yet.
+#
+# Decision recorded in PLAN section 4.3: uv, ruff and PyO3 are consumed by path from the pinned fork
+# checkouts under vendor/ (fetched by the pins of vendor.json), not from crates.io, so that an Aphrody
+# patch can be carried on a fork branch. The versions written below are the pinned ones and are
+# asserted by `cargo metadata` in the first gate (P1).
+
+[workspace]
+resolver = "3"
+members = ["crates/vu", "crates/vu-runtime"]
+# The forks are workspaces of their own: their members are used as path dependencies only.
+exclude = ["vendor"]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.98"
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/vu"
+authors = ["aphrody-dev <contact@aphrody.com>"]
+
+[workspace.dependencies]
+# Pinned upstream releases (forks: aphrody-labs/{uv,ruff,pyo3}, branches vu-pin-<version>).
+uv = { path = "vendor/uv/crates/uv", version = "=0.12.23" }
+ruff = { path = "vendor/ruff/crates/ruff", version = "=0.16.10" }
+# Embedding needs the interpreter initialisation API; the extension-module feature is deprecated upstream.
+pyo3 = { path = "vendor/pyo3", version = "=0.29.3", default-features = false, features = ["macros", "auto-initialize"] }
+
+# First-party members.
+vu-runtime = { path = "crates/vu-runtime" }
+
+[profile.release]
+# Same shape as the uv and ruff release profiles. panic = "abort" is the upstream choice for both
+# CLIs; PyO3 cannot turn a Rust panic into a Python exception under abort (PLAN section 5).
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+debug = "line-tables-only"
