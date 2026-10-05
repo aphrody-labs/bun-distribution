@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Google Fonts edge proxy behind nginx on cdn.aphrody.com (nginx/aphrody/cdn.aphrody.com.conf).
+# /srv/aphrody-cdn/app is a sparse checkout of the aphrody monorepo pinned to a commit
+# (packages/google/google, packages/engine/core); the cache lives in /srv/aphrody-cdn/google.
+[Unit]
+Description=Aphrody Google Fonts edge proxy (cdn.aphrody.com)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/aphrody-cdn/app
+ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-cdn/app/packages/google/google/bin/aphrody-google.ts fonts serve --port 8796 --cache /srv/aphrody-cdn/google --origin https://cdn.aphrody.com
+Restart=on-failure
+RestartSec=2
+ProtectHome=read-only
+ReadWritePaths=/srv/aphrody-cdn/google
+
+[Install]
+WantedBy=multi-user.target

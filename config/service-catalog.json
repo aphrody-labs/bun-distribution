@@ -5,6 +5,19 @@
   "proxy": "nginx",
   "services": [
     {
+      "id": "aphrody-fonts-proxy",
+      "application": "aphrody-google",
+      "kind": "bun-edge-proxy",
+      "runtime": "bun",
+      "unit": "aphrody-fonts-proxy.service",
+      "health": "http://127.0.0.1:8796/health",
+      "port": 8796,
+      "sourceRepo": "aphrody",
+      "workingDirectory": "/srv/aphrody-cdn/app",
+      "publicProxy": "nginx",
+      "public": true
+    },
+    {
       "id": "aphrody-discord-dev",
       "application": "aphrody-discord",
       "kind": "discord-interactions-and-gateway",
