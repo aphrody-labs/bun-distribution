@@ -168,6 +168,22 @@
       "public": true
     },
     {
+      "id": "shenron-mcp-http",
+      "application": "shenron",
+      "kind": "rust-mcp-http",
+      "runtime": "native",
+      "unit": "shenron-mcp-http.service",
+      "health": "http://127.0.0.1:8790/health",
+      "port": 8790,
+      "sourceRepo": "shenron",
+      "workingDirectory": "/srv/shenron/current",
+      "releaseRoot": "/srv/shenron/releases",
+      "sharedRoot": "/srv/shenron/shared",
+      "deployAdapter": "scripts/release/atomic-deploy-shenron.sh",
+      "note": "crates/shenron-mcp --http 127.0.0.1:8790 --public (read-only tools, the binary default address), shipped in the Shenron release as bin/shenron-mcp; the site relays https://dragonballfr.com/mcp to it through SHENRON_MCP_URL. Supersedes the retired Bun shenron-mcp (5010)",
+      "public": false
+    },
+    {
       "id": "shenron-pg-tunnel",
       "application": "shenron",
       "kind": "ssh-tunnel",

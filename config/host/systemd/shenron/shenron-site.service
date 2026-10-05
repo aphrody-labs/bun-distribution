@@ -39,6 +39,8 @@ Environment=NEXT_DIST_DIR=.next-build
 Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 Environment=BUN_RUNTIME_TRANSPILER_CACHE_PATH=/srv/shenron/shared/site/bun-cache
 Environment=A2A_COORD_DIR=/srv/shenron/shared/coord
+# Relais /mcp du site vers le serveur MCP public de la release (unité shenron-mcp-http).
+Environment=SHENRON_MCP_URL=http://127.0.0.1:8790
 # ProtectHome=read-only keeps ~ubuntu read-only; native Node-API modules (@swc/core,
 # loaded by next.config.ts) fail to initialise without a writable HOME.
 Environment=HOME=/srv/shenron/shared/site/home

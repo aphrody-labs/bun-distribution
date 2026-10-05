@@ -1,0 +1,52 @@
+# shenron-mcp-http — serveur MCP public en lecture seule de Shenron (crates/shenron-mcp, Rust).
+#
+# Livré dans la release Shenron (`bin/shenron-mcp`, même commit que le site et le bot) ;
+# `/srv/shenron/current` bascule atomiquement au déploiement (aphrody-infra deploy --stack
+# shenron). Écoute la boucle locale 127.0.0.1:8790 ; https://dragonballfr.com/mcp est relayé
+# par le site (`SHENRON_MCP_URL`, unité shenron-site), jamais exposé directement par nginx.
+# `--public` ne monte que les outils en lecture ; aucun secret requis.
+#
+# Installation : portée par la release (systemd/shenron-mcp-http.service du bundle), rendue par
+#   bun $YOLO_ROOT/packages/engine/core/src/host/cli.ts compose-unit shenron-mcp-http.service
+[Unit]
+Description=Shenron — serveur MCP public en lecture seule (Rust, 127.0.0.1:8790)
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=20
+StartLimitIntervalSec=600
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/shenron/current
+
+# Réglages opérateur non secrets (SHENRON_MCP_LOG, SHENRON_MCP_ALLOWED_HOSTS), fichier 0600.
+EnvironmentFile=-/etc/rose-griffon/shenron-mcp-http.env
+Environment=HOME=/srv/shenron/shared/mcp/home
+Environment=SHENRON_MCP_LOG=info
+
+ExecStartPre=+/usr/bin/install -d -o ubuntu -g ubuntu /srv/shenron/shared/mcp /srv/shenron/shared/mcp/home
+ExecStart=/srv/shenron/current/bin/shenron-mcp --http 127.0.0.1:8790 --public
+
+Restart=always
+RestartSec=5
+
+MemoryAccounting=true
+MemoryHigh=1G
+MemoryMax=2G
+LimitNOFILE=65536
+CPUWeight=100
+
+PrivateDevices=true
+RestrictNamespaces=true
+RestrictRealtime=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+ReadWritePaths=/srv/shenron/shared/mcp
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=shenron-mcp-http
+
+[Install]
+WantedBy=multi-user.target

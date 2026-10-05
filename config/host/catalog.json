@@ -363,6 +363,14 @@
       "site": "bot.dragonballfr.com"
     },
     {
+      "service": "shenron-mcp-http",
+      "unit": "shenron-mcp-http.service",
+      "path": "systemd/shenron/shenron-mcp-http.service",
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-home-ro", "syscall-service"],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
       "service": "shenron-pg-backup",
       "unit": "shenron-pg-backup.service",
       "path": "systemd/shenron/shenron-pg-backup.service",
