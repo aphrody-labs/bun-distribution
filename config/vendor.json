@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Third-party and fork sources fetched on demand by `bun scripts/tools/vendor/fetch.ts`: pinned, shallow and blobless. Fetched trees are git-ignored; nothing here is vendored into the repository. Bun (aphrody-labs/bun, branch main) is the only vendored source.",
+  "description": "Third-party and fork sources fetched on demand by `bun scripts/tools/vendor/fetch.ts`: pinned, shallow and blobless. Fetched trees are git-ignored; nothing here is vendored into the repository. Bun (aphrody-labs/bun, branch main) is the only vendored source. Deno (aphrody-labs/deno) is pinned to v2.9.7, the release built on deno_core 0.412.0 that Obscura embeds (crates/web/obscura-js), as a source reference without tests/.",
   "sources": [
     {
       "name": "bun",
@@ -8,6 +8,15 @@
       "url": "git@github-dev:aphrody-labs/bun.git",
       "upstream": "https://github.com/oven-sh/bun.git",
       "ref": "954db0c030d703e1b84cb03ce2bbdf44df03fdaa",
+      "rootFiles": true
+    },
+    {
+      "name": "deno",
+      "path": "vendor/deno",
+      "url": "git@github-dev:aphrody-labs/deno.git",
+      "upstream": "https://github.com/denoland/deno.git",
+      "ref": "0c071246a412575e07423263404a5d13e7ed6aa2",
+      "sparse": ["cli", "doc", "ext", "libs", "runtime", "tools"],
       "rootFiles": true
     }
   ]
