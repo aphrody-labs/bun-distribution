@@ -14,7 +14,7 @@ crate-type = ["cdylib"]
 napi = "3.12.2"
 napi-derive = "3.6.3"
 tauri-cli = { path = "../aphrody-tauri-cli", package = "aphrody-tauri-cli", default-features = false, version = "3.0.0-alpha.4" }
-log = "0.4.21"
+log = { workspace = true }
 
 [build-dependencies]
 napi-build = "2.4.1"

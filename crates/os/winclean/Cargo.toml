@@ -33,7 +33,7 @@ tempfile = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 ort = { workspace = true, features = ["load-dynamic"] }
-pollster = "1.0"
+pollster = { workspace = true }
 uiautomation = { workspace = true, features = ["input"] }
 vigem-rust = { workspace = true }
 # Native Win32 backends replace the former reg/sc/netstat/wevtutil/powershell/where/explorer

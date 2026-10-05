@@ -20,7 +20,7 @@ name = "cargo-create-tauri-app"
 path = "src/main.rs"
 
 [dependencies]
-anyhow = "1"
+anyhow = { workspace = true }
 dialoguer = "0.12"
 pico-args = "0.5"
 ctrlc = "3.3"

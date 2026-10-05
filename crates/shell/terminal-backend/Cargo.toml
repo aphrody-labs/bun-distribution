@@ -18,7 +18,7 @@ aphrody-a2a-coord = { workspace = true }
 portable-pty        = { workspace = true }
 aphrody-terminal-core = { workspace = true }
 tokio               = { workspace = true, features = ["rt-multi-thread", "macros", "io-util", "sync", "net", "fs", "time"] }
-tokio-tungstenite = { version = "0.30" }
+tokio-tungstenite = { workspace = true }
 futures-util        = { workspace = true }
 anyhow              = { workspace = true }
 thiserror           = { workspace = true }

@@ -11,11 +11,11 @@ publish = false
 tauri-build = { workspace = true, default-features = true }
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 tauri = { workspace = true, default-features = true }
 # Depending on the crate is what selects the CEF runtime; see `examples/cef`.
 tauri-runtime-cef = { workspace = true, default-features = true }
 
 [dev-dependencies]
-tempfile = "3"
+tempfile = { workspace = true }

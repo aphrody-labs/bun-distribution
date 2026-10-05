@@ -31,13 +31,13 @@ name = "tauri_plugin_store"
 tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
-tracing = "0.1"
-thiserror = "2"
-dunce = "1"
-tokio = { version = "1", features = ["sync", "time", "macros"] }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+dunce = { workspace = true }
+tokio = { workspace = true, features = ["sync", "time", "macros"] }
 
 [dev-dependencies]
 tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["test"] }

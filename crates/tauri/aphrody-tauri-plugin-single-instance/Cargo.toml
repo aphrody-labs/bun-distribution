@@ -20,14 +20,14 @@ ios = { level = "none", notes = "" }
 name = "tauri_plugin_single_instance"
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
-tracing = "0.1"
-thiserror = "2"
+tracing = { workspace = true }
+thiserror = { workspace = true }
 tauri-plugin-deep-link = { version = "3.0.0-alpha.2", path = "../aphrody-tauri-plugin-deep-link", package = "aphrody-tauri-plugin-deep-link", optional = true }
-semver = { version = "1", optional = true }
-tokio = { version = "1", features = ["net"] }
+semver = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["net"] }
 
 [target."cfg(target_os = \"windows\")".dependencies.windows-sys]
 version = "0.60"

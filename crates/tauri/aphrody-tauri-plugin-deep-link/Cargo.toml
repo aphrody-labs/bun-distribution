@@ -31,8 +31,8 @@ ios = { level = "partial", notes = "Deep links must be registered in config. Dyn
 name = "tauri_plugin_deep_link"
 
 [build-dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 tauri-utils = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
 tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
 
@@ -40,16 +40,16 @@ tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", pa
 plist = "1"
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
 tauri-utils = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
-tracing = "0.1"
-thiserror = "2"
-url = "2"
+tracing = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }
 
 [target."cfg(windows)".dependencies]
-dunce = "1"
+dunce = { workspace = true }
 windows-registry = "0.5"
 windows-result = "0.3"
 

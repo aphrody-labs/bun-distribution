@@ -31,15 +31,15 @@ name = "tauri_plugin_websocket"
 tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
-log = "0.4.21"
-thiserror = "2"
-http = "1"
+log = { workspace = true }
+thiserror = { workspace = true }
+http = { workspace = true }
 rand = "0.9"
-futures-util = "0.3"
-tokio = { version = "1", features = ["net", "sync"] }
+futures-util = { workspace = true }
+tokio = { workspace = true, features = ["net", "sync"] }
 tokio-tungstenite = { version = "0.29" }
 rustls = { version = "0.23", default-features = false, features = [
   "ring",

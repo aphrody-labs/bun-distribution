@@ -24,12 +24,12 @@ anyhow = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }
 chrono = { workspace = true }
-async-trait = "0.1"
-encoding_rs = "0.8"
-tempfile = "3"
+async-trait = { workspace = true }
+encoding_rs = { workspace = true }
+tempfile = { workspace = true }
 psl = "2"
 cookie = { workspace = true }
-futures-util = { version = "0.3", optional = true }
+futures-util = { workspace = true, optional = true }
 # wreq and wreq-util are pre-release crates whose API changes between rc builds
 # (CertStore moved out of `tls`, `cert_store` renamed to `tls_cert_store`, the
 # Emulation builder reshuffled). A caret requirement let a fresh resolve pull a

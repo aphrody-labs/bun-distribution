@@ -36,11 +36,11 @@ tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", pa
 
 [dependencies]
 tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-thiserror = "2"
-log = "0.4.21"
-tokio = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+tokio = { workspace = true }
 reqwest = { version = "0.13", default-features = false, features = [
   "json",
   "stream",
@@ -48,14 +48,14 @@ reqwest = { version = "0.13", default-features = false, features = [
 rustls = { version = "0.23", default-features = false, features = [
   "ring",
 ], optional = true }
-url = "2"
-http = "1"
+url = { workspace = true }
+http = { workspace = true }
 minisign-verify = "0.2"
-time = { version = "0.3", features = ["parsing", "formatting"] }
+time = { workspace = true, features = ["parsing", "formatting"] }
 base64 = "0.22"
-semver = { version = "1", features = ["serde"] }
-futures-util = "0.3"
-tempfile = "3.20"
+semver = { workspace = true, features = ["serde"] }
+futures-util = { workspace = true }
+tempfile = { workspace = true }
 infer = "0.19"
 percent-encoding = "2.3"
 
@@ -69,12 +69,12 @@ windows-sys = { version = "0.60.0", features = [
 
 [target."cfg(target_os = \"linux\")".dependencies]
 dirs = "6"
-tar = { version = "0.4", optional = true }
-flate2 = { version = "1", optional = true }
+tar = { workspace = true, optional = true }
+flate2 = { workspace = true, optional = true }
 
 [target."cfg(target_os = \"macos\")".dependencies]
-tar = "0.4"
-flate2 = "1"
+tar = { workspace = true }
+flate2 = { workspace = true }
 osakit = { version = "0.3", features = ["full"] }
 
 [features]

@@ -46,8 +46,8 @@ development = ["quickcheck_macros"]
 name = "tauri"
 
 [dependencies]
-serde_json = { version = "1", features = ["raw_value"] }
-serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { workspace = true, features = ["raw_value"] }
+serde = { workspace = true, features = ["derive", "rc"] }
 tokio = { version = "1", features = [
   "rt",
   "rt-multi-thread",
@@ -55,39 +55,39 @@ tokio = { version = "1", features = [
   "fs",
   "io-util",
 ] }
-uuid = { version = "1", features = ["v4"], optional = true }
-url = "2"
-anyhow = "1"
-thiserror = "2"
+uuid = { workspace = true, optional = true, features = ["v4"] }
+url = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
 tauri-runtime = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
 tauri-macros = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-macros", package = "aphrody-tauri-macros" }
 tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["resources"] }
 getrandom = "0.3"
 serde_repr = "0.1"
-http = "1"
-dirs = "7"
+http = { workspace = true }
+dirs = { workspace = true }
 percent-encoding = "2"
 raw-window-handle = { version = "0.6", features = ["std"] }
-glob = "0.3"
+glob = { workspace = true }
 mime = "0.3"
 data-url = { version = "0.3", optional = true }
 serialize-to-javascript = "0.1.2"
 image = { version = "0.25", default-features = false, optional = true }
 http-range = { version = "0.1", optional = true }
-tracing = { version = "0.1", optional = true }
+tracing = { workspace = true, optional = true }
 heck = "0.5"
-log = "0.4.21"
-dunce = "1"
+log = { workspace = true }
+dunce = { workspace = true }
 specta = { version = "^2.0.0-rc.25", optional = true, default-features = false, features = [
   "function",
   "derive",
   "std",
 ] }
 # WARNING: cookie::Cookie is re-exported so bumping this is a breaking change, documented to be done as a minor bump
-cookie = "0.18"
+cookie = { workspace = true }
 
 # dev server proxy
-bytes = { version = "1", features = ["serde"] }
+bytes = { workspace = true, features = ["serde"] }
 reqwest = { version = "0.13", default-features = false, features = [
   "json",
   "stream",
@@ -157,8 +157,8 @@ jni = "0.21"
 
 # UIKit, i.e. iOS/tvOS/watchOS/visionOS
 [target.'cfg(all(target_vendor = "apple", not(target_os = "macos")))'.dependencies]
-libc = "0.2"
-swift-rs = "1.0.8"
+libc = { workspace = true }
+swift-rs = { workspace = true }
 objc2-ui-kit = { version = "0.3.2", default-features = false, features = [
   "UIApplication",
   "UIResponder",
@@ -166,19 +166,19 @@ objc2-ui-kit = { version = "0.3.2", default-features = false, features = [
 ] }
 
 [build-dependencies]
-glob = "0.3"
+glob = { workspace = true }
 heck = "0.5"
 tauri-build = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-build", package = "aphrody-tauri-build", default-features = false }
 tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
 
 [dev-dependencies]
-proptest = "1.6.0"
+proptest = { workspace = true }
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 tauri = { path = ".", package = "aphrody-tauri", default-features = false, version = "3.0.0-alpha.4" }
-tokio = { version = "1", features = ["full"] }
+tokio = { workspace = true, features = ["full"] }
 cargo_toml = "1.0"
 http-range = "0.1.5"
 

@@ -20,10 +20,10 @@ ios = { level = "none", notes = "" }
 name = "tauri_plugin_localhost"
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
-log = "0.4.21"
-thiserror = "2"
+log = { workspace = true }
+thiserror = { workspace = true }
 tiny_http = "0.12"
-http = "1"
+http = { workspace = true }

@@ -40,9 +40,9 @@ x11 = ["dep:gdkx11-sys", "dep:x11-dl"]
 dbus = ["dep:dbus"]
 
 [dependencies]
-libc = "0.2"
-log = "0.4"
-serde = { version = "1", optional = true, features = ["serde_derive"] }
+libc = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true, optional = true, features = ["serde_derive"] }
 rwh_04 = { package = "raw-window-handle", version = "0.4", optional = true }
 rwh_05 = { package = "raw-window-handle", version = "0.5", features = [
   "std",
@@ -51,20 +51,20 @@ rwh_06 = { package = "raw-window-handle", version = "0.6", features = [
   "std",
 ], optional = true }
 bitflags = "2"
-crossbeam-channel = "0.5"
-url = "2"
+crossbeam-channel = { workspace = true }
+url = { workspace = true }
 dpi = "0.1"
 
 [dev-dependencies]
-image = "0.25"
+image = { workspace = true }
 env_logger = "0.11"
 
 [target."cfg(target_os = \"windows\")".dev-dependencies]
 softbuffer = "0.4"
 
 [target."cfg(target_os = \"windows\")".dependencies]
-parking_lot = "0.12"
-unicode-segmentation = "1.11"
+parking_lot = { workspace = true }
+unicode-segmentation = { workspace = true }
 windows-version = "0.1"
 windows-core = "0.62"
 
@@ -169,6 +169,6 @@ gtk = "0.18"
 gdkx11-sys = { version = "0.18", optional = true }
 gdkwayland-sys = "0.18.0"
 x11-dl = { version = "2.21", optional = true }
-parking_lot = "0.12"
+parking_lot = { workspace = true }
 dlopen2 = "0.8.0"
 dbus = { version = "0.9", optional = true }

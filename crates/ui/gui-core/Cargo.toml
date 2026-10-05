@@ -15,8 +15,8 @@ workspace = true
 aphrody-m3-tokens = { workspace = true }
 raw-window-handle = "0.6"
 async-trait = { workspace = true }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }

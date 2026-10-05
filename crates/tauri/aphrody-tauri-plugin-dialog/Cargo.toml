@@ -39,12 +39,12 @@ name = "tauri_plugin_dialog"
 tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
-log = "0.4.21"
-thiserror = "2"
-url = "2"
+log = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }
 tauri-plugin-fs = { version = "3.0.0-alpha.2", path = "../aphrody-tauri-plugin-fs", package = "aphrody-tauri-plugin-fs" }
 
 [target."cfg(any(target_os = \"macos\", windows, target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]

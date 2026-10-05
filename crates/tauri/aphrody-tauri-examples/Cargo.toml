@@ -18,9 +18,9 @@ tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphro
 tauri-runtime-wry = { version = "~3.0.0-alpha.4", path = "../aphrody-tauri-runtime-wry", package = "aphrody-tauri-runtime-wry", default-features = false, optional = true }
 tauri-runtime-cef = { version = "~3.0.0-alpha.5", path = "../aphrody-tauri-runtime-cef", package = "aphrody-tauri-runtime-cef", default-features = false, optional = true }
 tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-http = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+http = { workspace = true }
 http-range = "0.1.5"
 getrandom = "0.3"
 percent-encoding = "2"

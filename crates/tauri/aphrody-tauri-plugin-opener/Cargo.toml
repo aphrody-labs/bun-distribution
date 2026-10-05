@@ -26,17 +26,17 @@ name = "tauri_plugin_opener"
 
 [build-dependencies]
 tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
-schemars = "1"
-serde = { version = "1", features = ["derive"] }
+schemars = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
-thiserror = "2"
-open = { version = "5", features = ["shellexecute-on-windows"] }
-glob = "0.3"
-dunce = "1"
+thiserror = { workspace = true }
+open = { workspace = true, features = ["shellexecute-on-windows"] }
+glob = { workspace = true }
+dunce = { workspace = true }
 
 [target."cfg(windows)".dependencies.windows]
 version = "0.61"
@@ -51,7 +51,7 @@ features = [
 
 [target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"netbsd\", target_os = \"openbsd\"))".dependencies]
 zbus = "5.9"
-url = "2"
+url = { workspace = true }
 
 [target."cfg(target_os = \"macos\")".dependencies.objc2-app-kit]
 version = "0.3"

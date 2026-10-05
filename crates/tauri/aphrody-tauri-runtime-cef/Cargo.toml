@@ -38,17 +38,17 @@ cef = { version = "=152.3.0", features = ["build-util", "linux-x11"] }
 cef-dll-sys = { version = "=152.3.0", default-features = false }
 dirs = "6"
 dioxus-debug-cell = "0.1"
-http = "1"
+http = { workspace = true }
 kuchiki = { package = "kuchikiki", version = "0.8.8-speedreader" }
 html5ever = "0.29"
-log = "0.4.21"
+log = { workspace = true }
 raw-window-handle = "0.6"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 sha2 = "0.10"
 tauri-runtime = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
 tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["html-manipulation"] }
-url = "2"
+url = { workspace = true }
 winit = { version = "0.31.0-beta.3", package = "tauri-winit", default-features = false, features = [
   "gtk4",
 ] }
@@ -69,7 +69,7 @@ windows = { version = "0.62", features = [
 
 [target."cfg(target_os = \"macos\")".dependencies]
 # `kill(pid, 0)` and `gethostname`, to read Chromium's process singleton lock.
-libc = "0.2"
+libc = { workspace = true }
 objc2 = "0.6"
 objc2-application-services = { version = "0.3", default-features = false, features = [
   "HIServices",
@@ -125,7 +125,7 @@ objc2-foundation = { version = "0.3", default-features = false, features = [
 [target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
 dlopen2 = { version = "0.8", features = ["derive"] }
 gtk = { package = "gtk4", version = "0.11.4" }
-libc = "0.2"
+libc = { workspace = true }
 x11-dl = "2.21"
 
 [features]

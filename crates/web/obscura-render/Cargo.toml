@@ -27,7 +27,7 @@ taffy = { version = "0.12", default-features = false, features = [
 ] }
 obscura-dom = { workspace = true }
 tiny-skia = { version = "0.12", optional = true }
-ab_glyph = { version = "0.2", optional = true }
+ab_glyph = { workspace = true, optional = true }
 # Real inline text layout: HarfBuzz-class shaping (rustybuzz) + UAX#14 line
 # breaking, the same algorithms browsers use. Built with only our embedded
 # fonts (no system-font scan) so layout stays deterministic across hosts.
@@ -51,7 +51,7 @@ wuff = { version = "0.2.7", optional = true }
 # Same `log` instance usvg emits glyph-fallback warnings through, so tests can
 # install a collector and assert on them.
 [dev-dependencies]
-log = "0.4"
+log = { workspace = true }
 
 [lib]
 path = "src/lib.rs"

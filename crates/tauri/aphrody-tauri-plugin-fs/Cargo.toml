@@ -28,22 +28,22 @@ name = "tauri_plugin_fs"
 
 [build-dependencies]
 tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
-schemars = "1"
-serde = { version = "1", features = ["derive"] }
+schemars = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 serde_repr = "0.1"
 tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
-thiserror = "2"
-url = "2"
-log = "0.4.21"
-anyhow = "1"
-glob = "0.3"
-notify = { version = "8", optional = true, features = ["serde"] }
+thiserror = { workspace = true }
+url = { workspace = true }
+log = { workspace = true }
+anyhow = { workspace = true }
+glob = { workspace = true }
+notify = { workspace = true, optional = true, features = ["serde"] }
 notify-debouncer-full = { version = "0.6", optional = true }
-dunce = "1"
+dunce = { workspace = true }
 percent-encoding = "2"
 
 [target.'cfg(target_os = "ios")'.dependencies]

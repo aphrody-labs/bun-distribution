@@ -16,34 +16,34 @@ exclude = ["CHANGELOG.md", "/target", "rustfmt.toml"]
 
 [dependencies]
 tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["resources"] }
-image = "0.25"
-flate2 = "1"
-thiserror = "2"
-anyhow = "1"
-serde_json = "1"
-serde = { version = "1", features = ["derive"] }
+image = { workspace = true }
+flate2 = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 strsim = "0.11"
-tar = "0.4"
-walkdir = "2"
+tar = { workspace = true }
+walkdir = { workspace = true }
 bytesize = "2"
 handlebars = "6"
-tempfile = "3"
-log = { version = "0.4.21", features = ["kv"] }
-dirs = "7"
+tempfile = { workspace = true }
+log = { workspace = true, features = ["kv"] }
+dirs = { workspace = true }
 os_pipe = "1"
 ureq = { version = "3", default-features = false, features = ["socks-proxy"] }
 native-tls = { version = "0.2", optional = true }
-hex = "0.4"
-semver = "1"
-sha1 = "0.11"
-sha2 = "0.11"
+hex = { workspace = true }
+semver = { workspace = true }
+sha1 = { workspace = true }
+sha2 = { workspace = true }
 zip = { version = "8", default-features = false, features = ["deflate"] }
-dunce = "1"
-url = "2"
-uuid = { version = "1", features = ["v4", "v5"] }
-regex = "1"
+dunce = { workspace = true }
+url = { workspace = true }
+uuid = { workspace = true, features = ["v4", "v5"] }
+regex = { workspace = true }
 plist = "1"
-glob = "0.3"
+glob = { workspace = true }
 
 [target."cfg(target_os = \"windows\")".dependencies]
 bitness = "0.4"
@@ -55,7 +55,7 @@ features = ["Win32_System_SystemInformation", "Win32_System_Diagnostics_Debug"]
 
 [target."cfg(target_os = \"macos\")".dependencies]
 icns = { package = "tauri-icns", version = "0.1" }
-time = { version = "0.3", features = ["formatting"] }
+time = { workspace = true, features = ["formatting"] }
 tauri-macos-sign = { version = "=3.0.0-alpha.2", path = "../aphrody-tauri-macos-sign", package = "aphrody-tauri-macos-sign" }
 
 [target."cfg(target_os = \"linux\")".dependencies]
@@ -73,7 +73,7 @@ rpm = { version = "0.28.0", default-features = false, features = [
 ] }
 
 [target."cfg(unix)".dependencies]
-which = "8"
+which = { workspace = true }
 
 [lib]
 name = "tauri_bundler"

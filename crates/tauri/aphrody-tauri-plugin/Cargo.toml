@@ -28,13 +28,13 @@ build = [
 runtime = []
 
 [dependencies]
-anyhow = { version = "1", optional = true }
-serde = { version = "1", optional = true }
+anyhow = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
-serde_json = { version = "1", optional = true }
-glob = { version = "0.3", optional = true }
-schemars = { version = "1", features = ["preserve_order"] }
-walkdir = { version = "2", optional = true }
+serde_json = { workspace = true, optional = true }
+glob = { workspace = true, optional = true }
+schemars = { workspace = true, features = ["preserve_order"] }
+walkdir = { workspace = true, optional = true }
 
 [target."cfg(target_os = \"macos\")".dependencies]
 plist = { version = "1", optional = true }
