@@ -40,9 +40,6 @@ const extract = Bun.spawn(["tar", "-x", "-C", source], {
 });
 if ((await extract.exited) || (await archive.exited))
   throw new Error("Source archive extraction failed");
-await cp(join(root, ".cache/yolo-packages"), join(source, ".cache/yolo-packages"), {
-  recursive: true,
-});
 await run(["bun", "install", "--frozen-lockfile", "--ignore-scripts"], source);
 const cargo = ["bash", "scripts/build/rust/cargo-serial.sh"];
 const lock = Bun.TOML.parse(await readFile(join(source, "Cargo.lock"), "utf8")) as {

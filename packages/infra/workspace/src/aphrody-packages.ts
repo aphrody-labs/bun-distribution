@@ -70,11 +70,24 @@ function git(root: string, args: string[]): string {
   return result.stdout.toString().trim();
 }
 
-/** Package name to directory for every tracked @aphrody/* workspace member. */
+/** Package name to directory for every tracked @aphrody/* member of the root `workspaces` globs. */
 export async function aphrodyPackageDirectories(root: string): Promise<Map<string, string>> {
+  const { workspaces } = JSON.parse(await readFile(join(root, "package.json"), "utf8")) as {
+    workspaces?: string[] | { packages?: string[] };
+  };
+  const patterns = (Array.isArray(workspaces) ? workspaces : workspaces?.packages) ?? [];
+  const globs = (negated: boolean) =>
+    patterns
+      .filter((pattern) => pattern.startsWith("!") === negated)
+      .map((pattern) => new Bun.Glob(`${pattern.replace(/^!/, "")}/package.json`));
+  const [include, exclude] = [globs(false), globs(true)];
   const directories = new Map<string, string>();
-  for (const manifest of git(root, ["ls-files", "packages/*/*/package.json"]).split("\n")) {
-    if (!manifest) continue;
+  for (const manifest of git(root, ["ls-files", "--", "*package.json"]).split("\n")) {
+    if (
+      !include.some((glob) => glob.match(manifest)) ||
+      exclude.some((glob) => glob.match(manifest))
+    )
+      continue;
     const { name } = JSON.parse(await readFile(join(root, manifest), "utf8")) as { name?: string };
     if (name?.startsWith("@aphrody/")) directories.set(name, join(root, dirname(manifest)));
   }

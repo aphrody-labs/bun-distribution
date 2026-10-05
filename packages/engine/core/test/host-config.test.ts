@@ -21,9 +21,9 @@ test("catalog and tree agree", () => {
   expect(checkCatalog()).toEqual([]);
 });
 
-test("YOLO_ROOT overrides the default", () => {
+test("YOLO_ROOT overrides the default monorepo checkout", () => {
   expect(yoloRoot({ YOLO_ROOT: "/x" })).toBe("/x");
-  expect(yoloRoot({ HOME: "/h" })).toBe("/h/yolo");
+  expect(yoloRoot({ HOME: "/h" })).toBe("/h/aphrody");
 });
 
 test("composed units carry every dropped-in directive", () => {

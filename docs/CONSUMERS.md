@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Runtime consumers
 
 Yolo produces the precompiled native runtime and lightweight SDK. Aphrody keeps
@@ -23,24 +24,22 @@ desktop integration or JSC parity.
 
 ## Reproducible SDK packaging
 
-The producer command reads committed SDK files at an exact revision, includes
-the producer license and disables package hooks. It does not checkout a branch,
-read dirty SDK files, include engines or invoke Cargo.
+The SDK is the workspace member `@aphrody/runtime-sdk` (`packages/engine/runtime`);
+workspace consumers depend on it through `workspace:*`. Repositories outside the
+workspace receive it through the single archive channel, like every other
+`@aphrody/*` package:
 
 ```sh
-bun scripts/release/runtime_sdk_pack.ts --help
-bun scripts/release/runtime_sdk_pack.ts /path/to/sdk-output --revision <full-commit>
+aphrody-ops aphrody-packages prepare --package @aphrody/runtime-sdk --destination <dir> --apply
 ```
 
-The archive name includes the SHA-256 prefix; the adjacent JSON records the
-complete hash, package version, size and source revision. Repeated snapshots
-produce identical archive bytes. Symlink source entries and conflicting cached
-archives are refused. Working tree edits remain intact.
+Archives are canonical and named by their SHA-256; the consumer pins them in its
+`config/aphrody-packages.json` and refuses drift. Packing disables package hooks,
+refuses dirty sources and never compiles native engines.
 
-Aphrody's Workspace owner must prepare this archive before frozen Bun installation
-from `config/sibling-checkouts.json`. The configured revision and checksum are
-independent requirements: acquiring sources does not qualify a runtime library.
-The consumer's normal build uses this package, without compiling native engines.
+The runtime artifacts a workspace may activate are pinned separately in
+`config/native-runtime.json` (`yolo ops native-runtime`): acquiring sources does
+not qualify a runtime library.
 
 ## Runtime artifact and rollout
 

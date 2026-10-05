@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Installation complète d’un poste de développement Aphrody
 
 Le [parcours Workspace](README.md) distingue la préparation du dépôt de
@@ -27,9 +28,8 @@ Depuis Ubuntu/WSL :
 bash scripts/dev/clone-and-bootstrap.sh "$HOME/aphrody"
 ```
 
-Ces lanceurs clonent `aphrody`, le workspace Python `aphrody-py` et le checkout
-IECODE déclaré dans `config/sibling-checkouts.json` côte à côte, puis exécutent
-le bootstrap. Vérifier que les trois destinations sont libres et que l’accès
+Ces lanceurs clonent `aphrody` et le workspace Python `aphrody-py` côte à côte,
+puis exécutent le bootstrap. Vérifier que les deux destinations sont libres et que l’accès
 aux dépôts privés est configuré avant de lancer le clone.
 
 ## Windows
@@ -44,9 +44,9 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 Le script installe Git, Rustup, Bun, uv, CMake, Ninja, LLVM et les outils C++
 MSVC avec le Windows SDK. Redémarrer le terminal après l’installation des
-Build Tools pour charger l’environnement MSVC. Les checkouts frères requis
-sont ceux des manifests et de
-`config/sibling-checkouts.json` courants. Un ancien dossier `source` n’est pas
+Build Tools pour charger l’environnement MSVC. Les dépôts frères (IECODE, FUT) ne
+sont pas des checkouts requis : ils consomment les paquets `@aphrody/*` par le canal
+d'archives `aphrody-ops aphrody-packages prepare`. Un ancien dossier `source` n’est pas
 un prérequis universel : consulter les dépendances de la capacité sélectionnée.
 
 ## Ubuntu ou WSL

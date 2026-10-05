@@ -39,7 +39,8 @@ export interface RenderedUnit {
   text: string;
 }
 
-export const unitCatalog = catalog as UnitCatalog;
+// JSON imports infer per-unit literal shapes; the catalog schema is the declared contract.
+export const unitCatalog = catalog as unknown as UnitCatalog;
 
 const HEADER =
   "# SPDX-License-Identifier: Apache-2.0\n# Generated from @aphrody/yolo-core units/catalog.json; edit the catalog, not this file.\n";

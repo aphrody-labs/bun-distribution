@@ -75,7 +75,8 @@ async function fixture() {
   return { root, local, remote, base, commit, repository, config, options };
 }
 
-test("exact3 declaration uses existing owner remotes and explicit main destinations", async () => {
+// Yolo is fused into the monorepo (cf2fa3f4b): only Aphrody and its Python sibling synchronize.
+test("declaration uses existing owner remotes and explicit main destinations", async () => {
   const config = await loadSourceSyncConfig();
   expect(
     config.repositories.map((repo) => [
@@ -85,7 +86,6 @@ test("exact3 declaration uses existing owner remotes and explicit main destinati
       repo.destinationBranch,
     ]),
   ).toEqual([
-    ["yolo", "origin", "dev", "main"],
     ["aphrody", "workspace", "main", "main"],
     ["aphrody-py", "origin", "main", "main"],
   ]);

@@ -46,10 +46,16 @@ const KEY = /^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/;
 export const validEdgeKey = (key: string): boolean =>
   KEY.test(key) && !key.split("/").some((s) => s === "." || s === "..");
 
+// Bun's CompressionStream accepts brotli and a level; the DOM lib types know neither.
+const BrotliStream = CompressionStream as unknown as new (
+  format: "brotli",
+  options: { level: number },
+) => CompressionStream;
+
 async function brotli(data: Uint8Array): Promise<Uint8Array> {
-  const stream = new Blob([data])
+  const stream = new Blob([data.slice()])
     .stream()
-    .pipeThrough(new CompressionStream("brotli", { level: 11 }));
+    .pipeThrough(new BrotliStream("brotli", { level: 11 }));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 

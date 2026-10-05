@@ -7,7 +7,6 @@ import { join, resolve } from "node:path";
 import { acquireNativeRuntime, runNativeRuntime } from "./native-runtime.ts";
 
 const consumer = resolve(import.meta.dir, "../../../..");
-const sourceSdk = join(consumer, ".cache/yolo-packages");
 const yolo = resolve(consumer, "bin/yolo");
 const target = "x86_64-unknown-linux-gnu";
 const nativeHome = join(homedir(), ".yolo/runtime", target);
@@ -18,7 +17,7 @@ const capabilities = ["system.stats", "bench.compute", "process.supervise", "htt
 const assetTest = test.skipIf(
   process.platform !== "linux" ||
     process.arch !== "x64" ||
-    ![older, newer, abi13, sourceSdk, yolo].every(existsSync),
+    ![older, newer, abi13, yolo].every(existsSync),
 );
 const temporary: string[] = [];
 afterEach(async () => {
@@ -28,11 +27,7 @@ const sha256 = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(byte
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "native-runtime-consumer-"));
   temporary.push(root);
-  const configuration = JSON.parse(
-    await readFile(join(consumer, "config/sibling-checkouts.json"), "utf8"),
-  );
-  configuration.yolo.path = "../absent-producer";
-  configuration.yolo.runtime = {
+  const configuration = {
     requiredCapabilities: capabilities,
     artifacts: [
       {
@@ -52,75 +47,50 @@ async function fixture() {
     ],
   };
   await mkdir(join(root, "config"));
-  await writeFile(join(root, "config/sibling-checkouts.json"), JSON.stringify(configuration));
-  await writeFile(
-    join(root, "package.json"),
-    JSON.stringify({
-      workspaces: {
-        catalog: {
-          "@aphrody/runtime-sdk": "file:.cache/yolo-packages/" + configuration.yolo.sdk.archive,
-        },
-      },
-    }),
-  );
-  return {
-    root,
-    runtimeHome: join(root, "installed/runtime"),
-    sdkSource: sourceSdk,
-    yolo,
-    configuration,
-  };
+  await writeFile(join(root, "config/native-runtime.json"), JSON.stringify(configuration));
+  return { root, runtimeHome: join(root, "installed/runtime"), yolo, configuration };
 }
 async function updateConfiguration(f: Awaited<ReturnType<typeof fixture>>) {
-  await writeFile(join(f.root, "config/sibling-checkouts.json"), JSON.stringify(f.configuration));
+  await writeFile(join(f.root, "config/native-runtime.json"), JSON.stringify(f.configuration));
 }
-assetTest(
-  "fresh SDK acquisition, native install, upgrade and rollback load the exact real artifacts",
-  async () => {
-    const f = await fixture();
-    const originalCurrent = await readlink(join(nativeHome, "current"));
-    const originalPrevious = await readlink(join(nativeHome, "previous"));
-    const preview = await acquireNativeRuntime({ ...f, action: "install", artifact: older });
-    expect(preview).toMatchObject({
-      applied: false,
-      runtime: { build: { abi: "1.4", git_rev: "01300fb2f935" } },
-    });
-    expect(
-      await Bun.file(
-        join(f.root, ".cache/yolo-packages", f.configuration.yolo.sdk.archive),
-      ).exists(),
-    ).toBe(false);
-    expect(existsSync(f.runtimeHome)).toBe(false);
+assetTest("native install, upgrade and rollback load the exact real artifacts", async () => {
+  const f = await fixture();
+  const originalCurrent = await readlink(join(nativeHome, "current"));
+  const originalPrevious = await readlink(join(nativeHome, "previous"));
+  const preview = await acquireNativeRuntime({ ...f, action: "install", artifact: older });
+  expect(preview).toMatchObject({
+    applied: false,
+    runtime: { build: { abi: "1.4", git_rev: "01300fb2f935" } },
+  });
+  expect(existsSync(f.runtimeHome)).toBe(false);
 
-    const installed = await acquireNativeRuntime({
-      ...f,
-      action: "install",
-      artifact: older,
-      apply: true,
-    });
-    expect(installed.applied).toBe(true);
-    expect(installed.runtime.revision).toBe("01300fb2f935f7fb85b135212c718131ae640ff5");
-    expect(await Bun.file(installed.sdk.archive).exists()).toBe(true);
-    expect(await readlink(join(f.runtimeHome, target, "current"))).toBe("0.1.0-3d585c67");
+  const installed = await acquireNativeRuntime({
+    ...f,
+    action: "install",
+    artifact: older,
+    apply: true,
+  });
+  expect(installed.applied).toBe(true);
+  expect(installed.runtime.revision).toBe("01300fb2f935f7fb85b135212c718131ae640ff5");
+  expect(await readlink(join(f.runtimeHome, target, "current"))).toBe("0.1.0-3d585c67");
 
-    const upgraded = await acquireNativeRuntime({
-      ...f,
-      action: "install",
-      artifact: newer,
-      apply: true,
-    });
-    expect(upgraded.runtime.build.git_rev).toBe("0ade1c71ccb5");
-    expect(await readlink(join(f.runtimeHome, target, "previous"))).toBe("0.1.0-3d585c67");
+  const upgraded = await acquireNativeRuntime({
+    ...f,
+    action: "install",
+    artifact: newer,
+    apply: true,
+  });
+  expect(upgraded.runtime.build.git_rev).toBe("0ade1c71ccb5");
+  expect(await readlink(join(f.runtimeHome, target, "previous"))).toBe("0.1.0-3d585c67");
 
-    const rolledBack = await acquireNativeRuntime({ ...f, action: "rollback", apply: true });
-    expect(rolledBack.runtime.manifestSha256).toBe(installed.runtime.manifestSha256);
-    const verified = await acquireNativeRuntime({ ...f, action: "verify" });
-    expect(verified.runtime.build.git_rev).toBe("01300fb2f935");
-    expect(verified.runtime.capabilities).toEqual(capabilities);
-    expect(await readlink(join(nativeHome, "current"))).toBe(originalCurrent);
-    expect(await readlink(join(nativeHome, "previous"))).toBe(originalPrevious);
-  },
-);
+  const rolledBack = await acquireNativeRuntime({ ...f, action: "rollback", apply: true });
+  expect(rolledBack.runtime.manifestSha256).toBe(installed.runtime.manifestSha256);
+  const verified = await acquireNativeRuntime({ ...f, action: "verify" });
+  expect(verified.runtime.build.git_rev).toBe("01300fb2f935");
+  expect(verified.runtime.capabilities).toEqual(capabilities);
+  expect(await readlink(join(nativeHome, "current"))).toBe(originalCurrent);
+  expect(await readlink(join(nativeHome, "previous"))).toBe(originalPrevious);
+});
 
 assetTest("unapproved artifacts and tampered library bytes never activate", async () => {
   const f = await fixture();
@@ -142,7 +112,7 @@ assetTest("unapproved artifacts and tampered library bytes never activate", asyn
 });
 
 assetTest(
-  "the pinned SDK rejects a real ABI 1.3 library before install even if it is approved",
+  "the workspace SDK rejects a real ABI 1.3 library before install even if it is approved",
   async () => {
     const f = await fixture();
     const artifact = join(f.root, "abi13");
@@ -153,7 +123,7 @@ assetTest(
     manifest.sources.yolo.dirty = false;
     const bytes = Buffer.from(JSON.stringify(manifest));
     await writeFile(manifestPath, bytes);
-    f.configuration.yolo.runtime.artifacts.push({
+    f.configuration.artifacts.push({
       target,
       version: manifest.version,
       abi: manifest.abi,
@@ -196,16 +166,8 @@ assetTest("a concurrent acquisition lock is preserved and no install starts", as
   expect(existsSync(join(f.runtimeHome, target, "current"))).toBe(false);
 });
 
-assetTest("linked SDK caches and library files cannot replace another owner's data", async () => {
+assetTest("linked library files cannot replace another owner's data", async () => {
   const f = await fixture();
-  const cache = join(f.root, ".cache/yolo-packages");
-  await mkdir(cache, { recursive: true });
-  const archive = f.configuration.yolo.sdk.archive;
-  await symlink(join(sourceSdk, archive), join(cache, archive));
-  await expect(
-    acquireNativeRuntime({ ...f, action: "install", artifact: newer, apply: true }),
-  ).rejects.toThrow(/regular files/);
-  await rm(cache, { recursive: true });
   const artifact = join(f.root, "linked-artifact");
   await cp(newer, artifact, { recursive: true });
   await rm(join(artifact, "libyolo_runtime.so"));
@@ -218,7 +180,7 @@ assetTest("linked SDK caches and library files cannot replace another owner's da
 
 assetTest("missing capabilities are refused before native activation", async () => {
   const f = await fixture();
-  f.configuration.yolo.runtime.requiredCapabilities = [...capabilities, "desktop.window"];
+  f.configuration.requiredCapabilities = [...capabilities, "desktop.window"];
   await updateConfiguration(f);
   await expect(
     acquireNativeRuntime({ ...f, action: "install", artifact: newer, apply: true }),

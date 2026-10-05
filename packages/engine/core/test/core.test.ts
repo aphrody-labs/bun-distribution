@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { resolve } from "node:path";
+import { probeNativeTooling } from "@aphrody/runtime-sdk/tooling";
 import {
   sys,
   vfs,
@@ -99,16 +100,20 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
       expect(vfs.formatBytes(1073741824)).toBe("1.00 GB");
     });
 
-    it("should parse TypeScript source and extract AST/wyhash metrics", async () => {
-      const filePath = resolve(rootDir, "packages/engine/core/src/index.ts");
-      const parsed = await parseTsSource(filePath);
-      expect(parsed.path).toBe(filePath);
-      expect(parsed.checksum).toBeDefined();
-      expect(parsed.checksum.length).toBeGreaterThan(0);
-      expect(parsed.exports.length).toBeGreaterThan(0);
-      expect(parsed.lines).toBeGreaterThan(50);
-      expect(parsed.bytes).toBeGreaterThan(500);
-    });
+    // Parsing goes through the optional native tooling provider (libyolo_tooling).
+    it.skipIf(!probeNativeTooling().available)(
+      "should parse TypeScript source and extract AST/wyhash metrics",
+      async () => {
+        const filePath = resolve(rootDir, "packages/engine/core/src/index.ts");
+        const parsed = await parseTsSource(filePath);
+        expect(parsed.path).toBe(filePath);
+        expect(parsed.checksum).toBeDefined();
+        expect(parsed.checksum.length).toBeGreaterThan(0);
+        expect(parsed.exports.length).toBeGreaterThan(0);
+        expect(parsed.lines).toBeGreaterThan(50);
+        expect(parsed.bytes).toBeGreaterThan(500);
+      },
+    );
 
     it("should perform parallel recursive directory scan", async () => {
       const report = await scanDirectory(resolve(rootDir, "packages/engine/core/src/sys"), {

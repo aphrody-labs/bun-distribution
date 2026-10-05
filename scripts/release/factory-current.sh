@@ -19,7 +19,6 @@ YOLO_CARGO_WRAPPER="$factory_yolo_wrapper" just yolo::qualify-tooling
 export YOLO_TOOLING_LIB="$factory_yolo_root/target/runtime/libyolo_tooling.so"
 bun scripts/release/runtime_artifact.ts
 bun test --timeout 30000 test/
-bun scripts/release/runtime_sdk_pack.ts
 bun scripts/release/release.ts --out "dist/release/$factory_yolo_sha"
 factory_yolo_version=$(cat apps/yolo/VERSION)
 factory_yolo_release="dist/release/$factory_yolo_sha/$factory_yolo_version"

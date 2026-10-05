@@ -50,7 +50,7 @@ mapfile -t cargo_tools < <(jq -r '.cargoTools[]' "$packages_file")
 "$root/scripts/build/rust/cargo-serial.sh" binstall -y --locked nu "${cargo_tools[@]}"
 
 cd "$root"
-bun run install:workspace
+bun install --frozen-lockfile
 if (( skip_sources == 0 )); then bun run sources:sync; fi
 cargo fetch --locked
 if (( skip_python == 0 )); then

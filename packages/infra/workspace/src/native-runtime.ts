@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-/** Acquire a precompiled producer runtime using the pinned SDK and Yolo release owner. */
-import { constants } from "node:fs";
-import { copyFile, lstat, mkdir, mkdtemp, readFile, readlink, rm } from "node:fs/promises";
-import { homedir, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
-import { prepareRuntimeSdk } from "./runtime-sdk.ts";
+/** Activate a precompiled Yolo runtime verified by the workspace SDK and the Yolo release owner. */
+import { lstat, mkdir, readFile, readlink, rm } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join, resolve } from "node:path";
+import * as workspaceSdk from "@aphrody/runtime-sdk/artifact";
 
 interface ArtifactPin {
   target: string;
@@ -35,20 +33,20 @@ interface NativeBuild {
   git_rev: string;
   panic_recovery: boolean;
 }
-interface PinnedSdk {
+interface RuntimeSdk {
   hostTarget(): string;
-  verifyArtifact(directory: string): NativeManifest;
+  verifyArtifact(directory: string): unknown;
   loadArtifact(directory: string): {
     buildInfo(): NativeBuild;
     capabilities(): string[];
     close(): void;
   };
 }
+const sdk: RuntimeSdk = workspaceSdk;
 export interface NativeRuntimeOptions {
   root: string;
   action: "install" | "verify" | "rollback";
   artifact?: string;
-  sdkSource?: string;
   runtimeHome?: string;
   yolo?: string;
   apply?: boolean;
@@ -80,34 +78,6 @@ async function command(argv: string[], root: string, env?: NodeJS.ProcessEnv) {
   return stdout.trim();
 }
 
-async function acquireSdk(root: string, source: string | undefined, apply: boolean) {
-  const cached = await prepareRuntimeSdk({ root });
-  if (cached.cached) return cached;
-  if (source === undefined) {
-    if (!apply) return cached;
-    throw new Error(
-      "Pinned SDK is unavailable; supply --sdk-source with its archive and provenance",
-    );
-  }
-  const supplied = await prepareRuntimeSdk({ root, destination: source });
-  if (!supplied.cached) throw new Error("SDK source does not contain the pinned archive");
-  if (!apply) return supplied;
-  await mkdir(dirname(cached.archive), { recursive: true });
-  await realDirectory(dirname(cached.archive));
-  // Never overwrite another session's SDK cache. A race may only reuse the exact verified pair.
-  const publish = async (suffix: string) => {
-    try {
-      await copyFile(supplied.archive + suffix, cached.archive + suffix, constants.COPYFILE_EXCL);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-    }
-  };
-  // Publish provenance first, so an interrupted copy cannot strand an archive without its metadata.
-  await publish(".json");
-  await publish("");
-  return await prepareRuntimeSdk({ root });
-}
-
 function readContract(value: unknown): RuntimeContract {
   const contract = value as RuntimeContract | undefined;
   if (
@@ -133,7 +103,7 @@ function readContract(value: unknown): RuntimeContract {
   return contract;
 }
 
-async function inspectArtifact(directory: string, contract: RuntimeContract, sdk: PinnedSdk) {
+async function inspectArtifact(directory: string, contract: RuntimeContract) {
   await realDirectory(directory);
   const manifestPath = join(directory, "manifest.json");
   await regular(manifestPath);
@@ -163,7 +133,7 @@ async function inspectArtifact(directory: string, contract: RuntimeContract, sdk
       if (status.size !== file.bytes) throw new Error("Runtime file size differs: " + name);
     }),
   );
-  // The producer SDK owns file checksums, target validation and ABI negotiation.
+  // The SDK owns file checksums, target validation and ABI negotiation.
   sdk.verifyArtifact(directory);
   const runtime = sdk.loadArtifact(directory);
   try {
@@ -210,10 +180,9 @@ async function selectedDirectory(home: string, target: string, slot: "current" |
 
 export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
   const root = resolve(options.root);
-  const configuration = JSON.parse(
-    await readFile(join(root, "config/sibling-checkouts.json"), "utf8"),
+  const contract = readContract(
+    JSON.parse(await readFile(join(root, "config/native-runtime.json"), "utf8")),
   );
-  const contract = readContract(configuration.yolo?.runtime);
   if (options.action !== "install" && options.action !== "verify" && options.action !== "rollback")
     throw new Error("Expected install, verify or rollback");
   if (options.action === "install" && !options.artifact)
@@ -223,19 +192,8 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
       (process.env["YOLO_RUNTIME_HOME"] ||
         join(process.env["YOLO_HOME"] || join(homedir(), ".yolo"), "runtime")),
   );
-  const sdkArchive = await acquireSdk(
-    root,
-    options.sdkSource,
-    Boolean(options.apply && options.action !== "verify"),
-  );
-  if (!sdkArchive.cached) throw new Error("Pinned SDK is unavailable; supply --sdk-source");
-  const temporary = await mkdtemp(join(tmpdir(), "aphrody-pinned-sdk-"));
   let lock: string | undefined;
   try {
-    await command(["tar", "-xzf", sdkArchive.archive, "-C", temporary], root);
-    const sdk = (await import(
-      pathToFileURL(join(temporary, "package/src/artifact.ts")).href
-    )) as PinnedSdk;
     const target = sdk.hostTarget();
     if (!contract.artifacts.some((pin) => pin.target === target))
       throw new Error("No qualified native runtime pin for " + target);
@@ -248,7 +206,7 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
     }
     const before =
       options.action === "install"
-        ? await inspectArtifact(resolve(options.artifact!), contract, sdk)
+        ? await inspectArtifact(resolve(options.artifact!), contract)
         : await inspectArtifact(
             await selectedDirectory(
               home,
@@ -256,14 +214,12 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
               options.action === "rollback" ? "previous" : "current",
             ),
             contract,
-            sdk,
           );
     if (!options.apply || options.action === "verify")
       return {
         schema: "aphrody.native-runtime/1",
         action: options.action,
         applied: false,
-        sdk: sdkArchive,
         runtime: before,
       };
     if (options.action === "install") {
@@ -273,17 +229,16 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
         throw error;
       });
       if (existing) {
-        const installed = await inspectArtifact(destination, contract, sdk);
+        const installed = await inspectArtifact(destination, contract);
         if (installed.manifestSha256 !== before.manifestSha256)
           throw new Error("Installed runtime directory conflicts with the requested artifact");
       }
     }
-    const producer = resolve(root, configuration.yolo.path);
     const executable =
       options.yolo ??
       process.env["APHRODY_YOLO_BIN"] ??
       Bun.which("yolo") ??
-      join(producer, "bin", process.platform === "win32" ? "yolo.exe" : "yolo");
+      join(root, "bin", process.platform === "win32" ? "yolo.exe" : "yolo");
     await command(
       options.action === "install"
         ? [executable, "runtime", "install", before.directory]
@@ -291,23 +246,17 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
       root,
       { ...process.env, YOLO_RUNTIME_HOME: home },
     );
-    const after = await inspectArtifact(
-      await selectedDirectory(home, target, "current"),
-      contract,
-      sdk,
-    );
+    const after = await inspectArtifact(await selectedDirectory(home, target, "current"), contract);
     if (after.manifestSha256 !== before.manifestSha256)
       throw new Error("Yolo release owner selected an unexpected runtime");
     return {
       schema: "aphrody.native-runtime/1",
       action: options.action,
       applied: true,
-      sdk: sdkArchive,
       runtime: after,
     };
   } finally {
     if (lock) await rm(lock, { recursive: true, force: true });
-    await rm(temporary, { recursive: true, force: true });
   }
 }
 
@@ -315,7 +264,7 @@ export async function runNativeRuntime(input: readonly string[]): Promise<number
   const args = [...input];
   if (args.includes("--help")) {
     console.log(
-      "Usage: yolo ops native-runtime install|verify|rollback [--root DIR] [--artifact DIR] [--sdk-source DIR] [--runtime-home DIR] [--yolo BIN] [--apply]. Uses exact runtime/SDK pins and the Yolo release owner; no source checkout, Cargo or engine rebuild. Default: verify without activation.",
+      "Usage: yolo ops native-runtime install|verify|rollback [--root DIR] [--artifact DIR] [--runtime-home DIR] [--yolo BIN] [--apply]. Uses the runtime pins of config/native-runtime.json, the workspace SDK and the Yolo release owner; no source checkout, Cargo or engine rebuild. Default: verify without activation.",
     );
     return 0;
   }
@@ -327,10 +276,9 @@ export async function runNativeRuntime(input: readonly string[]): Promise<number
     const arg = args.shift();
     if (arg === "--apply") options.apply = true;
     else {
-      const keys: Record<string, "root" | "artifact" | "sdkSource" | "runtimeHome" | "yolo"> = {
+      const keys: Record<string, "root" | "artifact" | "runtimeHome" | "yolo"> = {
         "--root": "root",
         "--artifact": "artifact",
-        "--sdk-source": "sdkSource",
         "--runtime-home": "runtimeHome",
         "--yolo": "yolo",
       };

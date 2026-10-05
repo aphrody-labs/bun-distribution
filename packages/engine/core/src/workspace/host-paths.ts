@@ -113,9 +113,15 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
   },
 ];
 const PREFILTER = String.raw`/home/|/Users/|[A-Za-z]:[\\/]+Users|/mnt/[a-z]/|/source([/"'\x60[:space:])]|$)|aphrody-src|aphrody-(infra|ai|web|ui|os|compat|contracts|shell|native)/`;
-const REWRITABLE: HostPathArea[] = new Set(["docs", "record", "data", "code", "config"]);
+const REWRITABLE: ReadonlySet<HostPathArea> = new Set<HostPathArea>([
+  "docs",
+  "record",
+  "data",
+  "code",
+  "config",
+]);
 /** Config files only take the retired-layout mapping; other rules need a reviewed edit. */
-const CONFIG_REWRITES: HostPathRule[] = new Set(["legacy-layout"]);
+const CONFIG_REWRITES: ReadonlySet<HostPathRule> = new Set<HostPathRule>(["legacy-layout"]);
 const canRewrite = (area: HostPathArea, rule: HostPathRule, line: string): boolean =>
   REWRITABLE.has(area) &&
   (area !== "code" || COMMENT_LINE.test(line)) &&

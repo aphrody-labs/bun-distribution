@@ -25,7 +25,7 @@ helper. No token value belongs in a repository.
 | --- | --- |
 | `aphrody` | Canonical monorepo (Rust + Bun), all Aphrody domains, the plugin and the Codex marketplace (`.agents/plugins/marketplace.json`). |
 | `aphrody-py` | Python workspace (training, RAG kernels), cloned next to the monorepo by the bootstrap. |
-| `iecode` | IEVR/NIE workspace; RG consumes its pinned archives (`config/sibling-checkouts.json`). Absorbs the former `nie`, `iepy` and `iecode-cpp` repositories. |
+| `iecode` | IEVR/NIE workspace; consumes `@aphrody/*` through the sha256 archive channel (`aphrody-ops aphrody-packages prepare`, pinned in its `config/aphrody-packages.json`). Absorbs the former `nie`, `iepy` and `iecode-cpp` repositories. |
 | `oxc` | Fork pinned as a Cargo git dependency in `Cargo.toml`. |
 | `bun` | Bun fork (`config/bun-fork.json` (not in repo)), keeps its `oven-sh/bun` fork relationship. |
 

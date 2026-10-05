@@ -2,10 +2,10 @@
 // Copyright 2026 aphrody-code
 // SPDX-License-Identifier: Apache-2.0
 //
-// Canonical schema and Rust types are owned by the existing Yolo checkout.
+// Canonical schema and Rust types live in crates/compat/n2b-types (Yolo is part of this monorepo).
 // Produit :
-//   - Yolo crates/aphrody-n2b-types/src/schema.rs via `cargo typify`
-//   - packages/compat/n2b-types/src/index.ts      via `json-schema-to-typescript --unreachableDefinitions`
+//   - crates/compat/n2b-types/src/schema.rs       via `cargo typify`
+//   - packages/engine/n2b-types/src/index.ts      via `json-schema-to-typescript --unreachableDefinitions`
 //
 // Les deux fichiers sont commités. La CI échoue si drift (mode --check).
 //
@@ -21,22 +21,17 @@ import { join, resolve } from "node:path";
 // scripts/tools/compat/scripts/n2b -> repository root is five levels up.
 const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..", "..");
 
-export async function schemaPaths(root = REPO_ROOT, producer = process.env.APHRODY_YOLO_ROOT) {
-  const pin = (await Bun.file(join(root, "config/sibling-checkouts.json")).json()).yolo;
-  if (pin?.envOverride !== "APHRODY_YOLO_ROOT" || typeof pin.path !== "string") {
-    throw new Error("Unsupported Yolo sibling checkout configuration");
-  }
-  const yolo = resolve(root, producer ?? pin.path);
-  const crate = join(yolo, "crates/aphrody-n2b-types");
+export async function schemaPaths(root = REPO_ROOT) {
+  const crate = join(root, "crates/compat/n2b-types");
   const schema = join(crate, "schema/v2.json");
   if (!(await Bun.file(schema).exists())) {
-    throw new Error(`Canonical N2B schema missing: ${schema}; prepare the Yolo source checkout`);
+    throw new Error(`Canonical N2B schema missing: ${schema}`);
   }
   return {
     schema,
     rust: join(crate, "src/schema.rs"),
     format: join(crate, "rustfmt.toml"),
-    ts: join(root, "packages/compat/n2b-types/src/index.ts"),
+    ts: join(root, "packages/engine/n2b-types/src/index.ts"),
   };
 }
 

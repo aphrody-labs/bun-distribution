@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { readTar } from "../src/canonical-tar.ts";
 import {
   aphrodyClosure,
+  aphrodyPackageDirectories,
   archiveName,
   assertPublicEntries,
   embedExternalImports,
@@ -30,10 +31,19 @@ test("export targets cover every condition, main and module, but not patterns", 
   ).toEqual(["dist/index.d.mts", "dist/index.mjs", "main.js"]);
 });
 
-test("the RG closure includes transitive workspace packages and reports the Yolo SDK as external", async () => {
+test("the RG closure packs the runtime SDK as a workspace member", async () => {
   const { members, external } = await aphrodyClosure(root, ["@aphrody/agent-browser"]);
-  expect(members.map((member) => member.name)).toContain("@aphrody/agent-browser");
-  expect(external).toContain("@aphrody/runtime-sdk");
+  expect(members.map((member) => member.name)).toEqual([
+    "@aphrody/agent-browser",
+    "@aphrody/runtime-sdk",
+  ]);
+  expect(external).toEqual([]);
+});
+
+test("members follow the root workspaces globs beyond packages/*/*", async () => {
+  const directories = await aphrodyPackageDirectories(root);
+  expect(directories.get("@aphrody/canvas")).toBe(join(root, "m3/packages/canvas"));
+  expect(directories.get("@aphrody/api")).toBe(join(root, "crates/tauri/aphrody-tauri-api"));
 });
 
 test("archive names are content addressed and pins detect missing or changed archives", async () => {

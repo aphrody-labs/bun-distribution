@@ -555,7 +555,10 @@ export async function runInfraAudit(args: string[]): Promise<number> {
         "packages/infra/workspace/src/ops.ts",
         ...commandArgs,
       ]);
-    await observe("Infra source/config contracts", [process.execPath, "scripts/tools/infra/check-infra.ts"]);
+    await observe("Infra source/config contracts", [
+      process.execPath,
+      "scripts/tools/infra/check-infra.ts",
+    ]);
     for (const host of ["wsl", "vps", "dbfr"] as const) {
       const command = hostProbeCommand(host, services);
       const result = await observe(

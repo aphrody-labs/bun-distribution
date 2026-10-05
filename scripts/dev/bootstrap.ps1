@@ -64,7 +64,7 @@ $cargoTools = @($packagePins.cargoTools)
 & (Join-Path $root 'scripts/build/rust/cargo-serial.ps1') binstall --yes --locked nu @cargoTools
 if ($LASTEXITCODE -ne 0) { throw 'Rust developer tools installation failed' }
 
-bun run install:workspace
+bun install --frozen-lockfile
 if ($LASTEXITCODE -ne 0) { throw 'Bun workspace install failed' }
 if (-not $SkipSources) { bun run sources:sync; if ($LASTEXITCODE -ne 0) { throw 'Pinned upstream source synchronization failed' } }
 cargo fetch --locked

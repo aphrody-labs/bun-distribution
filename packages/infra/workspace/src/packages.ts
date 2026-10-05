@@ -1,4 +1,5 @@
 import { basename, dirname, join } from "node:path";
+import { syncPackages } from "@aphrody/yolo-core/pm";
 import { infraRoot } from "./runtime.ts";
 
 const OFFICIAL_NPM_REGISTRY = "https://registry.npmjs.org";
@@ -115,13 +116,23 @@ export async function runPackageOperation(
   }
   let exitCode = 0;
   for (const workspace of workspaces) {
-    const args =
-      operation === "install"
-        ? ["install", "--frozen-lockfile"]
-        : operation === "outdated"
-          ? ["outdated", "--frozen-lockfile"]
-          : ["audit", "--json"];
     console.error(`@aphrody/workspace ${operation}: ${workspace.id}`);
+    if (operation === "install") {
+      // One install owner: the yolo-core package facade (also behind the yolo_package_sync MCP tool).
+      const report = await syncPackages({
+        root: workspace.root,
+        managers: ["bun"],
+        lifecycleScripts: true,
+        apply: true,
+        timeoutMs: 1_800_000,
+      });
+      if (!report.ok) {
+        console.error(JSON.stringify(report, null, 2));
+        exitCode = 1;
+      }
+      continue;
+    }
+    const args = operation === "outdated" ? ["outdated", "--frozen-lockfile"] : ["audit", "--json"];
     const child = Bun.spawn([process.execPath, ...args], {
       cwd: workspace.root,
       stdout: "inherit",

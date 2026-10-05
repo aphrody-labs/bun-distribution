@@ -13,40 +13,26 @@ afterEach(async () => {
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "n2b-schema-"));
   roots.push(root);
-  const consumer = join(root, "consumer");
-  const producer = join(root, "producer");
-  await Bun.write(
-    join(consumer, "config/sibling-checkouts.json"),
-    JSON.stringify({
-      yolo: { path: "../producer", envOverride: "APHRODY_YOLO_ROOT" },
-    }),
-  );
-  return { consumer, producer };
+  return root;
 }
 
-test("schema and Rust output belong to Yolo; generated TS belongs to consumer", async () => {
-  const { consumer, producer } = await fixture();
-  const schema = join(producer, "crates/aphrody-n2b-types/schema/v2.json");
+test("schema and Rust output live in the n2b-types crate; generated TS in its package", async () => {
+  const root = await fixture();
+  const schema = join(root, "crates/compat/n2b-types/schema/v2.json");
   await Bun.write(schema, '{"title":"N2BReport"}');
-  const paths = await schemaPaths(consumer, producer);
+  const paths = await schemaPaths(root);
   expect(paths.schema).toBe(schema);
-  expect(paths.rust).toBe(join(producer, "crates/aphrody-n2b-types/src/schema.rs"));
-  expect(paths.format).toBe(join(producer, "crates/aphrody-n2b-types/rustfmt.toml"));
-  expect(paths.ts).toBe(join(consumer, "packages/compat/n2b-types/src/index.ts"));
+  expect(paths.rust).toBe(join(root, "crates/compat/n2b-types/src/schema.rs"));
+  expect(paths.format).toBe(join(root, "crates/compat/n2b-types/rustfmt.toml"));
+  expect(paths.ts).toBe(join(root, "packages/engine/n2b-types/src/index.ts"));
   expect(await Bun.file(paths.schema).json()).toEqual({ title: "N2BReport" });
 });
 
-test("missing producer fails instead of using a stale local schema", async () => {
-  const { consumer, producer } = await fixture();
-  await Bun.write(join(consumer, "crates/contracts/schema/v2.json"), "{}");
-  await expect(schemaPaths(consumer, producer)).rejects.toThrow("Canonical N2B schema missing");
+test("a missing canonical schema fails", async () => {
+  const root = await fixture();
+  await expect(schemaPaths(root)).rejects.toThrow("Canonical N2B schema missing");
 });
 
-test("producer override is explicit and local", async () => {
-  const { consumer, producer } = await fixture();
-  const selected = join(producer, "alternate");
-  await Bun.write(join(selected, "crates/aphrody-n2b-types/schema/v2.json"), "{}");
-  expect((await schemaPaths(consumer, selected)).schema).toBe(
-    join(selected, "crates/aphrody-n2b-types/schema/v2.json"),
-  );
+test("the repository schema is present", async () => {
+  expect(await Bun.file((await schemaPaths()).schema).exists()).toBe(true);
 });

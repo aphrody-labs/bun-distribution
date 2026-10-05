@@ -21,7 +21,12 @@ function object(value: unknown): ObjectValue {
 }
 
 /** Check the kernel's domain before invoking a tool that can write conversations. */
-export async function syncAgentPass(client: SyncClient, domain: string, memory: boolean, live = true) {
+export async function syncAgentPass(
+  client: SyncClient,
+  domain: string,
+  memory: boolean,
+  live = true,
+) {
   if (!["aphrody", "dbfr", "ie"].includes(domain)) throw new Error("invalid domain");
   const environment = object(
     await client.call("nu_eval", { code: "$env.APHRODY_AGENT_DOMAIN?", timeout_secs: 5 }, 10_000),

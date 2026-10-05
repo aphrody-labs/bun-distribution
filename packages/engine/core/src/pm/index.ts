@@ -11,6 +11,8 @@ export interface PackageSyncOptions {
   managers?: readonly PackageManager[] | undefined;
   offline?: boolean | undefined;
   production?: boolean | undefined;
+  /** Run Bun lifecycle scripts (trustedDependencies only, per Bun policy). Off by default. */
+  lifecycleScripts?: boolean | undefined;
   apply?: boolean | undefined;
   timeoutMs?: number | undefined;
   signal?: AbortSignal | undefined;
@@ -101,7 +103,7 @@ export async function planPackageSync(options: PackageSyncOptions = {}): Promise
         binary ?? "bun",
         "install",
         "--frozen-lockfile",
-        "--ignore-scripts",
+        ...(options.lifecycleScripts ? [] : ["--ignore-scripts"]),
         "--no-progress",
         ...(options.production ? ["--production"] : []),
       ];
