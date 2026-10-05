@@ -35,7 +35,7 @@ does not prove that a service or desktop artifact is deployed.
 | [aphrody-shell](../products/shell/README.md) | Nushell, terminal/PTY and TUI implementations |
 | [aphrody-web](../products/web/README.md) | Obscura, BXC, browsing/extraction, web clients, aphrody-site as public HTTP origin and the transitory FSL Drive server |
 | [aphrody-ui](../../design/aphrody-m3/docs/products/_source/README.md.8c1fe132fe5c) | The Aphrody Tauri desktop, app-ui shell, Material 3, Drive presentation and renderers; a retained Drive source copy remains during migration |
-| [aphrody-koharu](../products/koharu/README.md) | Reusable Koharu project, page, scene, manga pipeline and model configuration libraries; Rust and Bun SDKs |
+| aphrody-koharu (`docs/products/koharu/README.md`, not in repo) | Reusable Koharu project, page, scene, manga pipeline and model configuration libraries; Rust and Bun SDKs |
 | [aphrody-compat](../products/compat/_source/README.md.038abe5c2ce0) | Bun/N2B compatibility facilities and documentation |
 | [aphrody-ai](../products/ai/_source/README.md.a7d252bc425b) | Agent/runtime/tools, model clients and lifecycle, inference, RAG/memory, OCR/vision/voice, training, AI MCP/A2A, app-server and the `aphrody` CLI |
 | [aphrody-infra](../products/infra/README.md) | Targets, topology, service/routes catalogues, release/deployment control, Git/SSH/VPN and remote operations |

@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths — backtick paths in this dated document name files of the repository at the time it records (Shenron and Koharu moved to aphrody-labs/shenron on 2026-10-05), not of this checkout. -->
 # Rust and Bun database clients (2026-10-01)
 
 Versions come from crates.io, npm and GitHub on 2026-10-01. Workspace

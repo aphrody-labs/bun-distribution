@@ -14,7 +14,7 @@ bun run typecheck
 bun run build:native
 ```
 
-The Web API runs from `packages/shenron/api/src/server/index.ts` and Aphrody OS releases
+The Web API runs from `shenron:packages/api/src/server/index.ts` and Aphrody OS releases
 deploy it as `aphrody-web-api`. Use the Aphrody OS and infra release workflow
 for production artifacts. The local CLI shim runs the source entrypoint;
 there is no standalone BXC executable or BXC MCP release to build.

@@ -14,7 +14,7 @@ Historically, Aphrody Discord bots required:
 3. Node/Bun environment variables for module transpilation and decorator handling.
 
 With the introduction of `aphrody-discord-compiler` and AOT standalone compilation (`bun build --compile`), both bots are compiled into self-contained ELF executable binaries:
-- `apps/shenron/bot/dist/shenron` (~151.6 MB)
+- `shenron:apps/bot/dist/shenron` (~151.6 MB)
 - `apps/rg/bot/dist/rg-bot` (not in repo) (~144.9 MB)
 
 ### Operational Benefits
@@ -28,9 +28,9 @@ With the introduction of `aphrody-discord-compiler` and AOT standalone compilati
 
 ## 2. Updated Systemd Service Units
 
-The systemd units in the repository (`yolo/config/host/systemd/shenron/shenron-bot.service` and `iecode/config/rg/host/systemd/rg-bot.service`) have been updated to target the autonomous native binaries directly.
+The systemd units in the repository (`config/host/systemd/shenron/shenron-bot.service` and `iecode/config/rg/host/systemd/rg-bot.service`) have been updated to target the autonomous native binaries directly.
 
-### 2.1 `yolo/config/host/systemd/shenron/shenron-bot.service`
+### 2.1 `config/host/systemd/shenron/shenron-bot.service`
 
 ```ini
 [Unit]
@@ -210,7 +210,7 @@ aphrody discord compile all --smoke
 
 Verify that the binaries exist and respond cleanly:
 ```bash
-apps/shenron/bot/dist/shenron --help
+shenron:apps/bot/dist/shenron --help
 apps/rg/bot/dist/rg-bot --help
 ```
 

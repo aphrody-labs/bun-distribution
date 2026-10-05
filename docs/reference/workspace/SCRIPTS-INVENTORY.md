@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths — backtick paths in this dated document name files of the repository at the time it records (Shenron and Koharu moved to aphrody-labs/shenron on 2026-10-05), not of this checkout. -->
 # Inventaire des scripts par références entrantes — 2026-10-03
 
 Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de fichiers suivis (`git grep -F <nom de base>`, hors `docs/migration`, lockfiles et le script lui-même) qui citent son nom. Zéro référence ne prouve pas l'inutilité : les `*.test.ts` sont découverts par `bun test`, et un script peut être lancé à la main. Aucune suppression sans vérification du propriétaire.

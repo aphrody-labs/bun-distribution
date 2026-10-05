@@ -46,7 +46,7 @@ repository; add a collector in `src/deps/inventory.ts` when one appears.
   and never applies. Only the pinned `rust-toolchain.toml` channel is installed (no floating `stable`/`nightly`); it
   moves through `tools --apply`. Cargo tools are installed as prebuilt binaries with `cargo binstall`.
 - `.github/workflows/update.yml`: weekly report-only run on GitHub Actions.
-- `.github/shenron/workflows/update-deps.yml` is a separate Shenron subtree PR workflow (not under `.github/workflows`).
+- `shenron:.github/workflows/update-deps.yml` is a separate Shenron subtree PR workflow (not under `.github/workflows`).
 
 ## Rules
 

@@ -97,7 +97,7 @@ render, install, and rollout functions.
 
 The reusable workflow at `.github/workflows/aphrody-reusable-ci.yml` (not in repo) is
 consumed through one generated file,
-`.github/shenron/workflows/aphrody-ci.yml`, containing this shape:
+`shenron:.github/workflows/aphrody-ci.yml`, containing this shape:
 
 ```yaml
 # SPDX-License-Identifier: Apache-2.0

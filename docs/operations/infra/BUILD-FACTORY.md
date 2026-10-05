@@ -86,7 +86,7 @@ assets are not implied by the installed toolchains.
 The existing atomic adapter accepts `sourceLayout: "monorepo"` and
 `target: "dbfr"` in `release.json`, with `repository: "aphrody-labs/aphrody"`.
 Absent fields retain legacy VPS behavior. Monorepo source maps to
-`apps/shenron/site` and `apps/shenron/bot`; artifact schema remains
+`shenron:apps/site` and `shenron:apps/bot`; artifact schema remains
 `shenron-site-artifact/v1`. Assembly renders unit paths before sealing hashes.
 DBFR requires private 0600 environment files and loopback PostgreSQL on port
 5432 before removing the VPS tunnel dependency. This validates configuration;
@@ -213,7 +213,7 @@ rollback; it does not restart application services.
 ## Isolated Bun runtime dependencies
 
 Monorepo assembly and activation require Next under the site owner:
-`apps/shenron/site/node_modules/next/dist/bin/next`. Generated site units use
+`shenron:apps/site/node_modules/next/dist/bin/next`. Generated site units use
 that same path before sealing; only legacy artifacts retain the root fallback.
 The source payload includes compiled first-party directories selected by the
 existing Workspace dependency build plan for site and bot. Owner manifests
@@ -289,4 +289,4 @@ Only DBFR Redis restarts; its enabled state is unchanged. SHA-256 must match bef
 
 ### Shared compute transport
 
-Shenron's compute client requires a loopback HTTP endpoint. Keep the existing VPS compute service and protected model store in place; supervise the VPS→DBFR reverse tunnel with `yolo/config/host/systemd/aphrody/aphrody-compute-dbfr-tunnel.service`. Install its helper at `/usr/local/libexec/aphrody-infra/shenron-compute-dbfr-tunnel.py` and the unit under `/etc/systemd/system`, then reload and enable it through Infra. Root reads only the port from the existing private compute environment before dropping to Ubuntu for SSH. No token is transferred or placed in process arguments. The SSH forward binds DBFR `127.0.0.1` to the same VPS loopback port, with forwarding failure and keepalive checks. Verify DBFR's listener is loopback-only and run the existing authenticated compute client probe before Shenron activation. This generic compute tunnel remains after the obsolete PostgreSQL tunnel is retired.
+Shenron's compute client requires a loopback HTTP endpoint. Keep the existing VPS compute service and protected model store in place; supervise the VPS→DBFR reverse tunnel with `config/host/systemd/aphrody/aphrody-compute-dbfr-tunnel.service`. Install its helper at `/usr/local/libexec/aphrody-infra/shenron-compute-dbfr-tunnel.py` and the unit under `/etc/systemd/system`, then reload and enable it through Infra. Root reads only the port from the existing private compute environment before dropping to Ubuntu for SSH. No token is transferred or placed in process arguments. The SSH forward binds DBFR `127.0.0.1` to the same VPS loopback port, with forwarding failure and keepalive checks. Verify DBFR's listener is loopback-only and run the existing authenticated compute client probe before Shenron activation. This generic compute tunnel remains after the obsolete PostgreSQL tunnel is retired.

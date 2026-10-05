@@ -61,35 +61,11 @@ Source of truth: `crates/ai/mcp/src/main.rs` (`#[tool_router]` impl on
 | `auth_extract` | Windows-only: DPAPI Chrome Canary cookie inspection via `backend::chromium::ChromiumParser`. |
 | `chrome_autopsy` | Windows-only: `OpenProcess` + `ReadProcessMemory` against a target PID, 4 KiB cap, hex+ASCII dump. |
 
-### Dragon Ball (`dragonball.*`, feature `dragonball`, on by default)
+### Dragon Ball tools
 
-The Dragon Ball tools are served by `src/dragonball_tools.rs` and registered
-in `src/main.rs`. The former Bun `apps/shenron-mcp` (not in repo) is retired. The current
-registry includes `rag_search`, `rag_context`, `rag_ask`,
-`sources`, `data_coverage`, `wiki_{search,list,get,categories}`,
-`manga_{search,tomes,page,chapitre,planche,recherche,scanlate}`, `chronologie`,
-`bot_{stats,personas,leaderboard,commands}`, `news`,
-`databooks_{search,planches,get,scanlate}`, `canon_{check,references}`,
-`a2a_{send,task_status,task_list,agent_card}` and
-`admin_{databooks_deposit,bot_commands,bot_command_execute,services,service_action}`.
-Use MCP `tools/list` from the built server for the exact runtime schemas.
-
-- Backends: `SHENRON_API_URL` (bot), `SHENRON_SITE_API_URL` / `SHENRON_SITE_URL` (site).
-- Local RAG, persona and chat: `aphrody_rag::dragonball`. `local: true` or
-  `SHENRON_LOCAL_RAG=1` answers from the local corpus
-  (`APHRODY_DRAGONBALL_CORPUS`, `APHRODY_DRAGONBALL_DATASET_DIR`,
-  `APHRODY_CORPUS_CRAWL_DIR`, `APHRODY_DRAGONBALL_RAG_DB`, `APHRODY_HOME`);
-  `APHRODY_AUTO_FALLBACK=1` falls back to it when the bot API fails. The local
-  model comes from the `APHRODY_AI_CHAT_*` contract (`APHRODY_LOCAL_AI_CONFIG`
-  names the contract file).
-- Admin tools fail closed without `SHENRON_API_ADMIN_TOKEN` (bot) or
-  `SHENRON_DATABOOKS_API_TOKEN` (site).
-
-The independent `aphrody_rag_*` index tools are opt-in. `--features rag` exposes the
-SQLite index with lexical search; `--features rag-ort` also forwards
-`aphrody-rag/ort` so configured local ONNX embeddings can run. The aggregate
-`toolbox` feature includes `rag-ort`, OCR, vision, local transcription, jobs,
-and DBFR tools. It still excludes NIE.
+The `dragonball.*` tools left with the Shenron product: `shenron-mcp`
+(`shenron:crates/shenron-mcp` in [aphrody-labs/shenron](https://github.com/aphrody-labs/shenron))
+serves them. This server keeps the AI gateway Shenron calls (`/api/v1/shenron/*`).
 
 ### NIE (`nie.*`, optional feature `nie`, disabled by default)
 

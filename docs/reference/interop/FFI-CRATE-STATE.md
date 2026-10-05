@@ -1,3 +1,4 @@
+<!-- docs-links: external-paths — backtick paths in this dated document name files of the repository at the time it records (Shenron and Koharu moved to aphrody-labs/shenron on 2026-10-05), not of this checkout. -->
 # FFI crate state (factual inventory)
 
 Generated 2026-10-02 by static inspection only (no cargo run). Method and limits are at the end. Counts are the output of the scripts described in "Method"; "unverified" marks what was not checked.

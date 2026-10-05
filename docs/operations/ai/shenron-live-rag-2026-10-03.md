@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths — backtick paths in this dated document name files of the repository at the time it records (Shenron and Koharu moved to aphrody-labs/shenron on 2026-10-05), not of this checkout. -->
 
 # Qualification du RAG Shenron — 2026-10-03
 
@@ -147,7 +148,7 @@ préchargement complet n'est revendiqué.
 résolution du domaine et priorité du workspace explicite. Seuls `tone`,
 `brevity` et `vibe` atteignent les instructions ; la garde reste en dernière
 position. Les textes privés et les mémoires ne sont pas copiés. Voir
-[agent-home-bun.md](../shenron/agent-home-bun.md).
+agent-home-bun.md (`docs/operations/shenron/agent-home-bun.md`, not in repo).
 
 Le rapport de synchronisation est publié par renommage atomique et contient
 l'heure réelle de lecture de chaque source. Pour les exports chargés avant la

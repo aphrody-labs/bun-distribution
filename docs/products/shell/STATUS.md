@@ -56,7 +56,7 @@ DESKTOP-PTY.md (marked superseded), audit T-01 and T-05 (marked fixed).
 
 ## Known doc debt (not fixed here)
 
-- `docs/reference/os/integrations/KOHARU.md` (13 dead links) and `docs/products/os/*` (6 dead links).
+- `docs/products/os/*` (6 dead links); the Koharu integration note left with Koharu (aphrody-labs/shenron).
 - `ARCHITECTURE.md` over-claims the systemd restart policy; `ARCHITECTURE-GAPS-STATUS.md` has stale script paths.
 - About 25 os crates have no crate doc (systemd, proc, sandbox, jobs, kernel, search first).
 - `docs/plans/os/native-runtime-yolo.md` is transient session state, not a plan.

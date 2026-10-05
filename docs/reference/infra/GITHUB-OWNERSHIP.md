@@ -35,7 +35,7 @@ the former Windows and remote copies were removed after SHA-256 verification
 on 2026-10-02 under the single-copy rule): the former split layer
 repositories `aphrody-ai`, `-os`, `-ui`, `-web`, `-compat`, `-contracts`,
 `-shell`, `-native`, `-infra`, `-discord`, `-koharu`, `-src`, `-go`, `-ts`,
-`aphrody-legacy`, `shenron` (imported into `apps/shenron` and `packages/shenron` at its last commit `58e03b40`; the running vps release is a self-contained artifact), and `bxc`, `fut`, `n2b`, `winclean`, `nie`, `iepy`,
+`aphrody-legacy`, `shenron` (imported into `shenron:apps` and `shenron:packages` at its last commit `58e03b40`; the running vps release is a self-contained artifact), and `bxc`, `fut`, `n2b`, `winclean`, `nie`, `iepy`,
 `iecode-cpp`, `diffutils`, `findutils`, `grep`, `sed`, `tar`. Their content
 lives in the monorepo or in IECODE. An organization owner can restore a deleted
 repository for 90 days from the organization settings.

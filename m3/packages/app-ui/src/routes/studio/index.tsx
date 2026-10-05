@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Studio of the desktop app (docs/plans/ui/aphrody-app-studio.md): agent tools and Drive.
+// Studio of the desktop app: agent tools and Drive.
 // Each section calls an existing native owner through typed Studio commands.
 import { useEffect, useState, type ComponentType } from "react";
 import { useSearchParams } from "react-router-dom";

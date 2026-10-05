@@ -326,7 +326,7 @@ explicitly requested; they do not close these gates or authorize cutover.
       dependency catalog. Package typechecks, migration audit and Infra service
       catalog pass. The UI/runtime/dependency convergence roadmap and remaining
       script portability checks are in
-      [`APHRODY-ROADMAP.md`](../plans/shenron/APHRODY-ROADMAP.md). This does
+      `APHRODY-ROADMAP.md` (`docs/plans/shenron/APHRODY-ROADMAP.md`, not in repo). This does
       not close the clean-clone or release gates.
 - [ ] Qualify the copied Infra package from a clean clone and migrate its
       remaining callers before removing the transitional `src/aphrody-infra`

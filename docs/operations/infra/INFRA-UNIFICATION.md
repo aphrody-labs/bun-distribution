@@ -4,7 +4,7 @@
 > et unités ci-dessous proviennent de la consolidation des anciens dépôts.
 > Depuis, les owners, manifests et catalogues du monorepo ont évolué. Pour les
 > workloads et routes déclarés, consulter `config/service-catalog.json`,
-> `yolo/config/host/nginx/routes.json` et `config/production-topology.json`. Pour
+> `config/host/nginx/routes.json` et `config/production-topology.json`. Pour
 > l’implémentation, consulter les fichiers actuels `crates/infra/infra/`,
 > `packages/infra/workspace/` et `scripts/`. L’observation hôte datée est
 > séparée dans `VPS-STATUS-2026-10-02.md`.
@@ -17,7 +17,7 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 > host). Shared sandbox/identity directives are drop-ins in `systemd/shared`
 > and proxy headers are `nginx/snippets/*.inc`; compose with
 > `bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit|compose-nginx|check`.
-> `config/service-catalog.json` and `yolo/config/host/nginx/routes.json` remain here as
+> `config/service-catalog.json` and `config/host/nginx/routes.json` remain here as
 > declared intent (their `vhost` paths are relative to the yolo host config root).
 
 ---
@@ -26,7 +26,7 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 
 `aphrody-infra` est l'unique dépositaire et autorité d'exploitation pour :
 - **Supervision & Cycle de vie** : Définition des unités systemd, timers et drop-ins.
-- **Routage & Passerelle Web** : Vhosts Nginx, certificats Let's Encrypt et table de routes publiques (`yolo/config/host/nginx/routes.json`).
+- **Routage & Passerelle Web** : Vhosts Nginx, certificats Let's Encrypt et table de routes publiques (`config/host/nginx/routes.json`).
 - **Catalogue de Services** : Unique registre de tous les workloads applicatifs (`config/service-catalog.json`).
 - **Gestion des Réseaux & Proxies** : Mullvad WireGuard (`wg0`), passerelle Privoxy (`127.0.0.1:8119`), tunnels PostgreSQL (`15433`).
 - **Pipelines de Déploiement** : Assemblage d'artefacts scellés et bascules atomiques blue/green (`scripts/atomic-deploy*.sh`).
@@ -39,8 +39,8 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 
 | Domaine / Projet | Emplacement Centralisé (`aphrody-infra`) | Ancien Emplacement (Dépôt Sœur) | Rôle & Optimisations |
 |---|---|---|---|
-| **Shenron Media Bridge** | `scripts/shenron/install-media-vpn-proxy.sh`<br>`~/yolo/config/host/privoxy/shenron-media.conf`<br>`yolo/config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
-| **Shenron Crawl Sync** | `scripts/shenron/sync-bxc-crawls.ts` | `shenron/scripts/ops/sync-bxc-crawls-to-newvps.ts` | Synchronisation SQLite vers PostgreSQL via Bun pur. Modernisation de l'alias hôte (`vps`), modes `--dry-run` et `--json`. |
+| **Shenron Media Bridge** | `shenron:deploy/install-media-vpn-proxy.sh`<br>`~/yolo/config/host/privoxy/shenron-media.conf`<br>`config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
+| **Shenron Crawl Sync** | `shenron:scripts/sync-bxc-crawls.ts` | `shenron/scripts/ops/sync-bxc-crawls-to-newvps.ts` | Synchronisation SQLite vers PostgreSQL via Bun pur. Modernisation de l'alias hôte (`vps`), modes `--dry-run` et `--json`. |
 | **Shenron Backups** | `scripts/ops/backup-shenron-pg.sh`<br>`scripts/ops/backup-shenron-sqlite.sh` | `shenron/scripts/backup-shenron-*.sh` | Dépotoir logique MVCC `pg_dump` compressé, manifestes SHA-256, purge différée après accusé de réception offsite Windows. |
 | **NIE 3D Model Prewarm** | `scripts/nie/model-serve-prewarm.sh` (not in repo) | `nie/scripts/ops/model-serve-prewarm.sh` | Pré-chauffage du cache 3D (`nie-model-serve` :8790) pour les modèles GLB et Keshin critiques. Support `--json` et paramétrage du port. |
 | **NIE Sync Main** | `iecode/scripts/tools/sync-main.ts` | `nie/scripts/workspace-transfer.ts` | Synchronisation de checkout entre station de travail et VPS. |
@@ -133,5 +133,5 @@ aphrody-infra secrets check --service aphrody-web-api
 ./scripts/nie/model-serve-prewarm.sh --json
 
 # Synchronisation et import BXC Shenron
-bun scripts/shenron/sync-bxc-crawls.ts --dry-run
+bun shenron:scripts/sync-bxc-crawls.ts --dry-run
 ```

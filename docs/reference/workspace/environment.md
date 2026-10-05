@@ -24,7 +24,7 @@ ne sont pas magiquement disponibles à une commande `cargo` lancée séparément
 ## Fichiers et propriétaires observés
 
 - `.env` à la racine : Bun le charge lorsqu’un programme est lancé depuis cette
-  racine; `scripts/dev/shenron/scripts/dev/local-env.ts` le lit aussi pour
+  racine; `shenron:scripts/dev/local-env.ts` le lit aussi pour
   construire les environnements locaux des applications. Les autres outils
   peuvent charger un fichier explicite.
 - `iecode/apps/rg/.env`, `iecode/apps/rg/.env.local`, `iecode/apps/rg/website/.env`,
@@ -32,10 +32,10 @@ ne sont pas magiquement disponibles à une commande `cargo` lancée séparément
   locale RG; les commandes Next/Bun les lisent selon leur cwd, mode ou appelant.
 - `iecode/packages/rg/cron/.env` : configuration du cron RG lorsque lancé depuis ce
   package.
-- `apps/shenron/site/.env` (not in repo) et `apps/shenron/bot/.env` (not in repo) : secrets privés
+- `shenron:apps/site/.env` (not in repo) et `shenron:apps/bot/.env` (not in repo) : secrets privés
   facultatifs lus explicitement par plusieurs scripts Shenron. Le dépôt ne
   fournit pas ces fichiers privés; les exemples suivis sont
-  [`apps/shenron/bot/.env.example`](../../../apps/shenron/bot/.env.example).
+  `shenron:apps/bot/.env.example` ([aphrody-labs/shenron](https://github.com/aphrody-labs/shenron)).
 - `.env.remote-db` : fichier privé distinct, lu explicitement par des outils
   d’audit et d’administration Shenron. Il n’est pas créé par l’initialiseur.
 - `~/.shenron-neon.env` et les fichiers `/etc/aphrody/*.env` ou

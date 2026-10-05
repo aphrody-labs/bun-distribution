@@ -201,5 +201,5 @@ Unlike Claude Code and Open-Design, which auto-trigger based on natural language
 | **Triggers** | None | Natural language triggers | Natural language triggers | None |
 | **Invocation** | Tool call (`activate_skill`) | Direct narrative injection | Direct narrative injection | Direct narrative injection |
 | **Config formats** | `hooks/hooks.json` (Gemini CLI), `.agents/hooks.json` (not in repo) (Antigravity) | `agent.json` | `CLAUDE.md` | `plugin.json` |
-| **Local Path** | `.agents/skills/` (not in repo) | `.agents/skills/` (not in repo) | `.claude/shenron/skills/` | `.agents/skills/` (not in repo) |
+| **Local Path** | `.agents/skills/` (not in repo) | `.agents/skills/` (not in repo) | `.claude/skills/` (not in repo) | `.agents/skills/` (not in repo) |
 | **Global Path** | `~/.gemini/` | `~/.openclaw/` | `~/.claude/` | `~/.agents/` |

@@ -37,13 +37,13 @@ flowchart TD
     end
 
     subgraph Apps ["Consumer Applications (apps/)"]
-        SHENRON["apps/shenron/bot\n(Dragon Ball Bot + Public API :5006)"]
+        SHENRON["shenron:apps/bot\n(Dragon Ball Bot + Public API :5006)"]
         RG["apps/rg/bot\n(Rose Griffon / Azalée Bot)"]
         ACHILLEA["apps/rg/achillea-bot\n(Tournament Engine Bot)"]
     end
 
     subgraph Binaries ["Autonomous Standalone Binaries (dist/)"]
-        BIN_SHENRON["apps/shenron/bot/dist/shenron\n(~151.6 MB Standalone ELF)"]
+        BIN_SHENRON["shenron:apps/bot/dist/shenron\n(~151.6 MB Standalone ELF)"]
         BIN_RG["apps/rg/bot/dist/rg-bot\n(~144.9 MB Standalone ELF)"]
     end
 
@@ -122,7 +122,7 @@ Detailed in [`COMPILER.md`](COMPILER.md):
 
 ### Layer 4: Application Bots (`apps/`)
 
-1. **`apps/shenron/bot` (`@shenron/bot`)**:
+1. **`shenron:apps/bot` (`@shenron/bot`)**:
    - Dragon Ball canon database, interactive commands, card games, OCR integration, and public HTTP/REST/GraphQL API server on port 5006.
    - Entry point: `src/entry-standalone.ts`.
    - Output binary: `dist/shenron` (~151.6 MB).
@@ -137,7 +137,7 @@ Detailed in [`COMPILER.md`](COMPILER.md):
 ### Layer 5: Host Systemd Services (`systemd/`)
 
 Detailed in [`docs/operations/discord/SYSTEMD-SERVICES.md`](../../operations/discord/SYSTEMD-SERVICES.md):
-- `yolo/config/host/systemd/shenron/shenron-bot.service` executes `/srv/shenron/current/apps/bot/dist/shenron`.
+- `config/host/systemd/shenron/shenron-bot.service` executes `/srv/shenron/current/apps/bot/dist/shenron`.
 - `iecode/config/rg/host/systemd/rg-bot.service` executes `/srv/rg/current/apps/bot/dist/rg-bot`.
 - Complete elimination of host node_modules and Bun binary requirements.
 
@@ -145,6 +145,6 @@ Detailed in [`docs/operations/discord/SYSTEMD-SERVICES.md`](../../operations/dis
 
 ## 3. Boundary Principles
 
-1. **Separation of Concerns**: Discord protocols, decorators, and runtime lifecycles live in `@aphrody/discord-kit`. Domain logic, SQL schemas, business commands, and credentials remain strictly inside their respective applications (`apps/shenron/bot`, `iecode/apps/rg/bot`).
+1. **Separation of Concerns**: Discord protocols, decorators, and runtime lifecycles live in `@aphrody/discord-kit`. Domain logic, SQL schemas, business commands, and credentials remain strictly inside their respective applications (`shenron:apps/bot`, `iecode/apps/rg/bot`).
 2. **No Duplicated Gateways**: Each application runs exactly one Discord Gateway connection. HTTP interaction webhooks and Gateway delivery are mutually exclusive.
 3. **Deterministic Verification**: No change can be merged without passing `bun run discord:verify --compile` (100% pass across catalog audit, kit unit tests, messaging unit tests, bot suites, and AOT standalone compilation).

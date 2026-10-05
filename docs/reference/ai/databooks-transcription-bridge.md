@@ -4,7 +4,7 @@
 The operational counts and host layout below are a dated 2026-09-06 snapshot.
 For the current review boundary and manifest contract, use Shenron's
 `KOHARU-CAPABILITY-MAP.md`
-and [`@shenron/pipeline` README](../../../packages/shenron/pipeline/README.md).
+and the `@shenron/pipeline` README (`shenron:packages/pipeline/README.md`).
 `aphrody ocr page --result-v2 --json` and
 `aphrody ocr batch|databooks --result-v2 --out <file>` can emit
 `aphrody.ocr.result/v2` with a SHA-256 of each stable input image; PP-OCR batch

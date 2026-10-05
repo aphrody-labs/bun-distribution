@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths — backtick paths in this dated document name files of the repository at the time it records (Shenron and Koharu moved to aphrody-labs/shenron on 2026-10-05), not of this checkout. -->
 # Inventaire Rust Aphrody : Tauri, Obscura et Bun
 
 > Scan statique effectué le 2026-10-03 sur le workspace `aphrody`, HEAD `c4ca873709fe6d8d8cd3d7f24a5742930d11b3b5`. Périmètre : `crates/**` (sources Rust, tests et manifestes Cargo). Le rapport est enregistré dans le dépôt yolo à la demande du propriétaire. Les chemins pointent vers le checkout Aphrody. Ce scan ne lance ni compilation, ni test, ni application.

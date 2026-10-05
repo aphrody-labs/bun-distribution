@@ -3,7 +3,7 @@
 # Tauri documentation hub
 
 Current line: Tauri 3 alpha (`tauri =3.0.0-alpha.3`, runtime `tauri-runtime-wry` by default,
-`tauri-runtime-cef` for Koharu only), pinned in the root `Cargo.toml` and described in
+`tauri-runtime-cef` for generated CEF projects), pinned in the root `Cargo.toml` and described in
 [`docs/operations/ui/tauri-upstream.md`](../../operations/tauri-upstream.md) and
 [`config/tauri-apps.json`](https://github.com/aphrody-labs/aphrody/blob/main/config/tauri-apps.json) (registry of every Tauri project).
 Tauri 2 pages below are kept as historical or compatibility context and carry a banner. Parent map:
@@ -31,12 +31,6 @@ Tauri 2 pages below are kept as historical or compatibility context and carry a 
 Owner documents in `packages/material-web/docs/tauri/`
 (prerequisites, project setup, desktop and mobile platforms, type safety) and the French guide
 `tauri-2.0.md` (Tauri 2.0 and Material Design 3; historical).
-
-## Koharu
-
-[`KOHARU.md`](../integrations/KOHARU.md) (integration), the Koharu crates under
-[`crates/koharu`](https://github.com/aphrody-labs/aphrody/blob/main/crates/koharu/koharu/README.md) and the user docs in
-[`packages/koharu/docs`](https://github.com/aphrody-labs/aphrody/blob/main/packages/koharu/docs/en/index.mdx). Koharu keeps the CEF runtime.
 
 ## Historical records
 

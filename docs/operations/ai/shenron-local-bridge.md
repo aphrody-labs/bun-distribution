@@ -2,7 +2,7 @@
 
 # Shenron local bridge
 
-Shenron owns its local profile and editorial data. The former profile generator command (`bun scripts/dev/local-env.ts env`) is not present at that path in the current monorepo; see [`docs/operations/shenron/DEV-LOCAL.md`](../shenron/DEV-LOCAL.md) for the archival status. The variable inventory is in [`docs/operations/shenron/ENV.md`](../shenron/ENV.md). Aphrody reads ignored app `.env.local` files when explicit process environment variables are absent. It never copies tokens into this repository.
+Shenron owns its local profile and editorial data. The former profile generator command (`bun scripts/dev/local-env.ts env`) is not present at that path in the current monorepo; see `shenron:docs/operations/DEV-LOCAL.md` ([aphrody-labs/shenron](https://github.com/aphrody-labs/shenron)) for the archival status. The variable inventory is in `shenron:docs/operations/ENV.md`. Aphrody reads ignored app `.env.local` files when explicit process environment variables are absent. It never copies tokens into this repository.
 
 `aphrody shenron doctor --json` probes the local site, bot, selected RAG engine, Aphrody AI HTTP service, and the validated seven-file `dbfr` Agent Home. The exact value `RAG_BACKEND=aphrody` selects authenticated `/api/v1/shenron/*` RAG routes; every other value selects the bot's `/api/public/rag/search` and `/api/ia/status` routes, matching `@shenron/pipeline/ai/config`. `rag eval` calls the bot's authenticated `POST /api/training/eval`; this measures retrieval on Shenron's gold set and does not train model weights. `persona ask` loads the current Agent Home revision, retrieves from the selected RAG engine, and calls Aphrody AI chat with those sources.
 

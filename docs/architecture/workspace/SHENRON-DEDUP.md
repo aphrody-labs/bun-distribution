@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths — backtick paths in this dated document name files of the repository at the time it records (Shenron and Koharu moved to aphrody-labs/shenron on 2026-10-05), not of this checkout. -->
 # Shared Shenron / Aphrody implementation — 2026-10-05
 
 Aphrody owns common rendering and transport. Shenron retains Dragon Ball
@@ -20,7 +21,7 @@ implicit credential handoff. No subprocess or additional service is introduced.
 
 The bot's pure rules and site domain source are untouched. Session-bearing chat
 still uses the bot. The shared compute endpoint does not merge domain stores.
-Six reader captures are identical; see [reader qualification](../../../m3/packages/shenron-ui/QUALIFICATION.md).
+Six reader captures are identical; see reader qualification (`m3/packages/shenron-ui/QUALIFICATION.md`, not in repo).
 No full-site pixel parity, RAG activation or native-host claim is inferred.
 
 Validation:

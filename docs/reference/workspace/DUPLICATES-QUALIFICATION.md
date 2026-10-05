@@ -12,7 +12,6 @@ qu'après mise à jour des consommateurs (règle du plan, section 0).
 | `apps/rg/website/public/achillea/**` (not in repo) ↔ `public/**` (drapeaux, rangs, ligues, sons, fonds) | URLs publiques servies sous deux chemins | Conservés : supprimer casse des URL publiées ; à fusionner par une redirection RG. |
 | `inazuma-cross/reward-imageN` ↔ `-achieve` | deux états d'interface au même rendu actuel | Conservés (assets distincts par rôle). |
 | `iecode/packages/rg/assets/public` (police Humane, `noise.svg`, portrait/notfound) | paquet d'assets RG, chemins publics | Conservés (chemins publics). |
-| Icônes Koharu (`apps/koharu/editor` ↔ `crates/koharu/koharu/icons`, docs) | bundle web et bundle Tauri | Conservés : chaque bundler exige le fichier dans son arbre. |
 | `Gemini.ico` (`assets/ui/chrome-web-apps` ↔ `crates/ui/app/icons`) | icône de l'app Tauri | Conservé (ressource embarquée par Tauri). |
 | Portraits XV2 identiques sous deux codes (Shenron bot) | table code → image du bot | Conservés (clés distinctes). |
 | Licences (`LICENSE*` par paquet, `docs/migration/source-licenses`) | obligation de redistribution par paquet et preuve d'import | Conservées volontairement. |

@@ -54,15 +54,6 @@ historical.
 | [External UI forks](UPSTREAM-FORKS.md) | Upstream-derived frameworks are maintained in separate Git repositories. | notice | 2026-09-29 |
 <!-- docs-hub:end -->
 
-## Integrations
-
-<!-- docs-hub:begin include="integrations/KOHARU.md;integrations/SHENRON.md" -->
-| Document | Contenu | Statut | Mis à jour |
-| --- | --- | --- | --- |
-| [Koharu integration map for Aphrody](integrations/KOHARU.md) | Status: source comparison snapshot dated 2026-09-27; standalone UI extraction and native settings integration updated 2026-09-28. | historical | 2026-10-01 |
-| [Shenron desktop integration](integrations/SHENRON.md) | The Aphrody desktop remains an independent UI-layer process. | imported | 2026-09-29 |
-<!-- docs-hub:end -->
-
 ## Archived notes (historical)
 
 <!-- docs-hub:begin include="INTEGRATION-2026-09-27.md;MODERN-AGENT-APP-SPEC-2026.md;SESSION-INSPECTION-ERRORS-AND-INCONSISTENCIES.md" -->

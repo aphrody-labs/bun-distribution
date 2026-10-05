@@ -1,3 +1,4 @@
+<!-- docs-links: external-paths — backtick paths in this dated document name files of the repository at the time it records (Shenron and Koharu moved to aphrody-labs/shenron on 2026-10-05), not of this checkout. -->
 # Fact-Checked Session & Autonomous Training Ledger
 
 - **Date :** 2026-10-03T23:34:54.534Z

@@ -6,7 +6,7 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 44 binaries with a clap surface, 938 commands.
+Totals: 21 binaries with a clap surface, 864 commands.
 
 ## aphrody
 
@@ -16,21 +16,14 @@ Crate `aphrody-a2a-client`, parser `crates/os/a2a-client/src/bin/a2a_duel_loop.r
 
 _No subcommands (flags only)._
 
-### `aot_inpainting`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/aot_inpainting.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 328 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 292 commands.
 
 - `aphrody rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
   - `aphrody rag index` — Index a directory incrementally, including vectors when configured.
   - `aphrody rag web-ingest` — Scrape one URL through Aphrody OS and index it in the local AI RAG store.
   - `aphrody rag search` — Search the index and report source paths, lines and effective mode.
-  - `aphrody rag ingest-shenron` — Ingest a Shenron corpus JSON, JSONL or lots directory into the RAG store.
   - `aphrody rag context` — Assemble source context for a model prompt.
   - `aphrody rag stats` — Report document, chunk and vector counts.
 - `aphrody exec` — Execute an autonomous agent task with optional Codex-compatible JSONL. _(cfg: not(target_arch = "wasm32"))_
@@ -96,27 +89,6 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 328 comma
 - `aphrody shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody shell status` — Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)
   - `aphrody shell start` — Start interactive Nushell / Ratatui terminal session
-- `aphrody shenron` — Shenron Sovereign Bridge — unified integration connecting Aphrody (AI, Web, Infra, Shell, OS) to Shenron and Dragon Ball FR. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody shenron doctor` — Report whether the sibling `shenron` checkout and its databooks tooling were found.
-  - `aphrody shenron emit` — Write one databook's stored transcriptions as a `shenron`-shaped `resultats.jsonl`, without depositing anything.
-  - `aphrody shenron verify` — Run `shenron`'s own quality judge over an emitted lot.
-  - `aphrody shenron deposit` — Emit, then hand the lot to `shenron`'s own depositor.
-  - `aphrody shenron pipeline` — Deposit every databook the local corpus holds readable text for.
-- `aphrody manga` — Koharu manga page analysis, translation, cleanup and PSD export. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody manga models` — List Koharu's current pipeline and translation model choices. _(cfg: feature = "koharu")_
-  - `aphrody manga preferences` — Inspect or edit Koharu's persisted processing preferences. _(cfg: feature = "koharu")_
-    - `aphrody manga preferences show` — Show Koharu's persisted settings, with only credential presence flags.
-    - `aphrody manga preferences set-pipeline` — Replace the pipeline settings from a Koharu PipelineConfig JSON file.
-    - `aphrody manga preferences set-providers` — Replace provider settings from a JSON array of Koharu ProviderConfig entries.
-    - `aphrody manga preferences set-typesetting` — Replace typesetting settings from a Koharu TypesettingConfig JSON file.
-    - `aphrody manga preferences credential` — Set a provider credential from stdin, or clear it from the native store.
-  - `aphrody manga detect` — Detect real Koharu regions, including text, bubbles and panels.
-  - `aphrody manga inpaint` — Export Koharu's cleanup overlay, or apply a supplied mask with the local CPU inpainter.
-  - `aphrody manga export-psd` — Run Koharu page processing and export a layered Photoshop document.
-  - `aphrody manga pipeline` — Run Koharu detection, OCR, translation, inpainting and export.
-  - `aphrody manga cdn` — Process an image from a CDN URL or relative path with Koharu.
-  - `aphrody manga databook` — Stream and scanlate a databook plate directly from the Dragon Ball FR catalog by ID and plate number.
-  - `aphrody manga chapter` — Stream and scanlate a manga chapter plate directly from the Dragon Ball FR catalog.
 - `aphrody codex` — Forward vers le binaire natif OpenAI Codex (`codex`). _(cfg: not(target_arch = "wasm32"))_
 - `aphrody train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
   - `aphrody train status` — Show training status, GPU lock availability, and active jobs.
@@ -142,7 +114,7 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 328 comma
 - `aphrody agy` — Forward vers le binaire natif Antigravity CLI (`agy`).
 - `aphrody bxc` — Forward vers le binaire natif Bxc (`bxc`).
 - `aphrody google` — Écosystème Google branché via Bxc (Search, Translate, DNS, Books, Gemini Web, TTS) _(cfg: not(target_arch = "wasm32"))_
-- `aphrody translate` — Traduction unifiée via aphrody-translate, avec protection Shenron JP->FR _(cfg: not(target_arch = "wasm32"))_
+- `aphrody translate` — Traduction unifiée via aphrody-translate _(cfg: not(target_arch = "wasm32"))_
 - `aphrody n2b` — Execute the integrated N2B engine in-process.
 - `aphrody nie` — Forward vers le CLI natif Niers (`niers`).
 - `aphrody ssh` — Safe cross-platform operator CLI for configured SSH hosts. _(cfg: not(target_arch = "wasm32"))_
@@ -255,20 +227,6 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 328 comma
     - `aphrody ocr db stats` — Report how many pages the corpus holds, per final status.
     - `aphrody ocr db list` — List stored pages, newest deposit first.
     - `aphrody ocr db show` — Print the full stored record for one page.
-  - `aphrody ocr shenron` — Bridge to the sibling `shenron` checkout: emit, verify or deposit through shenron's own quality judge and depositor.
-    - `aphrody ocr shenron doctor` — Report whether the sibling `shenron` checkout and its databooks tooling were found.
-    - `aphrody ocr shenron emit` — Write one databook's stored transcriptions as a `shenron`-shaped `resultats.jsonl`, without depositing anything.
-    - `aphrody ocr shenron verify` — Run `shenron`'s own quality judge over an emitted lot.
-    - `aphrody ocr shenron deposit` — Emit, then hand the lot to `shenron`'s own depositor.
-    - `aphrody ocr shenron pipeline` — Deposit every databook the local corpus holds readable text for.
-  - `aphrody ocr dbfr` — Read and feed the Dragon Ball FR databooks API.
-    - `aphrody ocr dbfr list` — List databook records.
-    - `aphrody ocr dbfr survey` — Report transcription progress across the whole corpus.
-    - `aphrody ocr dbfr pages` — Report one record's plates: how many carry an image, and how many are still missing a transcription.
-    - `aphrody ocr dbfr textes` — Read the stored text of specific plates.
-    - `aphrody ocr dbfr fetch` — Download a record's plate images into a lot directory, ready for OCR.
-    - `aphrody ocr dbfr fetch-all` — Download every plate still missing a transcription, corpus-wide.
-    - `aphrody ocr dbfr push` — Deposit transcriptions from the local OCR corpus into one record.
   - `aphrody ocr databooks` — Transcribe a Shenron Dragon Ball databook lot with the safe preset.
 - `aphrody chat` — Run the unified turn-loop chat agent. _(cfg: not(target_arch = "wasm32"))_
 - `aphrody hermes` — Agent multi-canaux voice-to-voice (Discord + X) — surpasse hermes-agent. _(cfg: not(target_arch = "wasm32"))_
@@ -383,7 +341,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/src/main.rs#Cli`, 7 commands.
 
 ### `aphrody-infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 388 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 352 commands.
 
 - `aphrody-infra status` — Show target, repository and runtime state without mutation.
 - `aphrody-infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -404,7 +362,6 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 388 commands
     - `aphrody-infra ssh rag index` — Index a directory incrementally, including vectors when configured.
     - `aphrody-infra ssh rag web-ingest` — Scrape one URL through Aphrody OS and index it in the local AI RAG store.
     - `aphrody-infra ssh rag search` — Search the index and report source paths, lines and effective mode.
-    - `aphrody-infra ssh rag ingest-shenron` — Ingest a Shenron corpus JSON, JSONL or lots directory into the RAG store.
     - `aphrody-infra ssh rag context` — Assemble source context for a model prompt.
     - `aphrody-infra ssh rag stats` — Report document, chunk and vector counts.
   - `aphrody-infra ssh exec` — Execute an autonomous agent task with optional Codex-compatible JSONL. _(cfg: not(target_arch = "wasm32"))_
@@ -470,27 +427,6 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 388 commands
   - `aphrody-infra ssh shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody-infra ssh shell status` — Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)
     - `aphrody-infra ssh shell start` — Start interactive Nushell / Ratatui terminal session
-  - `aphrody-infra ssh shenron` — Shenron Sovereign Bridge — unified integration connecting Aphrody (AI, Web, Infra, Shell, OS) to Shenron and Dragon Ball FR. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody-infra ssh shenron doctor` — Report whether the sibling `shenron` checkout and its databooks tooling were found.
-    - `aphrody-infra ssh shenron emit` — Write one databook's stored transcriptions as a `shenron`-shaped `resultats.jsonl`, without depositing anything.
-    - `aphrody-infra ssh shenron verify` — Run `shenron`'s own quality judge over an emitted lot.
-    - `aphrody-infra ssh shenron deposit` — Emit, then hand the lot to `shenron`'s own depositor.
-    - `aphrody-infra ssh shenron pipeline` — Deposit every databook the local corpus holds readable text for.
-  - `aphrody-infra ssh manga` — Koharu manga page analysis, translation, cleanup and PSD export. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody-infra ssh manga models` — List Koharu's current pipeline and translation model choices. _(cfg: feature = "koharu")_
-    - `aphrody-infra ssh manga preferences` — Inspect or edit Koharu's persisted processing preferences. _(cfg: feature = "koharu")_
-      - `aphrody-infra ssh manga preferences show` — Show Koharu's persisted settings, with only credential presence flags.
-      - `aphrody-infra ssh manga preferences set-pipeline` — Replace the pipeline settings from a Koharu PipelineConfig JSON file.
-      - `aphrody-infra ssh manga preferences set-providers` — Replace provider settings from a JSON array of Koharu ProviderConfig entries.
-      - `aphrody-infra ssh manga preferences set-typesetting` — Replace typesetting settings from a Koharu TypesettingConfig JSON file.
-      - `aphrody-infra ssh manga preferences credential` — Set a provider credential from stdin, or clear it from the native store.
-    - `aphrody-infra ssh manga detect` — Detect real Koharu regions, including text, bubbles and panels.
-    - `aphrody-infra ssh manga inpaint` — Export Koharu's cleanup overlay, or apply a supplied mask with the local CPU inpainter.
-    - `aphrody-infra ssh manga export-psd` — Run Koharu page processing and export a layered Photoshop document.
-    - `aphrody-infra ssh manga pipeline` — Run Koharu detection, OCR, translation, inpainting and export.
-    - `aphrody-infra ssh manga cdn` — Process an image from a CDN URL or relative path with Koharu.
-    - `aphrody-infra ssh manga databook` — Stream and scanlate a databook plate directly from the Dragon Ball FR catalog by ID and plate number.
-    - `aphrody-infra ssh manga chapter` — Stream and scanlate a manga chapter plate directly from the Dragon Ball FR catalog.
   - `aphrody-infra ssh codex` — Forward vers le binaire natif OpenAI Codex (`codex`). _(cfg: not(target_arch = "wasm32"))_
   - `aphrody-infra ssh train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
     - `aphrody-infra ssh train status` — Show training status, GPU lock availability, and active jobs.
@@ -516,7 +452,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 388 commands
   - `aphrody-infra ssh agy` — Forward vers le binaire natif Antigravity CLI (`agy`).
   - `aphrody-infra ssh bxc` — Forward vers le binaire natif Bxc (`bxc`).
   - `aphrody-infra ssh google` — Écosystème Google branché via Bxc (Search, Translate, DNS, Books, Gemini Web, TTS) _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody-infra ssh translate` — Traduction unifiée via aphrody-translate, avec protection Shenron JP->FR _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody-infra ssh translate` — Traduction unifiée via aphrody-translate _(cfg: not(target_arch = "wasm32"))_
   - `aphrody-infra ssh n2b` — Execute the integrated N2B engine in-process.
   - `aphrody-infra ssh nie` — Forward vers le CLI natif Niers (`niers`).
   - `aphrody-infra ssh ssh` — Safe cross-platform operator CLI for configured SSH hosts. _(cfg: not(target_arch = "wasm32"))_
@@ -629,20 +565,6 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/main.rs#Cli`, 388 commands
       - `aphrody-infra ssh ocr db stats` — Report how many pages the corpus holds, per final status.
       - `aphrody-infra ssh ocr db list` — List stored pages, newest deposit first.
       - `aphrody-infra ssh ocr db show` — Print the full stored record for one page.
-    - `aphrody-infra ssh ocr shenron` — Bridge to the sibling `shenron` checkout: emit, verify or deposit through shenron's own quality judge and depositor.
-      - `aphrody-infra ssh ocr shenron doctor` — Report whether the sibling `shenron` checkout and its databooks tooling were found.
-      - `aphrody-infra ssh ocr shenron emit` — Write one databook's stored transcriptions as a `shenron`-shaped `resultats.jsonl`, without depositing anything.
-      - `aphrody-infra ssh ocr shenron verify` — Run `shenron`'s own quality judge over an emitted lot.
-      - `aphrody-infra ssh ocr shenron deposit` — Emit, then hand the lot to `shenron`'s own depositor.
-      - `aphrody-infra ssh ocr shenron pipeline` — Deposit every databook the local corpus holds readable text for.
-    - `aphrody-infra ssh ocr dbfr` — Read and feed the Dragon Ball FR databooks API.
-      - `aphrody-infra ssh ocr dbfr list` — List databook records.
-      - `aphrody-infra ssh ocr dbfr survey` — Report transcription progress across the whole corpus.
-      - `aphrody-infra ssh ocr dbfr pages` — Report one record's plates: how many carry an image, and how many are still missing a transcription.
-      - `aphrody-infra ssh ocr dbfr textes` — Read the stored text of specific plates.
-      - `aphrody-infra ssh ocr dbfr fetch` — Download a record's plate images into a lot directory, ready for OCR.
-      - `aphrody-infra ssh ocr dbfr fetch-all` — Download every plate still missing a transcription, corpus-wide.
-      - `aphrody-infra ssh ocr dbfr push` — Deposit transcriptions from the local OCR corpus into one record.
     - `aphrody-infra ssh ocr databooks` — Transcribe a Shenron Dragon Ball databook lot with the safe preset.
   - `aphrody-infra ssh chat` — Run the unified turn-loop chat agent. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody-infra ssh hermes` — Agent multi-canaux voice-to-voice (Discord + X) — surpasse hermes-agent. _(cfg: not(target_arch = "wasm32"))_
@@ -932,93 +854,9 @@ Crate `aphrody-yolo`, parser `crates/infra/yolo/src/main.rs#Cli`, 25 commands.
 - `aphrody-yolo autopilot` — Dispatch bounded unattended ticks through an installed agent harness.
 - `aphrody-yolo ingest` — Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard).
 
-### `baberu_ocr`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/baberu_ocr.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `comic_layout_yolo26s`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/comic_layout_yolo26s.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `comic_onomatopoeia`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/comic_onomatopoeia.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `comic_text_bubble_detector`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/comic_text_bubble_detector.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `comic_text_detector`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/comic_text_detector.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `flux2_klein`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/flux2_klein.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `font_detector`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/font_detector.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `hayai_ocr`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/hayai_ocr.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `koharu`
-
-Crate `koharu`, parser `crates/koharu/koharu/src/main.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `koharu_layout_rfdetr_seg_2xl`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/koharu_layout_rfdetr_seg_2xl.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
 ### `koharu-bindgen`
 
 Crate `koharu-bindgen`, parser `crates/koharu/koharu-bindgen/src/main.rs#Args`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `koharu-sdk`
-
-Crate `koharu-library`, parser `crates/koharu/koharu-library/src/bin/koharu-sdk.rs#Arguments`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `lama`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/lama.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `manga_ocr`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/manga_ocr.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `manga_text_mask`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/manga_text_mask.rs#Cli`, 0 commands.
 
 _No subcommands (flags only)._
 
@@ -1071,55 +909,6 @@ Crate `aphrody-n2b`, parser `crates/compat/n2b/src/cli/args.rs#Cli`, 45 commands
   - `n2b rust deps` — `cargo outdated` + `cargo audit` en rapport unifié.
   - `n2b rust doctor` — Vérifie l'installation de la toolchain Rust (rustc, clippy, wasm-pack, just…).
 - `n2b analyze` — Scan + audit + crosslink ML (embeddings) sur un ou plusieurs repos.
-
-### `paddle_ocr_vl`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/paddle_ocr_vl.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `pp_doclayout_v3`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/pp_doclayout_v3.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `pp_ocr_v6`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/pp_ocr_v6.rs#Cli`, 2 commands.
-
-- `pp_ocr_v6 det` — Detect text regions and return their rotated polygons.
-- `pp_ocr_v6 rec` — Recognize text in a cropped text-line image.
-
-### `rorem_mixed`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/rorem_mixed.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `run`
-
-Crate `koharu-library`, parser `crates/koharu/koharu-library/src/bin/run.rs#Arguments`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `speech_bubble_yolo11n`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/speech_bubble_yolo11n.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `speech_bubble_yolov8m`
-
-Crate `koharu-ml`, parser `crates/koharu/koharu-ml/src/bin/speech_bubble_yolov8m.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `translate`
-
-Crate `koharu-translator`, parser `crates/koharu/koharu-translator/src/bin/translate.rs#Args`, 0 commands.
-
-_No subcommands (flags only)._
 
 ### `x-cli`
 
@@ -1208,11 +997,17 @@ Crate `aphrody-x`, parser `crates/web/x/src/main.rs#Cli`, 70 commands.
 - `aphrody-gemini-web` (aphrody / `aphrody-gemini-web`)
 - `aphrody-jev` (aphrody / `aphrody-jev`)
 - `aphrody-llama-daemon` (aphrody / `aphrody-llama-server`)
+- `aphrody-m3-showcase` (aphrody / `aphrody-m3-showcase`)
 - `aphrody-shell-tauri-e2e` (aphrody / `aphrody-shell-tauri-e2e`)
 - `aphrody-summary` (aphrody / `aphrody-summary`)
+- `cargo-create-tauri-app` (aphrody / `aphrody-create-tauri-app`)
+- `cargo-tauri` (aphrody / `aphrody-tauri-cli`)
 - `design` (aphrody / `aphrody-identity`)
 - `export_assets` (aphrody / `aphrody-identity`)
-- `generate` (aphrody / `koharu-app`)
 - `paint_file` (aphrody / `obscura-render`)
 - `pixel` (aphrody / `aphrody-identity`)
+- `restart` (aphrody / `aphrody-restart`)
 - `serde-saphyr` (aphrody / `serde-saphyr`)
+- `tauri-driver` (aphrody / `aphrody-tauri-driver`)
+- `tauri-schema-generator` (aphrody / `aphrody-tauri-schema-generator`)
+- `yolo-desktop` (aphrody / `yolo-desktop`)

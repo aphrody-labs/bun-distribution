@@ -12,7 +12,6 @@ comes from m3.material.io (or Context7), not from copies in this repository.
 - `INTEGRATION-2026-09-27.md` (historical, removed in commit 54745147e during docs pruning): short integration archive; not a feature status source.
 - [`GUI.md`](../../reference/GUI.md): public webview scope, ownership boundaries and release evidence. Delivery order: [AI plan](https://github.com/aphrody-labs/aphrody/blob/main/docs/plans/ai/PLAN.md); owners: [AI architecture](https://github.com/aphrody-labs/aphrody/blob/main/docs/architecture/ai/ARCHITECTURE.md).
 - [`AI-UI-INTEGRATION.md`](../../reference/AI-UI-INTEGRATION.md): AI ownership and desktop UI boundary.
-- [`integrations/KOHARU.md`](../../reference/integrations/KOHARU.md): source-backed map of Koharu's UI, scene, pipeline and canvas capabilities against existing Aphrody UI surfaces; distinguishes shared primitives from an actual integration.
 - [`UI-DESIGN.md`](../../architecture/UI-DESIGN.md): visual rules for the public Chat, Files, Models and Settings webview.
 - [`UX-DESIGN.md`](../../architecture/UX-DESIGN.md): public webview flows, keyboard, focus and recovery behavior.
 - [`UI-RULES.md`](../../reference/UI-RULES.md): binding product rules (no placeholders, no debug text, short copy).

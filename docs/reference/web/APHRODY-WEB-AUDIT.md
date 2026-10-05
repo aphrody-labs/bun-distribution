@@ -66,7 +66,7 @@ Bun APIs: `@aphrody/agent-browser` exports `./client ./types ./cdp ./config ./en
 - Cookies: obscura-cdp (`cookie_params.rs`, domains/network/storage), obscura-net `CookieJar`, obscura-mcp get/set/clear, `web-chromium`, `x/src/session.rs`, FFI `web/cookies.rs`, web-index sqlite table `cookie_jars`. Six implementations.
 - Fetch clients: reqwest in obscura-js, obscura-net, web-bridge, web-detect, web-frames, x (workspace dep); wreq (stealth) only in obscura-net, pinned `=6.0.0-rc.31` and `wreq-util =3.0.0-rc.14` (`obscura-net/Cargo.toml:37-57`). The 8 `wreq` hits above are in obscura-net/obscura-js only. Two TLS stacks (reqwest rustls and wreq/boring).
 - CDP clients: server in obscura-cdp; clients in `packages/web/agent-browser/src/cdp.ts` and `packages/web/aphrody-web-test/src/cdp.ts` (two TS clients), plus web-chromium.
-- Crawl frontiers: `web-crawl` runner/frontier, `web-engine/src/crawl.rs`, `crates/os/task-runner`, `native_crawl_tools.rs`, FFI dom.rs; Bun `packages/shenron/pipeline/scripts/aphrody-web-corpus-crawl.ts`. Runtime store `frontier.sqlite` exists.
+- Crawl frontiers: `web-crawl` runner/frontier, `web-engine/src/crawl.rs`, `crates/os/task-runner`, `native_crawl_tools.rs`, FFI dom.rs; Bun `shenron:packages/pipeline/scripts/aphrody-web-corpus-crawl.ts`. Runtime store `frontier.sqlite` exists.
 - Lightpanda/obscura/aphrody-web: three browser engines with no shared trait found.
 
 ## 4. Runtime state

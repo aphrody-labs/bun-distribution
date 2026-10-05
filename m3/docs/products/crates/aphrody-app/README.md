@@ -14,26 +14,6 @@ The trusted main window's core commands include:
 | `aphrody_rpc(request)` | JSON-RPC result | app-server v2 sessions, turns and interruption |
 | `aphrody_shell_window(action)` | native window state | main-only window controls and navigation |
 
-Shenron's public, read-only grounded chat is available in the existing Chat
-surface with `/shenron <question>`. Its typed `aphrody_shenron_chat` command calls
-only `https://dragonballfr.com/api/chat`; it accepts no arbitrary URL or token.
-It does not represent an authenticated Shenron account or grant admin access.
-See [`../../docs/integrations/SHENRON.md`](../../../reference/integrations/SHENRON.md)
-for the API, FFI, auth, and database ownership decisions.
-
-The main window also exposes `koharu_rpc(method, params)`. Its broker starts the
-`koharu-sdk` executable from the `aphrody-koharu` sibling checkout on demand,
-passes JSON Lines requests over stdio, and emits SDK events as `koharu://event`.
-The method must exist in the SDK; this is not a shell execution API. The SDK owns
-its Rust model, project, and processing dependencies in its own Cargo workspace,
-so Tauri v2 never links Koharu's Tauri 3 alpha desktop runtime. The existing
-log, single-instance, window-state, opener, and process plugins already cover
-Koharu's plugin set. `aphrody-ops tauri` stages the SDK as a target-suffixed
-`externalBin`; `KOHARU_SDK_SIDECAR_SOURCE` may point to a prebuilt binary during
-packaging, and `KOHARU_SDK_BIN` overrides resolution at runtime. A packaged SDK
-binary and successful IPC compilation do not establish an integrated editor
-route or visual behavior.
-
 The shell command takes its invoking `WebviewWindow`, accepts no target label and
 rejects every label except `main`. Remote Wry previews have no capability and
 cannot control desktop windows.

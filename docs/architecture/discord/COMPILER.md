@@ -40,7 +40,7 @@ flowchart TD
 ### Core Rust Structures
 
 - **`BotTarget`**: Enum identifying supported targets:
-  - `BotTarget::Shenron`: Root `apps/shenron/bot`, entry `src/entry-standalone.ts`, output `dist/shenron`.
+  - `BotTarget::Shenron`: Root `shenron:apps/bot`, entry `src/entry-standalone.ts`, output `dist/shenron`.
   - `BotTarget::RoseGriffon`: Root `iecode/apps/rg/bot`, entry `src/entry-standalone.ts`, output `dist/rg-bot`.
   - `BotTarget::Achillea`: Root `apps/rg/achillea-bot` (not in repo), entry `src/main.ts`, output `dist/achillea`.
   - `BotTarget::Custom(PathBuf)`: Arbitrary external Discord bot.
@@ -182,7 +182,7 @@ export function isCompiledBinary(): boolean {
 }
 ```
 
-In `apps/shenron/bot/src/lib/logger.ts`, logger initialization checks `isCompiledBinary()`. When running as a compiled standalone binary, it bypasses thread workers and writes directly to stdout/stderr with formatting, ensuring crash-free operation.
+In `shenron:apps/bot/src/lib/logger.ts`, logger initialization checks `isCompiledBinary()`. When running as a compiled standalone binary, it bypasses thread workers and writes directly to stdout/stderr with formatting, ensuring crash-free operation.
 
 ---
 
@@ -190,7 +190,7 @@ In `apps/shenron/bot/src/lib/logger.ts`, logger initialization checks `isCompile
 
 | Property | Shenron Bot (`dist/shenron`) | Rose Griffon Bot (`dist/rg-bot`) |
 | :--- | :--- | :--- |
-| **Source Directory** | `apps/shenron/bot` | `iecode/apps/rg/bot` |
+| **Source Directory** | `shenron:apps/bot` | `iecode/apps/rg/bot` |
 | **Entrypoint** | `src/entry-standalone.ts` | `src/entry-standalone.ts` |
 | **Pre-build Step** | Tailwind CSS generation for web dashboard | None |
 | **Bundled Modules** | 2,470 modules | 959 modules |

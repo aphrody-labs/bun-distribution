@@ -65,7 +65,7 @@ provided only when the caller intends to retain crawl state.
 ### Dragon Ball tools
 
 The `dragonball.*` tools left with the Shenron product: they are served by
-`shenron-mcp` (`crates/shenron-mcp` of
+`shenron-mcp` (`shenron:crates/shenron-mcp` in
 [aphrody-labs/shenron](https://github.com/aphrody-labs/shenron)). This server keeps
 only the Aphrody AI gateway Shenron calls (`/api/v1/shenron/*`, below).
 

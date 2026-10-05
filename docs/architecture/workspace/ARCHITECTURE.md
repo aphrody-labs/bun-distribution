@@ -40,7 +40,7 @@ history under `upstream/`.
 | UI | `crates/ui`, `m3/packages`: rendering, tokens, components and presentation |
 | AI and Web | `crates/ai`, `packages/ai`, `crates/web`, `packages/web`: model clients, inference, RAG and web capabilities |
 | Koharu and Discord | Domain libraries; applications own startup, credentials and product behavior |
-| RG and Shenron | `iecode/packages/rg`, `iecode/apps/rg`, `packages/shenron`, `apps/shenron`: domain rules, application contracts and product consumers |
+| RG and Shenron | `iecode/packages/rg`, `iecode/apps/rg`, `shenron:packages`, `shenron:apps`: domain rules, application contracts and product consumers |
 
 New Rust package placement follows the
 [crate naming rules](../rust-crate-naming.md). Existing public crate/package
@@ -76,7 +76,7 @@ respect runtime threading and lifetime rules.
 
 Infra configuration is canonical: [services](../../../config/service-catalog.json),
 [topology](../../../config/production-topology.json),
-`yolo/config/host/nginx/routes.json` and
+`config/host/nginx/routes.json` and
 [local AI](../../../config/local-ai.json). Current release records and live
 probes establish deployed state; manifests and historical catalogues do not.
 Migration tools may intentionally read legacy archives, while active service

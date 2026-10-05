@@ -22,7 +22,6 @@ plan; its old repository paths and status claims require current evidence.
 | Which repository owns a capability? | [Organization and ownership](../../../plans/ai/PLAN.md#organization-and-ownership), [generated ecosystem inventory](../../../ecosystem/ECOSYSTEM.md) |
 | What does each capability contribute to the product? | [Capability integration](../../../plans/ai/PLAN.md#capability-integration) |
 | What remains for Koharu, Aphrody and Shenron? | [Koharu convergence work packages](../../../plans/ai/PLAN.md#koharu-aphrody-and-shenron-convergence) |
-| What is the dated cross-repository Shenron pillar snapshot? | [ROADMAP-AGENT-PILLARS.md](../../../plans/ai/ROADMAP-AGENT-PILLARS.md) (historical metrics; verify against owners) |
 | What does responsive mean? | [Latency budgets](../../../plans/ai/PLAN.md#latency-budgets) |
 | How are changes maintained and checked? | [DOCUMENTATION-PIPELINE.md](../../../reference/ai/DOCUMENTATION-PIPELINE.md), [agent rules](../../../reference/ai/AGENTS.md) |
 

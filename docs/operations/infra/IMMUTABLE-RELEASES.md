@@ -104,7 +104,7 @@ Historical status (2026-09-29 08:50 UTC): release
 checksums, public health/Gateway, `ping` command, minimal login and separate
 install redirects, denied callback replay, and logout origin checks passed.
 The authorized callback and rollback drill remain open; see
-`yolo/config/host/inventory/aphrody-discord-dev-2026-09-29.md`.
+`config/host/inventory/aphrody-discord-dev-2026-09-29.md`.
 
 Historical status (2026-09-29 08:56 UTC): release
 `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808` superseded the prior
@@ -136,7 +136,7 @@ are met.
 | Unit | Binary (release `bin/`) | Listener | Source |
 | --- | --- | --- | --- |
 | `aphrody-site` | `aphrody-site` | `127.0.0.1:8083` | `aphrody-web` |
-| `aphrody-web-api` | `aphrody-web-api` (Bun `--compile` of `packages/shenron/api/src/server/index.ts`) + `lib/libaphrody_web_ffi.so`, `lib/libbxc_render.so` | `127.0.0.1:3007` | `aphrody-web` |
+| `aphrody-web-api` | `aphrody-web-api` (Bun `--compile` of `shenron:packages/api/src/server/index.ts`) + `lib/libaphrody_web_ffi.so`, `lib/libbxc_render.so` | `127.0.0.1:3007` | `aphrody-web` |
 | `aphrody-a2a` | `aphrody a2a serve` | `127.0.0.1:8788` | `aphrody-ai` (feature `aphrody/rag`) |
 | `aphrody-ai-http` | `aphrody-mcp http` (MCP on `/mcp`, incl. the `dragonball.*` tools that replaced `shenron-mcp`; REST `/api/v1/*`) | `127.0.0.1:8789` | `aphrody-ai` (feature `aphrody-mcp/ocr`) |
 | `aphrody-shenron-embed` | `aphrody-embed serve` (pure Rust E5) | `127.0.0.1:8794` | `aphrody-ai` (feature `server`) |
@@ -145,7 +145,7 @@ The agent console served by `aphrody` is `aphrody-ui`'s tracked
 `crates/ui/app/ui-dist`, embedded at compile time by
 `aphrody-app-server`; a build that falls back to its placeholder page fails.
 Nginx serves `/ai.json` byte-for-byte from `/srv/aphrody/current/ai.json` and
-routes the apex (`yolo/config/host/nginx/aphrody/aphrody-apex.conf`: `aphrody.com`,
+routes the apex (`config/host/nginx/aphrody/aphrody-apex.conf`: `aphrody.com`,
 `www.aphrody.com`, `mcp.aphrody.com`) to the loopback services.
 
 Persistent state stays outside releases: Web SQLite, crawler queue and cookies
@@ -341,7 +341,7 @@ active. On success `/srv/aphrody-infra/BUNDLE.json` (with `activatedAt`) and
 After activation: run `$B/provision-shenron-ai-access.sh` as root to prove
 Shenron → AI (RAG search returns passages), drop `"status": "retired"` from the
 five Aphrody services, their routes, the `vps` allocation and the `vps`
-local-AI target in `config/`, refresh `yolo/config/host/inventory/vps-source.json`, then run
+local-AI target in `config/`, refresh `config/host/inventory/vps-source.json`, then run
 the `live` pipeline stage (`bun run audit:live`).
 
 ## Existing-host path (legacy)

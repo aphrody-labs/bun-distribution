@@ -24,7 +24,7 @@ bun run discord:compile all --smoke
 ```
 
 Binaries are generated at:
-- `apps/shenron/bot/dist/shenron`
+- `shenron:apps/bot/dist/shenron`
 - `apps/rg/bot/dist/rg-bot` (not in repo)
 
 ### 2. Pre-deployment Verification Gate

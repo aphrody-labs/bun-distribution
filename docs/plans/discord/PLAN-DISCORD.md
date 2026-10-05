@@ -47,8 +47,8 @@ La release Discord de développement observée était
 
 1. Lire les règles, `README.md`, ce plan, `docs/PLAN.md` (not in repo),
    [`docs/UPSTREAMS.md` (not in repo)](../../reference/discord/UPSTREAMS.md), [`m3/packages/material-web/docs/STACK.md`](../../reference/discord/STACK.md)
-   et les audits. Dans Shenron lire `AGENTS.md`, `docs/products/shenron/GOALS.md`,
-   `docs/operations/shenron/ADMIN-REPORTS.md`, `docs/operations/shenron/INFRA-DELEGATION.md`. Dans Infra lire les
+   et les audits. Dans Shenron lire `AGENTS.md`, `shenron:docs/products/GOALS.md`,
+   `shenron:docs/operations/ADMIN-REPORTS.md`, `shenron:docs/operations/INFRA-DELEGATION.md`. Dans Infra lire les
    contrats et runbooks de release. `aphrody-ui` appartient à son agent : ne
    pas l'inspecter ni le modifier.
 2. Relever branches, SHAs, arbres Git, lockfiles, versions upstream/publiées,

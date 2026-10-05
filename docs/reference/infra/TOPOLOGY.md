@@ -12,7 +12,7 @@
 
 | Surface | Repository | Responsibility |
 |---|---|---|
-| Public web origin, Web API, BXC, browser/render FFI | `aphrody-web` | `aphrody-site` on `127.0.0.1:8083`; the integrated Web API (`packages/shenron/api/src/server/index.ts`) on `127.0.0.1:3007` with `libaphrody_web_ffi.so` and the V8 renderer `libbxc_render.so`; BXC has one source tree under `apps/bxc` (not in repo). |
+| Public web origin, Web API, BXC, browser/render FFI | `aphrody-web` | `aphrody-site` on `127.0.0.1:8083`; the integrated Web API (`shenron:packages/api/src/server/index.ts`) on `127.0.0.1:3007` with `libaphrody_web_ffi.so` and the V8 renderer `libbxc_render.so`; BXC has one source tree under `apps/bxc` (not in repo). |
 | AI agents, A2A, RAG, MCP, embeddings | `aphrody-ai` | `aphrody a2a serve` on `127.0.0.1:8788`; `aphrody-mcp http` on `127.0.0.1:8789` (MCP on `/mcp` with the `dragonball.*` tools, REST under `/api/v1`); `aphrody-embed serve` (E5) on `127.0.0.1:8794`. |
 | Agent console, M3 design system, `bun_rs` | `aphrody-ui` | Tracked `crates/ui/app/ui-dist` embedded into the `aphrody` binary at build time; `@aphrody/bun` over the `aphrody-bun` crate. |
 | OS control plane | `aphrody-os` | `aphrody-kernel`; not deployed on the VPS (a build-time path dependency of the category workspaces). |
@@ -30,7 +30,7 @@ services), `/srv/shenron/current` and `/srv/rg/current`; the all-in-one bundle
 state lives in `/srv/aphrody-infra` (`bundles/`, `state/`, `BUNDLE.json`,
 `BUNDLE.previous.json`). As of 2026-09-26 RG and Shenron are live and the
 Aphrody plane is retired (removed 2026-09-25) until the first bundle
-activation; `yolo/config/host/inventory/vps-source.json` records the observed state.
+activation; `config/host/inventory/vps-source.json` records the observed state.
 
 Nginx serves `/ai.json` byte-for-byte from `/srv/aphrody/current/ai.json` and
 routes A2A and AI REST paths directly to their loopback services; the site

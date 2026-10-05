@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths — backtick paths in this dated document name files of the repository at the time it records (Shenron and Koharu moved to aphrody-labs/shenron on 2026-10-05), not of this checkout. -->
 # Aphrody RAG Architecture and Shenron Benchmark
 
 This document describes Aphrody's local retrieval engine and the evidence available for comparison with Shenron. A score is comparable only when both targets use the same gold set, corpus snapshot, and retrieval condition.

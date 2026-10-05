@@ -31,7 +31,7 @@
 | **Sanitizers (ASAN/MSAN/TSAN)** | Chromium / Google sanitizer suite | Aliases + profile `asan` | ✅ |
 | **Deterministic builds** | Bazel / Buck reproducibility | `--remap-path-prefix`, profile `reproducible`, `SOURCE_DATE_EPOCH` | ✅ |
 | **CI matrix multi-OS** | Chromium / Fuchsia waterfalls | `.github/workflows/cross-platform.yml` (not in repo) 6 OS + Android NDK | ✅ |
-| **Release multi-target** | Chromium release builders | `.github/shenron/workflows/release.yml` 8 archis + SHA256 | ✅ |
+| **Release multi-target** | Chromium release builders | `shenron:.github/workflows/release.yml` 8 archis + SHA256 | ✅ |
 | **Coverage llvm-cov** | Standard 2026 | `.github/workflows/coverage.yml` (not in repo) + Codecov | ✅ |
 | **Docs CI + GH Pages** | Standard | `.github/workflows/docs.yml` (not in repo) rustdoc + mdBook | ✅ |
 | **Pre-commit hooks** | Standard | `.pre-commit-config.yaml` fmt/clippy/deny/machete | ✅ |

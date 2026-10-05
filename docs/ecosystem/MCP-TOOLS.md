@@ -7,7 +7,25 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 20 servers, 423 tool registrations, 406 unique tool names.
+Totals: 21 servers, 393 tool registrations, 376 unique tool names.
+
+## aphrody — @aphrody/m3-mcp
+
+Kind: bun-mcp. 11 tools.
+
+| Tool | Description |
+| --- | --- |
+| `m3_docs_search` | Case-insensitive line search over aphrody-m3 docs/ (md, mdx); returns path:line hits. |
+| `m3_list_packages` | List the aphrody-m3 workspace packages with versions. |
+| `m3_list_templates` | List UI templates, examples and Tauri example apps. |
+| `m3_os_themes_generate` | Return the text content of one generated OS theme file (path from m3_os_themes_list). Never writes to disk or the system. |
+| `m3_os_themes_list` | List the files m3-os-themes would generate for a seed colour and target (nothing is written). |
+| `m3_research_links` | List docs/research files and the curated dated Google design/research link index. |
+| `m3_svg_to_ico` | Generate Tauri desktop icons (ico, icns, png) from a symbol name or SVG file. |
+| `m3_symbol_search` | Search the full Material Symbols catalogue (4150 names) by substring; returns matching symbol names. |
+| `m3_symbol_svg` | Return path and SVG source of a Material Symbol from the forked catalogue. |
+| `m3_token_lookup` | Look up Material 3 design tokens (--md-*) by name or value fragment in m3-tokens. |
+| `m3_token_validate` | Validate that every --md-* custom property in a CSS snippet or name list exists in m3-tokens. |
 
 ## aphrody — @aphrody/workspace subsystem `workspace`
 
@@ -177,7 +195,7 @@ Kind: json-catalog. 15 tools.
 
 ## aphrody — aphrody-mcp (GoogleMcpServer)
 
-Kind: rmcp. 105 tools.
+Kind: rmcp. 64 tools.
 
 | Tool | Description |
 | --- | --- |
@@ -204,48 +222,7 @@ Kind: rmcp. 105 tools.
 | `coding_style_guide` | Fetch official coding style guidelines for Google projects (Chromium, Android, C++, Python, TypeScript, etc.). |
 | `context7_query_docs` | Retrieve up-to-date documentation and code examples from Context7 for a specific library and topic. Pass a libraryId resolved via `context7_resolve_library_id`. Returns raw markdown. |
 | `context7_resolve_library_id` | Resolve a package or product name to a Context7-compatible library ID (e.g. '/vercel/next.js') and return matching libraries with descriptions and source reputation. First step before `context7_query… |
-| `dbfr_databooks` | List Dragon Ball FR databook records (dragonballfr.com). Reads the public catalogue; `include_hidden` needs $DBFR_TOKEN and is refused without one rather than silently serving the public subset. |
-| `dbfr_deposit` | Deposit transcriptions into one databook. Writes into a public corpus, so it is a dry run unless `apply` is true, refuses a blank text (the API reads it as `nothing to say`), and merges by default so… |
-| `dbfr_pages` | Report one databook's plates: how many carry an image, how many are transcribed, and the numbers of those still missing a transcription. This is what says where OCR work remains. |
-| `dbfr_textes` | Read the stored transcription of specific plates of one databook (at most 40 per call). |
 | `docs_auto_search` | Single-shot documentation lookup that queries four backends in parallel — Context7, Microsoft Learn, Microsoft code samples, and GitHub (authoritative repos, llms.txt, and READMEs) — and returns one… |
-| `dragonball.a2a_agent_card` | AgentCard A2A du hub Dragon Ball (cibles et compétences). |
-| `dragonball.a2a_send` | Protocole A2A (JSON-RPC 2.0) du hub Dragon Ball, Honest Delivery : rag rend des passages réels ; ocr/translation l'état mesuré ; les ordres pour codex, agycli, claude, local_model, subagents restent… |
-| `dragonball.a2a_task_list` | Liste les tâches A2A du registre, filtrables par cible. API : site /api/a2a. |
-| `dragonball.a2a_task_status` | État, historique et artefacts d'une tâche A2A ; submitted/working n'a pas encore de résultat. API : site /api/a2a. |
-| `dragonball.admin_bot_command_execute` | Admin : exécute une commande Discord sous l'identité administrateur du bot ; consulter d'abord admin_bot_commands. Requiert $SHENRON_API_ADMIN_TOKEN. |
-| `dragonball.admin_bot_commands` | Admin : commandes exécutables via l'API d'administration Shenron. Requiert $SHENRON_API_ADMIN_TOKEN. |
-| `dragonball.admin_databooks_deposit` | Admin : dépose des transcriptions OCR déjà vérifiées sur un databook (fusion ciblée, révisions réversibles côté site). Requiert $SHENRON_DATABOOKS_API_TOKEN. |
-| `dragonball.admin_service_action` | Admin : exécute une action listée par admin_services ; aucun service ni shell arbitraire. Requiert $SHENRON_API_ADMIN_TOKEN. |
-| `dragonball.admin_services` | Admin : actions de service explicitement autorisées par Shenron. Requiert $SHENRON_API_ADMIN_TOKEN. |
-| `dragonball.bot_commands` | Commandes Discord publiques du bot Dragon Ball. API : bot /api/public/commands. |
-| `dragonball.bot_leaderboard` | Classement public des membres du serveur Discord par niveau/XP (limit ≤ 100). API : bot /api/public/leaderboard. |
-| `dragonball.bot_personas` | Persona actif du bot unique (Akira Toriyama par défaut en YOLO). set_persona enregistre un persona utilisateur dans <APHRODY_HOME>/persona.json. API : bot /api/public/personas, repli local. |
-| `dragonball.bot_stats` | Statistiques publiques du bot Discord Dragon Ball et de son serveur. API : bot /api/public/stats. |
-| `dragonball.canon_check` | Verdict déterministe de canonicité (doctrine curée, cinq rangs, score, règles, déclarations de Toriyama, planches, fiches). Sans question : la doctrine. API : site /api/canon. |
-| `dragonball.canon_references` | Corpus de preuves de canonicité (déclarations de Toriyama, planches de databooks traduites), filtrable par q et provenance. API : site /api/canon/references. |
-| `dragonball.chronologie` | La frise officielle dans son ordre éditorial (épisodes, films, tomes) ; ne pas la reconstruire par dates de diffusion. Filtres era et kind. API : site /api/chronologie. |
-| `dragonball.data_coverage` | Couverture réelle : passages par corpus et par type, modèle d'embeddings, date de l'index, nombre de fiches par rubrique du wiki. Une recherche vide sur un corpus absent ne prouve rien. API : bot /ap… |
-| `dragonball.databooks_get` | Détail d'un guide, artbook ou interview : métadonnées, couverture, planches transcrites (maxPages défaut 50). API : site /api/databooks/{id}. |
-| `dragonball.databooks_planches` | Cherche une expression dans la transcription des planches et rend ouvrage, planche et extrait autour du terme. API : site /api/databooks/search. |
-| `dragonball.databooks_scanlate` | Analyse une planche databook via le CDN et Koharu : régions détectées, OCR, traduction, calque de nettoyage et export PSD. Requiert la fonctionnalité Koharu et ses modèles. |
-| `dragonball.databooks_search` | Recherche parmi les fiches d'ouvrages (titre, auteur, description) avec couverture et nombre de planches ; ne lit pas le texte des planches (voir databooks_planches). API : site /api/databooks. |
-| `dragonball.manga_chapitre` | Un chapitre planche par planche : transcription et URL de lecture ; texteSeul (défaut vrai) omet les URL d'images. API : site /api/manga/chapter/{id}. |
-| `dragonball.manga_page` | Métadonnées et URL d'image d'une planche (coordonnées OCR series/tome/planche). API : bot /api/public/manga/page. |
-| `dragonball.manga_planche` | Une planche d'un chapitre : image, transcription OCR, bulles, voisines et URL de lecture. API : site /api/manga/chapter/{id}/planche/{n}. |
-| `dragonball.manga_recherche` | Cherche un texte dans les transcriptions et rend des planches citables avec URL de lecture (limit ≤ 100). API : site /api/manga/search. |
-| `dragonball.manga_scanlate` | Analyse une planche manga via le CDN et Koharu : régions détectées, OCR, traduction, calque de nettoyage et export PSD. Requiert la fonctionnalité Koharu et ses modèles. |
-| `dragonball.manga_search` | Recherche textuelle (OCR) dans les planches du manga Dragon Ball (limit ≤ 50). API : bot /api/public/manga/search. |
-| `dragonball.manga_tomes` | Liste les tomes du manga, ou le détail d'un tome (avec ses planches) si series et tome sont fournis. API : bot /api/public/manga/tomes. |
-| `dragonball.news` | Dernières actualités Dragon Ball de dragonballfr.com (limit ≤ 50). API : bot /api/public/news. |
-| `dragonball.rag_ask` | Question en langage naturel : le RAG sélectionne les passages (hits, avec url) et le LLM rédige answer dans la voix du bot unique (persona Akira Toriyama par défaut en YOLO). Si le LLM est indisponib… |
-| `dragonball.rag_context` | Passages les plus pertinents en texte intégral, numérotés [n] avec leur URL absolue, dans un budget maxChars (défaut 6000). Mêmes filtres que rag_search. API : bot /api/public/rag/context. |
-| `dragonball.rag_search` | Recherche hybride (BM25 + embeddings, fusion RRF, reranking) dans la base Dragon Ball de dragonballfr.com (manga, databooks, Kanzenshuu, wiki). Renvoie des passages sourcés (rowid, kind, title, url,… |
-| `dragonball.sources` | Liste les sources/corpus indexés par le RAG Dragon Ball (manga, databooks, Kanzenshuu…). API : bot /api/public/sources. |
-| `dragonball.wiki_categories` | Registre des catégories du wiki : name, label, total. API : bot /api/public/wiki/categories. |
-| `dragonball.wiki_get` | Détail d'une entité du wiki par identifiant numérique ou slug. API : bot /api/public/wiki/{category}/{idOrSlug}. |
-| `dragonball.wiki_list` | Liste paginée des entités d'une catégorie du wiki avec son total. API : bot /api/public/wiki/{category}. |
-| `dragonball.wiki_search` | Recherche plein-texte dans le wiki Dragon Ball ; résultats {category, id, slug, title, snippet} à ouvrir avec dragonball.wiki_get. API : bot /api/public/wiki/search. |
 | `firefly_generate` | Generate image(s) with Adobe Firefly Services (v3, async). OAuth server-to-server: set FIREFLY_CLIENT_ID and FIREFLY_CLIENT_SECRET in the environment. Cross-platform, headless cloud API (no Photoshop… |
 | `firefly_generative_expand` | Generative expand (Adobe Firefly v3): enlarge an image's canvas to width×height, AI-filling the new area (optional prompt). image_url must be Adobe-readable. Optionally save_dir. Returns { count, ima… |
 | `firefly_generative_fill` | Generative fill (Adobe Firefly v3): replace the masked region of an image with prompt-guided content. image_url + mask_url (white = fill) must be Adobe-readable. Optionally save_dir. Returns { count,… |

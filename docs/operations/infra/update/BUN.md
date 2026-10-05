@@ -137,7 +137,7 @@ failures already present before the bump).
 
 | Package | From | To | Note |
 | --- | --- | --- | --- |
-| `vitest` | ^4.1.11 | ^5.0.2 | `apps/koharu/editor` (12 files, 102 tests) passes; matcher typing unchanged. 5.0.3 waits for the age window. |
+| `vitest` | ^4.1.11 | ^5.0.2 | `shenron:packages/koharu` (12 files, 102 tests) passes; matcher typing unchanged. 5.0.3 waits for the age window. |
 | `@testing-library/jest-dom` | ^6.10.0 | ^7.0.1 | Node 22+, `@testing-library/dom` peer already met. |
 | `three` | ^0.184.0 | ^0.186.1 | Code fix: `PCFSoftShadowMap` was removed from `WebGLShadowMap` in r186 (runtime warning, falls back), `m3/packages/material-web/scene3d/scene-3d.ts` now sets `PCFShadowMap`. |
 | `motion` | ^12.43.0 | ^13.4.4 | Only the removed emotion integration changed; unused. |
@@ -163,5 +163,5 @@ failures already present before the bump).
 
 Not part of this pass: the Bun runtime (1.4.2 is latest), TypeScript 7.0.2, oxlint 1.86.0 and oxfmt 0.71.0 (all
 current), and the Tauri family (`tauri-sync --check` reports no drift; `@aphrody/plugin-opener` alpha.2 waits for the
-age window). The non-workspace mirrors `config/rg/package.json` (not in repo), `config/shenron/package.json` and
+age window). The non-workspace mirrors `config/rg/package.json` (not in repo), `shenron:package.json` and
 `docs/reference/rg/root/package.json` (not in repo) keep their own ranges and are out of scope of the first-party manifest scan.

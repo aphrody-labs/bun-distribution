@@ -25,7 +25,6 @@ BXC in `aphrody-web`; Material 3, GUI, Tauri and rendering in `aphrody-ui`; Bun 
 
 | Document | Subject |
 |---|---|
-| [integrations/KOHARU.md](../../../reference/os/integrations/KOHARU.md) | Source-backed mapping of Koharu runtime, jobs, credentials, settings and Tauri boundaries to existing OS owners; not an integration claim. |
 
 ## WinClean
 

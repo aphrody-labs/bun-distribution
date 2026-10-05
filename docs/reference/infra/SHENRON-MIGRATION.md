@@ -40,14 +40,14 @@ backups et probes.
   données ;
 - bot Discord **et** API publique (REST/GraphQL/OpenAPI) : `shenron-bot.service`,
   port local `5006`, `WorkingDirectory=/srv/shenron/current/apps/bot` ;
-- hôte d'assets `cdn.dragonballfr.com` : servi par le même Nginx depuis
-  `/srv/shenron/shared` (+ `/_next/*` via `shenron-site`) ;
+- hôte d'assets `cdn.dragonballfr.com` : servi par le même Nginx, statique d'abord
+  depuis `/srv/shenron-cdn`, puis Next ou le bot, puis la page de maintenance ;
 - backups : `shenron-backup.timer` (sauvegarde SQLite locale) et les unités
   spécialisées déclarées dans le catalogue ;
 - exposition publique : Nginx uniquement, déclarée dans
-  `yolo/config/host/nginx/routes.json` ; les vhosts sont des gabarits reviewables sous
-  `nginx/*.conf.example`, concaténés en `nginx/shenron.conf` (not in repo) dans le bundle et
-  installés par l'adaptateur ;
+  `config/host/nginx/routes.json` ; les vhosts réels sont
+  `config/host/nginx/shenron/{00-shenron,dragonballfr.com,cdn.dragonballfr.com,bot.dragonballfr.com}.conf`,
+  installés séparément dans `/etc/nginx/conf.d/` sur le vps ;
 - déploiement : `scripts/release/atomic-deploy-shenron.sh` (`assemble` puis
   `activate`, rollback vers le `current` précédent), seul ou comme deuxième
   étape du bundle tout-en-un (`docs/operations/infra/IMMUTABLE-RELEASES.md`).
@@ -55,14 +55,14 @@ backups et probes.
 ## Décision — process unique bot/API (résout l'écart signalé par
 `shenron/docs/INFRA-DELEGATION.md`)
 
-`docs/infra-vps.md` (not in repo) et `apps/shenron/bot/src/lib/env.ts` (côté Shenron) confirment un
+`docs/infra-vps.md` (not in repo) et `shenron:apps/bot/src/lib/env.ts` (côté Shenron) confirment un
 seul workload Bun : `discordx` (gateway Discord) et `Bun.serve` (API REST/
 GraphQL/OpenAPI, `API_PORT` par défaut `5006`) tournent dans le même process,
 démarré par `bun src/index.ts` depuis `apps/bot` (not in repo). Le catalogue infra a donc été
 aligné sur ce fait : **`shenron-api.service` est retiré** (ajouté à
 `policies.retiredUnits` dans `config/service-catalog.json`) et
 `shenron-bot.service` porte à la fois le bot et le `health` public
-(`http://127.0.0.1:5006/health`, `public: true`). `yolo/config/host/nginx/routes.json`
+(`http://127.0.0.1:5006/health`, `public: true`). `config/host/nginx/routes.json`
 route donc `bot.dragonballfr.com` vers le service `shenron-bot`, pas
 `shenron-api`.
 
@@ -105,12 +105,12 @@ une release RG scellée. Shenron possède donc sa propre racine :
 
 - `/srv/shenron/releases/<sha>` : source `git archive` du commit Shenron, plus
   l'artefact `site-build.tar.gz` (`bun run site:artifact`, vérifié par sha256)
-  extrait dans `apps/shenron/site/.next-build`, plus `bun install --frozen-lockfile` ;
+  extrait dans `shenron:apps/site/.next-build`, plus `bun install --frozen-lockfile` ;
 - `/srv/shenron/current` : lien basculé atomiquement (`ln -sfn` puis `mv -T`),
   la release précédente reste disponible pour le rollback ;
 - `/srv/shenron/shared` : les données mutables, reliées dans la release par des
-  liens symboliques (`apps/site/public/wiki` (not in repo), `apps/shenron/bot/data`,
-  `apps/shenron/bot/assets`, `apps/shenron/site/.next-build/cache`). Les fichiers suivis par git
+  liens symboliques (`apps/site/public/wiki` (not in repo), `shenron:apps/bot/data`,
+  `shenron:apps/bot/assets`, `shenron:apps/site/.next-build/cache`). Les fichiers suivis par git
   sont rafraîchis depuis la release, et rien n'y est supprimé.
 
 Secrets : `/etc/rose-griffon/shenron-{site,bot}.env` (0600 root), copiés d'hôte
@@ -124,16 +124,23 @@ Le WireGuard historique (`wg0`, 10.8.0.0/24) est inactif côté VPS. Le chemin p
 retenu est donc `shenron-pg-tunnel.service`, un tunnel SSH supervisé par systemd.
 
 CDN : `cdn.dragonballfr.com` est une route Shenron dédiée, co-localisée sur le
-VPS (`yolo/config/host/nginx/routes.json`, `yolo/config/host/nginx/shenron/cdn.dragonballfr.com.conf.example`),
-parce que le site est construit avec cet hôte comme base d'assets.
+VPS (`config/host/nginx/routes.json`, `config/host/nginx/shenron/cdn.dragonballfr.com.conf`),
+parce que le site est construit avec cet hôte comme base d'assets. Le plan est
+statique d'abord : `/srv/shenron-cdn` sert les fichiers, puis Next (`shenron-site`)
+ou le bot (`shenron-bot`) répondent, puis la maintenance (503 HTML de marque, API en
+503 JSON). `shenron-cdn-sync.timer` (horaire, `config/host/systemd/shenron/`) tire de
+dbfr vers le vps le wiki, les assets et `public-extra` par WireGuard, avec une clé
+`rrsync -ro` limitée à WireGuard (10.8.0.1 ; shell et écriture refusés).
 
-Nginx : un seul fichier possédé par Shenron sur l'hôte,
-`/etc/nginx/conf.d/shenron.conf`. Il concatène `00-shenron-cache` et les vhosts
-`dragonballfr.com`, `bot.` et `cdn.` ; le bundle le génère
-(`shenron/nginx/shenron.conf`) et `atomic-deploy-shenron.sh` l'installe, le
-valide (`nginx -t`) et le restaure en cas d'échec. `mcp.dragonballfr.com` est
-retiré avec `shenron-mcp` (2026-09-25). La page 50x de marque est installée
-dans `/var/www/shenron/50x.html`.
+Nginx : quatre fichiers possédés par Shenron sur l'hôte, installés séparément dans
+`/etc/nginx/conf.d/` : `00-shenron.conf` (zones de cache) et les vhosts
+`dragonballfr.com.conf`, `cdn.dragonballfr.com.conf` et `bot.dragonballfr.com.conf`
+(sources `config/host/nginx/shenron/`), validés par `nginx -t`.
+`scripts/release/atomic-deploy-shenron.sh` installe encore un `shenron.conf`
+concaténé unique : à aligner sur ces fichiers avant son prochain usage.
+`mcp.dragonballfr.com` est retiré avec `shenron-mcp` (2026-09-25). La page 50x de
+marque est installée dans `/var/www/shenron/50x.html`. Preuve datée : MEMORY,
+lignes « Production dragonballfr.com » et « CDN statique Shenron ».
 
 Adaptateur (2026-09-26) : `scripts/release/atomic-deploy-shenron.sh assemble
 BUNDLE/shenron` construit `/srv/shenron/releases/<sha complet>` sans toucher au
@@ -201,7 +208,7 @@ filebrowser, watchdog et superviseurs propres à Shenron sont retirées du plan.
   `aphrody-infra deploy --stack shenron|bundle` les pilote.
 - **Privoxy / proxy média Shenron** (`shenron/deploy/privoxy/shenron-media*`) :
   hors périmètre de cette tâche, signalé côté Shenron
-  (`docs/operations/shenron/INFRA-DELEGATION.md`) comme candidat à un composant `aphrody-os`
+  (`shenron:docs/operations/INFRA-DELEGATION.md`) comme candidat à un composant `aphrody-os`
   mutualisé plutôt qu'une unité par application. Non traité ici.
 
 ## Audit de parité VPS/DBFR (2026-09-24, lecture seule)
@@ -213,9 +220,9 @@ filebrowser, watchdog et superviseurs propres à Shenron sont retirées du plan.
   5006/5010/5011/15433/8789/8794 en écoute loopback, sondes du catalogue en 200.
   Aucune unité `shenron.target`, `shenron-runtime` ni `shenron-api`.
 - Catalogue corrigé : `aphrody-shenron-embed.workingDirectory` pointe
-  `apps/shenron-embed` (not in repo) ; `staged` retiré de `aphrody-shenron-embed`,
+  `shenron:apps-embed` (not in repo) ; `staged` retiré de `aphrody-shenron-embed`,
   `shenron-mcp` et `shenron-backup` (actifs en production). Source
-  `yolo/config/host/systemd/shenron/shenron-zswap.service` (not in repo) supprimée (unité retirée, absente des deux hôtes).
+  `config/host/systemd/shenron/shenron-zswap.service` (not in repo) supprimée (unité retirée, absente des deux hôtes).
 - Écart résolu (2026-09-30) : sur DBFR, `shenron-pg-backup.service` et
   `shenron-sqlite-replica-backup.service` disposent d'un fallback direct et
   résilient vers `~/shenron/scripts/backup-shenron-{pg,sqlite}.sh`
@@ -256,6 +263,6 @@ stricte entre les dépôts (`aphrody` et `aphrody-infra`) et les serveurs réels
    - DBFR : `shenron-sqlite-replica-backup.service` (SQLite réplica 127 Mo compressé, status 0/SUCCESS).
 
 5. **Nettoyage et Purge des Résidus** :
-   - Monorepo : suppression du répertoire orphelin `packages/shenron/_preview` (not in repo) (457 fichiers) et masquage de `/.coord/` dans `.gitignore`.
+   - Monorepo : suppression du répertoire orphelin `shenron:packages/_preview` (not in repo) (457 fichiers) et masquage de `/.coord/` dans `.gitignore`.
    - VPS & DBFR : suppression de `~/.shenron-build-tmp` et `.shenron-isr-release-dir`.
    - Validation `aphrody-infra validate` : 23 services, 25 routes, 0 violation.

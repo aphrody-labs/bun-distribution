@@ -95,7 +95,7 @@ Consumers of `aphrody-oxc-bridge`: `crates/interop/ffi/Cargo.toml:54`
 
 | Package | Declared | Resolved (bun.lock) | Where |
 |---|---|---|---|
-| `oxlint` | root catalog `1.86.0` (`package.json:34`), root devDep `catalog:` (`:357`) | `oxlint@1.86.0` (bun.lock:5760) | `catalog:` in `packages/rg/achillea-{types,client,contract,core}` (not in repo), `packages/shenron/pipeline`, `packages/koharu/bridge`, `apps/rg/{website,bot}` (not in repo), `apps/shenron/bot`, `apps/koharu/editor`; peer `>=1.0.0` in `m3/packages/eslint-plugin-m3/package.json:46` |
+| `oxlint` | root catalog `1.86.0` (`package.json:34`), root devDep `catalog:` (`:357`) | `oxlint@1.86.0` (bun.lock:5760) | `catalog:` in `packages/rg/achillea-{types,client,contract,core}` (not in repo), `shenron:packages/pipeline`, `shenron:packages/koharu`, `apps/rg/{website,bot}` (not in repo), `shenron:apps/bot`, `shenron:packages/koharu`; peer `>=1.0.0` in `m3/packages/eslint-plugin-m3/package.json:46` |
 | `oxfmt` | root catalog `0.71.0` (`package.json:35`), root devDep `catalog:` (`:356`) | `oxfmt@0.71.0` (bun.lock:5758) | root only in the main workspace |
 | `oxc-parser` | not declared by any first-party package.json | `oxc-parser@0.143.0` (bun.lock:5756), transitive, pulled by `@sentry/bundler-plugins@11.1.0` (bun.lock:3440) | - |
 | `@oxc-project/types` | not declared | `0.151.0` (bun.lock:2930), required `=0.151.0` by `rolldown@1.2.11` (bun.lock:6156); `oxc-parser` wants `^0.143.0` | - |
@@ -103,7 +103,7 @@ Consumers of `aphrody-oxc-bridge`: `crates/interop/ffi/Cargo.toml:54`
 
 Separate imported workspaces (own lockfiles, not the root catalog):
 `config/rg/package.json` (not in repo) (catalog `oxlint ^1.86.0` :47, `oxfmt ^0.71.0` :158) and
-`config/shenron/package.json` (catalog `oxlint ^1.81.0` :28, `oxfmt ^0.66.0` :29,
+`shenron:package.json` (catalog `oxlint ^1.81.0` :28, `oxfmt ^0.66.0` :29,
 behind the root pins).
 
 Pins: `config/update/pins.json` tools `oxlint` (targets `package.json`,
@@ -170,7 +170,7 @@ Historical evidence (dated logs/JSON, keep as record): `inventory/2026-09-30-{bu
 `docs/migration/{unified-ui-ffi,native-rust-extraction}.json`, `docs/migration/IMPORTED-DOCS-INDEX.md`,
 `docs/plans/2026-09-29-consolidation-initial-archive.md` (not in repo),
 `docs/research/os/low-level-audit-2026-10-01/{bun-chaine,abi}.md`,
-`apps/shenron/bot/dist/shenron.map` (build output).
+`shenron:apps/bot/dist/shenron.map` (build output).
 
 ## 6. N2B deduplication (2026-10-02)
 

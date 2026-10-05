@@ -495,7 +495,7 @@ que leurs tags existent. Cette publication les livre toutes d'un coup, avec les 
   - types.ts : interfaces et typages stricts (sans `any`).
   - scraper.ts : client d'automatisation de forum MyBB (profiles, threads, MPs).
   - rankings.ts : synchronisation et parsing hors-ligne des classements via Wayback CDX.
-  - [analytics.ts](../../../../../apps/shenron/site/src/lib/analytics.ts) : normalisation des pièces (Blades, Bits) et calculs mathématiques (Podium Score, Combo Synergy).
+  - analytics.ts (`apps/shenron/site/src/lib/analytics.ts`, not in repo) : normalisation des pièces (Blades, Bits) et calculs mathématiques (Podium Score, Combo Synergy).
   - index.ts : export "barrel" propre.
 - Simplification du script d'analyse bbx_metagame_analyst.ts (-500 lignes de code dupliqué) en important les fonctions analytiques partagées du module principal.
 - Mise en conformité stricte `oxlint` et formatage `biome` de tous les fichiers modifiés.

@@ -9,7 +9,7 @@ Authoritative sources (never a second registry):
 
 - `config/service-catalog.json` — every unit, its loopback port, health check, owning repository
   and `status`.
-- `yolo/config/host/nginx/routes.json` — every public host and path, and the internal paths reached through
+- `config/host/nginx/routes.json` — every public host and path, and the internal paths reached through
   a public host.
 - `config/production-topology.json` — the port policy (`publicPorts` vs `internalOnly`) per host.
 - `config/a2a-peers.json` — the A2A registry (JSON-RPC endpoints and agent cards).
@@ -80,9 +80,9 @@ closed 2026-09-26.
 | `aphrody.com` | `/api/v1/a2a`, `/.well-known/agent-card.json` | aphrody-a2a :8788 | retired 2026-09-25 |
 | `aphrody.com` | `/api/v1/models`, `/api/v1/rag/*` | aphrody-ai-http :8789 | retired 2026-09-25 |
 | `aphrody.com` | `/api/v1/web/` | aphrody-web-api :3007 | retired 2026-09-25 |
-| `mcp.aphrody.com` | `/mcp` | aphrody-site :8083 | retired 2026-09-25 (`yolo/config/host/nginx/aphrody/aphrody-apex.conf`) |
-| `n2b.aphrody.com` | `/api/v1/n2b`, `/api/v1/n2b/` | aphrody-site :8083 | retired 2026-09-25 (`yolo/config/host/nginx/aphrody/aphrody.com.conf`) |
-| `api.aphrody.com` | `/healthz`, `/api/v1/a2a`, `/api/v1/models`, `/api/v1/rag/*`, `/api/` etc. | aphrody-site :8083, aphrody-a2a :8788, aphrody-ai-http :8789 | retired 2026-09-25 (`yolo/config/host/nginx/aphrody/aphrody.com.conf`) |
+| `mcp.aphrody.com` | `/mcp` | aphrody-site :8083 | retired 2026-09-25 (`config/host/nginx/aphrody/aphrody-apex.conf`) |
+| `n2b.aphrody.com` | `/api/v1/n2b`, `/api/v1/n2b/` | aphrody-site :8083 | retired 2026-09-25 (`config/host/nginx/aphrody/aphrody.com.conf`) |
+| `api.aphrody.com` | `/healthz`, `/api/v1/a2a`, `/api/v1/models`, `/api/v1/rag/*`, `/api/` etc. | aphrody-site :8083, aphrody-a2a :8788, aphrody-ai-http :8789 | retired 2026-09-25 (`config/host/nginx/aphrody/aphrody.com.conf`) |
 | `bot.aphrody.com` | `/` | `aphrody-discord-dev` (`127.0.0.1:4010`) | Bun dev app: signed Discord HTTP interactions, Gateway session for non-interaction events, OAuth2 login/callback; managed by `aphrody-infra` |
 | `downloads.aphrody.com` / `admin.aphrody.com` | `/` | none — reserved, explicit 410 | reserved; no backing service |
 | `cdn.aphrody.com` | `/s/`, `/h/`, `/s/manifest.json` | static `aphrody-cdn` release tree (`config/asset-catalog.json`) — no backend process, so no `service-catalog.json` entry | retired 2026-09-25: `/srv/aphrody-cdn` and its vhost were removed with the Aphrody retirement (`config/asset-catalog.json` `status: retired`); not part of the bundle |
@@ -170,12 +170,12 @@ of 2026-09-26 — nothing in this section is open any more:
     either without first confirming a live owner. `staging-nds.conf`'s own design intent (a staged
     NDS emulator, deliberately never public) is unchanged and still documented inline; it simply
     has no implementing code yet in this ecosystem.
-11. ~~`yolo/config/host/nginx/aphrody/aphrody.com.conf`'s `mcp.`, `downloads.`, `n2b.`, `api.` hosts~~ — **resolved
+11. ~~`config/host/nginx/aphrody/aphrody.com.conf`'s `mcp.`, `downloads.`, `n2b.`, `api.` hosts~~ — **resolved
     2026-09-26.** `mcp.aphrody.com`, `n2b.aphrody.com` and `api.aphrody.com` all back onto
     already-retired services (`aphrody-site` :8083, plus `aphrody-a2a` :8788 and `aphrody-ai-http`
-    :8789 for `api.aphrody.com`) — added matching `yolo/config/host/nginx/routes.json` entries with
+    :8789 for `api.aphrody.com`) — added matching `config/host/nginx/routes.json` entries with
     `status: retired`/`retiredAt: 2026-09-25` (same date as the services they back), plus an inline
-    banner on each server block in `yolo/config/host/nginx/aphrody/aphrody.com.conf`/`aphrody-apex.conf` naming the
+    banner on each server block in `config/host/nginx/aphrody/aphrody.com.conf`/`aphrody-apex.conf` naming the
     retirement. `downloads.aphrody.com` (and its `bot.`/`admin.` siblings) is different in kind:
     it never had a backing service — it is a reserved placeholder returning an explicit 410 — so
     it correctly has no `nginx-routes.json` entry (that schema requires a `service` to reference);
@@ -191,7 +191,7 @@ of 2026-09-26 — nothing in this section is open any more:
     the `rpbey.fr`/`*.rpbey.fr` branch of the nginx-stats parser in `rg`'s
     `iecode/packages/rg/cron/src/tasks/stats/achillea.ts`. `docs/reference/infra/ops/OVH.md` and `docs/ovh/README.md` (not in repo) now
     record the sale instead of describing a live-but-unserved zone. No route ever existed in
-    `yolo/config/host/nginx/routes.json`/`config/service-catalog.json` for this domain, so no catalog entry
+    `config/host/nginx/routes.json`/`config/service-catalog.json` for this domain, so no catalog entry
     needed removing there. CHANGELOG/history mentions (e.g. `shenron/docs/archive/`) were left
     untouched, per the "history stays" rule.
 13. ~~Port 8811 (`SUPABASE_INTERNAL_URL`)~~ — **resolved 2026-09-26: routed to `rg-api:8800`
@@ -214,7 +214,7 @@ commit trailers in each repo for any fix that landed):
 - **aphrody-ai**: every literal that duplicates a canonical `APHRODY_AI_*` value already resolves
   through that env var first; nothing trivial to fix. One drift found and fixed 2026-09-26:
   `crates/ai/rag-eval/src/main.rs`'s `DEFAULT_MCP_URL` defaulted to `https://aphrody.com/mcp`,
-  a path/host with no live entry in `yolo/config/host/nginx/routes.json` (its `aphrody-site` backend is
+  a path/host with no live entry in `config/host/nginx/routes.json` (its `aphrody-site` backend is
   retired). Made env-driven (`APHRODY_MCP_HTTP_URL`, checked before the local default) with the
   local default repointed at `http://127.0.0.1:8789/mcp` — `aphrody-mcp http`'s own `--bind`
   default and `/mcp` mount (`crates/ai/mcp/src/main.rs`), the one MCP HTTP origin this
@@ -245,12 +245,12 @@ commit trailers in each repo for any fix that landed):
   independently confirmed the `rg-postgrest`/`:8809` retirement claim is accurate from `rg`'s own
   source (no live call site; the real PostgREST-successor type-generation script now targets
   `pg-meta` on `:8813`, not `:8809`).
-- **shenron**: fixed and committed (`d00c8825`) one case (`apps/shenron/site/scripts/index-databooks-redis.ts`
+- **shenron**: fixed and committed (`d00c8825`) one case (`shenron:apps/site/scripts/index-databooks-redis.ts`
   now reuses the shared `resolveRedisUrl()` instead of a literal). Flagged for the owner, not fixed
   (a different agent was already mid-edit on the same MCP-retirement cleanup, so these were
   reported rather than raced against): several executable, live dependencies on the retired
   `mcp.dragonballfr.com` / `127.0.0.1:5010` remain — `ai.json`'s own agent-card
   (`supported_interfaces`, `coord.http_bind`), the `dragon-ball` MCP plugin's client config
   (`plugins/dragon-ball/mcp_config.json` (not in repo), `.mcp.json`), and three ops scripts that actively probe or
-  call the dead host (`scripts/audit/shenron/scripts/ops/test-a2a-live.ts`, `scripts/tools/shenron/scripts/ops/observability-snapshot.ts`,
-  `scripts/tools/shenron/scripts/monitor-shenron-engine.ts`).
+  call the dead host (`shenron:scripts/audit/test-a2a-live.ts`, `shenron:scripts/ops/observability-snapshot.ts`,
+  `shenron:scripts/monitor-shenron-engine.ts`).

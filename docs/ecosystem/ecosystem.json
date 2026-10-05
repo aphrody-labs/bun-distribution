@@ -20,7 +20,6 @@
             "index",
             "infer",
             "jobs",
-            "koharu",
             "magika",
             "memory-lancedb",
             "native",
@@ -92,6 +91,13 @@
           "name": "aphrody-a2a-ui",
           "path": "crates/ui/a2a-ui",
           "description": "A2A protocol UI: WASM channel viewer for ai.json + .coord JSONL mailbox.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-acl-tests",
+          "path": "crates/tauri/aphrody-acl-tests",
+          "description": "Aphrody platform crate aphrody-acl-tests.",
           "bins": [],
           "features": []
         },
@@ -237,7 +243,6 @@
             "index",
             "infer",
             "jobs",
-            "koharu",
             "magika",
             "memory-lancedb",
             "native",
@@ -275,6 +280,22 @@
           "name": "aphrody-coreutils",
           "path": "crates/os/coreutils",
           "description": "Kernel adapter for the pinned upstream uutils/coreutils multicall distribution.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-create-tauri-app",
+          "path": "crates/tauri/aphrody-create-tauri-app",
+          "description": "Rapidly scaffold out a new tauri app project.",
+          "bins": [
+            "cargo-create-tauri-app"
+          ],
+          "features": []
+        },
+        {
+          "name": "aphrody-create-tauri-app-node",
+          "path": "crates/tauri/aphrody-create-tauri-app-node",
+          "description": "Aphrody platform crate aphrody-create-tauri-app-node.",
           "bins": [],
           "features": []
         },
@@ -380,6 +401,7 @@
           "description": "Native C-ABI surface for aphrody — load the full CLI in-process from Bun (bun:ffi) or any C host.",
           "bins": [],
           "features": [
+            "browser",
             "default",
             "firefly",
             "forensics",
@@ -387,7 +409,6 @@
             "index",
             "infer",
             "jobs",
-            "koharu",
             "magika",
             "native-stealth",
             "ocr",
@@ -520,6 +541,13 @@
           ]
         },
         {
+          "name": "aphrody-inference-ffi",
+          "path": "crates/ai/inference-ffi",
+          "description": "Asynchronous C ABI over Aphrody's shared in-process inference and Agent Home",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-infra",
           "path": "crates/infra/infra",
           "description": "Unified Aphrody infrastructure, workflow, development environment and deployment orchestrator",
@@ -610,6 +638,17 @@
           ]
         },
         {
+          "name": "aphrody-m3-showcase",
+          "path": "crates/ui/m3-showcase",
+          "description": "Native showcase shell for the canonical Aphrody M3 frontend and API",
+          "bins": [
+            "aphrody-m3-showcase"
+          ],
+          "features": [
+            "custom-protocol"
+          ]
+        },
+        {
           "name": "aphrody-m3-tokens",
           "path": "crates/ui/m3-tokens",
           "description": "Material Design 3 baseline design tokens: color roles, type scale, elevation, motion.",
@@ -622,26 +661,6 @@
           ]
         },
         {
-          "name": "aphrody-manga",
-          "path": "crates/ai/manga",
-          "description": "Koharu-backed manga page analysis, translation, cleanup and PSD export for Aphrody.",
-          "bins": [],
-          "features": [
-            "default",
-            "koharu"
-          ]
-        },
-        {
-          "name": "aphrody-marketplace",
-          "path": "crates/ai/marketplace",
-          "description": "Skill / MCP / hook / theme extension marketplace index — loaders (file, HTTP, embedded), semver queries, SHA-256 integrity verification.",
-          "bins": [],
-          "features": [
-            "default",
-            "github"
-          ]
-        },
-        {
           "name": "aphrody-mcp",
           "path": "crates/ai/mcp",
           "description": "aphrody-mcp — unified Rust MCP stdio server. Pure Rust, sub-millisecond cold-start.",
@@ -650,11 +669,9 @@
           ],
           "features": [
             "browser-stealth",
-            "dbfr",
             "default",
-            "dragonball",
+            "gateway-cache",
             "jobs",
-            "koharu",
             "managed-llama",
             "native",
             "native-browser",
@@ -798,6 +815,21 @@
           "features": []
         },
         {
+          "name": "aphrody-obscura",
+          "path": "crates/web/obscura",
+          "description": "Rust API for the Obscura headless browser",
+          "bins": [],
+          "features": [
+            "api",
+            "default",
+            "obscura-browser",
+            "obscura-net",
+            "render",
+            "stealth",
+            "tokio"
+          ]
+        },
+        {
           "name": "aphrody-ocr",
           "path": "crates/ai/ocr",
           "description": "Image-to-text pipeline for aphrody: drives a local vision-language model over one image or a whole directory, parses its DocTags output into markdown, and reports which pages carry no text at all.",
@@ -841,7 +873,7 @@
         {
           "name": "aphrody-oxc-bridge",
           "path": "crates/compat/oxc-bridge",
-          "description": "",
+          "description": "Aphrody's in-process Oxc bridge for the Bun fork.",
           "bins": [],
           "features": []
         },
@@ -904,7 +936,7 @@
         {
           "name": "aphrody-rag-eval",
           "path": "crates/ai/rag-eval",
-          "description": "RAG evaluation harness benchmarked against shenron on dbfr (P9).",
+          "description": "RAG retrieval evaluation harness (Recall@k, MRR, nDCG) over HTTP, MCP or a local index.",
           "bins": [
             "aphrody-rag-eval"
           ],
@@ -942,6 +974,17 @@
           ]
         },
         {
+          "name": "aphrody-restart",
+          "path": "crates/tauri/aphrody-restart",
+          "description": "Aphrody platform crate aphrody-restart.",
+          "bins": [
+            "restart"
+          ],
+          "features": [
+            "process-relaunch-dangerous-allow-symlink-macos"
+          ]
+        },
+        {
           "name": "aphrody-rollout",
           "path": "crates/ai/rollout",
           "description": "Resilient agent-session recorder: appends timestamped JSONL items to ~/.aphrody/sessions/rollout-*.jsonl through an async actor (mpsc + background writer task with Flush/Persist/Shutdown), and resumes a prior session by replaying its JSONL. Inspired by OpenAI Codex rollout (Apache-2.0).",
@@ -958,7 +1001,7 @@
         {
           "name": "aphrody-rust",
           "path": "crates/ai/rag-python",
-          "description": "",
+          "description": "Aphrody platform crate aphrody-rust.",
           "bins": [],
           "features": []
         },
@@ -1180,11 +1223,184 @@
           "features": []
         },
         {
+          "name": "aphrody-tao",
+          "path": "crates/tauri/aphrody-tao",
+          "description": "Cross-platform window manager library.",
+          "bins": [],
+          "features": [
+            "dbus",
+            "default",
+            "rwh_04",
+            "rwh_05",
+            "rwh_06",
+            "serde",
+            "x11"
+          ]
+        },
+        {
+          "name": "aphrody-tao-macros",
+          "path": "crates/tauri/aphrody-tao-macros",
+          "description": "Proc macros for tao",
+          "bins": [],
+          "features": [
+            "default"
+          ]
+        },
+        {
           "name": "aphrody-task-runner",
           "path": "crates/os/task-runner",
           "description": "Parallel DAG task executor with dependency ordering, retries, timeouts, concurrency caps and NDJSON-friendly event stream for aphrody background pipelines.",
           "bins": [],
           "features": []
+        },
+        {
+          "name": "aphrody-tauri",
+          "path": "crates/tauri/aphrody-tauri",
+          "description": "Make tiny, secure apps for all desktop platforms with Tauri",
+          "bins": [],
+          "features": [
+            "common-controls-v6",
+            "compression",
+            "config-json5",
+            "config-toml",
+            "custom-protocol",
+            "data-url",
+            "default",
+            "devtools",
+            "dynamic-acl",
+            "gtk3",
+            "gtk4",
+            "http-range",
+            "image",
+            "image-ico",
+            "image-png",
+            "isolation",
+            "linux-libappindicator",
+            "linux-libxdo",
+            "native-tls",
+            "native-tls-vendored",
+            "process-relaunch-dangerous-allow-symlink-macos",
+            "protocol-asset",
+            "rustls-tls",
+            "specta",
+            "test",
+            "tracing",
+            "tray-icon",
+            "unstable",
+            "uuid",
+            "webview-data-url",
+            "webview2-com"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-build",
+          "path": "crates/tauri/aphrody-tauri-build",
+          "description": "build time code to pair with https://crates.io/crates/tauri",
+          "bins": [],
+          "features": [
+            "codegen",
+            "config-json",
+            "config-json5",
+            "config-toml",
+            "default",
+            "isolation",
+            "quote",
+            "tauri-codegen"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-bundler",
+          "path": "crates/tauri/aphrody-tauri-bundler",
+          "description": "Wrap rust executables in OS-specific app bundles for Tauri",
+          "bins": [],
+          "features": [
+            "default",
+            "native-tls",
+            "native-tls-vendored",
+            "platform-certs",
+            "rustls"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-cli",
+          "path": "crates/tauri/aphrody-tauri-cli",
+          "description": "Command line interface for building Tauri apps",
+          "bins": [
+            "cargo-tauri"
+          ],
+          "features": [
+            "default",
+            "native-tls",
+            "native-tls-vendored",
+            "platform-certs",
+            "rustls"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-cli-node",
+          "path": "crates/tauri/aphrody-tauri-cli-node",
+          "description": "Aphrody platform crate aphrody-tauri-cli-node.",
+          "bins": [],
+          "features": [
+            "default",
+            "native-tls",
+            "native-tls-vendored"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-codegen",
+          "path": "crates/tauri/aphrody-tauri-codegen",
+          "description": "code generation meant to be consumed inside of `tauri` through `tauri-build` or `tauri-macros`",
+          "bins": [],
+          "features": [
+            "brotli",
+            "compression",
+            "config-json5",
+            "config-toml",
+            "isolation"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-driver",
+          "path": "crates/tauri/aphrody-tauri-driver",
+          "description": "Webdriver server for Tauri applications",
+          "bins": [
+            "tauri-driver"
+          ],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-examples",
+          "path": "crates/tauri/aphrody-tauri-examples",
+          "description": "Tauri desktop application examples (wry and CEF runtimes)",
+          "bins": [],
+          "features": [
+            "cef",
+            "default",
+            "isolation",
+            "wry"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-macos-sign",
+          "path": "crates/tauri/aphrody-tauri-macos-sign",
+          "description": "Code signing utilities for macOS and iOS apps",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-macros",
+          "path": "crates/tauri/aphrody-tauri-macros",
+          "description": "Macros for the tauri crate.",
+          "bins": [],
+          "features": [
+            "compression",
+            "config-json5",
+            "config-toml",
+            "custom-protocol",
+            "isolation",
+            "tracing"
+          ]
         },
         {
           "name": "aphrody-tauri-mcp",
@@ -1194,6 +1410,401 @@
             "aphrody-tauri-mcp"
           ],
           "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin",
+          "path": "crates/tauri/aphrody-tauri-plugin",
+          "description": "Build script and runtime Tauri plugin definitions",
+          "bins": [],
+          "features": [
+            "build",
+            "runtime"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-autostart",
+          "path": "crates/tauri/aphrody-tauri-plugin-autostart",
+          "description": "Automatically launch your application at startup.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-barcode-scanner",
+          "path": "crates/tauri/aphrody-tauri-plugin-barcode-scanner",
+          "description": "Scan QR codes, EAN-13 and other kinds of barcodes on Android and iOS",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-biometric",
+          "path": "crates/tauri/aphrody-tauri-plugin-biometric",
+          "description": "Prompt the user for biometric authentication on Android and iOS.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-cli",
+          "path": "crates/tauri/aphrody-tauri-plugin-cli",
+          "description": "Parse arguments from your Tauri application's command line interface.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-clipboard-manager",
+          "path": "crates/tauri/aphrody-tauri-plugin-clipboard-manager",
+          "description": "Read and write to the system clipboard.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-deep-link",
+          "path": "crates/tauri/aphrody-tauri-plugin-deep-link",
+          "description": "Set your Tauri application as the default handler for an URL",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-dialog",
+          "path": "crates/tauri/aphrody-tauri-plugin-dialog",
+          "description": "Native system dialogs for opening and saving files along with message dialogs on your Tauri application.",
+          "bins": [],
+          "features": [
+            "default",
+            "gtk3",
+            "xdg-portal"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-fs",
+          "path": "crates/tauri/aphrody-tauri-plugin-fs",
+          "description": "Access the file system.",
+          "bins": [],
+          "features": [
+            "notify",
+            "notify-debouncer-full",
+            "watch"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-geolocation",
+          "path": "crates/tauri/aphrody-tauri-plugin-geolocation",
+          "description": "Get and track the device's current position",
+          "bins": [],
+          "features": [
+            "specta"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-global-shortcut",
+          "path": "crates/tauri/aphrody-tauri-plugin-global-shortcut",
+          "description": "Register global hotkeys listeners on your Tauri application.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-haptics",
+          "path": "crates/tauri/aphrody-tauri-plugin-haptics",
+          "description": "Haptic feedback and vibrations on Android and iOS",
+          "bins": [],
+          "features": [
+            "specta"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-http",
+          "path": "crates/tauri/aphrody-tauri-plugin-http",
+          "description": "Access an HTTP client written in Rust.",
+          "bins": [],
+          "features": [
+            "blocking",
+            "brotli",
+            "charset",
+            "cookies",
+            "dangerous-settings",
+            "default",
+            "deflate",
+            "gzip",
+            "http2",
+            "json",
+            "multipart",
+            "native-tls",
+            "native-tls-alpn",
+            "native-tls-vendored",
+            "rustls-tls",
+            "rustls-tls-manual-roots",
+            "rustls-tls-native-roots",
+            "rustls-tls-webpki-roots",
+            "socks",
+            "stream",
+            "system-proxy",
+            "tracing",
+            "trust-dns",
+            "unsafe-headers",
+            "zstd"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-localhost",
+          "path": "crates/tauri/aphrody-tauri-plugin-localhost",
+          "description": "Expose your apps assets through a localhost server instead of the default custom protocol.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-log",
+          "path": "crates/tauri/aphrody-tauri-plugin-log",
+          "description": "Configurable logging for your Tauri app.",
+          "bins": [],
+          "features": [
+            "colored",
+            "tracing"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-mcp-bridge",
+          "path": "crates/ui/tauri-plugin-mcp-bridge",
+          "description": "MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-nfc",
+          "path": "crates/tauri/aphrody-tauri-plugin-nfc",
+          "description": "Read and write NFC tags on Android and iOS.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-notification",
+          "path": "crates/tauri/aphrody-tauri-plugin-notification",
+          "description": "Send desktop and mobile notifications on your Tauri application.",
+          "bins": [],
+          "features": [
+            "win7-notifications",
+            "windows-version",
+            "windows7-compat"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-opener",
+          "path": "crates/tauri/aphrody-tauri-plugin-opener",
+          "description": "Open files and URLs using their default application.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-os",
+          "path": "crates/tauri/aphrody-tauri-plugin-os",
+          "description": "Read information about the operating system.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-persisted-scope",
+          "path": "crates/tauri/aphrody-tauri-plugin-persisted-scope",
+          "description": "Save filesystem and asset scopes and restore them when the app is reopened.",
+          "bins": [],
+          "features": [
+            "protocol-asset"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-positioner",
+          "path": "crates/tauri/aphrody-tauri-plugin-positioner",
+          "description": "Position your windows at well-known locations.",
+          "bins": [],
+          "features": [
+            "tray-icon"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-process",
+          "path": "crates/tauri/aphrody-tauri-plugin-process",
+          "description": "Access the current process of your Tauri application.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-shell",
+          "path": "crates/tauri/aphrody-tauri-plugin-shell",
+          "description": "Access the system shell. Allows you to spawn child processes.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-single-instance",
+          "path": "crates/tauri/aphrody-tauri-plugin-single-instance",
+          "description": "Ensure a single instance of your tauri app is running.",
+          "bins": [],
+          "features": [
+            "deep-link",
+            "semver"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-store",
+          "path": "crates/tauri/aphrody-tauri-plugin-store",
+          "description": "Simple, persistent key-value store.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-plugin-stronghold",
+          "path": "crates/tauri/aphrody-tauri-plugin-stronghold",
+          "description": "Store secrets and keys using the IOTA Stronghold secret management engine.",
+          "bins": [],
+          "features": [
+            "default",
+            "kdf"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-updater",
+          "path": "crates/tauri/aphrody-tauri-plugin-updater",
+          "description": "In-app updates for Tauri applications.",
+          "bins": [],
+          "features": [
+            "default",
+            "native-tls",
+            "native-tls-vendored",
+            "rustls-tls",
+            "system-proxy",
+            "zip"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-upload",
+          "path": "crates/tauri/aphrody-tauri-plugin-upload",
+          "description": "Upload files from disk to a remote server over HTTP.",
+          "bins": [],
+          "features": [
+            "default",
+            "native-tls",
+            "native-tls-vendored",
+            "rustls-tls"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-websocket",
+          "path": "crates/tauri/aphrody-tauri-plugin-websocket",
+          "description": "Expose a WebSocket server to your Tauri frontend.",
+          "bins": [],
+          "features": [
+            "default",
+            "native-tls",
+            "native-tls-vendored",
+            "rustls-tls",
+            "rustls-tls-native-roots"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-plugin-window-state",
+          "path": "crates/tauri/aphrody-tauri-plugin-window-state",
+          "description": "Save window positions and sizes and restore them when the app is reopened.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-runtime",
+          "path": "crates/tauri/aphrody-tauri-runtime",
+          "description": "Runtime for Tauri applications",
+          "bins": [],
+          "features": [
+            "default",
+            "devtools"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-runtime-cef",
+          "path": "crates/tauri/aphrody-tauri-runtime-cef",
+          "description": "Tauri runtime interface for Chromium Embedded Framework",
+          "bins": [],
+          "features": [
+            "default",
+            "devtools",
+            "unstable"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-runtime-wry",
+          "path": "crates/tauri/aphrody-tauri-runtime-wry",
+          "description": "Wry bindings to the Tauri runtime",
+          "bins": [],
+          "features": [
+            "common-controls-v6",
+            "dbus",
+            "default",
+            "devtools",
+            "macos-proxy",
+            "tracing",
+            "unstable",
+            "x11"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-schema-generator",
+          "path": "crates/tauri/aphrody-tauri-schema-generator",
+          "description": "Hosts the schema for the Tauri configuration file.",
+          "bins": [
+            "tauri-schema-generator"
+          ],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-schema-worker",
+          "path": "crates/tauri/aphrody-tauri-schema-worker",
+          "description": "Aphrody platform crate aphrody-tauri-schema-worker.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-specta",
+          "path": "crates/tauri/aphrody-tauri-specta",
+          "description": "Completely typesafe Tauri commands",
+          "bins": [],
+          "features": [
+            "default",
+            "derive",
+            "javascript",
+            "typescript"
+          ]
+        },
+        {
+          "name": "aphrody-tauri-specta-macros",
+          "path": "crates/tauri/aphrody-tauri-specta/macros",
+          "description": "Completely typesafe Tauri commands",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-tauri-utils",
+          "path": "crates/tauri/aphrody-tauri-utils",
+          "description": "Utilities for Tauri",
+          "bins": [],
+          "features": [
+            "aes-gcm",
+            "brotli",
+            "build",
+            "build-2",
+            "cargo_metadata",
+            "compression",
+            "config-json5",
+            "config-toml",
+            "getrandom",
+            "html-manipulation",
+            "html-manipulation-2",
+            "isolation",
+            "json5",
+            "proc-macro2",
+            "process-relaunch-dangerous-allow-symlink-macos",
+            "quote",
+            "resources",
+            "schema",
+            "schemars",
+            "serialize-to-javascript",
+            "swift-rs",
+            "walkdir"
+          ]
         },
         {
           "name": "aphrody-tauri-wrap",
@@ -1396,6 +2007,28 @@
           "features": []
         },
         {
+          "name": "aphrody-wry",
+          "path": "crates/tauri/aphrody-wry",
+          "description": "Cross-platform WebView rendering library",
+          "bins": [],
+          "features": [
+            "default",
+            "devtools",
+            "gdkx11",
+            "javascriptcore-rs",
+            "linux-body",
+            "mac-proxy",
+            "os-webview",
+            "serde",
+            "soup3",
+            "tracing",
+            "webkit2gtk",
+            "webkit2gtk-sys",
+            "x11",
+            "x11-dl"
+          ]
+        },
+        {
           "name": "aphrody-wsl",
           "path": "crates/os/aphrody-wsl",
           "description": "Pinned WSL, Linux kernel, WSLg and Aphrody OS distribution build workbench",
@@ -1423,34 +2056,6 @@
           "features": []
         },
         {
-          "name": "koharu",
-          "path": "crates/koharu/koharu",
-          "description": "Manga translation tools",
-          "bins": [
-            "koharu"
-          ],
-          "features": []
-        },
-        {
-          "name": "koharu-agent",
-          "path": "crates/koharu/koharu-agent",
-          "description": "OAuth-backed Codex agent orchestration for Koharu.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-app",
-          "path": "crates/koharu/koharu-app",
-          "description": "Manga translation tools",
-          "bins": [
-            "generate"
-          ],
-          "features": [
-            "cef",
-            "default"
-          ]
-        },
-        {
           "name": "koharu-bindgen",
           "path": "crates/koharu/koharu-bindgen",
           "description": "Bindgen-based generator for dynamically loaded native-library bindings.",
@@ -1460,23 +2065,9 @@
           "features": []
         },
         {
-          "name": "koharu-canvas",
-          "path": "crates/koharu/koharu-canvas",
-          "description": "Manga translation tools",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "koharu-config",
           "path": "crates/koharu/koharu-config",
           "description": "Extensible typed configuration storage for Koharu.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-desktop",
-          "path": "crates/koharu/koharu-desktop",
-          "description": "Manga translation tools",
           "bins": [],
           "features": []
         },
@@ -1492,16 +2083,6 @@
           "path": "crates/koharu/koharu-diffusion-sys",
           "description": "Low-level dynamically loaded FFI bindings for stable-diffusion.cpp.",
           "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-library",
-          "path": "crates/koharu/koharu-library",
-          "description": "Headless Koharu SDK for projects, editing, processing, rendering, and agent tools",
-          "bins": [
-            "koharu-sdk",
-            "run"
-          ],
           "features": []
         },
         {
@@ -1523,95 +2104,9 @@
           "features": []
         },
         {
-          "name": "koharu-metrics",
-          "path": "crates/koharu/koharu-metrics",
-          "description": "Manga translation tools",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-ml",
-          "path": "crates/koharu/koharu-ml",
-          "description": "Manga translation tools",
-          "bins": [
-            "aot_inpainting",
-            "baberu_ocr",
-            "comic_layout_yolo26s",
-            "comic_onomatopoeia",
-            "comic_text_bubble_detector",
-            "comic_text_detector",
-            "flux2_klein",
-            "font_detector",
-            "hayai_ocr",
-            "koharu_layout_rfdetr_seg_2xl",
-            "lama",
-            "manga_ocr",
-            "manga_text_mask",
-            "paddle_ocr_vl",
-            "pp_doclayout_v3",
-            "pp_ocr_v6",
-            "rorem_mixed",
-            "speech_bubble_yolo11n",
-            "speech_bubble_yolov8m"
-          ],
-          "features": []
-        },
-        {
-          "name": "koharu-pipeline",
-          "path": "crates/koharu/koharu-pipeline",
-          "description": "In-process scene-processing workflow for Koharu.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-psd",
-          "path": "crates/koharu/koharu-psd",
-          "description": "Manga translation tools",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-rasterizer",
-          "path": "crates/koharu/koharu-rasterizer",
-          "description": "Portable prepared frames and shared Vello/WGPU composition for Koharu.",
-          "bins": [],
-          "features": [
-            "default",
-            "native"
-          ]
-        },
-        {
-          "name": "koharu-renderer",
-          "path": "crates/koharu/koharu-renderer",
-          "description": "Manga translation tools",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "koharu-runtime",
           "path": "crates/koharu/koharu-runtime",
           "description": "Runtime package discovery, downloading, and dynamic library loading for Koharu.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-scene",
-          "path": "crates/koharu/koharu-scene",
-          "description": "Performance-first typed scene model for Koharu.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-secrets",
-          "path": "crates/koharu/koharu-secrets",
-          "description": "Manga translation tools",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "koharu-storage",
-          "path": "crates/koharu/koharu-storage",
-          "description": "Filesystem-native snapshot and blob storage for Koharu.",
           "bins": [],
           "features": []
         },
@@ -1633,33 +2128,9 @@
           "features": []
         },
         {
-          "name": "koharu-translator",
-          "path": "crates/koharu/koharu-translator",
-          "description": "Local and hosted translation backends for Koharu.",
-          "bins": [
-            "translate"
-          ],
-          "features": []
-        },
-        {
-          "name": "obscura",
-          "path": "crates/web/obscura",
-          "description": "Rust API for the Obscura headless browser",
-          "bins": [],
-          "features": [
-            "api",
-            "default",
-            "obscura-browser",
-            "obscura-net",
-            "render",
-            "stealth",
-            "tokio"
-          ]
-        },
-        {
           "name": "obscura-browser",
           "path": "crates/web/obscura-browser",
-          "description": "",
+          "description": "Aphrody platform crate obscura-browser.",
           "bins": [],
           "features": [
             "default",
@@ -1670,7 +2141,7 @@
         {
           "name": "obscura-cdp",
           "path": "crates/web/obscura-cdp",
-          "description": "",
+          "description": "Aphrody platform crate obscura-cdp.",
           "bins": [],
           "features": [
             "default",
@@ -1681,14 +2152,14 @@
         {
           "name": "obscura-dom",
           "path": "crates/web/obscura-dom",
-          "description": "",
+          "description": "Aphrody platform crate obscura-dom.",
           "bins": [],
           "features": []
         },
         {
           "name": "obscura-js",
           "path": "crates/web/obscura-js",
-          "description": "",
+          "description": "Aphrody platform crate obscura-js.",
           "bins": [],
           "features": [
             "default",
@@ -1699,7 +2170,7 @@
         {
           "name": "obscura-mcp",
           "path": "crates/web/obscura-mcp",
-          "description": "",
+          "description": "Aphrody platform crate obscura-mcp.",
           "bins": [],
           "features": [
             "default",
@@ -1710,7 +2181,7 @@
         {
           "name": "obscura-net",
           "path": "crates/web/obscura-net",
-          "description": "",
+          "description": "Aphrody platform crate obscura-net.",
           "bins": [],
           "features": [
             "default",
@@ -1756,25 +2227,62 @@
           "features": []
         },
         {
-          "name": "tauri-plugin-dialog",
-          "path": "crates/ui/tauri-plugin-dialog",
-          "description": "Native system dialogs for opening and saving files along with message dialogs on your Tauri application.",
+          "name": "yolo-core",
+          "path": "crates/engine/yolo-core",
+          "description": "Core native engine and system benchmarking logic for YOLO Monorepo",
           "bins": [],
           "features": [
             "default",
-            "gtk3",
-            "xdg-portal"
+            "repository-tools"
           ]
         },
         {
-          "name": "tauri-plugin-mcp-bridge",
-          "path": "crates/ui/tauri-plugin-mcp-bridge",
-          "description": "MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection",
+          "name": "yolo-desktop",
+          "path": "crates/engine/yolo-desktop",
+          "description": "Tauri 3 Desktop Native Shell for YOLO Monorepo",
+          "bins": [
+            "yolo-desktop"
+          ],
+          "features": []
+        },
+        {
+          "name": "yolo-pyo3",
+          "path": "crates/engine/yolo-pyo3",
+          "description": "PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach)",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "yolo-runtime",
+          "path": "crates/engine/yolo-runtime",
+          "description": "Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark)",
+          "bins": [],
+          "features": [
+            "browser",
+            "default"
+          ]
+        },
+        {
+          "name": "yolo-tooling",
+          "path": "crates/compat/yolo-tooling",
+          "description": "Optional native N2B and Oxc C ABI provider for Yolo and Aphrody.",
           "bins": [],
           "features": []
         }
       ],
       "bunPackages": [
+        {
+          "name": "__NAME__",
+          "path": "m3/templates/base",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/ag-ui",
+          "path": "m3/packages/ag-ui",
+          "description": "Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges.",
+          "bins": []
+        },
         {
           "name": "@aphrody/agent-browser",
           "path": "packages/web/agent-browser",
@@ -1784,15 +2292,121 @@
           ]
         },
         {
+          "name": "@aphrody/api",
+          "path": "crates/tauri/aphrody-tauri-api",
+          "description": "Tauri API definitions",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/app-ui",
+          "path": "m3/packages/app-ui",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/assets",
+          "path": "m3/packages/assets",
+          "description": "File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces.",
+          "bins": []
+        },
+        {
           "name": "@aphrody/bun",
           "path": "packages/interop/native",
           "description": "Native Rust FFI wrappers for Bun.",
           "bins": []
         },
         {
+          "name": "@aphrody/bun-forge",
+          "path": "apps/yolo/forge",
+          "description": "One executable that builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
+          "bins": [
+            "bun-forge"
+          ]
+        },
+        {
           "name": "@aphrody/bun-test-dom",
           "path": "packages/bun/test-dom",
           "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/canvas",
+          "path": "m3/packages/canvas",
+          "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli",
+          "path": "crates/tauri/aphrody-tauri-cli-node",
+          "description": "Command line interface for building Tauri apps",
+          "bins": [
+            "tauri"
+          ]
+        },
+        {
+          "name": "@aphrody/cli-darwin-arm64",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/darwin-arm64",
+          "description": "Command line interface for building Tauri apps",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli-darwin-x64",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/darwin-x64",
+          "description": "Command line interface for building Tauri apps",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli-linux-arm-gnueabihf",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-arm-gnueabihf",
+          "description": "Command line interface for building Tauri apps",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli-linux-arm64-gnu",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-arm64-gnu",
+          "description": "Command line interface for building Tauri apps",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli-linux-arm64-musl",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-arm64-musl",
+          "description": "Command line interface for building Tauri apps",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli-linux-riscv64-gnu",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-riscv64-gnu",
+          "description": "Command line interface for building Tauri apps",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli-linux-x64-gnu",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-x64-gnu",
+          "description": "Command line interface for building Tauri apps",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli-linux-x64-musl",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-x64-musl",
+          "description": "Command line interface for building Tauri apps",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli-win32-arm64-msvc",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/win32-arm64-msvc",
+          "description": "Command line interface for building Tauri apps",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli-win32-ia32-msvc",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/win32-ia32-msvc",
+          "description": "Command line interface for building Tauri apps",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/cli-win32-x64-msvc",
+          "path": "crates/tauri/aphrody-tauri-cli-node/npm/win32-x64-msvc",
+          "description": "Command line interface for building Tauri apps",
           "bins": []
         },
         {
@@ -1816,9 +2430,9 @@
           "bins": []
         },
         {
-          "name": "@aphrody/fut",
-          "path": "packages/fut/fut",
-          "description": "High-Performance EA SPORTS FC & FIFA Ultimate Team Intelligence Suite: Scraping, Crawling, Market Valuation, AI Squad Builder, Mathematical SBC Solver, Early Leaks Radar, Live Chrome MV3 Extension, and Remote MCP Bridge.",
+          "name": "@aphrody/eslint-plugin-m3",
+          "path": "m3/packages/eslint-plugin-m3",
+          "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint.",
           "bins": []
         },
         {
@@ -1830,16 +2444,191 @@
           ]
         },
         {
-          "name": "@aphrody/koharu-editor-example",
-          "path": "apps/koharu/editor",
+          "name": "@aphrody/http",
+          "path": "packages/web/http",
+          "description": "Portable in-process JSON transport shared by Aphrody service clients",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/identity",
+          "path": "m3/packages/identity",
+          "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, and the animated pet sprite (atlas, timed tracks, 16-way gaze) drawn from crates/ui/identity.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/inference",
+          "path": "packages/ai/inference",
           "description": "",
           "bins": []
         },
         {
-          "name": "@aphrody/koharu-ui",
-          "path": "packages/koharu/ui",
-          "description": "Koharu editor, controls, preferences, resources and canvas UI for Aphrody hosts",
+          "name": "@aphrody/m3",
+          "path": "m3/packages/m3",
+          "description": "The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), M3App and the m3 CLI.",
+          "bins": [
+            "m3"
+          ]
+        },
+        {
+          "name": "@aphrody/m3-ai",
+          "path": "m3/packages/m3-ai",
+          "description": "Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives.",
           "bins": []
+        },
+        {
+          "name": "@aphrody/m3-baseui",
+          "path": "m3/packages/m3-baseui",
+          "description": "Base UI (aphrody-labs fork, forks/base-ui) with Material 3 styling: every Base UI primitive wrapped with M3 token classes; static CSS, no CSS-in-JS runtime, per-component modules and sheets.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-bun",
+          "path": "m3/packages/m3-bun",
+          "description": "The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudflare, Coolify, VS Code, Windows, minimal Linux image). One Bun file server serves the UI and the API from one process.",
+          "bins": [
+            "m3-bun"
+          ]
+        },
+        {
+          "name": "@aphrody/m3-codemods",
+          "path": "m3/packages/m3-codemods",
+          "description": "Codemods MUI React -> @aphrody/m3-react (jscodeshift + ast-grep)",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-config",
+          "path": "m3/packages/m3-config",
+          "description": "Shared build, typecheck and test presets for the @aphrody Material Design 3 packages: tsconfig, the Bun.build preset and the happy-dom test preload.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-design",
+          "path": "m3/packages/m3-design",
+          "description": "Automated design engine for Material Design 3 and Google Design",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-explorer",
+          "path": "m3/packages/m3-explorer",
+          "description": "Material Design 3 file-management components (tag pill, inline rename, file thumb, grid item): the SpaceUI (@spacedrive/explorer) set rebuilt on @aphrody/m3-primitives.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-fonts",
+          "path": "m3/packages/m3-fonts",
+          "description": "Aphrody M3 typefaces: Google Sans Flex, Google Sans Code, Roboto Flex, Roboto Mono and Material Symbols with Japanese fallbacks (Noto Sans JP, M PLUS 1 Code) as @font-face CSS and a typed manifest.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-forms",
+          "path": "m3/packages/m3-forms",
+          "description": "Material Design 3 form fields (react-hook-form) on @aphrody/m3-primitives: the SpaceUI (@spacedrive/forms) set, M3-styled.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-front",
+          "path": "m3/packages/m3-front",
+          "description": "Framework-agnostic Material 3 front layer: <m3-theme> web component, lazy material-web registration and window-class observation on top of @aphrody/material-web and @aphrody/m3-tokens.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-icons",
+          "path": "m3/packages/m3-icons",
+          "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-bun icons module (variable fonts), no icon font shipped at runtime.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-mcp",
+          "path": "m3/packages/m3-mcp",
+          "description": "Single design/UI MCP server of aphrody-m3: packages, M3 tokens (lookup, validate), docs search, research links, templates, Material Symbols SVG, SVG to Tauri icons.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-motion",
+          "path": "m3/packages/m3-motion",
+          "description": "Material 3 animation plugin powered by Motion (formerly Framer Motion)",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-next",
+          "path": "m3/packages/m3-next",
+          "description": "Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config (React Compiler, Cache Components, typed routes, Tauri static export), M3Html/M3Root server components, a light 'use client' theme provider, a proxy.ts helper, metadata/viewport helpers, crawler files and the m3-next runner (Next on Bun, no Node).",
+          "bins": [
+            "m3-next"
+          ]
+        },
+        {
+          "name": "@aphrody/m3-next-migrate",
+          "path": "m3/packages/m3-next-migrate",
+          "description": "Migration analysis, codemods and runtime shims for Next.js 16 components and private-owner native Bun web apps; Tauri 3 source planning requires a registered native host adapter for activation",
+          "bins": [
+            "m3-next-migrate",
+            "next-migrate"
+          ]
+        },
+        {
+          "name": "@aphrody/m3-os-themes",
+          "path": "m3/packages/m3-os-themes",
+          "description": "Material 3 OS theme generators and installers (Windows 11, GNOME Shell, COSMIC, Chromium browsers) derived from @aphrody/m3-tokens dynamic colour roles.",
+          "bins": [
+            "m3-os-themes"
+          ]
+        },
+        {
+          "name": "@aphrody/m3-primitives",
+          "path": "m3/packages/m3-primitives",
+          "description": "Material Design 3 React primitives: the SpaceUI (@spacedrive/primitives) component set rebuilt on the M3 roles, shape, typescale, state layers and motion of the aphrody design system.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-react",
+          "path": "m3/packages/m3-react",
+          "description": "React wrappers (@lit/react createComponent) for every <md-*> element of the @aphrody/material-web fork.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-reader",
+          "path": "m3/packages/m3-reader",
+          "description": "Material 3 manga and illustrated book readers for React",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-showcase",
+          "path": "m3/apps/showcase",
+          "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable and a prepared canonical Tauri desktop shell.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-tailwind",
+          "path": "m3/packages/m3-tailwind",
+          "description": "Tailwind v4 CSS-first preset for Material 3: generates @theme (colour roles, shape, typescale, elevation, easing) from @aphrody/m3-tokens.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-theme",
+          "path": "m3/packages/m3-theme",
+          "description": "Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases).",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-tokens",
+          "path": "m3/packages/m3-tokens",
+          "description": "Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/m3-web",
+          "path": "m3/apps/web",
+          "description": "Showcase app of the M3 framework. Built, served and compiled through the yolo CLI (`yolo web build|dev`, `yolo tauri build`), which runs these scripts.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/material-design-icons",
+          "path": "m3/packages/material-design-icons",
+          "description": "Material Symbols SVG catalogue (forks/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons.",
+          "bins": [
+            "m3-svg-to-ico"
+          ]
         },
         {
           "name": "@aphrody/messaging",
@@ -1849,26 +2638,26 @@
         },
         {
           "name": "@aphrody/n2b-core",
-          "path": "packages/compat/n2b-client",
-          "description": "TypeScript façade thin pour le binaire Rust n2b — wrapper CLI (scan, rules, promptMarkdown) et shims Bun-natifs (./shims: env, fs, path, shell).",
+          "path": "packages/engine/n2b-client",
+          "description": "Native N2B SDK scan, explicit legacy CLI helpers and Bun shims",
           "bins": []
         },
         {
           "name": "@aphrody/n2b-plugin",
-          "path": "packages/compat/n2b-plugin",
-          "description": "Plugin Bun (Bun.plugin) pour le scan N2B Rust natif ou CLI.",
+          "path": "packages/engine/n2b-plugin",
+          "description": "Bun plugin scanning through the native Yolo tooling SDK; explicit legacy CLI opt-in",
           "bins": []
         },
         {
           "name": "@aphrody/n2b-shims",
-          "path": "packages/compat/n2b-shims",
+          "path": "packages/engine/n2b-shims",
           "description": "Alias de compatibilité : ré-exporte @aphrody/n2b-core/shims (polyfills Bun-natifs env, fs, path, shell).",
           "bins": []
         },
         {
           "name": "@aphrody/n2b-types",
-          "path": "packages/compat/n2b-types",
-          "description": "TypeScript types auto-générés depuis schema/v2.json. Source de vérité Rust → TS.",
+          "path": "packages/engine/n2b-types",
+          "description": "Compatibility aliases of the canonical Yolo native tooling report schema",
           "bins": []
         },
         {
@@ -1890,6 +2679,188 @@
           "path": "packages/infra/paths",
           "description": "Cross-platform path resolution for Aphrody workspaces and runtime data",
           "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-autostart",
+          "path": "crates/tauri/aphrody-tauri-plugin-autostart",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-barcode-scanner",
+          "path": "crates/tauri/aphrody-tauri-plugin-barcode-scanner",
+          "description": "Scan QR codes, EAN-13 and other kinds of barcodes on Android and iOS",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-biometric",
+          "path": "crates/tauri/aphrody-tauri-plugin-biometric",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-cli",
+          "path": "crates/tauri/aphrody-tauri-plugin-cli",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-clipboard-manager",
+          "path": "crates/tauri/aphrody-tauri-plugin-clipboard-manager",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-deep-link",
+          "path": "crates/tauri/aphrody-tauri-plugin-deep-link",
+          "description": "Set your Tauri application as the default handler for an URL",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-dialog",
+          "path": "crates/tauri/aphrody-tauri-plugin-dialog",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-fs",
+          "path": "crates/tauri/aphrody-tauri-plugin-fs",
+          "description": "Access the file system.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-geolocation",
+          "path": "crates/tauri/aphrody-tauri-plugin-geolocation",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-global-shortcut",
+          "path": "crates/tauri/aphrody-tauri-plugin-global-shortcut",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-haptics",
+          "path": "crates/tauri/aphrody-tauri-plugin-haptics",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-http",
+          "path": "crates/tauri/aphrody-tauri-plugin-http",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-log",
+          "path": "crates/tauri/aphrody-tauri-plugin-log",
+          "description": "Configurable logging for your Tauri app.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-nfc",
+          "path": "crates/tauri/aphrody-tauri-plugin-nfc",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-notification",
+          "path": "crates/tauri/aphrody-tauri-plugin-notification",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-opener",
+          "path": "crates/tauri/aphrody-tauri-plugin-opener",
+          "description": "Open files and URLs using their default application.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-os",
+          "path": "crates/tauri/aphrody-tauri-plugin-os",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-positioner",
+          "path": "crates/tauri/aphrody-tauri-plugin-positioner",
+          "description": "Position your windows at well-known locations.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-process",
+          "path": "crates/tauri/aphrody-tauri-plugin-process",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-shell",
+          "path": "crates/tauri/aphrody-tauri-plugin-shell",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-sql",
+          "path": "crates/tauri/aphrody-tauri-plugin-sql",
+          "description": "Interface with SQL databases",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-store",
+          "path": "crates/tauri/aphrody-tauri-plugin-store",
+          "description": "Simple, persistent key-value store.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-stronghold",
+          "path": "crates/tauri/aphrody-tauri-plugin-stronghold",
+          "description": "Store secrets and keys using the IOTA Stronghold encrypted database.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-updater",
+          "path": "crates/tauri/aphrody-tauri-plugin-updater",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-upload",
+          "path": "crates/tauri/aphrody-tauri-plugin-upload",
+          "description": "Upload files from disk to a remote server over HTTP.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-websocket",
+          "path": "crates/tauri/aphrody-tauri-plugin-websocket",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugin-window-state",
+          "path": "crates/tauri/aphrody-tauri-plugin-window-state",
+          "description": "Save window positions and sizes and restore them when the app is reopened.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/plugins",
+          "path": "packages/engine/plugins",
+          "description": "Unified YOLO & Bun-TS7 plugin engine: generator, schema validation, doctrine enforcement and autonomous hook runtime",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/runtime-sdk",
+          "path": "packages/engine/runtime",
+          "description": "Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/scaffold",
+          "path": "m3/packages/scaffold",
+          "description": "The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web-to-tauri.",
+          "bins": [
+            "aphrody-scaffold"
+          ]
         },
         {
           "name": "@aphrody/shell-web",
@@ -1916,6 +2887,14 @@
           "path": "packages/web/aphrody-web-test",
           "description": "Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server.",
           "bins": []
+        },
+        {
+          "name": "@aphrody/web-to-tauri",
+          "path": "m3/packages/web-to-tauri",
+          "description": "Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original.",
+          "bins": [
+            "web-to-tauri"
+          ]
         },
         {
           "name": "@aphrody/winclean",
@@ -1946,83 +2925,35 @@
           "bins": []
         },
         {
+          "name": "@aphrody/yolo-cli",
+          "path": "apps/yolo/cli",
+          "description": "Zero-dependency programmatic CLI for the YOLO Bun Industrial Engine",
+          "bins": [
+            "yolo"
+          ]
+        },
+        {
+          "name": "@aphrody/yolo-core",
+          "path": "packages/engine/core",
+          "description": "Unified core library for YOLO, modeled directly after Bun's core library architecture",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/yolo-web",
+          "path": "apps/yolo/web",
+          "description": "",
+          "bins": []
+        },
+        {
           "name": "@hypothesi/tauri-plugin-mcp-bridge",
           "path": "crates/ui/tauri-plugin-mcp-bridge",
           "description": "A Tauri plugin that exposes an MCP server interface via WebSockets.",
           "bins": []
         },
         {
-          "name": "@aphrody/koharu-bridge",
-          "path": "packages/koharu/bridge",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/koharu-docs",
-          "path": "packages/koharu/docs",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/koharu-sdk",
-          "path": "packages/koharu/sdk",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@material-symbols/metadata",
-          "path": "crates/ui/bun/icons/metadata",
-          "description": "Metadata for Material Symbols.",
-          "bins": []
-        },
-        {
-          "name": "@shenron/api",
-          "path": "packages/shenron/api",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@shenron/auth",
-          "path": "packages/shenron/auth",
-          "description": "Briques Better Auth partagées (site Next, bot Bun, API) : secret, origines, cookies, fournisseur Discord, handler Request/Response",
-          "bins": []
-        },
-        {
-          "name": "@shenron/bot",
-          "path": "apps/shenron/bot",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@shenron/config",
-          "path": "packages/shenron/config",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@shenron/db",
-          "path": "packages/shenron/db",
-          "description": "PostgreSQL partagé Shenron : schéma Drizzle, pool postgres-js (Next) et driver Bun.SQL (scripts, API), indépendant du framework",
-          "bins": []
-        },
-        {
-          "name": "@shenron/images",
-          "path": "packages/shenron/images",
-          "description": "Image hashing, deduplication, variant selection and sourced illustration picking for Shenron (Bun + sharp)",
-          "bins": []
-        },
-        {
-          "name": "@shenron/pipeline",
-          "path": "packages/shenron/pipeline",
-          "description": "Shenron compute clients and Dragon Ball data pipeline: AI, Aphrody services, BXC and OCR/RAG workflows",
-          "bins": [
-            "pipeline"
-          ]
-        },
-        {
-          "name": "@shenron/site",
-          "path": "apps/shenron/site",
-          "description": "",
+          "name": "@rosegriffon/ui",
+          "path": "m3/packages/rg-ui",
+          "description": "Composants shadcn/ui partagés (new-york style, Tailwind v4)",
           "bins": []
         },
         {
@@ -2038,30 +2969,106 @@
           "bins": []
         },
         {
-          "name": "material-symbols",
-          "path": "crates/ui/bun/icons/material-symbols",
-          "description": "Latest variable icon fonts and CSS for Material Symbols.",
+          "name": "aphrody-m3",
+          "path": "m3",
+          "description": "Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates and docs.",
           "bins": []
         },
         {
-          "name": "shenron-monorepo",
-          "path": "config/shenron",
+          "name": "aphrody-py-workspace",
+          "path": "py",
           "description": "",
           "bins": []
-        }
-      ],
-      "pythonPackages": [],
-      "errors": []
-    },
-    {
-      "name": "aphrody-py",
-      "kind": "aphrody",
-      "role": "Active Python workspace",
-      "crates": [],
-      "bunPackages": [
+        },
         {
-          "name": "aphrody-py-workspace",
-          "path": ".",
+          "name": "app",
+          "path": "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "create-tauri-app",
+          "path": "crates/tauri/aphrody-create-tauri-app-node",
+          "description": "Rapidly scaffold out a new tauri app project.",
+          "bins": [
+            "create-tauri-app"
+          ]
+        },
+        {
+          "name": "create-tauri-app-darwin-arm64",
+          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/darwin-arm64",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "create-tauri-app-darwin-x64",
+          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/darwin-x64",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "create-tauri-app-linux-arm-gnueabihf",
+          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/linux-arm-gnueabihf",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "create-tauri-app-linux-arm64-gnu",
+          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/linux-arm64-gnu",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "create-tauri-app-linux-arm64-musl",
+          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/linux-arm64-musl",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "create-tauri-app-linux-x64-gnu",
+          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/linux-x64-gnu",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "create-tauri-app-linux-x64-musl",
+          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/linux-x64-musl",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "create-tauri-app-win32-arm64-msvc",
+          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/win32-arm64-msvc",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "create-tauri-app-win32-ia32-msvc",
+          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/win32-ia32-msvc",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "create-tauri-app-win32-x64-msvc",
+          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/win32-x64-msvc",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "tauri-app",
+          "path": "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "tauri-plugin-{{ plugin_name }}-api",
+          "path": "crates/tauri/aphrody-tauri-cli/templates/plugin",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "tauri-schema-worker",
+          "path": "crates/tauri/aphrody-tauri-schema-worker",
           "description": "",
           "bins": []
         }
@@ -2069,13 +3076,13 @@
       "pythonPackages": [
         {
           "name": "aphrody",
-          "path": "packages/aphrody",
+          "path": "py/packages/aphrody",
           "description": "Aphrody Python SDK: authenticated AI, web, document and media clients.",
           "scripts": []
         },
         {
           "name": "aphrody-cli",
-          "path": "packages/cli",
+          "path": "py/packages/cli",
           "description": "",
           "scripts": [
             "aphrody-python",
@@ -2084,7 +3091,7 @@
         },
         {
           "name": "aphrody-embedding-fixtures",
-          "path": "packages/embedding-fixtures",
+          "path": "py/packages/embedding-fixtures",
           "description": "Regenerate reference fixtures for the native Aphrody embedding crate",
           "scripts": [
             "aphrody-embedding-fixture",
@@ -2093,7 +3100,7 @@
         },
         {
           "name": "aphrody-meetings",
-          "path": "apps/meetings",
+          "path": "py/apps/meetings",
           "description": "",
           "scripts": [
             "aphrody-meeting"
@@ -2101,19 +3108,19 @@
         },
         {
           "name": "aphrody-py-workspace",
-          "path": ".",
+          "path": "py",
           "description": "Unified Aphrody Python projects and tools",
           "scripts": []
         },
         {
           "name": "aphrody-train",
-          "path": "packages/aphrody-train",
+          "path": "py/packages/aphrody-train",
           "description": "Training surface for aphrody: dataset generation, embedding/reranker fine-tuning, LoRA",
           "scripts": []
         },
         {
           "name": "koharu-model-tools",
-          "path": "packages/model-tools",
+          "path": "py/packages/model-tools",
           "description": "Export pretrained vision models for the Koharu Rust implementation",
           "scripts": [
             "koharu-export-dinov2",
@@ -2121,12 +3128,10 @@
           ]
         },
         {
-          "name": "shenron-relecture-ocr",
-          "path": "packages/relecture-ocr",
-          "description": "Loopback OCR second-reader service for Shenron databook review",
-          "scripts": [
-            "relecture-ocr"
-          ]
+          "name": "yolo",
+          "path": "packages/engine/python",
+          "description": "High-performance Python wrapper around YOLO Rust native engine (PyO3 + uv)",
+          "scripts": []
         }
       ],
       "errors": []
@@ -2138,13 +3143,6 @@
       "crate": "aphrody-a2a-client",
       "repo": "aphrody",
       "source": "crates/os/a2a-client/src/bin/a2a_duel_loop.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "aot_inpainting",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/aot_inpainting.rs#Cli",
       "commands": []
     },
     {
@@ -2178,13 +3176,6 @@
             {
               "name": "search",
               "about": "Search the index and report source paths, lines and effective mode.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "ingest-shenron",
-              "about": "Ingest a Shenron corpus JSON, JSONL or lots directory into the RAG store.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -2684,164 +3675,6 @@
           ]
         },
         {
-          "name": "shenron",
-          "about": "Shenron Sovereign Bridge — unified integration connecting Aphrody (AI, Web, Infra, Shell, OS) to Shenron and Dragon Ball FR.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "doctor",
-              "about": "Report whether the sibling `shenron` checkout and its databooks tooling were found.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "emit",
-              "about": "Write one databook's stored transcriptions as a `shenron`-shaped `resultats.jsonl`, without depositing anything.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "verify",
-              "about": "Run `shenron`'s own quality judge over an emitted lot.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "deposit",
-              "about": "Emit, then hand the lot to `shenron`'s own depositor.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "pipeline",
-              "about": "Deposit every databook the local corpus holds readable text for.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "manga",
-          "about": "Koharu manga page analysis, translation, cleanup and PSD export.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "models",
-              "about": "List Koharu's current pipeline and translation model choices.",
-              "aliases": [],
-              "cfg": [
-                "feature = \"koharu\""
-              ],
-              "children": []
-            },
-            {
-              "name": "preferences",
-              "about": "Inspect or edit Koharu's persisted processing preferences.",
-              "aliases": [],
-              "cfg": [
-                "feature = \"koharu\""
-              ],
-              "children": [
-                {
-                  "name": "show",
-                  "about": "Show Koharu's persisted settings, with only credential presence flags.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "set-pipeline",
-                  "about": "Replace the pipeline settings from a Koharu PipelineConfig JSON file.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "set-providers",
-                  "about": "Replace provider settings from a JSON array of Koharu ProviderConfig entries.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "set-typesetting",
-                  "about": "Replace typesetting settings from a Koharu TypesettingConfig JSON file.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "credential",
-                  "about": "Set a provider credential from stdin, or clear it from the native store.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "detect",
-              "about": "Detect real Koharu regions, including text, bubbles and panels.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "inpaint",
-              "about": "Export Koharu's cleanup overlay, or apply a supplied mask with the local CPU inpainter.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "export-psd",
-              "about": "Run Koharu page processing and export a layered Photoshop document.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "pipeline",
-              "about": "Run Koharu detection, OCR, translation, inpainting and export.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "cdn",
-              "about": "Process an image from a CDN URL or relative path with Koharu.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "databook",
-              "about": "Stream and scanlate a databook plate directly from the Dragon Ball FR catalog by ID and plate number.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "chapter",
-              "about": "Stream and scanlate a manga chapter plate directly from the Dragon Ball FR catalog.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
           "name": "codex",
           "about": "Forward vers le binaire natif OpenAI Codex (`codex`).",
           "aliases": [],
@@ -3027,7 +3860,7 @@
         },
         {
           "name": "translate",
-          "about": "Traduction unifiée via aphrody-translate, avec protection Shenron JP->FR",
+          "about": "Traduction unifiée via aphrody-translate",
           "aliases": [],
           "cfg": [
             "not(target_arch = \"wasm32\")"
@@ -3873,106 +4706,6 @@
                 {
                   "name": "show",
                   "about": "Print the full stored record for one page.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "shenron",
-              "about": "Bridge to the sibling `shenron` checkout: emit, verify or deposit through shenron's own quality judge and depositor.",
-              "aliases": [],
-              "cfg": [],
-              "children": [
-                {
-                  "name": "doctor",
-                  "about": "Report whether the sibling `shenron` checkout and its databooks tooling were found.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "emit",
-                  "about": "Write one databook's stored transcriptions as a `shenron`-shaped `resultats.jsonl`, without depositing anything.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "verify",
-                  "about": "Run `shenron`'s own quality judge over an emitted lot.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "deposit",
-                  "about": "Emit, then hand the lot to `shenron`'s own depositor.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "pipeline",
-                  "about": "Deposit every databook the local corpus holds readable text for.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "dbfr",
-              "about": "Read and feed the Dragon Ball FR databooks API.",
-              "aliases": [],
-              "cfg": [],
-              "children": [
-                {
-                  "name": "list",
-                  "about": "List databook records.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "survey",
-                  "about": "Report transcription progress across the whole corpus.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "pages",
-                  "about": "Report one record's plates: how many carry an image, and how many are still missing a transcription.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "textes",
-                  "about": "Read the stored text of specific plates.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "fetch",
-                  "about": "Download a record's plate images into a lot directory, ready for OCR.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "fetch-all",
-                  "about": "Download every plate still missing a transcription, corpus-wide.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "push",
-                  "about": "Deposit transcriptions from the local OCR corpus into one record.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -4898,13 +5631,6 @@
                   "children": []
                 },
                 {
-                  "name": "ingest-shenron",
-                  "about": "Ingest a Shenron corpus JSON, JSONL or lots directory into the RAG store.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
                   "name": "context",
                   "about": "Assemble source context for a model prompt.",
                   "aliases": [],
@@ -5399,164 +6125,6 @@
               ]
             },
             {
-              "name": "shenron",
-              "about": "Shenron Sovereign Bridge — unified integration connecting Aphrody (AI, Web, Infra, Shell, OS) to Shenron and Dragon Ball FR.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "doctor",
-                  "about": "Report whether the sibling `shenron` checkout and its databooks tooling were found.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "emit",
-                  "about": "Write one databook's stored transcriptions as a `shenron`-shaped `resultats.jsonl`, without depositing anything.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "verify",
-                  "about": "Run `shenron`'s own quality judge over an emitted lot.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "deposit",
-                  "about": "Emit, then hand the lot to `shenron`'s own depositor.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "pipeline",
-                  "about": "Deposit every databook the local corpus holds readable text for.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "manga",
-              "about": "Koharu manga page analysis, translation, cleanup and PSD export.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "models",
-                  "about": "List Koharu's current pipeline and translation model choices.",
-                  "aliases": [],
-                  "cfg": [
-                    "feature = \"koharu\""
-                  ],
-                  "children": []
-                },
-                {
-                  "name": "preferences",
-                  "about": "Inspect or edit Koharu's persisted processing preferences.",
-                  "aliases": [],
-                  "cfg": [
-                    "feature = \"koharu\""
-                  ],
-                  "children": [
-                    {
-                      "name": "show",
-                      "about": "Show Koharu's persisted settings, with only credential presence flags.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "set-pipeline",
-                      "about": "Replace the pipeline settings from a Koharu PipelineConfig JSON file.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "set-providers",
-                      "about": "Replace provider settings from a JSON array of Koharu ProviderConfig entries.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "set-typesetting",
-                      "about": "Replace typesetting settings from a Koharu TypesettingConfig JSON file.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "credential",
-                      "about": "Set a provider credential from stdin, or clear it from the native store.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    }
-                  ]
-                },
-                {
-                  "name": "detect",
-                  "about": "Detect real Koharu regions, including text, bubbles and panels.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "inpaint",
-                  "about": "Export Koharu's cleanup overlay, or apply a supplied mask with the local CPU inpainter.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "export-psd",
-                  "about": "Run Koharu page processing and export a layered Photoshop document.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "pipeline",
-                  "about": "Run Koharu detection, OCR, translation, inpainting and export.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "cdn",
-                  "about": "Process an image from a CDN URL or relative path with Koharu.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "databook",
-                  "about": "Stream and scanlate a databook plate directly from the Dragon Ball FR catalog by ID and plate number.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "chapter",
-                  "about": "Stream and scanlate a manga chapter plate directly from the Dragon Ball FR catalog.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
               "name": "codex",
               "about": "Forward vers le binaire natif OpenAI Codex (`codex`).",
               "aliases": [],
@@ -5742,7 +6310,7 @@
             },
             {
               "name": "translate",
-              "about": "Traduction unifiée via aphrody-translate, avec protection Shenron JP->FR",
+              "about": "Traduction unifiée via aphrody-translate",
               "aliases": [],
               "cfg": [
                 "not(target_arch = \"wasm32\")"
@@ -6588,106 +7156,6 @@
                     {
                       "name": "show",
                       "about": "Print the full stored record for one page.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    }
-                  ]
-                },
-                {
-                  "name": "shenron",
-                  "about": "Bridge to the sibling `shenron` checkout: emit, verify or deposit through shenron's own quality judge and depositor.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": [
-                    {
-                      "name": "doctor",
-                      "about": "Report whether the sibling `shenron` checkout and its databooks tooling were found.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "emit",
-                      "about": "Write one databook's stored transcriptions as a `shenron`-shaped `resultats.jsonl`, without depositing anything.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "verify",
-                      "about": "Run `shenron`'s own quality judge over an emitted lot.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "deposit",
-                      "about": "Emit, then hand the lot to `shenron`'s own depositor.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "pipeline",
-                      "about": "Deposit every databook the local corpus holds readable text for.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    }
-                  ]
-                },
-                {
-                  "name": "dbfr",
-                  "about": "Read and feed the Dragon Ball FR databooks API.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": [
-                    {
-                      "name": "list",
-                      "about": "List databook records.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "survey",
-                      "about": "Report transcription progress across the whole corpus.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "pages",
-                      "about": "Report one record's plates: how many carry an image, and how many are still missing a transcription.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "textes",
-                      "about": "Read the stored text of specific plates.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "fetch",
-                      "about": "Download a record's plate images into a lot directory, ready for OCR.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "fetch-all",
-                      "about": "Download every plate still missing a transcription, corpus-wide.",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "push",
-                      "about": "Deposit transcriptions from the local OCR corpus into one record.",
                       "aliases": [],
                       "cfg": [],
                       "children": []
@@ -8183,7 +8651,14 @@
         },
         {
           "name": "all",
-          "about": "Build kernel, WSLg, Windows WSL and the Aphrody OS guest in sequence.",
+          "about": "Build both kernels, WSLg, Windows WSL and the Aphrody OS guest in sequence.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "latest",
+          "about": "Resolve the newest kernel.org stable tag; --apply moves the linux-stable pin to it.",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -8399,108 +8874,10 @@
       ]
     },
     {
-      "binary": "baberu_ocr",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/baberu_ocr.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "comic_layout_yolo26s",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/comic_layout_yolo26s.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "comic_onomatopoeia",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/comic_onomatopoeia.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "comic_text_bubble_detector",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/comic_text_bubble_detector.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "comic_text_detector",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/comic_text_detector.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "flux2_klein",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/flux2_klein.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "font_detector",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/font_detector.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "hayai_ocr",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/hayai_ocr.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "koharu",
-      "crate": "koharu",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu/src/main.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "koharu_layout_rfdetr_seg_2xl",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/koharu_layout_rfdetr_seg_2xl.rs#Cli",
-      "commands": []
-    },
-    {
       "binary": "koharu-bindgen",
       "crate": "koharu-bindgen",
       "repo": "aphrody",
       "source": "crates/koharu/koharu-bindgen/src/main.rs#Args",
-      "commands": []
-    },
-    {
-      "binary": "koharu-sdk",
-      "crate": "koharu-library",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-library/src/bin/koharu-sdk.rs#Arguments",
-      "commands": []
-    },
-    {
-      "binary": "lama",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/lama.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "manga_ocr",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/manga_ocr.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "manga_text_mask",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/manga_text_mask.rs#Cli",
       "commands": []
     },
     {
@@ -8832,77 +9209,6 @@
           "children": []
         }
       ]
-    },
-    {
-      "binary": "paddle_ocr_vl",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/paddle_ocr_vl.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "pp_doclayout_v3",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/pp_doclayout_v3.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "pp_ocr_v6",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/pp_ocr_v6.rs#Cli",
-      "commands": [
-        {
-          "name": "det",
-          "about": "Detect text regions and return their rotated polygons.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "rec",
-          "about": "Recognize text in a cropped text-line image.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        }
-      ]
-    },
-    {
-      "binary": "rorem_mixed",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/rorem_mixed.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "run",
-      "crate": "koharu-library",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-library/src/bin/run.rs#Arguments",
-      "commands": []
-    },
-    {
-      "binary": "speech_bubble_yolo11n",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/speech_bubble_yolo11n.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "speech_bubble_yolov8m",
-      "crate": "koharu-ml",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-ml/src/bin/speech_bubble_yolov8m.rs#Cli",
-      "commands": []
-    },
-    {
-      "binary": "translate",
-      "crate": "koharu-translator",
-      "repo": "aphrody",
-      "source": "crates/koharu/koharu-translator/src/bin/translate.rs#Args",
-      "commands": []
     },
     {
       "binary": "x-cli",
@@ -9462,6 +9768,11 @@
       "repo": "aphrody"
     },
     {
+      "binary": "aphrody-m3-showcase",
+      "crate": "aphrody-m3-showcase",
+      "repo": "aphrody"
+    },
+    {
       "binary": "aphrody-shell-tauri-e2e",
       "crate": "aphrody-shell-tauri-e2e",
       "repo": "aphrody"
@@ -9469,6 +9780,16 @@
     {
       "binary": "aphrody-summary",
       "crate": "aphrody-summary",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "cargo-create-tauri-app",
+      "crate": "aphrody-create-tauri-app",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "cargo-tauri",
+      "crate": "aphrody-tauri-cli",
       "repo": "aphrody"
     },
     {
@@ -9482,11 +9803,6 @@
       "repo": "aphrody"
     },
     {
-      "binary": "generate",
-      "crate": "koharu-app",
-      "repo": "aphrody"
-    },
-    {
       "binary": "paint_file",
       "crate": "obscura-render",
       "repo": "aphrody"
@@ -9497,12 +9813,94 @@
       "repo": "aphrody"
     },
     {
+      "binary": "restart",
+      "crate": "aphrody-restart",
+      "repo": "aphrody"
+    },
+    {
       "binary": "serde-saphyr",
       "crate": "serde-saphyr",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "tauri-driver",
+      "crate": "aphrody-tauri-driver",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "tauri-schema-generator",
+      "crate": "aphrody-tauri-schema-generator",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "yolo-desktop",
+      "crate": "yolo-desktop",
       "repo": "aphrody"
     }
   ],
   "mcp": [
+    {
+      "server": "@aphrody/m3-mcp",
+      "repo": "aphrody",
+      "kind": "bun-mcp",
+      "tools": [
+        {
+          "name": "m3_docs_search",
+          "description": "Case-insensitive line search over aphrody-m3 docs/ (md, mdx); returns path:line hits.",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        },
+        {
+          "name": "m3_list_packages",
+          "description": "List the aphrody-m3 workspace packages with versions.",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        },
+        {
+          "name": "m3_list_templates",
+          "description": "List UI templates, examples and Tauri example apps.",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        },
+        {
+          "name": "m3_os_themes_generate",
+          "description": "Return the text content of one generated OS theme file (path from m3_os_themes_list). Never writes to disk or the system.",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        },
+        {
+          "name": "m3_os_themes_list",
+          "description": "List the files m3-os-themes would generate for a seed colour and target (nothing is written).",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        },
+        {
+          "name": "m3_research_links",
+          "description": "List docs/research files and the curated dated Google design/research link index.",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        },
+        {
+          "name": "m3_svg_to_ico",
+          "description": "Generate Tauri desktop icons (ico, icns, png) from a symbol name or SVG file.",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        },
+        {
+          "name": "m3_symbol_search",
+          "description": "Search the full Material Symbols catalogue (4150 names) by substring; returns matching symbol names.",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        },
+        {
+          "name": "m3_symbol_svg",
+          "description": "Return path and SVG source of a Material Symbol from the forked catalogue.",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        },
+        {
+          "name": "m3_token_lookup",
+          "description": "Look up Material 3 design tokens (--md-*) by name or value fragment in m3-tokens.",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        },
+        {
+          "name": "m3_token_validate",
+          "description": "Validate that every --md-* custom property in a CSS snippet or name list exists in m3-tokens.",
+          "file": "m3/packages/m3-mcp/src/server.ts"
+        }
+      ]
+    },
     {
       "server": "@aphrody/workspace subsystem `workspace`",
       "repo": "aphrody",
@@ -10118,213 +10516,8 @@
           "file": "crates/ai/mcp/src/main.rs"
         },
         {
-          "name": "dbfr_databooks",
-          "description": "List Dragon Ball FR databook records (dragonballfr.com). Reads the public catalogue; `include_hidden` needs $DBFR_TOKEN and is refused without one rather than silently serving the public subset.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dbfr_deposit",
-          "description": "Deposit transcriptions into one databook. Writes into a public corpus, so it is a dry run unless `apply` is true, refuses a blank text (the API reads it as `nothing to say`), and merges by default so plates absent from the call are untouched. Needs $DBFR_TOKEN.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dbfr_pages",
-          "description": "Report one databook's plates: how many carry an image, how many are transcribed, and the numbers of those still missing a transcription. This is what says where OCR work remains.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dbfr_textes",
-          "description": "Read the stored transcription of specific plates of one databook (at most 40 per call).",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
           "name": "docs_auto_search",
           "description": "Single-shot documentation lookup that queries four backends in parallel — Context7, Microsoft Learn, Microsoft code samples, and GitHub (authoritative repos, llms.txt, and READMEs) — and returns one fused markdown report. Provide `library_name` when known to unlock the Context7 deep fetch and targeted GitHub repo discovery; provide `language` to narrow Microsoft code samples.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.a2a_agent_card",
-          "description": "AgentCard A2A du hub Dragon Ball (cibles et compétences).",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.a2a_send",
-          "description": "Protocole A2A (JSON-RPC 2.0) du hub Dragon Ball, Honest Delivery : rag rend des passages réels ; ocr/translation l'état mesuré ; les ordres pour codex, agycli, claude, local_model, subagents restent submitted/INCOMPLET jusqu'au résultat du pair. Avec taskId + verdict, clôt une tâche (FAIT exige un artefact). API : site /api/a2a.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.a2a_task_list",
-          "description": "Liste les tâches A2A du registre, filtrables par cible. API : site /api/a2a.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.a2a_task_status",
-          "description": "État, historique et artefacts d'une tâche A2A ; submitted/working n'a pas encore de résultat. API : site /api/a2a.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.admin_bot_command_execute",
-          "description": "Admin : exécute une commande Discord sous l'identité administrateur du bot ; consulter d'abord admin_bot_commands. Requiert $SHENRON_API_ADMIN_TOKEN.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.admin_bot_commands",
-          "description": "Admin : commandes exécutables via l'API d'administration Shenron. Requiert $SHENRON_API_ADMIN_TOKEN.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.admin_databooks_deposit",
-          "description": "Admin : dépose des transcriptions OCR déjà vérifiées sur un databook (fusion ciblée, révisions réversibles côté site). Requiert $SHENRON_DATABOOKS_API_TOKEN.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.admin_service_action",
-          "description": "Admin : exécute une action listée par admin_services ; aucun service ni shell arbitraire. Requiert $SHENRON_API_ADMIN_TOKEN.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.admin_services",
-          "description": "Admin : actions de service explicitement autorisées par Shenron. Requiert $SHENRON_API_ADMIN_TOKEN.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.bot_commands",
-          "description": "Commandes Discord publiques du bot Dragon Ball. API : bot /api/public/commands.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.bot_leaderboard",
-          "description": "Classement public des membres du serveur Discord par niveau/XP (limit ≤ 100). API : bot /api/public/leaderboard.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.bot_personas",
-          "description": "Persona actif du bot unique (Akira Toriyama par défaut en YOLO). set_persona enregistre un persona utilisateur dans <APHRODY_HOME>/persona.json. API : bot /api/public/personas, repli local.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.bot_stats",
-          "description": "Statistiques publiques du bot Discord Dragon Ball et de son serveur. API : bot /api/public/stats.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.canon_check",
-          "description": "Verdict déterministe de canonicité (doctrine curée, cinq rangs, score, règles, déclarations de Toriyama, planches, fiches). Sans question : la doctrine. API : site /api/canon.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.canon_references",
-          "description": "Corpus de preuves de canonicité (déclarations de Toriyama, planches de databooks traduites), filtrable par q et provenance. API : site /api/canon/references.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.chronologie",
-          "description": "La frise officielle dans son ordre éditorial (épisodes, films, tomes) ; ne pas la reconstruire par dates de diffusion. Filtres era et kind. API : site /api/chronologie.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.data_coverage",
-          "description": "Couverture réelle : passages par corpus et par type, modèle d'embeddings, date de l'index, nombre de fiches par rubrique du wiki. Une recherche vide sur un corpus absent ne prouve rien. API : bot /api/public/data/coverage.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.databooks_get",
-          "description": "Détail d'un guide, artbook ou interview : métadonnées, couverture, planches transcrites (maxPages défaut 50). API : site /api/databooks/{id}.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.databooks_planches",
-          "description": "Cherche une expression dans la transcription des planches et rend ouvrage, planche et extrait autour du terme. API : site /api/databooks/search.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.databooks_scanlate",
-          "description": "Analyse une planche databook via le CDN et Koharu : régions détectées, OCR, traduction, calque de nettoyage et export PSD. Requiert la fonctionnalité Koharu et ses modèles.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.databooks_search",
-          "description": "Recherche parmi les fiches d'ouvrages (titre, auteur, description) avec couverture et nombre de planches ; ne lit pas le texte des planches (voir databooks_planches). API : site /api/databooks.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.manga_chapitre",
-          "description": "Un chapitre planche par planche : transcription et URL de lecture ; texteSeul (défaut vrai) omet les URL d'images. API : site /api/manga/chapter/{id}.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.manga_page",
-          "description": "Métadonnées et URL d'image d'une planche (coordonnées OCR series/tome/planche). API : bot /api/public/manga/page.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.manga_planche",
-          "description": "Une planche d'un chapitre : image, transcription OCR, bulles, voisines et URL de lecture. API : site /api/manga/chapter/{id}/planche/{n}.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.manga_recherche",
-          "description": "Cherche un texte dans les transcriptions et rend des planches citables avec URL de lecture (limit ≤ 100). API : site /api/manga/search.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.manga_scanlate",
-          "description": "Analyse une planche manga via le CDN et Koharu : régions détectées, OCR, traduction, calque de nettoyage et export PSD. Requiert la fonctionnalité Koharu et ses modèles.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.manga_search",
-          "description": "Recherche textuelle (OCR) dans les planches du manga Dragon Ball (limit ≤ 50). API : bot /api/public/manga/search.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.manga_tomes",
-          "description": "Liste les tomes du manga, ou le détail d'un tome (avec ses planches) si series et tome sont fournis. API : bot /api/public/manga/tomes.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.news",
-          "description": "Dernières actualités Dragon Ball de dragonballfr.com (limit ≤ 50). API : bot /api/public/news.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.rag_ask",
-          "description": "Question en langage naturel : le RAG sélectionne les passages (hits, avec url) et le LLM rédige answer dans la voix du bot unique (persona Akira Toriyama par défaut en YOLO). Si le LLM est indisponible l'API répond une erreur. local=true utilise le modèle du contrat APHRODY_AI_* et le corpus local. API : bot /api/public/rag/chat.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.rag_context",
-          "description": "Passages les plus pertinents en texte intégral, numérotés [n] avec leur URL absolue, dans un budget maxChars (défaut 6000). Mêmes filtres que rag_search. API : bot /api/public/rag/context.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.rag_search",
-          "description": "Recherche hybride (BM25 + embeddings, fusion RRF, reranking) dans la base Dragon Ball de dragonballfr.com (manga, databooks, Kanzenshuu, wiki). Renvoie des passages sourcés (rowid, kind, title, url, snippet, score) et le mode effectif. Filtres lang, entity, sourceId, kind. local=true (ou SHENRON_LOCAL_RAG=1) interroge le corpus local Aphrody. API : bot /api/public/rag/search.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.sources",
-          "description": "Liste les sources/corpus indexés par le RAG Dragon Ball (manga, databooks, Kanzenshuu…). API : bot /api/public/sources.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.wiki_categories",
-          "description": "Registre des catégories du wiki : name, label, total. API : bot /api/public/wiki/categories.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.wiki_get",
-          "description": "Détail d'une entité du wiki par identifiant numérique ou slug. API : bot /api/public/wiki/{category}/{idOrSlug}.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.wiki_list",
-          "description": "Liste paginée des entités d'une catégorie du wiki avec son total. API : bot /api/public/wiki/{category}.",
-          "file": "crates/ai/mcp/src/main.rs"
-        },
-        {
-          "name": "dragonball.wiki_search",
-          "description": "Recherche plein-texte dans le wiki Dragon Ball ; résultats {category, id, slug, title, snippet} à ouvrir avec dragonball.wiki_get. API : bot /api/public/wiki/search.",
           "file": "crates/ai/mcp/src/main.rs"
         },
         {
@@ -11760,18 +11953,18 @@
     }
   ],
   "counts": {
-    "repos": 2,
-    "aphrodyRepos": 2,
+    "repos": 1,
+    "aphrodyRepos": 1,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 197,
-    "binaries": 62,
-    "bunPackages": 44,
+    "crates": 240,
+    "binaries": 45,
+    "bunPackages": 127,
     "pythonPackages": 8,
-    "cliBinaries": 44,
-    "cliCommands": 937,
-    "mcpServers": 20,
-    "mcpTools": 423,
-    "mcpUniqueToolNames": 406
+    "cliBinaries": 21,
+    "cliCommands": 864,
+    "mcpServers": 21,
+    "mcpTools": 393,
+    "mcpUniqueToolNames": 376
   }
 }

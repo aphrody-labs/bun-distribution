@@ -42,10 +42,9 @@ vérifiés sur fixtures ; Windows natif et promotion de release restent ouverts.
 
 ## Media / administration unification — 2026-10-05
 
-- [ ] Share manga/OCR/translation provenance and adapters across the three products.
+- [x] Shenron and Koharu (manga, OCR review, translation, administration, editor) left for
+  aphrody-labs/shenron on 2026-10-05; Aphrody keeps the host plane and the `/api/v1/shenron/*` gateway.
 - [ ] Qualify consumer contracts, review gates and native boundaries.
-- [ ] Absorb Shenron administration into the Aphrody web surface with authentication.
-- [ ] Keep one Aphrody desktop host and retain all navigation and Koharu editor sections.
 - [ ] Reuse Yolo supervision for Discord binaries; wire native Gemma inference and dbfr Agent Home.
 - [ ] Leave n2b/Oxc/runtime/CLI retirement to the concurrent Yolo owner.
 - [ ] Deliver owned changes and evidence.

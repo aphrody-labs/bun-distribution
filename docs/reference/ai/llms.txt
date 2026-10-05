@@ -35,7 +35,6 @@
 - [Aphrody Contracts](../../products/contracts/README.md)
 - [Aphrody Discord Ecosystem](../../products/discord/README.md)
 - [Aphrody Infra](../../products/infra/README.md)
-- [Aphrody Koharu](../../products/koharu/README.md)
 - [Aphrody Native](../../products/native/README.md)
 - [Aphrody OS](../../products/os/README.md)
 - [Aphrody Shell](../../products/shell/README.md)
