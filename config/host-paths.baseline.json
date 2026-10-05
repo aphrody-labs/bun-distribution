@@ -2,7 +2,6 @@
   "schemaVersion": 1,
   "$comment": "Host- and machine-specific path ratchet (aphrody-ops path-audit --repository). Counts may only fall.",
   "files": {
-    ".codex/config.toml": 13,
     "scripts/release/atomic-deploy-rg.sh": 1
   }
 }
