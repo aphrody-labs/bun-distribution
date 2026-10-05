@@ -68,6 +68,6 @@ Ce plan centralise et fusionne l'ensemble des axes directeurs du projet :
   - Pointer le SDK `@aphrody/runtime` de manière transparente vers `aphrody_ffi`.
   - Requalifier le chargement dynamique sous Bun (`bun:ffi`).
 
-- [ ] **Phase 4 : Documentation & Nettoyage Final**
+- [~] **Phase 4 : Documentation & Nettoyage Final** (chemins du tableau §2 vérifiés présents 2026-10-05 ; intégrité Agent Home `crates/ai/agent-home` en attente du gate Cargo sérialisé)
   - Vérifier que tous les chemins relatifs sont synchronisés.
   - Valider l'intégrité de l'Agent Home.
