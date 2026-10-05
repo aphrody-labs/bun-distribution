@@ -6,7 +6,6 @@ the shared workspace environment and keep their original command arguments:
 
 ```sh
 uv run --locked --project /home/aphro/aphrody-py python tools/infra/scripts/install-developer-cli.py
-uv run --locked --project /home/aphro/aphrody-py python tools/infra/scripts/ops/ovh.py zones
 uv run --locked --project /home/aphro/aphrody-py python tools/infra/scripts/rg/prune-vps-releases.py --max-delete 1
 uv run --locked --project /home/aphro/aphrody-py pytest tools/infra/scripts/rg/test_prune_vps_releases.py
 ```

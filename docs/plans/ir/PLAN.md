@@ -4,7 +4,7 @@
 Date: 2026-10-05. Status: draft opened by the inventory batch; the architecture, research
 journal and checklist are completed in the runtime-plan batch.
 
-Owner request (verbatim, French): absorb `py/packages/aphrody/native`, fuse `py` natively into
+Owner request (verbatim, French): absorb py/packages/aphrody/native, fuse `py` natively into
 Aphrody, deduplicate for real, and integrate uv and PyO3 at the core of Aphrody the way Bun is
 handled (an external monorepo holding the Astral Rust crates, uv, ruff and PyO3) to obtain our
 own runtime named `ir`.

@@ -23,7 +23,7 @@ equal results except latency. TypeScript root and core, scoped strict oxlint and
 oxfmt pass. Source tests do not prove model weights, new runtime artefacts,
 installed CLI replacement, or activation of a persistent MCP server.
 
-[Python adapters and remaining native work](../../../aphrody-py/docs/architecture/ai/OWNERS.md).
+[Python adapters and remaining native work](../../py/docs/architecture/ai/OWNERS.md).
 Aphrody's factory has an occupied heavy lock and an old source pin; no Rust
 build or concurrent job interruption is claimed. The installed-help capture
 reports yolo present and aphrody-python absent; the new source CLI is tested via

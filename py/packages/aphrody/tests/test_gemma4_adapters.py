@@ -22,6 +22,8 @@ def test_sdk_sampler_mcp_and_cli_use_the_same_provider(native_provider):
     assert Gemma4Client().chat("same prompt") == "42"
     assert Gemma4Sampler().sample("same prompt").token_count == 2
     assert gemma4_chat("same prompt") == "42"
+    # The CLI is the separate aphrody-cli distribution: absent in the isolated SDK wheel gate.
+    pytest.importorskip("aphrody_cli")
     result = subprocess.run(
         [sys.executable, "-m", "aphrody_cli.main", "gemma4", "chat", "same prompt"],
         capture_output=True,

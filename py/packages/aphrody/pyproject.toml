@@ -31,8 +31,8 @@ data = ["polars>=1.0", "pyarrow>=15.0"]
 
 
 [project.urls]
-Repository = "https://github.com/aphrody-labs/aphrody-py"
-Documentation = "https://github.com/aphrody-labs/aphrody-py/tree/main/docs/sdk"
+Repository = "https://github.com/aphrody-labs/aphrody"
+Documentation = "https://github.com/aphrody-labs/aphrody/tree/main/py/docs/sdk"
 
 [tool.maturin]
 # The extension is owned by the Rust workspace: crates/ai/rag-python (package aphrody-rust)

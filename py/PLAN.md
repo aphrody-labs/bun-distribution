@@ -23,7 +23,7 @@ through locked uv pending qualification of their native Bun replacement.
 
 Run `apply`, then `check`; use `providers` for private provider contracts.
 Validation results are recorded after successful execution, not inferred from
-this plan. The cross-repository extraction authority remains `../aphrody/PLAN.md`.
+this plan. The architecture authority is the monorepo [PLAN.md](../PLAN.md); the runtime plan is [docs/plans/ir](../docs/plans/ir/PLAN.md).
 
 Linux is the supported platform; see [Linux contracts](docs/sdk/linux.md).
 

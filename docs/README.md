@@ -73,6 +73,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [discord](plans/discord/) | 2 | [Aphrody Discord plan](plans/discord/PLAN.md) |
 | plans | [fusion](plans/fusion/) | 14 | - |
 | plans | [infra](plans/infra/) | 4 | [Aphrody Infra plan](plans/infra/PLAN.md) |
+| plans | [ir](plans/ir/) | 2 | [`ir`: the Aphrody Python runtime (draft)](plans/ir/PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
 | plans | [runtime](plans/runtime/) | 3 | - |
@@ -81,7 +82,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [upstream-oxc](plans/upstream-oxc/) vendored upstream copy | 1 | - |
 | plans | [web](plans/web/) | 6 | - |
 | plans | [workspace](plans/workspace/) | 1 | [Aphrody — FFI unique et consolidation Rust, Python, Bun](plans/workspace/PLAN.md) |
-| products | [ai](products/ai/) | 31 | [Aphrody AI](products/ai/README.md) |
+| products | [ai](products/ai/) | 29 | [Aphrody AI](products/ai/README.md) |
 | products | [compat](products/compat/) | 5 | [Aphrody Compat](products/compat/README.md) |
 | products | [contracts](products/contracts/) | 5 | [Aphrody Contracts](products/contracts/README.md) |
 | products | [discord](products/discord/) | 36 | [Aphrody Discord Ecosystem](products/discord/README.md) |
@@ -144,7 +145,8 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [kernel-qualification-2026-10-01](migration/kernel-qualification-2026-10-01/) | 3 | - |
 | migration (outside the category layout) | [kernel-source-optin-2026-10-01](migration/kernel-source-optin-2026-10-01/) | 3 | - |
 | migration (outside the category layout) | [n2b-qualification-2026-10-01](migration/n2b-qualification-2026-10-01/) | 6 | - |
+| migration (outside the category layout) | [python](migration/python/) | 2 | - |
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 8 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 4550 files.
+Total: 4552 files.

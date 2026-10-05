@@ -15,6 +15,7 @@ import sys
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import Literal, cast
 
 DEFAULT_MINER_MODEL = "intfloat/multilingual-e5-small"
 
@@ -116,7 +117,7 @@ def mine_candidates(
             max_score=config.max_score,
             relative_margin=config.relative_margin,
             num_negatives=min(config.pool, config.range_max - config.range_min),
-            sampling_strategy=config.sampling_strategy,
+            sampling_strategy=cast(Literal["random", "top"], config.sampling_strategy),
             query_prompt=query_prompt,
             corpus_prompt=corpus_prompt,
             output_format="triplet",

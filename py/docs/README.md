@@ -101,7 +101,7 @@ uv build --wheel packages/aphrody --out-dir dist
 The workspace structure separates reusable libraries, command-line interfaces, and domain applications:
 
 ```text
-aphrody-py/
+py/
 ├── packages/
 │   ├── aphrody/             # Core library: PyO3 native bindings, vector math, ranking
 │   ├── aphrody-train/       # Model training, dataset generation, and evaluation harness

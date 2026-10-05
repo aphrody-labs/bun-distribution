@@ -28,6 +28,7 @@
 - [PLAN — aphrody-contracts](../../plans/contracts/PLAN.md)
 - [Aphrody Discord plan](../../plans/discord/PLAN.md)
 - [Aphrody Infra plan](../../plans/infra/PLAN.md)
+- [`ir`: the Aphrody Python runtime (draft)](../../plans/ir/PLAN.md)
 - [PLAN — aphrody-native](../../plans/native/PLAN.md)
 - [Aphrody — FFI unique et consolidation Rust, Python, Bun](../../plans/workspace/PLAN.md)
 - [Aphrody AI](../../products/ai/README.md)

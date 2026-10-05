@@ -73,7 +73,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 - `crates/tauri/aphrody-tauri-plugin-sql`
 - `crates/tauri/aphrody-tauri/test/cef-rollback`
 - `m3/templates/desktop/src-tauri`
-- `py/packages/aphrody/native`
 
 ## ai
 

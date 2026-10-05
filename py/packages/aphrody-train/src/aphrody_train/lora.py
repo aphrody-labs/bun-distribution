@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import click
 
@@ -208,7 +209,10 @@ def train(
             )
 
     adapter_dir = output_dir / "adapter"
-    trainer.model.save_pretrained(adapter_dir)
+    if trainer.model is None:
+        raise RuntimeError("LoRA trainer produced no model to save")
+    saved_model: Any = trainer.model
+    saved_model.save_pretrained(adapter_dir)
     adapter_file = adapter_dir / "adapter_model.safetensors"
     weights = load_file(str(adapter_file))
     if any(not torch.isfinite(weight).all() for weight in weights.values()):

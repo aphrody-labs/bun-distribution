@@ -1,9 +1,10 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody Python
 
-A uv workspace for Python libraries, applications and tools. Rust source is
-owned by the sibling Aphrody monorepo; the SDK builds from an independently
-verified, pinned source artifact rather than a neighboring runtime checkout.
+A uv workspace for Python libraries, applications and tools, fused into the Aphrody
+monorepo on 2026-10-05 (it was the separate `aphrody-py` repository). The Rust source is owned by the
+monorepo: the SDK wheel builds `crates/ai/rag-python` in place. The longer-term direction is the
+`ir` runtime ([plan](../docs/plans/ir/PLAN.md)).
 
 ## Development
 
@@ -11,7 +12,7 @@ Requires uv 0.12.22, Bun 1.4+ and CPython 3.12 for the complete workspace.
 
 ```sh
 # Unified Bun scripts
-bun run build       # Apply modernization and synchronization
+bun run build       # Build the aphrody wheel (needs Cargo: serialized build host)
 bun run check       # Validate standalone locks and distribution wheels
 bun run test        # Execute fast test discovery across all packages
 bun run lint        # Code inspection via Ruff
@@ -41,7 +42,6 @@ and [Rust-Python research](docs/RAPPORT_RUST_PYTHON_RESEARCH.md).
 - `apps/meetings`: audio meeting application built on the SDK.
 - `tools/`: operational, migration and packaging tools.
 - `vendor/`: removed 2026-10-05; Bun (`vendor/bun` at the repository root) is the only vendored source (`config/vendor.json`).
-- `packages/os/drive`: retained upstream Drive adapters with their provenance.
 
 The root owns workspace dependencies and tooling. Standalone SDK and training
 locks are checked in temporary copies outside workspace discovery. Source
@@ -66,7 +66,7 @@ existing credential helper; ordinary unit tests do not claim live provider parit
 
 See [current contracts](docs/sdk/workspace-audit.md),
 [SDK validation](docs/sdk/validation.md), [native build](docs/sdk/native-build.md)
-and [the extraction plan](../aphrody/PLAN.md). Historical migration evidence
+and [the extraction plan](../PLAN.md). Historical migration evidence
 stays under `docs/migration/`; protected datasets, model weights and secrets
 stay in their existing private stores.
 

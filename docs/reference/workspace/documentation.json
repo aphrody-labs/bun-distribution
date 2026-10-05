@@ -6,8 +6,8 @@
     {
       "path": "AGENTS.md",
       "title": "Aphrody repository instructions",
-      "sha256": "787fb99e0c1ba21e62585d0640a938758e0ed27905211c4dc2cbab91668f5b21",
-      "bytes": 6443,
+      "sha256": "a0a644a50fb7e1ba4a63b68494530fee082de9f3492918786099935f7c59e72f",
+      "bytes": 6648,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -36,8 +36,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan Directeur Unique — Aphrody & Yolo Core Trinity",
-      "sha256": "f94e645288425f236dbc3db64212ab7b60533a369072e303ecb98a808de974dd",
-      "bytes": 14379,
+      "sha256": "2497a538ba9badc6f22d0759010fe15c9a18384b32a8289d12ab6d9066ce0987",
+      "bytes": 14709,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3166,8 +3166,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "e25392ebaef8af133be4462678fca098a23410e4343671ed448a68cbb5ce91cf",
-      "bytes": 11440,
+      "sha256": "e24e9c9e828e7b9202cb76c1e44b705cfcdb08bb11ee81567dfbdbac2ddfd525",
+      "bytes": 11617,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3266,8 +3266,8 @@
     {
       "path": "docs/ai/shared-adapters-2026-10-05.md",
       "title": "Shared AI, CLI and MCP owners — 2026-10-05",
-      "sha256": "627efd83e0db52182269bce6df65c750c25d8ed741c88fa16a58beb7ad6b3a22",
-      "bytes": 1958,
+      "sha256": "440d1736de508588430d4f25ebc3b13dc4d18c559eb8c8dca478b1c812ed402e",
+      "bytes": 1947,
       "domain": "",
       "status": "historical",
       "visibility": "private",
@@ -3276,8 +3276,8 @@
     {
       "path": "docs/ai/vector-owner-2026-10-05.md",
       "title": "Pure vector owner — 2026-10-05",
-      "sha256": "e2463df3542c6621b64a05b09504dedb65436b9bd8c241b160474351c86c204f",
-      "bytes": 1568,
+      "sha256": "1491cb5115577fc28feb16071368a9890ea4f488c3ec20917fc413acbeb45eb6",
+      "bytes": 1557,
       "domain": "",
       "status": "historical",
       "visibility": "private",
@@ -8474,6 +8474,26 @@
       "canonical": "docs/migration/jan-absorption/ui/HANDOFF.md"
     },
     {
+      "path": "docs/migration/python/GOAL-aphrody-py-2026-10-04.md",
+      "title": "GOAL — aphrody-py",
+      "sha256": "b54ba6f1e6659635ff05f3071fa362d4e21ea2743cea462eddba2a2b56fc2803",
+      "bytes": 2000,
+      "domain": "python",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/migration/python/GOAL-aphrody-py-2026-10-04.md"
+    },
+    {
+      "path": "docs/migration/python/MEMORY-aphrody-py-2026-10-05.md",
+      "title": "Aphrody Python — mémoire factuelle",
+      "sha256": "526021de622a02d9aac3b640aaa7097c37291ed4ff2fc310fd671e3d6740fa4c",
+      "bytes": 13382,
+      "domain": "python",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/migration/python/MEMORY-aphrody-py-2026-10-05.md"
+    },
+    {
       "path": "docs/migration/shenron-bxc-aphrody-crosswalk-2026-10-01.md",
       "title": "Shenron, BXC et Aphrody Web : état de migration",
       "sha256": "d1187a576149c0f05c86924952571d59f7c1afeac2613d72eb5260afb69efa21",
@@ -9386,8 +9406,8 @@
     {
       "path": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md",
       "title": "Plan de fusion Obscura × Bun — partie 4 de 4 : audits et contexte vérifiés",
-      "sha256": "ae86e011bfc6ce0a62e5fcc01796ca4cf506cbe29f2c2db6e6ca5538818ac5c6",
-      "bytes": 43088,
+      "sha256": "358cc27a74d63ea33b5e8e12c5695fe42023faed163950a66364fa757c3b2f8b",
+      "bytes": 47799,
       "domain": "fusion",
       "status": "canonical",
       "visibility": "private",
@@ -9492,6 +9512,26 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/infra/sql-convergence-handoff.md"
+    },
+    {
+      "path": "docs/plans/ir/INVENTORY-py-vs-aphrody.md",
+      "title": "Inventory: py/ against the rest of the Aphrody monorepo",
+      "sha256": "fc5888e892fec07e405479e0263b07ae548841a35002e8b90c2459cc1eac559f",
+      "bytes": 13648,
+      "domain": "ir",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/ir/INVENTORY-py-vs-aphrody.md"
+    },
+    {
+      "path": "docs/plans/ir/PLAN.md",
+      "title": "ir: the Aphrody Python runtime (draft)",
+      "sha256": "6699759d3a154d638ab5eb7999f1ef697383cca6076e4026997cc79423fde1c7",
+      "bytes": 652,
+      "domain": "ir",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/ir/PLAN.md"
     },
     {
       "path": "docs/plans/native/PLAN.md",
@@ -9902,26 +9942,6 @@
       "status": "imported",
       "visibility": "private",
       "canonical": "docs/products/ai/py/antigravity-sdk-python/skills/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/aphrody-train/README.md",
-      "title": "aphrody-train",
-      "sha256": "f76945adfcbc40305fe4d08ffb16b8668b066896ba03d5fe84c74b1344675e3e",
-      "bytes": 2720,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/aphrody-train/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/aphrody/README.md",
-      "title": "aphrody (Python)",
-      "sha256": "6d8cd18998a450f32ae3f3c4fdd4225a29b4a6ba896e66fe07b3e02f2dff74b9",
-      "bytes": 6528,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/aphrody/README.md"
     },
     {
       "path": "docs/products/ai/py/aphrody/blender_addon/README.md",
@@ -15496,10 +15516,10 @@
     {
       "path": "docs/reference/infra/ops/OVH.md",
       "title": "OVH — accounts, zones, records and procedures",
-      "sha256": "513106c732ede3e86d5a5b4daa52e9c3de686f8483c89bf651987bde5f37f726",
-      "bytes": 10513,
+      "sha256": "046a7225e19a03c7d35bb2a88664d1d6b8435895bb44ae3aa2a916f58a722453",
+      "bytes": 10995,
       "domain": "infra",
-      "status": "canonical",
+      "status": "historical",
       "visibility": "private",
       "canonical": "docs/reference/infra/ops/OVH.md"
     },
@@ -41086,8 +41106,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "f96cbe7b2934d3c554d90845a72961f6e849b1382f17754b21bc99d6da5cf3da",
-      "bytes": 53544,
+      "sha256": "90e971204943a5c515cc814697d729d3fa61f9bdf52c22593118dbe866958795",
+      "bytes": 53513,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -46614,40 +46634,10 @@
       "canonical": "packages/web/x/examples/showcase/README.md"
     },
     {
-      "path": "py/.github/pull_request_template.md",
-      "title": "📋 Description des Changements",
-      "sha256": "c2e47c660f90aa9be83b17f5b19cb6eeeadd2abe629f622b342e8d00650dec3d",
-      "bytes": 1127,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "py/.github/pull_request_template.md"
-    },
-    {
-      "path": "py/AGENTS.md",
-      "title": "Aphrody Python workspace rules",
-      "sha256": "ad258080394bd27adf2447d83840cb2815645fcbd50d90688a18477d73065ebb",
-      "bytes": 1707,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "py/AGENTS.md"
-    },
-    {
-      "path": "py/GOAL.md",
-      "title": "GOAL — aphrody-py",
-      "sha256": "f26acd468d293e0a5ff00b39639ce86819fec1a26c5245e0e065dbe5210b5ed8",
-      "bytes": 2008,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "py/GOAL.md"
-    },
-    {
       "path": "py/PLAN.md",
       "title": "Python workspace modernization",
-      "sha256": "530a643ee3b63bc6754123b5fa0ed75ce63ba583a8dd5987895891d66d368fc7",
-      "bytes": 3318,
+      "sha256": "7b9790c4bcfbcc72fa0892ab8f27fa39c50adc18d1156546c8e342005033f527",
+      "bytes": 3375,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46656,22 +46646,12 @@
     {
       "path": "py/README.md",
       "title": "Aphrody Python",
-      "sha256": "acb1db02582c8df2b5af642e1b5bfa8bf3a4a454361c7822732b317c83723bda",
-      "bytes": 3570,
+      "sha256": "22b8192588b9188591574e8683e273a323002e9f8bb00d36bf6d6cfb5389b981",
+      "bytes": 3657,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
       "canonical": "py/README.md"
-    },
-    {
-      "path": "py/TODO.md",
-      "title": "Unification IA / CLI / MCP — 2026-10-05",
-      "sha256": "b33f98367f5666ba88f9c690639f40fe53256a98ff449f5e30cdccf41d492c17",
-      "bytes": 720,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "py/TODO.md"
     },
     {
       "path": "py/docs/AWESOME.md",
@@ -46696,8 +46676,8 @@
     {
       "path": "py/docs/INDEX.md",
       "title": "Aphrody Python Documentation Index",
-      "sha256": "b3d439c70a68b4768deee3c46fc8bda3302ffb65cbb6e95eb0b122028bf425d7",
-      "bytes": 2926,
+      "sha256": "ad8880084ca58c5f55667f8c163504ae9302a8c7be54a6a0cfd8c6962dedf2a4",
+      "bytes": 2918,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46716,8 +46696,8 @@
     {
       "path": "py/docs/README.md",
       "title": "Technical Documentation & Quickstart: Aphrody Python Workspace",
-      "sha256": "f6c6de9b31b06c8ed164bdb87fe2b0184d25d147bfc93a83e176ceca641a2ac3",
-      "bytes": 6374,
+      "sha256": "620d0ba72b2da521127d7100670549721b80097837adf0fd874ad04f61df4dcc",
+      "bytes": 6399,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46726,8 +46706,8 @@
     {
       "path": "py/docs/architecture/agent-first.md",
       "title": "Architecture Agent-First",
-      "sha256": "bae859d1f3527a8f26946f0416a55ed7838352304032a63c9bd050159fc50632",
-      "bytes": 7152,
+      "sha256": "daa6a63d6f553c53864078e917fe637dd7045332533bfdc729931082e2331c58",
+      "bytes": 7144,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46736,8 +46716,8 @@
     {
       "path": "py/docs/architecture/ai/OWNERS.md",
       "title": "Logique IA, inférence et RAG",
-      "sha256": "177b0a8ff0085e2b36d93227f274397dc47ce150f363cedcf750691495b6eeee",
-      "bytes": 7146,
+      "sha256": "b66a1555ebc0a1b70913d197c75eceaa5a86c885b8ebf70adf644c0400dbf0ac",
+      "bytes": 7165,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46816,8 +46796,8 @@
     {
       "path": "py/docs/sdk/PLAN.md",
       "title": "Linux SDK qualification plan",
-      "sha256": "a1d2aafa3f3b2297d9e3f1f32fa93b9c8e6189126767f2e8e527afe21586a8d9",
-      "bytes": 1226,
+      "sha256": "2ea5e15325ab1bf9e5e870092360f5f2e8cd8fc9db249a0a251c84d9533c3a88",
+      "bytes": 1258,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46836,8 +46816,8 @@
     {
       "path": "py/docs/sdk/linux.md",
       "title": "Linux runtime contract",
-      "sha256": "fb49a75e3e648bba6717e9f09fc4c418652b0a123ef7d7884e5a47b19175d56c",
-      "bytes": 2025,
+      "sha256": "43d0dcf1922775f7b9e3d304545a6811b4d5a15f51fc69b0ee96b953966418e8",
+      "bytes": 2011,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46846,8 +46826,8 @@
     {
       "path": "py/docs/sdk/native-build.md",
       "title": "Building the native SDK",
-      "sha256": "2958d59c11f2e6b109bed778b302f12919ea9a8155bc60edf1088f012f1999a5",
-      "bytes": 4389,
+      "sha256": "2fadecf275a2273ba3e952a2aaecac0fe6f3d08356248aaa0089d5604885cf65",
+      "bytes": 3855,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46856,8 +46836,8 @@
     {
       "path": "py/docs/sdk/validation.md",
       "title": "SDK distribution validation",
-      "sha256": "5601a6a02418a261f0e6eebc6991aabb04052ba8328326fc848bab221f541f9a",
-      "bytes": 5422,
+      "sha256": "c410bfa6f1aa1f3f9a17631ded14b972856bb28f56908493d2a45c41b7eee2e3",
+      "bytes": 5623,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46866,8 +46846,8 @@
     {
       "path": "py/docs/sdk/workspace-audit.md",
       "title": "Current Python workspace contracts",
-      "sha256": "e407c36dcf81eb7d983d2dd93a1cb6d629c7982f73dabb3cd7172fe9f6f8d5b4",
-      "bytes": 2015,
+      "sha256": "a1d18c10b227ed3b80ace5dea66f9a645bba62f412859a0f337c4964282849c8",
+      "bytes": 2082,
       "domain": "",
       "status": "historical",
       "visibility": "private",
@@ -46896,28 +46876,18 @@
     {
       "path": "py/packages/aphrody/README.md",
       "title": "aphrody (Python)",
-      "sha256": "486a043c621e73bdfe179d5414382d5bf517f1f288d90a9179a03a8c0491d8b7",
-      "bytes": 8234,
+      "sha256": "599c7ac777822ef4333079fb0863359c6ce330ec44ce0bef29072fb8835757f6",
+      "bytes": 8275,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
       "canonical": "py/packages/aphrody/README.md"
     },
     {
-      "path": "py/packages/os/drive/README.md",
-      "title": "Spacedrive Drive adapter sources",
-      "sha256": "c5ada9f2cbb941be233ef966f1db2f2aa38e995ef42139c7a052d31dcd4d9a44",
-      "bytes": 911,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "py/packages/os/drive/README.md"
-    },
-    {
       "path": "py/tools/infra/README.md",
       "title": "Infra Python tools",
-      "sha256": "befa2f280511b32f4bb7a56b2f070c3b33099f77af1e9ac5ea98d08650d20b5e",
-      "bytes": 1206,
+      "sha256": "787223daaa8aa7a585ab8151ab5be009a6cc8900c605d15dfd20ad8a382a374f",
+      "bytes": 1113,
       "domain": "",
       "status": "canonical",
       "visibility": "private",

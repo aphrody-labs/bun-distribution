@@ -1,17 +1,17 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Logique IA, inférence et RAG
 
-Relevé du 2026-10-05 sur les trois checkouts existants. Architecture commune :
-[plan Aphrody](../../../../aphrody/PLAN.md).
+Relevé du 2026-10-05 (les trois checkouts sont depuis fusionnés dans le monorepo). Architecture commune :
+[plan Aphrody](../../../../PLAN.md).
 
 | Contrat | Propriétaire observé | Consommation |
 | --- | --- | --- |
-| Kernels RAG et classement | [rag-core Rust](../../../../aphrody/crates/ai/rag-core/src/lib.rs) | Extension PyO3 épinglée par la distribution Python |
+| Kernels RAG et classement | [rag-core Rust](../../../../crates/ai/rag-core/src/lib.rs) | Extension PyO3 `crates/ai/rag-python`, compilée dans la roue Python |
 | Conversion NumPy/buffers | [adaptateur partagé](../../../packages/aphrody/src/aphrody/_rag_vectors.py) | Forensic float32 et RAPTOR float64 ; façade historique conservée |
 | Inférence Python unifiée | [façade](../../../packages/aphrody/src/aphrody/inference/unified.py) | Un seul client HTTP/Harmony existant ; exécution chez le fournisseur configuré |
-| Produit IA natif | [Aphrody AI](../../../../aphrody/crates/ai/ai/src/lib.rs) | Fournisseurs, modèles, agents et RAG appartiennent à Aphrody |
-| Calcul vectoriel Bun | [math/vectors](../../../../yolo/packages/core/src/math/vectors.ts) | Redis et adaptateurs Gemma ; aucun import métier dans le module de calcul |
-| Runtime et ressources natives | [Yolo](../../../../yolo/PLAN.md) | SDK et artefacts versionnés ; pas de copie des moteurs dans Python |
+| Produit IA natif | [Aphrody AI](../../../../crates/ai/ai/src/lib.rs) | Fournisseurs, modèles, agents et RAG appartiennent à Aphrody |
+| Calcul vectoriel Bun | [math/vectors](../../../../packages/engine/core/src/math/vectors.ts) | Redis et adaptateurs Gemma ; aucun import métier dans le module de calcul |
+| Runtime et ressources natives | [Yolo](../../../../PLAN.md) | SDK et artefacts versionnés ; pas de copie des moteurs dans Python |
 
 ## Changements qualifiés
 
@@ -84,7 +84,7 @@ streaming correspondent aux événements reçus, pas à des mots reconstruits ap
 une génération complète. Tests via SDK, vrai sous-processus CLI, MCP et HTTP
 loopback ; pas de génération avec des poids ni d'appel distant authentifié.
 
-Yolo possède maintenant un [registre commun de capacités](../../../../yolo/packages/core/src/tools/registry.ts),
+Yolo possède maintenant un [registre commun de capacités](../../../../packages/engine/core/src/tools/registry.ts),
 indépendant des enveloppes MCP et HTTP. `yolo ai list` expose le sous-ensemble IA ;
 `yolo ai call yolo_ai_infer '{"prompt":"question"}'` utilise les mêmes schémas,
 validation, contexte et fournisseur que MCP/API. Configurer

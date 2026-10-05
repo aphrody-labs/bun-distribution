@@ -25,7 +25,7 @@ norecursedirs = ["*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules"
 [tool.ruff]
 line-length = 88
 target-version = "py312"
-extend-exclude = ["packages/os/drive", "tools/ui", "vendor"]
+extend-exclude = ["tools/ui", "vendor"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "UP", "B"]

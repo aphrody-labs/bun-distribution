@@ -9,7 +9,6 @@ from pathlib import Path
 
 TARGETS = {
     "install-developer-cli.py": "scripts/install-developer-cli.py",
-    "ovh.py": "scripts/ops/ovh.py",
     "provision-vps-env.py": "scripts/rg/provision-vps-env.py",
     "prune-vps-releases.py": "scripts/rg/prune-vps-releases.py",
     "sync-cron-secret.py": "scripts/rg/sync-cron-secret.py",

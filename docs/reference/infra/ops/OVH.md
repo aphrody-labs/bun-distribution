@@ -6,6 +6,12 @@ the local and VPS API credentials. Where this file and a plan disagree, this fil
 [`docs/reference/infra/TOPOLOGY.md`](../TOPOLOGY.md) says what answers on which port; this one says
 what DNS and the registrar hold, and how to change it without breaking mail or TLS.
 
+> Update 2026-10-05: the Python script `scripts/ops/ovh.py` (kept as `py/tools/infra/scripts/ops/ovh.py`) was
+> removed as superseded by the Rust CLI. Use `aphrody ovh dns <zones|info|records|add|delete|refresh|export|backup>`
+> with `--profile <domain>` (see `aphrody ovh profiles`) in place of `--account`; `info` replaces `zone`. Writes keep
+> requiring `--apply`. The command examples below are the measured 2026-09-07 procedure and keep the old
+> script names for provenance.
+
 ## 1. Three accounts, three disjoint sets of zones
 
 Confusing them is the single most expensive mistake here, because the failure mode lies:

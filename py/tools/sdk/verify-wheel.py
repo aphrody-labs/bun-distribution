@@ -195,6 +195,11 @@ def verify(wheel: Path, python: str, tests: Path | None) -> None:
             for source in test_files:
                 if source.name not in SOURCE_ONLY_TESTS:
                     shutil.copy2(source, isolated_tests / source.name)
+            # The workspace conftest only defines loopback inference fixtures (no imports
+            # of the source tree), which the copied tests need; copy it next to them.
+            fixtures = tests.parents[2] / "conftest.py"
+            if fixtures.is_file():
+                shutil.copy2(fixtures, isolated_tests / "conftest.py")
             config = work / "pytest.ini"
             config.write_text(
                 "[pytest]\naddopts = --strict-markers\n"

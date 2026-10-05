@@ -164,8 +164,8 @@ for actor in actors.list():
     print(actor.name)
 ```
 
-The [SDK guide](https://github.com/aphrody-labs/aphrody-py/blob/main/docs/sdk/README.md)
-and [validation guide](https://github.com/aphrody-labs/aphrody-py/blob/main/docs/sdk/validation.md)
+The [SDK guide](https://github.com/aphrody-labs/aphrody/blob/main/py/docs/sdk/README.md)
+and [validation guide](https://github.com/aphrody-labs/aphrody/blob/main/py/docs/sdk/validation.md)
 describe installation, runtime configuration and distribution checks.
 
 RAG cosine and rank fusion use the native canonical rag-core calculations.

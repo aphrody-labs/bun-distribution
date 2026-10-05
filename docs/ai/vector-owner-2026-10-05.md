@@ -18,7 +18,7 @@ Native `yolo verify --only docs,whitespace --json` passes (mdBook and whitespace
 three document links pass the Workspace link checker.
 
 Python shares its native buffer adapter and routes unified inference through its
-existing HTTP client; [cross-repository ownership and limits](../../../aphrody-py/docs/architecture/ai/OWNERS.md).
+existing HTTP client; [cross-repository ownership and limits](../../py/docs/architecture/ai/OWNERS.md).
 The Bun arithmetic is not replaced by Rust: their error and floating-point
 contracts differ and no equivalent interlanguage binding was qualified here.
 No Rust, native artefact, model execution or installed runtime is qualified by
