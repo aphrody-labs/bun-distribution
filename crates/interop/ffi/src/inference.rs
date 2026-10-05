@@ -313,10 +313,10 @@ pub extern "C" fn aphrody_inference_cancel(id: u64) {
         } else {
             None
         };
-        if let Some(model) = removed {
-            if let Ok(runtime) = runtime() {
-                runtime.spawn_blocking(move || drop(model));
-            }
+        if let Some(model) = removed
+            && let Ok(runtime) = runtime()
+        {
+            runtime.spawn_blocking(move || drop(model));
         }
     });
 }
