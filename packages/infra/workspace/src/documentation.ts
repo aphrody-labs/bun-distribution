@@ -264,6 +264,11 @@ export async function generateDocumentation(
   )
     failures++;
   for (const target of config.sources) {
+    // Sibling repositories (../aphrody-py, ../iecode) are not checked out on every host.
+    if (!existsSync(resolve(root, target.root))) {
+      console.warn(`docs: skipped ${target.root}: repository not present on this host`);
+      continue;
+    }
     const outputs = await generateSourceReference(resolve(root, target.root), [target]);
     for (const [path, text] of outputs) if (!generatedOutput(root, path, text, check)) failures++;
   }

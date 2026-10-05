@@ -35,7 +35,7 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 | `jan` | [janhq/jan](https://github.com/janhq/jan) | `14a720628f9592c8e60f7e081ef733076db8a6a9` | 14a720628f | Pinned Jan source for owner-authorized absorption; existing Aphrody capability owners remain canonical. Initial model-hub search adapted with Fuse.js 7.1.0; full parity pending. Pinned checkout: ../aphrody-py/vendor/jan. Root LICENSE Apache-2.0, Menlo Research 2025; selected search adaptation retains attribution. Python/JS ADK manifests declare AGPL-3.0; do not assume a uniform repository license. | m3/packages/app-ui/src/models-hub-state.ts; config/jan-absorption.json; docs/migration/jan-absorption |
 | `mistral.rs` | [EricLBuehler/mistral.rs](https://github.com/EricLBuehler/mistral.rs) | `master` | 3f2515e9b5 | mistral.rs; Cargo git dependency (mistralrs) plus native integration reference. | Cargo.toml workspace dependency mistralrs; docs/plans/ai/native-integration-master.md |
 
-## Build-on-demand upstreams (4)
+## Build-on-demand upstreams (5)
 
 Inputs of the WSL build (`config/os/wsl-build.json`, `crates/os/aphrody-wsl`). Restore one with
 `aphrody-update sources sync --only <id> --apply` before a WSL build; remove it afterwards with
@@ -45,6 +45,7 @@ Inputs of the WSL build (`config/os/wsl-build.json`, `crates/os/aphrody-wsl`). R
 | --- | --- | --- | --- | --- | --- |
 | `WSL` | [microsoft/WSL](https://github.com/microsoft/WSL) | `master` | 11c74d836c | Microsoft WSL; native WSL build recipe input. | config/os/wsl-build.json; crates/os/aphrody-wsl |
 | `WSL2-Linux-Kernel` | [microsoft/WSL2-Linux-Kernel](https://github.com/microsoft/WSL2-Linux-Kernel) | `linux-msft-wsl-6.18.y` | 1479418068 | WSL2 Linux kernel; kernel build recipe input. | config/os/wsl-build.json; crates/os/aphrody-wsl |
+| `linux-stable` | https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git | `v7.2.9` | 5fce161649 | kernel.org stable Linux with Rust-for-Linux; mainline kernel recipe input. `aphrody-wsl latest --apply` moves the pin. | config/os/wsl-build.json; crates/os/aphrody-wsl |
 | `terminal` | [microsoft/terminal](https://github.com/microsoft/terminal) | `main` | 2b5336c1fc | Windows Terminal; WSL build recipe input. | config/os/wsl-build.json |
 | `wslg` | [microsoft/wslg](https://github.com/microsoft/wslg) | `main` | 6942bb534b | WSLg; system distro build recipe input. | config/os/wsl-build.json; scripts/build/os/build-wslg.py |
 

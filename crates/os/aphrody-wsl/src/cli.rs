@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 use std::{fs,path::PathBuf};
 use clap::Subcommand;
-use crate::{Config,Result,Target,artifact,build,doctor,expected_artifacts,import,plan,sources};
+use crate::{Config,Result,Target,artifact,build,doctor,expected_artifacts,import,latest_kernel,plan,sources};
 
 #[derive(Debug,Clone,Subcommand)]
 pub enum Action {
@@ -15,8 +15,10 @@ pub enum Action {
     Dependencies,
     /// Compile an upstream component or assemble the guest root filesystem.
     Build {#[arg(value_enum)] target:Target},
-    /// Build kernel, WSLg, Windows WSL and the Aphrody OS guest in sequence.
+    /// Build both kernels, WSLg, Windows WSL and the Aphrody OS guest in sequence.
     All,
+    /// Resolve the newest kernel.org stable tag; --apply moves the linux-stable pin to it.
+    Latest {#[arg(long)] apply:bool},
     /// Read build evidence; missing and failed reports remain visible.
     Status,
     /// Hash and validate expected nonempty artifacts.
@@ -31,15 +33,22 @@ pub fn run(action:Action,config_path:PathBuf)->Result<()> {
         Action::Sources=>serde_json::to_value(sources(&config)?)?,
         Action::Plan{target}=>serde_json::to_value(plan(&config,target)?)?,
         Action::Build{target}=>serde_json::to_value(build(&config,target)?)?,
-        Action::All=>{let mut results=vec![];for target in [Target::Kernel,Target::Wslg,Target::Wsl,Target::Distro]{results.push(build(&config,target)?);}serde_json::to_value(results)?},
+        Action::All=>{let mut results=vec![];for target in Target::ALL{results.push(build(&config,target)?);}serde_json::to_value(results)?},
+        Action::Latest{apply}=>serde_json::to_value(latest_kernel(&config,&config_path,apply)?)?,
         Action::Status=>{
-            let mut reports=serde_json::Map::new();for target in [Target::Kernel,Target::Wslg,Target::Wsl,Target::Distro]{let path=config.output_root.join(format!("{}-report.json",target.name()));reports.insert(target.name().into(),if path.exists(){serde_json::from_slice(&fs::read(path)?)?}else{serde_json::json!({"state":"not-built"})});}serde_json::Value::Object(reports)
+            let mut reports=serde_json::Map::new();for target in Target::ALL{let path=config.output_root.join(format!("{}-report.json",target.name()));reports.insert(target.name().into(),if path.exists(){serde_json::from_slice(&fs::read(path)?)?}else{serde_json::json!({"state":"not-built"})});}serde_json::Value::Object(reports)
         },
         Action::Verify{target}=>serde_json::to_value(expected_artifacts(&config,target).iter().map(|p|artifact(p)).collect::<Result<Vec<_>>>()?)?,
         Action::Import{install_dir}=>{import(&config,&install_dir)?;serde_json::json!({"imported":config.distribution})},
         Action::Dependencies=>{
-            let status=std::process::Command::new("sudo").args(["-n","env","DEBIAN_FRONTEND=noninteractive","apt-get","install","-y","build-essential","flex","bison","dwarves","libssl-dev","libelf-dev","cpio","qemu-utils","rsync","bc","e2fsprogs","kmod","debootstrap","ubuntu-keyring","podman","golang-go","pkg-config","libdw-dev","libunwind-dev","libcap-dev","libslang2-dev","libnuma-dev","libzstd-dev","zlib1g-dev","libtraceevent-dev","libpfm4-dev"]).status()?;
-            if !status.success(){return Err(crate::Error::Invalid("dependency installation failed".into()));}doctor(&config)?
+            let status=std::process::Command::new("sudo").args(["-n","env","DEBIAN_FRONTEND=noninteractive","apt-get","install","-y","build-essential","flex","bison","dwarves","libssl-dev","libelf-dev","cpio","qemu-utils","rsync","bc","e2fsprogs","kmod","debootstrap","ubuntu-keyring","podman","golang-go","pkg-config","libdw-dev","libunwind-dev","libcap-dev","libslang2-dev","libnuma-dev","libzstd-dev","zlib1g-dev","libtraceevent-dev","libpfm4-dev","clang","lld","llvm","gnupg"]).status()?;
+            if !status.success(){return Err(crate::Error::Invalid("dependency installation failed".into()));}
+            // Rust-for-Linux needs bindgen >= 0.71.1 (newer than older distro packages) and the rust-src component.
+            let status=std::process::Command::new("cargo").args(["install","--locked","bindgen-cli"]).status()?;
+            if !status.success(){return Err(crate::Error::Invalid("bindgen-cli installation failed".into()));}
+            let status=std::process::Command::new("rustup").args(["component","add","rust-src"]).status()?;
+            if !status.success(){return Err(crate::Error::Invalid("rust-src installation failed".into()));}
+            doctor(&config)?
         },
     };
     println!("{}",serde_json::to_string_pretty(&result)?);Ok(())
