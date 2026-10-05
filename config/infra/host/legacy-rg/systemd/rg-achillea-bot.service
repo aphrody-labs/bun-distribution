@@ -1,0 +1,74 @@
+# rg-achillea-bot.service — Achillea: Discord + REST API + Socket.IO, with the
+# ranked/Colyseus server as a supervised child. Formerly `achillea-bot.service`.
+# Installed from an immutable RG release by scripts/atomic-deploy-rg.sh.
+[Unit]
+Description=Achillea bot, API, Socket.IO and ranked
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/rg/current/apps/achillea-bot
+EnvironmentFile=/etc/rose-griffon/rg-achillea-bot.env
+Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
+Environment=NODE_ENV=production
+# Gateway: profile `current` (BOT_TOKEN) owns the panels and community guilds.
+# Better Auth (Rose Griffon) is the only owner of the Discord OAuth callback.
+Environment=BOT_PROFILE=current
+Environment=RG_DISCORD_SYNC_SQLITE_PATH=/srv/rg/shared/discord-sync/discord.db
+Environment=RG_DISCORD_SYNC_REDIS_URL=redis://127.0.0.1:6379
+Environment=BOT_COMMAND_GUILDS=1055585286320554055,1134795051361386506,1387955162450100296
+Environment=API_HOST=127.0.0.1
+Environment=API_PORT=4000
+Environment=RANKED_HOST=127.0.0.1
+Environment=RANKED_PORT=4002
+Environment=SOCKET_HOST=127.0.0.1
+Environment=SOCKET_PORT=4005
+Environment=UNIFIED_API_URL=https://api.rosegriffon.fr
+Environment=RANKED_ENTRY=/srv/rg/current/apps/achillea-bot/build/ranked/main.js
+ExecStart=/home/ubuntu/.bun/bin/bun build/main.js
+
+# The ranked child lives and dies with its parent.
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=30
+SuccessExitStatus=143
+Restart=always
+RestartSec=5
+
+# Uploads, renders and logs are written to shared state, never into the release.
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectHostname=true
+ProtectClock=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/srv/rg/shared/achillea /srv/rg/shared/discord-sync
+BindPaths=/srv/rg/shared/achillea/logs:/srv/rg/current/apps/achillea-bot/logs
+BindPaths=/srv/rg/shared/achillea/storage:/srv/rg/current/apps/achillea-bot/storage
+
+MemoryHigh=2G
+MemoryMax=4G
+MemorySwapMax=512M
+TasksMax=1024
+LimitNOFILE=65536
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rg-achillea-bot
+
+[Install]
+WantedBy=multi-user.target

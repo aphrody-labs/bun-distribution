@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody local native application backend
+After=network-online.target aphrody-kernel.service
+Wants=aphrody-kernel.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/aphrody
+ExecStart=%h/.local/share/aphrody/local-app/current/bin/aphrody app-server --http --addr 127.0.0.1:8765
+Environment=APHRODY_AGENT_DOMAIN=aphrody
+Environment=PATH=%h/.local/share/aphrody/local-app/current/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+Restart=on-failure
+RestartSec=3
+UMask=0077
+
+[Install]
+WantedBy=default.target
