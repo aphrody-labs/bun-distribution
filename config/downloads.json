@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "authority": "owner order 2026-10-06: explicit publication authority for the artifacts below, on existing repositories only",
+  "runbook": "docs/operations/infra/DOWNLOADS.md",
+  "site": {
+    "baseUrl": "https://downloads.aphrody.com",
+    "hosts": ["downloads.aphrody.com", "aphrody.com", "www.aphrody.com"],
+    "certName": "downloads.aphrody.com"
+  },
+  "host": {
+    "target": "vps",
+    "root": "/srv/aphrody-downloads",
+    "service": "aphrody-downloads",
+    "port": 8797,
+    "bun": "/home/ubuntu/.bun/bin/bun",
+    "keepReleases": 5
+  },
+  "factory": {
+    "repo": "aphrody",
+    "workspace": "/srv/aphrody-build/workspaces/aphrody",
+    "cargoTargetDir": "/srv/aphrody-build/cache/cargo/aphrody",
+    "jobPrefix": "downloads"
+  },
+  "assets": {
+    "install.sh": "apps/web/downloads/install.sh",
+    "install.ps1": "apps/web/downloads/install.ps1",
+    "install-yolo.sh": "apps/yolo/install.sh"
+  },
+  "artifacts": [
+    {
+      "id": "aphrody",
+      "kind": "factory-binary",
+      "description": "Single aphrody multi-call binary: CLI, MCP server (aphrody-mcp), infra, ovh, kernel and every former standalone CLI name",
+      "versionFrom": { "cargoWorkspace": "Cargo.toml" },
+      "executable": "aphrody",
+      "provides": ["aphrody", "aphrody-mcp", "aphrody-infra", "aphrody-kernel"],
+      "platforms": [
+        {
+          "platform": "linux-x86_64",
+          "target": "x86_64-unknown-linux-gnu",
+          "cargo": [
+            "scripts/build/rust/cargo-serial.sh",
+            "build",
+            "--release",
+            "--locked",
+            "-p",
+            "aphrody",
+            "--bin",
+            "aphrody"
+          ],
+          "binary": "release/aphrody",
+          "glibcMax": "2.39",
+          "archive": "tar.gz",
+          "enabled": true
+        },
+        {
+          "platform": "windows-x86_64",
+          "target": "x86_64-pc-windows-msvc",
+          "cargo": [
+            "scripts/build/rust/cargo-serial.sh",
+            "xwin",
+            "build",
+            "--release",
+            "--locked",
+            "--target",
+            "x86_64-pc-windows-msvc",
+            "-p",
+            "aphrody",
+            "--bin",
+            "aphrody"
+          ],
+          "binary": "x86_64-pc-windows-msvc/release/aphrody.exe",
+          "archive": "zip",
+          "enabled": true,
+          "optional": true,
+          "note": "cross-built on the factory with cargo-xwin (Windows SDK/CRT splat in ~/.cache/cargo-xwin on the host); skipped, with a note in latest.json, when the binary is absent"
+        },
+        {
+          "platform": "macos-aarch64",
+          "target": "aarch64-apple-darwin",
+          "enabled": false,
+          "reason": "no macOS target is declared by the factory or the toolchain catalog"
+        }
+      ]
+    },
+    {
+      "id": "yolo",
+      "kind": "bun-compile",
+      "description": "yolo Bun CLI (bun build --compile) with its verified native runtime artifact, runtime SDK and project templates",
+      "versionFrom": { "file": "apps/yolo/VERSION" },
+      "entry": "apps/yolo/cli/src/index.ts",
+      "compileFlags": [
+        "--bytecode",
+        "--no-compile-autoload-dotenv",
+        "--no-compile-autoload-bunfig"
+      ],
+      "sdk": "packages/engine/runtime",
+      "templates": "m3/templates",
+      "provides": ["yolo"],
+      "platforms": [
+        {
+          "platform": "linux-x86_64",
+          "target": "x86_64-unknown-linux-gnu",
+          "bunTarget": "bun-linux-x64",
+          "runtimeArtifact": "~/.yolo/runtime/x86_64-unknown-linux-gnu/current",
+          "archive": "tar.gz",
+          "enabled": true
+        },
+        {
+          "platform": "windows-x86_64",
+          "target": "x86_64-pc-windows-msvc",
+          "bunTarget": "bun-windows-x64",
+          "enabled": false,
+          "reason": "no packaged yolo-runtime artifact for Windows (dist/runtime/x86_64-pc-windows-msvc)"
+        }
+      ]
+    },
+    {
+      "id": "plugin-aphrody",
+      "kind": "plugin",
+      "description": "Aphrody Claude Code plugin (repository aphrody-labs/plugin-aphrody)",
+      "git": { "path": "plugins/aphrody", "ref": "HEAD", "subdir": "" },
+      "manifest": "plugin.json",
+      "repository": "aphrody-labs/plugin-aphrody"
+    },
+    {
+      "id": "plugin-yolo",
+      "kind": "plugin",
+      "description": "yolo Claude Code plugin, generic toolkit (repository aphrody-labs/plugin-yolo)",
+      "git": { "path": "plugins/yolo", "ref": "HEAD", "subdir": "" },
+      "manifest": "plugin.json",
+      "repository": "aphrody-labs/plugin-yolo"
+    },
+    {
+      "id": "plugin-shenron",
+      "kind": "plugin",
+      "description": "Shenron Claude Code plugin (plugin/ of aphrody-labs/shenron)",
+      "git": { "path": "~/shenron", "ref": "HEAD", "subdir": "plugin" },
+      "manifest": ".claude-plugin/plugin.json",
+      "repository": "aphrody-labs/shenron"
+    }
+  ],
+  "github": {
+    "tool": "gh api upload (asset upload is binary; `aphrody git api` carries JSON only), release creation through `aphrody git api`",
+    "tagPrefix": "downloads-",
+    "releases": [
+      {
+        "repository": "aphrody-labs/aphrody",
+        "artifacts": ["aphrody", "yolo"],
+        "extra": ["install.sh", "install.ps1", "install-yolo.sh", "SHA256SUMS", "latest.json"]
+      },
+      { "repository": "aphrody-labs/plugin-aphrody", "artifacts": ["plugin-aphrody"], "extra": [] },
+      { "repository": "aphrody-labs/plugin-yolo", "artifacts": ["plugin-yolo"], "extra": [] },
+      {
+        "repository": "aphrody-labs/plugins",
+        "artifacts": ["plugin-aphrody", "plugin-yolo", "plugin-shenron"],
+        "extra": ["SHA256SUMS"]
+      }
+    ]
+  },
+  "secrets": {
+    "deniedNames": [
+      "(^|/)\\.env($|\\.)",
+      "\\.pem$",
+      "\\.key$",
+      "(^|/)id_(rsa|dsa|ecdsa|ed25519)",
+      "\\.(sqlite3?|db)(-wal|-shm)?$",
+      "\\.(gguf|safetensors|onnx|ckpt)$",
+      "(^|/)\\.netrc$",
+      "(^|/)\\.npmrc$",
+      "cookies?\\.(json|txt|sqlite)$",
+      "(^|/)credentials(\\.json)?$"
+    ],
+    "contentPatterns": [
+      "-----BEGIN [A-Z ]*PRIVATE KEY-----\\r?\\n[A-Za-z0-9+/]{64}",
+      "gh[pousr]_[A-Za-z0-9]{36,}",
+      "github_pat_[A-Za-z0-9_]{50,}",
+      "sk-ant-[A-Za-z0-9_-]{20,}",
+      "sk-[A-Za-z0-9]{40,}",
+      "AIza[0-9A-Za-z_-]{35}",
+      "xox[baprs]-[0-9A-Za-z-]{10,}",
+      "AKIA[0-9A-Z]{16}",
+      "[MNO][A-Za-z0-9]{23,25}\\.[A-Za-z0-9_-]{6}\\.[A-Za-z0-9_-]{27,}"
+    ]
+  }
+}

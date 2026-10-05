@@ -1,7 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # Google Fonts edge proxy behind nginx on cdn.aphrody.com (nginx/aphrody/cdn.aphrody.com.conf).
-# /srv/aphrody-cdn/app is a sparse checkout of the aphrody monorepo pinned to a commit
-# (packages/google/google, packages/engine/core, apps/yolo/cli); the cache lives in /srv/aphrody-cdn/google.
+# /srv/aphrody-cdn/app is the unpacked `yolo` release archive of the download site (bin/yolo is the standalone
+# executable); `yolo google` delegates to the Bun source of @aphrody/google, which /srv/aphrody-cdn/src holds as a
+# pinned `git archive` of the revision in /srv/aphrody-cdn/src/REVISION (packages/google/google/src and
+# packages/engine/core/src/server only, no dependency to install). Upgrade both with:
+#   tar -xzf /srv/aphrody-downloads/current/files/yolo-*-x86_64-unknown-linux-gnu.tar.gz -C /srv/aphrody-cdn/app
+#   git -C /srv/aphrody-build/workspaces/aphrody archive <sha> packages/google/google/src packages/engine/core/src/server | tar -x -C /srv/aphrody-cdn/src
+# The cache lives in /srv/aphrody-cdn/google.
 [Unit]
 Description=Aphrody Google Fonts edge proxy (cdn.aphrody.com)
 After=network-online.target
@@ -9,12 +14,28 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+User=ubuntu
+Group=ubuntu
 WorkingDirectory=/srv/aphrody-cdn/app
-ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-cdn/app/apps/yolo/cli/src/index.ts google fonts serve --port 8796 --cache /srv/aphrody-cdn/google --origin https://cdn.aphrody.com
-Restart=on-failure
+Environment=YOLO_HOME=/srv/aphrody-cdn/app
+Environment=YOLO_APHRODY_ROOT=/srv/aphrody-cdn/src
+ExecStart=/srv/aphrody-cdn/app/bin/yolo google fonts serve --port 8796 --cache /srv/aphrody-cdn/google --origin https://cdn.aphrody.com
+Restart=always
 RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
 ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
 ReadWritePaths=/srv/aphrody-cdn/google
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-fonts-proxy
 
 [Install]
 WantedBy=multi-user.target

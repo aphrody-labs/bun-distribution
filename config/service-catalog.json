@@ -18,6 +18,21 @@
       "public": true
     },
     {
+      "id": "aphrody-downloads",
+      "application": "aphrody",
+      "kind": "bun-download-server",
+      "runtime": "bun",
+      "unit": "aphrody-downloads.service",
+      "health": "http://127.0.0.1:8797/health",
+      "port": 8797,
+      "sourceRepo": "aphrody",
+      "workingDirectory": "/srv/aphrody-downloads/app",
+      "releaseRoot": "/srv/aphrody-downloads/releases",
+      "publicProxy": "nginx",
+      "note": "read-only download site (index, latest.json, SHA256SUMS, install.sh, install.ps1, artifacts): public and unauthenticated by design, it serves published checksummed release files only; published by scripts/release/publish-downloads.ts from config/downloads.json (docs/operations/infra/DOWNLOADS.md)",
+      "public": true
+    },
+    {
       "id": "aphrody-discord-dev",
       "application": "aphrody-discord",
       "kind": "discord-interactions-and-gateway",

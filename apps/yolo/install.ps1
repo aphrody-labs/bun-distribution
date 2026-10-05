@@ -77,7 +77,7 @@ try {
   # Known limitation: `yolo upgrade` runs this script from the very yolo.exe it is about to replace, and Windows
   # locks an executable file while it runs, so `Rename-Item $New $Part` can still fail for "bin" in that path (the
   # plain `irm ... | iex` / manual install.ps1 flow is unaffected, since nothing there is already running).
-  foreach ($Part in "bin", "packages", "templates", "VERSION", "LICENSE") {
+  foreach ($Part in "bin", "packages", "m3", "templates", "VERSION", "LICENSE") {
     $Src = Join-Path $Extract $Part; if (-not (Test-Path $Src)) { continue }
     $New = Join-Path $HomeDir "$Part.new"; if (Test-Path $New) { Remove-Item -Recurse -Force $New }
     Copy-Item -Recurse $Src $New

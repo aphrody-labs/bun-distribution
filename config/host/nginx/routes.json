@@ -5,6 +5,7 @@
   "vhostRoot": "$YOLO_ROOT/config/host",
   "routes": [
     { "host": "bot.aphrody.com", "service": "aphrody-discord-dev", "upstream": "127.0.0.1:4010", "probePath": "/healthz", "vhost": "nginx/aphrody/bot.aphrody.com.conf" },
+    { "host": "downloads.aphrody.com", "service": "aphrody-downloads", "upstream": "127.0.0.1:8797", "probePath": "/health", "vhost": "nginx/aphrody/downloads.aphrody.com.conf" },
     { "host": "aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "status": "retired", "retiredAt": "2026-09-25" },
     { "host": "mcp.aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "paths": ["/mcp"], "vhost": "nginx/aphrody/aphrody-apex.conf", "status": "retired", "retiredAt": "2026-09-25" },
     { "host": "n2b.aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "paths": ["/api/v1/n2b", "/api/v1/n2b/"], "vhost": "nginx/aphrody/aphrody.com.conf", "status": "retired", "retiredAt": "2026-09-25" },

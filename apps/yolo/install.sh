@@ -111,7 +111,7 @@ YOLO_HOME="$TMP/main" YOLO_RUNTIME_HOME="$TMP/runtime-probe" "$TMP/main/bin/yolo
 # --- install -----------------------------------------------------------------------------------
 mkdir -p "$HOME_DIR"
 # code and data are replaced; runtime artifact history (current/previous) is kept by `yolo runtime install`
-for part in bin packages templates crates VERSION LICENSE; do
+for part in bin packages m3 templates crates VERSION LICENSE; do
   [ -e "$TMP/main/$part" ] || continue
   rm -rf "$HOME_DIR/$part.new"
   cp -R "$TMP/main/$part" "$HOME_DIR/$part.new"
