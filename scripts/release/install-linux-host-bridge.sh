@@ -12,24 +12,23 @@ binary_dir=${1:-"$repo_root/target/debug"}
 windows_dir=${2:-$(wslpath -u 'C:\ProgramData\Aphrody\Host')}
 owner_group=$(id -gn)
 case "$owner_group" in *[!a-zA-Z0-9_-]*) exit 1;; esac
-for binary in aphrody-kernel aphrody-host-service; do
-    test -x "$binary_dir/$binary"
-done
+# One multi-call binary: aphrody-kernel and aphrody-host-service dispatch on their invocation name.
+test -x "$binary_dir/aphrody"
 umask 077
 stable_dir="$HOME/.local/lib/aphrody/host-bridge"
 config_dir="$HOME/.config/aphrody/host-bridge"
 mkdir -p "$stable_dir" "$config_dir" "$HOME/.local/bin" "$HOME/.config/systemd/user"
-for binary in aphrody-kernel aphrody-host-service; do
-    install -m 755 "$binary_dir/$binary" "$stable_dir/$binary.new"
-    mv -f "$stable_dir/$binary.new" "$stable_dir/$binary"
-    ln -sfn "$stable_dir/$binary" "$HOME/.local/bin/$binary"
+install -m 755 "$binary_dir/aphrody" "$stable_dir/aphrody.new"
+mv -f "$stable_dir/aphrody.new" "$stable_dir/aphrody"
+for binary in aphrody aphrody-kernel aphrody-host-service; do
+    ln -sfn "$stable_dir/aphrody" "$HOME/.local/bin/$binary"
 done
 for peer in windows desktop; do
     install -m 600 "$windows_dir/linux-$peer.json" "$config_dir/$peer.json"
 done
 bun "${APHRODY_YOLO_ROOT:-$HOME/aphrody}/packages/engine/core/src/units/cli.ts" render --out "$HOME/.config/systemd/user" aphrody-kernel.service 'aphrody-host-bridge@.service'
 sudo install -d -o root -g root -m 755 /usr/local/lib/aphrody/host-bridge
-sudo install -o root -g root -m 755 "$binary_dir/aphrody-kernel" /usr/local/lib/aphrody/host-bridge/aphrody-kernel.new
+sudo install -o root -g root -m 755 "$binary_dir/aphrody" /usr/local/lib/aphrody/host-bridge/aphrody-kernel.new
 sudo mv -f /usr/local/lib/aphrody/host-bridge/aphrody-kernel.new /usr/local/lib/aphrody/host-bridge/aphrody-kernel
 python3 - "$config_dir/privileged.json" <<'PY'
 import json, os, secrets, sys

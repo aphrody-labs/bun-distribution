@@ -24,7 +24,7 @@ add repository constraints, not a separate approval workflow.
 
 ## Validation
 
-`bun run scan` remains a compatible entry point for `aphrody-ops repository-health`.
+`bun run scan` remains a compatible entry point for `yolo ops repository-health`.
 
 Documentation-only changes need links/anchors and `git diff --check`; use the
 repository documentation generator where required. For implementation/release
@@ -36,7 +36,7 @@ cargo check  --workspace --all-targets
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test   --workspace
 cargo deny check
-cargo run -p aphrody-summary -- --check
+aphrody summary -- --check
 bun install --frozen-lockfile && bun run typecheck && bun run test
 git diff --check
 ```
@@ -46,7 +46,7 @@ Layout and entry points: [README](../../products/ai/README.md). Reuse the
 
 ## Automatisation transversale
 
-`bun run ecosystem:check`, `bun run ecosystem:sync` et `bun run runtime:check` délèguent à `aphrody-ops` du paquet `@aphrody/workspace`. Conserver cette entrée locale lors de toute évolution du module central.
+`bun run ecosystem:check`, `bun run ecosystem:sync` et `bun run runtime:check` délèguent à `yolo ops` du paquet `@aphrody/workspace`. Conserver cette entrée locale lors de toute évolution du module central.
 
-`bun run agents:sync` actualise le contexte agent depuis `~/src` avec `aphrody-ops agent-home`.
-`bun run plugins:sync` centralise la synchronisation du plugin Aphrody via `aphrody-ops agent-plugin-sync`.
+`bun run agents:sync` actualise le contexte agent depuis `~/src` avec `yolo ops agent-home`.
+`bun run plugins:sync` centralise la synchronisation du plugin Aphrody via `yolo ops agent-plugin-sync`.

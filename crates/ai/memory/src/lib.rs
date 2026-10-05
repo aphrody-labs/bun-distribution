@@ -24,6 +24,7 @@
 #![forbid(unsafe_code)]
 
 pub mod agent_home;
+mod cli;
 pub mod hnsw;
 pub mod jsonl;
 #[cfg(feature = "lancedb")]
@@ -31,6 +32,8 @@ pub mod lancedb;
 #[cfg(feature = "lancedb")]
 pub mod lancedb_adapter;
 pub mod sqlite;
+
+pub use cli::cli_main;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tier-1 provider surface (Mem0, Honcho, SqliteLocal).

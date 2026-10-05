@@ -7,5 +7,5 @@
 #>
 param([Parameter(Mandatory)][string]$Root)
 
-& aphrody-ops powershell-syntax --root $Root
+& yolo ops powershell-syntax --root $Root
 exit $LASTEXITCODE

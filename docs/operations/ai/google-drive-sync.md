@@ -8,16 +8,16 @@ The canonical `@aphrody/google` package owns Drive/Docs API access and the two-w
 
 The root `.env` contains private-file paths and public IDs, not credential values. Keep the service-account JSON and installed OAuth client JSON under `~/.aphrody/private/google/` with directory mode `0700` and file mode `0600`. Keep the Google cookie file at `~/.aphrody/google-cookies.json` with mode `0600`. `GOOGLE_APPLICATION_CREDENTIALS` points to the service account for Vertex/Gemini.
 
-The Drive folder is in a human user's My Drive. A service account cannot own new files there because it has no Drive storage quota. Drive sync therefore uses `APHRODY_GOOGLE_DRIVE_AUTH=gcloud-user`, which obtains a scoped token from the already authorized Google Cloud CLI account. The official `googleapis` library performs all Drive and Docs requests. The installed OAuth client can be used instead by running `aphrody-google drive auth-login`, then setting `APHRODY_GOOGLE_DRIVE_AUTH=oauth-user`; its refresh token stays in the private directory.
+The Drive folder is in a human user's My Drive. A service account cannot own new files there because it has no Drive storage quota. Drive sync therefore uses `APHRODY_GOOGLE_DRIVE_AUTH=gcloud-user`, which obtains a scoped token from the already authorized Google Cloud CLI account. The official `googleapis` library performs all Drive and Docs requests. The installed OAuth client can be used instead by running `yolo google drive auth-login`, then setting `APHRODY_GOOGLE_DRIVE_AUTH=oauth-user`; its refresh token stays in the private directory.
 
 ## Commands
 
 From the Aphrody root:
 
 ```sh
-bun packages/google/google/bin/aphrody-google.ts drive status
-bun packages/google/google/bin/aphrody-google.ts drive sync --dry-run
-bun packages/google/google/bin/aphrody-google.ts drive sync
+yolo google drive status
+yolo google drive sync --dry-run
+yolo google drive sync
 ```
 
 The Infra daemon is `packages/infra/workspace/src/agent-home-drive-sync.ts` in the Aphrody monorepo. It watches the local tree and also polls Drive every five minutes with Bun cron. Its systemd unit is `yolo/config/host/systemd/shenron/shenron-agent-home-drive-sync.service`. The service uses `--env-file=.env` for the child sync process.

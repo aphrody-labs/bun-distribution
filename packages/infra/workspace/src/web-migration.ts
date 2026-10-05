@@ -245,7 +245,7 @@ export async function runWebMigration(args: string[]): Promise<number> {
     else if (arg === "--strict") strict = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops web-migration [--source PATH] [--target PATH] [--json] [--strict]",
+        "Usage: yolo ops web-migration [--source PATH] [--target PATH] [--json] [--strict]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

@@ -566,8 +566,8 @@ export async function publishAphrodyPackages(options: {
 }
 
 const usage =
-  "Usage: aphrody-ops aphrody-packages publish [--package <@aphrody/name>...] [--apply]\n" +
-  "       aphrody-ops aphrody-packages prepare (--package <@aphrody/name>... | --pin <file> [--write-pin]) --destination <dir> [--apply] [--allow-dirty]";
+  "Usage: yolo ops aphrody-packages publish [--package <@aphrody/name>...] [--apply]\n" +
+  "       yolo ops aphrody-packages prepare (--package <@aphrody/name>... | --pin <file> [--write-pin]) --destination <dir> [--apply] [--allow-dirty]";
 
 export async function runAphrodyPackages(args: string[]): Promise<number> {
   const [action, ...rest] = args;

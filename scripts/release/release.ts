@@ -3,7 +3,7 @@
  * Builds the release assets of one target into `dist/release/<version>/`:
  *
  *   yolo-<version>-<target>.tar.gz   standalone `yolo` executable (bun build --compile), verified runtime
- *                                    artifact, SDK, templates, desktop icons
+ *                                    artifact, SDK, templates
  *   yolo-<version>-crates.tar.gz     Rust sources of the aphrody-* crates for the desktop scaffold
  *   install.sh, install.ps1          the one-command installers
  *   SHA256SUMS, release.json         integrity and provenance
@@ -77,7 +77,7 @@ await run([
   exe,
 ]);
 
-// 2. data next to it: runtime artifact, SDK, templates, desktop icons
+// 2. data next to it: runtime artifact, SDK, templates
 cpSync(artifactDir, join(stage, "artifact"), { recursive: true });
 cpSync(join(root, "packages/runtime"), join(stage, "packages/runtime"), {
   recursive: true,
@@ -87,13 +87,6 @@ cpSync(join(root, "templates"), join(stage, "templates"), {
   recursive: true,
   filter: (src) => !src.endsWith("awesome-audit.json"),
 });
-cpSync(
-  join(root, "crates/engine/yolo-desktop/icons"),
-  join(stage, "crates/engine/yolo-desktop/icons"),
-  {
-    recursive: true,
-  },
-);
 writeFileSync(join(stage, "VERSION"), `${version}\n`);
 cpSync(join(root, "LICENSE"), join(stage, "LICENSE"));
 cpSync(join(root, "NOTICE"), join(stage, "NOTICE"));
@@ -125,7 +118,8 @@ for (const imported of imports.crates) {
 await run(["tar", "-czf", join(dir, crates), "-C", crateStage, "."]);
 
 // 4. installers, checksums, provenance
-for (const script of ["install.sh", "install.ps1"]) cpSync(join(root, "apps/yolo", script), join(dir, script));
+for (const script of ["install.sh", "install.ps1"])
+  cpSync(join(root, "apps/yolo", script), join(dir, script));
 const files = readdirSync(dir)
   .filter((f) => f !== "SHA256SUMS" && f !== "release.json")
   .toSorted();

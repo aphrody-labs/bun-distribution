@@ -1,21 +1,10 @@
 [package]
 name = "aphrody-web-engine"
 repository.workspace = true
-description = "Aphrody Web browser engine binary: CDP server, fetch and scrape on Obscura."
+description = "Aphrody Web browser engine: CDP server, fetch and scrape on Obscura (entry points of the `aphrody-web` and `aphrody-web-worker` multi-call names)."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-# La CLI publique est `aphrody-web`; aucune surface produit ne garde le nom
-# historique du moteur. Les capacités Chrome/V8 restent identiques.
-default-run = "aphrody-web"
-
-[[bin]]
-name = "aphrody-web"
-path = "src/main.rs"
-
-[[bin]]
-name = "aphrody-web-worker"
-path = "src/worker.rs"
 
 [features]
 default = ["render"]

@@ -10,7 +10,7 @@ def main [
 ] {
   if $nu.os-info.name != "linux" { error make {msg: "setup.nu exige un hôte Linux/WSL; depuis Windows: aphrody-infra dev-env --target <id>"} }
   let root = ($env.FILE_PWD | path dirname)
-  let args = ["run" "-q" "-p" "aphrody-infra" "--manifest-path" ($root | path join "Cargo.toml") "--bin" "aphrody-infra" "--" "--root" $root "dev-env" "--local" $target]
+  let args = ["run" "-q" "-p" "aphrody" "--manifest-path" ($root | path join "Cargo.toml") "--bin" "aphrody" "--" "infra" "--root" $root "dev-env" "--local" $target]
   if (which cargo | is-empty) {
     # First boot: no Rust yet. Install rustup only; dev-env then pins the channel.
     if not $apply { print "cargo absent: relancer avec --apply pour installer rustup"; return }

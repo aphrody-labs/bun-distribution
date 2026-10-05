@@ -9,7 +9,7 @@
  * packages from the `workspaces.catalog`, every first-party `tauri*.conf.json` `$schema` carries the
  * pinned Tauri tag and nothing points at the legacy sibling checkouts.
  *
- * Usage: aphrody-ops tauri-apps [--root <repo>] [--check] [--fix] [--json]
+ * Usage: yolo ops tauri-apps [--root <repo>] [--check] [--fix] [--json]
  */
 import { existsSync } from "node:fs";
 import { readdir, readFile, writeFile } from "node:fs/promises";
@@ -524,7 +524,7 @@ export async function runTauriApps(argv: string[]): Promise<number> {
     args = parseArgs(argv);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.log("Usage: aphrody-ops tauri-apps [--root <repo>] [--check] [--fix] [--json]");
+    console.log("Usage: yolo ops tauri-apps [--root <repo>] [--check] [--fix] [--json]");
     return message === "help" ? 0 : (console.error(message), 2);
   }
   const registry = parseRegistry(await readFile(join(args.root, "config/tauri-apps.json"), "utf8"));

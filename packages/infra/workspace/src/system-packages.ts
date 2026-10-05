@@ -219,7 +219,7 @@ export async function runSystemPackages(args: string[]): Promise<number> {
   }
   if (action === "--help" || action === "-h" || !["plan", "apply"].includes(action)) {
     console.log(
-      "Usage: aphrody-ops system-packages <plan|apply> [--host linux|windows] [--profile <name>] [--root <repo>]",
+      "Usage: yolo ops system-packages <plan|apply> [--host linux|windows] [--profile <name>] [--root <repo>]",
     );
     return action === "--help" || action === "-h" ? 0 : 64;
   }

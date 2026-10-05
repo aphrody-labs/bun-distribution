@@ -22,7 +22,7 @@ WASM release build, six Bun tests, TypeScript typecheck and real Tauri LOCAL/REM
 | Sandbox host | `aphrody-shell-sandbox-host` (`MockHost`, `LocalPtyHost`) | T11 contract and shared conformance pass; native PTY and live WebSocket round trips pass | Linux tested, wasm32 and Windows GNU checked |
 | Cloud sandbox | `aphrody-shell-sandbox-host-e2b` | T12 adapter compiles and protocol framing tests pass; live E2B conformance is gated and has not run because credentials are unavailable | native |
 | Tauri plugin | `aphrody-shell-tauri` (`open`, `open_channel`, `write`, `resize`, `close`) | real, tested, wired in `crates/ui/app` | native (Tauri 3 alpha.3) |
-| Webview e2e | `aphrody-shell-tauri-e2e` + `scripts/build/shell/tauri-e2e.sh` | passes on WebKitGTK/Broadway | Linux |
+| Webview e2e | `aphrody-app` example `shell_e2e` + `scripts/build/shell/tauri-e2e.sh` | passes on WebKitGTK/Broadway | Linux |
 | Nushell | `aphrody-nu` (nu 0.115.1) | real | native only; no upstream wasm32 target |
 | TUI | `aphrody-tui` | real | native only |
 | Systemd | `aphrody-systemd` | virtual DAG, journal, `sd_notify`; `start_unit`/`stop_unit` only flip state. Restart policy is parsed, not enforced. Real control only via `HostSystemdBackend` | native |

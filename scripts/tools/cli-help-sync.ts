@@ -72,7 +72,7 @@ const infra = Bun.spawnSync(["aphrody-infra", "--help"], { cwd: root }).stdout.t
 if (infra)
   out.push(
     "",
-    "## Delegated control plane: infra | ops | workspace | workflow | git | ssh | ship | hooks (aphrody-infra --help)",
+    "## Delegated control plane: infra | workflow | git | ssh | ship | hooks (aphrody-infra --help)",
     "",
     "```",
     infra,

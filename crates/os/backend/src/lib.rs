@@ -67,3 +67,30 @@ impl Md3Mirror {
         Ok(())
     }
 }
+
+/// Entry point of the former `aphrody-backend` binary, now reached through the `aphrody` multi-call binary.
+/// `args[0]` is the program name (argv convention). Returns the process exit code.
+pub fn cli_main(_args: Vec<std::ffi::OsString>) -> i32 {
+    let _ = tracing_subscriber::fmt().try_init();
+    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+        Ok(runtime) => runtime,
+        Err(error) => {
+            eprintln!("Error: {error}");
+            return 1;
+        },
+    };
+    let outcome: Result<()> = runtime.block_on(async {
+        let mirror = Md3Mirror::new()?;
+        mirror.start_mirroring().await
+    });
+    match outcome {
+        Ok(()) => {
+            println!("MD3 mirror completed successfully.");
+            0
+        },
+        Err(error) => {
+            eprintln!("Error: {error:?}");
+            1
+        },
+    }
+}

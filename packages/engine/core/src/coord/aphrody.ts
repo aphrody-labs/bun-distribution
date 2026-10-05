@@ -1,13 +1,13 @@
 /**
  * Native bridge to the Aphrody control plane, so that yolo is one workflow with it:
  *
- *   yolo infra|ops|workspace|workflow|git|ssh ...   pass-through to the installed owner CLIs
+ *   yolo infra|workflow|git|ssh ...                  pass-through to the installed aphrody-infra
  *   yolo ship [--apply] [--sha X] [--detach]         build all of yolo on the build factory host
  *   yolo ship status|log [--sha X]                   follow a build
  *   yolo hooks install|uninstall                     run `ship` automatically on `git push` to main/dev
  *
- * Owners stay owners: `aphrody-infra` (host matrix, SSH, workflow stages, git audit), `aphrody-ops` /
- * `aphrody-workspace` (workspace gates). Heavy builds run on the host declared in the Aphrody
+ * Owners stay owners: `aphrody-infra` (host matrix, SSH, workflow stages, git audit); the workspace gates
+ * (`yolo ops|workspace`) run in-process from the CLI. Heavy builds run on the host declared in the Aphrody
  * `config/build-factory.json`, behind its heavy lock; secrets stay on that host.
  */
 import { diskDecision, diskProbeCommand, resolveMinFree } from "../fleet/space";
@@ -19,8 +19,6 @@ import { dirname, join, resolve } from "node:path";
 
 const PASSTHROUGH: Readonly<Record<string, readonly string[]>> = {
   infra: ["aphrody-infra"],
-  ops: ["aphrody-ops"],
-  workspace: ["aphrody-workspace"],
   workflow: ["aphrody-infra", "workflow"],
   git: ["aphrody-infra", "git"],
   ssh: ["aphrody-infra", "ssh"],
@@ -487,7 +485,7 @@ export async function runAphrodyCommand(
 
 /** For `yolo doctor`: which Aphrody owners are reachable. */
 export function aphrodyTools(): { name: string; found: boolean }[] {
-  return ["aphrody-infra", "aphrody-ops", "aphrody-workspace"].map((name) => ({
+  return ["aphrody-infra"].map((name) => ({
     name,
     found: onPath(name),
   }));

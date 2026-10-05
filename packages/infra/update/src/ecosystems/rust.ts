@@ -459,7 +459,7 @@ export function classify(i: ClassifyInput): OutdatedRow[] {
       .at(-1);
     const vers = (i.versions.get(d.crate) ?? [])
       .filter((v) => !v.yanked)
-      .map((v) => (Object.assign(v, { vers: noBuild(v.vers) })));
+      .map((v) => Object.assign(v, { vers: noBuild(v.vers) }));
     const allowPre = !!locked && locked.includes("-");
     const stable = vers
       .filter((v) => allowPre || !v.vers.includes("-"))
@@ -604,7 +604,7 @@ function owners(c: Ctx): Map<string, string> {
   const m = new Map<string, string>();
   for (const n of c.jsonFile<{ rust?: { crates?: string[] } }>("config/tauri-upstream.json", {})
     .rust?.crates ?? [])
-    m.set(n, "tauri-sync (aphrody-ops tauri-sync)");
+    m.set(n, "tauri-sync (yolo ops tauri-sync)");
   return m;
 }
 
@@ -706,7 +706,7 @@ const fmtRow = (r: OutdatedRow) =>
 function printStatus(r: RustReport) {
   const t = r.toolchain;
   console.log(
-    `toolchain  pinned ${t.pinned ?? "?"}, installed ${t.installed ?? "?"}, latest stable ${t.stable ?? "?"}, nightly ${t.nightly ?? "?"} (${t.nightlyDate ?? "?"})${t.behind ? "  <- pin behind stable: aphrody-update tools rust --apply" : ""}`,
+    `toolchain  pinned ${t.pinned ?? "?"}, installed ${t.installed ?? "?"}, latest stable ${t.stable ?? "?"}, nightly ${t.nightly ?? "?"} (${t.nightlyDate ?? "?"})${t.behind ? "  <- pin behind stable: yolo update tools rust --apply" : ""}`,
   );
   const inRange = r.outdated.filter((x) => x.inRange);
   const beyond = r.outdated.filter((x) => x.beyond);
@@ -1031,7 +1031,7 @@ async function verify(c: Ctx, args: string[]): Promise<number> {
 
 // ---------------------------------------------------------------- entry
 
-/** Entry point for `aphrody-update rust <status|plan|apply|verify>`. Arguments: the subcommand, its flags, --root, --json. */
+/** Entry point for `yolo update rust <status|plan|apply|verify>`. Arguments: the subcommand, its flags, --root, --json. */
 export async function runRust(args: string[]): Promise<number> {
   const ri = args.indexOf("--root");
   const root = resolve(ri >= 0 ? args[ri + 1]! : process.cwd());

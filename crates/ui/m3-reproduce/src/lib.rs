@@ -14,7 +14,7 @@
 //! | `image`   | (default) [`theme::theme_from_image_bytes`] — PNG/JPEG capture bytes to a seed color, via `aphrody-m3-tokens`'s `sourceColorFromImage` port. |
 //! | `crawl`   | [`crawl`] — regex-based color/font/landmark extraction from an already-fetched HTML string. No network, no DOM/CSS engine: light by design. |
 //! | `network` | [`fetch`] — fetches a URL's HTML before crawling it (`reqwest` blocking). |
-//! | `cli`     | The `aphrody-m3-reproduce` binary (`--url`, `--image`, `--out`, `--json`). |
+//! | `cli`     | [`cli::cli_main`] — the `aphrody m3-reproduce` entry point (`--url`, `--image`, `--out`, `--json`). |
 //!
 //! Only [`theme`] and [`plan`] are unconditionally compiled; every network-adjacent
 //! piece is feature-gated so the core stays a light, deterministic library.
@@ -23,6 +23,8 @@ pub mod plan;
 pub mod scaffold;
 pub mod theme;
 
+#[cfg(feature = "cli")]
+pub mod cli;
 #[cfg(feature = "crawl")]
 pub mod crawl;
 // `reqwest` has no blocking client on wasm32, so the fetcher exists on native targets only.
@@ -31,6 +33,9 @@ pub mod fetch;
 
 pub use plan::{AssetRef, ComponentNode, ReproductionPlan, ReproductionSource};
 pub use theme::ThemePlan;
+
+#[cfg(feature = "cli")]
+pub use cli::cli_main;
 
 /// Errors this crate's public functions return.
 #[derive(Debug, thiserror::Error)]

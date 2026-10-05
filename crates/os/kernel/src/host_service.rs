@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Boot service and persistent bidirectional WSL/Windows kernel bridge.
-#![cfg_attr(windows, windows_subsystem = "windows")]
 
 #[cfg(windows)]
-use aphrody_kernel::Kernel;
+use crate::Kernel;
 #[cfg(target_os = "linux")]
-use aphrody_kernel::client::Client;
-use aphrody_kernel::transport;
+use crate::client::Client;
+use crate::transport;
 use serde::Deserialize;
 #[cfg(target_os = "linux")]
 use serde_json::{Value, json};
@@ -53,10 +52,12 @@ fn log(config: &Config, message: &str) {
     }
 }
 
-fn read_config() -> Result<(Config, bool), Box<dyn std::error::Error>> {
-    let mut args = std::env::args().skip(1);
+fn read_config(
+    args: Vec<std::ffi::OsString>,
+) -> Result<(Config, bool), Box<dyn std::error::Error>> {
+    let mut args = args.into_iter().skip(1).map(|arg| arg.to_string_lossy().into_owned());
     if args.next().as_deref() != Some("--config") {
-        return Err("usage: aphrody-host-service --config <absolute-json-path> [--console]".into());
+        return Err("usage: aphrody host-service --config <absolute-json-path> [--console]".into());
     }
     let path = PathBuf::from(args.next().ok_or("missing config path")?);
     if !path.is_absolute() {
@@ -77,8 +78,20 @@ fn read_config() -> Result<(Config, bool), Box<dyn std::error::Error>> {
     Ok((config, console))
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (config, console) = read_config()?;
+/// Entry point of the former `aphrody-host-service` binary, now reached through the `aphrody`
+/// multi-call binary. `args[0]` is the program name (argv convention). Returns the process exit code.
+pub fn host_service_main(args: Vec<std::ffi::OsString>) -> i32 {
+    match host_service(args) {
+        Ok(()) => 0,
+        Err(error) => {
+            eprintln!("Error: {error}");
+            1
+        },
+    }
+}
+
+fn host_service(args: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::error::Error>> {
+    let (config, console) = read_config(args)?;
     #[cfg(windows)]
     if !console {
         return windows::dispatch(config).map_err(Into::into);
@@ -92,7 +105,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let auth = config.auth_file.as_ref().ok_or("Windows host requires authFile")?;
     let kernel = Kernel::with_authentication_file(auth)?;
-    kernel.register(Arc::new(aphrody_kernel::AdminSubsystem)).await?;
+    kernel.register(Arc::new(crate::AdminSubsystem)).await?;
     if let Some(endpoint) = config.local_endpoint.clone() {
         let local_kernel = kernel.clone();
         tokio::spawn(async move {
@@ -104,13 +117,13 @@ async fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     windows::ready();
     let limit = Arc::new(tokio::sync::Semaphore::new(16));
     let mut connections = tokio::task::JoinSet::new();
-    let mut listener: Option<(String, aphrody_kernel::hvsock::HostListener)> = None;
+    let mut listener: Option<(String, crate::hvsock::HostListener)> = None;
     loop {
-        let discovered = tokio::task::spawn_blocking(aphrody_kernel::hvsock::wsl_vm_id).await??;
+        let discovered = tokio::task::spawn_blocking(crate::hvsock::wsl_vm_id).await??;
         if let Some((id, vm)) = discovered {
             if listener.as_ref().is_none_or(|(current, _)| current != &id) {
                 drop(listener.take());
-                let bound = aphrody_kernel::hvsock::HostListener::bind(config.port, vm)?;
+                let bound = crate::hvsock::HostListener::bind(config.port, vm)?;
                 log(&config, &format!("Hyper-V listener ready: VM {id}, port {}", config.port));
                 listener = Some((id, bound));
             }

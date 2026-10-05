@@ -102,7 +102,7 @@ export async function runPipelineCatalog(args: string[]): Promise<number> {
     if (args[i] === "--root") root = args[++i] ?? "";
     else if (args[i] === "--apply") apply = true;
     else if (args[i] === "--help") {
-      console.log("Usage: aphrody-ops pipeline-catalog [--root path] [--apply]");
+      console.log("Usage: yolo ops pipeline-catalog [--root path] [--apply]");
       return 0;
     } else throw new Error(`Unknown argument: ${args[i]}`);
   }

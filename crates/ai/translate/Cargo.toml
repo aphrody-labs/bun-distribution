@@ -12,10 +12,6 @@ categories.workspace    = true
 readme                  = "README.md"
 description = "aphrody — translate code comments to French, scrub AI-isms and emoji, apply Aphrody prose style"
 
-[[bin]]
-name = "aphrody-translate"
-path = "src/main.rs"
-
 [lib]
 path = "src/lib.rs"
 

@@ -19,7 +19,7 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
     else if (arg === "--ref") ref = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops bun-upstream-docs [--root <repository>] [--ref <branch-or-tag>]",
+        "Usage: yolo ops bun-upstream-docs [--root <repository>] [--ref <branch-or-tag>]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

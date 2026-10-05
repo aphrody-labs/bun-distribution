@@ -330,7 +330,7 @@ export async function runInlineInventory(args: string[]): Promise<number> {
     else if (arg === "--write-baseline") write = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops automation-inventory --inline [--root <repository>] [--baseline <file> | --no-baseline] [--json | --markdown] [--check] [--write-baseline]",
+        "Usage: yolo ops automation-inventory --inline [--root <repository>] [--baseline <file> | --no-baseline] [--json | --markdown] [--check] [--write-baseline]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

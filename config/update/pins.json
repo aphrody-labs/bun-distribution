@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Every hardcoded tool version, grouped by tool. Each target is a file (or glob) and a regex with exactly one capture group holding the version. `aphrody-update pins check` fails when targets disagree; `pins apply` rewrites them all. The first target is the source of truth.",
+  "note": "Every hardcoded tool version, grouped by tool. Each target is a file (or glob) and a regex with exactly one capture group holding the version. `yolo update pins check` fails when targets disagree; `pins apply` rewrites them all. The first target is the source of truth.",
   "tools": {
     "bun": {
       "latest": { "github": "oven-sh/bun", "stripTag": "^bun-v" },

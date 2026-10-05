@@ -46,7 +46,7 @@ Le script installe Git, Rustup, Bun, uv, CMake, Ninja, LLVM et les outils C++
 MSVC avec le Windows SDK. Redémarrer le terminal après l’installation des
 Build Tools pour charger l’environnement MSVC. Les dépôts frères (IECODE, FUT) ne
 sont pas des checkouts requis : ils consomment les paquets `@aphrody/*` par le canal
-d'archives `aphrody-ops aphrody-packages prepare`. Un ancien dossier `source` n’est pas
+d'archives `yolo ops aphrody-packages prepare`. Un ancien dossier `source` n’est pas
 un prérequis universel : consulter les dépendances de la capacité sélectionnée.
 
 ## Ubuntu ou WSL
@@ -71,11 +71,11 @@ les scripts installent aussi des outils via le wrapper Cargo. Le script peut
 paquets évitent les installations redondantes.
 
 Sous Linux avec systemd utilisateur, `bun run update:systemd` vérifie les unités et
-`aphrody-update systemd install --apply` les génère depuis le catalogue d’unités yolo (`packages/core/src/units/catalog.json`)
+`yolo update systemd install --apply` les génère depuis le catalogue d’unités yolo (`packages/core/src/units/catalog.json`)
 (dont `aphrody-update.timer`, rapport hebdomadaire sans écriture, et
 `aphrody-rust-update.timer`, rafraîchissement des toolchains `stable`/`nightly` et des
 sous-commandes Cargo). Le bootstrap installe les versions épinglées; les montées de
-version passent par `aphrody-update` (voir [Mise à jour](../../operations/infra/UPDATE.md)).
+version passent par `yolo update` (voir [Mise à jour](../../operations/infra/UPDATE.md)).
 Voir aussi le [guide toolchains et compilation
 croisée](../../operations/workspace/rust-toolchains-and-cross-builds.md).
 

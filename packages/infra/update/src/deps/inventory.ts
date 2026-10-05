@@ -388,11 +388,11 @@ export async function inventory(
   const bun: Row[] = bunDeps.map((d) => {
     const i = npm.get(d.name) ?? {};
     return Object.assign(d, {
-	latest: i.latest,
-	behind: !!i.latest && cmpVersion(d.version, i.latest) < 0,
-	deprecated: i.deprecated,
-	direct: declared.has(d.name)
-});
+      latest: i.latest,
+      behind: !!i.latest && cmpVersion(d.version, i.latest) < 0,
+      deprecated: i.deprecated,
+      direct: declared.has(d.name),
+    });
   });
 
   // ---- Python
@@ -501,7 +501,7 @@ export function summarise(inv: Inventory, root: string): string {
     "<!-- SPDX-License-Identifier: Apache-2.0 -->",
     "# Dependency inventory",
     "",
-    `Generated ${inv.generated} by \`aphrody-update deps inventory\` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: \`${relative(root, join(root, "target/deps-inventory/inventory.json"))}\` (not committed).`,
+    `Generated ${inv.generated} by \`yolo update deps inventory\` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: \`${relative(root, join(root, "target/deps-inventory/inventory.json"))}\` (not committed).`,
     "",
     ...sect("Rust (Cargo.lock)", inv.rust),
     ...sect("Bun (bun.lock)", inv.bun),

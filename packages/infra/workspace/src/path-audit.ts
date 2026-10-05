@@ -13,7 +13,7 @@ export async function runPathAudit(args: string[]): Promise<number> {
     );
   if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops path-audit [--root path] [--apply]\n       aphrody-ops path-audit --repository --help",
+      "Usage: yolo ops path-audit [--root path] [--apply]\n       yolo ops path-audit --repository --help",
     );
     return 0;
   }

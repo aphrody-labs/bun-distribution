@@ -26,8 +26,9 @@ test("Infra runtime never compiles implicitly or ignores an invalid explicit bin
       "--quiet",
       "--locked",
       "--bin",
-      "aphrody-infra",
+      "aphrody",
       "--",
+      "infra",
     ]);
     await expect(
       infraExecutable(root, {

@@ -8,7 +8,7 @@ import { buildDependencies } from "../../../packages/infra/workspace/src/bun-dep
 
 const root = resolve(import.meta.dir, "../../..");
 if (Bun.env.APHRODY_BUILD_HOST !== "vps") {
-  throw new Error("Use aphrody-ops build-factory run for this build.");
+  throw new Error("Use yolo ops build-factory run for this build.");
 }
 async function run(args: string[], cwd: string, env: Record<string, string> = {}) {
   const child = Bun.spawn(args, {
@@ -67,7 +67,8 @@ if ((await bindgen.exited) || installedBindgen !== `wasm-bindgen ${bindgenVersio
 await run(
   [
     "bun",
-    "packages/infra/workspace/src/ops.ts",
+    "apps/yolo/cli/src/index.ts",
+    "ops",
     "bun-native",
     `--root=${root}`,
     `--package-root=${join(source, "packages/interop/native")}`,
@@ -101,28 +102,16 @@ for (const line of (await readFile(join(source, "crates/ui/app/ui-dist.manifest"
   await copyFile(join(source, canonical), join(ui, destination));
 }
 await run(
-  [
-    ...cargo,
-    "build",
-    "--locked",
-    "--release",
-    "-p",
-    "aphrody",
-    "-p",
-    "aphrody-kernel",
-    "-p",
-    "aphrody-mcp",
-    "-p",
-    "aphrody-embed",
-    "--features",
-    "aphrody-embed/server",
-    "--bins",
-  ],
+  [...cargo, "build", "--locked", "--release", "-p", "aphrody", "-p", "aphrody-kernel", "--bins"],
   source,
 );
 await cp(ui, join(release, "ui"), { recursive: true });
-for (const name of ["aphrody", "aphrody-kernel", "aphrody-mcp", "aphrody-embed"])
+for (const name of ["aphrody", "aphrody-kernel"])
   await copyFile(join(target, "release", name), join(release, "bin", name));
+// `aphrody-mcp` is the `aphrody` multi-call binary under its former name (dispatch on argv[0]).
+await copyFile(join(target, "release", "aphrody"), join(release, "bin", "aphrody-mcp"));
+// Same for `aphrody-embed` (worker, serve, install).
+await copyFile(join(target, "release", "aphrody"), join(release, "bin", "aphrody-embed"));
 await copyFile(library, join(release, "bin/libaphrody_ffi.so"));
 await copyFile(join(dirname(library), "manifest.json"), join(release, "bin/native-manifest.json"));
 const files: Record<string, { bytes: number; sha256: string }> = {};

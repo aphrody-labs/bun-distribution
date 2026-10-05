@@ -86,17 +86,9 @@ async function calls(log: string): Promise<string[][]> {
 }
 
 async function bunFixture(setup: Awaited<ReturnType<typeof fixture>>) {
-  await Bun.write(join(setup.dir, "apps/yolo/yolo.just"), Bun.file(join(root, "apps/yolo/yolo.just")));
-  const source = join(setup.dir, "vendor/bun");
-  await mkdir(join(source, "scripts"), { recursive: true });
-  const pinFile = Bun.file(join(root, "vendor/bun/rust-toolchain.toml"));
-  const toolchain = (await pinFile.exists())
-    ? (Bun.TOML.parse(await pinFile.text()) as { toolchain: { channel: string } }).toolchain.channel
-    : "nightly-2026-09-15";
-  await Bun.write(join(source, "rust-toolchain.toml"), `[toolchain]\nchannel = "${toolchain}"\n`);
   await Bun.write(
-    join(source, "scripts/build.ts"),
-    'throw new Error("Engine fixture must not execute");\n',
+    join(setup.dir, "apps/yolo/yolo.just"),
+    Bun.file(join(root, "apps/yolo/yolo.just")),
   );
   const log = join(setup.dir, "bun.jsonl");
   const bun = join(setup.bin, "bun");
@@ -104,106 +96,33 @@ async function bunFixture(setup: Awaited<ReturnType<typeof fixture>>) {
     bun,
     `#!${process.execPath}
 import { appendFileSync } from "node:fs";
-const args = process.argv.slice(2);
-appendFileSync(${JSON.stringify(log)}, JSON.stringify({args, cwd: process.cwd(), toolchain: process.env.RUSTUP_TOOLCHAIN, wrapper: process.env.RUSTC_WRAPPER}) + "\\n");
-// Only the source-pin parser executes. The engine command is recorded without running the driver.
-if (args[0] === "-e") {
-  const result = Bun.spawnSync([process.execPath, ...args], {stdout: "inherit", stderr: "inherit"});
-  process.exit(result.exitCode);
-}
+appendFileSync(${JSON.stringify(log)}, JSON.stringify({args: process.argv.slice(2), cwd: process.cwd()}) + "\\n");
 `,
   );
   await chmod(bun, 0o700);
-  return { source, toolchain, log };
+  return { log };
 }
 
 function packages(args: string[]): string[] {
   return args.flatMap((value, index) => (value === "-p" ? [args[index + 1]!] : []));
 }
 
-profileTest(
-  "Bun engine recipes refuse a local contract before any source probe or build",
-  async () => {
-    const setup = await fixture();
-    const bun = await bunFixture(setup);
-    const result = await runRecipes(setup, ["qualify-bun"], setup.dir, {
-      APHRODY_BUILD_HOST: "",
-      APHRODY_LOCAL_CARGO: "1",
-    });
-    expect(result.exitCode, result.stderr).not.toBe(0);
-    expect(result.stderr).toContain("Bun engine builds require the declared factory");
-    expect(await Bun.file(bun.log).exists()).toBe(false);
-    expect(await Bun.file(setup.preflightLog).exists()).toBe(false);
-  },
-);
-
-profileTest(
-  "Bun engine recipes reject source pin drift before probing or acquiring a toolchain",
-  async () => {
-    const setup = await fixture();
-    const bun = await bunFixture(setup);
-    await Bun.write(join(bun.source, "rust-toolchain.toml"), '[toolchain]\nchannel = "stable"\n');
-    const result = await runRecipes(setup, ["qualify-bun"], setup.dir, {
-      APHRODY_BUILD_HOST: "vps",
-    });
-    expect(result.exitCode, result.stderr).not.toBe(0);
-    expect(result.stderr).toContain("Bun source toolchain differs from the qualified recipe pin");
-    expect(await Bun.file(setup.preflightLog).exists()).toBe(false);
-    const probes = (await Bun.file(bun.log).text()).trim().split("\n");
-    expect(probes).toHaveLength(1);
-    expect(JSON.parse(probes[0]!).args[0]).toBe("-e");
-  },
-);
-
-profileTest("an absent Bun nightly stops before the engine driver", async () => {
+profileTest("the Bun recipe dispatches to bun-forge, which owns toolchain and pins", async () => {
   const setup = await fixture();
   const bun = await bunFixture(setup);
-  const result = await runRecipes(setup, ["qualify-bun"], setup.dir, {
-    APHRODY_BUILD_HOST: "vps",
-    YOLO_PROFILE_MISSING_NIGHTLY: "1",
-  });
-  expect(result.exitCode, result.stderr).not.toBe(0);
-  expect(await calls(setup.preflightLog)).toEqual([["run", bun.toolchain, "rustc", "--version"]]);
-  const probes = (await Bun.file(bun.log).text()).trim().split("\n");
-  expect(probes).toHaveLength(1);
-  expect(JSON.parse(probes[0]!).args[0]).toBe("-e");
-});
-
-profileTest(
-  "the Bun recipe uses its native owner, source toolchain and bounded Ninja jobs",
-  async () => {
-    const setup = await fixture();
-    const bun = await bunFixture(setup);
-    const result = await runRecipes(setup, ["qualify-bun"], setup.dir, {
-      APHRODY_BUILD_HOST: "vps",
-      RUSTUP_TOOLCHAIN: "inherited-override",
-      RUSTC_WRAPPER: "preserved-cache-wrapper",
-    });
-    expect(result.exitCode, result.stderr).toBe(0);
-    expect(await calls(setup.preflightLog)).toEqual([["run", bun.toolchain, "rustc", "--version"]]);
-    const probes = (await Bun.file(bun.log).text())
-      .trim()
-      .split("\n")
-      .map((line) => JSON.parse(line));
-    expect(probes).toHaveLength(2);
-    expect(probes[1]).toEqual({
-      args: ["scripts/build.ts", "--profile=release", "-j2"],
-      cwd: bun.source,
-      toolchain: bun.toolchain,
-      wrapper: "preserved-cache-wrapper",
-    });
-    expect(await Bun.file(setup.log).exists()).toBe(false);
-  },
-);
-
-profileTest("an absent pinned compiler toolchain stops before any Cargo command", async () => {
-  const setup = await fixture();
-  const result = await runRecipes(setup, ["qualify-compiler"], root, {
-    YOLO_PROFILE_MISSING_NIGHTLY: "1",
-  });
-  expect(result.exitCode).not.toBe(0);
+  const result = await runRecipes(setup, ["qualify-bun", "--dry-run"], setup.dir);
+  expect(result.exitCode, result.stderr).toBe(0);
+  const probes = (await Bun.file(bun.log).text())
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  expect(probes).toEqual([
+    {
+      args: ["apps/yolo/forge/src/main.ts", "build", "--branch", "yolo", "--dry-run"],
+      cwd: setup.dir,
+    },
+  ]);
   expect(await Bun.file(setup.log).exists()).toBe(false);
-  expect(await calls(setup.preflightLog)).toHaveLength(1);
 });
 
 profileTest(
@@ -259,25 +178,22 @@ profileTest(
     for (const args of commands) {
       expect(args).toContain("--locked");
       expect(args).toContain("--no-default-features");
-      expect(args).not.toContain("--features");
       expect(args).not.toContain("--workspace");
-      expect(packages(args).sort()).toEqual(
-        args[0] === "build" ? ["yolo-runtime"] : ["yolo-core", "yolo-runtime"],
-      );
+      if (args[0] === "build") {
+        // The runtime artifact is the single C-ABI library, with the yolo_* browser exports.
+        expect(packages(args)).toEqual(["aphrody-ffi"]);
+        expect(args[args.indexOf("--features") + 1]).toBe("browser,tooling");
+      } else {
+        expect(args).not.toContain("--features");
+        expect(packages(args).sort()).toEqual(["yolo-core", "yolo-runtime"]);
+      }
     }
     expect(commands[1]!.slice(-3)).toEqual(["--", "-D", "warnings"]);
-    const manifest = Bun.TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()) as {
-      workspace: { "default-members": string[] };
-    };
-    expect(manifest.workspace["default-members"].sort()).toEqual([
-      "crates/engine/yolo-core",
-      "crates/engine/yolo-runtime",
-    ]);
   },
 );
 
 profileTest(
-  "provider recipes keep desktop, browser, Python and compiler selections explicit",
+  "provider recipes keep desktop, browser, Python and upstream selections explicit",
   async () => {
     const setup = await fixture();
     const result = await runRecipes(setup, [
@@ -286,65 +202,39 @@ profileTest(
       "check-python",
       "clippy-python",
       "test-python-crate",
-      "qualify-compiler",
       "qualify-upstream",
     ]);
     expect(result.exitCode, result.stderr).toBe(0);
     const executed = await calls(setup.log);
     const formatters = executed.filter((args) => args[0] === "fmt");
-    expect(formatters).toContainEqual(["fmt", "--check", "-p", "yolo-desktop"]);
+    expect(formatters).toContainEqual(["fmt", "--check", "-p", "aphrody-app"]);
     expect(formatters).toContainEqual(["fmt", "--check", "-p", "yolo-core", "-p", "yolo-runtime"]);
     expect(formatters).toContainEqual(["fmt", "--all", "--check"]);
     const commands = executed.filter((args) => args[0] !== "fmt");
-    expect(commands).toHaveLength(13);
+    expect(commands).toHaveLength(11);
     for (const args of commands) expect(args).toContain("--locked");
-    for (const args of commands.slice(0, 3)) expect(packages(args)).toEqual(["yolo-desktop"]);
+    for (const args of commands.slice(0, 3)) expect(packages(args)).toEqual(["aphrody-app"]);
     for (const args of commands.slice(3, 6)) {
       expect(packages(args)).toEqual(["yolo-runtime"]);
       expect(args[args.indexOf("--features") + 1]).toBe("browser");
     }
     for (const args of commands.slice(6, 9)) expect(packages(args)).toEqual(["yolo-pyo3"]);
 
-    const baseline = await Bun.file(
-      join(root, "docs/core-module-boundaries-2026-10-04.json"),
-    ).json();
-    const names = new Map<string, string>();
-    for (const path of new Bun.Glob("crates/*/Cargo.toml").scanSync({ cwd: root })) {
+    // Every upstream selector still names a workspace package.
+    const names: string[] = [];
+    for (const path of new Bun.Glob("crates/**/Cargo.toml").scanSync({ cwd: root })) {
       const manifest = Bun.TOML.parse(await Bun.file(join(root, path)).text()) as {
-        package: { name: string };
+        package?: { name?: string };
       };
-      names.set(path.slice(0, -"/Cargo.toml".length), manifest.package.name);
+      if (manifest.package?.name) names.push(manifest.package.name);
     }
-    const selected = (args: string[]) =>
-      [...names.values()]
-        .filter((name) => packages(args).some((pattern) => new Bun.Glob(pattern).match(name)))
-        .sort();
-    const compilerNames = baseline.crates
-      .filter((entry: { family: string }) => entry.family === "compiler")
-      .map((entry: { package: string }) => entry.package)
-      .sort();
-    expect(compilerNames).toHaveLength(59);
-    const compilerPin = Bun.file(join(root, "vendor/next/rust-toolchain.toml"));
-    // A core-only CI checkout need not materialize the compiler vendor. Hydrated
-    // producer checkouts also verify the exact pin against its source owner.
-    const compilerToolchain = (await compilerPin.exists())
-      ? (Bun.TOML.parse(await compilerPin.text()) as { toolchain: { channel: string } })
-      : undefined;
-    for (const args of commands.slice(9, 11)) {
-      expect(selected(args)).toEqual(compilerNames);
-      expect(args[0]).toMatch(/^\+nightly-\d{4}-\d{2}-\d{2}$/);
-      if (compilerToolchain !== undefined)
-        expect(args[0]).toBe(`+${compilerToolchain.toolchain.channel}`);
+    for (const pattern of packages(commands[10]!)) {
+      const glob = new Bun.Glob(pattern);
+      expect(
+        names.some((name) => glob.match(name)),
+        pattern,
+      ).toBe(true);
     }
-    const preflights = await calls(setup.preflightLog);
-    expect(preflights).toHaveLength(1);
-    expect(preflights[0]).toEqual(["run", commands[9]![0]!.slice(1), "rustc", "--version"]);
-    const formerImportedDefaults = baseline.currentDefaultMembers
-      .filter((path: string) => path.startsWith("crates/aphrody-"))
-      .map((path: string) => names.get(path))
-      .sort();
-    expect(formerImportedDefaults).toHaveLength(44);
-    expect(selected(commands[12]!)).toEqual(formerImportedDefaults);
   },
 );
 
@@ -352,12 +242,15 @@ profileTest(
   "factory recipes dispatch a pinned profile through the native owner and reject invalid input",
   async () => {
     const setup = await fixture();
-    await Bun.write(join(setup.dir, "apps/yolo/yolo.just"), Bun.file(join(root, "apps/yolo/yolo.just")));
+    await Bun.write(
+      join(setup.dir, "apps/yolo/yolo.just"),
+      Bun.file(join(root, "apps/yolo/yolo.just")),
+    );
     const yolo = join(setup.dir, "bin/yolo");
     await Bun.write(yolo, setup.recorder);
     await chmod(yolo, 0o700);
     const revision = "a".repeat(40);
-    const result = await runRecipes(setup, ["factory", "compiler", revision], setup.dir);
+    const result = await runRecipes(setup, ["factory", "desktop", revision], setup.dir);
     expect(result.exitCode, result.stderr).toBe(0);
     expect(await calls(setup.log)).toEqual([
       [
@@ -370,7 +263,7 @@ profileTest(
         revision,
         "--",
         "just",
-        "qualify-compiler",
+        "qualify-desktop",
       ],
     ]);
     const bun = await runRecipes(setup, ["factory", "bun", revision], setup.dir);
@@ -383,8 +276,6 @@ profileTest(
       "yolo",
       "--revision",
       revision,
-      "--submodules",
-      "vendor/bun",
       "--",
       "just",
       "qualify-bun",

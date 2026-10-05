@@ -52,7 +52,7 @@ amélioration du compilateur n’est déduite de cet arbitrage.
 | Ensemble constaté | Destination retenue | Limite publique |
 | :-- | :-- | :-- |
 | `yolo-core`, `yolo-runtime` : 2 crates propres | Cœur natif minimal partagé | Primitives communes et ABI C versionnée ; `runtime:system` et `runtime:process` |
-| `yolo-desktop` : 1 crate propre | Hôte desktop optionnel produit par Yolo | `runtime:desktop`, avec supervision et boucle UI native |
+| `yolo-desktop` : fusionné dans `aphrody-app` (`crates/ui/app`) | Hôte desktop optionnel : `aphrody-app --host-info` / `--runtime-host` (protocole `yolo.desktop/1`) | `runtime:desktop`, avec supervision et boucle UI native |
 | `yolo-pyo3` : 1 crate propre | Adaptateur Python optionnel du même cœur | `_yolo_native` ; l’IA/ML reste dans Aphrody Python |
 | Tauri/Wry/Tao et outillage : 54 imports, dont 30 plugins Tauri | Fournisseur desktop et ses outils de fabrication | Sélection de plugins par application et permissions Tauri ; aucune API Bun par crate |
 | Next/Turbo/Turbopack | Retiré le 2026-10-05 : aucun consommateur, `next` vient de npm | Historique Git |

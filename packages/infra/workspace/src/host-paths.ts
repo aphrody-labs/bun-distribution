@@ -288,7 +288,7 @@ export async function runHostPaths(args: string[]): Promise<number> {
     else if (arg === "--write-baseline") writeBaseline = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops path-audit --repository [--root <repository>] [--json | --markdown] [--apply] [--check] [--write-baseline]",
+        "Usage: yolo ops path-audit --repository [--root <repository>] [--json | --markdown] [--apply] [--check] [--write-baseline]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
@@ -329,7 +329,7 @@ export async function runHostPaths(args: string[]): Promise<number> {
         {
           schemaVersion: 1,
           $comment:
-            "Host- and machine-specific path ratchet (aphrody-ops path-audit --repository). Counts may only fall.",
+            "Host- and machine-specific path ratchet (yolo ops path-audit --repository). Counts may only fall.",
           files: counts,
         } satisfies Baseline,
         null,

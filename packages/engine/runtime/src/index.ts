@@ -98,7 +98,7 @@ export function defaultLibraryPath(): string {
         : join(homedir(), ".yolo", "runtime");
   const installed = resolve(base, installedTarget(), "current", libraryFile());
   if (existsSync(installed)) return installed;
-  return resolve(import.meta.dir, "../../..", "target/runtime", libraryFile());
+  return resolve(import.meta.dir, "../../../..", "target/runtime", libraryFile());
 }
 
 function installedTarget(): string {

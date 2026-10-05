@@ -17,6 +17,7 @@ use std::{
 const UI_DIST_MANIFEST: &str = include_str!("ui-dist.manifest");
 
 fn main() {
+    stamp_build_identity();
     println!("cargo:rerun-if-changed=windows-app-manifest.xml");
     println!("cargo:rerun-if-changed=ui-dist.manifest");
     // `frontendDist` is generated from `m3/packages/app-ui` (`bun run build`, m3 build --tauri) into
@@ -34,6 +35,43 @@ fn main() {
         .app_manifest(include_str!("windows-app-manifest.xml"));
     tauri_build::try_build(tauri_build::Attributes::new().windows_attributes(windows))
         .expect("failed to build Tauri resources");
+}
+
+/// Output of `program args`, or `unknown` when it fails or prints nothing.
+fn command_output(program: &str, args: &[&str]) -> String {
+    process::Command::new(program)
+        .args(args)
+        .output()
+        .ok()
+        .filter(|output| output.status.success())
+        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
+        .filter(|output| !output.is_empty())
+        .unwrap_or_else(|| "unknown".into())
+}
+
+/// Build identity answered by `--host-info` (`src/runtime_host.rs`): target, Git revision, rustc.
+fn stamp_build_identity() {
+    let target = env::var("TARGET").unwrap_or_else(|_| "unknown".into());
+    println!("cargo:rustc-env=YOLO_DESKTOP_TARGET={target}");
+    println!(
+        "cargo:rustc-env=YOLO_DESKTOP_GIT_REV={}",
+        command_output("git", &["rev-parse", "HEAD"])
+    );
+    let rustc = env::var("RUSTC").unwrap_or_else(|_| "rustc".into());
+    println!("cargo:rustc-env=YOLO_DESKTOP_RUSTC={}", command_output(&rustc, &["--version"]));
+    for name in ["HEAD", "packed-refs"] {
+        println!(
+            "cargo:rerun-if-changed={}",
+            command_output("git", &["rev-parse", "--git-path", name])
+        );
+    }
+    let branch = command_output("git", &["symbolic-ref", "-q", "HEAD"]);
+    if branch != "unknown" {
+        println!(
+            "cargo:rerun-if-changed={}",
+            command_output("git", &["rev-parse", "--git-path", &branch])
+        );
+    }
 }
 
 /// Copy every `ui-dist.manifest` source over its missing or different destination.

@@ -39,6 +39,9 @@
     "apps/yolo/web": {
       "name": "@aphrody/yolo-web",
       "version": "0.1.0",
+      "dependencies": {
+        "@aphrody/api": "workspace:*",
+      },
     },
     "crates/tauri/aphrody-tauri-api": {
       "name": "@aphrody/api",

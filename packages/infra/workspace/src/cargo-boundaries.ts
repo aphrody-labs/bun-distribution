@@ -18,7 +18,7 @@ export async function runCargoBoundaries(args: string[]): Promise<number> {
     else if (arg === "--metadata") metadataPath = args[++index];
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops cargo-boundaries [--root <workspace>] [--metadata <cargo-metadata.json>]",
+        "Usage: yolo ops cargo-boundaries [--root <workspace>] [--metadata <cargo-metadata.json>]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

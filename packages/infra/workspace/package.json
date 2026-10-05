@@ -4,11 +4,6 @@
   "description": "Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations",
   "license": "Apache-2.0",
   "author": "Aphrody",
-  "bin": {
-    "aphrody-ops": "./src/ops.ts",
-    "aphrody-optimize": "./src/optimize.ts",
-    "aphrody-workspace": "./src/cli.ts"
-  },
   "files": [
     "src",
     "README.md"

@@ -1056,9 +1056,15 @@ mod tests {
         let load_catalog = |value: &Value| {
             serde_json::from_value::<ServiceCatalog>(value.clone()).expect("fixture catalog")
         };
-        assert_eq!(check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).len(), 1);
+        assert_eq!(
+            check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).len(),
+            1
+        );
         raw["services"][0]["unitSource"] = json!("repository");
-        assert_eq!(check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).len(), 1);
+        assert_eq!(
+            check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).len(),
+            1
+        );
         raw["services"][0]["unitSource"] = json!("system-package");
         assert!(check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).is_empty());
         raw["services"][0]["unitSource"] = json!("repository");

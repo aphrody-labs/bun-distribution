@@ -1,26 +1,23 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: Apache-2.0
 import { runInfra } from "./runtime.ts";
 
-if (process.argv[2] === "optimize") {
-  process.exit(await (await import("./optimize.ts")).runOptimize(process.argv.slice(3)));
+export const workspaceHelp =
+  "Aphrody workspace: optimize <task> runs the optimization plugin workflow.\nplugins <command> manages user plugins, skills and MCP.\ncode-edit <operation> searches and transforms code using rg, sd, ast-grep and jscodeshift.\nOther commands are delegated to aphrody-infra.";
+
+/** `yolo workspace <command> [arguments...]`: Workspace commands, then aphrody-infra for the rest. */
+export async function runWorkspace(argv: readonly string[]): Promise<number> {
+  const [command, ...rest] = argv;
+  if (command === "optimize") return (await import("./optimize.ts")).runOptimize(rest);
+  if (command === "code-edit") return (await import("./code-edit.ts")).runCodeEdit(rest);
+  if (command === "plugins") return (await import("./agent-plugins.ts")).runAgentPlugins(rest);
+  if (command === "--help" || command === "-h") {
+    console.log(workspaceHelp);
+    return 0;
+  }
+  const result = await runInfra({ args: [...argv], stdout: "inherit", stderr: "inherit" });
+  return result.exitCode;
 }
 
-if (process.argv[2] === "code-edit") {
-  process.exit((await import("./code-edit.ts")).runCodeEdit(process.argv.slice(3)));
-}
-
-if (process.argv[2] === "plugins") {
-  process.exit(await (await import("./agent-plugins.ts")).runAgentPlugins(process.argv.slice(3)));
-}
-if (process.argv[2] === "--help" || process.argv[2] === "-h") {
-  console.log(
-    "Aphrody workspace: optimize <task> runs the optimization plugin workflow.\nplugins <command> manages user plugins, skills and MCP.\ncode-edit <operation> searches and transforms code using rg, sd, ast-grep and jscodeshift.\nOther commands are delegated to aphrody-infra.",
-  );
-  process.exit(0);
-}
-const result = await runInfra({
-  args: process.argv.slice(2),
-  stdout: "inherit",
-  stderr: "inherit",
-});
-process.exit(result.exitCode);
+// Direct execution remains for the installed link ~/.local/bin/aphrody-workspace until hosts use `yolo workspace`.
+if (import.meta.main) process.exit(await runWorkspace(process.argv.slice(2)));

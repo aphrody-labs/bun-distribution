@@ -49,4 +49,4 @@ and Cargo workspace. Record Obscura modifications in its
 
 ## Automatisation transversale
 
-Le contrôle des workspaces BXC est fourni par `aphrody-ops workspace-layout` via `apps/bxc`.
+Le contrôle des workspaces BXC est fourni par `yolo ops workspace-layout` via `apps/bxc`.

@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Rust ecosystem bump (`aphrody-update rust`)
+# Rust ecosystem bump (`yolo update rust`)
 
 Owner: Infra (`packages/infra/update/src/ecosystems/rust.ts`, exported as `runRust`). Part of the
 [update pipeline](../UPDATE.md); this page is the policy and the runbook for everything Cargo: the toolchain channel,
@@ -8,7 +8,7 @@ the lock, direct dependency requirements, advisories and git remotes.
 Run it from the repository root:
 
 ```sh
-bun packages/infra/update/src/cli.ts rust <status|plan|apply|verify|doctor|fix> [flags]   # or: aphrody-update rust ...
+yolo update rust <status|plan|apply|verify|doctor|fix> [flags]
 bun run rust:doctor      # every gate of the Rust workspace, report only
 bun run rust:fix         # the same gates, repairing what is mechanical first
 ```
@@ -26,9 +26,9 @@ bun run rust:fix         # the same gates, repairing what is mechanical first
 - Holds are data, not folklore: `config/deps/rust-holds.json` (never move) and `config/deps/advisory-holds.json`
   (advisories that no bump can fix). An exact `=x.y.z` requirement is a deliberate pin: reported as `[exact pin]`, moved only
   by an explicit `apply --majors <crate>`.
-- Tauri family crates belong to `aphrody-ops tauri-sync` (`config/tauri-upstream.json`); the module reports them as
+- Tauri family crates belong to `yolo ops tauri-sync` (`config/tauri-upstream.json`); the module reports them as
   `[owner: tauri-sync]` and refuses to move them.
-- `rust-toolchain.toml` moves only through `aphrody-update tools rust --apply`, together with the category repositories
+- `rust-toolchain.toml` moves only through `yolo update tools rust --apply`, together with the category repositories
   (see the header of that file). The module reports the gap, it does not change the channel.
 
 ### Resolver rule (`.cargo/config.toml`)
@@ -58,7 +58,7 @@ derived from `dep:crate` entries), not blindly.
 
 ## Doctor: one action for the whole workspace
 
-`aphrody-update rust doctor` (`bun run rust:doctor`) proves the state of the Cargo workspace; `aphrody-update rust fix`
+`yolo update rust doctor` (`bun run rust:doctor`) proves the state of the Cargo workspace; `yolo update rust fix`
 (`bun run rust:fix`) is the same run with the repair step first. Owner module:
 `packages/infra/update/src/ecosystems/rust-doctor.ts`; data: `config/update/rust-doctor.json`; nextest profile:
 `.config/nextest.toml` (`doctor`). Each stage is one Cargo command through `cargo-serial.sh`, in this order:

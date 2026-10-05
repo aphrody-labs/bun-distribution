@@ -9,11 +9,15 @@
 
 pub mod ai_patterns;
 pub mod aphrodify;
+#[cfg(not(target_arch = "wasm32"))]
+mod cli;
 pub mod extract;
 pub mod translate;
 
 use std::path::Path;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use cli::cli_main;
 pub use translate::{Backend, Translator};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

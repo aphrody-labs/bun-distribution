@@ -14,7 +14,7 @@ description            = "Managed local inference: a supervisor for llama.cpp's 
 workspace = true
 
 [features]
-# Builds the fake `llama-server` used by the integration tests.
+# Builds the fake `llama-server` and the daemon host used by the integration tests.
 test-support = []
 # In-process llama.cpp through `aphrody-llama` (libllama / libmtmd are loaded at
 # RUNTIME through libloading, nothing is linked): a `ModelClient` over a GGUF
@@ -43,8 +43,11 @@ in-process = [
 ]
 
 [[bin]]
-name = "aphrody-llama-daemon"
-path = "src/bin/aphrody_llama_daemon.rs"
+name              = "aphrody-llama-daemon"
+path              = "tests/support/llama_daemon.rs"
+test              = false
+doc               = false
+required-features = ["test-support"]
 
 [[bin]]
 name              = "aphrody-fake-llama-server"

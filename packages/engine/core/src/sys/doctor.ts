@@ -51,7 +51,7 @@ export interface DoctorReport {
 }
 
 export function aphrodyTools(): { name: string; found: boolean }[] {
-  return ["aphrody-infra", "aphrody-ops", "aphrody-workspace"].map((name) => ({
+  return ["aphrody-infra"].map((name) => ({
     name,
     found: Boolean(Bun.which(name)),
   }));
@@ -80,7 +80,7 @@ export function collectDoctorReport(): DoctorReport {
     ["packages/engine/runtime/package.json", "runtime SDK", true],
     ["packages/engine/python/pyproject.toml", "Python package (uv / maturin)", sourceInstallation],
     ["crates/engine/yolo-pyo3/Cargo.toml", "PyO3 0.29 native extension crate", sourceInstallation],
-    ["crates/engine/yolo-desktop/icons", "desktop scaffold sources (crates/)", false],
+    ["m3/templates/desktop/src-tauri/icons", "desktop scaffold icons (templates)", false],
   ] as const) {
     const exists = existsSync(join(home, path));
     if (!exists && required) okStatus = false;

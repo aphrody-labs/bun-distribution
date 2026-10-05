@@ -10,7 +10,7 @@ peer agent and returns typed responses. The crate provides a `Transport`
 trait, JSON-RPC and REST implementations (gRPC comes from the companion
 `aphrody-a2a-grpc` crate), middleware hooks, and an `AgentCard` resolver that
 auto-selects the correct transport for a remote agent. It is imported in Rust
-as `aphrody_a2a_client` and also ships the native `a2a-duel-loop` binary.
+as `aphrody_a2a_client` and also ships the native `a2a_duel_loop` example (`cargo run -p aphrody-a2a-client --example a2a_duel_loop`).
 
 ## Install
 

@@ -26,7 +26,7 @@ privileges stay under their application owners.
 | Custom elements | `material-web`, `m3-front`, `m3-react` | Lit components and React wrappers consuming shared roles. |
 | Web hosts | `m3`, `m3-bun`, `m3-next` | Bun and Next adapters; no platform authority is inferred from a component import. |
 | Host generation | `scaffold`, `m3-next-migrate` | Pinned Tauri 3 shell generation; migration rejects unsupported host adapters before activation. |
-| Native host | Aphrody `crates/ui/m3-showcase`, `crates/ui/app`, rendering crates | Native process, permission and resource ownership stay in the parent workspace. |
+| Native host | Aphrody `crates/ui/app` (showcase window: `aphrody-app --showcase`), rendering crates | Native process, permission and resource ownership stay in the parent workspace. |
 
 Base UI renders React DOM and Tailwind emits CSS; native widgets require separate
 interaction and accessibility evidence. Active dependencies come from manifests
@@ -55,7 +55,7 @@ It establishes the named software contracts on Linux with Bun 1.4.2.
 | --- | --- | --- |
 | Bun browser app | Framework/example source; showcase unit/API contracts pass | Production browser build, interactions, offline assets and visual/accessibility receipt for the chosen app. |
 | Next.js web | 49 unit pass, 10 isolated DOM pass; theme/proxy/export/runner contracts | Browser receipt, asynchronous DOM gate stability and the skipped Rust parity check. |
-| Tauri desktop | `apps/showcase` host contracts pass; native owner is Aphrody `crates/ui/m3-showcase` | Factory-admitted native build, bundle, install, API lifecycle, permissions and real host interaction receipt. |
+| Tauri desktop | `apps/showcase` host contracts pass; native owner is Aphrody `crates/ui/app` (`aphrody-app --showcase`) | Factory-admitted native build, bundle, install, API lifecycle, permissions and real host interaction receipt. |
 | Mobile browser and TV layout | Showcase adaptive contracts and three D-pad DOM tests pass | Real browser keyboard/touch, viewport/safe-area, text scaling and screen-reader checks. Layout presets do not establish a mobile installation. |
 | Android/iOS installed app | Scaffolder mobile entry/capability contracts and host diagnostics exist | Actual SDK/toolchain, build, install, lifecycle and interaction checks. iOS needs a macOS/Xcode host. |
 | Standalone Rust desktop GUI | Rendering/token crates exist in Aphrody | Native widget, focus/accessibility, packaged app and installed-host receipt. No Rust gate ran in this UI audit. |

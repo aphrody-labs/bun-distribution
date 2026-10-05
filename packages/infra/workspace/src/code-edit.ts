@@ -4,7 +4,7 @@ import { spawnSync } from "@aphrody/update/process";
 import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 
-const help = `Usage: aphrody-workspace code-edit <search|replace|add-before|add-after|remove|rename|restore> [options]
+const help = `Usage: yolo workspace code-edit <search|replace|add-before|add-after|remove|rename|restore> [options]
   --engine text|regex|ast|codemod|yolo  Default: text (rename/restore: yolo)
   --root PATH                    Default: current directory
   --glob PATTERN                  Repeatable file filters (ripgrep syntax)

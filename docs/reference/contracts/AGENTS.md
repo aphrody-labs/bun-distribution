@@ -11,7 +11,7 @@ add repository constraints, not a separate approval workflow.
 ## Local constraints
 
 - No sibling path dependencies. Enforce the boundary with
-  `aphrody-ops cargo-boundaries --root .`; UI and implementation code stay with consumers.
+  `yolo ops cargo-boundaries --root .`; UI and implementation code stay with consumers.
 - Make wire changes additive or version them with their changelog and consumer migration.
   Workspace dependency/feature changes affect sibling consumers too.
 - Keep A2A, agent-proto and app-protocol wasm32-safe. Keep `aphrody-a2a-slimrpc`
@@ -33,7 +33,7 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test   --workspace         # or cargo nextest run --workspace + cargo test --doc
 cargo fmt    --check             # not `--all`: that also formats path dependencies
 cargo deny   check
-aphrody-ops cargo-boundaries --root .
+yolo ops cargo-boundaries --root .
 cargo check --target wasm32-unknown-unknown -p aphrody-a2a -p aphrody-agent-proto -p aphrody-app-protocol
 git diff --check
 ```
@@ -43,4 +43,4 @@ Layout and entry points: [README](../../products/contracts/README.md). Reuse the
 
 ## Automatisation transversale
 
-`just boundaries` délègue la vérification Cargo à `aphrody-ops cargo-boundaries`. Conserver cette entrée locale lors de toute évolution du module central.
+`just boundaries` délègue la vérification Cargo à `yolo ops cargo-boundaries`. Conserver cette entrée locale lors de toute évolution du module central.

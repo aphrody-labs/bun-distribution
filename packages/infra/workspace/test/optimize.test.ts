@@ -5,6 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { optimizationPrompt } from "../src/optimize.ts";
 
+// `yolo optimize` is the only command line of this module.
+const yolo = join(import.meta.dir, "../../../../apps/yolo/cli/src/index.ts");
+
 test("requires a bounded task", () => {
   expect(() => optimizationPrompt("  ")).toThrow("bounded");
 });
@@ -20,7 +23,7 @@ test("passes task literally to the owner CLI and preserves its failure", async (
     );
     await chmod(binary, 0o755);
     const task = 'simplify $(touch /tmp/should-not-run) `echo unsafe` "quoted"';
-    const child = Bun.spawn([process.execPath, join(import.meta.dir, "../src/optimize.ts"), task], {
+    const child = Bun.spawn([process.execPath, yolo, "optimize", task], {
       env: { ...process.env, PATH: dir, CAPTURE: capture },
       stdout: "pipe",
       stderr: "pipe",
@@ -37,12 +40,7 @@ test("passes task literally to the owner CLI and preserves its failure", async (
 
 test("preview needs no owner executable", async () => {
   const child = Bun.spawn(
-    [
-      process.execPath,
-      join(import.meta.dir, "../src/optimize.ts"),
-      "--print",
-      "deduplicate selected imports",
-    ],
+    [process.execPath, yolo, "optimize", "--print", "deduplicate selected imports"],
     {
       env: { ...process.env, PATH: "" },
       stdout: "pipe",

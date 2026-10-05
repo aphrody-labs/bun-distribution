@@ -5,5 +5,5 @@ def main [...repos: path, --apply] {
     mut args = [cargo-package-repair --rename-table ($env.FILE_PWD | path join data crate-renames.json)]
     $args = ($args | append ...($repos | each {|repo| $repo | path expand}))
     if $apply { $args = ($args | append --apply) }
-    ^aphrody-ops ...$args
+    ^yolo ops ...$args
 }

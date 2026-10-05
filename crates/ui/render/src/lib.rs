@@ -32,8 +32,11 @@ pub mod text;
 /// The deterministic CPU rasterizer: the pixel-perfect reference backend.
 pub mod raster;
 
-/// Bounded rendering of untrusted canvas scenes (the `aphrody-canvas` binary).
+/// Bounded rendering of untrusted canvas scenes (the `aphrody canvas` entry point).
 pub mod canvas;
+
+mod canvas_cli;
+pub use canvas_cli::cli_main;
 
 /// Headless `wgpu` offscreen backend (feature `gpu`).
 #[cfg(feature = "gpu")]

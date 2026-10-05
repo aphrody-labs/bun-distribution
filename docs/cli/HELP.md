@@ -30,7 +30,13 @@ COMMANDS:
   awesome [stats|list|search|github|check] Browse oven-sh/awesome-bun (README cached, no clone)
   import [--apply|--check] Vendor the fork crates into crates/aphrody-* (see vendor.toml)
   rename [opts] [dir..] Mass boundary-aware rename (--preset aphrody | --from X --to Y, --apply, --paths)
-  infra|ops|workspace|workflow|git|ssh ... Aphrody control plane (aphrody-infra / aphrody-ops), same workflow
+  infra|workflow|git|ssh ... Aphrody control plane (aphrody-infra), same workflow
+  ops|workspace <operation> ... Workspace operations and gates; unknown operations go to aphrody-infra
+  optimize [--print] [--] <task> Run the optimize-workspace skill through aphrody exec
+  update check|pins|tools|cargo|deps|systemd|sources|rust|bun|uv|upstream|run Pins, dependencies, upstream sources
+  google drive|fonts ... Google Drive projection and Fonts proxy (Gemini runtime: aphrody google)
+  doc-ai translate|generate|sync Markdown translation and Lit component API guides
+  browser open|snapshot|click|fill|eval|screenshot|... [--cdp URL] One CDP browser command (Obscura)
   verify [--only a,b] [--changed] [--parallel N] [--json|--md] [--list|--last] Run the repository gates as a parallel graph; JSON or Markdown evidence in var/verify
   host audit|reclaim|archive|services|tune|net|mount|journal --host vps|dbfr|local [--apply] Manage a Linux server (plan by default, journaled, safety-checked)
   ship [--apply] [--prepare] [status|log|attach|stop] Prepare or build on the factory; hooks install ships main/dev pushes
@@ -134,9 +140,9 @@ yolo awesome — browse oven-sh/awesome-bun
   awesome github             GitHub repositories referenced by the list
   awesome check [section]    HTTP check of the links (network; --concurrency N, --timeout MS)
   awesome audit              Judge every entry for the Rust-based Bun (network, GitHub API);
-                             writes templates/awesome-audit.json
-  awesome curate [--out f]   audit + templates/awesome.curated.json + cleaned README (default
-                             templates/AWESOME.md); --since YYYY-MM-DD (default 2026-05-14)
+                             writes config/yolo/awesome-audit.json
+  awesome curate [--out f]   audit + config/yolo/awesome.curated.json + cleaned README (default
+                             docs/reference/yolo/AWESOME.md); --since YYYY-MM-DD (default 2026-05-14)
 
 Options: --repo owner/name  --ref branch (default main)  --refresh  --offline
          --file README.md   --json
@@ -179,6 +185,85 @@ Usage: yolo py [status|test|lint|fmt|build] [--json|--md]
 Usage: yolo hooks install|uninstall
 ```
 
+## yolo optimize -h
+
+```
+Usage: yolo optimize [--print] [--] <bounded task>
+Reuse the optimize-workspace plugin skill through aphrody exec.
+--print prints the instructions without starting an agent.
+The current directory defines the workspace; existing AGENTS/PLAN remain authoritative.
+```
+
+## yolo update -h
+
+```
+yolo update: one entry point for toolchain pins, dependencies, Cargo lock, user systemd units and dev-env checks.
+
+  yolo update check                     pins agree + systemd units match the yolo catalog + wsl.conf matches (gate, exit 1 on drift)
+  yolo update pins [check|apply <tool> <version>]
+  yolo update tools [<tool>] [--apply]  installed vs pinned vs latest; --apply installs and re-pins
+  yolo update cargo [--apply]           Cargo.lock refresh within manifest ranges (dry run by default)
+  yolo update deps <sub> [...]          dependency pipeline: plan|apply|facts|fix|changelog|memory|inventory|baseline|run
+  yolo update systemd [check|install|restart]
+  yolo update sources [status|sync|verify|drift|forks|repo|bump]   upstream source checkouts, upstream pins, forks, git state
+  yolo update rust|bun|uv <status|plan|apply|verify>   per-ecosystem structured bump (docs/operations/infra/update/{RUST,BUN,UV}.md)
+  yolo update upstream [list|drift|refresh|fetch|prune|docs]   reference upstreams: catalogue, live drift, disposable fetch
+  yolo update run [--apply]             tools, cargo, deps, systemd restart, then the gates (report only without --apply)
+Global flags: --root <repo>, --json
+```
+
+## yolo google -h
+
+```
+Usage: yolo google <drive|fonts> ...
+  drive <auth-login|status|sync [--download-only] [--dry-run] [--seed-reviewed directory]|sync-models>
+  fonts serve [--port 8796] [--cache <dir>] [--origin https://cdn.aphrody.com] [--all-families]
+Gemini and Google Cloud runtime commands (status, env, doctor, login, auth-status, whoami, models,
+generate, generate-stream) belong to the Rust CLI: aphrody google <command>.
+```
+
+## yolo doc-ai -h
+
+```
+
+AI-First Documentation & Translation System CLI
+
+Usage:
+  yolo doc-ai translate <file_or_dir> [lang]   Translate markdown (default lang: fr)
+  yolo doc-ai generate <ts_file> [out_file]    Generate a Lit component API guide
+  yolo doc-ai sync [lang]                       Translate all monorepo docs folders
+  yolo doc-ai --help                            Show this help
+
+Commands:
+  translate  Translate a single markdown file or every markdown file in a
+             directory (recursive). Output is written next to each source as
+             <name>.<lang>.md.
+  generate   Analyze a Lit component TS file and write its Markdown API guide.
+  sync       Scan the monorepo 'docs' folders and translate them.
+
+Options:
+  -h, --help     Show this help and exit.
+  -v, --version  Print the package version and exit.
+
+Languages: en, fr
+
+Environment:
+  GOOGLE_APPLICATION_CREDENTIALS    ADC credential file for Vertex AI.
+  GOOGLE_CLOUD_PROJECT | APHRODY_VERTEX_PROJECT   Vertex project and online mode.
+  GOOGLE_CLOUD_LOCATION | APHRODY_VERTEX_LOCATION Vertex region.
+  DOC_AI_MODEL                      Override the model (default: gemini-2.5-flash).
+  DOC_AI_REQUEST_TIMEOUT_MS         Per-request network timeout (default: 60000).
+
+When no credentials are set, generation uses a deterministic static template
+and translation uses a structure-preserving offline pipeline.
+```
+
+## yolo browser -h
+
+```
+yolo browser <open|snapshot|click|fill|type|press|hover|select|get|eval|wait|screenshot|pdf> [args] [--url URL] [--cdp WS_URL] [--session ID]
+```
+
 ## yolo host -h
 
 ```
@@ -201,7 +286,7 @@ Every command is a plan unless --apply is given. --policy FILE selects another h
 Mutations are refused while a build lock is held. Nothing is ever formatted or wiped.
 ```
 
-## Delegated control plane: infra | ops | workspace | workflow | git | ssh | ship | hooks (aphrody-infra --help)
+## Delegated control plane: infra | workflow | git | ssh | ship | hooks (aphrody-infra --help)
 
 ```
 Aphrody unified infra/workflow orchestrator

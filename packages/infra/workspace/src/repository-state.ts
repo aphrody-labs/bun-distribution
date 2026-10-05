@@ -209,7 +209,7 @@ export async function runRepositoryState(args: string[]): Promise<number> {
     else if (args[i] === "--out") out = args[++i];
     else if (args[i] === "--json") json = true;
     else if (args[i] === "--help") {
-      console.log("Usage: aphrody-ops repository-state [--root path] [--out report.json] [--json]");
+      console.log("Usage: yolo ops repository-state [--root path] [--out report.json] [--json]");
       return 0;
     } else throw new Error(`Unknown argument: ${args[i]}`);
   }

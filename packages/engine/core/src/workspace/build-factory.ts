@@ -162,7 +162,10 @@ export function buildFactoryPreparePlan(
   repository: string,
   revision: string,
   source: FactorySource,
-  options: { initializeSubmodules?: boolean | undefined; submodules?: readonly string[] | undefined } = {},
+  options: {
+    initializeSubmodules?: boolean | undefined;
+    submodules?: readonly string[] | undefined;
+  } = {},
 ) {
   const sourceScope = factorySourceScope(options.submodules);
   if (sourceScope.kind === "gitlinks" && options.initializeSubmodules === false)
@@ -512,7 +515,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> [--submodules <gitlink[,gitlink]>] [--detach --job <stable-id>] -- <owner command> [arguments...]\n       aphrody-ops build-factory prepare --repo <aphrody|yolo|aphrody-py> --revision <full-git-sha> [--apply] [--no-submodules | --submodules <gitlink[,gitlink]>]\n       aphrody-ops build-factory status [--route]\n       aphrody-ops build-factory status --job <stable-id> [--tail <0..200>]\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\n--submodules prepares/verifies only selected root-tree gitlinks and their recursive descendants, plus parent source files/index. Unselected gitlinks are preserved; whole repository cleanliness is not asserted. Combine the same scope with plan/run. Selected scope cannot be combined with --no-submodules. Detached jobs retain the selected source scope in their request fingerprint.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
+      "Usage: yolo ops build-factory <plan|run> --repo <aphrody|yolo|iecode|aphrody-py> --revision <full-git-sha> [--submodules <gitlink[,gitlink]>] [--detach --job <stable-id>] -- <owner command> [arguments...]\n       yolo ops build-factory prepare --repo <aphrody|yolo|aphrody-py> --revision <full-git-sha> [--apply] [--no-submodules | --submodules <gitlink[,gitlink]>]\n       yolo ops build-factory status [--route]\n       yolo ops build-factory status --job <stable-id> [--tail <0..200>]\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\n--submodules prepares/verifies only selected root-tree gitlinks and their recursive descendants, plus parent source files/index. Unselected gitlinks are preserved; whole repository cleanliness is not asserted. Combine the same scope with plan/run. Selected scope cannot be combined with --no-submodules. Detached jobs retain the selected source scope in their request fingerprint.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
     );
     return 0;
   }

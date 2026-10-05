@@ -97,6 +97,7 @@ aphrody-gpu-backend = { path = "crates/native/gpu-backend", version = "1.0.0-can
 aphrody-guard = { path = "crates/os/guard", version = "1.0.0-canary", features = [] }
 aphrody-http-error = { path = "crates/ai/http-error", version = "1.0.0", features = [] }
 aphrody-infer = { path = "crates/ai/infer", version = "1.0.0", features = ["onnx"] }
+aphrody-infra = { path = "crates/infra/infra", version = "0.1.0" }
 aphrody-jev = { path = "crates/ai/jev", version = "1.0.0", features = [] }
 aphrody-jobs = { path = "crates/os/jobs", version = "1.0.0-canary", features = [] }
 aphrody-kernel = { path = "crates/os/kernel", version = "1.0.0-canary", default-features = false, features = [] }
@@ -104,6 +105,7 @@ aphrody-llama-server = { path = "crates/ai/llama-server", version = "1.0.0", fea
 aphrody-llm-infra = { path = "crates/ai/llm-infra", version = "1.0.0", features = [] }
 aphrody-local-ai = { path = "crates/ui/local-ai", version = "1.0.0-canary" }
 aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.0.0-canary", features = [] }
+aphrody-mcp = { path = "crates/ai/mcp", version = "1.0.0" }
 aphrody-mcp-client = { path = "crates/ai/mcp-client", version = "1.0.0", features = [] }
 aphrody-mcp-oauth = { path = "crates/ai/mcp-oauth", version = "1.0.0", features = [] }
 aphrody-memory = { path = "crates/ai/memory", version = "1.0.0", features = [] }
@@ -134,6 +136,7 @@ aphrody-router = { path = "crates/ai/router", version = "1.0.0", features = [] }
 aphrody-secrets = { path = "crates/os/secrets", version = "1.0.0-canary", features = [] }
 aphrody-session = { path = "crates/ai/session", version = "1.0.0", features = [] }
 aphrody-skills = { path = "crates/ai/skills", version = "1.0.0", features = [] }
+aphrody-summary = { path = "crates/ai/summary", version = "1.0.0" }
 aphrody-ssh = { path = "crates/infra/ssh", version = "0.1.0", features = [] }
 aphrody-stdio-capture = { path = "crates/os/stdio-capture", version = "1.0.0-canary", features = [] }
 aphrody-supervisor = { path = "crates/ai/supervisor", version = "1.0.0", features = [] }
@@ -170,6 +173,7 @@ aphrody-web-service = { path = "crates/web/web-service", version = "1.0.0", feat
 aphrody-x = { path = "crates/web/x", version = "0.3.1", features = [] }
 aphrody-winclean = { path = "crates/os/winclean", version = "1.0.0-canary", features = [] }
 aphrody-wsl = { path = "crates/os/aphrody-wsl", version = "1.0.0-canary", features = [] }
+aphrody-yolo = { path = "crates/infra/yolo", version = "0.1.0" }
 arc-swap = "1.9.2"
 arrow-array = { version = "58", features = [] }
 arrow-schema = { version = "58", features = [] }

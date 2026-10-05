@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Python and uv updates (`aphrody-update uv`)
+# Python and uv updates (`yolo update uv`)
 
 Owner: Infra (`packages/infra/update/src/ecosystems/uv.ts`, exported as `runUv` / `runUvWith`). It bumps everything that
 is Python or uv: the uv pin, the managed CPython interpreters, every `uv.lock` of the Python workspace and the gates that
@@ -28,8 +28,8 @@ inside them is exact and strips extras. Run every gate from the repository root.
 - uv follows the latest published release. Four places must agree: the installed binary, `config/system-packages.json`
   (source of truth in `config/update/pins.json`), `required-version = "==X"` in the workspace `pyproject.toml` and the
   `setup-uv` version in `.github/workflows/python-sdk.yml` (not in repo) (plus the README and the CLI/TOOLS reference tables). The
-  pin manifest rewrites all of them: `aphrody-update tools uv --apply` installs and re-pins, or
-  `aphrody-update pins apply uv <version>` when the binary is already in place. `required-version` refuses any other uv, so
+  pin manifest rewrites all of them: `yolo update tools uv --apply` installs and re-pins, or
+  `yolo update pins apply uv <version>` when the binary is already in place. `required-version` refuses any other uv, so
   update the binary first.
 - Every direct dependency follows its latest release inside its specifier; `uv lock --upgrade` is run on every bump.
   A specifier that excludes the latest release is a cap and needs an entry in `config/deps/uv-holds.json` with the
@@ -89,7 +89,7 @@ bun packages/infra/update/src/ecosystems/uv.ts rollback
 | `verify` | uv pins agree and the installed uv matches; `uv lock --check` per lock; `uv sync --all-packages --locked --extra rag --extra dedup`; `ruff check .`; pytest for every workspace member that ships `tests/test_*.py` (the SDK suite is about 500 tests) |
 | `rollback` | restore the lock files from the newest snapshot in `target/update/uv/<stamp>/` |
 
-`apply` does not install uv: do that first with `aphrody-update tools uv --apply`. The monorepo side of a bump
+`apply` does not install uv: do that first with `yolo update tools uv --apply`. The monorepo side of a bump
 (`config/system-packages.json`, the CLI and TOOLS reference tables, the holds file, the journal) is committed in the
 monorepo; the Python side (locks, pyprojects, workflow, README) is committed in `~/aphrody-py` with the owner identity.
 
@@ -98,7 +98,7 @@ monorepo; the Python side (locks, pyprojects, workflow, README) is committed in 
 1. `bun packages/infra/update/src/ecosystems/uv.ts rollback` restores every `uv.lock` from the newest snapshot, or
    `git -C ~/aphrody-py checkout -- uv.lock packages/ai/py/aphrody/uv.lock packages/ai/py/aphrody-train/uv.lock`.
 2. `uv sync --all-packages --locked --extra rag --extra dedup` realigns the environment.
-3. A uv bump is undone with `uv self update <old>` followed by `aphrody-update pins apply uv <old>`.
+3. A uv bump is undone with `uv self update <old>` followed by `yolo update pins apply uv <old>`.
 4. Record why in `config/deps/uv-holds.json` so the next run does not retry it blindly.
 
 ## How a major bump is done

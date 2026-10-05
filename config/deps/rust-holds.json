@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Direct crates that `aphrody-update rust apply` must never move, with the reason. Exact `=x.y.z` pins in a manifest are not listed here: they are deliberate, reported as [exact pin] and only moved by an explicit `apply --majors <crate>`. Advisory-driven holds also belong in advisory-holds.json. Remove an entry as soon as its blocker moves; docs/operations/infra/update/RUST.md carries the long form.",
+  "note": "Direct crates that `yolo update rust apply` must never move, with the reason. Exact `=x.y.z` pins in a manifest are not listed here: they are deliberate, reported as [exact pin] and only moved by an explicit `apply --majors <crate>`. Advisory-driven holds also belong in advisory-holds.json. Remove an entry as soon as its blocker moves; docs/operations/infra/update/RUST.md carries the long form.",
   "holds": [
     {
       "crate": "yara-x",

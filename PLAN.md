@@ -79,13 +79,20 @@ Cibles uniques : CLI `aphrody` (`apps/cli` + `crates/infra/aphrody-command`), FF
 (`apps/yolo/cli`). Les identités publiées (binaires, symboles `yolo_*`, noms d'outils MCP)
 restent des alias de compatibilité jusqu'à qualification.
 
-- [ ] **CLI Rust** — absorber en sous-commandes de `aphrody-command` : `aphrody-infra`, `aphrody-yolo`,
-  `aphrody-google`, `aphrody-gemini-web`, `aphrody-x` (`x-cli`), `n2b`, `aphrody-translate`,
-  `aphrody-summary`, `aphrody-skills`, `aphrody-embed`, `aphrody-jev`, `aphrody-web`, `aphrody-app`,
-  `aphrody-kernel`, `aphrody-llama-daemon`. Bins de test/outil (`paint_file`, `pixel`, `export_assets`,
-  `a2a-duel-loop`, `rag-eval`, `tauri-e2e`) vont sous `examples/` ou `xtask`.
-- [ ] **CLI Bun** — replier `aphrody-ops`, `aphrody-optimize`, `aphrody-workspace`, `aphrody-update`,
-  `aphrody-ovh`, `aphrody-google`, `pipeline`, `doc-ai`, `agent-browser` en sous-commandes de `yolo`.
+- [~] **CLI Rust** — binaire multi-call unique `aphrody` (`crates/infra/aphrody-command/src/multicall.rs`) :
+  `aphrody <outil> …` ou ancien nom en lien (`aphrody self install-path`) pour infra, ovh, yolo, kernel,
+  host-service, ssh, wsl, backend, mcp-server, web-engine, web-worker, x, gemini-web, google,
+  translate-project, jev, embed, summary, skills, agent-home-memory, agent-train, llama-daemon, n2b,
+  identity, m3-reproduce, canvas, bindgen ; leurs `[[bin]]` sont retirés (`cli_main` en lib), le faux
+  pilier `aphrody infra` est remplacé par le vrai plan de contrôle, `aphrody google` n'a plus de
+  sous-processus. Démos/tests → `examples/` (`paint_file`, `a2a_duel_loop`, `mcp_smoke`, `shell_e2e`).
+  Restent : outillage amont Tauri (`cargo-tauri`, `tauri-driver`, …), `rag-eval` (claim purge).
+- [~] **CLI Bun** — `yolo` absorbe `ops`, `workspace`, `optimize`, `update`, `google` (drive, fonts),
+  `doc-ai`, `browser` (agent-browser) in-process ; `aphrody-ovh` Bun retiré au profit de `aphrody ovh`.
+  Les liens `aphrody-{ops,optimize,workspace}` restent exécutables tant que des consommateurs les appellent.
+- [~] **App desktop** — une seule app `aphrody-app` : `yolo-desktop` (hôte runtime `--runtime-host`,
+  protocole `yolo.desktop/1` inchangé) et `m3-showcase` (`--showcase`, sidecar Bun) absorbés,
+  `tauri-e2e` → exemple `shell_e2e`.
 - [~] **FFI** — un seul cdylib C-ABI `aphrody_ffi` : `yolo-tooling` (feature `tooling`, défaut) et
   `aphrody-inference-ffi` (feature `inference`) absorbés 2026-10-05, `yolo-runtime` réduit à `rlib` ; consommateurs
   Bun repointés vers `libaphrody_ffi`. Restent hors C-ABI : `aphrody-a2a-ui`/`aphrody-shell-web` (wasm-bindgen),

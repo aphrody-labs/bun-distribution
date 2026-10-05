@@ -4,10 +4,8 @@ param([string]$ArtifactRoot = 'var/winclean-live/openai')
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$kernel = Join-Path $root 'target/debug/aphrody-kernel.exe'
-if (-not (Test-Path -LiteralPath $kernel)) { throw "aphrody-kernel missing: $kernel" }
-$yolo = Join-Path $root 'target/debug/aphrody-yolo.exe'
-if (-not (Test-Path -LiteralPath $yolo)) { throw "aphrody-yolo missing: $yolo" }
+$kernel = Join-Path $root 'target/debug/aphrody.exe'
+if (-not (Test-Path -LiteralPath $kernel)) { throw "aphrody missing: $kernel" }
 
 $package = Get-AppxPackage -Name 'OpenAI.Codex' | Sort-Object Version -Descending | Select-Object -First 1
 if (-not $package) { throw 'OpenAI.Codex MSIX package not installed.' }
@@ -29,11 +27,11 @@ $session = Join-Path $common $stamp
 $latest = Join-Path $common 'latest'
 New-Item -ItemType Directory -Force -Path $session, $latest | Out-Null
 $pipe = "\\.\pipe\aphrody-openai-inventory-$stamp"
-$server = Start-Process -FilePath $kernel -ArgumentList @('--socket', $pipe, 'serve', '--no-shell', '--no-browser') -WindowStyle Hidden -PassThru
+$server = Start-Process -FilePath $kernel -ArgumentList @('kernel', '--socket', $pipe, 'serve', '--no-shell', '--no-browser') -WindowStyle Hidden -PassThru
 
 function Invoke-KernelTool([string]$Tool, [hashtable]$Arguments) {
     $payload = $Arguments | ConvertTo-Json -Compress -Depth 20
-    $raw = & $kernel --socket $pipe call $Tool $payload 2>&1
+    $raw = & $kernel kernel --socket $pipe call $Tool $payload 2>&1
     if ($LASTEXITCODE -ne 0) { throw "kernel call failed: $Tool" }
     return ($raw -join "`n" | ConvertFrom-Json)
 }
@@ -57,7 +55,7 @@ function Classify([System.IO.FileInfo]$File, [string]$RootKind) {
 
 try {
     Start-Sleep -Milliseconds 700
-    $yoloStatus = (& $yolo --root $root --socket $pipe --json win status | ConvertFrom-Json)
+    $yoloStatus = (& $kernel yolo --root $root --socket $pipe --json win status | ConvertFrom-Json)
     $records = [System.Collections.Generic.List[object]]::new()
     $binaries = [System.Collections.Generic.List[object]]::new()
     foreach ($entry in $scanRoots) {

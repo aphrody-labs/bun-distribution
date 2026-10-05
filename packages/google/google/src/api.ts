@@ -66,9 +66,7 @@ export async function oauthClient(requireToken = true): Promise<OAuth2Client> {
       void saveOAuthToken(merged, paths.token);
     });
   } else if (requireToken) {
-    throw new Error(
-      `Google OAuth is not connected. Run: bun packages/google/google/bin/aphrody-google-api.ts auth-login`,
-    );
+    throw new Error(`Google OAuth is not connected. Run: yolo google drive auth-login`);
   }
   return client;
 }

@@ -19,12 +19,8 @@ name = "aphrody_a2a_client"
 # Pure-Rust port of `.claude/plugins/aphrody/skills/a2a-duel-loop/scripts/duel-cycle.ts`
 # (PLAN_RUST_ONLY.md Phase 4.5). Native-only — depends on tokio + reqwest for
 # the optional POST /msg mirror plus chrono/clap/getrandom/hex (all native-only
-# in the cfg-gated target block below). The binary is excluded on wasm targets
-# via #![cfg(not(target_family = "wasm"))] in src/bin/a2a_duel_loop.rs.
-[[bin]]
-name = "a2a-duel-loop"
-path = "src/bin/a2a_duel_loop.rs"
-required-features = []
+# in the cfg-gated target block below). The example is a no-op on wasm targets
+# (examples/a2a_duel_loop.rs).
 
 [lints]
 workspace = true
@@ -43,8 +39,8 @@ uuid = { workspace = true }
 
 # Native (Linux / Windows / macOS): full tokio + reqwest with TLS.
 # reqwest uses OS networking (mio, hyper, rustls) — not available on wasm32.
-# The `a2a-duel-loop` binary lives here too — its deps (chrono, clap, getrandom,
-# hex) are pulled in only on native because the binary is native-only (uses the
+# The `a2a_duel_loop` example lives here too — its deps (chrono, clap, getrandom,
+# hex) are pulled in only on native because the example is native-only (uses the
 # tokio-multi-thread runtime + native file APIs via std::fs).
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 tokio = { workspace = true }

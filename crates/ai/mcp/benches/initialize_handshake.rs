@@ -30,15 +30,26 @@ use aphrody_gemini_runtime::McpClient;
 use criterion::{Criterion, criterion_group, criterion_main};
 use tokio::runtime::Builder;
 
-/// Resolve the freshly-built `aphrody-mcp` binary path.
-///
-/// `CARGO_BIN_EXE_<name>` is injected by Cargo at compile time for any
-/// `[[bench]]` declared in the same crate as a `[[bin]]`. This avoids both a
-/// `which` lookup (which would race with an outdated `~/.local/bin/aphrody-mcp`)
-/// and an `assert_cmd` dependency at bench time.
-const APHRODY_MCP_BIN: &str = env!("CARGO_BIN_EXE_aphrody-mcp");
+/// Path of the workspace `aphrody` multi-call binary (the former `aphrody-mcp` binary is its
+/// `mcp-server` subcommand). `APHRODY_BIN` overrides; otherwise it is the `aphrody` next to the
+/// `deps/` directory of the current bench executable (`target/<profile>/aphrody`), so build it
+/// first with `scripts/build/rust/cargo-serial.sh build -p aphrody`.
+fn aphrody_bin() -> std::path::PathBuf {
+    if let Some(path) = std::env::var_os("APHRODY_BIN") {
+        return path.into();
+    }
+    let exe = std::env::current_exe().expect("current exe");
+    let profile_dir = exe.parent().and_then(std::path::Path::parent).expect("target profile dir");
+    let bin = profile_dir.join(format!("aphrody{}", std::env::consts::EXE_SUFFIX));
+    assert!(
+        bin.is_file(),
+        "{} not found: build the `aphrody` binary (cargo build -p aphrody) or set APHRODY_BIN",
+        bin.display()
+    );
+    bin
+}
 
-/// Spawn `aphrody-mcp`, run the full MCP initialize handshake, drop the
+/// Spawn `aphrody mcp-server`, run the full MCP initialize handshake, drop the
 /// client (which kills the child via `kill_on_drop(true)`).
 ///
 /// We assert handshake success to fail fast if the server regresses to a
@@ -46,9 +57,10 @@ const APHRODY_MCP_BIN: &str = env!("CARGO_BIN_EXE_aphrody-mcp");
 /// a broken server).
 async fn spawn_and_handshake() {
     let env: HashMap<String, String> = HashMap::new();
-    let mut client = McpClient::from_stdio(black_box(APHRODY_MCP_BIN), &[], &env)
-        .await
-        .expect("aphrody-mcp: stdio spawn must succeed (built binary missing?)");
+    let mut client =
+        McpClient::from_stdio(black_box(&aphrody_bin().to_string_lossy()), &["mcp-server"], &env)
+            .await
+            .expect("aphrody-mcp: stdio spawn must succeed (built binary missing?)");
     let info = client.initialize().await.expect("aphrody-mcp: initialize handshake must succeed");
     // Touch the returned ServerInfo so the optimiser cannot elide the call.
     black_box(&info);

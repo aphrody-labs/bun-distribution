@@ -24,23 +24,7 @@
       "generated": [
         "crates/ui/app/gen"
       ],
-      "note": "Desktop agent console. Embeds the prebuilt ui-dist bundle until @aphrody/app-ui joins the workspace."
-    },
-    {
-      "id": "m3-showcase",
-      "kind": "app",
-      "path": "crates/ui/m3-showcase",
-      "package": "aphrody-m3-showcase",
-      "runtime": "wry",
-      "workspace": "member",
-      "confs": [
-        "tauri.conf.json"
-      ],
-      "gate": true,
-      "generated": [
-        "crates/ui/m3-showcase/gen"
-      ],
-      "note": "Canonical adaptive M3 showcase shell. The frontend and Bun API live in m3/apps/showcase; tauri-wrap owns the compiled desktop sidecar and its lifecycle. Mobile entry is retained; production activation requires a qualified native API host adapter."
+      "note": "Desktop agent console, the only desktop application. Embeds the prebuilt ui-dist bundle until @aphrody/app-ui joins the workspace. Also the Yolo desktop SDK host (--host-info, --runtime-host: former yolo-desktop), opens the M3 showcase window with --showcase (former m3-showcase; the Bun sidecar of m3/apps/showcase serves UI and API) and hosts the real-webview shell e2e as the shell_e2e example (former aphrody-shell-tauri-e2e)."
     },
     {
       "id": "aphrody-drive",
@@ -93,22 +77,6 @@
       "workspace": "member",
       "gate": true,
       "note": "Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client."
-    },
-    {
-      "id": "aphrody-shell-tauri-e2e",
-      "kind": "app",
-      "path": "crates/shell/tauri-e2e",
-      "package": "aphrody-shell-tauri-e2e",
-      "runtime": "wry",
-      "workspace": "member",
-      "confs": [
-        "tauri.conf.json"
-      ],
-      "gate": true,
-      "generated": [
-        "crates/shell/tauri-e2e/gen"
-      ],
-      "note": "Minimal real Tauri app running WASM shell through aphrody-shell-tauri plugin."
     }
   ]
 }

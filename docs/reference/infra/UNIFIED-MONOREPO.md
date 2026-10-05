@@ -30,7 +30,6 @@ Tous les packages et outils consomment [`@aphrody/paths`](packages/infra/paths/s
 
 Les commandes d'infrastructure et d'exploitation partagées sont centralisées via :
 1. **`aphrody` CLI** (`~/.local/bin/aphrody`) : Point d'entrée produit, RAG, IA, kernel OS.
-2. **`yolo` CLI** (`~/.local/bin/yolo`) : Moteur de compilation, scan wyhash, N2B in-process, tests de conformité.
-3. **`aphrody-workspace`** (`~/.local/bin/aphrody-workspace`) : Workflow d'optimisation, édition de code par lot (`code-edit`), synchronisation de plugins (`plugins`).
+2. **`yolo` CLI** (`~/.local/bin/yolo`) : Moteur de compilation, scan wyhash, N2B in-process, tests de conformité, et les commandes des paquets Bun (`yolo ops|workspace|optimize|update|google|doc-ai|browser`) : workflow d'optimisation, édition de code par lot (`yolo workspace code-edit`), synchronisation de plugins (`yolo workspace plugins`).
 
 Les doublons de scripts de build et de déploiement direct dans les sous-dossiers sont dépréciés au profit de `scripts/release/` et de l'orchestrateur d'inventaire `config/infra/`.

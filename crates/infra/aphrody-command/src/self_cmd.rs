@@ -18,7 +18,8 @@ use crate::{
 };
 
 /// `aphrody self install-path` — register the release binary on the user's
-/// PATH (or symlink it into `$HOME/.local/bin`).
+/// PATH (or symlink it into `$HOME/.local/bin`), plus the links of the former
+/// standalone binaries served by the multi-call dispatch.
 pub(crate) struct InstallPathCommand {
     /// Absolute path to the `aphrody` binary. When `None`, falls back to
     /// `<repo>/target/release/aphrody[.exe]` relative to the current working
@@ -70,8 +71,71 @@ impl TerminalCommand for InstallPathCommand {
             }
         }
 
-        platform_install_path(&bin, self.dry_run)
+        platform_install_path(&bin, self.dry_run)?;
+        install_aliases(&bin, self.dry_run)
     }
+}
+
+/// Link every former standalone binary name to `bin` so `aphrody-infra …` and friends keep
+/// working through the multi-call dispatch. Existing links are replaced; an existing regular file
+/// (an old standalone build) is moved under `<link dir>/../lib/aphrody/replaced/` for rollback.
+fn install_aliases(bin: &Path, dry_run: bool) -> miette::Result<()> {
+    let link_dir = alias_dir(bin)?;
+    let replaced = link_dir.parent().unwrap_or(&link_dir).join("lib/aphrody/replaced");
+    for alias in crate::multicall::aliases() {
+        let link = link_dir.join(format!("{alias}{}", std::env::consts::EXE_SUFFIX));
+        if dry_run {
+            println!("[dry-run] would link {} -> {}", link.display(), bin.display());
+            continue;
+        }
+        match link.symlink_metadata() {
+            Ok(meta) if meta.file_type().is_symlink() => std::fs::remove_file(&link)
+                .into_diagnostic()
+                .wrap_err_with(|| format!("failed to remove existing {}", link.display()))?,
+            Ok(_) => {
+                std::fs::create_dir_all(&replaced).into_diagnostic()?;
+                let backup = replaced.join(link.file_name().unwrap_or_default());
+                std::fs::rename(&link, &backup).into_diagnostic().wrap_err_with(|| {
+                    format!("failed to move {} to {}", link.display(), backup.display())
+                })?;
+                println!("moved former binary {} -> {}", link.display(), backup.display());
+            },
+            Err(_) => {},
+        }
+        link_alias(bin, &link)?;
+        println!("linked {} -> {}", link.display(), bin.display());
+    }
+    Ok(())
+}
+
+/// Unix links live next to the `aphrody` link in `~/.local/bin`; Windows hard links sit next to
+/// the binary, whose directory is on PATH.
+#[cfg(not(target_os = "windows"))]
+fn alias_dir(_bin: &Path) -> miette::Result<PathBuf> {
+    let home =
+        std::env::var("HOME").into_diagnostic().wrap_err("HOME environment variable is not set")?;
+    Ok(PathBuf::from(home).join(".local").join("bin"))
+}
+
+#[cfg(target_os = "windows")]
+fn alias_dir(bin: &Path) -> miette::Result<PathBuf> {
+    bin.parent()
+        .map(Path::to_path_buf)
+        .ok_or_else(|| miette::miette!("binary path has no parent directory: {}", bin.display()))
+}
+
+#[cfg(unix)]
+fn link_alias(bin: &Path, link: &Path) -> miette::Result<()> {
+    std::os::unix::fs::symlink(bin, link)
+        .into_diagnostic()
+        .wrap_err_with(|| format!("failed to symlink {} -> {}", link.display(), bin.display()))
+}
+
+#[cfg(not(unix))]
+fn link_alias(bin: &Path, link: &Path) -> miette::Result<()> {
+    std::fs::hard_link(bin, link)
+        .into_diagnostic()
+        .wrap_err_with(|| format!("failed to hard-link {} -> {}", link.display(), bin.display()))
 }
 
 /// Resolve the binary path, defaulting to `<cwd>/target/release/aphrody[.exe]`.

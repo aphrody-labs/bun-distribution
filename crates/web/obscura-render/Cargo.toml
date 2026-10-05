@@ -56,9 +56,11 @@ log = { workspace = true }
 [lib]
 path = "src/lib.rs"
 
-[[bin]]
+# Offline paint harness (former `paint_file` binary):
+# `cargo run -p obscura-render --features paint --example paint_file -- in.html out.png`.
+[[example]]
 name = "paint_file"
-path = "src/bin/paint_file.rs"
+path = "examples/paint_file.rs"
 required-features = ["paint"]
 
 # Vendored upstream code (h4ckf0r0day/obscura): not held to the aphrody lint

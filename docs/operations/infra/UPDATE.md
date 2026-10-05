@@ -1,25 +1,25 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Update pipeline (`aphrody-update`)
+# Update pipeline (`yolo update`)
 
-Owner: Infra (`packages/infra/update`, package `@aphrody/update`, also reachable as `aphrody-ops update` and
-`aphrody-ops deps-sync`). One entry point for toolchains, dependencies, the Cargo lock, user systemd units and the
+Owner: Infra (`packages/infra/update`, package `@aphrody/update`, also reachable as `yolo ops update` and
+`yolo ops deps-sync`). One entry point for toolchains, dependencies, the Cargo lock, user systemd units and the
 dev-env checks. Bun, uv and the Tauri family follow the latest published release; see the policy below.
 
 | Module | Command | What it does |
 | --- | --- | --- |
 | gate | `bun run update` | pins agree everywhere, user units linked, `/etc/wsl.conf` matches `config/wsl/wsl.conf` (exit 1 on drift) |
-| pins | `aphrody-update pins [check\|apply <tool> <version>]` | every hardcoded version of bun, uv, rust, nushell, oxlint, oxfmt, typescript (manifest: `config/update/pins.json`, one regex capture per target, 30+ `engines` ranges included) |
+| pins | `yolo update pins [check\|apply <tool> <version>]` | every hardcoded version of bun, uv, rust, nushell, oxlint, oxfmt, typescript (manifest: `config/update/pins.json`, one regex capture per target, 30+ `engines` ranges included) |
 | tools | `bun run update:tools` (`--apply`) | installed vs pinned vs latest (GitHub, PyPI, npm, crates.io); `--apply` installs the exact version (`uv self update <v>`, bun installer, `rustup toolchain install`, `cargo binstall nu@<v>`) and re-pins |
 | cargo | `bun run update:cargo` (`--apply`) | `cargo update --dry-run`, or the lock refresh inside manifest ranges through `cargo-serial.sh`; snapshot in `target/update/` (not in repo) |
-| deps | `bun run update:deps`, `aphrody-update deps <sub>` | `plan`, `apply` (Tauri family + `bun update -r`), `facts`, `fix`, `baseline`, `changelog`, `memory`, `inventory`, `run` |
-| systemd | `bun run update:systemd`, `aphrody-update systemd install\|restart` | write the units rendered from the yolo unit catalog (`yolo/packages/core/src/units/catalog.json`, `APHRODY_YOLO_ROOT` or `~/yolo`) into `~/.config/systemd/user` (differing copies are kept as `*.pre-update-<ts>`), `daemon-reload`, `try-restart` units that run bun or aphrody binaries |
-| sources | `bun run sources` (status), `sources:verify`, `sources:sync`, `bun run update:sources` (drift), `aphrody-update sources <sub>` | the one owner of `~/source` checkouts, upstream pins, forks and git state, see below |
-| tauri | `aphrody-ops tauri-sync [--check\|--apply]` (also run by `deps plan\|apply`) | the one owner of the Tauri crates, npm packages, mirrors (`m3/packages/scaffold/src/pins.ts`) and `$schema` URLs; honours `minimumReleaseAge`; its Cargo gate goes through `cargo-serial.sh` |
-| rust | `bun run update:rust`, `aphrody-update rust status\|plan\|apply [--majors a,b]\|verify` | structured Rust bump: toolchain, lock refresh in range, majors one at a time, advisories vs `config/deps/rust-holds.json`; every Cargo call goes through `cargo-serial.sh`. Doc: [update/RUST.md](./update/RUST.md) |
-| rust doctor | `bun run rust:doctor`, `bun run rust:fix`, `aphrody-update rust doctor\|fix [--only a,b] [--skip a,b] [--strict] [--allow-dirty]` | one action for the whole Cargo workspace: lock, format, compile and lints, every member feature, wasm32 and Windows MSVC targets, tests, advisories and bumps; `fix` repairs lock pins, formatting and machine-applicable suggestions first, never in vendored or already-modified crates. Report: `target/update/rust-doctor/report.json` (not in repo). Doc: [update/RUST.md](./update/RUST.md#doctor-one-action-for-the-whole-workspace) |
-| bun | `bun run update:bun`, `aphrody-update bun status\|plan\|apply [--majors a,b]\|verify\|rollback` | structured Bun/npm bump: runtime pins, release-age aware plan, majors after release notes, holds in `config/deps/bun-holds.json`, snapshot and rollback under `target/update/bun/` (not in repo). Doc: [update/BUN.md](./update/BUN.md) |
-| uv | `bun run update:uv`, `aphrody-update uv status\|plan\|apply [--upgrade-package a,b]\|verify\|rollback` | structured Python bump for `~/aphrody-py` (three `uv.lock` files), holds in `config/deps/uv-holds.json`. Doc: [update/UV.md](./update/UV.md) |
-| upstream | `bun run upstream`, `aphrody-update upstream list\|drift\|refresh\|fetch\|prune\|docs` | the reference upstream catalogue, see "Sources" below |
+| deps | `bun run update:deps`, `yolo update deps <sub>` | `plan`, `apply` (Tauri family + `bun update -r`), `facts`, `fix`, `baseline`, `changelog`, `memory`, `inventory`, `run` |
+| systemd | `bun run update:systemd`, `yolo update systemd install\|restart` | write the units rendered from the yolo unit catalog (`yolo/packages/core/src/units/catalog.json`, `APHRODY_YOLO_ROOT` or `~/yolo`) into `~/.config/systemd/user` (differing copies are kept as `*.pre-update-<ts>`), `daemon-reload`, `try-restart` units that run bun or aphrody binaries |
+| sources | `bun run sources` (status), `sources:verify`, `sources:sync`, `bun run update:sources` (drift), `yolo update sources <sub>` | the one owner of `~/source` checkouts, upstream pins, forks and git state, see below |
+| tauri | `yolo ops tauri-sync [--check\|--apply]` (also run by `deps plan\|apply`) | the one owner of the Tauri crates, npm packages, mirrors (`m3/packages/scaffold/src/pins.ts`) and `$schema` URLs; honours `minimumReleaseAge`; its Cargo gate goes through `cargo-serial.sh` |
+| rust | `bun run update:rust`, `yolo update rust status\|plan\|apply [--majors a,b]\|verify` | structured Rust bump: toolchain, lock refresh in range, majors one at a time, advisories vs `config/deps/rust-holds.json`; every Cargo call goes through `cargo-serial.sh`. Doc: [update/RUST.md](./update/RUST.md) |
+| rust doctor | `bun run rust:doctor`, `bun run rust:fix`, `yolo update rust doctor\|fix [--only a,b] [--skip a,b] [--strict] [--allow-dirty]` | one action for the whole Cargo workspace: lock, format, compile and lints, every member feature, wasm32 and Windows MSVC targets, tests, advisories and bumps; `fix` repairs lock pins, formatting and machine-applicable suggestions first, never in vendored or already-modified crates. Report: `target/update/rust-doctor/report.json` (not in repo). Doc: [update/RUST.md](./update/RUST.md#doctor-one-action-for-the-whole-workspace) |
+| bun | `bun run update:bun`, `yolo update bun status\|plan\|apply [--majors a,b]\|verify\|rollback` | structured Bun/npm bump: runtime pins, release-age aware plan, majors after release notes, holds in `config/deps/bun-holds.json`, snapshot and rollback under `target/update/bun/` (not in repo). Doc: [update/BUN.md](./update/BUN.md) |
+| uv | `bun run update:uv`, `yolo update uv status\|plan\|apply [--upgrade-package a,b]\|verify\|rollback` | structured Python bump for `~/aphrody-py` (three `uv.lock` files), holds in `config/deps/uv-holds.json`. Doc: [update/UV.md](./update/UV.md) |
+| upstream | `bun run upstream`, `yolo update upstream list\|drift\|refresh\|fetch\|prune\|docs` | the reference upstream catalogue, see "Sources" below |
 | all | `bun run update:run` | tools, cargo, deps, systemd restart, then the gate |
 
 Everything except `check`, `pins` and `systemd check` is report-only until `--apply`.
@@ -82,7 +82,7 @@ Reference upstreams (codex, ollama, mistral.rs, vllm, WSL, ...) are accessed thr
 - MCP: `upstream_list`, `upstream_info`, `upstream_tree`, `upstream_read`, `upstream_search` (`crates/ai/mcp`).
 - Skill: `~/plugins/aphrody/skills/upstreams`.
 
-`aphrody-update upstream drift` compares the observed commit of each entry with the remote head; `refresh --apply` records
+`yolo update upstream drift` compares the observed commit of each entry with the remote head; `refresh --apply` records
 the heads; `fetch <id> [--path <dir>]` makes a disposable shallow clone in `~/.cache/aphrody/upstream/<id>`;
 `prune --apply [--cache]` removes every non-vital directory of `~/source` (clean ones only) and the cache; `docs --apply`
 regenerates UPSTREAMS.md. The WSL build inputs (tier `build`) are restored only for a build

@@ -15,7 +15,7 @@ Audit + coverage automation pour le plugin `n2b`.
 > (`bun scripts/audit/compat/scripts/n2b/coverage-check.ts`, `bun scripts/tools/compat/scripts/n2b/coverage-daemon.ts`).
 >
 > Removed on 2026-10-02: `update-bun-docs.{sh,ps1}` (thin wrappers of
-> `aphrody-ops bun-upstream-docs`, whose root resolution pointed at `scripts/tools/compat`), and
+> `yolo ops bun-upstream-docs`, whose root resolution pointed at `scripts/tools/compat`), and
 > `n2b-env.{sh,ps1}`, `refactor-start.{sh,ps1}`, `refactor-state.{sh,ps1}` (tmux launchers of the
 > former standalone n2b plugin; they required `plan/MISSION.md`, which does not exist here).
 

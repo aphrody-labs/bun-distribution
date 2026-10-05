@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Bun and npm updates (`aphrody-update bun`)
+# Bun and npm updates (`yolo update bun`)
 
 Owner: Infra (`packages/infra/update/src/ecosystems/bun.ts`, exported as `runBun`). It bumps everything that is Bun or
 npm: the Bun runtime pin, the Tauri JS packages, the root `workspaces.catalog` and the literal ranges of every
@@ -9,7 +9,7 @@ retired: the Aphrody Bun fork (`aphrody-labs/bun`) was deleted on 2026-10-02: `b
 ## Policy
 
 - Bun follows the latest published release (`config/update/pins.json` rewrites every hardcoded version, see
-  `aphrody-update tools`). The Tauri family follows the latest 3.0.0 alpha line and is owned by `tauri sync`.
+  `yolo update tools`). The Tauri family follows the latest 3.0.0 alpha line and is owned by `tauri sync`.
   TypeScript is 7 and Oxc (`oxlint`, `oxfmt`) is pinned: both move through the same pin manifest, never by hand.
 - Every other direct dependency follows its latest release. Minors and patches are applied automatically. A major (and
   a `0.x` minor, which is breaking by semver) needs the release notes read first (GitHub releases, the changelog or
@@ -33,7 +33,7 @@ supply-chain delay. `minimumReleaseAgeExcludes` lists the packages that must tra
 | `nodemailer`, `undici` | Security fixes (SMTP and HTTP clients). |
 | `@tauri-apps/cli`, `@aphrody/api`, `@tauri-apps/cli-linux-x64-gnu` | The 3.0.0 alphas must track the Rust crates (`tauri sync`). |
 
-`aphrody-update bun` honours the gate: a release younger than the window is reported as `waiting`, and `apply` writes
+`yolo update bun` honours the gate: a release younger than the window is reported as `waiting`, and `apply` writes
 the newest release that is old enough (`pickEligible` from `tauri/sync.ts`, prereleases ignored when the latest is
 stable). `bun run bun:check` fails if the window drops below 3 days.
 
@@ -46,17 +46,17 @@ Root `package.json` `overrides` force one resolution for everything that depends
 | `axios` `^1.20.0`, `qs` `^6.16.0`, `undici` `^7.30.0` | Floors for transitive consumers so the lockfile resolves the patched releases (2026-10-01 advisory pass). `undici` stays on 7: its dependents ask for `^7` (`@ai-sdk/provider-utils`, `cheerio`, `jsdom`, `shadcn`, `@dotenvx`), `miniflare` pins 7.29.0 and Discord's libraries are forced up from 6. |
 | `@rosegriffon/azalee`, `@rosegriffon/inagle`, `@rosegriffon/inagle-cross` | Local tarballs under `.cache/iecode-packages` (the IECODE packages, one commit hash each). `status` flags a missing tarball. |
 
-`aphrody-update bun status` prints each override with the versions `bun.lock` resolves and the registry latest, so a
+`yolo update bun status` prints each override with the versions `bun.lock` resolves and the registry latest, so a
 floor that no longer matters can be dropped.
 
 ## Commands
 
 ```bash
-aphrody-update bun status [--offline] [--json] [--no-advisories]   # report only
-aphrody-update bun plan   [--majors a,b]                            # what apply would do
-aphrody-update bun apply  [--majors a,b] [--skip-tests]             # snapshot, bump, install, verify
-aphrody-update bun verify [--skip-tests]                            # gates only
-aphrody-update bun rollback                                         # restore the newest snapshot
+yolo update bun status [--offline] [--json] [--no-advisories]   # report only
+yolo update bun plan   [--majors a,b]                            # what apply would do
+yolo update bun apply  [--majors a,b] [--skip-tests]             # snapshot, bump, install, verify
+yolo update bun verify [--skip-tests]                            # gates only
+yolo update bun rollback                                         # restore the newest snapshot
 ```
 
 (`bun packages/infra/update/src/ecosystems/bun.ts <sub>` runs the same module directly.)
@@ -82,19 +82,19 @@ aphrody-update bun rollback                                         # restore th
 
 ## Majors, step by step
 
-1. `aphrody-update bun plan` lists the candidates (`major` bucket) with the release-age-installable version.
+1. `yolo update bun plan` lists the candidates (`major` bucket) with the release-age-installable version.
 2. For each candidate read the release notes between the current and the target version, `grep` the repo for the APIs it
    uses, and check `peerDependencies` and `engines` of the target against the repo (react, next, typescript 7, bun).
    Delegating this to read-only research agents works; the decision and the record stay here.
 3. Verdict per package: SAFE (bump), FIX (bump plus a named code change), HOLD (do not bump).
-4. `aphrody-update bun apply --majors a,b,c` for the SAFE and FIX ones, with the code fix applied before `verify`.
-5. A failure that is not a cheap, real fix: `aphrody-update bun rollback` (or edit the one spec back), then add the
+4. `yolo update bun apply --majors a,b,c` for the SAFE and FIX ones, with the code fix applied before `verify`.
+5. A failure that is not a cheap, real fix: `yolo update bun rollback` (or edit the one spec back), then add the
    package to `config/deps/bun-holds.json` and to the hold table below.
-6. Run `aphrody-update deps inventory` afterwards to refresh `docs/reference/workspace/DEPS-INVENTORY.md`.
+6. Run `yolo update deps inventory` afterwards to refresh `docs/reference/workspace/DEPS-INVENTORY.md`.
 
 ## Rollback
 
-`aphrody-update bun rollback` restores the newest snapshot (`target/update/bun/` (not in repo), not committed). A bump that was
+`yolo update bun rollback` restores the newest snapshot (`target/update/bun/` (not in repo), not committed). A bump that was
 committed is reverted with `git revert` of that commit. After either, run `bun install` to realign `node_modules`.
 
 ## Bun fork

@@ -56,7 +56,7 @@ export const WORKSPACE_TOOLS: ToolSpec[] = [
   {
     name: "workspace_binaries",
     description:
-      "Installed and workspace-built Aphrody binaries with their source and catalogue status; never arbitrary PATH files (CLI: aphrody-ops binaries).",
+      "Installed and workspace-built Aphrody binaries with their source and catalogue status; never arbitrary PATH files (CLI: yolo ops binaries).",
     inputSchema: { type: "object", properties: { root: ROOT_SCHEMA }, additionalProperties: false },
     readOnly: true,
     handler: (args) => discoverAphrodyBinaries(root(args)),
@@ -64,7 +64,7 @@ export const WORKSPACE_TOOLS: ToolSpec[] = [
   {
     name: "workspace_fleet",
     description:
-      "Repositories, pipeline stages and binaries declared for the Aphrody fleet (CLI: aphrody-ops fleet).",
+      "Repositories, pipeline stages and binaries declared for the Aphrody fleet (CLI: yolo ops fleet).",
     inputSchema: { type: "object", properties: { root: ROOT_SCHEMA }, additionalProperties: false },
     readOnly: true,
     handler: (args) => loadFleet(root(args)),
@@ -72,7 +72,7 @@ export const WORKSPACE_TOOLS: ToolSpec[] = [
   {
     name: "workspace_bridges",
     description:
-      "Rust, Bun, package and API bridge catalogue used by aphrody-ops bridge (CLI: aphrody-ops bridge status).",
+      "Rust, Bun, package and API bridge catalogue used by yolo ops bridge (CLI: yolo ops bridge status).",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     readOnly: true,
     handler: () => loadAphrodyBridgeCatalog(),
@@ -119,7 +119,7 @@ export async function runWorkspaceSubsystem(args: string[]): Promise<number> {
     return stopping ? 0 : 1;
   }
   console.log(
-    "Usage: aphrody-ops workspace-subsystem <--list | --call <tool> [--args <json>] | --serve>",
+    "Usage: yolo ops workspace-subsystem <--list | --call <tool> [--args <json>] | --serve>",
   );
   return mode === "--help" || mode === "-h" ? 0 : 64;
 }

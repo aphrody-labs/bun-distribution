@@ -122,7 +122,8 @@ describe("unified documentation", () => {
     ]) {
       const result = Bun.spawnSync([
         process.execPath,
-        join(import.meta.dir, "../src/ops.ts"),
+        join(import.meta.dir, "../../../../apps/yolo/cli/src/index.ts"),
+        "ops",
         ...args,
         "--root",
         join(tmpdir(), "nonexistent-docs-help-root"),

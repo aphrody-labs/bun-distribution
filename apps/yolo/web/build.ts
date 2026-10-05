@@ -23,10 +23,13 @@ async function bundle() {
     return false;
   }
 
-  // Copy HTML template & assets (the favicon is the 32px icon of crates/yolo-desktop)
+  // Copy HTML template & assets (the favicon is the local favicon.png)
   const htmlSrc = await Bun.file(resolve(import.meta.dir, "index.html")).text();
   await Bun.write(resolve(outdir, "index.html"), htmlSrc);
-  await Bun.write(resolve(outdir, "favicon.png"), Bun.file(resolve(import.meta.dir, "favicon.png")));
+  await Bun.write(
+    resolve(outdir, "favicon.png"),
+    Bun.file(resolve(import.meta.dir, "favicon.png")),
+  );
 
   const elapsedMs = ((Bun.nanoseconds() - t0) / 1_000_000).toFixed(2);
   console.log(`[Bun+OXC] Built in ${elapsedMs}ms -> dist/`);

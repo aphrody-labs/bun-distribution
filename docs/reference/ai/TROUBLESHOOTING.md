@@ -74,7 +74,7 @@ using `packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml` (not in re
 
 - **Cause**: Hand edits or a doc was added/removed without regenerating.
 - **Fix**: DO NOT hand-edit `docs/reference/ai/SUMMARY.md`. Re-run
-  `cargo run -p aphrody-summary` after any doc add, remove, or rename. The
+  `aphrody summary` after any doc add, remove, or rename. The
   script is the single source of truth.
 
 ## 9. `a2a-pb` build fails with "build scripts must only write to $OUT_DIR"

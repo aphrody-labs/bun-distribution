@@ -19,9 +19,7 @@ export async function runRuntimeGate(args: string[]): Promise<number> {
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--python-root") pythonRoot = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
-      console.log(
-        "Usage: aphrody-ops runtime-gate [--root <aphrody>] [--python-root <aphrody-py>]",
-      );
+      console.log("Usage: yolo ops runtime-gate [--root <aphrody>] [--python-root <aphrody-py>]");
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }

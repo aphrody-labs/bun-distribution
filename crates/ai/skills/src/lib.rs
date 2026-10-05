@@ -13,6 +13,9 @@
 
 #![forbid(unsafe_code)]
 
+mod cli;
 pub mod hooks;
 pub mod permissions;
 pub mod runtime;
+
+pub use cli::cli_main;

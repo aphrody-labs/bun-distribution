@@ -412,7 +412,7 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     else if (arg === "--run") run = true;
     else if (arg === "--help") {
       console.log(
-        "Usage: aphrody-ops infra-audit [--root path] [--run] [--live] [--output report.json] [--evidence private-directory] [--gate-report prior-report.json]",
+        "Usage: yolo ops infra-audit [--root path] [--run] [--live] [--output report.json] [--evidence private-directory] [--gate-report prior-report.json]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
@@ -522,23 +522,12 @@ export async function runInfraAudit(args: string[]): Promise<number> {
       "--json",
       "doctor",
     ]);
-    await observe("Bun OVH profiles", [
-      process.execPath,
-      "packages/infra/ovh/src/cli.ts",
-      "profiles",
-      "--json",
-    ]);
+    // OVH belongs to the Rust Infra owner (`aphrody ovh` = `aphrody infra ovh`).
+    await observe("Native OVH profiles", [...binary, "--root", root, "ovh", "profiles"]);
     for (const profile of ["aphrody.com", "rosegriffon.fr", "dragonballfr.com"])
       await observe(
-        `Bun OVH API ${profile}`,
-        [
-          process.execPath,
-          "packages/infra/ovh/src/cli.ts",
-          "check",
-          "--profile",
-          profile,
-          "--json",
-        ],
+        `Native OVH API ${profile}`,
+        [...binary, "--root", root, "ovh", "status", "--profile", profile],
         root,
         45_000,
       );
@@ -552,7 +541,8 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     ])
       await observe(`Bun ${commandArgs[0]}`, [
         process.execPath,
-        "packages/infra/workspace/src/ops.ts",
+        "apps/yolo/cli/src/index.ts",
+        "ops",
         ...commandArgs,
       ]);
     await observe("Infra source/config contracts", [

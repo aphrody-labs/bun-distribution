@@ -192,14 +192,15 @@ fn workspace_infra_invoker(manifest: &Path, allow_source: bool) -> Option<(Strin
         return None;
     }
     if let Some(manifest_dir) = manifest.parent() {
-        let bin_name = if cfg!(windows) { "aphrody-ssh.exe" } else { "aphrody-ssh" };
+        // `aphrody-ssh` is the `ssh` subcommand of the single `aphrody` multi-call binary.
+        let bin_name = if cfg!(windows) { "aphrody.exe" } else { "aphrody" };
         let debug_bin = manifest_dir.join("target").join("debug").join(bin_name);
         let release_bin = manifest_dir.join("target").join("release").join(bin_name);
         if release_bin.is_file() {
-            return Some((release_bin.to_string_lossy().into_owned(), Vec::new()));
+            return Some((release_bin.to_string_lossy().into_owned(), vec!["ssh".to_string()]));
         }
         if debug_bin.is_file() {
-            return Some((debug_bin.to_string_lossy().into_owned(), Vec::new()));
+            return Some((debug_bin.to_string_lossy().into_owned(), vec!["ssh".to_string()]));
         }
     }
 
@@ -211,8 +212,11 @@ fn workspace_infra_invoker(manifest: &Path, allow_source: bool) -> Option<(Strin
             "--manifest-path".to_string(),
             manifest.to_string_lossy().into_owned(),
             "-p".to_string(),
-            "aphrody-ssh".to_string(),
+            "aphrody".to_string(),
+            "--bin".to_string(),
+            "aphrody".to_string(),
             "--".to_string(),
+            "ssh".to_string(),
         ],
     ))
 }

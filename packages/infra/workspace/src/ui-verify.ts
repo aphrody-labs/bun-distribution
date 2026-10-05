@@ -51,7 +51,7 @@ export async function runUiVerify(args: string[]): Promise<number> {
     if (arg === "--quick") quick = true;
     else if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops ui-verify [--root <aphrody-ui>] [--quick]");
+      console.log("Usage: yolo ops ui-verify [--root <aphrody-ui>] [--quick]");
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }

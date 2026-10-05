@@ -16,7 +16,7 @@ async function run(root: string, command: string[], label: string): Promise<void
 export async function runWorkspaceRepair(args: string[]): Promise<number> {
   if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops workspace-repair --ai-root <repo> --os-root <repo> --repo <aphrody|aphrody-os> [--apply] [--include-dirty]",
+      "Usage: yolo ops workspace-repair --ai-root <repo> --os-root <repo> --repo <aphrody|aphrody-os> [--apply] [--include-dirty]",
     );
     return 0;
   }
@@ -27,7 +27,7 @@ export async function runWorkspaceRepair(args: string[]): Promise<number> {
   const includeDirty = args.includes("--include-dirty");
   if (!ai || !os || !selected || !["aphrody", "aphrody-os"].includes(selected))
     throw new Error(
-      "Usage: aphrody-ops workspace-repair --ai-root <repo> --os-root <repo> --repo <aphrody|aphrody-os> [--apply] [--include-dirty]",
+      "Usage: yolo ops workspace-repair --ai-root <repo> --os-root <repo> --repo <aphrody|aphrody-os> [--apply] [--include-dirty]",
     );
   const roots = { aphrody: resolve(ai), "aphrody-os": resolve(os) };
   const target = roots[selected as keyof typeof roots];

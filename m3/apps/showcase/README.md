@@ -21,27 +21,21 @@ Text fields keep their caret keys.
 in all three layouts and both colour schemes. It fails for console errors or
 external assets and writes its receipt outside the repository.
 
-The frontend and Bun API stay in this application. The native Tauri shell belongs to
-[Aphrody's canonical Rust owner](../../../crates/ui/m3-showcase/Cargo.toml);
-it inherits the workspace's pinned Tauri dependencies. Its desktop wrapper starts
-the compiled Bun sidecar on loopback, serves UI and API from the same origin,
-and owns the child's lifecycle. A static frontend directory alone does not host
-the API panels.
+The frontend and Bun API stay in this application. There is no separate native shell: the
+desktop is `aphrody-app` ([`crates/ui/app`](../../../crates/ui/app/Cargo.toml)), which opens a
+showcase window with `aphrody-app --showcase` or its Help > "M3 Showcase" menu entry. That window
+starts the compiled Bun sidecar `m3-showcase` on loopback and loads it, so UI and API share one
+origin; the page gets no Tauri IPC. A static frontend directory alone does not host the API panels.
 
-Run `bun run icons` to prepare the canonical brand icons using the installed Tauri CLI.
-`bun run tauri -- build --plan` reports the concrete owner, serialized Cargo runner
-and prerequisite diagnostics without compiling. Native build, development and sidecar
-commands execute through Aphrody's configured Workspace build factory and
-`scripts/build/rust/cargo-serial.sh`; local flags cannot bypass those owners.
-A production desktop delivery still needs a successful build/package and a launch
-of the resulting application.
+`bun run tauri -- sidecar` compiles the sidecar and stages it beside the desktop executable (found
+there first, then on `PATH`); `bun run tauri -- info` reports the desktop owner and prerequisites
+without compiling. Compilation executes through Aphrody's configured Workspace build factory and
+`scripts/build/rust/cargo-serial.sh`; local flags cannot bypass those owners. A production desktop
+delivery still needs a successful build/package of `aphrody-app` and a launch of the result.
 
-The responsive mobile layout is available in the web UI. Android/iOS source retains
-the mobile entry point, but native mobile activation is refused until the canonical
-API host adapter and serialized platform builder qualify. Android needs its SDK,
-NDK and JDK; iOS needs the macOS/Xcode builder. The desktop Bun sidecar does not
-establish a mobile API host. Native artifacts, device installation and device
-execution require separate evidence.
+The responsive mobile layout is available in the web UI. No native mobile host exists: the desktop
+Bun sidecar does not establish a mobile API host, and native mobile activation requires a
+canonical API host adapter, a serialized platform builder and separate device evidence.
 
 Deployment commands generate reviewable target files from the declared configuration.
 The example domain is a template input; it is not a live deployed service.

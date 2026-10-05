@@ -2,10 +2,75 @@
   "schemaVersion": 1,
   "$comment": "Ratchet for inline interpreter invocations. Counts may only fall; new files fail the check.",
   "files": {
+    "apps/yolo/cli/test/startup-benchmark.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "apps/yolo/cli/test/upgrade.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "apps/yolo/cli/test/verify-python.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "apps/yolo/cli/test/web-command.test.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "apps/yolo/install.sh": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "apps/yolo/yolo.just": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "m3/packages/m3-front/test/production-contract.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/core/src/sys/supervisor-benchmark.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/core/src/verify/engine.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/core/src/workspace/build-factory-jobs.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/core/test/vendor-catalog.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/n2b-client/test/binary-resolution.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
     "packages/infra/update/test/tauri-sync-apply.test.ts": {
       "count": 1,
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
+    },
+    "packages/infra/workspace/src/build-factory-jobs.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
     },
     "packages/infra/workspace/src/bun-native.ts": {
       "count": 1,
@@ -22,6 +87,21 @@
       "scope": "local",
       "reason": "uv import probe of a Python package owner (Python via uv by policy)."
     },
+    "packages/infra/workspace/test/build-factory-concurrency.test.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/infra/workspace/test/build-factory-jobs.test.ts": {
+      "count": 4,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/infra/workspace/test/build-factory.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
     "packages/infra/workspace/test/bun-native.test.ts": {
       "count": 2,
       "scope": "test",
@@ -36,6 +116,11 @@
       "count": 1,
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
+    },
+    "packages/infra/workspace/test/repo-sync.test.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
     },
     "packages/interop/native/test-http-request.test.ts": {
       "count": 1,
@@ -72,31 +157,6 @@
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     },
-    "scripts/release/atomic-deploy-aphrody-discord.sh": {
-      "count": 3,
-      "scope": "host",
-      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
-    },
-    "scripts/release/atomic-deploy-aphrody-stack.sh": {
-      "count": 3,
-      "scope": "host",
-      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
-    },
-    "scripts/release/atomic-deploy-bundle.sh": {
-      "count": 7,
-      "scope": "host",
-      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
-    },
-    "scripts/release/atomic-deploy-rg.sh": {
-      "count": 2,
-      "scope": "host",
-      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
-    },
-    "scripts/release/atomic-deploy-shenron.sh": {
-      "count": 9,
-      "scope": "host",
-      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
-    },
     "scripts/audit/ai/scripts/test-xai-grok-bxc.sh": {
       "count": 3,
       "scope": "host",
@@ -107,10 +167,10 @@
       "scope": "host",
       "reason": "Calls the Bun binary under the VPS home, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
     },
-    "scripts/tools/install-vps-adapter.sh": {
-      "count": 4,
-      "scope": "host",
-      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    "scripts/audit/verify-google-pipeline.ps1": {
+      "count": 1,
+      "scope": "local",
+      "reason": "uv import probe of a Python package owner (Python via uv by policy)."
     },
     "scripts/migration/shenron-env-transfer.sh": {
       "count": 2,
@@ -142,6 +202,31 @@
       "scope": "host",
       "reason": "Calls the Bun binary under the VPS home, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
     },
+    "scripts/release/atomic-deploy-aphrody-discord.sh": {
+      "count": 3,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/atomic-deploy-aphrody-stack.sh": {
+      "count": 3,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/atomic-deploy-bundle.sh": {
+      "count": 7,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/atomic-deploy-rg.sh": {
+      "count": 2,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/atomic-deploy-shenron.sh": {
+      "count": 9,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
     "scripts/release/install-linux-host-bridge.sh": {
       "count": 2,
       "scope": "host",
@@ -167,10 +252,10 @@
       "scope": "local",
       "reason": "Benchmark of the Python surface itself."
     },
-    "scripts/audit/verify-google-pipeline.ps1": {
-      "count": 1,
-      "scope": "local",
-      "reason": "uv import probe of a Python package owner (Python via uv by policy)."
+    "scripts/tools/install-vps-adapter.sh": {
+      "count": 4,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     }
   }
 }

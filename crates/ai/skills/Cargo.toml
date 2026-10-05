@@ -13,10 +13,6 @@ description            = "Unified skills infrastructure: SKILL.md runtime + life
 [lints]
 workspace = true
 
-[[bin]]
-name = "aphrody-skills"
-path = "src/runtime/bin/agent_skills.rs"
-
 [dependencies]
 # The single authority for `~/.aphrody` (`aphrody_models::paths`). This crate
 # resolved the state root on its own and never consulted `$APHRODY_HOME`, so

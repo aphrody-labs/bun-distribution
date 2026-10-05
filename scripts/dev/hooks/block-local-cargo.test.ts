@@ -9,6 +9,8 @@ test("blocks local heavy cargo, direct or serialized", () => {
     "cargo +nightly build --release",
     "APHRODY_LOCAL_CARGO=1 scripts/build/rust/cargo-serial.sh check -p aphrody",
     "true; cargo b",
+    `bash -c "cargo build --release"`,
+    "eval 'cargo test'",
   ]) {
     expect(blocksLocalCargo(command)).toBe(true);
   }
@@ -23,6 +25,9 @@ test("allows light cargo and every remote route", () => {
     "ssh vps 'cd /srv && cargo build'",
     "rg -n cargo Cargo.toml",
     "echo cargo-test",
+    `sd -F 'cargo build -p a' 'cargo build -p b' docs/RUNTIME-ABI.md`,
+    `bun -e 'console.log("cargo test")'`,
+    `git commit -m "fix: cargo clippy findings"`,
   ]) {
     expect(blocksLocalCargo(command)).toBe(false);
   }

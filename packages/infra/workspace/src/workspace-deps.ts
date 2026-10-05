@@ -23,7 +23,7 @@ export async function runWorkspaceDeps(args: string[]): Promise<number> {
   const sibling = flag("--sibling");
   const apply = args.includes("--apply");
   if (!root || !sibling) {
-    console.error("usage: aphrody-ops workspace-deps --root <repo> --sibling <repo> [--apply]");
+    console.error("usage: yolo ops workspace-deps --root <repo> --sibling <repo> [--apply]");
     return 2;
   }
   /** Workspace members of a repository: package name -> directory. */

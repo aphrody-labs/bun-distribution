@@ -135,7 +135,7 @@
     ]
   },
   "windows": {
-    "note": "Windows 11 host prerequisites applied through winget (aphrody-ops system-packages --host windows). MSVC from Visual Studio Build Tools 2026 (v18) is the supported Windows target; ids and workload per Microsoft Learn (use-command-line-parameters-to-install-visual-studio, workload-component-id-vs-build-tools).",
+    "note": "Windows 11 host prerequisites applied through winget (yolo ops system-packages --host windows). MSVC from Visual Studio Build Tools 2026 (v18) is the supported Windows target; ids and workload per Microsoft Learn (use-command-line-parameters-to-install-visual-studio, workload-component-id-vs-build-tools).",
     "winget": [
       {
         "id": "Git.Git"

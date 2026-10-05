@@ -14,7 +14,7 @@ them lives in `../aphrody-ai`.
 | Server framework | `aphrody-a2a-server` | JSON-RPC, REST, SSE, task store, push notifications, `AgentExecutor` |
 | gRPC binding | `aphrody-a2a-grpc` | tonic transport for client and server |
 | Coordination | `aphrody-a2a-coord` | `ai.json`, JSONL mailboxes, HTTP bridge, native peer dispatch |
-| Client / duel | `aphrody-a2a-client`, `a2a-duel-loop` | Remote calls and file-based duel ticks |
+| Client / duel | `aphrody-a2a-client`, `a2a_duel_loop` (example) | Remote calls and file-based duel ticks |
 
 ## Quick start (from `../aphrody-ai`)
 

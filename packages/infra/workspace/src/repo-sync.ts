@@ -516,7 +516,7 @@ export async function readRepoSyncStatus(root = infraRoot(), state = sourceSyncS
 export async function runRepoSync(args: string[], root = infraRoot()): Promise<number> {
   if (args[0] === "status") {
     if (args.length > 2 || (args[1] !== undefined && args[1] !== "--json")) {
-      console.error("Usage: aphrody-ops repo-sync status [--json]");
+      console.error("Usage: yolo ops repo-sync status [--json]");
       return 2;
     }
     try {
@@ -540,7 +540,7 @@ export async function runRepoSync(args: string[], root = infraRoot()): Promise<n
   }
   if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops repo-sync <plan|once|watch> [--apply] [--build] [--repo NAME] [--json]\n       aphrody-ops repo-sync status [--json]\n       --build prepares exact synchronized main revisions and queues declared native factory profiles",
+      "Usage: yolo ops repo-sync <plan|once|watch> [--apply] [--build] [--repo NAME] [--json]\n       yolo ops repo-sync status [--json]\n       --build prepares exact synchronized main revisions and queues declared native factory profiles",
     );
     return 0;
   }

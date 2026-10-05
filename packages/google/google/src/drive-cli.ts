@@ -124,6 +124,6 @@ export async function runDriveCli(args: string[]): Promise<void> {
     });
   else
     throw new Error(
-      "Usage: aphrody-google drive <auth-login|status|sync [--download-only] [--dry-run] [--seed-reviewed directory]|sync-models>",
+      "Usage: yolo google drive <auth-login|status|sync [--download-only] [--dry-run] [--seed-reviewed directory]|sync-models>",
     );
 }

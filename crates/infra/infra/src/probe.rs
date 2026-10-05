@@ -226,7 +226,9 @@ mod tests {
 
         drop(listener);
 
-        let res_closed = probe_tcp(&target_open, Duration::from_millis(2000));
+        // A freed ephemeral port can be re-picked as the connect source port and self-connect;
+        // port 1 (tcpmux) sits outside the ephemeral range and is closed on build hosts.
+        let res_closed = probe_tcp("tcp://127.0.0.1:1", Duration::from_millis(2000));
         assert!(!res_closed.ok, "le port fermé doit renvoyer ok == false");
         assert_ne!(res_closed.status, 200);
     }

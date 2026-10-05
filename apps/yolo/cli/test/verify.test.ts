@@ -127,7 +127,7 @@ describe("selectChanged", () => {
     for (const file of [
       "vendor/obscura/crates/obscura-core/src/lib.rs",
       "crates/aphrody-tauri/src/lib.rs",
-      "crates/engine/yolo-desktop/src/lib.rs",
+      "crates/ui/app/src/lib.rs",
       "crates/engine/yolo-pyo3/src/lib.rs",
     ])
       expect(selectChanged(GATES, [file]).map((entry) => entry.id)).not.toContain("rust-fmt");

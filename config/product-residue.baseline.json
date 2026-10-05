@@ -72,7 +72,7 @@
     "crates/ai/config/src/resolve_tests.rs": 21,
     "crates/ai/config/tests/fixtures/upstream_style_config.toml": 1,
     "crates/ai/embed/Cargo.toml": 1,
-    "crates/ai/embed/src/bin/aphrody-embed/main.rs": 4,
+    "crates/ai/embed/src/cli/mod.rs": 4,
     "crates/ai/embed/src/lib.rs": 1,
     "crates/ai/embed/src/server.rs": 2,
     "crates/ai/mcp-client/src/bxc.rs": 1,

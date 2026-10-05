@@ -68,12 +68,14 @@ commit still requires staged review and exclusion of protected/ignored output.
 
 ## Agent tooling
 
-Agents use only the Aphrody MCP tools, the `yolo` CLI, Rust CLIs (`aphrody`, `aphrody-infra`,
-`aphrody-ops`) and Bun (`bun`, `bun -e`, `bun <script>.ts`). No GNU shell utilities (grep, sed,
+Agents use only the Aphrody MCP tools, the single Rust CLI `aphrody` (multi-call: `aphrody infra`,
+`aphrody ovh`, `aphrody kernel`… ; former names such as `aphrody-infra` are links), the Bun CLI `yolo`
+(`yolo ops`, `yolo workspace`, `yolo update`…) and Bun (`bun`, `bun -e`, `bun <script>.ts`). No GNU shell utilities (grep, sed,
 awk, find, xargs, cat heredocs) and no Python for agent work: use MCP search/read/edit tools, the
 Edit tool or a Bun script. Python stays only as product code under `py/`, run through `uv`.
 Never npm, npx or bunx: call the binaries on PATH directly (oxlint, oxfmt, tsc).
-Remote work goes through `aphrody-infra ssh` or the MCP `infra_exec`, never raw ssh.
+Remote work goes through `aphrody infra ssh` or the MCP `infra_exec`, never raw ssh (the
+`vps-cargo` tunnel is the one sanctioned SSH master for remote Cargo).
 
 ## Builds and validation
 

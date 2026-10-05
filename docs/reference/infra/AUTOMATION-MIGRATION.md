@@ -10,7 +10,7 @@
 `packages/infra/workspace` est l’autorité pour les automatisations qui ne
 portent ni données produit, ni contrat d’application, ni dépendance upstream.
 Chaque dépôt conserve une entrée `bun run`, `just` ou wrapper compatible qui
-appelle `aphrody-ops`.
+appelle `yolo ops`.
 
 ## Opérations centralisées
 
@@ -33,12 +33,12 @@ migration.
 Exécuter l’inventaire courant :
 
 ```sh
-aphrody-ops automation-inventory --root ~/src --json
+yolo ops automation-inventory --root ~/src --json
 ```
 
 ## Périmètre contrôlé
 
-L’inventaire `aphrody-ops automation-inventory --root ~/src --json`
+L’inventaire `yolo ops automation-inventory --root ~/src --json`
 est relu après chaque migration. Les surfaces restantes ont la frontière suivante :
 
 | Surface | Raison de conserver les scripts locaux |

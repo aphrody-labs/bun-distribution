@@ -15,10 +15,6 @@ categories.workspace = true
 name = "aphrody_summary"
 path = "src/lib.rs"
 
-[[bin]]
-name = "aphrody-summary"
-path = "src/main.rs"
-
 [dependencies]
 anyhow.workspace = true
 

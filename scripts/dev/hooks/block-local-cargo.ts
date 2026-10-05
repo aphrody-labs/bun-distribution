@@ -8,14 +8,22 @@
  */
 
 const HEAVY = "build|b|check|c|test|t|clippy|run|r|bench|nextest|doc|d|install|rustc|xwin|zigbuild";
-const LOCAL_CARGO = new RegExp(String.raw`(^|[\s;&|(])cargo(\s+\+\S+)?\s+(${HEAVY})(\s|$)`);
-const LOCAL_SERIAL = new RegExp(String.raw`cargo-serial\.sh(\s+\+\S+)?\s+(${HEAVY})(\s|$)`);
+const LOCAL_CARGO = new RegExp(
+  String.raw`(^|[\s;&|("'])cargo(\s+\+\S+)?\s+(${HEAVY})(?=[\s"';&|)]|$)`,
+);
+const LOCAL_SERIAL = new RegExp(
+  String.raw`cargo-serial\.sh(\s+\+\S+)?\s+(${HEAVY})(?=[\s"';&|)]|$)`,
+);
 const REMOTE =
   /vps-cargo\.ts|build-factory|APHRODY_BUILD_HOST=vps|(^|[\s;&|])ssh\s|infra ssh|infra_exec/;
 
+// Quoted text is data (an edit pattern, a message), unless a shell runs it (`bash -c "…"`, `eval`).
+const QUOTED = /(?<!(?:-c|eval)\s+)(?:'[^']*'|"(?:[^"\\]|\\.)*"|`[^`]*`)/g;
+
 export function blocksLocalCargo(command: string): boolean {
   if (REMOTE.test(command)) return false;
-  return LOCAL_CARGO.test(command) || LOCAL_SERIAL.test(command);
+  const code = command.replace(QUOTED, "''");
+  return LOCAL_CARGO.test(code) || LOCAL_SERIAL.test(code);
 }
 
 if (import.meta.main) {

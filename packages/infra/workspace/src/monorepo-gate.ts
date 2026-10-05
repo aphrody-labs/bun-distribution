@@ -395,7 +395,7 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
     else if (arg === "--json") json = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops monorepo-gate [--root <repository>] [--docs-script <bun-script>] [--no-build] [--plan] [--json] [--timeout-seconds <positive integer>]",
+        "Usage: yolo ops monorepo-gate [--root <repository>] [--docs-script <bun-script>] [--no-build] [--plan] [--json] [--timeout-seconds <positive integer>]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
@@ -413,7 +413,7 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
       (arg, index) => arg !== "--root" && args[index - 1] !== "--root",
     );
     const dispatched = await routeHeavyBuild(
-      ["bun", "packages/infra/workspace/src/ops.ts", "monorepo-gate", ...remoteArgs],
+      ["bun", "apps/yolo/cli/src/index.ts", "ops", "monorepo-gate", ...remoteArgs],
       plan.root,
     );
     if (dispatched !== undefined) return dispatched;

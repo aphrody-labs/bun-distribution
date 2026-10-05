@@ -39,9 +39,9 @@ const PROTOCOL_VERSION: &str = "2025-06-18";
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// Path to the aphrody-mcp binary. If omitted, resolves via
-    /// $APHRODY_MCP_BIN → $PATH → ~/.local/bin/aphrody-mcp[.exe] →
-    /// target/release/aphrody-mcp[.exe].
+    /// Path to the `aphrody` multi-call binary (or an `aphrody-mcp` link to it). If omitted,
+    /// resolves via $APHRODY_MCP_BIN → $PATH → ~/.local/bin/aphrody[.exe] →
+    /// target/release/aphrody[.exe]. A binary named `aphrody` is run as `aphrody mcp-server`.
     #[arg(long)]
     bin: Option<PathBuf>,
 
@@ -221,6 +221,7 @@ async fn main() -> Result<()> {
     let bin = resolve_binary(args.bin.as_deref())?;
 
     let mut child = Command::new(&bin)
+        .args(launch_args(&bin))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
@@ -485,6 +486,15 @@ async fn wait_with_timeout(child: &mut Child, dur: std::time::Duration) -> Resul
     }
 }
 
+/// Extra arguments needed to reach the MCP server through the multi-call binary: the `aphrody`
+/// binary needs its `mcp-server` subcommand, an `aphrody-mcp` link dispatches on its own name.
+fn launch_args(bin: &Path) -> &'static [&'static str] {
+    match bin.file_stem().and_then(|stem| stem.to_str()) {
+        Some("aphrody-mcp") => &[],
+        _ => &["mcp-server"],
+    }
+}
+
 fn resolve_binary(explicit: Option<&Path>) -> Result<PathBuf> {
     if let Some(p) = explicit {
         if p.exists() {
@@ -498,7 +508,7 @@ fn resolve_binary(explicit: Option<&Path>) -> Result<PathBuf> {
             return Ok(p);
         }
     }
-    let exe_name = if cfg!(windows) { "aphrody-mcp.exe" } else { "aphrody-mcp" };
+    let exe_name = if cfg!(windows) { "aphrody.exe" } else { "aphrody" };
     if let Ok(path) = which(exe_name) {
         return Ok(path);
     }
@@ -524,8 +534,8 @@ fn resolve_binary(explicit: Option<&Path>) -> Result<PathBuf> {
         return Ok(p);
     }
     bail!(
-        "aphrody-mcp binary not found. Set --bin <path>, $APHRODY_MCP_BIN, or build it with \
-         `cargo build --release -p aphrody-mcp --bin aphrody-mcp`."
+        "aphrody binary not found. Set --bin <path>, $APHRODY_MCP_BIN, or build it with \
+         `cargo build --release -p aphrody`."
     )
 }
 

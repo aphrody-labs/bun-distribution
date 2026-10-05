@@ -2,7 +2,7 @@
 
 # @aphrody/doc-ai
 
-Documentation and translation CLI for the Aphrody repository. It translates
+Documentation and translation module of the Aphrody repository (command line: `yolo doc-ai`). It translates
 Markdown, generates Lit component API guides, and syncs the root `docs/` folder.
 The online backend uses Google Vertex AI through `@ai-sdk/google-vertex` and
 `ai`; an offline fallback is available when Vertex credentials are absent.
@@ -10,17 +10,17 @@ The online backend uses Google Vertex AI through `@ai-sdk/google-vertex` and
 ## Commands
 
 ```bash
-doc-ai translate <file_or_dir> [lang]   # translate one .md file or a dir (recursive)
-doc-ai generate <ts_file> [out_file]    # generate a Lit component API guide
-doc-ai sync [lang]                      # translate every monorepo docs/ folder
-doc-ai --help                           # full usage
+yolo doc-ai translate <file_or_dir> [lang]   # translate one .md file or a dir (recursive)
+yolo doc-ai generate <ts_file> [out_file]    # generate a Lit component API guide
+yolo doc-ai sync [lang]                      # translate every monorepo docs/ folder
+yolo doc-ai --help                           # full usage
 ```
 
 From the monorepo root, the wrapper scripts are wired in:
 
 ```bash
-bun run docs:translate <file_or_dir> [lang]   # packages/doc-ai/src/cli.ts translate
-bun run docs:ai                               # packages/doc-ai/src/cli.ts sync
+bun run docs:translate <file_or_dir> [lang]   # yolo ops docs assist translate -> yolo doc-ai translate
+bun run docs:ai                               # yolo ops docs assist sync -> yolo doc-ai sync
 ```
 
 Translations are written next to each source as `<name>.<lang>.md` (default

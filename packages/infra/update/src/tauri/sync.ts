@@ -8,7 +8,7 @@
  * report, and with `--apply` bumps ONLY those two central files, refreshes the
  * lockfiles and runs a small gate, restoring every edited file when it fails.
  *
- * Usage: aphrody-ops tauri-sync [--root <repo>] [--check] [--apply] [--json] [--offline]
+ * Usage: yolo ops tauri-sync [--root <repo>] [--check] [--apply] [--json] [--offline]
  */
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
@@ -818,7 +818,7 @@ export async function runTauriSync(argv: string[]): Promise<number> {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.log(
-      "Usage: aphrody-ops tauri-sync [--root <repo>] [--check] [--apply] [--json] [--offline]",
+      "Usage: yolo ops tauri-sync [--root <repo>] [--check] [--apply] [--json] [--offline]",
     );
     return message === "help" ? 0 : (console.error(message), 2);
   }

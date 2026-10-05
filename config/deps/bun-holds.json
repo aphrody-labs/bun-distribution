@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Bun/npm bumps that policy refuses until the blocker moves. `aphrody-update bun status|plan|apply` lists them as held and never bumps them. A hold stops releases above `maxMajor`, or above `maxVersion`. Advisory holds (security findings that no bump can fix) stay in advisory-holds.json. Re-check on every bump and remove an entry as soon as its blocker moves; the table in docs/operations/infra/update/BUN.md mirrors this file.",
+  "note": "Bun/npm bumps that policy refuses until the blocker moves. `yolo update bun status|plan|apply` lists them as held and never bumps them. A hold stops releases above `maxMajor`, or above `maxVersion`. Advisory holds (security findings that no bump can fix) stay in advisory-holds.json. Re-check on every bump and remove an entry as soon as its blocker moves; the table in docs/operations/infra/update/BUN.md mirrors this file.",
   "holds": [
     {
       "name": "undici-types",

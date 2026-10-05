@@ -2,7 +2,7 @@
 
 # Édition de code en masse
 
-`aphrody-workspace code-edit` combine la sélection de fichiers par `rg`,
+`yolo workspace code-edit` combine la sélection de fichiers par `rg`,
 le remplacement textuel par `sd`, les motifs AST par `ast-grep` et les
 transforms JS/TS existants par `jscodeshift`. L'aperçu est le comportement
 par défaut; `--apply` applique les modifications. Les outils doivent être
@@ -10,27 +10,27 @@ installés: `rg` et `sd` sur PATH, les paquets ast-grep/jscodeshift via Bun.
 
 ```sh
 # Sélection et recherche littérale
-aphrody-workspace code-edit search --root ./src --glob '*.ts' --find ancien
+yolo workspace code-edit search --root ./src --glob '*.ts' --find ancien
 
 # Remplacement littéral; retirer --apply pour afficher l'aperçu
-aphrody-workspace code-edit replace --root ./src --glob '*.ts' \
+yolo workspace code-edit replace --root ./src --glob '*.ts' \
   --find ancien --with nouveau --apply
 
 # Ajout avant/après chaque occurrence, suppression
-aphrody-workspace code-edit add-before --root ./src --find 'foo()' --with 'await '
-aphrody-workspace code-edit add-after --root ./src --find 'foo()' --with '; bar()'
-aphrody-workspace code-edit remove --root ./src --find 'obsolete();' --apply
+yolo workspace code-edit add-before --root ./src --find 'foo()' --with 'await '
+yolo workspace code-edit add-after --root ./src --find 'foo()' --with '; bar()'
+yolo workspace code-edit remove --root ./src --find 'obsolete();' --apply
 
 # Regex; les captures $1/$2 sont utilisables dans replace
-aphrody-workspace code-edit replace --engine regex --root ./src \
+yolo workspace code-edit replace --engine regex --root ./src \
   --find 'old_(\w+)' --with 'new_$1'
 
 # Transformation syntaxique: le même motif fonctionne malgré les espaces
-aphrody-workspace code-edit replace --engine ast --root ./src --glob '*.ts' \
+yolo workspace code-edit replace --engine ast --root ./src --glob '*.ts' \
   --lang ts --find 'oldCall($A)' --with 'newCall($A)' --apply
 
 # Codemod propriétaire existant, parser JSX/TypeScript
-aphrody-workspace code-edit replace --engine codemod --root ./src \
+yolo workspace code-edit replace --engine codemod --root ./src \
   --glob '*.tsx' --lang tsx --transform /chemin/transform.ts
 ```
 
@@ -56,16 +56,16 @@ Workspace lui délègue ces opérations sans dupliquer son implémentation.
 
 ```sh
 # Plan: fichiers, identifiants et chemins
-aphrody-workspace code-edit rename --root /chemin/depot \
+yolo workspace code-edit rename --root /chemin/depot \
   --find '@ancien/' --with '@nouveau/' --glob '**/*.ts' --paths
 
 # Appliquer après inspection du plan
-aphrody-workspace code-edit rename --root /chemin/depot \
+yolo workspace code-edit rename --root /chemin/depot \
   --find '@ancien/' --with '@nouveau/' --paths --apply
 
 # Aperçu puis application de la restauration du journal YOLO
-aphrody-workspace code-edit restore --journal /chemin/rename.jsonl
-aphrody-workspace code-edit restore --journal /chemin/rename.jsonl --apply
+yolo workspace code-edit restore --journal /chemin/rename.jsonl
+yolo workspace code-edit restore --journal /chemin/rename.jsonl --apply
 ```
 
 Les règles d'identifiants, le contrôle des collisions et le format des journaux

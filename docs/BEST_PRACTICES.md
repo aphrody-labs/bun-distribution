@@ -85,6 +85,6 @@ export function fastSumSquares(numbers: Float64Array): number {
 
 ## 5. Tauri 3 Desktop : Sécurité & IPC
 
-- Utiliser l'arborescence standardisée : `crates/engine/yolo-desktop` avec `build.rs` invoquant `tauri_build::build()`.
+- Utiliser l'arborescence standardisée : `crates/ui/app` (`aphrody-app`, l’unique application desktop) avec `build.rs` invoquant `tauri_build::build()`.
 - Déclarer les autorisations de commandes de manière explicite dans les schémas d'ACL.
 - Servir l'interface utilisateur de manière réactive via un bundler Bun sans nécessiter de serveur lourd en développement.

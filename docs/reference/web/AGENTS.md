@@ -41,4 +41,4 @@ Layout and entry points: [README](../../products/web/README.md). Reuse the
 
 ## Automatisation transversale
 
-Le contrôle des workspaces BXC est fourni par `aphrody-ops workspace-layout` via `apps/bxc`. Conserver cette entrée locale lors de toute évolution du module central.
+Le contrôle des workspaces BXC est fourni par `yolo ops workspace-layout` via `apps/bxc`. Conserver cette entrée locale lors de toute évolution du module central.

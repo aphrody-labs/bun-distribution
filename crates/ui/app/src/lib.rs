@@ -24,6 +24,8 @@ pub mod llama_daemon;
 pub mod models;
 pub mod quickbar;
 pub mod runtime;
+pub mod runtime_host;
+pub mod showcase;
 pub mod studio;
 pub mod web_subsystem;
 pub mod window;
@@ -507,6 +509,28 @@ async fn webview_eval(
     })
 }
 
+/// Host probe of the yolo-core engine: operating system, architecture and a millisecond timestamp.
+#[tauri::command]
+fn aphrody_system_stats() -> yolo_core::SystemStats {
+    yolo_core::current_system_stats()
+}
+
+/// CPU micro-benchmark of the yolo-core engine, run off the UI thread.
+#[tauri::command]
+async fn aphrody_benchmark(iterations: u32) -> Result<yolo_core::BenchmarkResult, String> {
+    tauri::async_runtime::spawn_blocking(move || yolo_core::compute_benchmark(iterations))
+        .await
+        .map_err(|error| error.to_string())
+}
+
+/// Open the M3 showcase window (its compiled Bun sidecar starts on first use).
+#[tauri::command]
+fn aphrody_showcase_open(window: WebviewWindow) -> Result<(), String> {
+    shell_window(&window)?;
+    showcase::open(window.app_handle());
+    Ok(())
+}
+
 /// Capture the primary display after an explicit user action.
 #[tauri::command]
 async fn aphrody_capture_primary() -> Result<serde_json::Value, String> {
@@ -699,9 +723,25 @@ fn aphrody_quickbar(window: WebviewWindow, action: quickbar::QuickbarAction) -> 
     quickbar::act(&window, action)
 }
 
-/// Build and run the desktop application.
+/// The one embedded Tauri context (config, capabilities, `ui-dist` assets) shared by the desktop
+/// and the isolated runtime host, so the assets are embedded once.
 // `tauri::generate_context!()` expands to code that calls `std::process::exit`.
 #[allow(clippy::exit)]
+fn context() -> tauri::Context {
+    tauri::generate_context!()
+}
+
+/// Run the isolated system-WebView host of the light desktop SDK (`--runtime-host`).
+///
+/// # Errors
+///
+/// Fails when the session token or policy of the environment is invalid, or the host cannot start.
+pub fn run_runtime_host() -> Result<i32, Box<dyn std::error::Error>> {
+    runtime_host::tune_linux_display();
+    runtime_host::run(context())
+}
+
+/// Build and run the desktop application.
 pub fn run() {
     tauri::Builder::default()
         // Tauri 3 has no implicit runtime: the system webview (wry) is the Aphrody default.
@@ -762,6 +802,9 @@ pub fn run() {
             tauri::async_runtime::spawn(start_kernel(app.handle().clone()));
             quickbar::register(app.handle());
             integration::setup(app.handle())?;
+            if showcase::requested(std::env::args()) {
+                showcase::open(app.handle());
+            }
             Ok(())
         })
         .on_menu_event(|app, event| {
@@ -787,6 +830,9 @@ pub fn run() {
                 "menu_docs" => {
                     let _ = tauri_plugin_opener::OpenerExt::opener(app)
                         .open_url("https://aphrody.dev/docs", None::<&str>);
+                },
+                "menu_showcase" => {
+                    showcase::open(app);
                 },
                 "menu_updates" => {
                     tauri::async_runtime::spawn(integration::check_updates(app.clone()));
@@ -844,6 +890,9 @@ pub fn run() {
                 aphrody_system_cwd,
                 aphrody_shell_window,
                 aphrody_quickbar,
+                aphrody_system_stats,
+                aphrody_benchmark,
+                aphrody_showcase_open,
                 integration::aphrody_app_ready,
                 integration::aphrody_take_open_requests,
                 integration::aphrody_desktop_integration,
@@ -874,9 +923,12 @@ pub fn run() {
                 identity::aphrody_pixel_vectoriser,
                 identity::aphrody_pixel_planche,
         ])
-        .build(tauri::generate_context!())
+        .build(context())
         .expect("aphrody desktop: fatal error while building the Tauri application")
         .run(|app, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                showcase::stop(app);
+            }
             // The agent runs in this process: closing its input lets it join every session, so
             // each rollout is flushed before the process ends (bounded, a stuck turn is dropped).
             if matches!(event, tauri::RunEvent::Exit)

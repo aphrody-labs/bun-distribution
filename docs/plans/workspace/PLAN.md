@@ -61,7 +61,7 @@ restent à livrer selon les parcours maintenus en section 10.
 
 [Snapshot de cette passe](../../operations/workspace/HISTORY.md) :
 heads, branches, modifications locales et résultat de
-`aphrody-ops bridge status`. Il observe **13 racines Bun et 10 binaires** dans
+`yolo ops bridge status`. Il observe **13 racines Bun et 10 binaires** dans
 le catalogue du package central, pas l'ensemble des crates ni leurs exports.
 `bridges.ts` exécute encore les binaires : « bridge » ne prouve pas une FFI.
 L'inventaire de scripts antérieur ne descend pas toutes les profondeurs de

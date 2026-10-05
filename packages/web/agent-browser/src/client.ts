@@ -13,7 +13,8 @@ import type {
   SnapshotResult,
 } from "./types.ts";
 
-const OWN_LAUNCHER = realpathSync(join(import.meta.dir, "../bin/agent-browser.js"));
+// Child-process runner of AgentBrowser.exec/execAsync; the command line is `yolo browser`.
+const OWN_LAUNCHER = realpathSync(join(import.meta.dir, "cli.ts"));
 
 function hasFlag(args: readonly string[], flag: string): boolean {
   return args.some((arg) => arg === flag || arg.startsWith(`${flag}=`));

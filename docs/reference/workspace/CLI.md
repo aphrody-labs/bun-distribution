@@ -9,7 +9,7 @@ ne prouve ni l’authentification d’un fournisseur ni une compilation produit.
 
 L’aide du binaire installé est la référence avant de choisir une commande.
 Consulter d’abord les orchestrateurs `aphrody infra`, `aphrody-infra` et
-`aphrody-ops`, puis l’aide du propriétaire de la capacité. Ne pas reconstruire
+`yolo ops`, puis l’aide du propriétaire de la capacité. Ne pas reconstruire
 manuellement un workflow déjà déclaré dans Workspace ou Infra.
 
 Le relevé récursif du 2026-10-03 couvre **53 binaires installés et
@@ -24,7 +24,7 @@ bat ~/.local/share/aphrody/cli-help/INDEX.md
 rg -n 'deploy|pipeline|workspace' ~/.local/share/aphrody/cli-help/
 aphrody infra --help
 aphrody-infra pipeline --help
-aphrody-ops --help
+yolo ops --help
 ```
 
 Workspace possède le collecteur `cli-help` : chaque invocation termine par
@@ -92,10 +92,10 @@ booter depuis ce checkout ; leurs stores et conversations sont filtrés par prof
 | Routage des pairs | `aphrody a2a peers` |
 | Import incrémental des sessions | `aphrody ai sync-sessions --json --shared-workspace <repo>` |
 | Projection sans import mémoire | `aphrody ai sync-sessions --json --no-memory` |
-| Propriétaire natif de l’import par domaine | `bun packages/infra/workspace/src/ops.ts agent-sync --help` |
-| État live PID/session/workspace/Git | `bun packages/infra/workspace/src/ops.ts agent-live --json` |
-| Actualisation continue | `bun packages/infra/workspace/src/ops.ts agent-live --watch --interval-secs 30` |
-| Génération Agent Home | `bun packages/infra/workspace/src/ops.ts agent-home --help` |
+| Propriétaire natif de l’import par domaine | `yolo ops agent-sync --help` |
+| État live PID/session/workspace/Git | `yolo ops agent-live --json` |
+| Actualisation continue | `yolo ops agent-live --watch --interval-secs 30` |
+| Génération Agent Home | `yolo ops agent-home --help` |
 | Catalogue réel du kernel | `aphrody-kernel tools` |
 | Appel kernel | `aphrody-kernel call <outil> '<objet JSON>'` |
 | Modèles locaux installés | `aphrody model list --json` |

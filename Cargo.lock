@@ -737,6 +737,7 @@ dependencies = [
  "aphrody-tauri-plugin-updater",
  "aphrody-tauri-plugin-window-state",
  "aphrody-tauri-runtime-wry",
+ "aphrody-tauri-wrap",
  "async-trait",
  "base64 0.23.1",
  "log",
@@ -748,6 +749,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "url",
+ "yolo-core",
 ]
 
 [[package]]
@@ -918,26 +920,33 @@ dependencies = [
  "aphrody-app-server",
  "aphrody-backend",
  "aphrody-base",
+ "aphrody-bindgen",
  "aphrody-chat",
  "aphrody-config",
  "aphrody-diagnostics",
  "aphrody-discord-compiler",
  "aphrody-ecosystem",
+ "aphrody-embed",
  "aphrody-engine",
  "aphrody-exec-events",
  "aphrody-firefly",
  "aphrody-fsindex",
  "aphrody-gateway",
  "aphrody-gemini-runtime",
+ "aphrody-gemini-web",
  "aphrody-git",
  "aphrody-google",
  "aphrody-guard",
  "aphrody-identity",
  "aphrody-infer",
+ "aphrody-infra",
+ "aphrody-jev",
  "aphrody-jobs",
  "aphrody-kernel",
  "aphrody-llama-server",
+ "aphrody-m3-reproduce",
  "aphrody-m3-tokens",
+ "aphrody-mcp",
  "aphrody-memory",
  "aphrody-messaging",
  "aphrody-model-client",
@@ -951,11 +960,14 @@ dependencies = [
  "aphrody-prompts",
  "aphrody-rag",
  "aphrody-re",
+ "aphrody-render",
  "aphrody-rollout",
  "aphrody-secrets",
  "aphrody-session",
+ "aphrody-skills",
  "aphrody-ssh",
  "aphrody-stdio-capture",
+ "aphrody-summary",
  "aphrody-terminal-backend",
  "aphrody-toolcall",
  "aphrody-toolchains",
@@ -967,10 +979,13 @@ dependencies = [
  "aphrody-web-bridge",
  "aphrody-web-crawl",
  "aphrody-web-detect",
+ "aphrody-web-engine",
  "aphrody-web-extract",
  "aphrody-web-frames",
  "aphrody-winclean",
+ "aphrody-wsl",
  "aphrody-x",
+ "aphrody-yolo",
  "assert_cmd",
  "async-trait",
  "chrono",
@@ -1738,16 +1753,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-m3-showcase"
-version = "3.3.3"
-dependencies = [
- "aphrody-tauri",
- "aphrody-tauri-build",
- "aphrody-tauri-runtime-wry",
- "aphrody-tauri-wrap",
-]
-
-[[package]]
 name = "aphrody-m3-tokens"
 version = "1.0.0-canary"
 dependencies = [
@@ -2222,6 +2227,7 @@ name = "aphrody-ovh"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "clap",
  "reqwest 0.13.5",
  "ring",
@@ -2609,16 +2615,6 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
-]
-
-[[package]]
-name = "aphrody-shell-tauri-e2e"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-shell-tauri",
- "aphrody-tauri",
- "aphrody-tauri-build",
- "aphrody-tauri-runtime-wry",
 ]
 
 [[package]]
@@ -33736,19 +33732,6 @@ dependencies = [
  "tempfile",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "yolo-desktop"
-version = "1.0.0"
-dependencies = [
- "aphrody-tauri",
- "aphrody-tauri-build",
- "aphrody-tauri-plugin-opener",
- "aphrody-tauri-runtime-wry",
- "serde",
- "serde_json",
- "yolo-core",
 ]
 
 [[package]]

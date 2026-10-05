@@ -575,7 +575,9 @@ export function pythonRoot(c: Ctx, override?: string): string | undefined {
 /** Directories with a `uv.lock` and every pyproject.toml, relative to the Python root (vendored docs excluded). */
 export function discover(pyRoot: string): Layout {
   const scan = (pattern: string) =>
-    [...new Bun.Glob(pattern).scanSync({ cwd: pyRoot })].filter((f) => !SKIP_DIRS.test(f)).toSorted();
+    [...new Bun.Glob(pattern).scanSync({ cwd: pyRoot })]
+      .filter((f) => !SKIP_DIRS.test(f))
+      .toSorted();
   return {
     pyRoot,
     locks: scan("**/uv.lock").map((f) => dirname(f)),
@@ -858,12 +860,12 @@ export function problems(s: UvStatus): string[] {
   const t = s.tool;
   if (t.installed && t.pinned && t.installed !== t.pinned)
     out.push(
-      `uv installed ${t.installed} differs from the pin ${t.pinned} (aphrody-update tools uv --apply)`,
+      `uv installed ${t.installed} differs from the pin ${t.pinned} (yolo update tools uv --apply)`,
     );
   for (const r of t.required)
     if (t.pinned && r.version !== t.pinned)
       out.push(
-        `${r.file}: required-version ${r.version} differs from the pin ${t.pinned} (aphrody-update pins apply uv ${t.pinned})`,
+        `${r.file}: required-version ${r.version} differs from the pin ${t.pinned} (yolo update pins apply uv ${t.pinned})`,
       );
   for (const l of s.locks)
     if (!l.fresh) out.push(`${lockLabel(l.dir)} is stale: ${l.detail ?? "uv lock --check failed"}`);
@@ -947,7 +949,7 @@ export function renderPlan(s: UvStatus, locks: LockPlan[]): string[] {
   const t = s.tool;
   if (t.latest && t.pinned && cmpPy(t.pinned, t.latest) < 0)
     lines.push(
-      `step 1  uv ${t.pinned} -> ${t.latest}: aphrody-update tools uv --apply (installs, re-pins every target)`,
+      `step 1  uv ${t.pinned} -> ${t.latest}: yolo update tools uv --apply (installs, re-pins every target)`,
     );
   else lines.push(`step 1  uv ${t.pinned ?? "?"} is the latest`);
   lines.push("step 2  uv python upgrade (managed interpreters, newest patch of each minor)");
@@ -1094,14 +1096,14 @@ export async function applyBumps(
   const layout = discover(pyRoot);
   const snap = snapshot(c, layout);
   console.log(
-    `snapshot ${snap} (restore with: aphrody-update uv rollback, or git checkout -- uv.lock in ${pyRoot})`,
+    `snapshot ${snap} (restore with: yolo update uv rollback, or git checkout -- uv.lock in ${pyRoot})`,
   );
 
   const tool = installed(c, "uv");
   const pin = checkPins(c).find((r) => r.tool === "uv")?.pin;
   if (tool && pin && tool !== pin) {
     console.error(
-      `uv installed ${tool} differs from the pin ${pin}; run aphrody-update tools uv --apply first (required-version would refuse the run)`,
+      `uv installed ${tool} differs from the pin ${pin}; run yolo update tools uv --apply first (required-version would refuse the run)`,
     );
     return 1;
   }
@@ -1118,12 +1120,12 @@ export async function applyBumps(
     const r = run("uv", lockArgs(args.packages), cwd);
     if (r.status !== 0) {
       console.error(
-        `uv lock failed in ${l}: ${(r.stderr || r.stdout).trim().split("\n").slice(-6).join("\n")}\nrestore with: aphrody-update uv rollback`,
+        `uv lock failed in ${l}: ${(r.stderr || r.stdout).trim().split("\n").slice(-6).join("\n")}\nrestore with: yolo update uv rollback`,
       );
       return 1;
     }
-    const diff = lockDiff(before, lockMap(readFileSync(join(cwd, "uv.lock"), "utf8"))).map(
-      (ch) => (Object.assign(ch, { ecosystem: 'uv-lock' })),
+    const diff = lockDiff(before, lockMap(readFileSync(join(cwd, "uv.lock"), "utf8"))).map((ch) =>
+      Object.assign(ch, { ecosystem: "uv-lock" }),
     );
     console.log(`lock   ${lockLabel(l)}: ${diff.length} package change(s)`);
     for (const ch of diff.slice(0, 80))
@@ -1139,7 +1141,7 @@ export async function applyBumps(
   const steps = verify(c, layout, { skipTests: args.skipTests, run });
   if (steps.some((s) => !s.ok)) {
     console.error(
-      "verify failed after the bump: fix the breakage, narrow it with --upgrade-package, or run aphrody-update uv rollback",
+      "verify failed after the bump: fix the breakage, narrow it with --upgrade-package, or run yolo update uv rollback",
     );
     return 1;
   }
@@ -1211,7 +1213,7 @@ export async function runUvWith(c: Ctx, args: UvArgs): Promise<number> {
   }
 }
 
-/** `aphrody-update uv <status|plan|apply|verify|rollback> [--upgrade-package a,b] [--offline] [--json] [--root <repo>]`. */
+/** `yolo update uv <status|plan|apply|verify|rollback> [--upgrade-package a,b] [--offline] [--json] [--root <repo>]`. */
 export async function runUv(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
   const c = new Ctx(resolve(args.root ?? process.cwd()), args.apply, args.json);

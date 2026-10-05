@@ -10,7 +10,7 @@ $helpOnly = ($CargoArgs -contains '--help') -or ($CargoArgs -contains '-h')
 if (($heavyCommands -contains $cargoCommand) -and -not $helpOnly -and (Test-Path -LiteralPath $factoryConfig) -and $env:APHRODY_BUILD_HOST -ne 'vps' -and $env:APHRODY_LOCAL_CARGO -ne '1') {
   $factory = Get-Content -Raw -LiteralPath $factoryConfig | ConvertFrom-Json
   if ($factory.enabled -eq $true) {
-    throw 'Heavy Cargo execution belongs to the VPS factory. Use aphrody-ops build-factory run with the pinned revision and owner command. APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic.'
+    throw 'Heavy Cargo execution belongs to the VPS factory. Use yolo ops build-factory run with the pinned revision and owner command. APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic.'
   }
 }
 foreach ($arg in $CargoArgs) {

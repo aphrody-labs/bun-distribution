@@ -3,8 +3,8 @@
 
 ## État mesuré — 2026-09-29
 
-`aphrody-ops binaries` voit 10 binaires Aphrody installés. Le scanner a trouvé
-plusieurs appels `Bun.spawn`/`Command::new` dans `aphrody-workspace` et les
+`yolo ops binaries` voit 10 binaires Aphrody installés. Le scanner a trouvé
+plusieurs appels `Bun.spawn`/`Command::new` dans `@aphrody/workspace` (`yolo ops`) et les
 crates infra. Ils ont trois natures distinctes :
 
 1. **Processus externes nécessaires** : `git`, `ssh`, `systemctl`, `cargo`,
@@ -28,7 +28,7 @@ frontière native stable. Le pont adopte donc deux couches :
 | --- | --- | --- |
 | `@aphrody/native-core` | Données compactes, calcul local synchrone, ABI déjà C | Rust `cdylib` + `bun:ffi` |
 | `@aphrody/native` | API publique stable, objets, async, distribution multi-plateforme | Rust `napi-rs` / Node-API |
-| `aphrody-ops` | Orchestration, Git/SSH/systemd et gates de build | Rust API lorsque possible; processus externes documentés sinon |
+| `yolo ops` | Orchestration, Git/SSH/systemd et gates de build | Rust API lorsque possible; processus externes documentés sinon |
 
 Les ABI C exposent seulement des valeurs scalaires, buffers UTF-8 et handles
 opaques. Chaque buffer retourné possède une fonction `free` du même crate;
@@ -54,7 +54,7 @@ structurée si l’artefact est absent.
 ## Lots d’exécution
 
 1. **Inventaire et métriques**
-   - Ajouter à `aphrody-ops` un scanner AST des imports `bun:ffi`, Node-API,
+   - Ajouter à `yolo ops` un scanner AST des imports `bun:ffi`, Node-API,
      `Bun.spawn`, `Command::new` et des symboles C exportés.
    - Émettre `bridge-inventory.json` avec appelant, cible, latence, volume,
      caractère bloquant et remplacement proposé.
@@ -68,7 +68,7 @@ structurée si l’artefact est absent.
      artefact Rust.
 
 3. **Chemins locaux synchrones**
-   - Migrer les opérations pures de `aphrody-workspace` qui délèguent à un
+   - Migrer les opérations pures de `@aphrody/workspace` qui délèguent à un
      binaire Aphrody vers `@aphrody/native-core`.
    - Commencer par N2B et IECODE, qui possèdent déjà une C ABI ou un cdylib.
    - Remplacer les JSON via stdout par des buffers de réponse bornés.

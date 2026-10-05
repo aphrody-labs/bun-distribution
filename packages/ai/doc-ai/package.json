@@ -13,9 +13,6 @@
     "url": "git+https://github.com/aphrody-labs/aphrody.git",
     "directory": "packages/doc-ai"
   },
-  "bin": {
-    "doc-ai": "./src/cli.ts"
-  },
   "files": [
     "dist",
     "src"

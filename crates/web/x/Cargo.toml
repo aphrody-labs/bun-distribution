@@ -12,10 +12,6 @@ repository  = "https://github.com/aphrody-labs/aphrody"
 [lints]
 workspace = true
 
-[[bin]]
-name = "x-cli"
-path = "src/main.rs"
-
 [lib]
 name = "aphrody_x"
 path = "src/lib.rs"

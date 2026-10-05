@@ -8,7 +8,7 @@ import { infraRoot } from "./runtime.ts";
 
 const ROOT = process.env.APHRODY_ROOT ?? infraRoot();
 const ENV = `${ROOT}/.env`;
-const GOOGLE_CLI = `${ROOT}/packages/google/google/bin/aphrody-google.ts`;
+const YOLO_CLI = `${ROOT}/apps/yolo/cli/src/index.ts`;
 const WORKSPACE = statePath("workspaces", "dbfr");
 const MEMORY_DB = process.env.APHRODY_AGENT_HOME_MEMORY_DB ?? `${WORKSPACE}/db/agent.db`;
 const MEMORY_BIN =
@@ -43,7 +43,15 @@ async function sync(): Promise<void> {
     do {
       pending = false;
       const task = Bun.spawn(
-        [process.execPath, `--env-file=${ENV}`, GOOGLE_CLI, "drive", "sync", "--download-only"],
+        [
+          process.execPath,
+          `--env-file=${ENV}`,
+          YOLO_CLI,
+          "google",
+          "drive",
+          "sync",
+          "--download-only",
+        ],
         {
           cwd: ROOT,
           stdin: "ignore",

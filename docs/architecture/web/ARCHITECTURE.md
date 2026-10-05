@@ -83,7 +83,7 @@ upstream lint relaxations declared in its manifest.
 
 | Package                | Surface                                                                                                   | Consumers                                                                                              |
 | ---------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `@aphrody/agent-browser` | `AgentBrowser`/`AgentPage`/`WebCdpPage` (CDP), `/service`, `/engine`, `/config`, `/test-preload`; bin `agent-browser` | `iecode/packages/rg/cron` (`web-cdp.ts`), `packages/rg/inagle` (not in repo) (`web-cdp.ts`), `@aphrody/web-test`, `config/pipeline.json` |
+| `@aphrody/agent-browser` | `AgentBrowser`/`AgentPage`/`WebCdpPage` (CDP), `/service`, `/engine`, `/config`, `/test-preload`; command line `yolo browser` | `iecode/packages/rg/cron` (`web-cdp.ts`), `packages/rg/inagle` (not in repo) (`web-cdp.ts`), `@aphrody/web-test`, `config/pipeline.json` |
 | `@aphrody/web-test`    | Playwright-compatible runner on the same engine; site presets (Rose Griffon, Shenron, Aphrody UI)         | `config/pipeline.json` only; live audits under `scripts/audit/live` still point at a retired sibling checkout   |
 | `@aphrody/x`           | Headless X client, function tools                                                                         | `iecode/packages/rg/cron`, `packages/ai/xai`, `packages/fut/*` (some imports undeclared, see gaps)           |
 

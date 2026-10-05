@@ -5,7 +5,7 @@ The active repository is the root Rust + Bun monorepo. Python services and
 IECODE remain in their canonical sibling repositories. Ownership and execution
 rules live in root [AGENTS.md](../../../AGENTS.md) and [PLAN.md](../../../PLAN.md).
 
-Documentation has one controller: `@aphrody/workspace` and `aphrody-ops docs`.
+Documentation has one controller: `@aphrody/workspace` and `yolo ops docs`.
 The [documentation guide](../../guides/workspace/documentation.md) describes
 source references, provenance, duplicate review, agent indexes and private web
 exports. Markdown pages remain canonical; generated views are never edited.

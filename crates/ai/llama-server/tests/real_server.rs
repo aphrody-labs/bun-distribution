@@ -8,6 +8,7 @@
 //! APHRODY_LLAMA_TEST_MODEL=/path/to/model.gguf \
 //! cargo test -p aphrody-llama-server --test real_server -- --ignored --nocapture
 //! ```
+#![cfg(feature = "test-support")]
 
 use std::{path::PathBuf, time::Duration};
 

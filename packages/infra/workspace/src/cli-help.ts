@@ -126,7 +126,7 @@ export async function runCliHelp(
   args: string[],
   root = resolve(import.meta.dir, "../../../.."),
 ): Promise<number> {
-  const usage = "aphrody-ops cli-help [--out <directory>] [--only <bin[,bin]>] [--no-recursive]";
+  const usage = "yolo ops cli-help [--out <directory>] [--only <bin[,bin]>] [--no-recursive]";
   if (args.includes("--help")) {
     console.log(
       `Usage: ${usage}\nCapture installed first-party CLI --help; absent binaries are recorded.\n--only resolves only the named binaries through PATH.\n--no-recursive captures top-level help without invoking advertised subcommands.\nSelected captures default to a separate selected/<bins> directory; --out overrides it.`,

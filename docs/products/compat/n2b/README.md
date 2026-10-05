@@ -25,7 +25,7 @@ Only markdown is kept here; binary assets (images, icons, logos) are stripped.
 
 ### Bun docs
 
-`aphrody-ops bun-upstream-docs [--root <repo>] [--ref <branch-or-tag>]`
+`yolo ops bun-upstream-docs [--root <repo>] [--ref <branch-or-tag>]`
 (`packages/infra/workspace/src/bun-upstream-docs.ts`) still writes the legacy
 `docs/n2b/bun/` (not in repo) path; it must be pointed at `docs/<category>/upstream-bun/`
 before it is used again (owner: Infra).

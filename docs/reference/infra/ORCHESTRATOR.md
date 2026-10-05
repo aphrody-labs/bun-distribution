@@ -38,8 +38,8 @@ Run the CLI from the monorepo root through
 `scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- <args>` when a
 Cargo build is required; direct `cargo run` bypasses the repository's shared
 Cargo lock. Bun bridge/shortcut forms are
-`bun packages/infra/workspace/src/ops.ts infra <args>` and
-`bun packages/infra/workspace/src/ops.ts orchestrate <action> ...`.
+`yolo ops infra <args>` and
+`yolo ops orchestrate <action> ...`.
 
 Every invocation creates `var/runs/<timestamp>-<pid>/manifest.json` with the
 scope, actions, outputs and final status. Status output keeps the catalog's

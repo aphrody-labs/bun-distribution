@@ -7,5 +7,5 @@ def main [
     mut args = []
     if $dry_run { $args = ($args | append "--dry-run") }
     if $skip_hashes { $args = ($args | append "--skip-hashes") }
-    ^aphrody-ops workspace-clean --root $env.PWD ...$args
+    ^yolo ops workspace-clean --root $env.PWD ...$args
 }

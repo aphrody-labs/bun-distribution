@@ -30,7 +30,7 @@ workspace receive it through the single archive channel, like every other
 `@aphrody/*` package:
 
 ```sh
-aphrody-ops aphrody-packages prepare --package @aphrody/runtime-sdk --destination <dir> --apply
+yolo ops aphrody-packages prepare --package @aphrody/runtime-sdk --destination <dir> --apply
 ```
 
 Archives are canonical and named by their SHA-256; the consumer pins them in its

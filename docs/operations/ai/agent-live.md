@@ -8,8 +8,8 @@ conversations ou de mémoire. Le service `aphrody-agent-session-sync` continue
 d'alimenter la mémoire canonique et les conversations communes.
 
 ```sh
-bun packages/infra/workspace/src/ops.ts agent-live --watch
-bun packages/infra/workspace/src/ops.ts agent-live --json
+yolo ops agent-live --watch
+yolo ops agent-live --json
 systemctl --user status aphrody-agent-live.service
 ```
 

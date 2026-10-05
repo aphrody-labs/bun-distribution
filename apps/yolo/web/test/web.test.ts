@@ -12,7 +12,7 @@ describe("apps/yolo/web", () => {
       target: "browser",
     });
     expect(result.success).toBe(true);
-    expect(await result.outputs[0]!.text()).toContain("get_system_stats");
+    expect(await result.outputs[0]!.text()).toContain("aphrody_system_stats");
   });
 
   test("index.html loads main.js and a favicon that exists", async () => {

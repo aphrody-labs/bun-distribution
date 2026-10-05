@@ -40,7 +40,7 @@ import {
 } from "./agent-plugin-providers.ts";
 import { checkPluginFacts, refreshPluginFacts } from "./plugin-facts.ts";
 
-const help = `Usage: aphrody-workspace plugins <command> [options]
+const help = `Usage: yolo workspace plugins <command> [options]
 
 Commands:
   status       Detect providers and inventory the canonical store

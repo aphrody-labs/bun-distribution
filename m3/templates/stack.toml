@@ -53,7 +53,7 @@ plan = "R3"
 provider = "Tauri 3 alpha through crates/aphrody-tauri*"
 status = "template (checked by cargo check); runtime:desktop still reserved"
 template = "desktop"
-paths = ["crates/aphrody-tauri", "crates/engine/yolo-desktop"]
+paths = ["crates/aphrody-tauri", "crates/ui/app"]
 
 [layer.headless]
 plan = "R4"

@@ -13,11 +13,6 @@ description = "Reproduce a site in Material 3: seed colors, fonts, shapes and a 
 [lints]
 workspace = true
 
-[[bin]]
-name              = "aphrody-m3-reproduce"
-path              = "src/bin/aphrody-m3-reproduce.rs"
-required-features = ["cli"]
-
 [features]
 # Image-seeded themes (`sourceColorFromImage`-equivalent): PNG/JPEG capture bytes to a theme.
 default = ["image"]
@@ -27,7 +22,7 @@ image   = ["aphrody-m3-tokens/image", "dep:image"]
 crawl   = ["dep:regex"]
 # Fetches a URL's HTML over the network before crawling it.
 network = ["crawl", "dep:reqwest"]
-# The `aphrody-m3-reproduce` CLI binary.
+# The `cli_main` entry point (`aphrody m3-reproduce`).
 cli     = ["image", "crawl", "network", "dep:clap"]
 
 [dependencies]

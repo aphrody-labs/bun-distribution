@@ -202,7 +202,7 @@ Nothing below was compiled: Cargo is run only by the integrating agent. Bun gate
 | 309 Bun doc files in `docs/*/compat/n2b/bun/` | `docs/*/upstream-bun/` | per-file aliases + SHA-256 in `docs/migration/n2b-dedup-2026-10-02.json` |
 | `docs/apis/contracts/v2.json` (not in repo) | `crates/contracts/schema/v2.json` | `include_str!` in mcp repointed; alias recorded in the same JSON |
 | Node-to-Bun mapping list in `plugins/aphrody/skills/n2b/SKILL.md` | pointer to `crates/compat/n2b-registry/registry/*.toml`, `aphrody n2b rules`, MCP `bun_node_equivalent` | skill name and triggers unchanged |
-| `update-bun-docs.{sh,ps1}`, `n2b-env.{sh,ps1}`, `refactor-{start,state}.{sh,ps1}` | deleted | `aphrody-ops bun-upstream-docs` remains the Bun-docs entry point |
+| `update-bun-docs.{sh,ps1}`, `n2b-env.{sh,ps1}`, `refactor-{start,state}.{sh,ps1}` | deleted | `yolo ops bun-upstream-docs` remains the Bun-docs entry point |
 
 Kept on purpose: `n2b-types` (consumed by mcp and imported by `@aphrody/n2b-plugin`, and
 `n2b-registry` depends on it), `n2b-registry` (consumed by `bun-docs`, which must not pull n2b-core's

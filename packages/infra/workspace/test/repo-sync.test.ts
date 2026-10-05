@@ -674,8 +674,8 @@ test("repo-sync status reads live receipts and pending metadata without exposing
       ),
     );
     expect(unchanged.every(Boolean)).toBe(true);
-    const ownerEntry = join(import.meta.dir, "../src/ops.ts");
-    const cli = Bun.spawn([process.execPath, ownerEntry, "repo-sync", "status", "--json"], {
+    const yolo = join(import.meta.dir, "../../../../apps/yolo/cli/src/index.ts");
+    const cli = Bun.spawn([process.execPath, yolo, "ops", "repo-sync", "status", "--json"], {
       stdout: "pipe",
       stderr: "pipe",
       env: {

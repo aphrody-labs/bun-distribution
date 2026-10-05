@@ -29,7 +29,10 @@ async function mcp(cmd: string[], cwd: string, call?: { name: string; arguments:
       if (nl >= 0) {
         const line = buf.slice(0, nl);
         buf = buf.slice(nl + 1);
-        try { const m = JSON.parse(line); if (m.id === id) return m; } catch {}
+        try {
+          const m = JSON.parse(line);
+          if (m.id === id) return m;
+        } catch {}
         continue;
       }
       const { value, done } = await rd.read();
@@ -39,7 +42,16 @@ async function mcp(cmd: string[], cwd: string, call?: { name: string; arguments:
   };
   const send = (o: object) => p.stdin.write(JSON.stringify(o) + "\n");
   const t0 = Bun.nanoseconds();
-  send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "perf", version: "1" } } });
+  send({
+    jsonrpc: "2.0",
+    id: 1,
+    method: "initialize",
+    params: {
+      protocolVersion: "2025-06-18",
+      capabilities: {},
+      clientInfo: { name: "perf", version: "1" },
+    },
+  });
   await next(1);
   const t1 = Bun.nanoseconds();
   send({ jsonrpc: "2.0", method: "notifications/initialized" });
@@ -53,14 +65,26 @@ async function mcp(cmd: string[], cwd: string, call?: { name: string; arguments:
     callMs = (Bun.nanoseconds() - t2) / 1e6;
   }
   let rssKb = 0;
-  try { rssKb = Number(/VmHWM:\s+(\d+)/.exec(readFileSync(`/proc/${p.pid}/status`, "utf8"))?.[1] ?? 0); } catch {}
+  try {
+    rssKb = Number(/VmHWM:\s+(\d+)/.exec(readFileSync(`/proc/${p.pid}/status`, "utf8"))?.[1] ?? 0);
+  } catch {}
   p.kill();
-  return { initialize_ms: r2((t1 - t0) / 1e6), tools_list_ms: r2((t2 - t1) / 1e6), tools: tl.result?.tools?.length ?? 0, call_ms: callMs && r2(callMs), rss_kb: rssKb };
+  return {
+    initialize_ms: r2((t1 - t0) / 1e6),
+    tools_list_ms: r2((t2 - t1) / 1e6),
+    tools: tl.result?.tools?.length ?? 0,
+    call_ms: callMs && r2(callMs),
+    rss_kb: rssKb,
+  };
 }
 
 const home = homedir();
 const root = process.cwd();
-const out: Record<string, unknown> = { date: new Date().toISOString().slice(0, 10), bun: Bun.version, runs };
+const out: Record<string, unknown> = {
+  date: new Date().toISOString().slice(0, 10),
+  bun: Bun.version,
+  runs,
+};
 const sample = `${root}/packages/infra/update`;
 out.tools = {
   oxlint_global: timeCmd(["oxlint", "--version"]),
@@ -72,18 +96,41 @@ out.tools = {
   nu_version: timeCmd(["nu", "--version"]),
 };
 out.cli = Object.fromEntries(
-  ["aphrody", "aphrody-ops", "aphrody-kernel", "yolo"].map((b) => [b, timeCmd([`${home}/.local/bin/${b}`, "--version"])]),
+  ["aphrody", "aphrody-kernel", "yolo"].map((b) => [
+    b,
+    timeCmd([`${home}/.local/bin/${b}`, "--version"]),
+  ]),
 );
-async function mcpMedian(cmd: string[], cwd: string, call: { name: string; arguments: object }, n = 7) {
+async function mcpMedian(
+  cmd: string[],
+  cwd: string,
+  call: { name: string; arguments: object },
+  n = 7,
+) {
   const rs: Awaited<ReturnType<typeof mcp>>[] = [];
   for (let i = 0; i < n + 1; i++) rs.push(await mcp(cmd, cwd, call)); // first run is cold, dropped
   rs.shift();
-  const m = (k: "initialize_ms" | "tools_list_ms" | "call_ms" | "rss_kb") => r2(med(rs.map((r) => Number(r[k] ?? 0))));
-  return { runs: n, tools: rs[0]!.tools, initialize_ms: m("initialize_ms"), tools_list_ms: m("tools_list_ms"), call: call.name, call_ms: m("call_ms"), rss_kb: m("rss_kb") };
+  const m = (k: "initialize_ms" | "tools_list_ms" | "call_ms" | "rss_kb") =>
+    r2(med(rs.map((r) => Number(r[k] ?? 0))));
+  return {
+    runs: n,
+    tools: rs[0]!.tools,
+    initialize_ms: m("initialize_ms"),
+    tools_list_ms: m("tools_list_ms"),
+    call: call.name,
+    call_ms: m("call_ms"),
+    rss_kb: m("rss_kb"),
+  };
 }
 out.mcp = {
-  aphrody_kernel_inprocess: await mcpMedian([`${home}/.local/bin/aphrody-kernel`, "mcp"], root, { name: "coreutils_status", arguments: {} }).catch((e) => ({ error: String(e) })),
-  yolo: await mcpMedian([`${home}/yolo/bin/yolo`, "mcp"], `${home}/yolo`, { name: "yolo_doctor", arguments: {} }).catch((e) => ({ error: String(e) })),
+  aphrody_kernel_inprocess: await mcpMedian([`${home}/.local/bin/aphrody-kernel`, "mcp"], root, {
+    name: "coreutils_status",
+    arguments: {},
+  }).catch((e) => ({ error: String(e) })),
+  yolo: await mcpMedian([`${home}/yolo/bin/yolo`, "mcp"], `${home}/yolo`, {
+    name: "yolo_doctor",
+    arguments: {},
+  }).catch((e) => ({ error: String(e) })),
 };
 try {
   const lib = dlopen(`${home}/.local/bin/IECODE.Ffi.so`, {
@@ -95,8 +142,14 @@ try {
   for (let i = 0; i < 1000; i++) f(buf, 64n);
   const s = Bun.nanoseconds();
   for (let i = 0; i < N; i++) f(buf, 64n);
-  out.ffi = { lib: "IECODE.Ffi.so", symbol: "iecode_level5_crc32(64B)", ns_per_call: r2((Bun.nanoseconds() - s) / N) };
-} catch (e) { out.ffi = { error: String(e) }; }
+  out.ffi = {
+    lib: "IECODE.Ffi.so",
+    symbol: "iecode_level5_crc32(64B)",
+    ns_per_call: r2((Bun.nanoseconds() - s) / N),
+  };
+} catch (e) {
+  out.ffi = { error: String(e) };
+}
 const path = process.argv[2];
 if (path) await Bun.write(path, JSON.stringify(out, null, 2) + "\n");
 console.log(JSON.stringify(out, null, 2));

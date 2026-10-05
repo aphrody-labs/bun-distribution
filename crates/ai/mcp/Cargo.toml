@@ -9,11 +9,10 @@ homepage.workspace    = true
 repository.workspace  = true
 description           = "aphrody-mcp — unified Rust MCP stdio server. Pure Rust, sub-millisecond cold-start."
 
-# The crate stays named `google_mcp` (historical), but ships a single
-# binary named `aphrody-mcp` consumed by the Claude Code plugin.
-[[bin]]
-name = "aphrody-mcp"
-path = "src/main.rs"
+# Library only: the `aphrody-mcp` entry point (`aphrody_mcp::cli_main`) is dispatched by the
+# `aphrody` multi-call binary (symlink `aphrody-mcp` or `aphrody mcp-server`).
+[lib]
+path = "src/lib.rs"
 
 [features]
 # The Obscura browser (HTTP + DOM + V8, plus the layout/paint engine for
@@ -194,7 +193,7 @@ tempfile           = { workspace = true }
 criterion          = { workspace = true }
 
 # --- MCP handshake benchmarks (native targets only) ------------------------
-# The bench harness spawns the freshly-built `aphrody-mcp` binary, so it
+# The bench harness spawns the workspace `aphrody mcp-server` binary, so it
 # cannot run on wasm32 (no Command::output) and is gated implicitly via the
 # `gemini_runtime::McpClient::from_stdio` cfg in upstream. `harness = false`
 # disables libtest so criterion can install its own main() — same convention

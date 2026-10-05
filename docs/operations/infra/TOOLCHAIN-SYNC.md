@@ -20,8 +20,8 @@ services, nginx, units, databases, models or persistent stores.
   binstall for the Rust set. PATH comes from `aphrody-claude/user/shell/profile.ps1`.
 - Aphrody binaries: prebuilt Linux `aphrody`, `aphrody-infra` (embeds the `aphrody-ovh` crate) and
   `aphrody-kernel` are streamed from the WSL release install (zstd over SSH) to `~/.local/bin` on
-  vps and dbfr. `aphrody-ops` and `aphrody-workspace` are Bun scripts in
-  `packages/infra/workspace` and need a source checkout (factory workspace bootstrap).
+  vps and dbfr. `yolo ops` and `yolo workspace` load `packages/infra/workspace` from a source
+  checkout (factory workspace bootstrap).
 
 ## Open items
 
@@ -40,7 +40,7 @@ newest stable release at least three days old (same window as `bunfig.toml`
 cache size (prunes entries unused for 30 days above 5 GB), and runs
 `bun install --frozen-lockfile --dry-run` on a temporary copy of the manifests where a checkout
 exists. It never rewrites a lockfile or a shared tree and never restarts a service. Repository pins
-stay owned by `aphrody-update pins` and `aphrody-update bun`; bump the pin there, then re-run the
+stay owned by `yolo update pins` and `yolo update bun`; bump the pin there, then re-run the
 sync scripts. Logs: `~/.local/state/aphrody/log/bun-hygiene.log` (Windows
 `%LOCALAPPDATA%\aphrody\log`).
 

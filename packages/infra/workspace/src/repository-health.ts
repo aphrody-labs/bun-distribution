@@ -16,7 +16,7 @@ function option(args: string[], name: string): string | undefined {
 export async function runRepositoryHealth(args: string[]): Promise<number> {
   if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      "Usage: aphrody-ops repository-health [--root <repository>] [--stale <regex>] [--fail-on-links]",
+      "Usage: yolo ops repository-health [--root <repository>] [--stale <regex>] [--fail-on-links]",
     );
     return 0;
   }
@@ -27,7 +27,7 @@ export async function runRepositoryHealth(args: string[]): Promise<number> {
     const arg = args[index];
     if (!arg || !["--root", "--stale", "--fail-on-links"].includes(arg))
       throw new Error(
-        "Usage: aphrody-ops repository-health [--root <repository>] [--stale <regex>] [--fail-on-links]",
+        "Usage: yolo ops repository-health [--root <repository>] [--stale <regex>] [--fail-on-links]",
       );
     if (arg !== "--fail-on-links") index += 1;
   }

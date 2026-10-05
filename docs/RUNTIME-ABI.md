@@ -15,7 +15,7 @@ phases.
 | Tests                      | `cargo test -p yolo-runtime`, `test/runtime_sdk.test.ts` |
 
 ```bash
-just runtime-build      # cargo build --profile runtime -p yolo-runtime
+just runtime-build      # cargo build --profile runtime -p aphrody-ffi --features browser,tooling
 just runtime-package    # library + header + manifest.json (target, toolchain, ABI, revisions, hashes)
 just runtime-test       # Rust unit tests + Bun SDK tests
 bun run packages/runtime/examples/stats.ts

@@ -10,7 +10,8 @@ binary. Commands load on demand; `yolo help` lists them and `docs/cli/HELP.md` h
 | Servers | `mcp` (stdio MCP server), `api` (REST/OpenAPI on `Bun.serve`) |
 | Frontend | `web build|dev`, `create <dir> --with web,desktop` (templates/) |
 | Runtime | `version`, `doctor`, `runtime install|list|verify|rollback|info`, `upgrade`, `uninstall` |
-| Operations | `host ... --host vps|dbfr|local` (plan unless `--apply`), `ship`, `infra|ops|workspace|workflow|git|ssh` |
+| Operations | `host ... --host vps|dbfr|local` (plan unless `--apply`), `ship`, `infra|workflow|git|ssh` (aphrody-infra) |
+| Bun packages | `ops`, `workspace`, `optimize` (@aphrody/workspace), `update`, `google drive|fonts`, `doc-ai`, `browser`: in-process, `src/package-commands.ts` |
 | Ecosystem | `plugin create|status|check|purge`, `awesome`, `py`, `bench` |
 
 Every command takes `--json` (strict schema) or `--md` where it reports. Sources: `src/index.ts`

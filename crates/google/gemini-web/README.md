@@ -63,11 +63,10 @@ legacy BXC object with `text`, `conversation_id`, `response_id`, and `choice_id`
 or an `error` object. The cookie path and prompt are never command-line
 arguments. This process boundary keeps OS crates independent of the AI layer.
 
-From the Aphrody AI workspace, build both process clients with
-`cargo build --locked -p aphrody-gemini-web` and
-`cargo build --locked -p aphrody-embed --features server`. The current
-release CLI does not install these binaries automatically; put the matching
-binary on `PATH` or configure `APHRODY_GEMINI_WEB_BIN` explicitly. Production
+Both process clients are entries of the multi-call `aphrody` binary
+(`aphrody gemini-web`, `aphrody embed`; `aphrody_gemini_web::cli_main`). The current
+release CLI does not install the links automatically; put the matching
+link on `PATH` or configure `APHRODY_GEMINI_WEB_BIN` explicitly. Production
 installation has not been verified.
 
 ## Status

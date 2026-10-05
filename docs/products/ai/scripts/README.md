@@ -34,8 +34,8 @@ Host deployment belongs to `crates/infra` and `packages/infra/workspace`.
 | `bench-bun-surface.ts` | Benchmark Bun runtime operations and CLI latency. |
 | `bench-python-surface.ts` | Benchmark Python client calls and import overhead. |
 | `bench-rust-surface.ts` | Benchmark native Rust binaries and cold start latency. |
-| `bun run runtime:check` | Central `aphrody-ops` gate for Bun and uv/Python runtime surfaces. |
-| `bun run docs:check-links` | Central `aphrody-ops` gate checking relative Markdown documentation links. |
+| `bun run runtime:check` | Central `yolo ops` gate for Bun and uv/Python runtime surfaces. |
+| `bun run docs:check-links` | Central `yolo ops` gate checking relative Markdown documentation links. |
 | `scan-repo.sh` | Shell scanner for repository tree, file sizes and manifests. |
 | `gh-repo-intelligence.ts` | GitHub repository intelligence metadata extraction. |
 | `github-account-audit.ts` | GitHub user/organization audit and repository discovery. |

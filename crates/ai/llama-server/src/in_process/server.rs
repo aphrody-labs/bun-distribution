@@ -104,7 +104,8 @@ async fn chat(State(engine): State<Arc<InProcessLlama>>, Json(body): Json<Value>
             };
             std::future::ready(frame)
         });
-        let done = futures::stream::once(std::future::ready(Bytes::from_static(b"data: [DONE]\n\n")));
+        let done =
+            futures::stream::once(std::future::ready(Bytes::from_static(b"data: [DONE]\n\n")));
         let body = Body::from_stream(frames.chain(done).map(Ok::<_, std::convert::Infallible>));
         return ([(header::CONTENT_TYPE, "text/event-stream")], body).into_response();
     }
@@ -270,7 +271,9 @@ fn content_parts(content: Option<&Value>) -> Result<Vec<Part>, String> {
     if let Value::Array(items) = content {
         for item in items {
             if item.get("type").and_then(Value::as_str) == Some("image_url") {
-                let source = item.get("image_url").ok_or_else(|| "`image_url` part without `image_url`".to_owned())?;
+                let source = item
+                    .get("image_url")
+                    .ok_or_else(|| "`image_url` part without `image_url`".to_owned())?;
                 parts.push(Part::Image(image_source(source)?));
             }
         }
@@ -305,7 +308,8 @@ fn request_to_turn(body: &Value) -> Result<ChatTurn, String> {
                 if !text.is_empty() {
                     parts.push(Part::Text(text));
                 }
-                for call in message.get("tool_calls").and_then(Value::as_array).into_iter().flatten()
+                for call in
+                    message.get("tool_calls").and_then(Value::as_array).into_iter().flatten()
                 {
                     let id = call.get("id").and_then(Value::as_str).unwrap_or_default().to_owned();
                     let function = call.get("function").unwrap_or(&Value::Null);
@@ -426,7 +430,9 @@ mod tests {
             Part::Image(ImageSource::Base64 { mime, data }) if mime == "image/png" && data == "AAAA"
         ));
         assert!(matches!(&parts[2], Part::Image(ImageSource::Url(url)) if url == "/tmp/a.png"));
-        assert!(matches!(&parts[3], Part::Image(ImageSource::Url(url)) if url == "file:///tmp/b.jpg"));
+        assert!(
+            matches!(&parts[3], Part::Image(ImageSource::Url(url)) if url == "file:///tmp/b.jpg")
+        );
     }
 
     #[test]

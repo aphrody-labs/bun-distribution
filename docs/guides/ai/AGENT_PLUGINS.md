@@ -11,13 +11,13 @@ le validateur Rust `aphrody-skills` et les commandes natives disponibles.
 ## Préparer et vérifier
 
 ```sh
-aphrody-workspace plugins status
-aphrody-workspace plugins clean --apply
-aphrody-workspace plugins fix-refs --scan-root /chemin/docs --apply
-aphrody-workspace plugins prepare --apply
-aphrody-workspace plugins validate
-aphrody-workspace plugins validate --name aphrody --provider claude
-aphrody-workspace plugins facts
+yolo workspace plugins status
+yolo workspace plugins clean --apply
+yolo workspace plugins fix-refs --scan-root /chemin/docs --apply
+yolo workspace plugins prepare --apply
+yolo workspace plugins validate
+yolo workspace plugins validate --name aphrody --provider claude
+yolo workspace plugins facts
 ```
 
 Sans `--apply`, les mutations produisent un plan. `prepare` synchronise les
@@ -41,10 +41,10 @@ liées, corrige les instructions et exemples du plugin, exécute les gates du
 propriétaire et les validateurs du plugin, puis actualise le reçu:
 
 ```sh
-aphrody-workspace plugins facts --name NOM
+yolo workspace plugins facts --name NOM
 # Revue manuelle des écarts contre les chemins déclarés et mise à jour du bundle
-aphrody-workspace plugins refresh-facts --name NOM --apply
-aphrody-workspace plugins validate --name NOM
+yolo workspace plugins refresh-facts --name NOM --apply
+yolo workspace plugins validate --name NOM
 ```
 
 Sans `--apply`, `refresh-facts` ne fait qu'afficher le plan. YOLO doit effectuer
@@ -62,21 +62,21 @@ Un verrou coopératif sérialise les mutations.
 
 ```sh
 # Depuis . : détection automatique des CLI installés.
-aphrody-workspace plugins install --name aphrody --apply
+yolo workspace plugins install --name aphrody --apply
 
 # Un seul fournisseur.
-aphrody-workspace plugins install --name yolo --provider claude --apply
+yolo workspace plugins install --name yolo --provider claude --apply
 
 # Skill complète : instructions et ressources restent dans leur source.
-aphrody-workspace plugins install --kind skill --name ecosystem \
+yolo workspace plugins install --kind skill --name ecosystem \
   --source ~/plugins/aphrody/skills/ecosystem --provider codex --apply
 
 # Configuration MCP dans un fichier privé, jamais des secrets en arguments.
-aphrody-workspace plugins install --kind mcp --name aphrody \
+yolo workspace plugins install --kind mcp --name aphrody \
   --source ~/plugins/aphrody/.mcp.json --apply
 
 # Retirer l'enregistrement, conserver la source et les données du plugin.
-aphrody-workspace plugins uninstall --name yolo --provider claude --apply
+yolo workspace plugins uninstall --name yolo --provider claude --apply
 ```
 
 Les mêmes options s'appliquent à `uninstall`; les skills et MCP demandent leur

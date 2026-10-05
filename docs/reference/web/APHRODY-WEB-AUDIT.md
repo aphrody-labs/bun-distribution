@@ -31,7 +31,7 @@ Only web-chromium has wasm/windows cfg gates; the rest have none (unverified for
 No `todo!`/`unimplemented!` in any web crate. Stub-like "not implemented" strings were not searched (unverified).
 
 Bun packages (`packages/web/*`; there is no `apps/web*`, `ls` failed):
-- `@aphrody/agent-browser` (`packages/web/agent-browser/package.json`): CDP client, engine lifecycle, service client, config, tauri; bin `agent-browser`. Has `test/`.
+- `@aphrody/agent-browser` (`packages/web/agent-browser/package.json`): CDP client, engine lifecycle, service client, config, tauri; command line `yolo browser` (no bin). Has `test/`.
 - `aphrody-web-test` (`packages/web/aphrody-web-test`): Playwright-like runner (cdp, locator, expect, page). Has `test/`.
 - `x` (`packages/web/x`): X client, tools, db; tests at package root.
 

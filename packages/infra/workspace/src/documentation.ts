@@ -312,7 +312,7 @@ export async function runDocumentation(argv: string[]): Promise<number> {
   const [command = "status", ...rest] = args;
   if (["--help", "-h", "help"].includes(command)) {
     console.log(
-      "Usage: aphrody-ops docs <status|generate|check|audit|links|overlaps|consolidate|site|ai> [--root <repository>]\ngenerate: --check --deps --skip-ecosystem; site: --output <directory>; audit: --json; ai: translate <file> [language] --apply --online",
+      "Usage: yolo ops docs <status|generate|check|audit|links|overlaps|consolidate|site|ai> [--root <repository>]\ngenerate: --check --deps --skip-ecosystem; site: --output <directory>; audit: --json; ai: translate <file> [language] --apply --online",
     );
     return 0;
   }
@@ -321,7 +321,7 @@ export async function runDocumentation(argv: string[]): Promise<number> {
     rest.some((arg) => arg === "--help" || arg === "-h")
   ) {
     console.log(
-      `Usage: aphrody-ops docs ${command} [--root <repository>] [--check] [--deps] [--skip-ecosystem]`,
+      `Usage: yolo ops docs ${command} [--root <repository>] [--check] [--deps] [--skip-ecosystem]`,
     );
     return 0;
   }
@@ -418,7 +418,8 @@ export async function runDocumentation(argv: string[]): Promise<number> {
     const child = Bun.spawn(
       [
         process.execPath,
-        join(root, "packages/ai/doc-ai/src/cli.ts"),
+        join(root, "apps/yolo/cli/src/index.ts"),
+        "doc-ai",
         "translate",
         documentationPath(root, path),
         language ?? "fr",
@@ -436,7 +437,7 @@ export async function runDocumentation(argv: string[]): Promise<number> {
   // Compatibility adapter: an explicit invocation retains doc-ai's original arguments.
   if (command === "assist") {
     const child = Bun.spawn(
-      [process.execPath, join(root, "packages/ai/doc-ai/src/cli.ts"), ...rest],
+      [process.execPath, join(root, "apps/yolo/cli/src/index.ts"), "doc-ai", ...rest],
       { cwd: root, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
     );
     return child.exited;

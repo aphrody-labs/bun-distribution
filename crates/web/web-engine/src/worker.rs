@@ -1,6 +1,6 @@
-#![allow(linker_messages)] // MSVC import-library progress is not a compiler diagnostic.
+//! Line-delimited JSON worker (former `aphrody-web-worker` binary) spawned by `aphrody-web scrape`.
 
-use std::sync::Arc;
+use std::{ffi::OsString, sync::Arc};
 
 use obscura_browser::{BrowserContext, Page};
 use serde::{Deserialize, Serialize};
@@ -41,9 +41,25 @@ impl WorkerResponse {
     }
 }
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() {
-    tracing_subscriber::fmt().with_env_filter("warn").with_writer(std::io::stderr).init();
+/// Entry point of the former `aphrody-web-worker` binary, now reached through the `aphrody` multi-call binary.
+/// `args[0]` is the program name (argv convention). Returns the process exit code.
+pub fn worker_main(_args: Vec<OsString>) -> i32 {
+    match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+        Ok(runtime) => {
+            runtime.block_on(run());
+            0
+        },
+        Err(err) => {
+            eprintln!("Worker runtime error: {err}");
+            1
+        },
+    }
+}
+
+async fn run() {
+    // `try_init`: the host process may already own the global subscriber.
+    let _ =
+        tracing_subscriber::fmt().with_env_filter("warn").with_writer(std::io::stderr).try_init();
 
     let proxy = std::env::var("OBSCURA_PROXY")
         .ok()

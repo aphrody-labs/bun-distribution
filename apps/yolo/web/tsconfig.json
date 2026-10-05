@@ -1,16 +1,12 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "paths": {
-      "@aphrody/api": ["../../vendor/tauri/packages/api/src/index.ts"],
-      "@aphrody/api/*": ["../../vendor/tauri/packages/api/src/*.ts"]
-    },
-    // The Tauri API is type-checked from the vendored sources with their globals (global.d.ts); their own
-    // settings (vendor/tauri/packages/api/tsconfig.json) do not enable these stricter yolo options.
+    // The Tauri API (@aphrody/api, crates/tauri/aphrody-tauri-api) is type-checked from its sources with
+    // their globals (global.d.ts); its own settings do not enable these stricter yolo options.
     "noUncheckedIndexedAccess": false,
     "isolatedModules": false,
     "verbatimModuleSyntax": false
   },
-  "files": ["../../vendor/tauri/packages/api/src/global.d.ts"],
+  "files": ["../../../crates/tauri/aphrody-tauri-api/src/global.d.ts"],
   "include": ["src/**/*", "build.ts"]
 }

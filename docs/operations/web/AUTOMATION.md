@@ -57,7 +57,7 @@ only warranted for long-lived agents that share one browser.
 ## Pipeline
 
 `config/pipeline.json` is generated from the package manifests by
-`bun packages/infra/workspace/src/ops.ts pipeline-catalog --root . [--apply]`. The web stage
+`yolo ops pipeline-catalog --root . [--apply]`. The web stage
 (`bun-web`) now includes `lint`, `typecheck` and `test` of `@aphrody/agent-browser` (a `lint` script
 was added) next to `@aphrody/web-test` and `@aphrody/x`. Rust gates stay in the `rust-foundation`
 stage; the web-only Rust gate is `web:verify:rust`.

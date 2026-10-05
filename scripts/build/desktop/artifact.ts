@@ -31,7 +31,7 @@ export function packageDesktop(options: {
       join(
         root,
         "target/runtime",
-        process.platform === "win32" ? "yolo-desktop.exe" : "yolo-desktop",
+        process.platform === "win32" ? "aphrody-app.exe" : "aphrody-app",
       ),
   );
   const info = inspectDesktopBinary(executable);

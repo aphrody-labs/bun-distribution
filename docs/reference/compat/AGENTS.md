@@ -63,4 +63,4 @@ git diff --check
 
 ## Automatisation transversale
 
-`bun run docs:bun:update` délègue la synchronisation documentaire Bun à `aphrody-ops bun-upstream-docs`. Conserver cette entrée locale lors de toute évolution du module central.
+`bun run docs:bun:update` délègue la synchronisation documentaire Bun à `yolo ops bun-upstream-docs`. Conserver cette entrée locale lors de toute évolution du module central.

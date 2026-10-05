@@ -29,7 +29,7 @@ export function runAiReleaseGate(args: string[]): number {
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--scoped") scoped = true;
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: aphrody-ops ai-release-gate [--root <repository>] [--scoped]");
+      console.log("Usage: yolo ops ai-release-gate [--root <repository>] [--scoped]");
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }

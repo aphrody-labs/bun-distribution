@@ -7,7 +7,7 @@
  * at their pinned commit, crates.io archives, and the local patches applied on
  * top. `aphrody git source` reads the same manifest natively.
  *
- * Usage: aphrody-ops upstream-sources [status|sync|verify] [--root <repo>]
+ * Usage: yolo ops upstream-sources [status|sync|verify] [--root <repo>]
  *        [--source-root <dir>] [--only <id>] [--apply] [--json]
  */
 import { existsSync } from "node:fs";
@@ -349,7 +349,7 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.log(
-      "Usage: aphrody-ops upstream-sources [status|sync|verify] [--root <repo>] [--source-root <dir>] [--only <id>] [--apply] [--json]",
+      "Usage: yolo ops upstream-sources [status|sync|verify] [--root <repo>] [--source-root <dir>] [--only <id>] [--apply] [--json]",
     );
     return message === "help" ? 0 : (console.error(message), 2);
   }
@@ -400,9 +400,9 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
       const dir = join(args.repo, source.integratedPath);
       const row = await inspect(dirname(dir), { ...source, id: basename(dir) });
       return Object.assign(row, {
-	id: source.id,
-	detail: `${source.integratedPath} ${row.detail}`
-});
+        id: source.id,
+        detail: `${source.integratedPath} ${row.detail}`,
+      });
     }),
   ]);
   const problems =
@@ -432,7 +432,7 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
       );
     if (unmanaged.length)
       console.log(
-        `not vital (remove with \`aphrody-update upstream prune --apply\`): ${unmanaged.join(", ")}`,
+        `not vital (remove with \`yolo update upstream prune --apply\`): ${unmanaged.join(", ")}`,
       );
     for (const problem of problems) console.log(`problem: ${problem}`);
     if (args.action === "sync" && !args.apply)

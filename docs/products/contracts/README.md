@@ -33,4 +33,4 @@ Apache-2.0. Manifest publishability and historical dry runs do not prove upload.
 
 ## Automatisation transversale
 
-`just boundaries` délègue la vérification Cargo à `aphrody-ops cargo-boundaries`.
+`just boundaries` délègue la vérification Cargo à `yolo ops cargo-boundaries`.

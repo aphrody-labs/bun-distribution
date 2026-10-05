@@ -4,7 +4,7 @@
  * has: `cargo metadata` (crates and third-party packages), the AST import inventory
  * (`scanImportsExports`, Bun packages) and the tracked files (exact duplicates).
  *
- *   aphrody-ops stack-dedup [--root <repo>] [--scope ui,web] [--metadata <cargo-metadata.json>] [--json] [--out <file>]
+ *   yolo ops stack-dedup [--root <repo>] [--scope ui,web] [--metadata <cargo-metadata.json>] [--json] [--out <file>]
  *
  * Read-only. It never edits a manifest: the report names each cut and what it frees, the cut is made
  * (and verified) by hand or by the owning tool.
@@ -463,7 +463,7 @@ export async function runStackDedup(args: string[]): Promise<number> {
     else if (arg === "--json") json = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: aphrody-ops stack-dedup [--root <repo>] [--scope ui,web] [--metadata <cargo-metadata.json>] [--min-bytes <n>] [--json] [--out <file>]",
+        "Usage: yolo ops stack-dedup [--root <repo>] [--scope ui,web] [--metadata <cargo-metadata.json>] [--min-bytes <n>] [--json] [--out <file>]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);

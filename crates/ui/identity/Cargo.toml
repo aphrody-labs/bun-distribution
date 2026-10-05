@@ -39,16 +39,3 @@ thiserror = { workspace = true }
 # and `Pet::from_png` are enough; everything else works in memory.
 default = ["fs"]
 fs = []
-
-[[bin]]
-name = "pixel"
-path = "src/bin/pixel.rs"
-
-[[bin]]
-name = "export_assets"
-path = "src/bin/export_assets.rs"
-
-# `design`: the colour sheet derived from the measured palette, and the M3 seed (`--m3-seed`).
-[[bin]]
-name = "design"
-path = "src/bin/design.rs"
