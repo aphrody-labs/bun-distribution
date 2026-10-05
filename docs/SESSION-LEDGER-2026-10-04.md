@@ -13,11 +13,11 @@
 
 | Code | Composant | Description | Commit | Statut |
 | :--- | :--- | :--- | :--- | :---: |
-| `YOLO-ABI-01` | `crates/yolo-runtime` | Add # Safety docstring to ffi_sum_squares to satisfy Clippy strict | `766f004` | **RESOLVED** |
-| `YOLO-ABI-02` | `crates/yolo-runtime/include/yolo_runtime.h` | Declare ffi_sum_squares in yolo_runtime.h and include in tests.rs | `766f004` | **RESOLVED** |
+| `YOLO-ABI-01` | `crates/engine/yolo-runtime` | Add # Safety docstring to ffi_sum_squares to satisfy Clippy strict | `766f004` | **RESOLVED** |
+| `YOLO-ABI-02` | `crates/engine/yolo-runtime/include/yolo_runtime.h` | Declare ffi_sum_squares in yolo_runtime.h and include in tests.rs | `766f004` | **RESOLVED** |
 | `YOLO-PY-01` | `pyproject.toml` | Unify uv workspace and generate root uv.lock with requires-python >=3.12 | `766f004` | **RESOLVED** |
 | `YOLO-A2A-01` | `ai.json` | Initialize ai.json and ignore runtime .coord mailbox | `355b423` | **RESOLVED** |
-| `YOLO-PRIV-01` | `crates/yolo-core/src/privilege.rs` | Add native privilege layer, sudo -n non-interactive wrapping and zero-latency FFI | `9f320c3` | **RESOLVED** |
+| `YOLO-PRIV-01` | `crates/engine/yolo-core/src/privilege.rs` | Add native privilege layer, sudo -n non-interactive wrapping and zero-latency FFI | `9f320c3` | **RESOLVED** |
 
 ## Preuves d'Exécution & Métriques
 

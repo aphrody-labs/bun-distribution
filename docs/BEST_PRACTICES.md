@@ -7,12 +7,12 @@ Ce document détaille les standards d'architecture, de mémoire et de concurrenc
 ## 1. Architecture Rust : Cœur Neutre & FFI Découplée
 
 ### Principe de Responsabilité Unique
-Le code de calcul intensif réside exclusivement dans [`crates/yolo-core`](file:///home/aphro/yolo/crates/yolo-core). Cette crate ne possède **aucune adhérence** à Python (PyO3) ni à Bun (`bun:ffi`) :
+Le code de calcul intensif réside exclusivement dans [`crates/engine/yolo-core`](file:///home/aphro/yolo/crates/engine/yolo-core). Cette crate ne possède **aucune adhérence** à Python (PyO3) ni à Bun (`bun:ffi`) :
 - Pureté algorithmique : calculs vectorisés, `rayon::par_chunks()`.
 - Immutabilité des tranches : passage par référence `&[f64]` plutôt que transfert d'allocation `Vec<f64>` quand c'est possible.
 - Concurrence sûre : isolation des états modifiables via `parking_lot::RwLock` ou structures atomiques.
 
-### Couche d'Export C-ABI (`crates/yolo-runtime`)
+### Couche d'Export C-ABI (`crates/engine/yolo-runtime`)
 Pour Bun et les runtimes externes :
 ```rust
 #[unsafe(no_mangle)]
@@ -85,6 +85,6 @@ export function fastSumSquares(numbers: Float64Array): number {
 
 ## 5. Tauri 3 Desktop : Sécurité & IPC
 
-- Utiliser l'arborescence standardisée : `crates/yolo-desktop` avec `build.rs` invoquant `tauri_build::build()`.
+- Utiliser l'arborescence standardisée : `crates/engine/yolo-desktop` avec `build.rs` invoquant `tauri_build::build()`.
 - Déclarer les autorisations de commandes de manière explicite dans les schémas d'ACL.
 - Servir l'interface utilisateur de manière réactive via un bundler Bun sans nécessiter de serveur lourd en développement.

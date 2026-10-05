@@ -8,8 +8,8 @@ phases.
 
 | Piece                      | Path                                                      |
 | :------------------------- | :-------------------------------------------------------- |
-| Library (cdylib + rlib)    | `crates/yolo-runtime`                                     |
-| C header                   | `crates/yolo-runtime/include/yolo_runtime.h`              |
+| Library (cdylib + rlib)    | `crates/engine/yolo-runtime`                                     |
+| C header                   | `crates/engine/yolo-runtime/include/yolo_runtime.h`              |
 | TypeScript SDK (`bun:ffi`) | `packages/runtime`                                             |
 | Artifact packaging         | `scripts/release/runtime_artifact.ts` → `dist/runtime/<target>/`  |
 | Tests                      | `cargo test -p yolo-runtime`, `test/runtime_sdk.test.ts` |

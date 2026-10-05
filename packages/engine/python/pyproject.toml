@@ -14,7 +14,7 @@ dependencies = ["pydantic>=2.8.0", "polars>=1.12.0"]
 dev = ["pytest>=8.0.0"]
 
 [tool.maturin]
-manifest-path = "../../crates/yolo-pyo3/Cargo.toml"
+manifest-path = "../../crates/engine/yolo-pyo3/Cargo.toml"
 module-name = "yolo._yolo_native"
 python-source = "python"
 features = ["pyo3/extension-module"]

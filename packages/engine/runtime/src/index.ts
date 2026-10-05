@@ -2,7 +2,7 @@
  * Light SDK of the YOLO native runtime (phase R0 slice).
  *
  * Loads the precompiled `yolo_runtime` library through `bun:ffi` and its versioned C ABI
- * (`crates/yolo-runtime/include/yolo_runtime.h`, `docs/RUNTIME-ABI.md`). Nothing here compiles or
+ * (`crates/engine/yolo-runtime/include/yolo_runtime.h`, `docs/RUNTIME-ABI.md`). Nothing here compiles or
  * links Tauri, wry, tao, Bun internals or Obscura: the consumer only needs this file and the
  * prebuilt artifact.
  */

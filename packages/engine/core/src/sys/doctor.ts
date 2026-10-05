@@ -79,8 +79,8 @@ export function collectDoctorReport(): DoctorReport {
     ["templates/stack.toml", "templates (yolo create)", true],
     ["packages/runtime/package.json", "runtime SDK", true],
     ["packages/python/pyproject.toml", "Python package (uv / maturin)", sourceInstallation],
-    ["crates/yolo-pyo3/Cargo.toml", "PyO3 0.29 native extension crate", sourceInstallation],
-    ["crates/yolo-desktop/icons", "desktop scaffold sources (crates/)", false],
+    ["crates/engine/yolo-pyo3/Cargo.toml", "PyO3 0.29 native extension crate", sourceInstallation],
+    ["crates/engine/yolo-desktop/icons", "desktop scaffold sources (crates/)", false],
   ] as const) {
     const exists = existsSync(join(home, path));
     if (!exists && required) okStatus = false;

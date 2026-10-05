@@ -23,8 +23,8 @@ remains governed by [GOAL](../GOAL.md), [PLAN](../PLAN.md) and
 | Compatibility CLI | [aphrody-n2b](../crates/aphrody-n2b) | Existing `n2b` binary and native in-process engine |
 | Runtime discovery and pins | [aphrody-toolchains](../crates/aphrody-toolchains) | Bun/uv/Nushell discovery and launch environment; discovery is not engine embedding |
 | Native parser, formatter, linter and minifier | [aphrody-oxc-bridge](../crates/aphrody-oxc-bridge) | `aphrody_oxc_*`, ABI 1, official Oxc APIs |
-| Grouped optional provider | [yolo-tooling](../crates/yolo-tooling) | Reexports the two C ABIs; group ABI 1; no second engine implementation |
-| Repository mapper, watcher and polyglot inspection | [yolo-core](../crates/yolo-core) with `repository-tools` | `mapper` and `polyglot`; Aphrody's `aphrody_yolo` library reexports them |
+| Grouped optional provider | [yolo-tooling](../crates/compat/yolo-tooling) | Reexports the two C ABIs; group ABI 1; no second engine implementation |
+| Repository mapper, watcher and polyglot inspection | [yolo-core](../crates/engine/yolo-core) with `repository-tools` | `mapper` and `polyglot`; Aphrody's `aphrody_yolo` library reexports them |
 
 The seven transferred crates preserve their package, library and binary identities.
 `yolo-tooling` is the new grouped artifact owner. The default Cargo members remain
@@ -83,7 +83,7 @@ owners for their broader CLI behavior; no `npx` or `bunx` execution is needed.
 
 ## Shared scan budget and safe migration boundaries
 
-[The std-only resource owner](../crates/yolo-core/src/resources.rs) supplies one
+[The std-only resource owner](../crates/engine/yolo-core/src/resources.rs) supplies one
 exclusive scan lease and a worker budget of 1 through 6. N2B and repository mapping
 use the same owner; defaults cap available parallelism at six. The lease creates
 no worker pool. It serializes scans sharing one linked native library, including

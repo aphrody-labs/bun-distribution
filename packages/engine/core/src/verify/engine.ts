@@ -80,8 +80,8 @@ export const GATES: readonly Gate[] = [
     title: "rustfmt --check (yolo-core and yolo-runtime)",
     command: ["cargo", "fmt", "--check", "-p", "yolo-core", "-p", "yolo-runtime"],
     surfaces: [
-      "crates/yolo-core/**",
-      "crates/yolo-runtime/**",
+      "crates/engine/yolo-core/**",
+      "crates/engine/yolo-runtime/**",
       "Cargo.toml",
       "rustfmt.toml",
       ".rustfmt.toml",
@@ -126,8 +126,8 @@ export const GATES: readonly Gate[] = [
     ],
     surfaces: [
       "packages/python/**",
-      "crates/yolo-pyo3/**",
-      "crates/yolo-core/**",
+      "crates/engine/yolo-pyo3/**",
+      "crates/engine/yolo-core/**",
       "pyproject.toml",
       "uv.lock",
     ],
@@ -153,8 +153,8 @@ export const GATES: readonly Gate[] = [
     needs: ["python-native"],
     surfaces: [
       "packages/python/**",
-      "crates/yolo-pyo3/**",
-      "crates/yolo-core/**",
+      "crates/engine/yolo-pyo3/**",
+      "crates/engine/yolo-core/**",
       "pyproject.toml",
       "uv.lock",
     ],

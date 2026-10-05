@@ -73,7 +73,7 @@ Toutes les sorties de la CLI interne (`yolo`) doivent être directement exploita
 
 1. **Bun / TypeScript (Natif) :** Socle par défaut pour l'orchestration, l'outillage interne, la CLI et le prototypage rapide. Exploite les primitives natives Bun (`Bun.file`, `Bun.Glob`, `Bun.hash.wyhash`, `Bun.serve`, `Bun.TOML`, `Bun.JSONL`).
 2. **C / C++ (Adoption immédiate) :** Dès qu'une bibliothèque officielle de référence existe déjà en C/C++ (WebKitGTK, Wry, SQLite, zstd), adoption immédiate sans réimplémentation redondante, interfacée via le C ABI ou `bun:ffi`.
-3. **Rust (Maturation ciblée) :** Cible finale pour remplacer le code TypeScript/Bun sur le chemin critique dès que la performance brute, le calcul intensif, la sûreté mémoire sans GC ou la distribution binaire autonome l'exigent (`crates/yolo-core`, `crates/yolo-runtime`, `crates/yolo-desktop`).
+3. **Rust (Maturation ciblée) :** Cible finale pour remplacer le code TypeScript/Bun sur le chemin critique dès que la performance brute, le calcul intensif, la sûreté mémoire sans GC ou la distribution binaire autonome l'exigent (`crates/engine/yolo-core`, `crates/engine/yolo-runtime`, `crates/engine/yolo-desktop`).
 4. **Python via `uv` (Écosystème IA / ML) :** Mobilisé dès qu'un écosystème externe de modèles ou bibliothèques spécialisées (Gemma 4, PyTorch, Hugging Face, Unsloth) est requis, strictement conteneurisé sous des environnements `uv` isolés.
 5. **CPython (Restreint) :** Réservé exclusivement aux besoins système très bas niveau liés aux détails internes de l'interpréteur.
 
@@ -105,8 +105,8 @@ Chaque fonctionnalité de la CLI `yolo` est conçue pour être exposée via quat
 - Endpoints REST : `/health`, `/api/status`, `/api/verify`, `/api/parse`, `/api/bench`, `/api/doctor`, `/api/scan`, `/api/tools`, `/api/openapi.json`.
 
 ### 4. FFI (Foreign Function Interface) & PyO3 Native Interop
-- **TypeScript / Bun (`bun:ffi`) :** Couche `packages/runtime` (`@aphrody/yolo-runtime`) interfacée avec `crates/yolo-runtime` via `bun:ffi` zéro-copie (`ptr(Float64Array)` direct sans sérialisation).
-- **Python / PyO3 0.29 (`crates/yolo-pyo3`) :** Extension native `_yolo_native` compilée avec Maturin, exploitant `py.detach()` pour relâcher instantanément le GIL et basculer sur les cœurs de calcul Rayon SIMD, prête pour CPython 3.14t Free-Threaded (PEP 703 No-GIL).
+- **TypeScript / Bun (`bun:ffi`) :** Couche `packages/runtime` (`@aphrody/yolo-runtime`) interfacée avec `crates/engine/yolo-runtime` via `bun:ffi` zéro-copie (`ptr(Float64Array)` direct sans sérialisation).
+- **Python / PyO3 0.29 (`crates/engine/yolo-pyo3`) :** Extension native `_yolo_native` compilée avec Maturin, exploitant `py.detach()` pour relâcher instantanément le GIL et basculer sur les cœurs de calcul Rayon SIMD, prête pour CPython 3.14t Free-Threaded (PEP 703 No-GIL).
 - **Package Python `yolo` (`packages/python`) :** Intégration Pydantic V2, Apache Arrow IPC / Polars DataFrame, stubs typés PEP 484/561 (`py.typed`, `_yolo_native.pyi`).
 - C ABI versionné (`EXPECTED_ABI_MAJOR = 1`, `EXPECTED_ABI_MINOR = 4`).
 - Zéro dépendance d'en-tête externe, gestion stricte des lifetimes et panic boundaries.

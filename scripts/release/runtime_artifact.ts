@@ -33,7 +33,7 @@ loaded.close();
 const outDir = resolve(root, "dist/runtime", info.target);
 mkdirSync(outDir, { recursive: true });
 
-const headerSrc = resolve(root, "crates/yolo-runtime/include/yolo_runtime.h");
+const headerSrc = resolve(root, "crates/engine/yolo-runtime/include/yolo_runtime.h");
 const libName = basename(libraryPath);
 const lib = new Uint8Array(await Bun.file(libraryPath).arrayBuffer());
 const header = new Uint8Array(await Bun.file(headerSrc).arrayBuffer());

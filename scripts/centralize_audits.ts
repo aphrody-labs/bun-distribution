@@ -68,7 +68,7 @@ ledger.recordAuditReport(db, {
     "ABI C 1.4 fully verified. 20 canonical symbols + ffi_sum_squares regularized. Clippy strict clean.",
   details: {
     abiVersion: "1.4",
-    cHeader: "crates/yolo-runtime/include/yolo_runtime.h",
+    cHeader: "crates/engine/yolo-runtime/include/yolo_runtime.h",
     clippyWarnings: 0,
     yoloCoreTests: 9,
     yoloRuntimeTests: 28,
@@ -137,7 +137,7 @@ ledger.recordBenchmark(db, {
 ledger.recordBenchmark(db, {
   sessionId,
   benchmarkName: "c_abi_runtime_tests",
-  target: "crates/yolo-runtime",
+  target: "crates/engine/yolo-runtime",
   iterations: 28,
   latencyUs: 490000,
   throughputOpsSec: 57.14,
@@ -208,14 +208,14 @@ for (const g of gates) {
 const remediations = [
   {
     code: "YOLO-ABI-01",
-    component: "crates/yolo-runtime",
+    component: "crates/engine/yolo-runtime",
     desc: "Add # Safety docstring to ffi_sum_squares to satisfy Clippy strict",
     commit: "766f004",
     status: "RESOLVED" as const,
   },
   {
     code: "YOLO-ABI-02",
-    component: "crates/yolo-runtime/include/yolo_runtime.h",
+    component: "crates/engine/yolo-runtime/include/yolo_runtime.h",
     desc: "Declare ffi_sum_squares in yolo_runtime.h and include in tests.rs",
     commit: "766f004",
     status: "RESOLVED" as const,
@@ -236,7 +236,7 @@ const remediations = [
   },
   {
     code: "YOLO-PRIV-01",
-    component: "crates/yolo-core/src/privilege.rs",
+    component: "crates/engine/yolo-core/src/privilege.rs",
     desc: "Add native privilege layer, sudo -n non-interactive wrapping and zero-latency FFI",
     commit: "9f320c3",
     status: "RESOLVED" as const,

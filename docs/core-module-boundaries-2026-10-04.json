@@ -77,14 +77,14 @@
     "crates/aphrody-tauri-runtime-wry",
     "crates/aphrody-tauri-utils",
     "crates/aphrody-wry",
-    "crates/yolo-core",
-    "crates/yolo-desktop",
-    "crates/yolo-pyo3",
-    "crates/yolo-runtime"
+    "crates/engine/yolo-core",
+    "crates/engine/yolo-desktop",
+    "crates/engine/yolo-pyo3",
+    "crates/engine/yolo-runtime"
   ],
   "targetDefaultMembers": [
-    "crates/yolo-core",
-    "crates/yolo-runtime"
+    "crates/engine/yolo-core",
+    "crates/engine/yolo-runtime"
   ],
   "existingBunModules": [
     "runtime:system",
@@ -213,14 +213,14 @@
     },
     {
       "repository": "yolo",
-      "path": "crates/yolo-runtime/Cargo.toml",
+      "path": "crates/engine/yolo-runtime/Cargo.toml",
       "sha256": "675f6e579a305640297fd7cd7ac7880817226a428b82aa6fbd1914b2baf9f3e2",
       "headSha256": "1421bba7334653266841abc67d1bb5a9403492e9849596bee9d11039d2fd5d39",
       "modified": true
     },
     {
       "repository": "yolo",
-      "path": "crates/yolo-desktop/Cargo.toml",
+      "path": "crates/engine/yolo-desktop/Cargo.toml",
       "sha256": "8fd5b249cbce390ee316b15d033143a0f550de5dc5c31b543578f0585f996149",
       "headSha256": "a040f721d94214986ed2aad77f39ca55902933a9d2d3a0d7a7cc503bc6bd7562",
       "modified": true
@@ -1450,7 +1450,7 @@
     },
     {
       "package": "yolo-core",
-      "path": "crates/yolo-core",
+      "path": "crates/engine/yolo-core",
       "source": "yolo",
       "family": "core",
       "role": "shared-primitives",
@@ -1460,7 +1460,7 @@
     },
     {
       "package": "yolo-desktop",
-      "path": "crates/yolo-desktop",
+      "path": "crates/engine/yolo-desktop",
       "source": "yolo",
       "family": "adapter",
       "role": "desktop-host",
@@ -1470,7 +1470,7 @@
     },
     {
       "package": "yolo-pyo3",
-      "path": "crates/yolo-pyo3",
+      "path": "crates/engine/yolo-pyo3",
       "source": "yolo",
       "family": "adapter",
       "role": "python-binding",
@@ -1480,7 +1480,7 @@
     },
     {
       "package": "yolo-runtime",
-      "path": "crates/yolo-runtime",
+      "path": "crates/engine/yolo-runtime",
       "source": "yolo",
       "family": "core",
       "role": "c-abi",

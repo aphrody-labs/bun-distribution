@@ -87,7 +87,7 @@ cpSync(join(root, "templates"), join(stage, "templates"), {
   recursive: true,
   filter: (src) => !src.endsWith("awesome-audit.json"),
 });
-cpSync(join(root, "crates/yolo-desktop/icons"), join(stage, "crates/yolo-desktop/icons"), {
+cpSync(join(root, "crates/engine/yolo-desktop/icons"), join(stage, "crates/engine/yolo-desktop/icons"), {
   recursive: true,
 });
 writeFileSync(join(stage, "VERSION"), `${version}\n`);
