@@ -53,8 +53,9 @@ if (import.meta.main) {
   try {
     process.exitCode = await main(Bun.argv.slice(2));
   } catch (e) {
-    if (!(e instanceof ForgeError)) throw e;
-    console.error(`bun-forge: ${e.message}`);
+    const system = e instanceof Error && typeof (e as NodeJS.ErrnoException).code === "string";
+    if (!(e instanceof ForgeError) && !system) throw e;
+    console.error(`bun-forge: ${(e as Error).message}`);
     process.exitCode = 2;
   }
 }
