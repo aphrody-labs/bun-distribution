@@ -3,7 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod cli;
-pub mod mapper;
-pub mod polyglot;
+// The repository mapper and polyglot detector have one owner: yolo-core (feature `repository-tools`).
+pub use yolo_core::{mapper, polyglot};
 
 pub use cli::cli_main;

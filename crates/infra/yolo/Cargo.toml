@@ -12,24 +12,16 @@ name = "aphrody_yolo"
 path = "src/lib.rs"
 
 [dependencies]
+yolo-core = { path = "../../engine/yolo-core", version = "1.0.0", features = ["repository-tools"] }
 anyhow.workspace = true
 aphrody-git = { workspace = true }
 aphrody-kernel-client = { workspace = true }
-blake3.workspace = true
 chrono.workspace = true
 clap = { workspace = true, features = ["derive"] }
-dashmap.workspace = true
-dunce.workspace = true
-globset.workspace = true
 ignore.workspace = true
-notify.workspace = true
-notify-debouncer-full.workspace = true
-parking_lot.workspace = true
-regex.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
-tracing.workspace = true
 which.workspace = true
 
 [lints]

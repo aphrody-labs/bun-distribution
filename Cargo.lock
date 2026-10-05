@@ -4389,22 +4389,14 @@ dependencies = [
  "anyhow",
  "aphrody-git",
  "aphrody-kernel-client",
- "blake3",
  "chrono",
  "clap",
- "dashmap",
- "dunce",
- "globset",
  "ignore",
- "notify 8.2.0",
- "notify-debouncer-full 0.7.0",
- "parking_lot",
- "regex",
  "serde",
  "serde_json",
  "tokio",
- "tracing",
  "which 8.0.6",
+ "yolo-core",
 ]
 
 [[package]]
