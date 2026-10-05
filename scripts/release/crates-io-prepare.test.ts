@@ -13,7 +13,6 @@ describe("crates-io-prepare", () => {
 
   test("forks keep their upstream licence", () => {
     expect(forkLicense("crates/tauri/aphrody-tauri-cli-node")).toBe("Apache-2.0 OR MIT");
-    expect(forkLicense("crates/turbopack/aphrody-next-api")).toBe("MIT");
     expect(forkLicense("crates/ai/rag")).toBe("");
   });
 

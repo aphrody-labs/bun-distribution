@@ -1,4 +1,4 @@
-# Reproducible import of the Tauri-stack forks into crates/{tauri,turbopack}/aphrody-*  (see docs/VENDORING.md)
+# Reproducible import of the Tauri-stack forks into crates/tauri/aphrody-*  (see docs/VENDORING.md)
 # `yolo import` reads the committed HEAD of each submodule under vendor/ and rewrites the crates.
 
 prefix = "aphrody-"
@@ -67,22 +67,6 @@ name = "create-tauri-app"
 rustfmt = "default"
 crates = [".", "node"]
 exclude = ["worker/**", ".scripts/**", "*.sh", "*.ps1", "package.json", "CONTRIBUTING.md"]
-
-[[source]]
-name = "next"
-rustfmt = ".rustfmt.toml"
-crates = [
-  "crates/next-api",
-  "crates/next-build",
-  "crates/next-code-frame",
-  "crates/next-core",
-  "crates/next-custom-transforms",
-  "crates/next-napi-bindings",
-  "crates/next-taskless",
-  "turbopack/crates/*",
-]
-exclude_crates = ["turbopack/crates/*-tests", "turbopack/crates/*/fuzz"]
-exclude = ["**/tests/**", "**/fixtures/**", "**/fuzz/**"]
 
 # Sources of the `tauri-examples` crate (its [[example]] entries live outside the crate).
 [[copy]]

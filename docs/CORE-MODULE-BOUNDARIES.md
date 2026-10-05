@@ -55,7 +55,7 @@ amélioration du compilateur n’est déduite de cet arbitrage.
 | `yolo-desktop` : 1 crate propre | Hôte desktop optionnel produit par Yolo | `runtime:desktop`, avec supervision et boucle UI native |
 | `yolo-pyo3` : 1 crate propre | Adaptateur Python optionnel du même cœur | `_yolo_native` ; l’IA/ML reste dans Aphrody Python |
 | Tauri/Wry/Tao et outillage : 54 imports, dont 30 plugins Tauri | Fournisseur desktop et ses outils de fabrication | Sélection de plugins par application et permissions Tauri ; aucune API Bun par crate |
-| Next/Turbo/Turbopack : 59 imports | Backend de compilation optionnel et ses outils | Adaptateur `Bun.build`, addon N-API lorsque compatible ; package proposé `@aphrody/yolo-build/turbopack` |
+| Next/Turbo/Turbopack | Retiré le 2026-10-05 : aucun consommateur, `next` vient de npm | Historique Git |
 | Obscura et son V8, dans `vendor/obscura` | Fournisseur navigateur optionnel | `runtime:browser` ; conserver le graphe de build du moteur |
 | Fork Bun, dans `vendor/bun` | Hôte JavaScript et APIs natives existantes | Patch interne seulement pour un besoin d’intégration VM ou un gain mesuré |
 
@@ -107,25 +107,10 @@ la provenance importée, hors bibliothèque d’exécution minimale.
 `tauri-runtime-cef` est un fournisseur alternatif explicite, hors profil par
 défaut : son graphe CEF/GTK4 n’est pas requis par le choix Obscura.
 
-## Compilateur : un backend, quelques adaptateurs
+## Compilateur
 
-Les 21 Turbo et 29 Turbopack composent un backend de compilation. Les sept Next
-restent dans sa compatibilité tant que les dépendances l’exigent :
-[turbopack-ecmascript](../crates/aphrody-turbopack-ecmascript/Cargo.toml)
-dépend directement de `next-custom-transforms`. Retirer tous les `next-*`
-casserait cette dépendance. `auto-hash-map` reste un utilitaire interne.
-
-[next-napi-bindings](../crates/aphrody-next-napi-bindings/Cargo.toml) fournit
-déjà un `cdylib` N-API : c’est un point d’intégration Bun à qualifier avant de
-créer un nouveau pont. Les exigences Node, workers, système de fichiers et
-annulation doivent être testées sous Bun. Le moteur SWC est actuellement la
-dépendance registry `swc_core = 79.0.0` ; `aphrody-swc-ast-explorer` est un outil
-d’inspection AST, pas le moteur SWC à absorber.
-
-Benchmarks, fuzzing, outils de persistance, traces et tests restent avec le
-backend de compilation. Ils ne sont pas installés comme services du cœur.
-L’adaptateur proposé n’existe pas encore ; le plugin de bundler actuel ne fait
-que résoudre les imports du SDK runtime.
+Le fork vendored Next/Turbo/Turbopack (59 crates) a été retiré le 2026-10-05 : aucun crate ni paquet ne le
+consommait ; `next` vient de npm et la compilation passe par `Bun.build`.
 
 ## Employer le bon mécanisme Bun
 

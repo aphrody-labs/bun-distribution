@@ -7,8 +7,6 @@ set working-directory := "../.."
 # Local/factory builds use Aphrody's shared Cargo lock, cache and resource guard.
 # The factory may override this with its installed owner wrapper.
 cargo_owner := env("YOLO_CARGO_WRAPPER", env("HOME") / "aphrody/scripts/build/rust/cargo-serial.sh")
-# Pinned compiler toolchain; core stays stable.
-compiler_toolchain := "nightly-2026-08-20"
 # The Bun fork has its own toolchain and build graph.
 bun_toolchain := "nightly-2026-09-15"
 
@@ -74,7 +72,7 @@ deny-ci:
 # Explicit imported desktop graph and tools, preserving the former workspace gate.
 # Compiler and CEF engines retain separate opt-in selections.
 check-upstream:
-    "{{cargo_owner}}" check --locked --workspace --exclude aphrody-tauri-runtime-cef --exclude 'aphrody-turbo*' --exclude 'aphrody-next*' --exclude aphrody-auto-hash-map --exclude aphrody-swc-ast-explorer --all-targets
+    "{{cargo_owner}}" check --locked --workspace --exclude aphrody-tauri-runtime-cef --all-targets
 
 check-workspace: check-upstream
 
@@ -152,18 +150,6 @@ test-python:
 qualify-python: rust-fmt-python-check check-python clippy-python test-python
 
 # `rustup run` without --install refuses an absent toolchain instead of acquiring it.
-_compiler-ready:
-    rustup run "{{compiler_toolchain}}" rustc --version
-
-# Upstream compiler lints keep their upstream levels; check all native entry points.
-check-compiler: _compiler-ready
-    "{{cargo_owner}}" +{{compiler_toolchain}} check --locked -p 'aphrody-turbo*' -p 'aphrody-next*' -p aphrody-auto-hash-map -p aphrody-swc-ast-explorer --all-targets
-
-test-compiler: _compiler-ready
-    "{{cargo_owner}}" +{{compiler_toolchain}} nextest run --locked -p 'aphrody-turbo*' -p 'aphrody-next*' -p aphrody-auto-hash-map -p aphrody-swc-ast-explorer --lib --bins --tests --no-fail-fast
-
-qualify-compiler: _compiler-ready rust-fmt-upstream-check check-compiler test-compiler
-
 qualify-upstream: rust-fmt-upstream-check check-upstream test-upstream
 
 # The Bun fork builds through bun-forge (apps/yolo/forge): toolchain, per-commit scratch partition, receipt.
@@ -179,8 +165,8 @@ factory profile revision:
     case "$1" in
       core) recipe=ci ;;
       bun) recipe=qualify-bun ;;
-      desktop|browser|python|compiler|tooling|upstream) recipe="qualify-$1" ;;
-      *) echo 'Unknown profile: expected core, bun, desktop, browser, python, compiler, tooling or upstream.' >&2; exit 64 ;;
+      desktop|browser|python|tooling|upstream) recipe="qualify-$1" ;;
+      *) echo 'Unknown profile: expected core, bun, desktop, browser, python, tooling or upstream.' >&2; exit 64 ;;
     esac
     [[ "$2" =~ ^[0-9a-f]{40}$ ]] || { echo 'Factory revision must be a full Git SHA.' >&2; exit 64; }
     exec ./bin/yolo ops build-factory run --repo yolo --revision "$2" "${source_scope[@]}" -- just "$recipe"
@@ -256,10 +242,10 @@ clean:
 
 # Publishing (dry-run by default; real publish needs explicit *-run recipes)
 publish-crates-dry:
-    cargo publish --workspace --exclude aphrody-tauri-runtime-cef --exclude 'aphrody-turbo*' --exclude 'aphrody-next*' --exclude aphrody-auto-hash-map --exclude aphrody-swc-ast-explorer --dry-run --allow-dirty
+    cargo publish --workspace --exclude aphrody-tauri-runtime-cef --dry-run --allow-dirty
 
 publish-crates-run:
-    cargo publish --workspace --exclude aphrody-tauri-runtime-cef --exclude 'aphrody-turbo*' --exclude 'aphrody-next*' --exclude aphrody-auto-hash-map --exclude aphrody-swc-ast-explorer
+    cargo publish --workspace --exclude aphrody-tauri-runtime-cef
 
 # Plugins Management & Auditing
 plugin-status:

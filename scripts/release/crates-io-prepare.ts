@@ -29,7 +29,6 @@ interface Meta {
 /** Upstream licence of forks whose manifest has none. */
 export function forkLicense(dir: string): string {
   if (dir.startsWith("crates/tauri/")) return "Apache-2.0 OR MIT";
-  if (dir.startsWith("crates/turbopack/")) return "MIT";
   return "";
 }
 
