@@ -24,7 +24,7 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 | --- | --- | --- | --- |
 
 
-## Reference upstreams (14, never cloned by default)
+## Reference upstreams (6, never cloned by default)
 
 | Id | Repository | Ref | Observed | What it is for | Used by |
 | --- | --- | --- | --- | --- | --- |
@@ -32,16 +32,8 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 | `tauri` | [tauri-apps/tauri](https://github.com/tauri-apps/tauri) | `v3` | a8703ee487 | Tauri 3 branch; only crates/tauri-driver is read (primary Tauri 3 WebDriver proxy). | config/tauri-upstream.json debuggers; docs/guides/web/TAURI-DEBUG.md |
 | `tauri-plugin-webdriver` | [Choochmeque/tauri-plugin-webdriver](https://github.com/Choochmeque/tauri-plugin-webdriver) | `main` | 007d18ece8 | In-process W3C WebDriver server for Tauri 2; reading base for the Tauri 3 downcast_ref patch. | config/tauri-upstream.json debuggers |
 | `victauri` | [4DA-Systems/Victauri](https://github.com/4DA-Systems/Victauri) | `main` | bb17a65296 | Rust-native Tauri MCP; read for its hardening and tool surface. | config/tauri-upstream.json debuggers; aphrody-tauri-mcp design |
-| `antigravity-sdk-python` | [google-antigravity/antigravity-sdk-python](https://github.com/google-antigravity/antigravity-sdk-python) | `main` | 12f9a4c3be | Antigravity SDK; wire format reference for the native integration. | docs/plans/ai/native-integration-master.md |
-| `codex` | [openai/codex](https://github.com/openai/codex) | `main` | cb6da58876 | OpenAI Codex CLI; native integration reference. | docs/plans/ai/native-integration-master.md |
 | `jan` | [janhq/jan](https://github.com/janhq/jan) | `14a720628f9592c8e60f7e081ef733076db8a6a9` | 14a720628f | Pinned Jan source for owner-authorized absorption; existing Aphrody capability owners remain canonical. Initial model-hub search adapted with Fuse.js 7.1.0; full parity pending. Pinned checkout: ../aphrody-py/vendor/jan. Root LICENSE Apache-2.0, Menlo Research 2025; selected search adaptation retains attribution. Python/JS ADK manifests declare AGPL-3.0; do not assume a uniform repository license. | m3/packages/app-ui/src/models-hub-state.ts; config/jan-absorption.json; docs/migration/jan-absorption |
-| `llama_index` | [run-llama/llama_index](https://github.com/run-llama/llama_index) | `main` | 962940ddc0 | LlamaIndex; RAG reference. | docs/research/ai |
-| `litellm` | [BerriAI/litellm](https://github.com/BerriAI/litellm) | `main` | 2b51f2f941 | LiteLLM SDK and gateway, including its beta litellm-rust workspace. License: MIT outside enterprise/; enterprise/ has separate terms. Keep external. | docs/research/ai/litellm-review-2026-10-01.md |
 | `mistral.rs` | [EricLBuehler/mistral.rs](https://github.com/EricLBuehler/mistral.rs) | `master` | 3f2515e9b5 | mistral.rs; Cargo git dependency (mistralrs) plus native integration reference. | Cargo.toml workspace dependency mistralrs; docs/plans/ai/native-integration-master.md |
-| `ollama` | [ollama/ollama](https://github.com/ollama/ollama) | `main` | b0c1ca4f75 | Ollama; native integration reference. | docs/plans/ai/native-integration-master.md |
-| `opencode` | [anomalyco/opencode](https://github.com/anomalyco/opencode) | `dev` | a79ecfe109 | OpenCode; native integration reference. | docs/plans/ai/native-integration-master.md |
-| `openfox` | [co-l/openfox](https://github.com/co-l/openfox) | `develop` | 3b434db5f3 | OpenFox; agent reference. | docs/research/ai |
-| `vllm` | [vllm-project/vllm](https://github.com/vllm-project/vllm) | `main` | 89772ddb1f | vLLM; serving reference. | docs/plans/ai/native-integration-master.md |
 
 ## Build-on-demand upstreams (4)
 

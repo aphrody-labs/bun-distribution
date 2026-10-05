@@ -53,7 +53,7 @@ export function iconFile({ name, fill, weight }: IconRequest): string {
 
 /** The SVG markup of an icon, or a build error that names the file. */
 export function readIcon(request: IconRequest, root: string | null = iconsRoot() ?? null): string {
-  if (!root) throw new Error("m3-bun: the Material Symbols catalogue is not checked out (bun scripts/forks.ts sparse material-design-icons --apply) and M3_ICONS_ROOT is not set");
+  if (!root) throw new Error("m3-bun: the Material Symbols catalogue is not available: set M3_ICONS_ROOT (the fork is no longer vendored)");
   const file = join(root, request.name, `materialsymbols${request.style}`, iconFile(request));
   if (!existsSync(file)) throw new Error(`m3-bun: no icon ${request.style}/${iconFile(request)} in ${root}`);
   return readFileSync(file, "utf8").trim();

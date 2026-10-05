@@ -1,7 +1,7 @@
 {
   "name": "aphrody-m3",
   "private": true,
-  "description": "Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates, docs and forks.",
+  "description": "Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates and docs.",
   "scripts": {
     "build": "bun scripts/yolo.ts build",
     "test": "bun scripts/yolo.ts test",
@@ -14,7 +14,6 @@
     "bench:check": "bun scripts/yolo.ts bench:check",
     "fmt:check": "oxfmt --check packages apps scripts",
     "icons:ico": "bun packages/material-design-icons/scripts/svg-to-ico.ts",
-    "forks": "bun ../scripts/tools/vendor/fetch.ts",
     "bundle-size": "bun scripts/bundle-size.ts",
     "check": "bun scripts/check-exports.ts && bun scripts/check-assets.ts && bun scripts/check-links.ts",
     "fonts:sync": "bun scripts/fonts-sync.ts",

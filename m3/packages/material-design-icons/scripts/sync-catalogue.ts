@@ -26,7 +26,7 @@ const git = (...a: string[]) => {
 
 if (!existsSync(join(FORK, ".git")) && !existsSync(join(FORK, "..", "..", ".git"))) {
   console.error(
-    "forks/material-design-icons is not initialised: run `bun scripts/tools/vendor/fetch.ts fetch material-design-icons`",
+    "forks/material-design-icons is not vendored: clone aphrody-labs/material-design-icons (--no-checkout --filter=blob:none) there first",
   );
   process.exit(1);
 }

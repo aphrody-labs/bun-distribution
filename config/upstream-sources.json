@@ -71,26 +71,6 @@
       "observedCommit": "14794180686c2fb6307fbe359c359bec765249f3"
     },
     {
-      "id": "antigravity-sdk-python",
-      "kind": "git",
-      "url": "https://github.com/google-antigravity/antigravity-sdk-python.git",
-      "ref": "main",
-      "tier": "reference",
-      "purpose": "Antigravity SDK; wire format reference for the native integration.",
-      "consumers": "docs/plans/ai/native-integration-master.md",
-      "observedCommit": "12f9a4c3becf487302dc799b0f59054f01f3ddb9"
-    },
-    {
-      "id": "codex",
-      "kind": "git",
-      "url": "https://github.com/openai/codex.git",
-      "ref": "main",
-      "tier": "reference",
-      "purpose": "OpenAI Codex CLI; native integration reference.",
-      "consumers": "docs/plans/ai/native-integration-master.md",
-      "observedCommit": "cb6da58876afed3ede0ab11084f67dd5394ecb48"
-    },
-    {
       "id": "jan",
       "kind": "git",
       "url": "https://github.com/janhq/jan.git",
@@ -100,27 +80,6 @@
       "consumers": "m3/packages/app-ui/src/models-hub-state.ts; config/jan-absorption.json; docs/migration/jan-absorption",
       "note": "Pinned checkout: ../aphrody-py/vendor/jan. Root LICENSE Apache-2.0, Menlo Research 2025; selected search adaptation retains attribution. Python/JS ADK manifests declare AGPL-3.0; do not assume a uniform repository license.",
       "observedCommit": "14a720628f9592c8e60f7e081ef733076db8a6a9"
-    },
-    {
-      "id": "llama_index",
-      "kind": "git",
-      "url": "https://github.com/run-llama/llama_index.git",
-      "ref": "main",
-      "tier": "reference",
-      "purpose": "LlamaIndex; RAG reference.",
-      "consumers": "docs/research/ai",
-      "observedCommit": "962940ddc079cc21701d28d1237c84c82a7c5164"
-    },
-    {
-      "id": "litellm",
-      "kind": "git",
-      "url": "https://github.com/BerriAI/litellm.git",
-      "ref": "main",
-      "note": "License: MIT outside enterprise/; enterprise/ has separate terms. Keep external.",
-      "tier": "reference",
-      "purpose": "LiteLLM SDK and gateway, including its beta litellm-rust workspace.",
-      "consumers": "docs/research/ai/litellm-review-2026-10-01.md",
-      "observedCommit": "2b51f2f941248f65b7d696c7a7044345b859bb0d"
     },
     {
       "id": "mistral.rs",
@@ -133,36 +92,6 @@
       "observedCommit": "3f2515e9b5adc2ac44949c128c50a13b15721294"
     },
     {
-      "id": "ollama",
-      "kind": "git",
-      "url": "https://github.com/ollama/ollama.git",
-      "ref": "main",
-      "tier": "reference",
-      "purpose": "Ollama; native integration reference.",
-      "consumers": "docs/plans/ai/native-integration-master.md",
-      "observedCommit": "b0c1ca4f7549d7acdfa52a7dcffc934bc63a43ce"
-    },
-    {
-      "id": "opencode",
-      "kind": "git",
-      "url": "https://github.com/anomalyco/opencode.git",
-      "ref": "dev",
-      "tier": "reference",
-      "purpose": "OpenCode; native integration reference.",
-      "consumers": "docs/plans/ai/native-integration-master.md",
-      "observedCommit": "a79ecfe109294909a239c98fb89f02979d5aa10b"
-    },
-    {
-      "id": "openfox",
-      "kind": "git",
-      "url": "https://github.com/co-l/openfox.git",
-      "ref": "develop",
-      "tier": "reference",
-      "purpose": "OpenFox; agent reference.",
-      "consumers": "docs/research/ai",
-      "observedCommit": "3b434db5f3722db6314eed600d7d3fb835c3b425"
-    },
-    {
       "id": "terminal",
       "kind": "git",
       "url": "https://github.com/microsoft/terminal.git",
@@ -171,16 +100,6 @@
       "purpose": "Windows Terminal; WSL build recipe input.",
       "consumers": "config/os/wsl-build.json",
       "observedCommit": "2b5336c1fca1e53ceeaac09710a13c478938cc8d"
-    },
-    {
-      "id": "vllm",
-      "kind": "git",
-      "url": "https://github.com/vllm-project/vllm.git",
-      "ref": "main",
-      "tier": "reference",
-      "purpose": "vLLM; serving reference.",
-      "consumers": "docs/plans/ai/native-integration-master.md",
-      "observedCommit": "89772ddb1f0d9a5858e55b1efefdac5912231b05"
     },
     {
       "id": "wslg",

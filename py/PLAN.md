@@ -38,7 +38,7 @@ Owner direction: 2026-10-03; [contract and maturation tree](docs/architecture/ag
 - [ ] Expose shared capability owners through authorized MCP/API adapters and native ABI where needed.
 - [ ] Qualify a bounded recursive workflow with measured parallelism and explicit stopping criteria.
 - [ ] Absorb the private Jan fork under `vendor/`: compare UI/backend/desktop/web/CLI/Python/Rust/TS against factual Aphrody owners; migrate missing capabilities without duplicates. The pinned source inventory and initial model-hub search migration do not prove full parity.
-- [x] Vendored `vendor/gemma-tuner-multimodal` and `vendor/jan` with proper submodule tracking.
+- [x] Vendored `vendor/gemma-tuner-multimodal` and `vendor/jan` with proper submodule tracking (vendor trees removed 2026-10-05; Bun is the only vendored source).
 - [x] Gemma 4 Multimodal Fine-Tuning suite (Vision, Audio, Text, MoE Router LoRA/QLoRA) with assistant loss masking.
 - [x] Gemma 4 Jan local runtime integration (Cortex/Nitro model manifests, index generation, GGUF metadata exporter, Jan proxy bridge).
 

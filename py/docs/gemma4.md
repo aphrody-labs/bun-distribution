@@ -140,7 +140,7 @@ Aphrody exposes native Gemma 4 tools for any MCP-compliant assistant or IDE:
 
 ## 9. Git Submodule & Upstream Fork Management
 
-- **Submodule Location**: `vendor/gemma` tracked in `.gitmodules`.
+- **Source**: `aphrody-labs/gemma` on GitHub; no longer vendored (removed 2026-10-05).
 - **Active Branch**: `yolo` tracking `aphrody-labs/gemma:yolo`.
 - **Upstream Mirror**: `google-deepmind/gemma:main`.
 - **Author Identity**: All commits signed by `aphrody-dev <contact@aphrody.com>`.
