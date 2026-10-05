@@ -311,7 +311,7 @@ export class BunUpstreamTrackerEngine {
     md += `> **Source**: [oven-sh/bun](https://github.com/oven-sh/bun)  \n`;
     md += `> **Target Fork**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (Branch: \`yolo\`)  \n`;
     md += `> **Updated**: ${new Date().toISOString()}  \n`;
-    md += `> **Engine**: \`scripts/vendor/bun_upstream_tracker.ts\`\n\n`;
+    md += `> **Engine**: \`scripts/tools/vendor/bun_upstream_tracker.ts\`\n\n`;
 
     md += `## 1. Executive Summary & Optimization Strategy\n\n`;
     md += `This intelligence dashboard monitors upstream Bun pull requests and performance issues to optimize **Aphrody Bun Fork** for high-throughput AI agent execution, memory efficiency, and native FFI bridging.\n\n`;

@@ -3,7 +3,7 @@
 > **Source**: [oven-sh/bun](https://github.com/oven-sh/bun)  
 > **Target Fork**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (Branch: `yolo`)  
 > **Updated**: 2026-10-03T05:28:10.621Z  
-> **Engine**: `scripts/vendor/bun_upstream_tracker.ts`
+> **Engine**: `scripts/tools/vendor/bun_upstream_tracker.ts`
 
 ## 1. Executive Summary & Optimization Strategy
 

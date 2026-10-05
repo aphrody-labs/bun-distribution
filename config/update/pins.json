@@ -9,7 +9,6 @@
         { "file": "package.json", "re": "\"packageManager\": \"bun@(\\d+\\.\\d+\\.\\d+)\"" },
         { "file": "package.json", "re": "\"@types/bun\": \"(\\d+\\.\\d+\\.\\d+)\"" },
         { "file": "package.json", "re": "\"bun-types\": \"\\^(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "config/shenron/package.json", "re": "\"packageManager\": \"bun@(\\d+\\.\\d+\\.\\d+)\"" },
         { "glob": "{package.json,config/*/package.json,apps/**/package.json,packages/**/package.json,crates/**/package.json}", "re": "\"bun\": \">=(\\d+\\.\\d+\\.\\d+)\"" },
         { "file": "docs/plans/workspace/PLAN.md", "re": "utilise Bun (\\d+\\.\\d+\\.\\d+)" },
         { "file": "docs/reference/workspace/CLI.md", "re": "Bun `(\\d+\\.\\d+\\.\\d+)`" },

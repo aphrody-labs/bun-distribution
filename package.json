@@ -22,8 +22,8 @@
       "m3/packages/*",
       "!m3/packages/rg-ui",
       "packages/interop/*",
-      "crates/vendor/aphrody-tauri-api",
-      "crates/vendor/aphrody-tauri-plugin-*"
+      "crates/tauri/aphrody-tauri-api",
+      "crates/tauri/aphrody-tauri-plugin-*"
     ],
     "catalog": {
       "@types/bun": "1.4.2",

@@ -1494,6 +1494,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "url",
+ "yolo-runtime",
 ]
 
 [[package]]

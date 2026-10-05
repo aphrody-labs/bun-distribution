@@ -1,9 +1,9 @@
-# Reproducible import of the Tauri-stack forks into crates/vendor/aphrody-*  (see docs/VENDORING.md)
+# Reproducible import of the Tauri-stack forks into crates/{tauri,turbopack}/aphrody-*  (see docs/VENDORING.md)
 # `yolo import` reads the committed HEAD of each submodule under vendor/ and rewrites the crates.
 
 prefix = "aphrody-"
 repository = "https://github.com/aphrody-labs/yolo"
-out = "crates/vendor"
+out = "crates"
 
 # File globs (relative to each source repository) never imported.
 exclude = [

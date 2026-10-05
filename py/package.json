@@ -1,15 +1,6 @@
 {
   "name": "aphrody-py-workspace",
   "private": true,
-  "workspaces": {
-    "packages": [
-      "packages/*",
-      "apps/*"
-    ],
-    "catalog": {
-      "@aphrody/runtime-sdk": "file:.cache/yolo-packages/aphrody-runtime-sdk-0.1.0-c81812ea.tgz"
-    }
-  },
   "scripts": {
     "build": "bun tools/workspace/cli.ts build",
     "check": "bun tools/workspace/cli.ts check",
@@ -22,10 +13,5 @@
     "workspace:plan": "bun tools/workspace/cli.ts plan",
     "workspace:test": "bun test tools/workspace",
     "workspace:typecheck": "tsc --project tsconfig.json"
-  },
-  "devDependencies": {
-    "@aphrody/runtime-sdk": "catalog:",
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
   }
 }

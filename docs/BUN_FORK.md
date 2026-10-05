@@ -6,8 +6,8 @@
 > **Submodule Path**: [`vendor/bun`](../vendor/bun)
 > **Active Fork Branch**: `yolo`
 > **Pristine Upstream Branch**: `main`
-> **Sync & Drift Engine**: [`scripts/vendor/bun_upstream_sync.ts`](../scripts/vendor/bun_upstream_sync.ts)
-> **PR & Issue Tracker Engine**: [`scripts/vendor/bun_upstream_tracker.ts`](../scripts/vendor/bun_upstream_tracker.ts)
+> **Sync & Drift Engine**: [`scripts/tools/vendor/bun_upstream_sync.ts`](../scripts/vendor/bun_upstream_sync.ts)
+> **PR & Issue Tracker Engine**: [`scripts/tools/vendor/bun_upstream_tracker.ts`](../scripts/vendor/bun_upstream_tracker.ts)
 > **Tracker Live Dashboard**: [BUN_UPSTREAM_TRACKER.md](BUN_UPSTREAM_TRACKER.md)
 
 ---
