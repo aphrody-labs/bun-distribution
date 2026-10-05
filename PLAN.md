@@ -112,6 +112,10 @@ restent des alias de compatibilité jusqu'à qualification.
 
 ## 6. Bun au centre (directive propriétaire du 2026-10-05)
 
+Plan de fusion du propriétaire (Obscura × Bun, futur dépôt `yolo`) : copie du dossier Drive « Aphrody » dans
+[`docs/plans/fusion/drive/`](docs/plans/fusion/drive/README.md) ; la partie 4 y consigne les audits du 2026-10-05
+(état des forks, mécanismes d'extension du fork Bun, Obscura, Tauri, collisions de nom, décisions ouvertes).
+
 Bun est le runtime central ; le fork `aphrody-labs/bun` (branche unique `main` : amont + correctifs Aphrody, `vendor/bun`, pin dans
 `config/vendor.json`) absorbe les bibliothèques JS/TS au niveau du résolveur, comme Bun le fait déjà
 pour `ws`, `undici` et `node-fetch` (`src/js/thirdparty` + `src/resolve_builtins/HardcodedModule.rs`).
