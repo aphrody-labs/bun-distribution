@@ -13,6 +13,7 @@ import { join } from "node:path";
 const ROOT = join(import.meta.dir, "../..");
 const BUN_SRC = join(ROOT, "vendor/bun/src");
 const OBSCURA = join(ROOT, "crates/web/obscura-js/src");
+const OBSCURA_JS = join(ROOT, "crates/web/obscura-js/js");
 const WEBKIT_PREBUILT =
   "/srv/aphrody-build/cache/bun-forge/build-cache/webkit-5718a6ec579b9836-lto/include";
 const VPS_JSC = `${WEBKIT_PREBUILT}/JavaScriptCore ${WEBKIT_PREBUILT}/wtf`;
@@ -24,6 +25,8 @@ interface Capability {
   jsc: string[];
   bun: string[];
   note: string;
+  /** Where the "v8" probes are searched: the Rust sources (default) or bootstrap.js (non-op Deno.core APIs). */
+  v8Where?: Where;
 }
 
 const CAPABILITIES: Capability[] = [
@@ -116,6 +119,28 @@ const CAPABILITIES: Capability[] = [
     bun: ["ThrowScope", "CatchScope"],
     note: "JSC::ThrowScope and CatchScope replace v8::TryCatch.",
   },
+  {
+    id: "timers",
+    name: "Timer queue driven by the host event loop (Deno.core.createTimer and cancelTimer)",
+    v8: ["createTimer", "cancelTimer"],
+    v8Where: "obscura-js",
+    jsc: [],
+    bun: ["EventLoopTimer"],
+    note: "Not a V8 API: bootstrap.js calls deno_core's timer queue (a refed timer keeps the event loop alive). JSC has no timer API; Bun's EventLoopTimer is the embedder-side counterpart the realm host must expose.",
+  },
+  {
+    id: "rejections",
+    name: "Unhandled and handled promise-rejection hooks and the uncaught-exception reporter",
+    v8: [
+      "setUnhandledPromiseRejectionHandler",
+      "setHandledPromiseRejectionHandler",
+      "setReportExceptionCallback",
+    ],
+    v8Where: "obscura-js",
+    jsc: ["promiseRejectionTracker", "reportUncaughtExceptionAtEventLoop"],
+    bun: ["promiseRejectionTracker", "reportUncaughtExceptionAtEventLoop"],
+    note: "bootstrap.js installs three deno_core callbacks. JSGlobalObjectMethodTable has promiseRejectionTracker and reportUncaughtExceptionAtEventLoop, which Bun already implements.",
+  },
 ];
 
 // Near-misses: symbols that exist but are NOT an equivalent (kept out of the status logic on purpose).
@@ -167,7 +192,7 @@ const MITIGATIONS: { id: string; name: string; jsc: string[]; bun: string[]; not
   },
 ];
 
-type Where = "obscura" | "jsc" | "bun" | "shim";
+type Where = "obscura" | "obscura-js" | "jsc" | "bun" | "shim";
 
 const shellQuote = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`;
 
@@ -175,16 +200,20 @@ async function hits(symbol: string, where: Where): Promise<number> {
   const dir =
     where === "obscura"
       ? OBSCURA
-      : where === "bun"
-        ? BUN_SRC
-        : where === "shim"
-          ? join(BUN_SRC, "jsc/bindings/v8")
-          : VPS_JSC;
-  const cmd = `rg -F -c --no-messages -e ${shellQuote(symbol)} ${dir}`;
+      : where === "obscura-js"
+        ? OBSCURA_JS
+        : where === "bun"
+          ? BUN_SRC
+          : where === "shim"
+            ? join(BUN_SRC, "jsc/bindings/v8")
+            : VPS_JSC;
   const out =
     where === "jsc"
-      ? await $`aphrody infra ssh exec --host vps ${cmd}`.nothrow().quiet().text()
-      : await $`bash -c ${cmd}`.nothrow().quiet().text();
+      ? await $`aphrody infra ssh exec --host vps ${`rg -F -c --no-messages -e ${shellQuote(symbol)} ${dir}`}`
+          .nothrow()
+          .quiet()
+          .text()
+      : await $`rg -F -c --no-messages -e ${symbol} ${dir}`.nothrow().quiet().text();
   let total = 0;
   for (const line of out.split("\n")) {
     const m = line.trim().match(/:(\d+)$/);
@@ -200,7 +229,7 @@ const found = (r: Record<string, number>) => Object.values(r).some((n) => n > 0)
 const receipt = await Promise.all(
   CAPABILITIES.map(async (c) => {
     const [v8, jsc, bun] = await Promise.all([
-      symbols(c.v8, "obscura"),
+      symbols(c.v8, c.v8Where ?? "obscura"),
       symbols(c.jsc, "jsc"),
       symbols(c.bun, "bun"),
     ]);

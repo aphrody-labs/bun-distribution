@@ -223,6 +223,39 @@
         "ThrowScope": 660,
         "CatchScope": 1
       }
+    },
+    {
+      "id": "timers",
+      "name": "Timer queue driven by the host event loop (Deno.core.createTimer and cancelTimer)",
+      "status": "bun-only",
+      "note": "Not a V8 API: bootstrap.js calls deno_core's timer queue (a refed timer keeps the event loop alive). JSC has no timer API; Bun's EventLoopTimer is the embedder-side counterpart the realm host must expose.",
+      "v8": {
+        "createTimer": 1,
+        "cancelTimer": 1
+      },
+      "jsc": {},
+      "bun": {
+        "EventLoopTimer": 381
+      }
+    },
+    {
+      "id": "rejections",
+      "name": "Unhandled and handled promise-rejection hooks and the uncaught-exception reporter",
+      "status": "covered",
+      "note": "bootstrap.js installs three deno_core callbacks. JSGlobalObjectMethodTable has promiseRejectionTracker and reportUncaughtExceptionAtEventLoop, which Bun already implements.",
+      "v8": {
+        "setUnhandledPromiseRejectionHandler": 1,
+        "setHandledPromiseRejectionHandler": 1,
+        "setReportExceptionCallback": 1
+      },
+      "jsc": {
+        "promiseRejectionTracker": 2,
+        "reportUncaughtExceptionAtEventLoop": 2
+      },
+      "bun": {
+        "promiseRejectionTracker": 15,
+        "reportUncaughtExceptionAtEventLoop": 31
+      }
     }
   ],
   "mitigations": [
