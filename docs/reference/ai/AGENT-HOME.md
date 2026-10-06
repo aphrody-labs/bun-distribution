@@ -43,6 +43,90 @@ les détails temporaires dans une note datée. Les documents de projet et leurs
 instructions restent dans leur dépôt. Ne copie pas les corpus ou les secrets
 dans le profil.
 
+## Gestion des homes
+
+Le propriétaire est le crate
+[`aphrody-agent-home`](../../../crates/ai/agent-home/src/lib.rs) ; la ligne de
+commande est `aphrody agent-home` (sortie JSON, `--state` et `--homes-dir`
+globaux). Un argument de home est un nom (résolu sous la racine) ou un chemin.
+
+| Besoin | API Rust | Commande |
+| --- | --- | --- |
+| Racine des homes | `homes::HomesRoot` | `aphrody agent-home roots` |
+| Instancier un gabarit externe | `template::instantiate_template` | `aphrody agent-home new <nom> --template <dir> [--set clé=valeur] [--avatar ...] [--agent-id ...] [--force]` |
+| Champs de profil | `user::UserProfile` | `aphrody agent-home profile <home> [--avatar ...] [--agent-id ...] [--set clé=valeur]` |
+| Révision du contenu | `revision::home_revision` | `aphrody agent-home revision <home> [--files]` |
+| Fusion / synchronisation | `merge::merge_homes`, `merge::sync_homes`, `merge::restore_backup` | `aphrody agent-home merge <source> <cible> [--policy lww\|keep-target\|take-source] [--apply]`, `sync <a> <b> [--apply]`, `restore <backup> <home>` |
+| Renommage | `rename::rename_home` | `aphrody agent-home rename <ancien> <nouvel-id> [--apply]` |
+
+### Racine des homes
+
+Ordre de résolution : `$APHRODY_HOMES_DIR`, puis `homes_dir` de la table
+`[agent_home]` de `<state>/config.toml`, puis `<state>/workspaces` (défaut
+inchangé). Une valeur relative est jointe au dossier d'état. Avec la racine par
+défaut, `workspace-<nom>` reste lu en repli et un `agent_id` résout toujours
+vers `<state>/workspace-<agent>` ; avec une racine configurée (hôte
+multi-utilisateur), tout home est `<racine>/<nom assaini>` (`discord:42` donne
+`discord-42`).
+
+### Gabarit externe
+
+Un gabarit est un dossier de contenu de home. L'instanciation copie son contenu
+(mêmes exclusions que la révision), remplace `{{agent_id}}`, `{{home_name}}`,
+`{{date}}` et `{{user.<clé>}}` dans les fichiers texte, complète les fichiers
+canoniques absents depuis les gabarits intégrés, écrit les champs utilisateur
+dans `USER.md`, puis renomme le dossier préparé sur la destination. `--force`
+déplace l'ancien home vers `.<nom>.replaced-<horodatage>` au lieu de le supprimer.
+
+### Champs de profil
+
+Le frontmatter de `USER.md` porte `avatar` (chemin relatif au home, contenu
+par la garde, ou URL `https:`/`data:`), `agent_id` (identifiant verbatim),
+`updated_at` (ISO-8601 UTC, mis à jour par chaque écriture de profil, fusion
+appliquée ou renommage) et `template_revision` (révision du gabarit d'origine).
+Ces champs ne sont pas injectés dans le prompt.
+
+### Révision `sha256-v1`
+
+1. Parcours récursif sans suivre les liens symboliques ; exclusion des dossiers
+   `.aphrody`, `.git`, `.coord`, `db`, `cache`, `locks`, `logs`, `sessions`,
+   `node_modules` (à toute profondeur) et des fichiers finissant par `.tmp`,
+   `.lock`, `.sqlite`, `.sqlite-wal`, `.sqlite-shm`, `.db`, `.db-wal`,
+   `.db-shm`, `-journal`.
+2. Chemins relatifs en `/`, UTF-8, sans saut de ligne, triés par octets UTF-8.
+3. Manifeste : une ligne `<sha256 hex> <taille décimale> <chemin>\n` par fichier.
+4. Révision : `sha256-v1:` suivi du SHA-256 hexadécimal du manifeste.
+
+Bun la recalcule sans FFI avec
+[`agent-home-revision.ts`](../../../packages/infra/workspace/src/agent-home-revision.ts)
+(`Bun.CryptoHasher("sha256")`) ; un vecteur de référence commun est testé des
+deux côtés. `SyncSnapshot.revision_sha256` applique le même manifeste aux sept
+documents synchronisés, dans l'ordre du contrat ; `SyncSnapshot.revision`
+(BLAKE3) reste la clé des registres mémoire et entraînement.
+
+### Fusion et synchronisation
+
+Règles par fichier : absent de la cible, copié avec son mtime ; identique,
+ignoré ; présent seulement dans la cible, jamais supprimé. Les souvenirs
+(`MEMORY.md`, `memory/**`) font l'union par paragraphes : rien n'est perdu.
+Les autres conflits suivent la politique : dernier écrivain (mtime le plus
+récent, égalité au profit de la cible) par défaut, ou `keep-target`,
+`take-source`. Simulation par défaut ; `--apply` sauvegarde d'abord tout le
+contenu de la cible sous `.aphrody/backups/merge-<horodatage>/` et vérifie que
+la révision de la copie égale celle du plan avant d'écrire. `sync` enchaîne
+`a vers b` puis `b vers a`, une sauvegarde vérifiée par côté.
+
+### Renommage
+
+`rename <ancien> <nouvel-id> --apply` déplace le dossier par un seul `rename`
+(refus entre systèmes de fichiers), réécrit dans le home les références
+absolues à l'ancien dossier et `agent_id` dans `USER.md`, `MEMORY.md` et
+`memory/**`, puis les références de `<state>/config.toml` et
+`<state>/aphrody.json`. En cas d'échec, les contenus d'origine sont restaurés
+et le dossier revient en place. Le rapport donne l'ancien et le nouvel espace
+de noms de services (Redis, `PostgreSQL`) pour la migration des stockages externes
+par leur propriétaire.
+
 ## Conventions Markdown
 
 - Utiliser UTF-8, fins de ligne LF, une ligne vide entre blocs et aucun espace
