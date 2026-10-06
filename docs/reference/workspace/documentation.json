@@ -36,8 +36,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan Directeur Unique — Aphrody & Yolo Core Trinity",
-      "sha256": "29ba3c813db1315a171c5b7ba87a8b3654e0a4b6f27dc1ec1ba941685e7eca0a",
-      "bytes": 20447,
+      "sha256": "84635372f7006a7e681de627e9c9e11841423030fffba55504729af839da8bce",
+      "bytes": 20728,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -72,6 +72,76 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "TODO.md"
+    },
+    {
+      "path": "apps/community/creator-kit/README.md",
+      "title": "creator-kit",
+      "sha256": "7cdfa868082864cdfa992c69f175af02167f7d4edfc05fe0921563e420990f13",
+      "bytes": 8241,
+      "domain": "community",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "apps/community/creator-kit/README.md"
+    },
+    {
+      "path": "apps/community/creator-kit/docs-challonge.md",
+      "title": "challonge : tournois Challonge en CLI et bot Discord",
+      "sha256": "f389c13934230c338787bdd4daeb8c24bbe3204f7eee97fadc416e14fd8f8b10",
+      "bytes": 15660,
+      "domain": "community",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "apps/community/creator-kit/docs-challonge.md"
+    },
+    {
+      "path": "apps/community/creator-kit/docs-video-translate.md",
+      "title": "video-translate",
+      "sha256": "724bd2e6734e5d92f5858e69db036366687d8cff15315f356ae20d5de96d418c",
+      "bytes": 26117,
+      "domain": "community",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "apps/community/creator-kit/docs-video-translate.md"
+    },
+    {
+      "path": "apps/community/creator-kit/extensions/yt-subs-sorter/README.md",
+      "title": "YouTube Subs Sorter",
+      "sha256": "38e295b98eee9107942bce3579cfd3a2e64484e0aacf8480bd9cc71fc5919a8f",
+      "bytes": 8156,
+      "domain": "community",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "apps/community/creator-kit/extensions/yt-subs-sorter/README.md"
+    },
+    {
+      "path": "apps/community/creator-kit/patches/pngtuber-plus-hotkey-combos/README.md",
+      "title": "PNGTuber-Plus : raccourcis en combinaison (Ctrl / Maj / Alt + touche)",
+      "sha256": "542616dbc5be06488e847c70584d64b049bf35e784d74f70222e2b7bc16bd659",
+      "bytes": 7668,
+      "domain": "community",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "apps/community/creator-kit/patches/pngtuber-plus-hotkey-combos/README.md"
+    },
+    {
+      "path": "apps/community/creator-kit/windows/README.md",
+      "title": "creator-kit / windows",
+      "sha256": "3b76fe3c9479f1026f5ed466aaf7bf2d964451d0b013792d3e22434166deb746",
+      "bytes": 14076,
+      "domain": "community",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "apps/community/creator-kit/windows/README.md"
+    },
+    {
+      "path": "apps/community/omar-kit/README.md",
+      "title": "omar-kit",
+      "sha256": "554a93412dbc9142ebe67d620fd81ea566219be9deceed246e9aa1995b643e47",
+      "bytes": 2679,
+      "domain": "community",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "apps/community/omar-kit/README.md"
     },
     {
       "path": "apps/yolo/cli/README.md",
@@ -386,8 +456,8 @@
     {
       "path": "crates/contracts/a2a/CHANGELOG.md",
       "title": "Changelog",
-      "sha256": "2bc41b9ad5972b182c22812e9ff848f260d20c65836e1b64e646ed6db0f669d4",
-      "bytes": 2031,
+      "sha256": "aab0a55404c03fc3d1087a7de32b28b6833f4e4c1cb3a3708f82cd3914f35215",
+      "bytes": 2276,
       "domain": "contracts",
       "status": "canonical",
       "visibility": "private",
@@ -496,8 +566,8 @@
     {
       "path": "crates/interop/ffi/README.md",
       "title": "aphrody-ffi",
-      "sha256": "10dd69523597c0bed28422a994ff0bff30d4306c19c69bd4bd56e5a23c454ec6",
-      "bytes": 6972,
+      "sha256": "0ff3ab025c3848bebc23d219ae30a165e5930dd21eb59711f7121c8cddb235b4",
+      "bytes": 7390,
       "domain": "interop",
       "status": "canonical",
       "visibility": "private",
@@ -512,6 +582,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "crates/interop/ffi/bun/README-agent.md"
+    },
+    {
+      "path": "crates/interop/python-ffi/README.md",
+      "title": "aphrody-python-ffi",
+      "sha256": "8c293ae7184eefff20fc1f32cdb2a1cfcc2f09be473c7a45455d96e9f3c8a993",
+      "bytes": 1006,
+      "domain": "interop",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "crates/interop/python-ffi/README.md"
     },
     {
       "path": "crates/ml/UPSTREAM-README.md",
@@ -636,8 +716,8 @@
     {
       "path": "crates/os/a2a-server/CHANGELOG.md",
       "title": "Changelog",
-      "sha256": "4034106605b8802d91a9c9ce283110110d7aea4d8b481d5f1cca8a2f96adb399",
-      "bytes": 3276,
+      "sha256": "870d47bb5e9b666a487b0b8c054b13d8bda2993d381496e64260effae583b5ce",
+      "bytes": 3599,
       "domain": "os",
       "status": "canonical",
       "visibility": "private",
@@ -3056,7 +3136,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "929f22c8fd0138878cee66750face2a5a1ad9d4db46c7fb7be3bb570a0d4d057",
+      "sha256": "39a6659cafb9f2a4572304960adccd11206b284f32530250e37431782f221959",
       "bytes": 12343,
       "domain": "",
       "status": "generated",
@@ -5116,8 +5196,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "d27fa8f2dc1ad3c823531c6a021efb8e5b33646e16b7ff55e300b53edf473cba",
-      "bytes": 31894,
+      "sha256": "73bdc9bf248793aacb3fb4e1938942c67100bf5753f076b82f53af0863fa93e5",
+      "bytes": 92606,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -5126,8 +5206,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "95220ee6e039ac282ea33ceee9dd15ea668b3402901764d7ce325c5f0e20b686",
-      "bytes": 65186,
+      "sha256": "e548d0af2889fdd496d6bce4830a6e18df0b3255784a345f363a38dfe47d1a61",
+      "bytes": 67933,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -8496,8 +8576,8 @@
     {
       "path": "docs/operations/cloud/AGENT-HOME-SETUP.md",
       "title": "Fresh agent home for a cloud session",
-      "sha256": "4b5fea60b3b9cd156804af257302dfdd047c09e4babb2c9d287037566edff7f7",
-      "bytes": 2369,
+      "sha256": "bf500619de89666bbc85028690716d7db564a16a7796c4f78f5f899a36ef3543",
+      "bytes": 2846,
       "domain": "cloud",
       "status": "canonical",
       "visibility": "private",
@@ -8516,8 +8596,8 @@
     {
       "path": "docs/operations/cloud/CONTEXT-HANDOFF.md",
       "title": "Context handoff for the cloud session",
-      "sha256": "a7225272fce7da019f4acc1121f14b39d0f4dd507be648dd6c257b5fad25372e",
-      "bytes": 3265,
+      "sha256": "07935dd5772c9224bb0ad90828c67abee249451da14a03dccc1808174784067e",
+      "bytes": 3536,
       "domain": "cloud",
       "status": "canonical",
       "visibility": "private",
@@ -8582,6 +8662,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/COOKIE-OPERATIONS.md"
+    },
+    {
+      "path": "docs/operations/infra/CREATOR.md",
+      "title": "creator.aphrody.com: creator-kit download and auto-update",
+      "sha256": "68241493368577222a1bcfa21c5bb3551cfb51236df953756cf5b0f73d9a2bd3",
+      "bytes": 3333,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/CREATOR.md"
     },
     {
       "path": "docs/operations/infra/DBFR-BUILD-HOST-2026-10-05.md",
@@ -8775,7 +8865,7 @@
     },
     {
       "path": "docs/operations/infra/PRIVATE-TUNNEL.md",
-      "title": "Private WireGuard tunnel and the `omar` account (declared 2026-10-06, not applied)",
+      "title": "Private WireGuard tunnel and the omar account (declared 2026-10-06, not applied)",
       "sha256": "790988449ca0b927c0901ac09fa34794ff16c9cdffe7d780e9721e48ea2297a9",
       "bytes": 11806,
       "domain": "infra",
@@ -8912,6 +9002,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/update/UV.md"
+    },
+    {
+      "path": "docs/operations/omar-guide.md",
+      "title": "Aphrody sur ton PC : le guide d'Omar",
+      "sha256": "d185a9de254dead9ccf90efd4cbab04accf32c1323a00d7afbf17d53c4df25a1",
+      "bytes": 3893,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/omar-guide.md"
     },
     {
       "path": "docs/operations/os/windows-wsl-host-bridge.md",
@@ -9242,6 +9342,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/ai/rag-native-integration.md"
+    },
+    {
+      "path": "docs/plans/ai/shenron-targets.md",
+      "title": "Shenron : trois cibles RAG (WASM web, natif desktop, FFI Bun)",
+      "sha256": "e4d1779fb7ed86f6fc0f90c8107a355f018941b90a8f17125d98860cad95cf6b",
+      "bytes": 8482,
+      "domain": "ai",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/ai/shenron-targets.md"
     },
     {
       "path": "docs/plans/compat/PLAN.md",
@@ -9626,8 +9736,8 @@
     {
       "path": "docs/plans/vu/PLAN.md",
       "title": "vu: the Aphrody Python runtime",
-      "sha256": "4f249ea0ca993490a81c4e7c6852a1d91fe23c080696d63f093470f027c789e3",
-      "bytes": 58400,
+      "sha256": "353fb6f8ff4d4ed813667acd5ab0ebcac71920bfd4523c2bcfb2f76cf739a7cd",
+      "bytes": 58804,
       "domain": "vu",
       "status": "canonical",
       "visibility": "private",
@@ -9716,8 +9826,8 @@
     {
       "path": "docs/plans/yolo-fork-unified/PLAN.md",
       "title": "yolo et le fork Bun : un seul produit runtime",
-      "sha256": "7ec9341f5dda0366b6169bffb47d2cd7068873d37ca387eb9f94dc44f0253e53",
-      "bytes": 4650,
+      "sha256": "170a607f20dd0f0c9f86a92a7eec8686728b6ec739ed07ec7262db5ca981ca44",
+      "bytes": 7036,
       "domain": "yolo-fork-unified",
       "status": "canonical",
       "visibility": "private",
@@ -10056,8 +10166,8 @@
     {
       "path": "docs/products/contracts/a2a/README.md",
       "title": "Aphrody A2A (Agent2Agent)",
-      "sha256": "90d3c5b7c1465bfdcd4139479e5d193257df9f3dfc8a3db00710b570440f38bd",
-      "bytes": 5032,
+      "sha256": "a02c54b959d0bf67813dba5941fcf0b8c7aa8bd0bba099334d624c42866e59bd",
+      "bytes": 5878,
       "domain": "contracts",
       "status": "canonical",
       "visibility": "private",
@@ -40696,8 +40806,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "8a9854c21768aafb3d776b0f4c4d209adfdd9e6ac022966576754a509bf8b918",
-      "bytes": 53168,
+      "sha256": "b5fb5f3e6e3d34c724dfd682ea53dc36ab75abaaf2bc7d2dde4a14e653637698",
+      "bytes": 54768,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -41804,16 +41914,6 @@
       "canonical": "m3/apps/showcase/README.md"
     },
     {
-      "path": "m3/apps/web/README.md",
-      "title": "@aphrody/m3-web",
-      "sha256": "36bda22d959c013aa71f72b2847e7c38a33c4abeeaacecc7dcdeea5129e6ddb3",
-      "bytes": 929,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/apps/web/README.md"
-    },
-    {
       "path": "m3/docs/apis/WRAP-CONFIG.md",
       "title": "wrap.json (aphrody-web-to-tauri/1)",
       "sha256": "f45b7e0205c99ac4307d48f6ec60f9d908a1a075b868e14b3e93383c64ea5cf0",
@@ -42366,8 +42466,8 @@
     {
       "path": "m3/docs/guides/FRAMEWORK.md",
       "title": "Aphrody M3 framework",
-      "sha256": "119788248f2a6e93e2d62fd365086434f7fd29fe88c8e55d6434096a5e009427",
-      "bytes": 8224,
+      "sha256": "a1799e90e49b4a1c5b2d96ab46800f4561b421a5e0baef549db40612b0772047",
+      "bytes": 8172,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -45854,6 +45954,16 @@
       "canonical": "packages/ai/inference/README.md"
     },
     {
+      "path": "packages/ai/rag-core/README.md",
+      "title": "@aphrody/rag-core",
+      "sha256": "00acd0dea7cfb6b1d90d8bb439dd3e67dd76998e5dde78fc5e929a4e896104e5",
+      "bytes": 1575,
+      "domain": "ai",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "packages/ai/rag-core/README.md"
+    },
+    {
       "path": "packages/ai/xai/README.md",
       "title": "@aphrody/xai",
       "sha256": "3a9b4d9dc721e54939e3f291944faf156e033d91f855c74da478753e6c83930c",
@@ -45932,6 +46042,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "packages/engine/runtime/README.md"
+    },
+    {
+      "path": "packages/infra/cli-wasm/README.md",
+      "title": "@aphrody/cli-wasm",
+      "sha256": "da9c7edde1d05f4813ade232afc94b5b2c0f5c34c94908743b4e6cdf937062f4",
+      "bytes": 1047,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "packages/infra/cli-wasm/README.md"
     },
     {
       "path": "packages/infra/ovh/README.md",
@@ -46062,6 +46182,16 @@
       "status": "imported",
       "visibility": "private",
       "canonical": "packages/infra/workspace/docs/bun/runtime/toml.md"
+    },
+    {
+      "path": "packages/os/a2a/README.md",
+      "title": "@aphrody/a2a",
+      "sha256": "45330132a99e0751fa5fdf7149fece6ec408521761f34f9ea2cc2f342262bf0d",
+      "bytes": 16078,
+      "domain": "os",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "packages/os/a2a/README.md"
     },
     {
       "path": "packages/os/drive-client/README.md",
@@ -46442,19 +46572,27 @@
       "root": ".",
       "id": "workspace-typescript",
       "language": "typescript",
-      "paths": ["packages/infra/workspace/src/index.ts", "packages/infra/workspace/src/client.ts"]
+      "paths": [
+        "packages/infra/workspace/src/index.ts",
+        "packages/infra/workspace/src/client.ts"
+      ]
     },
     {
       "root": ".",
       "id": "infra-rust",
       "language": "rust",
-      "paths": ["crates/infra/infra/src/lib.rs", "crates/infra/git/src/lib.rs"]
+      "paths": [
+        "crates/infra/infra/src/lib.rs",
+        "crates/infra/git/src/lib.rs"
+      ]
     },
     {
       "root": ".",
       "id": "python-google",
       "language": "python",
-      "paths": ["py/packages/aphrody/src/aphrody/google.py"]
+      "paths": [
+        "py/packages/aphrody/src/aphrody/google.py"
+      ]
     }
   ],
   "excluded": [

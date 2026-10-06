@@ -6,14 +6,32 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 19 binaries with a clap surface, 834 commands.
+Totals: 19 binaries with a clap surface, 870 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 292 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 310 commands.
 
+- `aphrody pure` — Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
+  - `aphrody pure rag` — RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.
+    - `aphrody pure rag ops` — Manifest of the RAG call surface: ABI and every operation name.
+    - `aphrody pure rag call` — Run a structured operation: `rag call rrf '{"lists":[[1,2],[2,3]]}'`.
+    - `aphrody pure rag chunk` — Split a source file into line-addressed chunks.
+  - `aphrody pure toolcall` — Tool-call JSON repair, validation and inline extraction.
+    - `aphrody pure toolcall repair` — Repair malformed model-emitted JSON; prints `{"value", "repairs"}`.
+    - `aphrody pure toolcall validate` — Validate arguments against a JSON-Schema subset; prints `{"violations"}`.
+    - `aphrody pure toolcall extract` — Extract inline tool calls (Hermes, Qwen XML, Mistral, OpenAI, bare JSON).
+  - `aphrody pure html` — HTML main-content extraction, Markdown conversion and SimHash.
+    - `aphrody pure html extract` — Main-content extraction as JSON (title, byline, Markdown, blocks, SimHash).
+    - `aphrody pure html markdown` — Whole-document HTML to GitHub-flavoured Markdown.
+    - `aphrody pure html simhash` — 64-bit SimHash of the text, as 16 hex digits.
+  - `aphrody pure text` — Comment extraction, AI-marker scrubbing, Aphrody style and language detection.
+    - `aphrody pure text comments` — Comments of a source file as JSON.
+    - `aphrody pure text scrub` — Remove AI markers and emoji from a comment body.
+    - `aphrody pure text aphrodify` — Apply the Aphrody prose style.
+    - `aphrody pure text is-japanese` — Print `true` when the text contains Japanese characters.
 - `aphrody rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
   - `aphrody rag index` — Index a directory incrementally, including vectors when configured.
   - `aphrody rag web-ingest` — Scrape one URL through Aphrody OS and index it in the local AI RAG store.
@@ -346,7 +364,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/src/cli.rs#Cli`, 7 commands.
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 369 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 387 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -363,6 +381,24 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 369 commands.
 - `aphrody infra pipeline` — Execute declared monorepo validation stages.
 - `aphrody infra serve` — Launch the embedded HTTP API daemon.
 - `aphrody infra ssh` — Remote SSH operator: execute commands, audit host health, sysctl kernel tuning, port inspection.
+  - `aphrody infra ssh pure` — Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
+    - `aphrody infra ssh pure rag` — RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.
+      - `aphrody infra ssh pure rag ops` — Manifest of the RAG call surface: ABI and every operation name.
+      - `aphrody infra ssh pure rag call` — Run a structured operation: `rag call rrf '{"lists":[[1,2],[2,3]]}'`.
+      - `aphrody infra ssh pure rag chunk` — Split a source file into line-addressed chunks.
+    - `aphrody infra ssh pure toolcall` — Tool-call JSON repair, validation and inline extraction.
+      - `aphrody infra ssh pure toolcall repair` — Repair malformed model-emitted JSON; prints `{"value", "repairs"}`.
+      - `aphrody infra ssh pure toolcall validate` — Validate arguments against a JSON-Schema subset; prints `{"violations"}`.
+      - `aphrody infra ssh pure toolcall extract` — Extract inline tool calls (Hermes, Qwen XML, Mistral, OpenAI, bare JSON).
+    - `aphrody infra ssh pure html` — HTML main-content extraction, Markdown conversion and SimHash.
+      - `aphrody infra ssh pure html extract` — Main-content extraction as JSON (title, byline, Markdown, blocks, SimHash).
+      - `aphrody infra ssh pure html markdown` — Whole-document HTML to GitHub-flavoured Markdown.
+      - `aphrody infra ssh pure html simhash` — 64-bit SimHash of the text, as 16 hex digits.
+    - `aphrody infra ssh pure text` — Comment extraction, AI-marker scrubbing, Aphrody style and language detection.
+      - `aphrody infra ssh pure text comments` — Comments of a source file as JSON.
+      - `aphrody infra ssh pure text scrub` — Remove AI markers and emoji from a comment body.
+      - `aphrody infra ssh pure text aphrodify` — Apply the Aphrody prose style.
+      - `aphrody infra ssh pure text is-japanese` — Print `true` when the text contains Japanese characters.
   - `aphrody infra ssh rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
     - `aphrody infra ssh rag index` — Index a directory incrementally, including vectors when configured.
     - `aphrody infra ssh rag web-ingest` — Scrape one URL through Aphrody OS and index it in the local AI RAG store.

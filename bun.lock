@@ -296,21 +296,6 @@
         "typescript": "catalog:",
       },
     },
-    "m3/apps/web": {
-      "name": "@aphrody/m3-web",
-      "version": "3.3.6",
-      "dependencies": {
-        "@aphrody/m3": "workspace:*",
-        "@aphrody/m3-front": "workspace:*",
-        "@aphrody/m3-tailwind": "workspace:*",
-        "@aphrody/m3-tokens": "workspace:*",
-        "tailwindcss": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "typescript": "catalog:",
-      },
-    },
     "m3/packages/ag-ui": {
       "name": "@aphrody/ag-ui",
       "version": "1.0.1",
@@ -1449,8 +1434,6 @@
     "@aphrody/m3-theme": ["@aphrody/m3-theme@workspace:m3/packages/m3-theme"],
 
     "@aphrody/m3-tokens": ["@aphrody/m3-tokens@workspace:m3/packages/m3-tokens"],
-
-    "@aphrody/m3-web": ["@aphrody/m3-web@workspace:m3/apps/web"],
 
     "@aphrody/material-design-icons": ["@aphrody/material-design-icons@workspace:m3/packages/material-design-icons"],
 

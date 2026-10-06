@@ -740,33 +740,6 @@
             "@aphrody/m3-showcase",
             "build"
           ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-web",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-web",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-web",
-            "build"
-          ]
         }
       ]
     },

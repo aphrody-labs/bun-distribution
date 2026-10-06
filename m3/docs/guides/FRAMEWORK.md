@@ -17,8 +17,7 @@ Tailwind v4, build tooling and OS theme installers. Yolo orchestrates build, ser
 | Bun application | `@aphrody/m3-bun` | Build, serve, compile, package and deployment configuration for an app's UI and API |
 | Shared | `m3-config`, `m3-fonts`, `m3-icons`, `m3-motion`, `m3-primitives`, `m3-forms`, `m3-ai`, `m3-explorer`, `m3-design`, `m3-next`, `m3-next-migrate`, `m3-codemods`, `m3-reader`, `m3-mcp`, `material-design-icons`, `scaffold` | Build presets, assets, behaviour, migrations, MCP |
 | OS | `@aphrody/m3-os-themes` | Windows 11, GNOME, COSMIC and Chromium theme generators and installers |
-| Web example | `apps/web` (`@aphrody/m3-web`) | App selected by the root Yolo build, serve and compile commands |
-| Showcase | `apps/showcase` (`@aphrody/m3-showcase`) | Adaptive mobile, desktop and TV package demos, with a Bun API |
+| Showcase | `apps/showcase` (`@aphrody/m3-showcase`) | The single framework showcase (it absorbed the former `apps/web` example on 2026-10-06): adaptive mobile, desktop and TV package demos with a Bun API, shown by `aphrody-app --showcase` |
 
 Forks (`forks/`): `tailwindcss`, `base-ui`, `material-web`, `material-color-utilities`, `material-design-icons`.
 Shared dependency versions live in the root `workspaces.catalog`; the lockfile pins their resolved versions.
@@ -28,13 +27,13 @@ Packages use `catalog:`, `workspace:*` and explicit dependencies where declared.
 
 Root scripts run [scripts/yolo.ts](../../scripts/yolo.ts), which invokes `$YOLO_ROOT/bin/yolo` directly.
 `YOLO_ROOT` defaults to `$HOME/yolo`; inspect this entry point's live help for Yolo commands.
-The wrapper sets `YOLO_HOME` to this repository, so Yolo's `web|desktop|tauri` commands select `apps/web`.
+The wrapper sets `YOLO_HOME` to this repository for its Yolo preflight; `serve` and `compile` run the showcase's own scripts.
 
 | Script | Runs |
 | --- | --- |
-| `bun run build` | `yolo web build` (apps/web `build` = `yolo m3 build`), then `scripts/build.ts build --no-apps` for the default package scope |
-| `bun run serve` | `yolo web dev` (apps/web `dev` = `yolo m3 dev`, HMR) |
-| `bun run compile` | `yolo tauri build`, then apps/web `compile` (`yolo m3 compile`, delegated to `@aphrody/m3-bun` for the executable) |
+| `bun run build` | Yolo preflight, then `scripts/build.ts build`: every package and app, the showcase included, cached |
+| `bun run serve` | apps/showcase `dev` (`yolo m3 bun dev`, HMR) |
+| `bun run compile` | apps/showcase `compile` (`yolo m3 bun compile`, the single executable the desktop runs as its showcase sidecar) |
 | `bun run test` | Yolo preflight (`yolo version --json`), the root script suites, then workspace `test` scripts in parallel, followed by export, asset and documentation link checks |
 | `bun run lint` | Yolo preflight, then `oxlint` over `packages/m3*`, apps and scripts |
 | `bun run typecheck` | Yolo preflight, then `scripts/build.ts typecheck` with its default scope and cache |
@@ -75,8 +74,8 @@ bun run typecheck
 ```
 
 These commands use [m3-bun](../../packages/m3-bun/README.md) and the showcase's own configuration.
-Its inventory step precedes development, build and compile. Root `serve` and `compile` continue to
-select `apps/web`; they do not select this app. Tauri desktop/mobile packaging additionally needs
+Its inventory step precedes development, build and compile. Root `serve` and `compile` select
+this app. Tauri desktop/mobile packaging additionally needs
 the target toolchains; a configuration or web build does not establish an installed native bundle.
 
 ## Benchmark qualification limits

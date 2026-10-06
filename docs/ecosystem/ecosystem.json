@@ -272,6 +272,20 @@
           ]
         },
         {
+          "name": "aphrody-command-pure",
+          "path": "crates/infra/aphrody-command-pure",
+          "description": "Pure aphrody sub-commands (rag, toolcall, html, text): clap parsing and execution with no network, process, tokio, git or ssh. Shared by the native aphrody-command and the wasm32 targets.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-command-wasm",
+          "path": "crates/infra/aphrody-command-wasm",
+          "description": "wasm-bindgen adapter running the pure aphrody sub-commands (aphrody-command-pure) in the browser; no logic of its own.",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-compat",
           "path": "crates/os/compat",
           "description": "Cross-platform runtime compatibility layer for Aphrody OS: Wine, Proton, .NET and PowerShell Core (pwsh).",
@@ -934,6 +948,13 @@
           "features": []
         },
         {
+          "name": "aphrody-python-ffi",
+          "path": "crates/interop/python-ffi",
+          "description": "C ABI that hosts the shared CPython (the libpython of the vu runtime) inside the single aphrody-ffi cdylib: no libpython linked, the C API is bound by dlsym.",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-rag",
           "path": "crates/ai/rag",
           "description": "Unified RAG storage, embedding, vector scan, hybrid search, and agent tools for aphrody (P8).",
@@ -958,6 +979,20 @@
           "name": "aphrody-rag-eval",
           "path": "crates/ai/rag-eval",
           "description": "RAG retrieval evaluation harness (Recall@k, MRR, nDCG) over HTTP, MCP or a local index.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-rag-ffi",
+          "path": "crates/ai/rag-ffi",
+          "description": "C ABI adapter of aphrody-rag-core for bun:ffi: re-exported by the single aphrody-ffi cdylib, no logic of its own.",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-rag-wasm",
+          "path": "crates/ai/rag-wasm",
+          "description": "wasm-bindgen adapter of aphrody-rag-core for the browser: three entry points over the shared call surface, no logic of its own.",
           "bins": [],
           "features": []
         },
@@ -1835,6 +1870,13 @@
           "features": []
         },
         {
+          "name": "aphrody-translate-core",
+          "path": "crates/ai/translate-core",
+          "description": "Pure stages of the aphrody comment rewriter: comment extraction, AI-marker scrubbing, Aphrody style, language detection. No network, no runtime; wasm32-safe.",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-tui",
           "path": "crates/shell/tui",
           "description": "Full-screen interactive agent surface for aphrody, built on Ratatui 0.30 + crossterm. A thin client over the SQ/EQ NDJSON protocol: renders the streamed Event timeline (agent message deltas, reasoning, tool calls, exec output) and turns key input into Submission/UserInput. Inspired by the OpenAI Codex TUI (Apache-2.0).",
@@ -2219,6 +2261,12 @@
           "bins": []
         },
         {
+          "name": "@aphrody/cli-wasm",
+          "path": "packages/infra/cli-wasm",
+          "description": "The pure aphrody commands (rag, toolcall, html, text) as WebAssembly for the browser, Bun and Node: the same code as `aphrody pure` of the native CLI.",
+          "bins": []
+        },
+        {
           "name": "@aphrody/cli-win32-arm64-msvc",
           "path": "crates/tauri/aphrody-tauri-cli-node/npm/win32-arm64-msvc",
           "description": "Command line interface for building Tauri apps",
@@ -2235,6 +2283,14 @@
           "path": "crates/tauri/aphrody-tauri-cli-node/npm/win32-x64-msvc",
           "description": "Command line interface for building Tauri apps",
           "bins": []
+        },
+        {
+          "name": "@aphrody/creator-kit",
+          "path": "apps/community/creator-kit",
+          "description": "Small local tools for a content creator: Challonge bot, wiki image fetch, Adobe and disk cleaners, image compression, video translation.",
+          "bins": [
+            "creator-kit"
+          ]
         },
         {
           "name": "@aphrody/discord-kit",
@@ -2446,12 +2502,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/m3-web",
-          "path": "m3/apps/web",
-          "description": "Showcase app of the M3 framework. Built, served and compiled through the yolo CLI (`yolo web build|dev`, `yolo tauri build`), which runs these scripts.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/material-design-icons",
           "path": "m3/packages/material-design-icons",
           "description": "Material Symbols SVG catalogue (forks/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons.",
@@ -2488,6 +2538,14 @@
           "path": "packages/engine/n2b-types",
           "description": "Compatibility aliases of the canonical Yolo native tooling report schema",
           "bins": []
+        },
+        {
+          "name": "@aphrody/omar-kit",
+          "path": "apps/community/omar-kit",
+          "description": "Zero-command Windows kit for the Aphrody administrator: installs the tools, connects the private tunnel, checks that everything is ready and runs simplified model training on the hosts over SSH.",
+          "bins": [
+            "aphrody-omar"
+          ]
         },
         {
           "name": "@aphrody/os",
@@ -2682,6 +2740,12 @@
           "bins": []
         },
         {
+          "name": "@aphrody/rag-core",
+          "path": "packages/ai/rag-core",
+          "description": "Aphrody RAG core for the web (WebAssembly) and for Bun (bun:ffi): chunking, fusion, eval and vector kernels behind one typed facade.",
+          "bins": []
+        },
+        {
           "name": "@aphrody/runtime-sdk",
           "path": "packages/engine/runtime",
           "description": "Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI",
@@ -2775,6 +2839,12 @@
           "name": "@aphrody/yolo-web",
           "path": "apps/yolo/web",
           "description": "",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/yt-subs-sorter",
+          "path": "apps/community/creator-kit/extensions/yt-subs-sorter",
+          "description": "WebExtension (Chrome, Edge, Brave, Firefox) to sort YouTube subscriptions into groups. No dependency, no network.",
           "bins": []
         },
         {
@@ -2971,6 +3041,137 @@
       "repo": "aphrody",
       "source": "crates/infra/aphrody-command/src/lib.rs#Cli",
       "commands": [
+        {
+          "name": "pure",
+          "about": "Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "rag",
+              "about": "RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "ops",
+                  "about": "Manifest of the RAG call surface: ABI and every operation name.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "call",
+                  "about": "Run a structured operation: `rag call rrf '{\"lists\":[[1,2],[2,3]]}'`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "chunk",
+                  "about": "Split a source file into line-addressed chunks.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "toolcall",
+              "about": "Tool-call JSON repair, validation and inline extraction.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "repair",
+                  "about": "Repair malformed model-emitted JSON; prints `{\"value\", \"repairs\"}`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "validate",
+                  "about": "Validate arguments against a JSON-Schema subset; prints `{\"violations\"}`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "extract",
+                  "about": "Extract inline tool calls (Hermes, Qwen XML, Mistral, OpenAI, bare JSON).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "html",
+              "about": "HTML main-content extraction, Markdown conversion and SimHash.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "extract",
+                  "about": "Main-content extraction as JSON (title, byline, Markdown, blocks, SimHash).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "markdown",
+                  "about": "Whole-document HTML to GitHub-flavoured Markdown.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "simhash",
+                  "about": "64-bit SimHash of the text, as 16 hex digits.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "text",
+              "about": "Comment extraction, AI-marker scrubbing, Aphrody style and language detection.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "comments",
+                  "about": "Comments of a source file as JSON.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "scrub",
+                  "about": "Remove AI markers and emoji from a comment body.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "aphrodify",
+                  "about": "Apply the Aphrody prose style.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "is-japanese",
+                  "about": "Print `true` when the text contains Japanese characters.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
         {
           "name": "rag",
           "about": "Index and retrieve local code and documentation.",
@@ -5433,6 +5634,137 @@
           "aliases": [],
           "cfg": [],
           "children": [
+            {
+              "name": "pure",
+              "about": "Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "rag",
+                  "about": "RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "ops",
+                      "about": "Manifest of the RAG call surface: ABI and every operation name.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "call",
+                      "about": "Run a structured operation: `rag call rrf '{\"lists\":[[1,2],[2,3]]}'`.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "chunk",
+                      "about": "Split a source file into line-addressed chunks.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "name": "toolcall",
+                  "about": "Tool-call JSON repair, validation and inline extraction.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "repair",
+                      "about": "Repair malformed model-emitted JSON; prints `{\"value\", \"repairs\"}`.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "validate",
+                      "about": "Validate arguments against a JSON-Schema subset; prints `{\"violations\"}`.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "extract",
+                      "about": "Extract inline tool calls (Hermes, Qwen XML, Mistral, OpenAI, bare JSON).",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "name": "html",
+                  "about": "HTML main-content extraction, Markdown conversion and SimHash.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "extract",
+                      "about": "Main-content extraction as JSON (title, byline, Markdown, blocks, SimHash).",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "markdown",
+                      "about": "Whole-document HTML to GitHub-flavoured Markdown.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "simhash",
+                      "about": "64-bit SimHash of the text, as 16 hex digits.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "name": "text",
+                  "about": "Comment extraction, AI-marker scrubbing, Aphrody style and language detection.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "comments",
+                      "about": "Comments of a source file as JSON.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "scrub",
+                      "about": "Remove AI markers and emoji from a comment body.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "aphrodify",
+                      "about": "Apply the Aphrody prose style.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "is-japanese",
+                      "about": "Print `true` when the text contains Japanese characters.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
             {
               "name": "rag",
               "about": "Index and retrieve local code and documentation.",
@@ -11434,12 +11766,12 @@
     "aphrodyRepos": 1,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 230,
+    "crates": 236,
     "binaries": 9,
-    "bunPackages": 130,
+    "bunPackages": 134,
     "pythonPackages": 8,
     "cliBinaries": 19,
-    "cliCommands": 834,
+    "cliCommands": 870,
     "mcpServers": 20,
     "mcpTools": 379,
     "mcpUniqueToolNames": 377

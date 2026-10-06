@@ -3,15 +3,15 @@
 // Root task runner: the m3 packages build, serve and compile through the yolo CLI.
 //   bun scripts/yolo.ts <build|serve|compile|test|lint|typecheck|bench|bench:check|install:theme> [args...]
 // yolo is resolved from $YOLO_ROOT (default $HOME/yolo) and run through `$YOLO_ROOT/bin/yolo`.
-//   build    yolo web build     -> apps/web `build`, then the canonical cached package/app pipeline
-//   serve    yolo web dev       -> apps/web `dev`   (m3 dev)
-//   compile  yolo tauri build   -> apps/web `build`, then apps/web `compile` (m3 compile, single executable)
+//   build    the canonical cached package/app pipeline (every app, the showcase included)
+//   serve    apps/showcase `dev`      (yolo m3 bun dev, HMR)
+//   compile  apps/showcase `compile`  (yolo m3 bun compile, single executable shown by aphrody-app --showcase)
 //   test / lint / typecheck     workspace gates, after a yolo preflight (`yolo version --json`); typecheck is scripts/build.ts;
 //                               test runs every package, the script tests and check-exports, check-assets, check-links
 //   bench / bench:check         scripts/bench/run.ts: measure the startup, install, bundle and compile numbers of
 //                               docs/reports/PERF.md; `bench:check` fails past docs/reports/perf-budget.json + 10%
 //   install:theme               packages/m3-os-themes CLI (dry-run unless --apply)
-// yolo's web|desktop|tauri commands act on $YOLO_HOME/apps/web, so YOLO_HOME is pointed at this repository.
+// The single M3 showcase is apps/showcase (it absorbed the former apps/web example on 2026-10-06).
 import { existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -46,15 +46,18 @@ const lintPaths = (): string[] => [
 
 const bun = (cwd: string, ...args: string[]): Step => ({ cmd: ["bun", ...args], cwd });
 
+/** The one showcase app of the framework. */
+export const SHOWCASE = join(REPO, "apps/showcase");
+
 /** The steps of one task, in order. */
 export function plan(task: string, rest: string[] = []): Step[] {
   switch (task) {
     case "build":
-      return [yolo("web", "build"), bun(REPO, "scripts/build.ts", "build")];
+      return [yolo("version", "--json"), bun(REPO, "scripts/build.ts", "build")];
     case "serve":
-      return [yolo("web", "dev")];
+      return [bun(SHOWCASE, "run", "dev")];
     case "compile":
-      return [yolo("tauri", "build"), bun(join(REPO, "apps/web"), "run", "compile")];
+      return [bun(SHOWCASE, "run", "compile")];
     case "test":
       return [
         yolo("version", "--json"),

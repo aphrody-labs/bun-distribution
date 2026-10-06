@@ -4,14 +4,14 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pipeline } from "./build.ts";
-import { REPO, YOLO_CLI, plan } from "./yolo.ts";
+import { REPO, SHOWCASE, YOLO_CLI, plan } from "./yolo.ts";
 
 describe("yolo task plan", () => {
-  test("build, serve and compile go through the yolo CLI web|tauri commands", () => {
-    expect(plan("build")[0]!.cmd).toEqual([YOLO_CLI, "web", "build"]);
-    expect(plan("serve")[0]!.cmd.slice(1)).toEqual(["web", "dev"]);
-    expect(plan("compile")[0]!.cmd.slice(1)).toEqual(["tauri", "build"]);
+  test("build runs after a yolo preflight; serve and compile run the single showcase", () => {
+    expect(plan("build")[0]!.cmd).toEqual([YOLO_CLI, "version", "--json"]);
     expect(plan("build")[0]!.env).toEqual({ YOLO_HOME: REPO });
+    expect(plan("serve")).toEqual([{ cmd: ["bun", "run", "dev"], cwd: SHOWCASE }]);
+    expect(plan("compile")).toEqual([{ cmd: ["bun", "run", "compile"], cwd: SHOWCASE }]);
   });
   test("build then runs the cached package and app pipeline; typecheck uses the same owner", () => {
     expect(plan("build")[1]!.cmd.slice(1)).toEqual(["scripts/build.ts", "build"]);
@@ -29,7 +29,7 @@ describe("yolo task plan", () => {
         }),
       );
       await Promise.all(
-        ["web", "showcase"].map(async (name) => {
+        ["example", "showcase"].map(async (name) => {
           const directory = join(root, "apps", name);
           await Bun.write(
             join(directory, "package.json"),
@@ -53,8 +53,8 @@ describe("yolo task plan", () => {
       const options = { root, apps: !build.cmd.includes("--no-apps") };
       const results = await pipeline(options);
       expect(results.map((result) => result.name).toSorted()).toEqual([
+        "@aphrody/m3-example",
         "@aphrody/m3-showcase",
-        "@aphrody/m3-web",
       ]);
       expect(results.every((result) => result.status === "built")).toBe(true);
       expect(await Bun.file(join(root, "apps/showcase/dist/index.js")).text()).toContain(

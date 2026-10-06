@@ -59,18 +59,18 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [upstream-WSL](guides/upstream-WSL/) vendored upstream copy | 1 | - |
 | guides | [web](guides/web/) | 4 | - |
 | guides | [workspace](guides/workspace/) | 4 | [Parcours Workspace Aphrody](guides/workspace/README.md) |
-| operations | [(files)](operations/) | 1 | - |
+| operations | [(files)](operations/) | 2 | - |
 | operations | [ai](operations/ai/) | 9 | - |
 | operations | [cloud](operations/cloud/) | 3 | - |
 | operations | [container](operations/container/) | 1 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
-| operations | [infra](operations/infra/) | 112 | - |
+| operations | [infra](operations/infra/) | 115 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
 | operations | [web](operations/web/) | 1 | - |
 | operations | [workspace](operations/workspace/) | 2 | - |
 | plans | [agent-home-pipeline](plans/agent-home-pipeline/) | 1 | [Agent home, one database, one pipeline, one RAG](plans/agent-home-pipeline/PLAN.md) |
-| plans | [ai](plans/ai/) | 17 | [Delivery plan](plans/ai/PLAN.md) |
+| plans | [ai](plans/ai/) | 18 | [Delivery plan](plans/ai/PLAN.md) |
 | plans | [compat](plans/compat/) | 3 | [PLAN — aphrody-compat](plans/compat/PLAN.md) |
 | plans | [contracts](plans/contracts/) | 1 | [PLAN — aphrody-contracts](plans/contracts/PLAN.md) |
 | plans | [convergence](plans/convergence/) | 1 | - |
@@ -156,4 +156,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 8 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 4414 files.
+Total: 4419 files.
