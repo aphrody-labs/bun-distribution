@@ -42,6 +42,8 @@ mod jobs_tools;
 mod ocr_tools;
 #[cfg(all(feature = "rag", not(target_arch = "wasm32")))]
 mod rag_tools;
+#[cfg(feature = "rag")]
+mod home_tools;
 #[cfg(all(feature = "stt-local", not(target_arch = "wasm32")))]
 mod stt_local_tools;
 #[cfg(all(feature = "vision", not(target_arch = "wasm32")))]
@@ -2639,6 +2641,27 @@ impl GoogleMcpServer {
     ) -> String {
         rag_tools::context(req).await
     }
+
+    #[tool(description = "Search the agent home database (one SQLite file per home: `<home>/db/aphrody.sqlite`) \
+                          with a single hybrid query over document chunks, code-graph nodes and \
+                          memories (FTS5 plus one reciprocal-rank fusion). Optional kinds filter \
+                          (chunk, node, memory) and profile (aphrody, dbfr, ie). Build it with \
+                          `aphrody home index <dir>`. Returns ranked hits with path, line and snippet.")]
+    async fn aphrody_home_query(
+        &self,
+        Parameters(req): Parameters<home_tools::HomeQueryRequest>,
+    ) -> String {
+        home_tools::query(req).await
+    }
+
+    #[tool(description = "Status of the agent home database: path, schema version and table counts \
+                          (sources, files, docs, chunks, graph nodes and edges, memories, sessions).")]
+    async fn aphrody_home_status(
+        &self,
+        Parameters(req): Parameters<home_tools::HomeStatusRequest>,
+    ) -> String {
+        home_tools::status(req).await
+    }
 }
 
 impl GoogleMcpServer {
@@ -3496,6 +3519,10 @@ mod aphrody_mcp_call_tests {
             router.get("sync_external_agents").is_some(),
             "external_sessions_router not merged"
         );
+        #[cfg(all(feature = "rag", not(target_arch = "wasm32")))]
+        for name in ["aphrody_home_query", "aphrody_home_status"] {
+            assert!(router.get(name).is_some(), "agent home MCP tool missing: {name}");
+        }
     }
 
     #[test]

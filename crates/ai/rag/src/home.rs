@@ -10,7 +10,7 @@
 use std::collections::HashMap;
 
 use aphrody_rag_core::fusion::rrf;
-use aphrody_store::{HomeDb, HomeLayout, HomeScope};
+pub use aphrody_store::{HomeDb, HomeLayout, HomeScope};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -196,6 +196,52 @@ pub fn unified_search(db: &HomeDb, query: &str, options: &UnifiedOptions) -> Res
     Ok(fused)
 }
 
+/// Scope of a profile name, falling back to `$APHRODY_PROFILE` (agent-home semantics) and then
+/// to the global home.
+#[must_use]
+pub fn scope_for(profile: Option<&str>) -> HomeScope {
+    match profile.map(str::to_owned).or_else(|| std::env::var("APHRODY_PROFILE").ok()) {
+        Some(p) => HomeScope::from_profile(Some(&p)),
+        None => HomeScope::Global,
+    }
+}
+
+/// Path of the home database of `profile` when it exists (never created here).
+#[must_use]
+pub fn existing_home_db(profile: Option<&str>) -> Option<std::path::PathBuf> {
+    let layout = HomeLayout::resolve(&scope_for(profile)).ok()?;
+    layout.db_path.is_file().then_some(layout.db_path)
+}
+
+/// Unified search over the home database of `profile` as a JSON value (the MCP and CLI payload).
+///
+/// # Errors
+///
+/// A missing home database or SQLite failures.
+pub fn home_query_json(profile: Option<&str>, query: &str, options: &UnifiedOptions) -> Result<serde_json::Value> {
+    let path = existing_home_db(profile)
+        .ok_or_else(|| RagError::Other("no home database yet (run `aphrody home index`)".to_owned()))?;
+    let db = HomeDb::open_read_only(&path).map_err(|e| RagError::Other(e.to_string()))?;
+    let hits = unified_search(&db, query, options)?;
+    Ok(serde_json::json!({ "query": query, "db": path, "hits": hits }))
+}
+
+/// Layout, schema version and table counts of the home database of `profile`.
+///
+/// # Errors
+///
+/// Home resolution or SQLite failures.
+pub fn home_status_json(profile: Option<&str>) -> Result<serde_json::Value> {
+    let args = aphrody_store::cli::StoreArgs {
+        profile: match scope_for(profile) {
+            HomeScope::Global => None,
+            HomeScope::Profile(p) => Some(p),
+        },
+        state: None,
+    };
+    aphrody_store::cli::run(&args, &aphrody_store::cli::Command::Status).map_err(|e| RagError::Other(e.to_string()))
+}
+
 impl RagStore {
     /// Open the RAG store of a home: the home database is created and migrated first (the RAG
     /// tables are its baseline), so retrieval, graph, memories and sessions share one file.
@@ -271,6 +317,11 @@ mod tests {
         assert!(hits.iter().all(|h| h.kind == HitKind::Memory));
         assert!(unified_search(&db, "!!", &UnifiedOptions::default()).unwrap().is_empty());
         assert!(unified_search(&db, "zzzznothing", &UnifiedOptions::default()).unwrap().is_empty());
+    }
+
+    #[test]
+    fn explicit_profiles_select_their_own_scope() {
+        assert_eq!(scope_for(Some("dbfr")), HomeScope::Profile("dbfr".into()));
     }
 
     #[tokio::test]

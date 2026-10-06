@@ -32,11 +32,14 @@ use rmcp::schemars::{self, JsonSchema};
 use serde::Deserialize;
 use serde_json::json;
 
-/// Resolve the index path: `$APHRODY_RAG_DB`, else `~/.aphrody/rag/index.db`.
+/// Resolve the index path: `$APHRODY_RAG_DB`, else the agent-home database
+/// (`<home>/db/aphrody.sqlite`, profile from `$APHRODY_PROFILE`) when it exists, else the legacy
+/// `~/.aphrody/rag/index.db`.
 fn db_path() -> Option<PathBuf> {
     std::env::var_os("APHRODY_RAG_DB")
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
+        .or_else(|| aphrody_rag::home::existing_home_db(None))
         .or_else(|| dirs::home_dir().map(|home| home.join(".aphrody/rag/index.db")))
 }
 
