@@ -1,0 +1,812 @@
+{
+  "name": "art-streams",
+  "description": "Drawing, painting, animation and illustration vocabulary for art streams and process videos (JP, FR, ES -> EN). Verified: Clip Studio Paint blend-mode names and a few UI names (Clip Studio Paint User Guide, JP and EN, 2026-10-06), pen-tablet terms, key animation / in-betweens / off-model animation, derivative work, manga rough layout (Wikipedia ja). The remaining entries are author knowledge of common usage and are labelled unverified.",
+  "sources": {
+    "csp-help-en-blending-modes": {
+      "title": "Clip Studio Paint User Guide (en): Blending modes",
+      "url": "https://help.clip-studio.com/en-us/manual_en/180_layers/Blending_modes.htm",
+      "retrieved": "2026-10-06"
+    },
+    "csp-help-ja-blending-modes": {
+      "title": "Clip Studio Paint User Guide (ja): 合成モードを設定する",
+      "url": "https://help.clip-studio.com/ja-jp/manual_jp/180_layers/%E5%90%88%E6%88%90%E3%83%A2%E3%83%BC%E3%83%89%E3%82%92%E8%A8%AD%E5%AE%9A%E3%81%99%E3%82%8B.htm",
+      "retrieved": "2026-10-06"
+    },
+    "csp-help-reference-layers": {
+      "title": "Clip Studio Paint User Guide (en): Reference layers",
+      "url": "https://help.clip-studio.com/en-us/manual_en/180_layers/Reference_layers.htm",
+      "retrieved": "2026-10-06"
+    },
+    "ja-wikipedia-pen-tablet": {
+      "title": "Wikipedia (ja): ペンタブレット",
+      "url": "https://ja.wikipedia.org/wiki/%E3%83%9A%E3%83%B3%E3%82%BF%E3%83%96%E3%83%AC%E3%83%83%E3%83%88",
+      "retrieved": "2026-10-06"
+    },
+    "ja-wikipedia-genga": {
+      "title": "Wikipedia (ja): 原画",
+      "url": "https://ja.wikipedia.org/wiki/%E5%8E%9F%E7%94%BB",
+      "retrieved": "2026-10-06"
+    },
+    "ja-wikipedia-douga": {
+      "title": "Wikipedia (ja): 動画 (アニメ制作)",
+      "url": "https://ja.wikipedia.org/wiki/%E5%8B%95%E7%94%BB_(%E3%82%A2%E3%83%8B%E3%83%A1%E5%88%B6%E4%BD%9C)",
+      "retrieved": "2026-10-06"
+    },
+    "ja-wikipedia-sakuga-houkai": {
+      "title": "Wikipedia (ja): 作画崩壊",
+      "url": "https://ja.wikipedia.org/wiki/%E4%BD%9C%E7%94%BB%E5%B4%A9%E5%A3%8A",
+      "retrieved": "2026-10-06"
+    },
+    "ja-wikipedia-nijisousaku": {
+      "title": "Wikipedia (ja): 二次創作",
+      "url": "https://ja.wikipedia.org/wiki/%E4%BA%8C%E6%AC%A1%E5%89%B5%E4%BD%9C",
+      "retrieved": "2026-10-06"
+    },
+    "ja-wikipedia-name": {
+      "title": "Wikipedia (ja): ネーム (漫画)",
+      "url": "https://ja.wikipedia.org/wiki/%E3%83%8D%E3%83%BC%E3%83%A0_(%E6%BC%AB%E7%94%BB)",
+      "retrieved": "2026-10-06"
+    }
+  },
+  "entries": [
+    {
+      "kind": "software",
+      "id": "csp-blend-multiply",
+      "src": ["乗算", "Multiply mode", "Multiply"],
+      "en": "Multiply",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '乗算'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-screen",
+      "src": ["スクリーン", "Screen mode", "Screen"],
+      "en": "Screen",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード 'スクリーン'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-overlay",
+      "src": ["オーバーレイ", "Overlay mode", "Overlay"],
+      "en": "Overlay",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード 'オーバーレイ'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-add-glow",
+      "src": ["加算(発光)", "加算（発光）", "Add (Glow) mode", "Add (Glow)"],
+      "en": "Add (Glow)",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '加算(発光)'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-add",
+      "src": ["加算", "Add mode", "Add"],
+      "en": "Add",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '加算'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes",
+      "ambiguous": true
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-color-dodge",
+      "src": ["覆い焼きカラー", "Color dodge mode", "Color dodge"],
+      "en": "Color dodge",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '覆い焼きカラー'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-glow-dodge",
+      "src": ["覆い焼き(発光)", "覆い焼き（発光）", "Glow dodge mode", "Glow dodge"],
+      "en": "Glow dodge",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '覆い焼き(発光)'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-color-burn",
+      "src": ["焼き込みカラー", "Color burn mode", "Color burn"],
+      "en": "Color burn",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '焼き込みカラー'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-linear-burn",
+      "src": ["焼き込み(リニア)", "焼き込み（リニア）", "Linear burn mode", "Linear burn"],
+      "en": "Linear burn",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '焼き込み(リニア)'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-soft-light",
+      "src": ["ソフトライト", "Soft light mode", "Soft light"],
+      "en": "Soft light",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード 'ソフトライト'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-hard-light",
+      "src": ["ハードライト", "Hard light mode", "Hard light"],
+      "en": "Hard light",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード 'ハードライト'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-difference",
+      "src": ["差の絶対値", "Difference mode", "Difference"],
+      "en": "Difference",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '差の絶対値'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-exclusion",
+      "src": ["除外", "Exclusion mode", "Exclusion"],
+      "en": "Exclusion",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '除外'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes",
+      "ambiguous": true
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-divide",
+      "src": ["除算", "Divide mode", "Divide"],
+      "en": "Divide",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '除算'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes",
+      "ambiguous": true
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-subtract",
+      "src": ["減算", "Subtract mode", "Subtract"],
+      "en": "Subtract",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '減算'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes",
+      "ambiguous": true
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-darken",
+      "src": ["比較(暗)", "比較（暗）", "Darken mode", "Darken"],
+      "en": "Darken",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '比較(暗)'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-lighten",
+      "src": ["比較(明)", "比較（明）", "Lighten mode", "Lighten"],
+      "en": "Lighten",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '比較(明)'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-vivid-light",
+      "src": ["ビビッドライト", "Vivid light mode", "Vivid light"],
+      "en": "Vivid light",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード 'ビビッドライト'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-linear-light",
+      "src": ["リニアライト", "Linear light mode", "Linear light"],
+      "en": "Linear light",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード 'リニアライト'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-pin-light",
+      "src": ["ピンライト", "Pin light mode", "Pin light"],
+      "en": "Pin light",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード 'ピンライト'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-hard-mix",
+      "src": ["ハードミックス", "Hard mix mode", "Hard mix"],
+      "en": "Hard mix",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード 'ハードミックス'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-darker-color",
+      "src": ["カラー比較(暗)", "カラー比較（暗）", "Darker color mode", "Darker color"],
+      "en": "Darker color",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード 'カラー比較(暗)'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-lighter-color",
+      "src": ["カラー比較(明)", "カラー比較（明）", "Lighter color mode", "Lighter color"],
+      "en": "Lighter color",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード 'カラー比較(明)'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-hue",
+      "src": ["色相", "Hue mode", "Hue"],
+      "en": "Hue",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '色相'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes",
+      "ambiguous": true
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-saturation",
+      "src": ["彩度", "Saturation mode", "Saturation"],
+      "en": "Saturation",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '彩度'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes",
+      "ambiguous": true
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-brightness",
+      "src": ["輝度", "Brightness mode", "Brightness"],
+      "en": "Brightness",
+      "note": "Clip Studio Paint layer blending mode (JP 合成モード '輝度'). Use the official English UI name.",
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes",
+      "ambiguous": true
+    },
+    {
+      "kind": "software",
+      "id": "csp-blend-mode",
+      "src": ["合成モード", "blending mode", "blend mode"],
+      "en": "blending mode",
+      "alt": ["blend mode", "layer mode"],
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-color-blend",
+      "src": ["カラー"],
+      "en": "Color",
+      "note": "In a layer-blending context 'カラー' is the 'Color' blending mode.",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "csp-help-en-blending-modes+csp-help-ja-blending-modes"
+    },
+    {
+      "kind": "software",
+      "id": "csp-reference-layer",
+      "src": ["参照レイヤー", "reference layer"],
+      "en": "reference layer",
+      "alt": ["Reference layer"],
+      "note": "CSP layer setting: the Fill and Selection tools refer to it, e.g. a separate line art layer.",
+      "confidence": "verified",
+      "ref": "csp-help-reference-layers"
+    },
+    {
+      "kind": "software",
+      "id": "csp-draft-layer",
+      "src": ["下書きレイヤー", "draft layer"],
+      "en": "draft layer",
+      "alt": ["Draft layer", "sketch layer"],
+      "avoid": ["underwriting layer"],
+      "note": "CSP layer excluded from fills, selections and exports (rough sketch layer).",
+      "confidence": "partial",
+      "ref": "csp-help-ja-blending-modes",
+      "unverifiedSrc": []
+    },
+    {
+      "kind": "software",
+      "id": "csp-clipping",
+      "src": ["下のレイヤーでクリッピング", "クリッピング", "clipping mask", "clip to layer below"],
+      "en": "clipping mask",
+      "alt": ["Clip to Layer Below", "clip to layer", "clipping"],
+      "note": "CSP: 'Clip to Layer Below' limits a layer to the drawn area of the layer under it.",
+      "confidence": "partial",
+      "ref": "csp-help-ja-blending-modes",
+      "unverifiedSrc": ["クリッピング", "clipping mask"]
+    },
+    {
+      "kind": "software",
+      "id": "csp-stabilization",
+      "src": ["手ブレ補正", "手ぶれ補正", "stabilization", "stabiliser", "stabilizer"],
+      "en": "stabilization",
+      "alt": ["stabilizer", "line stabilization", "smoothing"],
+      "avoid": ["camera shake correction", "image stabilization"],
+      "note": "Pen stabilization (line smoothing) in drawing apps; not camera image stabilization.",
+      "confidence": "partial",
+      "ref": "csp-help-reference-layers",
+      "unverifiedSrc": ["手ぶれ補正"]
+    },
+    {
+      "kind": "software",
+      "id": "csp-fill",
+      "src": ["塗りつぶし", "投げなわ塗り", "fill tool", "lasso fill"],
+      "en": "fill",
+      "alt": ["Fill tool", "Lasso Fill", "bucket"],
+      "note": "塗りつぶし = the Fill tool; 投げなわ塗り = Lasso fill.",
+      "confidence": "partial",
+      "ref": "csp-help-reference-layers",
+      "unverifiedSrc": ["投げなわ塗り", "lasso fill"]
+    },
+    {
+      "kind": "software",
+      "id": "csp-vector-layer",
+      "src": ["ベクターレイヤー", "ベクターレイヤ", "vector layer"],
+      "en": "vector layer",
+      "alt": ["Vector layer"],
+      "confidence": "verified",
+      "ref": "csp-help-reference-layers",
+      "unverifiedSrc": ["ベクターレイヤ"]
+    },
+    {
+      "kind": "software",
+      "id": "csp-layer",
+      "src": ["レイヤーフォルダー", "レイヤー", "layer folder", "layers"],
+      "en": "layer",
+      "alt": ["layers", "layer folder"],
+      "note": "レイヤー = layer; レイヤーフォルダー = layer folder.",
+      "confidence": "partial",
+      "ref": "csp-help-reference-layers",
+      "unverifiedSrc": ["レイヤーフォルダー"]
+    },
+    {
+      "kind": "term",
+      "id": "ekitab",
+      "src": ["液タブ", "液晶タブレット", "液晶ペンタブレット", "pen display"],
+      "en": "pen display",
+      "alt": ["display tablet", "drawing display", "screen tablet"],
+      "avoid": ["liquid tab", "LCD tab"],
+      "note": "液タブ = a pen tablet with a built-in display, so you draw directly on the screen (Cintiq-style).",
+      "confidence": "verified",
+      "ref": "ja-wikipedia-pen-tablet",
+      "unverifiedSrc": ["pen display"]
+    },
+    {
+      "kind": "term",
+      "id": "itatab",
+      "src": ["板タブ", "ペンタブ", "ペンタブレット", "pen tablet"],
+      "en": "pen tablet",
+      "alt": ["graphics tablet", "drawing tablet", "non-display tablet"],
+      "note": "板タブ = a plain pen tablet without a display (the conventional pad); ペンタブ is the generic abbreviation.",
+      "confidence": "verified",
+      "ref": "ja-wikipedia-pen-tablet",
+      "unverifiedSrc": ["pen tablet"]
+    },
+    {
+      "kind": "term",
+      "id": "genga",
+      "src": ["原画", "原画マン", "genga"],
+      "en": "key animation",
+      "alt": ["key frames", "keyframes", "key drawings", "genga", "original artwork"],
+      "avoid": ["original picture", "original drawing"],
+      "note": "原画 in anime production = key animation (the drawings of key poses). In manga/illustration it can mean the original (hand-drawn) artwork instead.",
+      "confidence": "verified",
+      "ref": "ja-wikipedia-genga",
+      "unverifiedSrc": ["genga"]
+    },
+    {
+      "kind": "term",
+      "id": "nakawari",
+      "src": ["中割り", "中割", "動画マン", "in-between", "inbetween", "tweening"],
+      "en": "in-betweening",
+      "alt": ["in-betweens", "tweening", "in-between animation", "inbetweens"],
+      "avoid": ["middle splitting", "middle dividing"],
+      "note": "中割り / 動画 (in anime production) = the in-between drawings that fill the motion between key poses; 動画マン = in-betweener.",
+      "confidence": "verified",
+      "ref": "ja-wikipedia-douga",
+      "unverifiedSrc": ["動画マン", "tweening"]
+    },
+    {
+      "kind": "term",
+      "id": "sakuga",
+      "src": ["作画", "sakuga"],
+      "en": "animation",
+      "alt": ["sakuga", "the art", "animation quality", "drawn animation"],
+      "avoid": ["drawing picture", "picture drawing"],
+      "note": "作画 = the drawn animation or art of an anime; 作画が良い = it is beautifully animated/drawn.",
+      "confidence": "partial",
+      "ref": "ja-wikipedia-sakuga-houkai",
+      "ambiguous": true,
+      "unverifiedSrc": ["作画", "sakuga"]
+    },
+    {
+      "kind": "term",
+      "id": "sakuga-houkai",
+      "src": ["作画崩壊", "作崩"],
+      "en": "off-model animation",
+      "alt": [
+        "animation quality collapse",
+        "off-model",
+        "the animation falling apart",
+        "terrible animation"
+      ],
+      "avoid": ["drawing collapse", "picture collapse"],
+      "note": "作画崩壊 = anime whose drawn quality visibly degrades (budget/schedule); roughly 'off-model animation' / 'the animation falling apart'.",
+      "confidence": "verified",
+      "ref": "ja-wikipedia-sakuga-houkai",
+      "unverifiedSrc": ["作崩"]
+    },
+    {
+      "kind": "term",
+      "id": "kami-sakuga",
+      "src": ["神作画"],
+      "en": "insane animation",
+      "alt": ["god-tier animation", "peak sakuga", "incredible animation", "amazing animation"],
+      "avoid": ["god drawing", "divine drawing"],
+      "note": "神作画 = spectacular animation (fans call such scenes 'peak sakuga').",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "name-manga",
+      "src": ["ネーム"],
+      "en": "rough layout",
+      "alt": ["storyboard", "manga storyboard", "name", "thumbnails"],
+      "avoid": ["name"],
+      "note": "ネーム (manga) = the rough layout/storyboard stage of a manga page, before the final drawing.",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "ja-wikipedia-name"
+    },
+    {
+      "kind": "term",
+      "id": "nijisousaku",
+      "src": ["二次創作", "二次絵", "ファンアート", "fanart", "fan art"],
+      "en": "fan art",
+      "alt": ["fanwork", "fan works", "derivative work", "fan creations", "fanart"],
+      "avoid": ["secondary creation", "second creation"],
+      "note": "二次創作 = derivative/fan works based on an existing work (fan art, fan fiction, etc.); for drawings, 'fan art'.",
+      "confidence": "verified",
+      "ref": "ja-wikipedia-nijisousaku",
+      "unverifiedSrc": ["二次絵", "ファンアート"]
+    },
+    {
+      "kind": "term",
+      "id": "ichijisousaku",
+      "src": ["一次創作", "オリジナル作品", "オリキャラ"],
+      "en": "original work",
+      "alt": ["original content", "OC", "original characters", "my own characters"],
+      "avoid": ["primary creation", "first creation"],
+      "note": "一次創作 = original (non-derivative) work; オリキャラ = original character (OC).",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "hanken-e",
+      "src": ["版権絵", "版権イラスト", "版権"],
+      "en": "fan art of an existing franchise",
+      "alt": ["franchise fan art", "fan art of licensed characters", "fan art"],
+      "avoid": ["copyright picture", "copyright art"],
+      "note": "版権絵 = fan illustrations of characters from a commercial franchise (e.g. a game or anime).",
+      "ambiguous": true,
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "tachie",
+      "src": ["立ち絵", "立絵"],
+      "en": "character standing art",
+      "alt": ["character sprite", "full-body character art", "standing pose", "character art"],
+      "avoid": ["standing picture", "stand picture"],
+      "note": "立ち絵 = a full-body standing character illustration (visual novels, VTuber models).",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "sabun",
+      "src": ["表情差分", "差分"],
+      "en": "expression variants",
+      "alt": ["variants", "alternate versions", "variations", "alt versions"],
+      "avoid": ["difference", "differential"],
+      "note": "差分 = variants of an illustration (expressions, poses, outfits).",
+      "ambiguous": true,
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "shitagaki",
+      "src": ["下書き", "下描き", "下絵"],
+      "en": "rough sketch",
+      "alt": ["sketch", "draft", "underdrawing", "rough"],
+      "avoid": ["underwriting", "lower writing"],
+      "note": "下書き / 下描き = the first pencil/rough drawing stage.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "rough",
+      "src": ["ラフ", "ラフ絵", "ラフスケッチ"],
+      "en": "rough",
+      "alt": ["rough sketch", "thumbnail", "rough draft"],
+      "note": "ラフ = loose first sketch used to plan composition.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "senga",
+      "src": ["線画", "清書", "ペン入れ"],
+      "en": "line art",
+      "alt": ["lineart", "linework", "inking", "clean-up", "inks"],
+      "avoid": ["line picture", "line drawing picture"],
+      "note": "線画 = line art; 清書 / ペン入れ = inking (cleaning up the rough into final lines).",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "shitanuri",
+      "src": ["下塗り", "ベタ塗り", "ベタ"],
+      "en": "flats",
+      "alt": ["flat colors", "base colors", "base coat", "flat fill", "solid fill"],
+      "avoid": ["under-painting", "undercoat paint"],
+      "note": "下塗り / ベタ塗り = laying down the flat base colors before shading.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "iro-nuri",
+      "src": ["色塗り", "彩色", "着彩", "塗り"],
+      "en": "coloring",
+      "alt": ["painting", "colouring", "rendering", "coloring pass"],
+      "note": "色塗り / 着彩 = the coloring stage.",
+      "ambiguous": true,
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "atsunuri",
+      "src": ["厚塗り", "厚塗"],
+      "en": "painterly rendering",
+      "alt": [
+        "painterly style",
+        "thick-paint style",
+        "painterly",
+        "opaque painting",
+        "impasto-style"
+      ],
+      "avoid": ["thick coating", "thick paint", "heavy painting"],
+      "note": "厚塗り = a painterly style that builds opaque layers with visible brushwork, the opposite of flat anime-style coloring.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "anime-nuri",
+      "src": ["アニメ塗り", "セル塗り"],
+      "en": "cel shading",
+      "alt": ["anime-style coloring", "cel-shaded", "anime coloring"],
+      "note": "アニメ塗り = flat anime-style coloring with hard-edged shadows.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "kage",
+      "src": ["影塗り", "影付け", "陰影", "影を付け"],
+      "en": "shading",
+      "alt": ["shadows", "adding shadows", "shadow pass"],
+      "avoid": ["shade-painting"],
+      "note": "影塗り / 影付け = shading; the next step is usually highlights (ハイライト).",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "highlight",
+      "src": ["ハイライト", "照り返し", "リムライト"],
+      "en": "highlights",
+      "alt": ["highlight", "rim light", "reflected light", "bounce light"],
+      "note": "ハイライト = highlights; 照り返し = reflected/bounce light; リムライト = rim light.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "haishoku",
+      "src": ["配色", "カラーパレット", "色選び"],
+      "en": "color scheme",
+      "alt": ["palette", "color palette", "color choice", "color choices"],
+      "avoid": ["allocation of colors"],
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "kozu",
+      "src": ["構図"],
+      "en": "composition",
+      "alt": ["layout", "framing"],
+      "avoid": ["structure drawing", "composition drawing"],
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "perth",
+      "src": ["パース", "パースがおかしい", "パース定規"],
+      "en": "perspective",
+      "alt": ["perspective grid", "perspective ruler"],
+      "avoid": ["perse"],
+      "note": "パース = perspective; パース定規 = a perspective ruler/guide (CSP).",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "dessin",
+      "src": ["デッサン", "クロッキー"],
+      "en": "figure drawing",
+      "alt": [
+        "drawing fundamentals",
+        "life drawing",
+        "gesture drawing",
+        "croquis",
+        "anatomy practice"
+      ],
+      "avoid": ["dessin"],
+      "note": "デッサン = observational drawing practice (fundamentals); クロッキー = quick gesture drawing.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "mosha",
+      "src": ["模写", "模写する"],
+      "en": "study copy",
+      "alt": ["master study", "copy study", "copying", "studying by copying", "copy"],
+      "avoid": ["tracing paper copy"],
+      "note": "模写 = copying an existing picture by hand to learn from it (not tracing).",
+      "confidence": "partial",
+      "ref": "ja-wikipedia-genga",
+      "unverifiedSrc": ["模写する"]
+    },
+    {
+      "kind": "term",
+      "id": "ehon",
+      "src": ["絵柄"],
+      "en": "art style",
+      "alt": ["style", "drawing style"],
+      "avoid": ["picture pattern", "picture design"],
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "kakikomi",
+      "src": ["描き込み", "描き込む", "描き込んで"],
+      "en": "rendering",
+      "alt": ["adding detail", "detailing", "detail work", "polish"],
+      "avoid": ["writing in", "drawing in"],
+      "note": "描き込み = adding detail to a drawing in the final stage.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "senno-kyojaku",
+      "src": ["線の強弱", "入り抜き", "強弱をつけ"],
+      "en": "line weight variation",
+      "alt": ["line weight", "line variation", "varying the line"],
+      "note": "線の強弱 = varying thickness/pressure along a line.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "hentai-flip",
+      "src": ["左右反転", "キャンバス反転", "反転"],
+      "en": "flip the canvas",
+      "alt": ["horizontal flip", "mirror flip", "flipping the canvas", "flip horizontally"],
+      "note": "Artists flip the canvas to spot proportion errors.",
+      "ambiguous": true,
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "hitsuatsu",
+      "src": ["筆圧"],
+      "en": "pen pressure",
+      "alt": ["pressure sensitivity", "pressure"],
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "oekaki-haishin",
+      "src": ["お絵描き配信", "お絵かき配信", "絵描き配信", "作業配信"],
+      "en": "art stream",
+      "alt": ["drawing stream", "stream while drawing", "work stream"],
+      "avoid": ["picture-drawing broadcast"],
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "irai-e",
+      "src": ["依頼絵", "コミッション", "スキマ", "commission"],
+      "en": "commission",
+      "alt": ["commissions", "commissioned art", "commissioned piece"],
+      "note": "依頼絵 / コミッション = paid commissioned artwork.",
+      "ambiguous": true,
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "kami-e",
+      "src": ["神絵", "神絵師", "絵師"],
+      "en": "incredible art",
+      "alt": ["godly art", "amazing piece", "an artist", "illustrator"],
+      "avoid": ["god picture", "god painter"],
+      "note": "神絵 = a stunning illustration; 絵師 = illustrator/artist (hobby or pro); 神絵師 = an amazing artist.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "fr-calque",
+      "src": ["calque", "calques"],
+      "en": "layer",
+      "alt": ["layers"],
+      "avoid": ["tracing"],
+      "note": "French drawing software: 'calque' = layer.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "fr-crayonne",
+      "src": ["crayonné", "crayonne", "croquis", "esquisse"],
+      "en": "rough sketch",
+      "alt": ["sketch", "rough", "pencil sketch"],
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "fr-encrage",
+      "src": ["encrage", "encrer", "mise au propre"],
+      "en": "inking",
+      "alt": ["line art", "clean-up", "inks"],
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "fr-couleur",
+      "src": ["mise en couleur", "mise en couleurs", "colorisation", "aplat", "aplats"],
+      "en": "coloring",
+      "alt": ["flats", "flat colors", "colouring"],
+      "note": "French: 'aplat(s)' = flat color areas; 'mise en couleur' = coloring.",
+      "confidence": "unverified"
+    },
+    {
+      "kind": "term",
+      "id": "es-capas",
+      "src": ["capas", "capa", "boceto", "entintado"],
+      "en": "layers",
+      "alt": ["layer", "sketch", "inking"],
+      "note": "Spanish: 'capa' = layer; 'boceto' = sketch; 'entintado' = inking.",
+      "ambiguous": true,
+      "confidence": "unverified"
+    }
+  ]
+}

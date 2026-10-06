@@ -1,0 +1,17 @@
+{
+  "name": "@aphrody/creator-kit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Small local tools for a content creator: Challonge bot, wiki image fetch, Adobe and disk cleaners, image compression, video translation.",
+  "license": "Apache-2.0",
+  "bin": {
+    "creator-kit": "src/cli.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "bun src/cli.ts",
+    "test": "bun test",
+    "typecheck": "tsgo --noEmit -p tsconfig.json",
+    "build:windows": "bun build --compile --target=bun-windows-x64 src/cli.ts --outfile dist/creator-kit.exe"
+  }
+}

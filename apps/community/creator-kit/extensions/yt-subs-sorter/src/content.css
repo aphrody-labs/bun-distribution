@@ -1,0 +1,276 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* YouTube Subs Sorter - everything is prefixed yss- / data-yss- to stay out of YouTube's way. */
+
+.yss-ui {
+  --yss-fg: #0f0f0f;
+  --yss-fg-dim: #606060;
+  --yss-bg: #ffffff;
+  --yss-chip: rgba(0, 0, 0, 0.05);
+  --yss-chip-hover: rgba(0, 0, 0, 0.1);
+  --yss-on: #0f0f0f;
+  --yss-on-fg: #ffffff;
+  --yss-line: rgba(0, 0, 0, 0.12);
+  font:
+    500 14px/20px Roboto,
+    Arial,
+    sans-serif;
+  color: var(--yss-fg);
+  box-sizing: border-box;
+}
+
+html[dark] .yss-ui {
+  --yss-fg: #f1f1f1;
+  --yss-fg-dim: #aaaaaa;
+  --yss-bg: #282828;
+  --yss-chip: rgba(255, 255, 255, 0.1);
+  --yss-chip-hover: rgba(255, 255, 255, 0.2);
+  --yss-on: #f1f1f1;
+  --yss-on-fg: #0f0f0f;
+  --yss-line: rgba(255, 255, 255, 0.2);
+}
+
+.yss-ui *,
+.yss-ui *::before,
+.yss-ui *::after {
+  box-sizing: border-box;
+}
+
+/* hidden by a filter */
+[data-yss-hidden] {
+  display: none !important;
+}
+
+[data-yss-host] {
+  position: relative;
+}
+
+/* filter bar */
+.yss-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+}
+
+.yss-bar-label {
+  color: var(--yss-fg-dim);
+  margin-right: 4px;
+}
+
+.yss-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--yss-line);
+  margin: 0 4px;
+}
+
+.yss-chip,
+.yss-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--yss-chip);
+  color: var(--yss-fg);
+  font:
+    500 14px/20px Roboto,
+    Arial,
+    sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.yss-chip:hover,
+.yss-btn:hover {
+  background: var(--yss-chip-hover);
+}
+
+.yss-chip:focus-visible,
+.yss-btn:focus-visible,
+.yss-select:focus-visible,
+.yss-input:focus-visible {
+  outline: 2px solid #3ea6ff;
+  outline-offset: 1px;
+}
+
+.yss-chip[aria-pressed="true"] {
+  background: var(--yss-on);
+  color: var(--yss-on-fg);
+}
+
+.yss-dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.yss-select {
+  height: 32px;
+  border: 1px solid var(--yss-line);
+  border-radius: 8px;
+  background: var(--yss-bg);
+  color: var(--yss-fg);
+  font:
+    500 14px/20px Roboto,
+    Arial,
+    sans-serif;
+  padding: 0 8px;
+}
+
+/* fallback when the browse page markup is not found: floating bar */
+.yss-bar[data-floating] {
+  position: fixed;
+  top: 64px;
+  left: 256px;
+  right: 16px;
+  z-index: 2000;
+  padding: 8px 12px;
+  border: 1px solid var(--yss-line);
+  border-radius: 12px;
+  background: var(--yss-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* channel list row (/feed/channels) */
+.yss-row {
+  padding: 0 0 12px 24px;
+}
+
+/* channel and watch pages */
+.yss-btn.yss-fixed {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  background: var(--yss-bg);
+  border: 1px solid var(--yss-line);
+}
+
+.yss-btn-label {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.yss-btn-sm {
+  height: 28px;
+  padding: 0 10px;
+  background: var(--yss-on);
+  color: var(--yss-on-fg);
+}
+
+/* badge over the thumbnail corner in the feed */
+.yss-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: calc(100% - 12px);
+  pointer-events: none;
+}
+
+.yss-pill {
+  max-width: 120px;
+  padding: 0 6px;
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+  font:
+    500 11px/18px Roboto,
+    Arial,
+    sans-serif;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+}
+
+/* popover */
+.yss-pop {
+  position: absolute;
+  z-index: 2147483000;
+  width: 300px;
+  max-height: 70vh;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--yss-line);
+  border-radius: 12px;
+  background: var(--yss-bg);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+.yss-pop-title {
+  padding: 4px 8px 8px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yss-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.yss-pop-item:hover {
+  background: var(--yss-chip);
+}
+
+.yss-pop-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yss-pop-new {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--yss-line);
+}
+
+.yss-input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--yss-line);
+  border-radius: 6px;
+  background: var(--yss-bg);
+  color: var(--yss-fg);
+  font:
+    500 14px/20px Roboto,
+    Arial,
+    sans-serif;
+}
+
+.yss-color {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.yss-pop-error {
+  margin-top: 6px;
+  padding: 0 8px;
+  color: #d93025;
+}

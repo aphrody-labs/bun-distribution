@@ -1,0 +1,3061 @@
+{
+  "name": "guilty-gear",
+  "description": "Guilty Gear (mainly -Strive-, roster of Ver 2.02 dated 2026-07-01) names and systems. Characters: official Japanese names from the Arc System Works GGST JP site and English names from Dustloop. Moves: official English names from the Dustloop character pages (headings); Japanese forms for moves are from author knowledge and flagged in `unverifiedSrc` (the official command lists are images and were not read). confidence: verified = term and rendering both appear in the cited source(s); partial = English side verified, some source forms (see `unverifiedSrc`) not cross-checked; unverified = not checked. Strive 2.0 (2026-04-09) removed Wild Assault and changed the systems; older videos may still use the old names.",
+  "sources": {
+    "asw-ggst-jp-characters": {
+      "title": "Arc System Works: GGST official site (JP), character list and character pages",
+      "url": "https://www.guiltygear.com/ggst/jp/character/",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst": {
+      "title": "Dustloop Wiki: GGST (roster, Ver 2.02 of 2026-07-01)",
+      "url": "https://www.dustloop.com/w/GGST",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-mechanics": {
+      "title": "Dustloop Wiki: GGST/Mechanics",
+      "url": "https://www.dustloop.com/w/GGST/Mechanics",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-universal-strategy": {
+      "title": "Dustloop Wiki: GGST/Universal Strategy",
+      "url": "https://www.dustloop.com/w/GGST/Universal_Strategy",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-glossary": {
+      "title": "Dustloop Wiki: Glossary",
+      "url": "https://www.dustloop.com/w/Glossary",
+      "retrieved": "2026-10-06"
+    },
+    "ja-wikipedia-ggst": {
+      "title": "Wikipedia (ja): GUILTY GEAR -STRIVE-",
+      "url": "https://ja.wikipedia.org/wiki/GUILTY_GEAR_-STRIVE-",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-sol_badguy": {
+      "title": "Dustloop Wiki: GGST/Sol Badguy (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Sol_Badguy",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-ky_kiske": {
+      "title": "Dustloop Wiki: GGST/Ky Kiske (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Ky_Kiske",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-may": {
+      "title": "Dustloop Wiki: GGST/May (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/May",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-chipp_zanuff": {
+      "title": "Dustloop Wiki: GGST/Chipp Zanuff (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Chipp_Zanuff",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-potemkin": {
+      "title": "Dustloop Wiki: GGST/Potemkin (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Potemkin",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-millia_rage": {
+      "title": "Dustloop Wiki: GGST/Millia Rage (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Millia_Rage",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-axl_low": {
+      "title": "Dustloop Wiki: GGST/Axl Low (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Axl_Low",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-ramlethal_valentine": {
+      "title": "Dustloop Wiki: GGST/Ramlethal Valentine (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Ramlethal_Valentine",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-faust": {
+      "title": "Dustloop Wiki: GGST/Faust (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Faust",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-i-no": {
+      "title": "Dustloop Wiki: GGST/I-No (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/I-No",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-nagoriyuki": {
+      "title": "Dustloop Wiki: GGST/Nagoriyuki (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Nagoriyuki",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-giovanna": {
+      "title": "Dustloop Wiki: GGST/Giovanna (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Giovanna",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-baiken": {
+      "title": "Dustloop Wiki: GGST/Baiken (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Baiken",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-testament": {
+      "title": "Dustloop Wiki: GGST/Testament (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Testament",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-happy_chaos": {
+      "title": "Dustloop Wiki: GGST/Happy Chaos (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Happy_Chaos",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-goldlewis_dickinson": {
+      "title": "Dustloop Wiki: GGST/Goldlewis Dickinson (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Goldlewis_Dickinson",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-bridget": {
+      "title": "Dustloop Wiki: GGST/Bridget (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Bridget",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-sin_kiske": {
+      "title": "Dustloop Wiki: GGST/Sin Kiske (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Sin_Kiske",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-johnny": {
+      "title": "Dustloop Wiki: GGST/Johnny (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Johnny",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-asuka_r": {
+      "title": "Dustloop Wiki: GGST/Asuka R (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Asuka_R",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-elphelt_valentine": {
+      "title": "Dustloop Wiki: GGST/Elphelt Valentine (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Elphelt_Valentine",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-anji_mito": {
+      "title": "Dustloop Wiki: GGST/Anji Mito (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Anji_Mito",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-zato-1": {
+      "title": "Dustloop Wiki: GGST/Zato-1 (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Zato-1",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-leo_whitefang": {
+      "title": "Dustloop Wiki: GGST/Leo Whitefang (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Leo_Whitefang",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-jack-o": {
+      "title": "Dustloop Wiki: GGST/Jack-O (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Jack-O",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-queen_dizzy": {
+      "title": "Dustloop Wiki: GGST/Queen Dizzy (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Queen_Dizzy",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-slayer": {
+      "title": "Dustloop Wiki: GGST/Slayer (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Slayer",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-venom": {
+      "title": "Dustloop Wiki: GGST/Venom (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Venom",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-jam_kuradoberi": {
+      "title": "Dustloop Wiki: GGST/Jam Kuradoberi (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Jam_Kuradoberi",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-robo-ky": {
+      "title": "Dustloop Wiki: GGST/Robo-Ky (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Robo-Ky",
+      "retrieved": "2026-10-06"
+    },
+    "dustloop-ggst-lucy": {
+      "title": "Dustloop Wiki: GGST/Lucy (move headings)",
+      "url": "https://www.dustloop.com/w/GGST/Lucy",
+      "retrieved": "2026-10-06"
+    }
+  },
+  "entries": [
+    {
+      "id": "char-sol",
+      "src": ["ソル＝バッドガイ", "ソル", "Sol", "Sol Badguy"],
+      "en": "Sol",
+      "alt": ["Sol Badguy"],
+      "note": "Guilty Gear -Strive- character (full name: Sol Badguy). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-ky",
+      "src": ["カイ＝キスク", "カイ", "Ky", "Ky Kiske"],
+      "en": "Ky",
+      "alt": ["Ky Kiske"],
+      "note": "Guilty Gear -Strive- character (full name: Ky Kiske). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-may",
+      "src": ["メイ", "May"],
+      "en": "May",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-axl",
+      "src": ["アクセル＝ロウ", "アクセル", "Axl", "Axl Low"],
+      "en": "Axl",
+      "alt": ["Axl Low"],
+      "note": "Guilty Gear -Strive- character (full name: Axl Low). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-chipp",
+      "src": ["チップ＝ザナフ", "チップ", "Chipp", "Chipp Zanuff"],
+      "en": "Chipp",
+      "alt": ["Chipp Zanuff"],
+      "note": "Guilty Gear -Strive- character (full name: Chipp Zanuff). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-potemkin",
+      "src": ["ポチョムキン", "ポチョ", "Potemkin", "Pot"],
+      "en": "Potemkin",
+      "alt": ["Pot"],
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst",
+      "unverifiedSrc": ["ポチョ"]
+    },
+    {
+      "id": "char-faust",
+      "src": ["ファウスト", "Faust"],
+      "en": "Faust",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-millia",
+      "src": ["ミリア＝レイジ", "ミリア", "Millia", "Millia Rage"],
+      "en": "Millia",
+      "alt": ["Millia Rage"],
+      "note": "Guilty Gear -Strive- character (full name: Millia Rage). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-zato",
+      "src": ["ザトー＝ONE", "ザトー", "Zato-1", "Zato", "Zato=1", "Zato-ONE"],
+      "en": "Zato-1",
+      "alt": ["Zato", "Zato=1", "Zato-ONE"],
+      "note": "Guilty Gear -Strive- character (full name: Zato-ONE). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-ramlethal",
+      "src": [
+        "ラムレザル＝ヴァレンタイン",
+        "ラムレザル",
+        "ラムレ",
+        "Ramlethal",
+        "Ramlethal Valentine",
+        "Ram"
+      ],
+      "en": "Ramlethal",
+      "alt": ["Ramlethal Valentine", "Ram"],
+      "note": "Guilty Gear -Strive- character (full name: Ramlethal Valentine). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst",
+      "unverifiedSrc": ["ラムレ"]
+    },
+    {
+      "id": "char-leo",
+      "src": ["レオ＝ホワイトファング", "レオ", "Leo", "Leo Whitefang"],
+      "en": "Leo",
+      "alt": ["Leo Whitefang"],
+      "note": "Guilty Gear -Strive- character (full name: Leo Whitefang). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-nagoriyuki",
+      "src": ["名残雪", "ナゴリユキ", "Nagoriyuki", "Nago"],
+      "en": "Nagoriyuki",
+      "alt": ["Nago"],
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "partial",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst",
+      "unverifiedSrc": ["ナゴリユキ"]
+    },
+    {
+      "id": "char-giovanna",
+      "src": ["ジオヴァーナ", "ジオ", "Giovanna", "Gio"],
+      "en": "Giovanna",
+      "alt": ["Gio"],
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "partial",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst",
+      "unverifiedSrc": ["ジオ"]
+    },
+    {
+      "id": "char-anji",
+      "src": ["御津 闇慈", "御津闇慈", "闇慈", "Anji", "Anji Mito"],
+      "en": "Anji",
+      "alt": ["Anji Mito"],
+      "note": "Guilty Gear -Strive- character (full name: Anji Mito). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-ino",
+      "src": ["イノ", "I-No", "INo"],
+      "en": "I-No",
+      "alt": ["INo"],
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-goldlewis",
+      "src": ["ゴールドルイス＝ディキンソン", "ゴールドルイス", "Goldlewis", "Goldlewis Dickinson"],
+      "en": "Goldlewis",
+      "alt": ["Goldlewis Dickinson"],
+      "note": "Guilty Gear -Strive- character (full name: Goldlewis Dickinson). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-jacko",
+      "src": ["ジャック・オー", "ジャックオー", "Jack-O'", "Jack-O", "Jack O"],
+      "en": "Jack-O'",
+      "alt": ["Jack-O", "Jack O"],
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst",
+      "unverifiedSrc": ["ジャックオー"]
+    },
+    {
+      "id": "char-chaos",
+      "src": ["ハッピーケイオス", "Happy Chaos"],
+      "en": "Happy Chaos",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-baiken",
+      "src": ["梅喧", "Baiken"],
+      "en": "Baiken",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-testament",
+      "src": ["テスタメント", "Testament"],
+      "en": "Testament",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-bridget",
+      "src": ["ブリジット", "Bridget"],
+      "en": "Bridget",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-sin",
+      "src": ["シン＝キスク", "シン", "Sin", "Sin Kiske"],
+      "en": "Sin",
+      "alt": ["Sin Kiske"],
+      "note": "Guilty Gear -Strive- character (full name: Sin Kiske). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-bedman",
+      "src": ["ベッドマン？", "ベッドマン?", "ベッドマン", "Bedman?", "Bedman"],
+      "en": "Bedman?",
+      "alt": ["Bedman"],
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-asuka",
+      "src": ["飛鳥＝R♯", "飛鳥", "Asuka", "Asuka R♯", "Asuka R#"],
+      "en": "Asuka",
+      "alt": ["Asuka R♯", "Asuka R#"],
+      "note": "Guilty Gear -Strive- character (full name: Asuka R♯). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-johnny",
+      "src": ["ジョニー", "Johnny"],
+      "en": "Johnny",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-elphelt",
+      "src": ["エルフェルト＝ヴァレンタイン", "エルフェルト", "Elphelt", "Elphelt Valentine"],
+      "en": "Elphelt",
+      "alt": ["Elphelt Valentine"],
+      "note": "Guilty Gear -Strive- character (full name: Elphelt Valentine). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-aba",
+      "src": ["アバ", "A.B.A", "ABA"],
+      "en": "A.B.A",
+      "alt": ["ABA"],
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-slayer",
+      "src": ["スレイヤー", "Slayer"],
+      "en": "Slayer",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-dizzy",
+      "src": ["クイーン・ディズィー", "ディズィー", "Dizzy", "Queen Dizzy"],
+      "en": "Dizzy",
+      "alt": ["Queen Dizzy"],
+      "note": "Guilty Gear -Strive- character (full name: Queen Dizzy). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-venom",
+      "src": ["ヴェノム", "Venom"],
+      "en": "Venom",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-unika",
+      "src": ["ユニカ", "Unika"],
+      "en": "Unika",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-lucy",
+      "src": ["ルーシー", "Lucy"],
+      "en": "Lucy",
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-jam",
+      "src": ["蔵土縁 紗夢", "蔵土縁紗夢", "紗夢", "Jam", "Jam Kuradoberi"],
+      "en": "Jam",
+      "alt": ["Jam Kuradoberi"],
+      "note": "Guilty Gear -Strive- character (full name: Jam Kuradoberi). Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "id": "char-roboky",
+      "src": ["ロボカイ", "Robo-Ky", "Robo Ky", "RoboKy"],
+      "en": "Robo-Ky",
+      "alt": ["Robo Ky", "RoboKy"],
+      "note": "Guilty Gear -Strive- character. Keep this English name; never transliterate or translate it.",
+      "kind": "character",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "asw-ggst-jp-characters+dustloop-ggst"
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-roman-cancel",
+      "src": ["ロマンキャンセル", "ロマキャン", "roman cancel", "RC"],
+      "en": "Roman Cancel",
+      "alt": ["RC", "roman"],
+      "note": "Costs 50% Tension. Four colors by timing: Red (during a hit's hitstop), Purple (during a move, outside the Red window), Yellow (in blockstun), Blue (neutral).",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-mechanics+ja-wikipedia-ggst",
+      "unverifiedSrc": ["ロマキャン"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-rc-red",
+      "src": ["赤ロマ", "赤ロマンキャンセル", "Red RC", "Red Roman Cancel"],
+      "en": "Red RC",
+      "alt": ["Red Roman Cancel", "Red Roman"],
+      "note": "Strive Roman Cancel colour (Red RC). YRC = Yellow Roman Cancel, a defensive 'get off me' during blockstun.",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-mechanics",
+      "unverifiedSrc": ["赤ロマ", "赤ロマンキャンセル"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-rc-purple",
+      "src": ["紫ロマ", "紫ロマンキャンセル", "Purple RC", "Purple Roman Cancel"],
+      "en": "Purple RC",
+      "alt": ["Purple Roman Cancel", "Purple Roman"],
+      "note": "Strive Roman Cancel colour (Purple RC). YRC = Yellow Roman Cancel, a defensive 'get off me' during blockstun.",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-mechanics",
+      "unverifiedSrc": ["紫ロマ", "紫ロマンキャンセル"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-rc-yellow",
+      "src": ["黄ロマ", "黄ロマンキャンセル", "Yellow RC", "Yellow Roman Cancel"],
+      "en": "Yellow RC",
+      "alt": ["Yellow Roman Cancel", "Yellow Roman"],
+      "note": "Strive Roman Cancel colour (Yellow RC). YRC = Yellow Roman Cancel, a defensive 'get off me' during blockstun.",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-mechanics",
+      "unverifiedSrc": ["黄ロマ", "黄ロマンキャンセル"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-rc-blue",
+      "src": ["青ロマ", "青ロマンキャンセル", "Blue RC", "Blue Roman Cancel"],
+      "en": "Blue RC",
+      "alt": ["Blue Roman Cancel", "Blue Roman"],
+      "note": "Strive Roman Cancel colour (Blue RC). YRC = Yellow Roman Cancel, a defensive 'get off me' during blockstun.",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-mechanics",
+      "unverifiedSrc": ["青ロマ", "青ロマンキャンセル"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-burst",
+      "src": ["サイキックバースト", "バースト", "psych burst", "burst"],
+      "en": "Burst",
+      "alt": ["Psych Burst"],
+      "avoid": ["explosion", "outburst"],
+      "note": "Combo-breaker (Psych Burst) that uses the Burst Gauge. Gold Burst = used in neutral/wakeup, Blue Burst = used during blockstun or hitstun.",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-mechanics+ja-wikipedia-ggst",
+      "unverifiedSrc": ["サイキックバースト"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-gold-burst",
+      "src": ["金バースト", "ゴールドバースト", "gold burst"],
+      "en": "Gold Burst",
+      "alt": ["gold"],
+      "confidence": "verified",
+      "ref": "dustloop-ggst-mechanics+ja-wikipedia-ggst",
+      "unverifiedSrc": ["ゴールドバースト"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-blue-burst",
+      "src": ["青バースト", "ブルーバースト", "blue burst"],
+      "en": "Blue Burst",
+      "alt": ["blue"],
+      "confidence": "verified",
+      "ref": "dustloop-ggst-mechanics+ja-wikipedia-ggst",
+      "unverifiedSrc": ["ブルーバースト"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-burst-bait",
+      "src": ["burst bait", "burst baits", "バースト読み"],
+      "en": "burst bait",
+      "alt": ["bait the burst", "burst baits"],
+      "note": "Cancelling a move (jump cancel or Roman Cancel) to make the opponent burst, then blocking it and punishing.",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-universal-strategy",
+      "unverifiedSrc": ["バースト読み"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-tension",
+      "src": ["テンションゲージ", "テンション", "tension gauge", "tension"],
+      "en": "Tension",
+      "alt": ["Tension Gauge", "meter"],
+      "note": "Main resource of Guilty Gear: spent on Roman Cancel, Faultless Defense, Overdrives.",
+      "confidence": "verified",
+      "ref": "dustloop-glossary+ja-wikipedia-ggst"
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-burst-gauge",
+      "src": ["バーストゲージ", "burst gauge"],
+      "en": "Burst Gauge",
+      "alt": ["burst bar"],
+      "confidence": "verified",
+      "ref": "dustloop-ggst-mechanics+ja-wikipedia-ggst"
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-risc",
+      "src": ["RISCレベル", "リスクレベル", "R.I.S.C.", "RISC", "リスク値"],
+      "en": "R.I.S.C. Level",
+      "alt": ["RISC", "RISC level", "R.I.S.C."],
+      "note": "Gauge built by blocking; higher levels increase the damage the attacker deals and enable R.I.S.C. counter hits.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary+dustloop-ggst-mechanics",
+      "unverifiedSrc": ["RISCレベル", "リスクレベル", "リスク値"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-positive-bonus",
+      "src": ["ポジティブボーナス", "positive bonus"],
+      "en": "Positive Bonus",
+      "alt": ["PB"],
+      "note": "State granting free Tension and buffs (Gold Burst hit, wall break, ...).",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-mechanics+ja-wikipedia-ggst"
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-negative-penalty",
+      "src": ["ネガティブペナルティ", "negative penalty"],
+      "en": "Negative Penalty",
+      "alt": ["negative penalty"],
+      "note": "Tension-gain penalty for passive play.",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-mechanics",
+      "unverifiedSrc": ["ネガティブペナルティ"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-wall-break",
+      "src": ["ウォールブレイク", "wall break", "wallbreak"],
+      "en": "Wall Break",
+      "alt": ["wallbreak", "break the wall"],
+      "note": "Strive: breaking the wall at the stage edge to move to a new area.",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-mechanics+ja-wikipedia-ggst"
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-wall-stick",
+      "src": ["壁張り付き", "壁貼り付き", "wall stick", "wall cling"],
+      "en": "wall stick",
+      "alt": ["wall cling", "wallstick"],
+      "confidence": "partial",
+      "ref": "dustloop-ggst-mechanics",
+      "unverifiedSrc": ["壁張り付き", "壁貼り付き"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-faultless-defense",
+      "src": ["フォルトレスディフェンス", "faultless defense", "faultless defence", "FD"],
+      "en": "Faultless Defense",
+      "alt": ["FD", "faultless defence", "faultless"],
+      "note": "Special block that negates chip damage and pushes the opponent back, at a Tension cost. IBFD = Instant Faultless Defense.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary+dustloop-ggst-mechanics",
+      "unverifiedSrc": ["フォルトレスディフェンス"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-ibfd",
+      "src": ["IBFD", "インスタントFD", "instant faultless defense", "instant faultless defence"],
+      "en": "IBFD",
+      "alt": ["Instant Faultless Defense", "instant FD"],
+      "note": "Instant Block while holding Faultless Defense.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["インスタントFD"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-fdc",
+      "src": ["FDC", "FDキャンセル", "faultless defense cancel"],
+      "en": "FDC",
+      "alt": ["Faultless Defense Cancel", "FD cancel"],
+      "note": "Cancelling an air dash into FD to land faster (air dash FDC).",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["FDキャンセル"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-instant-block",
+      "src": ["インスタントブロック", "instant block"],
+      "en": "Instant Block",
+      "alt": ["IB", "instant guard"],
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["インスタントブロック"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-deflect-shield",
+      "src": ["ディフレクトシールド", "deflect shield", "deflect"],
+      "en": "Deflect Shield",
+      "alt": ["Deflect"],
+      "note": "Burst Gauge-costing pushblock-style defensive tool.",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-mechanics+ja-wikipedia-ggst"
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-counter-blitz",
+      "src": ["カウンターブリッツ", "counter blitz"],
+      "en": "Counter Blitz",
+      "note": "Strive 2.0 (2026-04): 6D with 50% Burst during counter-hit slowdown; hard knockdown on hit, locks out the opponent's Burst.",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-mechanics",
+      "unverifiedSrc": ["カウンターブリッツ"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-wild-assault",
+      "src": ["ワイルドアサルト", "wild assault"],
+      "en": "Wild Assault",
+      "alt": ["WA"],
+      "note": "Burst-Gauge dash attack. Removed in Ver 2.00 (2026-04-09), so expect it in older videos only.",
+      "confidence": "verified",
+      "ref": "dustloop-ggst+ja-wikipedia-ggst"
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-instant-kill",
+      "src": ["インスタントキル", "instant kill"],
+      "en": "Instant Kill",
+      "note": "Series mechanic removed in Strive.",
+      "confidence": "verified",
+      "ref": "ja-wikipedia-ggst"
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-dust",
+      "src": ["ダスト", "dust attack", "5D", "dust"],
+      "en": "Dust",
+      "alt": ["Dust attack", "5D"],
+      "note": "5D: GG's universal overhead.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary+dustloop-ggst-mechanics",
+      "unverifiedSrc": ["ダスト"],
+      "ambiguous": true
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-homing-jump",
+      "src": ["ホーミングジャンプ", "homing jump", "HJ"],
+      "en": "Homing Jump",
+      "alt": ["HJ"],
+      "confidence": "partial",
+      "ref": "dustloop-ggst-mechanics",
+      "unverifiedSrc": ["ホーミングジャンプ"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-sweep",
+      "src": ["足払い", "スウィープ", "sweep"],
+      "en": "sweep",
+      "alt": ["Sweep", "2D"],
+      "avoid": ["foot sweeping", "foot payment"],
+      "note": "2D, the knockdown low.",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-mechanics",
+      "unverifiedSrc": ["足払い", "スウィープ"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-gatling",
+      "src": ["ガトリング", "ガト", "gatling"],
+      "en": "gatling",
+      "alt": ["chain", "gatling combo"],
+      "note": "Guilty Gear's system for cancelling normals into other normals.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["ガトリング", "ガト"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-overdrive",
+      "src": ["覚醒必殺技", "オーバードライブ", "overdrive"],
+      "en": "Overdrive",
+      "alt": ["OD", "super"],
+      "note": "Super move in the Guilty Gear series (costs 50% Tension). Not the SF6 'Overdrive Arts'.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["覚醒必殺技", "オーバードライブ"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-dragon-install",
+      "src": ["ドラゴンインストール", "dragon install"],
+      "en": "Dragon Install",
+      "alt": ["DI"],
+      "note": "Sol's and Ky's install super.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary+dustloop-ggst",
+      "unverifiedSrc": ["ドラゴンインストール"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-counter-hit",
+      "src": ["カウンターヒット", "カウンター", "counter hit", "counterhit"],
+      "en": "counter hit",
+      "alt": ["CH", "counter"],
+      "confidence": "partial",
+      "ref": "dustloop-ggst-mechanics",
+      "unverifiedSrc": ["カウンターヒット", "カウンター"],
+      "ambiguous": true
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-guts",
+      "src": ["ガッツ", "guts"],
+      "en": "Guts",
+      "note": "Defensive stat that reduces damage taken at low life.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["ガッツ"],
+      "ambiguous": true
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-clean-hit",
+      "src": ["クリーンヒット", "clean hit"],
+      "en": "clean hit",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["クリーンヒット"]
+    },
+    {
+      "kind": "system",
+      "game": "ggst",
+      "id": "gg-dead-angle",
+      "src": ["デッドアングルアタック", "dead angle attack", "dead angle", "DAA"],
+      "en": "Dead Angle Attack",
+      "alt": ["DAA", "Dead Angle"],
+      "note": "Invincible attack out of blockstun in older Guilty Gear games.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["デッドアングルアタック"]
+    },
+    {
+      "kind": "system",
+      "game": "gg-older",
+      "id": "gg-slashback",
+      "src": ["スラッシュバック", "slashback"],
+      "en": "Slashback",
+      "note": "GGACR/Plus R parry (S+HS).",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["スラッシュバック"]
+    },
+    {
+      "kind": "system",
+      "game": "gg-older",
+      "id": "gg-force-break",
+      "src": ["フォースブレイク", "force break"],
+      "en": "Force Break",
+      "note": "GGACR meter-consuming special that is not a super.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["フォースブレイク"]
+    },
+    {
+      "kind": "system",
+      "game": "gg-older",
+      "id": "gg-mortal-counter",
+      "src": ["モータルカウンター", "mortal counter"],
+      "en": "Mortal Counter",
+      "note": "GGXrd special counter hit with extra hitstun.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["モータルカウンター"]
+    },
+    {
+      "kind": "system",
+      "game": "gg-older",
+      "id": "gg-danger-time",
+      "src": ["デンジャータイム", "danger time"],
+      "en": "Danger Time",
+      "note": "GGXrd state after an attack clash: +20% damage, mostly mortal counters.",
+      "confidence": "partial",
+      "ref": "dustloop-glossary",
+      "unverifiedSrc": ["デンジャータイム"]
+    },
+    {
+      "id": "mv-sol-gun-flame",
+      "src": ["Gun Flame", "gunflame", "ガンフレイム", "ガンフレ"],
+      "en": "Gun Flame",
+      "note": "Guilty Gear -Strive- Sol's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-sol_badguy",
+      "unverifiedSrc": ["ガンフレイム", "ガンフレ"]
+    },
+    {
+      "id": "mv-sol-volcanic-viper",
+      "src": ["Volcanic Viper", "ヴォルカニックヴァイパー", "ヴァイパー"],
+      "en": "Volcanic Viper",
+      "note": "Guilty Gear -Strive- Sol's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-sol_badguy",
+      "unverifiedSrc": ["ヴォルカニックヴァイパー", "ヴァイパー"]
+    },
+    {
+      "id": "mv-sol-bandit-revolver",
+      "src": ["Bandit Revolver", "バンディットリヴォルバー"],
+      "en": "Bandit Revolver",
+      "note": "Guilty Gear -Strive- Sol's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-sol_badguy",
+      "unverifiedSrc": ["バンディットリヴォルバー"]
+    },
+    {
+      "id": "mv-sol-bandit-bringer",
+      "src": ["Bandit Bringer", "バンディットブリンガー"],
+      "en": "Bandit Bringer",
+      "note": "Guilty Gear -Strive- Sol's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-sol_badguy",
+      "unverifiedSrc": ["バンディットブリンガー"]
+    },
+    {
+      "id": "mv-sol-tyrant-rave",
+      "src": ["Tyrant Rave", "タイラントレイヴ"],
+      "en": "Tyrant Rave",
+      "note": "Guilty Gear -Strive- Sol's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-sol_badguy",
+      "unverifiedSrc": ["タイラントレイヴ"]
+    },
+    {
+      "id": "mv-sol-night-raid-vortex",
+      "src": ["Night Raid Vortex", "ナイトレイドヴォルテクス"],
+      "en": "Night Raid Vortex",
+      "note": "Guilty Gear -Strive- Sol's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-sol_badguy",
+      "unverifiedSrc": ["ナイトレイドヴォルテクス"]
+    },
+    {
+      "id": "mv-sol-fafnir",
+      "src": ["Fafnir", "ファフニール"],
+      "en": "Fafnir",
+      "note": "Guilty Gear -Strive- Sol's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-sol_badguy",
+      "unverifiedSrc": ["ファフニール"]
+    },
+    {
+      "id": "mv-sol-sidewinder-ignited",
+      "src": ["Sidewinder Ignited", "sidewinder", "サイドワインダー"],
+      "en": "Sidewinder Ignited",
+      "note": "Guilty Gear -Strive- Sol's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-sol_badguy",
+      "unverifiedSrc": ["サイドワインダー"]
+    },
+    {
+      "id": "mv-sol-heavy-mob-cemetery",
+      "src": ["Heavy Mob Cemetery", "ヘヴィモブセメタリー"],
+      "en": "Heavy Mob Cemetery",
+      "note": "Guilty Gear -Strive- Sol's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-sol_badguy",
+      "unverifiedSrc": ["ヘヴィモブセメタリー"]
+    },
+    {
+      "id": "mv-ky-stun-edge",
+      "src": ["Stun Edge", "スタンエッジ"],
+      "en": "Stun Edge",
+      "note": "Guilty Gear -Strive- Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-ky_kiske",
+      "unverifiedSrc": ["スタンエッジ"]
+    },
+    {
+      "id": "mv-ky-stun-dipper",
+      "src": ["Stun Dipper", "スタンディッパー"],
+      "en": "Stun Dipper",
+      "note": "Guilty Gear -Strive- Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-ky_kiske",
+      "unverifiedSrc": ["スタンディッパー"]
+    },
+    {
+      "id": "mv-ky-vapor-thrust",
+      "src": ["Vapor Thrust", "ヴェイパースラスト"],
+      "en": "Vapor Thrust",
+      "note": "Guilty Gear -Strive- Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-ky_kiske",
+      "unverifiedSrc": ["ヴェイパースラスト"]
+    },
+    {
+      "id": "mv-ky-ride-the-lightning",
+      "src": ["Ride the Lightning", "ライドザライトニング"],
+      "en": "Ride the Lightning",
+      "note": "Guilty Gear -Strive- Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-ky_kiske",
+      "unverifiedSrc": ["ライドザライトニング"]
+    },
+    {
+      "id": "mv-ky-sacred-edge",
+      "src": ["Sacred Edge", "セイクリッドエッジ"],
+      "en": "Sacred Edge",
+      "note": "Guilty Gear -Strive- Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-ky_kiske",
+      "unverifiedSrc": ["セイクリッドエッジ"]
+    },
+    {
+      "id": "mv-may-mr-dolphin",
+      "src": ["Mr. Dolphin", "mr dolphin"],
+      "en": "Mr. Dolphin",
+      "note": "Guilty Gear -Strive- May's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-may"
+    },
+    {
+      "id": "mv-may-overhead-kiss",
+      "src": ["Overhead Kiss"],
+      "en": "Overhead Kiss",
+      "note": "Guilty Gear -Strive- May's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-may"
+    },
+    {
+      "id": "mv-may-great-yamada-attack",
+      "src": ["Great Yamada Attack"],
+      "en": "Great Yamada Attack",
+      "note": "Guilty Gear -Strive- May's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-may"
+    },
+    {
+      "id": "mv-may-arisugawa-sparkle",
+      "src": ["Arisugawa Sparkle"],
+      "en": "Arisugawa Sparkle",
+      "note": "Guilty Gear -Strive- May's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-may"
+    },
+    {
+      "id": "mv-may-the-wonderful-and-dynamic-goshogawara",
+      "src": ["The Wonderful and Dynamic Goshogawara"],
+      "en": "The Wonderful and Dynamic Goshogawara",
+      "note": "Guilty Gear -Strive- May's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-may"
+    },
+    {
+      "id": "mv-chipp-alpha-blade",
+      "src": ["Alpha Blade"],
+      "en": "Alpha Blade",
+      "note": "Guilty Gear -Strive- Chipp's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-chipp_zanuff"
+    },
+    {
+      "id": "mv-chipp-beta-blade",
+      "src": ["Beta Blade"],
+      "en": "Beta Blade",
+      "note": "Guilty Gear -Strive- Chipp's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-chipp_zanuff"
+    },
+    {
+      "id": "mv-chipp-gamma-blade",
+      "src": ["Gamma Blade"],
+      "en": "Gamma Blade",
+      "note": "Guilty Gear -Strive- Chipp's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-chipp_zanuff"
+    },
+    {
+      "id": "mv-chipp-resshou",
+      "src": ["Resshou"],
+      "en": "Resshou",
+      "note": "Guilty Gear -Strive- Chipp's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-chipp_zanuff"
+    },
+    {
+      "id": "mv-chipp-rokusai",
+      "src": ["Rokusai"],
+      "en": "Rokusai",
+      "note": "Guilty Gear -Strive- Chipp's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-chipp_zanuff"
+    },
+    {
+      "id": "mv-chipp-senshuu",
+      "src": ["Senshuu"],
+      "en": "Senshuu",
+      "note": "Guilty Gear -Strive- Chipp's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-chipp_zanuff"
+    },
+    {
+      "id": "mv-chipp-genrou-zan",
+      "src": ["Genrou Zan", "幻狼斬"],
+      "en": "Genrou Zan",
+      "note": "Guilty Gear -Strive- Chipp's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-chipp_zanuff",
+      "unverifiedSrc": ["幻狼斬"]
+    },
+    {
+      "id": "mv-chipp-zansei-rouga",
+      "src": ["Zansei Rouga", "斬星狼牙"],
+      "en": "Zansei Rouga",
+      "note": "Guilty Gear -Strive- Chipp's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-chipp_zanuff",
+      "unverifiedSrc": ["斬星狼牙"]
+    },
+    {
+      "id": "mv-chipp-banki-messai",
+      "src": ["Banki Messai"],
+      "en": "Banki Messai",
+      "note": "Guilty Gear -Strive- Chipp's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-chipp_zanuff"
+    },
+    {
+      "id": "mv-potemkin-potemkin-buster",
+      "src": ["Potemkin Buster", "pot buster", "ポチョムキンバスター", "ポチバス"],
+      "en": "Potemkin Buster",
+      "note": "Guilty Gear -Strive- Potemkin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-potemkin",
+      "unverifiedSrc": ["ポチョムキンバスター", "ポチバス"]
+    },
+    {
+      "id": "mv-potemkin-heat-knuckle",
+      "src": ["Heat Knuckle", "ヒートナックル"],
+      "en": "Heat Knuckle",
+      "note": "Guilty Gear -Strive- Potemkin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-potemkin",
+      "unverifiedSrc": ["ヒートナックル"]
+    },
+    {
+      "id": "mv-potemkin-mega-fist",
+      "src": ["Mega Fist", "メガフィスト"],
+      "en": "Mega Fist",
+      "note": "Guilty Gear -Strive- Potemkin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-potemkin",
+      "unverifiedSrc": ["メガフィスト"]
+    },
+    {
+      "id": "mv-potemkin-slide-head",
+      "src": ["Slide Head", "スライドヘッド"],
+      "en": "Slide Head",
+      "note": "Guilty Gear -Strive- Potemkin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-potemkin",
+      "unverifiedSrc": ["スライドヘッド"]
+    },
+    {
+      "id": "mv-potemkin-hammer-fall",
+      "src": ["Hammer Fall", "ハンマフォール"],
+      "en": "Hammer Fall",
+      "note": "Guilty Gear -Strive- Potemkin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-potemkin",
+      "unverifiedSrc": ["ハンマフォール"]
+    },
+    {
+      "id": "mv-potemkin-heat-tackle",
+      "src": ["Heat Tackle", "ヒートタックル"],
+      "en": "Heat Tackle",
+      "note": "Guilty Gear -Strive- Potemkin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-potemkin",
+      "unverifiedSrc": ["ヒートタックル"]
+    },
+    {
+      "id": "mv-potemkin-heavenly-potemkin-buster",
+      "src": ["Heavenly Potemkin Buster", "ヘブンリーポチョムキンバスター"],
+      "en": "Heavenly Potemkin Buster",
+      "note": "Guilty Gear -Strive- Potemkin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-potemkin",
+      "unverifiedSrc": ["ヘブンリーポチョムキンバスター"]
+    },
+    {
+      "id": "mv-potemkin-garuda-impact",
+      "src": ["Garuda Impact"],
+      "en": "Garuda Impact",
+      "note": "Guilty Gear -Strive- Potemkin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-potemkin"
+    },
+    {
+      "id": "mv-potemkin-giganter-kai",
+      "src": ["Giganter Kai"],
+      "en": "Giganter Kai",
+      "note": "Guilty Gear -Strive- Potemkin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-potemkin"
+    },
+    {
+      "id": "mv-millia-tandem-top",
+      "src": ["Tandem Top", "タンデムトップ"],
+      "en": "Tandem Top",
+      "note": "Guilty Gear -Strive- Millia's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-millia_rage",
+      "unverifiedSrc": ["タンデムトップ"]
+    },
+    {
+      "id": "mv-millia-bad-moon",
+      "src": ["Bad Moon", "バッドムーン"],
+      "en": "Bad Moon",
+      "note": "Guilty Gear -Strive- Millia's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-millia_rage",
+      "unverifiedSrc": ["バッドムーン"]
+    },
+    {
+      "id": "mv-millia-iron-savior",
+      "src": ["Iron Savior", "アイアンセイヴァー"],
+      "en": "Iron Savior",
+      "note": "Guilty Gear -Strive- Millia's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-millia_rage",
+      "unverifiedSrc": ["アイアンセイヴァー"]
+    },
+    {
+      "id": "mv-millia-turbo-fall",
+      "src": ["Turbo Fall", "ターボフォール"],
+      "en": "Turbo Fall",
+      "note": "Guilty Gear -Strive- Millia's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-millia_rage",
+      "unverifiedSrc": ["ターボフォール"]
+    },
+    {
+      "id": "mv-millia-lust-shaker",
+      "src": ["Lust Shaker", "ラストシェイカー"],
+      "en": "Lust Shaker",
+      "note": "Guilty Gear -Strive- Millia's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-millia_rage",
+      "unverifiedSrc": ["ラストシェイカー"]
+    },
+    {
+      "id": "mv-millia-winger",
+      "src": ["Winger", "ウィンガー"],
+      "en": "Winger",
+      "note": "Guilty Gear -Strive- Millia's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "partial",
+      "ref": "dustloop-ggst-millia_rage",
+      "unverifiedSrc": ["ウィンガー"]
+    },
+    {
+      "id": "mv-millia-septem-voices",
+      "src": ["Septem Voices", "セプテムヴォイセス"],
+      "en": "Septem Voices",
+      "note": "Guilty Gear -Strive- Millia's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-millia_rage",
+      "unverifiedSrc": ["セプテムヴォイセス"]
+    },
+    {
+      "id": "mv-axl-sickle-flash",
+      "src": ["Sickle Flash"],
+      "en": "Sickle Flash",
+      "note": "Guilty Gear -Strive- Axl's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-axl_low"
+    },
+    {
+      "id": "mv-axl-winter-mantis",
+      "src": ["Winter Mantis"],
+      "en": "Winter Mantis",
+      "note": "Guilty Gear -Strive- Axl's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-axl_low"
+    },
+    {
+      "id": "mv-axl-rainwater",
+      "src": ["Rainwater"],
+      "en": "Rainwater",
+      "note": "Guilty Gear -Strive- Axl's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "dustloop-ggst-axl_low"
+    },
+    {
+      "id": "mv-axl-axl-bomber",
+      "src": ["Axl Bomber"],
+      "en": "Axl Bomber",
+      "note": "Guilty Gear -Strive- Axl's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-axl_low"
+    },
+    {
+      "id": "mv-axl-one-vision",
+      "src": ["One Vision"],
+      "en": "One Vision",
+      "note": "Guilty Gear -Strive- Axl's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-axl_low"
+    },
+    {
+      "id": "mv-axl-sickle-storm",
+      "src": ["Sickle Storm"],
+      "en": "Sickle Storm",
+      "note": "Guilty Gear -Strive- Axl's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-axl_low"
+    },
+    {
+      "id": "mv-axl-soaring-chain-strike",
+      "src": ["Soaring Chain Strike"],
+      "en": "Soaring Chain Strike",
+      "note": "Guilty Gear -Strive- Axl's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-axl_low"
+    },
+    {
+      "id": "mv-axl-spinning-chain-strike",
+      "src": ["Spinning Chain Strike"],
+      "en": "Spinning Chain Strike",
+      "note": "Guilty Gear -Strive- Axl's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-axl_low"
+    },
+    {
+      "id": "mv-axl-winter-cherry",
+      "src": ["Winter Cherry"],
+      "en": "Winter Cherry",
+      "note": "Guilty Gear -Strive- Axl's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-axl_low"
+    },
+    {
+      "id": "mv-axl-whistling-wind",
+      "src": ["Whistling Wind"],
+      "en": "Whistling Wind",
+      "note": "Guilty Gear -Strive- Axl's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-axl_low"
+    },
+    {
+      "id": "mv-ramlethal-dauro",
+      "src": ["Dauro"],
+      "en": "Dauro",
+      "note": "Guilty Gear -Strive- Ramlethal's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-ramlethal_valentine"
+    },
+    {
+      "id": "mv-ramlethal-erarlumo",
+      "src": ["Erarlumo"],
+      "en": "Erarlumo",
+      "note": "Guilty Gear -Strive- Ramlethal's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-ramlethal_valentine"
+    },
+    {
+      "id": "mv-ramlethal-sildo-detruo",
+      "src": ["Sildo Detruo"],
+      "en": "Sildo Detruo",
+      "note": "Guilty Gear -Strive- Ramlethal's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-ramlethal_valentine"
+    },
+    {
+      "id": "mv-ramlethal-ondo",
+      "src": ["Ondo"],
+      "en": "Ondo",
+      "note": "Guilty Gear -Strive- Ramlethal's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "dustloop-ggst-ramlethal_valentine"
+    },
+    {
+      "id": "mv-ramlethal-bajoneto",
+      "src": ["Bajoneto"],
+      "en": "Bajoneto",
+      "note": "Guilty Gear -Strive- Ramlethal's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-ramlethal_valentine"
+    },
+    {
+      "id": "mv-ramlethal-agresa-ordono",
+      "src": ["Agresa Ordono"],
+      "en": "Agresa Ordono",
+      "note": "Guilty Gear -Strive- Ramlethal's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-ramlethal_valentine"
+    },
+    {
+      "id": "mv-ramlethal-sabrobato",
+      "src": ["Sabrobato"],
+      "en": "Sabrobato",
+      "note": "Guilty Gear -Strive- Ramlethal's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-ramlethal_valentine"
+    },
+    {
+      "id": "mv-ramlethal-calvados",
+      "src": ["Calvados"],
+      "en": "Calvados",
+      "note": "Guilty Gear -Strive- Ramlethal's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-ramlethal_valentine"
+    },
+    {
+      "id": "mv-ramlethal-mortobato",
+      "src": ["Mortobato"],
+      "en": "Mortobato",
+      "note": "Guilty Gear -Strive- Ramlethal's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-ramlethal_valentine"
+    },
+    {
+      "id": "mv-faust-what-could-this-be",
+      "src": ["What Could This Be?"],
+      "en": "What Could This Be?",
+      "note": "Guilty Gear -Strive- Faust's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-faust"
+    },
+    {
+      "id": "mv-faust-bone-crushing-excitement",
+      "src": ["Bone-crushing Excitement"],
+      "en": "Bone-crushing Excitement",
+      "note": "Guilty Gear -Strive- Faust's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-faust"
+    },
+    {
+      "id": "mv-faust-mix-mix-mix",
+      "src": ["Mix Mix Mix"],
+      "en": "Mix Mix Mix",
+      "note": "Guilty Gear -Strive- Faust's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-faust"
+    },
+    {
+      "id": "mv-faust-snip-snip-snip",
+      "src": ["Snip Snip Snip"],
+      "en": "Snip Snip Snip",
+      "note": "Guilty Gear -Strive- Faust's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-faust"
+    },
+    {
+      "id": "mv-i-no-antidepressant-scale",
+      "src": ["Antidepressant Scale"],
+      "en": "Antidepressant Scale",
+      "note": "Guilty Gear -Strive- I-No's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-i-no"
+    },
+    {
+      "id": "mv-i-no-stroke-the-big-tree",
+      "src": ["Stroke the Big Tree"],
+      "en": "Stroke the Big Tree",
+      "note": "Guilty Gear -Strive- I-No's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-i-no"
+    },
+    {
+      "id": "mv-i-no-sultry-performance",
+      "src": ["Sultry Performance"],
+      "en": "Sultry Performance",
+      "note": "Guilty Gear -Strive- I-No's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-i-no"
+    },
+    {
+      "id": "mv-i-no-chemical-love",
+      "src": ["Chemical Love"],
+      "en": "Chemical Love",
+      "note": "Guilty Gear -Strive- I-No's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-i-no"
+    },
+    {
+      "id": "mv-i-no-mad-love-agitato",
+      "src": ["Mad Love Agitato"],
+      "en": "Mad Love Agitato",
+      "note": "Guilty Gear -Strive- I-No's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-i-no"
+    },
+    {
+      "id": "mv-i-no-megalomania",
+      "src": ["Megalomania"],
+      "en": "Megalomania",
+      "note": "Guilty Gear -Strive- I-No's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-i-no"
+    },
+    {
+      "id": "mv-i-no-ultimate-fortissimo",
+      "src": ["Ultimate Fortissimo"],
+      "en": "Ultimate Fortissimo",
+      "note": "Guilty Gear -Strive- I-No's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-i-no"
+    },
+    {
+      "id": "mv-nagoriyuki-fukyo",
+      "src": ["Fukyo"],
+      "en": "Fukyo",
+      "note": "Guilty Gear -Strive- Nagoriyuki's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-nagoriyuki"
+    },
+    {
+      "id": "mv-nagoriyuki-zarameyuki",
+      "src": ["Zarameyuki"],
+      "en": "Zarameyuki",
+      "note": "Guilty Gear -Strive- Nagoriyuki's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-nagoriyuki"
+    },
+    {
+      "id": "mv-nagoriyuki-kamuriyuki",
+      "src": ["Kamuriyuki"],
+      "en": "Kamuriyuki",
+      "note": "Guilty Gear -Strive- Nagoriyuki's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-nagoriyuki"
+    },
+    {
+      "id": "mv-nagoriyuki-shizuriyuki",
+      "src": ["Shizuriyuki"],
+      "en": "Shizuriyuki",
+      "note": "Guilty Gear -Strive- Nagoriyuki's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-nagoriyuki"
+    },
+    {
+      "id": "mv-nagoriyuki-yukimoyoi",
+      "src": ["Yukimoyoi"],
+      "en": "Yukimoyoi",
+      "note": "Guilty Gear -Strive- Nagoriyuki's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-nagoriyuki"
+    },
+    {
+      "id": "mv-nagoriyuki-blood-rage",
+      "src": ["Blood Rage"],
+      "en": "Blood Rage",
+      "note": "Guilty Gear -Strive- Nagoriyuki's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-nagoriyuki"
+    },
+    {
+      "id": "mv-nagoriyuki-wasureyuki",
+      "src": ["Wasureyuki"],
+      "en": "Wasureyuki",
+      "note": "Guilty Gear -Strive- Nagoriyuki's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-nagoriyuki"
+    },
+    {
+      "id": "mv-nagoriyuki-zansetsu",
+      "src": ["Zansetsu"],
+      "en": "Zansetsu",
+      "note": "Guilty Gear -Strive- Nagoriyuki's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-nagoriyuki"
+    },
+    {
+      "id": "mv-nagoriyuki-bloodsucking-universe",
+      "src": ["Bloodsucking Universe"],
+      "en": "Bloodsucking Universe",
+      "note": "Guilty Gear -Strive- Nagoriyuki's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-nagoriyuki"
+    },
+    {
+      "id": "mv-giovanna-trova-o",
+      "src": ["Trovão", "trovao"],
+      "en": "Trovão",
+      "note": "Guilty Gear -Strive- Giovanna's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-giovanna"
+    },
+    {
+      "id": "mv-giovanna-sol-nascente",
+      "src": ["Sol Nascente"],
+      "en": "Sol Nascente",
+      "note": "Guilty Gear -Strive- Giovanna's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-giovanna"
+    },
+    {
+      "id": "mv-giovanna-sol-poente",
+      "src": ["Sol Poente"],
+      "en": "Sol Poente",
+      "note": "Guilty Gear -Strive- Giovanna's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-giovanna"
+    },
+    {
+      "id": "mv-giovanna-ventania",
+      "src": ["Ventania"],
+      "en": "Ventania",
+      "note": "Guilty Gear -Strive- Giovanna's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-giovanna"
+    },
+    {
+      "id": "mv-giovanna-tempestade",
+      "src": ["Tempestade"],
+      "en": "Tempestade",
+      "note": "Guilty Gear -Strive- Giovanna's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-giovanna"
+    },
+    {
+      "id": "mv-giovanna-sepultura",
+      "src": ["Sepultura"],
+      "en": "Sepultura",
+      "note": "Guilty Gear -Strive- Giovanna's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-giovanna"
+    },
+    {
+      "id": "mv-baiken-tatami-gaeshi",
+      "src": ["Tatami Gaeshi", "畳返し"],
+      "en": "Tatami Gaeshi",
+      "note": "Guilty Gear -Strive- Baiken's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "partial",
+      "ref": "dustloop-ggst-baiken",
+      "unverifiedSrc": ["畳返し"]
+    },
+    {
+      "id": "mv-baiken-kabari",
+      "src": ["Kabari"],
+      "en": "Kabari",
+      "note": "Guilty Gear -Strive- Baiken's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-baiken"
+    },
+    {
+      "id": "mv-baiken-youzansen",
+      "src": ["Youzansen"],
+      "en": "Youzansen",
+      "note": "Guilty Gear -Strive- Baiken's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-baiken"
+    },
+    {
+      "id": "mv-baiken-hiiragi",
+      "src": ["Hiiragi"],
+      "en": "Hiiragi",
+      "note": "Guilty Gear -Strive- Baiken's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-baiken"
+    },
+    {
+      "id": "mv-baiken-tsurane-sanzu-watashi",
+      "src": ["Tsurane Sanzu-watashi"],
+      "en": "Tsurane Sanzu-watashi",
+      "note": "Guilty Gear -Strive- Baiken's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-baiken"
+    },
+    {
+      "id": "mv-baiken-kenjyu",
+      "src": ["Kenjyu"],
+      "en": "Kenjyu",
+      "note": "Guilty Gear -Strive- Baiken's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-baiken"
+    },
+    {
+      "id": "mv-testament-grave-reaper",
+      "src": ["Grave Reaper"],
+      "en": "Grave Reaper",
+      "note": "Guilty Gear -Strive- Testament's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-testament"
+    },
+    {
+      "id": "mv-testament-unholy-diver",
+      "src": ["Unholy Diver"],
+      "en": "Unholy Diver",
+      "note": "Guilty Gear -Strive- Testament's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-testament"
+    },
+    {
+      "id": "mv-testament-possession",
+      "src": ["Possession"],
+      "en": "Possession",
+      "note": "Guilty Gear -Strive- Testament's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "dustloop-ggst-testament"
+    },
+    {
+      "id": "mv-testament-arbiter-sign",
+      "src": ["Arbiter Sign"],
+      "en": "Arbiter Sign",
+      "note": "Guilty Gear -Strive- Testament's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-testament"
+    },
+    {
+      "id": "mv-testament-nostrovia",
+      "src": ["Nostrovia"],
+      "en": "Nostrovia",
+      "note": "Guilty Gear -Strive- Testament's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-testament"
+    },
+    {
+      "id": "mv-testament-calamity-one",
+      "src": ["Calamity One"],
+      "en": "Calamity One",
+      "note": "Guilty Gear -Strive- Testament's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-testament"
+    },
+    {
+      "id": "mv-happy-chaos-deus-ex-machina",
+      "src": ["Deus Ex Machina"],
+      "en": "Deus Ex Machina",
+      "note": "Guilty Gear -Strive- Happy Chaos's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-happy_chaos"
+    },
+    {
+      "id": "mv-happy-chaos-super-focus",
+      "src": ["Super Focus"],
+      "en": "Super Focus",
+      "note": "Guilty Gear -Strive- Happy Chaos's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-happy_chaos"
+    },
+    {
+      "id": "mv-happy-chaos-scapegoat",
+      "src": ["Scapegoat"],
+      "en": "Scapegoat",
+      "note": "Guilty Gear -Strive- Happy Chaos's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-happy_chaos"
+    },
+    {
+      "id": "mv-goldlewis-behemoth-typhoon",
+      "src": ["Behemoth Typhoon"],
+      "en": "Behemoth Typhoon",
+      "note": "Guilty Gear -Strive- Goldlewis's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-goldlewis_dickinson"
+    },
+    {
+      "id": "mv-goldlewis-thunderbird",
+      "src": ["Thunderbird"],
+      "en": "Thunderbird",
+      "note": "Guilty Gear -Strive- Goldlewis's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "dustloop-ggst-goldlewis_dickinson"
+    },
+    {
+      "id": "mv-goldlewis-skyfish",
+      "src": ["Skyfish"],
+      "en": "Skyfish",
+      "note": "Guilty Gear -Strive- Goldlewis's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "dustloop-ggst-goldlewis_dickinson"
+    },
+    {
+      "id": "mv-goldlewis-down-with-the-system",
+      "src": ["Down With The System"],
+      "en": "Down With The System",
+      "note": "Guilty Gear -Strive- Goldlewis's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-goldlewis_dickinson"
+    },
+    {
+      "id": "mv-goldlewis-burn-it-down",
+      "src": ["Burn It Down"],
+      "en": "Burn It Down",
+      "note": "Guilty Gear -Strive- Goldlewis's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-goldlewis_dickinson"
+    },
+    {
+      "id": "mv-bridget-starship",
+      "src": ["Starship"],
+      "en": "Starship",
+      "note": "Guilty Gear -Strive- Bridget's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "dustloop-ggst-bridget"
+    },
+    {
+      "id": "mv-bridget-kick-start-my-heart",
+      "src": ["Kick Start My Heart"],
+      "en": "Kick Start My Heart",
+      "note": "Guilty Gear -Strive- Bridget's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-bridget"
+    },
+    {
+      "id": "mv-bridget-roger-dive",
+      "src": ["Roger Dive"],
+      "en": "Roger Dive",
+      "note": "Guilty Gear -Strive- Bridget's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-bridget"
+    },
+    {
+      "id": "mv-bridget-rock-the-baby",
+      "src": ["Rock the Baby"],
+      "en": "Rock the Baby",
+      "note": "Guilty Gear -Strive- Bridget's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-bridget"
+    },
+    {
+      "id": "mv-bridget-loop-the-loop",
+      "src": ["Loop the Loop"],
+      "en": "Loop the Loop",
+      "note": "Guilty Gear -Strive- Bridget's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-bridget"
+    },
+    {
+      "id": "mv-bridget-return-of-the-killing-machine",
+      "src": ["Return of the Killing Machine"],
+      "en": "Return of the Killing Machine",
+      "note": "Guilty Gear -Strive- Bridget's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-bridget"
+    },
+    {
+      "id": "mv-sin-beak-driver",
+      "src": ["Beak Driver"],
+      "en": "Beak Driver",
+      "note": "Guilty Gear -Strive- Sin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-sin_kiske"
+    },
+    {
+      "id": "mv-sin-hawk-baker",
+      "src": ["Hawk Baker"],
+      "en": "Hawk Baker",
+      "note": "Guilty Gear -Strive- Sin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-sin_kiske"
+    },
+    {
+      "id": "mv-sin-elk-hunt",
+      "src": ["Elk Hunt"],
+      "en": "Elk Hunt",
+      "note": "Guilty Gear -Strive- Sin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-sin_kiske"
+    },
+    {
+      "id": "mv-sin-hoof-stomp",
+      "src": ["Hoof Stomp"],
+      "en": "Hoof Stomp",
+      "note": "Guilty Gear -Strive- Sin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-sin_kiske"
+    },
+    {
+      "id": "mv-sin-gazelle-step",
+      "src": ["Gazelle Step"],
+      "en": "Gazelle Step",
+      "note": "Guilty Gear -Strive- Sin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-sin_kiske"
+    },
+    {
+      "id": "mv-sin-tyrant-barrel",
+      "src": ["Tyrant Barrel"],
+      "en": "Tyrant Barrel",
+      "note": "Guilty Gear -Strive- Sin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-sin_kiske"
+    },
+    {
+      "id": "mv-sin-r-t-l",
+      "src": ["R.T.L"],
+      "en": "R.T.L",
+      "note": "Guilty Gear -Strive- Sin's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-sin_kiske"
+    },
+    {
+      "id": "mv-johnny-mist-finer",
+      "src": ["Mist Finer"],
+      "en": "Mist Finer",
+      "note": "Guilty Gear -Strive- Johnny's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-johnny"
+    },
+    {
+      "id": "mv-johnny-ensenga",
+      "src": ["Ensenga"],
+      "en": "Ensenga",
+      "note": "Guilty Gear -Strive- Johnny's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-johnny"
+    },
+    {
+      "id": "mv-johnny-that-s-my-name",
+      "src": ["That's My Name"],
+      "en": "That's My Name",
+      "note": "Guilty Gear -Strive- Johnny's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-johnny"
+    },
+    {
+      "id": "mv-johnny-joker-trick",
+      "src": ["Joker Trick"],
+      "en": "Joker Trick",
+      "note": "Guilty Gear -Strive- Johnny's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-johnny"
+    },
+    {
+      "id": "mv-asuka-bookmark",
+      "src": ["Bookmark"],
+      "en": "Bookmark",
+      "note": "Guilty Gear -Strive- Asuka's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "dustloop-ggst-asuka_r"
+    },
+    {
+      "id": "mv-asuka-change-test-case",
+      "src": ["Change Test Case"],
+      "en": "Change Test Case",
+      "note": "Guilty Gear -Strive- Asuka's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-asuka_r"
+    },
+    {
+      "id": "mv-asuka-high-compression-submicron-particle-sphere",
+      "src": ["High Compression Submicron Particle Sphere"],
+      "en": "High Compression Submicron Particle Sphere",
+      "note": "Guilty Gear -Strive- Asuka's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-asuka_r"
+    },
+    {
+      "id": "mv-elphelt-miss-charlotte",
+      "src": ["Miss Charlotte"],
+      "en": "Miss Charlotte",
+      "note": "Guilty Gear -Strive- Elphelt's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-elphelt_valentine"
+    },
+    {
+      "id": "mv-elphelt-bomb-bomb-chocolat",
+      "src": ["Bomb-Bomb Chocolat"],
+      "en": "Bomb-Bomb Chocolat",
+      "note": "Guilty Gear -Strive- Elphelt's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-elphelt_valentine"
+    },
+    {
+      "id": "mv-elphelt-juganto-da-parfeo",
+      "src": ["Juganto da parfeo"],
+      "en": "Juganto da parfeo",
+      "note": "Guilty Gear -Strive- Elphelt's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-elphelt_valentine"
+    },
+    {
+      "id": "mv-elphelt-bomb-bombnnie-re",
+      "src": ["Bomb-Bombnnière"],
+      "en": "Bomb-Bombnnière",
+      "note": "Guilty Gear -Strive- Elphelt's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-elphelt_valentine"
+    },
+    {
+      "id": "mv-elphelt-nailed-it",
+      "src": ["Nailed It!"],
+      "en": "Nailed It!",
+      "note": "Guilty Gear -Strive- Elphelt's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-elphelt_valentine"
+    },
+    {
+      "id": "mv-anji-shitsu",
+      "src": ["Shitsu"],
+      "en": "Shitsu",
+      "note": "Guilty Gear -Strive- Anji's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-anji_mito"
+    },
+    {
+      "id": "mv-anji-suigetsu-no-hakobi",
+      "src": ["Suigetsu no Hakobi"],
+      "en": "Suigetsu no Hakobi",
+      "note": "Guilty Gear -Strive- Anji's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-anji_mito"
+    },
+    {
+      "id": "mv-anji-fuujin",
+      "src": ["Fuujin"],
+      "en": "Fuujin",
+      "note": "Guilty Gear -Strive- Anji's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-anji_mito"
+    },
+    {
+      "id": "mv-anji-issokutobi",
+      "src": ["Issokutobi"],
+      "en": "Issokutobi",
+      "note": "Guilty Gear -Strive- Anji's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-anji_mito"
+    },
+    {
+      "id": "mv-anji-nagiha",
+      "src": ["Nagiha"],
+      "en": "Nagiha",
+      "note": "Guilty Gear -Strive- Anji's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-anji_mito"
+    },
+    {
+      "id": "mv-anji-midare",
+      "src": ["Midare"],
+      "en": "Midare",
+      "note": "Guilty Gear -Strive- Anji's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-anji_mito"
+    },
+    {
+      "id": "mv-anji-issei-ougi-sai",
+      "src": ["Issei Ougi: Sai"],
+      "en": "Issei Ougi: Sai",
+      "note": "Guilty Gear -Strive- Anji's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-anji_mito"
+    },
+    {
+      "id": "mv-anji-kachoufuugetsu-kai",
+      "src": ["Kachoufuugetsu Kai"],
+      "en": "Kachoufuugetsu Kai",
+      "note": "Guilty Gear -Strive- Anji's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-anji_mito"
+    },
+    {
+      "id": "mv-zato-summon-eddie",
+      "src": ["Summon Eddie"],
+      "en": "Summon Eddie",
+      "note": "Guilty Gear -Strive- Zato's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-zato-1"
+    },
+    {
+      "id": "mv-zato-drunkard-shade",
+      "src": ["Drunkard Shade"],
+      "en": "Drunkard Shade",
+      "note": "Guilty Gear -Strive- Zato's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-zato-1"
+    },
+    {
+      "id": "mv-zato-damned-fang",
+      "src": ["Damned Fang"],
+      "en": "Damned Fang",
+      "note": "Guilty Gear -Strive- Zato's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-zato-1"
+    },
+    {
+      "id": "mv-zato-amorphous",
+      "src": ["Amorphous"],
+      "en": "Amorphous",
+      "note": "Guilty Gear -Strive- Zato's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "dustloop-ggst-zato-1"
+    },
+    {
+      "id": "mv-zato-sun-void",
+      "src": ["Sun Void"],
+      "en": "Sun Void",
+      "note": "Guilty Gear -Strive- Zato's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-zato-1"
+    },
+    {
+      "id": "mv-zato-invite-hell",
+      "src": ["Invite Hell"],
+      "en": "Invite Hell",
+      "note": "Guilty Gear -Strive- Zato's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-zato-1"
+    },
+    {
+      "id": "mv-zato-break-the-law",
+      "src": ["Break The Law"],
+      "en": "Break The Law",
+      "note": "Guilty Gear -Strive- Zato's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-zato-1"
+    },
+    {
+      "id": "mv-leo-gravierte-wu-rde",
+      "src": ["Gravierte Würde", "gravierte wurde"],
+      "en": "Gravierte Würde",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-leo-eisensturm",
+      "src": ["Eisensturm"],
+      "en": "Eisensturm",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-leo-erstes-kaltes-gesto-ber",
+      "src": ["Erstes Kaltes Gestöber"],
+      "en": "Erstes Kaltes Gestöber",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-leo-zweites-kaltes-gesto-ber",
+      "src": ["Zweites Kaltes Gestöber"],
+      "en": "Zweites Kaltes Gestöber",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-leo-turbulenz",
+      "src": ["Turbulenz"],
+      "en": "Turbulenz",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-leo-brynhildr-stance",
+      "src": ["Brynhildr Stance"],
+      "en": "Brynhildr Stance",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-leo-kahn-schild",
+      "src": ["Kahn-Schild"],
+      "en": "Kahn-Schild",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-leo-gla-nzendes-dunkel",
+      "src": ["Glänzendes Dunkel"],
+      "en": "Glänzendes Dunkel",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-leo-blitzschlag",
+      "src": ["Blitzschlag"],
+      "en": "Blitzschlag",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-leo-stahlwirbel",
+      "src": ["Stahlwirbel"],
+      "en": "Stahlwirbel",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-leo-leidenschaft-des-dirigenten",
+      "src": ["Leidenschaft des Dirigenten"],
+      "en": "Leidenschaft des Dirigenten",
+      "note": "Guilty Gear -Strive- Leo's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-leo_whitefang"
+    },
+    {
+      "id": "mv-jack-o-forever-elysion-driver",
+      "src": ["Forever Elysion Driver"],
+      "en": "Forever Elysion Driver",
+      "note": "Guilty Gear -Strive- Jack-O''s move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jack-o"
+    },
+    {
+      "id": "mv-dizzy-imperial-ray",
+      "src": ["Imperial Ray"],
+      "en": "Imperial Ray",
+      "note": "Guilty Gear -Strive- Dizzy's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-queen_dizzy"
+    },
+    {
+      "id": "mv-dizzy-gamma-ray",
+      "src": ["Gamma Ray"],
+      "en": "Gamma Ray",
+      "note": "Guilty Gear -Strive- Dizzy's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-queen_dizzy"
+    },
+    {
+      "id": "mv-dizzy-michael-sword",
+      "src": ["Michael Sword"],
+      "en": "Michael Sword",
+      "note": "Guilty Gear -Strive- Dizzy's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-queen_dizzy"
+    },
+    {
+      "id": "mv-dizzy-ice-field",
+      "src": ["Ice Field"],
+      "en": "Ice Field",
+      "note": "Guilty Gear -Strive- Dizzy's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-queen_dizzy"
+    },
+    {
+      "id": "mv-dizzy-wings-of-light",
+      "src": ["Wings of Light"],
+      "en": "Wings of Light",
+      "note": "Guilty Gear -Strive- Dizzy's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-queen_dizzy"
+    },
+    {
+      "id": "mv-slayer-mappa-hunch",
+      "src": ["Mappa Hunch"],
+      "en": "Mappa Hunch",
+      "note": "Guilty Gear -Strive- Slayer's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-slayer"
+    },
+    {
+      "id": "mv-slayer-dandy-step",
+      "src": ["Dandy Step"],
+      "en": "Dandy Step",
+      "note": "Guilty Gear -Strive- Slayer's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-slayer"
+    },
+    {
+      "id": "mv-slayer-pilebunker",
+      "src": ["Pilebunker"],
+      "en": "Pilebunker",
+      "note": "Guilty Gear -Strive- Slayer's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-slayer"
+    },
+    {
+      "id": "mv-slayer-master-s-hammer",
+      "src": ["Master's Hammer"],
+      "en": "Master's Hammer",
+      "note": "Guilty Gear -Strive- Slayer's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-slayer"
+    },
+    {
+      "id": "mv-slayer-hand-of-doom",
+      "src": ["Hand of Doom"],
+      "en": "Hand of Doom",
+      "note": "Guilty Gear -Strive- Slayer's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-slayer"
+    },
+    {
+      "id": "mv-slayer-super-mappa-hunch",
+      "src": ["Super Mappa Hunch"],
+      "en": "Super Mappa Hunch",
+      "note": "Guilty Gear -Strive- Slayer's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-slayer"
+    },
+    {
+      "id": "mv-slayer-last-horizon",
+      "src": ["Last Horizon"],
+      "en": "Last Horizon",
+      "note": "Guilty Gear -Strive- Slayer's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-slayer"
+    },
+    {
+      "id": "mv-venom-ball-set",
+      "src": ["Ball Set"],
+      "en": "Ball Set",
+      "note": "Guilty Gear -Strive- Venom's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-venom"
+    },
+    {
+      "id": "mv-venom-stinger-aim",
+      "src": ["Stinger Aim"],
+      "en": "Stinger Aim",
+      "note": "Guilty Gear -Strive- Venom's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-venom"
+    },
+    {
+      "id": "mv-venom-carcass-raid",
+      "src": ["Carcass Raid"],
+      "en": "Carcass Raid",
+      "note": "Guilty Gear -Strive- Venom's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-venom"
+    },
+    {
+      "id": "mv-venom-tryambaka",
+      "src": ["Tryambaka"],
+      "en": "Tryambaka",
+      "note": "Guilty Gear -Strive- Venom's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-venom"
+    },
+    {
+      "id": "mv-venom-dark-angel",
+      "src": ["Dark Angel"],
+      "en": "Dark Angel",
+      "note": "Guilty Gear -Strive- Venom's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-venom"
+    },
+    {
+      "id": "mv-venom-navaratna-runout",
+      "src": ["Navaratna Runout"],
+      "en": "Navaratna Runout",
+      "note": "Guilty Gear -Strive- Venom's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-venom"
+    },
+    {
+      "id": "mv-jam-hochifu",
+      "src": ["Hochifu"],
+      "en": "Hochifu",
+      "note": "Guilty Gear -Strive- Jam's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jam_kuradoberi"
+    },
+    {
+      "id": "mv-jam-goushao",
+      "src": ["Goushao"],
+      "en": "Goushao",
+      "note": "Guilty Gear -Strive- Jam's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jam_kuradoberi"
+    },
+    {
+      "id": "mv-jam-bakushuu",
+      "src": ["Bakushuu"],
+      "en": "Bakushuu",
+      "note": "Guilty Gear -Strive- Jam's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jam_kuradoberi"
+    },
+    {
+      "id": "mv-jam-hyappo-shinshou",
+      "src": ["Hyappo Shinshou"],
+      "en": "Hyappo Shinshou",
+      "note": "Guilty Gear -Strive- Jam's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jam_kuradoberi"
+    },
+    {
+      "id": "mv-jam-choujin",
+      "src": ["Choujin"],
+      "en": "Choujin",
+      "note": "Guilty Gear -Strive- Jam's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jam_kuradoberi"
+    },
+    {
+      "id": "mv-jam-asanagi-no-kokyuu",
+      "src": ["Asanagi no Kokyuu"],
+      "en": "Asanagi no Kokyuu",
+      "note": "Guilty Gear -Strive- Jam's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jam_kuradoberi"
+    },
+    {
+      "id": "mv-jam-ryuujin",
+      "src": ["Ryuujin"],
+      "en": "Ryuujin",
+      "note": "Guilty Gear -Strive- Jam's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jam_kuradoberi"
+    },
+    {
+      "id": "mv-jam-gekirin",
+      "src": ["Gekirin"],
+      "en": "Gekirin",
+      "note": "Guilty Gear -Strive- Jam's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jam_kuradoberi"
+    },
+    {
+      "id": "mv-jam-ryuutsui",
+      "src": ["Ryuutsui"],
+      "en": "Ryuutsui",
+      "note": "Guilty Gear -Strive- Jam's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jam_kuradoberi"
+    },
+    {
+      "id": "mv-jam-choukyaku-kouryumon",
+      "src": ["Choukyaku Kouryumon"],
+      "en": "Choukyaku Kouryumon",
+      "note": "Guilty Gear -Strive- Jam's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-jam_kuradoberi"
+    },
+    {
+      "id": "mv-robo-ky-gimmic-ky",
+      "src": ["Gimmic-KY"],
+      "en": "Gimmic-KY",
+      "note": "Guilty Gear -Strive- Robo-Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-robo-ky"
+    },
+    {
+      "id": "mv-robo-ky-jun-ky-bargain",
+      "src": ["Jun-KY Bargain"],
+      "en": "Jun-KY Bargain",
+      "note": "Guilty Gear -Strive- Robo-Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-robo-ky"
+    },
+    {
+      "id": "mv-robo-ky-ky-zen-blitz",
+      "src": ["KY-zen Blitz"],
+      "en": "KY-zen Blitz",
+      "note": "Guilty Gear -Strive- Robo-Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-robo-ky"
+    },
+    {
+      "id": "mv-robo-ky-spar-ky-surprise",
+      "src": ["Spar-KY Surprise"],
+      "en": "Spar-KY Surprise",
+      "note": "Guilty Gear -Strive- Robo-Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-robo-ky"
+    },
+    {
+      "id": "mv-robo-ky-luc-ky-launcher",
+      "src": ["Luc-KY Launcher"],
+      "en": "Luc-KY Launcher",
+      "note": "Guilty Gear -Strive- Robo-Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-robo-ky"
+    },
+    {
+      "id": "mv-robo-ky-beautiful-s-ky-today",
+      "src": ["Beautiful S-KY Today"],
+      "en": "Beautiful S-KY Today",
+      "note": "Guilty Gear -Strive- Robo-Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-robo-ky"
+    },
+    {
+      "id": "mv-robo-ky-ris-ky-lovers",
+      "src": ["Ris-KY Lovers"],
+      "en": "Ris-KY Lovers",
+      "note": "Guilty Gear -Strive- Robo-Ky's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-robo-ky"
+    },
+    {
+      "id": "mv-lucy-monowire",
+      "src": ["Monowire"],
+      "en": "Monowire",
+      "note": "Guilty Gear -Strive- Lucy's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "dustloop-ggst-lucy"
+    },
+    {
+      "id": "mv-lucy-quickhack",
+      "src": ["Quickhack"],
+      "en": "Quickhack",
+      "note": "Guilty Gear -Strive- Lucy's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "ambiguous": true,
+      "confidence": "verified",
+      "ref": "dustloop-ggst-lucy"
+    },
+    {
+      "id": "mv-lucy-live-wire",
+      "src": ["Live Wire"],
+      "en": "Live Wire",
+      "note": "Guilty Gear -Strive- Lucy's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-lucy"
+    },
+    {
+      "id": "mv-lucy-finisher-deepdive",
+      "src": ["Finisher: Deepdive"],
+      "en": "Finisher: Deepdive",
+      "note": "Guilty Gear -Strive- Lucy's move (official English name). Keep it as written; never translate it literally.",
+      "kind": "move",
+      "game": "ggst",
+      "confidence": "verified",
+      "ref": "dustloop-ggst-lucy"
+    }
+  ]
+}
