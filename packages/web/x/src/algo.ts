@@ -43,9 +43,10 @@ export function rankPosts(
   if (!candidates?.length) return [];
   const ranked = webXAlgorithmRank(candidates, { ...context }, topK);
   if (!Array.isArray(ranked)) {
-    const error = ranked && typeof ranked === "object" && "error" in ranked
-      ? String(ranked.error)
-      : "invalid native ranking response";
+    const error =
+      ranked && typeof ranked === "object" && "error" in ranked
+        ? String(ranked.error)
+        : "invalid native ranking response";
     throw new Error(`X ranking failed: ${error}`);
   }
 
@@ -92,7 +93,9 @@ export function toPostCandidate(raw: any): PostCandidate | null {
     text: raw.text || raw.full_text || raw.legacy?.full_text || "",
     created_at: raw.created_at
       ? Math.floor(new Date(raw.created_at).getTime() / 1000)
-      : (raw.timestamp ? Math.floor(raw.timestamp / 1000) : 0),
+      : raw.timestamp
+        ? Math.floor(raw.timestamp / 1000)
+        : 0,
     like_count: Number(metrics.like_count ?? metrics.favorite_count ?? 0),
     reply_count: Number(metrics.reply_count ?? 0),
     repost_count: Number(metrics.repost_count ?? metrics.retweet_count ?? 0),
@@ -144,11 +147,7 @@ export function tweetToPostCandidate(tweet: Tweet, inNetwork = false): PostCandi
  * This is the high-level TS equivalent of `rank_tweets` in the Rust x-client.
  * Returns scored posts with explainable reasons.
  */
-export function rankTweets(
-  tweets: Tweet[],
-  context: RankingContext = {},
-  topK = 20,
-): ScoredPost[] {
+export function rankTweets(tweets: Tweet[], context: RankingContext = {}, topK = 20): ScoredPost[] {
   const candidates = tweets
     .map((t) => tweetToPostCandidate(t, false))
     .filter((c): c is PostCandidate => c !== null);

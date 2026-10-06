@@ -444,9 +444,7 @@ export function buildTweetQueue(
       kind,
       like_count: likes,
       created_at: post.created_at,
-      ...(kind === "retweet"
-        ? { own_status: !post.author_id || post.author_id === viewerId }
-        : {}),
+      ...(kind === "retweet" ? { own_status: !post.author_id || post.author_id === viewerId } : {}),
       preview: preview(post.text),
     });
   }
@@ -513,15 +511,15 @@ export async function purgeTweets(
   const handle = viewer.screen_name || client.session.handle || "viewer";
   const statePath = opts.statePath ?? defaultStatePath(handle);
 
-  log(`[purge] compte @${handle} (${viewer.id}) — ${dryRun ? "DRY-RUN" : "LIVE"}, seuil ${maxLikes} likes`);
+  log(
+    `[purge] compte @${handle} (${viewer.id}) — ${dryRun ? "DRY-RUN" : "LIVE"}, seuil ${maxLikes} likes`,
+  );
 
   // --- queue: resume or (re)build -----------------------------------------
   let state = opts.refresh || !persist ? null : loadTweetState(statePath, viewer.id);
 
   if (state && state.max_likes !== maxLikes) {
-    log(
-      `[purge] seuil changé (${state.max_likes} → ${maxLikes}) — la file est reconstruite`,
-    );
+    log(`[purge] seuil changé (${state.max_likes} → ${maxLikes}) — la file est reconstruite`);
     state = null;
   }
 

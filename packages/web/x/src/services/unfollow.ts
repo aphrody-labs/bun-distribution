@@ -49,14 +49,7 @@ import {
   type StopReason,
 } from "./purge-engine";
 
-export {
-  DAY_MS,
-  RateGovernor,
-  WINDOW_MS,
-  estimateEta,
-  isAuthFailure,
-  sleep,
-} from "./purge-engine";
+export { DAY_MS, RateGovernor, WINDOW_MS, estimateEta, isAuthFailure, sleep } from "./purge-engine";
 
 /** Pacing + walk defaults for the follow purge. */
 export const DEFAULTS = {
@@ -286,7 +279,12 @@ export async function collectFollowing(
   opts: PurgeOptions = {},
 ): Promise<CollectResult> {
   const size = opts.pageSize ?? DEFAULTS.pageSize;
-  return collectUsers(client, (cursor) => client.following(userId, size, cursor), opts, "following");
+  return collectUsers(
+    client,
+    (cursor) => client.following(userId, size, cursor),
+    opts,
+    "following",
+  );
 }
 
 /** Walks the full `Followers` timeline. */
@@ -296,7 +294,12 @@ export async function collectFollowers(
   opts: PurgeOptions = {},
 ): Promise<CollectResult> {
   const size = opts.pageSize ?? DEFAULTS.pageSize;
-  return collectUsers(client, (cursor) => client.followers(userId, size, cursor), opts, "followers");
+  return collectUsers(
+    client,
+    (cursor) => client.followers(userId, size, cursor),
+    opts,
+    "followers",
+  );
 }
 
 /** Captures both sides of the follow graph for `handle` / `userId`. */

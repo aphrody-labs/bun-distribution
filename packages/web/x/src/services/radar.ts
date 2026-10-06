@@ -69,7 +69,9 @@ function computeMetrics(query: string, tweets: Tweet[]): RadarMetrics {
     totalRts += t.retweet_count ?? 0;
   }
   const n = tweets.length || 1;
-  const top = [...tweets].toSorted((a, b) => (b.like_count ?? 0) - (a.like_count ?? 0)).slice(0, 10);
+  const top = [...tweets]
+    .toSorted((a, b) => (b.like_count ?? 0) - (a.like_count ?? 0))
+    .slice(0, 10);
   return {
     query,
     tweet_count: tweets.length,

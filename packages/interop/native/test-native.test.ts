@@ -4,7 +4,12 @@ import { CString, dlopen, type FFIFunction } from "bun:ffi";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { closeNativeLibrary, loadNativeLibrary, nativeLibraryLoaded, resolveNativeLibraryPath } from "./src/library";
+import {
+  closeNativeLibrary,
+  loadNativeLibrary,
+  nativeLibraryLoaded,
+  resolveNativeLibraryPath,
+} from "./src/library";
 import { probeNativeTooling } from "@aphrody/runtime-sdk/tooling";
 import { findNewlinesUtf16, scanNodeProject } from "./src/n2b";
 import { runAphrodyCaptured } from "./src/cli";

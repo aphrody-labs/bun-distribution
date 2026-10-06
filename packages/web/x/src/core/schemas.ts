@@ -40,7 +40,7 @@ export const TweetSchema: z.ZodType<any> = z.lazy(() =>
     is_note_tweet: z.boolean().default(false),
     quoted_tweet: z.nullable(z.lazy(() => TweetSchema)).optional(),
     media: z.array(MediaSchema).optional(),
-  })
+  }),
 );
 
 export type Tweet = z.infer<typeof TweetSchema>;

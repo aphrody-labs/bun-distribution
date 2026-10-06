@@ -25,15 +25,28 @@ function mockClient(calls: string[]): XToolsClient {
     },
     userTweets: async (id: string, count: number) => {
       calls.push(`userTweets:${id}:${count}`);
-      return { tweets: [{ id: "t1", text: "hi", author: { username: "bar", name: "Bar" }, like_count: 3 }] };
+      return {
+        tweets: [{ id: "t1", text: "hi", author: { username: "bar", name: "Bar" }, like_count: 3 }],
+      };
     },
     getNews: async (count: number) => {
       calls.push(`getNews:${count}`);
-      return [{ id: "n1", headline: "Headline", category: "Tech", post_count: 1200, url: "https://x.com/i/trending/n1" }];
+      return [
+        {
+          id: "n1",
+          headline: "Headline",
+          category: "Tech",
+          post_count: 1200,
+          url: "https://x.com/i/trending/n1",
+        },
+      ];
     },
     search: async (query: string, count: number, _cursor?: string, product?: string) => {
       calls.push(`search:${query}:${count}:${product}`);
-      return { tweets: [{ id: "s1", text: `about ${query}`, author: { username: "a", name: "A" } }], next_cursor: "c2" };
+      return {
+        tweets: [{ id: "s1", text: `about ${query}`, author: { username: "a", name: "A" } }],
+        next_cursor: "c2",
+      };
     },
   } as unknown as XToolsClient;
 }
@@ -50,7 +63,9 @@ describe("X function tools", () => {
 
   test("builds a client from a cookie string or a session without network access", () => {
     expect(new XTools("auth_token=fake; ct0=fake")).toBeInstanceOf(XTools);
-    expect(new XTools(XSession.fromCookieString("auth_token=fake; ct0=fake"))).toBeInstanceOf(XTools);
+    expect(new XTools(XSession.fromCookieString("auth_token=fake; ct0=fake"))).toBeInstanceOf(
+      XTools,
+    );
   });
 
   test("maps each tool onto the injected X client", async () => {
@@ -59,7 +74,16 @@ describe("X function tools", () => {
 
     const search = await tools.search({ query: "aphrody", count: 5 });
     expect(search).toEqual({
-      tweets: [{ id: "s1", text: "about aphrody", author: "a", created_at: undefined, like_count: undefined, retweet_count: undefined }],
+      tweets: [
+        {
+          id: "s1",
+          text: "about aphrody",
+          author: "a",
+          created_at: undefined,
+          like_count: undefined,
+          retweet_count: undefined,
+        },
+      ],
       next_cursor: "c2",
     });
     await tools.profile({ handle: "@foo" });
@@ -89,9 +113,15 @@ describe("X function tools", () => {
     await tools.execute("x_whoami", undefined);
     expect(calls).toEqual(["search:rust:10:Top", "getNews:10", "whoami"]);
 
-    await expect(tools.execute("x_search", { query: "" })).rejects.toThrow('non-empty string "query"');
-    await expect(tools.execute("x_tweets", { handle: "a", count: 2.5 })).rejects.toThrow("positive integer");
-    await expect(tools.execute("x_search", { query: "a", mode: "Hot" })).rejects.toThrow('"Latest" or "Top"');
+    await expect(tools.execute("x_search", { query: "" })).rejects.toThrow(
+      'non-empty string "query"',
+    );
+    await expect(tools.execute("x_tweets", { handle: "a", count: 2.5 })).rejects.toThrow(
+      "positive integer",
+    );
+    await expect(tools.execute("x_search", { query: "a", mode: "Hot" })).rejects.toThrow(
+      '"Latest" or "Top"',
+    );
     await expect(tools.execute("web_search", {})).rejects.toThrow("Unknown X tool: web_search");
     expect(xNewsToolDef.function.name).toBe("x_news");
   });

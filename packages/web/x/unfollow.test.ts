@@ -156,7 +156,12 @@ describe("RateGovernor", () => {
 
   test("window budget forces a wait until the oldest call ages out", () => {
     const clock = fakeClock();
-    const gov = new RateGovernor({ ...baseOpts(clock), perWindow: 3, minDelayMs: 0, maxDelayMs: 0 });
+    const gov = new RateGovernor({
+      ...baseOpts(clock),
+      perWindow: 3,
+      minDelayMs: 0,
+      maxDelayMs: 0,
+    });
 
     for (let i = 0; i < 3; i++) {
       gov.record(null);

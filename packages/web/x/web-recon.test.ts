@@ -4,11 +4,13 @@ import { runXWebRecon } from "./src/tools/web-recon";
 
 describe("X recon native transport", () => {
   test("browser profiles are routed to the Rust renderer", async () => {
-    await Promise.all((["fast", "stealth", "max"] as const).map(async (profile) => {
-      const report = await runXWebRecon(profile, []);
-      expect(report.profile).toBe(profile);
-      expect(report.results).toEqual({});
-    }));
+    await Promise.all(
+      (["fast", "stealth", "max"] as const).map(async (profile) => {
+        const report = await runXWebRecon(profile, []);
+        expect(report.profile).toBe(profile);
+        expect(report.results).toEqual({});
+      }),
+    );
   });
 
   test("HTTP recon returns a native validation error for an invalid URL", async () => {

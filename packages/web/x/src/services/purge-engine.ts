@@ -212,10 +212,7 @@ export class RateGovernor {
     this.perWindow = opts.perWindow ?? PACING_DEFAULTS.perWindow;
     this.perDay = opts.perDay ?? PACING_DEFAULTS.perDay;
     this.minDelayMs = opts.minDelayMs ?? PACING_DEFAULTS.minDelayMs;
-    this.maxDelayMs = Math.max(
-      opts.maxDelayMs ?? PACING_DEFAULTS.maxDelayMs,
-      this.minDelayMs,
-    );
+    this.maxDelayMs = Math.max(opts.maxDelayMs ?? PACING_DEFAULTS.maxDelayMs, this.minDelayMs);
     this.reserve = opts.reserve ?? PACING_DEFAULTS.reserve;
     this.now = opts.now ?? Date.now;
     this.sleepFn = opts.sleep ?? sleep;
@@ -309,9 +306,7 @@ export class RateGovernor {
   /** `true` when either rolling budget is saturated right now. */
   public budgetExhausted(): boolean {
     this.prune();
-    return (
-      this.countSince(WINDOW_MS) >= this.perWindow || this.countSince(DAY_MS) >= this.perDay
-    );
+    return this.countSince(WINDOW_MS) >= this.perWindow || this.countSince(DAY_MS) >= this.perDay;
   }
 }
 

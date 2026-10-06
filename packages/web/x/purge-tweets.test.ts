@@ -744,14 +744,16 @@ describe("retweet detection (regression)", () => {
   });
 
   test("a genuine post that merely mentions RT is not a retweet", () => {
-    expect(classifyPost(post({ id: "1", text: "RT is dead, long live QT" }), VIEWER)).toBe(
-      "tweet",
-    );
+    expect(classifyPost(post({ id: "1", text: "RT is dead, long live QT" }), VIEWER)).toBe("tweet");
     expect(classifyPost(post({ id: "2", text: "RT @: nope" }), VIEWER)).toBe("tweet");
   });
 
   test("out-of-scope by default, so a retweet is never deleted as an own post", () => {
-    const { queue, byKind, kept } = buildTweetQueue([rtOnOwnTimeline, post({ id: "mine" })], VIEWER, {});
+    const { queue, byKind, kept } = buildTweetQueue(
+      [rtOnOwnTimeline, post({ id: "mine" })],
+      VIEWER,
+      {},
+    );
     expect(queue.map((t) => t.id)).toEqual(["mine"]);
     expect(byKind.retweet).toBe(0);
     expect(kept).toBe(1);
@@ -799,9 +801,11 @@ describe("aborted walk completeness (regression)", () => {
     const wrapped = {
       ...(client as unknown as Record<string, unknown>),
       userTweets: async (id: string, n: number, cursor?: string) => {
-        const page = await (client as unknown as {
-          userTweets: (i: string, n: number, c?: string) => Promise<unknown>;
-        }).userTweets(id, n, cursor);
+        const page = await (
+          client as unknown as {
+            userTweets: (i: string, n: number, c?: string) => Promise<unknown>;
+          }
+        ).userTweets(id, n, cursor);
         if (++served >= 1) controller.abort();
         return page;
       },

@@ -14,10 +14,7 @@ const operationsMap = new Map<string, Operation>();
 
 // Initialize map from JSON catalog
 function ingestCatalog(
-  ops: Record<
-    string,
-    { queryId: string; operationType: string; featureSwitches?: string[] }
-  >,
+  ops: Record<string, { queryId: string; operationType: string; featureSwitches?: string[] }>,
 ): void {
   for (const [name, op] of Object.entries(ops)) {
     operationsMap.set(name, {

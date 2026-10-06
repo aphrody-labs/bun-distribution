@@ -100,7 +100,6 @@ describe("X Client Unit Tests", () => {
   });
 });
 
-
 describe("X Algo (For You ranking - from x-algorithm)", () => {
   const now = Math.floor(Date.now() / 1000);
 
@@ -123,8 +122,22 @@ describe("X Algo (For You ranking - from x-algorithm)", () => {
   test("rankPosts applies filters and scores correctly", () => {
     const candidates: PostCandidate[] = [
       { ...baseCandidate, id: "1", author_id: "u1", in_network: true },
-      { ...baseCandidate, id: "2", author_id: "u2", like_count: 5, text: "short", created_at: now - 100000, in_network: false },
-      { ...baseCandidate, id: "3", author_id: "u1", text: "duplicate id? no", created_at: now - 10 },
+      {
+        ...baseCandidate,
+        id: "2",
+        author_id: "u2",
+        like_count: 5,
+        text: "short",
+        created_at: now - 100000,
+        in_network: false,
+      },
+      {
+        ...baseCandidate,
+        id: "3",
+        author_id: "u1",
+        text: "duplicate id? no",
+        created_at: now - 10,
+      },
     ];
 
     const ctx: RankingContext = {
@@ -137,35 +150,42 @@ describe("X Algo (For You ranking - from x-algorithm)", () => {
     };
 
     // add a muted one
-    const muted = { ...baseCandidate, id: "4", author_id: "u3", text: "this contains spam keyword", created_at: now - 1000 };
+    const muted = {
+      ...baseCandidate,
+      id: "4",
+      author_id: "u3",
+      text: "this contains spam keyword",
+      created_at: now - 1000,
+    };
 
     const ranked = rankPosts([...candidates, muted], ctx, 10);
 
     // dupe filter, self (none), blocked (none), muted (filtered), age (none filtered)
     expect(ranked.length).toBe(3); // 1,2,3 (4 muted out)
     expect(ranked[0].post.id).toBe("1"); // highest: in_network + eng + history + fresh + media
-    expect(ranked[0].reasons.some(r => r.includes("in_network"))).toBe(true);
-    expect(ranked[0].reasons.some(r => r.includes("engagement"))).toBe(true);
-    expect(ranked.some(r => r.post.id === "4")).toBe(false); // muted filtered
+    expect(ranked[0].reasons.some((r) => r.includes("in_network"))).toBe(true);
+    expect(ranked[0].reasons.some((r) => r.includes("engagement"))).toBe(true);
+    expect(ranked.some((r) => r.post.id === "4")).toBe(false); // muted filtered
   });
 
   test("author diversity attenuates repeats", () => {
     // Clean low-base candidates: c1 high, c2 same-author medium, c3 other-author slightly lower; pen drops c2 below c3
-    const make = (id: string, author: string, like: number) => ({
-      id,
-      author_id: author,
-      author_handle: author,
-      text: "test " + id,
-      created_at: now - 3600,
-      like_count: like,
-      reply_count: 0,
-      repost_count: 0,
-      quote_count: 0,
-      is_reply: false,
-      is_repost: false,
-      has_media: false,
-      in_network: false,
-    } as PostCandidate);
+    const make = (id: string, author: string, like: number) =>
+      ({
+        id,
+        author_id: author,
+        author_handle: author,
+        text: "test " + id,
+        created_at: now - 3600,
+        like_count: like,
+        reply_count: 0,
+        repost_count: 0,
+        quote_count: 0,
+        is_reply: false,
+        is_repost: false,
+        has_media: false,
+        in_network: false,
+      }) as PostCandidate;
 
     const c1 = make("a1", "same", 500);
     const c2 = make("a2", "same", 200);
@@ -176,7 +196,9 @@ describe("X Algo (For You ranking - from x-algorithm)", () => {
     expect(ranked[0].post.id).toBe("a1");
     expect(ranked[1].post.id).toBe("a3");
     expect(ranked[2].post.id).toBe("a2");
-    expect(ranked.find(r => r.post.id === "a2")!.reasons.some(r => r.includes("diversity_penalty"))).toBe(true);
+    expect(
+      ranked.find((r) => r.post.id === "a2")!.reasons.some((r) => r.includes("diversity_penalty")),
+    ).toBe(true);
   });
 
   test("toPostCandidate and tweetToPostCandidate roundtrip", () => {
@@ -229,8 +251,30 @@ describe("X Algo (For You ranking - from x-algorithm)", () => {
 
   test("rankTweets converts and ranks", () => {
     const tweets: Tweet[] = [
-      { id: "rt1", text: "high", author: { username: "h", name: "H" }, author_id: "hu", like_count: 1000, reply_count: 100, retweet_count: 200, quote_count: 10, created_at: new Date(now * 1000 - 1000).toISOString(), is_note_tweet: false } as any,
-      { id: "rt2", text: "low", author: { username: "l", name: "L" }, author_id: "lu", like_count: 1, reply_count: 0, retweet_count: 0, quote_count: 0, created_at: new Date(now * 1000 - 100000).toISOString(), is_note_tweet: false } as any,
+      {
+        id: "rt1",
+        text: "high",
+        author: { username: "h", name: "H" },
+        author_id: "hu",
+        like_count: 1000,
+        reply_count: 100,
+        retweet_count: 200,
+        quote_count: 10,
+        created_at: new Date(now * 1000 - 1000).toISOString(),
+        is_note_tweet: false,
+      } as any,
+      {
+        id: "rt2",
+        text: "low",
+        author: { username: "l", name: "L" },
+        author_id: "lu",
+        like_count: 1,
+        reply_count: 0,
+        retweet_count: 0,
+        quote_count: 0,
+        created_at: new Date(now * 1000 - 100000).toISOString(),
+        is_note_tweet: false,
+      } as any,
     ];
 
     const ranked = rankTweets(tweets, { viewer_id: "v", now_unix: now }, 5);
@@ -242,14 +286,42 @@ describe("X Algo (For You ranking - from x-algorithm)", () => {
   test("algo ranks results from mock XClient search (integration unit)", async () => {
     // Simulate fetching from XClient then ranking locally (no network)
     const mockSearchResults: Tweet[] = [
-      { id: "s1", text: "popular post about topic", author: { username: "p1", name: "P1" }, author_id: "p1id", like_count: 5000, reply_count: 200, retweet_count: 1000, quote_count: 50, created_at: new Date(now * 1000 - 500).toISOString(), is_note_tweet: false } as any,
-      { id: "s2", text: "low engagement", author: { username: "p2", name: "P2" }, author_id: "p2id", like_count: 10, reply_count: 0, retweet_count: 1, quote_count: 0, created_at: new Date(now * 1000 - 10000).toISOString(), is_note_tweet: false } as any,
+      {
+        id: "s1",
+        text: "popular post about topic",
+        author: { username: "p1", name: "P1" },
+        author_id: "p1id",
+        like_count: 5000,
+        reply_count: 200,
+        retweet_count: 1000,
+        quote_count: 50,
+        created_at: new Date(now * 1000 - 500).toISOString(),
+        is_note_tweet: false,
+      } as any,
+      {
+        id: "s2",
+        text: "low engagement",
+        author: { username: "p2", name: "P2" },
+        author_id: "p2id",
+        like_count: 10,
+        reply_count: 0,
+        retweet_count: 1,
+        quote_count: 0,
+        created_at: new Date(now * 1000 - 10000).toISOString(),
+        is_note_tweet: false,
+      } as any,
     ];
 
-    const ranked = rankTweets(mockSearchResults, { viewer_id: "viewer", now_unix: now, followed_author_ids: ["p1id"] }, 5);
+    const ranked = rankTweets(
+      mockSearchResults,
+      { viewer_id: "viewer", now_unix: now, followed_author_ids: ["p1id"] },
+      5,
+    );
     expect(ranked.length).toBe(2);
     expect(ranked[0].post.id).toBe("s1"); // high eng + in_network (followed)
-    expect(ranked[0].reasons.some(r => r.includes("in_network") || r.includes("engagement"))).toBe(true);
+    expect(
+      ranked[0].reasons.some((r) => r.includes("in_network") || r.includes("engagement")),
+    ).toBe(true);
   });
 });
 

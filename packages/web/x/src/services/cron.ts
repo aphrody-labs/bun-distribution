@@ -10,11 +10,7 @@ export interface SyncOptions {
 }
 
 /** Schedule a periodic background sync of X data into the local store using Bun.cron. */
-export function startSyncCron(
-  client: XClient,
-  store: Store,
-  options: SyncOptions = {}
-) {
+export function startSyncCron(client: XClient, store: Store, options: SyncOptions = {}) {
   const cronExpr = options.cronExpression || "*/15 * * * *"; // every 15 minutes default
   const handle = client.session.handle || "viewer";
 
@@ -65,7 +61,7 @@ export function startSyncCron(
       } catch (err: any) {
         console.error(`[cron-sync] Error during sync loop execution: ${err.message}`);
       }
-    }
+    },
   );
 }
 export type CronInstance = ReturnType<typeof Bun.cron>;
