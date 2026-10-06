@@ -8,6 +8,24 @@ import pkg from "../../package.json";
 export const VERSION: string = pkg.version;
 export const UPDATE_BASE_URL = "https://creator.aphrody.com";
 
+/** Identity of a kit built on this engine (creator-kit by default; omar-kit passes its own). */
+export interface AppIdentity {
+  /** Folder name under LOCALAPPDATA / XDG_CACHE_HOME that holds the update state. */
+  name: string;
+  version: string;
+  /** Environment variable that disables the background check. */
+  disableEnv: string;
+  /** Sub-command spawned (detached, `--quiet`) to download an update. */
+  updateCommand: string;
+}
+
+export const CREATOR_APP: AppIdentity = {
+  name: "creator-kit",
+  version: VERSION,
+  disableEnv: "CREATOR_KIT_NO_UPDATE",
+  updateCommand: "self-update",
+};
+
 export interface ReleaseArtifact {
   id: string;
   kind: "pack" | "update";
@@ -161,9 +179,12 @@ export async function applyPack(
   }
 }
 
-export function stateFile(env: Record<string, string | undefined> = process.env): string {
+export function stateFile(
+  env: Record<string, string | undefined> = process.env,
+  app: AppIdentity = CREATOR_APP,
+): string {
   const base = env.LOCALAPPDATA ?? env.XDG_CACHE_HOME ?? join(env.HOME ?? homedir(), ".cache");
-  return join(base, "creator-kit", "update.json");
+  return join(base, app.name, "update.json");
 }
 
 interface State {
@@ -190,8 +211,7 @@ export interface UpdateResult {
   detail?: string;
 }
 
-/** Download and install the newest release when there is one. `checkOnly` never modifies anything. */
-export async function updateNow(opts: {
+export interface UpdateOptions {
   checkOnly?: boolean;
   baseUrl?: string;
   fetchImpl?: Fetch;
@@ -199,9 +219,17 @@ export async function updateNow(opts: {
   platform?: string;
   version?: string;
   statePath?: string;
-}): Promise<UpdateResult> {
+}
+
+/**
+ * Install the update described by an already fetched `release` when it is newer than `opts.version`.
+ * `checkOnly` never modifies anything. Kits whose manifest has another shape convert it to a `Release` first.
+ */
+export async function updateFromRelease(
+  release: Release,
+  opts: UpdateOptions = {},
+): Promise<UpdateResult> {
   const fetchImpl = opts.fetchImpl ?? fetch;
-  const release = await fetchLatest(opts.baseUrl, fetchImpl, 10_000);
   const state = opts.statePath ?? stateFile();
   await writeState(state, { lastCheck: Date.now(), latest: release.version });
   if (compareVersions(release.version, opts.version ?? VERSION) <= 0)
@@ -233,6 +261,12 @@ export async function updateNow(opts: {
   return { status: "updated", latest: release.version };
 }
 
+/** Download and install the newest release when there is one. `checkOnly` never modifies anything. */
+export async function updateNow(opts: UpdateOptions): Promise<UpdateResult> {
+  const release = await fetchLatest(opts.baseUrl, opts.fetchImpl ?? fetch, 10_000);
+  return updateFromRelease(release, opts);
+}
+
 /** Remove the previous executable left by a swap. */
 export async function cleanupOld(execPath = process.execPath): Promise<void> {
   await rm(`${execPath}.old`, { force: true }).catch(() => undefined);
@@ -240,28 +274,29 @@ export async function cleanupOld(execPath = process.execPath): Promise<void> {
 
 /**
  * Called at every start of a compiled executable: at most one check per 12 h, never blocking. When a newer
- * version exists, a detached `self-update --quiet` downloads it; it takes effect at the next launch.
+ * version exists, a detached `<updateCommand> --quiet` downloads it; it takes effect at the next launch.
  */
 export async function autoUpdateInBackground(
   env: Record<string, string | undefined> = process.env,
+  app: AppIdentity = CREATOR_APP,
 ): Promise<string | undefined> {
-  if (env.CREATOR_KIT_NO_UPDATE || !isCompiled()) return undefined;
+  if (env[app.disableEnv] || !isCompiled()) return undefined;
   await cleanupOld();
-  const file = stateFile(env);
+  const file = stateFile(env, app);
   const state = await readState(file);
   if (
     state.latest &&
-    compareVersions(state.latest, VERSION) > 0 &&
+    compareVersions(state.latest, app.version) > 0 &&
     Date.now() - (state.lastCheck ?? 0) < 12 * 3_600_000
   ) {
     return `Mise à jour ${state.latest} en cours d'installation en arrière-plan (active au prochain lancement).`;
   }
   if (Date.now() - (state.lastCheck ?? 0) < 12 * 3_600_000) return undefined;
-  const child = Bun.spawn([process.execPath, "self-update", "--quiet"], {
+  const child = Bun.spawn([process.execPath, app.updateCommand, "--quiet"], {
     stdin: "ignore",
     stdout: "ignore",
     stderr: "ignore",
-    env: { ...env, CREATOR_KIT_NO_UPDATE: "1" },
+    env: { ...env, [app.disableEnv]: "1" },
   });
   child.unref();
   await writeState(file, { ...state, lastCheck: Date.now() });

@@ -13,9 +13,8 @@
  * Runbook: docs/operations/infra/CREATOR.md. Remote commands go through `aphrody infra ssh` only.
  */
 import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 
 export const SITE = {
@@ -30,6 +29,7 @@ export const SITE = {
 const repo = resolve(import.meta.dir, "../..");
 const appDir = join(repo, "apps/community/creator-kit");
 import { build as buildPage, SEED } from "../../apps/web/creator/build.ts";
+import { brandExe } from "./windows-exe.ts";
 const TARGET = {
   platform: "windows-x64",
   bunTarget: "bun-windows-x64-baseline",
@@ -159,48 +159,20 @@ export async function scanPack(dir: string): Promise<void> {
   }
 }
 
-const RCEDIT = {
-  url: "https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe",
-  sha256: "3e7801db1a5edbec91b49a24a094aad776cb4515488ea5a4ca2289c400eade2a",
-};
-
-/**
- * Icon and version resources of the Windows exe. `bun build --windows-icon` only works when compiling on Windows,
- * so from Linux the pinned rcedit (MIT, electron/rcedit) edits the PE resources under Wine.
- */
-async function brandExe(exe: string, ver: string): Promise<void> {
-  const cache = join(homedir(), ".cache/creator-kit");
-  const rcedit = join(cache, "rcedit-x64.exe");
-  if (!existsSync(rcedit) || (await sha256File(rcedit)) !== RCEDIT.sha256) {
-    const res = await fetch(RCEDIT.url);
-    if (!res.ok) throw new Error(`rcedit download: HTTP ${res.status}`);
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (createHash("sha256").update(bytes).digest("hex") !== RCEDIT.sha256)
-      throw new Error("rcedit: SHA-256 mismatch");
-    await mkdir(cache, { recursive: true });
-    await writeFile(rcedit, bytes);
-  }
-  const strings = {
-    ProductName: "Creator Kit",
-    FileDescription: "Creator Kit",
-    CompanyName: "MAKIT",
-    LegalCopyright: "Apache-2.0",
-    OriginalFilename: TARGET.exe,
-    InternalName: "creator-kit",
-  };
-  const args = [
-    rcedit,
-    exe,
-    "--set-icon",
-    join(appDir, "assets/creator-kit.ico"),
-    "--set-file-version",
-    `${ver}.0`,
-    "--set-product-version",
-    `${ver}.0`,
-  ];
-  for (const [key, value] of Object.entries(strings)) args.push("--set-version-string", key, value);
-  const runner = process.platform === "win32" ? args : ["wine", ...args];
-  await run(runner, repo, { WINEDEBUG: "-all", WINEPREFIX: join(cache, "wine") });
+/** Icon and version resources of the Windows exe (shared rcedit-under-Wine helper). */
+async function brand(exe: string, ver: string): Promise<void> {
+  await brandExe(exe, {
+    icon: join(appDir, "assets/creator-kit.ico"),
+    version: `${ver}.0`,
+    strings: {
+      ProductName: "Creator Kit",
+      FileDescription: "Creator Kit",
+      CompanyName: "MAKIT",
+      LegalCopyright: "Apache-2.0",
+      OriginalFilename: TARGET.exe,
+      InternalName: "creator-kit",
+    },
+  });
 }
 
 async function version(): Promise<string> {
@@ -232,7 +204,7 @@ async function stage(): Promise<{
     ],
     appDir,
   );
-  await brandExe(join(pack, TARGET.exe), ver);
+  await brand(join(pack, TARGET.exe), ver);
   for (const path of PACK_PATHS) {
     await mkdir(join(pack, path, ".."), { recursive: true });
     await cp(join(appDir, path), join(pack, path), { recursive: true });
