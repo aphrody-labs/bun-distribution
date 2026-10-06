@@ -23,4 +23,4 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = {{  tauri_dep  }}
 tauri-runtime-cef = {{  tauri_runtime_cef_dep  }}
-tauri-plugin-log = { package = "aphrody-tauri-plugin-log", version = "3.0.0-alpha.2" }
+tauri-plugin-log = {{  tauri_plugin_log_dep  }}

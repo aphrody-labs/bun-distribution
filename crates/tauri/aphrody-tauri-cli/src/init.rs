@@ -306,12 +306,15 @@ fn render_tauri_config(
 
 /// Builds the template variables for the Tauri crate dependencies of the generated `Cargo.toml`.
 ///
-/// `tauri_dep`, `tauri_build_dep` and `tauri_runtime_cef_dep` are always set. The crates are the
+/// `tauri_dep`, `tauri_build_dep`, `tauri_plugin_log_dep` and `tauri_runtime_cef_dep` are always set. The crates are the
 /// Aphrody packages (`aphrody-tauri`, …) while the dependency keys keep the upstream names, so
 /// `use tauri::…` and `tauri/custom-protocol` keep working.
 ///
 /// When `tauri_path` is provided the dependencies point to the crates inside that directory
 /// (`<tauri_path>/crates/tauri/aphrody-*`, the monorepo layout).
+/// Version of `aphrody-tauri-plugin-log` the app template depends on when no `--tauri-path` is given.
+const TAURI_PLUGIN_LOG_VERSION: &str = "3.0.0-alpha.2";
+
 fn tauri_dependencies_data(
   tauri_path: Option<&Path>,
   metadata: &VersionMetadata,
@@ -326,6 +329,7 @@ fn tauri_dependencies_data(
     };
     data.insert("tauri_dep", path_dep("aphrody-tauri"));
     data.insert("tauri_build_dep", path_dep("aphrody-tauri-build"));
+    data.insert("tauri_plugin_log_dep", path_dep("aphrody-tauri-plugin-log"));
     data.insert(
       "tauri_runtime_cef_dep",
       path_dep("aphrody-tauri-runtime-cef"),
@@ -337,6 +341,10 @@ fn tauri_dependencies_data(
       ))
     };
     data.insert("tauri_dep", version_dep("aphrody-tauri", &metadata.tauri));
+    data.insert(
+      "tauri_plugin_log_dep",
+      version_dep("aphrody-tauri-plugin-log", TAURI_PLUGIN_LOG_VERSION),
+    );
     data.insert(
       "tauri_build_dep",
       version_dep("aphrody-tauri-build", &metadata.tauri_build),
@@ -445,6 +453,11 @@ mod tests {
       dependency(manifest, "build-dependencies", "tauri-build"),
       tauri_path,
       "crates/tauri/aphrody-tauri-build",
+    );
+    assert_path_dependency(
+      dependency(manifest, "dependencies", "tauri-plugin-log"),
+      tauri_path,
+      "crates/tauri/aphrody-tauri-plugin-log",
     );
     assert_path_dependency(
       dependency(manifest, "dependencies", "tauri-runtime-cef"),
