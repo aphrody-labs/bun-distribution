@@ -1,0 +1,58 @@
+// SPDX-License-Identifier: Apache-2.0
+/**
+ * Self-update of the exe, reusing creator-kit's engine (SHA-256 + size check, staging, running exe renamed to `.old`).
+ * Only the source differs: the artifact `omar-kit` of the downloads catalogue, cross-checked against SHA256SUMS.
+ */
+import {
+  autoUpdateInBackground,
+  currentPlatform,
+  updateFromRelease,
+  stateFile,
+  type AppIdentity,
+  type UpdateResult,
+} from "../../../creator-kit/src/lib/update.ts";
+import type { Context } from "./context.ts";
+import {
+  checkArtifact,
+  fetchManifest,
+  fetchSums,
+  pickArtifact,
+  toRelease,
+  WINDOWS_PLATFORM,
+} from "./downloads.ts";
+import { loadProfile } from "./profile.ts";
+
+export const KIT_ARTIFACT = "omar-kit";
+
+export const omarApp = (version: string): AppIdentity => ({
+  name: "Aphrody/Omar",
+  version,
+  disableEnv: "APHRODY_OMAR_NO_UPDATE",
+  updateCommand: "mise-a-jour",
+});
+
+/** `base` overrides the site (tests, and a pack that names another one): default is the access pack's, then the public site. */
+export async function updateKit(
+  ctx: Context,
+  options: { checkOnly?: boolean; base?: string } = {},
+): Promise<UpdateResult> {
+  const base =
+    options.base ??
+    (await loadProfile(ctx.paths))?.downloadsBase ??
+    "https://downloads.aphrody.com";
+  const manifest = await fetchManifest(base, ctx.fetchImpl);
+  const release = toRelease(manifest, KIT_ARTIFACT, currentPlatform());
+  if (!release)
+    return { status: "skipped", detail: "aucune mise à jour de ce programme n'est publiée" };
+  const artifact = pickArtifact(manifest, KIT_ARTIFACT, WINDOWS_PLATFORM, ".tar.gz");
+  if (artifact) checkArtifact(base, artifact, await fetchSums(base, ctx.fetchImpl));
+  return updateFromRelease(release, {
+    version: ctx.version,
+    execPath: ctx.exePath,
+    checkOnly: options.checkOnly ?? false,
+    fetchImpl: ctx.fetchImpl,
+    statePath: stateFile(ctx.sys.env, omarApp(ctx.version)),
+  });
+}
+
+export { autoUpdateInBackground };
