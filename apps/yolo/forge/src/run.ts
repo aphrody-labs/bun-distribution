@@ -577,27 +577,18 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
     });
     if (options.tests) {
       await step(steps, "tests (first_party)", async () => {
-        await run(
-          [
-            receipt.aliases!.find((alias) => alias.name === "bun")!.path,
-            "install",
-            "--ignore-scripts",
-          ],
-          {
-            cwd: join(tree, "test"),
-            env,
-            logFile,
-          },
-        );
+        // The engine as built (argv0 bun): a compiled yolo would run its CLI when the tests spawn process.execPath.
+        await run([built, "install", "--ignore-scripts"], {
+          cwd: join(tree, "test"),
+          env,
+          logFile,
+        });
         const suites = firstPartyTests(tree);
-        await run(
-          [receipt.aliases!.find((alias) => alias.name === "bun")!.path, "test", ...suites],
-          {
-            cwd: tree,
-            env: { ...env, BUN_DEBUG_QUIET_LOGS: "1", BUN_FEATURE_FLAG_INTERNAL_FOR_TESTING: "1" },
-            logFile,
-          },
-        );
+        await run([built, "test", ...suites], {
+          cwd: tree,
+          env: { ...env, BUN_DEBUG_QUIET_LOGS: "1", BUN_FEATURE_FLAG_INTERNAL_FOR_TESTING: "1" },
+          logFile,
+        });
       });
     }
     receipt.ok = true;
