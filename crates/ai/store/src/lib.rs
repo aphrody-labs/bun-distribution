@@ -24,6 +24,7 @@ pub mod files;
 pub mod import;
 pub mod layout;
 pub mod runs;
+pub mod scan;
 pub mod sync_state;
 pub mod time;
 

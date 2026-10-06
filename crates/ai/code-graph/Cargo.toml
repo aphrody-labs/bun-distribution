@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-code-graph"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "aphrody-code-graph: native code graph (nodes, EXTRACTED/INFERRED edges with confidence, communities, god nodes, query/path/explain, report, graph.json) stored in the home database. Port of the Graphify concepts (Apache-2.0, see NOTICE)."
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-store = { workspace = true }
+clap          = { workspace = true, features = ["derive"] }
+tree-sitter = { workspace = true }
+tree-sitter-rust = { workspace = true }
+rusqlite      = { workspace = true }
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+thiserror     = { workspace = true }
+
+[[bin]]
+name = "aphrody-graph"
+path = "src/bin/aphrody-graph.rs"
+
+[dev-dependencies]
+tempfile = { workspace = true }

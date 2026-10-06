@@ -29,6 +29,7 @@ pub fn migrations() -> Result<MigrationSet> {
         "../migrations/0004_memories.sql",
         "../migrations/0005_sessions.sql",
         "../migrations/0006_training.sql",
+        "../migrations/0007_graph_file_cache.sql",
     )?)
 }
 
@@ -173,8 +174,8 @@ mod tests {
     #[test]
     fn migrations_are_valid_and_ordered() {
         let set = migrations().unwrap();
-        assert_eq!(set.len(), 6);
-        assert_eq!(set.latest_version(), Some(6));
+        assert_eq!(set.len(), 7);
+        assert_eq!(set.latest_version(), Some(7));
     }
 
     #[test]
@@ -182,10 +183,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("db/aphrody.sqlite");
         let first = HomeDb::open_path(&path).unwrap();
-        assert_eq!(first.schema_version().unwrap(), 6);
+        assert_eq!(first.schema_version().unwrap(), 7);
         drop(first);
         let second = HomeDb::open_path(&path).unwrap();
-        assert_eq!(second.schema_version().unwrap(), 6);
+        assert_eq!(second.schema_version().unwrap(), 7);
         second.integrity_check().unwrap();
         let mode: String =
             second.conn().pragma_query_value(None, "journal_mode", |r| r.get(0)).unwrap();
@@ -212,7 +213,7 @@ mod tests {
         let source: Option<i64> =
             db.conn().query_row("SELECT source_id FROM docs WHERE path = 'a.rs'", [], |r| r.get(0)).unwrap();
         assert_eq!(source, None);
-        assert_eq!(db.schema_version().unwrap(), 6);
+        assert_eq!(db.schema_version().unwrap(), 7);
     }
 
     #[test]

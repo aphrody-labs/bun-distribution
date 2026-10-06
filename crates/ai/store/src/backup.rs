@@ -164,7 +164,7 @@ mod tests {
         let report = db.backup(&backups, "global", "test").unwrap();
         assert!(report.path.starts_with(&backups));
         assert_eq!(report.sha256.len(), 64);
-        assert_eq!(report.schema_version, 6);
+        assert_eq!(report.schema_version, 7);
         verify_backup(&report.path, &report.sha256).unwrap();
         let sidecar = std::fs::read_to_string(format!("{}.sha256", report.path.display())).unwrap();
         assert!(sidecar.starts_with(&report.sha256));
