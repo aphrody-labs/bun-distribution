@@ -134,7 +134,7 @@ Never stage secrets, private data, database contents, model weights or build out
 No AI bots/apps added to organizations/repositories. Commits:
 `aphrody-dev <contact@aphrody.com>`, no assistant attribution/coauthor.
 Push only existing authorized remotes. Active orgs: aphrody-labs, rose-griffon.
-Public publication requires explicit owner authority.
+Public publication (npm, releases, downloads) and host apply are authorised by the owner directive of 2026-10-07; no secret, credential or database content is ever staged or published.
 
 ## Optimization and migrations
 

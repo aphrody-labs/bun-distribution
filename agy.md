@@ -4,7 +4,7 @@ Lis d'abord `AGENTS.md`, `PLAN.md`, `MEMORY.md`. Règles du propriétaire : rép
 boucle, commit et push directs sur `workspace/main` (jamais de force-push, jamais de `reset --hard`), commits
 `aphrody-dev <contact@aphrody.com>` sans mention d'IA ni co-auteur, corriger les erreurs préexistantes, Cargo lourd
 uniquement sur le VPS (`bun scripts/build/rust/vps-cargo.ts run -- <args>`, jamais dans WSL), aucun secret stagé.
-Autorité : pas de publication (npm, release downloads) ni d'apply hôte sans ordre écrit du propriétaire, sauf ce qui est
+Autorité (directive du propriétaire du 2026-10-07) : publication (npm, release downloads) et apply hôte autorisés sans ordre écrit supplémentaire ; seules restent les règles de données (aucun secret, identifiant ni contenu de base stagé ou publié).
 déjà autorisé ci-dessous. Ne touche jamais aux fichiers non commités de Shenron.
 
 Positionnement : les runtimes Bun fork / vu / yolo sont les vrais produits ; aphrody AI est un backend ; m3 et app-ui sont
@@ -45,7 +45,7 @@ des frameworks.
 9. **Worktrees** : ~18 worktrees `.claude/worktrees/agent-*` obsolètes (commits déjà sur `main` pour la plupart) : vérifier `git cherry workspace/main <branche>`
    puis supprimer ceux qui ne portent plus rien (`git worktree remove`), sans toucher `omar-access` ni `shenron-targets` s'ils sont dirty.
 
-## Attend un ordre écrit du propriétaire (ne pas exécuter sans)
+## Autorisé depuis le 2026-10-07 (ordre du propriétaire : lever les interdictions)
 - Apply hôte : compte `omar`, WireGuard `wg1`, unités MCP/A2A sur le vps (`aphrody infra`/`host-apply`).
 - Publication npm : `@aphrody/a2a` 0.1.0, `@aphrody/rag-core`, `@aphrody/shell-web`, `@aphrody/cli-wasm`.
 - Clés d'Omar : SSH identique à la clé du PC du propriétaire (clé distincte recommandée), WireGuard `A42Sm27u…` ; Discord `1323725494184841256` à confirmer.

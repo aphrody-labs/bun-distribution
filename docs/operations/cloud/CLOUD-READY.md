@@ -40,8 +40,8 @@ and `ssh <alias>` work as on the owner machine.
 - Heavy builds (full workspace, V8, Tauri, WebKit, the Bun fork, `vu` runtime artifacts): the VPS factory,
   `bun scripts/build/rust/vps-cargo.ts run -- <cargo args>` from WSL or `aphrody infra ssh exec --host vps` from the cloud.
 - WSL: no heavy Cargo (crashes WSL); `vps-cargo.ts`, `bootstrap.sh`, tmux tunnels `vps-tunnel`/`vps-cargo`.
-- Hosts change only through Infra's catalog: plan before apply. Publication and `omar`/WireGuard apply still need the
-  owner's written order ([agy.md](../../../agy.md)).
+- Hosts change only through Infra's catalog: plan before apply. Publication and `omar`/WireGuard apply are authorised (owner directive 2026-10-07);
+  keep the plan-before-apply order and the data rules.
 
 ## Verify
 
