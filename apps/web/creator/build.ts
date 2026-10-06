@@ -12,13 +12,14 @@ import { cssFromSeed } from "../../../m3/packages/m3-tokens/src/dynamic-color.ts
 
 const here = import.meta.dir;
 const m3 = join(here, "../../../m3/packages");
-export const SEED = "#7b2cbf";
+/** Source colour of the logo (QuantizerCelebi + Score of material-color-utilities on assets/icon-256.png). */
+export const SEED = "#951ae2";
 
 export async function build(outDir = join(here, "dist")): Promise<string> {
   await rm(outDir, { recursive: true, force: true });
   await mkdir(join(outDir, "fonts"), { recursive: true });
   const tokens = await Bun.file(join(m3, "m3-tokens/src/m3-tokens.css")).text();
-  const scheme = cssFromSeed(SEED, { variant: "tonalSpot" });
+  const scheme = cssFromSeed(SEED, { variant: "fidelity" });
   const font = `@font-face {
   font-family: "Google Sans Flex";
   src: url("/fonts/GoogleSansFlex-latin.woff2") format("woff2");

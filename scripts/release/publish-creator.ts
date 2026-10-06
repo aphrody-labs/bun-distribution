@@ -29,7 +29,7 @@ export const SITE = {
 
 const repo = resolve(import.meta.dir, "../..");
 const appDir = join(repo, "apps/community/creator-kit");
-import { build as buildPage } from "../../apps/web/creator/build.ts";
+import { build as buildPage, SEED } from "../../apps/web/creator/build.ts";
 const TARGET = {
   platform: "windows-x64",
   bunTarget: "bun-windows-x64-baseline",
@@ -237,6 +237,26 @@ async function stage(): Promise<{
     await mkdir(join(pack, path, ".."), { recursive: true });
     await cp(join(appDir, path), join(pack, path), { recursive: true });
   }
+  // Windows M3 theme (light and dark) from the logo source colour; installers are dry-run until -Apply and revert with -Uninstall.
+  const themeOut = join(dir, "theme");
+  await run([
+    "bun",
+    "m3/packages/m3-os-themes/src/cli.ts",
+    "generate",
+    "--target",
+    "windows",
+    "--seed",
+    SEED,
+    "--variant",
+    "fidelity",
+    "--mode",
+    "auto",
+    "--name",
+    "MAKIT",
+    "--out",
+    themeOut,
+  ]);
+  await cp(join(themeOut, "windows"), join(pack, "windows/theme"), { recursive: true });
   await scanPack(pack);
   const out = join(dir, "out");
   await mkdir(join(out, "files"), { recursive: true });

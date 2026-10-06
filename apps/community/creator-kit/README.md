@@ -37,6 +37,8 @@ licence Adobe : il n'est ni installé, ni documenté, ni automatisé ici. Les po
 Toutes les commandes qui modifient quelque chose sont en simulation tant que tu n'ajoutes pas `--apply`
 (ou, pour la compression d'images, elles n'écrasent jamais l'original).
 
+**Thème Windows** (dans le pack, `windows/theme/`) : thème clair et sombre Material 3 tiré de la couleur du logo (`#951ae2`, variante fidelity), fonds d'écran unis. `install-windows.ps1` simule tant que tu n'ajoutes pas `-Apply` et garde l'état précédent ; `uninstall-windows.ps1` revient en arrière. Non testé sur un vrai Windows.
+
 ## wiki-images
 
 ```
