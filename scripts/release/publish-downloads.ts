@@ -1022,7 +1022,7 @@ async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
   const steps = [
     `create ${rootDir}/{releases,app} owned by ubuntu`,
     `upload apps/web/downloads/src/server.ts -> ${rootDir}/app/server.ts`,
-    `upload ${unit}, install to /etc/systemd/system, daemon-reload, enable --now ${cfg.host.service}`,
+    `upload ${unit}, install to /etc/systemd/system, daemon-reload, enable and restart ${cfg.host.service}`,
     `certificate ${cfg.site.certName} (HTTP-01, ${cfg.site.hosts.join(", ")}) through ${cert} when ${certDir} is absent`,
     `upload ${vhost}, install to /etc/nginx/conf.d, retire aphrody-acme-temp.conf (saved under /etc/nginx/retired/), nginx -t, reload`,
   ];
@@ -1039,7 +1039,7 @@ async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
   await put(cfg, join(root, unit), "/tmp/aphrody-downloads.service");
   await remote(
     cfg,
-    "sudo install -o root -g root -m 0644 /tmp/aphrody-downloads.service /etc/systemd/system/aphrody-downloads.service && sudo systemctl daemon-reload && sudo systemctl enable --now aphrody-downloads.service",
+    "sudo install -o root -g root -m 0644 /tmp/aphrody-downloads.service /etc/systemd/system/aphrody-downloads.service && sudo systemctl daemon-reload && sudo systemctl enable aphrody-downloads.service && sudo systemctl restart aphrody-downloads.service",
   );
   await put(cfg, join(root, cert), "/tmp/issue-downloads-certificate.sh");
   await remote(
