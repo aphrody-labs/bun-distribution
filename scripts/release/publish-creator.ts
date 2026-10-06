@@ -30,7 +30,11 @@ export const SITE = {
 const repo = resolve(import.meta.dir, "../..");
 const appDir = join(repo, "apps/community/creator-kit");
 import { build as buildPage } from "../../apps/web/creator/build.ts";
-const TARGET = { platform: "windows-x64", bunTarget: "bun-windows-x64", exe: "creator-kit.exe" };
+const TARGET = {
+  platform: "windows-x64",
+  bunTarget: "bun-windows-x64-baseline",
+  exe: "creator-kit.exe",
+};
 
 /** Files of the pack, relative to the app folder: anything not listed here never ships. */
 const PACK_PATHS = [

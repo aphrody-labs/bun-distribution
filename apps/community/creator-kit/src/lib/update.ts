@@ -98,10 +98,42 @@ export async function downloadVerified(
   await writeFile(dest, bytes);
 }
 
+/** Extract a gzip-compressed ustar archive (regular files and folders only) into `dest`, without any external tool. */
+export async function extractTarGz(archive: string, dest: string): Promise<void> {
+  const data = Bun.gunzipSync(new Uint8Array(await Bun.file(archive).arrayBuffer()));
+  const decoder = new TextDecoder();
+  const field = (start: number, length: number) =>
+    decoder.decode(data.subarray(start, start + length)).replace(/\0.*$/s, "");
+  let offset = 0;
+  while (offset + 512 <= data.length) {
+    if (data[offset] === 0) break;
+    const prefix = field(offset + 345, 155);
+    const name = (prefix ? `${prefix}/` : "") + field(offset, 100);
+    const size = Number.parseInt(field(offset + 124, 12).trim() || "0", 8);
+    const type = String.fromCharCode(data[offset + 156] || 48);
+    offset += 512;
+    const clean = name.replace(/^\.\//, "").replace(/\/$/, "");
+    if (clean === "" || clean === ".") {
+      offset += Math.ceil(size / 512) * 512;
+      continue;
+    }
+    if (clean.startsWith("/") || /^[A-Za-z]:/.test(clean) || clean.split(/[\\/]/).includes("..")) {
+      throw new Error(`entrée refusée : ${name}`);
+    }
+    const target = join(dest, clean);
+    if (type === "5") await mkdir(target, { recursive: true });
+    else if (type === "0" || type === "\0") {
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, data.subarray(offset, offset + size));
+    }
+    offset += Math.ceil(size / 512) * 512;
+  }
+}
+
 /**
- * Extract a verified `tar.gz` (top-level entries only, no `..`) into a staging folder, then swap it in:
- * the running executable is renamed to `<exe>.old` (allowed on Windows even while it runs), other entries replace
- * the old ones. Nothing is deleted before the new files are fully extracted.
+ * Extract a verified `tar.gz` into a staging folder, then swap it in: the running executable is renamed to
+ * `<exe>.old` (allowed on Windows even while it runs), other entries replace the old ones. Nothing is deleted
+ * before the new files are fully extracted.
  */
 export async function applyPack(
   archive: string,
@@ -111,17 +143,7 @@ export async function applyPack(
   const staging = join(installDir, `.update-${Date.now()}`);
   await mkdir(staging, { recursive: true });
   try {
-    const list = Bun.spawnSync(["tar", "-tzf", archive], { stdout: "pipe", stderr: "pipe" });
-    if (list.exitCode !== 0) throw new Error(`archive illisible : ${list.stderr.toString()}`);
-    for (const entry of list.stdout.toString().split("\n").filter(Boolean)) {
-      if (entry.startsWith("/") || entry.split(/[\\/]/).includes(".."))
-        throw new Error(`entrée refusée : ${entry}`);
-    }
-    const extract = Bun.spawnSync(["tar", "-xzf", archive, "-C", staging], {
-      stdout: "ignore",
-      stderr: "pipe",
-    });
-    if (extract.exitCode !== 0) throw new Error(`extraction : ${extract.stderr.toString()}`);
+    await extractTarGz(archive, staging);
     const entries = await readdir(staging);
     if (!entries.includes(exeName)) throw new Error(`${exeName} absent de l'archive`);
     for (const entry of entries) {

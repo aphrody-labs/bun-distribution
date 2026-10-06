@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { registry, summaries } from "./commands/index.ts";
 import { UsageError } from "./lib/args.ts";
+import { logCrash, splitArgs } from "./lib/crash.ts";
 import { autoUpdateInBackground, VERSION } from "./lib/update.ts";
 
 function help(): string {
@@ -43,6 +44,41 @@ export async function main(argv: string[]): Promise<number> {
   }
 }
 
+/** Run one command line; any unexpected error is logged and reported, never left as a raw crash. */
+export async function guarded(argv: string[]): Promise<number> {
+  try {
+    return await main(argv);
+  } catch (error) {
+    const log = logCrash(error, argv);
+    console.error(`Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`);
+    if (log) console.error(`Détails : ${log}`);
+    return 1;
+  }
+}
+
+/** Started without arguments from a terminal (double click on the .exe): menu loop instead of a flash. */
+async function interactive(): Promise<number> {
+  console.log(help());
+  for (;;) {
+    const line = prompt("\ncreator-kit> (q pour quitter)");
+    if (line === null || /^(q|quit|exit)$/i.test(line.trim())) return 0;
+    if (line.trim() === "") continue;
+    await guarded(splitArgs(line));
+  }
+}
+
 if (import.meta.main) {
-  process.exit(await main(Bun.argv.slice(2)));
+  const crash = (error: unknown) => {
+    logCrash(error, Bun.argv.slice(2));
+    console.error(`Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  };
+  process.on("uncaughtException", crash);
+  process.on("unhandledRejection", crash);
+  const args = Bun.argv.slice(2);
+  const code =
+    args.length === 0 && process.stdin.isTTY && process.stdout.isTTY
+      ? await interactive()
+      : await guarded(args);
+  process.exit(code);
 }
