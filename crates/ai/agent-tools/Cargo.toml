@@ -19,7 +19,8 @@ aphrody-agent-proto = { workspace = true }
 aphrody-patch       = { workspace = true }
 aphrody-guard       = { workspace = true }
 aphrody-winclean    = { workspace = true }
-aphrody-web-bridge          = { workspace = true }
+aphrody-google             = { workspace = true }
+aphrody-web-service         = { workspace = true, features = ["render"] }
 aphrody-gemini-web          = { workspace = true }
 obscura-net                = { workspace = true }
 aphrody-jev         = { workspace = true }

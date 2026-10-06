@@ -37,9 +37,8 @@ tokio-stream = { workspace = true }
 tokio-rustls = { workspace = true }
 rustls       = { workspace = true, features = ["ring"] }
 webpki-roots = { workspace = true }
-# x-cli resolution for the X channel (`channels::x`): reuses the single bxc
-# discovery chain instead of growing a second one. Host-only, like bxc-bridge.
-aphrody-web-bridge   = { workspace = true }
+# In-process X client for the X channel (`channels::x`). Host-only: HTTP and SQLite.
+aphrody-x            = { workspace = true }
 
 [dev-dependencies]
 tokio        = { workspace = true, features = ["rt-multi-thread", "macros", "test-util", "io-util", "net", "time", "sync"] }

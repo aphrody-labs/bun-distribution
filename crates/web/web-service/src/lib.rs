@@ -12,10 +12,28 @@
 //! Browser subsystems and the `aphrody-web` CLI use the same [`WebSession`]
 //! contract. HTML from either static fetches or V8-rendered pages is normalized
 //! by [`aphrody_web_extract`], the single content-extraction implementation.
+//!
+//! Two native-only modules are the in-process remainder of the former `aphrody-web-bridge`
+//! (the executable bridge to `bxc` is gone; `bxc` is a name of the `aphrody` binary):
+//!
+//! - [`fetch`]: fetch a page with a profile (HTTP or Obscura browser) and convert it to Markdown,
+//!   with its itinerary attached.
+//! - [`session`]: the shared browser session on its own worker thread, with typed helpers
+//!   (navigate, snapshot, click, evaluate, ...).
 
 pub use aphrody_web_extract::{Extracted, extract_main, html_to_markdown};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod error;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod fetch;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod session;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use error::WebError;
 
 /// A JavaScript unit discovered while crawling HTML. External scripts retain
 /// their resolved URL but are not fetched implicitly; the caller controls

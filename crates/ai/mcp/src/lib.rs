@@ -148,11 +148,9 @@ pub struct WebFetchRequest {
     /// Retrieval profile, opt-in.
     ///
     /// Absent (the default) means aphrody fetches the bytes itself and
-    /// converts them in-process. Naming a profile hands the retrieval to the
-    /// `bxc` executable, which can drive a real browser. That is strictly more
-    /// expensive - and bxc escalates its own profile on failure, so one
-    /// blocked request can become five attempts - hence opt-in rather than
-    /// default.
+    /// converts them in-process. Naming a profile renders the page in the
+    /// in-process Obscura browser, which can run JavaScript. That is strictly
+    /// more expensive, hence opt-in rather than default.
     #[schemars(description = "Optional Aphrody browser retrieval profile for pages that need a \
                               real browser: static | fast | http | stealth | max. Omit for the \
                               fast, local, direct fetch.")]
@@ -776,16 +774,16 @@ pub struct GoogleMcpServer;
 /// is ever remembered when the pattern gets fixed. One function, one policy.
 ///
 /// The returned string always begins with a provenance banner
-/// ([`aphrody_web_bridge::fetch::Fetched::banner`]): which URL, which road, whether
+/// ([`aphrody_web_service::fetch::Fetched::banner`]): which URL, which road, whether
 /// the body is Markdown or unconverted HTML, whether it was truncated. A model
 /// that cannot tell a converted page from raw markup will quote `<div>` at the
 /// user, so the distinction is stated in the one place the model reads.
 ///
 /// Failures are returned as text (an MCP tool answers with a `String`), but
-/// they are the *typed* errors from the bridge, which name the command that
-/// fixes them. Nothing here retries through a proxy.
+/// they are the *typed* errors of the fetch module, which name what failed.
+/// Nothing here retries through a proxy.
 async fn fetch_page(url: &str, profile: Option<&str>) -> String {
-    let mut request = aphrody_web_bridge::fetch::Request::new(url);
+    let mut request = aphrody_web_service::fetch::Request::new(url);
 
     // An unrecognised profile is refused rather than ignored. Silently dropping
     // it would answer with a plain direct fetch while the caller believed a
@@ -807,7 +805,7 @@ async fn fetch_page(url: &str, profile: Option<&str>) -> String {
                     refused rather than silently ignored."
                 .to_owned();
         }
-        let Some(parsed) = aphrody_web_bridge::Profile::parse(trimmed) else {
+        let Some(parsed) = aphrody_web_service::fetch::Profile::parse(trimmed) else {
             return format!(
                 "Unknown browser profile {trimmed:?}. Valid: static, fast, http, stealth, max. \
                  Omit the field for the direct, in-process fetch."
@@ -816,7 +814,7 @@ async fn fetch_page(url: &str, profile: Option<&str>) -> String {
         request = request.with_profile(parsed);
     }
 
-    match aphrody_web_bridge::fetch::fetch(&request).await {
+    match aphrody_web_service::fetch::fetch(&request).await {
         Ok(page) => page.to_report(),
         Err(err) => format!("Fetch failed for {url}\n\n{err}"),
     }
@@ -825,7 +823,7 @@ async fn fetch_page(url: &str, profile: Option<&str>) -> String {
 #[tool_router(router = core_router)]
 impl GoogleMcpServer {
     // -----------------------------------------------------------------------
-    // 1. coding_style_guide — direct fetch + in-process Markdown (bxc-bridge).
+    // 1. coding_style_guide — direct fetch + in-process Markdown (aphrody-web-service).
     //
     // Was: `reqwest::get(format!("https://r.jina.ai/{target_url}"))`. The ten
     // targets below are static, public documents on google.github.io,
@@ -874,13 +872,13 @@ impl GoogleMcpServer {
     }
 
     // -----------------------------------------------------------------------
-    // 2. universal_web_fetch — direct fetch + in-process Markdown (bxc-bridge).
+    // 2. universal_web_fetch — direct fetch + in-process Markdown (aphrody-web-service).
     //
     // Was: `reqwest::get(format!("https://r.jina.ai/{url}"))`, i.e. every page
     // the model asked for was proxied by a third party that saw the URL, the
     // source address and the timing — with no timeout, no user agent, no size
     // cap, and no status check, so a 402 or 429 from the proxy reached the
-    // model as if it were the page. All five of those are fixed by the bridge.
+    // model as if it were the page. All five of those are fixed by the fetch module.
     // -----------------------------------------------------------------------
     #[tool(description = "Fetch any webpage from the internet and convert it to clean Markdown. \
                           Fetched directly by aphrody and converted in-process (no third-party \

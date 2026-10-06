@@ -47,6 +47,9 @@ pub(crate) const TOOLS: &[Tool] = &[
     tool("web-engine", &["aphrody-web"], Target::Entry(aphrody_web_engine::cli_main)),
     tool("web-worker", &["aphrody-web-worker"], Target::Entry(aphrody_web_engine::worker_main)),
     tool("x", &["x-cli"], Target::Entry(aphrody_x::cli_main)),
+    // Absorbed products: `bxc` (Bun x Chrome) and its MCP server `bxc-mcp` are aliases of this
+    // binary; their first argument is mapped through `bxc_compat::PARITY`.
+    tool("bxc", &["bxc", "bxc-mcp"], Target::Entry(crate::bxc_compat::entry)),
     // AI and Google.
     tool("gemini-web", &["aphrody-gemini-web"], Target::Entry(aphrody_gemini_web::cli_main)),
     tool("google", &["aphrody-google"], Target::Command("google")),
@@ -82,9 +85,10 @@ const fn tool(name: &'static str, aliases: &'static [&'static str], target: Targ
 pub(crate) const HELP: &str = "Former standalone binaries, also callable by their old name \
 through the links `aphrody self install-path` creates:
   infra, ovh, yolo, kernel, host-service, ssh, wsl, backend, mcp-server, web-engine, web-worker, x,
-  gemini-web, google, translate-project, jev, embed, summary, skills, agent-home-memory,
-  agent-train, llama-daemon, n2b, identity (design | export-assets | pixel), m3-reproduce,
-  canvas, bindgen, rag-eval, tauri (cargo-tauri), create-tauri-app";
+  bxc (also bxc-mcp: Bun x Chrome, see `bxc --help`), gemini-web, google, translate-project, jev,
+  embed, summary, skills, agent-home-memory, agent-train, llama-daemon, n2b (Node 2 Bun), identity
+  (design | export-assets | pixel), m3-reproduce, canvas, bindgen, rag-eval, tauri (cargo-tauri),
+  create-tauri-app";
 
 /// `aphrody ovh …` is `aphrody infra ovh …`: the OVHcloud control plane (DNS, email, VPS
 /// inspection, reboot and renewal).
@@ -117,16 +121,17 @@ fn tauri(args: Vec<OsString>) -> i32 {
 fn create_tauri_app(args: Vec<OsString>) -> i32 {
     let mut rest = args.into_iter().peekable();
     let first = rest.next();
-    let (bin_name, manager) = if first.as_deref().and_then(invocation_name) == Some("cargo-create-tauri-app") {
-        if rest.peek().and_then(|arg| arg.to_str()) == Some("create-tauri-app") {
-            rest.next();
-            ("cargo create-tauri-app", Some("cargo".to_owned()))
+    let (bin_name, manager) =
+        if first.as_deref().and_then(invocation_name) == Some("cargo-create-tauri-app") {
+            if rest.peek().and_then(|arg| arg.to_str()) == Some("create-tauri-app") {
+                rest.next();
+                ("cargo create-tauri-app", Some("cargo".to_owned()))
+            } else {
+                ("cargo-create-tauri-app", Some("cargo".to_owned()))
+            }
         } else {
-            ("cargo-create-tauri-app", Some("cargo".to_owned()))
-        }
-    } else {
-        ("aphrody create-tauri-app", None)
-    };
+            ("aphrody create-tauri-app", None)
+        };
     create_tauri_app::run(rest, Some(bin_name.to_owned()), manager);
     0
 }
@@ -160,7 +165,8 @@ pub(crate) enum Resolved {
     Entry(fn(Vec<OsString>) -> i32, Vec<OsString>),
 }
 
-fn invocation_name(argv0: &OsStr) -> Option<&str> {
+/// The tool name an executable was started under: `bxc` for `/home/u/.local/bin/bxc.exe`.
+pub(crate) fn invocation_name(argv0: &OsStr) -> Option<&str> {
     Path::new(argv0).file_stem().and_then(OsStr::to_str)
 }
 
@@ -254,6 +260,34 @@ mod tests {
     fn windows_extension_is_ignored() {
         let argv = args(&["n2b.exe", "scan"]);
         assert_eq!(clap_args(resolve(argv)), ["aphrody", "n2b", "scan"]);
+    }
+
+    #[test]
+    fn bxc_and_bxc_mcp_are_names_of_the_single_binary() {
+        for name in ["/home/u/.local/bin/bxc", "/home/u/.local/bin/bxc-mcp", "bxc.exe"] {
+            let Resolved::Entry(_, argv) = resolve(args(&[name, "--version"])) else {
+                panic!("{name} must reach the compatibility entry");
+            };
+            assert_eq!(argv, args(&[name, "--version"]), "the entry sees the invocation name");
+        }
+        let Resolved::Entry(_, argv) = resolve(args(&["aphrody", "bxc", "doctor"])) else {
+            panic!("`aphrody bxc` must reach the compatibility entry");
+        };
+        assert_eq!(argv, args(&["bxc", "doctor"]));
+    }
+
+    #[test]
+    fn n2b_stays_an_alias_of_the_clap_command() {
+        let argv = args(&["/home/u/.local/bin/n2b", "--help"]);
+        assert_eq!(clap_args(resolve(argv)), ["aphrody", "n2b", "--help"]);
+    }
+
+    #[test]
+    fn install_path_links_every_compatibility_name() {
+        let names: Vec<_> = aliases().collect();
+        for wanted in ["bxc", "bxc-mcp", "n2b"] {
+            assert!(names.contains(&wanted), "`aphrody self install-path` must link {wanted}");
+        }
     }
 
     #[test]

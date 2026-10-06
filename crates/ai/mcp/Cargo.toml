@@ -24,7 +24,7 @@ default = ["native-browser", "managed-llama", "gateway-cache"]
 gateway-cache = ["dep:aphrody-rag"]
 # Managed llama.cpp daemon as the Shenron LLM backend when no chat base URL is configured.
 managed-llama = ["dep:aphrody-llama-server"]
-native-browser = ["dep:aphrody-web-service", "aphrody-web-service/render"]
+native-browser = ["aphrody-web-service/render"]
 # Obscura stealth (fingerprint + tracker blocking, wreq TLS impersonation).
 browser-stealth = ["native-browser", "aphrody-web-service/stealth"]
 
@@ -130,13 +130,6 @@ aphrody-firefly    = { workspace = true }
 # Native screen/window capture — backs the screen_capture MCP tool.
 aphrody-capture    = { workspace = true }
 which              = { workspace = true }
-# The single door to bxc: direct fetch + in-process HTML→Markdown through the
-# runtime-loaded `bxc_rust_bridge` cdylib, and the driven `bxc` binary for
-# browser/stealth profiles. Retires the `https://r.jina.ai/` proxy that used to
-# back `universal_web_fetch` and `coding_style_guide`. Not optional: it resolves
-# bxc at runtime, so it builds and links on a machine without bxc installed and
-# answers with a typed error naming the fix.
-aphrody-web-bridge         = { workspace = true }
 aphrody-n2b-core           = { workspace = true }
 aphrody-n2b-types          = { workspace = true }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -152,7 +145,9 @@ dirs               = { workspace = true }
 aphrody-gemini-web         = { workspace = true }
 aphrody-llama-server = { workspace = true, optional = true }
 aphrody-google-mcp         = { workspace = true }
-aphrody-web-service = { workspace = true, optional = true }
+# Direct fetch + in-process HTML→Markdown (`universal_web_fetch`, `coding_style_guide`; retires the
+# `https://r.jina.ai/` proxy) and, with `native-browser`, the Obscura browser tools.
+aphrody-web-service = { workspace = true }
 regex              = { workspace = true }
 # `sync_external_agents` — external agent session mirror (agy, Codex, Claude
 # Code) and its feed into the local memory store (sqlite is already linked

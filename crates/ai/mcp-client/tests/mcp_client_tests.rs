@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 
 use aphrody_mcp_client::{
-    BXC_STABLE_ALIASES, LazyBxcProvider, MCP_PROTOCOL_VERSION, McpClientError, McpContent,
-    PlanState, ToolCatalog, ToolSearchTool, UpdatePlanTool, mcp_schema_to_toolcall_schema,
+    BXC_STABLE_ALIASES, MCP_PROTOCOL_VERSION, McpClientError, McpContent, PlanState, ToolCatalog,
+    ToolSearchTool, UpdatePlanTool, mcp_schema_to_toolcall_schema,
     protocol::{
         jsonrpc_notification, jsonrpc_request, parse_call_tool_result, parse_response,
         parse_server_info, parse_tools_list,
@@ -233,14 +233,5 @@ fn test_bxc_stable_aliases_coverage() {
     for alias in BXC_STABLE_ALIASES {
         assert!(!alias.upstream_name.is_empty());
         assert!(!alias.description.is_empty());
-    }
-}
-
-#[test]
-fn test_lazy_bxc_provider_construction() {
-    let provider = LazyBxcProvider::new();
-    // On this machine, bxc 0.9.15 is installed so is_available should be true!
-    if provider.is_available() {
-        assert!(provider.binary_path().is_some());
     }
 }

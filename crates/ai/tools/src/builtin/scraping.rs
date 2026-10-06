@@ -30,9 +30,8 @@ use reqwest::Client;
 /// Format mirrors the frozen UA that Chrome 146 ships; the `(Windows NT 10.0;
 /// Win64; x64)` platform token is the universal form sent to non-origin-trial
 /// sites as of 2026.
-/// The value is owned by `aphrody-web-bridge` (aphrody-os), the single source for every
-/// direct fetch.
-pub const CHROME146_USER_AGENT: &str = aphrody_web_bridge::fetch::USER_AGENT;
+/// The value is owned by `aphrody-web-service`, the single source for every direct fetch.
+pub const CHROME146_USER_AGENT: &str = aphrody_web_service::fetch::USER_AGENT;
 
 // ---------------------------------------------------------------------------
 // Shared scraping client

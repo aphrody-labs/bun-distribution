@@ -141,6 +141,8 @@ cookie reader (`aphrody-web-chromium`) redacts values from `Debug` output.
 - `aphrody-web fetch --dump markdown` converts the live DOM with the native
   extractor; the V8-side converter in `obscura-js` remains for the CDP `LP`
   domain and the Obscura MCP tools.
-- The `aphrody bxc` and `aphrody google` commands of the general CLI still call a
-  legacy bridge binary that `aphrody-web` does not implement; see the gap list in
-  the architecture document.
+- `bxc` (Bun x Chrome) is a name of the `aphrody` binary: `bxc <subcommand>` and
+  `aphrody bxc <subcommand>` run the unified commands (`aphrody web ...`, `aphrody x`,
+  `aphrody google`, `aphrody kernel mcp`) or fail with their replacement; no legacy bridge
+  binary is called. The parity table is in
+  [bxc-n2b-unification-2026-10-05](../../migration/bxc-n2b-unification-2026-10-05.md).

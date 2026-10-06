@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! File-based A2A coordination + HTTP bridge for aphrody.
 //!
-//! - [`AiManifest`] — rich `ai.json` (peers: Claude Code, Grok, agy, bxc)
+//! - [`AiManifest`] — rich `ai.json` (peers: Claude Code, Grok, agy, bxc = `aphrody web search`)
 //! - [`Envelope`] — JSONL mailbox format (v1, compatible with `aphrody-a2a-ui` in aphrody-ui)
 //! - [`PeerInvoker`] — headless CLI dispatch with verified Grok flags
 //! - [`CoordProxy`] — a `.coord` JSONL mailbox as an NDJSON/SSE snapshot or a `tail -f` stream

@@ -9,9 +9,8 @@
 //! - **Matrix** — Client-Server API v3 (/_matrix/client/v3/) with /sync long-poll.
 //! - **Discord** — REST API v10 (POST `/channels/{id}/messages`, polling history fallback). Ported
 //!   from `openclaw/extensions/discord` (TS, ~140 source files).
-//! - **X / Twitter** — wraps the `x-cli` binary shipped by bxc (cookie auth; resolved through
-//!   `aphrody_web_bridge::resolve`, see [`x`]). aphrody's own `aphrody-x` fork was deleted
-//!   2026-09-07.
+//! - **X / Twitter** — in process through the `aphrody-x` crate (cookie auth, see [`x`]); no
+//!   executable is spawned.
 //!
 //! ## Future roadmap adapters (catalog roadmap)
 //!
@@ -42,6 +41,7 @@ pub mod discord;
 pub mod matrix;
 pub mod slack;
 pub mod telegram;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod x;
 
 use std::path::Path;

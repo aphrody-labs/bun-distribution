@@ -21,6 +21,7 @@ use aphrody_toolcall::{
     AdditionalProperties, JsonSchema, ToolDefinition, ToolError, ToolExecutor, ToolImage,
     ToolOutput,
 };
+use aphrody_web_service::session;
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -447,7 +448,8 @@ impl ComputerBackend for WindowsComputerBackend {
     }
 }
 
-/// Browser automation backend driven by the shared Rust Web client.
+/// Browser automation backend driven by the shared in-process browser session
+/// ([`aphrody_web_service::session`]): no process is spawned.
 pub struct BrowserComputerBackend;
 
 #[async_trait::async_trait]
@@ -461,91 +463,37 @@ impl ComputerBackend for BrowserComputerBackend {
         action: &ComputerAction,
         policy: &ComputerPolicy,
     ) -> Result<ToolOutput, ToolError> {
-        let client = match aphrody_web_bridge::cli::WebBrowserClient::discover() {
-            Ok(c) => c,
-            Err(error) => {
-                return Ok(ToolOutput::error(format!(
-                    "computer [browser]: native Web client unavailable ({error})"
-                )));
-            },
-        };
-
+        let short = Duration::from_secs(5);
+        let long = Duration::from_secs(15);
         match action {
-            ComputerAction::Screenshot => {
-                let run = client
-                    .run(&["chrome".to_string(), "screenshot".to_string()], Duration::from_secs(15))
-                    .await;
-                match run {
-                    Ok(r) if r.ok() && !r.stdout.trim().is_empty() => {
-                        let b64 = r.stdout.trim().to_string();
-                        let mut out = ToolOutput::ok("Browser screenshot captured.");
-                        out.images = vec![ToolImage::new("image/png", b64)];
-                        Ok(out)
-                    },
-                    Ok(_) => Ok(ToolOutput::error("Browser screenshot returned no PNG data.")),
-                    Err(error) => {
-                        Ok(ToolOutput::error(format!("Browser screenshot error: {error}")))
-                    },
-                }
+            ComputerAction::Screenshot => match session::screenshot(long).await {
+                Ok(png) if !png.trim().is_empty() => {
+                    let mut out = ToolOutput::ok("Browser screenshot captured.");
+                    out.images = vec![ToolImage::new("image/png", png.trim().to_string())];
+                    Ok(out)
+                },
+                Ok(_) => Ok(ToolOutput::error("Browser screenshot returned no PNG data.")),
+                Err(error) => Ok(ToolOutput::error(format!("Browser screenshot error: {error}"))),
             },
-            ComputerAction::Click { x, y, element_id, button } => {
-                let btn = button.as_deref().unwrap_or("left");
-                let mut args = vec!["chrome".to_string(), "click".to_string()];
-                if let Some(eid) = element_id {
-                    args.push("--selector".to_string());
-                    args.push(eid.clone());
-                } else if let (Some(x), Some(y)) = (x, y) {
-                    args.push("--x".to_string());
-                    args.push(x.to_string());
-                    args.push("--y".to_string());
-                    args.push(y.to_string());
-                }
-                args.push("--button".to_string());
-                args.push(btn.to_string());
-
-                let res = client.run(&args, Duration::from_secs(15)).await;
-                match res {
-                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
-                    Ok(r) => Ok(ToolOutput::error(format!("Browser click failed: {}", r.stderr))),
-                    Err(e) => Ok(ToolOutput::error(format!("Browser click error: {e}"))),
-                }
+            ComputerAction::Click { element_id, .. } => match element_id {
+                Some(selector) => match session::click(selector, long).await {
+                    Ok(text) => Ok(ToolOutput::ok(text)),
+                    Err(error) => Ok(ToolOutput::error(format!("Browser click error: {error}"))),
+                },
+                None => Ok(ToolOutput::error(
+                    "Browser click error: coordinate clicks are not exposed by the shared \
+                     browser session; pass an element_id CSS selector",
+                )),
             },
-            ComputerAction::DoubleClick { x, y } => {
-                let args = vec![
-                    "chrome".to_string(),
-                    "click".to_string(),
-                    "--x".to_string(),
-                    x.to_string(),
-                    "--y".to_string(),
-                    y.to_string(),
-                    "--double".to_string(),
-                ];
-                let res = client.run(&args, Duration::from_secs(15)).await;
-                match res {
-                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
-                    Ok(r) => {
-                        Ok(ToolOutput::error(format!("Browser double-click failed: {}", r.stderr)))
-                    },
-                    Err(e) => Ok(ToolOutput::error(format!("Browser double click error: {e}"))),
-                }
-            },
-            ComputerAction::Move { x, y } => {
-                let args = vec![
-                    "chrome".to_string(),
-                    "move".to_string(),
-                    "--x".to_string(),
-                    x.to_string(),
-                    "--y".to_string(),
-                    y.to_string(),
-                ];
-                match client.run(&args, Duration::from_secs(5)).await {
-                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
-                    Ok(r) => Ok(ToolOutput::error(format!("Browser move failed: {}", r.stderr))),
-                    Err(error) => Ok(ToolOutput::error(format!("Browser move error: {error}"))),
-                }
-            },
-            ComputerAction::Drag { start_x, start_y, end_x, end_y } => {
-                let _ = (start_x, start_y, end_x, end_y);
+            ComputerAction::DoubleClick { .. } => Ok(ToolOutput::error(
+                "Browser double click error: double-click is not exposed by the shared browser \
+                 session",
+            )),
+            ComputerAction::Move { .. } => Ok(ToolOutput::error(
+                "Browser move error: pointer movement is not exposed by the shared browser \
+                 session",
+            )),
+            ComputerAction::Drag { .. } => {
                 Ok(ToolOutput::error("Native browser drag is not available."))
             },
             ComputerAction::Scroll { delta_x, delta_y, direction, amount } => {
@@ -557,42 +505,17 @@ impl ComputerBackend for BrowserComputerBackend {
                     })
                     .unwrap_or(0);
                 let dx = delta_x.unwrap_or(0);
-                let args = vec![
-                    "chrome".to_string(),
-                    "scroll".to_string(),
-                    "--dx".to_string(),
-                    dx.to_string(),
-                    "--dy".to_string(),
-                    dy.to_string(),
-                ];
-                match client.run(&args, Duration::from_secs(5)).await {
-                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
-                    Ok(r) => Ok(ToolOutput::error(format!("Browser scroll failed: {}", r.stderr))),
+                match session::scroll(i64::from(dx), i64::from(dy), short).await {
+                    Ok(text) => Ok(ToolOutput::ok(text)),
                     Err(error) => Ok(ToolOutput::error(format!("Browser scroll error: {error}"))),
                 }
             },
-            ComputerAction::Type { text } => {
-                let args = vec![
-                    "chrome".to_string(),
-                    "type".to_string(),
-                    "--text".to_string(),
-                    text.clone(),
-                ];
-                let res = client.run(&args, Duration::from_secs(15)).await;
-                match res {
-                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
-                    Ok(r) => Ok(ToolOutput::error(format!("Browser type failed: {}", r.stderr))),
-                    Err(e) => Ok(ToolOutput::error(format!("Browser type error: {e}"))),
-                }
-            },
-            ComputerAction::Keypress { key } => {
-                let args =
-                    vec!["chrome".to_string(), "key".to_string(), "--key".to_string(), key.clone()];
-                match client.run(&args, Duration::from_secs(5)).await {
-                    Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
-                    Ok(r) => Ok(ToolOutput::error(format!("Browser key failed: {}", r.stderr))),
-                    Err(error) => Ok(ToolOutput::error(format!("Browser key error: {error}"))),
-                }
+            ComputerAction::Type { .. } => Ok(ToolOutput::error(
+                "Browser type error: typing requires an element selector or ref",
+            )),
+            ComputerAction::Keypress { key } => match session::press_key(key, short).await {
+                Ok(text) => Ok(ToolOutput::ok(text)),
+                Err(error) => Ok(ToolOutput::error(format!("Browser key error: {error}"))),
             },
             ComputerAction::Wait { duration_ms } => {
                 tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
@@ -604,20 +527,13 @@ impl ComputerBackend for BrowserComputerBackend {
                         "Element-specific observation requires a browser ref.",
                     ));
                 }
-                let res = client
-                    .run(&["chrome".to_string(), "snapshot".to_string()], Duration::from_secs(15))
-                    .await;
-                match res {
-                    Ok(r) => Ok(ToolOutput::ok(r.stdout)),
-                    Err(e) => Ok(ToolOutput::error(format!("Browser observe error: {e}"))),
+                match session::snapshot(long).await {
+                    Ok(text) => Ok(ToolOutput::ok(text)),
+                    Err(error) => Ok(ToolOutput::error(format!("Browser observe error: {error}"))),
                 }
             },
-            ComputerAction::ListWindows => match client
-                .run(&["chrome".to_string(), "tabs".to_string()], Duration::from_secs(15))
-                .await
-            {
-                Ok(r) if r.ok() => Ok(ToolOutput::ok(r.stdout)),
-                Ok(r) => Ok(ToolOutput::error(format!("Browser tab listing failed: {}", r.stderr))),
+            ComputerAction::ListWindows => match session::tabs(long).await {
+                Ok(text) => Ok(ToolOutput::ok(text)),
                 Err(error) => Ok(ToolOutput::error(format!("Browser tab listing error: {error}"))),
             },
             ComputerAction::FocusWindow { window_title, .. } => {
@@ -625,14 +541,11 @@ impl ComputerBackend for BrowserComputerBackend {
                     if let Err(denial) = policy.verify_target(url) {
                         return Ok(ToolOutput::error(denial));
                     }
-                    let args = vec!["chrome".to_string(), "navigate".to_string(), url.clone()];
-                    let res = client.run(&args, Duration::from_secs(15)).await;
-                    match res {
-                        Ok(r) => Ok(ToolOutput::ok(format!(
-                            "Navigated browser to '{url}':\n{}",
-                            r.stdout
-                        ))),
-                        Err(e) => Ok(ToolOutput::error(format!("Navigation error: {e}"))),
+                    match session::navigate(url, long).await {
+                        Ok(text) => {
+                            Ok(ToolOutput::ok(format!("Navigated browser to '{url}':\n{text}")))
+                        },
+                        Err(error) => Ok(ToolOutput::error(format!("Navigation error: {error}"))),
                     }
                 } else {
                     Ok(ToolOutput::error("Native browser focus requires a URL."))

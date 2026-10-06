@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! A2A 1.0 [`AgentExecutor`] — routes `SendMessage` to native Claude / Grok / agy / bxc CLIs.
+//! A2A 1.0 [`AgentExecutor`] — routes `SendMessage` to native Claude / Grok / agy CLIs and to `aphrody web search` (peer `bxc`).
 
 use std::{collections::HashMap, sync::Arc};
 

@@ -12,6 +12,10 @@ use std::{collections::BTreeMap, time::Duration};
 use aphrody_toolcall::{
     AdditionalProperties, JsonSchema, ToolDefinition, ToolError, ToolExecutor, ToolOutput,
 };
+use aphrody_web_service::{
+    fetch::{Profile, Request, fetch},
+    session,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -78,35 +82,37 @@ impl ToolExecutor for WebSearchTool {
             ToolError::InvalidArguments { tool: "web_search".into(), message: e.to_string() }
         })?;
 
-        let client = match aphrody_web_bridge::cli::WebBrowserClient::discover() {
-            Ok(c) => c,
-            Err(e) => {
-                return Ok(ToolOutput::error(format!(
-                    "web_search: native Web client unavailable ({e})"
-                )));
-            },
+        if args.query.trim().is_empty() {
+            return Ok(ToolOutput::error("web_search: the query must not be empty"));
+        }
+        // The shared SERP client of `aphrody web search`: cookie-authenticated when a jar is
+        // present, anonymous otherwise.
+        let num = args.num.unwrap_or(5).clamp(1, 100);
+        let options = aphrody_google::search::SearchOptions {
+            num: u8::try_from(num).ok(),
+            ..aphrody_google::search::SearchOptions::default()
         };
-
-        let num = args.num.unwrap_or(5);
-        match client.search(&args.query, Some(num), self.budget).await {
-            Ok(results) => {
+        let search = aphrody_google::search::search_rich(&args.query, &options);
+        match tokio::time::timeout(self.budget, search).await {
+            Ok(Ok(results)) => {
                 let mut out = format!("# Search results for: {}\n\n", args.query);
-                if results.hits.is_empty() {
+                if results.content.organic.is_empty() {
                     out.push_str("No results found.\n");
                 } else {
-                    for (i, hit) in results.hits.iter().enumerate() {
+                    for hit in results.content.organic.iter().take(num as usize) {
                         out.push_str(&format!(
                             "### {}. [{}]({})\n{}\n\n",
-                            i + 1,
-                            hit.title,
-                            hit.link,
-                            hit.snippet
+                            hit.position, hit.title, hit.url, hit.snippet
                         ));
                     }
                 }
                 Ok(ToolOutput::ok(out))
             },
-            Err(e) => Ok(ToolOutput::error(format!("web_search failed: {e}"))),
+            Ok(Err(e)) => Ok(ToolOutput::error(format!("web_search failed: {e}"))),
+            Err(_) => Ok(ToolOutput::error(format!(
+                "web_search exceeded its {}s budget",
+                self.budget.as_secs()
+            ))),
         }
     }
 }
@@ -178,18 +184,20 @@ impl ToolExecutor for WebScrapeTool {
             ToolError::InvalidArguments { tool: "web_scrape".into(), message: e.to_string() }
         })?;
 
-        let client = match aphrody_web_bridge::cli::WebBrowserClient::discover() {
-            Ok(c) => c,
-            Err(e) => {
+        let mut request = Request::new(args.url).with_timeout(self.budget);
+        if let Some(name) = args.profile.as_deref() {
+            let Some(profile) = Profile::parse(name) else {
                 return Ok(ToolOutput::error(format!(
-                    "web_scrape: native Web client unavailable ({e})"
+                    "web_scrape: unknown profile {name:?}; use static, fast, http, stealth or max"
                 )));
+            };
+            request = request.with_profile(profile);
+        }
+        match fetch(&request).await {
+            Ok(page) if page.body.trim().is_empty() => {
+                Ok(ToolOutput::error("web_scrape failed: the page produced an empty body"))
             },
-        };
-
-        let profile = args.profile.as_deref().and_then(aphrody_web_bridge::cli::Profile::parse);
-        match client.scrape_markdown(&args.url, profile, self.budget).await {
-            Ok((body, _run)) => Ok(ToolOutput::ok(body)),
+            Ok(page) => Ok(ToolOutput::ok(page.body)),
             Err(e) => Ok(ToolOutput::error(format!("web_scrape failed: {e}"))),
         }
     }
@@ -252,33 +260,15 @@ impl ToolExecutor for JsEvalTool {
             ToolError::InvalidArguments { tool: "js_eval".into(), message: e.to_string() }
         })?;
 
-        let client = match aphrody_web_bridge::cli::WebBrowserClient::discover() {
-            Ok(c) => c,
-            Err(e) => {
-                return Ok(ToolOutput::error(format!(
-                    "js_eval: native Web client unavailable ({e})"
-                )));
-            },
-        };
-
-        let run = client
-            .run(&["-e".to_string(), args.code], Duration::from_secs(10))
+        let output = session::evaluate(&args.code, Duration::from_secs(10))
             .await
             .map_err(|e| ToolError::Execution { tool: "js_eval".into(), message: e.to_string() })?;
 
-        if run.ok() {
-            Ok(ToolOutput::ok(if run.stdout.trim().is_empty() {
-                "Execution finished successfully with empty output.".into()
-            } else {
-                run.stdout
-            }))
+        Ok(ToolOutput::ok(if output.trim().is_empty() {
+            "Execution finished successfully with empty output.".into()
         } else {
-            Ok(ToolOutput::error(format!(
-                "js_eval exited {}: {}",
-                run.code.unwrap_or(-1),
-                run.stderr
-            )))
-        }
+            output
+        }))
     }
 }
 

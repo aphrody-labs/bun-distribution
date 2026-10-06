@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | **bxc** workspace | `apps/bxc` (not in repo) | Zero-spawn browser engine, REST `:3000`, **bxc-mcp** (40 tools) |
 | **`@aphrody/x`** | `packages/web/x` | TypeScript X.com client (GraphQL + REST, cookie auth) |
-| **x FFI** (Rust) | `crates/aphrody-web-ffi` (not in repo), `crates/web/web-bridge` | FFI for `bxc_x_*` |
+| **x FFI** (Rust) | `crates/aphrody-web-ffi` (not in repo), `crates/interop/ffi` | FFI for `bxc_x_*` |
 | **aphrody-x** | `crates/web/x` | Standalone Rust CLI (`aphrody-x`, 47 subcommands) |
 
 ## CLI surfaces

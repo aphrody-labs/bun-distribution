@@ -108,27 +108,20 @@ which                     = { workspace = true }
 indicatif                 = { workspace = true }
 colored                   = { workspace = true }
 mimalloc                  = { workspace = true }
-# `scraper` had exactly one consumer: the hand-rolled DuckDuckGo SERP scraper
-# in `SearchCommand`, now delegated to `bxc search --json`. Kept declared (and
-# ignored by cargo-machete below) rather than removed, because dropping a
-# workspace dependency is a lockfile-wide change and this pass is about routing,
-# not about pruning; the crate is no longer referenced by any `use` in `cli`.
-scraper                   = { workspace = true }
-# The single door to bxc: SERP retrieval for `aphrody search`, the resolution
-# chain behind `aphrody bxc`, and the in-process HTML→Markdown cdylib.
-aphrody-web-bridge                = { workspace = true }
+# In-process page fetch with profiles and the shared browser session (`aphrody web fetch|browser`).
+aphrody-web-service               = { workspace = true, features = ["render"] }
 aphrody-web-crawl                 = { workspace = true }
 aphrody-web-detect                = { workspace = true }
 aphrody-web-extract               = { workspace = true }
 aphrody-web-frames                = { workspace = true }
 aphrody-x                         = { workspace = true }
 obscura                           = { workspace = true }
+obscura-dom                       = { workspace = true }
 obscura-net                       = { workspace = true }
 aphrody-n2b                       = { workspace = true }
 aphrody-translate         = { workspace = true }
 aphrody-ecosystem         = { workspace = true }
 aphrody-backend                   = { workspace = true }
-aphrody-toolchains                = { workspace = true }
 rustls                    = { workspace = true }
 aphrody-ai                = { workspace = true }
 aphrody-native            = { workspace = true }
@@ -307,4 +300,4 @@ criterion     = { workspace = true }
 
 
 [package.metadata.cargo-machete]
-ignored = ["ort", "scraper"]
+ignored = ["ort"]

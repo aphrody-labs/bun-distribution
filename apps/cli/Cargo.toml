@@ -65,7 +65,4 @@ name    = "cold_start"
 harness = false
 
 [package.metadata.cargo-machete]
-# `scraper`: its only consumer (the DuckDuckGo SERP scraper in SearchCommand)
-# was routed to `bxc search --json`. Declared but unreferenced by design — see
-# the comment on the dependency.
-ignored = ["ort", "scraper"]
+ignored = ["ort"]

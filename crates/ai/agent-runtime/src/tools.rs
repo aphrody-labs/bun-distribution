@@ -26,7 +26,7 @@ use crate::{config::RuntimeConfig, error::RuntimeError};
 /// Maximum bytes returned by one skill tool invocation.
 const MAX_SKILL_BYTES: u64 = 256 * 1024;
 
-/// Tool name of the bxc-backed browser ("web computer use") surface.
+/// Tool name of the in-process browser ("web computer use") surface (formerly bxc-backed).
 ///
 /// Kept distinct from the native `computer_use` desktop surface so an agent can
 /// drive a page and the host desktop in the same session.
@@ -353,8 +353,8 @@ pub fn build_tool_registry(config: &RuntimeConfig) -> Result<Arc<ToolRegistry>, 
         )?;
     }
 
-    // BXC native surface. These tools broker their own transport (bxc CLI /
-    // FFI bridge) and take no `cwd`, so they are registered unwrapped.
+    // BXC native surface. These tools run in process (aphrody-web-service, the SERP client of
+    // aphrody-google) and take no `cwd`, so they are registered unwrapped.
     register_if_allowed(&mut registry, profile, Arc::new(WebSearchTool::new()))?;
     register_if_allowed(&mut registry, profile, Arc::new(WebScrapeTool::new()))?;
     register_if_allowed(&mut registry, profile, Arc::new(JsEvalTool::new()))?;

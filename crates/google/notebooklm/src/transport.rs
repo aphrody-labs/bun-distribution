@@ -4,8 +4,8 @@
 //!
 //! When the upstream eventually rejects the request because the cookie
 //! session has expired, callers should surface the [`NotebookError::Auth`]
-//! variant to their session-refresh layer (typically `aphrody bxc` headless
-//! re-login flow, kept out-of-crate per `project_aphrody_owned_tools`).
+//! variant to their session-refresh layer (typically a headless
+//! browser re-login through `aphrody web`, kept out-of-crate per `project_aphrody_owned_tools`).
 
 use std::{sync::Arc, time::Duration};
 

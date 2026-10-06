@@ -1,8 +1,8 @@
 # Plan bxc-bridge — ce que aphrody web doit garantir à un appelant Rust
 
 **Date** : 7 septembre 2026 · **Aphrody Web mesuré** : 0.9.4 (binaire), `rust-bridge` 0.2.1
-**Appelant** : `crates/web/web-bridge` (à l'époque dans le monorepo aphrody ; aujourd'hui dans
-`aphrody-web`, consommé par `aphrody-ai` via `../crates/web/web-bridge`)
+**Appelant** : ancien crate `aphrody-web-bridge` (supprimé le 2026-10-05 ; à l'époque dans le monorepo aphrody ; aujourd'hui dans
+`aphrody-web`, consommé par `aphrody-ai`, chemin disparu)
 **Registre** : ce document prolonge [`RAPPORT-DEFAUTS-2026-09-05.md`](../../../operations/workspace/HISTORY.md)
 et son fil rouge — *Aphrody Web échoue en silence avec un code de sortie 0*. Tout ce qui suit
 a été mesuré par exécution, avec son code de sortie.
@@ -289,7 +289,7 @@ ligne non-Markdown `[recon] …` que tout parseur doit retirer.
 
 ## 5. Ce que l'appelant fait déjà, et qu'il ne faut pas dupliquer
 
-`crates/web/web-bridge` côté aphrody encaisse déjà les défauts ci-dessus. Corriger côté Aphrody Web
+l'ancien `aphrody-web-bridge` côté aphrody encaissait déjà les défauts ci-dessus. Corriger côté Aphrody Web
 permettra de **retirer** ces contournements, pas de les doubler :
 
 | Défaut | Contournement côté aphrody |

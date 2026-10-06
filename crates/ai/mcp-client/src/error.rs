@@ -115,10 +115,6 @@ pub enum McpClientError {
     #[error("MCP stdio transport is unavailable on this target")]
     UnsupportedTransport,
 
-    /// Failed to resolve the bxc executable or runtime bridge.
-    #[error("failed to resolve bxc executable: {0}")]
-    BxcResolve(String),
-
     /// Failed to read an image file for `view_image`.
     #[error("failed to load image `{path}`: {message}")]
     ImageLoadError {

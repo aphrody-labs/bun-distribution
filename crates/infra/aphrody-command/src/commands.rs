@@ -879,70 +879,6 @@ impl TerminalCommand for CodexCommand {
     }
 }
 
-// The `bxc` resolution chain used to live here, in a `resolve_bxc_bin` helper.
-// It now lives in `aphrody_web_bridge::resolve::binary`, the single authority for where
-// bxc is on this machine: the CLI and the MCP server must not drift apart on
-// that question, and two copies is how they would. Delegating also fixed a real
-// defect the local copy carried — its `~/.local/bin` branch was
-// `#[cfg(not(windows))]`, so on Windows, where the installed binary sits at
-// `%USERPROFILE%\.local\bin\bxc.exe`, the chain skipped it and reported bxc as
-// absent.
-
-/// Implementation of `aphrody bxc <args…>` — a thin, scriptable forwarder to Bxc.
-pub(crate) struct BxcCommand {
-    pub args: Vec<String>,
-}
-
-#[async_trait]
-impl TerminalCommand for BxcCommand {
-    async fn execute(&self, _ctx: &GoogleContext) -> miette::Result<()> {
-        // The itinerary comes from the resolver, so the message lists the
-        // paths that were really probed rather than a prose summary that can
-        // drift away from the code.
-        let bin_path =
-            aphrody_web_bridge::resolve::binary().map_err(|e| miette::miette!("{e}"))?.into_path();
-
-        let status = if cfg!(windows)
-            && bin_path
-                .extension()
-                .and_then(|e| e.to_str())
-                .is_some_and(|ext| ext.eq_ignore_ascii_case("cmd"))
-        {
-            std::process::Command::new("cmd").arg("/c").arg(&bin_path).args(&self.args).status()
-        } else {
-            std::process::Command::new(&bin_path).args(&self.args).status()
-        };
-
-        let status = match status {
-            Ok(st) => st,
-            Err(e) => {
-                // Repli in-tree via Bun si le spawn direct échoue
-                let in_tree_candidate = aphrody_diagnostics::doctor::repo_root()
-                    .map(|r| r.join("apps").join("bxc").join("src").join("cli").join("index.ts"));
-                if let Some(script) = in_tree_candidate.filter(|p| p.is_file()) {
-                    aphrody_toolchains::Toolchain::Bun
-                        .command([script])
-                        .args(&self.args)
-                        .status()
-                        .map_err(|be| {
-                        miette::miette!(
-                            "Échec du spawn `{}` ({e}) et du repli Bun ({be})",
-                            bin_path.display()
-                        )
-                    })?
-                } else {
-                    return Err(miette::miette!("Échec du spawn `{}`: {e}", bin_path.display()));
-                }
-            },
-        };
-
-        if !status.success() {
-            return Err(miette::Report::new(SubprocessExit(status.code().unwrap_or(1))));
-        }
-        Ok(())
-    }
-}
-
 /// Forwards `aphrody google <args…>` to the native Google/Gemini ecosystem or executes native DoH / Suggest / Languages in-process.
 pub(crate) struct GoogleCommand {
     pub args: Vec<String>,
@@ -1302,8 +1238,8 @@ impl TerminalCommand for NieCommand {
     async fn execute(&self, _ctx: &GoogleContext) -> miette::Result<()> {
         let bin_path = resolve_nie_bin().ok_or_else(|| {
             miette::miette!(
-                "CLI Niers (`niers`) introuvable. Installer avec `aphrody package install nie` ou \
-                 définir NIE_BIN=/chemin/absolu."
+                "CLI Niers (`niers`) introuvable : il est géré par IECODE, pas par Aphrody. \
+                 L'installer depuis son dépôt ou définir NIE_BIN=/chemin/absolu."
             )
         })?;
         let status = std::process::Command::new(&bin_path)
@@ -1366,31 +1302,14 @@ impl TerminalCommand for SshCommand {
     }
 }
 
-/// `aphrody search <query…>` — web search, delegated to the bxc engine.
+/// `aphrody search <query…>` — web search through the native SERP client of `aphrody web search`.
 ///
-/// # What this replaced, and why
-///
-/// This command used to scrape `https://html.duckduckgo.com/html/` by hand: a
-/// forged Chrome 124 user agent, then three hard-coded CSS selectors
-/// (`div.result.results_links`, `a.result__a`, `a.result__snippet`) against an
-/// endpoint DuckDuckGo never contracted, plus a hand-rolled decoder for their
-/// `uddg` redirect wrapper. It had one loud defect and one quiet one:
-///
-/// * loud — the selectors break whenever DDG touches its markup, which it does;
-/// * quiet — when they broke, the loop simply matched nothing and the command printed "Aucun
-///   résultat trouvé". A parsing failure was **indistinguishable from an honest zero-result
-///   query**, which is precisely the failure mode this repository has a name for (`CLAUDE.md` §7):
-///   the filter discards, and raises nothing.
-///
-/// bxc owns SERP retrieval, including the bot-detection dance, and answers
-/// with structured JSON. So the selectors are gone, and the two outcomes are
-/// now told apart: [`aphrody_web_bridge::cli::Search::unreadable`] counts entries bxc
-/// returned that this side could not read, so "Google gave nothing" and "the
-/// payload shape changed" no longer print the same sentence.
-///
-/// There is **no fallback to the old scraper**. Falling back would reinstate
-/// the silent failure on the day bxc is missing, and the operator would never
-/// learn why the results got worse.
+/// The hand-rolled DuckDuckGo scraper this command once carried is gone, and so is the delegation
+/// to an external `bxc` executable: the query goes through [`aphrody_google::search`] in process.
+/// A blocked anonymous query and a genuinely empty one are told apart: the first is an error that
+/// names the cookie-authenticated route, the second prints an explicit "no result" line with the
+/// profile that answered. There is no fallback to another scraper: it would bring the silent
+/// failure back.
 pub(crate) struct SearchCommand {
     pub query: Vec<String>,
 }
@@ -1401,8 +1320,8 @@ impl TerminalCommand for SearchCommand {
         let q = self.query.join(" ");
         println!("{}", format!("🔍 Recherche : {}", q).bold().blue());
 
-        let cli = aphrody_web_bridge::BxcCli::discover().map_err(|e| miette::miette!("{e}"))?;
-        let results = match cli.search(&q, Some(10), aphrody_web_bridge::cli::SEARCH_BUDGET).await {
+        let options = aphrody_google::search::SearchOptions { num: Some(10), ..Default::default() };
+        let results = match aphrody_google::search::search_rich(&q, &options).await {
             Ok(res) => res,
             Err(e) => {
                 let err_str = e.to_string();
@@ -1430,82 +1349,35 @@ impl TerminalCommand for SearchCommand {
             },
         };
 
-        for hit in results.hits.iter().take(10) {
+        for hit in results.content.organic.iter().take(10) {
             println!("\n{}", hit.title.bold().green());
-            if !hit.link.is_empty() {
-                println!("{}", hit.link.cyan().underline());
+            if !hit.url.is_empty() {
+                println!("{}", hit.url.cyan().underline());
             }
             if !hit.snippet.is_empty() {
                 println!("{}", hit.snippet);
             }
         }
 
-        // The provenance line: which engine ran, on which profile, whether the
-        // answer was cached and whether a cookie jar was in play. Without it a
-        // blocked anonymous query and a genuinely empty one look identical.
-        let profile = results.profile.as_deref().unwrap_or("unknown");
+        // The provenance line: which profile answered and whether a cookie jar was in play.
+        // Without it a blocked anonymous query and a genuinely empty one look identical.
         println!(
             "\n{}",
             format!(
-                "via Aphrody Web Rust ({}) · profil {profile} · {} · {}",
-                cli.path().display(),
-                if results.from_cache { "cache" } else { "live" },
+                "via Aphrody Web Rust · profil {:?} · {}",
+                results.profile_used,
                 if results.authenticated { "authentifié" } else { "anonyme" }
             )
             .dimmed()
         );
 
-        // bxc exits 65 for "ran, found nothing" and 0 for "ran, found some".
-        // Both are honest answers, so neither is turned into a failure here —
-        // but a reader who sees zero results needs to know the engine actually
-        // answered, and with what code, to tell that apart from a block.
-        if let Some(code) = results.exit_code
-            && code != 0
-        {
-            println!("{}", format!("code de sortie Web : {code}").dimmed());
-        }
-
-        if results.partial > 0 {
-            // Kept in `hits` — dropping them would be the discarding
-            // filter — but a hit with no link cannot be opened, so the
-            // count has to be visible next to the results it describes.
+        if results.content.organic.is_empty() {
             println!(
                 "{}",
-                format!(
-                    "⚠ {} résultat(s) incomplet(s) (titre sans lien, ou lien sans titre) — \
-                     affichés tels quels.",
-                    results.partial
-                )
-                .yellow()
-            );
-        }
-
-        if results.unreadable > 0 {
-            // Counted, never dropped in silence: if this number is non-zero
-            // the bxc payload shape moved, and that is a bridge bug, not an
-            // empty search.
-            println!(
-                "{}",
-                format!(
-                    "⚠ {} résultat(s) renvoyé(s) par bxc mais illisibles ici (le format de `bxc \
-                     search --json` a changé) — corriger \
-                     aphrody_web_bridge::cli::Search::from_json.",
-                    results.unreadable
-                )
-                .yellow()
-            );
-        }
-
-        if results.hits.is_empty() {
-            println!(
-                "{}",
-                format!(
-                    "Aucun résultat (bxc a répondu, code {}). Un profil `fetch` anonyme est \
-                     souvent bloqué : authentifier bxc (`~/.bxc/cookies/google.json`) pour de \
-                     meilleurs résultats.",
-                    results.exit_code.map_or_else(|| "-".to_owned(), |c| c.to_string())
-                )
-                .red()
+                "Aucun résultat. Un profil anonyme est souvent bloqué : fournir un jar de cookies \
+                 (`aphrody web search --cookies <fichier>`, `~/.aphrody/cookies/google.json`) \
+                 pour de meilleurs résultats."
+                    .red()
             );
         }
 

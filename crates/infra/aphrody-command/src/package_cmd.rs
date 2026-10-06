@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Package manager for the first-party Aphrody command-line tools.
+//! `aphrody package`: a thin compatibility group over the single `aphrody` binary.
+//!
+//! Aphrody used to ship four separately cloned, built and installed command-line tools (`aphrody`,
+//! `bxc`, `n2b`, `nie`). There is one binary now: `bxc`, `bxc-mcp`, `n2b` and every former
+//! standalone name are links to it (multi-call dispatch, see `multicall.rs`). This group reports
+//! and repairs those links; it never clones, builds or updates anything. `nie` (IECODE) is an
+//! externally managed tool: reported, never installed or removed.
 
 use std::{
     fs,
@@ -7,416 +13,272 @@ use std::{
     process::Command,
 };
 
-use clap::{Subcommand, ValueEnum};
-use miette::{IntoDiagnostic, WrapErr};
+use clap::Subcommand;
+use miette::IntoDiagnostic;
 use serde::Serialize;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
-pub(crate) enum PackageName {
-    Aphrody,
-    Bxc,
-    N2b,
-    #[value(alias = "niers")]
-    Nie,
-    All,
-}
+use crate::multicall;
 
 #[derive(Subcommand, Debug, Clone)]
 pub(crate) enum PackageAction {
-    /// Afficher le catalogue intégré et les dépendances de construction.
+    /// Afficher le binaire unique, les noms de binaires qu'il remplace et les outils gérés ailleurs.
     Catalog {
         #[arg(long)]
         json: bool,
     },
-    /// Afficher les versions installées et l'état des sources gérées.
+    /// Afficher le binaire en cours et l'état de chaque lien (ok, absent, pendant, étranger).
     Status {
-        package: Option<PackageName>,
+        /// Accepté pour compatibilité (aphrody, bxc, n2b, all) : la réponse est la même.
+        package: Option<String>,
         #[arg(long)]
         json: bool,
     },
-    /// Cloner, construire et installer un ou plusieurs CLI.
+    /// Vérifier le binaire, le répertoire des liens et PATH ; code 1 si un lien n'est pas sain.
+    Doctor {
+        #[arg(long)]
+        json: bool,
+    },
+    /// Lier `aphrody` et chaque ancien nom de binaire au binaire en cours (= `aphrody self
+    /// install-path`).
     Install {
-        package: PackageName,
+        /// Accepté pour compatibilité (aphrody, bxc, n2b, all) : tous les liens sont créés.
+        package: Option<String>,
+        /// Binaire à lier ; par défaut, le binaire en cours.
+        #[arg(long)]
+        bin: Option<PathBuf>,
         #[arg(long)]
         dry_run: bool,
     },
-    /// Mettre à jour les sources, reconstruire et remplacer les binaires.
-    Update {
-        package: PackageName,
-        #[arg(long)]
-        dry_run: bool,
-    },
-    /// Retirer les binaires; --purge retire aussi les sources gérées.
+    /// Retirer les liens créés par `install` (jamais le binaire lui-même).
     Uninstall {
-        package: PackageName,
-        #[arg(long)]
-        purge: bool,
+        /// aphrody ou all : tous les liens ; bxc : bxc et bxc-mcp ; n2b : n2b.
+        package: Option<String>,
         #[arg(long)]
         yes: bool,
         #[arg(long)]
         dry_run: bool,
     },
-    /// Vérifier Git, Cargo/Bun, la plateforme et le répertoire d'installation.
-    Doctor {
-        #[arg(long)]
-        json: bool,
+    /// Retiré : il n'y a plus rien à cloner, construire ou mettre à jour.
+    #[command(hide = true)]
+    Update {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
     },
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
-#[serde(rename_all = "lowercase")]
-enum Engine {
-    Cargo,
-    Bun,
+/// Names of the absorbed products: links to the single binary kept for compatibility.
+const COMPAT_NAMES: &[&str] = &["bxc", "bxc-mcp", "n2b"];
+
+/// Names `package` accepted before the unification; they all designate the single binary now.
+const LEGACY_PACKAGES: &[&str] = &["aphrody", "bxc", "bxc-mcp", "n2b", "all"];
+
+/// IECODE's CLI, managed outside Aphrody: `aphrody nie` forwards to it.
+const EXTERNAL_BINARY: &str = "niers";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+enum LinkState {
+    /// Resolves to the running binary.
+    Ok,
+    /// Nothing at that path.
+    Missing,
+    /// A symbolic link whose target no longer exists.
+    Dangling,
+    /// Something else sits there: another binary, a script, a link to a different file.
+    Foreign,
 }
 
-#[derive(Debug, Clone, Copy)]
-struct Package {
-    name: &'static str,
-    repository: &'static str,
-    engine: Engine,
-    cargo_package: Option<&'static str>,
-    unix_build: &'static [&'static str],
-    windows_build: &'static [&'static str],
-    binaries: &'static [&'static str],
+impl LinkState {
+    const fn label(self) -> &'static str {
+        match self {
+            Self::Ok => "ok",
+            Self::Missing => "absent",
+            Self::Dangling => "pendant",
+            Self::Foreign => "étranger",
+        }
+    }
 }
 
-const PACKAGES: &[Package] = &[
-    Package {
-        name: "aphrody",
-        repository: "https://github.com/aphrody-labs/aphrody.git",
-        engine: Engine::Cargo,
-        cargo_package: Some("aphrody"),
-        unix_build: &[],
-        windows_build: &[],
-        binaries: &["aphrody"],
-    },
-    Package {
-        name: "bxc",
-        repository: "https://github.com/aphrody-labs/aphrody.git",
-        engine: Engine::Bun,
-        cargo_package: None,
-        unix_build: &["run", "build:linux"],
-        windows_build: &["run", "build:win"],
-        binaries: &["bxc", "bxc-mcp"],
-    },
-    Package {
-        name: "n2b",
-        repository: "https://github.com/aphrody-labs/aphrody.git",
-        engine: Engine::Cargo,
-        cargo_package: Some("n2b"),
-        unix_build: &[],
-        windows_build: &[],
-        binaries: &["n2b"],
-    },
-    Package {
-        name: "nie",
-        repository: "https://github.com/aphrody-labs/iecode.git",
-        engine: Engine::Cargo,
-        cargo_package: Some("nie-cli"),
-        unix_build: &[],
-        windows_build: &[],
-        binaries: &["niers"],
-    },
-];
-
-#[derive(Serialize)]
-struct Status<'a> {
-    name: &'a str,
-    repository: &'a str,
-    engine: Engine,
-    installed: bool,
-    managed_installed: bool,
-    binary_path: Option<String>,
-    version: Option<String>,
-    source_present: bool,
-    source: String,
+#[derive(Debug, Clone, Serialize)]
+struct LinkReport {
+    name: String,
+    /// `binary` (`aphrody`), `compat` (absorbed products) or `alias` (other former binaries).
+    kind: &'static str,
+    path: String,
+    state: LinkState,
+    /// Where a symbolic link points, when it is one.
+    target: Option<String>,
 }
 
 pub(crate) fn run(action: PackageAction) -> miette::Result<()> {
     match action {
         PackageAction::Catalog { json } => catalog(json),
         PackageAction::Status { package, json } => {
-            status(package.unwrap_or(PackageName::All), json)
-        },
-        PackageAction::Install { package, dry_run } => change(package, false, dry_run),
-        PackageAction::Update { package, dry_run } => change(package, true, dry_run),
-        PackageAction::Uninstall { package, purge, yes, dry_run } => {
-            uninstall(package, purge, yes, dry_run)
+            if let Some(package) = package {
+                legacy_package(&package)?;
+            }
+            status(json)
         },
         PackageAction::Doctor { json } => doctor(json),
+        PackageAction::Install { package, bin, dry_run } => {
+            if let Some(package) = package {
+                legacy_package(&package)?;
+            }
+            install(bin, dry_run)
+        },
+        PackageAction::Uninstall { package, yes, dry_run } => {
+            let names = match package {
+                Some(package) => legacy_package(&package)?,
+                None => all_link_names(),
+            };
+            uninstall(&names, yes, dry_run)
+        },
+        PackageAction::Update { .. } => Err(miette::miette!(
+            "`aphrody package update` est retiré : il n'y a qu'un binaire et plus de sources \
+             gérées à tirer. Installer le nouveau binaire (fabrique : `bun \
+             scripts/build/rust/build-factory.ts run --install`), puis `aphrody package install` \
+             pour re-pointer les liens."
+        )),
     }
 }
 
-fn selected(name: PackageName) -> Vec<&'static Package> {
-    if name == PackageName::All {
-        return PACKAGES.iter().collect();
+/// Link names designated by a legacy package argument.
+fn legacy_package(name: &str) -> miette::Result<Vec<String>> {
+    match name {
+        "aphrody" | "all" => Ok(all_link_names()),
+        "bxc" => Ok(vec!["bxc".to_owned(), "bxc-mcp".to_owned()]),
+        "bxc-mcp" => Ok(vec!["bxc-mcp".to_owned()]),
+        "n2b" => Ok(vec!["n2b".to_owned()]),
+        "nie" | "niers" => Err(miette::miette!(
+            "`nie` est géré par IECODE, pas par Aphrody : installer `{EXTERNAL_BINARY}` depuis son \
+             dépôt (ou définir NIE_BIN) ; `aphrody nie` le relaie."
+        )),
+        other => Err(miette::miette!(
+            "paquet inconnu `{other}` : il n'y a qu'un binaire (`{}`)",
+            LEGACY_PACKAGES.join("`, `")
+        )),
     }
-    let wanted = match name {
-        PackageName::Aphrody => "aphrody",
-        PackageName::Bxc => "bxc",
-        PackageName::N2b => "n2b",
-        PackageName::Nie => "nie",
-        PackageName::All => unreachable!(),
+}
+
+/// `aphrody` first, then every former binary name.
+fn all_link_names() -> Vec<String> {
+    std::iter::once("aphrody").chain(multicall::aliases()).map(str::to_owned).collect()
+}
+
+fn link_kind(name: &str) -> &'static str {
+    if name == "aphrody" {
+        "binary"
+    } else if COMPAT_NAMES.contains(&name) {
+        "compat"
+    } else {
+        "alias"
+    }
+}
+
+fn exe(name: &str) -> String {
+    format!("{name}{}", std::env::consts::EXE_SUFFIX)
+}
+
+/// The running binary, with symbolic links resolved.
+fn running_binary() -> miette::Result<PathBuf> {
+    let current = std::env::current_exe().into_diagnostic()?;
+    Ok(fs::canonicalize(&current).unwrap_or(current))
+}
+
+fn link_dir(binary: &Path) -> miette::Result<PathBuf> {
+    crate::self_cmd::alias_dir(binary)
+}
+
+/// Whether both paths name the same file (same canonical path, same inode, or on platforms
+/// without inodes the same length and modification time).
+fn same_file(a: &Path, b: &Path) -> bool {
+    if let (Ok(a), Ok(b)) = (fs::canonicalize(a), fs::canonicalize(b))
+        && a == b
+    {
+        return true;
+    }
+    let (Ok(a), Ok(b)) = (fs::metadata(a), fs::metadata(b)) else {
+        return false;
     };
-    PACKAGES.iter().filter(|p| p.name == wanted).collect()
-}
-
-fn roots() -> miette::Result<(PathBuf, PathBuf)> {
-    let home = dirs::home_dir().ok_or_else(|| miette::miette!("profil utilisateur introuvable"))?;
-    #[cfg(target_os = "windows")]
-    let base = std::env::var_os("LOCALAPPDATA")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| home.join("AppData").join("Local"))
-        .join("Aphrody");
-    #[cfg(not(target_os = "windows"))]
-    let base = home.join(".local").join("share").join("aphrody");
-    #[cfg(target_os = "windows")]
-    let bin = base.join("bin");
-    #[cfg(not(target_os = "windows"))]
-    let bin = home.join(".local").join("bin");
-    Ok((base.join("sources"), bin))
-}
-
-fn catalog(json: bool) -> miette::Result<()> {
-    let rows: Vec<_> = PACKAGES.iter().map(|p| serde_json::json!({
-        "name": p.name, "repository": p.repository, "engine": p.engine,
-        "cargo_package": p.cargo_package, "binaries": p.binaries,
-        "requires": match p.engine { Engine::Cargo => vec!["git", "cargo", "rustc"], Engine::Bun => vec!["git", "bun"] },
-        "os": ["linux", "macos", "windows"]
-    })).collect();
-    if json {
-        println!("{}", serde_json::to_string_pretty(&rows).into_diagnostic()?);
-    } else {
-        for p in PACKAGES {
-            println!("{:<8} {:<5?} {}", p.name, p.engine, p.repository);
-        }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        a.dev() == b.dev() && a.ino() == b.ino()
     }
-    Ok(())
+    #[cfg(not(unix))]
+    {
+        a.len() == b.len() && a.modified().ok() == b.modified().ok()
+    }
 }
 
-fn status(name: PackageName, json: bool) -> miette::Result<()> {
-    let (sources, bin) = roots()?;
-    let mut rows = Vec::new();
-    for p in selected(name) {
-        let managed_binary = bin.join(exe(p.binaries[0]));
-        let managed_installed = managed_binary.exists();
-        let executable = if managed_installed {
-            Some(managed_binary)
+fn is_aphrody_name(path: &Path) -> bool {
+    path.file_stem().and_then(std::ffi::OsStr::to_str) == Some("aphrody")
+}
+
+/// Classify the link `path` against the running `binary`.
+fn inspect(path: &Path, binary: &Path) -> (LinkState, Option<PathBuf>) {
+    let Ok(meta) = fs::symlink_metadata(path) else {
+        return (LinkState::Missing, None);
+    };
+    if meta.file_type().is_symlink() {
+        let target = fs::read_link(path).ok();
+        let state = if !path.exists() {
+            LinkState::Dangling
+        } else if same_file(path, binary) {
+            LinkState::Ok
         } else {
-            resolve_path_binary(p.binaries[0])
+            LinkState::Foreign
         };
-        let version = executable.as_deref().and_then(command_version);
-        rows.push(Status {
-            name: p.name,
-            repository: p.repository,
-            engine: p.engine,
-            installed: executable.is_some(),
-            managed_installed,
-            binary_path: executable.as_ref().map(|path| path.display().to_string()),
-            version,
-            source_present: sources.join(p.name).join(".git").exists(),
-            source: sources.join(p.name).display().to_string(),
-        });
+        return (state, target);
     }
-    if json {
-        println!("{}", serde_json::to_string_pretty(&rows).into_diagnostic()?);
-    } else {
-        for row in rows {
-            println!(
-                "{:<8} {:<12} {}",
-                row.name,
-                row.version.as_deref().unwrap_or("non installé"),
-                if row.source_present { "source gérée" } else { "sans source gérée" }
-            );
-        }
-    }
-    Ok(())
+    (if same_file(path, binary) { LinkState::Ok } else { LinkState::Foreign }, None)
 }
 
-fn change(name: PackageName, update: bool, dry_run: bool) -> miette::Result<()> {
-    let (sources, bin) = roots()?;
-    for p in selected(name) {
-        let source = sources.join(p.name);
-        println!(
-            "{} {} ({:?})",
-            if update { "mise à jour" } else { "installation" },
-            p.name,
-            p.engine
-        );
-        ensure_tools(p, dry_run)?;
-        if !source.join(".git").exists() {
-            run_cmd(
-                None,
-                "git",
-                &["clone", "--depth", "1", p.repository, path_str(&source)?],
-                dry_run,
-            )?;
-        } else if update {
-            run_cmd(Some(&source), "git", &["pull", "--ff-only", "origin", "main"], dry_run)?;
-        }
-        build(p, &source, dry_run)?;
-        install_binaries(p, &source, &bin, dry_run)?;
-    }
-    Ok(())
-}
-
-fn ensure_tools(p: &Package, dry_run: bool) -> miette::Result<()> {
-    for tool in [
-        "git",
-        match p.engine {
-            Engine::Cargo => "cargo",
-            Engine::Bun => "bun",
-        },
-    ] {
-        if which::which(tool).is_err() && !dry_run {
-            return Err(miette::miette!("dépendance `{tool}` absente"));
-        }
-    }
-    Ok(())
-}
-
-fn build(p: &Package, source: &Path, dry_run: bool) -> miette::Result<()> {
-    match p.engine {
-        Engine::Cargo => run_cmd(
-            Some(source),
-            "cargo",
-            &["build", "--release", "--locked", "-p", p.cargo_package.unwrap()],
-            dry_run,
-        ),
-        Engine::Bun => {
-            run_cmd(Some(source), "bun", &["install", "--frozen-lockfile"], dry_run)?;
-            let args = if cfg!(target_os = "windows") { p.windows_build } else { p.unix_build };
-            run_cmd(Some(source), "bun", args, dry_run)?;
-            if cfg!(target_os = "windows") && p.name == "bxc" {
-                run_cmd(Some(source), "bun", &["run", "build:mcp:win"], dry_run)?;
-            }
-            Ok(())
-        },
-    }
-}
-
-fn install_binaries(p: &Package, source: &Path, bin: &Path, dry_run: bool) -> miette::Result<()> {
-    if dry_run {
-        for name in p.binaries {
-            println!("[dry-run] installer {} dans {}", name, bin.display());
-        }
-        return Ok(());
-    }
-    fs::create_dir_all(bin).into_diagnostic()?;
-    for name in p.binaries {
-        let built = built_binary(p, source, name);
-        if !built.exists() {
-            return Err(miette::miette!("binaire attendu absent: {}", built.display()));
-        }
-        let destination = bin.join(exe(name));
-        fs::copy(&built, &destination)
-            .into_diagnostic()
-            .wrap_err_with(|| format!("installation de {}", destination.display()))?;
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            fs::set_permissions(&destination, fs::Permissions::from_mode(0o755))
-                .into_diagnostic()?;
-        }
-        println!("installé: {}", destination.display());
-    }
-    Ok(())
-}
-
-fn built_binary(p: &Package, source: &Path, name: &str) -> PathBuf {
-    let filename = exe(name);
-    match p.engine {
-        Engine::Cargo => source.join("target").join("release").join(filename),
-        Engine::Bun => source.join("dist").join("standalone").join(
-            match (name, std::env::consts::OS, std::env::consts::ARCH) {
-                ("bxc", "windows", _) => PathBuf::from("windows").join("bxc-windows-x64.exe"),
-                ("bxc", "linux", "aarch64") => "bxc-linux-arm64".into(),
-                ("bxc", "linux", _) => "bxc-linux-x64".into(),
-                ("bxc", "macos", "aarch64") => "bxc-darwin-arm64".into(),
-                ("bxc", "macos", _) => "bxc-darwin-x64".into(),
-                ("bxc-mcp", "windows", _) => "bxc-mcp-windows-x64.exe".into(),
-                _ => filename.into(),
-            },
-        ),
-    }
-}
-
-fn uninstall(name: PackageName, purge: bool, yes: bool, dry_run: bool) -> miette::Result<()> {
-    if !dry_run && !yes {
-        return Err(miette::miette!(
-            "désinstallation refusée: ajouter --yes (ou utiliser --dry-run)"
-        ));
-    }
-    let (sources, bin) = roots()?;
-    for p in selected(name) {
-        for name in p.binaries {
-            let path = bin.join(exe(name));
-            if dry_run {
-                println!("[dry-run] retirer {}", path.display());
-            } else if path.exists() {
-                fs::remove_file(&path).into_diagnostic()?;
-                println!("retiré: {}", path.display());
-            }
-        }
-        if purge {
-            let source = sources.join(p.name);
-            if dry_run {
-                println!("[dry-run] purger {}", source.display());
-            } else if source.exists() {
-                fs::remove_dir_all(&source).into_diagnostic()?;
-                println!("purgé: {}", source.display());
-            }
-        }
-    }
-    Ok(())
-}
-
-fn doctor(json: bool) -> miette::Result<()> {
-    let (sources, bin) = roots()?;
-    let tools: Vec<_> = ["git", "cargo", "rustc", "bun"]
+fn collect_links(link_dir: &Path, binary: &Path, names: &[String]) -> Vec<LinkReport> {
+    names
         .iter()
-        .map(|name| serde_json::json!({"name": name, "available": which::which(name).is_ok()}))
-        .collect();
-    let value = serde_json::json!({"os": std::env::consts::OS, "arch": std::env::consts::ARCH,
-        "source_root": sources, "bin_dir": bin, "tools": tools});
-    if json {
-        println!("{}", serde_json::to_string_pretty(&value).into_diagnostic()?);
-    } else {
-        println!(
-            "plateforme: {}/{}\nsources: {}\nbinaires: {}",
-            std::env::consts::OS,
-            std::env::consts::ARCH,
-            sources.display(),
-            bin.display()
-        );
-        for tool in tools {
-            println!(
-                "{:<8} {}",
-                tool["name"].as_str().unwrap_or("?"),
-                if tool["available"].as_bool().unwrap_or(false) { "ok" } else { "absent" }
-            );
-        }
-    }
-    Ok(())
+        .map(|name| {
+            let path = link_dir.join(exe(name));
+            let (state, target) = inspect(&path, binary);
+            LinkReport {
+                name: name.clone(),
+                kind: link_kind(name),
+                path: path.display().to_string(),
+                state,
+                target: target.map(|target| target.display().to_string()),
+            }
+        })
+        .collect()
 }
 
-fn run_cmd(cwd: Option<&Path>, program: &str, args: &[&str], dry_run: bool) -> miette::Result<()> {
-    if dry_run {
-        println!("[dry-run] {} {}", program, args.join(" "));
-        return Ok(());
+fn on_path(dir: &Path) -> bool {
+    let wanted = fs::canonicalize(dir).unwrap_or_else(|_| dir.to_path_buf());
+    std::env::var_os("PATH").is_some_and(|raw| {
+        std::env::split_paths(&raw).any(|entry| fs::canonicalize(&entry).unwrap_or(entry) == wanted)
+    })
+}
+
+#[derive(Serialize)]
+struct External {
+    name: &'static str,
+    binary: &'static str,
+    managed_by: &'static str,
+    installed: bool,
+    path: Option<String>,
+    version: Option<String>,
+}
+
+fn external() -> External {
+    let path = crate::commands::resolve_nie_bin();
+    let version = path.as_deref().and_then(command_version);
+    External {
+        name: "nie",
+        binary: EXTERNAL_BINARY,
+        managed_by: "IECODE (dépôt aphrody-labs/iecode)",
+        installed: path.is_some(),
+        path: path.map(|path| path.display().to_string()),
+        version,
     }
-    let mut command = Command::new(program);
-    command.args(args);
-    if let Some(path) = cwd {
-        command.current_dir(path);
-    }
-    let status =
-        command.status().into_diagnostic().wrap_err_with(|| format!("exécution de `{program}`"))?;
-    if !status.success() {
-        return Err(miette::miette!("`{program}` a échoué avec {}", status.code().unwrap_or(1)));
-    }
-    Ok(())
 }
 
 fn command_version(path: &Path) -> Option<String> {
@@ -424,45 +286,342 @@ fn command_version(path: &Path) -> Option<String> {
     output.status.success().then(|| String::from_utf8_lossy(&output.stdout).trim().to_owned())
 }
 
-/// Resolve an executable that was installed outside Aphrody's managed prefix.
-///
-/// Cargo, Scoop, Chocolatey and a direct user install all legitimately place a
-/// first-party CLI on `PATH`; reporting those binaries as absent is misleading.
-fn resolve_path_binary(name: &str) -> Option<PathBuf> {
-    which::which(name).ok()
+fn print_json(value: &serde_json::Value) -> miette::Result<()> {
+    println!("{}", serde_json::to_string_pretty(value).into_diagnostic()?);
+    Ok(())
 }
 
-fn exe(name: &str) -> String {
-    if cfg!(target_os = "windows") { format!("{name}.exe") } else { name.to_owned() }
+fn catalog(json: bool) -> miette::Result<()> {
+    let names = all_link_names();
+    if json {
+        let rows: Vec<_> = names
+            .iter()
+            .map(|name| serde_json::json!({ "name": name, "kind": link_kind(name) }))
+            .collect();
+        return print_json(&serde_json::json!({
+            "binary": "aphrody",
+            "version": env!("CARGO_PKG_VERSION"),
+            "links": rows,
+            "external": [external_catalog()],
+        }));
+    }
+    println!("aphrody {}  binaire unique", env!("CARGO_PKG_VERSION"));
+    for name in &names[1..] {
+        let kind = match link_kind(name) {
+            "compat" => "compatibilité (produit absorbé)",
+            _ => "ancien binaire",
+        };
+        println!("  {name:<26} {kind}");
+    }
+    let external = external_catalog();
+    println!(
+        "{:<28} {}",
+        external["name"].as_str().unwrap_or("nie"),
+        external["note"].as_str().unwrap_or_default()
+    );
+    Ok(())
 }
-fn path_str(path: &Path) -> miette::Result<&str> {
-    path.to_str().ok_or_else(|| miette::miette!("chemin non UTF-8: {}", path.display()))
+
+fn external_catalog() -> serde_json::Value {
+    serde_json::json!({
+        "name": "nie",
+        "binary": EXTERNAL_BINARY,
+        "managed_by": "IECODE (dépôt aphrody-labs/iecode)",
+        "note": "géré ailleurs : `aphrody nie` relaie vers `niers`, jamais installé ici",
+    })
+}
+
+struct Inventory {
+    binary: PathBuf,
+    link_dir: PathBuf,
+    links: Vec<LinkReport>,
+    on_path: bool,
+}
+
+impl Inventory {
+    fn collect() -> miette::Result<Self> {
+        let binary = running_binary()?;
+        let link_dir = link_dir(&binary)?;
+        let links = collect_links(&link_dir, &binary, &all_link_names());
+        Ok(Self { on_path: on_path(&link_dir), binary, link_dir, links })
+    }
+
+    fn healthy(&self) -> bool {
+        self.links.iter().all(|link| link.state == LinkState::Ok)
+    }
+}
+
+fn status(json: bool) -> miette::Result<()> {
+    let report = Inventory::collect()?;
+    let external = external();
+    if json {
+        return print_json(&serde_json::json!({
+            "binary": {
+                "path": report.binary.display().to_string(),
+                "version": env!("CARGO_PKG_VERSION"),
+                "target": env!("APHRODY_TARGET"),
+            },
+            "link_dir": report.link_dir.display().to_string(),
+            "on_path": report.on_path,
+            "healthy": report.healthy(),
+            "links": report.links,
+            "external": [external],
+        }));
+    }
+    println!("aphrody {}  {}", env!("CARGO_PKG_VERSION"), report.binary.display());
+    for link in &report.links {
+        println!("  {:<26} {:<9} {}", link.name, link.state.label(), link.path);
+    }
+    println!(
+        "nie        {}",
+        external.version.as_deref().unwrap_or(if external.installed {
+            "installé (version inconnue)"
+        } else {
+            "non installé (géré par IECODE)"
+        })
+    );
+    Ok(())
+}
+
+fn doctor(json: bool) -> miette::Result<()> {
+    let report = Inventory::collect()?;
+    let broken: Vec<&LinkReport> =
+        report.links.iter().filter(|link| link.state != LinkState::Ok).collect();
+    let legacy_state = dirs::home_dir().map(|home| home.join(".bxc")).filter(|path| path.exists());
+    if json {
+        print_json(&serde_json::json!({
+            "os": std::env::consts::OS,
+            "arch": std::env::consts::ARCH,
+            "binary": report.binary.display().to_string(),
+            "link_dir": report.link_dir.display().to_string(),
+            "link_dir_exists": report.link_dir.is_dir(),
+            "on_path": report.on_path,
+            "links_ok": report.links.len() - broken.len(),
+            "links_total": report.links.len(),
+            "healthy": report.healthy(),
+            "broken": broken,
+            "legacy_state": legacy_state.as_ref().map(|path| path.display().to_string()),
+        }))?;
+    } else {
+        println!("plateforme : {}/{}", std::env::consts::OS, std::env::consts::ARCH);
+        println!("binaire    : {}", report.binary.display());
+        println!(
+            "liens      : {} ({}), {}/{} sains",
+            report.link_dir.display(),
+            if report.on_path { "dans PATH" } else { "hors PATH" },
+            report.links.len() - broken.len(),
+            report.links.len()
+        );
+        for link in &broken {
+            println!("  {:<26} {:<9} {}", link.name, link.state.label(), link.path);
+        }
+        if let Some(path) = &legacy_state {
+            println!(
+                "état hérité: {} (lu en repli pour les cookies, jamais écrit)",
+                path.display()
+            );
+        }
+    }
+    if report.healthy() {
+        Ok(())
+    } else {
+        Err(miette::miette!(
+            "{} lien(s) non sain(s) : `aphrody package install` les recrée (`--dry-run` d'abord)",
+            broken.len()
+        ))
+    }
+}
+
+fn install(bin: Option<PathBuf>, dry_run: bool) -> miette::Result<()> {
+    let bin = match bin {
+        Some(bin) => bin,
+        None => running_binary()?,
+    };
+    crate::self_cmd::InstallPathCommand { bin: Some(bin), build_if_missing: false, dry_run }.run()
+}
+
+/// Remove the links in `names` that are ours: pointing at the running binary, or dangling after
+/// the removal of an `aphrody` build. A link that points elsewhere is reported and left alone.
+fn remove_links(
+    link_dir: &Path,
+    binary: &Path,
+    names: &[String],
+    dry_run: bool,
+) -> miette::Result<usize> {
+    let mut removed = 0;
+    for link in collect_links(link_dir, binary, names) {
+        let path = PathBuf::from(&link.path);
+        let ours = match link.state {
+            LinkState::Ok => true,
+            LinkState::Dangling => {
+                link.target.as_deref().is_some_and(|t| is_aphrody_name(Path::new(t)))
+            },
+            LinkState::Missing => {
+                println!("absent: {}", link.path);
+                continue;
+            },
+            LinkState::Foreign => false,
+        };
+        if !ours {
+            println!("étranger, non retiré: {}", link.path);
+            continue;
+        }
+        if dry_run {
+            println!("[dry-run] retirer {}", link.path);
+        } else {
+            fs::remove_file(&path).into_diagnostic()?;
+            println!("retiré: {}", link.path);
+        }
+        removed += 1;
+    }
+    Ok(removed)
+}
+
+fn uninstall(names: &[String], yes: bool, dry_run: bool) -> miette::Result<()> {
+    if !dry_run && !yes {
+        return Err(miette::miette!(
+            "désinstallation refusée: ajouter --yes (ou utiliser --dry-run)"
+        ));
+    }
+    let binary = running_binary()?;
+    let link_dir = link_dir(&binary)?;
+    let removed = remove_links(&link_dir, &binary, names, dry_run)?;
+    println!(
+        "{removed} lien(s) {}; le binaire {} reste en place",
+        if dry_run { "à retirer" } else { "retiré(s)" },
+        binary.display()
+    );
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn catalog_has_unique_first_party_packages() {
-        assert_eq!(PACKAGES.len(), 4);
-        let mut names: Vec<_> = PACKAGES.iter().map(|p| p.name).collect();
-        names.sort_unstable();
-        names.dedup();
-        assert_eq!(names.len(), PACKAGES.len());
-    }
-    #[test]
-    fn every_package_has_https_repo_and_binary() {
-        for p in PACKAGES {
-            assert!(
-                p.repository.starts_with("https://github.com/aphrody-labs/")
-                    || p.repository.starts_with("https://github.com/aphrody-code/")
-            );
-            assert!(!p.binaries.is_empty());
-        }
+
+    fn names(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| (*value).to_owned()).collect()
     }
 
     #[test]
-    fn path_resolution_ignores_unknown_binary() {
-        assert!(resolve_path_binary("aphrody-package-test-definitely-absent").is_none());
+    fn the_catalog_is_one_binary_and_its_former_names() {
+        let all = all_link_names();
+        assert_eq!(all[0], "aphrody");
+        for compat in COMPAT_NAMES {
+            assert!(all.iter().any(|name| name == compat), "{compat} must be a link");
+            assert_eq!(link_kind(compat), "compat");
+        }
+        assert_eq!(link_kind("aphrody"), "binary");
+        assert_eq!(link_kind("aphrody-infra"), "alias");
+        let mut sorted = all.clone();
+        sorted.sort_unstable();
+        sorted.dedup();
+        assert_eq!(sorted.len(), all.len(), "every link name is unique");
+    }
+
+    #[test]
+    fn legacy_package_arguments_designate_links_never_builds() {
+        assert_eq!(legacy_package("all").unwrap(), all_link_names());
+        assert_eq!(legacy_package("aphrody").unwrap(), all_link_names());
+        assert_eq!(legacy_package("bxc").unwrap(), names(&["bxc", "bxc-mcp"]));
+        assert_eq!(legacy_package("n2b").unwrap(), names(&["n2b"]));
+        let nie = legacy_package("nie").unwrap_err().to_string();
+        assert!(nie.contains("IECODE"), "{nie}");
+        assert!(legacy_package("niers").is_err());
+        assert!(legacy_package("bogus").unwrap_err().to_string().contains("paquet inconnu"));
+    }
+
+    #[test]
+    fn update_is_retired_with_the_replacement() {
+        let error =
+            run(PackageAction::Update { args: vec!["all".to_owned()] }).unwrap_err().to_string();
+        assert!(error.contains("retiré"), "{error}");
+        assert!(error.contains("aphrody package install"), "{error}");
+    }
+
+    #[test]
+    fn uninstall_needs_yes_unless_it_is_a_dry_run() {
+        let error = uninstall(&names(&["bxc"]), false, false).unwrap_err().to_string();
+        assert!(error.contains("--yes"), "{error}");
+    }
+
+    #[cfg(unix)]
+    mod links {
+        use std::os::unix::fs::symlink;
+
+        use super::*;
+
+        struct Fixture {
+            _dir: tempfile::TempDir,
+            bin_dir: PathBuf,
+            binary: PathBuf,
+        }
+
+        fn fixture() -> Fixture {
+            let dir = tempfile::tempdir().unwrap();
+            let bin_dir = dir.path().join("bin");
+            fs::create_dir_all(&bin_dir).unwrap();
+            let binary = dir.path().join("installed").join("aphrody");
+            fs::create_dir_all(binary.parent().unwrap()).unwrap();
+            fs::write(&binary, b"binary").unwrap();
+            Fixture { _dir: dir, bin_dir, binary }
+        }
+
+        #[test]
+        fn a_link_is_ok_missing_dangling_or_foreign() {
+            let f = fixture();
+            symlink(&f.binary, f.bin_dir.join("aphrody")).unwrap();
+            symlink(f.bin_dir.join("gone/aphrody"), f.bin_dir.join("n2b")).unwrap();
+            let wrapper = f.bin_dir.join("legacy-wrapper");
+            fs::write(&wrapper, b"#!/bin/sh\n").unwrap();
+            symlink(&wrapper, f.bin_dir.join("bxc")).unwrap();
+
+            let reports =
+                collect_links(&f.bin_dir, &f.binary, &names(&["aphrody", "n2b", "bxc", "bxc-mcp"]));
+            let states: Vec<_> = reports.iter().map(|report| report.state).collect();
+            assert_eq!(
+                states,
+                [LinkState::Ok, LinkState::Dangling, LinkState::Foreign, LinkState::Missing]
+            );
+            assert!(reports[1].target.as_deref().unwrap().ends_with("gone/aphrody"));
+        }
+
+        #[test]
+        fn a_hard_link_to_the_binary_is_ok() {
+            let f = fixture();
+            fs::hard_link(&f.binary, f.bin_dir.join("aphrody")).unwrap();
+            let reports = collect_links(&f.bin_dir, &f.binary, &names(&["aphrody"]));
+            assert_eq!(reports[0].state, LinkState::Ok);
+        }
+
+        #[test]
+        fn uninstall_removes_ours_and_keeps_foreign_files() {
+            let f = fixture();
+            symlink(&f.binary, f.bin_dir.join("bxc")).unwrap();
+            symlink(f.bin_dir.join("old/aphrody"), f.bin_dir.join("n2b")).unwrap();
+            let wrapper = f.bin_dir.join("legacy-wrapper");
+            fs::write(&wrapper, b"#!/bin/sh\n").unwrap();
+            symlink(&wrapper, f.bin_dir.join("bxc-mcp")).unwrap();
+
+            let wanted = names(&["bxc", "bxc-mcp", "n2b"]);
+            assert_eq!(remove_links(&f.bin_dir, &f.binary, &wanted, true).unwrap(), 2);
+            assert!(f.bin_dir.join("bxc").symlink_metadata().is_ok(), "a dry run removes nothing");
+
+            assert_eq!(remove_links(&f.bin_dir, &f.binary, &wanted, false).unwrap(), 2);
+            assert!(f.bin_dir.join("bxc").symlink_metadata().is_err());
+            assert!(f.bin_dir.join("n2b").symlink_metadata().is_err());
+            assert!(
+                f.bin_dir.join("bxc-mcp").symlink_metadata().is_ok(),
+                "a link to another file is never ours to remove"
+            );
+            assert!(f.binary.is_file(), "the binary itself is never removed");
+        }
+
+        #[test]
+        fn a_dangling_link_to_a_foreign_target_is_not_ours() {
+            let f = fixture();
+            symlink("/nonexistent/bxc-source/bin/bxc", f.bin_dir.join("bxc")).unwrap();
+            assert_eq!(remove_links(&f.bin_dir, &f.binary, &names(&["bxc"]), false).unwrap(), 0);
+            assert!(f.bin_dir.join("bxc").symlink_metadata().is_ok());
+        }
     }
 }

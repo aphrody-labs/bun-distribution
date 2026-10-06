@@ -73,14 +73,14 @@ aphrody doctor
 - déploiement (`aphrody-mcp`, agent stack, site Python) : propriété de `aphrody-infra` ;
   le VPS n'exécute plus Aphrody ;
 - application desktop : le commentaire de `scripts/release/deploy.sh` décrit le build séparé ;
-- installation de CLI gérés : `aphrody package --help`.
+- liens des anciens noms de binaires (`bxc`, `bxc-mcp`, `n2b`, `aphrody-infra`, ...) : un seul binaire, `aphrody package status` et `aphrody package install` (voir [PACKAGES](../../reference/ai/PACKAGES.md)).
 
 ## Désinstaller
 
 Supprimez le ou les binaires copiés dans le répertoire choisi par le script,
-puis retirez ce répertoire du PATH si vous l'aviez ajouté. Pour les CLI gérés
-par le programme, utilisez `aphrody package uninstall --help` afin de choisir
-explicitement les cibles et l'éventuelle purge de leurs sources.
+puis retirez ce répertoire du PATH si vous l'aviez ajouté. Pour les liens créés
+par le programme (`aphrody`, `bxc`, `n2b`, ...), utilisez `aphrody package uninstall --dry-run`
+puis `--yes` : seuls les liens vers le binaire sont retirés, jamais le binaire.
 
 ## Diagnostic
 

@@ -429,13 +429,12 @@ pub(crate) enum WebBrowserAction {
 pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
     match action {
         WebAction::Status { json } => {
-            let dom = aphrody_web_bridge::ffi::shared();
             let status = serde_json::json!({
                 "layer": "web",
-                "status": if dom.is_ok() { "ready" } else { "degraded" },
+                "status": "ready",
                 "runtime": "shared-rust",
                 "components": {
-                    "dom": if dom.is_ok() { "linked" } else { "unavailable" },
+                    "dom": "linked",
                     "http": "linked",
                     "browser": "linked",
                     "search": "linked",
@@ -445,7 +444,6 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                     "x": "linked",
                 },
                 "network": "unchecked",
-                "domError": dom.as_ref().err().map(ToString::to_string),
             });
             if json {
                 print_web_json(&status)?;
@@ -454,9 +452,6 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                     "Aphrody Web: {} (shared Rust; network unchecked)",
                     status["status"].as_str().unwrap_or("unknown")
                 );
-                if let Some(error) = status["domError"].as_str() {
-                    println!("DOM bridge: {error}");
-                }
             }
         },
         WebAction::Capabilities { json } => {
@@ -494,13 +489,13 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
             }
         },
         WebAction::Fetch { url, profile, json } => {
-            let mut request = aphrody_web_bridge::fetch::Request::new(url);
+            let mut request = aphrody_web_service::fetch::Request::new(url);
             if let Some(name) = profile {
-                let selected = aphrody_web_bridge::Profile::parse(&name)
+                let selected = aphrody_web_service::fetch::Profile::parse(&name)
                     .ok_or_else(|| miette!("unknown Web profile: {name}"))?;
                 request = request.with_profile(selected);
             }
-            let result = aphrody_web_bridge::fetch::fetch(&request).await.into_diagnostic()?;
+            let result = aphrody_web_service::fetch::fetch(&request).await.into_diagnostic()?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&result).into_diagnostic()?);
             } else {
@@ -631,8 +626,7 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
         },
         WebAction::Recon { url, profile, json, output } => {
             let page = fetch_web_page(&url, &profile).await?;
-            let bridge = aphrody_web_bridge::ffi::shared().into_diagnostic()?;
-            let dom = bridge.parse_html(&page.html).into_diagnostic()?;
+            let dom = ParsedPage::parse(&page.html);
             let extracted = aphrody_web_extract::extract_main(&page.html, Some(&page.final_url));
             let report = serde_json::json!({
                 "schema": "aphrody-recon-v1",
@@ -645,9 +639,9 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 "description": extracted.description,
                 "canonical": extracted.canonical,
                 "wordCount": extracted.word_count,
-                "scripts": dom.query_selector_all("script[src]").into_diagnostic()?.len(),
-                "stylesheets": dom.query_selector_all("link[rel=stylesheet]").into_diagnostic()?.len(),
-                "images": dom.query_selector_all("img[src]").into_diagnostic()?.len(),
+                "scripts": dom.count("script[src]")?,
+                "stylesheets": dom.count("link[rel=stylesheet]")?,
+                "images": dom.count("img[src]")?,
             });
             let rendered = if json {
                 serde_json::to_string_pretty(&report).into_diagnostic()?
@@ -690,12 +684,9 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 }
                 println!("{result}");
             } else if let Some(selector) = selector {
-                let bridge = aphrody_web_bridge::ffi::shared().into_diagnostic()?;
-                let dom = bridge.parse_html(&page.html).into_diagnostic()?;
-                let selected = dom.query_selector_all(&selector).into_diagnostic()?;
+                let dom = ParsedPage::parse(&page.html);
                 let mut rows = Vec::new();
-                for (index, outer_html) in selected.into_iter().take(max).enumerate() {
-                    let text = bridge.strip_tags(&outer_html).into_diagnostic()?;
+                for (index, text) in dom.texts(&selector)?.into_iter().take(max).enumerate() {
                     let text = text.trim().chars().take(500).collect::<String>();
                     rows.push(serde_json::json!({"index": index, "text": text}));
                 }
@@ -1109,6 +1100,33 @@ fn default_gemini_cookie_path() -> Option<std::path::PathBuf> {
     candidate.is_file().then_some(candidate)
 }
 
+/// A parsed page: the shared Obscura DOM, with NUL bytes removed first (they truncate parsers).
+struct ParsedPage {
+    tree: obscura_dom::DomTree,
+}
+
+impl ParsedPage {
+    fn parse(html: &str) -> Self {
+        let clean = html.replace('\0', "");
+        Self { tree: obscura_dom::parse_html(&clean) }
+    }
+
+    fn count(&self, selector: &str) -> miette::Result<usize> {
+        Ok(self.matches(selector)?.len())
+    }
+
+    /// Text content of every element matching `selector`.
+    fn texts(&self, selector: &str) -> miette::Result<Vec<String>> {
+        Ok(self.matches(selector)?.into_iter().map(|id| self.tree.text_content(id)).collect())
+    }
+
+    fn matches(&self, selector: &str) -> miette::Result<Vec<obscura_dom::NodeId>> {
+        self.tree
+            .query_selector_all(selector)
+            .map_err(|detail| miette!("invalid selector {selector:?}: {detail}"))
+    }
+}
+
 struct WebPage {
     html: String,
     final_url: String,
@@ -1120,13 +1138,14 @@ async fn fetch_web_page(url: &str, profile: &str) -> miette::Result<WebPage> {
     if !matches!(url.scheme(), "http" | "https") {
         return Err(miette!("Web pages must use HTTP or HTTPS"));
     }
-    let selected = aphrody_web_bridge::Profile::parse(profile)
+    let selected = aphrody_web_service::fetch::Profile::parse(profile)
         .ok_or_else(|| miette!("unknown Web profile: {profile}"))?;
     if selected.needs_browser() {
         let browser = obscura::Browser::builder()
             .stealth(matches!(
                 selected,
-                aphrody_web_bridge::Profile::Stealth | aphrody_web_bridge::Profile::Max
+                aphrody_web_service::fetch::Profile::Stealth
+                    | aphrody_web_service::fetch::Profile::Max
             ))
             .build()
             .into_diagnostic()?;
@@ -1260,31 +1279,26 @@ async fn handle_web_media(action: WebMediaAction) -> miette::Result<()> {
 }
 
 async fn handle_web_browser(action: WebBrowserAction) -> miette::Result<()> {
-    let client = aphrody_web_bridge::WebBrowserClient::discover().into_diagnostic()?;
     match action {
         WebBrowserAction::Snapshot { url, json } => {
             let parsed = reqwest::Url::parse(&url).into_diagnostic()?;
             if !matches!(parsed.scheme(), "http" | "https") {
                 return Err(miette!("browser URL must use HTTP or HTTPS"));
             }
-            client
-                .run(
-                    &["chrome".to_owned(), "navigate".to_owned(), url.clone()],
-                    Duration::from_secs(45),
-                )
+            // One shared in-process browser session: navigate, then read the same page.
+            aphrody_web_service::session::navigate(&url, Duration::from_secs(45))
                 .await
                 .into_diagnostic()?;
-            let snapshot = client
-                .run(&["chrome".to_owned(), "snapshot".to_owned()], Duration::from_secs(15))
+            let snapshot = aphrody_web_service::session::snapshot(Duration::from_secs(15))
                 .await
                 .into_diagnostic()?;
-            if snapshot.stdout.trim().is_empty() {
+            if snapshot.trim().is_empty() {
                 return Err(miette!("browser snapshot returned no readable content"));
             }
             if json {
-                print_web_json(&serde_json::json!({ "url": url, "snapshot": snapshot.stdout }))?;
+                print_web_json(&serde_json::json!({ "url": url, "snapshot": snapshot }))?;
             } else {
-                println!("{}", snapshot.stdout);
+                println!("{snapshot}");
             }
         },
     }
@@ -1378,7 +1392,7 @@ async fn handle_web_crawl(request: WebCrawlRequest) -> miette::Result<()> {
         obey_robots: request.obey_robots,
         ingest_sitemaps: request.sitemaps,
         max_sitemaps: request.max_sitemaps,
-        user_agent: aphrody_web_bridge::fetch::USER_AGENT.to_owned(),
+        user_agent: aphrody_web_service::fetch::USER_AGENT.to_owned(),
         ..CrawlOptions::default()
     };
     obscura_net::ensure_rustls_crypto_provider();

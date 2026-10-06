@@ -8,6 +8,10 @@ use aphrody_toolcall::{
     AdditionalProperties, JsonSchema, ToolDefinition, ToolError, ToolExecutor, ToolExposure,
     ToolImage, ToolOutput, ToolRegistry,
 };
+use aphrody_web_service::{
+    fetch::{Profile, Request, fetch},
+    session,
+};
 use serde_json::Value;
 
 use crate::builtins::search::ToolCatalog;
@@ -15,10 +19,10 @@ use crate::builtins::search::ToolCatalog;
 /// Exposure policy for the native web tools.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum WebExposureProfile {
-    /// Search, fetch and browser actions are shown directly.
+    /// Fetch and browser actions are shown directly.
     #[default]
     Default,
-    /// Only search and fetch are shown directly.
+    /// Only fetch is shown directly.
     Minimal,
     /// Every available web tool is shown directly.
     Full,
@@ -26,7 +30,6 @@ pub enum WebExposureProfile {
 
 #[derive(Debug, Clone, Copy)]
 enum Operation {
-    Search,
     Fetch,
     Navigate,
     Snapshot,
@@ -43,9 +46,7 @@ struct NativeWebTool {
 fn schema(required: &[&str], optional: &[&str]) -> JsonSchema {
     let mut properties = BTreeMap::new();
     for name in required.iter().chain(optional) {
-        let field =
-            if *name == "num" { JsonSchema::integer(None) } else { JsonSchema::string(None) };
-        properties.insert((*name).to_owned(), field);
+        properties.insert((*name).to_owned(), JsonSchema::string(None));
     }
     JsonSchema::object(
         properties,
@@ -56,13 +57,6 @@ fn schema(required: &[&str], optional: &[&str]) -> JsonSchema {
 
 fn definitions(profile: WebExposureProfile) -> Vec<NativeWebTool> {
     let entries = [
-        (
-            "web_search",
-            "Search the public web and return linked results.",
-            Operation::Search,
-            &["query"][..],
-            &["num"][..],
-        ),
         (
             "web_fetch",
             "Fetch a public web page as Markdown.",
@@ -110,7 +104,7 @@ fn definitions(profile: WebExposureProfile) -> Vec<NativeWebTool> {
         .into_iter()
         .map(|(name, description, operation, required, optional)| {
             let exposure = if profile == WebExposureProfile::Minimal
-                && !matches!(operation, Operation::Search | Operation::Fetch)
+                && !matches!(operation, Operation::Fetch)
             {
                 ToolExposure::Deferred
             } else {
@@ -142,79 +136,51 @@ impl ToolExecutor for NativeWebTool {
 
     async fn handle(&self, arguments: Value) -> Result<ToolOutput, ToolError> {
         let tool = self.definition.name.as_str();
-        let client = match aphrody_web_bridge::WebBrowserClient::discover() {
-            Ok(client) => client,
-            Err(error) => return Ok(ToolOutput::error(format!("{tool}: {error}"))),
-        };
         let budget = Duration::from_secs(45);
-        match self.operation {
-            Operation::Search => {
-                let query = required(&arguments, "query", tool)?;
-                let num = arguments
-                    .get("num")
-                    .and_then(Value::as_u64)
-                    .and_then(|v| u32::try_from(v).ok());
-                match client.search(query, num, budget).await {
-                    Ok(results) => {
-                        let mut body = format!("# Search results for: {query}\n\n");
-                        for hit in results.hits {
-                            body.push_str(&format!(
-                                "- [{}]({}): {}\n",
-                                hit.title, hit.link, hit.snippet
-                            ));
-                        }
-                        Ok(ToolOutput::ok(body))
-                    },
-                    Err(error) => Ok(ToolOutput::error(format!("{tool}: {error}"))),
-                }
-            },
+        let outcome = match self.operation {
             Operation::Fetch => {
                 let url = required(&arguments, "url", tool)?;
-                let profile = arguments
-                    .get("profile")
-                    .and_then(Value::as_str)
-                    .and_then(aphrody_web_bridge::Profile::parse);
-                match client.scrape_markdown(url, profile, budget).await {
-                    Ok((body, _)) => Ok(ToolOutput::ok(body)),
-                    Err(error) => Ok(ToolOutput::error(format!("{tool}: {error}"))),
+                let mut request = Request::new(url).with_timeout(budget);
+                if let Some(name) = arguments.get("profile").and_then(Value::as_str) {
+                    let Some(profile) = Profile::parse(name) else {
+                        return Ok(ToolOutput::error(format!(
+                            "{tool}: unknown profile {name:?}; use static, fast, http, stealth or max"
+                        )));
+                    };
+                    request = request.with_profile(profile);
+                }
+                match fetch(&request).await {
+                    Ok(page) if page.body.trim().is_empty() => {
+                        return Ok(ToolOutput::error(format!(
+                            "{tool}: the page produced an empty body"
+                        )));
+                    },
+                    Ok(page) => Ok(page.body),
+                    Err(error) => Err(error),
                 }
             },
-            operation => {
-                let args = match operation {
-                    Operation::Navigate => vec![
-                        "chrome".to_owned(),
-                        "navigate".to_owned(),
-                        required(&arguments, "url", tool)?.to_owned(),
-                    ],
-                    Operation::Snapshot => vec!["chrome".to_owned(), "snapshot".to_owned()],
-                    Operation::Click => vec![
-                        "chrome".to_owned(),
-                        "click".to_owned(),
-                        "--selector".to_owned(),
-                        required(&arguments, "selector", tool)?.to_owned(),
-                    ],
-                    Operation::Screenshot => vec!["chrome".to_owned(), "screenshot".to_owned()],
-                    Operation::PressKey => vec![
-                        "chrome".to_owned(),
-                        "key".to_owned(),
-                        "--key".to_owned(),
-                        required(&arguments, "key", tool)?.to_owned(),
-                    ],
-                    Operation::Search | Operation::Fetch => unreachable!(),
-                };
-                match client.run(&args, budget).await {
-                    Ok(run) if !run.ok() => {
-                        Ok(ToolOutput::error(format!("{tool}: {}", run.stderr)))
-                    },
-                    Ok(run) if matches!(operation, Operation::Screenshot) => {
-                        Ok(ToolOutput::ok("Browser screenshot captured.")
-                            .with_images(vec![ToolImage::new("image/png", run.stdout)]))
-                    },
-                    Ok(run) => Ok(ToolOutput::ok(run.stdout)),
-                    Err(error) => Ok(ToolOutput::error(format!("{tool}: {error}"))),
-                }
+            Operation::Navigate => {
+                session::navigate(required(&arguments, "url", tool)?, budget).await
             },
-        }
+            Operation::Snapshot => session::snapshot(budget).await,
+            Operation::Click => {
+                session::click(required(&arguments, "selector", tool)?, budget).await
+            },
+            Operation::Screenshot => {
+                return Ok(match session::screenshot(budget).await {
+                    Ok(png) => ToolOutput::ok("Browser screenshot captured.")
+                        .with_images(vec![ToolImage::new("image/png", png)]),
+                    Err(error) => ToolOutput::error(format!("{tool}: {error}")),
+                });
+            },
+            Operation::PressKey => {
+                session::press_key(required(&arguments, "key", tool)?, budget).await
+            },
+        };
+        Ok(match outcome {
+            Ok(text) => ToolOutput::ok(text),
+            Err(error) => ToolOutput::error(format!("{tool}: {error}")),
+        })
     }
 }
 
@@ -245,10 +211,11 @@ mod tests {
         let catalog = ToolCatalog::new();
         assert_eq!(
             register_native_web_tools(&mut registry, &catalog, WebExposureProfile::Default).await,
-            7
+            6
         );
-        assert!(registry.get("web_search").is_some());
+        assert!(registry.get("web_fetch").is_some());
         assert!(registry.get("browser_snapshot").is_some());
+        assert!(registry.get("web_search").is_none());
         assert!(registry.get("web_crawl").is_none());
         assert!(registry.get("browser_fill").is_none());
     }

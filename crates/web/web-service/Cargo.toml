@@ -10,7 +10,7 @@ repository.workspace = true
 [features]
 default = []
 render = ["obscura-mcp/render"]
-stealth = ["render", "obscura-mcp/stealth"]
+stealth = ["render", "obscura-mcp/stealth", "obscura/stealth"]
 
 [lints]
 workspace = true
@@ -21,4 +21,13 @@ obscura-dom.workspace = true
 obscura-mcp.workspace = true
 serde = { workspace = true }
 serde_json.workspace = true
+thiserror.workspace = true
 url.workspace = true
+
+# The in-process page fetch and the shared browser session (modules `fetch`, `session`) are
+# native-only: they need sockets, threads and the Obscura engine.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+obscura.workspace = true
+reqwest.workspace = true
+rustls.workspace = true
+tokio.workspace = true

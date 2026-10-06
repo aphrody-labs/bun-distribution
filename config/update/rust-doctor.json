@@ -37,8 +37,7 @@
         { "crates": "aphrody-mcp", "reason": "host-only: MCP server over stdio, process and filesystem tools" },
         { "crates": "aphrody-mcp-client", "reason": "host-only: its async traits require Send futures, which browser fetch does not give" },
         { "crates": "aphrody-messaging", "reason": "host-only: reads the host name through rustix and sends through reqwest with tokio net" },
-        { "crates": "aphrody-session", "reason": "host-only: tokio net and the filesystem session mirror" },
-        { "crates": "aphrody-web-bridge", "reason": "host-only: embeds V8 through deno_core" }
+        { "crates": "aphrody-session", "reason": "host-only: tokio net and the filesystem session mirror" }
       ]
     },
     {

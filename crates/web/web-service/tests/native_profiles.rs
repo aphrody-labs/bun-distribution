@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
+//! Offline checks of the fetch profiles against a loopback page: the static path uses the
+//! in-process HTTP client, the browser path renders in the in-process Obscura browser.
+
+#![cfg(not(target_arch = "wasm32"))]
 
 use std::time::Duration;
 
-use aphrody_web_bridge::{
-    Profile,
-    fetch::{Request, Transport, fetch},
-};
+use aphrody_web_service::fetch::{Profile, Request, Transport, fetch};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 async fn local_page() -> (String, tokio::task::JoinHandle<()>) {
@@ -60,24 +61,5 @@ async fn static_profile_uses_local_http_client() {
 async fn stealth_profile_reports_missing_feature() {
     let request = Request::new("https://example.com").with_profile(Profile::Stealth);
     let error = fetch(&request).await.unwrap_err();
-    assert!(error.to_string().contains("stealth feature"));
-}
-
-#[tokio::test]
-async fn javascript_evaluation_uses_the_persistent_rust_browser() {
-    let client = aphrody_web_bridge::BxcCli::discover().unwrap();
-    let result =
-        client.run(&["-e".to_owned(), "1 + 2".to_owned()], Duration::from_secs(10)).await.unwrap();
-    assert_eq!(result.code, Some(0));
-    assert_eq!(result.stdout.trim(), "3.0");
-}
-
-#[tokio::test]
-async fn screenshot_without_a_renderable_page_reports_an_error() {
-    let client = aphrody_web_bridge::BxcCli::discover().unwrap();
-    let error = client
-        .run(&["chrome".to_owned(), "screenshot".to_owned()], Duration::from_secs(10))
-        .await
-        .expect_err("a blank session must not invent screenshot data");
-    assert!(error.to_string().contains("no renderable viewport"));
+    assert!(error.to_string().contains("stealth feature"), "{error}");
 }

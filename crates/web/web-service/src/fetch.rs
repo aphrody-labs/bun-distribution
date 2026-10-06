@@ -5,60 +5,104 @@
 //!
 //! # What this replaces
 //!
-//! `crates/google_mcp/src/main.rs` used to answer every `universal_web_fetch`
-//! and every `coding_style_guide` with
-//! `reqwest::get(format!("https://r.jina.ai/{url}"))`. That single line meant:
-//! a third-party reader saw the URL, the source IP and the timing of every
-//! page the model read; there was no timeout, no user agent, no size cap; and
-//! the HTTP status was never inspected, so a `402` or `429` from the proxy was
-//! handed to the model as though it were the page. The repository cap is
-//! local-first (`CLAUDE.md` §0); routing every read through a rented reader is
-//! the opposite of that.
+//! The MCP tools `universal_web_fetch` and `coding_style_guide` used to answer every call with
+//! `reqwest::get(format!("https://r.jina.ai/{url}"))`. That single line meant: a third-party
+//! reader saw the URL, the source IP and the timing of every page the model read; there was no
+//! timeout, no user agent, no size cap; and the HTTP status was never inspected, so a `402` or
+//! `429` from the proxy was handed to the model as though it were the page. The repository is
+//! local-first; routing every read through a rented reader is the opposite of that.
 //!
 //! # The network decision, stated on purpose
 //!
-//! Reading a web page needs the network. What it does **not** need is a second
-//! remote party. So the default path here is:
+//! Reading a web page needs the network. What it does **not** need is a second remote party. So
+//! the default path here is:
 //!
 //! 1. aphrody fetches the bytes itself, over its own rustls client, with a timeout, a real user
 //!    agent, a size cap and a status check;
-//! 2. the bytes are converted to Markdown in this process by the canonical
-//!    `aphrody-web-extract` Rust crate.
+//! 2. the bytes are converted to Markdown in this process by the canonical `aphrody-web-extract`
+//!    Rust crate.
 //!
-//! The only host contacted is the origin the caller asked for. No proxy, no
-//! reader service, no API key, nothing to rate-limit us.
+//! The only host contacted is the origin the caller asked for. No proxy, no reader service, no
+//! API key, nothing to rate-limit us.
 //!
-//! Browser profiles render JavaScript through the in-process Obscura runtime.
-//! They are selected explicitly because they consume more resources.
+//! Browser profiles render JavaScript through the in-process Obscura runtime. They are selected
+//! explicitly because they consume more resources.
 //!
 //! # Nothing degrades in silence
 //!
 //! An empty Markdown result from nonempty HTML returns the original HTML with
-//! [`Rendering::RawHtml`] and a reason. [`Fetched::path_taken`] records the
-//! actual Rust converter, while the serialized `via` marker remains stable.
+//! [`Rendering::RawHtml`] and a reason. [`Fetched::path_taken`] records the actual Rust
+//! converter, while the serialized `via` marker remains stable.
 
 use std::{sync::OnceLock, time::Duration};
 
-use crate::{
-    cli::Profile,
-    error::{Result, WebBrowserError},
-};
+use crate::error::{Result, WebError};
+
+/// A fetch profile.
+///
+/// `static` and `http` use the in-process HTTP client; `fast`, `stealth` and `max` render the
+/// page in the in-process Obscura browser.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Profile {
+    /// Plain HTTP, no browser.
+    Static,
+    /// Fast browser path.
+    Fast,
+    /// HTTP with header shaping.
+    Http,
+    /// Anti-bot evasion (requires the `stealth` feature).
+    Stealth,
+    /// Everything the engine can bring to bear (requires the `stealth` feature).
+    Max,
+}
+
+impl Profile {
+    /// The spelling used on command lines and in tool schemas.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Static => "static",
+            Self::Fast => "fast",
+            Self::Http => "http",
+            Self::Stealth => "stealth",
+            Self::Max => "max",
+        }
+    }
+
+    /// Parse a profile name, case-insensitively.
+    #[must_use]
+    pub fn parse(raw: &str) -> Option<Self> {
+        match raw.trim().to_ascii_lowercase().as_str() {
+            "static" => Some(Self::Static),
+            "fast" => Some(Self::Fast),
+            "http" => Some(Self::Http),
+            "stealth" => Some(Self::Stealth),
+            "max" => Some(Self::Max),
+            _ => None,
+        }
+    }
+
+    /// Whether this profile drives the in-process browser.
+    #[must_use]
+    pub const fn needs_browser(self) -> bool {
+        matches!(self, Self::Fast | Self::Stealth | Self::Max)
+    }
+}
 
 /// Default per-request timeout.
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Default cap on the bytes read from an origin (2 MiB).
 ///
-/// Generous for documentation, small enough that a mis-typed URL pointing at a
-/// disk image cannot exhaust memory.
+/// Generous for documentation, small enough that a mis-typed URL pointing at a disk image cannot
+/// exhaust memory.
 pub const DEFAULT_MAX_BYTES: usize = 2 * 1024 * 1024;
 
-/// User agent used for direct fetches.
+/// User agent used for direct fetches and by the crawler.
 ///
-/// A realistic browser string, for the same reason
-/// `aphrody-tools::builtin::scraping` uses one: a CLI-shaped agent is refused
-/// by a large share of documentation hosts, and a refusal that arrives as an
-/// empty page is worse than a slow one.
+/// A realistic browser string: a CLI-shaped agent is refused by a large share of documentation
+/// hosts, and a refusal that arrives as an empty page is worse than a slow one.
 pub const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
                               (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36";
 
@@ -98,9 +142,8 @@ pub enum Rendering {
     },
     /// HTML, **unconverted**, because conversion produced no usable content.
     ///
-    /// This variant exists so that a degraded answer is legible as degraded.
-    /// The alternative - handing back HTML that merely looks like a bad
-    /// conversion - is the failure this bridge was built to remove.
+    /// This variant exists so that a degraded answer is legible as degraded: handing back HTML
+    /// that merely looks like a bad conversion is the failure this module was written to remove.
     RawHtml {
         /// Why the conversion did not happen, including the fix.
         reason: String,
@@ -129,10 +172,9 @@ pub struct Fetched {
 impl Fetched {
     /// A one-line provenance banner suitable for prefixing an MCP answer.
     ///
-    /// Tools return a `String` to the model, and a model that cannot tell a
-    /// converted page from raw HTML will happily quote a `<div>` back at the
-    /// user. The banner makes the difference visible in the one place the
-    /// model actually reads.
+    /// Tools return a `String` to the model, and a model that cannot tell a converted page from
+    /// raw HTML will happily quote a `<div>` back at the user. The banner makes the difference
+    /// visible in the one place the model actually reads.
     #[must_use]
     pub fn banner(&self) -> String {
         let mut line = format!("Source: {}", self.url);
@@ -164,7 +206,7 @@ pub struct Request {
     pub url: String,
     /// Select an HTTP or in-process browser profile.
     pub profile: Option<Profile>,
-    /// Per-request timeout for the direct path.
+    /// Per-request timeout.
     pub timeout: Duration,
     /// Cap on the returned body.
     pub max_bytes: usize,
@@ -216,29 +258,24 @@ impl Request {
 
 /// Shared HTTP client for the direct path.
 ///
-/// One TLS stack and one connection pool per process, as
-/// `aphrody-tools::builtin::web_fetch` already does. Built lazily so a process
-/// that never fetches never pays for it, and so the rustls provider only has
-/// to be installed before the *first* fetch rather than before startup.
+/// One TLS stack and one connection pool per process. Built lazily so a process that never
+/// fetches never pays for it, and so the rustls provider only has to be installed before the
+/// *first* fetch rather than before startup.
 fn client() -> Result<&'static reqwest::Client> {
     static CLIENT: OnceLock<core::result::Result<reqwest::Client, String>> = OnceLock::new();
     match CLIENT.get_or_init(|| {
-        // The workspace pins reqwest to `rustls-no-provider`, so rustls 0.23
-        // has no default crypto provider until somebody installs one - and it
-        // does not fail politely: the first request **panics** with "No
-        // provider set", inside reqwest, at send time (measured 2026-09-07 in
-        // `tests/bxc_smoke.rs`). `crates/cli` and `crates/google_mcp` both
-        // install `ring` at startup, but a panic that takes down an MCP server
-        // because a future caller forgot is not an acceptable failure mode for
-        // a library. Installing here is idempotent: `install_default` returns
-        // `Err` when a provider is already set, which is exactly the
-        // no-op we want, so the result is deliberately discarded.
+        // The workspace pins reqwest to `rustls-no-provider`, so rustls 0.23 has no default
+        // crypto provider until somebody installs one, and it does not fail politely: the first
+        // request panics with "No provider set", inside reqwest, at send time. A library must
+        // not take an MCP server down because a caller forgot; installing here is idempotent
+        // (`install_default` returns `Err` when a provider is already set, which is the no-op
+        // we want), so the result is deliberately discarded.
         let _ = rustls::crypto::ring::default_provider().install_default();
 
         reqwest::Client::builder()
             .user_agent(USER_AGENT)
-            // 10 redirects is reqwest default; documentation hosts chain a
-            // few (http -> https -> canonical locale), so keep it.
+            // 10 redirects is the reqwest default; documentation hosts chain a few
+            // (http -> https -> canonical locale), so keep it.
             .connect_timeout(Duration::from_secs(10))
             .build()
             .map_err(|e| {
@@ -250,10 +287,9 @@ fn client() -> Result<&'static reqwest::Client> {
             })
     }) {
         Ok(c) => Ok(c),
-        Err(detail) => Err(WebBrowserError::Http {
-            url: "<client init>".to_owned(),
-            source: detail.clone().into(),
-        }),
+        Err(detail) => {
+            Err(WebError::Http { url: "<client init>".to_owned(), source: detail.clone().into() })
+        },
     }
 }
 
@@ -266,8 +302,8 @@ pub fn is_html(content_type: &str) -> bool {
 
 /// Cut a string to at most `max_bytes`, on a character boundary.
 ///
-/// Returns the text and whether anything was removed - the caller reports the
-/// truncation rather than handing back a silently shortened document.
+/// Returns the text and whether anything was removed: the caller reports the truncation rather
+/// than handing back a silently shortened document.
 #[must_use]
 pub fn truncate(text: &str, max_bytes: usize) -> (String, bool) {
     if text.len() <= max_bytes {
@@ -284,17 +320,15 @@ pub fn truncate(text: &str, max_bytes: usize) -> (String, bool) {
 ///
 /// # Errors
 ///
-/// [`WebBrowserError::BadUrl`] for a non-http(s) URL, [`WebBrowserError::Http`] /
-/// [`WebBrowserError::HttpStatus`] on the direct path, and browser errors for
-/// browser profiles.
+/// [`WebError::BadUrl`] for a non-http(s) URL, [`WebError::Http`] / [`WebError::HttpStatus`] on
+/// the direct path, and browser errors for browser profiles.
 pub async fn fetch(request: &Request) -> Result<Fetched> {
     if !(request.url.starts_with("http://") || request.url.starts_with("https://")) {
-        return Err(WebBrowserError::BadUrl { url: request.url.clone() });
+        return Err(WebError::BadUrl { url: request.url.clone() });
     }
     match request.profile {
-        Some(Profile::Static | Profile::Http) => fetch_direct(request).await,
+        Some(Profile::Static | Profile::Http) | None => fetch_direct(request).await,
         Some(profile) => fetch_browser(request, profile).await,
-        None => fetch_direct(request).await,
     }
 }
 
@@ -308,7 +342,7 @@ async fn fetch_direct(request: &Request) -> Result<Fetched> {
         .timeout(request.timeout)
         .send()
         .await
-        .map_err(|e| WebBrowserError::Http { url: request.url.clone(), source: Box::new(e) })?;
+        .map_err(|e| WebError::Http { url: request.url.clone(), source: Box::new(e) })?;
 
     let status = response.status();
     let final_url = response.url().to_string();
@@ -319,16 +353,16 @@ async fn fetch_direct(request: &Request) -> Result<Fetched> {
         .unwrap_or("")
         .to_owned();
 
-    // The status is checked, unlike the proxy path this replaces, where a 402
-    // from the reader arrived as page content.
+    // The status is checked, unlike the proxy path this replaces, where a 402 from the reader
+    // arrived as page content.
     if !status.is_success() {
-        return Err(WebBrowserError::HttpStatus { url: final_url, status: status.as_u16() });
+        return Err(WebError::HttpStatus { url: final_url, status: status.as_u16() });
     }
 
     let text = response
         .text()
         .await
-        .map_err(|e| WebBrowserError::Http { url: request.url.clone(), source: Box::new(e) })?;
+        .map_err(|e| WebError::Http { url: request.url.clone(), source: Box::new(e) })?;
     let bytes_in = text.len();
 
     let (rendering, body) = if is_html(&content_type) || looks_like_html(&text) {
@@ -390,7 +424,7 @@ fn markdown_body(html: String, path_taken: &mut Vec<String>) -> (Rendering, Stri
 async fn fetch_browser(request: &Request, profile: Profile) -> Result<Fetched> {
     let stealth = matches!(profile, Profile::Stealth | Profile::Max);
     if stealth && !cfg!(feature = "stealth") {
-        return Err(WebBrowserError::BrowserFeatureMissing { profile: profile.as_str() });
+        return Err(WebError::BrowserFeatureMissing { profile: profile.as_str() });
     }
 
     let url = request.url.clone();
@@ -429,22 +463,19 @@ async fn fetch_browser(request: &Request, profile: Profile) -> Result<Fetched> {
             })();
             let _ = sender.send(result);
         })
-        .map_err(|error| WebBrowserError::Browser {
+        .map_err(|error| WebError::Browser {
             url: request.url.clone(),
             detail: error.to_string(),
         })?;
 
     let (html, final_url) = tokio::time::timeout(budget, receiver)
         .await
-        .map_err(|_| WebBrowserError::BrowserTimeout {
-            url: request.url.clone(),
-            secs: budget.as_secs(),
-        })?
-        .map_err(|_| WebBrowserError::Browser {
+        .map_err(|_| WebError::BrowserTimeout { url: request.url.clone(), secs: budget.as_secs() })?
+        .map_err(|_| WebError::Browser {
             url: request.url.clone(),
             detail: "browser worker ended without a result".to_owned(),
         })?
-        .map_err(|detail| WebBrowserError::Browser { url: request.url.clone(), detail })?;
+        .map_err(|detail| WebError::Browser { url: request.url.clone(), detail })?;
 
     let bytes_in = html.len();
     let mut path_taken = vec![format!(
@@ -470,27 +501,22 @@ const NOISE_TAGS: [&str; 3] = ["script", "style", "noscript"];
 
 /// Remove `<script>`, `<style>` and `<noscript>` blocks, contents included.
 ///
-/// Measured need, not tidiness: converting `https://example.com` straight
-/// through the former `bxc_html_to_markdown` path produced a first line reading
-/// `Example Domainbody{background:#eee;width:60vw;...}` - the whole stylesheet,
-/// inlined into the prose, because `html2md` on the bxc side keeps the text of
-/// a `<style>` element. A model handed that spends tokens on CSS and can quote
-/// it back. The reader service this bridge replaces did drop these blocks, so
-/// not doing it would be a visible regression.
+/// Measured need, not tidiness: converting `https://example.com` straight through an HTML-to-text
+/// converter that keeps the text of a `<style>` element produced a first line reading
+/// `Example Domainbody{background:#eee;width:60vw;...}`: the whole stylesheet, inlined into the
+/// prose. A model handed that spends tokens on CSS and can quote it back.
 ///
-/// Returns the block count as well as the text. A pass that removes content
-/// without saying how much it removed is the failure mode this repository has
-/// a name for (`CLAUDE.md` §7), and here it would be removing part of a
-/// document a human is about to read.
+/// Returns the block count as well as the text. A pass that removes content without saying how
+/// much it removed is the failure mode this repository has a name for: it raises nothing, and
+/// things simply go missing.
 ///
-/// An unterminated block is **left alone** rather than swallowing the rest of
-/// the file: truncating a page at a stray `<script` would lose real content,
-/// and losing content silently is the thing being avoided.
+/// An unterminated block is **left alone** rather than swallowing the rest of the file:
+/// truncating a page at a stray `<script` would lose real content, and losing content silently
+/// is the thing being avoided.
 #[must_use]
 pub fn strip_noise_blocks(html: &str) -> (String, usize) {
-    // `to_ascii_lowercase` maps only ASCII A-Z, so byte offsets in `lower`
-    // index `html` identically - which is what lets the scan below use one
-    // set of indices for both.
+    // `to_ascii_lowercase` maps only ASCII A-Z, so byte offsets in `lower` index `html`
+    // identically - which is what lets the scan below use one set of indices for both.
     let lower = html.to_ascii_lowercase();
     let mut out = String::with_capacity(html.len());
     let mut cursor = 0usize;
@@ -507,8 +533,8 @@ pub fn strip_noise_blocks(html: &str) -> (String, usize) {
         let tag = NOISE_TAGS.iter().find(|t| {
             let open = &lower.as_bytes()[lt..];
             let name = t.as_bytes();
-            // `<script` must be followed by a delimiter, so `<scripting>` -
-            // not a real element, but neither is it this one - is left alone.
+            // `<script` must be followed by a delimiter, so `<scripting>` - not a real element,
+            // but neither is it this one - is left alone.
             open.len() > 1 + name.len()
                 && open[0] == b'<'
                 && open[1..=name.len()] == *name
@@ -538,8 +564,8 @@ pub fn strip_noise_blocks(html: &str) -> (String, usize) {
 
 /// Sniff HTML when the origin sent no usable content type.
 ///
-/// Servers that answer `application/octet-stream` for a `.html` are common
-/// enough that trusting the header alone leaves documentation unconverted.
+/// Servers that answer `application/octet-stream` for a `.html` are common enough that trusting
+/// the header alone leaves documentation unconverted.
 #[must_use]
 pub fn looks_like_html(text: &str) -> bool {
     let head = text.get(..512).unwrap_or(text).to_ascii_lowercase();
@@ -551,7 +577,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn local_html_uses_rust_extractor_without_loading_the_cdylib() {
+    async fn local_html_uses_the_rust_extractor() {
         use std::io::{Read, Write};
 
         let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("local listener");
@@ -573,7 +599,6 @@ mod tests {
         assert!(matches!(fetched.rendering, Rendering::Markdown { .. }));
         assert!(fetched.body.contains("# Rust owner"), "{}", fetched.body);
         assert!(fetched.path_taken.iter().any(|step| step.contains("aphrody-web-extract")));
-        assert!(!fetched.path_taken.iter().any(|step| step.contains("cdylib")));
     }
 
     #[test]
@@ -583,11 +608,23 @@ mod tests {
             .unwrap()
             .block_on(fetch(&Request::new("file:///etc/passwd")))
             .unwrap_err();
-        assert!(matches!(err, WebBrowserError::BadUrl { .. }), "{err}");
+        assert!(matches!(err, WebError::BadUrl { .. }), "{err}");
     }
 
-    /// The exact regression this pass fixes: the stylesheet of example.com
-    /// used to land in the prose as `Example Domainbody{background:#eee;...}`.
+    #[test]
+    fn profiles_round_trip_and_browser_profiles_are_flagged() {
+        for p in [Profile::Static, Profile::Fast, Profile::Http, Profile::Stealth, Profile::Max] {
+            assert_eq!(Profile::parse(p.as_str()), Some(p));
+        }
+        assert_eq!(Profile::parse("  STEALTH "), Some(Profile::Stealth));
+        assert_eq!(Profile::parse("turbo"), None);
+        assert!(!Profile::Static.needs_browser());
+        assert!(!Profile::Http.needs_browser());
+        assert!(Profile::Max.needs_browser());
+    }
+
+    /// The regression this pass fixes: the stylesheet of example.com used to land in the prose as
+    /// `Example Domainbody{background:#eee;...}`.
     #[test]
     fn inline_css_and_javascript_are_removed_with_their_contents() {
         let html = "<html><head><style>body{background:#eee;width:60vw}</style><script>var \
@@ -618,8 +655,8 @@ mod tests {
         assert_eq!(out, html);
     }
 
-    /// Truncating at a stray `<script` would lose the rest of the document,
-    /// and losing content in silence is the whole thing being avoided.
+    /// Truncating at a stray `<script` would lose the rest of the document, and losing content in
+    /// silence is the whole thing being avoided.
     #[test]
     fn an_unterminated_block_does_not_swallow_the_document() {
         let html = "<p>before</p><script>never closed <p>after</p>";
@@ -657,27 +694,27 @@ mod tests {
         assert_eq!(whole, text);
     }
 
-    /// The banner is the only place a model learns that a page came back
-    /// unconverted, so it has to say so in words.
+    /// The banner is the only place a model learns that a page came back unconverted, so it has
+    /// to say so in words.
     #[test]
     fn a_degraded_answer_announces_itself() {
         let fetched = Fetched {
             url: "https://example.com".into(),
             transport: Transport::Direct { final_url: "https://example.com/".into(), status: 200 },
             rendering: Rendering::RawHtml {
-                reason: "bxc bridge library not found. Fix: set APHRODY_BXC_LIB".into(),
+                reason: "aphrody-web-extract produced no text from 6 HTML bytes".into(),
             },
             body: "<html>".into(),
             bytes_in: 6,
             truncated: false,
-            path_taken: vec!["aphrody http GET".into(), "markdown conversion UNAVAILABLE".into()],
+            path_taken: vec![
+                "aphrody http GET".into(),
+                "markdown conversion returned empty".into(),
+            ],
         };
         let banner = fetched.banner();
         assert!(banner.contains("raw HTML, not Markdown"), "{banner}");
-        assert!(
-            banner.contains("APHRODY_BXC_LIB"),
-            "the fix must survive into the banner: {banner}"
-        );
+        assert!(banner.contains("produced no text"), "the reason must reach the banner: {banner}");
         assert!(fetched.to_report().contains("<html>"));
     }
 
@@ -686,7 +723,7 @@ mod tests {
         let fetched = Fetched {
             url: "https://example.com".into(),
             transport: Transport::Direct { final_url: "https://example.com/".into(), status: 200 },
-            rendering: Rendering::Markdown { via: "bxc_rust_bridge:bxc_html_to_markdown".into() },
+            rendering: Rendering::Markdown { via: "aphrody-web-extract".into() },
             body: "# Example".into(),
             bytes_in: 1256,
             truncated: false,

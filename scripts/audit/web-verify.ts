@@ -23,7 +23,6 @@ export const WEB_CRATES = [
   "obscura-net",
   "obscura-render",
   "taffy",
-  "aphrody-web-bridge",
   "aphrody-web-chromium",
   "aphrody-web-crawl",
   "aphrody-web-detect",

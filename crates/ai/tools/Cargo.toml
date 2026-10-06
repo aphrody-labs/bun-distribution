@@ -32,9 +32,9 @@ ignore   = { workspace = true }
 walkdir  = { workspace = true }
 reqwest  = { workspace = true }
 base64   = { workspace = true }
-# In-process HTML→Markdown for `web_fetch` (opt-in `markdown: true`), through
-# the runtime-loaded bxc cdylib. Native-only: the bridge loads a shared library.
-aphrody-web-bridge = { workspace = true }
+# In-process HTML→Markdown for `web_fetch` (opt-in `markdown: true`), and the user agent shared by
+# every direct fetch (`aphrody_web_service::fetch::USER_AGENT`).
+aphrody-web-service = { workspace = true }
 aphrody-web-extract = { workspace = true }
 [dev-dependencies]
 serde_json = { workspace = true }

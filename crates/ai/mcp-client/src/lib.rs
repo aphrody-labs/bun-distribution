@@ -32,10 +32,7 @@ pub use builtins::{
     PlanState, ToolCatalog, ToolSearchResult, ToolSearchTool, UpdatePlanTool, ViewImageTool,
     register_builtins,
 };
-pub use bxc::{
-    BXC_STABLE_ALIASES, BxcAliasMapping, BxcExposureProfile, LazyBxcProvider, register_bxc_tools,
-    resolve_bxc_binary,
-};
+pub use bxc::{BXC_STABLE_ALIASES, BxcAliasMapping, BxcExposureProfile, register_bxc_tools};
 pub use client::{DEFAULT_RPC_TIMEOUT, DEFAULT_STARTUP_TIMEOUT, McpClient, McpClientHandle};
 pub use error::{McpClientError, Result};
 pub use executor::McpToolExecutor;

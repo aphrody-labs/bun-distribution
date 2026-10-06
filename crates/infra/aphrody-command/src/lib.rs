@@ -27,6 +27,8 @@ mod app_server_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod auto_command;
 #[cfg(not(target_arch = "wasm32"))]
+mod bxc_compat;
+#[cfg(not(target_arch = "wasm32"))]
 mod codex_provision;
 #[cfg(not(target_arch = "wasm32"))]
 mod commands;
@@ -455,15 +457,9 @@ enum Commands {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Forward vers le binaire natif Bxc (`bxc`).
-    ///
-    /// Résolution : $BXC_BIN > $HOME/.local/bin/bxc > PATH.
-    Bxc {
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        args: Vec<String>,
-    },
-    /// Écosystème Google branché via Bxc (Search, Translate, DNS, Books, Gemini Web, TTS)
+    /// Écosystème Google natif (DNS, Suggest, Translate, Gemini Web, Antigravity, Runtime)
     #[cfg(not(target_arch = "wasm32"))]
+    #[command(disable_help_flag = true)]
     Google {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
@@ -480,7 +476,7 @@ enum Commands {
         /// Langue cible (fr, en, ja...)
         #[arg(short, long, default_value = "fr")]
         target: String,
-        /// Backend de traduction : auto, bxc, google, mymemory
+        /// Backend de traduction : auto, web, google, mymemory
         #[arg(short, long, default_value = "auto")]
         backend: String,
         /// Fichier à traduire
@@ -490,7 +486,8 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
-    /// Execute the integrated N2B engine in-process.
+    /// Execute the integrated N2B engine (Node 2 Bun) in-process; also the `n2b` link.
+    #[command(disable_help_flag = true)]
     N2b {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
@@ -1700,9 +1697,6 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         Some(Commands::Agy { args }) => {
             commands::AgyCommand { args }.execute(ctx).await?;
         },
-        Some(Commands::Bxc { args }) => {
-            commands::BxcCommand { args }.execute(ctx).await?;
-        },
         Some(Commands::Google { args }) => {
             commands::GoogleCommand { args }.execute(ctx).await?;
         },
@@ -2410,7 +2404,6 @@ pub fn run_wasm() {
                 Commands::Search { .. } => "search",
                 Commands::Gemini { .. } => "gemini",
                 Commands::Agy { .. } => "agy",
-                Commands::Bxc { .. } => "bxc",
                 Commands::N2b { .. } => "n2b",
                 Commands::Nie { .. } => "nie",
                 Commands::Doctor { .. } => "doctor",

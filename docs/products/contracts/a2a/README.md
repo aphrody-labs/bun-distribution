@@ -55,9 +55,9 @@ The repository root `ai.json` is the reference manifest of the
 | `grok` | `grok --prompt-file … --always-approve --permission-mode bypassPermissions` | Do **not** pass `--effort` with `grok-build` (HTTP 400) |
 | `agy` | `agy -p "…" --dangerously-skip-permissions --add-dir <repo>` | Antigravity / Gemini |
 | `claude` | `claude -p "…" --output-format text` | Claude Code |
-| `bxc` | `bxc search … --json` | Web search / recon |
+| `bxc` | `aphrody web search … --json` | Web search (`bxc` is a name of the `aphrody` binary) |
 
-Override binaries: `GROK_BIN`, `APHRODY_AGY_BIN`, `CLAUDE_BIN`, `BXC_BIN`.
+Override binaries: `GROK_BIN`, `APHRODY_AGY_BIN`, `CLAUDE_BIN`, `APHRODY_BIN` (the `bxc` peer).
 
 ## Protocol bindings (A2A 1.0)
 

@@ -35,6 +35,13 @@ pub(crate) struct InstallPathCommand {
 #[async_trait]
 impl TerminalCommand for InstallPathCommand {
     async fn execute(&self, _ctx: &GoogleContext) -> miette::Result<()> {
+        self.run()
+    }
+}
+
+impl InstallPathCommand {
+    /// The whole command, which never awaits: shared with `aphrody package install`.
+    pub(crate) fn run(&self) -> miette::Result<()> {
         let bin = resolve_bin_path(self.bin.clone())?;
 
         if !bin.exists() {
@@ -111,14 +118,14 @@ fn install_aliases(bin: &Path, dry_run: bool) -> miette::Result<()> {
 /// Unix links live next to the `aphrody` link in `~/.local/bin`; Windows hard links sit next to
 /// the binary, whose directory is on PATH.
 #[cfg(not(target_os = "windows"))]
-fn alias_dir(_bin: &Path) -> miette::Result<PathBuf> {
+pub(crate) fn alias_dir(_bin: &Path) -> miette::Result<PathBuf> {
     let home =
         std::env::var("HOME").into_diagnostic().wrap_err("HOME environment variable is not set")?;
     Ok(PathBuf::from(home).join(".local").join("bin"))
 }
 
 #[cfg(target_os = "windows")]
-fn alias_dir(bin: &Path) -> miette::Result<PathBuf> {
+pub(crate) fn alias_dir(bin: &Path) -> miette::Result<PathBuf> {
     bin.parent()
         .map(Path::to_path_buf)
         .ok_or_else(|| miette::miette!("binary path has no parent directory: {}", bin.display()))

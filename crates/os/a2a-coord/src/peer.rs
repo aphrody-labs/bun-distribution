@@ -307,10 +307,12 @@ impl PeerInvoker {
         self.run(PeerId::Codex, cmd)
     }
 
+    /// The `bxc` peer is the web-search surface of the single `aphrody` binary (`bxc` is only a
+    /// name of it): it runs `aphrody web search`, never a separate executable.
     fn invoke_bxc(&self, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
-        let bin = Self::resolve_bin("BXC_BIN", "bxc");
+        let bin = Self::resolve_bin("APHRODY_BIN", "aphrody");
         let mut cmd = Command::new(&bin);
-        cmd.args(["search", prompt, "--num", "3", "--json"]);
+        cmd.args(["web", "search", prompt, "--num", "3", "--json"]);
         cmd.current_dir(&self.cwd);
         self.run(PeerId::Bxc, cmd)
     }

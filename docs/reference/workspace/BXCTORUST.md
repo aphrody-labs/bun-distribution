@@ -9,7 +9,7 @@ Document d'architecture, d'audit exhaustif et de spécification technique pour l
 
 Actuellement, l'écosystème Aphrody utilise deux moteurs web :
 1. **Aphrody Web / Obscura (Rust)** : Moteur sovereign (`crates/web/*`) assurant le fetch HTTP direct, le parsing DOM, l'extraction de métadonnées, la détection des anti-bots (`web-detect`) et le crawl borné (`web-crawl`).
-2. **BXC (`bxc` binaire Bun / Zig)** : Moteur lourd de crawling, d'automatisation stealth et de scraping spécialisé, invoqué par Aphrody via un pont subprocess (`crates/web/web-bridge`).
+2. **BXC (`bxc` binaire Bun / Zig)** : Moteur lourd de crawling, d'automatisation stealth et de scraping spécialisé, invoqué par Aphrody via un pont subprocess (ancien crate `aphrody-web-bridge`, supprimé le 2026-10-05).
 
 ### Objectif architectural
 Supprimer la dépendance externe à l'environnement Bun/Zig/Chromium de BXC en transférant l'ensemble de ses briques critiques dans les crates Rust de premier rang d'Aphrody, réduisant l'empreinte mémoire de **>500 Mo** à **<30 Mo** et éliminant la latence IPC subprocess.
@@ -49,8 +49,8 @@ Supprimer la dépendance externe à l'environnement Bun/Zig/Chromium de BXC en t
   - `obscura_net::har` fournit la sérialisation, désérialisation et validation HAR 1.2 RFC complète.
   - `aphrody_web_extract::media::streaming` implémente l'extraction native des embeds et players vidéo (VoirAnime, AnimeSama, Sendvid, Vidmoly, Sibnet) en Rust pur sans FFI.
 
-### Chantier 4 : Dépréciation et Retrait de `web-bridge`
-- **Réalisé** : `crates/web/web-bridge` a été officiellement annoté comme **DEPRECATED** avec documentation de réorientation vers les crates souveraines (`aphrody_web_extract`, `obscura_net`, `aphrody_web_crawl`, `aphrody_web_service`).
+### Chantier 4 : Dépréciation et Retrait de `web-bridge` (supprimé le 2026-10-05)
+- **Réalisé** : l'ancien crate `aphrody-web-bridge` a été déprécié puis supprimé (le reste en processus est repris par `aphrody_web_service::{fetch, session}`, [migration](../../migration/bxc-n2b-unification-2026-10-05.md)), avec réorientation vers les crates souveraines (`aphrody_web_extract`, `obscura_net`, `aphrody_web_crawl`, `aphrody_web_service`).
 
 ---
 

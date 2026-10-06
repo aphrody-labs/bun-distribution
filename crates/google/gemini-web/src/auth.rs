@@ -195,6 +195,8 @@ impl Auth {
     /// 3. `~/.aphrody/google-cookies.json`
     /// 4. `~/.aphrody/google-session.json`
     /// 5. `~/.gemini/.cookies/google.com.json`
+    /// 6. `~/.bxc/cookies/gemini.json` / `google.json` (state of the former `bxc` application,
+    ///    read only, never written)
     ///
     /// # Errors
     ///
@@ -222,6 +224,8 @@ impl Auth {
             aphrody_dir.join("google.json"),
             aphrody_dir.join("google-session.json"),
             home_path.join(".gemini/.cookies/google.com.json"),
+            home_path.join(".bxc/cookies/gemini.json"),
+            home_path.join(".bxc/cookies/google.json"),
         ];
 
         for candidate in &candidates {

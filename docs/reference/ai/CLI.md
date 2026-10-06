@@ -77,8 +77,8 @@ aphrody translate "亜風炉照美のヘブンズタイム" --from ja --to fr
 
 ### 2.5. Autres Passerelles de l'Écosystème
 - **`aphrody nie`** : Forward vers le moteur de fichiers virtuels Niers VFS (`nie.exe` / `.g4md`, `.g4mg`, `.g4pkm`).
-- **`aphrody bxc`** : Moteur d'automatisation de navigateur furtif (CDP Lightpanda/Bun).
-- **`aphrody n2b`** : Outil d'audit et migration automatique Node.js vers Bun.
+- **`aphrody bxc`** (aussi `bxc`, `bxc-mcp`) : nom de compatibilité du binaire unique pour l'ancienne application Bun x Chrome ; chaque sous-commande exécute la commande unifiée (`aphrody web ...`, `x`, `google`, `kernel mcp`) ou indique son remplaçant ([parité](../../migration/bxc-n2b-unification-2026-10-05.md)).
+- **`aphrody n2b`** (aussi `n2b`) : Node 2 Bun, outil d'audit et migration automatique Node.js vers Bun, en processus.
 - **`aphrody re`** : Triage et reverse engineering binaire (PE32/PE64/ELF).
 - **`aphrody a2a`** : Serveur et client de coordination multi-agents (A2A JSONL/IPC).
 - **`aphrody session`** : Serveur applicatif JSON-RPC compatible Codex sur stdin/stdout.

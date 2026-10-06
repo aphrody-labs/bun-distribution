@@ -11,7 +11,7 @@ use tracing::{info, warn};
 
 use crate::{
     builtins::{PlanState, ToolCatalog, register_builtins},
-    bxc::{BxcExposureProfile, LazyBxcProvider, register_bxc_tools},
+    bxc::{BxcExposureProfile, register_bxc_tools},
     client::{McpClient, McpClientHandle},
     error::Result,
     executor::McpToolExecutor,
@@ -50,13 +50,10 @@ pub async fn assemble_tool_registry(
 
     // Register native web tools first, then compatibility tools still missing in Rust.
     #[cfg(not(target_arch = "wasm32"))]
-    if options.enable_bxc {
-        let provider = LazyBxcProvider::new();
-        if let Err(error) =
-            register_bxc_tools(&mut registry, &catalog, &provider, options.bxc_exposure).await
-        {
-            warn!(%error, "Web compatibility tools could not be registered");
-        }
+    if options.enable_bxc
+        && let Err(error) = register_bxc_tools(&mut registry, &catalog, options.bxc_exposure).await
+    {
+        warn!(%error, "Web compatibility tools could not be registered");
     }
 
     Ok(AssembledRegistry { registry, catalog, plan_state })

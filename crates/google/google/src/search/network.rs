@@ -193,6 +193,11 @@ fn default_cookie_path() -> Option<PathBuf> {
     if gemini_cookies.is_file() {
         return Some(gemini_cookies);
     }
+    // State of the former `bxc` application: read only, never written.
+    let legacy_cookies = home_path.join(".bxc/cookies/google.json");
+    if legacy_cookies.is_file() {
+        return Some(legacy_cookies);
+    }
     Some(cookies_json)
 }
 
