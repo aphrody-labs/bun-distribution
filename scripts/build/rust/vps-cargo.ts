@@ -405,6 +405,39 @@ export function remoteSeedScript(config: VpsCargoConfig): string {
   ].join("\n");
 }
 
+/**
+ * Per-snapshot ref that keeps a pushed snapshot reachable on the VPS. `snapshotRef` is shared by every session
+ * and force-updated, so without a pin the objects of a snapshot become unreachable (and collectable) as soon as
+ * another session pushes, while a job may still be waiting for the factory lock to check it out.
+ */
+export function pinRef(config: VpsCargoConfig, sha: string): string {
+  return `${config.snapshotRef.replace(/\/[^/]+$/, "")}/pin/${sha.slice(0, 12)}`;
+}
+
+/** Pins older than this are removed by the checkout script (a job never waits that long). */
+export const PIN_RETENTION_DAYS = 3;
+
+/** Remote script: fail (exit 3) when the snapshot misses any object (a commit whose blobs were collected). */
+export function remoteVerifyScript(config: VpsCargoConfig, sha: string): string {
+  return [
+    `cd ${shellQuote(config.remoteWorkspace)}`,
+    // `--quiet` prints nothing and exits non-zero when an object is missing: fast, no checkout needed.
+    `git rev-list --objects --quiet ${sha} || { echo "snapshot ${sha.slice(0, 12)} is incomplete on the VPS" >&2; exit 3; }`,
+  ].join("\n");
+}
+
+/**
+ * Remote script that drops the snapshot refs (shared ref and pins) whose history misses objects, so the next push
+ * resends them (git never resends what a remote ref says the remote has). Healthy pins of other sessions stay.
+ */
+export function remoteForgetScript(config: VpsCargoConfig): string {
+  const base = config.snapshotRef.replace(/\/[^/]+$/, "");
+  return [
+    `cd ${shellQuote(config.remoteWorkspace)}`,
+    `git for-each-ref --format='%(refname)' ${shellQuote(config.snapshotRef)} ${shellQuote(`${base}/pin`)} | while read -r ref; do git rev-list --objects --quiet "$ref" 2>/dev/null || git update-ref -d "$ref"; done`,
+  ].join("\n");
+}
+
 /** Remote script that moves the dedicated VPS checkout to the snapshot commit. */
 export function remoteCheckoutScript(config: VpsCargoConfig, sha: string, pull: boolean): string {
   const port = config.forwards.remote[0]?.bind.split(":").at(-1) ?? "19418";
@@ -415,6 +448,8 @@ export function remoteCheckoutScript(config: VpsCargoConfig, sha: string, pull: 
     remoteSeedScript(config),
     `cd ${shellQuote(config.remoteWorkspace)}`,
     fetch,
+    // Drop the pins of old snapshots; the pin of this one (and of every job still waiting) is recent.
+    `git for-each-ref --format='%(refname) %(committerdate:unix)' ${shellQuote(`${config.snapshotRef.replace(/\/[^/]+$/, "")}/pin`)} | while read -r ref when; do test "$when" -lt "$(( $(date +%s) - ${PIN_RETENTION_DAYS * 86400} ))" && git update-ref -d "$ref"; done || true`,
     // Moving the shared checkout under a running job would corrupt its build: when the factory lock is held, the move
     // is deferred to the job itself (remoteRunScript checks out the snapshot once it owns the lock).
     `if flock -n ${shellQuote(config.remoteHeavyLock)} true; then`,
@@ -490,7 +525,7 @@ export class SnapshotCollision extends Error {
 }
 
 const COLLISION_PATTERN =
-  /index\.lock|cannot lock ref|Unable to create '.*\.lock'|File exists|another git process|unable to write|cannot update the ref/i;
+  /index\.lock|index file (smaller|corrupt)|bad index file|cannot lock ref|Unable to create '.*\.lock'|File exists|another git process|unable to write|cannot update the ref/i;
 
 /**
  * Whether an error is a snapshot collision: git exits 128 when it cannot take a lock or update a ref that
@@ -551,8 +586,8 @@ export function snapshot(config: VpsCargoConfig, cwd = ROOT): Promise<string> {
 async function snapshotOnce(config: VpsCargoConfig, cwd: string): Promise<string> {
   // `.git` is a file in a linked worktree: ask git for the per-worktree directory holding the index.
   const gitDir = (await $`git rev-parse --absolute-git-dir`.cwd(cwd).text()).trim();
-  // One scratch index per process: two runs from the same worktree no longer fight over one index file.
-  const index = join(gitDir, `vps-cargo.${process.pid}.index`);
+  // One scratch index per call: concurrent runs (other processes, or this one) never share an index file.
+  const index = join(gitDir, `vps-cargo.${process.pid}.${crypto.randomUUID().slice(0, 8)}.index`);
   try {
     await Bun.write(index, Bun.file(join(gitDir, "index")));
     const env = { ...process.env, GIT_INDEX_FILE: index };
@@ -600,30 +635,44 @@ async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise
     if ((await ssh(config, remoteSeedScript(config))) !== 0) {
       throw new Error("cannot prepare the VPS checkout");
     }
-    await withSnapshotBackoff(async () => {
-      const push = Bun.spawn(
-        [
-          "git",
-          "push",
-          "--quiet",
-          "--force",
-          // The VPS checkout is seeded shallow: a thin pack may delta against bases it lacks.
-          "--no-thin",
-          `${config.host}:${config.remoteWorkspace}`,
-          `${sha}:${config.snapshotRef}`,
-        ],
-        {
-          cwd: root,
-          env: { ...process.env, GIT_SSH_COMMAND: sshBase(config).join(" ") },
-          stdout: "inherit",
-          stderr: "inherit",
-        },
-      );
-      const code = await push.exited;
-      if (code === 128)
-        throw new SnapshotCollision("git push of the snapshot hit a lock (exit 128)");
-      if (code !== 0) throw new Error("git push of the snapshot failed");
-    });
+    const pushOnce = () =>
+      withSnapshotBackoff(async () => {
+        const push = Bun.spawn(
+          [
+            "git",
+            "push",
+            "--quiet",
+            "--force",
+            // The VPS checkout is seeded shallow: a thin pack may delta against bases it lacks.
+            "--no-thin",
+            `${config.host}:${config.remoteWorkspace}`,
+            `${sha}:${config.snapshotRef}`,
+            // Pin this snapshot: other sessions overwrite the shared ref while a job may still be queued.
+            `${sha}:${pinRef(config, sha)}`,
+          ],
+          {
+            cwd: root,
+            env: { ...process.env, GIT_SSH_COMMAND: sshBase(config).join(" ") },
+            stdout: "inherit",
+            stderr: "inherit",
+          },
+        );
+        const code = await push.exited;
+        if (code === 128)
+          throw new SnapshotCollision("git push of the snapshot hit a lock (exit 128)");
+        if (code !== 0) throw new Error("git push of the snapshot failed");
+      });
+    await pushOnce();
+    // A remote ref can advertise history whose objects were collected (another session's snapshot, since
+    // overwritten): git then never resends them. Verify, and on damage forget the refs and push in full.
+    if ((await ssh(config, remoteVerifyScript(config, sha))) !== 0) {
+      console.error("vps-cargo: the snapshot is incomplete on the VPS, resending it in full");
+      await ssh(config, remoteForgetScript(config));
+      await pushOnce();
+      if ((await ssh(config, remoteVerifyScript(config, sha))) !== 0) {
+        throw new Error("the snapshot is still incomplete on the VPS after a full resend");
+      }
+    }
   }
   if ((await ssh(config, remoteCheckoutScript(config, sha, pull))) !== 0) {
     throw new Error("VPS checkout failed");

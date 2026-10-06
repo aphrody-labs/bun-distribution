@@ -12,10 +12,14 @@ import {
   gitDaemonCommand,
   isSnapshotCollision,
   loadConfig,
+  PIN_RETENTION_DAYS,
+  pinRef,
   matchesPackageSpec,
   remoteCheckoutScript,
+  remoteForgetScript,
   remoteRunScript,
   remoteSeedScript,
+  remoteVerifyScript,
   repositoryConfig,
   secretLikePaths,
   shellQuote,
@@ -144,6 +148,12 @@ describe("snapshot collisions", () => {
     expect(isSnapshotCollision(lockError)).toBe(true);
     expect(isSnapshotCollision(new SnapshotCollision("push"))).toBe(true);
     expect(isSnapshotCollision({ exitCode: 128, stderr: "" })).toBe(true);
+    expect(
+      isSnapshotCollision({
+        exitCode: 128,
+        stderr: "fatal: x.index: index file smaller than expected",
+      }),
+    ).toBe(true);
     expect(isSnapshotCollision({ exitCode: 128, stderr: "fatal: not a git repository" })).toBe(
       false,
     );
@@ -215,6 +225,75 @@ describe("snapshot collisions", () => {
       expect(leftovers).toEqual([]);
     } finally {
       await rm(repo, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("snapshot pins and verification", () => {
+  test("each snapshot gets its own ref next to the shared one, per repository", () => {
+    expect(pinRef(config, SHA)).toBe("refs/wsl/pin/0123456789ab");
+    const { config: vu } = repositoryConfig(config, "vu");
+    expect(pinRef(vu, SHA)).toBe("refs/vu/pin/0123456789ab");
+  });
+
+  test("the verify script fails with exit 3 when an object is missing", () => {
+    const script = remoteVerifyScript(config, SHA);
+    expect(script).toContain(`git rev-list --objects --quiet ${SHA}`);
+    expect(script).toContain("exit 3");
+    expect(script).toContain(`cd ${config.remoteWorkspace}`);
+  });
+
+  test("the forget script only drops refs whose history is broken", () => {
+    const script = remoteForgetScript(config);
+    expect(script).toContain("refs/wsl/snapshot");
+    expect(script).toContain("refs/wsl/pin");
+    expect(script).toContain(
+      'git rev-list --objects --quiet "$ref" 2>/dev/null || git update-ref -d "$ref"',
+    );
+  });
+
+  test("the checkout script prunes old pins and keeps the recent ones", () => {
+    const script = remoteCheckoutScript(config, SHA, false);
+    expect(script).toContain("refs/wsl/pin");
+    expect(script).toContain(String(PIN_RETENTION_DAYS * 86400));
+    expect(script).toContain("committerdate:unix");
+  });
+
+  test("a damaged snapshot ref is repaired by a real push (objects collected on the remote)", async () => {
+    const root = await mkdtemp(join(tmpdir(), "vps-cargo-pin-"));
+    try {
+      const remote = join(root, "remote");
+      const work = join(root, "work");
+      await $`git init -q ${remote} && git init -q ${work}`;
+      await $`git -c user.name=t -c user.email=t@t commit -q --allow-empty -m init`.cwd(work);
+      await Bun.write(join(work, "a.txt"), "payload\n");
+      const sha = await snapshot(config, work);
+      const push = (refs: string[]) =>
+        $`git push -q --force --no-thin ${remote} ${refs}`.cwd(work).quiet();
+      await push([`${sha}:refs/wsl/snapshot`]);
+      // Collect the blob on the remote while the ref still advertises it: the damage seen in production.
+      const blob = (await $`git rev-parse ${sha}:a.txt`.cwd(work).text()).trim();
+      await rm(join(remote, ".git/objects", blob.slice(0, 2), blob.slice(2)), { force: true });
+      expect(
+        (
+          await $`sh -c ${remoteVerifyScript({ ...config, remoteWorkspace: remote }, sha)}`
+            .nothrow()
+            .quiet()
+        ).exitCode,
+      ).toBe(3);
+      // A plain push resends nothing: the remote ref says it has the object.
+      await push([`${sha}:refs/wsl/snapshot`, `${sha}:${pinRef(config, sha)}`]);
+      expect(
+        (await $`git -C ${remote} rev-list --objects --quiet ${sha}`.nothrow().quiet()).exitCode,
+      ).not.toBe(0);
+      // Forget the broken refs, push again: the object is resent.
+      await $`sh -c ${remoteForgetScript({ ...config, remoteWorkspace: remote })}`.quiet();
+      await push([`${sha}:refs/wsl/snapshot`, `${sha}:${pinRef(config, sha)}`]);
+      expect(
+        (await $`git -C ${remote} rev-list --objects --quiet ${sha}`.nothrow().quiet()).exitCode,
+      ).toBe(0);
+    } finally {
+      await rm(root, { recursive: true, force: true });
     }
   });
 });
