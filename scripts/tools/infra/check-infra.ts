@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 
+// oxlint-disable no-await-in-loop -- sequential file checks: the first missing file ends the run.
 import { stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
@@ -15,6 +16,7 @@ type A2aPeer = {
   authEnv?: string | null;
   rpcPath?: string;
   service?: string;
+  status?: string | null;
 };
 
 type Route = {
@@ -84,7 +86,8 @@ async function main(): Promise<void> {
   ];
   for (const relative of yoloUnits) {
     try {
-      if (!(await stat(join(yoloRoot, relative))).isFile()) fail(`Missing yolo host file: ${relative}`);
+      if (!(await stat(join(yoloRoot, relative))).isFile())
+        fail(`Missing yolo host file: ${relative}`);
     } catch {
       fail(`Missing yolo host file: ${relative}`);
     }
@@ -134,6 +137,9 @@ async function main(): Promise<void> {
       if (!catalog.services.some((service) => service.id === peer.service)) {
         fail(`a2a peer service not in catalog: ${id}`);
       }
+      // A retired peer keeps its record (the redeploy shape) but its public edge is gone: no live route is required,
+      // so the service behind it can be served on loopback only (aphrody-a2a) without a public nginx route.
+      if (peer.status === "retired") continue;
 
       const hostname = new URL(endpoint).hostname;
       const publicRoute = routes.routes.find((route) => route.host === hostname);

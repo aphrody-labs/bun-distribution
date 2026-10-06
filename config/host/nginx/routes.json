@@ -18,9 +18,7 @@
     { "host": "mcp.dragonballfr.com", "service": "shenron-mcp", "upstream": "127.0.0.1:5010", "protocol": "mcp-a2a", "status": "retired", "retiredAt": "2026-09-25" }
   ],
   "internal": [
-    { "service": "aphrody-a2a", "upstream": "127.0.0.1:8788", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/v1/a2a", "/.well-known/agent-card.json"], "status": "retired", "retiredAt": "2026-09-25" },
     { "service": "aphrody-ai-http", "upstream": "127.0.0.1:8789", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/v1/models", "/api/v1/rag/query", "/api/v1/rag/stats"], "status": "retired", "retiredAt": "2026-09-25" },
-    { "service": "aphrody-a2a", "upstream": "127.0.0.1:8788", "via": "nginx", "publicHost": "api.aphrody.com", "paths": ["/api/v1/a2a", "/.well-known/agent-card.json"], "vhost": "nginx/aphrody/aphrody.com.conf", "status": "retired", "retiredAt": "2026-09-25" },
     { "service": "aphrody-ai-http", "upstream": "127.0.0.1:8789", "via": "nginx", "publicHost": "api.aphrody.com", "paths": ["/api/v1/models", "/api/v1/rag/query", "/api/v1/rag/stats"], "vhost": "nginx/aphrody/aphrody.com.conf", "status": "retired", "retiredAt": "2026-09-25" },
     { "service": "aphrody-web-api", "upstream": "127.0.0.1:3007", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/v1/web/"], "status": "retired", "retiredAt": "2026-09-25" }
   ],

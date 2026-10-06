@@ -114,6 +114,51 @@
       "targetHost": "vps"
     },
     {
+      "service": "aphrody-downloads",
+      "unit": "aphrody-downloads.service",
+      "path": "systemd/aphrody/aphrody-downloads.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "downloads.aphrody.com"
+    },
+    {
+      "service": "aphrody-llama-gemma4",
+      "unit": "aphrody-llama-gemma4.service",
+      "path": "systemd/aphrody/aphrody-llama-gemma4.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-mcp-http",
+      "unit": "aphrody-mcp-http.service",
+      "path": "systemd/aphrody/aphrody-mcp-http.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-kernel",
+        "net-inet-only",
+        "syscall-service"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-a2a",
+      "unit": "aphrody-a2a.service",
+      "path": "systemd/aphrody/aphrody-a2a.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-kernel",
+        "net-inet-only",
+        "syscall-service"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
       "service": "aphrody-ovh-watch",
       "unit": "aphrody-ovh-watch.service",
       "path": "systemd/aphrody/aphrody-ovh-watch.service",

@@ -8694,6 +8694,16 @@
       "canonical": "docs/operations/infra/LIVE-AUDIT-QUALIFICATION-2026-10-02.md"
     },
     {
+      "path": "docs/operations/infra/MCP-A2A.md",
+      "title": "MCP HTTP and A2A on the vps (declared 2026-10-06, not applied)",
+      "sha256": "143302cdc6395873ab31b6d8a41384c75c94de5719c800b43fdc0e5b41b75112",
+      "bytes": 6105,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/MCP-A2A.md"
+    },
+    {
       "path": "docs/operations/infra/MONOREPO-LAYERING-QUALIFICATION-2026-10-02.md",
       "title": "Monorepo Cargo graph qualification — 2026-10-02",
       "sha256": "bc73ea58e5d11d3dc0cc9fc4eec076122dabd125b4162eeee8dfa4939327fb75",

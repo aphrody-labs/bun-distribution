@@ -113,15 +113,31 @@
       "kind": "rust-http",
       "runtime": "rust",
       "unit": "aphrody-ai-http.service",
-      "health": "http://127.0.0.1:8789/healthz",
-      "port": 8789,
+      "retiredHealth": "http://127.0.0.1:8789/healthz",
+      "retiredPort": 8789,
       "capabilities": ["ai-http"],
       "sourceRepo": "aphrody-ai",
       "workingDirectory": "/srv/aphrody/current",
       "publicProxy": "nginx",
       "public": false,
       "status": "retired",
-      "retiredAt": "2026-09-25"
+      "retiredAt": "2026-09-25",
+      "supersededBy": "aphrody-mcp-http",
+      "note": "same server as aphrody-mcp-http (`aphrody-mcp http`); its port 8789 and health path now belong to aphrody-mcp-http, kept here as retiredPort/retiredHealth because the validator allows one catalog entry per port, retired or not"
+    },
+    {
+      "id": "aphrody-mcp-http",
+      "application": "aphrody",
+      "kind": "rust-http",
+      "runtime": "rust",
+      "unit": "aphrody-mcp-http.service",
+      "health": "http://127.0.0.1:8789/healthz",
+      "port": 8789,
+      "capabilities": ["ai-http"],
+      "sourceRepo": "aphrody",
+      "workingDirectory": "/home/ubuntu/.aphrody",
+      "public": false,
+      "note": "MCP Streamable HTTP (/mcp) and REST gateway (/healthz, /api/v1/*) of `aphrody-mcp http`, loopback only and never proxied (the binary refuses a non-loopback bind). /mcp has no authentication of its own. Declared 2026-10-06, not applied: 127.0.0.1:8789 on the vps is held by the reverse tunnel of the WSL compute (aphrody-compute-vps-tunnel), so the unit cannot start until the owner frees it or moves this port. The Shenron REST routes answer 503 until APHRODY_SHENRON_PRODUCTION_READY, the token and the database are configured. Runbook: docs/operations/infra/MCP-A2A.md; unit config/host/systemd/aphrody/aphrody-mcp-http.service"
     },
     {
       "id": "aphrody-shenron-embed",
@@ -147,18 +163,16 @@
       "health": "http://127.0.0.1:8788/ping",
       "port": 8788,
       "capabilities": ["a2a"],
-      "sourceRepo": "aphrody-ai",
-      "workingDirectory": "/srv/aphrody/current",
+      "sourceRepo": "aphrody",
+      "workingDirectory": "/srv/aphrody/shared/a2a",
       "a2a": {
         "registry": "config/a2a-peers.json",
         "peer": "aphrody",
-        "rpcPath": "/api/v1/a2a",
-        "agentCardPath": "/.well-known/agent-card.json",
-        "publicProxy": "nginx"
+        "rpcPath": "/",
+        "agentCardPath": "/.well-known/agent-card.json"
       },
       "public": false,
-      "status": "retired",
-      "retiredAt": "2026-09-25"
+      "note": "A2A 1.0 server of `aphrody a2a serve` on the coord mailbox (/srv/aphrody/shared/coord), loopback only: the former public routes of aphrody.com and api.aphrody.com stay removed and the registry peer `aphrody` stays retired (its https endpoint is the retired public edge). Peer agent CLIs are not spawned (APHRODY_A2A_DRY_RUN=1). Declared 2026-10-06, not applied. Runbook: docs/operations/infra/MCP-A2A.md; unit config/host/systemd/aphrody/aphrody-a2a.service"
     },
     {
       "id": "shenron-site",

@@ -1,20 +1,62 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 // bun packages/core/src/host/cli.ts compose-unit <unit> | compose-nginx <file> | check | list
+//   host-plan <unit>... [--target H] [--expect-tools N] [--observe] [--json]   steps to install the units (dry run)
+//   host-apply <unit>... --target H [--expect-tools N] [--apply]               same plan; executes it only with --apply
 import { readFileSync } from "node:fs";
 import { checkCatalog, composeNginx, composeUnit, hostRoot, loadCatalog } from "./index.ts";
+import { applyPlan, hostPlan, observePlan, renderPlan } from "./plan.ts";
 
 const [cmd, arg] = process.argv.slice(2);
+const rest = process.argv.slice(3);
+const flag = (name: string) => rest.includes(`--${name}`);
+const value = (name: string) => {
+  const at = rest.indexOf(`--${name}`);
+  return at >= 0 ? rest[at + 1] : undefined;
+};
+const names = () =>
+  rest.filter((a, i) => !a.startsWith("--") && !rest[i - 1]?.match(/^--(target|expect-tools)$/));
 if (cmd === "compose-unit" && arg) process.stdout.write(composeUnit(arg));
 else if (cmd === "compose-nginx" && arg)
   process.stdout.write(composeNginx(readFileSync(arg, "utf8")));
-else if (cmd === "list") for (const u of loadCatalog().units) console.log(u.unit, u.targetHost);
+else if (cmd === "host-plan" || cmd === "host-apply") {
+  const expect = value("expect-tools");
+  try {
+    if (names().length === 0) throw new Error("name at least one unit");
+    if (cmd === "host-apply" && flag("apply") && !value("target"))
+      throw new Error("--apply needs an explicit --target");
+    const plan = hostPlan(names(), {
+      target: value("target"),
+      expectTools: expect === undefined ? undefined : Number(expect),
+    });
+    if (cmd === "host-apply" && flag("apply")) {
+      const failed = await applyPlan(plan);
+      console.log(failed.length ? `FAIL ${failed.join(", ")}` : "applied");
+      process.exit(failed.length ? 1 : 0);
+    }
+    const observed = flag("observe") ? await observePlan(plan) : undefined;
+    console.log(
+      flag("json")
+        ? JSON.stringify({ ...plan, observed: observed && Object.fromEntries(observed) }, null, 2)
+        : renderPlan(plan, observed),
+    );
+    if (!flag("json"))
+      console.log(
+        `\nplan only: ${cmd === "host-apply" ? "pass --apply" : "use host-apply --target H --apply"} to execute`,
+      );
+  } catch (error) {
+    console.error(`host: ${error instanceof Error ? error.message : error}`);
+    process.exit(1);
+  }
+} else if (cmd === "list") for (const u of loadCatalog().units) console.log(u.unit, u.targetHost);
 else if (cmd === "check") {
   const problems = checkCatalog();
   for (const p of problems) console.error(p);
   console.log(problems.length ? `FAIL ${problems.length}` : `ok ${hostRoot()}`);
   process.exit(problems.length ? 1 : 0);
 } else {
-  console.error("usage: cli.ts compose-unit <unit> | compose-nginx <file> | list | check");
+  console.error(
+    "usage: cli.ts compose-unit <unit> | compose-nginx <file> | list | check | host-plan <unit>... | host-apply <unit>...",
+  );
   process.exit(2);
 }

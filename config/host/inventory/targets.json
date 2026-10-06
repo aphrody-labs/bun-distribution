@@ -64,6 +64,7 @@
         "aphrody-web-api",
         "aphrody-a2a",
         "aphrody-ai-http",
+        "aphrody-mcp-http",
         "aphrody-shenron-embed",
         "rg-services",
         "rg-infra-monitor",
