@@ -1,5 +1,4 @@
 {
-  "enabledPlugins": {},
   "permissions": {
     "allow": [
       "Bash",
@@ -39,5 +38,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "chrome-devtools-mcp@claude-plugins-official": true
   }
 }

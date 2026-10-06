@@ -58,3 +58,18 @@ reachability, push remote) and exits non-zero on a missing required item. Sessio
   runs every 5 minutes: clears failed units whose file is gone, restarts failed `aphrody-*`, `shenron-*`, `nie-*`,
   `rg-*` services (not `shenron-cdn-sync`, a long one-shot), vacuums the journal and apt cache above 85 % disk.
   Unattended upgrades, certbot, log rotation and the Shenron backup/pull timers were already active.
+
+## Browser automation (Aphrody Web, live sites)
+
+Two browser surfaces, both loaded as deferred MCP tools (`ToolSearch select:...`):
+
+- `claude-in-chrome` (extension in the owner Chrome, already signed in, so no cookie is ever copied into a session):
+  `list_connected_browsers`, `tabs_context_mcp {createIfEmpty:true}`, `navigate`, `get_page_text`, `read_page`,
+  `browser_batch` for several actions at once. Verified 2026-10-07: navigating to `https://aphrody.com` and reading the
+  page text works.
+- `chrome-devtools-mcp` plugin (`.claude/settings.json` `enabledPlugins`): console, network, performance and Lighthouse
+  on the same sites.
+
+Server-side crawling, extraction and mirroring stay with the Rust owner (`aphrody web`, skill `aphrody:aphrody-web`);
+use the browser tools for pages that need a logged-in or interactive session. Session cookies and tokens are never
+pasted into a chat, a file or a repository.
