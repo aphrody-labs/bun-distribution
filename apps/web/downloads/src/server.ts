@@ -94,8 +94,9 @@ export function renderIndex(manifest: Manifest | null): string {
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Aphrody</title>
 <style>
-:root{--md-sys-color-background:#fef7ff;--md-sys-color-on-background:#1d1b20;--md-sys-color-primary:#6750a4;--md-sys-color-on-primary:#fff;--md-sys-color-surface-container:#f3edf7;--md-sys-color-on-surface-variant:#49454f;--md-sys-color-outline-variant:#cac4d0}
-@media (prefers-color-scheme:dark){:root{--md-sys-color-background:#141218;--md-sys-color-on-background:#e6e0e9;--md-sys-color-primary:#d0bcff;--md-sys-color-on-primary:#381e72;--md-sys-color-surface-container:#211f26;--md-sys-color-on-surface-variant:#cac4d0;--md-sys-color-outline-variant:#49454f}}
+/* M3 tonal-spot roles from the Aphrody pet seed #8c6c88 (m3/packages/identity PET_COLORS). */
+:root{--md-sys-color-background:#fff7fa;--md-sys-color-on-background:#201a1e;--md-sys-color-primary:#7e4d7c;--md-sys-color-on-primary:#fff;--md-sys-color-surface-container:#f7ebf1;--md-sys-color-on-surface-variant:#4e444b;--md-sys-color-outline-variant:#d1c3cc}
+@media (prefers-color-scheme:dark){:root{--md-sys-color-background:#171216;--md-sys-color-on-background:#ebdfe6;--md-sys-color-primary:#efb4e9;--md-sys-color-on-primary:#4b1f4b;--md-sys-color-surface-container:#241e22;--md-sys-color-on-surface-variant:#d1c3cc;--md-sys-color-outline-variant:#4e444b}}
 body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--md-sys-color-background);color:var(--md-sys-color-on-background);font:16px/1.5 Roboto,system-ui,sans-serif}
 main{width:min(100% - 2rem,26rem);display:grid;gap:1rem;justify-items:center;padding:2rem 0}
 .pet{width:96px;height:104px;background:url(/pet.webp) 0 0/768px 1144px no-repeat;animation:idle 1.1s step-end infinite}

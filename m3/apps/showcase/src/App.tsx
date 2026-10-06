@@ -29,7 +29,7 @@ function ThemePersistence() {
 export function App() {
   return (
     <M3ThemeProvider
-      defaultSeedColor="#6750a4"
+      defaultSeedColor="#8c6c88"
       defaultThemeMode={savedThemeMode()}
       defaultVariant="tonalSpot"
     >

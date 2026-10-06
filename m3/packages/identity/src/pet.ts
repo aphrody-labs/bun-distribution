@@ -96,3 +96,16 @@ export function spriteStyle(frame: PetFrame, scale: number, atlas: PetAtlas = PE
     backgroundPosition: `${-frame.x * scale}px ${-frame.y * scale}px`,
   } as const;
 }
+
+/**
+ * Colours measured on the pet atlas (neutral gaze cell, dominant opaque pixel per region, 2026-10-06).
+ * `seed` is the sock mauve: the only pet colour with enough chroma for readable M3 primary roles.
+ * The hair, skin and tunic stay exact as accents (`--aphrody-pet-*`).
+ */
+export const PET_COLORS = {
+  seed: "#8c6c88",
+  hair: "#dcd894",
+  skin: "#fce0b4",
+  tunic: "#f4f4f4",
+  socks: "#8c6c88",
+} as const;

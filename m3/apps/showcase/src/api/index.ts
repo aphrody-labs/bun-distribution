@@ -82,7 +82,7 @@ function textInput(value: unknown, name: string, limit = 2000): string {
   return value;
 }
 function themeInput(url: URL): ThemeInput {
-  const seed = url.searchParams.get("seed") ?? "#6750a4";
+  const seed = url.searchParams.get("seed") ?? "#8c6c88";
   const mode = url.searchParams.get("mode") ?? "auto";
   if (!/^#[a-f\d]{6}$/i.test(seed)) throw new InputError("seed must be #rrggbb.");
   if (!["light", "dark", "auto"].includes(mode))

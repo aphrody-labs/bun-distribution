@@ -39,7 +39,7 @@ describe("showcase package computations", () => {
   });
 
   test("system discovers the real MCP server, lint rules and generated files", async () => {
-    const response = await request("/api/system?target=cosmic&seed=%236750a4");
+    const response = await request("/api/system?target=cosmic&seed=%238c6c88");
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.mcpTools.map((tool: { name: string }) => tool.name)).toContain("m3_symbol_search");
@@ -58,7 +58,7 @@ describe("showcase package computations", () => {
   });
 
   test("Next outputs use the requested origin and canonical theme roles", async () => {
-    const response = await request("/api/next?seed=%236750a4");
+    const response = await request("/api/next?seed=%238c6c88");
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.schemeCss).toContain("--md-sys-color-primary");

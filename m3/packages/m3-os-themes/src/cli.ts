@@ -147,7 +147,7 @@ export function run(argv: string[], exec: Exec = defaultExec): CliResult {
     files = generate(
       {
         name: String(flags["name"] ?? "Aphrody"),
-        seed: String(flags["seed"] ?? "#6750a4"),
+        seed: String(flags["seed"] ?? "#8c6c88"),
         variant: flags["variant"] as never,
         mode,
       },

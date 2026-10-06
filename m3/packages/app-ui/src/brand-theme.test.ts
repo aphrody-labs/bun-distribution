@@ -33,13 +33,13 @@ function contrast(a: string, b: string): number {
 }
 
 describe("brand theme", () => {
-  test("src/brand.css is the generated sheet for the Gemini seed", async () => {
+  test("src/brand.css is the generated sheet for the pet seed", async () => {
     const onDisk = await Bun.file(new URL("./brand.css", import.meta.url)).text();
     expect(onDisk).toBe(brandCss(tokensCss, BRAND_SEED));
   });
 
   test("brand values mirror crates/ui/m3-tokens/src/gemini_brand.rs", () => {
-    expect(BRAND_SEED).toBe("#3186ff");
+    expect(BRAND_SEED).toBe("#8c6c88");
     expect(rustBrand).toContain("GEMINI_BLUE: u32 = 0xFF31_86FF");
     expect(TITLE_GRADIENT_STOPS).toEqual(["#4285f4", "#9b72cb", "#d96570"]);
     expect(rustBrand).toContain("GEMINI_TITLE_BLUE: u32 = 0xFF42_85F4");

@@ -109,7 +109,7 @@ export default function Theme({ adaptive }: PageProps) {
           <Button
             variant="outlined"
             onClick={() => {
-              theme.setSeedColor("#6750a4");
+              theme.setSeedColor("#8c6c88");
               theme.setVariant("tonalSpot");
               theme.setThemeMode("system");
               theme.setContrastLevel(0);

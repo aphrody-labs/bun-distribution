@@ -18,7 +18,7 @@ test("the showcase builds into html, favicon, script and stylesheet", async () =
       entry: join(app, "src/index.html"),
       outdir,
       cwd: app,
-      plugin: { theme: { seed: "#6750a4" }, root: repo, css: (config) => `:root { --showcase-sheet: ${config.sheet}; }\n` },
+      plugin: { theme: { seed: "#8c6c88" }, root: repo, css: (config) => `:root { --showcase-sheet: ${config.sheet}; }\n` },
     });
     const files = (await readdir(outdir, { recursive: true })).map(String);
     // Bun keeps the entry's directory relative to the common root: src/index.html.

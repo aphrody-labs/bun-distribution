@@ -8,9 +8,25 @@
 
 import { cssFromSeed } from "@aphrody/m3-tokens/dynamic-color";
 
-import { BRAND_SEED, GEMINI_SURFACE, READING_COLUMN, SHAPE, TITLE_GRADIENT_STOPS, WEIGHTS } from "./brand-tokens";
+import {
+  BRAND_SEED,
+  GEMINI_SURFACE,
+  PET_ACCENTS,
+  READING_COLUMN,
+  SHAPE,
+  TITLE_GRADIENT_STOPS,
+  WEIGHTS,
+} from "./brand-tokens";
 
-export { BRAND_SEED, GEMINI_SURFACE, READING_COLUMN, SHAPE, TITLE_GRADIENT_STOPS, WEIGHTS };
+export {
+  BRAND_SEED,
+  GEMINI_SURFACE,
+  PET_ACCENTS,
+  READING_COLUMN,
+  SHAPE,
+  TITLE_GRADIENT_STOPS,
+  WEIGHTS,
+};
 
 /** M3 spring names carried by @aphrody/m3-tokens/m3-tokens.css. */
 export const SPRING_NAMES = [
@@ -98,7 +114,7 @@ export function brandCss(tokensCss: string, seed: string = BRAND_SEED): string {
   const header =
     "/* SPDX-License-Identifier: Apache-2.0 */\n" +
     "/*\n" +
-    ` * Aphrody brand sheet: M3 tonal-spot roles from seed ${seed} (Gemini brand blue),\n` +
+    ` * Aphrody brand sheet: M3 tonal-spot roles from seed ${seed} (Aphrody pet sock mauve),\n` +
     " * Gemini surfaces, shapes, weights and M3 springs as linear() easings.\n" +
     " * GENERATED - do not hand-edit. Regenerate with: bun run brand\n" +
     " */\n\n";
@@ -109,6 +125,8 @@ export function brandCss(tokensCss: string, seed: string = BRAND_SEED): string {
     surfaceOverride(":root.light,\n.light", GEMINI_SURFACE.light) +
     "\n" +
     surfaceOverride(":root,\n.dark", GEMINI_SURFACE.dark) +
+    "\n/* Exact Aphrody pet colours (identity PET_COLORS). */\n" +
+    `:root {\n  --aphrody-pet-hair: ${PET_ACCENTS.hair};\n  --aphrody-pet-skin: ${PET_ACCENTS.skin};\n  --aphrody-pet-tunic: ${PET_ACCENTS.tunic};\n}\n` +
     "\n" +
     brandTokens(springsFromTokensCss(tokensCss))
   );

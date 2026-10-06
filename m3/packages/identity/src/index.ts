@@ -5,5 +5,6 @@
 //   PET, frameAt, gazeFrame, spriteStyle  pure pet data ("@aphrody/identity/pet", no loader needed)
 export { AphrodyAvatar, type AphrodyAvatarProps } from "./AphrodyAvatar";
 export { AphrodyPet, type AphrodyPetProps } from "./AphrodyPet";
+export { PET_COLORS } from "./pet";
 export { BRAND_ICONS, brandIcon, brandSrcSet } from "./brand";
 export * from "./pet";
