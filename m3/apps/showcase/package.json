@@ -38,6 +38,7 @@
     "@aphrody/m3-forms": "workspace:*",
     "@aphrody/m3-front": "workspace:*",
     "@aphrody/m3-icons": "workspace:*",
+    "@aphrody/webview-page": "workspace:*",
     "@aphrody/m3-mcp": "workspace:*",
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-next": "workspace:*",

@@ -3,7 +3,7 @@
 // Bounded local capture: every showcase page in mobile, desktop and TV, with local assets.
 import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { chromium, type Browser } from "playwright-core";
+import { chromium, type Browser } from "@aphrody/webview-page";
 import { pool } from "../../../scripts/build.ts";
 import { PAGES } from "../src/pages/index.ts";
 export type Layout = "mobile" | "desktop" | "tv";
@@ -113,7 +113,6 @@ export async function capture(
           path: file,
           animations: "disabled",
           caret: "hide",
-          type: "png",
         });
         return {
           name: shot.name,

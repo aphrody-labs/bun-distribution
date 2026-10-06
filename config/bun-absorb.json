@@ -104,10 +104,6 @@
     { "name": "p-queue", "status": "gap", "bun": "fork candidate: bun:async" },
     { "name": "p-retry", "status": "gap", "bun": "fork candidate: bun:async" },
     { "name": "bottleneck", "status": "gap", "bun": "fork candidate: bun:async" },
-    { "name": "pino", "status": "gap", "bun": "fork candidate: structured logger" },
-    { "name": "fuse.js", "status": "gap", "bun": "fork candidate: fuzzy search" },
-    { "name": "qrcode", "status": "gap", "bun": "fork candidate: Bun.Image QR encoder" },
-    { "name": "@napi-rs/canvas", "status": "gap", "bun": "fork candidate: Bun.Image drawing" },
     { "name": "cheerio", "status": "gap", "bun": "HTMLRewriter covers streaming rewrite only" },
     { "name": "@happy-dom/global-registrator", "status": "gap", "bun": "DOM for bun:test" }
   ]

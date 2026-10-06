@@ -6,11 +6,9 @@
 //   bun scripts/browser-check.ts [--base http://localhost:3218]     (server running: `bun run start` in examples/app)
 //   bun scripts/yolo-example.ts browser                             (builds with yolo, starts the server, runs this)
 //
-// playwright-core is resolved from the repository root (it is a root dev dependency), so this package takes no dependency
-// for it; the browser is the Chromium Playwright installed (`~/.cache/ms-playwright`).
-import { resolve } from "node:path";
-
-const ROOT = resolve(import.meta.dir, "../../..");
+// The browser is Bun.WebView driven through @aphrody/webview-page (Chrome, Chromium or Edge found on PATH or in
+// BUN_CHROME_PATH); no Playwright and no browser download.
+import { chromium } from "@aphrody/webview-page";
 
 export interface Check {
   name: string;
@@ -18,38 +16,9 @@ export interface Check {
   detail?: string;
 }
 
-type Page = {
-  goto(url: string, options?: object): Promise<unknown>;
-  on(
-    event: string,
-    handler: (arg: { text?(): string; message?: string; type?(): string }) => void,
-  ): void;
-  locator(selector: string): {
-    click(options?: { force?: boolean }): Promise<void>;
-    textContent(): Promise<string | null>;
-    getAttribute(name: string): Promise<string | null>;
-    first(): ReturnType<Page["locator"]>;
-    nth(index: number): ReturnType<Page["locator"]>;
-    waitFor(options?: object): Promise<void>;
-    count(): Promise<number>;
-    evaluate<T>(fn: (el: Element) => T): Promise<T>;
-  };
-  evaluate<T>(fn: () => T): Promise<T>;
-  reload(options?: object): Promise<unknown>;
-  keyboard: { press(key: string): Promise<void> };
-  context(): { cookies(): Promise<{ name: string; value: string }[]> };
-  waitForTimeout(ms: number): Promise<void>;
-};
-
 /** Run every check against a running server; never throws on a failed check. */
 export async function browserCheck(base: string): Promise<Check[]> {
-  const playwright = (await import(Bun.resolveSync("playwright-core", ROOT))) as {
-    chromium: {
-      launch(options: object): Promise<{ newPage(): Promise<Page>; close(): Promise<void> }>;
-    };
-  };
-  const browser = await playwright.chromium.launch({
-    channel: "chromium",
+  const browser = await chromium.launch({
     headless: true,
     args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
   });
@@ -59,10 +28,11 @@ export async function browserCheck(base: string): Promise<Check[]> {
   try {
     const page = await browser.newPage();
     const problems: string[] = [];
-    // Headless Chromium without a display never fires requestAnimationFrame here, and Playwright's "stable" check waits for
-    // it: clicks are forced (the visibility and hit checks are replaced by the assertions after each click).
+    // Headless Chromium without a display never fires requestAnimationFrame here, and the actionability wait of a
+    // selector click depends on it: clicks are forced (native events at the element centre; the assertions after each
+    // click replace the visibility and hit checks).
     page.on("console", (message) => {
-      if (message.type?.() === "error") problems.push(`console: ${message.text?.()}`);
+      if (message.type() === "error") problems.push(`console: ${message.text()}`);
     });
     page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
 
@@ -107,7 +77,7 @@ export async function browserCheck(base: string): Promise<Check[]> {
         null,
     );
 
-    await page.locator("text=Open dialog").first().click({ force: true });
+    await page.getByText("Open dialog").first().click({ force: true });
     await page
       .locator(".m3-bui-dialog__popup")
       .first()
