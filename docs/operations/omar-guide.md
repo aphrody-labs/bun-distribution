@@ -4,6 +4,11 @@
 
 Une seule appli : **Aphrody Omar**. Tu fais un double-clic, un menu s'affiche, tu tapes un numéro puis Entrée. Tu n'as jamais besoin de taper une commande.
 
+Quand l'application **Aphrody** est installée sur ton PC, le double-clic sur Aphrody-Omar ouvre directement sa page
+**Administration** : les mêmes menus en boutons, et les questions (dont « tape OUI ») dans une fenêtre. Sans
+l'application, c'est le menu ci-dessous, comme avant. Pour retrouver le menu même avec l'application : lance
+`Aphrody-Omar.exe --console`.
+
 ## La première fois
 
 1. Décompresse le dossier reçu de l'équipe (clic droit, **Extraire tout**) et double-clique **Aphrody-Omar.exe**.

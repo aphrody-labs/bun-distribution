@@ -6,7 +6,7 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **235 crates**, **98 packages**, **5 apps** (236 Rust, 102 Bun).
+Totals: **235 crates**, **98 packages**, **6 apps** (236 Rust, 103 Bun).
 
 ## Per domain
 
@@ -16,7 +16,7 @@ Totals: **235 crates**, **98 packages**, **5 apps** (236 Rust, 102 Bun).
 | [apps](#apps) | 0 | 1 | 0 | 0 |
 | [bun](#bun) | 0 | 1 | 0 | 0 |
 | [cli](#cli) | 0 | 0 | 1 | 0 |
-| [community](#community) | 0 | 0 | 2 | 0 |
+| [community](#community) | 0 | 0 | 3 | 0 |
 | [compat](#compat) | 9 | 0 | 0 | 0 |
 | [contracts](#contracts) | 3 | 0 | 0 | 0 |
 | [discord](#discord) | 1 | 2 | 0 | 0 |
@@ -169,6 +169,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `@aphrody/creator-kit` | [apps/community/creator-kit](../../../apps/community/creator-kit) | bun app | 0.2.4 | bin | yes | 0 | 2026-10-06 |
 | `@aphrody/omar-kit` | [apps/community/omar-kit](../../../apps/community/omar-kit) | bun app | 0.1.0 | bin | yes | 0 | 2026-10-06 |
+| `@aphrody/setup` | [apps/community/setup](../../../apps/community/setup) | bun app | 0.1.0 | bin | yes | 0 | 2026-10-06 |
 
 ## compat
 

@@ -36,8 +36,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan Directeur Unique — Aphrody & Yolo Core Trinity",
-      "sha256": "84635372f7006a7e681de627e9c9e11841423030fffba55504729af839da8bce",
-      "bytes": 20728,
+      "sha256": "5c0ae494898924ea76ba4ebb8faaa5bc866cbea5964360c8b70371a5c196bf11",
+      "bytes": 21643,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -76,8 +76,8 @@
     {
       "path": "apps/community/creator-kit/README.md",
       "title": "creator-kit",
-      "sha256": "7cdfa868082864cdfa992c69f175af02167f7d4edfc05fe0921563e420990f13",
-      "bytes": 8241,
+      "sha256": "a2353881351e38402d57cc3220db7b1fee3250adb96ff791fc51a780052b8646",
+      "bytes": 9065,
       "domain": "community",
       "status": "canonical",
       "visibility": "private",
@@ -136,12 +136,22 @@
     {
       "path": "apps/community/omar-kit/README.md",
       "title": "omar-kit",
-      "sha256": "554a93412dbc9142ebe67d620fd81ea566219be9deceed246e9aa1995b643e47",
-      "bytes": 2679,
+      "sha256": "7fac13c5a9bf12d765c7dc9d97f6bebb2271224e248427668260786dc6fdfcaa",
+      "bytes": 3509,
       "domain": "community",
       "status": "canonical",
       "visibility": "private",
       "canonical": "apps/community/omar-kit/README.md"
+    },
+    {
+      "path": "apps/community/setup/README.md",
+      "title": "setup",
+      "sha256": "0ff2a3d6b8d6bd94059b2b7adb4b19844d4e8e3a81b62018504117bd72b305e0",
+      "bytes": 2399,
+      "domain": "community",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "apps/community/setup/README.md"
     },
     {
       "path": "apps/yolo/cli/README.md",
@@ -3126,7 +3136,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "39a6659cafb9f2a4572304960adccd11206b284f32530250e37431782f221959",
+      "sha256": "a4ff6d15b60b740cee886f0960bf68ffb96e26c6f2fc4d09fdb8d0454099b85e",
       "bytes": 12343,
       "domain": "",
       "status": "generated",
@@ -5196,8 +5206,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "f31d7f27131d2ff7ee009d3e5484b24eb50efafebe7a1e79cb33505a0bfc27b5",
-      "bytes": 67887,
+      "sha256": "1a8ae4a3b23245e5ef620db54c64829b912b2f5d29659594c2db92da8226c75d",
+      "bytes": 68150,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -8696,8 +8706,8 @@
     {
       "path": "docs/operations/infra/DOWNLOADS.md",
       "title": "Aphrody downloads: site, publisher and GitHub releases",
-      "sha256": "aacc60a0634d8a5ebf52d9bcb770f8f47f0855fc2712af1dab0a520871b5ef59",
-      "bytes": 7147,
+      "sha256": "89d3706e1e1a25aee5fc9c8b09b9f0671442bc16bd6e0d8d2f6f2a0a2fa9f7c7",
+      "bytes": 8394,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -8782,6 +8792,16 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/operations/infra/LIVE-AUDIT-QUALIFICATION-2026-10-02.md"
+    },
+    {
+      "path": "docs/operations/infra/LLAMA-MODELS.md",
+      "title": "llama-server models on the vps",
+      "sha256": "d09d4f651f08792aa4ce8ff221a8ce41175dd672157dcb21678590c4aef4fa3b",
+      "bytes": 1564,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/LLAMA-MODELS.md"
     },
     {
       "path": "docs/operations/infra/MCP-A2A.md",
@@ -8996,8 +9016,8 @@
     {
       "path": "docs/operations/omar-guide.md",
       "title": "Aphrody sur ton PC : le guide d'Omar",
-      "sha256": "d185a9de254dead9ccf90efd4cbab04accf32c1323a00d7afbf17d53c4df25a1",
-      "bytes": 3893,
+      "sha256": "59f1ff682dd5c04daeef868a66091c3d77bbafa69462d30a4f1bfecc6017c5b4",
+      "bytes": 4264,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -40796,8 +40816,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "313f22c6ff51ea2a906c6eb1c74bd591f8226a2cffca968f3c6d21be2f2c21fb",
-      "bytes": 54651,
+      "sha256": "2c7852d775c501dd6939f7e63ea68a86005f6c938564524542941024050c8e5c",
+      "bytes": 54775,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

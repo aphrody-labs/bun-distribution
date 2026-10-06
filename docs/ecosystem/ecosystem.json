@@ -2760,6 +2760,14 @@
           ]
         },
         {
+          "name": "@aphrody/setup",
+          "path": "apps/community/setup",
+          "description": "One-click Aphrody installer for everyone (Aphrody-Setup.exe): aphrody (CLI and MCP), yolo, the desktop app, the Claude plugins and the MCP declaration, with optional administrator and creator roles.",
+          "bins": [
+            "aphrody-setup"
+          ]
+        },
+        {
           "name": "@aphrody/shell-web",
           "path": "packages/shell/web",
           "description": "Aphrody shell for browsers and Tauri webviews: WASM VT core, local shell and WebSocket/Tauri transports.",
@@ -11762,7 +11770,7 @@
     "sharedRepos": 0,
     "crates": 236,
     "binaries": 9,
-    "bunPackages": 133,
+    "bunPackages": 134,
     "pythonPackages": 8,
     "cliBinaries": 19,
     "cliCommands": 870,

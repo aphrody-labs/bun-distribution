@@ -101,6 +101,14 @@ restent des alias de compatibilité jusqu'à qualification.
   `tauri-e2e` → exemple `shell_e2e`. Un seul runtime desktop (décision 21, ordre du 2026-10-05) :
   `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4) ; wry, tao, `tauri-runtime-wry`, `tauri-driver` et la pile GTK 3 /
   WebKitGTK sont retirés ([plan](docs/plans/tauri-cef/PLAN.md), [inventaire](docs/plans/tauri-cef/INVENTORY.md)).
+  Surfaces de l'app (ordre « merge toutes nos app », 2026-10-06) : `m3/packages/app-ui` porte aussi `creator`
+  (creator-kit) et `admin` (omar-kit, visible quand le fichier d'accès est importé) ; les kits gardent leur logique et
+  sont lancés par le pont de la fenêtre principale `crates/ui/app/src/kits.rs` (protocole `aphrody.kit/1`, questions =
+  dialogues M3) ; leurs exe deviennent des lanceurs minces (`aphrody://admin|creator`, menu console sans l'app).
+  Studio > Moteur absorbe `apps/yolo/web` (catalogue Bun, sonde et banc yolo-core ; `yolo web|desktop|tauri` construit
+  app-ui) ; `m3/apps/web` est fusionné dans la vitrine unique `m3/apps/showcase` (sidecar `--showcase`).
+  Installation en un clic : `Aphrody-Setup.exe` (`apps/community/setup`, bouton « Download Aphrody ») et
+  `install.sh`/`install.ps1` (`all`) ; reste : produire l'installeur Windows de l'app (`aphrody-app`, désactivé).
 - [~] **FFI** — un seul cdylib C-ABI `aphrody_ffi` : `yolo-tooling` (feature `tooling`, défaut) et
   `aphrody-inference-ffi` (feature `inference`) absorbés 2026-10-05, `yolo-runtime` réduit à `rlib` ; consommateurs
   Bun repointés vers `libaphrody_ffi`. Restent hors C-ABI : `aphrody-a2a-ui`/`aphrody-shell-web` (wasm-bindgen),

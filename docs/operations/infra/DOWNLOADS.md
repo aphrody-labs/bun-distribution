@@ -13,7 +13,7 @@ existing repositories.
 | `https://downloads.aphrody.com/` (also `https://aphrody.com/`, `https://www.aphrody.com/`) | index page | none, by design |
 | `/latest.json` | manifest: `name`, `version`, `platform`, `target`, `url`, `sha256`, `size` per artifact | none, by design |
 | `/SHA256SUMS`, `/files/<file>.sha256` | checksums of the current release | none, by design |
-| `/install.sh`, `/install.ps1`, `/install-yolo.sh` | one-line installers | none, by design |
+| `/install.sh`, `/install.ps1`, `/install-yolo.sh`, `/install-yolo.ps1` | one-line installers | none, by design |
 | `/files/<file>` | archives, immutable file names `<component>-<version>-<commit9>-<target>.<ext>` | none, by design |
 | `/health` | liveness of the origin (503 until a release is published) | none, loopback and through nginx |
 
@@ -21,11 +21,16 @@ The site is read-only (GET and HEAD only), serves nothing but published, checksu
 write endpoint, so it stays public and unauthenticated like `cdn.aphrody.com`. GitHub release assets of private
 repositories need an authenticated token: the download server is the public path.
 
-One line installs:
+One click on Windows: the « Download Aphrody » button of the index takes the first artifact of kind `desktop`,
+`Aphrody-Setup.exe` (`apps/community/setup`, 2026-10-06). It installs or repairs aphrody, yolo, the desktop app (once
+`aphrody-app` is published), the three plugins as the local Claude Code marketplace `aphrody-local`, declares the
+aphrody MCP server in Claude Desktop (backup first) and Claude Code, makes a shortcut, and offers the administrator
+(omar-kit access steps and `Aphrody-Omar.exe`) and creator (`creator-kit.exe`) roles. One line does the same from a
+shell, every component by default (`all`: unpublished ones are skipped with a note, named ones must install):
 
 ```sh
 curl -fsSL https://downloads.aphrody.com/install.sh | sh
-curl -fsSL https://downloads.aphrody.com/install.sh | APHRODY_COMPONENTS="aphrody yolo plugin-aphrody plugin-yolo plugin-shenron" sh
+curl -fsSL https://downloads.aphrody.com/install.sh | APHRODY_COMPONENTS="aphrody" sh
 ```
 
 ```powershell
@@ -45,6 +50,9 @@ Declared in `config/downloads.json`.
 | --- | --- | --- |
 | `aphrody` | factory build of a pushed revision: `scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody --bin aphrody` | linux x86_64 (glibc 2.39 gate through `scripts/audit/elf-glibc-imports.ts --max 2.39`), windows x86_64 when the factory has an `xwin` build |
 | `yolo` | `bun build --compile` of `apps/yolo/cli/src/index.ts`, verified runtime artifact `~/.yolo/runtime/<target>/current`, `packages/engine/runtime`, `m3/templates` | linux x86_64 |
+| `aphrody-setup` (kind `desktop`) | local stage `scripts/release/stage-setup.ts`: Bun compile of `apps/community/setup`, pet icon by rcedit under Wine, not signed; the `.exe` and its flat `.tar.gz` update archive | windows x86_64 |
+| `omar-kit` (kind `kit`) | local stage `scripts/release/stage-omar-kit.ts`: the pack zip and the flat `.tar.gz` its updater reads | windows x86_64 |
+| `aphrody-app` (kind `desktop-app`) | Tauri NSIS installer of `crates/ui/app`, installed by the setup with `/S` | declared, disabled: no Windows build of the desktop app yet |
 | `plugin-aphrody`, `plugin-yolo`, `plugin-shenron` | `git archive` of the pushed HEAD of `plugins/aphrody`, `plugins/yolo` and `plugin/` of `aphrody-labs/shenron` (tracked files only) | any (tar.gz and zip) |
 
 Not published, and why (also written in `latest.json` `notes`): macOS (no target declared by the factory or the
@@ -59,7 +67,7 @@ upload and by the installers.
 ```sh
 bun run downloads:publish plan
 bun run downloads:publish build   --revision <full-sha>     # factory prepare + build, waits for the jobs
-bun run downloads:publish release --revision <full-sha>     # stage, secret scan, upload, flip `current`
+bun run downloads:publish release --revision <full-sha>     # stage (local Bun stages included: Wine and rcedit), secret scan, upload, flip `current`
 bun run downloads:publish github                            # releases on the configured existing repositories
 bun run downloads:publish verify                            # public download, SHA-256, `--version`
 bun run downloads:publish host-plan | host-apply --apply   # unit, vhost, certificate (first install or repair)
