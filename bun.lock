@@ -22,6 +22,20 @@
         "undici-types": "catalog:",
       },
     },
+    "apps/community/creator-kit": {
+      "name": "@aphrody/creator-kit",
+      "version": "0.2.4",
+      "bin": {
+        "creator-kit": "src/cli.ts",
+      },
+    },
+    "apps/community/omar-kit": {
+      "name": "@aphrody/omar-kit",
+      "version": "0.1.0",
+      "bin": {
+        "aphrody-omar": "src/cli.ts",
+      },
+    },
     "apps/yolo/cli": {
       "name": "@aphrody/yolo-cli",
       "version": "1.0.0",
@@ -1364,6 +1378,8 @@
 
     "@aphrody/cli-wasm": ["@aphrody/cli-wasm@workspace:packages/infra/cli-wasm"],
 
+    "@aphrody/creator-kit": ["@aphrody/creator-kit@workspace:apps/community/creator-kit"],
+
     "@aphrody/discord-kit": ["@aphrody/discord-kit@workspace:packages/discord/kit"],
 
     "@aphrody/doc-ai": ["@aphrody/doc-ai@workspace:packages/ai/doc-ai"],
@@ -1451,6 +1467,8 @@
     "@aphrody/n2b-shims": ["@aphrody/n2b-shims@workspace:packages/engine/n2b-shims"],
 
     "@aphrody/n2b-types": ["@aphrody/n2b-types@workspace:packages/engine/n2b-types"],
+
+    "@aphrody/omar-kit": ["@aphrody/omar-kit@workspace:apps/community/omar-kit"],
 
     "@aphrody/os": ["@aphrody/os@workspace:packages/os/kernel-client"],
 

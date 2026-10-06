@@ -13,5 +13,8 @@
     "test": "bun test",
     "typecheck": "tsgo --noEmit -p tsconfig.json",
     "build:windows": "bun build --compile --target=bun-windows-x64-baseline --windows-icon=assets/creator-kit.ico --windows-title=\"Creator Kit\" --windows-publisher=MAKIT --windows-version=0.2.4.0 src/cli.ts --outfile dist/creator-kit.exe"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
   }
 }
