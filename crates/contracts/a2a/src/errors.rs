@@ -116,6 +116,13 @@ impl A2AError {
         A2AError::new(error_code::UNSUPPORTED_OPERATION, msg)
     }
 
+    pub fn extended_card_not_configured() -> Self {
+        A2AError::new(
+            error_code::EXTENDED_CARD_NOT_CONFIGURED,
+            "extended agent card not configured",
+        )
+    }
+
     pub fn content_type_not_supported() -> Self {
         A2AError::new(error_code::CONTENT_TYPE_NOT_SUPPORTED, "incompatible content types")
     }
@@ -160,6 +167,8 @@ impl A2AError {
             error_code::UNSUPPORTED_OPERATION => 400,
             error_code::CONTENT_TYPE_NOT_SUPPORTED => 400,
             error_code::VERSION_NOT_SUPPORTED => 400,
+            error_code::EXTENDED_CARD_NOT_CONFIGURED => 400,
+            error_code::EXTENSION_SUPPORT_REQUIRED => 400,
             error_code::PARSE_ERROR => 400,
             error_code::INVALID_REQUEST => 400,
             error_code::METHOD_NOT_FOUND => 501,
@@ -239,6 +248,9 @@ mod tests {
         let e = A2AError::unsupported_operation("nope");
         assert_eq!(e.code, error_code::UNSUPPORTED_OPERATION);
 
+        let e = A2AError::extended_card_not_configured();
+        assert_eq!(e.code, error_code::EXTENDED_CARD_NOT_CONFIGURED);
+
         let e = A2AError::content_type_not_supported();
         assert_eq!(e.code, error_code::CONTENT_TYPE_NOT_SUPPORTED);
 
@@ -279,6 +291,12 @@ mod tests {
         assert_eq!(A2AError::push_notification_not_supported().http_status_code(), 400);
         assert_eq!(A2AError::unsupported_operation("nope").http_status_code(), 400);
         assert_eq!(A2AError::version_not_supported("9.9").http_status_code(), 400);
+        assert_eq!(A2AError::extended_card_not_configured().http_status_code(), 400);
+        assert_eq!(
+            A2AError::new(error_code::EXTENSION_SUPPORT_REQUIRED, "ext").http_status_code(),
+            400
+        );
+        assert_eq!(A2AError::invalid_agent_response().http_status_code(), 500);
         assert_eq!(A2AError::parse_error("bad").http_status_code(), 400);
         assert_eq!(A2AError::invalid_request("bad").http_status_code(), 400);
         assert_eq!(A2AError::method_not_found("missing").http_status_code(), 501);

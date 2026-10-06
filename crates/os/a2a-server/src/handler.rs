@@ -687,11 +687,18 @@ impl RequestHandler for DefaultRequestHandler {
         _params: &ServiceParams,
         req: SubscribeToTaskRequest,
     ) -> Result<BoxStream<'static, Result<StreamResponse, A2AError>>, A2AError> {
-        let (receiver, snapshot_task, sequence) = self
-            .execution_manager
-            .resubscribe(&req.id)
-            .await
-            .ok_or_else(|| A2AError::task_not_found(&req.id))?;
+        let Some((receiver, snapshot_task, sequence)) =
+            self.execution_manager.resubscribe(&req.id).await
+        else {
+            // A finished task has nothing left to stream: the specification asks for
+            // UnsupportedOperationError there, TaskNotFoundError only for an unknown task.
+            return Err(match self.task_store.get(&req.id).await? {
+                Some(task) if task.status.state.is_terminal() => A2AError::unsupported_operation(
+                    format!("task {} is in a terminal state and cannot be subscribed to", req.id),
+                ),
+                _ => A2AError::task_not_found(&req.id),
+            });
+        };
         Ok(subscription_stream(receiver, snapshot_task, sequence))
     }
 
@@ -751,7 +758,7 @@ impl RequestHandler for DefaultRequestHandler {
         _params: &ServiceParams,
         _req: GetExtendedAgentCardRequest,
     ) -> Result<AgentCard, A2AError> {
-        Err(A2AError::unsupported_operation("extended agent card not configured"))
+        Err(A2AError::extended_card_not_configured())
     }
 }
 
@@ -1146,6 +1153,26 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_subscribe_to_terminal_task_is_unsupported_operation() {
+        let handler = make_handler();
+        let params = ServiceParams::new();
+        let task = Task {
+            id: "done".into(),
+            context_id: "c-done".into(),
+            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            artifacts: None,
+            history: None,
+            metadata: None,
+        };
+        handler.task_store.create(task).await.unwrap();
+        let req = SubscribeToTaskRequest { id: "done".into(), tenant: None };
+        match handler.subscribe_to_task(&params, req).await {
+            Ok(_) => panic!("expected subscribe_to_task to fail"),
+            Err(error) => assert_eq!(error.code, error_code::UNSUPPORTED_OPERATION),
+        }
+    }
+
+    #[tokio::test]
     async fn test_send_message_return_immediately_allows_resubscribe() {
         use futures::StreamExt;
 
@@ -1212,7 +1239,7 @@ mod tests {
             .await;
         match result {
             Ok(_) => panic!("expected subscribe_to_task to fail after completion"),
-            Err(error) => assert_eq!(error.code, error_code::TASK_NOT_FOUND),
+            Err(error) => assert_eq!(error.code, error_code::UNSUPPORTED_OPERATION),
         }
     }
 
@@ -1496,7 +1523,7 @@ mod tests {
         let result = handler
             .get_extended_agent_card(&params, GetExtendedAgentCardRequest { tenant: None })
             .await;
-        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().code, error_code::EXTENDED_CARD_NOT_CONFIGURED);
     }
 
     #[test]

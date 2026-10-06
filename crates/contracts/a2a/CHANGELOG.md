@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `A2AError::extended_card_not_configured()` (`-32007`, reason `EXTENDED_AGENT_CARD_NOT_CONFIGURED`) and
+  HTTP 400 for `ExtendedAgentCardNotConfiguredError` and `ExtensionSupportRequiredError`, as in section
+  5.4 of the A2A 1.0 specification.
 - README: crate names, install lines and imports use the `aphrody-a2a*` names published on
   crates.io instead of the upstream `a2a-*-lf` ones.
 - README doctest imported the old `a2a` crate name.

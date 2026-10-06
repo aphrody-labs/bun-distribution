@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `GetExtendedAgentCard` without a configured card answers `ExtendedAgentCardNotConfiguredError`
+  (`-32007`) instead of `UnsupportedOperationError`.
+- `SubscribeToTask` on a task in a terminal state answers `UnsupportedOperationError`; only an unknown
+  task is `TaskNotFoundError` (A2A 1.0 specification, section 9.4.6).
 - README: crate names, install lines and imports use the `aphrody-a2a*` names published on
   crates.io instead of the upstream `a2a-*-lf` ones.
 
