@@ -148,7 +148,7 @@ export async function run(argv: string[], fetchImpl: Fetch = fetch): Promise<num
       try {
         await download(file, dest, fetchImpl);
         done += 1;
-        process.stdout.write(`\r${done + skipped}/${files.length}`);
+        if (process.stdout.isTTY) process.stdout.write(`\r${done + skipped}/${files.length}`);
       } catch (error) {
         failed.push(`${file.name}: ${(error as Error).message}`);
       }

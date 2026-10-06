@@ -2,6 +2,7 @@
 import { registry, summaries } from "./commands/index.ts";
 import { UsageError } from "./lib/args.ts";
 import { logCrash, splitArgs } from "./lib/crash.ts";
+import { consoleForced, openInDesktop } from "./lib/desktop-launch.ts";
 import { autoUpdateInBackground, VERSION } from "./lib/update.ts";
 
 function help(): string {
@@ -20,6 +21,8 @@ export async function main(argv: string[]): Promise<number> {
     console.log(help());
     return 0;
   }
+  // Kit bridge of the desktop app (route `creator`), not listed in the help.
+  if (name === "desktop") return (await import("./desktop.ts")).desktopMain(rest);
   const load = registry[name];
   if (!load) {
     console.error(`Commande inconnue : ${name}\n\n${help()}`);
@@ -76,9 +79,15 @@ if (import.meta.main) {
   process.on("uncaughtException", crash);
   process.on("unhandledRejection", crash);
   const args = Bun.argv.slice(2);
-  const code =
-    args.length === 0 && process.stdin.isTTY && process.stdout.isTTY
-      ? await interactive()
-      : await guarded(args);
+  const doubleClick =
+    (args.length === 0 || (args.length === 1 && args[0] === "--console")) &&
+    process.stdin.isTTY &&
+    process.stdout.isTTY;
+  // Double click: the creator route of the desktop app when it is installed, else this console menu.
+  const code = !doubleClick
+    ? await guarded(args)
+    : !consoleForced(args, process.env) && openInDesktop("creator")
+      ? 0
+      : await interactive();
   process.exit(code);
 }
