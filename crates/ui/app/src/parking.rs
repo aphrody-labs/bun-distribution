@@ -32,6 +32,10 @@ pub const fn is_parked(x: i32, y: i32) -> bool {
 /// A parked window is mapped, so CEF treats it as visible and keeps painting and animating its page
 /// (the pet and widget sprites run at display rate) for nobody. Hiding it during the load is what
 /// stalls the load (#16205), hiding it afterwards is safe: CEF then throttles the page.
+///
+/// The page-load callback runs on the event-loop thread, and a window call from that thread waits for
+/// the loop to answer it: the hide runs on a short-lived thread instead (called inline it deadlocks the
+/// browser process, measured on 2026-10-06).
 pub fn hide_when_loaded<R: Runtime>(webview: &Webview<R>, event: &PageLoadEvent) {
     if !matches!(event, PageLoadEvent::Finished) {
         return;
@@ -40,10 +44,12 @@ pub fn hide_when_loaded<R: Runtime>(webview: &Webview<R>, event: &PageLoadEvent)
     if !HIDDEN_AT_START.contains(&window.label()) {
         return;
     }
-    let parked = window.outer_position().is_ok_and(|at| is_parked(at.x, at.y));
-    if parked && let Err(error) = window.hide() {
-        log::warn!("hiding the parked window {}: {error}", window.label());
-    }
+    std::thread::spawn(move || {
+        let parked = window.outer_position().is_ok_and(|at| is_parked(at.x, at.y));
+        if parked && let Err(error) = window.hide() {
+            log::warn!("hiding the parked window {}: {error}", window.label());
+        }
+    });
 }
 
 /// Move a (possibly parked) window with `place`, then show it.
