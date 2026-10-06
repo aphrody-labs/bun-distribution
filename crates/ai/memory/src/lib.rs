@@ -45,6 +45,7 @@ pub use cli::cli_main;
 pub mod eviction;
 pub mod honcho;
 pub mod honcho_v3;
+pub mod local_ops;
 pub mod mem0;
 pub mod mem0_v3;
 pub mod migrate;

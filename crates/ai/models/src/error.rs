@@ -47,6 +47,16 @@ pub enum ModelError {
         source: serde_json::Error,
     },
 
+    /// A caller-declared catalog file could not be decoded.
+    #[error("model catalog at `{path}` is invalid: {source}")]
+    Catalog {
+        /// Path to the declared catalog file.
+        path: PathBuf,
+        /// Underlying serde failure.
+        #[source]
+        source: serde_json::Error,
+    },
+
     /// A lookup targeted a model that is not installed.
     #[error("model `{0}` is not installed")]
     NotInstalled(String),

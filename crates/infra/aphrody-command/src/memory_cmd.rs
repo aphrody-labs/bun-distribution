@@ -219,6 +219,175 @@ async fn build_provider(
     }
 }
 
+/// Where a local memory operation reads and writes.
+#[derive(clap::Args, Debug, Clone)]
+pub(crate) struct LocalStoreArgs {
+    /// SQLite memory file, created when absent (mode 0600 on Unix). Default: the
+    /// local memory database of the active profile.
+    #[arg(long)]
+    pub db: Option<PathBuf>,
+    /// Logical owner of the records (one agent, one user).
+    #[arg(long)]
+    pub agent_id: String,
+    /// Pretty-print the JSON answer.
+    #[arg(long)]
+    pub pretty: bool,
+}
+
+/// `aphrody memory write|recall|list|delete|clear`: an application's local
+/// memory file, as JSON on stdout (`aphrody_memory::local_ops`).
+#[derive(clap::Subcommand, Debug, Clone)]
+pub(crate) enum LocalMemoryAction {
+    /// Store one memory; prints `{"id": …}`. An existing `--id` is replaced.
+    Write {
+        #[command(flatten)]
+        store: LocalStoreArgs,
+        /// Memory text; `-` reads it from stdin.
+        #[arg(long)]
+        content: String,
+        /// Label, repeatable.
+        #[arg(long = "tag")]
+        tags: Vec<String>,
+        /// JSON object kept with the record.
+        #[arg(long)]
+        metadata: Option<String>,
+        /// Record id to create or replace.
+        #[arg(long)]
+        id: Option<String>,
+    },
+    /// Records best matching `--query` (lexical); prints `{"records": [… "score"]}`.
+    Recall {
+        #[command(flatten)]
+        store: LocalStoreArgs,
+        /// What to remember.
+        #[arg(long)]
+        query: String,
+        /// Only records carrying every tag.
+        #[arg(long = "tag")]
+        tags: Vec<String>,
+        /// Maximum records (default 20).
+        #[arg(long)]
+        limit: Option<u32>,
+    },
+    /// Records newest first; prints `{"records": […]}`.
+    List {
+        #[command(flatten)]
+        store: LocalStoreArgs,
+        /// Only records carrying every tag.
+        #[arg(long = "tag")]
+        tags: Vec<String>,
+        /// Maximum records (default 20).
+        #[arg(long)]
+        limit: Option<u32>,
+    },
+    /// Delete one record; prints `{"deleted": bool}`.
+    Delete {
+        /// SQLite memory file. Default: the local memory database of the active profile.
+        #[arg(long)]
+        db: Option<PathBuf>,
+        /// Record id.
+        #[arg(long)]
+        id: String,
+        /// Refuse a record owned by another agent.
+        #[arg(long)]
+        agent_id: Option<String>,
+        /// Pretty-print the JSON answer.
+        #[arg(long)]
+        pretty: bool,
+    },
+    /// Delete every record of `--agent-id`; prints `{"deleted": n}`.
+    Clear {
+        #[command(flatten)]
+        store: LocalStoreArgs,
+    },
+}
+
+fn open_local(
+    db: Option<PathBuf>,
+    overrides: &CliOverrides,
+) -> miette::Result<SqliteLocalProvider> {
+    let path = match db {
+        Some(path) => path,
+        None => profile_sqlite_path(overrides)?,
+    };
+    if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+        std::fs::create_dir_all(parent)
+            .into_diagnostic()
+            .wrap_err_with(|| format!("failed to create {}", parent.display()))?;
+    }
+    let created = !path.exists();
+    let provider = SqliteLocalProvider::open(&path)
+        .map_err(|e| miette::miette!("memory: {e} (path={})", path.display()))?;
+    #[cfg(unix)]
+    if created {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600));
+    }
+    #[cfg(not(unix))]
+    let _ = created;
+    Ok(provider)
+}
+
+fn print_json(value: &serde_json::Value, pretty: bool) -> miette::Result<()> {
+    let text =
+        if pretty { serde_json::to_string_pretty(value) } else { serde_json::to_string(value) }
+            .into_diagnostic()?;
+    println!("{text}");
+    Ok(())
+}
+
+/// Run one local memory operation.
+pub(crate) async fn execute_local(
+    action: LocalMemoryAction,
+    overrides: &CliOverrides,
+) -> miette::Result<()> {
+    use aphrody_memory::local_ops;
+    let fail = |e: aphrody_memory::ProviderMemoryError| miette::miette!("memory: {e}");
+    match action {
+        LocalMemoryAction::Write { store, content, tags, metadata, id } => {
+            let content = if content == "-" {
+                std::io::read_to_string(std::io::stdin()).into_diagnostic()?
+            } else {
+                content
+            };
+            let metadata = metadata
+                .map(|text| serde_json::from_str::<serde_json::Value>(&text))
+                .transpose()
+                .into_diagnostic()
+                .wrap_err("--metadata must be JSON")?;
+            let provider = open_local(store.db, overrides)?;
+            let id = local_ops::write(&provider, &store.agent_id, &content, tags, metadata, id)
+                .await
+                .map_err(fail)?;
+            print_json(&serde_json::json!({ "id": id }), store.pretty)
+        },
+        LocalMemoryAction::Recall { store, query, tags, limit } => {
+            let provider = open_local(store.db, overrides)?;
+            let records = local_ops::recall(&provider, &store.agent_id, &query, tags, limit)
+                .await
+                .map_err(fail)?;
+            print_json(&serde_json::json!({ "records": records }), store.pretty)
+        },
+        LocalMemoryAction::List { store, tags, limit } => {
+            let provider = open_local(store.db, overrides)?;
+            let records =
+                local_ops::list(&provider, &store.agent_id, tags, limit).await.map_err(fail)?;
+            print_json(&serde_json::json!({ "records": records }), store.pretty)
+        },
+        LocalMemoryAction::Delete { db, id, agent_id, pretty } => {
+            let provider = open_local(db, overrides)?;
+            let deleted =
+                local_ops::delete(&provider, &id, agent_id.as_deref()).await.map_err(fail)?;
+            print_json(&serde_json::json!({ "deleted": deleted }), pretty)
+        },
+        LocalMemoryAction::Clear { store } => {
+            let provider = open_local(store.db, overrides)?;
+            let deleted = local_ops::clear(&provider, &store.agent_id).await.map_err(fail)?;
+            print_json(&serde_json::json!({ "deleted": deleted }), store.pretty)
+        },
+    }
+}
+
 /// Default offline SQLite store location — `$HOME/.aphrody/memory.sqlite`.
 /// Falls back to `./memory.sqlite` if the home directory cannot be resolved.
 fn default_sqlite_path() -> PathBuf {

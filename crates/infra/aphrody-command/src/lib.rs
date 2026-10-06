@@ -642,7 +642,8 @@ enum Commands {
         #[command(subcommand)]
         action: firefly_cmd::FireflyAction,
     },
-    /// Tier-1 memory provider operations — migrate, audit, list backends.
+    /// Memory: an application's local memory file (write, recall, list, delete, clear) and
+    /// Tier-1 provider migration.
     ///
     /// Wires the dyn-compatible `aphrody_memory::MemoryProvider` trait so
     /// records can be copied between Mem0 / Honcho / SqliteLocal without
@@ -1308,6 +1309,9 @@ pub(crate) enum McpAction {
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Subcommand, Debug, Clone)]
 pub(crate) enum MemoryAction {
+    /// An application's local memory file: write, recall, list, delete, clear (JSON on stdout).
+    #[command(flatten)]
+    Local(memory_cmd::LocalMemoryAction),
     /// Copy all records for `--agent-id` from one provider to another.
     ///
     /// With `--dry-run` the source is fully enumerated but no write is
@@ -1773,6 +1777,7 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
             docs_cmd::execute_awesome(action).await?;
         },
         Some(Commands::Memory { action }) => match action {
+            MemoryAction::Local(action) => memory_cmd::execute_local(action, &overrides).await?,
             MemoryAction::Migrate {
                 from,
                 to,

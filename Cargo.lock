@@ -1700,6 +1700,7 @@ dependencies = [
 name = "aphrody-llama-server"
 version = "1.0.0"
 dependencies = [
+ "aphrody-gemini-web",
  "aphrody-infer",
  "aphrody-llama",
  "aphrody-ml-runtime",

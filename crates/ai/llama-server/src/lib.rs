@@ -18,10 +18,15 @@
 //!    the keep-alive period.
 //! 5. [`ServerClient`] — health, exact token counts, LoRA hot-swap, server properties.
 //!
+//! 6. [`provision_chat`] / [`launch_chat`] — the end-to-end local chat model of a desktop
+//!    application (base GGUF + LoRA adapters in a caller-owned directory), also reachable as
+//!    the JSON command line `aphrody llama provision|serve|status|stop` ([`chat_cli_main`]).
+//!
 //! Host-only: the crate spawns processes and is not part of the wasm matrix.
 
 mod backend;
 mod caps;
+mod chat_cli;
 mod cli;
 mod client;
 pub mod daemon;
@@ -29,8 +34,10 @@ mod ensure;
 mod facts;
 #[cfg(feature = "in-process")]
 pub mod in_process;
+mod local_chat;
 mod managed;
 mod plan;
+pub mod router;
 mod spec;
 mod state;
 mod supervisor;
@@ -40,6 +47,7 @@ pub use in_process::{InProcessLlama, InProcessServer, LlamaLoadError};
 
 pub use backend::{BACKEND_ENV, BackendError, InferenceBackend};
 pub use caps::{CapabilityError, FlashAttnSyntax, ServerCapabilities};
+pub use chat_cli::chat_cli_main;
 pub use cli::cli_main;
 pub use client::{ClientError, Health, LoraStatus, ServerClient};
 pub use ensure::{
@@ -48,6 +56,11 @@ pub use ensure::{
     OssReadyOutcome, ensure_oss_ready,
 };
 pub use facts::{FactsError, KvQuant, ModelFacts};
+pub use local_chat::{
+    ArtifactSpec, ChatEndpoint, ChatLaunchOptions, ChatProvisionRequest, DEFAULT_CHAT_MODEL,
+    LoraSpec, ProvisionProgress, ProvisionedArtifact, ProvisionedChat, chat_present, launch_chat,
+    locate_llama_server, provision_chat,
+};
 pub use managed::{
     DEFAULT_EMBED_MODEL, DEFAULT_RERANK_MODEL, ManagedCategory, ManagedEndpoint, ManagedError,
     ManagedLaunchOptions, ManagedLlamaServer, ManagedRequest, PreparedManagedModel,

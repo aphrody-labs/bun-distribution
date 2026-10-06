@@ -337,6 +337,52 @@ impl Catalog {
         })
     }
 
+    /// Parse a catalog document in the `catalog.json` schema.
+    ///
+    /// This is how a product declares the artefacts it owns (a fine-tuned
+    /// adapter shipped by its installer, a private mirror) without adding them
+    /// to the built-in, Hub-pinned catalog: the same entry shape, the same
+    /// digests, resolved by [`Catalog::resolve_with`].
+    ///
+    /// # Errors
+    ///
+    /// [`ModelError::Catalog`] when the text is not a valid catalog.
+    pub fn from_json(text: &str, origin: impl Into<std::path::PathBuf>) -> Result<Self> {
+        serde_json::from_str(text)
+            .map_err(|source| crate::ModelError::Catalog { path: origin.into(), source })
+    }
+
+    /// Read a declared catalog file (see [`Catalog::from_json`]).
+    ///
+    /// # Errors
+    ///
+    /// [`ModelError::Io`] when the file is unreadable, [`ModelError::Catalog`]
+    /// when it is not a valid catalog.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn load(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        let path = path.as_ref();
+        let text = std::fs::read_to_string(path)
+            .map_err(|e| crate::ModelError::io(path.to_path_buf(), e))?;
+        Self::from_json(&text, path)
+    }
+
+    /// [`Catalog::resolve`] over a declared catalog first, then this one.
+    ///
+    /// # Errors
+    ///
+    /// [`ModelError::BadRef`] when the string is neither a catalog id of either
+    /// catalog nor a parseable reference.
+    pub fn resolve_with<'a>(
+        &'a self,
+        declared: Option<&'a Self>,
+        spec: &str,
+    ) -> Result<Resolved<'a>> {
+        if let Some(entry) = declared.and_then(|catalog| catalog.get(spec).ok()) {
+            return Ok(Resolved::Catalog(entry));
+        }
+        self.resolve(spec)
+    }
+
     /// Look up an entry by id.
     ///
     /// # Errors
@@ -595,6 +641,30 @@ mod tests {
             assert_eq!(entry.backend, Backend::WhisperCpp, "{}", entry.id);
         }
         assert_eq!(Catalog::builtin().by_backend(Backend::WhisperCpp).len(), 2);
+    }
+
+    #[test]
+    fn declared_catalog_wins_over_the_builtin_one() {
+        let declared = Catalog::from_json(
+            r#"{"version":1,"entries":[{"id":"product-adapter","title":"Adapter",
+            "task":"text-generation","backend":"llama-cpp","summary":"LoRA",
+            "files":[{"role":"lora","ref":"https://example.invalid/a.gguf","bytes":3,
+            "sha256":"aab485357c68fdcbb6d4ba55911632b8228964106047db035e0223e2aecc6107"}],
+            "license":{"spdx":"LicenseRef-Proprietary","url":"https://example.invalid",
+            "commercial_use":"permitted"}}]}"#,
+            "declared.json",
+        )
+        .unwrap();
+        let builtin = Catalog::builtin();
+        let resolved = builtin.resolve_with(Some(&declared), "product-adapter").unwrap();
+        assert_eq!(resolved.catalog_id(), Some("product-adapter"));
+        assert_eq!(resolved.artifacts()[0].1.as_deref().map(str::len), Some(64));
+        let base = builtin.resolve_with(Some(&declared), "qwen3-4b-instruct-2507-q4km").unwrap();
+        assert_eq!(base.catalog_id(), Some("qwen3-4b-instruct-2507-q4km"));
+        assert!(matches!(
+            Catalog::from_json("{}", "bad.json"),
+            Err(crate::ModelError::Catalog { .. })
+        ));
     }
 
     #[test]
