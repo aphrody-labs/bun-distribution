@@ -15,7 +15,9 @@ installed binaries on 2026-10-06; confirm a command with `--help` before scripti
   `bun_docs_search`, `upstream_search`/`upstream_read`, `infra_exec`, `infra_git_status`, `nu_eval`,
   `coord_read_status`/`coord_report_status`.
 - Code graph: `graphify query "<question>"`, `graphify explain "<node>"`, `graphify path "A" "B"` before broad
-  `rg` sweeps (`graphify-out/graph.json` exists at the repository root).
+  `rg` sweeps (`graphify-out/graph.json` exists at the repository root). The native owner `aphrody graph
+  query|explain|path` and the agent home search `aphrody home query` (MCP `aphrody_home_query`) take over as the
+  parity of the agent-home pipeline plan lands.
 
 ## 2. Command owners
 
