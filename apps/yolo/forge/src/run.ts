@@ -12,6 +12,7 @@ import {
   renameSync,
   rmSync,
   statfsSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { auditGlibc, lowerGlibcCeiling } from "./glibc.ts";
@@ -36,6 +37,8 @@ import {
   remoteHead,
   rustChannel,
   scratchPlan,
+  artifactLayout,
+  BINARY,
   SMOKE_SCRIPT,
   systemdUnit,
   toolUrl,
@@ -488,7 +491,7 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
     if (!existsSync(built)) fail(`build produced no ${built}`);
     await step(steps, "artifact", async () => {
       mkdirSync(out, { recursive: true });
-      const dest = join(out, "bun");
+      const dest = artifactLayout(out).binary;
       await Bun.write(dest, Bun.file(built));
       await run(["chmod", "+x", dest]);
       let bytes = await Bun.file(dest).bytes();
@@ -502,6 +505,10 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
         }
         receipt.glibc = { ceiling, maxBefore, maxAfter: result.maxGlibc, patched: result.patched };
       }
+      const aliasPath = artifactLayout(out).alias;
+      rmSync(aliasPath, { force: true });
+      symlinkSync(BINARY.name, aliasPath);
+      receipt.alias = { path: aliasPath, target: BINARY.name };
       receipt.artifact = {
         path: dest,
         sha256: new Bun.CryptoHasher("sha256").update(bytes).digest("hex"),
@@ -512,6 +519,18 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
       const r = capture([receipt.artifact!.path, "-e", SMOKE_SCRIPT], { env });
       if (r.code !== 0) fail(`smoke failed: ${r.stderr.trim()}`);
       receipt.smoke = JSON.parse(r.stdout.trim().split("\n").pop()!);
+      const viaAlias = capture([receipt.alias!.path, "-e", SMOKE_SCRIPT], { env });
+      if (viaAlias.code !== 0)
+        fail(`smoke through the ${BINARY.alias} alias failed: ${viaAlias.stderr.trim()}`);
+      receipt.smokeAlias = JSON.parse(viaAlias.stdout.trim().split("\n").pop()!);
+      const first = receipt.smoke as { argv0: string; revision: string };
+      const second = receipt.smokeAlias as { argv0: string; revision: string };
+      if (
+        first.argv0 !== BINARY.name ||
+        second.argv0 !== BINARY.alias ||
+        first.revision !== second.revision
+      )
+        fail(`argv0 check failed: ${first.argv0}/${second.argv0}`);
     });
     if (options.tests) {
       await step(steps, "tests (first_party)", async () => {

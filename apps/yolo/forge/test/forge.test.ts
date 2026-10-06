@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   ABSORBED,
+  artifactLayout,
+  BINARY,
   buildCommand,
   buildEnv,
   commitQueue,
@@ -15,6 +20,7 @@ import {
   recordBuild,
   remoteHead,
   rustChannel,
+  SMOKE_SCRIPT,
   scratchPlan,
   type State,
   systemdUnit,
@@ -250,6 +256,37 @@ describe("build environment", () => {
       .filter((entry: { status: string }) => entry.status === "fork")
       .map((entry: { name: string }) => entry.name);
     expect(ABSORBED.filter((s) => s !== "dotenv/config").toSorted()).toEqual(fork.toSorted());
+  });
+
+  test("the fork build is one product: binary yolo, alias bun", () => {
+    expect(BINARY).toEqual({ name: "yolo", alias: "bun" });
+    expect(artifactLayout("/srv/forge/artifacts/abc")).toEqual({
+      binary: "/srv/forge/artifacts/abc/yolo",
+      alias: "/srv/forge/artifacts/abc/bun",
+    });
+  });
+
+  test("a runtime linked as yolo and as bun runs under both argv0 names", () => {
+    const dir = mkdtempSync(join(tmpdir(), "yolo-argv0-"));
+    try {
+      symlinkSync(process.execPath, join(dir, BINARY.name));
+      symlinkSync(BINARY.name, join(dir, BINARY.alias));
+      for (const name of [BINARY.name, BINARY.alias]) {
+        const r = Bun.spawnSync([
+          join(dir, name),
+          "-e",
+          'console.log(process.argv0.split("/").pop(), Bun.version)',
+        ]);
+        expect(r.exitCode).toBe(0);
+        expect(r.stdout.toString().trim()).toBe(`${name} ${Bun.version}`);
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("smoke script reports argv0 so the alias is checked", () => {
+    expect(SMOKE_SCRIPT).toContain("argv0");
   });
 
   test("systemd unit runs watch with the forge home", () => {

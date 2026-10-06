@@ -420,9 +420,16 @@ export const ABSORBED = [
   "uuid",
 ] as const;
 
+/** The fork build is one product: the binary is `yolo`, and `bun` is a compatible alias (same file, argv0 bun). */
+export const BINARY = { name: "yolo", alias: "bun" } as const;
+
+export function artifactLayout(out: string): { binary: string; alias: string } {
+  return { binary: `${out}/${BINARY.name}`, alias: `${out}/${BINARY.alias}` };
+}
+
 export const SMOKE_SCRIPT = `const out = {};
 for (const s of ${JSON.stringify(ABSORBED)}) { try { out[s] = require.resolve(s) === s; } catch { out[s] = false; } }
-console.log(JSON.stringify({ version: Bun.version, revision: Bun.revision, absorbed: out }));`;
+console.log(JSON.stringify({ version: Bun.version, revision: Bun.revision, argv0: process.argv0.split("/").pop(), absorbed: out }));`;
 
 export interface StepRecord {
   name: string;
@@ -444,6 +451,9 @@ export interface Receipt {
   steps: StepRecord[];
   ok: boolean;
   artifact?: { path: string; sha256: string; bytes: number };
+  /** `bun` alias of the artifact (symlink to the binary), smoked through its own argv0. */
+  alias?: { path: string; target: string };
+  smokeAlias?: unknown;
   glibc?: { ceiling: string; maxBefore: string | null; maxAfter: string | null; patched: string[] };
   smoke?: unknown;
   startedAt: string;
