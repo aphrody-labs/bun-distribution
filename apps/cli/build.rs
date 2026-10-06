@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Binary-specific Windows main-thread stack reservation.
+//! Binary-specific Windows link settings: main-thread stack reservation and `/OPT:NOICF`.
 const MAIN_STACK_BYTES: u64 = 8 * 1024 * 1024;
 fn main() {
     // Main-thread stack for the `aphrody` binaries on Windows. `main` builds
@@ -13,7 +13,12 @@ fn main() {
     let target_env = std::env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default();
     if target_os == "windows" {
         match target_env.as_str() {
-            "msvc" => println!("cargo:rustc-link-arg-bins=/STACK:{MAIN_STACK_BYTES}"),
+            "msvc" => {
+                println!("cargo:rustc-link-arg-bins=/STACK:{MAIN_STACK_BYTES}");
+                // V8 (via aphrody-kernel -> Obscura): identical COMDAT folding merges distinct
+                // external references and V8 aborts at startup; keep /OPT:REF, disable ICF.
+                println!("cargo:rustc-link-arg-bins=/OPT:NOICF");
+            },
             "gnu" => println!("cargo:rustc-link-arg-bins=-Wl,--stack,{MAIN_STACK_BYTES}"),
             _ => {},
         }
