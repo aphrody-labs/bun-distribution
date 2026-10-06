@@ -116,9 +116,6 @@ pub struct VersionMetadata {
   tauri_plugin: String,
   #[serde(rename = "tauri-runtime-cef")]
   tauri_runtime_cef: String,
-  /// Only the v2 migration (third-party projects) selects wry; Aphrody apps and plugins use CEF.
-  #[serde(rename = "tauri-runtime-wry")]
-  tauri_runtime_wry: String,
 }
 
 #[derive(Deserialize)]

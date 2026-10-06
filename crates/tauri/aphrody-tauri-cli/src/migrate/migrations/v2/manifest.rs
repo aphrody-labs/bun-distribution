@@ -16,18 +16,16 @@ use super::{OFFICIAL_PLUGINS, RUNTIME_CRATE, generic_dependency_version};
 
 /// `tauri` features that no longer exist.
 const REMOVED_FEATURES: &[&str] = &["wry", "macos-private-api", "objc-exception"];
-/// `tauri` features that moved to the wry runtime crate.
+/// `tauri` features of the CEF runtime that CEF does not have (X11 is built into the CEF runtime), dropped.
 const WRY_FEATURES: &[&str] = &["x11", "dbus", "macos-proxy"];
-/// `tauri` features that must now be enabled on the runtime crate, which also enables them on `tauri`.
+/// `tauri` features that must now be enabled on the CEF runtime crate, which also enables them on `tauri`.
 const RUNTIME_FEATURES: &[&str] = &["devtools", "unstable"];
-/// `tauri` features that no longer forward to the runtime crate, so they must be enabled on both.
-const SHARED_FEATURES: &[&str] = &["tracing"];
 
 /// The result of the Cargo manifest migration.
 #[derive(Debug, Default)]
 pub struct MigratedManifest {
-  /// Whether the app uses the wry runtime, in which case it must be selected with `tauri::Builder::runtime`.
-  pub uses_wry: bool,
+  /// Whether the app uses the CEF runtime, in which case it must be selected with `tauri::Builder::runtime`.
+  pub uses_runtime: bool,
 }
 
 pub fn migrate(tauri_dir: &Path, metadata: &VersionMetadata) -> Result<MigratedManifest> {
@@ -50,10 +48,10 @@ pub fn migrate_manifest(
 
   for table in dependency_tables(manifest, "dependencies") {
     if let Some(runtime_dependency) = migrate_tauri_dependency(table, metadata) {
-      migrated.uses_wry = true;
-      add_runtime_dependency(table, runtime_dependency, &metadata.tauri_runtime_wry);
+      migrated.uses_runtime = true;
+      add_runtime_dependency(table, runtime_dependency, &metadata.tauri_runtime_cef);
     }
-    migrate_version(table, RUNTIME_CRATE, &metadata.tauri_runtime_wry);
+    migrate_version(table, RUNTIME_CRATE, &metadata.tauri_runtime_cef);
     migrate_version(table, "tauri-plugin", &metadata.tauri_plugin);
     for dependency in [
       "tauri-utils",
@@ -76,7 +74,7 @@ pub fn migrate_manifest(
         });
       });
     }
-    migrate_version(table, RUNTIME_CRATE, &metadata.tauri_runtime_wry);
+    migrate_version(table, RUNTIME_CRATE, &metadata.tauri_runtime_cef);
   }
 
   for table in dependency_tables(manifest, "build-dependencies") {
@@ -87,7 +85,7 @@ pub fn migrate_manifest(
     .get_mut("features")
     .and_then(|f| f.as_table_like_mut())
   {
-    migrate_features_table(features, migrated.uses_wry);
+    migrate_features_table(features, migrated.uses_runtime);
   }
 
   migrated
@@ -100,7 +98,7 @@ struct RuntimeDependency {
   features: Vec<String>,
 }
 
-/// Migrates the `tauri` dependency of the given table, returning the wry runtime dependency to add
+/// Migrates the `tauri` dependency of the given table, returning the CEF runtime dependency to add
 /// if the app used it.
 fn migrate_tauri_dependency(
   table: &mut Table,
@@ -127,24 +125,22 @@ fn migrate_tauri_dependency(
         .collect::<Vec<_>>()
     })
     .unwrap_or_default();
-  let uses_wry = default_features || features.iter().any(|f| f == "wry");
+  let uses_runtime = default_features || features.iter().any(|f| f == "wry");
 
   migrate_dependency_item(dependency, "tauri", &metadata.tauri, |features| {
     remove_features(features, |f| {
       REMOVED_FEATURES.contains(&f)
         || WRY_FEATURES.contains(&f)
-        || (uses_wry && RUNTIME_FEATURES.contains(&f))
+        || (uses_runtime && RUNTIME_FEATURES.contains(&f))
     });
   });
 
-  uses_wry.then(|| RuntimeDependency {
+  uses_runtime.then(|| RuntimeDependency {
     default_features,
     features: features
       .into_iter()
       .filter(|f| {
-        WRY_FEATURES.contains(&f.as_str())
-          || RUNTIME_FEATURES.contains(&f.as_str())
-          || SHARED_FEATURES.contains(&f.as_str())
+        RUNTIME_FEATURES.contains(&f.as_str())
       })
       .collect(),
   })
@@ -208,7 +204,7 @@ fn add_runtime_dependency(table: &mut Table, runtime: RuntimeDependency, version
 }
 
 /// Rewrites the `tauri/*` features enabled by the app's own features.
-fn migrate_features_table(features: &mut dyn TableLike, uses_wry: bool) {
+fn migrate_features_table(features: &mut dyn TableLike, uses_runtime: bool) {
   for (_, enabled) in features.iter_mut() {
     let Some(enabled) = enabled.as_array_mut() else {
       continue;
@@ -225,9 +221,7 @@ fn migrate_features_table(features: &mut dyn TableLike, uses_wry: bool) {
       } else {
         continue;
       };
-      if uses_wry
-        && (WRY_FEATURES.contains(&tauri_feature) || RUNTIME_FEATURES.contains(&tauri_feature))
-      {
+      if uses_runtime && RUNTIME_FEATURES.contains(&tauri_feature) {
         let decor = value.decor().clone();
         *value = format!("{RUNTIME_CRATE}{optional}/{tauri_feature}").into();
         *value.decor_mut() = decor;

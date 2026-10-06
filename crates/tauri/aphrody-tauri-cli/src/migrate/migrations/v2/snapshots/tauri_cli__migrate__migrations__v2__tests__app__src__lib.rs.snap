@@ -19,13 +19,13 @@ fn main_window(app: &AppHandle<DynRuntime>) -> tauri::WebviewWindow<DynRuntime> 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
-    .runtime(tauri_runtime_wry::Wry::default())
+    .runtime(tauri_runtime_cef::Cef::default())
     .plugin(tauri_plugin_opener::init())
     .plugin(plugin::init())
     .setup(|app| {
       tray::create(app.handle())?;
       let window = main_window(app.handle());
-      log::info!("{} webview {:?}", window.label(), tauri_runtime_wry::webview_version());
+      log::info!("{} webview {:?}", window.label(), tauri::webview_version());
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![greet])

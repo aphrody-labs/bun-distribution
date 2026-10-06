@@ -18,7 +18,7 @@ tauri-build = { version = "3.0.0-alpha.3", features = [] }
 [dependencies]
 # the core crate
 tauri = { version = "3.0.0-alpha.4", features = ["tray-icon", "tracing"] }
-tauri-runtime-wry = { version = "3.0.0-alpha.4", features = ["devtools", "tracing"] }
+tauri-runtime-cef = { version = "3.0.0-alpha.5", features = ["devtools"] }
 tauri-plugin-opener = "3.0.0-alpha"
 tauri-plugin-log = { version = "3.0.0-alpha", features = ["colored"] }
 tauri-plugin-community = "0.3" # not an official plugin
@@ -35,4 +35,4 @@ tauri = { version = "3.0.0-alpha.4", features = ["test"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
-debug-tools = ["tauri-runtime-wry/devtools", "log/std"]
+debug-tools = ["tauri-runtime-cef/devtools", "log/std"]

@@ -16,7 +16,7 @@ pub(crate) mod config;
 mod manifest;
 mod source;
 
-const RUNTIME_CRATE: &str = "tauri-runtime-wry";
+const RUNTIME_CRATE: &str = "tauri-runtime-cef";
 
 /// Official plugins, published as `tauri-plugin-<name>` and `@aphrody/plugin-<name>`.
 const OFFICIAL_PLUGINS: &[&str] = &[
@@ -66,11 +66,11 @@ fn migrate_tauri_dir(tauri_dir: &Path) -> Result<()> {
     manifest::migrate(tauri_dir, &metadata).context("Could not migrate Cargo manifest")?;
   config::migrate(tauri_dir).context("Could not migrate config")?;
   let source =
-    source::migrate(tauri_dir, manifest.uses_wry).context("Could not migrate Rust sources")?;
+    source::migrate(tauri_dir, manifest.uses_runtime).context("Could not migrate Rust sources")?;
 
-  if manifest.uses_wry && !source.runtime_selected {
+  if manifest.uses_runtime && !source.runtime_selected {
     log::warn!(
-      "Could not find `tauri::Builder::default()`, select the runtime with `.runtime(tauri_runtime_wry::Wry::default())` on your `tauri::Builder`"
+      "Could not find `tauri::Builder::default()`, select the runtime with `.runtime(tauri_runtime_cef::Cef::default())` on your `tauri::Builder`"
     );
   }
 

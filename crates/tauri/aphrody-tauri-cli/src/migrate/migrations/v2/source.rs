@@ -8,7 +8,7 @@ use regex::{Captures, Regex};
 
 use std::{fs, path::Path, sync::LazyLock};
 
-const SELECT_WRY_RUNTIME: &str = ".runtime(tauri_runtime_wry::Wry::default())";
+const SELECT_RUNTIME: &str = ".runtime(tauri_runtime_cef::Cef::default())";
 
 static BUILDER_DEFAULT: LazyLock<Regex> =
   LazyLock::new(|| Regex::new(r"tauri::Builder::default\(\)").unwrap());
@@ -32,19 +32,13 @@ const RENAMES: &[(&str, &str)] = &[
   ("fn extend_api(", "fn run_invoke_handler("),
 ];
 
-/// Renames of the wry-specific items that moved to the runtime crate.
-const WRY_RENAMES: &[(&str, &str)] = &[
-  ("tauri::tao::", "tauri_runtime_wry::tao::"),
-  ("tauri::wry::", "tauri_runtime_wry::wry::"),
-  (
-    "tauri::android_binding!",
-    "tauri_runtime_wry::android_binding!",
-  ),
-  (
-    "tauri::webview_version(",
-    "tauri_runtime_wry::webview_version(",
-  ),
-];
+/// Items of the wry runtime that have no CEF equivalent: reported, not renamed.
+const WRY_ONLY_ITEMS: &[&str] = &["tauri::tao::", "tauri::wry::", "tauri::android_binding!"];
+
+/// The CEF entry point, which hands Chromium's helper processes the executable before the app starts.
+const CEF_ENTRY_POINT: &str = "#[tauri_runtime_cef::cef_entry_point]";
+
+static MAIN_FN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?m)^fn main\(\)").unwrap());
 
 /// The result of the Rust source migration.
 #[derive(Debug, Default)]
@@ -54,7 +48,7 @@ pub struct MigratedSource {
 }
 
 /// Migrates the Rust files of the given directory.
-pub fn migrate(tauri_dir: &Path, uses_wry: bool) -> Result<MigratedSource> {
+pub fn migrate(tauri_dir: &Path, uses_runtime: bool) -> Result<MigratedSource> {
   let mut migrated = MigratedSource::default();
 
   for entry in walk_builder(tauri_dir).build().flatten() {
@@ -64,8 +58,19 @@ pub fn migrate(tauri_dir: &Path, uses_wry: bool) -> Result<MigratedSource> {
     }
 
     let contents = fs::read_to_string(path).fs_context("failed to read Rust file", path)?;
-    let (new_contents, runtime_selected) = migrate_source(&contents, uses_wry);
+    let (new_contents, runtime_selected) = migrate_source(&contents, uses_runtime);
     migrated.runtime_selected |= runtime_selected;
+
+    if uses_runtime {
+      for item in WRY_ONLY_ITEMS {
+        if new_contents.contains(item) {
+          log::warn!(
+            "{} uses `{item}`, which has no CEF equivalent: port it to the CEF runtime",
+            path.display()
+          );
+        }
+      }
+    }
 
     if WEBVIEW_VERSION.is_match(&new_contents) {
       log::warn!(
@@ -83,22 +88,24 @@ pub fn migrate(tauri_dir: &Path, uses_wry: bool) -> Result<MigratedSource> {
 }
 
 /// Returns the migrated source and whether it selects the wry runtime.
-pub fn migrate_source(source: &str, uses_wry: bool) -> (String, bool) {
+pub fn migrate_source(source: &str, uses_runtime: bool) -> (String, bool) {
   let mut source = migrate_wry_type(source);
 
   for (from, to) in RENAMES {
     source = source.replace(from, to);
   }
 
-  if !uses_wry {
+  if !uses_runtime {
     return (source, false);
   }
 
-  for (from, to) in WRY_RENAMES {
-    source = source.replace(from, to);
+  if MAIN_FN.is_match(&source) && !source.contains("cef_entry_point") {
+    source = MAIN_FN
+      .replace(&source, format!("{CEF_ENTRY_POINT}\nfn main()"))
+      .into_owned();
   }
 
-  let mut runtime_selected = source.contains(SELECT_WRY_RUNTIME);
+  let mut runtime_selected = source.contains(SELECT_RUNTIME);
   let mut migrated = String::with_capacity(source.len());
   let mut last_end = 0;
   for builder in BUILDER_DEFAULT.find_iter(&source) {
@@ -115,7 +122,7 @@ pub fn migrate_source(source: &str, uses_wry: bool) -> (String, bool) {
       migrated.push('\n');
       migrated.push_str(&chained[1]);
     }
-    migrated.push_str(SELECT_WRY_RUNTIME);
+    migrated.push_str(SELECT_RUNTIME);
     runtime_selected = true;
   }
   migrated.push_str(&source[last_end..]);
@@ -158,7 +165,7 @@ mod tests {
       migrated,
       r#"pub fn run() {
   tauri::Builder::default()
-    .runtime(tauri_runtime_wry::Wry::default())
+    .runtime(tauri_runtime_cef::Cef::default())
     .plugin(tauri_plugin_opener::init())
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
@@ -173,18 +180,36 @@ mod tests {
     assert!(selected);
     assert_eq!(
       migrated,
-      "let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());"
+      "let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());"
     );
   }
 
   #[test]
   fn is_idempotent() {
     let source = r#"tauri::Builder::default()
-    .runtime(tauri_runtime_wry::Wry::default())
+    .runtime(tauri_runtime_cef::Cef::default())
     .run(tauri::generate_context!())"#;
     let (migrated, selected) = migrate_source(source, true);
     assert!(selected);
     assert_eq!(migrated, source);
+  }
+
+  #[test]
+  fn adds_cef_entry_point_once() {
+    let source = "fn main() {
+  app_lib::run()
+}
+";
+    let (migrated, _) = migrate_source(source, true);
+    assert_eq!(
+      migrated,
+      "#[tauri_runtime_cef::cef_entry_point]
+fn main() {
+  app_lib::run()
+}
+"
+    );
+    assert_eq!(migrate_source(&migrated, true).0, migrated);
   }
 
   #[test]
