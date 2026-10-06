@@ -5128,6 +5128,3985 @@
       ]
     },
     {
+      "binary": "aphrody bindgen",
+      "crate": "aphrody-bindgen",
+      "repo": "aphrody",
+      "source": "crates/ml/bindgen/src/cli.rs#Args",
+      "commands": []
+    },
+    {
+      "binary": "aphrody graph",
+      "crate": "aphrody-code-graph",
+      "repo": "aphrody",
+      "source": "crates/ai/code-graph/src/cli.rs#Cli",
+      "commands": [
+        {
+          "name": "build",
+          "about": "Scan a tree and (re)build its graph incrementally.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "query",
+          "about": "Budgeted breadth-first retrieval for a question.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "explain",
+          "about": "Describe a node and its connections.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "path",
+          "about": "Shortest path between two nodes.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "report",
+          "about": "Print the markdown report.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "export",
+          "about": "Write `graph.json`.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody home",
+      "crate": "aphrody-rag",
+      "repo": "aphrody",
+      "source": "crates/ai/rag/src/home_cli.rs#Cli",
+      "commands": [
+        {
+          "name": "index",
+          "about": "Scan, extract the code graph, chunk and index a tree (incremental by content hash).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "import-knowledge",
+          "about": "Import the documents of a legacy `knowledge.db` into the retrieval index (dry run unless `--apply`; the legacy file is opened read-only).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "query",
+          "about": "Hybrid retrieval over document chunks, code-graph nodes and memories.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody host-service",
+      "crate": "aphrody-kernel",
+      "repo": "aphrody",
+      "source": "crates/os/kernel/src/cli.rs#Cli",
+      "commands": [
+        {
+          "name": "serve",
+          "about": "Serve the kernel with the built-in subsystems on the local endpoint.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "mcp",
+          "about": "MCP over stdio: relay to the running kernel, or run one in-process.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "tools",
+          "about": "List tools as JSON.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "skills",
+          "about": "List skills as JSON.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "call",
+          "about": "Call one tool.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "run-skill",
+          "about": "Run one skill.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "a2a",
+          "about": "Send an A2A envelope through the same kernel tool dispatcher.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody infra",
+      "crate": "aphrody-infra",
+      "repo": "aphrody",
+      "source": "crates/infra/infra/src/cli.rs#Cli",
+      "commands": [
+        {
+          "name": "status",
+          "about": "Show target, repository and runtime state without mutation.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "inventory",
+          "about": "Run the existing deep resource inventory through the canonical Bun adapter.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "maintenance",
+          "about": "Inspect or maintain first-party Cargo workspaces from the Rust control plane.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "quality",
+          "about": "Resolve and run declared Bun quality scripts from the Rust control plane.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "doctor",
+          "about": "Check the local development toolchain and repository contracts.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "sync",
+          "about": "Print the actions that a synchronization would perform.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "deploy",
+          "about": "Run a deploy adapter. Mutation requires --apply and an explicit target.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "validate",
+          "about": "Check cross-catalog invariants (services, nginx routes, port policy).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "reclaim",
+          "about": "Reclaim allowlisted disk/tmpfs space on a target (config/disk-reclaim.json).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "dev-env",
+          "about": "Validate or provision the declared development environment.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "service",
+          "about": "Manage cataloged services lifecycle (catalog, status, start, stop, restart, journal).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "probe",
+          "about": "Probe an HTTP or TCP endpoint health.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "pipeline",
+          "about": "Execute declared monorepo validation stages.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "serve",
+          "about": "Launch the embedded HTTP API daemon.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "ssh",
+          "about": "Remote SSH operator: execute commands, audit host health, sysctl kernel tuning, port inspection.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "rag",
+              "about": "Index and retrieve local code and documentation.",
+              "aliases": [],
+              "cfg": [
+                "all(not(target_arch = \"wasm32\"), feature = \"rag\")"
+              ],
+              "children": [
+                {
+                  "name": "index",
+                  "about": "Index a directory incrementally, including vectors when configured.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "web-ingest",
+                  "about": "Scrape one URL through Aphrody OS and index it in the local AI RAG store.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "search",
+                  "about": "Search the index and report source paths, lines and effective mode.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "context",
+                  "about": "Assemble source context for a model prompt.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "stats",
+                  "about": "Report document, chunk and vector counts.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "exec",
+              "about": "Execute an autonomous agent task with optional Codex-compatible JSONL.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "resume",
+                  "about": "Continue a recorded session in place.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "fork",
+                  "about": "Start a new session with the recorded conversation as its history.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "resume",
+              "about": "Continue a persisted agent session.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "fork",
+              "about": "Fork a persisted agent conversation into a new session.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "gateway",
+              "about": "Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795).",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "serve",
+                  "about": "Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8795).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "status",
+                  "about": "Query the status of a running gateway.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "models",
+                  "about": "List models available through the gateway.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "app-server",
+              "about": "Serve the local app-server protocol over stdio or loopback HTTP.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "config",
+              "about": "Manage, show, or import Codex-compatible configuration.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "show",
+                  "about": "Show the active or effective resolved configuration.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "path",
+                  "about": "Print the path to the user's config.toml file (~/.aphrody/config.toml).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "import-codex",
+                  "about": "Import and layer configuration from ~/.codex/config.toml.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "ai",
+              "about": "Resolve the local AI environment; mirror external agent sessions.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "env",
+                  "about": "Resolve and publish the local AI environment (`~/.aphrody/ai/local-ai.{json,env}`).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "status",
+                  "about": "Inspect active AI router, models, and provider status.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "sync-sessions",
+                  "about": "Mirror the sessions of the other coding agents on this machine (Antigravity CLI, Codex, Claude Code) into `~/.aphrody/sessions/<agent>/<session_id>.jsonl`, incrementally, and feed their user/assistant turns into the local memory store.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "native",
+              "about": "Native platform probes for CPU, memory, CUDA and monotonic time.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "status",
+                  "about": "Diagnostic summary of host platform probes",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "self-test",
+                  "about": "Check native topology and monotonic clock probes",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "os",
+              "about": "Canonical OS layer: kernel subsystems, WinClean diagnostics, process isolation.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "status",
+                  "about": "Inspect OS kernel status, active subsystems and diagnostics",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "doctor",
+                  "about": "Run WinClean diagnostics on local Windows machine",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "web",
+              "about": "Canonical Web engine: Obscura browser automation, crawling and extraction.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "status",
+                  "about": "Inspect the linked Rust Web runtime",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "capabilities",
+                  "about": "List the linked Rust Web capabilities",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "fetch",
+                  "about": "Fetch and convert a URL directly to clean Markdown",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "search",
+                  "about": "Search the Google Web index with the shared Rust SERP client",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "recon",
+                  "about": "One-shot page reconnaissance with linked Rust HTTP and DOM engines",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "scrape",
+                  "about": "Extract CSS-selected text or an entire page",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "extract",
+                  "about": "Extract main content and metadata from a page",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "detect",
+                  "about": "Detect site technologies and anti-bot challenges with the shared Rust engine",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "gemini",
+                  "about": "Ask Gemini through the shared authenticated Rust Web client",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "x",
+                  "about": "Read X profiles, timelines, search and news with cookie authentication",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "profile",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "tweets",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "search",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "news",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "whoami",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "name": "media",
+                  "about": "Extract direct media URLs or HLS variants from a page",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "resolve",
+                      "about": "Resolve an embed page into video candidates",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "variants",
+                      "about": "Parse variants from a known HLS master playlist",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "name": "browser",
+                  "about": "Inspect a page through the shared native browser session",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "snapshot",
+                      "about": "Navigate and capture a readable snapshot in the same browser session",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "name": "crawl",
+                  "about": "Crawl a bounded set of pages through the shared Rust frontier",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "mediawiki",
+                  "about": "Enumerate and extract pages through a MediaWiki Action API",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "mirror",
+                  "about": "Mirror HTML pages and their linked CSS/assets through Obscura",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "wiki-search",
+                  "about": "Search a MediaWiki installation through its Action API",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "wiki-page",
+                  "about": "Read a complete MediaWiki page dossier or Markdown through the Action API",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "frames",
+                  "about": "MPEG-7 frame vectors, SQLite indexing and local/trace.moe search",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "vector",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "search",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "stats",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "list",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "quota",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "index",
+                      "about": "",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "shell",
+              "about": "Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "status",
+                  "about": "Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "start",
+                  "about": "Start interactive Nushell / Ratatui terminal session",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "codex",
+              "about": "Forward vers le binaire natif OpenAI Codex (`codex`).",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "train",
+              "about": "Machine learning training and fine-tuning engine.",
+              "aliases": [],
+              "cfg": [
+                "all(not(target_arch = \"wasm32\"), feature = \"train\")"
+              ],
+              "children": [
+                {
+                  "name": "status",
+                  "about": "Show training status, GPU lock availability, and active jobs.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "lease",
+                  "about": "Test acquiring the exclusive GPU training lease (preempts llama-server).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "run",
+                  "about": "Run a training or fine-tuning job.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "registry-migrate",
+                  "about": "Apply the training registry migrations (schema `training`) over the direct `APHRODY_TRAINING_DATABASE_URL`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "promote",
+                  "about": "Reserved for measured shadow-index A/B promotion; currently refuses installation.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "auth",
+              "about": "Authentification Google (God Mode / OAuth2)",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "mirror",
+              "about": "Gère le mirroring des assets MD3 (start, stop, status).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "version",
+              "about": "Affiche la version et l'état du système",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "doctor",
+              "about": "Diagnostic env + intégration A2A + supply-chain (first-impression)",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "a2a",
+              "about": "A2A coordination (serve, tick, invoke peers)",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "serve",
+                  "about": "Start HTTP listener (`/ping`, `/msg`, JSON-RPC, agent card) on :8788.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "tick",
+                  "about": "Append one JSONL envelope (duel-tick / coord loop).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "invoke",
+                  "about": "Invoke a native peer CLI (grok, agy, claude, codex, bxc).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "send",
+                  "about": "JSON-RPC `message/send` to a federation peer (HTTP `/a2a` or `.coord` fallback).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "peers",
+                  "about": "List resolved federation peers (env > aphrody-infra catalog > default).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "cros",
+              "about": "Compilation hyper-optimisée de ChromeOS",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "sync",
+                  "about": "Synchronisation ultra-rapide (shallow clone)",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "build",
+                  "about": "Compilation GN/Ninja avec SCCache et optimisation multi-coeur",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "search",
+              "about": "Recherche Google Native",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "gemini",
+              "about": "[DÉPRÉCIÉ] Alias de `agy` — le Gemini CLI a migré vers l'Antigravity CLI. Honore encore `APHRODY_GEMINI_BIN` / un fork in-tree ; sinon forwarde vers `agy`. Préférez `aphrody agy`.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "agy",
+              "about": "Forward vers le binaire natif Antigravity CLI (`agy`).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "google",
+              "about": "Écosystème Google natif (DNS, Suggest, Translate, Gemini Web, Antigravity, Runtime)",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "translate",
+              "about": "Traduction unifiée via aphrody-translate",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "n2b",
+              "about": "Execute the integrated N2B engine (Node 2 Bun) in-process; also the `n2b` link.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "nie",
+              "about": "Forward vers le CLI natif Niers (`niers`).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "ssh",
+              "about": "Safe cross-platform operator CLI for configured SSH hosts.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "agy-loop",
+              "about": "Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook` est le driver invoqué par…",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "start",
+                  "about": "Arme la boucle pour le workspace courant avec un objectif.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "stop",
+                  "about": "Désarme la boucle (efface l'état) pour le workspace courant.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "status",
+                  "about": "Affiche l'état courant de la boucle en JSON.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "hook",
+                  "about": "Driver des hooks `Stop` et `PostInvocation` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "hooks-json",
+                  "about": "Affiche le fragment `hooks.json` (format natif agy) qui câble la boucle sur `Stop` et `PostInvocation`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "term",
+              "about": "Pont WebSocket-PTY pour le frontend WASM (localhost uniquement)",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "mcp",
+              "about": "Model Context Protocol — manage TOML servers, read legacy JSON, call tools.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "add",
+                  "about": "Add a server to ~/.aphrody/config.toml.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "remove",
+                  "about": "Remove a server from ~/.aphrody/config.toml.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "get",
+                  "about": "Show a configured server without exposing environment values.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "list",
+                  "about": "List configured MCP servers + (by default) probe `tools/list` for each.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "call",
+                  "about": "Invoke a single tool on a configured MCP server.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "discord",
+              "about": "Discord bot compilation, inspection, and monorepo verification.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "compile",
+                  "about": "Compile one or all Discord bots into a native standalone binary via Bun + Oxc.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "inspect",
+                  "about": "Inspect a Discord bot configuration, TypeScript decorators, and Oxc AST syntax.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "verify",
+                  "about": "Run the comprehensive Discord monorepo verification gate (catalog, kit, messaging, bots, compile).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "git",
+              "about": "Native Git inspection, GitHub REST/GraphQL, and ecosystem distribution.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "inspect",
+                  "about": "Inspect branch, HEAD, remotes and status with pure-Rust gix.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "repo",
+                  "about": "Fetch canonical GitHub repository metadata.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "api",
+                  "about": "Call any GitHub REST endpoint through authenticated Octocrab.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "graphql",
+                  "about": "Call the GitHub GraphQL endpoint.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "install",
+                  "about": "Install the thin reusable-workflow caller into local repositories.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "audit",
+                  "about": "Audit managed CI coverage across all active repositories owned by an account.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "rollout",
+                  "about": "Roll out managed CI to active GitHub repositories owned by an account.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "ingest",
+                  "about": "Ingest a Git repository or local directory into a prompt-ready LLM digest (GitIngest standard).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "search",
+                  "about": "Search GitHub repositories for documentation, llms.txt, and code digests.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "source",
+                  "about": "Upstream source checkouts outside the repository (config/upstream-sources.json).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "upstream",
+                  "about": "Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "attribution",
+                  "about": "Audit and strip AI attributions, co-authors, and trailers from Git commits.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "clean-public",
+                  "about": "Audit public web surfaces, products and repositories for private AI leaks.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "ingest",
+              "about": "Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard).",
+              "aliases": [
+                "gitingest",
+                "y"
+              ],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "docs",
+              "about": "Intelligent documentation and open-source library search (Context7, MS Learn, GitHub, llms.txt).",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "search",
+                  "about": "Search documentation across Context7, Microsoft Learn, and GitHub repositories with llms.txt.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "awesome",
+                  "about": "Curated Awesome lists ecosystem.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "presets",
+                      "about": "List known canonical Awesome presets.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "fetch",
+                      "about": "Fetch and parse a curated Awesome list from GitHub.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "search",
+                      "about": "Search across canonical Awesome ecosystems or a specific list.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "digest",
+                      "about": "Generate a prompt-ready LLM digest of an Awesome list.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "awesome",
+              "about": "Curated Awesome lists ecosystem.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "presets",
+                  "about": "List known canonical Awesome presets.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "fetch",
+                  "about": "Fetch and parse a curated Awesome list from GitHub.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "search",
+                  "about": "Search across canonical Awesome ecosystems or a specific list.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "digest",
+                  "about": "Generate a prompt-ready LLM digest of an Awesome list.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "re",
+              "about": "Reverse engineering — triage a binary (PE32/PE64/ELF32/ELF64).",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "triage",
+                  "about": "Triage a binary: detect format (PE32/PE64/ELF32/ELF64), parse sections + entropy + imports/exports + strings sample + SHA-256.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "strings",
+                  "about": "Extract ASCII + UTF-16LE strings from a binary.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "sections",
+                  "about": "Parse a binary and output its sections as JSON.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "disasm",
+                  "about": "Disassemble x86-64 instructions from a binary (or raw shellcode).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "google",
+                  "about": "Analyse a Google binary (Electron / Chromium / Go / Node / V8 snapshot).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "classify",
+                  "about": "Classify a file's content type with Google Magika (deep-learning).",
+                  "aliases": [],
+                  "cfg": [
+                    "feature = \"magika\""
+                  ],
+                  "children": []
+                },
+                {
+                  "name": "go",
+                  "about": "Analyse a Go binary — version, function table, packages, type names.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "auto",
+                  "about": "Auto reverse-engineering — orchestrates all RE passes on a binary or folder.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "yara",
+                  "about": "Scan a binary with YARA-X rules (pure Rust, BSD-3-Clause).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "forensics",
+              "about": "Reproducible forensic extraction — filesystem map + SQLite schema dump.",
+              "aliases": [],
+              "cfg": [
+                "all(not(target_arch = \"wasm32\"), feature = \"forensics\")"
+              ],
+              "children": [
+                {
+                  "name": "map",
+                  "about": "Map a target directory: parallel walk emitting `{ path, size, ext }` per file to `<out>/map.json`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "sqlite",
+                  "about": "Dump the schema of a SQLite database, read-only.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "index",
+              "about": "Persistent local-filesystem search index (SQLite FTS5).",
+              "aliases": [],
+              "cfg": [
+                "all(not(target_arch = \"wasm32\"), feature = \"index\")"
+              ],
+              "children": [
+                {
+                  "name": "build",
+                  "about": "Walk a directory and (re)build the local-file index. Metadata only — file contents are never read.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "search",
+                  "about": "Full-text search the index by file name / path (FTS5 prefix match).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "firefly",
+              "about": "Adobe Firefly Services image generation to disk.",
+              "aliases": [],
+              "cfg": [
+                "all(not(target_arch = \"wasm32\"), feature = \"firefly\")"
+              ],
+              "children": [
+                {
+                  "name": "generate",
+                  "about": "Generate an image from a prompt and save it to a directory.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "events",
+                  "about": "Drain the Adobe I/O Events journal (event-driven job completion).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "memory",
+              "about": "Tier-1 memory provider operations — migrate, audit, list backends.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "migrate",
+                  "about": "Copy all records for `--agent-id` from one provider to another.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "model",
+              "about": "Local model lifecycle — catalog, pull, inspect, verify, evict.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "hub",
+                  "about": "Discover Hugging Face repositories and verify the selected identity.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "search",
+                      "about": "Search public or selected-identity repository metadata; no payload download.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "info",
+                      "about": "Read repository metadata at a selected revision.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "runtime",
+                      "about": "Read Space runtime status; does not start or provision a Space.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "auth",
+                      "about": "Verify an existing credential with the official Hub, without printing identity data.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "name": "list",
+                  "about": "List locally installed models.",
+                  "aliases": [
+                    "ls"
+                  ],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "catalog",
+                  "about": "Show the curated catalog of models aphrody knows how to run.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "accel",
+                  "about": "Report the accelerators, GPUs and CUDA toolkit found on this machine.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "recommend",
+                  "about": "Rank the catalog for this machine and a given task.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "pull",
+                  "about": "Download a model into `~/.aphrody/models`, resuming if interrupted.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "info",
+                  "about": "Show what an installed artefact actually is: size, digest, and the decoded GGUF / GGML / safetensors / ONNX header.",
+                  "aliases": [
+                    "show"
+                  ],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "verify",
+                  "about": "Re-hash installed bytes and compare against what was recorded.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "rm",
+                  "about": "Delete an installed model and drop it from the registry.",
+                  "aliases": [
+                    "remove"
+                  ],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "gc",
+                  "about": "Evict least-recently-used models until the store fits a size budget, and sweep interrupted `.part` downloads.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "doctor",
+                  "about": "Report drift between the registry and the files on disk.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "adopt",
+                  "about": "Track a model file that already exists elsewhere on disk, without copying it.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "ps",
+                  "about": "List model servers currently loaded in-process-managed daemons (Ollama `ps`): role, alias, port, readiness. Read-only; reads the state published by `aphrody-llama-server`, spawns nothing.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "path",
+                  "about": "Print the store root, or the resolved path of one artefact.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "infer",
+              "about": "Local ONNX inference backend — runtime discovery and provider probing.",
+              "aliases": [],
+              "cfg": [
+                "all(not(target_arch = \"wasm32\"), feature = \"infer\")"
+              ],
+              "children": [
+                {
+                  "name": "runtime",
+                  "about": "Report which ONNX Runtime will be loaded and from where.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "llama",
+                  "about": "Report which llama.cpp binaries are available for the GGUF entries in the catalog (dots.ocr, granite-docling, SmolVLM).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "probe",
+                  "about": "Load a model and report the execution provider it actually got, plus the graph's inputs and outputs.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "job",
+              "about": "Persistent background jobs — work that outlives the process.",
+              "aliases": [],
+              "cfg": [
+                "all(not(target_arch = \"wasm32\"), feature = \"jobs\")"
+              ],
+              "children": [
+                {
+                  "name": "transcribe",
+                  "about": "Queue an audio file for local transcription and return immediately.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "submit",
+                  "about": "Queue a job of any registered kind with a raw JSON payload.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "list",
+                  "about": "List jobs, newest first.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "status",
+                  "about": "Show one job, including its result or its last error.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "logs",
+                  "about": "Print a job's NDJSON log.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "cancel",
+                  "about": "Cancel a queued or running job.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "run",
+                  "about": "Run jobs: recover what a previous run abandoned, then consume.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "stats",
+                  "about": "Counts per state, and where the queue lives.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "purge",
+                  "about": "Delete finished jobs older than N days, with their logs.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "ocr",
+              "about": "Read images with a local vision-language model.",
+              "aliases": [],
+              "cfg": [
+                "all(not(target_arch = \"wasm32\"), feature = \"ocr\")"
+              ],
+              "children": [
+                {
+                  "name": "page",
+                  "about": "Read one image and print its markdown transcription.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "ppocr",
+                  "about": "Read one image with local PP-OCRv5 and emit text regions plus geometry.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "audit",
+                  "about": "Audit a JSONL for defects before depositing it anywhere.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "clean",
+                  "about": "Re-run the text cleanup over an existing JSONL, in place.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "batch",
+                  "about": "Read every image in a directory, streaming one JSON object per line.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "db",
+                  "about": "Query and fill the local OCR corpus database.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "ingest",
+                      "about": "Deposit one or more JSONL files into the corpus database.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "stats",
+                      "about": "Report how many pages the corpus holds, per final status.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "list",
+                      "about": "List stored pages, newest deposit first.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "show",
+                      "about": "Print the full stored record for one page.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "name": "databooks",
+                  "about": "Transcribe a Shenron Dragon Ball databook lot with the safe preset.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "chat",
+              "about": "Run the unified turn-loop chat agent.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "hermes",
+              "about": "Agent multi-canaux voice-to-voice (Discord + X) — surpasse hermes-agent.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "agent",
+              "about": "Launch an autonomous agent — aphrody's flagship Antigravity-in-Rust surface.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "session",
+              "about": "Serve the local Codex-shaped JSON-RPC app-server over stdin/stdout.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "serve",
+                  "about": "Multiplex threads and local model turns over newline-delimited JSON-RPC.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "notify",
+              "about": "Envoie un message via Slack / Telegram / Matrix / Discord.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "mail",
+              "about": "Check or send transactional email through Resend or OVH SMTP.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "health",
+                  "about": "Verify provider credentials and connectivity without sending a message.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "send",
+                  "about": "Send one plain-text email using the configured provider.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "completions",
+              "about": "Génère des completions shell pour bash / zsh / fish / pwsh / elvish",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "self",
+              "about": "Installer / bootstrap natif (remplace les .ps1/.sh scripts/).",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "install-path",
+                  "about": "Register the release binary on the user PATH (HKCU on Windows, symlink into $HOME/.local/bin on Unix) and link the former standalone binary names (aphrody-infra, aphrody-kernel, …) to it.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "bootstrap",
+                  "about": "Inventory dev toolchain (rustup, cargo, git, zigbuild, wasm targets). With `--check`, prints the inventory and exits non-zero on missing required tools; without it, attempts `rustup target add` to fill gaps.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "package",
+              "about": "Gestionnaire des CLI Aphrody — installer, mettre à jour et désinstaller.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "catalog",
+                  "about": "Afficher le binaire unique, les noms de binaires qu'il remplace et les outils gérés ailleurs.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "status",
+                  "about": "Afficher le binaire en cours et l'état de chaque lien (ok, absent, pendant, étranger).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "doctor",
+                  "about": "Vérifier le binaire, le répertoire des liens et PATH ; code 1 si un lien n'est pas sain.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "install",
+                  "about": "Lier `aphrody` et chaque ancien nom de binaire au binaire en cours (= `aphrody self install-path`).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "uninstall",
+                  "about": "Retirer les liens créés par `install` (jamais le binaire lui-même).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "runtime",
+              "about": "Orchestrateur uv/Python/AI et détection des accélérateurs.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "status",
+                  "about": "Report uv, Python project and accelerator state.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "sync",
+                  "about": "Reconcile the selected Python project from its locked uv graph.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "check",
+                  "about": "Run uv's integrity checks without changing the environment.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "scan",
+              "about": "Repo analytics : scan tree (size/file-count) + scan manifests (Cargo/JSON/TOML).",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "tree",
+                  "about": "Size + file-count breakdown for top-level groups (vendor/packages/ crates by default).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "manifests",
+                  "about": "Walk the repo for Cargo.toml / package.json / pyproject.toml / etc. and emit metadata (name, version, dependency count, workspace members).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "oc-onboard",
+              "about": "(ported from openclaw) Bootstrap aphrody local state + seed config.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "oc-reset",
+              "about": "(ported from openclaw) Reset local state. Choose a scope: `config`, `config-creds-sessions`, or `full`.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "oc-uninstall",
+              "about": "(ported from openclaw) Uninstall aphrody scopes (service / state / workspace / app, or `--all`).",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "oc-pairing",
+              "about": "(ported from openclaw) Secure DM pairing — list / approve / inject requests against the local pairing store (~/.aphrody/pairing.json).",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "list",
+                  "about": "List pending pairing requests (optionally filtered by channel).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "approve",
+                  "about": "Approve a pending pairing code for a channel.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "add",
+                  "about": "Inject a pending pairing request (for tests / external integrations).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "oc-docs",
+              "about": "(ported from openclaw) Open or search the documentation site.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "notebooklm",
+              "about": "Google NotebookLM RPC client — notebooks / sources / chat / artifacts.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "list",
+                  "about": "List every notebook owned by the active account.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "create",
+                  "about": "Create a fresh empty notebook.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "delete",
+                  "about": "Delete a notebook by id.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "upload",
+                  "about": "Attach a source to a notebook (URL or local file path, auto-detected).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "chat",
+                  "about": "Send a chat message and print the reply on stdout.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "generate",
+                  "about": "Kick off an artifact generation workflow.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "download",
+                  "about": "Wait for an artifact to reach `COMPLETE` state and download it locally.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "antigravity",
+              "about": "Native Google AI Ultra / Gemini client (Antigravity). Scriptable, non-interactive, JSON output — `models`, `whoami`, `load`, `chat`.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "models",
+                  "about": "List the models available to the signed-in account / tier (`v1internal:fetchAvailableModels`).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "whoami",
+                  "about": "Print the signed-in user's profile (email + name) from Google's OpenID `userinfo` endpoint.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "load",
+                  "about": "Bootstrap the Code Assist session — project / tier / entitlements (`v1internal:loadCodeAssist`).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "chat",
+                  "about": "Send a single prompt to a Gemini model and print the raw `generateContent` response as JSON.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "onboard",
+                  "about": "Onboard the signed-in user to a Code Assist tier (`v1internal:onboardUser`). Returns the long-running operation JSON (`done` field; `done = false` while provisioning is ongoing).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "refresh",
+                  "about": "Obtain a fresh access token and print a non-sensitive confirmation (lengths + expiry hint only — no token bytes are printed).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "login",
+                  "about": "Interactively sign in via the Google OAuth 2.0 loopback PKCE flow.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "token-info",
+                  "about": "Inspect the token stored in the credential store.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "config",
+                  "about": "Inspect the Antigravity config file (`~/.gemini/config/config.json`).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "state-sync",
+                  "about": "Decode a `state.vscdb` `antigravityUnifiedStateSync.*` blob.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "item-table",
+                  "about": "Summarise a JSON dump of the `state.vscdb` `ItemTable`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "cloud-code",
+                  "about": "Generic Cloud Code `v1internal` RPC call.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "logo",
+              "about": "Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`).",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "design",
+              "about": "Material 3 design-token tooling (color CSS export + UI fusion sheet).",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "tokens",
+                  "about": "Emit Material 3 color tokens as CSS custom properties.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "ide",
+              "about": "Antigravity IDE installation inspector — info, extensions, RE, state, and launch.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "info",
+                  "about": "Detect the Antigravity IDE installation and emit key metadata as JSON.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "extensions",
+                  "about": "List the built-in extensions bundled with the IDE.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "re",
+                  "about": "Reverse-engineer the IDE Electron executable and the sidecar language server binary using the `aphrody-re` pipeline.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "state",
+                  "about": "Decode the `state.vscdb` global-storage database (structural view only).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "launch",
+                  "about": "Launch the Antigravity IDE, forwarding all arguments to the launcher.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "vpn",
+              "about": "Gestion du VPN Mullvad et du contournement géo pour Google AI / agy.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "status",
+                  "about": "Afficher le statut actuel du tunnel Mullvad VPN et du proxy VPS US.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "connect",
+                  "about": "Connecter le VPN local Mullvad (optionnellement cibler un pays/serveur, ex: 'us', 'ch', 'se').",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "disconnect",
+                  "about": "Déconnecter le VPN local Mullvad.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "ensure-agy",
+                  "about": "Assurer une connexion US / non-EEE (Mullvad local ou tunnel SSH VPS) pour agy.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "proxy",
+                  "about": "Gérer le tunnel SSH et le proxy SOCKS5 US hébergé sur le VPS.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "app",
+                  "about": "Piloter le routage US ciblé sur les applications (Chrome, Antigravity 2, AGY CLI).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "gemini",
+                      "about": "Lancer Google Gemini App en fenêtre PWA dédiée sous proxy SOCKS5 US",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "desktop",
+                      "about": "Lancer AGY Desktop (Antigravity 2) sous proxy SOCKS5 US",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "agy",
+                      "about": "Lancer AGY CLI configuré sur le proxy SOCKS5 US (tunnel VPS)",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "setup",
+                      "about": "Configurer les raccourcis stricts (Gemini App, AGY Desktop, AGY CLI)",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "status",
+                      "about": "Afficher le statut des 3 applications cibles et du tunnel US",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "winclean",
+              "about": "Native Windows computer use and OS control via the in-process aphrody-winclean crate.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "doctor",
+                  "about": "Show backend initialisation, the linked version and catalog drift.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "tools",
+                  "about": "List the WinClean tool catalog.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "schema",
+                  "about": "Print the JSON input schema of one tool.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "call",
+                  "about": "Invoke any tool.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "observe",
+                  "about": "Observe a window (metadata + UI Automation tree + PNG) — `computer_observe`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "screenshot",
+                  "about": "Capture the primary desktop — `computer_capture_screen`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "git",
+          "about": "Inspect local or remote Git repository status, remotes and commits.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "workspace-git-audit",
+          "about": "Audit local workspace Git state and GitHub forks, branches, PRs, commits, releases and packages.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "ci",
+          "about": "Ecosystem CI workflow distribution and audit across repositories.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "vpn",
+          "about": "Native Mullvad VPN controller and auto-proxy geo-unblock driver.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "status",
+              "about": "Show current Mullvad VPN connection status and egress details.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "connect",
+              "about": "Connect the VPN tunnel, optionally setting relay location (e.g. us, ch, se).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "disconnect",
+              "about": "Disconnect the VPN tunnel.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "proxy-target",
+              "about": "Print resolved SOCKS5 proxy target for VPS tunnel routing.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "workflow",
+          "about": "Unified ecosystem workflow execution and stage orchestration.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "yolo",
+          "about": "Sovereign autonomous YOLO engine (polyglot verification, mapper, doctor, plan).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "drive",
+          "about": "Virtual Distributed Filesystem (VDFS) engine: mounts, ls, tree, cat, git overview.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "mounts",
+              "about": "List active virtual mounts in the VDFS engine.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "ls",
+              "about": "List directory contents of a virtual mount URI (e.g. vdfs://vps/var/www or vdfs://local/crates).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "tree",
+              "about": "Display recursive tree of a virtual mount URI.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "cat",
+              "about": "Read/cat file content from a virtual mount URI.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "git",
+              "about": "Inspect consolidated Git status, commit graph and worktrees for a Git mount.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "ovh",
+          "about": "Native OVHcloud management: DNS zones & records, email deliverability, VPS operations.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "profiles",
+              "about": "List known profile configurations.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "status",
+              "about": "Diagnostic health check on configured credentials.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "dns",
+              "about": "DNS zone and records management.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "zones",
+                  "about": "List all managed DNS zones.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "info",
+                  "about": "Show metadata and DNSSEC status for a zone.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "records",
+                  "about": "List DNS records in a zone.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "add",
+                  "about": "Add a DNS record (requires --apply).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "delete",
+                  "about": "Delete a DNS record by ID (requires --apply).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "refresh",
+                  "about": "Refresh zone to propagate updates to nameservers.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "set-a",
+                  "about": "Switch selected A records to target IP (requires --apply; default apex + www).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "audit",
+                  "about": "Audit DNSSEC and production subdomain invariants.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "export",
+                  "about": "Export zone in standard BIND format (stdout, or --output FILE).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "backup",
+                  "about": "Back up every zone of the account as <DIR>/<zone>.zone (BIND format).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "vps",
+              "about": "VPS inventory and inspection.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "list",
+                  "about": "List VPS services.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "info",
+                  "about": "Inspect hardware specs and datacenter location for a VPS.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "ips",
+                  "about": "List IPs and routing configuration for a VPS.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "status",
+                  "about": "Get operational ping and status.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "start",
+                  "about": "Start a stopped VPS (requires --apply).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "reboot",
+                  "about": "Reboot a VPS (requires --apply).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "renew",
+                  "about": "Renew a VPS: quote by default (dry run), --apply orders, --apply --pay also pays with the default registered payment method. Ordering and paying are financial commitments.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "set-delete-at-expiration",
+                  "about": "Manage deleteAtExpiration flag. When true, the VPS is deleted at expiration if not renewed.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "watch",
+                  "about": "Check VPS expiration status: exit 0 if all healthy, 1 if alerts present, 2 on error.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "email",
+              "about": "Email domain status, redirections and deliverability audit.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "domain",
+                  "about": "Inspect domain email service and plan.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "redirections",
+                  "about": "List email redirections (aliases/forwarders).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "audit",
+                  "about": "Comprehensive email deliverability audit (MX, SPF, DMARC, DKIM).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "auth",
+              "about": "Authentication mode and identity of the credentials in use.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "status",
+                  "about": "Effective authentication mode, account and identity (no secret is printed).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "services",
+              "about": "Every service of the account (domains, DNS, email, VPS, IP, cloud): list (default), watch and renew.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "watch",
+                  "about": "Check every service: exit 0 if healthy, 1 if alerts, 2 on error.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "renew",
+                  "about": "Renew a service by id or resource name: quote by default (dry run), --apply orders, --apply --pay also pays with the default registered payment method.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "domain",
+              "about": "Registered domain names: inventory, renewal and automatic renewal.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "list",
+                  "about": "List registered domains with state, expiration and renewal.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "info",
+                  "about": "Registration details of a domain (state, expiration, DNSSEC, lock, name servers).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "renew",
+                  "about": "Renew a domain: quote by default (dry run), --apply orders, --apply --pay also pays.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "autorenew",
+                  "about": "Switch automatic renewal on or off (plan by default, requires --apply).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "iam",
+              "about": "IAM policy and resource groups of the service account.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "sync",
+                  "about": "Keep policy `aphrody-automation` and groups `aphrody-all*` covering every account resource (plan by default, requires --apply).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "secrets",
+          "about": "Sovereign secret management: audit leaks, contract check, envelope encrypt/decrypt, systemd render.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "audit",
+              "about": "Deep audit of repository tree and files for unencrypted secrets and tokens.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "check",
+              "about": "Validate secret presence for a service against config/secrets-contract.json.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "encrypt",
+              "about": "Encrypt an unencrypted environment file into an EncryptedManifest (.enc.json).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "decrypt",
+              "about": "Decrypt an EncryptedManifest to verify integrity or inspect schema.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "render",
+              "about": "Safely provision a decrypted environment file for systemd with 0400 permissions.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "binary": "aphrody kernel",
+      "crate": "aphrody-kernel",
+      "repo": "aphrody",
+      "source": "crates/os/kernel/src/cli.rs#Cli",
+      "commands": [
+        {
+          "name": "serve",
+          "about": "Serve the kernel with the built-in subsystems on the local endpoint.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "mcp",
+          "about": "MCP over stdio: relay to the running kernel, or run one in-process.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "tools",
+          "about": "List tools as JSON.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "skills",
+          "about": "List skills as JSON.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "call",
+          "about": "Call one tool.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "run-skill",
+          "about": "Run one skill.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "a2a",
+          "about": "Send an A2A envelope through the same kernel tool dispatcher.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody m3-reproduce",
+      "crate": "aphrody-m3-reproduce",
+      "repo": "aphrody",
+      "source": "crates/ui/m3-reproduce/src/cli.rs#Cli",
+      "commands": []
+    },
+    {
+      "binary": "aphrody mcp-server",
+      "crate": "aphrody-mcp",
+      "repo": "aphrody",
+      "source": "crates/ai/mcp/src/lib.rs#Cli",
+      "commands": [
+        {
+          "name": "server",
+          "about": "Run the stdio MCP server exposing the built-in tools (default mode).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "http",
+          "about": "Run the MCP Streamable HTTP server on a loopback address.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "client",
+          "about": "Connect to a third-party MCP server (stdio or HTTP) and invoke its tools.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "list",
+              "about": "List the tools advertised by the named MCP server (resolved via `mcp.json`). Each tool is printed as one NDJSON object.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "call",
+              "about": "Invoke a tool on the named MCP server and print its `result` payload.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "probe",
+              "about": "One-shot probe of an arbitrary stdio MCP server, bypassing `mcp.json`. Prints a single JSON object describing the server + its tool list.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "guide",
+          "about": "Print how agents should use these tools instead of their built-ins (the plugin's session hook injects it into the model context).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody rag-eval",
+      "crate": "aphrody-rag-eval",
+      "repo": "aphrody",
+      "source": "crates/ai/rag-eval/src/cli.rs#Args",
+      "commands": []
+    },
+    {
+      "binary": "aphrody skills",
+      "crate": "aphrody-skills",
+      "repo": "aphrody",
+      "source": "crates/ai/skills/src/cli.rs#Cli",
+      "commands": [
+        {
+          "name": "list",
+          "about": "Flat table of every discovered skill.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "validate",
+          "about": "Validate frontmatter against the required contract.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "to-prompt",
+          "about": "Emit the SKILL.md body for one skill (for prompt injection).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "info",
+          "about": "Print the full SKILL.md for one skill.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "where",
+          "about": "Print the absolute path(s) of one named skill.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "sources",
+          "about": "Print the source registry with discovered counts.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "install",
+          "about": "Copy one SKILL.md into $APHRODY_SKILLS_HOME.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "sync",
+          "about": "Mirror SKILL.md files (locally or from a GitHub repo).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "remove",
+          "about": "Uninstall a skill from $APHRODY_SKILLS_HOME (inverse of `install`).",
+          "aliases": [
+            "rm",
+            "uninstall"
+          ],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "find",
+          "about": "Search discovered skills by keyword (name + description, scriptable).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "init",
+          "about": "Scaffold a new SKILL.md template in a directory.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "update",
+          "about": "Refresh installed skills from their recorded source path.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody translate-project",
+      "crate": "aphrody-translate",
+      "repo": "aphrody",
+      "source": "crates/ai/translate/src/cli.rs#Args",
+      "commands": []
+    },
+    {
+      "binary": "aphrody web-engine",
+      "crate": "aphrody-web-engine",
+      "repo": "aphrody",
+      "source": "crates/web/web-engine/src/lib.rs#Args",
+      "commands": [
+        {
+          "name": "launch",
+          "about": "",
+          "aliases": [
+            "serve"
+          ],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "response",
+          "about": "Bounded original text response and metadata, through the shared native network owner.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "fetch",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "scrape",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "crawl",
+          "about": "Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "chrome-path",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody web-worker",
+      "crate": "aphrody-web-engine",
+      "repo": "aphrody",
+      "source": "crates/web/web-engine/src/lib.rs#Args",
+      "commands": [
+        {
+          "name": "launch",
+          "about": "",
+          "aliases": [
+            "serve"
+          ],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "response",
+          "about": "Bounded original text response and metadata, through the shared native network owner.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "fetch",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "scrape",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "crawl",
+          "about": "Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "chrome-path",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody wsl",
+      "crate": "aphrody-wsl",
+      "repo": "aphrody",
+      "source": "crates/os/aphrody-wsl/src/cli.rs#Args",
+      "commands": [
+        {
+          "name": "doctor",
+          "about": "Verify source pins and installed build tools.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "sources",
+          "about": "Inspect source revisions and dirtiness.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "plan",
+          "about": "Show exact build commands without executing them.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "dependencies",
+          "about": "Install host Linux dependencies (Windows prerequisites use native setup).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "build",
+          "about": "Compile an upstream component or assemble the guest root filesystem.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "all",
+          "about": "Build both kernels, WSLg, Windows WSL and the Aphrody OS guest in sequence.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "latest",
+          "about": "Resolve the newest kernel.org stable tag; --apply moves the linux-stable pin to it.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "status",
+          "about": "Read build evidence; missing and failed reports remain visible.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "verify",
+          "about": "Hash and validate expected nonempty artifacts.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "import",
+          "about": "Import a new distro, preserving every existing distribution.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody x",
+      "crate": "aphrody-x",
+      "repo": "aphrody",
+      "source": "crates/web/x/src/cli.rs#Cli",
+      "commands": [
+        {
+          "name": "post",
+          "about": "Post a new tweet.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "reply",
+          "about": "Reply to an existing tweet.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "delete",
+          "about": "Delete a tweet by its numeric ID.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "note",
+          "about": "Post a long-form note tweet (X Premium).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "like",
+          "about": "Like (favorite) a tweet.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "unlike",
+          "about": "Unlike (remove favorite) a tweet.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "retweet",
+          "about": "Retweet a tweet.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "unretweet",
+          "about": "Remove a retweet.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "bookmark",
+          "about": "Bookmark a tweet.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "unbookmark",
+          "about": "Remove a bookmark from a tweet.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "pin",
+          "about": "Pin a tweet to your profile.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "unpin",
+          "about": "Unpin the currently pinned tweet from your profile.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "follow",
+          "about": "Follow a user by their numeric user ID.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "unfollow",
+          "about": "Unfollow a user by their numeric user ID.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "block",
+          "about": "Block a user by their numeric user ID.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "unblock",
+          "about": "Unblock a user by their numeric user ID.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "mute",
+          "about": "Mute a user by their numeric user ID.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "unmute",
+          "about": "Unmute a user by their numeric user ID.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "user",
+          "about": "Look up a user by their handle (without @).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "timeline",
+          "about": "Fetch the authenticated user's home timeline.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "dm",
+          "about": "Send a direct message.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "graphql",
+          "about": "Invoke any operation from the 158-op GraphQL catalog.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "catalog",
+          "about": "List operations from the embedded GraphQL catalog.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "coverage",
+          "about": "Coverage report: catalog stats + optional live queryId drift check.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "rate-limit",
+          "about": "Print the most recently captured rate-limit headers.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "query-ids",
+          "about": "Inspect or refresh the runtime GraphQL queryId cache.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "read",
+          "about": "Read a single tweet by URL or numeric id.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "thread",
+          "about": "Show the full conversation thread for a tweet.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "replies",
+          "about": "List replies to a tweet (thread entries that reply to it).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "search",
+          "about": "Search tweets matching a query.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "user-tweets",
+          "about": "Fetch a user's profile timeline (by handle).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "home",
+          "about": "Fetch your home timeline (For You, or Following with --following).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "likes",
+          "about": "List your liked tweets.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "bookmarks",
+          "about": "List your bookmarked tweets.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "mentions",
+          "about": "Find mentions of a user (defaults to the authenticated account).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "following",
+          "about": "List accounts a user follows (default: you).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "followers",
+          "about": "List accounts that follow a user (default: you).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "list-timeline",
+          "about": "Fetch tweets from a list timeline (by URL or numeric id).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "community-timeline",
+          "about": "Fetch tweets from a community timeline (by URL https://x.com/i/communities/ID or numeric id).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "community-info",
+          "about": "Fetch community info + first tweets page in parallel (demo of parallel indexing).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "news",
+          "about": "Fetch news / trending topics from X's Explore tabs.",
+          "aliases": [
+            "trending"
+          ],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "upload-media",
+          "about": "Upload a media file and print its media_id (for scripted posting).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "lists",
+          "about": "List the lists you own (or are a member of with --member-of).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "premium",
+          "about": "Dump Premium / Blue Verified upsells and account flags (GraphQL).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "xpro",
+          "about": "X Pro (Gryphon) decks — pro.x.com/i/decks.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "sync",
+              "about": "List decks via ViewerAccountSync.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "deck",
+              "about": "Show one deck by id.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "create",
+              "about": "Create a deck (mutation CreateDeck).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "remove",
+              "about": "Remove a deck by id.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "probe",
+              "about": "Probe X Pro API access.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "whoami",
+          "about": "Print which X account your cookies belong to.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "check",
+          "about": "Show which credential sources are available and where they resolve from.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "sync",
+          "about": "Sync live data into the local SQLite store.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "authored",
+              "about": "Your own tweets.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "likes",
+              "about": "Tweets you liked.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "bookmarks",
+              "about": "Your bookmarks.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "timeline",
+              "about": "Your home timeline (For You).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "mentions",
+              "about": "Mentions of you.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "graph",
+              "about": "Your follow graph (following + followers).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "db",
+          "about": "Query the local store (stats / full-text search / export).",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "stats",
+              "about": "Show store statistics.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "search",
+              "about": "Full-text search stored tweets.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "export",
+              "about": "Export all stored tweets.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "digest",
+              "about": "Deterministic activity digest (top authors + most-liked tweets).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "graph",
+          "about": "Follow-graph analysis over the local store (run `sync graph` first).",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "mutuals",
+              "about": "Accounts that follow you back.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "non-mutual-following",
+              "about": "Accounts you follow that do not follow back.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "import",
+          "about": "Import a Twitter/X data archive into the local store.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "archive",
+              "about": "Import a Twitter/X data export (tweets.js or the archive directory).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "jobs",
+          "about": "Print a cross-OS scheduler snippet for periodic `sync` (no system change).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "binary": "aphrody yolo",
+      "crate": "aphrody-yolo",
+      "repo": "aphrody",
+      "source": "crates/infra/yolo/src/cli.rs#Cli",
+      "commands": [
+        {
+          "name": "doctor",
+          "about": "Verify tool availability and versions without changing the repository.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "detect",
+          "about": "Detect a file type and extract structural symbols.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "verify",
+          "about": "Run ordered polyglot validation tiers. Defaults to every tier.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "map",
+          "about": "Map, audit and watch the monorepo source topology.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "scan",
+              "about": "Produce the audit and topology JSON files once.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "check",
+              "about": "Produce JSON files and fail when path-hardening findings exist.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "watch",
+              "about": "Re-run the mapper when source topology changes.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "shell",
+          "about": "Run structured Nushell commands through the embedded Aphrody shell.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "eval",
+              "about": "Evaluate Nushell code and return structured output.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "commands",
+              "about": "List embedded Nushell commands.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "describe",
+              "about": "Print full embedded Nushell help for a command.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "fs",
+          "about": "Build and query the persistent metadata-only filesystem index.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "build",
+              "about": "Build or refresh the metadata-only SQLite FTS index.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "search",
+              "about": "Search an existing metadata-only SQLite FTS index.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "status",
+              "about": "Report the entry count of an existing filesystem index.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "win",
+          "about": "Proxy Windows administration to the running kernel admin subsystem.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "catalog",
+              "about": "List the generated WinClean tool catalog without loading the DLL.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "status",
+              "about": "Report the native WinClean runtime and tool catalog state.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "call",
+              "about": "Invoke one WinClean tool with a JSON object supplied explicitly.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "system",
+          "about": "Report orchestration services and the kernel control-plane connection.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "plan",
+          "about": "Inspect the YOLO manifest and produce the bounded polyglot gate plan.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "check",
+          "about": "Validate the unified Aphrody plugin's agents, skills and YOLO manifest.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "grind",
+          "about": "Create one Rust-owned YOLO automation tick.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "autopilot",
+          "about": "Dispatch bounded unattended ticks through an installed agent harness.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "ingest",
+          "about": "Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
       "binary": "aphrody-graph",
       "crate": "aphrody-code-graph",
       "repo": "aphrody",
@@ -5244,6 +9223,51 @@
     }
   ],
   "binariesWithoutClap": [
+    {
+      "binary": "aphrody agent-home-memory",
+      "crate": "aphrody-memory",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "aphrody agent-train",
+      "crate": "aphrody-train",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "aphrody backend",
+      "crate": "aphrody-backend",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "aphrody canvas",
+      "crate": "aphrody-render",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "aphrody embed",
+      "crate": "aphrody-embed",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "aphrody gemini-web",
+      "crate": "aphrody-gemini-web",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "aphrody jev",
+      "crate": "aphrody-jev",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "aphrody llama-daemon",
+      "crate": "aphrody-llama-server",
+      "repo": "aphrody"
+    },
+    {
+      "binary": "aphrody summary",
+      "crate": "aphrody-summary",
+      "repo": "aphrody"
+    },
     {
       "binary": "aphrody-app",
       "crate": "aphrody-app",
@@ -7321,8 +11345,8 @@
     "binaries": 9,
     "bunPackages": 127,
     "pythonPackages": 8,
-    "cliBinaries": 3,
-    "cliCommands": 301,
+    "cliBinaries": 19,
+    "cliCommands": 824,
     "mcpServers": 20,
     "mcpTools": 379,
     "mcpUniqueToolNames": 377

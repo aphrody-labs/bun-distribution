@@ -3,7 +3,8 @@
  * Unit tests for the ecosystem catalog extractors, plus the staleness gate: the committed
  * `docs/ecosystem/` output must match a fresh generation from the active roots.
  */
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
 import {
@@ -15,6 +16,7 @@ import {
   jsonCatalogTools,
   kebab,
   kernelTools,
+  multicallTools,
   readPyproject,
   reexportedParser,
   render,
@@ -186,6 +188,45 @@ describe.skipIf(!activeRootsPresent)("ecosystem catalog", () => {
     expect(eco.repos.flatMap((r) => r.errors)).toEqual([]);
     expect(eco.cli.some((b) => b.binary === "aphrody" && b.commands.length > 0)).toBe(true);
     expect(eco.counts.mcpTools).toBeGreaterThan(0);
-    expect(staleFiles(join(import.meta.dir, "..", "..", "..", "docs", "ecosystem"), render(eco))).toEqual([]);
+    expect(
+      staleFiles(join(import.meta.dir, "..", "..", "..", "docs", "ecosystem"), render(eco)),
+    ).toEqual([]);
   }, 180_000);
+});
+
+describe("multicallTools", () => {
+  test("indexes former binaries under their aphrody multi-call name", () => {
+    const dir = mkdtempSync(join(tmpdir(), "eco-multicall-"));
+    try {
+      mkdirSync(join(dir, "crates/infra/aphrody-command/src"), { recursive: true });
+      writeFileSync(
+        join(dir, "crates/infra/aphrody-command/src/multicall.rs"),
+        [
+          `tool("infra", &["aphrody-infra"], Target::Entry(aphrody_infra::cli_main)),`,
+          `tool("ssh", &["aphrody-ssh"], Target::Command("ssh")),`,
+          `tool("ovh", &["aphrody-ovh"], Target::Entry(ovh)),`,
+        ].join("\n"),
+      );
+      const pkg = {
+        name: "aphrody-infra",
+        description: null,
+        manifest_path: join(dir, "crates/infra/infra/Cargo.toml"),
+        features: {},
+        targets: [{ name: "aphrody_infra", kind: ["lib"], src_path: "/x/src/lib.rs" }],
+        dependencies: [{ name: "clap" }],
+      };
+      expect(multicallTools(dir, "aphrody", [pkg])).toEqual([
+        {
+          binary: "aphrody infra",
+          crate: "aphrody-infra",
+          repo: "aphrody",
+          src: "/x/src/lib.rs",
+          libSrc: "/x/src/lib.rs",
+          usesClap: true,
+        },
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

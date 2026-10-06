@@ -11,7 +11,7 @@
  * Usage: bun scripts/tools/workspace/ecosystem.ts [--root <workspace>] [--out <dir>] [--check]
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { loadCargoMetadata } from "./repo-layering.ts";
 
@@ -837,6 +837,47 @@ interface MetaPackage {
   dependencies: { name: string }[];
 }
 
+/** Dispatch table of the single `aphrody` binary (former standalone binaries, now `aphrody <tool>`). */
+const MULTICALL = "crates/infra/aphrody-command/src/multicall.rs";
+
+/**
+ * `aphrody <tool>` names whose entry point is another crate's `cli_main`: the binaries retired into the
+ * multi-call binary keep their clap tree in that crate, so it is indexed under the multi-call name.
+ */
+export function multicallTools(
+  dir: string,
+  repo: string,
+  packages: MetaPackage[],
+): {
+  binary: string;
+  crate: string;
+  repo: string;
+  src: string;
+  libSrc?: string;
+  usesClap: boolean;
+}[] {
+  const table = join(dir, MULTICALL);
+  if (!existsSync(table)) return [];
+  const crates = new Map(packages.map((pkg) => [pkg.name.replaceAll("-", "_"), pkg]));
+  const out = [];
+  for (const m of read(table).matchAll(
+    /tool\(\s*"([^"]+)",\s*&\[[^\]]*\],\s*Target::Entry\(([a-z0-9_]+)::/g,
+  )) {
+    const pkg = crates.get(m[2] as string);
+    const lib = pkg?.targets.find((t) => t.kind.some((k) => k === "lib" || k === "rlib"));
+    if (pkg === undefined || lib === undefined) continue;
+    out.push({
+      binary: `aphrody ${m[1]}`,
+      crate: pkg.name,
+      repo,
+      src: lib.src_path,
+      libSrc: lib.src_path,
+      usesClap: pkg.dependencies.some((d) => d.name === "clap"),
+    });
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Collection
 // ---------------------------------------------------------------------------------------------
@@ -854,6 +895,7 @@ export function collect(root: string): Ecosystem {
     libSrc?: string;
     usesClap: boolean;
   }[] = [];
+  const multicallTargets: typeof binTargets = [];
   const mcp = new Map<string, McpServer>();
   const addTool = (repo: string, server: string, kind: McpServer["kind"], tool: McpTool): void => {
     const key = `${repo}\0${server}`;
@@ -863,7 +905,7 @@ export function collect(root: string): Ecosystem {
   };
 
   for (const repo of repoNames) {
-    const dir = join(root, repo);
+    const dir = realpathSync(join(root, repo));
     const info: RepoInfo = {
       name: repo,
       kind: "aphrody",
@@ -910,6 +952,7 @@ export function collect(root: string): Ecosystem {
             });
           }
         }
+        multicallTargets.push(...multicallTools(dir, repo, metadata.packages));
       }
     }
     info.crates.sort((a, b) => a.name.localeCompare(b.name));
@@ -1011,7 +1054,7 @@ export function collect(root: string): Ecosystem {
   const parserNames = new Set(index.parsers().map((p) => p.name));
   const cli: CliBinary[] = [];
   const binariesWithoutClap: Ecosystem["binariesWithoutClap"] = [];
-  for (const bin of binTargets) {
+  for (const bin of [...binTargets, ...multicallTargets]) {
     let parser: ClapItem | undefined;
     const from = { file: "", crate: bin.crate, repo: bin.repo };
     for (const path of [bin.src, bin.libSrc]) {
@@ -1021,7 +1064,7 @@ export function collect(root: string): Ecosystem {
         if (parserNames.has(m[1] as string)) {
           parser = index.resolve(m[1], {
             ...from,
-            file: posix(path).slice(posix(join(root, bin.repo)).length + 1),
+            file: posix(path).slice(posix(realpathSync(join(root, bin.repo))).length + 1),
           });
           break;
         }
@@ -1320,7 +1363,9 @@ if (import.meta.main) {
     return at >= 0 ? args[at + 1] : undefined;
   };
   const root = resolve(option("--root") ?? join(import.meta.dir, "..", "..", "..", ".."));
-  const outDir = resolve(option("--out") ?? join(import.meta.dir, "..", "..", "..", "docs", "ecosystem"));
+  const outDir = resolve(
+    option("--out") ?? join(import.meta.dir, "..", "..", "..", "docs", "ecosystem"),
+  );
   const eco = collect(root);
   const files = render(eco);
   const errors = eco.repos.flatMap((r) => r.errors.map((e) => `${r.name}: ${e}`));

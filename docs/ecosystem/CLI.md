@@ -6,7 +6,7 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 3 binaries with a clap surface, 301 commands.
+Totals: 19 binaries with a clap surface, 824 commands.
 
 ## aphrody
 
@@ -302,6 +302,613 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 287 comma
   - `aphrody winclean observe` — Observe a window (metadata + UI Automation tree + PNG) — `computer_observe`.
   - `aphrody winclean screenshot` — Capture the primary desktop — `computer_capture_screen`.
 
+### `aphrody bindgen`
+
+Crate `aphrody-bindgen`, parser `crates/ml/bindgen/src/cli.rs#Args`, 0 commands.
+
+_No subcommands (flags only)._
+
+### `aphrody graph`
+
+Crate `aphrody-code-graph`, parser `crates/ai/code-graph/src/cli.rs#Cli`, 6 commands.
+
+- `aphrody graph build` — Scan a tree and (re)build its graph incrementally.
+- `aphrody graph query` — Budgeted breadth-first retrieval for a question.
+- `aphrody graph explain` — Describe a node and its connections.
+- `aphrody graph path` — Shortest path between two nodes.
+- `aphrody graph report` — Print the markdown report.
+- `aphrody graph export` — Write `graph.json`.
+
+### `aphrody home`
+
+Crate `aphrody-rag`, parser `crates/ai/rag/src/home_cli.rs#Cli`, 3 commands.
+
+- `aphrody home index` — Scan, extract the code graph, chunk and index a tree (incremental by content hash).
+- `aphrody home import-knowledge` — Import the documents of a legacy `knowledge.db` into the retrieval index (dry run unless `--apply`; the legacy file is opened read-only).
+- `aphrody home query` — Hybrid retrieval over document chunks, code-graph nodes and memories.
+
+### `aphrody host-service`
+
+Crate `aphrody-kernel`, parser `crates/os/kernel/src/cli.rs#Cli`, 7 commands.
+
+- `aphrody host-service serve` — Serve the kernel with the built-in subsystems on the local endpoint.
+- `aphrody host-service mcp` — MCP over stdio: relay to the running kernel, or run one in-process.
+- `aphrody host-service tools` — List tools as JSON.
+- `aphrody host-service skills` — List skills as JSON.
+- `aphrody host-service call` — Call one tool.
+- `aphrody host-service run-skill` — Run one skill.
+- `aphrody host-service a2a` — Send an A2A envelope through the same kernel tool dispatcher.
+
+### `aphrody infra`
+
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 364 commands.
+
+- `aphrody infra status` — Show target, repository and runtime state without mutation.
+- `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
+- `aphrody infra maintenance` — Inspect or maintain first-party Cargo workspaces from the Rust control plane.
+- `aphrody infra quality` — Resolve and run declared Bun quality scripts from the Rust control plane.
+- `aphrody infra doctor` — Check the local development toolchain and repository contracts.
+- `aphrody infra sync` — Print the actions that a synchronization would perform.
+- `aphrody infra deploy` — Run a deploy adapter. Mutation requires --apply and an explicit target.
+- `aphrody infra validate` — Check cross-catalog invariants (services, nginx routes, port policy).
+- `aphrody infra reclaim` — Reclaim allowlisted disk/tmpfs space on a target (config/disk-reclaim.json).
+- `aphrody infra dev-env` — Validate or provision the declared development environment.
+- `aphrody infra service` — Manage cataloged services lifecycle (catalog, status, start, stop, restart, journal).
+- `aphrody infra probe` — Probe an HTTP or TCP endpoint health.
+- `aphrody infra pipeline` — Execute declared monorepo validation stages.
+- `aphrody infra serve` — Launch the embedded HTTP API daemon.
+- `aphrody infra ssh` — Remote SSH operator: execute commands, audit host health, sysctl kernel tuning, port inspection.
+  - `aphrody infra ssh rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
+    - `aphrody infra ssh rag index` — Index a directory incrementally, including vectors when configured.
+    - `aphrody infra ssh rag web-ingest` — Scrape one URL through Aphrody OS and index it in the local AI RAG store.
+    - `aphrody infra ssh rag search` — Search the index and report source paths, lines and effective mode.
+    - `aphrody infra ssh rag context` — Assemble source context for a model prompt.
+    - `aphrody infra ssh rag stats` — Report document, chunk and vector counts.
+  - `aphrody infra ssh exec` — Execute an autonomous agent task with optional Codex-compatible JSONL. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh exec resume` — Continue a recorded session in place.
+    - `aphrody infra ssh exec fork` — Start a new session with the recorded conversation as its history.
+  - `aphrody infra ssh resume` — Continue a persisted agent session. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh fork` — Fork a persisted agent conversation into a new session. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh gateway` — Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795). _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh gateway serve` — Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8795).
+    - `aphrody infra ssh gateway status` — Query the status of a running gateway.
+    - `aphrody infra ssh gateway models` — List models available through the gateway.
+  - `aphrody infra ssh app-server` — Serve the local app-server protocol over stdio or loopback HTTP. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh config` — Manage, show, or import Codex-compatible configuration. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh config show` — Show the active or effective resolved configuration.
+    - `aphrody infra ssh config path` — Print the path to the user's config.toml file (~/.aphrody/config.toml).
+    - `aphrody infra ssh config import-codex` — Import and layer configuration from ~/.codex/config.toml.
+  - `aphrody infra ssh ai` — Resolve the local AI environment; mirror external agent sessions. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh ai env` — Resolve and publish the local AI environment (`~/.aphrody/ai/local-ai.{json,env}`).
+    - `aphrody infra ssh ai status` — Inspect active AI router, models, and provider status.
+    - `aphrody infra ssh ai sync-sessions` — Mirror the sessions of the other coding agents on this machine (Antigravity CLI, Codex, Claude Code) into `~/.aphrody/sessions/<agent>/<session_id>.jsonl`, incrementally, and feed their user/assistan…
+  - `aphrody infra ssh native` — Native platform probes for CPU, memory, CUDA and monotonic time. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh native status` — Diagnostic summary of host platform probes
+    - `aphrody infra ssh native self-test` — Check native topology and monotonic clock probes
+  - `aphrody infra ssh os` — Canonical OS layer: kernel subsystems, WinClean diagnostics, process isolation. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh os status` — Inspect OS kernel status, active subsystems and diagnostics
+    - `aphrody infra ssh os doctor` — Run WinClean diagnostics on local Windows machine
+  - `aphrody infra ssh web` — Canonical Web engine: Obscura browser automation, crawling and extraction. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh web status` — Inspect the linked Rust Web runtime
+    - `aphrody infra ssh web capabilities` — List the linked Rust Web capabilities
+    - `aphrody infra ssh web fetch` — Fetch and convert a URL directly to clean Markdown
+    - `aphrody infra ssh web search` — Search the Google Web index with the shared Rust SERP client
+    - `aphrody infra ssh web recon` — One-shot page reconnaissance with linked Rust HTTP and DOM engines
+    - `aphrody infra ssh web scrape` — Extract CSS-selected text or an entire page
+    - `aphrody infra ssh web extract` — Extract main content and metadata from a page
+    - `aphrody infra ssh web detect` — Detect site technologies and anti-bot challenges with the shared Rust engine
+    - `aphrody infra ssh web gemini` — Ask Gemini through the shared authenticated Rust Web client
+    - `aphrody infra ssh web x` — Read X profiles, timelines, search and news with cookie authentication
+      - `aphrody infra ssh web x profile`
+      - `aphrody infra ssh web x tweets`
+      - `aphrody infra ssh web x search`
+      - `aphrody infra ssh web x news`
+      - `aphrody infra ssh web x whoami`
+    - `aphrody infra ssh web media` — Extract direct media URLs or HLS variants from a page
+      - `aphrody infra ssh web media resolve` — Resolve an embed page into video candidates
+      - `aphrody infra ssh web media variants` — Parse variants from a known HLS master playlist
+    - `aphrody infra ssh web browser` — Inspect a page through the shared native browser session
+      - `aphrody infra ssh web browser snapshot` — Navigate and capture a readable snapshot in the same browser session
+    - `aphrody infra ssh web crawl` — Crawl a bounded set of pages through the shared Rust frontier
+    - `aphrody infra ssh web mediawiki` — Enumerate and extract pages through a MediaWiki Action API
+    - `aphrody infra ssh web mirror` — Mirror HTML pages and their linked CSS/assets through Obscura
+    - `aphrody infra ssh web wiki-search` — Search a MediaWiki installation through its Action API
+    - `aphrody infra ssh web wiki-page` — Read a complete MediaWiki page dossier or Markdown through the Action API
+    - `aphrody infra ssh web frames` — MPEG-7 frame vectors, SQLite indexing and local/trace.moe search
+      - `aphrody infra ssh web frames vector`
+      - `aphrody infra ssh web frames search`
+      - `aphrody infra ssh web frames stats`
+      - `aphrody infra ssh web frames list`
+      - `aphrody infra ssh web frames quota`
+      - `aphrody infra ssh web frames index`
+  - `aphrody infra ssh shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh shell status` — Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)
+    - `aphrody infra ssh shell start` — Start interactive Nushell / Ratatui terminal session
+  - `aphrody infra ssh codex` — Forward vers le binaire natif OpenAI Codex (`codex`). _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
+    - `aphrody infra ssh train status` — Show training status, GPU lock availability, and active jobs.
+    - `aphrody infra ssh train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
+    - `aphrody infra ssh train run` — Run a training or fine-tuning job.
+    - `aphrody infra ssh train registry-migrate` — Apply the training registry migrations (schema `training`) over the direct `APHRODY_TRAINING_DATABASE_URL`.
+    - `aphrody infra ssh train promote` — Reserved for measured shadow-index A/B promotion; currently refuses installation.
+  - `aphrody infra ssh auth` — Authentification Google (God Mode / OAuth2)
+  - `aphrody infra ssh mirror` — Gère le mirroring des assets MD3 (start, stop, status).
+  - `aphrody infra ssh version` — Affiche la version et l'état du système
+  - `aphrody infra ssh doctor` — Diagnostic env + intégration A2A + supply-chain (first-impression)
+  - `aphrody infra ssh a2a` — A2A coordination (serve, tick, invoke peers)
+    - `aphrody infra ssh a2a serve` — Start HTTP listener (`/ping`, `/msg`, JSON-RPC, agent card) on :8788.
+    - `aphrody infra ssh a2a tick` — Append one JSONL envelope (duel-tick / coord loop).
+    - `aphrody infra ssh a2a invoke` — Invoke a native peer CLI (grok, agy, claude, codex, bxc).
+    - `aphrody infra ssh a2a send` — JSON-RPC `message/send` to a federation peer (HTTP `/a2a` or `.coord` fallback).
+    - `aphrody infra ssh a2a peers` — List resolved federation peers (env > aphrody-infra catalog > default).
+  - `aphrody infra ssh cros` — Compilation hyper-optimisée de ChromeOS
+    - `aphrody infra ssh cros sync` — Synchronisation ultra-rapide (shallow clone)
+    - `aphrody infra ssh cros build` — Compilation GN/Ninja avec SCCache et optimisation multi-coeur
+  - `aphrody infra ssh search` — Recherche Google Native
+  - `aphrody infra ssh gemini` — [DÉPRÉCIÉ] Alias de `agy` — le Gemini CLI a migré vers l'Antigravity CLI. Honore encore `APHRODY_GEMINI_BIN` / un fork in-tree ; sinon forwarde vers `agy`. Préférez `aphrody agy`.
+  - `aphrody infra ssh agy` — Forward vers le binaire natif Antigravity CLI (`agy`).
+  - `aphrody infra ssh google` — Écosystème Google natif (DNS, Suggest, Translate, Gemini Web, Antigravity, Runtime) _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh translate` — Traduction unifiée via aphrody-translate _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh n2b` — Execute the integrated N2B engine (Node 2 Bun) in-process; also the `n2b` link.
+  - `aphrody infra ssh nie` — Forward vers le CLI natif Niers (`niers`).
+  - `aphrody infra ssh ssh` — Safe cross-platform operator CLI for configured SSH hosts. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh agy-loop` — Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la… _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh agy-loop start` — Arme la boucle pour le workspace courant avec un objectif.
+    - `aphrody infra ssh agy-loop stop` — Désarme la boucle (efface l'état) pour le workspace courant.
+    - `aphrody infra ssh agy-loop status` — Affiche l'état courant de la boucle en JSON.
+    - `aphrody infra ssh agy-loop hook` — Driver des hooks `Stop` et `PostInvocation` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.
+    - `aphrody infra ssh agy-loop hooks-json` — Affiche le fragment `hooks.json` (format natif agy) qui câble la boucle sur `Stop` et `PostInvocation`.
+  - `aphrody infra ssh term` — Pont WebSocket-PTY pour le frontend WASM (localhost uniquement)
+  - `aphrody infra ssh mcp` — Model Context Protocol — manage TOML servers, read legacy JSON, call tools. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh mcp add` — Add a server to ~/.aphrody/config.toml.
+    - `aphrody infra ssh mcp remove` — Remove a server from ~/.aphrody/config.toml.
+    - `aphrody infra ssh mcp get` — Show a configured server without exposing environment values.
+    - `aphrody infra ssh mcp list` — List configured MCP servers + (by default) probe `tools/list` for each.
+    - `aphrody infra ssh mcp call` — Invoke a single tool on a configured MCP server.
+  - `aphrody infra ssh discord` — Discord bot compilation, inspection, and monorepo verification. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh discord compile` — Compile one or all Discord bots into a native standalone binary via Bun + Oxc.
+    - `aphrody infra ssh discord inspect` — Inspect a Discord bot configuration, TypeScript decorators, and Oxc AST syntax.
+    - `aphrody infra ssh discord verify` — Run the comprehensive Discord monorepo verification gate (catalog, kit, messaging, bots, compile).
+  - `aphrody infra ssh git` — Native Git inspection, GitHub REST/GraphQL, and ecosystem distribution. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh git inspect` — Inspect branch, HEAD, remotes and status with pure-Rust gix.
+    - `aphrody infra ssh git repo` — Fetch canonical GitHub repository metadata.
+    - `aphrody infra ssh git api` — Call any GitHub REST endpoint through authenticated Octocrab.
+    - `aphrody infra ssh git graphql` — Call the GitHub GraphQL endpoint.
+    - `aphrody infra ssh git install` — Install the thin reusable-workflow caller into local repositories.
+    - `aphrody infra ssh git audit` — Audit managed CI coverage across all active repositories owned by an account.
+    - `aphrody infra ssh git rollout` — Roll out managed CI to active GitHub repositories owned by an account.
+    - `aphrody infra ssh git ingest` — Ingest a Git repository or local directory into a prompt-ready LLM digest (GitIngest standard).
+    - `aphrody infra ssh git search` — Search GitHub repositories for documentation, llms.txt, and code digests.
+    - `aphrody infra ssh git source` — Upstream source checkouts outside the repository (config/upstream-sources.json).
+    - `aphrody infra ssh git upstream` — Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.
+    - `aphrody infra ssh git attribution` — Audit and strip AI attributions, co-authors, and trailers from Git commits.
+    - `aphrody infra ssh git clean-public` — Audit public web surfaces, products and repositories for private AI leaks.
+  - `aphrody infra ssh ingest` — Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard). _(aliases: gitingest, y; cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh docs` — Intelligent documentation and open-source library search (Context7, MS Learn, GitHub, llms.txt). _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh docs search` — Search documentation across Context7, Microsoft Learn, and GitHub repositories with llms.txt.
+    - `aphrody infra ssh docs awesome` — Curated Awesome lists ecosystem.
+      - `aphrody infra ssh docs awesome presets` — List known canonical Awesome presets.
+      - `aphrody infra ssh docs awesome fetch` — Fetch and parse a curated Awesome list from GitHub.
+      - `aphrody infra ssh docs awesome search` — Search across canonical Awesome ecosystems or a specific list.
+      - `aphrody infra ssh docs awesome digest` — Generate a prompt-ready LLM digest of an Awesome list.
+  - `aphrody infra ssh awesome` — Curated Awesome lists ecosystem. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh awesome presets` — List known canonical Awesome presets.
+    - `aphrody infra ssh awesome fetch` — Fetch and parse a curated Awesome list from GitHub.
+    - `aphrody infra ssh awesome search` — Search across canonical Awesome ecosystems or a specific list.
+    - `aphrody infra ssh awesome digest` — Generate a prompt-ready LLM digest of an Awesome list.
+  - `aphrody infra ssh re` — Reverse engineering — triage a binary (PE32/PE64/ELF32/ELF64). _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh re triage` — Triage a binary: detect format (PE32/PE64/ELF32/ELF64), parse sections + entropy + imports/exports + strings sample + SHA-256.
+    - `aphrody infra ssh re strings` — Extract ASCII + UTF-16LE strings from a binary.
+    - `aphrody infra ssh re sections` — Parse a binary and output its sections as JSON.
+    - `aphrody infra ssh re disasm` — Disassemble x86-64 instructions from a binary (or raw shellcode).
+    - `aphrody infra ssh re google` — Analyse a Google binary (Electron / Chromium / Go / Node / V8 snapshot).
+    - `aphrody infra ssh re classify` — Classify a file's content type with Google Magika (deep-learning). _(cfg: feature = "magika")_
+    - `aphrody infra ssh re go` — Analyse a Go binary — version, function table, packages, type names.
+    - `aphrody infra ssh re auto` — Auto reverse-engineering — orchestrates all RE passes on a binary or folder.
+    - `aphrody infra ssh re yara` — Scan a binary with YARA-X rules (pure Rust, BSD-3-Clause).
+  - `aphrody infra ssh forensics` — Reproducible forensic extraction — filesystem map + SQLite schema dump. _(cfg: all(not(target_arch = "wasm32"), feature = "forensics"))_
+    - `aphrody infra ssh forensics map` — Map a target directory: parallel walk emitting `{ path, size, ext }` per file to `<out>/map.json`.
+    - `aphrody infra ssh forensics sqlite` — Dump the schema of a SQLite database, read-only.
+  - `aphrody infra ssh index` — Persistent local-filesystem search index (SQLite FTS5). _(cfg: all(not(target_arch = "wasm32"), feature = "index"))_
+    - `aphrody infra ssh index build` — Walk a directory and (re)build the local-file index. Metadata only — file contents are never read.
+    - `aphrody infra ssh index search` — Full-text search the index by file name / path (FTS5 prefix match).
+  - `aphrody infra ssh firefly` — Adobe Firefly Services image generation to disk. _(cfg: all(not(target_arch = "wasm32"), feature = "firefly"))_
+    - `aphrody infra ssh firefly generate` — Generate an image from a prompt and save it to a directory.
+    - `aphrody infra ssh firefly events` — Drain the Adobe I/O Events journal (event-driven job completion).
+  - `aphrody infra ssh memory` — Tier-1 memory provider operations — migrate, audit, list backends. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh memory migrate` — Copy all records for `--agent-id` from one provider to another.
+  - `aphrody infra ssh model` — Local model lifecycle — catalog, pull, inspect, verify, evict. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh model hub` — Discover Hugging Face repositories and verify the selected identity.
+      - `aphrody infra ssh model hub search` — Search public or selected-identity repository metadata; no payload download.
+      - `aphrody infra ssh model hub info` — Read repository metadata at a selected revision.
+      - `aphrody infra ssh model hub runtime` — Read Space runtime status; does not start or provision a Space.
+      - `aphrody infra ssh model hub auth` — Verify an existing credential with the official Hub, without printing identity data.
+    - `aphrody infra ssh model list` — List locally installed models. _(aliases: ls)_
+    - `aphrody infra ssh model catalog` — Show the curated catalog of models aphrody knows how to run.
+    - `aphrody infra ssh model accel` — Report the accelerators, GPUs and CUDA toolkit found on this machine.
+    - `aphrody infra ssh model recommend` — Rank the catalog for this machine and a given task.
+    - `aphrody infra ssh model pull` — Download a model into `~/.aphrody/models`, resuming if interrupted.
+    - `aphrody infra ssh model info` — Show what an installed artefact actually is: size, digest, and the decoded GGUF / GGML / safetensors / ONNX header. _(aliases: show)_
+    - `aphrody infra ssh model verify` — Re-hash installed bytes and compare against what was recorded.
+    - `aphrody infra ssh model rm` — Delete an installed model and drop it from the registry. _(aliases: remove)_
+    - `aphrody infra ssh model gc` — Evict least-recently-used models until the store fits a size budget, and sweep interrupted `.part` downloads.
+    - `aphrody infra ssh model doctor` — Report drift between the registry and the files on disk.
+    - `aphrody infra ssh model adopt` — Track a model file that already exists elsewhere on disk, without copying it.
+    - `aphrody infra ssh model ps` — List model servers currently loaded in-process-managed daemons (Ollama `ps`): role, alias, port, readiness. Read-only; reads the state published by `aphrody-llama-server`, spawns nothing.
+    - `aphrody infra ssh model path` — Print the store root, or the resolved path of one artefact.
+  - `aphrody infra ssh infer` — Local ONNX inference backend — runtime discovery and provider probing. _(cfg: all(not(target_arch = "wasm32"), feature = "infer"))_
+    - `aphrody infra ssh infer runtime` — Report which ONNX Runtime will be loaded and from where.
+    - `aphrody infra ssh infer llama` — Report which llama.cpp binaries are available for the GGUF entries in the catalog (dots.ocr, granite-docling, SmolVLM).
+    - `aphrody infra ssh infer probe` — Load a model and report the execution provider it actually got, plus the graph's inputs and outputs.
+  - `aphrody infra ssh job` — Persistent background jobs — work that outlives the process. _(cfg: all(not(target_arch = "wasm32"), feature = "jobs"))_
+    - `aphrody infra ssh job transcribe` — Queue an audio file for local transcription and return immediately.
+    - `aphrody infra ssh job submit` — Queue a job of any registered kind with a raw JSON payload.
+    - `aphrody infra ssh job list` — List jobs, newest first.
+    - `aphrody infra ssh job status` — Show one job, including its result or its last error.
+    - `aphrody infra ssh job logs` — Print a job's NDJSON log.
+    - `aphrody infra ssh job cancel` — Cancel a queued or running job.
+    - `aphrody infra ssh job run` — Run jobs: recover what a previous run abandoned, then consume.
+    - `aphrody infra ssh job stats` — Counts per state, and where the queue lives.
+    - `aphrody infra ssh job purge` — Delete finished jobs older than N days, with their logs.
+  - `aphrody infra ssh ocr` — Read images with a local vision-language model. _(cfg: all(not(target_arch = "wasm32"), feature = "ocr"))_
+    - `aphrody infra ssh ocr page` — Read one image and print its markdown transcription.
+    - `aphrody infra ssh ocr ppocr` — Read one image with local PP-OCRv5 and emit text regions plus geometry.
+    - `aphrody infra ssh ocr audit` — Audit a JSONL for defects before depositing it anywhere.
+    - `aphrody infra ssh ocr clean` — Re-run the text cleanup over an existing JSONL, in place.
+    - `aphrody infra ssh ocr batch` — Read every image in a directory, streaming one JSON object per line.
+    - `aphrody infra ssh ocr db` — Query and fill the local OCR corpus database.
+      - `aphrody infra ssh ocr db ingest` — Deposit one or more JSONL files into the corpus database.
+      - `aphrody infra ssh ocr db stats` — Report how many pages the corpus holds, per final status.
+      - `aphrody infra ssh ocr db list` — List stored pages, newest deposit first.
+      - `aphrody infra ssh ocr db show` — Print the full stored record for one page.
+    - `aphrody infra ssh ocr databooks` — Transcribe a Shenron Dragon Ball databook lot with the safe preset.
+  - `aphrody infra ssh chat` — Run the unified turn-loop chat agent. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh hermes` — Agent multi-canaux voice-to-voice (Discord + X) — surpasse hermes-agent. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh agent` — Launch an autonomous agent — aphrody's flagship Antigravity-in-Rust surface. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh session` — Serve the local Codex-shaped JSON-RPC app-server over stdin/stdout. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh session serve` — Multiplex threads and local model turns over newline-delimited JSON-RPC.
+  - `aphrody infra ssh notify` — Envoie un message via Slack / Telegram / Matrix / Discord.
+  - `aphrody infra ssh mail` — Check or send transactional email through Resend or OVH SMTP. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh mail health` — Verify provider credentials and connectivity without sending a message.
+    - `aphrody infra ssh mail send` — Send one plain-text email using the configured provider.
+  - `aphrody infra ssh completions` — Génère des completions shell pour bash / zsh / fish / pwsh / elvish
+  - `aphrody infra ssh self` — Installer / bootstrap natif (remplace les .ps1/.sh scripts/).
+    - `aphrody infra ssh self install-path` — Register the release binary on the user PATH (HKCU on Windows, symlink into $HOME/.local/bin on Unix) and link the former standalone binary names (aphrody-infra, aphrody-kernel, …) to it.
+    - `aphrody infra ssh self bootstrap` — Inventory dev toolchain (rustup, cargo, git, zigbuild, wasm targets). With `--check`, prints the inventory and exits non-zero on missing required tools; without it, attempts `rustup target add` to fi…
+  - `aphrody infra ssh package` — Gestionnaire des CLI Aphrody — installer, mettre à jour et désinstaller. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh package catalog` — Afficher le binaire unique, les noms de binaires qu'il remplace et les outils gérés ailleurs.
+    - `aphrody infra ssh package status` — Afficher le binaire en cours et l'état de chaque lien (ok, absent, pendant, étranger).
+    - `aphrody infra ssh package doctor` — Vérifier le binaire, le répertoire des liens et PATH ; code 1 si un lien n'est pas sain.
+    - `aphrody infra ssh package install` — Lier `aphrody` et chaque ancien nom de binaire au binaire en cours (= `aphrody self install-path`).
+    - `aphrody infra ssh package uninstall` — Retirer les liens créés par `install` (jamais le binaire lui-même).
+  - `aphrody infra ssh runtime` — Orchestrateur uv/Python/AI et détection des accélérateurs. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh runtime status` — Report uv, Python project and accelerator state.
+    - `aphrody infra ssh runtime sync` — Reconcile the selected Python project from its locked uv graph.
+    - `aphrody infra ssh runtime check` — Run uv's integrity checks without changing the environment.
+  - `aphrody infra ssh scan` — Repo analytics : scan tree (size/file-count) + scan manifests (Cargo/JSON/TOML).
+    - `aphrody infra ssh scan tree` — Size + file-count breakdown for top-level groups (vendor/packages/ crates by default).
+    - `aphrody infra ssh scan manifests` — Walk the repo for Cargo.toml / package.json / pyproject.toml / etc. and emit metadata (name, version, dependency count, workspace members).
+  - `aphrody infra ssh oc-onboard` — (ported from openclaw) Bootstrap aphrody local state + seed config. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh oc-reset` — (ported from openclaw) Reset local state. Choose a scope: `config`, `config-creds-sessions`, or `full`. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh oc-uninstall` — (ported from openclaw) Uninstall aphrody scopes (service / state / workspace / app, or `--all`). _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh oc-pairing` — (ported from openclaw) Secure DM pairing — list / approve / inject requests against the local pairing store (~/.aphrody/pairing.json). _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh oc-pairing list` — List pending pairing requests (optionally filtered by channel).
+    - `aphrody infra ssh oc-pairing approve` — Approve a pending pairing code for a channel.
+    - `aphrody infra ssh oc-pairing add` — Inject a pending pairing request (for tests / external integrations).
+  - `aphrody infra ssh oc-docs` — (ported from openclaw) Open or search the documentation site. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh notebooklm` — Google NotebookLM RPC client — notebooks / sources / chat / artifacts. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh notebooklm list` — List every notebook owned by the active account.
+    - `aphrody infra ssh notebooklm create` — Create a fresh empty notebook.
+    - `aphrody infra ssh notebooklm delete` — Delete a notebook by id.
+    - `aphrody infra ssh notebooklm upload` — Attach a source to a notebook (URL or local file path, auto-detected).
+    - `aphrody infra ssh notebooklm chat` — Send a chat message and print the reply on stdout.
+    - `aphrody infra ssh notebooklm generate` — Kick off an artifact generation workflow.
+    - `aphrody infra ssh notebooklm download` — Wait for an artifact to reach `COMPLETE` state and download it locally.
+  - `aphrody infra ssh antigravity` — Native Google AI Ultra / Gemini client (Antigravity). Scriptable, non-interactive, JSON output — `models`, `whoami`, `load`, `chat`. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh antigravity models` — List the models available to the signed-in account / tier (`v1internal:fetchAvailableModels`).
+    - `aphrody infra ssh antigravity whoami` — Print the signed-in user's profile (email + name) from Google's OpenID `userinfo` endpoint.
+    - `aphrody infra ssh antigravity load` — Bootstrap the Code Assist session — project / tier / entitlements (`v1internal:loadCodeAssist`).
+    - `aphrody infra ssh antigravity chat` — Send a single prompt to a Gemini model and print the raw `generateContent` response as JSON.
+    - `aphrody infra ssh antigravity onboard` — Onboard the signed-in user to a Code Assist tier (`v1internal:onboardUser`). Returns the long-running operation JSON (`done` field; `done = false` while provisioning is ongoing).
+    - `aphrody infra ssh antigravity refresh` — Obtain a fresh access token and print a non-sensitive confirmation (lengths + expiry hint only — no token bytes are printed).
+    - `aphrody infra ssh antigravity login` — Interactively sign in via the Google OAuth 2.0 loopback PKCE flow.
+    - `aphrody infra ssh antigravity token-info` — Inspect the token stored in the credential store.
+    - `aphrody infra ssh antigravity config` — Inspect the Antigravity config file (`~/.gemini/config/config.json`).
+    - `aphrody infra ssh antigravity state-sync` — Decode a `state.vscdb` `antigravityUnifiedStateSync.*` blob.
+    - `aphrody infra ssh antigravity item-table` — Summarise a JSON dump of the `state.vscdb` `ItemTable`.
+    - `aphrody infra ssh antigravity cloud-code` — Generic Cloud Code `v1internal` RPC call.
+  - `aphrody infra ssh logo` — Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`). _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh design` — Material 3 design-token tooling (color CSS export + UI fusion sheet). _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh design tokens` — Emit Material 3 color tokens as CSS custom properties.
+  - `aphrody infra ssh ide` — Antigravity IDE installation inspector — info, extensions, RE, state, and launch. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh ide info` — Detect the Antigravity IDE installation and emit key metadata as JSON.
+    - `aphrody infra ssh ide extensions` — List the built-in extensions bundled with the IDE.
+    - `aphrody infra ssh ide re` — Reverse-engineer the IDE Electron executable and the sidecar language server binary using the `aphrody-re` pipeline.
+    - `aphrody infra ssh ide state` — Decode the `state.vscdb` global-storage database (structural view only).
+    - `aphrody infra ssh ide launch` — Launch the Antigravity IDE, forwarding all arguments to the launcher.
+  - `aphrody infra ssh vpn` — Gestion du VPN Mullvad et du contournement géo pour Google AI / agy. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh vpn status` — Afficher le statut actuel du tunnel Mullvad VPN et du proxy VPS US.
+    - `aphrody infra ssh vpn connect` — Connecter le VPN local Mullvad (optionnellement cibler un pays/serveur, ex: 'us', 'ch', 'se').
+    - `aphrody infra ssh vpn disconnect` — Déconnecter le VPN local Mullvad.
+    - `aphrody infra ssh vpn ensure-agy` — Assurer une connexion US / non-EEE (Mullvad local ou tunnel SSH VPS) pour agy.
+    - `aphrody infra ssh vpn proxy` — Gérer le tunnel SSH et le proxy SOCKS5 US hébergé sur le VPS.
+    - `aphrody infra ssh vpn app` — Piloter le routage US ciblé sur les applications (Chrome, Antigravity 2, AGY CLI).
+      - `aphrody infra ssh vpn app gemini` — Lancer Google Gemini App en fenêtre PWA dédiée sous proxy SOCKS5 US
+      - `aphrody infra ssh vpn app desktop` — Lancer AGY Desktop (Antigravity 2) sous proxy SOCKS5 US
+      - `aphrody infra ssh vpn app agy` — Lancer AGY CLI configuré sur le proxy SOCKS5 US (tunnel VPS)
+      - `aphrody infra ssh vpn app setup` — Configurer les raccourcis stricts (Gemini App, AGY Desktop, AGY CLI)
+      - `aphrody infra ssh vpn app status` — Afficher le statut des 3 applications cibles et du tunnel US
+  - `aphrody infra ssh winclean` — Native Windows computer use and OS control via the in-process aphrody-winclean crate. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh winclean doctor` — Show backend initialisation, the linked version and catalog drift.
+    - `aphrody infra ssh winclean tools` — List the WinClean tool catalog.
+    - `aphrody infra ssh winclean schema` — Print the JSON input schema of one tool.
+    - `aphrody infra ssh winclean call` — Invoke any tool.
+    - `aphrody infra ssh winclean observe` — Observe a window (metadata + UI Automation tree + PNG) — `computer_observe`.
+    - `aphrody infra ssh winclean screenshot` — Capture the primary desktop — `computer_capture_screen`.
+- `aphrody infra git` — Inspect local or remote Git repository status, remotes and commits.
+- `aphrody infra workspace-git-audit` — Audit local workspace Git state and GitHub forks, branches, PRs, commits, releases and packages.
+- `aphrody infra ci` — Ecosystem CI workflow distribution and audit across repositories.
+- `aphrody infra vpn` — Native Mullvad VPN controller and auto-proxy geo-unblock driver.
+  - `aphrody infra vpn status` — Show current Mullvad VPN connection status and egress details.
+  - `aphrody infra vpn connect` — Connect the VPN tunnel, optionally setting relay location (e.g. us, ch, se).
+  - `aphrody infra vpn disconnect` — Disconnect the VPN tunnel.
+  - `aphrody infra vpn proxy-target` — Print resolved SOCKS5 proxy target for VPS tunnel routing.
+- `aphrody infra workflow` — Unified ecosystem workflow execution and stage orchestration.
+- `aphrody infra yolo` — Sovereign autonomous YOLO engine (polyglot verification, mapper, doctor, plan).
+- `aphrody infra drive` — Virtual Distributed Filesystem (VDFS) engine: mounts, ls, tree, cat, git overview.
+  - `aphrody infra drive mounts` — List active virtual mounts in the VDFS engine.
+  - `aphrody infra drive ls` — List directory contents of a virtual mount URI (e.g. vdfs://vps/var/www or vdfs://local/crates).
+  - `aphrody infra drive tree` — Display recursive tree of a virtual mount URI.
+  - `aphrody infra drive cat` — Read/cat file content from a virtual mount URI.
+  - `aphrody infra drive git` — Inspect consolidated Git status, commit graph and worktrees for a Git mount.
+- `aphrody infra ovh` — Native OVHcloud management: DNS zones & records, email deliverability, VPS operations.
+  - `aphrody infra ovh profiles` — List known profile configurations.
+  - `aphrody infra ovh status` — Diagnostic health check on configured credentials.
+  - `aphrody infra ovh dns` — DNS zone and records management.
+    - `aphrody infra ovh dns zones` — List all managed DNS zones.
+    - `aphrody infra ovh dns info` — Show metadata and DNSSEC status for a zone.
+    - `aphrody infra ovh dns records` — List DNS records in a zone.
+    - `aphrody infra ovh dns add` — Add a DNS record (requires --apply).
+    - `aphrody infra ovh dns delete` — Delete a DNS record by ID (requires --apply).
+    - `aphrody infra ovh dns refresh` — Refresh zone to propagate updates to nameservers.
+    - `aphrody infra ovh dns set-a` — Switch selected A records to target IP (requires --apply; default apex + www).
+    - `aphrody infra ovh dns audit` — Audit DNSSEC and production subdomain invariants.
+    - `aphrody infra ovh dns export` — Export zone in standard BIND format (stdout, or --output FILE).
+    - `aphrody infra ovh dns backup` — Back up every zone of the account as <DIR>/<zone>.zone (BIND format).
+  - `aphrody infra ovh vps` — VPS inventory and inspection.
+    - `aphrody infra ovh vps list` — List VPS services.
+    - `aphrody infra ovh vps info` — Inspect hardware specs and datacenter location for a VPS.
+    - `aphrody infra ovh vps ips` — List IPs and routing configuration for a VPS.
+    - `aphrody infra ovh vps status` — Get operational ping and status.
+    - `aphrody infra ovh vps start` — Start a stopped VPS (requires --apply).
+    - `aphrody infra ovh vps reboot` — Reboot a VPS (requires --apply).
+    - `aphrody infra ovh vps renew` — Renew a VPS: quote by default (dry run), --apply orders, --apply --pay also pays with the default registered payment method. Ordering and paying are financial commitments.
+    - `aphrody infra ovh vps set-delete-at-expiration` — Manage deleteAtExpiration flag. When true, the VPS is deleted at expiration if not renewed.
+    - `aphrody infra ovh vps watch` — Check VPS expiration status: exit 0 if all healthy, 1 if alerts present, 2 on error.
+  - `aphrody infra ovh email` — Email domain status, redirections and deliverability audit.
+    - `aphrody infra ovh email domain` — Inspect domain email service and plan.
+    - `aphrody infra ovh email redirections` — List email redirections (aliases/forwarders).
+    - `aphrody infra ovh email audit` — Comprehensive email deliverability audit (MX, SPF, DMARC, DKIM).
+  - `aphrody infra ovh auth` — Authentication mode and identity of the credentials in use.
+    - `aphrody infra ovh auth status` — Effective authentication mode, account and identity (no secret is printed).
+  - `aphrody infra ovh services` — Every service of the account (domains, DNS, email, VPS, IP, cloud): list (default), watch and renew.
+    - `aphrody infra ovh services watch` — Check every service: exit 0 if healthy, 1 if alerts, 2 on error.
+    - `aphrody infra ovh services renew` — Renew a service by id or resource name: quote by default (dry run), --apply orders, --apply --pay also pays with the default registered payment method.
+  - `aphrody infra ovh domain` — Registered domain names: inventory, renewal and automatic renewal.
+    - `aphrody infra ovh domain list` — List registered domains with state, expiration and renewal.
+    - `aphrody infra ovh domain info` — Registration details of a domain (state, expiration, DNSSEC, lock, name servers).
+    - `aphrody infra ovh domain renew` — Renew a domain: quote by default (dry run), --apply orders, --apply --pay also pays.
+    - `aphrody infra ovh domain autorenew` — Switch automatic renewal on or off (plan by default, requires --apply).
+  - `aphrody infra ovh iam` — IAM policy and resource groups of the service account.
+    - `aphrody infra ovh iam sync` — Keep policy `aphrody-automation` and groups `aphrody-all*` covering every account resource (plan by default, requires --apply).
+- `aphrody infra secrets` — Sovereign secret management: audit leaks, contract check, envelope encrypt/decrypt, systemd render.
+  - `aphrody infra secrets audit` — Deep audit of repository tree and files for unencrypted secrets and tokens.
+  - `aphrody infra secrets check` — Validate secret presence for a service against config/secrets-contract.json.
+  - `aphrody infra secrets encrypt` — Encrypt an unencrypted environment file into an EncryptedManifest (.enc.json).
+  - `aphrody infra secrets decrypt` — Decrypt an EncryptedManifest to verify integrity or inspect schema.
+  - `aphrody infra secrets render` — Safely provision a decrypted environment file for systemd with 0400 permissions.
+
+### `aphrody kernel`
+
+Crate `aphrody-kernel`, parser `crates/os/kernel/src/cli.rs#Cli`, 7 commands.
+
+- `aphrody kernel serve` — Serve the kernel with the built-in subsystems on the local endpoint.
+- `aphrody kernel mcp` — MCP over stdio: relay to the running kernel, or run one in-process.
+- `aphrody kernel tools` — List tools as JSON.
+- `aphrody kernel skills` — List skills as JSON.
+- `aphrody kernel call` — Call one tool.
+- `aphrody kernel run-skill` — Run one skill.
+- `aphrody kernel a2a` — Send an A2A envelope through the same kernel tool dispatcher.
+
+### `aphrody m3-reproduce`
+
+Crate `aphrody-m3-reproduce`, parser `crates/ui/m3-reproduce/src/cli.rs#Cli`, 0 commands.
+
+_No subcommands (flags only)._
+
+### `aphrody mcp-server`
+
+Crate `aphrody-mcp`, parser `crates/ai/mcp/src/lib.rs#Cli`, 7 commands.
+
+- `aphrody mcp-server server` — Run the stdio MCP server exposing the built-in tools (default mode).
+- `aphrody mcp-server http` — Run the MCP Streamable HTTP server on a loopback address.
+- `aphrody mcp-server client` — Connect to a third-party MCP server (stdio or HTTP) and invoke its tools.
+  - `aphrody mcp-server client list` — List the tools advertised by the named MCP server (resolved via `mcp.json`). Each tool is printed as one NDJSON object.
+  - `aphrody mcp-server client call` — Invoke a tool on the named MCP server and print its `result` payload.
+  - `aphrody mcp-server client probe` — One-shot probe of an arbitrary stdio MCP server, bypassing `mcp.json`. Prints a single JSON object describing the server + its tool list.
+- `aphrody mcp-server guide` — Print how agents should use these tools instead of their built-ins (the plugin's session hook injects it into the model context).
+
+### `aphrody rag-eval`
+
+Crate `aphrody-rag-eval`, parser `crates/ai/rag-eval/src/cli.rs#Args`, 0 commands.
+
+_No subcommands (flags only)._
+
+### `aphrody skills`
+
+Crate `aphrody-skills`, parser `crates/ai/skills/src/cli.rs#Cli`, 12 commands.
+
+- `aphrody skills list` — Flat table of every discovered skill.
+- `aphrody skills validate` — Validate frontmatter against the required contract.
+- `aphrody skills to-prompt` — Emit the SKILL.md body for one skill (for prompt injection).
+- `aphrody skills info` — Print the full SKILL.md for one skill.
+- `aphrody skills where` — Print the absolute path(s) of one named skill.
+- `aphrody skills sources` — Print the source registry with discovered counts.
+- `aphrody skills install` — Copy one SKILL.md into $APHRODY_SKILLS_HOME.
+- `aphrody skills sync` — Mirror SKILL.md files (locally or from a GitHub repo).
+- `aphrody skills remove` — Uninstall a skill from $APHRODY_SKILLS_HOME (inverse of `install`). _(aliases: rm, uninstall)_
+- `aphrody skills find` — Search discovered skills by keyword (name + description, scriptable).
+- `aphrody skills init` — Scaffold a new SKILL.md template in a directory.
+- `aphrody skills update` — Refresh installed skills from their recorded source path.
+
+### `aphrody translate-project`
+
+Crate `aphrody-translate`, parser `crates/ai/translate/src/cli.rs#Args`, 0 commands.
+
+_No subcommands (flags only)._
+
+### `aphrody web-engine`
+
+Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/lib.rs#Args`, 6 commands.
+
+- `aphrody web-engine launch` _(aliases: serve)_
+- `aphrody web-engine response` — Bounded original text response and metadata, through the shared native network owner.
+- `aphrody web-engine fetch`
+- `aphrody web-engine scrape`
+- `aphrody web-engine crawl` — Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.
+- `aphrody web-engine chrome-path`
+
+### `aphrody web-worker`
+
+Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/lib.rs#Args`, 6 commands.
+
+- `aphrody web-worker launch` _(aliases: serve)_
+- `aphrody web-worker response` — Bounded original text response and metadata, through the shared native network owner.
+- `aphrody web-worker fetch`
+- `aphrody web-worker scrape`
+- `aphrody web-worker crawl` — Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.
+- `aphrody web-worker chrome-path`
+
+### `aphrody wsl`
+
+Crate `aphrody-wsl`, parser `crates/os/aphrody-wsl/src/cli.rs#Args`, 10 commands.
+
+- `aphrody wsl doctor` — Verify source pins and installed build tools.
+- `aphrody wsl sources` — Inspect source revisions and dirtiness.
+- `aphrody wsl plan` — Show exact build commands without executing them.
+- `aphrody wsl dependencies` — Install host Linux dependencies (Windows prerequisites use native setup).
+- `aphrody wsl build` — Compile an upstream component or assemble the guest root filesystem.
+- `aphrody wsl all` — Build both kernels, WSLg, Windows WSL and the Aphrody OS guest in sequence.
+- `aphrody wsl latest` — Resolve the newest kernel.org stable tag; --apply moves the linux-stable pin to it.
+- `aphrody wsl status` — Read build evidence; missing and failed reports remain visible.
+- `aphrody wsl verify` — Hash and validate expected nonempty artifacts.
+- `aphrody wsl import` — Import a new distro, preserving every existing distribution.
+
+### `aphrody x`
+
+Crate `aphrody-x`, parser `crates/web/x/src/cli.rs#Cli`, 70 commands.
+
+- `aphrody x post` — Post a new tweet.
+- `aphrody x reply` — Reply to an existing tweet.
+- `aphrody x delete` — Delete a tweet by its numeric ID.
+- `aphrody x note` — Post a long-form note tweet (X Premium).
+- `aphrody x like` — Like (favorite) a tweet.
+- `aphrody x unlike` — Unlike (remove favorite) a tweet.
+- `aphrody x retweet` — Retweet a tweet.
+- `aphrody x unretweet` — Remove a retweet.
+- `aphrody x bookmark` — Bookmark a tweet.
+- `aphrody x unbookmark` — Remove a bookmark from a tweet.
+- `aphrody x pin` — Pin a tweet to your profile.
+- `aphrody x unpin` — Unpin the currently pinned tweet from your profile.
+- `aphrody x follow` — Follow a user by their numeric user ID.
+- `aphrody x unfollow` — Unfollow a user by their numeric user ID.
+- `aphrody x block` — Block a user by their numeric user ID.
+- `aphrody x unblock` — Unblock a user by their numeric user ID.
+- `aphrody x mute` — Mute a user by their numeric user ID.
+- `aphrody x unmute` — Unmute a user by their numeric user ID.
+- `aphrody x user` — Look up a user by their handle (without @).
+- `aphrody x timeline` — Fetch the authenticated user's home timeline.
+- `aphrody x dm` — Send a direct message.
+- `aphrody x graphql` — Invoke any operation from the 158-op GraphQL catalog.
+- `aphrody x catalog` — List operations from the embedded GraphQL catalog.
+- `aphrody x coverage` — Coverage report: catalog stats + optional live queryId drift check.
+- `aphrody x rate-limit` — Print the most recently captured rate-limit headers.
+- `aphrody x query-ids` — Inspect or refresh the runtime GraphQL queryId cache.
+- `aphrody x read` — Read a single tweet by URL or numeric id.
+- `aphrody x thread` — Show the full conversation thread for a tweet.
+- `aphrody x replies` — List replies to a tweet (thread entries that reply to it).
+- `aphrody x search` — Search tweets matching a query.
+- `aphrody x user-tweets` — Fetch a user's profile timeline (by handle).
+- `aphrody x home` — Fetch your home timeline (For You, or Following with --following).
+- `aphrody x likes` — List your liked tweets.
+- `aphrody x bookmarks` — List your bookmarked tweets.
+- `aphrody x mentions` — Find mentions of a user (defaults to the authenticated account).
+- `aphrody x following` — List accounts a user follows (default: you).
+- `aphrody x followers` — List accounts that follow a user (default: you).
+- `aphrody x list-timeline` — Fetch tweets from a list timeline (by URL or numeric id).
+- `aphrody x community-timeline` — Fetch tweets from a community timeline (by URL https://x.com/i/communities/ID or numeric id).
+- `aphrody x community-info` — Fetch community info + first tweets page in parallel (demo of parallel indexing).
+- `aphrody x news` — Fetch news / trending topics from X's Explore tabs. _(aliases: trending)_
+- `aphrody x upload-media` — Upload a media file and print its media_id (for scripted posting).
+- `aphrody x lists` — List the lists you own (or are a member of with --member-of).
+- `aphrody x premium` — Dump Premium / Blue Verified upsells and account flags (GraphQL).
+- `aphrody x xpro` — X Pro (Gryphon) decks — pro.x.com/i/decks.
+  - `aphrody x xpro sync` — List decks via ViewerAccountSync.
+  - `aphrody x xpro deck` — Show one deck by id.
+  - `aphrody x xpro create` — Create a deck (mutation CreateDeck).
+  - `aphrody x xpro remove` — Remove a deck by id.
+  - `aphrody x xpro probe` — Probe X Pro API access.
+- `aphrody x whoami` — Print which X account your cookies belong to.
+- `aphrody x check` — Show which credential sources are available and where they resolve from.
+- `aphrody x sync` — Sync live data into the local SQLite store.
+  - `aphrody x sync authored` — Your own tweets.
+  - `aphrody x sync likes` — Tweets you liked.
+  - `aphrody x sync bookmarks` — Your bookmarks.
+  - `aphrody x sync timeline` — Your home timeline (For You).
+  - `aphrody x sync mentions` — Mentions of you.
+  - `aphrody x sync graph` — Your follow graph (following + followers).
+- `aphrody x db` — Query the local store (stats / full-text search / export).
+  - `aphrody x db stats` — Show store statistics.
+  - `aphrody x db search` — Full-text search stored tweets.
+  - `aphrody x db export` — Export all stored tweets.
+  - `aphrody x db digest` — Deterministic activity digest (top authors + most-liked tweets).
+- `aphrody x graph` — Follow-graph analysis over the local store (run `sync graph` first).
+  - `aphrody x graph mutuals` — Accounts that follow you back.
+  - `aphrody x graph non-mutual-following` — Accounts you follow that do not follow back.
+- `aphrody x import` — Import a Twitter/X data archive into the local store.
+  - `aphrody x import archive` — Import a Twitter/X data export (tweets.js or the archive directory).
+- `aphrody x jobs` — Print a cross-OS scheduler snippet for periodic `sync` (no system change).
+
+### `aphrody yolo`
+
+Crate `aphrody-yolo`, parser `crates/infra/yolo/src/cli.rs#Cli`, 25 commands.
+
+- `aphrody yolo doctor` — Verify tool availability and versions without changing the repository.
+- `aphrody yolo detect` — Detect a file type and extract structural symbols.
+- `aphrody yolo verify` — Run ordered polyglot validation tiers. Defaults to every tier.
+- `aphrody yolo map` — Map, audit and watch the monorepo source topology.
+  - `aphrody yolo map scan` — Produce the audit and topology JSON files once.
+  - `aphrody yolo map check` — Produce JSON files and fail when path-hardening findings exist.
+  - `aphrody yolo map watch` — Re-run the mapper when source topology changes.
+- `aphrody yolo shell` — Run structured Nushell commands through the embedded Aphrody shell.
+  - `aphrody yolo shell eval` — Evaluate Nushell code and return structured output.
+  - `aphrody yolo shell commands` — List embedded Nushell commands.
+  - `aphrody yolo shell describe` — Print full embedded Nushell help for a command.
+- `aphrody yolo fs` — Build and query the persistent metadata-only filesystem index.
+  - `aphrody yolo fs build` — Build or refresh the metadata-only SQLite FTS index.
+  - `aphrody yolo fs search` — Search an existing metadata-only SQLite FTS index.
+  - `aphrody yolo fs status` — Report the entry count of an existing filesystem index.
+- `aphrody yolo win` — Proxy Windows administration to the running kernel admin subsystem.
+  - `aphrody yolo win catalog` — List the generated WinClean tool catalog without loading the DLL.
+  - `aphrody yolo win status` — Report the native WinClean runtime and tool catalog state.
+  - `aphrody yolo win call` — Invoke one WinClean tool with a JSON object supplied explicitly.
+- `aphrody yolo system` — Report orchestration services and the kernel control-plane connection.
+- `aphrody yolo plan` — Inspect the YOLO manifest and produce the bounded polyglot gate plan.
+- `aphrody yolo check` — Validate the unified Aphrody plugin's agents, skills and YOLO manifest.
+- `aphrody yolo grind` — Create one Rust-owned YOLO automation tick.
+- `aphrody yolo autopilot` — Dispatch bounded unattended ticks through an installed agent harness.
+- `aphrody yolo ingest` — Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard).
+
 ### `aphrody-graph`
 
 Crate `aphrody-code-graph`, parser `crates/ai/code-graph/src/cli.rs#Cli`, 6 commands.
@@ -328,6 +935,15 @@ Crate `aphrody-store`, parser `crates/ai/store/src/cli.rs#Cli`, 8 commands.
 
 ## Binaries without a detected clap surface
 
+- `aphrody agent-home-memory` (aphrody / `aphrody-memory`)
+- `aphrody agent-train` (aphrody / `aphrody-train`)
+- `aphrody backend` (aphrody / `aphrody-backend`)
+- `aphrody canvas` (aphrody / `aphrody-render`)
+- `aphrody embed` (aphrody / `aphrody-embed`)
+- `aphrody gemini-web` (aphrody / `aphrody-gemini-web`)
+- `aphrody jev` (aphrody / `aphrody-jev`)
+- `aphrody llama-daemon` (aphrody / `aphrody-llama-server`)
+- `aphrody summary` (aphrody / `aphrody-summary`)
 - `aphrody-app` (aphrody / `aphrody-app`)
 - `aphrody-fake-llama-server` (aphrody / `aphrody-llama-server`)
 - `aphrody-llama-daemon` (aphrody / `aphrody-llama-server`)
