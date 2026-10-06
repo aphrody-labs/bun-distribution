@@ -75,7 +75,44 @@ pub fn verify_backup(path: &Path, expected_sha256: &str) -> Result<()> {
     if result == "ok" { Ok(()) } else { Err(StoreError::Integrity(result)) }
 }
 
+/// Result of verifying every backup recorded in the ledger.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LedgerCheck {
+    /// Backups recorded.
+    pub recorded: usize,
+    /// Backups whose file exists and matches its recorded SHA-256 and integrity.
+    pub verified: usize,
+    /// Backups whose file is gone.
+    pub missing: usize,
+    /// Backups whose file no longer matches (checksum or integrity); paths only.
+    pub corrupt: Vec<String>,
+}
+
 impl HomeDb {
+    /// Verify every backup of the ledger against its file.
+    ///
+    /// # Errors
+    ///
+    /// SQLite failures (a bad backup is reported in the result, not as an error).
+    pub fn verify_ledger(&self) -> Result<LedgerCheck> {
+        let mut statement = self.conn.prepare("SELECT path, sha256 FROM backups ORDER BY id")?;
+        let rows = statement.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?;
+        let mut check = LedgerCheck::default();
+        for row in rows {
+            let (path, sha) = row?;
+            check.recorded += 1;
+            let file = std::path::Path::new(&path);
+            if !file.is_file() {
+                check.missing += 1;
+            } else if verify_backup(file, &sha).is_ok() {
+                check.verified += 1;
+            } else {
+                check.corrupt.push(path);
+            }
+        }
+        Ok(check)
+    }
+
     /// Back up this database into `dir` (created when missing), verify the copy, write the
     /// `.sha256` sidecar and record it in the ledger.
     ///
@@ -176,6 +213,24 @@ mod tests {
         let files: i64 = copy.conn().query_row("SELECT count(*) FROM files", [], |r| r.get(0)).unwrap();
         assert_eq!(files, 1);
         db.integrity_check().unwrap();
+    }
+
+    #[test]
+    fn the_ledger_reports_verified_missing_and_corrupt_backups() {
+        let (dir, db) = seeded();
+        let backups = dir.path().join("b");
+        let good = db.backup(&backups, "a", "one").unwrap();
+        let gone = db.backup(&backups, "b", "two").unwrap();
+        let bad = db.backup(&backups, "c", "three").unwrap();
+        std::fs::remove_file(&gone.path).unwrap();
+        let mut bytes = std::fs::read(&bad.path).unwrap();
+        let last = bytes.len() - 1;
+        bytes[last] ^= 0xff;
+        std::fs::write(&bad.path, bytes).unwrap();
+        let check = db.verify_ledger().unwrap();
+        assert_eq!((check.recorded, check.verified, check.missing), (3, 1, 1));
+        assert_eq!(check.corrupt, [bad.path.to_string_lossy().into_owned()]);
+        assert!(good.path.is_file());
     }
 
     #[test]

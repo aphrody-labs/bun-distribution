@@ -62,6 +62,13 @@ pub enum Command {
         #[arg(long, default_value = "manual")]
         reason: String,
     },
+    /// Verify and synchronise the home database: integrity, backup ledger and the session index
+    /// (preview by default; `--apply` takes a verified backup first).
+    Sync {
+        /// Write instead of previewing.
+        #[arg(long)]
+        apply: bool,
+    },
     /// Import legacy stores (dry run unless `--apply`).
     Import {
         /// Write instead of counting.
@@ -100,17 +107,47 @@ pub enum ImportWhat {
     },
 }
 
-fn open_for_write(layout: &HomeLayout, apply: bool) -> Result<HomeDb> {
+fn open_for_write(layout: &HomeLayout, apply: bool, reason: &str) -> Result<HomeDb> {
     if !apply {
         // Dry runs never touch the real file: they migrate a private in-memory copy.
         return HomeDb::open_in_memory();
     }
     if layout.db_path.exists() {
         let existing = HomeDb::open_path(&layout.db_path)?;
-        existing.backup(&layout.backup_dir(now_ms()), &layout.scope.label(), "pre-import")?;
+        existing.backup(&layout.backup_dir(now_ms()), &layout.scope.label(), reason)?;
         return Ok(existing);
     }
     HomeDb::open_path(&layout.db_path)
+}
+
+fn sync(layout: &HomeLayout, profile: Option<&str>, apply: bool) -> Result<serde_json::Value> {
+    let sessions_dir = layout.home.join("sessions");
+    let ro = HomeDb::open_read_only(&layout.db_path)?;
+    let latest = crate::db::migrations()?.latest_version().unwrap_or(0);
+    let current = ro.schema_version()?;
+    let integrity = ro.integrity_check().map(|()| "ok".to_owned()).unwrap_or_else(|e| e.to_string());
+    let ledger = ro.verify_ledger()?;
+    let plan = sessions::plan_sessions(&ro, &sessions_dir)?;
+    drop(ro);
+    let mut out = serde_json::json!({
+        "mode": if apply { "apply" } else { "preview" },
+        "db": layout.db_path,
+        "schema": { "current": current, "latest": latest },
+        "integrity": integrity,
+        "backups": ledger,
+        "sessions": plan,
+    });
+    if apply {
+        if integrity != "ok" {
+            return Err(crate::error::StoreError::Integrity(integrity));
+        }
+        let mut db = open_for_write(layout, true, "pre-sync")?;
+        let applied = sessions::import_sessions(&mut db, &sessions_dir, profile, true)?;
+        db.set_sync("sessions", "last_sync_ms", &now_ms().to_string(), None)?;
+        out["applied"] = serde_json::to_value(applied)?;
+        out["schema"]["current"] = db.schema_version()?.into();
+    }
+    Ok(out)
 }
 
 /// Run one verb of the home database.
@@ -149,13 +186,14 @@ pub fn run(store: &StoreArgs, command: &Command) -> Result<serde_json::Value> {
             }
             Ok(out)
         },
+        Command::Sync { apply } => sync(&layout, store.profile.as_deref(), *apply),
         Command::Backup { reason } => {
             let db = HomeDb::open_path(&layout.db_path)?;
             let report = db.backup(&layout.backup_dir(now_ms()), &layout.scope.label(), reason)?;
             Ok(serde_json::to_value(report)?)
         },
         Command::Import { apply, what } => {
-            let mut db = open_for_write(&layout, *apply)?;
+            let mut db = open_for_write(&layout, *apply, "pre-import")?;
             let report = match what {
                 ImportWhat::Graphify { path, label } => {
                     let label = label.clone().unwrap_or_else(|| {
@@ -205,5 +243,51 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
             eprintln!("aphrody home: {error}");
             1
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args(state: &std::path::Path) -> StoreArgs {
+        StoreArgs { profile: Some("ie".into()), state: Some(state.to_path_buf()) }
+    }
+
+    #[test]
+    fn sync_previews_without_writing_and_applies_with_a_verified_backup() {
+        let state = tempfile::tempdir().unwrap();
+        let layout = args(state.path()).layout().unwrap();
+        // A home with one database and one transcript.
+        drop(HomeDb::open_path(&layout.db_path).unwrap());
+        std::fs::create_dir_all(layout.home.join("sessions/codex")).unwrap();
+        std::fs::write(layout.home.join("sessions/codex/s1.jsonl"), "{}\n{}\n").unwrap();
+        let before = std::fs::read(&layout.db_path).unwrap();
+
+        let preview = run(&args(state.path()), &Command::Sync { apply: false }).unwrap();
+        assert_eq!(preview["mode"], "preview");
+        assert_eq!(preview["integrity"], "ok");
+        assert_eq!(preview["sessions"]["counts"]["new"], 1);
+        assert_eq!(std::fs::read(&layout.db_path).unwrap(), before, "a preview must not touch the database");
+        assert!(!layout.state.join("private").exists(), "a preview must not create backups");
+
+        let applied = run(&args(state.path()), &Command::Sync { apply: true }).unwrap();
+        assert_eq!(applied["mode"], "apply");
+        assert_eq!(applied["applied"]["counts"]["indexed_or_updated"], 1);
+        let backups = layout.backup_dir(now_ms());
+        let produced: Vec<_> = std::fs::read_dir(&backups).unwrap().flatten().collect();
+        assert!(produced.iter().any(|e| e.file_name().to_string_lossy().ends_with(".sqlite")));
+        assert!(produced.iter().any(|e| e.file_name().to_string_lossy().ends_with(".sha256")));
+
+        let again = run(&args(state.path()), &Command::Sync { apply: false }).unwrap();
+        assert_eq!(again["sessions"]["counts"]["unchanged"], 1);
+        assert_eq!(again["backups"]["verified"], 1);
+    }
+
+    #[test]
+    fn sync_without_a_database_is_an_error_not_a_creation() {
+        let state = tempfile::tempdir().unwrap();
+        assert!(run(&args(state.path()), &Command::Sync { apply: false }).is_err());
+        assert!(!args(state.path()).layout().unwrap().db_path.exists());
     }
 }

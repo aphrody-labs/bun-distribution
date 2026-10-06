@@ -74,6 +74,36 @@ fn count_lines(path: &Path) -> std::io::Result<u64> {
     }
 }
 
+/// Plan the session index without writing: which transcripts are new, changed or unchanged
+/// compared with the stored rows (by size). Works on a read-only database.
+///
+/// # Errors
+///
+/// SQLite failures.
+pub fn plan_sessions(db: &HomeDb, sessions_dir: &Path) -> Result<ImportReport> {
+    let mut report = ImportReport::new("sessions", true);
+    let mut found = Vec::new();
+    collect(sessions_dir, sessions_dir, None, &mut found)?;
+    report.add("files_found", found.len() as u64);
+    let mut stored = db.conn.prepare("SELECT source_bytes FROM sessions WHERE agent = ?1 AND id = ?2")?;
+    for file in &found {
+        let existing: Option<Option<i64>> = stored
+            .query_row(params![file.agent, file.id], |r| r.get(0))
+            .map(Some)
+            .or_else(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => Ok(None),
+                other => Err(other),
+            })?;
+        let key = match existing {
+            None => "new",
+            Some(bytes) if bytes == i64::try_from(file.bytes).ok() => "unchanged",
+            Some(_) => "changed",
+        };
+        report.add(key, 1);
+    }
+    Ok(report)
+}
+
 /// Index the transcripts under `sessions_dir` into `sessions` (metadata only).
 ///
 /// `domain` labels every row (the profile name, or `None` for the global home).

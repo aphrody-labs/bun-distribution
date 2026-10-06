@@ -47,6 +47,18 @@ enum Command {
         #[arg(long)]
         label: Option<String>,
     },
+    /// Import the documents of a legacy `knowledge.db` into the retrieval index (dry run unless
+    /// `--apply`; the legacy file is opened read-only).
+    ImportKnowledge {
+        /// Legacy `knowledge.db`.
+        path: PathBuf,
+        /// Source label (default `knowledge`).
+        #[arg(long, default_value = "knowledge")]
+        label: String,
+        /// Write instead of counting.
+        #[arg(long)]
+        apply: bool,
+    },
     /// Hybrid retrieval over document chunks, code-graph nodes and memories.
     Query {
         /// Free-text query.
@@ -76,6 +88,11 @@ fn run(cli: &Cli) -> Result<serde_json::Value> {
             let runtime = tokio::runtime::Builder::new_current_thread().build()?;
             let report = runtime.block_on(run_pipeline(&layout, &label, &root))?;
             Ok(serde_json::to_value(report)?)
+        },
+        Command::ImportKnowledge { path, label, apply } => {
+            let layout = cli.store.layout().map_err(other)?;
+            let runtime = tokio::runtime::Builder::new_current_thread().build()?;
+            runtime.block_on(crate::pipeline::import_knowledge(&layout, path, label, *apply))
         },
         Command::Query { text, limit, kinds } => {
             let layout = cli.store.layout().map_err(other)?;

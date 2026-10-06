@@ -137,6 +137,86 @@ async fn run_inner(layout: &HomeLayout, db: &mut HomeDb, label: &str, root: &Pat
     Ok(report)
 }
 
+/// Import the `documents` table of a legacy `knowledge.db` into the home retrieval index:
+/// each document is chunked and indexed under the key `<label>:<category>/<filename>`
+/// (a numeric suffix keeps duplicate names apart). The legacy file is opened read-only and is
+/// never modified. A dry run reads and counts only.
+///
+/// # Errors
+///
+/// SQLite or database failures.
+pub async fn import_knowledge(
+    layout: &HomeLayout,
+    legacy: &Path,
+    label: &str,
+    apply: bool,
+) -> Result<serde_json::Value> {
+    let conn = rusqlite::Connection::open_with_flags(
+        legacy,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )?;
+    let mut statement =
+        conn.prepare("SELECT id, filename, COALESCE(category, ''), content FROM documents ORDER BY id")?;
+    let rows = statement.query_map([], |r| {
+        Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?, r.get::<_, String>(3)?))
+    })?;
+    let mut docs: Vec<(String, String)> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    let (mut empty, mut bytes) = (0_u64, 0_u64);
+    for row in rows {
+        let (id, filename, category, content) = row?;
+        if content.trim().is_empty() {
+            empty += 1;
+            continue;
+        }
+        bytes += content.len() as u64;
+        let base = if category.is_empty() { filename } else { format!("{category}/{filename}") };
+        let key = if seen.insert(base.clone()) { format!("{label}:{base}") } else { format!("{label}:{base}#{id}") };
+        docs.push((key, content));
+    }
+    let mut report = serde_json::json!({
+        "importer": "knowledge",
+        "dry_run": !apply,
+        "documents": docs.len(),
+        "empty_skipped": empty,
+        "bytes": bytes,
+    });
+    if !apply {
+        return Ok(report);
+    }
+    let db = if layout.db_path.exists() {
+        let existing = HomeDb::open(layout).map_err(other)?;
+        existing
+            .backup(&layout.backup_dir(aphrody_store::time::now_ms()), &layout.scope.label(), "pre-import-knowledge")
+            .map_err(other)?;
+        existing
+    } else {
+        HomeDb::open(layout).map_err(other)?
+    };
+    let source = db.upsert_source("legacy-knowledge", label, Some(&legacy.to_string_lossy())).map_err(other)?;
+    let store = Arc::new(RagStore::open(&layout.db_path)?);
+    let indexer = RagIndexer::new(Arc::clone(&store));
+    let options = IndexOptions::default();
+    let (mut indexed, mut unchanged, mut chunks, mut errors) = (0_u64, 0_u64, 0_u64, 0_u64);
+    for (key, content) in &docs {
+        match indexer.index_document(key, content, i64::try_from(content.len()).unwrap_or(i64::MAX), 0, &options).await {
+            Ok(Some((n, _))) => {
+                indexed += 1;
+                chunks += n as u64;
+                db.conn().execute("UPDATE docs SET source_id = ?1 WHERE path = ?2", params![source, key])?;
+            },
+            Ok(None) => unchanged += 1,
+            Err(_) => errors += 1,
+        }
+    }
+    store.checkpoint().await?;
+    report["indexed"] = indexed.into();
+    report["unchanged"] = unchanged.into();
+    report["chunks"] = chunks.into();
+    report["errors"] = errors.into();
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use aphrody_store::HomeScope;
@@ -190,6 +270,39 @@ mod tests {
         assert_eq!((second.indexed, second.chunks), (0, 0), "{second:?}");
         assert_eq!(second.graph.extracted, 0);
         assert_eq!(second.graph.scan.hashed, 0);
+    }
+
+    #[tokio::test]
+    async fn knowledge_documents_are_imported_idempotently_and_the_legacy_file_is_untouched() {
+        let state = tempfile::tempdir().unwrap();
+        let layout = HomeLayout::in_state(state.path(), &HomeScope::Profile("ie".into())).unwrap();
+        let legacy_dir = tempfile::tempdir().unwrap();
+        let legacy = legacy_dir.path().join("knowledge.db");
+        {
+            let c = rusqlite::Connection::open(&legacy).unwrap();
+            c.execute_batch(
+                "CREATE TABLE documents (id INTEGER PRIMARY KEY, filename TEXT, category TEXT, title TEXT,
+                    source_file TEXT, imported_at TEXT, content TEXT);
+                 INSERT INTO documents (filename, category, content) VALUES ('a.md', 'lore', '# Alpha\n\nreciprocal fusion note');
+                 INSERT INTO documents (filename, category, content) VALUES ('a.md', 'lore', '# Alpha two\n\nsecond body');
+                 INSERT INTO documents (filename, category, content) VALUES ('empty.md', NULL, '   ');",
+            )
+            .unwrap();
+        }
+        let before = std::fs::read(&legacy).unwrap();
+        let dry = import_knowledge(&layout, &legacy, "knowledge", false).await.unwrap();
+        assert_eq!((dry["documents"].as_u64(), dry["empty_skipped"].as_u64()), (Some(2), Some(1)));
+        assert!(!layout.db_path.exists(), "a dry run must not create the database");
+
+        let first = import_knowledge(&layout, &legacy, "knowledge", true).await.unwrap();
+        assert_eq!(first["indexed"], 2);
+        let again = import_knowledge(&layout, &legacy, "knowledge", true).await.unwrap();
+        assert_eq!((again["indexed"].as_u64(), again["unchanged"].as_u64()), (Some(0), Some(2)));
+        let db = HomeDb::open_read_only(&layout.db_path).unwrap();
+        let hits = crate::home::unified_search(&db, "fusion", &crate::home::UnifiedOptions::default()).unwrap();
+        assert!(hits.iter().any(|h| h.path.as_deref() == Some("knowledge:lore/a.md")));
+        assert!(hits.iter().all(|h| !h.snippet.is_empty()));
+        assert_eq!(std::fs::read(&legacy).unwrap(), before);
     }
 
     #[tokio::test]

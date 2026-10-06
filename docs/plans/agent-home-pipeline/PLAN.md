@@ -336,7 +336,7 @@ only in `tests/oracle`.
 | 5 | Code-graph breadth: TS/JS and Python, communities, god nodes, P2 to P6 complete; Graphify leaves the execution path | parity report committed | |
 | 6 | CLI verbs: `aphrody home status|backup|import|index|query` and `aphrody graph build|query|explain|path|report|export` wired through the multi-call table (done); remaining: `memory`, `session`, `train`, `sync` verbs, compatibility aliases for `aphrody rag|index|scan`, MCP `home_*`, `rag_tools` default | VPS check/clippy/tests, MCP smoke | partly done |
 | 7 | Bun delegates (done: `yolo scan --ingest`, `yolo train`; remaining: `yolo scan --ingest`, `yolo train`, `yolo_scan`/`yolo_vector_search`/`yolo_traindb_stats`; Redis TrainDb/vector removed after parity; plugin skills and docs updated (plugin repos committed then pointer bumped) | `bun test` for touched TS, oxlint, oxfmt, tsc, docs gate | |
-| 8 | Sync: `aphrody sync` preview/apply with verified backups, `infra sync --store`, domain session sync writing `sessions`; XDG resolution in `aphrody-models::paths`; removal of replaced code after the rollback window (old stores kept) | gates + backup restore test | |
+| 8 | Sync: `aphrody home sync [--apply]` (done: integrity check, backup ledger verification, session index, preview by default, verified backup before apply); remaining: `aphrody sync` alias,  `infra sync --store`, domain session sync writing `sessions`; XDG resolution in `aphrody-models::paths`; removal of replaced code after the rollback window (old stores kept) | gates + backup restore test | |
 
 Each batch: explicit pathspecs, author `aphrody-dev <contact@aphrody.com>`, no assistant
 attribution, `git push workspace main` (rebase on conflict, never force), one dated line
