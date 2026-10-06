@@ -6,6 +6,9 @@
  *   yolo py test                     runs the py/ pytest suite via uv (--engine: packages/engine/python)
  *   yolo py lint                     runs ruff check on py/ (--engine: packages/engine/python)
  *   yolo py fmt                      runs ruff format on py/ (--engine: packages/engine/python)
+ *   yolo py check|locks|distributions|providers|typecheck|format:check|plan [--timeout-ms <n>]
+ *                                    bounded supervisor of the py/ workspace (timeout, output budget, cancellation,
+ *                                    JSON receipt on stdout) through the verified Yolo runtime artifact
  *   yolo py build                    builds the aphrody wheel (crates/ai/rag-python via maturin) into py/dist
  *                                    (--engine: maturin develop of packages/engine/python)
  *
@@ -249,6 +252,45 @@ export async function runPythonCommand(
     return 0;
   }
 
+  const supervised = new Set([
+    "check",
+    "locks",
+    "distributions",
+    "providers",
+    "typecheck",
+    "format:check",
+    "plan",
+  ]);
+  if (supervised.has(sub)) {
+    if (sub !== "plan" && tools.refusal !== null) {
+      console.error(`yolo py ${sub}: ${tools.refusal}`);
+      return 3;
+    }
+    const { runPythonWorkspace } =
+      await import("../../../../packages/infra/workspace/src/python-workspace.ts");
+    const rest: string[] = [];
+    for (let index = 0; index < args.length; index++) {
+      const arg = args[index]!;
+      if (arg === "--vu") index++;
+      else if (!["--no-vu", "--vu-full", "--json", "--md", "--engine"].includes(arg))
+        rest.push(arg);
+    }
+    const controller = new AbortController();
+    const cancel = () => controller.abort();
+    process.on("SIGINT", cancel);
+    process.on("SIGTERM", cancel);
+    try {
+      return await runPythonWorkspace(
+        rest,
+        { root: join(root, "py"), uv: tools.uv ?? "uv" },
+        { signal: controller.signal },
+      );
+    } finally {
+      process.removeListener("SIGINT", cancel);
+      process.removeListener("SIGTERM", cancel);
+    }
+  }
+
   const known = new Set(["test", "lint", "fmt", "build"]);
   if (known.has(sub) && tools.refusal !== null) {
     console.error(`yolo py ${sub}: ${tools.refusal}`);
@@ -322,7 +364,7 @@ export async function runPythonCommand(
 
   console.error(`Unknown python subcommand: ${sub}`);
   console.error(
-    "Usage: yolo py [status|test|lint|fmt|build] [--engine] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]",
+    "Usage: yolo py [status|test|lint|fmt|build|check|locks|distributions|providers|typecheck|format:check|plan] [--engine] [--timeout-ms <n>] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]",
   );
   return 2;
 }

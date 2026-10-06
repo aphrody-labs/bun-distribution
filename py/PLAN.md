@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Python workspace modernization
 
-The measured workspace entry point is `tools/workspace/cli.ts`.
+The measured workspace entry point is `yolo py` (supervisor: `packages/infra/workspace/src/python-workspace.ts`).
 Packaging operations remain in `tools/packaging/modernize_workspace.py`, invoked
 through locked uv pending qualification of their native Bun replacement.
 

@@ -38,33 +38,33 @@ The workspace unifies high-performance systems programming with productive Pytho
 
 ## 2. Quickstart & Command Reference
 
-The workspace root provides unified scripts accessible via Bun or native CLI tools.
+The workspace is driven by `yolo py` (the `vu` runtime's uv when installed) or by uv directly.
 
-### Task Orchestration with Bun
+### Task orchestration with `yolo py`
 
-All high-level engineering workflows are defined in [package.json](../package.json):
+All high-level engineering workflows are `yolo py` subcommands ([supervisor](../../packages/infra/workspace/src/python-workspace.ts)):
 
 ```bash
 # Apply workspace modernization and sync native components
-bun run build
+yolo py build
 
 # Run the complete workspace verification gate (tests, packages, manifests)
-bun run check
+yolo py check
 
 # Execute pytest test suites without re-sync overhead
-bun run test
+yolo py test
 
 # Run all test gates and package qualifications
-bun run test:all
+yolo py check
 
 # Lint codebase with Ruff
-bun run lint
+yolo py lint
 
 # Format Python files with Ruff
-bun run fmt
+yolo py fmt
 
 # Run static type checking with mypy across all packages
-bun run typecheck
+yolo py typecheck
 ```
 
 ### Direct Package Management with uv

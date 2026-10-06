@@ -11,13 +11,13 @@ monorepo: the SDK wheel builds `crates/ai/rag-python` in place. The longer-term 
 Requires uv 0.12.22, Bun 1.4+ and CPython 3.12 for the complete workspace.
 
 ```sh
-# Unified Bun scripts
-bun run build       # Build the aphrody wheel (needs Cargo: serialized build host)
-bun run check       # Validate standalone locks and distribution wheels
-bun run test        # Execute fast test discovery across all packages
-bun run lint        # Code inspection via Ruff
-bun run fmt         # Deterministic code formatting
-bun run typecheck   # Static typing verification via Mypy
+# Unified commands (`yolo py`, the bounded supervisor of the Yolo runtime)
+yolo py build       # Build the aphrody wheel (needs Cargo: serialized build host)
+yolo py check       # Validate standalone locks and distribution wheels
+yolo py test        # Execute fast test discovery across all packages
+yolo py lint        # Code inspection via Ruff
+yolo py fmt         # Deterministic code formatting
+yolo py typecheck   # Static typing verification via Mypy
 
 # Or using uv directly:
 uv sync --all-packages --locked --extra rag --extra dedup

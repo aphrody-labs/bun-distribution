@@ -3,14 +3,14 @@
 
 Décision propriétaire reçue le 2026-10-03. Le [plan Aphrody](../../../PLAN.md)
 reste l'autorité commune. Workspace/Infra possède les workflows inter-dépôts ;
-le [module local](../../tools/workspace/cli.ts) décrit les gates Python à consommer
+le [superviseur](../../../packages/infra/workspace/src/python-workspace.ts) (`yolo py`) décrit les gates Python à consommer
 depuis ces propriétaires, sans installation dépendant d'un checkout voisin.
 
 ## Contrat livré
 
-`bun run workspace:plan` publie le catalogue JSON sans exécuter de commande.
-`bun tools/workspace/cli.ts <command>` exécute une commande déclarée sans shell.
-Les scripts racine utilisent ce module ; `bun run fmt -- --check` reste compatible.
+`yolo py plan` publie le catalogue JSON sans exécuter de commande.
+`yolo py <command>` exécute une commande déclarée sans shell.
+`yolo py fmt -- --check` reste compatible.
 Les diagnostics enfants vont sur stderr, le reçu JSON sur stdout. Une erreur
 de commande conserve son code ; une commande inconnue retourne 2 et une erreur
 de lancement retourne 127. Délai : 124 ; annulation : 130 ; prérequis runtime,
@@ -31,13 +31,9 @@ il ne doit pas exposer `measure` comme exécution arbitraire distante.
 L'intégration MCP/API reste ouverte. Pas de boucle de retry automatique sur une commande
 mutante telle que `build`/`apply`.
 
-La supervision appartient au runtime Yolo : le SDK épinglé est préparé par
-`runtime-sdk.ts prepare --root /home/aphro/aphrody-py --apply` depuis le propriétaire
-Workspace actuel, puis installé par Bun. Le pin est dans
-[config/sibling-checkouts.json](../../config/sibling-checkouts.json) ; cache ignoré
-`.cache/yolo-packages`. Sans producteur existant ou cache vérifié, l'acquisition
-reste un prérequis explicite ; aucun clone ni copie de script n'est créé.
-Le runtime précompilé doit être installé via son propriétaire release.
+La supervision appartient au runtime Yolo : `@aphrody/runtime-sdk` est un membre du workspace Bun du monorepo
+(`packages/engine/runtime`), sans pin de checkout voisin ni archive. Le runtime précompilé doit être installé via son
+propriétaire release.
 
 Avant exécution, `loadArtifact` vérifie hashes, cible et ABI de l'artefact installé.
 Aucun rebuild moteur ni chargement implicite d'une bibliothèque d'un checkout voisin.

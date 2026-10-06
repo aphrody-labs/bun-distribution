@@ -3,10 +3,13 @@ import { expect, test } from "bun:test";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { measure, root } from "./cli.ts";
+import { pythonWorkspaceCommands, runPythonWorkspace, supervise } from "../src/python-workspace.ts";
 
-const fixture = `${root}tools/workspace/fixture.ts`;
+const fixture = join(import.meta.dir, "fixtures/python-workspace.ts");
+const root = "/";
 const silent = { diagnostics: () => {} };
+const measure = (command: string[], cwd: string = root, options = {}) =>
+  supervise(command, cwd, options);
 
 async function pids(directory: string): Promise<number[]> {
   const deadline = performance.now() + 2000;
@@ -35,6 +38,72 @@ async function assertStopped(pid: number) {
   }
   throw new Error(`Fixture process ${pid} still runs`);
 }
+
+test("measurement preserves failure and resource evidence", async () => {
+  const result = await measure([process.execPath, fixture, "7"], root, silent);
+  expect(result.exitCode).toBe(7);
+  expect(result.success).toBe(false);
+  expect(result.durationMs).toBeGreaterThanOrEqual(0);
+  expect(result).toHaveProperty("resourceUsage");
+  expect(() => JSON.stringify(result)).not.toThrow();
+});
+
+test("missing executable is a structured failure", async () => {
+  const result = await measure(["/nonexistent/aphrody-workspace-command"], root, silent);
+  expect(result.success).toBe(false);
+  expect(result.exitCode).toBe(127);
+});
+
+test("child output cannot contaminate JSON stdout", async () => {
+  const child = Bun.spawn([process.execPath, fixture, "measure"], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  expect(code).toBe(0);
+  expect(JSON.parse(stdout).success).toBe(true);
+  expect(stderr).toContain("fixture stdout");
+  expect(stderr).toContain("fixture stderr");
+});
+
+test("plan works and unknown commands fail", async () => {
+  const original = console.log;
+  try {
+    for (const action of [
+      "plan",
+      "constructor",
+      "lint extra",
+      "lint --timeout-ms 0",
+      "lint --timeout-ms NaN",
+    ]) {
+      let printed = "";
+      console.log = (line: string) => {
+        printed += line;
+      };
+      const code = await runPythonWorkspace(action.split(" "), { root: "/py" });
+      const result = JSON.parse(printed);
+      expect(code).toBe(action === "plan" ? 0 : 2);
+      expect(result.success).toBe(action === "plan");
+      if (action === "plan") expect(result.root).toBe("/py");
+    }
+  } finally {
+    console.log = original;
+  }
+});
+
+test("all Python ecosystem entry points use uv and a lock", () => {
+  for (const [action, command] of Object.entries(pythonWorkspaceCommands())) {
+    if (action === "build") continue; // `uv build` has no lock flag; the wheel build runs on the build host
+    expect(command.slice(0, 3)).toEqual(["uv", "run", "--locked"]);
+  }
+  for (const command of Object.values(pythonWorkspaceCommands("/vu/bin/uv"))) {
+    expect(command[0]).toBe("/vu/bin/uv");
+  }
+});
 
 test("abort before launch cannot execute the command", async () => {
   const controller = new AbortController();
@@ -98,7 +167,6 @@ for (const action of ["timeout", "cancel", "orphan"] as const) {
 
 test("missing verified artifact is an explicit prerequisite failure", async () => {
   const child = Bun.spawn([process.execPath, fixture, "measure"], {
-    cwd: root,
     env: { ...process.env, YOLO_RUNTIME_HOME: "/nonexistent/aphrody-runtime" },
     stdout: "pipe",
     stderr: "pipe",

@@ -66,6 +66,7 @@
     "./documentation": "./src/documentation.ts",
     "./agent-sync": "./src/agent-sync.ts",
     "./native-runtime": "./src/native-runtime.ts",
+    "./python-workspace": "./src/python-workspace.ts",
     "./native-desktop": "./src/native-desktop.ts"
   },
   "publishConfig": {
