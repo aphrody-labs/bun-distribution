@@ -20,10 +20,10 @@ pub mod cef;
 pub mod desktop;
 pub mod explorer;
 pub mod identity;
-pub mod parking;
 pub mod integration;
 pub mod llama_daemon;
 pub mod models;
+pub mod parking;
 pub mod quickbar;
 pub mod runtime;
 pub mod runtime_host;
@@ -844,6 +844,7 @@ pub fn run() {
                 _ => {},
             }
         })
+        .on_page_load(|webview, payload| parking::hide_when_loaded(webview, &payload.event()))
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Moved(position) = event {
                 integration::note_moved(window.app_handle(), window.label(), position.x, position.y);

@@ -20,6 +20,14 @@ fn main() {
     stamp_build_identity();
     println!("cargo:rerun-if-changed=windows-app-manifest.xml");
     println!("cargo:rerun-if-changed=ui-dist.manifest");
+    // libcef must be the first DT_NEEDED entry of the executable. Chromium resolves libc functions
+    // with `dlsym(RTLD_NEXT, ..)` from inside libcef at startup (`close symbol missing`, then a
+    // trap): a libc that the link map lists before libcef is invisible to it. Native libraries of
+    // the final crate are linked before those of its dependencies, which put `-lstdc++ -lc` (native
+    // C++ dependencies) ahead of the `-lcef` that `cef-dll-sys` emits.
+    if env::var("CARGO_CFG_TARGET_OS").is_ok_and(|os| os == "linux") {
+        println!("cargo:rustc-link-lib=dylib=cef");
+    }
     // `frontendDist` is generated from `m3/packages/app-ui` (`bun run build`, m3 build --tauri) into
     // ui-dist. Track the generated entry files (not the staged fonts, which are tracked per source
     // below) so Cargo/Tauri re-embed after a UI rebuild.
