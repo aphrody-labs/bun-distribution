@@ -10,26 +10,49 @@ Rattachement : [PLAN.md §6](../../../PLAN.md), [BUN-FORK-UNIFIED-NATIVE](../../
 
 - Un fichier exécutable produit par `bun-forge` : `yolo`. Lancé comme `yolo`, il expose les commandes `yolo`
   (CLI, `forge`, `ops`, `workspace`, `update`…) en natif ; lancé comme `bun` (lien `bun -> yolo`), il se comporte
-  comme Bun. Aucune copie du moteur : pas de second binaire Bun, pas de `bun build --compile` du CLI par-dessus
-  une copie du runtime.
+  comme Bun. Aucune copie du moteur : un seul fichier livré (le CLI est compilé sur le moteur qui vient d'être construit,
+  `bun-forge --yolo-root`), pas de second binaire Bun à côté.
 - `yolo` (ancien exécutable compilé, `~/.local/bin/yolo`) devient un alias de compatibilité du binaire fusionné
   jusqu'à sa disparition ; `bun-fork` (lien d'activation provisoire) disparaît au profit de `yolo`/`bun`.
 
 ## État mesuré (2026-10-06)
 
-- [x] Nom du binaire et alias dans `bun-forge` : l'artefact est `yolo`, `bun` est un lien symbolique relatif vers
-  `yolo` (`BINARY`, `artifactLayout` dans `apps/yolo/forge/src/plan.ts`). L'étape `smoke` exécute le script de
-  fumée par les deux noms et refuse le reçu si `argv0` ou la révision diffèrent ; le reçu porte `alias` et
-  `smokeAlias`. Tests : `apps/yolo/forge/test/forge.test.ts` (26 verts), dont un test d'`argv0` réel
-  (`yolo` et `bun` liés au même exécutable, `process.argv0` vérifié).
-- [ ] Commandes `yolo` natives dans le fork : ouvert. Il faut un correctif dans `aphrody-labs/bun`
-  (détection `argv0` `yolo` au démarrage, CLI `apps/yolo/cli` embarqué dans `src/js` comme module du runtime,
-  repli sur le comportement Bun pour tout autre nom). Qualification : build `bun-forge` sur la fabrique, puis
-  tests de parité (même sortie pour `yolo <cmd>` du fork et de l'exécutable compilé actuel).
-- [ ] Packaging : `downloads` (installeurs `apps/yolo/install.sh`, `install.ps1`) installent `yolo` et créent le
-  lien `bun` ; bascule après la qualification du point précédent (activation = installation locale, hors lot).
-- [ ] Épinglage : `config/vendor.json` avance avec le correctif ; `packageManager` (`bun@1.4.2` dans 20
-  manifestes) suit l'alias une fois `bun` = fork.
+Architecture retenue : le fork construit le moteur ; `bun-forge` compile ensuite le CLI `yolo` sur ce moteur
+(`bun build --compile` exécuté par le moteur qui vient d'être construit), ce qui donne **un seul fichier** `yolo`.
+Un correctif de deux lignes de logique dans le fork (`src/runtime/cli/mod.rs`) fait que tout exécutable compilé lancé
+sous le nom `bun` est le moteur (le chargeur d'exécutable autonome est ignoré quand `argv0` est `bun`) ; sous le
+nom `yolo` il exécute le CLI embarqué ; sous le nom `vu` le CLI délègue à l'artefact `vu`. Les liens `bun` et
+`vu` pointent vers `yolo` : aucune copie du moteur.
+
+- [x] Fork `aphrody-labs/bun:main` `a4d88d124` (avance `41a2ff302d` en fast-forward, sans force) : (1) `argv0`
+  `bun` = moteur même avec un CLI embarqué, `BUN_BE_BUN=1` reste valable ; (2) `bun:ffi`
+  `dlopen(chemin, symboles, { global: true })` ouvre en `RTLD_NOW | RTLD_GLOBAL` (`DynLib::open_global`,
+  `RTLD::NOW/GLOBAL`, types bun-types (ffi.d.ts du fork)), défaut inchangé (`RTLD_LAZY`). Tests du fork :
+  `test/js/first_party/runtime/dlopen-global.test.ts` (2, deux bibliothèques C dont une liée `-z now`) et
+  `argv0-bun-alias.test.ts` (2).
+- [x] `bun-forge` : l'artefact est `yolo` ; `--yolo-root <monorepo>` (+ `--yolo-asset`, `BUN_FORGE_YOLO_ROOT`)
+  compile le CLI (`apps/yolo/cli/src/index.ts`, drapeaux de `scripts/release/compile-flags.ts`) sur le moteur construit ;
+  les liens `bun` et `vu` sont créés ; la fumée exécute le moteur par `bun` (`argv0` vérifié), `yolo version` (CLI
+  embarqué) et `vu --version` (`argv0` `vu`, code 127 sans artefact) ; le plafond glibc 2.39 s'applique au fichier
+  final. Les tests `first_party` tournent sur le moteur tel que construit (un `yolo` compilé relancerait son CLI quand
+  un test crée un processus fils avec `process.execPath`). 28 tests forge.
+- [x] Reçu de la fabrique (VPS, `BUN_FORGE_HOME=/home/ubuntu/bun-forge-home`) pour `a4d88d124178` : build 569 s,
+  157 tests `first_party` verts (160 avec 3 `todo`, dont les 4 nouveaux), `yolo` 86 689 872 octets sha256
+  `7c6b4c6e…5aa6`, glibc 2.43 → 2.38. Installé sous `~/.local/share/aphrody/yolo/a4d88d124/` (`yolo`, liens `bun`
+  et `vu`, reçu) sans toucher aux liens du PATH : `yolo version` `yolo 0.1.0 (… Bun 1.4.3)`, `bun --revision`
+  `1.4.3-canary.1+a4d88d124`, `vu --version` délègue au vrai artefact `~/.vu` (CPython 3.12.15, uv 0.12.23, ruff
+  0.16.10), `dlopen` de la libpython de l'artefact avec `{ global: true }` : `Py_GetVersion()` répond, une seule
+  libpython mappée.
+- [x] CLI : `yolo vu …` et `vu …` (`apps/yolo/cli/src/vu.ts`, `runVu`, `isVuArgv0`) vérifient le manifeste de
+  l'artefact puis l'exécutent ; 127 sans artefact, 1 si la vérification échoue ; l'artefact est chargé, jamais lié.
+- [x] Packaging : `scripts/release/release.ts` empaquette l'artefact de la forge (`YOLO_BINARY`) avec les liens
+  `bun` et `vu` (chemin `apps/yolo/cli` corrigé) ; `apps/yolo/install.sh` vérifie l'alias `bun` de la livraison et
+  accepte `YOLO_NO_ALIASES=1` pour ne pas masquer un `bun`/`vu` existant du PATH.
+- [ ] Ouvert : activation locale (les liens `~/.local/bin/yolo`, `bun`, `vu` pointent encore vers l'ancien CLI
+  compilé et le Bun officiel 1.4.2 ; `packageManager` `bun@1.4.2` dans 20 manifestes) ; `install.ps1` et Windows
+  (pas de liens symboliques, pas de build fork Windows) ; fort découplage du `yolo` historique `~/.yolo` ; `libaphrody`
+  (PyO3) en `RTLD_GLOBAL` est le côté du plan vu ; asset d'outillage natif (`--yolo-asset`) non embarqué dans le
+  reçu ci-dessus (`asset: null`) : les commandes qui l'exigent restent à qualifier.
 
 ## Hors périmètre
 

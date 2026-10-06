@@ -12,6 +12,7 @@
 #   GITHUB_TOKEN      token for a private repository (else `gh auth token` is used)
 #   YOLO_NO_CRATES=1  skip the Rust sources of the desktop scaffold
 #   YOLO_NO_MODIFY_PATH=1  do not touch shell profiles
+#   YOLO_NO_ALIASES=1 do not install the `bun` and `vu` aliases of the single yolo executable
 set -eu
 
 REPO="${YOLO_REPO:-aphrody-labs/yolo}"
@@ -102,6 +103,10 @@ if [ -n "$crates_asset" ]; then
 fi
 [ -f "$TMP/main/bin/yolo" ] || die "release is missing bin/yolo"
 chmod +x "$TMP/main/bin/yolo"
+# A release built from the bun-forge artifact carries the aliases `bun` (engine) and `vu` as links to the same file.
+if [ -L "$TMP/main/bin/bun" ]; then
+  "$TMP/main/bin/bun" --revision >/dev/null || die "the bun alias of this release does not run"
+fi
 # Use the release's own standalone CLI and an isolated runtime store. Checking the outer archive's
 # hash does not establish that its native payload has a compatible ABI or can actually be loaded.
 YOLO_HOME="$TMP/main" YOLO_RUNTIME_HOME="$TMP/runtime-probe" "$TMP/main/bin/yolo" version
@@ -125,6 +130,8 @@ if [ -n "$crates_asset" ]; then
   cp -R "$TMP/crates/crates/." "$HOME_DIR/crates/"
 fi
 chmod +x "$HOME_DIR/bin/yolo"
+# YOLO_NO_ALIASES=1 keeps an existing `bun` or `vu` of the PATH from being shadowed by this installation.
+if [ -n "${YOLO_NO_ALIASES:-}" ]; then rm -f "$HOME_DIR/bin/bun" "$HOME_DIR/bin/vu"; fi
 
 YOLO_HOME="$HOME_DIR" "$HOME_DIR/bin/yolo" runtime install "$TMP/main/artifact"
 

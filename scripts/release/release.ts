@@ -12,14 +12,20 @@
  * this natively, so each target gets its own executable and library.
  *
  *   bun run scripts/release/release.ts [--out dist/release]
+ *
+ * `YOLO_BINARY=<path to the bun-forge artifact `yolo`>` packages that single executable (the fork engine with the CLI
+ * compiled onto it) and adds its aliases `bun` and `vu` (symlinks, selected by argv0); without it the CLI is compiled
+ * onto the Bun that runs this script and no alias is created.
  */
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
   readFileSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
@@ -55,7 +61,9 @@ if (!existsSync(join(artifactDir, "manifest.json"))) {
   throw new Error(`No packaged runtime for ${target}: run \`just yolo::runtime-package\` first`);
 }
 const manifest = verifyArtifact(artifactDir);
-const tooling = await toolingAsset(root);
+const prebuilt = process.env["YOLO_BINARY"];
+if (prebuilt && !existsSync(prebuilt)) throw new Error(`YOLO_BINARY ${prebuilt} does not exist`);
+const tooling = prebuilt ? null : await toolingAsset(root);
 
 rmSync(stage, { recursive: true, force: true });
 rmSync(dir, { recursive: true, force: true });
@@ -64,18 +72,27 @@ mkdirSync(dir, { recursive: true });
 
 // 1. standalone executable
 const exe = join(stage, "bin", windows ? "yolo.exe" : "yolo");
-await run([
-  "bun",
-  "build",
-  "--compile",
-  ...COMPILE_FLAGS,
-  ...tooling.flags,
-  "--define",
-  `YOLO_VERSION=${JSON.stringify(version)}`,
-  "apps/cli/src/index.ts",
-  "--outfile",
-  exe,
-]);
+if (prebuilt) {
+  cpSync(prebuilt, exe);
+  chmodSync(exe, 0o755);
+  if (!windows) {
+    // One executable, three names by argv0: yolo, bun (the engine) and vu (the vu runtime artifact).
+    for (const alias of ["bun", "vu"]) symlinkSync("yolo", join(stage, "bin", alias));
+  }
+} else {
+  await run([
+    "bun",
+    "build",
+    "--compile",
+    ...COMPILE_FLAGS,
+    ...(tooling?.flags ?? []),
+    "--define",
+    `YOLO_VERSION=${JSON.stringify(version)}`,
+    "apps/yolo/cli/src/index.ts",
+    "--outfile",
+    exe,
+  ]);
+}
 
 // 2. data next to it: runtime artifact, SDK, templates
 cpSync(artifactDir, join(stage, "artifact"), { recursive: true });
@@ -137,7 +154,12 @@ writeFileSync(
       target,
       commit,
       runtime: { version: manifest.version, abi: manifest.abi, toolchain: manifest.toolchain },
-      tooling: { sha256: tooling.sha256, abi: tooling.abi, embedded: true },
+      tooling: tooling
+        ? { sha256: tooling.sha256, abi: tooling.abi, embedded: true }
+        : { embedded: false },
+      binary: prebuilt
+        ? { source: "bun-forge", sha256: sha256(prebuilt), aliases: ["bun", "vu"] }
+        : null,
       assets: files,
       bun: Bun.version,
     },
