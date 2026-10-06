@@ -34,3 +34,18 @@ Rattachement : [PLAN.md §6](../../../PLAN.md), [BUN-FORK-UNIFIED-NATIVE](../../
 ## Hors périmètre
 
 Aucune publication publique. Les paquets npm, noms de commandes et schémas gardent leurs identités.
+
+## Décision définitive du 2026-10-06 : runtime unique `yolo`, qui charge `vu`
+
+Tranché par l'agent exécutant sur ordre du propriétaire (« runtime unique yolo, charge vu et notre fork bun »).
+
+| Question | Décision | Raison |
+| --- | --- | --- |
+| Produit | Un seul runtime : **`yolo`** = fork Bun (`aphrody-labs/bun`) + CLI `yolo`. | Les runtimes sont les produits ([positionnement](../../../AGENTS.md)) ; un seul artefact à livrer, vérifier et installer. |
+| Noms | `yolo` (principal), `bun` (alias moteur, `argv0`), `vu` (alias Python, `argv0`). Pas de codename `nub` : un quatrième nom, quasi homonyme de `bun`, sans consommateur ni gain. | Un nom par rôle ; le nom `vu` est réglé une fois dans `vu/scaffold/vu.json` (plan vu §0, §4.5). |
+| `vu` dans `yolo` | `yolo` **charge** `vu` : `yolo py …` et `vu …` délèguent à l'artefact `vu` installé (`~/.vu/current`, manifeste vérifié). `vu` n'est **pas** lié statiquement dans le binaire Bun. | `vu` a son dépôt, son cycle de build (uv release : 20 min, 6 Gio de pic ; ruff plus lourd) et sa matrice glibc ; fusionner les liens casserait le plafond glibc 2.39 du fork et la qualification par fabrique. |
+| Lien natif | **Une seule libpython partagée** (celle de l'artefact `vu`) : `yolo` (`bun:ffi`) et `libaphrody` (PyO3) l'ouvrent en global (`RTLD_GLOBAL`) ; aucun second CPython. | Liaison Bun ↔ Python ↔ Rust sans copie ni double interpréteur. |
+| Dépendance | Sens unique : `yolo` → artefact `vu` (contrat : manifeste schéma 1, `compatibility.cliMajor`) ; `vu` ne dépend jamais de `yolo`. Aphrody → `yolo`/`vu` par artefact. | Plan vu D3, D12. |
+| Hors périmètre | Aucune publication publique ; `config/vendor.json` ne bouge qu'après qualification `yolo forge build`. | Règles du fork. |
+
+Ordre d'exécution : (1) commandes `yolo` natives dans le fork (détection `argv0`), (2) chargement de l'artefact `vu` par `yolo py|vu`, (3) libpython partagée en global côté fork et `libaphrody`, (4) packaging `install.sh`/`install.ps1` : `yolo` + liens `bun` et `vu`.
