@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Low-level binding to the voidtools **Everything** SDK (`Everything64.dll`).
 //!
-//! This crate only owns the FFI plumbing shared by `aphrody-fsindex` and
-//! `aphrody-search`: dynamic DLL loading, the raw SDK symbols, a process-wide
+//! This crate only owns the FFI plumbing used by `aphrody-fsindex` (the single Everything
+//! search owner): dynamic DLL loading, the raw SDK symbols, a process-wide
 //! lock (the SDK keeps global query state) and a typed [`Query`] / [`Entry`]
 //! pair. Result shaping and domain helpers live in the callers.
 //!

@@ -2538,21 +2538,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-search"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-everything-sdk",
- "chrono",
- "regex",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "aphrody-secrets"
 version = "1.0.0-canary"
 dependencies = [
@@ -2581,19 +2566,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sysinfo 0.39.6",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "aphrody-settings"
-version = "1.0.0-canary"
-dependencies = [
- "schemars 1.2.2",
- "serde",
- "serde_json",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
