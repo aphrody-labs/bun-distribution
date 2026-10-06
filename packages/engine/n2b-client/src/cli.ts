@@ -51,7 +51,7 @@ function resolveBin(explicit?: string): string {
   if (installed) return installed;
 
   const executable = process.platform === "win32" ? "n2b.exe" : "n2b";
-  const workspaceBuild = join(import.meta.dir, "..", "..", "..", "target", "debug", executable);
+  const workspaceBuild = join(import.meta.dir, "..", "..", "..", "..", "target", "debug", executable);
   return existsSync(workspaceBuild) ? workspaceBuild : "n2b";
 }
 
