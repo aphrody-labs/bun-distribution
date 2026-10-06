@@ -52,6 +52,7 @@ const TEXT_TYPES: Record<string, string> = {
   ".sha256": "text/plain; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
   ".webp": "image/webp",
+  ".svg": "image/svg+xml",
 };
 
 const escapeHtml = (value: string): string =>
@@ -93,6 +94,7 @@ export function renderIndex(manifest: Manifest | null): string {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Aphrody</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
 <style>
 /* M3 tonal-spot roles from the Aphrody pet seed #8c6c88 (m3/packages/identity PET_COLORS). */
 :root{--md-sys-color-background:#fff7fa;--md-sys-color-on-background:#201a1e;--md-sys-color-primary:#7e4d7c;--md-sys-color-on-primary:#fff;--md-sys-color-surface-container:#f7ebf1;--md-sys-color-on-surface-variant:#4e444b;--md-sys-color-outline-variant:#d1c3cc}
@@ -214,6 +216,7 @@ export function createHandler(rootInput: string): (request: Request) => Promise<
         "/install.ps1",
         "/install-yolo.sh",
         "/pet.webp",
+        "/icon.svg",
       ].includes(path)
     ) {
       const file = Bun.file(join(root, path.slice(1)));

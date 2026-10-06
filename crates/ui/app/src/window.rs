@@ -215,7 +215,7 @@ impl SystemSubsystem for WindowSubsystem {
                 if label == "gemini-web" {
                     // Embedded: installed builds have no source tree to read the icon from.
                     let icon =
-                        Image::from_bytes(include_bytes!("../icons/Gemini.ico")).map_err(failed)?;
+                        Image::from_bytes(include_bytes!("../icons/icon.ico")).map_err(failed)?;
                     builder = builder.icon(icon).map_err(failed)?;
                 }
                 let window = builder.build().map_err(failed)?;
