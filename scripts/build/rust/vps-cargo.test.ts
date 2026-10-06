@@ -10,6 +10,7 @@ import {
   desktopRequirements,
   expandHome,
   gitDaemonCommand,
+  isSnapshotCollision,
   loadConfig,
   matchesPackageSpec,
   remoteCheckoutScript,
@@ -18,8 +19,10 @@ import {
   repositoryConfig,
   secretLikePaths,
   shellQuote,
+  SnapshotCollision,
   snapshot,
   tunnelCommand,
+  withSnapshotBackoff,
 } from "./vps-cargo";
 
 const config = await loadConfig();
@@ -125,6 +128,91 @@ describe("vps-cargo", () => {
       const files = (await $`git ls-tree --name-only ${sha}`.cwd(repo).text()).trim().split("\n");
       expect(files.sort()).toEqual([".gitignore", "new.txt"]);
       expect((await $`git rev-parse refs/wsl/snapshot`.cwd(repo).text()).trim()).toBe(sha);
+    } finally {
+      await rm(repo, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("snapshot collisions", () => {
+  const lockError = Object.assign(new Error("failed"), {
+    exitCode: 128,
+    stderr: "fatal: Unable to create '/r/.git/refs/wsl/snapshot.lock': File exists.",
+  });
+
+  test("only git lock and ref races count as collisions", () => {
+    expect(isSnapshotCollision(lockError)).toBe(true);
+    expect(isSnapshotCollision(new SnapshotCollision("push"))).toBe(true);
+    expect(isSnapshotCollision({ exitCode: 128, stderr: "" })).toBe(true);
+    expect(isSnapshotCollision({ exitCode: 128, stderr: "fatal: not a git repository" })).toBe(
+      false,
+    );
+    expect(isSnapshotCollision({ exitCode: 1, stderr: "index.lock" })).toBe(false);
+    expect(isSnapshotCollision(new Error("boom"))).toBe(false);
+    expect(isSnapshotCollision(null)).toBe(false);
+  });
+
+  test("backoff doubles the delay and returns once the race is won", async () => {
+    const delays: number[] = [];
+    let calls = 0;
+    const result = await withSnapshotBackoff(
+      async () => {
+        if (++calls < 4) throw lockError;
+        return "sha";
+      },
+      { baseMs: 100, random: () => 0, sleep: async (ms) => void delays.push(ms) },
+    );
+    expect(result).toBe("sha");
+    expect(calls).toBe(4);
+    expect(delays).toEqual([100, 200, 400]);
+  });
+
+  test("jitter is added and a persistent collision is rethrown after the last attempt", async () => {
+    const delays: number[] = [];
+    let calls = 0;
+    const run = withSnapshotBackoff(
+      async () => {
+        calls++;
+        throw lockError;
+      },
+      { attempts: 3, baseMs: 100, random: () => 0.5, sleep: async (ms) => void delays.push(ms) },
+    );
+    await expect(run).rejects.toBe(lockError);
+    expect(calls).toBe(3);
+    expect(delays).toEqual([150, 300]);
+  });
+
+  test("other failures are not retried", async () => {
+    let calls = 0;
+    const run = withSnapshotBackoff(
+      async () => {
+        calls++;
+        throw new Error("refusing to snapshot secret-like paths: .env");
+      },
+      { sleep: async () => {} },
+    );
+    await expect(run).rejects.toThrow("secret-like");
+    expect(calls).toBe(1);
+  });
+
+  test("concurrent snapshots of one worktree both succeed and leave no scratch index", async () => {
+    const repo = await mkdtemp(join(tmpdir(), "vps-cargo-race-"));
+    try {
+      await $`git init -q && git -c user.name=t -c user.email=t@t commit -q --allow-empty -m init`.cwd(
+        repo,
+      );
+      await Bun.write(join(repo, "a.txt"), "a\n");
+      const shas = await Promise.all(Array.from({ length: 6 }, () => snapshot(config, repo)));
+      expect(new Set(shas).size).toBeGreaterThanOrEqual(1);
+      for (const sha of shas) {
+        expect((await $`git ls-tree --name-only ${sha}`.cwd(repo).text()).trim()).toContain(
+          "a.txt",
+        );
+      }
+      const leftovers = (await $`ls .git`.cwd(repo).text())
+        .split("\n")
+        .filter((n) => n.startsWith("vps-cargo."));
+      expect(leftovers).toEqual([]);
     } finally {
       await rm(repo, { recursive: true, force: true });
     }

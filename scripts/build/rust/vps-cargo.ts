@@ -20,7 +20,7 @@
  * repository does not carry a copy of `cargo-serial.sh`; the wrapper of the Aphrody checkout on the VPS is used.
  */
 import { $ } from "bun";
-import { mkdir } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
@@ -481,43 +481,114 @@ async function ssh(config: VpsCargoConfig, script: string): Promise<number> {
   return child.exited;
 }
 
+/** A git operation of the snapshot lost a race with another session (lock held, ref moved): retry it. */
+export class SnapshotCollision extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SnapshotCollision";
+  }
+}
+
+const COLLISION_PATTERN =
+  /index\.lock|cannot lock ref|Unable to create '.*\.lock'|File exists|another git process|unable to write|cannot update the ref/i;
+
+/**
+ * Whether an error is a snapshot collision: git exits 128 when it cannot take a lock or update a ref that
+ * another session holds (`refs/wsl/snapshot` is shared by every worktree of the repository).
+ */
+export function isSnapshotCollision(error: unknown): boolean {
+  if (error instanceof SnapshotCollision) return true;
+  if (typeof error !== "object" || error === null) return false;
+  const { exitCode, stderr, message } = error as {
+    exitCode?: unknown;
+    stderr?: unknown;
+    message?: unknown;
+  };
+  if (exitCode !== 128) return false;
+  const text = `${stderr ?? ""} ${message ?? ""}`;
+  // Exit 128 is also git's generic fatal error: only lock and ref races are worth retrying.
+  return text.trim() === "" || COLLISION_PATTERN.test(text);
+}
+
+export type BackoffOptions = {
+  /** Total tries, first one included. */
+  attempts?: number;
+  /** Delay before the second try; doubles each time, plus jitter. */
+  baseMs?: number;
+  sleep?: (ms: number) => Promise<void>;
+  /** Jitter source in [0, 1): injectable for tests. */
+  random?: () => number;
+};
+
+/** Retry `operation` with exponential backoff and jitter while it fails with a snapshot collision. */
+export async function withSnapshotBackoff<T>(
+  operation: () => Promise<T>,
+  options: BackoffOptions = {},
+): Promise<T> {
+  const attempts = options.attempts ?? 6;
+  const baseMs = options.baseMs ?? 250;
+  const sleep = options.sleep ?? Bun.sleep;
+  const random = options.random ?? Math.random;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt >= attempts || !isSnapshotCollision(error)) throw error;
+      const delay = baseMs * 2 ** (attempt - 1) * (1 + random());
+      console.error(
+        `vps-cargo: snapshot collision, retry ${attempt}/${attempts - 1} in ${Math.round(delay)} ms`,
+      );
+      await sleep(delay);
+    }
+  }
+}
+
 /** Commit the exact worktree (tracked + untracked, ignores honoured) without touching index or HEAD. */
-export async function snapshot(config: VpsCargoConfig, cwd = ROOT): Promise<string> {
+export function snapshot(config: VpsCargoConfig, cwd = ROOT): Promise<string> {
+  return withSnapshotBackoff(() => snapshotOnce(config, cwd));
+}
+
+async function snapshotOnce(config: VpsCargoConfig, cwd: string): Promise<string> {
   // `.git` is a file in a linked worktree: ask git for the per-worktree directory holding the index.
   const gitDir = (await $`git rev-parse --absolute-git-dir`.cwd(cwd).text()).trim();
-  const index = join(gitDir, "vps-cargo.index");
-  await Bun.write(index, Bun.file(join(gitDir, "index")));
-  const env = { ...process.env, GIT_INDEX_FILE: index };
-  await $`git add -A`.cwd(cwd).env(env).quiet();
-  const changed = (await $`git diff --cached --name-only HEAD`.cwd(cwd).env(env).text())
-    .split("\n")
-    .filter(Boolean);
-  const refused = secretLikePaths(changed, config.refuseSnapshotPaths);
-  if (refused.length > 0) {
-    throw new Error(`refusing to snapshot secret-like paths: ${refused.join(", ")}`);
+  // One scratch index per process: two runs from the same worktree no longer fight over one index file.
+  const index = join(gitDir, `vps-cargo.${process.pid}.index`);
+  try {
+    await Bun.write(index, Bun.file(join(gitDir, "index")));
+    const env = { ...process.env, GIT_INDEX_FILE: index };
+    await $`git add -A`.cwd(cwd).env(env).quiet();
+    const changed = (await $`git diff --cached --name-only HEAD`.cwd(cwd).env(env).text())
+      .split("\n")
+      .filter(Boolean);
+    const refused = secretLikePaths(changed, config.refuseSnapshotPaths);
+    if (refused.length > 0) {
+      throw new Error(`refusing to snapshot secret-like paths: ${refused.join(", ")}`);
+    }
+    const large: string[] = [];
+    for (const path of changed) {
+      const file = Bun.file(join(cwd, path));
+      if ((await file.exists()) && file.size > MAX_SNAPSHOT_FILE_BYTES) large.push(path);
+    }
+    if (large.length > 0) {
+      throw new Error(`refusing files over 50 MiB (ignore them first): ${large.join(", ")}`);
+    }
+    const tree = (await $`git write-tree`.cwd(cwd).env(env).text()).trim();
+    const head = (await $`git rev-parse HEAD`.cwd(cwd).text()).trim();
+    const headTree = (await $`git rev-parse HEAD^{tree}`.cwd(cwd).text()).trim();
+    const message = "wsl snapshot";
+    const sha =
+      tree === headTree
+        ? head
+        : (
+            await $`git -c user.name=aphrody-dev -c user.email=contact@aphrody.com commit-tree ${tree} -p ${head} -m ${message}`
+              .cwd(cwd)
+              .text()
+          ).trim();
+    await $`git update-ref ${config.snapshotRef} ${sha}`.cwd(cwd);
+    return sha;
+  } finally {
+    await rm(index, { force: true });
   }
-  const large: string[] = [];
-  for (const path of changed) {
-    const file = Bun.file(join(cwd, path));
-    if ((await file.exists()) && file.size > MAX_SNAPSHOT_FILE_BYTES) large.push(path);
-  }
-  if (large.length > 0) {
-    throw new Error(`refusing files over 50 MiB (ignore them first): ${large.join(", ")}`);
-  }
-  const tree = (await $`git write-tree`.cwd(cwd).env(env).text()).trim();
-  const head = (await $`git rev-parse HEAD`.cwd(cwd).text()).trim();
-  const headTree = (await $`git rev-parse HEAD^{tree}`.cwd(cwd).text()).trim();
-  const message = "wsl snapshot";
-  const sha =
-    tree === headTree
-      ? head
-      : (
-          await $`git -c user.name=aphrody-dev -c user.email=contact@aphrody.com commit-tree ${tree} -p ${head} -m ${message}`
-            .cwd(cwd)
-            .text()
-        ).trim();
-  await $`git update-ref ${config.snapshotRef} ${sha}`.cwd(cwd);
-  return sha;
 }
 
 async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise<string> {
@@ -529,25 +600,30 @@ async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise
     if ((await ssh(config, remoteSeedScript(config))) !== 0) {
       throw new Error("cannot prepare the VPS checkout");
     }
-    const push = Bun.spawn(
-      [
-        "git",
-        "push",
-        "--quiet",
-        "--force",
-        // The VPS checkout is seeded shallow: a thin pack may delta against bases it lacks.
-        "--no-thin",
-        `${config.host}:${config.remoteWorkspace}`,
-        `${sha}:${config.snapshotRef}`,
-      ],
-      {
-        cwd: root,
-        env: { ...process.env, GIT_SSH_COMMAND: sshBase(config).join(" ") },
-        stdout: "inherit",
-        stderr: "inherit",
-      },
-    );
-    if ((await push.exited) !== 0) throw new Error("git push of the snapshot failed");
+    await withSnapshotBackoff(async () => {
+      const push = Bun.spawn(
+        [
+          "git",
+          "push",
+          "--quiet",
+          "--force",
+          // The VPS checkout is seeded shallow: a thin pack may delta against bases it lacks.
+          "--no-thin",
+          `${config.host}:${config.remoteWorkspace}`,
+          `${sha}:${config.snapshotRef}`,
+        ],
+        {
+          cwd: root,
+          env: { ...process.env, GIT_SSH_COMMAND: sshBase(config).join(" ") },
+          stdout: "inherit",
+          stderr: "inherit",
+        },
+      );
+      const code = await push.exited;
+      if (code === 128)
+        throw new SnapshotCollision("git push of the snapshot hit a lock (exit 128)");
+      if (code !== 0) throw new Error("git push of the snapshot failed");
+    });
   }
   if ((await ssh(config, remoteCheckoutScript(config, sha, pull))) !== 0) {
     throw new Error("VPS checkout failed");
