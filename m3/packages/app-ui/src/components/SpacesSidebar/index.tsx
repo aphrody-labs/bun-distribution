@@ -39,6 +39,7 @@ import { SpaceSwitcher } from "./SpaceSwitcher";
 import { useChatStore, getProjectGroups } from "../../stores/chat-store";
 import { useI18n } from "../../i18n";
 import { desktopRoutes } from "../../desktop-navigation";
+import { useKitVisible } from "../../routes/kit/use-kit-visible";
 
 // Wrapper that adds a space-level drop zone before each group and makes it sortable
 function SpaceGroupWithDropZone({
@@ -457,6 +458,10 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
     location.pathname.startsWith("/location");
   const isModelsActive = location.pathname.startsWith("/models");
   const isStudioActive = location.pathname.startsWith("/studio");
+  const isCreatorActive = location.pathname.startsWith(desktopRoutes.creator);
+  const isAdminActive = location.pathname.startsWith(desktopRoutes.admin);
+  const showCreator = useKitVisible("creator") || isCreatorActive;
+  const showAdmin = useKitVisible("omar", true) || isAdminActive;
   const isSettingsActive = location.pathname.startsWith("/settings");
 
   // Active setting section
@@ -588,6 +593,52 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
               </span>
               <span className="truncate">Studio</span>
             </button>
+            {showCreator && (
+              <button
+                type="button"
+                onClick={() => navigate(desktopRoutes.creator)}
+                className={clsx(
+                  "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
+                  isCreatorActive
+                    ? "bg-secondary-container text-on-secondary-container font-semibold"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
+                )}
+              >
+                <span
+                  className={clsx(
+                    "material-symbol text-title-medium",
+                    isCreatorActive && "font-bold",
+                  )}
+                >
+                  brush
+                </span>
+                <span className="truncate">{language === "fr" ? "Créateur" : "Creator"}</span>
+              </button>
+            )}
+            {showAdmin && (
+              <button
+                type="button"
+                onClick={() => navigate(desktopRoutes.admin)}
+                className={clsx(
+                  "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
+                  isAdminActive
+                    ? "bg-secondary-container text-on-secondary-container font-semibold"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
+                )}
+              >
+                <span
+                  className={clsx(
+                    "material-symbol text-title-medium",
+                    isAdminActive && "font-bold",
+                  )}
+                >
+                  admin_panel_settings
+                </span>
+                <span className="truncate">
+                  {language === "fr" ? "Administration" : "Administration"}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Corps dynamique de la barre latérale selon la zone active */}

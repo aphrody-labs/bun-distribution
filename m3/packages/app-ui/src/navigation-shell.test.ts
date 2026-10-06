@@ -35,6 +35,8 @@ describe("Single Navigation & Shell Architecture (UI-DESIGN.md §3, §4.6, §10)
       "/explorer",
       "/models",
       "/studio",
+      "/creator",
+      "/admin",
       "/settings",
     ]);
     expect(legacyRouteRedirects.jobs).toBe(desktopRoutes.files);

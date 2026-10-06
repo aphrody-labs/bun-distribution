@@ -21,6 +21,7 @@ pub mod desktop;
 pub mod explorer;
 pub mod identity;
 pub mod integration;
+pub mod kits;
 pub mod llama_daemon;
 pub mod models;
 pub mod parking;
@@ -908,6 +909,9 @@ pub fn run() {
                 integration::aphrody_widget,
                 integration::aphrody_check_update,
                 integration::aphrody_install_update,
+                kits::aphrody_kit_start,
+                kits::aphrody_kit_answer,
+                kits::aphrody_kit_cancel,
                 aphrody_fs_read_dir,
                 aphrody_fs_read_text,
                 explorer::aphrody_explorer_index_build,
@@ -936,6 +940,7 @@ pub fn run() {
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
                 showcase::stop(app);
+                kits::stop_all();
                 integration::flush_positions(app);
             }
             // The agent runs in this process: closing its input lets it join every session, so

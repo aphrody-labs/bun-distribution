@@ -8,6 +8,8 @@ const titles: Record<string, string> = {
   "/explorer": "Fichiers",
   "/models": "Modèles & IA",
   "/settings": "Paramètres",
+  "/creator": "Créateur",
+  "/admin": "Administration",
   "/favorites": "Favoris",
   "/recents": "Récents",
   "/file-kinds": "Types de fichiers",

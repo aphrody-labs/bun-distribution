@@ -8,6 +8,8 @@ import { JobsScreen } from "./components/JobManager";
 import { CodexChatRoute } from "./codex-chat";
 import { ModelsHub } from "./models-hub";
 import { StudioRoute } from "./routes/studio";
+import { AdminRoute } from "./routes/admin";
+import { CreatorRoute } from "./routes/creator";
 import { ExplorerView } from "./routes/explorer";
 import { RecentsView } from "./routes/explorer/views/RecentsView";
 import { FileKindsView, FileKindResultsView } from "./routes/file-kinds";
@@ -55,6 +57,14 @@ export const explorerRoutes = [
       {
         path: "studio",
         element: <StudioRoute />,
+      },
+      {
+        path: "creator",
+        element: <CreatorRoute />,
+      },
+      {
+        path: "admin",
+        element: <AdminRoute />,
       },
       {
         path: "favorites",

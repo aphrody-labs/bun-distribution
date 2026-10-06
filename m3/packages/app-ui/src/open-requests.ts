@@ -17,6 +17,8 @@ export const LINK_DESTINATIONS = [
   "models",
   "windows",
   "settings",
+  "creator",
+  "admin",
 ] as const;
 export type LinkDestination = (typeof LINK_DESTINATIONS)[number];
 
