@@ -75,7 +75,7 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 | MCP | `src/mcp` (channel/tools serve) | no | `crates/ai/mcp`→`aphrody-mcp` bin, `aphrody-mcp` (OAuth/PKCE) | `aphrody-mcp/src/{pkce,registration,discovery}.rs`, `google_mcp` | ✅ (50+ tools incl. OAuth flow) |
 | Cron / scheduling | `src/cron` (large) | no | `crates/os/cron` | `cron/src/lib.rs` | ⚠️ thin (see GAPS) |
 | Auth / secrets | `src/secrets`, auth-profiles | no | `crates/os/secrets` | `secrets/src/lib.rs` | ✅ |
-| Config | `src/config` | no | `crates/os/settings` | `settings/src/lib.rs` | ✅ |
+| Config | `src/config` | no | `crates/os/settings` (not in repo) | `settings/src/lib.rs` | ✅ |
 | CLI / onboarding | `openclaw onboard/pairing/doctor` | no | `cli` `oc-onboard/oc-pairing/oc-reset/oc-uninstall/doctor` | `cli/src/oc_cmd.rs` (897 LOC) | ✅ (explicit openclaw-compat surface) |
 | DM pairing / allowlist | `dmPolicy`, `pairing approve` | no | `oc-pairing` (`~/.aphrody/pairing.json`) | `cli/src/oc_cmd.rs:340-468` | ✅ |
 | Sandbox (Docker/SSH/OpenShell) | `agents.defaults.sandbox` | no | `SandboxShell` | `aphrody-sdk/src/shell.rs:85-181`, `aphrody-sdk/src/fs.rs` | ⚠️ host shell sandbox only, no Docker/SSH backend (see GAPS) |

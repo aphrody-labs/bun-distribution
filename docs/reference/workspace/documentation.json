@@ -5106,8 +5106,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "27f1fcb3acb7fb66a924cf9944c1635409d0e802248f4d1ef2a5c729f785cd51",
-      "bytes": 91644,
+      "sha256": "d27fa8f2dc1ad3c823531c6a021efb8e5b33646e16b7ff55e300b53edf473cba",
+      "bytes": 31894,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -5116,8 +5116,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "cb4670057d0d7b398c17b49e65910f7e7c371f1335db67935ed88f87cfe75e54",
-      "bytes": 65769,
+      "sha256": "95220ee6e039ac282ea33ceee9dd15ea668b3402901764d7ce325c5f0e20b686",
+      "bytes": 65186,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -5126,8 +5126,8 @@
     {
       "path": "docs/ecosystem/MCP-TOOLS.md",
       "title": "MCP tools",
-      "sha256": "73c3710c30050e7905d519a1653948d5421c14eea25a9fe1d03d0fc08cace704",
-      "bytes": 64687,
+      "sha256": "ce18c380702aeabfa0cd12092de1f89edcfb4700800a579f1042915739f4c80a",
+      "bytes": 63464,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -40656,8 +40656,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "d6b5db10a8d05c27339a5577d23940288a25597730e62fac8245fd72ee45c414",
-      "bytes": 53042,
+      "sha256": "4b79a5cce1c422befd16bea5127890b4c8d304a95a0dc75060339de6db12d830",
+      "bytes": 52784,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

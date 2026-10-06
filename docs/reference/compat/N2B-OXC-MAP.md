@@ -43,7 +43,7 @@ Resolved external versions (Cargo.lock): `fastembed 5.17.3`, `octocrab 0.54.2` (
 | `@aphrody/n2b-shims` | `packages/engine/n2b-shims` | 0.6.2 | n2b-core | build, typecheck | none (compatibility alias: every entry re-exports `@aphrody/n2b-core/shims*`) |
 | `@aphrody/n2b-types` | `packages/engine/n2b-types` | 0.6.2 | none | build, typecheck | none |
 
-No package outside `packages/compat` declares a dependency on `@aphrody/n2b-*`
+No package outside `packages/compat` (not in repo) declares a dependency on `@aphrody/n2b-*`
 (grep over `apps/**`, `packages/**` package.json). None declares a `bin`.
 
 Other surfaces:
@@ -185,7 +185,7 @@ Nothing below was compiled: Cargo is run only by the integrating agent. Bun gate
 | Lines, all files in `crates/compat/n2b*` | 30,111 | 29,738 |
 | Lines, `*.rs` in `crates/compat/n2b*` | 21,723 | 21,724 (code moved, not rewritten; see below) |
 | Bun packages `packages/compat/n2b-*` | 4 | 4 (`n2b-shims` is now a 5-file re-export alias) |
-| Lines, `*.ts` in `packages/compat` | 1,081 | 1,102 |
+| Lines, `*.ts` in `packages/compat` (not in repo) | 1,081 | 1,102 |
 | Files under `docs/*/compat/n2b/` | 423 | 114 |
 | Lines under `docs/*/compat/n2b/` | 195,911 | 151,861 |
 | n2b scripts (`scripts/{tools,audit}/compat/scripts/n2b`) | 12 files, 1,059 lines | 4 files, 612 lines |

@@ -15,7 +15,7 @@ of the current aphrody search/RE/forensics code.
 | Surface | Crate / path | What it does | Gap |
 | --- | --- | --- | --- |
 | `aphrody search <query>` | `cli` → `commands::SearchCommand` | Google **web** search (network) | not local, not offline |
-| `aphrody-search` | `crates/os/search` | In-memory BM25-lite inverted index over `Document{title,body,tags}`; JSON persist | only indexes memory/marketplace docs, never the filesystem |
+| `aphrody-search` | `crates/os/search` (not in repo) | In-memory BM25-lite inverted index over `Document{title,body,tags}`; JSON persist | only indexes memory/marketplace docs, never the filesystem |
 | `aphrody forensics map` | `crates/aphrody/forensics_cmd.rs` (not in repo) | Parallel `walkdir` → `{path,size,ext}` JSON (now also `sha256`/`modified`/`mtime_unix`) | one-shot dump, no queryable index |
 | `aphrody re classify` | `aphrody-re/magika` (feat `magika`) | Magika content type for one file | per-file, not corpus-wide |
 | `aphrody re leveldb` / `forensics sqlite` | `aphrody-re/leveldb`, `forensics_cmd` | Read-only LevelDB enum / SQLite schema dump | no content search across stores |
