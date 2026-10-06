@@ -80,8 +80,8 @@ pub use config_toml::{
     ShellEnvironmentPolicy,
 };
 pub use home_agent::{
-    A2aConfig, DatabaseCache, DatabaseConfig, DatabaseType, OcrConfig, OcrEngine, PluginConfig,
-    RedisConfig, SkillsConfig,
+    A2aConfig, AgentHomeConfig, DatabaseCache, DatabaseConfig, DatabaseType, OcrConfig, OcrEngine,
+    PluginConfig, RedisConfig, SkillsConfig,
 };
 pub use layer::{ConfigLayer, LayerSource, merge_layers, merge_toml_values, restrict_codex_layer};
 #[cfg(not(target_arch = "wasm32"))]

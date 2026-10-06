@@ -76,3 +76,15 @@ fn component_defaults_are_empty_and_side_effect_free() {
     assert!(OcrConfig::default().engines.is_empty());
     assert_eq!(RedisConfig::default().url, None);
 }
+
+#[test]
+fn agent_home_table_reads_homes_dir() {
+    let value: toml::Value = toml::from_str("[agent_home]\nhomes_dir = \"/srv/homes\"\n").unwrap();
+    let cfg = AgentHomeConfig::from_toml(&value).unwrap();
+    assert_eq!(cfg.homes_dir.as_deref(), Some("/srv/homes"));
+    let empty: toml::Value = toml::from_str("model = \"x\"\n").unwrap();
+    assert_eq!(AgentHomeConfig::from_toml(&empty), None);
+    let parsed: crate::ConfigToml = toml::from_str("[agent_home]\nhomes_dir = \"h\"\n").unwrap();
+    assert!(parsed.unknown_key_warnings().is_empty());
+    assert_eq!(parsed.agent_home.unwrap().homes_dir.as_deref(), Some("h"));
+}

@@ -4,7 +4,10 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    home_agent::{A2aConfig, DatabaseConfig, OcrConfig, PluginConfig, RedisConfig, SkillsConfig},
+    home_agent::{
+        A2aConfig, AgentHomeConfig, DatabaseConfig, OcrConfig, PluginConfig, RedisConfig,
+        SkillsConfig,
+    },
     mcp::McpServerConfig,
     policy::{AskForApproval, SandboxMode},
     profile::ConfigProfile,
@@ -149,6 +152,9 @@ pub struct ConfigToml {
     /// `[ocr]` — OCR engine policy and profile-local state path.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ocr: Option<OcrConfig>,
+    /// `[agent_home]` — homes root override.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_home: Option<AgentHomeConfig>,
     /// `[redis]` — Redis database and key namespace.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub redis: Option<RedisConfig>,

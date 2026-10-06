@@ -120,6 +120,28 @@ pub struct RedisConfig {
     pub prefix: Option<String>,
 }
 
+/// `[agent_home]` — where the Agent Homes of this machine live.
+///
+/// `homes_dir` overrides the default homes root (`<state>/workspaces`). A
+/// relative value is resolved against the state directory. The environment
+/// variable `APHRODY_HOMES_DIR` wins over this key (see
+/// `aphrody_agent_home::homes`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AgentHomeConfig {
+    /// Root directory holding one subdirectory per home.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub homes_dir: Option<String>,
+}
+
+impl AgentHomeConfig {
+    /// Extract the `[agent_home]` table from a raw `config.toml` value.
+    /// Returns `None` when the table is absent or malformed.
+    #[must_use]
+    pub fn from_toml(root: &toml::Value) -> Option<Self> {
+        root.get("agent_home").cloned().and_then(|v| v.try_into().ok())
+    }
+}
+
 #[cfg(test)]
 #[path = "home_agent_tests.rs"]
 mod home_agent_tests;
