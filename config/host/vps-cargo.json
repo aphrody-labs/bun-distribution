@@ -45,6 +45,14 @@
       "remoteTargetDir": "/srv/aphrody-build/cache/cargo/vu-wsl",
       "snapshotRef": "refs/vu/snapshot",
       "cargoSerial": "/srv/aphrody-build/workspaces/aphrody-wsl/scripts/build/rust/cargo-serial.sh"
+    },
+    "shenron": {
+      "root": "~/shenron",
+      "remoteWorkspace": "/home/ubuntu/shenron-build/workspaces/shenron-wsl",
+      "remoteSeed": "",
+      "remoteTargetDir": "/home/ubuntu/shenron-build/cache/cargo/shenron-wsl",
+      "snapshotRef": "refs/shenron/snapshot",
+      "cargoSerial": "/srv/aphrody-build/workspaces/aphrody-wsl/scripts/build/rust/cargo-serial.sh"
     }
   },
   "refuseSnapshotPaths": [
