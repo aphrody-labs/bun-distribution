@@ -74,6 +74,10 @@ pub use zerocopy::*;
 #[cfg(not(target_arch = "wasm32"))]
 pub use aphrody_rag_ffi::*;
 
+// Python host (aphrody_py_*): the shared libpython of vu opened RTLD_GLOBAL and bound by dlsym, never linked (plan vu D18).
+#[cfg(not(target_arch = "wasm32"))]
+pub use aphrody_python_ffi::*;
+
 // The historical bun_rs ABI remains available in the same native library.
 // Its implementation is an internal rlib; it no longer ships a second cdylib.
 #[cfg(not(target_arch = "wasm32"))]

@@ -1360,6 +1360,7 @@ dependencies = [
  "aphrody-models",
  "aphrody-n2b-native",
  "aphrody-oxc-bridge",
+ "aphrody-python-ffi",
  "aphrody-rag-core",
  "aphrody-rag-ffi",
  "aphrody-softraster",
@@ -2358,6 +2359,13 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "aphrody-python-ffi"
+version = "1.0.0"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

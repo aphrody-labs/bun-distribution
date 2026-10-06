@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-python-ffi"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "C ABI that hosts the shared CPython (the libpython of the vu runtime) inside the single aphrody-ffi cdylib: no libpython linked, the C API is bound by dlsym."
+
+[lib]
+# rlib only: the symbols ship inside the single aphrody-ffi dynamic library.
+crate-type = ["rlib"]
+
+[target.'cfg(unix)'.dependencies]
+libc = { workspace = true }
+
+[lints]
+workspace = true
