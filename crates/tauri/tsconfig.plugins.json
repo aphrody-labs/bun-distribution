@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "customConditions": [
+      "bun"
+    ],
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false,
+    "noEmit": true,
+    "verbatimModuleSyntax": false,
+    "noUnusedLocals": false
+  },
+  "files": [
+    "aphrody-tauri-api/src/global.d.ts"
+  ],
+  "include": [
+    "aphrody-tauri-plugin-*/guest-js/*.ts"
+  ]
+}

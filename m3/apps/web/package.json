@@ -10,7 +10,7 @@
     "dev": "bun ../../../apps/yolo/cli/src/index.ts m3 dev",
     "build": "bun ../../../apps/yolo/cli/src/index.ts m3 build",
     "compile": "bun ../../../apps/yolo/cli/src/index.ts m3 compile",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit --customConditions bun",
     "test": "bun ../../scripts/fonts-sync.ts --quiet && bun test"
   },
   "dependencies": {

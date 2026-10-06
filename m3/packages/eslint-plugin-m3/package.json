@@ -45,6 +45,7 @@
   "scripts": {
     "pretest": "bun scripts/sync-symbol-names.ts",
     "test": "bun test/run.ts",
+    "pretypecheck": "bun scripts/sync-symbol-names.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "sync-symbols": "bun scripts/sync-symbol-names.ts",
     "prepack": "bun scripts/sync-symbol-names.ts"

@@ -35,28 +35,28 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "bun": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./plugin": {
-      "types": "./dist/plugin.d.ts",
       "bun": "./src/plugin.ts",
+      "types": "./dist/plugin.d.ts",
       "default": "./dist/plugin.js"
     },
     "./server": {
-      "types": "./dist/server.d.ts",
       "bun": "./src/server.ts",
+      "types": "./dist/server.d.ts",
       "default": "./dist/server.js"
     },
     "./build": {
-      "types": "./dist/build.d.ts",
       "bun": "./src/build.ts",
+      "types": "./dist/build.d.ts",
       "default": "./dist/build.js"
     },
     "./config": {
-      "types": "./dist/config.d.ts",
       "bun": "./src/config.ts",
+      "types": "./dist/config.d.ts",
       "default": "./dist/config.js"
     },
     "./react": {
@@ -71,8 +71,8 @@
       "types": "./client.d.ts"
     },
     "./i18n": {
-      "types": "./dist/i18n.d.ts",
       "bun": "./src/i18n.ts",
+      "types": "./dist/i18n.d.ts",
       "import": "./src/i18n.ts",
       "default": "./dist/i18n.js"
     },

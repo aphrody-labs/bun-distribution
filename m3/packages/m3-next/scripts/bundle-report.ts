@@ -17,7 +17,12 @@ const PACKAGES = resolve(import.meta.dir, "../..");
 /** `@tailwindcss/node` as m3-tailwind resolves it, so the report measures the preset against its own engine. */
 const { compile } = (await import(
   Bun.resolveSync("@tailwindcss/node", join(PACKAGES, "m3-tailwind"))
-)) as typeof import("@tailwindcss/node");
+)) as {
+  compile(
+    css: string,
+    options: { base: string; onDependency(path: string): void },
+  ): Promise<{ build(candidates: string[]): string }>;
+};
 
 export interface Measure {
   bytes: number;

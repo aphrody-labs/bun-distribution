@@ -9,7 +9,7 @@
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["bun-types"],
+    "types": ["bun"],
     "verbatimModuleSyntax": true
   },
   "include": ["src", "scripts"],

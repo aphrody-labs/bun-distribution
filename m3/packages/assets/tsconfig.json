@@ -9,7 +9,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["bun-types"],
+    "types": ["bun"],
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true
