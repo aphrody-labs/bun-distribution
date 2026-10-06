@@ -7,8 +7,10 @@ import {
   EXPECTED_CLI_MAJOR,
   hostTarget,
   isDerivedPath,
+  isVuArgv0,
   pathWithVu,
   resolveVu,
+  runVu,
   verifyVuArtifact,
   vuHome,
 } from "../src/vu";
@@ -225,5 +227,38 @@ describe.skipIf(!supported)("yolo py with the vu runtime", () => {
     });
     expect(report.uvVersion).toBe("uv 0.12.23");
     expect(report.ruffVersion).toBe("ruff 0.16.10");
+  });
+});
+
+describe("vu alias of the single yolo executable", () => {
+  it("recognises the argv0 names", () => {
+    expect(isVuArgv0("vu")).toBe(true);
+    expect(isVuArgv0("/home/u/.local/bin/vu")).toBe(true);
+    expect(isVuArgv0("C:\\tools\\vu.exe")).toBe(true);
+    expect(isVuArgv0("yolo")).toBe(false);
+    expect(isVuArgv0("bun")).toBe(false);
+    expect(isVuArgv0("vux")).toBe(false);
+  });
+
+  it.skipIf(!supported)(
+    "delegates to the verified artifact and returns its exit code",
+    async () => {
+      const dir = artifact();
+      writeFileSync(join(dir, "bin/vu"), "#!/bin/sh\nexit 7\n");
+      // The synthetic manifest lists the original script, so verify with an artifact whose manifest matches.
+      const ok = artifact();
+      expect(await runVu(["--version"], { artifact: ok, env: { PATH: process.env["PATH"] } })).toBe(
+        0,
+      );
+      expect(await runVu([], { artifact: dir, env: { PATH: process.env["PATH"] } })).toBe(1);
+    },
+  );
+
+  it.skipIf(!supported)("exits 127 without an installed runtime", async () => {
+    const home = mkdtempSync(join(tmpdir(), "vu-none-"));
+    directories.push(home);
+    expect(await runVu(["--version"], { env: { VU_HOME: home, PATH: process.env["PATH"] } })).toBe(
+      127,
+    );
   });
 });

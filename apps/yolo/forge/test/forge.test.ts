@@ -8,6 +8,7 @@ import {
   artifactLayout,
   BINARY,
   buildCommand,
+  compileCommand,
   buildEnv,
   commitQueue,
   compareVersions,
@@ -258,20 +259,50 @@ describe("build environment", () => {
     expect(ABSORBED.filter((s) => s !== "dotenv/config").toSorted()).toEqual(fork.toSorted());
   });
 
-  test("the fork build is one product: binary yolo, alias bun", () => {
-    expect(BINARY).toEqual({ name: "yolo", alias: "bun" });
+  test("the fork build is one product: binary yolo, aliases bun and vu", () => {
+    expect(BINARY).toEqual({ name: "yolo", aliases: ["bun", "vu"] });
     expect(artifactLayout("/srv/forge/artifacts/abc")).toEqual({
       binary: "/srv/forge/artifacts/abc/yolo",
-      alias: "/srv/forge/artifacts/abc/bun",
+      aliases: {
+        bun: "/srv/forge/artifacts/abc/bun",
+        vu: "/srv/forge/artifacts/abc/vu",
+      },
     });
   });
 
-  test("a runtime linked as yolo and as bun runs under both argv0 names", () => {
+  test("compile command puts the CLI on the engine that runs it", () => {
+    expect(
+      compileCommand("/art/bun", "/art/yolo", "0.1.0", ["--bytecode"], "/lib/libaphrody_ffi.so"),
+    ).toEqual([
+      "/art/bun",
+      "build",
+      "--compile",
+      "--bytecode",
+      "--asset",
+      "/lib/libaphrody_ffi.so",
+      "--define",
+      'YOLO_VERSION="0.1.0"',
+      "apps/yolo/cli/src/index.ts",
+      "--outfile",
+      "/art/yolo",
+    ]);
+    expect(compileCommand("/art/bun", "/art/yolo", "0.1.0", [])).not.toContain("--asset");
+  });
+
+  test("--yolo-root and --yolo-asset select the compiled artifact", () => {
+    const options = parseArgs(["build", "--yolo-root", "/repo", "--yolo-asset=/lib/x.so"], {});
+    expect(options.yoloRoot).toBe("/repo");
+    expect(options.yoloAsset).toBe("/lib/x.so");
+    expect(parseArgs(["build"], { BUN_FORGE_YOLO_ROOT: "/env" }).yoloRoot).toBe("/env");
+    expect(parseArgs(["build"], {}).yoloRoot).toBeUndefined();
+  });
+
+  test("a runtime linked as yolo, bun and vu runs under each argv0 name", () => {
     const dir = mkdtempSync(join(tmpdir(), "yolo-argv0-"));
     try {
       symlinkSync(process.execPath, join(dir, BINARY.name));
-      symlinkSync(BINARY.name, join(dir, BINARY.alias));
-      for (const name of [BINARY.name, BINARY.alias]) {
+      for (const alias of BINARY.aliases) symlinkSync(BINARY.name, join(dir, alias));
+      for (const name of [BINARY.name, ...BINARY.aliases]) {
         const r = Bun.spawnSync([
           join(dir, name),
           "-e",

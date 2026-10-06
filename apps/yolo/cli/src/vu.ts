@@ -214,3 +214,41 @@ export function pathWithVu(dir: string, existing: string | undefined): string {
     ? join(dir, "bin")
     : `${join(dir, "bin")}:${existing}`;
 }
+
+/** argv0 names the Python alias of the single `yolo` executable (`vu` or `vu.exe`, any directory). */
+export function isVuArgv0(argv0: string): boolean {
+  const name = argv0.split(/[\\/]/).pop() ?? argv0;
+  return name === "vu" || name === "vu.exe";
+}
+
+/**
+ * `vu …` and `yolo vu …`: hands the command line to the verified `vu` runtime artifact (`<artifact>/bin/vu`), which
+ * owns Python, uv and ruff. The artifact is loaded, never linked into this executable; the dependency is one way
+ * (yolo -> vu). Returns the exit code of the artifact, 127 when none is installed, 1 when it fails verification.
+ */
+export async function runVu(
+  args: readonly string[],
+  options: { env?: Env; home?: string; artifact?: string } = {},
+): Promise<number> {
+  const env = options.env ?? process.env;
+  const state = await resolveVu({ artifact: options.artifact, env, home: options.home });
+  if (state.state === "absent") {
+    console.error(
+      `vu: runtime not installed (${state.reason}); set VU_HOME or install the vu artifact`,
+    );
+    return 127;
+  }
+  if (state.state === "invalid") {
+    console.error(
+      `vu: the runtime ${state.dir} failed verification: ${state.problems.slice(0, 3).join("; ")}`,
+    );
+    return 1;
+  }
+  const child = Bun.spawn([join(state.dir, "bin", "vu"), ...args], {
+    env: { ...env, PATH: pathWithVu(state.dir, env["PATH"]) },
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  return child.exited;
+}

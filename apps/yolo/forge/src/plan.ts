@@ -36,6 +36,10 @@ export interface ForgeConfig {
 
 export interface Options {
   command: Command;
+  /** Monorepo root holding the yolo CLI sources: when set, the artifact is the CLI compiled onto the fork engine. */
+  yoloRoot?: string;
+  /** Native tooling library embedded with the CLI (`--asset`), as `scripts/release/tooling-asset.ts` qualifies it. */
+  yoloAsset?: string;
   config: ForgeConfig;
   home: string;
   artifacts: string;
@@ -85,6 +89,8 @@ export function parseArgs(argv: string[], env: Record<string, string | undefined
   };
   if (env.BUN_FORGE_REPOSITORY) config.repository = env.BUN_FORGE_REPOSITORY;
   if (env.BUN_FORGE_BRANCH) config.branch = env.BUN_FORGE_BRANCH;
+  if (env.BUN_FORGE_YOLO_ROOT) options.yoloRoot = env.BUN_FORGE_YOLO_ROOT;
+  if (env.BUN_FORGE_YOLO_ASSET) options.yoloAsset = env.BUN_FORGE_YOLO_ASSET;
   const rest = argv.slice(1);
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i]!;
@@ -144,6 +150,12 @@ export function parseArgs(argv: string[], env: Record<string, string | undefined
         break;
       case "--keep":
         options.keep = true;
+        break;
+      case "--yolo-root":
+        options.yoloRoot = value();
+        break;
+      case "--yolo-asset":
+        options.yoloAsset = value();
         break;
       case "--tests":
         options.tests = true;
@@ -420,11 +432,42 @@ export const ABSORBED = [
   "uuid",
 ] as const;
 
-/** The fork build is one product: the binary is `yolo`, and `bun` is a compatible alias (same file, argv0 bun). */
-export const BINARY = { name: "yolo", alias: "bun" } as const;
+/** The fork build is one product: the binary is `yolo`; `bun` (the engine) and `vu` (Python) are aliases of the same file, selected by argv0. */
+export const BINARY = { name: "yolo", aliases: ["bun", "vu"] } as const;
 
-export function artifactLayout(out: string): { binary: string; alias: string } {
-  return { binary: `${out}/${BINARY.name}`, alias: `${out}/${BINARY.alias}` };
+/** CLI entry and version file of the monorepo, relative to `--yolo-root`. */
+export const YOLO_CLI = {
+  entry: "apps/yolo/cli/src/index.ts",
+  versionFile: "apps/yolo/VERSION",
+} as const;
+
+/** `bun build --compile` arguments that put the yolo CLI on the engine that runs them. */
+export function compileCommand(
+  engine: string,
+  outfile: string,
+  version: string,
+  flags: readonly string[],
+  asset?: string,
+): string[] {
+  return [
+    engine,
+    "build",
+    "--compile",
+    ...flags,
+    ...(asset ? ["--asset", asset] : []),
+    "--define",
+    `YOLO_VERSION=${JSON.stringify(version)}`,
+    YOLO_CLI.entry,
+    "--outfile",
+    outfile,
+  ];
+}
+
+export function artifactLayout(out: string): { binary: string; aliases: Record<string, string> } {
+  return {
+    binary: `${out}/${BINARY.name}`,
+    aliases: Object.fromEntries(BINARY.aliases.map((name) => [name, `${out}/${name}`])),
+  };
 }
 
 export const SMOKE_SCRIPT = `const out = {};
@@ -451,9 +494,13 @@ export interface Receipt {
   steps: StepRecord[];
   ok: boolean;
   artifact?: { path: string; sha256: string; bytes: number };
-  /** `bun` alias of the artifact (symlink to the binary), smoked through its own argv0. */
-  alias?: { path: string; target: string };
+  /** Aliases of the artifact (symlinks to the binary), each smoked through its own argv0. */
+  aliases?: { name: string; path: string; target: string }[];
   smokeAlias?: unknown;
+  /** Set when the artifact is the yolo CLI compiled onto the engine (otherwise it is the bare engine). */
+  compiled?: { entry: string; version: string; flags: string[]; asset: string | null };
+  smokeYolo?: unknown;
+  smokeVu?: unknown;
   glibc?: { ceiling: string; maxBefore: string | null; maxAfter: string | null; patched: string[] };
   smoke?: unknown;
   startedAt: string;

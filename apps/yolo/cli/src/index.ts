@@ -141,6 +141,12 @@ ${header}
 }
 
 async function main(): Promise<void> {
+  // One executable, three names: `yolo`, `bun` (the engine; the runtime handles it before this code) and `vu`.
+  const { isVuArgv0, runVu } = await import("./vu");
+  if (isVuArgv0(process.argv0)) {
+    process.exitCode = await runVu(process.argv.slice(2));
+    return;
+  }
   const args = process.argv.slice(2);
   const command = args[0] || (isCompiled() ? "help" : "status");
 
@@ -509,6 +515,11 @@ async function main(): Promise<void> {
       process.exitCode = await runPluginCommand(args.slice(1), rootDir());
       break;
     }
+
+    case "vu":
+      // The verified vu runtime artifact is loaded, never linked (docs/plans/yolo-fork-unified/PLAN.md).
+      process.exitCode = await runVu(args.slice(1));
+      break;
 
     case "py":
     case "python":

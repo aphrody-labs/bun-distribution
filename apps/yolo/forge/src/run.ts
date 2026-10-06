@@ -17,7 +17,8 @@ import {
 } from "node:fs";
 import { auditGlibc, lowerGlibcCeiling } from "./glibc.ts";
 import { availableParallelism, totalmem, userInfo } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { COMPILE_FLAGS } from "../../../../scripts/release/compile-flags.ts";
 import {
   type Arch,
   type Options,
@@ -39,7 +40,9 @@ import {
   scratchPlan,
   artifactLayout,
   BINARY,
+  compileCommand,
   SMOKE_SCRIPT,
+  YOLO_CLI,
   systemdUnit,
   toolUrl,
   versionIn,
@@ -492,7 +495,29 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
     await step(steps, "artifact", async () => {
       mkdirSync(out, { recursive: true });
       const dest = artifactLayout(out).binary;
-      await Bun.write(dest, Bun.file(built));
+      if (options.yoloRoot) {
+        // One executable: the yolo CLI compiled onto the engine just built, so the engine is not copied twice.
+        const root = resolve(options.yoloRoot);
+        const entry = join(root, YOLO_CLI.entry);
+        if (!existsSync(entry)) fail(`no yolo CLI at ${entry} (--yolo-root)`);
+        const version = readFileSync(join(root, YOLO_CLI.versionFile), "utf8").trim();
+        await Bun.write(dest, Bun.file(built));
+        await run(["chmod", "+x", dest]);
+        const flags = [...COMPILE_FLAGS];
+        await run(compileCommand(built, dest, version, flags, options.yoloAsset), {
+          cwd: root,
+          env,
+          logFile,
+        });
+        receipt.compiled = {
+          entry: YOLO_CLI.entry,
+          version,
+          flags,
+          asset: options.yoloAsset ?? null,
+        };
+      } else {
+        await Bun.write(dest, Bun.file(built));
+      }
       await run(["chmod", "+x", dest]);
       let bytes = await Bun.file(dest).bytes();
       const ceiling = options.config.glibcCeiling;
@@ -505,10 +530,12 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
         }
         receipt.glibc = { ceiling, maxBefore, maxAfter: result.maxGlibc, patched: result.patched };
       }
-      const aliasPath = artifactLayout(out).alias;
-      rmSync(aliasPath, { force: true });
-      symlinkSync(BINARY.name, aliasPath);
-      receipt.alias = { path: aliasPath, target: BINARY.name };
+      receipt.aliases = [];
+      for (const [name, path] of Object.entries(artifactLayout(out).aliases)) {
+        rmSync(path, { force: true });
+        symlinkSync(BINARY.name, path);
+        receipt.aliases.push({ name, path, target: BINARY.name });
+      }
       receipt.artifact = {
         path: dest,
         sha256: new Bun.CryptoHasher("sha256").update(bytes).digest("hex"),
@@ -516,35 +543,61 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
       };
     });
     await step(steps, "smoke", () => {
-      const r = capture([receipt.artifact!.path, "-e", SMOKE_SCRIPT], { env });
-      if (r.code !== 0) fail(`smoke failed: ${r.stderr.trim()}`);
-      receipt.smoke = JSON.parse(r.stdout.trim().split("\n").pop()!);
-      const viaAlias = capture([receipt.alias!.path, "-e", SMOKE_SCRIPT], { env });
-      if (viaAlias.code !== 0)
-        fail(`smoke through the ${BINARY.alias} alias failed: ${viaAlias.stderr.trim()}`);
-      receipt.smokeAlias = JSON.parse(viaAlias.stdout.trim().split("\n").pop()!);
-      const first = receipt.smoke as { argv0: string; revision: string };
-      const second = receipt.smokeAlias as { argv0: string; revision: string };
-      if (
-        first.argv0 !== BINARY.name ||
-        second.argv0 !== BINARY.alias ||
-        first.revision !== second.revision
-      )
-        fail(`argv0 check failed: ${first.argv0}/${second.argv0}`);
+      const aliasPath = (name: string) =>
+        receipt.aliases!.find((alias) => alias.name === name)!.path;
+      const engine = aliasPath("bun");
+      // The engine answers to the `bun` alias whether or not the CLI is compiled onto it.
+      const viaBun = capture([engine, "-e", SMOKE_SCRIPT], { env });
+      if (viaBun.code !== 0) fail(`smoke through the bun alias failed: ${viaBun.stderr.trim()}`);
+      receipt.smoke = JSON.parse(viaBun.stdout.trim().split("\n").pop()!);
+      const engineSmoke = receipt.smoke as { argv0: string; revision: string };
+      if (engineSmoke.argv0 !== "bun") fail(`bun alias argv0 is ${engineSmoke.argv0}`);
+      if (!receipt.compiled) {
+        // Bare engine: `yolo` is the same file as `bun`.
+        const viaYolo = capture([receipt.artifact!.path, "-e", SMOKE_SCRIPT], { env });
+        if (viaYolo.code !== 0) fail(`smoke through yolo failed: ${viaYolo.stderr.trim()}`);
+        receipt.smokeAlias = JSON.parse(viaYolo.stdout.trim().split("\n").pop()!);
+        const second = receipt.smokeAlias as { argv0: string; revision: string };
+        if (second.argv0 !== BINARY.name || second.revision !== engineSmoke.revision)
+          fail(`argv0 check failed: ${second.argv0}`);
+        return;
+      }
+      // Compiled: `yolo` runs the CLI, `vu` delegates to the vu runtime artifact (absent here: exit 127).
+      const yolo = capture([receipt.artifact!.path, "version"], { env });
+      if (yolo.code !== 0 || !yolo.stdout.startsWith("yolo "))
+        fail(`yolo version failed: ${(yolo.stderr || yolo.stdout).trim()}`);
+      receipt.smokeYolo = yolo.stdout.trim();
+      const emptyHome = join(out, ".vu-none");
+      mkdirSync(emptyHome, { recursive: true });
+      const vu = capture([aliasPath("vu"), "--version"], { env: { ...env, VU_HOME: emptyHome } });
+      rmSync(emptyHome, { recursive: true, force: true });
+      if (vu.code !== 127 || !vu.stderr.includes("vu: runtime not installed"))
+        fail(`vu alias did not dispatch by argv0: exit ${vu.code} ${vu.stderr.trim()}`);
+      receipt.smokeVu = { exit: vu.code, message: vu.stderr.trim() };
     });
     if (options.tests) {
       await step(steps, "tests (first_party)", async () => {
-        await run([receipt.artifact!.path, "install", "--ignore-scripts"], {
-          cwd: join(tree, "test"),
-          env,
-          logFile,
-        });
+        await run(
+          [
+            receipt.aliases!.find((alias) => alias.name === "bun")!.path,
+            "install",
+            "--ignore-scripts",
+          ],
+          {
+            cwd: join(tree, "test"),
+            env,
+            logFile,
+          },
+        );
         const suites = firstPartyTests(tree);
-        await run([receipt.artifact!.path, "test", ...suites], {
-          cwd: tree,
-          env: { ...env, BUN_DEBUG_QUIET_LOGS: "1", BUN_FEATURE_FLAG_INTERNAL_FOR_TESTING: "1" },
-          logFile,
-        });
+        await run(
+          [receipt.aliases!.find((alias) => alias.name === "bun")!.path, "test", ...suites],
+          {
+            cwd: tree,
+            env: { ...env, BUN_DEBUG_QUIET_LOGS: "1", BUN_FEATURE_FLAG_INTERNAL_FOR_TESTING: "1" },
+            logFile,
+          },
+        );
       });
     }
     receipt.ok = true;
