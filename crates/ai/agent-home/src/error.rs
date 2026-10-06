@@ -72,6 +72,30 @@ pub enum HomeError {
     /// The filesystem watcher failed to start or register a path.
     #[error("watch error: {0}")]
     Watch(String),
+
+    /// `config.toml` could not be read or parsed.
+    #[error("agent-home config: {0}")]
+    Config(String),
+
+    /// A home name sanitises to nothing (or is otherwise unusable).
+    #[error("invalid home name: {0:?}")]
+    InvalidHomeName(String),
+
+    /// The home (or template) directory does not exist.
+    #[error("home not found: {0}")]
+    HomeNotFound(PathBuf),
+
+    /// The destination home already exists.
+    #[error("home already exists: {0}")]
+    HomeExists(PathBuf),
+
+    /// A backup did not match the content it was taken from.
+    #[error("backup verification failed: {0}")]
+    BackupVerification(String),
+
+    /// The home changed between planning and applying an operation.
+    #[error("home changed during the operation: {0}")]
+    Concurrent(String),
 }
 
 impl HomeError {

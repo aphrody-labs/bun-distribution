@@ -8,7 +8,14 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{HomeError, filenames::BootstrapFile, guard::WorkspaceGuard, soul::Soul};
+use crate::{
+    HomeError,
+    filenames::BootstrapFile,
+    fsutil::sha256_hex,
+    guard::WorkspaceGuard,
+    revision::{FileDigest, manifest_revision},
+    soul::Soul,
+};
 
 const CONTRACT: &str = include_str!("../sync-contract.json");
 
@@ -49,8 +56,15 @@ pub struct SyncDocument {
 /// One coherent local revision of the seven default documents.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SyncSnapshot {
-    /// Hash of ordered filenames and document hashes.
+    /// BLAKE3 hash of ordered filenames and document hashes (stable key used
+    /// by the memory and training ledgers).
     pub revision: String,
+    /// Runtime-portable revision of the same seven documents: the
+    /// [`crate::revision`] `sha256-v1` manifest applied to the documents in
+    /// contract order (`<sha256> <size> <filename>\n` per document). Bun
+    /// recomputes it natively; see `docs/reference/ai/AGENT-HOME.md`.
+    #[serde(default)]
+    pub revision_sha256: String,
     /// Validated documents in prompt injection order.
     pub documents: Vec<SyncDocument>,
 }
@@ -97,6 +111,43 @@ impl SyncSnapshot {
                 )));
             }
         }
-        Ok(Self { revision: hasher.finalize().to_hex().to_string(), documents })
+        let digests: Vec<FileDigest> = documents
+            .iter()
+            .map(|d| FileDigest {
+                path: d.filename.clone(),
+                size: d.content.len() as u64,
+                sha256: sha256_hex(d.content.as_bytes()),
+            })
+            .collect();
+        Ok(Self {
+            revision: hasher.finalize().to_hex().to_string(),
+            revision_sha256: manifest_revision(&digests),
+            documents,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::onboard::{OnboardOptions, seed_workspace};
+
+    #[test]
+    fn sha256_revision_follows_the_documented_manifest() {
+        let td = tempfile::tempdir().unwrap();
+        seed_workspace(&OnboardOptions::new(td.path())).unwrap();
+        let snapshot = SyncSnapshot::capture(td.path()).unwrap();
+        let mut manifest = String::new();
+        for name in sync_defaults().unwrap() {
+            let bytes = std::fs::read(td.path().join(name.filename())).unwrap();
+            let line = [sha256_hex(&bytes), bytes.len().to_string(), name.filename().to_string()];
+            manifest.push_str(&line.join(" "));
+            manifest.push('\n');
+        }
+        assert_eq!(
+            snapshot.revision_sha256,
+            format!("sha256-v1:{}", sha256_hex(manifest.as_bytes()))
+        );
+        assert_eq!(snapshot.revision.len(), 64);
     }
 }

@@ -39,6 +39,9 @@ thiserror            = { workspace = true }
 # across agents/profiles). `rayon` feature dropped — the inputs are small
 # bootstrap files, single-pass hashing is faster than the rayon fan-out.
 blake3               = { version = "1", default-features = false }
+# Runtime-portable `sha256-v1` home revision: SHA-256 is native in Bun
+# (`Bun.CryptoHasher`), BLAKE3 is not.
+sha2                 = { workspace = true }
 # Grapheme-cluster aware streaming truncation (BudgetWriter). All targets.
 unicode-segmentation = { workspace = true }
 # Lock-free hot-swap of the live `Arc<AgentHome>`. All targets (the swap
@@ -54,6 +57,8 @@ memmap2              = { workspace = true }
 notify               = { workspace = true }
 # Pure-Rust git (optional `git` feature). Host-only.
 gix                  = { workspace = true, optional = true }
+# `aphrody agent-home` command line (`cli` module). Host-only.
+clap                 = { workspace = true }
 
 [dev-dependencies]
 tempfile             = { workspace = true }

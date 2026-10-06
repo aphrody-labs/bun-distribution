@@ -11,6 +11,11 @@
 //! * agent id — selects `~/.aphrody/workspace-<profile>` per agent when set via
 //!   [`HomeOptions::agent_id`].
 //! * default — `~/.aphrody/workspace`.
+//!
+//! Named and per-agent homes live under the homes root
+//! ([`crate::homes::HomesRoot`]): `$APHRODY_HOMES_DIR`, else `[agent_home]
+//! homes_dir` in `config.toml`, else `~/.aphrody/workspaces` (default layout
+//! unchanged).
 
 use std::path::{Path, PathBuf};
 
@@ -20,7 +25,7 @@ pub use aphrody_models::paths::ENV_APHRODY_HOME;
 #[cfg(target_arch = "wasm32")]
 pub const ENV_APHRODY_HOME: &str = "APHRODY_HOME";
 
-use crate::HomeError;
+use crate::{HomeError, homes::HomesRoot};
 /// Environment variable that overrides the workspace directory outright.
 pub const ENV_APHRODY_WORKSPACE: &str = "APHRODY_WORKSPACE";
 /// Environment variable that selects a named profile.
@@ -78,9 +83,9 @@ pub fn sanitize_profile(raw: &str) -> String {
 ///
 /// Resolution order (first match wins):
 /// 1. `$APHRODY_WORKSPACE` (verbatim override).
-/// 2. explicit `agent_id` -> `~/.aphrody/workspace-<agent>`.
-/// 3. `profile` arg or `$APHRODY_PROFILE` -> existing
-///    `~/.aphrody/workspaces/<profile>`, else `~/.aphrody/workspace-<profile>`.
+/// 2. explicit `agent_id` -> `~/.aphrody/workspace-<agent>`, or `<homes root>/<agent>` when the
+///    homes root is configured.
+/// 3. `profile` arg or `$APHRODY_PROFILE` -> [`named_profile_workspace`].
 /// 4. default -> `~/.aphrody/workspace`.
 ///
 /// # Errors
@@ -95,11 +100,10 @@ pub fn resolve_workspace(
         return Ok(PathBuf::from(ws));
     }
     let base = state_dir()?;
-    if let Some(agent) = agent_id {
-        let s = sanitize_profile(agent);
-        if !s.is_empty() {
-            return Ok(base.join(format!("workspace-{s}")));
-        }
+    if let Some(agent) = agent_id
+        && let Some(home) = HomesRoot::resolve_in_lenient(&base).agent_home(agent)
+    {
+        return Ok(home);
     }
     let prof = profile
         .map(str::to_string)
@@ -114,15 +118,20 @@ pub fn resolve_workspace(
 
 /// Resolve a named profile inside an explicit state directory, independently
 /// of the current agent's workspace/profile environment overrides.
-/// Existing legacy profile directories remain a compatibility fallback.
+///
+/// The home lives under the homes root ([`HomesRoot`]); with the default root
+/// an existing legacy `workspace-<profile>` directory remains a compatibility
+/// fallback, and a profile with no directory yet keeps resolving to the legacy
+/// path (unchanged behaviour).
 #[must_use]
 pub fn named_profile_workspace(state: &Path, profile: &str) -> PathBuf {
-    let profile = sanitize_profile(profile);
-    if profile.is_empty() {
-        return state.join("workspace");
+    let root = HomesRoot::resolve_in_lenient(state);
+    let name = sanitize_profile(profile);
+    if name.is_empty() || root.is_configured() {
+        return root.home(&name);
     }
-    let canonical = state.join("workspaces").join(&profile);
-    if canonical.is_dir() { canonical } else { state.join(format!("workspace-{profile}")) }
+    let canonical = root.path.join(&name);
+    if canonical.is_dir() { canonical } else { state.join(format!("workspace-{name}")) }
 }
 
 #[cfg(test)]

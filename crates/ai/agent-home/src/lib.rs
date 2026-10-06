@@ -25,6 +25,19 @@
 //! * is **`Send + Sync` by construction**, shareable across the tokio runtime;
 //! * **validates at parse** ([`soul::Soul`] is typed, with anti-pattern lints).
 //!
+//! ## Managing homes
+//!
+//! * [`homes::HomesRoot`] — configurable homes root (`$APHRODY_HOMES_DIR`, `[agent_home]
+//!   homes_dir`, default `<state>/workspaces`).
+//! * [`template::instantiate_template`] — create a home from an external template directory.
+//! * [`user::UserProfile`] — profile fields `avatar`, `agent_id`, `updated_at`,
+//!   `template_revision` in `USER.md`.
+//! * [`revision::home_revision`] — `sha256-v1` content revision, recomputable from Bun.
+//! * [`merge::merge_homes`] / [`merge::sync_homes`] — explicit-rule merge, dry run by default,
+//!   verified backup before apply.
+//! * [`rename::rename_home`] — atomic rename migrating memories and references.
+//! * [`cli`] — the `aphrody agent-home` command line over all of the above.
+//!
 //! ## Cross-platform
 //!
 //! The typed model + budget + assembly compile everywhere (Linux #1, Windows
@@ -61,18 +74,29 @@ pub mod cache;
 pub mod error;
 pub mod filenames;
 pub mod frontmatter;
+pub mod fsutil;
 pub mod guard;
 pub mod heartbeat;
 pub mod home;
+pub mod homes;
 pub mod identity;
+pub mod merge;
 pub mod mmap;
 pub mod onboard;
 pub mod paths;
+pub mod rename;
+pub mod revision;
 pub mod services;
 pub mod soul;
 pub mod sync;
+pub mod template;
+pub mod time;
 pub mod tools;
 pub mod user;
+
+/// `aphrody agent-home` command line (host-only: clap + process I/O).
+#[cfg(not(target_arch = "wasm32"))]
+pub mod cli;
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "git"))]
 pub mod git;
@@ -88,12 +112,20 @@ pub use crate::{
     filenames::BootstrapFile,
     guard::WorkspaceGuard,
     home::{AgentHome, HomeOptions},
+    homes::{ENV_APHRODY_HOMES_DIR, HomeEntry, HomesRoot, HomesRootSource},
     identity::Identity,
+    merge::{
+        BackupRecord, ConflictPolicy, MergeAction, MergeEntry, MergeOptions, MergeReport,
+        SyncReport, merge_homes, restore_backup, sync_homes,
+    },
     mmap::MappedBytes,
     onboard::{OnboardOptions, SeedReport, UpgradeOptions, UpgradeReport, upgrade_workspace},
+    rename::{RenameOptions, RenameReport, rename_home},
+    revision::{FileDigest, HomeRevision, REVISION_ALGORITHM, home_revision},
     services::{ProfileServiceContext, ServiceConfigError},
     soul::{Bluntness, Brevity, Humor, Soul},
     sync::{SyncDocument, SyncSnapshot, sync_defaults},
+    template::{TemplateOptions, TemplateReport, instantiate_template},
     tools::ToolsDoc,
     user::UserProfile,
 };

@@ -124,9 +124,117 @@ pub fn unquote(s: &str) -> String {
     }
 }
 
+/// Quote a scalar for the frontmatter when [`parse`] would otherwise misread
+/// it (leading/trailing space, a comment marker, a list bracket, a quote, or a
+/// `: ` sequence). Double quotes are used unless the value contains one.
+fn quote_scalar(value: &str) -> String {
+    let needs = value.is_empty()
+        || value.trim() != value
+        || value.starts_with(['#', '[', '"', '\'', '-'])
+        || value.contains(": ")
+        || value.contains(" #");
+    if !needs {
+        return value.to_string();
+    }
+    if value.contains('"') { format!("'{value}'") } else { format!("\"{value}\"") }
+}
+
+/// Set (`Some`) or remove (`None`) top-level scalar keys in the frontmatter of
+/// `content`, preserving every other key, comment and the markdown body.
+///
+/// A key that already exists is rewritten in place (a block list that followed
+/// it is dropped); a new key is appended at the end of the block. A document
+/// without frontmatter gains one. Values containing a line break are rejected
+/// by flattening them to a single line, so the block can never be corrupted.
+#[must_use]
+pub fn upsert_scalars(content: &str, pairs: &[(&str, Option<&str>)]) -> String {
+    let (fm, body) = split(content);
+    let mut lines: Vec<String> =
+        fm.map(|f| f.lines().map(str::to_string).collect()).unwrap_or_default();
+    for (key, value) in pairs {
+        let top_level_key = |line: &str| {
+            !line.starts_with([' ', '\t'])
+                && line.split_once(':').is_some_and(|(k, _)| k.trim() == *key)
+        };
+        let position = lines.iter().position(|l| top_level_key(l));
+        if let Some(start) = position {
+            // Remove the key line and any block-list items that belong to it.
+            let mut end = start + 1;
+            while end < lines.len() {
+                let item = lines[end].trim_start();
+                let indented = lines[end].starts_with([' ', '\t']);
+                if indented && (item.starts_with("- ") || item.is_empty()) {
+                    end += 1;
+                } else {
+                    break;
+                }
+            }
+            lines.drain(start..end);
+        }
+        if let Some(v) = value {
+            let flat = v.replace(['\r', '\n'], " ");
+            let line = format!("{key}: {}", quote_scalar(flat.trim()));
+            match position {
+                Some(at) => lines.insert(at.min(lines.len()), line),
+                None => lines.push(line),
+            }
+        }
+    }
+    let mut out = String::from("---\n");
+    for line in &lines {
+        out.push_str(line);
+        out.push('\n');
+    }
+    out.push_str("---\n");
+    if !body.is_empty() {
+        out.push('\n');
+        out.push_str(body);
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn upsert_replaces_appends_and_removes_keys() {
+        let src = "---\n# keep me\nname: Sam\ntags:\n  - a\n  - b\nlang: fr\n---\n\nBody.\n";
+        let out = upsert_scalars(
+            src,
+            &[("name", Some("Alex")), ("tags", None), ("avatar", Some("img/a.png"))],
+        );
+        assert_eq!(out, "---\n# keep me\nname: Alex\nlang: fr\navatar: img/a.png\n---\n\nBody.\n");
+        let pairs = parse(split(&out).0.unwrap());
+        assert!(
+            pairs.iter().any(|(k, v)| k == "avatar" && *v == FmValue::Scalar("img/a.png".into()))
+        );
+    }
+
+    #[test]
+    fn upsert_adds_frontmatter_and_round_trips_tricky_values() {
+        let out = upsert_scalars(
+            "Plain body\n",
+            &[
+                ("agent_id", Some("discord:123")),
+                ("note", Some("a: b # c")),
+                ("q", Some("say \"hi\"")),
+            ],
+        );
+        assert!(out.starts_with("---\n"));
+        assert!(out.ends_with("\nPlain body\n"));
+        let pairs = parse(split(&out).0.unwrap());
+        assert_eq!(pairs[0].1, FmValue::Scalar("discord:123".into()));
+        assert_eq!(pairs[1].1, FmValue::Scalar("a: b # c".into()));
+        assert_eq!(pairs[2].1, FmValue::Scalar("say \"hi\"".into()));
+    }
+
+    #[test]
+    fn upsert_flattens_line_breaks() {
+        let out = upsert_scalars("", &[("k", Some("a\nb: x"))]);
+        let pairs = parse(split(&out).0.unwrap());
+        assert_eq!(pairs, vec![("k".into(), FmValue::Scalar("a b: x".into()))]);
+    }
 
     #[test]
     fn split_returns_none_without_frontmatter() {

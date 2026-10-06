@@ -63,6 +63,7 @@ pub(crate) const TOOLS: &[Tool] = &[
         &["aphrody-agent-home-memory"],
         Target::Entry(aphrody_memory::cli_main),
     ),
+    tool("agent-home", &["aphrody-agent-home"], Target::Entry(aphrody_agent_home::cli::cli_main)),
     tool("agent-train", &["aphrody-agent-train"], Target::Entry(aphrody_train::cli_main)),
     tool("llama-daemon", &["aphrody-llama-daemon"], Target::Entry(aphrody_llama_server::cli_main)),
     tool("llama", &["aphrody-llama"], Target::Entry(aphrody_llama_server::chat_cli_main)),
@@ -90,7 +91,8 @@ pub(crate) const HELP: &str = "Former standalone binaries, also callable by thei
 through the links `aphrody self install-path` creates:
   infra, ovh, yolo, kernel, host-service, ssh, wsl, backend, mcp-server, web-engine, web-worker, x,
   bxc (also bxc-mcp: Bun x Chrome, see `bxc --help`), gemini-web, google, translate-project, jev,
-  embed, summary, skills, agent-home-memory, agent-train, llama-daemon,
+  embed, summary, skills, agent-home-memory, agent-home (homes: roots, revision, profile, new,
+  merge, sync, restore, rename), agent-train, llama-daemon,
   llama (local chat model: provision, serve, status, stop), n2b (Node 2 Bun), identity
   (design | export-assets | pixel), m3-reproduce, canvas, bindgen, rag-eval, tauri (cargo-tauri),
   create-tauri-app, home (agent home: status, backup, import, index, query), graph (code graph:

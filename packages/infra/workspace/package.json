@@ -39,6 +39,7 @@
     "./workspace-clean": "./src/workspace-clean.ts",
     "./ai-release-gate": "./src/ai-release-gate.ts",
     "./agent-home": "./src/agent-home.ts",
+    "./agent-home-revision": "./src/agent-home-revision.ts",
     "./agent-plugin-sync": "./src/agent-plugin-sync.ts",
     "./agent-plugins": "./src/agent-plugins.ts",
     "./python-quality": "./src/python-quality.ts",
