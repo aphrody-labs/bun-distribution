@@ -902,6 +902,17 @@
         "typescript": "catalog:",
       },
     },
+    "packages/ai/rag-core": {
+      "name": "@aphrody/rag-core",
+      "version": "0.1.0",
+      "dependencies": {
+        "@aphrody/paths": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/ai/xai": {
       "name": "@aphrody/xai",
       "version": "1.1.6",
@@ -1493,6 +1504,8 @@
     "@aphrody/plugins": ["@aphrody/plugins@workspace:packages/engine/plugins"],
 
     "@aphrody/qr": ["@aphrody/qr@workspace:packages/web/qr"],
+
+    "@aphrody/rag-core": ["@aphrody/rag-core@workspace:packages/ai/rag-core"],
 
     "@aphrody/runtime-sdk": ["@aphrody/runtime-sdk@workspace:packages/engine/runtime"],
 

@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-rag-wasm"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "wasm-bindgen adapter of aphrody-rag-core for the browser: three entry points over the shared call surface, no logic of its own."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+aphrody-rag-core = { workspace = true }
+wasm-bindgen     = { workspace = true }
+
+[lints]
+workspace = true

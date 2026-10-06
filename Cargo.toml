@@ -126,6 +126,8 @@ aphrody-prompts = { path = "crates/ai/prompts", version = "1.0.0", features = []
 aphrody-providers = { path = "crates/ai/providers", version = "1.0.0", features = [] }
 aphrody-rag = { path = "crates/ai/rag", version = "1.0.0", features = [] }
 aphrody-rag-core = { path = "crates/ai/rag-core", version = "1.0.0", features = [] }
+aphrody-rag-ffi = { path = "crates/ai/rag-ffi", version = "1.0.0", features = [] }
+aphrody-rag-wasm = { path = "crates/ai/rag-wasm", version = "1.0.0", features = [] }
 aphrody-rag-eval = { path = "crates/ai/rag-eval", version = "1.0.0", features = [] }
 aphrody-re = { path = "crates/os/re", version = "1.0.0-canary", features = [] }
 aphrody-rollout = { path = "crates/ai/rollout", version = "1.0.0", features = [] }

@@ -1339,6 +1339,7 @@ dependencies = [
  "aphrody-n2b-native",
  "aphrody-oxc-bridge",
  "aphrody-rag-core",
+ "aphrody-rag-ffi",
  "aphrody-softraster",
  "aphrody-stdio-capture",
  "aphrody-toolcall-repair",
@@ -2405,6 +2406,21 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "aphrody-rag-ffi"
+version = "1.0.0"
+dependencies = [
+ "aphrody-rag-core",
+]
+
+[[package]]
+name = "aphrody-rag-wasm"
+version = "1.0.0"
+dependencies = [
+ "aphrody-rag-core",
+ "wasm-bindgen",
 ]
 
 [[package]]

@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-rag-ffi"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "C ABI adapter of aphrody-rag-core for bun:ffi: re-exported by the single aphrody-ffi cdylib, no logic of its own."
+
+[lib]
+# rlib only: the symbols ship inside the single aphrody-ffi dynamic library.
+crate-type = ["rlib"]
+
+[dependencies]
+aphrody-rag-core = { workspace = true }
+
+[lints]
+workspace = true

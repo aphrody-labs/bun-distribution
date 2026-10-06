@@ -47,6 +47,11 @@ importing its module does not require a built native library.
 | `void aphrody_string_free(char *ptr)` | free a string this library returned. |
 | `const char *aphrody_last_error(void)` | last error on this thread (owned by lib, no free). |
 
+The RAG call surface (`aphrody_rag_*`: manifest, `call_json`, `call_vec`, `take`, `last_error`) is
+re-exported from `crates/ai/rag-ffi`, an adapter without logic over `aphrody_rag_core::api` (chunking, fusion,
+MMR, eval, vector kernels). Caller-owned buffers, no `free`. Typed Bun binding: `@aphrody/rag-core/ffi`
+(`packages/ai/rag-core`); contract: [Shenron targets](../../../docs/plans/ai/shenron-targets.md).
+
 Arguments exclude the program name — a synthetic `argv[0]` is prepended
 internally — e.g. `["doctor", "--json"]`. The C header is `include/aphrody.h`.
 

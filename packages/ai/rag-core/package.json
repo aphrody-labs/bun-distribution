@@ -1,0 +1,39 @@
+{
+  "name": "@aphrody/rag-core",
+  "version": "0.1.0",
+  "description": "Aphrody RAG core for the web (WebAssembly) and for Bun (bun:ffi): chunking, fusion, eval and vector kernels behind one typed facade.",
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "wasm",
+    "README.md"
+  ],
+  "type": "module",
+  "imports": {
+    "#rag-wasm-glue": "./wasm/aphrody_rag_wasm.js"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./wasm": "./src/wasm.ts",
+    "./ffi": "./src/ffi.ts",
+    "./wasm/*": "./wasm/*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build:wasm": "bun ../../../scripts/build/rust/wasm-package.ts --crate aphrody-rag-wasm --out packages/ai/rag-core/wasm",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@aphrody/paths": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

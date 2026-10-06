@@ -41,6 +41,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod api;
 mod chunk;
 mod markdown_chunker;
 mod prose_chunker;

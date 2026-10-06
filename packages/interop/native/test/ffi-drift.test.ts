@@ -12,6 +12,7 @@ const EXPORT_CRATES = [
   "crates/ui/bun/src",
   "crates/compat/n2b-native/src",
   "crates/compat/oxc-bridge/src",
+  "crates/ai/rag-ffi/src",
 ];
 
 // These existing C ABI exports remain for compatibility. Their JS consumers
@@ -40,6 +41,13 @@ const OWN_BINDING_EXPORTS = new Set([
   "aphrody_inference_poll",
   "aphrody_inference_cancel",
   "aphrody_inference_free",
+  // RAG call surface: bound by @aphrody/rag-core (packages/ai/rag-core), which has its own drift test.
+  "aphrody_rag_abi_version",
+  "aphrody_rag_manifest",
+  "aphrody_rag_call_json",
+  "aphrody_rag_call_vec",
+  "aphrody_rag_take",
+  "aphrody_rag_last_error",
 ]);
 
 function rustFiles(dir: string): string[] {
@@ -145,7 +153,8 @@ test("every product Rust export has a dlopen definition", () => {
   expect(
     [...rust.keys()]
       .filter(
-        (name) => !ts.has(name) && !LEGACY_TOOLING_EXPORTS.has(name) && !OWN_BINDING_EXPORTS.has(name),
+        (name) =>
+          !ts.has(name) && !LEGACY_TOOLING_EXPORTS.has(name) && !OWN_BINDING_EXPORTS.has(name),
       )
       .toSorted(),
   ).toEqual([]);

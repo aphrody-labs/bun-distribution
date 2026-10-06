@@ -69,6 +69,11 @@ mod zerocopy;
 #[cfg(not(target_arch = "wasm32"))]
 pub use zerocopy::*;
 
+// RAG call surface (aphrody_rag_*): chunking, fusion, eval and vector kernels of aphrody-rag-core. The adapter
+// crate owns only the C ABI; the capabilities live in aphrody_rag_core::api, shared with the wasm32 build.
+#[cfg(not(target_arch = "wasm32"))]
+pub use aphrody_rag_ffi::*;
+
 // The historical bun_rs ABI remains available in the same native library.
 // Its implementation is an internal rlib; it no longer ships a second cdylib.
 #[cfg(not(target_arch = "wasm32"))]

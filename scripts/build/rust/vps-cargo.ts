@@ -631,6 +631,11 @@ async function fetchArtifact(
   );
   const remoteDigest = (await new Response(remoteSum.stdout).text()).split(/\s+/)[0];
   if (digest !== remoteDigest) throw new Error(`sha256 mismatch for ${bin}`);
+  // A WebAssembly module or a shared library is a verified copy, not something to execute.
+  if (/\.(wasm|so|dll|dylib)$/.test(bin)) {
+    console.log(`${local} sha256=${digest} (not executed)`);
+    return 0;
+  }
   const runs = Bun.spawnSync([local, "--version"]).exitCode === 0;
   console.log(`${local} sha256=${digest} ${runs ? "runs here" : "does NOT run here (ABI)"}`);
   return runs ? 0 : 3;

@@ -62,6 +62,8 @@ aphrody-models = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
 # World/VFS/formats are qualified independently of absent authentic Wiki data.
 aphrody-rag-core = { workspace = true }
+# C ABI of the RAG call surface (aphrody_rag_*), re-exported by this cdylib.
+aphrody-rag-ffi = { workspace = true }
 aphrody-softraster = { workspace = true }
 aphrody-toolcall-repair = { workspace = true }
 aphrody-web-extract = { workspace = true }
