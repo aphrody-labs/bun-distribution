@@ -178,7 +178,7 @@ COMMANDS:
 
 ```
 Unknown python subcommand: -h
-Usage: yolo py [status|test|lint|fmt|build|check|locks|distributions|providers|typecheck|format:check|plan] [--engine] [--timeout-ms <n>] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]
+Usage: yolo py [status|test|lint|fmt|build|vu|add|remove|sync|lock|run|pip|python|ffi|hf|compile|check|locks|distributions|providers|typecheck|format:check|plan] [--engine] [--timeout-ms <n>] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]
 ```
 
 ## yolo hooks -h

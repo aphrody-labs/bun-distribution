@@ -9,6 +9,8 @@
  *   yolo py check|locks|distributions|providers|typecheck|format:check|plan [--timeout-ms <n>]
  *                                    bounded supervisor of the py/ workspace (timeout, output budget, cancellation,
  *                                    JSON receipt on stdout) through the verified Yolo runtime artifact
+ *   yolo py vu <args> | add|remove|sync|lock|run|pip|python|ffi|hf|compile|uv|ruff ...
+ *                                    delegated to the installed vu artifact (package manager, interpreters, ffi, hf, compiler)
  *   yolo py build                    builds the aphrody wheel (crates/ai/rag-python via maturin) into py/dist
  *                                    (--engine: maturin develop of packages/engine/python)
  *
@@ -69,6 +71,29 @@ export interface PythonTools {
   /** Why no command may run (a damaged or unusable artifact), or null. */
   readonly refusal: string | null;
 }
+
+/** Commands answered by the vu artifact's own binary (`vu <verb>`). */
+const VU_VERBS: ReadonlySet<string> = new Set([
+  "add",
+  "remove",
+  "sync",
+  "lock",
+  "tree",
+  "init",
+  "venv",
+  "publish",
+  "export",
+  "tool",
+  "cache",
+  "pip",
+  "run",
+  "python",
+  "ffi",
+  "hf",
+  "compile",
+  "uv",
+  "ruff",
+]);
 
 function flag(args: readonly string[], name: string): string | undefined {
   const index = args.indexOf(name);
@@ -252,6 +277,28 @@ export async function runPythonCommand(
     return 0;
   }
 
+  // The verbs of the vu runtime itself (package manager, interpreters, ffi, hf, compiler): `yolo` loads the installed
+  // artifact and delegates (plan D18); it never links vu. `yolo py vu <args>` is the explicit form of any vu command.
+  if (sub === "vu" || VU_VERBS.has(sub)) {
+    if (tools.source !== "vu" || tools.vu.artifact === undefined) {
+      console.error(
+        `yolo py ${sub}: the vu runtime is not installed (${tools.vu.state === "absent" ? tools.vu.reason : "unusable"}); install it from the vu repository (bun scripts/install.ts --apply)`,
+      );
+      return 3;
+    }
+    const forwarded: string[] = [];
+    const rest = sub === "vu" ? args.slice(1) : args;
+    for (let index = 0; index < rest.length; index++) {
+      const arg = rest[index]!;
+      if (arg === "--vu") index++;
+      else if (arg !== "--no-vu" && arg !== "--vu-full") forwarded.push(arg);
+    }
+    return runCommand([join(tools.vu.artifact, "bin", "vu"), ...forwarded], {
+      cwd: process.cwd(),
+      env: tools.env,
+    });
+  }
+
   const supervised = new Set([
     "check",
     "locks",
@@ -364,7 +411,7 @@ export async function runPythonCommand(
 
   console.error(`Unknown python subcommand: ${sub}`);
   console.error(
-    "Usage: yolo py [status|test|lint|fmt|build|check|locks|distributions|providers|typecheck|format:check|plan] [--engine] [--timeout-ms <n>] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]",
+    "Usage: yolo py [status|test|lint|fmt|build|vu|add|remove|sync|lock|run|pip|python|ffi|hf|compile|check|locks|distributions|providers|typecheck|format:check|plan] [--engine] [--timeout-ms <n>] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]",
   );
   return 2;
 }
