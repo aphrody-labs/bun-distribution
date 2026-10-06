@@ -5,7 +5,7 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use super::{FileExtract, RawEdge, rust::is_blocklisted};
+use super::{FileExtract, RawEdge, ids::make_id, rust::is_blocklisted};
 use crate::graph::{Confidence, Edge, Graph, Node, NodeKind};
 
 /// Counters describing an assembly.
@@ -29,6 +29,43 @@ fn lang_of(file: &str) -> Option<String> {
         _ => return None,
     }
     .to_owned())
+}
+
+/// File nodes whose bare name is shared by several files get the shortest path suffix (at
+/// least two components) that is unique among them, as Graphify labels them.
+fn disambiguate_file_labels(nodes: &mut [Node]) {
+    let mut groups: HashMap<String, Vec<usize>> = HashMap::new();
+    for (i, n) in nodes.iter().enumerate() {
+        if let Some(file) = &n.file
+            && n.id == make_id(&[file])
+            && n.loc.as_deref() == Some("L1")
+            && file.rsplit('/').next() == Some(n.label.as_str())
+        {
+            groups.entry(n.label.clone()).or_default().push(i);
+        }
+    }
+    for members in groups.into_values().filter(|m| m.len() > 1) {
+        let paths: Vec<Vec<&str>> = members
+            .iter()
+            .map(|&i| nodes[i].file.as_deref().unwrap_or("").split('/').collect())
+            .collect();
+        let suffix = |parts: &Vec<&str>, depth: usize| parts[parts.len().saturating_sub(depth)..].join("/");
+        let labels: Vec<String> = paths
+            .iter()
+            .map(|parts| {
+                for depth in 2..=parts.len() {
+                    let candidate = suffix(parts, depth);
+                    if paths.iter().filter(|other| suffix(other, depth) == candidate).count() == 1 {
+                        return candidate;
+                    }
+                }
+                parts.join("/")
+            })
+            .collect();
+        for (&i, label) in members.iter().zip(labels) {
+            nodes[i].label = label;
+        }
+    }
 }
 
 /// Assemble a graph from per-file extractions.
@@ -131,7 +168,7 @@ pub fn assemble(files: Vec<FileExtract>) -> (Graph, AssembleStats) {
     // 4. Build the graph; edges to nodes that do not exist are dropped (imports to stubs stay
     // because stubs remain nodes).
     let mut index: HashMap<String, usize> = HashMap::new();
-    let mut graph_nodes = Vec::new();
+    let mut graph_nodes: Vec<Node> = Vec::new();
     for (id, n) in &nodes {
         index.insert(id.clone(), graph_nodes.len());
         let mut node = Node::code(id, &n.label, if n.file.is_empty() { None } else { Some(&n.file) });
@@ -140,6 +177,7 @@ pub fn assemble(files: Vec<FileExtract>) -> (Graph, AssembleStats) {
         node.lang = lang_of(&n.file);
         graph_nodes.push(node);
     }
+    disambiguate_file_labels(&mut graph_nodes);
     let mut graph_edges = Vec::new();
     for e in edges {
         let (Some(&s), Some(&d)) = (index.get(&e.src), index.get(&e.dst)) else { continue };
@@ -176,6 +214,17 @@ mod tests {
         assert!(edge("run()", "new()").is_none(), "generic names are not resolved across files");
         assert_eq!((stats.same_file, stats.cross_file), (1, 1));
         assert_eq!(stats.unresolved, 2);
+    }
+
+    #[test]
+    fn duplicate_file_names_get_the_shortest_unique_path_suffix() {
+        let a = extract_file("crates/a/src/error.rs", b"fn x() {}");
+        let b = extract_file("crates/b/src/error.rs", b"fn y() {}");
+        let c = extract_file("crates/c/src/only.rs", b"fn z() {}");
+        let (g, _) = assemble(vec![a, b, c]);
+        let labels: Vec<&str> = g.nodes.iter().filter(|n| n.loc.as_deref() == Some("L1")).map(|n| n.label.as_str()).collect();
+        assert!(labels.contains(&"a/src/error.rs") && labels.contains(&"b/src/error.rs"), "{labels:?}");
+        assert!(labels.contains(&"only.rs"));
     }
 
     #[test]

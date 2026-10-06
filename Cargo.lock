@@ -946,6 +946,7 @@ dependencies = [
  "aphrody-base",
  "aphrody-bindgen",
  "aphrody-chat",
+ "aphrody-code-graph",
  "aphrody-config",
  "aphrody-create-tauri-app",
  "aphrody-diagnostics",
@@ -2339,14 +2340,17 @@ dependencies = [
 name = "aphrody-rag"
 version = "1.0.0"
 dependencies = [
+ "aphrody-code-graph",
  "aphrody-config",
  "aphrody-embed",
  "aphrody-models",
  "aphrody-rag-core",
  "aphrody-sql",
+ "aphrody-store",
  "aphrody-toolcall",
  "async-trait",
  "blake3",
+ "clap",
  "dirs 7.0.0",
  "ignore",
  "pretty_assertions",

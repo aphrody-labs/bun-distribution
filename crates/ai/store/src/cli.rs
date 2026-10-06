@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Command line of the home database (`aphrody-store`): status, verified backups and the
+//! Command line of the home database (`aphrody home`): status, verified backups and the
 //! legacy importers. JSON on stdout, never row content. Every importer is a dry run unless
 //! `--apply` is given, and `--apply` always takes a verified backup of an existing database
 //! first.
 
-use std::{path::PathBuf, process::ExitCode};
+use std::{ffi::OsString, path::PathBuf};
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 use crate::{
     HomeDb, HomeLayout, HomeScope,
@@ -15,22 +15,45 @@ use crate::{
     time::now_ms,
 };
 
-/// Home database tooling.
-#[derive(Debug, Parser)]
-#[command(name = "aphrody-store", version, about)]
-pub struct Cli {
+/// Home selection shared by every verb that opens the home database.
+#[derive(Debug, Clone, Args)]
+pub struct StoreArgs {
     /// Domain profile (`aphrody`, `dbfr`, `ie`...); omitted selects the global home.
     #[arg(long, global = true)]
-    profile: Option<String>,
+    pub profile: Option<String>,
     /// Explicit state root (default: `$APHRODY_HOME` or `~/.aphrody`).
     #[arg(long, global = true)]
-    state: Option<PathBuf>,
+    pub state: Option<PathBuf>,
+}
+
+impl StoreArgs {
+    /// Resolve the layout of the selected home.
+    ///
+    /// # Errors
+    ///
+    /// Home resolution failures.
+    pub fn layout(&self) -> Result<HomeLayout> {
+        let scope = HomeScope::from_profile(self.profile.as_deref());
+        match &self.state {
+            Some(state) => HomeLayout::in_state(state, &scope),
+            None => HomeLayout::resolve(&scope),
+        }
+    }
+}
+
+/// Home database tooling.
+#[derive(Debug, Parser)]
+#[command(name = "aphrody home", version, about)]
+pub struct Cli {
+    #[command(flatten)]
+    store: StoreArgs,
     #[command(subcommand)]
     command: Command,
 }
 
+/// Verbs of the home database.
 #[derive(Debug, Subcommand)]
-enum Command {
+pub enum Command {
     /// Print the layout, schema version and table counts.
     Status,
     /// Write a checksum-verified backup into the unique backup tree.
@@ -49,8 +72,9 @@ enum Command {
     },
 }
 
+/// Importable legacy stores.
 #[derive(Debug, Subcommand)]
-enum ImportWhat {
+pub enum ImportWhat {
     /// A Graphify `graph.json`.
     Graphify {
         /// Path of `graph.json`.
@@ -76,14 +100,6 @@ enum ImportWhat {
     },
 }
 
-fn layout(cli: &Cli) -> Result<HomeLayout> {
-    let scope = HomeScope::from_profile(cli.profile.as_deref());
-    match &cli.state {
-        Some(state) => HomeLayout::in_state(state, &scope),
-        None => HomeLayout::resolve(&scope),
-    }
-}
-
 fn open_for_write(layout: &HomeLayout, apply: bool) -> Result<HomeDb> {
     if !apply {
         // Dry runs never touch the real file: they migrate a private in-memory copy.
@@ -97,9 +113,14 @@ fn open_for_write(layout: &HomeLayout, apply: bool) -> Result<HomeDb> {
     HomeDb::open_path(&layout.db_path)
 }
 
-fn run(cli: &Cli) -> Result<serde_json::Value> {
-    let layout = layout(cli)?;
-    match &cli.command {
+/// Run one verb of the home database.
+///
+/// # Errors
+///
+/// Home, database or importer failures.
+pub fn run(store: &StoreArgs, command: &Command) -> Result<serde_json::Value> {
+    let layout = store.layout()?;
+    match command {
         Command::Status => {
             let exists = layout.db_path.exists();
             let mut out = serde_json::json!({
@@ -157,7 +178,7 @@ fn run(cli: &Cli) -> Result<serde_json::Value> {
                 },
                 ImportWhat::Sessions { path } => {
                     let dir = path.clone().unwrap_or_else(|| layout.home.join("sessions"));
-                    sessions::import_sessions(&mut db, &dir, cli.profile.as_deref(), *apply)?
+                    sessions::import_sessions(&mut db, &dir, store.profile.as_deref(), *apply)?
                 },
             };
             Ok(serde_json::to_value(report)?)
@@ -165,18 +186,24 @@ fn run(cli: &Cli) -> Result<serde_json::Value> {
     }
 }
 
-/// Entry point shared by the transitional binary and the multi-call dispatcher.
+/// Entry point of `aphrody home` (multi-call convention: `args[0]` is the invocation name).
 #[must_use]
-pub fn cli_main() -> ExitCode {
-    let cli = Cli::parse();
-    match run(&cli) {
+pub fn cli_main(args: Vec<OsString>) -> i32 {
+    let cli = match Cli::try_parse_from(args) {
+        Ok(cli) => cli,
+        Err(error) => {
+            let _ = error.print();
+            return i32::from(error.use_stderr());
+        },
+    };
+    match run(&cli.store, &cli.command) {
         Ok(value) => {
             println!("{}", serde_json::to_string_pretty(&value).unwrap_or_default());
-            ExitCode::SUCCESS
+            0
         },
         Err(error) => {
-            eprintln!("aphrody-store: {error}");
-            ExitCode::FAILURE
+            eprintln!("aphrody home: {error}");
+            1
         },
     }
 }

@@ -10,7 +10,10 @@
 pub mod config_resolve;
 pub mod embedder;
 pub mod error;
+pub mod home;
+pub mod home_cli;
 pub mod indexer;
+pub mod pipeline;
 pub mod postgres;
 pub mod redis_cache;
 pub mod reranker;
@@ -31,6 +34,7 @@ pub use embedder::{
     QWEN3_QUERY_INSTRUCTION, StubEmbedder, format_query_or_passage, truncate_and_normalize_mrl,
 };
 pub use error::{RagError, Result};
+pub use home::{HitKind, UnifiedHit, UnifiedOptions, unified_search};
 pub use indexer::{IndexOptions, IndexStats, RagIndexer};
 pub use postgres::{
     PgWebIngestResult, ShenronSearchParams, ingest_web_document, search_documents,

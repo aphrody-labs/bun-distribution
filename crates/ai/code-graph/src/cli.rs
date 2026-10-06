@@ -2,9 +2,9 @@
 //! Command line of the code graph: build, query, explain, path, report, export. JSON on stdout
 //! for `build`, plain text for the readers. Offline, no model, no network.
 
-use std::{fmt::Write as _, path::PathBuf, process::ExitCode};
+use std::{ffi::OsString, fmt::Write as _, path::PathBuf};
 
-use aphrody_store::{HomeDb, HomeLayout, HomeScope, scan::ScanOptions};
+use aphrody_store::{HomeDb, cli::StoreArgs, scan::ScanOptions};
 use clap::{Parser, Subcommand};
 
 use crate::{
@@ -16,14 +16,10 @@ use crate::{
 
 /// Code graph tooling.
 #[derive(Debug, Parser)]
-#[command(name = "aphrody-graph", version, about)]
+#[command(name = "aphrody graph", version, about)]
 pub struct Cli {
-    /// Domain profile (omitted selects the global home).
-    #[arg(long, global = true)]
-    profile: Option<String>,
-    /// Explicit state root (default: `$APHRODY_HOME` or `~/.aphrody`).
-    #[arg(long, global = true)]
-    state: Option<PathBuf>,
+    #[command(flatten)]
+    store: StoreArgs,
     /// Graph source label (default: the only graph of the database).
     #[arg(long, global = true)]
     source: Option<String>,
@@ -76,14 +72,6 @@ enum Command {
     },
 }
 
-fn layout(cli: &Cli) -> Result<HomeLayout> {
-    let scope = HomeScope::from_profile(cli.profile.as_deref());
-    Ok(match &cli.state {
-        Some(state) => HomeLayout::in_state(state, &scope)?,
-        None => HomeLayout::resolve(&scope)?,
-    })
-}
-
 fn pick_source(db: &HomeDb, wanted: Option<&str>) -> Result<String> {
     if let Some(label) = wanted {
         return Ok(label.to_owned());
@@ -100,7 +88,7 @@ fn pick_source(db: &HomeDb, wanted: Option<&str>) -> Result<String> {
 }
 
 fn run(cli: &Cli) -> Result<String> {
-    let layout = layout(cli)?;
+    let layout = cli.store.layout()?;
     if let Command::Build { root, json, report } = &cli.command {
         let mut db = HomeDb::open(&layout)?;
         db.interrupt_stale_runs()?;
@@ -164,18 +152,24 @@ fn run(cli: &Cli) -> Result<String> {
     })
 }
 
-/// Entry point shared by the transitional binary and the multi-call dispatcher.
+/// Entry point of `aphrody graph` (multi-call convention: `args[0]` is the invocation name).
 #[must_use]
-pub fn cli_main() -> ExitCode {
-    let cli = Cli::parse();
+pub fn cli_main(args: Vec<OsString>) -> i32 {
+    let cli = match Cli::try_parse_from(args) {
+        Ok(cli) => cli,
+        Err(error) => {
+            let _ = error.print();
+            return i32::from(error.use_stderr());
+        },
+    };
     match run(&cli) {
         Ok(text) => {
             println!("{}", text.trim_end());
-            ExitCode::SUCCESS
+            0
         },
         Err(error) => {
-            eprintln!("aphrody-graph: {error}");
-            ExitCode::FAILURE
+            eprintln!("aphrody graph: {error}");
+            1
         },
     }
 }

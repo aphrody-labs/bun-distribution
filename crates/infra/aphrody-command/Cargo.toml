@@ -17,7 +17,7 @@ workspace = true
 [features]
 default = []
 native = ["aphrody-rag/native"]
-rag = ["dep:aphrody-rag", "aphrody-rag/ort", "aphrody-rag/native", "aphrody-agent-runtime/rag", "aphrody-app-server/rag", "native"]
+rag = ["aphrody-rag/ort", "aphrody-rag/native", "aphrody-agent-runtime/rag", "aphrody-app-server/rag", "native"]
 train = ["aphrody-train/registry"]
 memory-lancedb = ["aphrody-memory/lancedb"]
 # Native Google Magika deep-learning file-type classification, exposed via
@@ -266,7 +266,8 @@ jsonschema                = { workspace = true }
 aphrody-project-doc       = { workspace = true }
 aphrody-rollout           = { workspace = true }
 aphrody-exec-events       = { workspace = true }
-aphrody-rag               = { workspace = true, optional = true }
+aphrody-rag               = { workspace = true }
+aphrody-code-graph        = { workspace = true }
 aphrody-llama-server      = { workspace = true }
 aphrody-train             = { workspace = true }
 aphrody-app-server        = { workspace = true }

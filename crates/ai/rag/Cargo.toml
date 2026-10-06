@@ -25,9 +25,12 @@ aphrody-rag-core = { workspace = true }
 aphrody-toolcall = { workspace = true }
 aphrody-config   = { workspace = true }
 aphrody-models   = { workspace = true }
+aphrody-code-graph = { workspace = true }
+aphrody-store    = { workspace = true }
 aphrody-sql      = { workspace = true, features = ["postgres", "sqlite"] }
 async-trait      = { workspace = true }
 blake3           = { workspace = true }
+clap             = { workspace = true, features = ["derive"] }
 dirs             = { workspace = true }
 ignore           = { workspace = true }
 rayon            = { workspace = true }

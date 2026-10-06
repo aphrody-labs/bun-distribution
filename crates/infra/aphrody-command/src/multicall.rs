@@ -68,6 +68,9 @@ pub(crate) const TOOLS: &[Tool] = &[
     tool("n2b", &["n2b"], Target::Command("n2b")),
     // Tauri tooling (vendored crates; their standalone binaries are not built).
     tool("rag-eval", &["aphrody-rag-eval"], Target::Entry(aphrody_rag_eval::cli_main)),
+    // The agent home: one database, one pipeline, one retrieval (docs/plans/agent-home-pipeline).
+    tool("home", &["aphrody-home"], Target::Entry(aphrody_rag::home_cli::cli_main)),
+    tool("graph", &["aphrody-graph"], Target::Entry(aphrody_code_graph::cli::cli_main)),
     tool("tauri", &["cargo-tauri"], Target::Entry(tauri)),
     tool("create-tauri-app", &["cargo-create-tauri-app"], Target::Entry(create_tauri_app)),
     // UI and build tooling.
@@ -88,7 +91,8 @@ through the links `aphrody self install-path` creates:
   bxc (also bxc-mcp: Bun x Chrome, see `bxc --help`), gemini-web, google, translate-project, jev,
   embed, summary, skills, agent-home-memory, agent-train, llama-daemon, n2b (Node 2 Bun), identity
   (design | export-assets | pixel), m3-reproduce, canvas, bindgen, rag-eval, tauri (cargo-tauri),
-  create-tauri-app";
+  create-tauri-app, home (agent home: status, backup, import, index, query), graph (code graph:
+  build, query, explain, path, report, export)";
 
 /// `aphrody ovh …` is `aphrody infra ovh …`: the OVHcloud control plane (DNS, email, VPS
 /// inspection, reboot and renewal).
