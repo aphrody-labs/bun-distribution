@@ -1,6 +1,6 @@
 # shenron-cdn-sync.timer — hourly mirror of the public Shenron media into the vps CDN.
 [Unit]
-Description=Hourly Shenron CDN mirror from dbfr
+Description=Hourly Shenron CDN mirror of the vps media
 
 [Timer]
 OnCalendar=hourly

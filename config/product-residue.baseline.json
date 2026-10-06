@@ -33,8 +33,6 @@
     "config/host/privoxy/shenron-media-proxy.env.example": 4,
     "config/host/privoxy/shenron-media.conf": 2,
     "config/host/rg/service-catalog.json": 11,
-    "config/host/ssh/shenron-cdn-known_hosts": 2,
-    "config/host/ssh/shenron-cdn-pull.authorized_keys": 4,
     "config/host/systemd/aphrody/aphrody-compute-dbfr-tunnel.service": 1,
     "config/host/systemd/aphrody/aphrody-llama-gemma4.service": 1,
     "config/host/systemd/nie/nie-model-serve.service": 1,

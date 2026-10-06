@@ -1,4 +1,0 @@
-# dbfr host key over WireGuard, pinned for shenron-cdn-sync on the vps
-# (/home/ubuntu/.ssh/shenron_cdn_known_hosts). Verified 2026-10-05 against /etc/ssh/ssh_host_ed25519_key.pub
-# read through an authenticated aphrody-infra session.
-10.8.0.3 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHYR3pwug0v845mC0RZLveKK7ZG5QzqQcRtExNwTniOl
