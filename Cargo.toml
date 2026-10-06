@@ -478,3 +478,8 @@ debug = false
 
 [profile.test]
 debug = "line-tables-only"
+
+# Precompiled runtime artifact (docs/RUNTIME-ABI.md, apps/yolo/yolo.just runtime-build): release with unwinding panics.
+[profile.runtime]
+inherits = "release"
+panic = "unwind"

@@ -25,11 +25,63 @@ async function git(...args: string[]): Promise<string> {
   return (await proc.exited) === 0 ? out.trim() : "unknown";
 }
 
-// Read what the library reports, then unload it: Windows refuses to open a loaded DLL.
-const loaded = Runtime.load({ libraryPath });
-const info = loaded.buildInfo();
-const capabilities = loaded.capabilities();
-loaded.close();
+interface BuildInfo {
+  name: string;
+  version: string;
+  abi: string;
+  target: string;
+  rustc: string;
+  panic_recovery: boolean;
+}
+
+/**
+ * Cross-built library (for example a Windows DLL built on the Linux factory): the library cannot be loaded here, so
+ * `YOLO_RUNTIME_TARGET` names its target and the identity is read from what the build embeds and from the sources:
+ * the PE export table must carry the whole ABI, the `rustc` and target strings come from the binary itself, and the
+ * ABI, version and capabilities come from the crate that produced it (features `browser`, `tooling`).
+ */
+async function crossInfo(
+  target: string,
+  path: string,
+): Promise<{ info: BuildInfo; capabilities: string[] }> {
+  const bytes = new Uint8Array(await Bun.file(path).arrayBuffer());
+  const text = new TextDecoder("latin1").decode(bytes);
+  if (!text.startsWith("MZ")) throw new Error(`${path} is not a PE image`);
+  const header = await Bun.file(resolve(root, "crates/engine/yolo-runtime/include/yolo_runtime.h")).text();
+  for (const symbol of header.match(/\byolo_[a-z0-9_]+(?=\()/g) ?? []) {
+    if (!text.includes(symbol)) throw new Error(`${path} does not export ${symbol}`);
+  }
+  if (!text.includes(target)) throw new Error(`${path} does not embed the target ${target}`);
+  const rustc = text.match(/rustc \d+\.\d+\.\d+(?:-[a-z]+)? \([0-9a-f]{9} \d{4}-\d{2}-\d{2}\)/)?.[0];
+  if (!rustc) throw new Error(`${path} embeds no rustc version`);
+  const lib = await Bun.file(resolve(root, "crates/engine/yolo-runtime/src/lib.rs")).text();
+  const major = lib.match(/pub const ABI_MAJOR: u32 = (\d+);/)?.[1];
+  const minor = lib.match(/pub const ABI_MINOR: u32 = (\d+);/)?.[1];
+  if (!major || !minor) throw new Error("ABI constants not found in yolo-runtime");
+  const workspace = await Bun.file(resolve(root, "Cargo.toml")).text();
+  const version = workspace.match(/\[workspace\.package\][^[]*?\nversion = "([^"]+)"/)?.[1];
+  const caps = lib.slice(lib.indexOf("fn yolo_runtime_capabilities"));
+  const block = caps.slice(caps.indexOf("&["), caps.indexOf("],"));
+  const capabilities = [...block.matchAll(/"([a-z]+\.[a-z]+)"/g)].map((m) => m[1]!);
+  if (!version || capabilities.length === 0) throw new Error("runtime version or capabilities not found");
+  return {
+    info: { name: "yolo-runtime", version, abi: `${major}.${minor}`, target, rustc, panic_recovery: true },
+    capabilities,
+  };
+}
+
+const crossTarget = process.env["YOLO_RUNTIME_TARGET"];
+let info: BuildInfo;
+let capabilities: string[];
+if (crossTarget) {
+  ({ info, capabilities } = await crossInfo(crossTarget, libraryPath));
+} else {
+  // Read what the library reports, then unload it: Windows refuses to open a loaded DLL.
+  const loaded = Runtime.load({ libraryPath });
+  info = loaded.buildInfo();
+  capabilities = loaded.capabilities();
+  loaded.close();
+}
 const outDir = resolve(root, "dist/runtime", info.target);
 mkdirSync(outDir, { recursive: true });
 
