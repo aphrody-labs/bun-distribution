@@ -202,3 +202,16 @@ Ordre du propriétaire (décision 21) : `tauri-runtime-cef` (CEF + `tauri-winit`
 | Intégration | `main` réparé : clés `aphrody-code-graph`, `tree-sitter`, `tree-sitter-rust` en double dans `Cargo.toml` (commit par index temporaire) ; `cargo metadata --locked` vert sur le VPS ; lien `CLAUDE.md` vérifié | Les agents parallèles se sérialisent sous les verrous de la fabrique (~35 min d attente) |
 | Installation | `aphrody` release (`--locked`, VPS, 3 min) installé, `aphrody package doctor` 34/34 liens ; `aphrody home` et `aphrody graph` disponibles | Binaire 370 Mo non strippé, contre 129 Mo publié |
 | Savoir consolidé | mémoires de session indexées dans le foyer global et `aphrody` (`aphrody home index … --label claude-memory-aphrody`, 22 chunks), sauvegardes vérifiées avant écriture ; `aphrody home query` les classe en tête | Recherche lexicale seule (canal vectoriel non livré) |
+
+## Déduplication du monorepo (dedup-monorepo) — 2026-10-06
+
+Relevé guidé par le graphe natif (`graph:aphrody`, 60 245 nœuds : symboles définis dans plusieurs propriétaires) et
+`cargo metadata --locked --no-deps` (dépendants par crate).
+
+| Sujet | Preuve | Limite |
+| --- | --- | --- |
+| Crates doublons retirés | `b6ca2bcba` : `aphrody-search` (second client Everything à côté d'`aphrody-fsindex`, second index BM25 à côté d'`aphrody-rag`/`fsindex`) et `aphrody-settings` (couches user/projet/env déjà portées par `aphrody-config`), aucun dépendant dans le workspace ni dans `~/shenron`/`~/vu` ; `cargo check -p aphrody-everything-sdk -p aphrody-fsindex` vert (VPS), `cargo metadata --locked` vert | `docs/ecosystem` non régénéré : `ecosystem.ts` cherche `aphrody/` comme dossier frère et ne trouve rien depuis un worktree |
+| Configuration TS | `ef85ce437` : `packages/compat/tsconfig.base.json` (seconde base TS, alias vers des chemins déplacés) supprimé ; les paquets n2b étendent la base racine | — |
+| Erreur préexistante | `70193938a` : `@aphrody/n2b-core` cherchait `target/debug/n2b` un niveau trop haut depuis `packages/engine` ; tests n2b-client 15/15 (2 échecs avant) | — |
+| Déjà traité avant | `aphrody-tauri-mcp`, `aphrody-mcp-smoke` (→ exemple), module `byok` et sources drive remplacées (commits du 2026-10-05) | — |
+| Restes identifiés | `aphrody-tools` et `aphrody-chat` marqués dépréciés au profit d'`aphrody-toolcall`/`aphrody-engine` mais encore appelés par `aphrody chat`/`agent` et `aphrody-sdk` ; `crates/ai/*` confié à la session shenron-desktop-ai, non touché. `@aphrody/ovh` (Bun) double `aphrody-ovh` (Rust) : paquet publiable déclaré au PLAN §7, à réduire en import FFI comme `@aphrody/x`. Crates sans dépendant mais capacité unique (`cron`, `task-runner`, `telemetry`, `sandbox`, `a2a-grpc`, `gui-core`, `engine-mistralrs`) : relèvent du code mort | Copies délibérées gardées : `svg_raster.rs` du workspace Drive (FSL isolé), alias npm `@aphrody/n2b-shims` |
