@@ -10,6 +10,10 @@ repository, store and authority. By owner directive of 2026-10-05 `py/` is fused
 Aphrody (single owner for the `aphrody-rust` binding: `crates/ai/rag-python`); the Python
 runtime `vu` follows the Bun/Yolo precedent ([plan](docs/plans/vu/PLAN.md)).
 
+Product positioning (owner directive of 2026-10-06): the runtimes (the Bun fork, `vu`, Yolo) are
+the real Aphrody products. Aphrody AI is a backend serving the apps; M3 and app-ui are
+frameworks, not products. Prioritise, document and release accordingly.
+
 Work autonomously through authorized implementation, gates, commit and push,
 without intermediate confirmation. Missing authority/data or external blockers
 do not authorize destructive actions, publication or changes outside scope.
