@@ -1,12 +1,10 @@
 "use client";
 
-import { format, formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
 import { Loader2, LogOut, Monitor, Smartphone, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { cn } from "../../lib/utils";
+import { cn, formatDateAt, formatRelative } from "../../lib/utils";
 import { Badge } from "../badge";
 import { Button } from "../button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../card";
@@ -156,15 +154,12 @@ export function AccountSessions({ sessions, onRevoke, onRevokeOthers }: AccountS
 									</div>
 									<p className="mt-0.5 text-xs text-muted-foreground">
 										{session.ipAddress ?? "IP inconnue"} · ouverte{" "}
-										{formatDistanceToNow(new Date(session.createdAt), {
-											addSuffix: true,
-											locale: fr,
-										})}
+										{formatRelative(session.createdAt)}
 									</p>
 									{session.expiresAt && (
 										<p className="text-xs text-muted-foreground">
 											Expire le{" "}
-											{format(new Date(session.expiresAt), "d MMMM yyyy 'à' HH:mm", { locale: fr })}
+											{formatDateAt(session.expiresAt)}
 										</p>
 									)}
 								</div>

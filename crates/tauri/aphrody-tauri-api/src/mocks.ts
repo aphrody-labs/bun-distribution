@@ -17,7 +17,7 @@
  *
  * @example
  * ```typescript
- * import { beforeEach, afterEach, expect, test } from 'vitest';
+ * import { beforeEach, afterEach, expect, test } from 'bun:test';
  * import { mockIPC, clearMocks } from '@aphrody/api/mocks';
  * import { invoke } from '@aphrody/api/core';
  *

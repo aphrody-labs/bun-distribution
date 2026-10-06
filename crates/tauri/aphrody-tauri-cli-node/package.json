@@ -43,8 +43,7 @@
   "devDependencies": {
     "@napi-rs/cli": "catalog:",
     "@types/node": "catalog:",
-    "cross-env": "catalog:",
-    "vitest": "catalog:"
+    "cross-env": "catalog:"
   },
   "engines": {
     "node": ">= 10"
@@ -62,7 +61,7 @@
     "prepack": "cp ../../crates/tauri-schema-generator/schemas/config.schema.json .",
     "postpublish": "bun ./postpublish.js",
     "version": "napi version",
-    "test": "vitest run",
+    "test": "bun test __tests__",
     "tauri": "bun ./tauri.js"
   }
 }

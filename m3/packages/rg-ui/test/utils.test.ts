@@ -5,7 +5,9 @@ import {
 	debounce,
 	formatCurrency,
 	formatDate,
+	formatDateAt,
 	formatDateShort,
+	formatRelative,
 	formatDateTime,
 	formatPrice,
 	generateId,
@@ -193,5 +195,18 @@ describe("sleep", () => {
 		const debut = Date.now();
 		await sleep(30);
 		expect(Date.now() - debut).toBeGreaterThanOrEqual(25);
+	});
+});
+
+describe("formatDateAt et formatRelative", () => {
+	test("formatDateAt joint date longue et heure sur 24 h", () => {
+		expect(formatDateAt(new Date(2026, 2, 9, 14, 5))).toBe("9 mars 2026 à 14:05");
+	});
+
+	test("formatRelative choisit l'unité la plus grande", () => {
+		const now = Date.parse("2026-03-09T12:00:00Z");
+		expect(formatRelative("2026-03-06T12:00:00Z", "fr-FR", now)).toBe("il y a 3 jours");
+		expect(formatRelative("2026-03-09T14:00:00Z", "fr-FR", now)).toBe("dans 2 heures");
+		expect(formatRelative("2026-03-09T11:59:00Z", "fr-FR", now)).toBe("il y a 1 minute");
 	});
 });

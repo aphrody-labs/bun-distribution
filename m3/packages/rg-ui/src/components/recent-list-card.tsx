@@ -1,10 +1,8 @@
 import { Badge } from "./badge";
 import { Card, CardContent, CardHeader, CardTitle } from "./card";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { cn } from "../lib/utils";
+import { cn, formatDateShort } from "../lib/utils";
 
 interface RecentItem {
 	id: string;
@@ -78,9 +76,7 @@ export function RecentListCard({
 										<div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
 											{item.date && (
 												<span>
-													{format(new Date(item.date), "d MMM yyyy", {
-														locale: fr,
-													})}
+													{formatDateShort(item.date)}
 												</span>
 											)}
 											{item.subtitle && <span className="truncate">{item.subtitle}</span>}

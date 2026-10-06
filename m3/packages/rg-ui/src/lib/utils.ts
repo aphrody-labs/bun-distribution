@@ -51,6 +51,39 @@ export function formatDateTime(date: Date | string, locale = "fr-FR"): string {
 }
 
 /**
+ * Format a date as "9 mars 2026 à 14:05" (long date, 24-hour time)
+ */
+export function formatDateAt(date: Date | string, locale = "fr-FR"): string {
+	const value = new Date(date);
+	const time = new Intl.DateTimeFormat(locale, {
+		hour: "2-digit",
+		minute: "2-digit",
+		hourCycle: "h23",
+	}).format(value);
+	return `${formatDate(value, locale)} à ${time}`;
+}
+
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+	["year", 365 * 24 * 3600],
+	["month", 30 * 24 * 3600],
+	["day", 24 * 3600],
+	["hour", 3600],
+	["minute", 60],
+];
+
+/**
+ * Format the distance between a date and now ("il y a 3 jours", "dans 2 heures")
+ */
+export function formatRelative(date: Date | string, locale = "fr-FR", now = Date.now()): string {
+	const seconds = Math.round((new Date(date).getTime() - now) / 1000);
+	const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+	for (const [unit, size] of RELATIVE_UNITS) {
+		if (Math.abs(seconds) >= size) return formatter.format(Math.trunc(seconds / size), unit);
+	}
+	return formatter.format(Math.trunc(seconds / 60), "minute");
+}
+
+/**
  * Truncate a string to a given length
  */
 export function truncate(str: string, length: number): string {

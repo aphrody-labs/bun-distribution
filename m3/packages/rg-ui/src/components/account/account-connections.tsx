@@ -1,13 +1,11 @@
 "use client";
 
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import { Loader2, RefreshCw, Unlink } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { cn } from "../../lib/utils";
+import { cn, formatDate } from "../../lib/utils";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -139,7 +137,7 @@ export function AccountConnections({ providers, accounts }: AccountConnectionsPr
 									<p className="mt-1 text-xs text-muted-foreground">{meta.description}</p>
 									{account?.createdAt && (
 										<p className="mt-1 text-xs text-muted-foreground">
-											Lié le {format(new Date(account.createdAt), "d MMMM yyyy", { locale: fr })}
+											Lié le {formatDate(account.createdAt)}
 										</p>
 									)}
 								</div>

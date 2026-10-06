@@ -11,7 +11,7 @@ import {
   rmSync,
   renameSync
 } from 'node:fs'
-import { beforeAll, describe, it } from 'vitest'
+import { beforeAll, describe, it } from 'bun:test'
 
 // Build CLI before tests, for local usage only.
 // CI builds the CLI on different platforms and architectures
@@ -23,7 +23,7 @@ if (!process.env.CI) {
 }
 
 describe('[CLI] @aphrody/cli template', () => {
-  it('init a project and builds it', { timeout: 15 * 60 * 1000 }, async () => {
+  it('init a project and builds it', async () => {
     const cwd = process.cwd()
     const fixturePath = resolve(__dirname, './fixtures/empty')
     const tauriFixturePath = resolve(fixturePath, 'src-tauri')
@@ -73,7 +73,7 @@ describe('[CLI] @aphrody/cli template', () => {
 
     await cli.run(['build', '-vv'])
     process.chdir(cwd)
-  })
+  }, 15 * 60 * 1000)
 })
 
 function exec(
