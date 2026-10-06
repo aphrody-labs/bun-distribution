@@ -7,7 +7,7 @@ import type {
   InstalledModels,
   PullProgress,
 } from "./tauri-bridge";
-import Fuse from "fuse.js";
+import { FuzzySearch } from "@aphrody/fuzzy";
 
 /** Jan hub search contract, adapted to Aphrody's existing catalog/store schema.
  * Source: janhq/jan@14a720628f9592c8e60f7e081ef733076db8a6a9,
@@ -39,7 +39,7 @@ export function searchModelCatalog<
       summary: entry.summary,
     };
   });
-  const fuse = new Fuse(documents, {
+  const fuse = new FuzzySearch(documents, {
     includeScore: true,
     threshold: 0.3,
     ignoreLocation: true,
@@ -211,7 +211,9 @@ export function resolveExternalModelPath(homeDir: string, defaultSubpath: string
 
 /** Given a home directory, build candidate paths for all standard external model stores. */
 export function buildStandardExternalCandidates(homeDir: string): ExternalStoreCandidate[] {
-  return STANDARD_EXTERNAL_MODEL_DIRS.map((def) => (Object.assign(def, { path: resolveExternalModelPath(homeDir, def.defaultSubpath) })));
+  return STANDARD_EXTERNAL_MODEL_DIRS.map((def) =>
+    Object.assign(def, { path: resolveExternalModelPath(homeDir, def.defaultSubpath) }),
+  );
 }
 
 /** Infer the home directory from an arbitrary known system path (e.g. cwd, store root, or app data dir). */
