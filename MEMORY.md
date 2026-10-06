@@ -237,3 +237,19 @@ Claim `bun-fork-finish`. Fork `aphrody-labs/bun:main` `41a2ff302d` (fusion de `o
 | Installation | `~/.local/share/aphrody/bun-fork/41a2ff302/bun`, sha256 `78d28e0e…a490` égal au reçu, lien `~/.local/bin/bun-fork` ; tests forge (23), bun-absorb (14) et fumée sous ce binaire | `bun` du PATH reste 1.4.2 officiel (pins `packageManager`) |
 | Absorption | gate `bun-absorb` refuse les `fork` déclarés par défaut, `tiny-invariant` retiré (package, catalogue, `bun.lock` : 2 lignes) ; vitest → `bun:test`, date-fns → `Intl` (rg-ui, 2 tests), ratchet 9 paquets → 2 | `playwright-core` (API `Bun.WebView` trop étroite), `date-fns/locale` (react-day-picker) restent ; `pino`, `fuse.js`, `qrcode`, `@napi-rs/canvas` non faits (0 import ou code navigateur) |
 | Fabrique | `/srv` plein (300 Go, 6 Mo libres) : le checkout du build échoue en mode `dir` (`No space left on device`) ; reconstruit avec `BUN_FORGE_HOME` sur le disque système | Nettoyage de `/srv` non fait (caches partagés à préserver) ; le fork a 12 458 branches distantes héritées de la copie GitHub |
+
+
+## Fork Bun : fin de lot (2026-10-06)
+
+Claim `bun-fork-finish2`. Mesures du worktree `agent-a2f2408b51ad9cf38` (Bun 1.4.2 sauf mention `bun-fork`).
+
+| Lot | Preuve | Limite |
+| --- | --- | --- |
+| `fuse.js` → `@aphrody/fuzzy` | `bun test` du paquet : 6 verts ; 312 requêtes de référence générées par fuse.js 7.1.0 (11 jeux d’options), résultats, ordre, scores et indices identiques ; `models-hub.test.ts` 18 verts sous `bun-fork` | pas de recherche étendue, logique ni pliage des diacritiques |
+| `qrcode` → `@aphrody/qr` | 8 verts ; 208 symboles de référence générés par qrcode 1.5.4 (versions 1 à 40, L/M/Q/H, masques forcés, UTF-8), matrices identiques du premier coup | pas de mode Kanji (désactivé aussi dans qrcode sans convertisseur Shift JIS) |
+| `pino`, `@napi-rs/canvas` | 0 import, 0 manifeste : entrées de catalogue retirées | paquets de plateforme de `m3/packages/canvas` conservés (facade native) |
+| `date-fns`, `react-day-picker` | calendrier first-party `rg-ui` : 11 tests de grille, 6 de rendu (`renderToStaticMarkup`), tsc propre sur `calendar.tsx` et `date-picker.tsx` avec React 19 installé hors dépôt ; deps retirées de `rg-ui` et du catalogue racine | `rg-ui` est exclu des workspaces (installé par son dépôt) : ses tests de `cn`/`utils` s’exécutent avec un `node_modules` temporaire (50 verts) ; réintégration d’un picker plus riche non faite |
+| `playwright-core` → `@aphrody/webview-page` | 16 tests (double de `Bun.WebView`, DOM happy-dom) : localisateurs, routage, événements, émulation, réseau inactif, clic forcé ; 3 scripts migrés, tsc propre sur les trois | non exécuté contre un vrai Chrome : aucun Chrome/Chromium installé sur cette machine ; clics par sélecteur dépendent de `requestAnimationFrame` (clic forcé par coordonnées fourni) ; locators sans mode strict, noms accessibles simplifiés |
+| Ratchet | `config/bun-absorb.baseline.json` `{}` ; `bun scripts/audit/workspace/bun-absorb.ts` : ok | `@happy-dom/global-registrator` et `lru-cache`/`p-queue`… restent `gap` (hors lot) |
+| `yolo` = fork | `bun-forge` produit `yolo` + lien `bun`, fumée par les deux `argv0` ; 26 tests forge verts dont argv0 réel | commandes `yolo` natives dans le fork non faites : voir [docs/plans/yolo-fork-unified/PLAN.md](docs/plans/yolo-fork-unified/PLAN.md) |
+| Vérifications | `bun install` (lockfile régénéré, `date-fns` ne reste qu’en pair optionnel de `@base-ui/react`), `docs:check-links` : 0 lien cassé ; app-ui 207 verts sous `bun-fork` (sous Bun 1.4.2 : `tiny-invariant` absent, attendu) | typecheck workspace (`bun run typecheck` = paquet workspace seul) ; erreurs préexistantes de résolution (`@aphrody/m3/build`, `@aphrody/api/*`) dans app-ui et showcase non traitées |
