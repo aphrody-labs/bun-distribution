@@ -42,6 +42,16 @@ import {
   versionIn,
 } from "./plan.ts";
 
+/** First-party test files a release build can run: `bun:internal-for-testing` only exists in debug and ASAN builds. */
+export function firstPartyTests(tree: string): string[] {
+  const root = join(tree, "test/js/first_party");
+  const files: string[] = [];
+  for (const file of new Bun.Glob("**/*.test.{ts,tsx,js,mjs}").scanSync({ cwd: root }))
+    if (!readFileSync(join(root, file), "utf8").includes("bun:internal-for-testing"))
+      files.push(`test/js/first_party/${file}`);
+  return files.toSorted();
+}
+
 const log = (message: string) => console.error(`\x1b[36m[bun-forge]\x1b[0m ${message}`);
 
 interface Captured {
@@ -510,7 +520,8 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
           env,
           logFile,
         });
-        await run([receipt.artifact!.path, "test", "test/js/first_party/"], {
+        const suites = firstPartyTests(tree);
+        await run([receipt.artifact!.path, "test", ...suites], {
           cwd: tree,
           env: { ...env, BUN_DEBUG_QUIET_LOGS: "1", BUN_FEATURE_FLAG_INTERNAL_FOR_TESTING: "1" },
           logFile,

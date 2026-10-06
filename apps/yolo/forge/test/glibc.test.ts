@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { auditGlibc, elfHash, lowerGlibcCeiling } from "../src/glibc.ts";
+import { firstPartyTests } from "../src/run.ts";
 
 /** Minimal ELF64 with .dynstr, .dynsym, .gnu.version, .gnu.version_r: libm needs GLIBC_2.2.5 and GLIBC_2.43. */
 function fixture(symbols: { name: string; index: number }[]): Uint8Array {
@@ -68,6 +72,19 @@ function fixture(symbols: { name: string; index: number }[]): Uint8Array {
   });
   return out;
 }
+
+describe("first-party suites", () => {
+  test("skips files that need bun:internal-for-testing (debug builds only)", () => {
+    const tree = mkdtempSync(join(tmpdir(), "forge-fp-"));
+    mkdirSync(join(tree, "test/js/first_party/ws"), { recursive: true });
+    writeFileSync(join(tree, "test/js/first_party/ws/a.test.ts"), "export {};\n");
+    writeFileSync(
+      join(tree, "test/js/first_party/ws/b.test.ts"),
+      'import "bun:internal-for-testing";\n',
+    );
+    expect(firstPartyTests(tree)).toEqual(["test/js/first_party/ws/a.test.ts"]);
+  });
+});
 
 describe("glibc ceiling", () => {
   test("elfHash matches the SysV value of a glibc version name", () => {
