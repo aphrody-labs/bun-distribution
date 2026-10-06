@@ -44,7 +44,14 @@ pub struct ScanOutcome {
     pub oversized: usize,
     /// Files that could not be read.
     pub unreadable: usize,
-    /// Difference with the previous scan.
+    /// New files since the previous scan.
+    pub added: usize,
+    /// Files whose hash changed.
+    pub changed: usize,
+    /// Files that disappeared.
+    pub removed: usize,
+    /// Full difference with the previous scan (paths); not serialised.
+    #[serde(skip)]
     pub delta: Delta,
 }
 
@@ -213,6 +220,9 @@ pub fn scan_tree(db: &mut HomeDb, source_id: i64, root: &Path, options: &ScanOpt
     }
     outcome.files = fingerprints.len();
     outcome.delta = db.apply_scan(source_id, &fingerprints)?;
+    outcome.added = outcome.delta.added.len();
+    outcome.changed = outcome.delta.changed.len();
+    outcome.removed = outcome.delta.removed.len();
     Ok(outcome)
 }
 

@@ -171,6 +171,87 @@ impl<'a> Ctx<'a> {
         }
     }
 
+    fn emit_type_refs(&mut self, owner: &str, node: Option<Node<'a>>, at: usize) {
+        let mut refs = Vec::new();
+        self.type_refs(node, false, &mut refs);
+        for (name, generic) in refs {
+            let target = self.named(&name);
+            if target != owner {
+                self.add_edge(owner, &target, "references", at, Some(if generic { "generic_arg" } else { "field" }));
+            }
+        }
+    }
+
+    fn struct_field_refs(&mut self, node: Node<'a>, owner: &str) {
+        let mut cursor = node.walk();
+        let children: Vec<Node<'a>> = node.children(&mut cursor).collect();
+        for c in children {
+            match c.kind() {
+                "field_declaration_list" => {
+                    let mut inner = c.walk();
+                    let fields: Vec<Node<'a>> = c.children(&mut inner).collect();
+                    for field in fields {
+                        if field.kind() == "field_declaration" {
+                            self.emit_type_refs(owner, field.child_by_field_name("type"), line(field));
+                        }
+                    }
+                },
+                "ordered_field_declaration_list" => {
+                    let at = line(c);
+                    let mut inner = c.walk();
+                    let types: Vec<Node<'a>> = c.children(&mut inner).filter(|n| n.is_named()).collect();
+                    for ty in types {
+                        self.emit_type_refs(owner, Some(ty), at);
+                    }
+                },
+                _ => {},
+            }
+        }
+    }
+
+    fn enum_variants(&mut self, node: Node<'a>, owner: &str) {
+        let mut cursor = node.walk();
+        let lists: Vec<Node<'a>> = node.children(&mut cursor).filter(|c| c.kind() == "enum_variant_list").collect();
+        for list in lists {
+            let mut inner = list.walk();
+            let variants: Vec<Node<'a>> = list.children(&mut inner).filter(|v| v.kind() == "enum_variant").collect();
+            for variant in variants {
+                let at = line(variant);
+                let mut vc = variant.walk();
+                let parts: Vec<Node<'a>> = variant.children(&mut vc).collect();
+                if let Some(id) = parts.iter().find(|p| p.kind() == "identifier") {
+                    let name = text(*id, self.src).to_owned();
+                    if !name.is_empty() {
+                        let nid = make_id(&[owner, &name]);
+                        self.add_node(&nid, &name, at);
+                        self.add_edge(owner, &nid, "case_of", at, None);
+                    }
+                }
+                for part in parts {
+                    match part.kind() {
+                        "ordered_field_declaration_list" => {
+                            let mut pc = part.walk();
+                            let types: Vec<Node<'a>> = part.children(&mut pc).filter(|n| n.is_named()).collect();
+                            for ty in types {
+                                self.emit_type_refs(owner, Some(ty), at);
+                            }
+                        },
+                        "field_declaration_list" => {
+                            let mut pc = part.walk();
+                            let fields: Vec<Node<'a>> = part.children(&mut pc).collect();
+                            for field in fields {
+                                if field.kind() == "field_declaration" {
+                                    self.emit_type_refs(owner, field.child_by_field_name("type"), line(field));
+                                }
+                            }
+                        },
+                        _ => {},
+                    }
+                }
+            }
+        }
+    }
+
     fn walk(&mut self, node: Node<'a>, impl_nid: Option<&str>) {
         match node.kind() {
             "function_item" | "function_signature_item" => {
@@ -213,6 +294,12 @@ impl<'a> Ctx<'a> {
                     self.add_node(&nid, &name, at);
                     let file = self.file_nid.clone();
                     self.add_edge(&file, &nid, "contains", at, None);
+                    if node.kind() == "struct_item" {
+                        self.struct_field_refs(node, &nid);
+                    }
+                    if node.kind() == "enum_item" {
+                        self.enum_variants(node, &nid);
+                    }
                     if node.kind() == "trait_item" {
                         let mut cursor = node.walk();
                         for child in node.children(&mut cursor) {
@@ -236,11 +323,9 @@ impl<'a> Ctx<'a> {
             "impl_item" => {
                 let Some(ty) = node.child_by_field_name("type") else { return };
                 let at = line(node);
-                let mut refs = Vec::new();
-                self.type_refs(Some(ty), false, &mut refs);
-                let bare = refs.first().map_or_else(|| text(ty, self.src).trim().to_owned(), |(n, _)| n.clone());
-                let nid = make_id(&[self.stem, &bare]);
-                self.add_node(&nid, &bare, at);
+                let type_name = text(ty, self.src).trim().to_owned();
+                let nid = make_id(&[self.stem, &type_name]);
+                self.add_node(&nid, &type_name, at);
                 let file = self.file_nid.clone();
                 if !self.out.edges.iter().any(|e| e.src == file && e.dst == nid && e.relation == "contains") {
                     self.add_edge(&file, &nid, "contains", at, None);
@@ -255,6 +340,28 @@ impl<'a> Ctx<'a> {
                 }
                 if let Some(body) = node.child_by_field_name("body") {
                     self.walk_children(body, Some(&nid));
+                }
+            },
+            "static_item" | "const_item" => {
+                if let Some(name) = node.child_by_field_name("name") {
+                    let name = text(name, self.src).to_owned();
+                    if name == "_" {
+                        return;
+                    }
+                    let at = line(node);
+                    let nid = if let Some(parent) = impl_nid {
+                        let nid = make_id(&[parent, &name]);
+                        self.add_node(&nid, &format!(".{name}"), at);
+                        self.add_edge(parent, &nid, "contains", at, None);
+                        nid
+                    } else {
+                        let nid = make_id(&[self.stem, &name]);
+                        self.add_node(&nid, &name, at);
+                        let file = self.file_nid.clone();
+                        self.add_edge(&file, &nid, "contains", at, None);
+                        nid
+                    };
+                    self.emit_type_refs(&nid, node.child_by_field_name("type"), at);
                 }
             },
             "use_declaration" => {
@@ -441,5 +548,22 @@ fn helper(q: &str) -> Hit { Hit }
         let broken = extract("b.rs", b"fn (((");
         assert!(broken.error.is_none()); // tree-sitter recovers; no panic
         assert!(super::super::extract_file("x.txt", b"hello").nodes.is_empty());
+    }
+
+    #[test]
+    fn enum_variants_constants_and_field_types_become_nodes_and_edges() {
+        let src = b"pub const LIMIT: usize = 3;\nstruct Holder { inner: Inner, list: Vec<Item> }\nenum Shape { Circle(Radius), Square { side: Side }, Empty }\n";
+        let f = extract("s.rs", src);
+        let labels: Vec<&str> = f.nodes.iter().map(|n| n.label.as_str()).collect();
+        for expected in ["LIMIT", "Holder", "Shape", "Circle", "Square", "Empty"] {
+            assert!(labels.contains(&expected), "missing {expected} in {labels:?}");
+        }
+        let case_of = f.edges.iter().filter(|e| e.relation == "case_of").count();
+        assert_eq!(case_of, 3);
+        let ctx_field: Vec<&str> = f.edges.iter().filter(|e| e.context.as_deref() == Some("field")).map(|e| e.dst.as_str()).collect();
+        for expected in ["inner", "radius", "side"] {
+            assert!(ctx_field.iter().any(|d| d.ends_with(expected)), "missing field ref {expected} in {ctx_field:?}");
+        }
+        assert!(f.edges.iter().any(|e| e.context.as_deref() == Some("generic_arg") && e.dst.ends_with("item")));
     }
 }
