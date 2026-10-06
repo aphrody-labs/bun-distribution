@@ -6,13 +6,13 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 19 binaries with a clap surface, 824 commands.
+Totals: 19 binaries with a clap surface, 834 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 287 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 292 commands.
 
 - `aphrody rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
   - `aphrody rag index` — Index a directory incrementally, including vectors when configured.
@@ -171,7 +171,12 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 287 comma
 - `aphrody firefly` — Adobe Firefly Services image generation to disk. _(cfg: all(not(target_arch = "wasm32"), feature = "firefly"))_
   - `aphrody firefly generate` — Generate an image from a prompt and save it to a directory.
   - `aphrody firefly events` — Drain the Adobe I/O Events journal (event-driven job completion).
-- `aphrody memory` — Tier-1 memory provider operations — migrate, audit, list backends. _(cfg: not(target_arch = "wasm32"))_
+- `aphrody memory` — Memory: an application's local memory file (write, recall, list, delete, clear) and Tier-1 provider migration. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody memory write` — Store one memory; prints `{"id": …}`. An existing `--id` is replaced.
+  - `aphrody memory recall` — Records best matching `--query` (lexical); prints `{"records": [… "score"]}`.
+  - `aphrody memory list` — Records newest first; prints `{"records": […]}`.
+  - `aphrody memory delete` — Delete one record; prints `{"deleted": bool}`.
+  - `aphrody memory clear` — Delete every record of `--agent-id`; prints `{"deleted": n}`.
   - `aphrody memory migrate` — Copy all records for `--agent-id` from one provider to another.
 - `aphrody model` — Local model lifecycle — catalog, pull, inspect, verify, evict. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody model hub` — Discover Hugging Face repositories and verify the selected identity.
@@ -341,7 +346,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/src/cli.rs#Cli`, 7 commands.
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 364 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 369 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -515,7 +520,12 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 364 commands.
   - `aphrody infra ssh firefly` — Adobe Firefly Services image generation to disk. _(cfg: all(not(target_arch = "wasm32"), feature = "firefly"))_
     - `aphrody infra ssh firefly generate` — Generate an image from a prompt and save it to a directory.
     - `aphrody infra ssh firefly events` — Drain the Adobe I/O Events journal (event-driven job completion).
-  - `aphrody infra ssh memory` — Tier-1 memory provider operations — migrate, audit, list backends. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh memory` — Memory: an application's local memory file (write, recall, list, delete, clear) and Tier-1 provider migration. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh memory write` — Store one memory; prints `{"id": …}`. An existing `--id` is replaced.
+    - `aphrody infra ssh memory recall` — Records best matching `--query` (lexical); prints `{"records": [… "score"]}`.
+    - `aphrody infra ssh memory list` — Records newest first; prints `{"records": […]}`.
+    - `aphrody infra ssh memory delete` — Delete one record; prints `{"deleted": bool}`.
+    - `aphrody infra ssh memory clear` — Delete every record of `--agent-id`; prints `{"deleted": n}`.
     - `aphrody infra ssh memory migrate` — Copy all records for `--agent-id` from one provider to another.
   - `aphrody infra ssh model` — Local model lifecycle — catalog, pull, inspect, verify, evict. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh model hub` — Discover Hugging Face repositories and verify the selected identity.
@@ -942,6 +952,7 @@ Crate `aphrody-store`, parser `crates/ai/store/src/cli.rs#Cli`, 8 commands.
 - `aphrody embed` (aphrody / `aphrody-embed`)
 - `aphrody gemini-web` (aphrody / `aphrody-gemini-web`)
 - `aphrody jev` (aphrody / `aphrody-jev`)
+- `aphrody llama` (aphrody / `aphrody-llama-server`)
 - `aphrody llama-daemon` (aphrody / `aphrody-llama-server`)
 - `aphrody summary` (aphrody / `aphrody-summary`)
 - `aphrody-app` (aphrody / `aphrody-app`)

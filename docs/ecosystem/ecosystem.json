@@ -2103,6 +2103,12 @@
           "bins": []
         },
         {
+          "name": "@aphrody/a2a",
+          "path": "packages/os/a2a",
+          "description": "A2A 1.0 client for Bun and the web platform: Agent Card discovery, JSON-RPC and HTTP+JSON bindings, SSE streaming, push notification configs, and a legacy-dialect shim",
+          "bins": []
+        },
+        {
           "name": "@aphrody/ag-ui",
           "path": "m3/packages/ag-ui",
           "description": "Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges.",
@@ -2252,6 +2258,12 @@
           "name": "@aphrody/eslint-plugin-m3",
           "path": "m3/packages/eslint-plugin-m3",
           "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/fuzzy",
+          "path": "packages/web/fuzzy",
+          "description": "First-party Bitap fuzzy search with score parity against fuse.js 7.1.0 (string lists, keyed object lists, weights, field norm)",
           "bins": []
         },
         {
@@ -2664,6 +2676,12 @@
           "bins": []
         },
         {
+          "name": "@aphrody/qr",
+          "path": "packages/web/qr",
+          "description": "First-party QR Code encoder and canvas renderer (module-for-module parity with qrcode 1.5.4)",
+          "bins": []
+        },
+        {
           "name": "@aphrody/runtime-sdk",
           "path": "packages/engine/runtime",
           "description": "Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI",
@@ -2708,6 +2726,12 @@
           "bins": [
             "web-to-tauri"
           ]
+        },
+        {
+          "name": "@aphrody/webview-page",
+          "path": "packages/web/webview-page",
+          "description": "Playwright-shaped page, locators, routing and events over Bun.WebView (Chrome backend over CDP)",
+          "bins": []
         },
         {
           "name": "@aphrody/winclean",
@@ -2781,12 +2805,6 @@
           "name": "aphrody-m3",
           "path": "m3",
           "description": "Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates and docs.",
-          "bins": []
-        },
-        {
-          "name": "aphrody-py-workspace",
-          "path": "py",
-          "description": "",
           "bins": []
         },
         {
@@ -4142,12 +4160,47 @@
         },
         {
           "name": "memory",
-          "about": "Tier-1 memory provider operations — migrate, audit, list backends.",
+          "about": "Memory: an application's local memory file (write, recall, list, delete, clear) and Tier-1 provider migration.",
           "aliases": [],
           "cfg": [
             "not(target_arch = \"wasm32\")"
           ],
           "children": [
+            {
+              "name": "write",
+              "about": "Store one memory; prints `{\"id\": …}`. An existing `--id` is replaced.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "recall",
+              "about": "Records best matching `--query` (lexical); prints `{\"records\": [… \"score\"]}`.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "list",
+              "about": "Records newest first; prints `{\"records\": […]}`.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "delete",
+              "about": "Delete one record; prints `{\"deleted\": bool}`.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "clear",
+              "about": "Delete every record of `--agent-id`; prints `{\"deleted\": n}`.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
             {
               "name": "migrate",
               "about": "Copy all records for `--agent-id` from one provider to another.",
@@ -6569,12 +6622,47 @@
             },
             {
               "name": "memory",
-              "about": "Tier-1 memory provider operations — migrate, audit, list backends.",
+              "about": "Memory: an application's local memory file (write, recall, list, delete, clear) and Tier-1 provider migration.",
               "aliases": [],
               "cfg": [
                 "not(target_arch = \"wasm32\")"
               ],
               "children": [
+                {
+                  "name": "write",
+                  "about": "Store one memory; prints `{\"id\": …}`. An existing `--id` is replaced.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "recall",
+                  "about": "Records best matching `--query` (lexical); prints `{\"records\": [… \"score\"]}`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "list",
+                  "about": "Records newest first; prints `{\"records\": […]}`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "delete",
+                  "about": "Delete one record; prints `{\"deleted\": bool}`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "clear",
+                  "about": "Delete every record of `--agent-id`; prints `{\"deleted\": n}`.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
                 {
                   "name": "migrate",
                   "about": "Copy all records for `--agent-id` from one provider to another.",
@@ -9259,6 +9347,11 @@
       "repo": "aphrody"
     },
     {
+      "binary": "aphrody llama",
+      "crate": "aphrody-llama-server",
+      "repo": "aphrody"
+    },
+    {
       "binary": "aphrody llama-daemon",
       "crate": "aphrody-llama-server",
       "repo": "aphrody"
@@ -11343,10 +11436,10 @@
     "sharedRepos": 0,
     "crates": 230,
     "binaries": 9,
-    "bunPackages": 127,
+    "bunPackages": 130,
     "pythonPackages": 8,
     "cliBinaries": 19,
-    "cliCommands": 824,
+    "cliCommands": 834,
     "mcpServers": 20,
     "mcpTools": 379,
     "mcpUniqueToolNames": 377

@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 1 repositories (1 aphrody, 0 shared, 0 experiments), 230 crates, 9 binaries, 127 Bun packages, 8 uv packages, 824 CLI commands, 379 MCP tools.
+Totals: 1 repositories (1 aphrody, 0 shared, 0 experiments), 230 crates, 9 binaries, 130 Bun packages, 8 uv packages, 834 CLI commands, 379 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -252,11 +252,12 @@ Canonical Rust/Bun monorepo
 | `yolo-pyo3` | crates/engine/yolo-pyo3 | PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach) |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, default |
 
-### Bun packages (127)
+### Bun packages (130)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
 | `__NAME__` | m3/templates/base |  |  |
+| `@aphrody/a2a` | packages/os/a2a | A2A 1.0 client for Bun and the web platform: Agent Card discovery, JSON-RPC and HTTP+JSON bindings, SSE streaming, push notification configs, and a legacy-dialect shim |  |
 | `@aphrody/ag-ui` | m3/packages/ag-ui | Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges. |  |
 | `@aphrody/agent-browser` | packages/web/agent-browser | Aphrody Web Bun client: CDP browser automation (agent-browser), engine lifecycle, web service client (fetch, scrape, crawl, sessions) and config reader, backed by the native aphrody-web engine. |  |
 | `@aphrody/api` | crates/tauri/aphrody-tauri-api | Tauri API definitions |  |
@@ -282,6 +283,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/doc-ai` | packages/ai/doc-ai | AI-first documentation and automatic translation system |  |
 | `@aphrody/drive-client` | packages/os/drive-client | Type-safe TypeScript client for Spacedrive daemon |  |
 | `@aphrody/eslint-plugin-m3` | m3/packages/eslint-plugin-m3 | Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint. |  |
+| `@aphrody/fuzzy` | packages/web/fuzzy | First-party Bitap fuzzy search with score parity against fuse.js 7.1.0 (string lists, keyed object lists, weights, field norm) |  |
 | `@aphrody/google` | packages/google/google | Canonical Bun facade for Aphrody Google Cloud and Gemini. |  |
 | `@aphrody/http` | packages/web/http | Portable in-process JSON transport shared by Aphrody service clients |  |
 | `@aphrody/identity` | m3/packages/identity | Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, and the animated pet sprite (atlas, timed tracks, 16-way gaze) drawn from crates/ui/identity. |  |
@@ -348,6 +350,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/plugin-websocket` | crates/tauri/aphrody-tauri-plugin-websocket |  |  |
 | `@aphrody/plugin-window-state` | crates/tauri/aphrody-tauri-plugin-window-state | Save window positions and sizes and restore them when the app is reopened. |  |
 | `@aphrody/plugins` | packages/engine/plugins | Unified YOLO & Bun-TS7 plugin engine: generator, schema validation, doctrine enforcement and autonomous hook runtime |  |
+| `@aphrody/qr` | packages/web/qr | First-party QR Code encoder and canvas renderer (module-for-module parity with qrcode 1.5.4) |  |
 | `@aphrody/runtime-sdk` | packages/engine/runtime | Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI |  |
 | `@aphrody/scaffold` | m3/packages/scaffold | The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web-to-tauri. | `aphrody-scaffold` |
 | `@aphrody/shell-web` | packages/shell/web | Aphrody shell for browsers and Tauri webviews: WASM VT core, local shell and WebSocket/Tauri transports. |  |
@@ -355,6 +358,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/update` | packages/infra/update | Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks |  |
 | `@aphrody/web-test` | packages/web/aphrody-web-test | Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server. |  |
 | `@aphrody/web-to-tauri` | m3/packages/web-to-tauri | Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original. | `web-to-tauri` |
+| `@aphrody/webview-page` | packages/web/webview-page | Playwright-shaped page, locators, routing and events over Bun.WebView (Chrome backend over CDP) |  |
 | `@aphrody/winclean` | packages/os/winclean | Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools). |  |
 | `@aphrody/workspace` | packages/infra/workspace | Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations |  |
 | `@aphrody/x` | packages/web/x | Headless X (Twitter) client for Bun: a thin import over the Rust crate aphrody-x (aphrody-ffi), with batch jobs for mass scripting. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model. |  |
@@ -367,7 +371,6 @@ Canonical Rust/Bun monorepo
 | `@tauri-plugin/mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge/guest-js | Guest bindings for MCP Bridge Tauri plugin |  |
 | `aphrody` | . |  |  |
 | `aphrody-m3` | m3 | Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates and docs. |  |
-| `aphrody-py-workspace` | py |  |  |
 | `app` | crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla |  |  |
 | `create-tauri-app` | crates/tauri/aphrody-create-tauri-app-node | Rapidly scaffold out a new tauri app project. | `create-tauri-app` |
 | `create-tauri-app-darwin-arm64` | crates/tauri/aphrody-create-tauri-app-node/npm/darwin-arm64 |  |  |
