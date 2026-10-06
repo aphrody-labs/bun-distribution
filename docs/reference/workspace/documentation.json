@@ -6,8 +6,8 @@
     {
       "path": "AGENTS.md",
       "title": "Aphrody repository instructions",
-      "sha256": "9fe65b70db2d517c8730f7cddfc03315443582b03c75f037d217de1a3a86d1cd",
-      "bytes": 8664,
+      "sha256": "b96c7c1387df4f4bc604ee8d2afc6c974471ae706f6b237bdaacacb1d70be98f",
+      "bytes": 8921,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -36,8 +36,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan Directeur Unique — Aphrody & Yolo Core Trinity",
-      "sha256": "40f732d190f8f623c021fcccc810ba0e2698fa99c0e7cb14ca9195a8fb47d799",
-      "bytes": 15382,
+      "sha256": "29ba3c813db1315a171c5b7ba87a8b3654e0a4b6f27dc1ec1ba941685e7eca0a",
+      "bytes": 20447,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -242,6 +242,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "crates/ai/jev/README.md"
+    },
+    {
+      "path": "crates/ai/llama-server/LOCAL-CHAT.md",
+      "title": "Local chat for desktop applications",
+      "sha256": "f537b1812c792cf2f7353a174ea5dbc2f88bfc4c96c3cbf6e698b982ed343f64",
+      "bytes": 7288,
+      "domain": "ai",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "crates/ai/llama-server/LOCAL-CHAT.md"
     },
     {
       "path": "crates/ai/mcp/README.md",
@@ -3046,8 +3056,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "5e5dd0cb35a25b4655ee77a9280ee11fd801e33e7fc8b932b696178627c1330a",
-      "bytes": 12198,
+      "sha256": "929f22c8fd0138878cee66750face2a5a1ad9d4db46c7fb7be3bb570a0d4d057",
+      "bytes": 12343,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -5046,8 +5056,8 @@
     {
       "path": "docs/cli/HELP.md",
       "title": "yolo CLI reference",
-      "sha256": "6d0f5b09a00091c75bfeffae14aac42ee89b3a2185446ad5745cb7444d42affd",
-      "bytes": 18837,
+      "sha256": "198a1f2553efb05a4ecf451ac0162c9d926d7ce1da4a6a87d7f2d20871b96b63",
+      "bytes": 18891,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -9606,8 +9616,8 @@
     {
       "path": "docs/plans/vu/PLAN.md",
       "title": "vu: the Aphrody Python runtime",
-      "sha256": "b53de925e24bf2c0d223559218a245f36804aaa722a1fef097bc03cf04975912",
-      "bytes": 50422,
+      "sha256": "4f249ea0ca993490a81c4e7c6852a1d91fe23c080696d63f093470f027c789e3",
+      "bytes": 58400,
       "domain": "vu",
       "status": "canonical",
       "visibility": "private",
@@ -9692,6 +9702,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/x-bun-import/PLAN.md"
+    },
+    {
+      "path": "docs/plans/yolo-fork-unified/PLAN.md",
+      "title": "yolo et le fork Bun : un seul produit runtime",
+      "sha256": "7ec9341f5dda0366b6169bffb47d2cd7068873d37ca387eb9f94dc44f0253e53",
+      "bytes": 4650,
+      "domain": "yolo-fork-unified",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/yolo-fork-unified/PLAN.md"
     },
     {
       "path": "docs/products/ai/README.md",
@@ -40666,8 +40686,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "cb82ae49e7ce1d73121747f363493b0b55fc41afa2dd26775993d5493a9dbb54",
-      "bytes": 52784,
+      "sha256": "8a9854c21768aafb3d776b0f4c4d209adfdd9e6ac022966576754a509bf8b918",
+      "bytes": 53168,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -45396,8 +45416,8 @@
     {
       "path": "m3/packages/m3-ai/README.md",
       "title": "@aphrody/m3-ai",
-      "sha256": "3269092f169ea2556358c1d5d1f608b80af9c2900abf0b471a339f9ed439c433",
-      "bytes": 6756,
+      "sha256": "93274af641c9e7a9876c6a2c22f1bf8358d48becc709d93c0486228f90f0a6a2",
+      "bytes": 10892,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -45726,8 +45746,8 @@
     {
       "path": "m3/packages/rg-ui/README.md",
       "title": "@rosegriffon/ui — Design System Rose Griffon",
-      "sha256": "b0485def624ef1ae92101bcb553659c230d3a4323beb5c07e817fa6cba851088",
-      "bytes": 7830,
+      "sha256": "c9ff3037ec37a7bc7d3fb7931e242edcfb0fc793225b889278f3525f15d66856",
+      "bytes": 7886,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
