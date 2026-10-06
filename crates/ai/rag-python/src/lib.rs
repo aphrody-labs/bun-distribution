@@ -90,10 +90,16 @@ fn normalize_embeddings_f32(
     rows: usize,
     width: usize,
 ) -> PyResult<Py<PyByteArray>> {
-    let batch = unpack_embeddings_f32(data, rows, width)?;
-    let result =
-        py.detach(|| aphrody_rag_core::vectors_f32::normalize(&batch)).map_err(vector_error)?;
-    pack_embeddings_f32(py, &result)
+    if rows.checked_mul(width).and_then(|size| size.checked_mul(4)) != Some(data.len()) {
+        return Err(vector_error("packed embedding dimensions do not match buffer length"));
+    }
+    // One contiguous buffer in and out: no per-row allocation (the row form stays the reference in rag-core).
+    let values: Vec<f32> =
+        data.as_chunks::<4>().0.iter().map(|bytes| f32::from_le_bytes(*bytes)).collect();
+    let result = py
+        .detach(|| aphrody_rag_core::vectors_f32::normalize_flat(&values, width))
+        .map_err(vector_error)?;
+    pack_values_f32(py, result.iter())
 }
 
 #[pyfunction]

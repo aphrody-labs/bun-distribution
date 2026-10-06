@@ -17,6 +17,56 @@ pub fn normalize(rows: &[Vec<f32>]) -> Result<Vec<Vec<f32>>, &'static str> {
         .collect())
 }
 
+/// Batches below this many values are normalised on the calling thread (thread start-up would cost more than it saves).
+const PARALLEL_MIN_VALUES: usize = 1 << 18;
+/// Upper bound on the worker threads of one call.
+const PARALLEL_MAX_THREADS: usize = 16;
+
+/// Normalises whole rows of `source` into `target` (same length, a multiple of `width`).
+fn normalize_rows(source: &[f32], target: &mut [f32], width: usize) {
+    for (row, out) in source.chunks_exact(width).zip(target.chunks_exact_mut(width)) {
+        let norm = sum_f32(width, &|index| row[index] * row[index]).sqrt();
+        let denominator = if norm == 0.0 { 1.0 } else { norm };
+        for (value, slot) in row.iter().zip(out.iter_mut()) {
+            *slot = value / denominator;
+        }
+    }
+}
+
+/// [`normalize`] over one contiguous row-major buffer: same arithmetic and rounding (NumPy fast-axis reduction, zero norm
+/// replaced by one, NaNs propagate) without a heap allocation per row, and, for large batches, rows spread over worker
+/// threads (rows are independent, so the result is bit-identical to the sequential form). `width == 0` yields an empty
+/// buffer.
+pub fn normalize_flat(values: &[f32], width: usize) -> Result<Vec<f32>, &'static str> {
+    if width == 0 {
+        return Ok(Vec::new());
+    }
+    if !values.len().is_multiple_of(width) {
+        return Err("embedding batch must be rectangular");
+    }
+    let rows = values.len() / width;
+    let mut result = vec![0.0_f32; values.len()];
+    let threads = if values.len() < PARALLEL_MIN_VALUES {
+        1
+    } else {
+        std::thread::available_parallelism()
+            .map_or(1, std::num::NonZero::get)
+            .min(PARALLEL_MAX_THREADS)
+            .min(rows)
+    };
+    if threads <= 1 {
+        normalize_rows(values, &mut result, width);
+    } else {
+        let chunk = rows.div_ceil(threads) * width;
+        std::thread::scope(|scope| {
+            for (source, target) in values.chunks(chunk).zip(result.chunks_mut(chunk)) {
+                scope.spawn(move || normalize_rows(source, target, width));
+            }
+        });
+    }
+    Ok(result)
+}
+
 /// Contiguous float32 product left * right^T for forensic retrieval scores.
 pub fn similarities_flat(
     left: &[f32],
@@ -104,6 +154,49 @@ mod tests {
         assert_eq!(scores[1], 0.0);
         assert!((scores[2] - 0.28).abs() < 1e-6);
         assert!(normalize(&[vec![f32::NAN]]).unwrap()[0][0].is_nan());
+    }
+
+    #[test]
+    fn flat_normalization_is_bit_identical_to_the_row_form() {
+        for width in [1_usize, 3, 8, 9, 64, 129, 257, 384] {
+            let rows: Vec<Vec<f32>> = (0..5)
+                .map(|row| {
+                    (0..width)
+                        .map(|column| {
+                            let seed = (row * 7919 + column * 104_729 + 13) as f32;
+                            (seed.sin() * 100.0) + if row == 3 { 0.0 } else { 0.5 }
+                        })
+                        .collect()
+                })
+                .collect();
+            let flat: Vec<f32> = rows.iter().flatten().copied().collect();
+            let expected: Vec<f32> = normalize(&rows).unwrap().into_iter().flatten().collect();
+            let actual = normalize_flat(&flat, width).unwrap();
+            assert_eq!(
+                actual.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+                expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+                "width {width}"
+            );
+        }
+        // Above the parallel threshold: rows are spread over threads and the bits must not change.
+        let (rows, width) = (2_049_usize, 129_usize);
+        assert!(rows * width >= PARALLEL_MIN_VALUES);
+        let big: Vec<Vec<f32>> = (0..rows)
+            .map(|row| {
+                (0..width).map(|column| ((row * 31 + column * 17) as f32).cos() * 50.0).collect()
+            })
+            .collect();
+        let flat: Vec<f32> = big.iter().flatten().copied().collect();
+        let expected: Vec<f32> = normalize(&big).unwrap().into_iter().flatten().collect();
+        let actual = normalize_flat(&flat, width).unwrap();
+        assert!(
+            actual.iter().map(|v| v.to_bits()).eq(expected.iter().map(|v| v.to_bits())),
+            "parallel result differs"
+        );
+        assert_eq!(normalize_flat(&[0.0, 0.0, 3.0, 4.0], 2).unwrap(), vec![0.0, 0.0, 0.6, 0.8]);
+        assert!(normalize_flat(&[f32::NAN, 1.0], 2).unwrap()[0].is_nan());
+        assert_eq!(normalize_flat(&[], 0).unwrap(), Vec::<f32>::new());
+        assert!(normalize_flat(&[1.0, 2.0, 3.0], 2).is_err());
     }
 
     #[test]
