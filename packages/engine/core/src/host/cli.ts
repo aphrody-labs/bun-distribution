@@ -3,9 +3,12 @@
 // bun packages/core/src/host/cli.ts compose-unit <unit> | compose-nginx <file> | check | list
 //   host-plan <unit>... [--target H] [--expect-tools N] [--observe] [--json]   steps to install the units (dry run)
 //   host-apply <unit>... --target H [--expect-tools N] [--apply]               same plan; executes it only with --apply
+//   wg-plan [--observe] [--json]                                               private tunnel and omar account plan (no apply)
+//   wg-client <peer> [--hub-public-key K] [--format sections|paste|conf] [--private-key-file F|--private-key-stdin] [--out F]
 import { readFileSync } from "node:fs";
 import { checkCatalog, composeNginx, composeUnit, hostRoot, loadCatalog } from "./index.ts";
 import { applyPlan, hostPlan, observePlan, renderPlan } from "./plan.ts";
+import { wgMain } from "./wireguard.ts";
 
 const [cmd, arg] = process.argv.slice(2);
 const rest = process.argv.slice(3);
@@ -48,6 +51,17 @@ else if (cmd === "host-plan" || cmd === "host-apply") {
     console.error(`host: ${error instanceof Error ? error.message : error}`);
     process.exit(1);
   }
+} else if (cmd === "wg-plan" || cmd === "wg-client") {
+  try {
+    await wgMain(cmd, rest, {
+      root: hostRoot(),
+      catalog: loadCatalog(),
+      compose: (unit) => composeUnit(unit),
+    });
+  } catch (error) {
+    console.error(`host: ${error instanceof Error ? error.message : error}`);
+    process.exit(1);
+  }
 } else if (cmd === "list") for (const u of loadCatalog().units) console.log(u.unit, u.targetHost);
 else if (cmd === "check") {
   const problems = checkCatalog();
@@ -56,7 +70,7 @@ else if (cmd === "check") {
   process.exit(problems.length ? 1 : 0);
 } else {
   console.error(
-    "usage: cli.ts compose-unit <unit> | compose-nginx <file> | list | check | host-plan <unit>... | host-apply <unit>...",
+    "usage: cli.ts compose-unit <unit> | compose-nginx <file> | list | check | host-plan <unit>... | host-apply <unit>... | wg-plan | wg-client <peer>",
   );
   process.exit(2);
 }

@@ -43,12 +43,42 @@
       "2026-09-30-oxc-transfer.json",
       "aphrody-discord-dev-2026-09-29.md",
       "build-factory-2026-10-03.json",
+      "private-tunnel-2026-10-06.json",
       "targets.json",
       "vps-source.json",
       "vps-unit-catalog.json"
     ],
     "toolchain": "toolchain.json"
   },
+  "wireguard": { "declaration": "wireguard/aphrody-tunnel.json" },
+  "accounts": [
+    {
+      "user": "omar",
+      "hosts": ["vps", "dbfr"],
+      "groups": [],
+      "authorizedKeys": "ssh/omar.authorized_keys",
+      "sudoers": "sudoers/omar",
+      "sshdDropIns": [
+        {
+          "file": "ssh/omar-sshd.conf",
+          "install": "/etc/ssh/sshd_config.d/60-omar.conf",
+          "hosts": ["vps", "dbfr"]
+        },
+        {
+          "file": "ssh/postgres-no-login-sshd.conf",
+          "install": "/etc/ssh/sshd_config.d/62-postgres-no-login.conf",
+          "hosts": ["dbfr"]
+        }
+      ],
+      "allowedFrom": ["92.170.252.46", "10.200.77.10"],
+      "postgresAccess": "sudo-only",
+      "findings": [
+        "omar's ssh key is the same key pair as ~/.ssh/id_ed25519.pub of the owner's PC (owner's choice, keys confirmed as Omar's, SHA256:8G22L1q/zD3aUYPRqYNIuIQg7c0NWfofpXsaqZHuM/s): two people share one private key, so sshd and sudo logs tell them apart only by the Unix login, never by key",
+        "that same public key is also a line of /home/ubuntu/.ssh/authorized_keys on dbfr (observed 2026-10-06): whoever holds the private key can log in as ubuntu there (NOPASSWD sudo, no from= restriction), which bypasses the omar restrictions, the per-user journal and the postgres sudo-only rule on dbfr",
+        "recommendation: a distinct ssh key for omar; replacing it changes one line of ssh/omar.authorized_keys (and nothing else), and the old key line of ubuntu on dbfr stays the owner's alone"
+      ]
+    }
+  ],
   "units": [
     {
       "service": "aphrody-compute-dbfr-tunnel",
@@ -135,6 +165,23 @@
       ],
       "ownerRepo": "aphrody",
       "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-wg-proxy",
+      "unit": "aphrody-wg-proxy@.service",
+      "path": "systemd/aphrody/aphrody-wg-proxy@.service",
+      "dropIns": ["sandbox-base", "sandbox-kernel", "net-inet-only", "syscall-service"],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-wg-proxy",
+      "unit": "aphrody-wg-proxy@.socket",
+      "path": "systemd/aphrody/aphrody-wg-proxy@.socket",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "aphrody-wg-proxy@.service"
     },
     {
       "service": "aphrody-ovh-watch",

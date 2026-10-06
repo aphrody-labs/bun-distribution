@@ -34,9 +34,11 @@
     },
     {
       "id": "aphrody-creator",
+      "unitSource": "system-package",
       "application": "aphrody",
       "kind": "nginx-static",
       "runtime": "none",
+      "unit": "nginx.service",
       "sourceRepo": "aphrody",
       "releaseRoot": "/srv/aphrody-creator/releases",
       "publicProxy": "nginx",
@@ -51,9 +53,7 @@
       "unit": "aphrody-llama-gemma4.service",
       "health": "http://127.0.0.1:8798/health",
       "port": 8798,
-      "capabilities": [
-        "chat"
-      ],
+      "capabilities": ["chat"],
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody/runtimes/llama-b11415",
       "model": {

@@ -6,6 +6,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
+import { accountProblems, loadTunnel, tunnelProblems } from "./wireguard.ts";
 
 export interface HostUnit {
   service: string;
@@ -18,6 +19,19 @@ export interface HostUnit {
   pairs?: string;
   status?: string;
 }
+/** A Unix account declared for hosts: root-owned authorized keys, sudoers drop-in, sshd drop-ins, no extra group. */
+export interface HostAccount {
+  user: string;
+  hosts: string[];
+  groups: string[];
+  authorizedKeys: string;
+  sudoers: string;
+  sshdDropIns: { file: string; install: string; hosts: string[] }[];
+  allowedFrom: string[];
+  postgresAccess?: "sudo-only";
+  /** Findings the plan repeats to the owner (declared choices that weaken a guarantee); they never block the declaration. */
+  findings?: string[];
+}
 export interface HostCatalog {
   schemaVersion: number;
   units: HostUnit[];
@@ -27,6 +41,9 @@ export interface HostCatalog {
   nginxSnippets: { dir: string; files: string[] };
   /** Cross-host inventory records (targets, dated observations) and the per-user toolchain manifest. */
   inventory?: { dir: string; files: string[]; toolchain: string };
+  /** Private WireGuard tunnel declaration (`wireguard.ts`) and the accounts that use it. */
+  wireguard?: { declaration: string };
+  accounts?: HostAccount[];
 }
 
 /** `$YOLO_ROOT`, default `$HOME/aphrody`; Windows uses `%USERPROFILE%\aphrody`. */
@@ -99,6 +116,15 @@ export function checkCatalog(root = hostRoot()): string[] {
     for (const f of readdirSync(join(root, "systemd", dir)))
       if (f.endsWith(".service") || f.endsWith(".timer"))
         if (!listed.has(`systemd/${dir}/${f}`)) problems.push(`unlisted unit: systemd/${dir}/${f}`);
+  if (c.wireguard) problems.push(...tunnelProblems(root, c.wireguard.declaration));
+  if (c.accounts)
+    problems.push(
+      ...accountProblems(
+        root,
+        c.accounts,
+        c.wireguard ? loadTunnel(root, c.wireguard.declaration) : undefined,
+      ),
+    );
   for (const f of readdirSync(join(root, "systemd/shared")))
     if (f.endsWith(".conf") && !c.dropIns.files.includes(f))
       problems.push(`unlisted drop-in: ${f}`);

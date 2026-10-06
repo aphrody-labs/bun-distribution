@@ -8774,6 +8774,16 @@
       "canonical": "docs/operations/infra/OVH-VPS-OPERATIONS.md"
     },
     {
+      "path": "docs/operations/infra/PRIVATE-TUNNEL.md",
+      "title": "Private WireGuard tunnel and the `omar` account (declared 2026-10-06, not applied)",
+      "sha256": "790988449ca0b927c0901ac09fa34794ff16c9cdffe7d780e9721e48ea2297a9",
+      "bytes": 11806,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/PRIVATE-TUNNEL.md"
+    },
+    {
       "path": "docs/operations/infra/RETIREMENT-RUNBOOK.md",
       "title": "VPS retirement and cutover runbook",
       "sha256": "d56c799178c53a7cbfc299614e0cacc021ecf340334b6a8354ee9334103fd30a",

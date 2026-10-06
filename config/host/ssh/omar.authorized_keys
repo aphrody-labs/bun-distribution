@@ -1,0 +1,13 @@
+# Installed as /etc/ssh/authorized_keys.d/omar (root:root, 0644) on vps and dbfr, read through the
+# `AuthorizedKeysFile` of the `Match User omar` block of ssh/omar-sshd.conf. Root-owned on purpose.
+#
+# Public key supplied and confirmed by the owner on 2026-10-06 (SHA256:8G22L1q/zD3aUYPRqYNIuIQg7c0NWfofpXsaqZHuM/s).
+# It is the same key pair as ~/.ssh/id_ed25519.pub of the owner's PC (comment "windows-aphro"): a shared pair. Logs
+# (sshd, sudo) therefore tell the two people apart by the Unix login only, and on dbfr the same key is also a line of
+# the ubuntu account (full sudo): see `findings` of the omar account in catalog.json.
+# To give omar his own key, replace the single key line below (nothing else changes).
+#
+# from= lists his public address (direct ssh on :22) and his tunnel address (ssh through the tunnel, where the source
+# seen by sshd is 10.200.77.10 and only his WireGuard key can originate it). Drop the second entry to force the public
+# path only. `restrict` removes forwarding, agent, X11 and the pty; `pty` gives the pty back.
+from="92.170.252.46,10.200.77.10",restrict,pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)

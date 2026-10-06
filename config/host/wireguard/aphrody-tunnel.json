@@ -1,0 +1,139 @@
+{
+  "$comment": "Private WireGuard tunnel between the vps (hub), dbfr, the WSL, the owner's Windows PC and Omar's Windows PC. Declared intent only: nothing here is applied until the owner orders it in the main session. No private key is ever written to this file or to the repository: each private key is born on its own peer (wg genkey on a host, the WireGuard app on Windows) and only public keys are recorded. Plan and client sections: bun packages/engine/core/src/host/cli.ts wg-plan | wg-client. Runbook: docs/operations/infra/PRIVATE-TUNNEL.md.",
+  "schemaVersion": 1,
+  "name": "aphrody-private",
+  "status": "declared-not-applied",
+  "interface": "wg1",
+  "windowsTunnelName": "aphrody",
+  "subnet": "10.200.77.0/24",
+  "clientAllowedIps": "10.200.77.0/24",
+  "keepalive": 25,
+  "keyFiles": { "private": "/etc/wireguard/wg1.key", "public": "/etc/wireguard/wg1.pub" },
+  "existingNetworks": [
+    {
+      "name": "wg0, historical Shenron link (vps 10.8.0.1, dbfr 10.8.0.3, ufw trusts the whole /24 for every port, PostgreSQL and the Shenron admin list)",
+      "cidr": "10.8.0.0/24"
+    },
+    { "name": "docker0 of the vps", "cidr": "172.17.0.0/16" },
+    { "name": "other Docker bridges, WSL2 NAT, RFC 1918 172.16/12", "cidr": "172.16.0.0/12" },
+    { "name": "Mullvad tunnel addresses and SOCKS5 (10.64.0.1)", "cidr": "10.64.0.0/10" },
+    { "name": "Tailscale and carrier-grade NAT", "cidr": "100.64.0.0/10" },
+    { "name": "typical home and office LANs", "cidr": "192.168.0.0/16" },
+    { "name": "link-local", "cidr": "169.254.0.0/16" }
+  ],
+  "hub": {
+    "peer": "vps",
+    "address": "10.200.77.1",
+    "endpoint": "51.77.147.152:51821",
+    "listenPort": 51821,
+    "publicKey": null,
+    "publicKeyNote": "generated on the vps at apply (wg genkey); read it back with `sudo wg show wg1 public-key` and pass it to wg-client --hub-public-key"
+  },
+  "peers": [
+    {
+      "id": "wsl",
+      "host": "wsl",
+      "os": "linux",
+      "address": "10.200.77.2",
+      "publicKey": null,
+      "keyOrigin": "wg genkey on the WSL at apply; the public half is collected by the plan",
+      "udpSource": { "mode": "covered-by-shenron-admin" }
+    },
+    {
+      "id": "dbfr",
+      "host": "dbfr",
+      "os": "linux",
+      "address": "10.200.77.3",
+      "publicKey": null,
+      "keyOrigin": "wg genkey on dbfr at apply; the public half is collected by the plan",
+      "udpSource": { "mode": "covered-by-shenron-admin" }
+    },
+    {
+      "id": "aphro-pc",
+      "host": "windows",
+      "os": "windows",
+      "address": "10.200.77.4",
+      "publicKey": "iM+MggQed48HpejJsIkhfR6yDBgwq2IkT1w6WDgWSgM=",
+      "keyOrigin": "WireGuard app on the owner's Windows PC (host of the WSL); the private key stays there",
+      "udpSource": {
+        "mode": "covered-by-shenron-admin",
+        "note": "the WireGuard key is the authentication; the workstation public address is already an all-ports ufw source of scripts/ops/admin-access.ts (Shenron), refreshed every 15 minutes when the address changes, so no second ufw rule is declared"
+      }
+    },
+    {
+      "id": "omar",
+      "host": "windows",
+      "os": "windows",
+      "address": "10.200.77.10",
+      "publicKey": "A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=",
+      "keyOrigin": "WireGuard app on Omar's Windows PC (empty tunnel); he sends only the public key",
+      "publicKeyNote": "supplied by the owner on 2026-10-06, replacing the key announced earlier that day (withdrawn: tunnel cancelled, private key lost; never reuse it)",
+      "udpSource": { "mode": "ufw", "ips": ["92.170.252.46"], "comment": "aphrody-wg-omar" }
+    }
+  ],
+  "services": [
+    {
+      "id": "ssh-vps",
+      "host": "vps",
+      "address": "10.200.77.1",
+      "port": 22,
+      "proto": "tcp",
+      "expose": "listener",
+      "auth": "ssh-key"
+    },
+    {
+      "id": "ssh-dbfr",
+      "host": "dbfr",
+      "address": "10.200.77.3",
+      "port": 22,
+      "proto": "tcp",
+      "expose": "listener",
+      "auth": "ssh-key"
+    },
+    {
+      "id": "mcp-http",
+      "host": "vps",
+      "address": "10.200.77.1",
+      "port": 8789,
+      "proto": "tcp",
+      "expose": "socket-proxyd",
+      "upstream": "127.0.0.1:8789",
+      "unit": "aphrody-mcp-http",
+      "auth": "none",
+      "caveat": "/mcp has no authentication, only a Host header check: a peer that reaches it can call every tool. Port 8789 on the vps is also held today by the WSL compute reverse tunnel (sshd, GatewayPorts yes), so the tunnel address would reach the WSL MCP. Owner decision required before apply (docs/operations/infra/MCP-A2A.md, findings 1 and 2)."
+    },
+    {
+      "id": "a2a",
+      "host": "vps",
+      "address": "10.200.77.1",
+      "port": 8788,
+      "proto": "tcp",
+      "expose": "socket-proxyd",
+      "upstream": "127.0.0.1:8788",
+      "unit": "aphrody-a2a",
+      "auth": "unverified",
+      "caveat": "runs with APHRODY_A2A_DRY_RUN=1 (messages recorded and answered, no peer CLI spawned); no authentication layer is declared for it"
+    },
+    {
+      "id": "training",
+      "host": "wsl",
+      "address": "10.200.77.2",
+      "proto": "tcp",
+      "expose": "peer-listener",
+      "status": "pending",
+      "pendingReason": "no training service with a declared port exists in the catalogs (managed llama ports are dynamic per run); the owner names the ports, then the routed ufw rules are generated"
+    }
+  ],
+  "grants": {
+    "omar": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "training"],
+    "aphro-pc": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "training"],
+    "wsl": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a"],
+    "dbfr": []
+  },
+  "firewall": {
+    "marker": "aphrody-wg",
+    "foreignMarkers": ["shenron-admin"],
+    "neverOpen": [5432, 6379],
+    "note": "Rules carry the aphrody-wg-<peer> comment. scripts/ops/admin-access.ts of Shenron only deletes rules whose comment is shenron-admin, so the two never collide. The tunnel subnet is RFC 1918 outside 10.8.0.0/24: admin-access-host.ts skips it (no ufw, fail2ban, pg_hba or admin-IP entry)."
+  }
+}
