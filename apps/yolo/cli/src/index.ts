@@ -95,7 +95,8 @@ ${header}
 
 \x1b[1mCOMMANDS:\x1b[0m
   \x1b[32mstatus [--json|--md]\x1b[0m Inspect active package forks & Cargo workspace status
-  \x1b[32mscan [dir] [--json|--md]\x1b[0m Fast parallel recursive scanner (lines, bytes, wyhash)
+  \x1b[32mscan [dir] [--json|--md|--ingest]\x1b[0m Fast parallel recursive scanner (lines, bytes, wyhash); --ingest feeds the agent home
+  \x1b[32mtrain <args>\x1b[0m     Delegate to 'aphrody train' (datasets, jobs, promotion)
   \x1b[32mn2b [dir] [--jobs N] [--fix|--aggressive] [--dry-run] [--json]\x1b[0m Native recursive Node-to-Bun migration
   \x1b[32mai list|call <tool> <json>\x1b[0m Shared AI capabilities (same schemas and owner as MCP/API)
   \x1b[32mmcp\x1b[0m                 Model Context Protocol (MCP 2024-11-05) stdio server for AI agents
@@ -424,6 +425,12 @@ async function main(): Promise<void> {
         args.slice(1),
         isCompiled() ? process.cwd() : rootDir(),
       );
+      break;
+    }
+
+    case "train": {
+      const { runTrainCommand } = await import("./train");
+      process.exitCode = await runTrainCommand(args.slice(1));
       break;
     }
 

@@ -161,7 +161,7 @@ describe("yolo scan CLI arguments", () => {
 
 describe("yolo scan (Native Bun Parallel Recursive Scanner)", () => {
   it("should scan directory and return schema yolo.scan/1 with lines and fingerprint", async () => {
-    const report = await scanDirectory(resolve(rootDir, "apps/cli/src"));
+    const report = await scanDirectory(resolve(rootDir, "apps/yolo/cli/src"));
     expect(report.schema).toBe("yolo.scan/1");
     expect(report.totalFiles).toBeGreaterThan(5);
     expect(report.totalBytes).toBeGreaterThan(10000);
@@ -173,7 +173,7 @@ describe("yolo scan (Native Bun Parallel Recursive Scanner)", () => {
   });
 
   it("should filter by extension correctly", async () => {
-    const report = await scanDirectory(resolve(rootDir, "apps/cli/src"), {
+    const report = await scanDirectory(resolve(rootDir, "apps/yolo/cli/src"), {
       exts: ["ts"],
     });
     expect(report.totalFiles).toBeGreaterThan(0);
@@ -183,7 +183,7 @@ describe("yolo scan (Native Bun Parallel Recursive Scanner)", () => {
   });
 
   it("should render markdown and terminal outputs without errors", async () => {
-    const report = await scanDirectory(resolve(rootDir, "apps/cli/src"), {
+    const report = await scanDirectory(resolve(rootDir, "apps/yolo/cli/src"), {
       maxFiles: 5,
     });
     const md = renderScanMarkdown(report);
@@ -192,5 +192,59 @@ describe("yolo scan (Native Bun Parallel Recursive Scanner)", () => {
 
     const term = renderScanTerminal(report);
     expect(term).toContain("=== YOLO Recursive Scan ===");
+  });
+});
+
+describe("yolo scan --ingest delegates to the aphrody home pipeline", () => {
+  const dir = mkdtempSync(resolve(tmpdir(), "yolo-scan-ingest-"));
+  const fake = resolve(dir, "aphrody");
+  const log = resolve(dir, "args.log");
+
+  beforeAll(async () => {
+    await Bun.write(
+      fake,
+      `#!/bin/sh\nprintf '%s\\n' "$@" > "${log}"\necho '{"source":"fake","indexed":1}'\n`,
+    );
+    await Bun.$`chmod +x ${fake}`.quiet();
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  it("passes profile, root and label to `aphrody home index` and prints its JSON", async () => {
+    const previous = process.env.APHRODY_BIN;
+    process.env.APHRODY_BIN = fake;
+    try {
+      const lines: string[] = [];
+      const code = await runScanCommand(
+        ["--ingest", "--profile", "dbfr", "--label", "repo", dir],
+        dir,
+        (s) => lines.push(s),
+      );
+      expect(code).toBe(0);
+      expect(JSON.parse(lines.join("\n"))).toEqual({ source: "fake", indexed: 1 });
+      const args = (await Bun.file(log).text()).trim().split("\n");
+      expect(args).toEqual(["home", "--profile", "dbfr", "index", dir, "--label", "repo"]);
+    } finally {
+      if (previous === undefined) delete process.env.APHRODY_BIN;
+      else process.env.APHRODY_BIN = previous;
+    }
+  });
+
+  it("rejects --profile without --ingest and reports a missing binary", async () => {
+    expect(await runScanCommand(["--profile", "dbfr", dir], dir, () => {})).toBe(1);
+    const previous = {
+      a: process.env.APHRODY_BIN,
+      y: process.env.YOLO_APHRODY_BIN,
+      p: process.env.PATH,
+    };
+    process.env.APHRODY_BIN = "";
+    process.env.YOLO_APHRODY_BIN = "";
+    process.env.PATH = dir + "/nowhere";
+    try {
+      expect(await runScanCommand(["--ingest", dir], dir, () => {})).toBe(127);
+    } finally {
+      process.env.APHRODY_BIN = previous.a;
+      process.env.YOLO_APHRODY_BIN = previous.y;
+      process.env.PATH = previous.p;
+    }
   });
 });

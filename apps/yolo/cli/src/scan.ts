@@ -4,6 +4,7 @@
  */
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { runAphrody } from "./aphrody-delegate";
 import {
   scanDirectory,
   renderScanMarkdown,
@@ -36,6 +37,10 @@ Options:
   --parallel N     Maximum parallel I/O workers (positive integer, default: 16)
   --json          Print the scan report as JSON
   --md            Print the scan report as Markdown
+  --ingest        Delegate to 'aphrody home index': scan, code graph, chunk and index into the
+                  agent home database (incremental by content hash)
+  --profile NAME  Domain home for --ingest (aphrody, dbfr, ie); default: the global home
+  --label NAME    Source label for --ingest (default: the directory name)
   --help, -h      Show this help
 
 Options may appear before or after dir. Use -- before a dir starting with -.`;
@@ -64,6 +69,9 @@ export async function runScanCommand(
         parallel: { type: "string" },
         json: { type: "boolean" },
         md: { type: "boolean" },
+        ingest: { type: "boolean" },
+        profile: { type: "string" },
+        label: { type: "string" },
         help: { type: "boolean", short: "h" },
       },
     });
@@ -79,6 +87,24 @@ export async function runScanCommand(
     }
 
     const target = positionals[0] === undefined ? root : resolve(process.cwd(), positionals[0]);
+    if (values.ingest) {
+      const delegated = await runAphrody([
+        "home",
+        ...(values.profile ? ["--profile", values.profile] : []),
+        "index",
+        target,
+        ...(values.label ? ["--label", values.label] : []),
+      ]);
+      if (delegated.code !== 0) {
+        console.error(`yolo scan error: ${delegated.stderr.trim() || "aphrody home index failed"}`);
+        return delegated.code;
+      }
+      out(delegated.stdout.trimEnd());
+      return 0;
+    }
+    if (values.profile || values.label) {
+      throw new Error("--profile and --label require --ingest");
+    }
     const exts = parseList(values.exts, "--exts");
     const exclude = parseList(values.exclude, "--exclude");
     let parallel: number | undefined;
