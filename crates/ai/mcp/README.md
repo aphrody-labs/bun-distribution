@@ -83,6 +83,23 @@ the HTTP transport is for local clients or an authenticated, tool-filtering
 gateway. Its default session mode may return SSE and `Mcp-Session-Id`; a gateway
 must forward the MCP session and protocol headers and stream response bodies.
 
+### Authentication of `/mcp`
+
+`/mcp` exposes every tool, so it answers only to `Authorization: Bearer <token>`. The token is read once at start from
+`APHRODY_MCP_HTTP_TOKEN`, else from the AI HTTP token (`APHRODY_AI_HTTP_TOKEN`, alias `APHRODY_SHENRON_API_TOKEN`), so a
+gateway that already injects that bearer keeps working; the dedicated name scopes `/mcp` apart from the REST bridge. It
+must be at least 32 bytes (`openssl rand -hex 32`) and belongs in a host `EnvironmentFile`, never in a repository or a
+command line. Without a usable token `/mcp` answers 503 (fail-closed); a missing or wrong header is 401; the comparison is
+constant time. `/healthz` and the REST routes are outside this layer. A client reads the token from its environment, for
+example in a `.mcp.json`:
+
+```json
+{ "mcpServers": { "aphrody-http": { "type": "http", "url": "http://127.0.0.1:8793/mcp",
+  "headers": { "Authorization": "Bearer ${APHRODY_MCP_HTTP_TOKEN}" } } } }
+```
+
+`bun scripts/tools/infra/mcp-tools-count.ts <url> --token-env APHRODY_MCP_HTTP_TOKEN` counts the tools of a running server.
+
 ### Shenron AI REST bridge
 
 The same loopback listener serves `/api/v1/shenron/*`. Set a non-empty

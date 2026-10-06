@@ -44,6 +44,8 @@ export interface PlanOptions {
   root?: string;
   target?: string;
   expectTools?: number;
+  /** A build already on the target host (for example in the factory target directory) to install as the unit's binary. */
+  binary?: { from: string; sha256: string };
 }
 export type Runner = (
   host: string,
@@ -53,6 +55,8 @@ export type Runner = (
 const LOOPBACK = /^(127\.\d+\.\d+\.\d+|localhost|\[?::1\]?)$/;
 const STAGE_DIR = "/tmp/aphrody-host-plan";
 const BUN = "/home/ubuntu/.bun/bin/bun";
+/** Bearer token variable of `aphrody-mcp http`, generated on the host and read from the unit's EnvironmentFile. */
+const MCP_TOKEN_ENV = "APHRODY_MCP_HTTP_TOKEN";
 const b64 = (text: string) => Buffer.from(text).toString("base64");
 const sq = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
 
@@ -125,6 +129,7 @@ function unitSteps(
   text: string,
   repoRoot: string,
   expectTools?: number,
+  binary?: PlanOptions["binary"],
 ): PlanStep[] {
   const f = unitFacts(entry, text);
   const svc = serviceEntry(repoRoot, entry.service);
@@ -144,14 +149,28 @@ function unitSteps(
   const stage = `${STAGE_DIR}/${f.unit}`;
   const steps: PlanStep[] = [];
 
+  const mcp = f.service === "aphrody-mcp-http";
+  const install = mcp ? binary : undefined;
+  if (install && !/^[0-9a-f]{64}$/.test(install.sha256)) {
+    throw new Error(`${f.unit}: --binary-sha256 must be a 64 hex digit SHA-256`);
+  }
+  const tokenFile = f.envFiles.find((e) => !e.optional)?.path;
   steps.push(
-    step(
-      "preflight",
-      "check",
-      "binary",
-      `${f.binary} is installed and runs`,
-      `test -x ${f.binary} && ${f.binary} --version`,
-    ),
+    install
+      ? step(
+          "preflight",
+          "check",
+          "binary-artifact",
+          `${install.from} is the expected build (sha256 ${install.sha256.slice(0, 12)}...) and is installed as ${f.binary}`,
+          `test -x ${sq(install.from)} && echo ${install.sha256}'  '${sq(install.from)} | sha256sum -c --quiet -`,
+        )
+      : step(
+          "preflight",
+          "check",
+          "binary",
+          `${f.binary} is installed and runs`,
+          `test -x ${f.binary} && ${f.binary} --version`,
+        ),
     step(
       "preflight",
       "info",
@@ -228,7 +247,40 @@ function unitSteps(
       ),
     );
   }
-  if (f.service === "aphrody-mcp-http") {
+  if (mcp && tokenFile) {
+    // The token is made on the host and never leaves it: nothing here prints it, and the plan carries no value.
+    const script = [
+      "set -e",
+      "umask 077",
+      `f=${tokenFile}`,
+      'touch "$f"',
+      `grep -q "^${MCP_TOKEN_ENV}=.\\{32,\\}" "$f" || printf "${MCP_TOKEN_ENV}=%s\\n" "$(openssl rand -hex 32)" >> "$f"`,
+      'chown root:root "$f"',
+      'chmod 0600 "$f"',
+    ].join("; ");
+    steps.push(
+      step(
+        "provision",
+        "mutate",
+        "generate-token",
+        `${tokenFile} (root:root 0600) holds ${MCP_TOKEN_ENV}, generated here with openssl and kept when already set`,
+        `sudo -n sh -c ${sq(script)}`,
+      ),
+    );
+  }
+  if (install) {
+    const dir = f.binary.slice(0, f.binary.lastIndexOf("/"));
+    steps.push(
+      step(
+        "provision",
+        "mutate",
+        "install-binary",
+        `install the build as ${f.binary}, the previous one is kept as ${f.binary}.prev (rollback: mv it back)`,
+        `install -d -m 0755 ${dir} && install -m 0755 ${sq(install.from)} ${f.binary}.new && { [ ! -e ${f.binary} ] || cp -p ${f.binary} ${f.binary}.prev; } && mv -f ${f.binary}.new ${f.binary}`,
+      ),
+    );
+  }
+  if (mcp) {
     steps.push(
       step(
         "provision",
@@ -297,18 +349,38 @@ function unitSteps(
       step("verify", "check", "health", `GET ${svc.health}`, `curl -fsS -m 5 ${svc.health}`),
     );
   }
-  if (f.service === "aphrody-mcp-http" && port !== undefined) {
+  if (mcp && port !== undefined) {
+    const post = `curl -s -o /dev/null -m 5 -w '%{http_code}' -X POST -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"ping"}'`;
+    steps.push(
+      step(
+        "verify",
+        "check",
+        "auth-required",
+        "/mcp refuses a request without a token (401)",
+        `[ "$(${post} http://127.0.0.1:${port}/mcp)" = 401 ]`,
+      ),
+      step(
+        "verify",
+        "check",
+        "auth-wrong-token",
+        "/mcp refuses a wrong token (401)",
+        `[ "$(${post} -H 'Authorization: Bearer 0000000000000000000000000000000000000000000000000000000000000000' http://127.0.0.1:${port}/mcp)" = 401 ]`,
+      ),
+    );
     const script = readFileSync(join(repoRoot, "scripts/tools/infra/mcp-tools-count.ts"), "utf8");
     const expect = expectTools !== undefined ? ` --expect ${expectTools}` : "";
+    const token = tokenFile
+      ? `${MCP_TOKEN_ENV}="$(sudo -n sed -n 's/^${MCP_TOKEN_ENV}=//p' ${tokenFile} | tail -n 1)" `
+      : "";
     steps.push(
       step(
         "verify",
         expectTools !== undefined ? "check" : "info",
         "tools-count",
         expectTools !== undefined
-          ? `tools/list over HTTP returns exactly ${expectTools} tools (the build serving is the expected one)`
-          : "tools/list over HTTP: exact count of the build serving (pass --expect-tools N to gate on it)",
-        `printf %s ${sq(b64(script))} | base64 -d > ${STAGE_DIR}/mcp-tools-count.ts && ${BUN} ${STAGE_DIR}/mcp-tools-count.ts http://127.0.0.1:${port}/mcp${expect}`,
+          ? `tools/list over HTTP, with the token, returns exactly ${expectTools} tools (the build serving is the expected one)`
+          : "tools/list over HTTP, with the token: exact count of the build serving (pass --expect-tools N to gate on it)",
+        `printf %s ${sq(b64(script))} | base64 -d > ${STAGE_DIR}/mcp-tools-count.ts && ${token}${BUN} ${STAGE_DIR}/mcp-tools-count.ts http://127.0.0.1:${port}/mcp --token-env ${MCP_TOKEN_ENV}${expect}`,
       ),
     );
   }
@@ -353,6 +425,7 @@ export function hostPlan(units: string[], options: PlanOptions = {}): Plan {
       composeUnit(entry.unit, root),
       repoRoot,
       entry.service === "aphrody-mcp-http" ? options.expectTools : undefined,
+      options.binary,
     ),
   );
   return { target, units: entries.map((e) => e.unit), steps };

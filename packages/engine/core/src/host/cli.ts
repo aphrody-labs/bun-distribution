@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 // bun packages/core/src/host/cli.ts compose-unit <unit> | compose-nginx <file> | check | list
-//   host-plan <unit>... [--target H] [--expect-tools N] [--observe] [--json]   steps to install the units (dry run)
-//   host-apply <unit>... --target H [--expect-tools N] [--apply]               same plan; executes it only with --apply
+//   host-plan <unit>... [--target H] [--expect-tools N] [--binary-from PATH --binary-sha256 HEX] [--observe] [--json]   steps to install the units (dry run)
+//   host-apply <unit>... --target H [--expect-tools N] [--binary-from PATH --binary-sha256 HEX] [--apply]               same plan; executes it only with --apply
 //   wg-plan [--observe] [--json]                                               private tunnel and omar account plan (no apply)
 //   wg-client <peer> [--hub-public-key K] [--format sections|paste|conf] [--private-key-file F|--private-key-stdin] [--out F]
 import { readFileSync } from "node:fs";
@@ -18,7 +18,11 @@ const value = (name: string) => {
   return at >= 0 ? rest[at + 1] : undefined;
 };
 const names = () =>
-  rest.filter((a, i) => !a.startsWith("--") && !rest[i - 1]?.match(/^--(target|expect-tools)$/));
+  rest.filter(
+    (a, i) =>
+      !a.startsWith("--") &&
+      !rest[i - 1]?.match(/^--(target|expect-tools|binary-from|binary-sha256)$/),
+  );
 if (cmd === "compose-unit" && arg) process.stdout.write(composeUnit(arg));
 else if (cmd === "compose-nginx" && arg)
   process.stdout.write(composeNginx(readFileSync(arg, "utf8")));
@@ -28,9 +32,14 @@ else if (cmd === "host-plan" || cmd === "host-apply") {
     if (names().length === 0) throw new Error("name at least one unit");
     if (cmd === "host-apply" && flag("apply") && !value("target"))
       throw new Error("--apply needs an explicit --target");
+    const from = value("binary-from");
+    const sha256 = value("binary-sha256");
+    if (Boolean(from) !== Boolean(sha256))
+      throw new Error("--binary-from and --binary-sha256 go together");
     const plan = hostPlan(names(), {
       target: value("target"),
       expectTools: expect === undefined ? undefined : Number(expect),
+      binary: from && sha256 ? { from, sha256 } : undefined,
     });
     if (cmd === "host-apply" && flag("apply")) {
       const failed = await applyPlan(plan);

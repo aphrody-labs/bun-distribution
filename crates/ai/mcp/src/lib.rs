@@ -54,6 +54,7 @@ mod bxc_tools;
 #[cfg(not(target_arch = "wasm32"))]
 mod tauri_tools;
 // MCP protocol surface: annotations, version negotiation, resources, prompts.
+mod http_auth;
 mod jev_tools;
 mod protocol;
 // External agent session mirror (agy, Codex, Claude Code). Host-only: it reads
@@ -78,7 +79,7 @@ use std::{
 };
 
 use anyhow::Result;
-use axum::{Json, Router, routing::get};
+use axum::{Json, Router, middleware, routing::get};
 use clap::{Parser, Subcommand};
 use rmcp::{
     ServerHandler, ServiceExt,
@@ -3099,20 +3100,26 @@ async fn run(cli: Cli) -> Result<()> {
 async fn run_http_server(bind: SocketAddr) -> Result<()> {
     anyhow::ensure!(bind.ip().is_loopback(), "HTTP MCP must bind to a loopback address");
 
-    let app = http_app();
+    let auth = http_auth::McpAuth::from_env();
+    auth.warn_if_unusable();
+    let app = http_app(auth);
     let listener = tokio::net::TcpListener::bind(bind).await?;
     tracing::info!(address = %listener.local_addr()?, "Starting Aphrody MCP Streamable HTTP server");
     axum::serve(listener, app).await?;
     Ok(())
 }
 
-fn http_app() -> Router {
+/// `/mcp` sits behind the Bearer layer of [`http_auth`]; `/healthz` and the REST gateway routes are outside it.
+fn http_app(auth: http_auth::McpAuth) -> Router {
     let service = StreamableHttpService::new(
         || Ok(GoogleMcpServer),
         LocalSessionManager::default().into(),
         StreamableHttpServerConfig::default(),
     );
-    Router::new().nest_service("/mcp", service).merge(http_rest::router())
+    let mcp = Router::new()
+        .nest_service("/mcp", service)
+        .layer(middleware::from_fn_with_state(auth, http_auth::require_bearer));
+    mcp.merge(http_rest::router())
 }
 
 /// Boot the stdio MCP server exposing the built-in tools. Equivalent to the
@@ -3281,14 +3288,20 @@ mod cli_tests {
         assert!(error.to_string().contains("loopback"));
     }
 
-    #[tokio::test]
-    async fn http_initialize_uses_rmcp_transport() {
+    const TEST_TOKEN: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+    async fn serve_http(auth: http_auth::McpAuth) -> (SocketAddr, tokio::task::JoinHandle<()>) {
         let _ = rustls::crypto::ring::default_provider().install_default();
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
-        let server = tokio::spawn(async move { axum::serve(listener, http_app()).await });
+        let server = tokio::spawn(async move {
+            let _ = axum::serve(listener, http_app(auth)).await;
+        });
+        (address, server)
+    }
 
-        let response = reqwest::Client::new()
+    fn initialize(address: SocketAddr, bearer: Option<&str>) -> reqwest::RequestBuilder {
+        let mut request = reqwest::Client::new()
             .post(format!("http://{address}/mcp"))
             .header("Accept", "application/json, text/event-stream")
             .json(&serde_json::json!({
@@ -3301,16 +3314,69 @@ mod cli_tests {
                     "clientInfo": { "name": "aphrody-http-smoke", "version": "1" }
                 }
             }))
-            .timeout(Duration::from_secs(5))
-            .send()
-            .await
-            .unwrap();
+            .timeout(Duration::from_secs(5));
+        if let Some(token) = bearer {
+            request = request.header("Authorization", format!("Bearer {token}"));
+        }
+        request
+    }
+
+    #[tokio::test]
+    async fn http_initialize_uses_rmcp_transport() {
+        let (address, server) = serve_http(http_auth::McpAuth::with_token(TEST_TOKEN)).await;
+
+        let response = initialize(address, Some(TEST_TOKEN)).send().await.unwrap();
         assert!(response.status().is_success());
         assert!(response.headers().contains_key("Mcp-Session-Id"));
         let body = response.text().await.unwrap();
         assert!(body.contains("serverInfo"), "unexpected MCP response: {body}");
 
         server.abort();
+    }
+
+    #[tokio::test]
+    async fn http_mcp_is_closed_without_the_bearer_token() {
+        let (address, server) = serve_http(http_auth::McpAuth::with_token(TEST_TOKEN)).await;
+
+        let anonymous = initialize(address, None).send().await.unwrap();
+        assert_eq!(anonymous.status(), 401);
+        assert!(!anonymous.headers().contains_key("Mcp-Session-Id"));
+        assert_eq!(initialize(address, Some("wrong")).send().await.unwrap().status(), 401);
+        // The session endpoints are behind the same layer: no token, no stream and no session teardown.
+        let client = reqwest::Client::new();
+        assert_eq!(client.get(format!("http://{address}/mcp")).send().await.unwrap().status(), 401);
+        assert_eq!(
+            client.delete(format!("http://{address}/mcp")).send().await.unwrap().status(),
+            401
+        );
+
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn http_mcp_refuses_everything_when_no_token_is_configured() {
+        let (address, server) = serve_http(http_auth::McpAuth::unconfigured()).await;
+
+        assert_eq!(initialize(address, None).send().await.unwrap().status(), 503);
+        assert_eq!(initialize(address, Some(TEST_TOKEN)).send().await.unwrap().status(), 503);
+
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn http_healthz_needs_no_token() {
+        for auth in [http_auth::McpAuth::with_token(TEST_TOKEN), http_auth::McpAuth::unconfigured()]
+        {
+            let (address, server) = serve_http(auth).await;
+            let response = reqwest::Client::new()
+                .get(format!("http://{address}/healthz"))
+                .timeout(Duration::from_secs(5))
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(response.status(), 200);
+            server.abort();
+        }
     }
 
     #[test]

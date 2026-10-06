@@ -198,10 +198,10 @@
       "topologyHost": "vps",
       "status": "retired",
       "retiredAt": "2026-09-25",
-      "note": "aphrody-ai-http and aphrody-shenron-embed were retired from vps on 2026-09-25 (see config/service-catalog.json); bindings below are the redeploy recipe, not a live binding, until Aphrody converges back onto vps. The ai-http binding names aphrody-mcp-http, the same server (`aphrody-mcp http`) declared loopback-only on 2026-10-06 and not applied",
+      "note": "aphrody-ai-http and aphrody-shenron-embed were retired from vps on 2026-09-25 (see config/service-catalog.json); bindings below are the redeploy recipe, not a live binding, until Aphrody converges back onto vps",
       "bindings": {
         "ai-http": {
-          "service": "aphrody-mcp-http",
+          "service": "aphrody-ai-http",
           "env": { "APHRODY_AI_HTTP_URL": "http://127.0.0.1:8789" },
           "secretsFrom": "/etc/aphrody/shenron-compute-client.env"
         },

@@ -183,7 +183,8 @@ test("the declared loopback units plan against the real catalog", () => {
   const ports = plan.steps
     .filter((s) => s.id.endsWith("/port-free"))
     .map((s) => /:(\d+)"/.exec(s.run)?.[1]);
-  expect(ports).toEqual(["8789", "8788"]);
+  // 8789 is the loopback end of the WSL compute reverse tunnel on the vps: no unit may take it
+  expect(ports).toEqual(["8793", "8788"]);
   for (const name of ["aphrody-mcp-http.service", "aphrody-a2a.service"]) {
     const text = composeUnit(name);
     expect(text).toContain("User=ubuntu");
@@ -193,4 +194,60 @@ test("the declared loopback units plan against the real catalog", () => {
     expect(text).toContain("Restart=on-failure");
     expect(text).not.toMatch(/(SECRET|TOKEN|PASSWORD|DATABASE_URL)=/);
   }
+});
+
+const BUILD = {
+  from: "/srv/aphrody-build/cache/cargo/aphrody-wsl/release/aphrody",
+  sha256: "ab".repeat(32),
+};
+
+test("mcp-http: a token generated on the host, the build installed, authentication proven before the count", () => {
+  const plan = hostPlan(["aphrody-mcp-http"], {
+    root: hostRoot(),
+    expectTools: 137,
+    binary: BUILD,
+  });
+  const id = (name: string) => plan.steps.findIndex((s) => s.id === `aphrody-mcp-http/${name}`);
+  const run = (name: string) => plan.steps[id(name)]?.run ?? "";
+  expect(id("generate-token")).toBeGreaterThan(-1);
+  expect(id("generate-token")).toBeLessThan(id("install"));
+  expect(run("generate-token")).toContain("openssl rand -hex 32");
+  expect(run("generate-token")).toContain("chmod 0600");
+  expect(run("generate-token")).not.toMatch(/[0-9a-f]{64}/);
+  expect(id("install-binary")).toBeLessThan(id("install"));
+  expect(run("install-binary")).toContain(".prev");
+  expect(plan.steps.some((s) => s.id === "aphrody-mcp-http/binary")).toBe(false);
+  expect(run("binary-artifact")).toContain(BUILD.sha256);
+  // 401 without a token and with a wrong one, then the count with the token, which is read on the host and never printed
+  expect(run("auth-required")).toContain("= 401");
+  expect(run("auth-wrong-token")).toContain("Bearer 0000");
+  expect(id("auth-required")).toBeLessThan(id("tools-count"));
+  expect(run("tools-count")).toContain("--token-env APHRODY_MCP_HTTP_TOKEN");
+  expect(run("tools-count")).toContain("--expect 137");
+  expect(run("tools-count")).toContain("sudo -n sed -n 's/^APHRODY_MCP_HTTP_TOKEN=//p'");
+  // no step carries a real token: the only Bearer literal is the all-zero wrong token of the 401 check
+  for (const s of plan.steps)
+    for (const [, bearer] of s.run.matchAll(/Bearer ([0-9a-f]{20,})/g))
+      expect(bearer).toMatch(/^0+$/);
+});
+
+test("mcp-http: the build must come with a 64 hex SHA-256, and A2A takes none", () => {
+  expect(() =>
+    hostPlan(["aphrody-mcp-http"], {
+      root: hostRoot(),
+      binary: { from: BUILD.from, sha256: "nope" },
+    }),
+  ).toThrow("64 hex");
+  const a2a = hostPlan(["aphrody-a2a"], { root: hostRoot(), binary: BUILD });
+  expect(a2a.steps.some((s) => s.id.endsWith("/install-binary"))).toBe(false);
+});
+
+test("mcp-http: without a build the installed binary is checked; the unit's env file is required", () => {
+  const plan = hostPlan(["aphrody-mcp-http"], { root: hostRoot() });
+  expect(plan.steps.some((s) => s.id === "aphrody-mcp-http/binary")).toBe(true);
+  expect(plan.steps.some((s) => s.id.endsWith("/install-binary"))).toBe(false);
+  const text = composeUnit("aphrody-mcp-http.service");
+  expect(text).toMatch(/^EnvironmentFile=\/etc\/aphrody\/aphrody-mcp-http\.env$/m);
+  expect(text).toContain("mcp-server http --bind 127.0.0.1:8793");
+  expect(text).not.toMatch(/--bind 127\.0\.0\.1:8789/);
 });

@@ -57,11 +57,17 @@ pub fn execute_lifecycle(
 ) -> Result<Vec<ServiceActionResult>> {
     let catalog = load_service_catalog(root)?;
 
-    let selected: Vec<_> =
-        catalog.services.iter().filter(|s| id.is_none_or(|wanted| s.id == wanted)).collect();
+    let selected: Vec<_> = catalog
+        .services
+        .iter()
+        .filter(|s| id.map_or(s.unit.is_some(), |wanted| s.id == wanted))
+        .collect();
 
     if selected.is_empty() {
         bail!("aucun service correspondant à l'identifiant: {}", id.unwrap_or("<tous>"));
+    }
+    if let Some(service) = selected.iter().find(|s| s.unit.is_none()) {
+        bail!("le service {} n'a pas d'unité systemd (servi par nginx)", service.id);
     }
 
     let is_local = is_local_target(target_id);
@@ -83,7 +89,7 @@ pub fn execute_lifecycle(
 
     for service in selected {
         let sid = &service.id;
-        let unit = service.systemd_unit_name();
+        let Some(unit) = service.systemd_unit_name() else { continue };
 
         if action == ServiceAction::Journal {
             let out = if is_local {
@@ -157,8 +163,13 @@ pub fn get_service_statuses(
     id: Option<&str>,
 ) -> Result<Vec<ServiceStatusResult>> {
     let catalog = load_service_catalog(root)?;
-    let selected: Vec<_> =
-        catalog.services.iter().filter(|s| id.is_none_or(|wanted| s.id == wanted)).collect();
+    // A unit-less service (served by nginx) has nothing to query: it is left out of the listing and, asked by id,
+    // reported as such rather than as a stopped unit.
+    let selected: Vec<_> = catalog
+        .services
+        .iter()
+        .filter(|s| id.map_or(s.unit.is_some(), |wanted| s.id == wanted))
+        .collect();
 
     let is_local = is_local_target(target_id);
     let mut statuses = Vec::new();
@@ -167,7 +178,16 @@ pub fn get_service_statuses(
         // Status describes the catalogued unit itself. In particular, a timer
         // must be queried as `*.timer`; mapping it to its associated service
         // reports an active timer as inactive whenever its service is idle.
-        let unit = service.unit.clone();
+        let Some(unit) = service.unit.clone() else {
+            statuses.push(ServiceStatusResult {
+                id: service.id.clone(),
+                unit: String::new(),
+                active: false,
+                state: "no-unit".to_owned(),
+                enabled: None,
+            });
+            continue;
+        };
         let (active, state) = if is_local {
             let out = Command::new("systemctl").args(["is-active", &unit]).output().ok();
             match out {
@@ -205,7 +225,38 @@ pub fn get_service_statuses(
 
 #[cfg(test)]
 mod tests {
-    use super::is_local_target;
+    use super::{ServiceAction, execute_lifecycle, get_service_statuses, is_local_target};
+
+    /// A catalog holding one site nginx serves from disk, which has no unit: none of these calls may reach a host.
+    fn unit_less_root() -> tempfile::TempDir {
+        let root = tempfile::tempdir().expect("fixture directory");
+        std::fs::create_dir_all(root.path().join("config")).expect("fixture config directory");
+        std::fs::write(
+            root.path().join("config/service-catalog.json"),
+            r#"{ "schemaVersion": 1, "owner": "infra", "supervisor": "systemd", "proxy": "nginx",
+                 "services": [{ "id": "creator", "kind": "nginx-static", "runtime": "none" }] }"#,
+        )
+        .expect("fixture catalog");
+        root
+    }
+
+    #[test]
+    fn a_unit_less_service_is_reported_not_queried() {
+        let root = unit_less_root();
+        let statuses = get_service_statuses(root.path(), "vps", Some("creator")).expect("status");
+        assert_eq!(statuses.len(), 1);
+        assert_eq!((statuses[0].state.as_str(), statuses[0].active), ("no-unit", false));
+        assert!(get_service_statuses(root.path(), "vps", None).expect("listing").is_empty());
+    }
+
+    #[test]
+    fn a_unit_less_service_cannot_be_started_or_stopped() {
+        let root = unit_less_root();
+        let error = execute_lifecycle(root.path(), ServiceAction::Restart, Some("creator"), "vps")
+            .expect_err("no unit to restart");
+        assert!(error.to_string().contains("pas d'unité"), "{error}");
+        assert!(execute_lifecycle(root.path(), ServiceAction::Restart, None, "vps").is_err());
+    }
 
     #[test]
     fn remote_aliases_never_select_local_systemd() {

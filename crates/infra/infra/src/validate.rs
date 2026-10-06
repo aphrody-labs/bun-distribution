@@ -67,10 +67,17 @@ pub fn check_unit_templates(systemd_root: &Path, catalog: &ServiceCatalog) -> Ve
         .filter(|service| {
             !service.is_retired()
                 && service.requires_unit_template()
-                && !unit_template_exists(systemd_root, &service.unit)
+                && service
+                    .unit
+                    .as_deref()
+                    .is_some_and(|unit| !unit_template_exists(systemd_root, unit))
         })
         .map(|service| {
-            format!("{}: unité {} absente de yolo config/host/systemd/", service.id, service.unit)
+            format!(
+                "{}: unité {} absente de yolo config/host/systemd/",
+                service.id,
+                service.unit.as_deref().unwrap_or_default()
+            )
         })
         .collect()
 }
@@ -211,6 +218,9 @@ pub fn check_repositories(
     }
     report
 }
+
+/// Route upstream of a site nginx serves from disk, `static:<directory>`.
+const STATIC_UPSTREAM: &str = "static:";
 
 /// Split `host:port`, tolerating a leading `http://` and a trailing path.
 fn host_port(address: &str) -> Option<(&str, u16)> {
@@ -464,11 +474,20 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
             report.errors.push(format!("route {label} vers service inconnu: {service_id}"));
             continue;
         };
-        let Some((host, port)) = str_field(route, "upstream").and_then(host_port) else {
-            report.errors.push(format!("route {label}: upstream sans host:port"));
-            continue;
+        // `static:<dir>`: nginx serves the files itself, there is no origin to probe or to keep on loopback.
+        let origin = if str_field(route, "upstream").is_some_and(|u| u.starts_with(STATIC_UPSTREAM))
+        {
+            None
+        } else {
+            let Some(origin) = str_field(route, "upstream").and_then(host_port) else {
+                report.errors.push(format!("route {label}: upstream sans host:port"));
+                continue;
+            };
+            Some(origin)
         };
-        if !is_private(host) {
+        if let Some((host, _)) = origin
+            && !is_private(host)
+        {
             report.errors.push(format!("route {label}: upstream {host} hors loopback/privé"));
         }
         check_retirement(&mut report, &format!("route {label}"), route);
@@ -477,15 +496,17 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
                 "route {label}: retired status disagrees with service {service_id} (both or neither must be retired)"
             ));
         }
-        let health_port = str_field(service, "health").and_then(host_port).map(|(_, p)| p);
-        let additional_port = entries(service, "additionalUpstreams")
-            .iter()
-            .any(|address| address.as_str().and_then(host_port).is_some_and(|(_, p)| p == port));
-        if health_port.is_some_and(|p| p != port) && !additional_port {
-            report.errors.push(format!(
-                "route {label}: port {port} ≠ port health de {service_id} ({})",
-                health_port.unwrap_or_default()
-            ));
+        if let Some((_, port)) = origin {
+            let health_port = str_field(service, "health").and_then(host_port).map(|(_, p)| p);
+            let additional_port = entries(service, "additionalUpstreams").iter().any(|address| {
+                address.as_str().and_then(host_port).is_some_and(|(_, p)| p == port)
+            });
+            if health_port.is_some_and(|p| p != port) && !additional_port {
+                report.errors.push(format!(
+                    "route {label}: port {port} ≠ port health de {service_id} ({})",
+                    health_port.unwrap_or_default()
+                ));
+            }
         }
         if public {
             routed_public.insert(service_id);
@@ -1072,6 +1093,65 @@ mod tests {
         fs::write(root.path().join("systemd/aphrody/redis-server.service.example"), "[Service]\n")
             .expect("fixture unit template");
         assert!(check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).is_empty());
+    }
+
+    fn static_catalog() -> Value {
+        json!({
+            "services": [
+                { "id": "site", "unit": "site.service", "health": "http://127.0.0.1:8100/health" },
+                { "id": "creator", "kind": "nginx-static", "runtime": "none", "public": true }
+            ]
+        })
+    }
+
+    #[test]
+    fn a_site_nginx_serves_from_disk_has_no_unit_and_no_loopback_origin() {
+        let routes = json!({ "routes": [
+            { "host": "creator.example.com", "service": "creator", "upstream": "static:/srv/creator/current" },
+            { "host": "example.com", "service": "site", "upstream": "127.0.0.1:8100" }
+        ] });
+        let report = check(&static_catalog(), &routes);
+        assert!(report.errors.is_empty(), "{:?}", report.errors);
+        assert_eq!(report.services, 2);
+    }
+
+    #[test]
+    fn a_static_route_keeps_the_service_and_retirement_rules() {
+        let unknown = json!({ "routes": [
+            { "host": "a.example.com", "service": "nope", "upstream": "static:/srv/a" }
+        ] });
+        assert!(check(&static_catalog(), &unknown).errors.iter().any(|e| e.contains("inconnu")));
+        let retired_route = json!({ "routes": [
+            { "host": "a.example.com", "service": "creator", "upstream": "static:/srv/a",
+              "status": "retired", "retiredAt": "2026-10-01" }
+        ] });
+        assert!(
+            check(&static_catalog(), &retired_route)
+                .errors
+                .iter()
+                .any(|e| e.contains("retired status disagrees"))
+        );
+        // Only `static:` is exempt: any other upstream still needs a loopback host:port.
+        let bare = json!({ "routes": [
+            { "host": "a.example.com", "service": "creator", "upstream": "/srv/a" }
+        ] });
+        assert!(check(&static_catalog(), &bare).errors.iter().any(|e| e.contains("host:port")));
+        let public_ip = json!({ "routes": [
+            { "host": "a.example.com", "service": "site", "upstream": "8.8.8.8:80" }
+        ] });
+        assert!(check(&static_catalog(), &public_ip).errors.iter().any(|e| e.contains("hors")));
+    }
+
+    #[test]
+    fn a_unit_less_service_needs_no_unit_template() {
+        let root = tempfile::tempdir().expect("fixture directory");
+        let raw = json!({
+            "schemaVersion": 1, "owner": "infra", "supervisor": "systemd", "proxy": "nginx",
+            "services": [{ "id": "creator", "kind": "nginx-static", "runtime": "none" }]
+        });
+        let catalog = serde_json::from_value::<ServiceCatalog>(raw).expect("unit-less catalog");
+        assert!(catalog.services[0].unit.is_none());
+        assert!(check_unit_templates(&root.path().join("systemd"), &catalog).is_empty());
     }
 
     #[test]

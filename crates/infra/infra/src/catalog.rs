@@ -34,7 +34,10 @@ pub struct CatalogService {
     pub id: String,
     pub kind: String,
     pub runtime: String,
-    pub unit: String,
+    /// Systemd unit. Absent for a service nginx serves from disk (`kind: nginx-static`, route upstream `static:<dir>`):
+    /// it has no process to supervise, so it is neither started, stopped nor reported by the lifecycle commands.
+    #[serde(default)]
+    pub unit: Option<String>,
     /// Omitted means a repository-owned systemd template. OS package units
     /// are validated on their target host, not fabricated in this repository.
     pub unit_source: Option<UnitSource>,
@@ -80,7 +83,7 @@ pub fn address_port(address: &str) -> Option<u16> {
 impl CatalogService {
     #[must_use]
     pub fn requires_unit_template(&self) -> bool {
-        self.unit_source != Some(UnitSource::SystemPackage)
+        self.unit.is_some() && self.unit_source != Some(UnitSource::SystemPackage)
     }
 
     /// Declared `port`, else the port of the `health` probe.
@@ -111,12 +114,14 @@ impl CatalogService {
 
     #[must_use]
     pub fn is_oneshot(&self) -> bool {
-        self.unit.ends_with(".timer")
+        self.unit.as_deref().is_some_and(|unit| unit.ends_with(".timer"))
     }
 
+    /// The unit lifecycle commands act on (a timer acts on its service); `None` for a unit-less service.
     #[must_use]
-    pub fn systemd_unit_name(&self) -> String {
-        if self.is_oneshot() { self.unit.replace(".timer", ".service") } else { self.unit.clone() }
+    pub fn systemd_unit_name(&self) -> Option<String> {
+        let unit = self.unit.as_deref()?;
+        Some(if self.is_oneshot() { unit.replace(".timer", ".service") } else { unit.to_owned() })
     }
 }
 

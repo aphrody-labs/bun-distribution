@@ -20,6 +20,12 @@ native = ["aphrody-rag/native"]
 rag = ["aphrody-rag/ort", "aphrody-rag/native", "aphrody-agent-runtime/rag", "aphrody-app-server/rag", "native"]
 train = ["aphrody-train/registry"]
 memory-lancedb = ["aphrody-memory/lancedb"]
+# The MCP server entry point (`aphrody-mcp`, argv0 or `aphrody mcp-server`) with the local-inference toolbox of
+# aphrody-mcp (`toolbox`: ocr, vision, stt-local, jobs, rag-ort). Without it the binary advertises the default tool set
+# (127 over `tools/list`); with it 137. Opt-in because each backend is a dependency the base server has no use for.
+# Build with: cargo build -p aphrody --features mcp-toolbox
+mcp-toolbox = ["aphrody-mcp/toolbox"]
+
 # Native Google Magika deep-learning file-type classification, exposed via
 # `aphrody re classify <path>`. Opt-in because it links the ONNX Runtime
 # (`ort`), which fetches a prebuilt backend at build time — host-only, not

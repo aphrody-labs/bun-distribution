@@ -1,19 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
-# Aphrody MCP, Streamable HTTP transport (`aphrody-mcp http`): the same server as the stdio one, tools on /mcp and
-# the REST gateway on /healthz, /api/v1/*. Catalog entry `aphrody-mcp-http` (config/service-catalog.json), vps.
-# Loopback only: 127.0.0.1:8789, never proxied by nginx, never published (the binary refuses a non-loopback --bind;
-# ufw denies incoming by default). /mcp has no authentication of its own, only a Host header check: every process that
-# reaches the loopback port can call every tool, hence the sandbox below (home hidden except the Aphrody state dir,
-# no capability, container sockets and other users' data out of reach).
-# Binary: /home/ubuntu/.local/bin/aphrody-mcp (the installed multi-call binary, argv0 aphrody-mcp). The advertised tool
-# set is fixed at build time (Cargo features of aphrody-mcp); the build is accepted only when tools/list over HTTP returns
-# the expected count (host-plan gate, docs/operations/infra/MCP-A2A.md).
-# State: ~/.aphrody (RAG index, jobs, memory, models, runtimes), the only writable path.
-# Optional settings and provider keys (names in config/secrets-contract.json): /etc/aphrody/aphrody-mcp-http.env, absent
-# by default. APHRODY_SHENRON_PRODUCTION_READY is deliberately unset: the Shenron REST gateway stays quarantined (503),
-# the Shenron compute path keeps its own endpoint.
+# Aphrody MCP, Streamable HTTP transport (`aphrody mcp-server http`, the multi-call binary of the `mcp-toolbox` build):
+# tools on /mcp and the REST gateway on /healthz, /api/v1/*. Catalog entry `aphrody-mcp-http`
+# (config/service-catalog.json), vps.
+# Loopback only: 127.0.0.1:8793, never proxied by nginx, never published (the binary refuses a non-loopback --bind; ufw
+# denies incoming by default). 127.0.0.1:8789 is not used: on the vps it is the loopback end of the WSL compute reverse
+# tunnel, which the Shenron site and bot read.
+# Authentication: /mcp answers only to `Authorization: Bearer <token>` (constant-time comparison, 401 otherwise, 503 when
+# no token is configured); /healthz needs none. The token is APHRODY_MCP_HTTP_TOKEN in /etc/aphrody/aphrody-mcp-http.env
+# (root:root 0600), generated on the host by the host-plan `generate-token` step with `openssl rand -hex 32`, never in the
+# repository, never in this unit. The file is required: no file, no start. Sandbox below: home hidden except the Aphrody
+# state dir, no capability, container sockets out of reach.
+# Binary: /home/ubuntu/.local/lib/aphrody-mcp/aphrody (previous build kept as aphrody.prev for the rollback). The tool
+# set is fixed at build time by the Cargo features (`--features mcp-toolbox`); the host-plan accepts a build only when
+# tools/list over HTTP returns the expected count.
+# State: ~/.aphrody (RAG index, jobs, memory, models, runtimes), the only writable path. APHRODY_SHENRON_PRODUCTION_READY
+# is deliberately unset: the Shenron REST gateway stays quarantined (503), the Shenron compute path keeps its own endpoint.
 [Unit]
-Description=Aphrody MCP Streamable HTTP server (aphrody-mcp http, 127.0.0.1:8789, loopback only)
+Description=Aphrody MCP Streamable HTTP server (aphrody mcp-server http, 127.0.0.1:8793, loopback only, Bearer token)
 After=network-online.target
 Wants=network-online.target
 StartLimitBurst=10
@@ -27,8 +30,8 @@ Environment=XDG_CACHE_HOME=/home/ubuntu/.aphrody/xdg/cache
 Environment=XDG_CONFIG_HOME=/home/ubuntu/.aphrody/xdg/config
 Environment=XDG_DATA_HOME=/home/ubuntu/.aphrody/xdg/data
 Environment=RUST_LOG=info
-EnvironmentFile=-/etc/aphrody/aphrody-mcp-http.env
-ExecStart=/home/ubuntu/.local/bin/aphrody-mcp http --bind 127.0.0.1:8789
+EnvironmentFile=/etc/aphrody/aphrody-mcp-http.env
+ExecStart=/home/ubuntu/.local/lib/aphrody-mcp/aphrody mcp-server http --bind 127.0.0.1:8793
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=20
@@ -47,7 +50,7 @@ Nice=5
 # ~/.ssh, ~/.config, other tokens and the other binaries are not visible. JIT needs W+X pages, hence no
 # MemoryDenyWriteExecute.
 ProtectHome=tmpfs
-BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody-mcp
+BindReadOnlyPaths=/home/ubuntu/.local/lib/aphrody-mcp/aphrody
 BindPaths=/home/ubuntu/.aphrody
 ReadWritePaths=/home/ubuntu/.aphrody
 InaccessiblePaths=-/run/docker.sock -/var/run/docker.sock -/run/containerd -/var/lib/lxd -/run/user
