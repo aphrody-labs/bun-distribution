@@ -8,7 +8,7 @@ import React, {
   useState,
   useSyncExternalStore,
 } from "react";
-import { applyDynamicFusionTheme } from "./index.js";
+import { applyDynamicFusionTheme } from "./index";
 
 export type ThemeMode = "light" | "dark" | "system";
 export type SchemeVariant =

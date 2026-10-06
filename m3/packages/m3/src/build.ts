@@ -10,7 +10,7 @@
 import { build, type BuildArtifact, type BunPlugin } from "bun";
 import { mkdir, rename, rm, stat } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";
-import { m3Plugin, type M3PluginOptions } from "./plugin.js";
+import { m3Plugin, type M3PluginOptions } from "./plugin";
 
 export interface BuildM3Tauri {
   /** Output directory of the webview (`frontendDist`). */
@@ -140,7 +140,10 @@ export async function buildM3(options: BuildM3Options): Promise<BuildM3Result> {
     ...(options.optimizeImports && options.optimizeImports.length > 0
       ? { optimizeImports: options.optimizeImports }
       : {}),
-    plugins: [...(options.plugin === false ? [] : [m3Plugin(options.plugin)]), ...(options.plugins ?? [])],
+    plugins: [
+      ...(options.plugin === false ? [] : [m3Plugin(options.plugin)]),
+      ...(options.plugins ?? []),
+    ],
     ...(tauri
       ? {
           naming: {

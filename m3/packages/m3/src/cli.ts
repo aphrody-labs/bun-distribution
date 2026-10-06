@@ -12,12 +12,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { buildM3 } from "./build.js";
-import { loadM3Config } from "./config.js";
-import type { M3Sheet } from "./native.js";
-import { createM3Project } from "./new.js";
-import { serveM3 } from "./server.js";
-import { m3Tokens, SHEETS, writeTokenBundle } from "./tokens.js";
+import { buildM3 } from "./build";
+import { loadM3Config } from "./config";
+import type { M3Sheet } from "./native";
+import { createM3Project } from "./new";
+import { serveM3 } from "./server";
+import { m3Tokens, SHEETS, writeTokenBundle } from "./tokens";
 
 export const COMMANDS = [
   "dev",

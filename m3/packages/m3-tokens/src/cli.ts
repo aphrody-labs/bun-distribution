@@ -8,7 +8,7 @@
 // Prints the generated CSS to stdout; diagnostics go to stderr.
 // -----------------------------------------------------------------------------
 
-import { muiThemeToTokens, normalizeHex, type MuiTheme } from "./theme-to-tokens.js";
+import { muiThemeToTokens, normalizeHex, type MuiTheme } from "./theme-to-tokens";
 
 async function main(): Promise<void> {
   const seedArg = normalizeHex(process.argv[2] ?? "");

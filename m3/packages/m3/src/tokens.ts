@@ -4,9 +4,9 @@
 // replaces the former static `assets/design-system/m3` tree.
 import { copyFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { cssRequest, defaultM3Css, type M3CssConfig, type M3CssFn, type M3Sheet } from "./native.js";
-import { fontPaths, resolveRepoRoot, SYMBOL_STYLES } from "./paths.js";
-import { fontsCss } from "./plugin.js";
+import { cssRequest, defaultM3Css, type M3CssConfig, type M3CssFn, type M3Sheet } from "./native";
+import { fontPaths, resolveRepoRoot, SYMBOL_STYLES } from "./paths";
+import { fontsCss } from "./plugin";
 
 export const SHEETS: readonly M3Sheet[] = ["tokens", "tailwind", "spaceui", "scheme"];
 
@@ -59,7 +59,10 @@ export async function bundleFontsCss(root: string): Promise<string> {
  * Write the self-contained token bundle into `dir`: every sheet, light and dark schemes, the
  * fonts and a manifest. Returns the written files, relative to `dir`.
  */
-export async function writeTokenBundle(dir: string, options: TokenBundleOptions = {}): Promise<string[]> {
+export async function writeTokenBundle(
+  dir: string,
+  options: TokenBundleOptions = {},
+): Promise<string[]> {
   const { root: rootOption, css, ...theme } = options;
   const root = resolveRepoRoot(rootOption);
   const generate = css ?? (await defaultM3Css());
@@ -84,7 +87,11 @@ export async function writeTokenBundle(dir: string, options: TokenBundleOptions 
     copyFile(join(fonts.sansFlexDir, "OFL.txt"), join(dir, "fonts", "OFL.txt")),
     copyFile(join(fonts.symbolsDir, "LICENSE"), join(dir, "fonts", "LICENSE-material-symbols.txt")),
   ]);
-  const manifest = { generator: "@aphrody/m3", theme, files: BUNDLE_FILES.filter((f) => f !== "manifest.json") };
+  const manifest = {
+    generator: "@aphrody/m3",
+    theme,
+    files: BUNDLE_FILES.filter((f) => f !== "manifest.json"),
+  };
   await Bun.write(join(dir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   return [...BUNDLE_FILES];
 }

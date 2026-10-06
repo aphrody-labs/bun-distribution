@@ -1,8 +1,8 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { HTMLMotionProps } from "motion/react";
-import { m3Easings, m3Durations } from "../easings.js";
-import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion.js";
+import { m3Easings, m3Durations } from "../easings";
+import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
 
 export interface M3CollapseProps extends HTMLMotionProps<"div"> {
   /**

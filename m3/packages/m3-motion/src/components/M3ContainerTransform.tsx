@@ -1,9 +1,9 @@
 import * as React from "react";
 import { motion } from "motion/react";
 import type { HTMLMotionProps, Transition, MotionStyle } from "motion/react";
-import { m3Springs } from "../springs.js";
-import { m3Easings } from "../easings.js";
-import { useM3ReducedMotion } from "../hooks/useM3ReducedMotion.js";
+import { m3Springs } from "../springs";
+import { m3Easings } from "../easings";
+import { useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
 
 export interface M3ContainerTransformProps extends HTMLMotionProps<"div"> {
   /**

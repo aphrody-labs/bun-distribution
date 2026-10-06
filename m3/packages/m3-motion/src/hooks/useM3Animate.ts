@@ -12,8 +12,8 @@ import type {
   ValueAnimationTransition,
   ObjectTarget,
 } from "motion/react";
-import { m3Easings, m3Durations } from "../easings.js";
-import { useM3ReducedMotion } from "./useM3ReducedMotion.js";
+import { m3Easings, m3Durations } from "../easings";
+import { useM3ReducedMotion } from "./useM3ReducedMotion";
 
 /**
  * Overloaded type for the scoped animate function returned by useM3Animate.

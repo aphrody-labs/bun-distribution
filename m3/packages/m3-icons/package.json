@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-icons",
-  "version": "3.3.5",
+  "version": "3.3.6",
   "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-bun icons module (variable fonts), no icon font shipped at runtime.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
@@ -51,7 +51,8 @@
   },
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*",
-    "lit": "catalog:"
+    "lit": "catalog:",
+    "react-dom": "catalog:"
   },
   "peerDependencies": {
     "lit": ">=3.0.0",

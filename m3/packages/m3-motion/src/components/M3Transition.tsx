@@ -2,8 +2,8 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { HTMLMotionProps, MotionStyle, Transition, Variants } from "motion/react";
-import { m3Easings, m3Durations } from "../easings.js";
-import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion.js";
+import { m3Easings, m3Durations } from "../easings";
+import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
 
 export type M3TransitionPattern =
   | "fade"

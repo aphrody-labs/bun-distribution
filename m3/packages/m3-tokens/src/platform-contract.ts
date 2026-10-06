@@ -11,7 +11,7 @@ import {
   panesFor,
   type NavigationKind,
   type WindowSizeClass,
-} from "./breakpoints.js";
+} from "./breakpoints";
 
 export interface M3PlatformState {
   sizeClass: WindowSizeClass;
