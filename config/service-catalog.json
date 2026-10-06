@@ -33,6 +33,17 @@
       "public": true
     },
     {
+      "id": "aphrody-creator",
+      "application": "aphrody",
+      "kind": "nginx-static",
+      "runtime": "none",
+      "sourceRepo": "aphrody",
+      "releaseRoot": "/srv/aphrody-creator/releases",
+      "publicProxy": "nginx",
+      "note": "static download page of creator-kit (Material 3 page, latest.json, packs) served by nginx from /srv/aphrody-creator/current, no application origin and no unit; public and unauthenticated by design, published by scripts/release/publish-creator.ts (docs/operations/infra/CREATOR.md)",
+      "public": true
+    },
+    {
       "id": "aphrody-llama-gemma4",
       "application": "aphrody",
       "kind": "llama-server-openai",

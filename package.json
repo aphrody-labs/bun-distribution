@@ -159,6 +159,7 @@
   "scripts": {
     "bun:check": "bun apps/yolo/cli/src/index.ts ops bun-workspace --root .",
     "downloads:publish": "bun scripts/release/publish-downloads.ts",
+    "creator:publish": "bun scripts/release/publish-creator.ts",
     "downloads:test": "bun test scripts/release/publish-downloads.test.ts apps/web/downloads",
     "typecheck": "bun run --filter @aphrody/workspace typecheck",
     "test": "bun run --filter @aphrody/workspace test",

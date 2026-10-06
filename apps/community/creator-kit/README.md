@@ -28,12 +28,10 @@ licence Adobe : il n'est ni installé, ni documenté, ni automatisé ici. Les po
 
 ## Installer
 
-Deux façons :
-
-1. Avec [Bun](https://bun.sh) : `bun apps/community/creator-kit/src/cli.ts <commande>` (ou `bun run start <commande>` dans le dossier).
-2. Un seul `.exe` Windows, sans rien installer : `bun run build:windows` produit `dist/creator-kit.exe`
-   (`dist/` n'est pas versionné). Compilé et lancé sous Wine ici (`adobe-clean`, `disk-clean`, `img-compress`) ;
-   pas encore essayé sur un vrai Windows.
+- **Windows** : télécharge le pack sur <https://creator.aphrody.com>, décompresse, lance `creator-kit.exe`. L'exe se met à
+  jour tout seul en arrière-plan (`CREATOR_KIT_NO_UPDATE=1` pour couper, `creator-kit self-update` pour forcer).
+  Détails : [docs/operations/infra/CREATOR.md](../../../docs/operations/infra/CREATOR.md).
+- **Avec [Bun](https://bun.sh)** : `bun apps/community/creator-kit/src/cli.ts <commande>`.
 
 `creator-kit --help` liste les commandes ; `creator-kit <commande> --help` détaille les options.
 Toutes les commandes qui modifient quelque chose sont en simulation tant que tu n'ajoutes pas `--apply`

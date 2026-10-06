@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { registry, summaries } from "./commands/index.ts";
 import { UsageError } from "./lib/args.ts";
+import { autoUpdateInBackground, VERSION } from "./lib/update.ts";
 
 function help(): string {
   const width = Math.max(...Object.keys(summaries).map((name) => name.length));
@@ -10,6 +11,10 @@ function help(): string {
 
 export async function main(argv: string[]): Promise<number> {
   const [name, ...rest] = argv;
+  if (name === "--version" || name === "-v") {
+    console.log(VERSION);
+    return 0;
+  }
   if (!name || name === "--help" || name === "-h" || name === "help") {
     console.log(help());
     return 0;
@@ -18,6 +23,10 @@ export async function main(argv: string[]): Promise<number> {
   if (!load) {
     console.error(`Commande inconnue : ${name}\n\n${help()}`);
     return 2;
+  }
+  if (name !== "self-update") {
+    const notice = await autoUpdateInBackground().catch(() => undefined);
+    if (notice) console.error(notice);
   }
   const { default: command } = await load();
   try {
