@@ -4,6 +4,7 @@
 import type { Context } from "./lib/context.ts";
 import { registry } from "./commands/index.ts";
 import { pickJob, stopFlow, wizard } from "./commands/entrainement.ts";
+import { PC_ACTIONS, runPcAction, serverStatus } from "./commands/pc.ts";
 import { resolveActive } from "./menu-host.ts";
 
 export interface MenuItem {
@@ -34,7 +35,12 @@ export const MAIN_MENU: MenuItem[] = [
     run: (ctx) => runCommand(ctx, "diagnostic"),
   },
   { key: "6", title: "Ouvrir le guide", run: (ctx) => runCommand(ctx, "guide") },
-  { key: "7", title: "Mettre ce programme à jour", run: (ctx) => runCommand(ctx, "mise-a-jour") },
+  {
+    key: "7",
+    title: "Mon PC et mes serveurs (état, mémoire, WSL, diagnostic)",
+    run: (ctx) => pcMenu(ctx),
+  },
+  { key: "8", title: "Mettre ce programme à jour", run: (ctx) => runCommand(ctx, "mise-a-jour") },
 ];
 
 export const TRAIN_MENU: MenuItem[] = [
@@ -62,6 +68,19 @@ export const TRAIN_MENU: MenuItem[] = [
       const id = await pickJob(ctx, host, "en-cours");
       return id ? stopFlow(ctx, host, id, { force: false, oui: false }) : 0;
     },
+  },
+];
+
+export const PC_MENU: MenuItem[] = [
+  ...PC_ACTIONS.map((action, index) => ({
+    key: String(index + 1),
+    title: action.titre,
+    run: (ctx: Context) => runPcAction(ctx, action.key),
+  })),
+  {
+    key: String(PC_ACTIONS.length + 1),
+    title: "Santé des serveurs (vps, dbfr)",
+    run: (ctx: Context) => serverStatus(ctx),
   },
 ];
 
@@ -108,6 +127,10 @@ async function loop(
 
 export async function trainingMenu(ctx: Context): Promise<void> {
   await loop(ctx, "Entraîner un modèle", TRAIN_MENU, "Retour");
+}
+
+export async function pcMenu(ctx: Context): Promise<void> {
+  await loop(ctx, "Mon PC et mes serveurs", PC_MENU, "Retour");
 }
 
 export async function mainMenu(ctx: Context): Promise<void> {

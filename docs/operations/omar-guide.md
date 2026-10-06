@@ -25,6 +25,10 @@ Une seule appli : **Aphrody Omar**. Tu fais un double-clic, un menu s'affiche, t
 
 Garde-fous : rien n'est supprimé ni écrasé, un seul entraînement à la fois, aucun modèle n'est mis en service tout seul. Un entraînement réserve la carte graphique : les modèles d'inférence du serveur sont suspendus le temps du travail.
 
+## Mon PC et mes serveurs (menu 7)
+
+Des boutons pour l'état du PC, WSL, libérer de la mémoire (sans supprimer de fichier, confirmation **OUI**), le diagnostic d'aphrody, mes modèles, yolo et la santé des serveurs. Ils utilisent aphrody et yolo : il faut qu'ils soient installés (menu 1).
+
 ## Si ça bloque
 
 | Tu vois | Tu fais |
@@ -39,4 +43,4 @@ Garde-fous : rien n'est supprimé ni écrasé, un seul entraînement à la fois,
 
 **Quoi envoyer à l'équipe** : tape **5** (Préparer le message d'aide). Le fichier **message-pour-l-equipe.txt** est créé sur ton Bureau et copié dans le presse-papiers : colle-le (Ctrl+V) dans la conversation, avec une capture d'écran si possible. Il ne contient ni mot de passe ni clé privée.
 
-Tes clés privées restent sur ton PC : ne les envoie jamais, l'équipe ne les demandera jamais. Le programme se met à jour tout seul (menu 7 pour forcer).
+Tes clés privées restent sur ton PC : ne les envoie jamais, l'équipe ne les demandera jamais. Le programme se met à jour tout seul (menu 8 pour forcer).

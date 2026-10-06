@@ -325,6 +325,7 @@ test("the menu lists French choices, survives errors and unknown input, and quit
     "Envoyer mes clés à l'équipe (première fois)",
     "Préparer le message d'aide pour l'équipe",
     "Ouvrir le guide",
+    "Mon PC et mes serveurs (état, mémoire, WSL, diagnostic)",
     "Mettre ce programme à jour",
   ]);
   expect(TRAIN_MENU.map((item) => item.key)).toEqual(["1", "2", "3", "4"]);

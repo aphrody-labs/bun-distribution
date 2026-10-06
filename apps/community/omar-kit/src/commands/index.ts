@@ -9,6 +9,7 @@ export const registry: Record<string, () => Promise<{ default: Command }>> = {
   acces: () => import("./acces.ts"),
   diagnostic: () => import("./diagnostic.ts"),
   guide: () => import("./guide.ts"),
+  pc: () => import("./pc.ts"),
   "mise-a-jour": () => import("./mise-a-jour.ts"),
   interne: () => import("./interne.ts"),
 };
@@ -20,6 +21,7 @@ export const summaries: Record<string, string> = {
   acces: "Clés, fichier d'accès de l'équipe, tunnel privé",
   diagnostic: "Préparer le message d'aide à envoyer à l'équipe",
   guide: "Ouvrir le guide (1 page)",
+  pc: "Mon PC et mes serveurs : état, mémoire, WSL, diagnostic, modèles, yolo",
   "mise-a-jour": "Mettre ce programme à jour",
 };
 

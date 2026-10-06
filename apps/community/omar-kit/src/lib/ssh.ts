@@ -20,7 +20,7 @@ export function renderSshConfig(pack: AccessPack, paths: KitPaths): string {
   const strict = pack.hostKeys.length > 0 ? "yes" : "accept-new";
   const blocks = Object.entries(pack.hosts).map(([id, host]) =>
     [
-      `Host ${hostAlias(id)}`,
+      `Host ${hostAlias(id)}${id === "vps" || id === "dbfr" ? ` ${id}` : ""}`,
       `  HostName ${host.address}`,
       `  Port ${host.port}`,
       `  User ${host.user}`,
