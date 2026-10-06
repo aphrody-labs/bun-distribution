@@ -7,7 +7,7 @@
  * prebuilt artifact.
  */
 import { dlopen, FFIType, ptr, read, suffix, toArrayBuffer, type Pointer } from "bun:ffi";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -96,8 +96,19 @@ export function defaultLibraryPath(): string {
       : yoloHome !== undefined && yoloHome !== ""
         ? resolve(yoloHome, "runtime")
         : join(homedir(), ".yolo", "runtime");
-  const installed = resolve(base, installedTarget(), "current", libraryFile());
+  const current = resolve(base, installedTarget(), "current");
+  const installed = join(current, libraryFile());
   if (existsSync(installed)) return installed;
+  // A release artifact names its shared library in its manifest (`libyolo_runtime.so`).
+  try {
+    const manifest = JSON.parse(readFileSync(join(current, "manifest.json"), "utf8")) as {
+      files?: Record<string, unknown>;
+    };
+    const name = Object.keys(manifest.files ?? {}).find((file) => /\.(so|dylib|dll)$/.test(file));
+    if (name !== undefined && existsSync(join(current, name))) return join(current, name);
+  } catch {
+    // no installed artifact: fall through to the local build
+  }
   return resolve(import.meta.dir, "../../../..", "target/runtime", libraryFile());
 }
 
