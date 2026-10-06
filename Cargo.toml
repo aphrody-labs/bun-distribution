@@ -42,9 +42,6 @@ webpki-roots = "1"
 aphrody-code-graph = { path = "crates/ai/code-graph", version = "1.0.0", features = [] }
 tree-sitter = "0.27"
 tree-sitter-rust = "0.24"
-aphrody-code-graph = { path = "crates/ai/code-graph", version = "1.0.0", features = [] }
-tree-sitter = "0.27"
-tree-sitter-rust = "0.24"
 aphrody-sql = { path = "crates/infra/sql", version = "0.1.0", default-features = false }
 aphrody-store = { path = "crates/ai/store", version = "1.0.0", features = [] }
 pyo3 = { version = "0.29", features = [] }
