@@ -5,8 +5,9 @@
  * `aphrody-a2a-server` and `aphrody-a2a-coord`), run in dry-run mode so no peer CLI is invoked.
  * Skipped when the `aphrody` binary is not on PATH.
  *
- * Divergences of the Rust server from the A2A 1.0 specification observed with the installed
- * binary are asserted loosely and marked "DIVERGENCE": tighten them once the server is fixed.
+ * Divergences of the installed binary from the A2A 1.0 specification are asserted loosely and
+ * marked "DIVERGENCE". The two error-code ones are fixed in the Rust sources (aphrody-a2a and
+ * aphrody-a2a-server, `Unreleased` changelog entries); tighten them once the binary is rebuilt.
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { copyFileSync, mkdtempSync, rmSync } from "node:fs";
@@ -129,8 +130,8 @@ describe.skipIf(!binary)("Rust A2A server (aphrody a2a serve, dry run)", () => {
         for await (const _ of client.subscribeToTask(task!.id));
       })().catch((e: unknown) => e)) as A2AError;
       expect(refused).toBeInstanceOf(A2AError);
-      // DIVERGENCE: the spec requires UNSUPPORTED_OPERATION for a terminal task; the Rust task
-      // store only knows live tasks and answers TASK_NOT_FOUND.
+      // DIVERGENCE (installed binary): the spec requires UNSUPPORTED_OPERATION for a terminal
+      // task; binaries built before the fix answer TASK_NOT_FOUND.
       expect(["UNSUPPORTED_OPERATION", "TASK_NOT_FOUND"]).toContain(refused.reason as string);
     });
 
@@ -148,8 +149,8 @@ describe.skipIf(!binary)("Rust A2A server (aphrody a2a serve, dry run)", () => {
         .getExtendedAgentCard()
         .catch((e: unknown) => e)) as A2AError;
       expect(error).toBeInstanceOf(A2AError);
-      // DIVERGENCE: the spec code is -32007 EXTENDED_AGENT_CARD_NOT_CONFIGURED; the server sends
-      // -32004 UNSUPPORTED_OPERATION.
+      // DIVERGENCE (installed binary): the spec code is -32007 EXTENDED_AGENT_CARD_NOT_CONFIGURED;
+      // binaries built before the fix send -32004 UNSUPPORTED_OPERATION.
       expect([-32007, -32004]).toContain(error.code);
     });
   });

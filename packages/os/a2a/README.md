@@ -73,6 +73,9 @@ of `supportedInterfaces` whose binding is `JSONRPC` or `HTTP+JSON` and whose `pr
 - Credentials: `headers` is a `HeadersInit` or a function awaited before each request. Redirects are
   refused so credentials never follow one to another host.
 
+Not implemented: the gRPC binding, Agent Card signature verification (JWS, spec 8.4), and the
+OAuth / in-task authorisation flows (credentials are the caller's, through `headers`).
+
 ## Errors
 
 | Class               | Meaning                                                                                                                                                                                                                 |
@@ -190,7 +193,9 @@ bun run typecheck && bun run lint && bun run generate:check
 - `test/fake-agent.ts` is an in-process agent (card, JSON-RPC, REST, SSE, push configs).
 - `test/rust-server.test.ts` starts `aphrody a2a serve` in dry-run mode (no peer CLI is invoked) in a
   temporary directory and runs the client and the legacy bridge against it; skipped without the binary.
-  Divergences of the installed server from the specification are asserted loosely and marked
+  Divergences of the installed binary from the specification are asserted loosely and marked
   `DIVERGENCE` in the test: `SubscribeToTask` on a finished task answers `TASK_NOT_FOUND` (spec:
-  `UNSUPPORTED_OPERATION`), `GetExtendedAgentCard` answers `-32004` (spec: `-32007`), and the
-  `A2A-Version` header is not validated server-side.
+  `UNSUPPORTED_OPERATION`) and `GetExtendedAgentCard` answers `-32004` (spec: `-32007`); both are
+  fixed in the Rust sources and show up once the binary is rebuilt. Still open server-side: the
+  `A2A-Version` header is not validated (a request without it is served, spec 3.6.2 asks for 0.3
+  semantics) and a message with no parts is accepted (spec: `INVALID_PARAMS`).
