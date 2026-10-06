@@ -7,7 +7,7 @@ qu'après mise à jour des consommateurs (règle du plan, section 0).
 
 | Groupe | Propriétaire / consommateurs | Décision |
 | --- | --- | --- |
-| `crates/ui/app/ui-dist/fonts` ↔ `design/aphrody-m3/packages/assets`, `design/aphrody-m3/packages/m3-fonts`, `crates/ui/bun` (226) | `aphrody-app`, recopiés par `build.rs` depuis `ui-dist.manifest` | Retirés de l'index le 2026-10-03 (copie de packaging générée). |
+| `crates/ui/app/ui-dist/fonts` (not in repo) ↔ `design/aphrody-m3/packages/assets`, `design/aphrody-m3/packages/m3-fonts`, `crates/ui/bun` (226) | `aphrody-app`, recopiés par `build.rs` depuis `ui-dist.manifest` | Retirés de l'index le 2026-10-03 (copie de packaging générée). |
 | Copies `scripts/` de fichiers de paquets (13) | paquet propriétaire | Supprimées le 2026-10-03 ([SCRIPTS-INVENTORY.md](SCRIPTS-INVENTORY.md)). |
 | `apps/rg/website/public/achillea/**` (not in repo) ↔ `public/**` (drapeaux, rangs, ligues, sons, fonds) | URLs publiques servies sous deux chemins | Conservés : supprimer casse des URL publiées ; à fusionner par une redirection RG. |
 | `inazuma-cross/reward-imageN` ↔ `-achieve` | deux états d'interface au même rendu actuel | Conservés (assets distincts par rôle). |

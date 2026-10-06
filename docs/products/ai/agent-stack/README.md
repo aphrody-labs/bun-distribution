@@ -10,7 +10,7 @@ Snapshot date: **2026-06-03**. CLI `--help` captures and `llms.txt` mirrors live
 | **agy** | Antigravity / Gemini CLI bridge | [`agy-help.txt`](../../../reference/ai/agent-stack/agy-help.txt) |
 | **grok** | Grok Build TUI (xAI) | [`grok-help.txt`](../../../reference/ai/agent-stack/grok-help.txt) |
 | **claude** | Claude Code | [`claude-help.txt`](../../../reference/ai/agent-stack/claude-help.txt) |
-| **bxc** | Bun-native browser engine + domain CLIs | [Source OS](../../web/apps/bxc/README.md), `bxc --help` pour l'aide installée |
+| **bxc** | Bun-native browser engine + domain CLIs | Source OS, `bxc --help` pour l'aide installée |
 | **aphrody** | Cross-platform Rust agent (`1.0.0-canary`) | [`aphrody-help.txt`](../../../reference/ai/agent-stack/aphrody-help.txt) |
 
 Install paths (typical): `~/.local/bin/{agy,grok,claude,bxc,aphrody,aphrody-mcp,bxc-mcp}`.

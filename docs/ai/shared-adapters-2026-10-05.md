@@ -1,11 +1,11 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Shared AI, CLI and MCP owners — 2026-10-05
 
-The [capability registry](../../packages/core/src/tools/registry.ts) owns tool
+The [capability registry](../../packages/engine/core/src/tools/registry.ts) owns tool
 schemas, validation, contexts, cancellation propagation and execution. The
-[MCP adapter](../../packages/core/src/mcp/server.ts) retains only JSON-RPC and
+[MCP adapter](../../packages/engine/core/src/mcp/server.ts) retains only JSON-RPC and
 stdio framing; old exports remain compatible. HTTP/OpenAPI and the
-[AI CLI](../../apps/cli/src/ai.ts) import the common owner directly. A bundle test
+[AI CLI](../../apps/yolo/cli/src/ai.ts) import the common owner directly. A bundle test
 checks that HTTP no longer imports the MCP protocol implementation.
 
 `yolo ai list` displays the same AI definitions as MCP/API.

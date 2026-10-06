@@ -111,7 +111,7 @@ serially.
 - Test: conformance suite on `MemVfs` (native) and wasm32 check; property tests for path normalisation.
 
 ### T3. Extend LocalShell onto session + vfs (the in-wasm engine)
-- Owner: `crates/shell/web/src/local.rs`, new `packages/fut/fut/src/engine/` (if split), `crates/shell/web/Cargo.toml`.
+- Owner: `crates/shell/web/src/local.rs`, new `packages/fut/fut/src/engine/` (not in repo) (if split), `crates/shell/web/Cargo.toml`.
 - Deps: T1, T2. Parser choice ADR from T6 (parser-only part may start with a handwritten tokenizer).
 - Content: line editor with history/arrow keys, cwd, quoting, pipes, redirects, `&&`/`||`, env expansion, command registry
   trait `ShellCommand`, builtins (`cd pwd ls cat mkdir rm cp mv touch` over the Vfs) kept in-crate until T7 lands.

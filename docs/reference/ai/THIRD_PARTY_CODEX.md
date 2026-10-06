@@ -29,7 +29,7 @@ provenance of existing ports or fixtures.
 
 | aphrody path | Upstream source | Adaptation |
 |---|---|---|
-| `py/aphrody/aphrody/agent.py` | `sdk/python/src/openai_codex/{client,_message_router}.py` | Subprocess JSONL transport and response/notification routing adapted to the synchronous Aphrody client; standard library only. |
+| `py/packages/aphrody/src/aphrody/agent.py` | `sdk/python/src/openai_codex/{client,_message_router}.py` | Subprocess JSONL transport and response/notification routing adapted to the synchronous Aphrody client; standard library only. |
 | `crates/interop/ffi/bun/agent.ts` | `sdk/python/src/openai_codex/{client,_message_router}.py` | The same transport and routing ported to Bun subprocess streams with typed session and turn handles. |
 
 Both clients retain module-level upstream attribution. This source reuse does not imply

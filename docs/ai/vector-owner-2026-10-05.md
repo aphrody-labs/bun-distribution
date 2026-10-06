@@ -1,9 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Pure vector owner — 2026-10-05
 
-The [vector module](../../packages/core/src/math/vectors.ts) owns Bun normalization,
+The [vector module](../../packages/engine/core/src/math/vectors.ts) owns Bun normalization,
 cosine similarity and Euclidean distance. Redis imports it directly;
-[Gemma](../../packages/core/src/gemma4/engine.ts) retains compatible reexports and
+[Gemma](../../packages/engine/core/src/gemma4/engine.ts) retains compatible reexports and
 its profile-dependent synthetic projection and KV estimates. No arithmetic,
 precision, validation, mutation or error contract changed.
 

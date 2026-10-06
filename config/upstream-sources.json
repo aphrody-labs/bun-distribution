@@ -21,9 +21,7 @@
       "kind": "git",
       "url": "https://github.com/tauri-apps/tauri",
       "ref": "v3",
-      "sparse": [
-        "crates/tauri-runtime-cef"
-      ],
+      "sparse": ["crates/tauri-runtime-cef"],
       "license": "Apache-2.0 OR MIT",
       "tier": "reference",
       "purpose": "Tauri 3 branch; only crates/tauri-runtime-cef is read: the one desktop runtime (CEF + tauri-winit + GTK 4). The local patch for tauri-apps/tauri#16189 (patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch, base 3.0.0-alpha.5) is re-checked against it; drop the patch once upstream merges a fix.",
@@ -317,7 +315,7 @@
     },
     {
       "id": "taffy-aphrody-fork",
-      "kind": "git",
+      "kind": "crate",
       "crate": "taffy",
       "version": "0.12.1",
       "upstreamUrl": "https://github.com/DioxusLabs/taffy",

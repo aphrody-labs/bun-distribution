@@ -30,7 +30,7 @@ Resolved external versions (Cargo.lock): `fastembed 5.17.3`, `octocrab 0.54.2` (
 |---|---|---|
 | `apps/cli` (`aphrody` binary) | `apps/cli/Cargo.toml:130` | `aphrody-n2b`; subcommand `aphrody n2b` = `Commands::N2b` (`crates/infra/aphrody-command/src/lib.rs:521`, dispatch `:1742` -> `commands::N2bCommand`) |
 | `apps/cli` package manager | `crates/infra/aphrody-command/src/package_cmd.rs:18,104,107` | `PackageName::N2b`, `cargo_package: Some("n2b")` (the Cargo package is `aphrody-n2b`; whether this resolves is unverified) |
-| `crates/ai/mcp` (MCP server) | `crates/ai/mcp/Cargo.toml:146-147` | n2b-core, n2b-types; MCP tool `n2b` (`crates/ai/mcp/src/main.rs:2216-2240`, modes check/fix/migrate, renders with `aphrody_n2b_core::report::render_json`), contract `n2b` in `aphrody_schema` (`main.rs:2182-2187`, `include_str!` of `crates/contracts/schema/v2.json`) |
+| `crates/ai/mcp` (MCP server) | `crates/ai/mcp/Cargo.toml:146-147` | n2b-core, n2b-types; MCP tool `n2b` (`crates/ai/mcp/src/main.rs:2216-2240` (not in repo), modes check/fix/migrate, renders with `aphrody_n2b_core::report::render_json`), contract `n2b` in `aphrody_schema` (`main.rs:2182-2187`, `include_str!` of `crates/contracts/schema/v2.json`) |
 | `crates/compat/bun-docs` | `crates/compat/bun-docs/Cargo.toml:16` | n2b-registry (Node->Bun equivalents; listed as MCP tool `bun_node_equivalent` in `docs/reference/workspace/TOOLS.md:157`) |
 | `crates/interop/ffi` (`aphrody-ffi`) | `crates/interop/ffi/Cargo.toml:53`, `src/lib.rs:65` | re-exports `aphrody_n2b_native::*` |
 
@@ -38,10 +38,10 @@ Resolved external versions (Cargo.lock): `fastembed 5.17.3`, `octocrab 0.54.2` (
 
 | Package | Path | Version | Workspace deps | Scripts | Tests |
 |---|---|---|---|---|---|
-| `@aphrody/n2b-core` (dir name `n2b-client`) | `packages/compat/n2b-client` | 0.6.2 | n2b-types | build, start, dev, typecheck, test | `test/binary-resolution.test.ts`, `test/cli.test.ts`, `test/shims.test.ts` |
-| `@aphrody/n2b-plugin` | `packages/compat/n2b-plugin` | 0.6.2 | n2b-types, n2b-core | typecheck, test | `test-resolution.test.ts` |
-| `@aphrody/n2b-shims` | `packages/compat/n2b-shims` | 0.6.2 | n2b-core | build, typecheck | none (compatibility alias: every entry re-exports `@aphrody/n2b-core/shims*`) |
-| `@aphrody/n2b-types` | `packages/compat/n2b-types` | 0.6.2 | none | build, typecheck | none |
+| `@aphrody/n2b-core` (dir name `n2b-client`) | `packages/engine/n2b-client` | 0.6.2 | n2b-types | build, start, dev, typecheck, test | `test/binary-resolution.test.ts`, `test/cli.test.ts`, `test/shims.test.ts` |
+| `@aphrody/n2b-plugin` | `packages/engine/n2b-plugin` | 0.6.2 | n2b-types, n2b-core | typecheck, test | `test-resolution.test.ts` |
+| `@aphrody/n2b-shims` | `packages/engine/n2b-shims` | 0.6.2 | n2b-core | build, typecheck | none (compatibility alias: every entry re-exports `@aphrody/n2b-core/shims*`) |
+| `@aphrody/n2b-types` | `packages/engine/n2b-types` | 0.6.2 | none | build, typecheck | none |
 
 No package outside `packages/compat` declares a dependency on `@aphrody/n2b-*`
 (grep over `apps/**`, `packages/**` package.json). None declares a `bin`.
@@ -122,7 +122,7 @@ Gates and scripts running them:
 | Root scripts | `package.json:276` `ai:lint` (`oxlint -c .oxlintrc.json packages/ai/ packages/web/x/`), `:277` `ai:fmt` (`oxfmt ...`) |
 | Monorepo gate allow-list | `packages/infra/workspace/src/monorepo-gate.ts:174-175` (accepts `oxlint ...` and `oxfmt --check ...` package scripts) |
 | RG ops | `packages/infra/workspace/src/rg.ts:207` (not in repo) (`config/rg/oxfmt.json` (not in repo)) |
-| Asset generator | `scripts/build/ui/packages/assets/scripts/generate.ts:104` (`bunx oxfmt`) |
+| Asset generator | `scripts/build/ui/packages/assets/scripts/generate.ts:104` (not in repo) (`bunx oxfmt`) |
 | Agent home tool list | `packages/infra/workspace/src/agent-home.ts:72-73` |
 
 No `.github/workflows` file runs oxlint/oxfmt (grep).
@@ -138,7 +138,7 @@ Live code (behaviour depends on a `bun:aphrody` module that stock Bun lacks):
 | File:line | Reference |
 |---|---|
 | `crates/os/kernel/src/runtimes.rs:23` | probes `require('bun:aphrody').moduleVersion` |
-| `packages/compat/n2b-plugin/src/index.ts:79` | specifier `"bun:aphrody"` |
+| `packages/engine/n2b-plugin/src/index.ts:79` | specifier `"bun:aphrody"` |
 | `packages/interop/native/src/library.ts:293` | owner type `"@aphrody/bun" \| "bun:aphrody"` |
 | `packages/interop/native/fixtures/bun-fork-native.ts:18,31` | fixture for `bun:aphrody` |
 
@@ -196,9 +196,9 @@ Nothing below was compiled: Cargo is run only by the integrating agent. Bun gate
 | Before | After | Alias / contract kept |
 |---|---|---|
 | crates `aphrody-n2b-{ai,github,util,report,rules,scanners}` (no consumer outside n2b except mcp -> report) | modules `aphrody_n2b_core::{ai,github,util,report,rules,scanners}` (`crates/compat/n2b-core/src/<name>/`) | same public paths `aphrody_n2b_core::<name>` that n2b-core already re-exported; none of the six crates is on crates.io (API 404) |
-| `aphrody_n2b_report::render_json` in `crates/ai/mcp/src/main.rs` | `aphrody_n2b_core::report::render_json` | MCP tool `n2b` unchanged |
+| `aphrody_n2b_report::render_json` in `crates/ai/mcp/src/main.rs` (not in repo) | `aphrody_n2b_core::report::render_json` | MCP tool `n2b` unchanged |
 | private `write` + `which` copies in `n2b/src/{app,linux,wasm,win32}_cmd.rs` | `crates/compat/n2b/src/scaffold_fs.rs` (`write_tagged`, `which`) | output and log tags unchanged |
-| `@aphrody/n2b-shims` sources | `@aphrody/n2b-core/shims{,/env,/fs,/path,/shell}` (`packages/compat/n2b-client/src/shims/`) | `@aphrody/n2b-shims` 0.6.2 is published on npm: the package stays as a re-export alias |
+| `@aphrody/n2b-shims` sources | `@aphrody/n2b-core/shims{,/env,/fs,/path,/shell}` (`packages/engine/n2b-client/src/shims/`) | `@aphrody/n2b-shims` 0.6.2 is published on npm: the package stays as a re-export alias |
 | 309 Bun doc files in `docs/*/compat/n2b/bun/` | `docs/*/upstream-bun/` | per-file aliases + SHA-256 in `docs/migration/n2b-dedup-2026-10-02.json` |
 | `docs/apis/contracts/v2.json` (not in repo) | `crates/contracts/schema/v2.json` | `include_str!` in mcp repointed; alias recorded in the same JSON |
 | Node-to-Bun mapping list in `plugins/aphrody/skills/n2b/SKILL.md` | pointer to `crates/compat/n2b-registry/registry/*.toml`, `aphrody n2b rules`, MCP `bun_node_equivalent` | skill name and triggers unchanged |

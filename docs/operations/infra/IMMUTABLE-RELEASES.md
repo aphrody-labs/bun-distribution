@@ -49,7 +49,7 @@ queries entries selected from `config/service-catalog.json`; it does not
 discover arbitrary units. Installed binary/catalog and current source views
 can differ, so reconcile their revisions before relying on results. The root
 monorepo CLI is defined in
-[`crates/infra/infra/src/main.rs`](../../../crates/infra/infra/src/main.rs);
+`crates/infra/infra/src/main.rs` (not in repo);
 the separate Bun host monitor is `bun scripts/tools/infra/infra-status.ts status`. These
 commands have different scope and output. Invoke Cargo builds/runs through
 `scripts/build/rust/cargo-serial.sh` as required by repository rules.

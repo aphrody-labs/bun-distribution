@@ -53,7 +53,7 @@ remains separate. On cancellation the native owner kills its local SSH child;
 this does not prove all remote descendants have terminated. Preserve the
 factory job log and result under its artifact owner.
 
-IECODE's current authority is `docs/development/INAGLE-NIE-FFI.md` in its
+IECODE's current authority is `docs/development/INAGLE-NIE-FFI.md` (not in repo) in its
 own checkout. Its Cargo configuration and native packaging expect root
 `target/`; AppImage packaging explicitly refuses redirected target directories.
 Do not apply the optional target override globally to these owners. Build the
@@ -117,7 +117,7 @@ production metadata. No completed NIE compilation, native artifact or Bun ABI
 qualification follows from this run. These missing inputs are distinct from
 the successful Infra qualification.
 
-The current IECODE authority, `docs/nie/game-data/root-manifests.md`, assigns
+The current IECODE authority, `docs/nie/game-data/root-manifests.md` (not in repo), assigns
 these generated indexes to verified VFS/native exports and Inagle
 materialization. An executable owner pipeline generating these exact six
 files has not been identified. The narrow prerequisite is a genuine generated

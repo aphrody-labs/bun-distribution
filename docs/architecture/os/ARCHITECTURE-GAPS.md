@@ -38,7 +38,7 @@ This leaves a gap between the repository's ownership statement (kernel owns exec
 sandboxing) and runtime enforcement, especially for remote subsystem calls and admin operations.
 
 Evidence: [`aphrody-kernel/Cargo.toml`](../../../crates/os/kernel/Cargo.toml),
-[`main.rs`](../../../crates/os/kernel/src/main.rs) (`builtin_kernel`), and
+`main.rs` (`builtin_kernel`), and
 [`rpc.rs`](../../../crates/os/kernel/src/rpc.rs) (`tools/call`).
 
 **Direction:** make the policy boundary explicit and enforce it at kernel dispatch or document
@@ -154,7 +154,7 @@ repository architecture or README ownership list. Further, `start_mirroring()` l
 each download error, then returns success, so the binary can print “terminé avec succès” after
 partial or total failure.
 
-Evidence: [`aphrody-backend/src/main.rs`](../../../crates/os/backend/src/main.rs),
+Evidence: `aphrody-backend/src/main.rs`,
 [`aphrody-backend/src/lib.rs`](../../../crates/os/backend/src/lib.rs),
 [`Cargo.toml`](../../../Cargo.toml), and [`README.md`](../../products/os/README.md).
 

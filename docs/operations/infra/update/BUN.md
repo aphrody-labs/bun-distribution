@@ -139,7 +139,7 @@ failures already present before the bump).
 | --- | --- | --- | --- |
 | `vitest` | ^4.1.11 | ^5.0.2 | `shenron:packages/koharu` (12 files, 102 tests) passes; matcher typing unchanged. 5.0.3 waits for the age window. |
 | `@testing-library/jest-dom` | ^6.10.0 | ^7.0.1 | Node 22+, `@testing-library/dom` peer already met. |
-| `three` | ^0.184.0 | ^0.186.1 | Code fix: `PCFSoftShadowMap` was removed from `WebGLShadowMap` in r186 (runtime warning, falls back), `m3/packages/material-web/scene3d/scene-3d.ts` now sets `PCFShadowMap`. |
+| `three` | ^0.184.0 | ^0.186.1 | Code fix: `PCFSoftShadowMap` was removed from `WebGLShadowMap` in r186 (runtime warning, falls back), `m3/packages/material-web/scene3d/scene-3d.ts` (not in repo) now sets `PCFShadowMap`. |
 | `motion` | ^12.43.0 | ^13.4.4 | Only the removed emotion integration changed; unused. |
 | `react-dropzone` | ^15.0.0 | ^20.1.2 | `useDropzone` call site unaffected. |
 | `react-easy-crop` | ^5.5.7 | ^6.2.3 | Build-only breaks. |

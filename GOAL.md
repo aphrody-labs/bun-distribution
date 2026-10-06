@@ -3,7 +3,7 @@
 
 Directive propriétaire du 2026-10-04, réécrite et vérifiée contre l'état réel du poste
 (commandes citées en fin de document). Pendants : [Yolo](GOAL.md) pour la bibliothèque
-partagée et [aphrody-py](../aphrody-py/GOAL.md) pour la surface Python IA/ML.
+partagée et aphrody-py pour la surface Python IA/ML.
 
 ## 1. Rôle
 

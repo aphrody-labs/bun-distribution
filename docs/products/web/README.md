@@ -13,7 +13,7 @@ X clients, native FFI and the `aphrody-site` HTTP origin.
 - `crates/aphrody-site`, `aphrody-x*`: HTTP origin and X client/ranking.
 - `drive-server/`: isolated FSL-1.1-ALv2 `sd-server` migration workspace;
   consumes the OS Drive core and the compiled UI bundle from sibling repos.
-- `apps/bxc`, `packages/x`, `packages/bxc-test`: Bun engine, client and test adapter.
+- `apps/bxc` (not in repo), `packages/x` (not in repo), `packages/bxc-test` (not in repo): Bun engine, client and test adapter.
   FUT has moved to its independent repository.
 
 Cargo dependencies point to Contracts, OS and Compat. UI canvas execution is a
@@ -40,7 +40,7 @@ transport variant. Browser subsystem consumers can opt into `render` or
 `stealth` on `aphrody-browser` when they need those MCP capabilities.
 
 - [Web index](../../reference/web/web/INDEX.md), [runtime boundaries](../../reference/web/WEB-RUNTIME.md)
-- [BXC manual](./apps/bxc/README.md) and [local agent rules](../../reference/web/apps/bxc/AGENTS.md)
+- BXC manual and local agent rules
 - [X](./x/README.md), [Chromium](./chromium/README.md), [URL conventions](../../reference/web/URL-SLUG-SEO.md)
 
 The main Cargo workspace is Apache-2.0; `drive-server/` has its own FSL license
@@ -49,4 +49,4 @@ and Cargo workspace. Record Obscura modifications in its
 
 ## Automatisation transversale
 
-Le contrôle des workspaces BXC est fourni par `yolo ops workspace-layout` via `apps/bxc`.
+Le contrôle des workspaces BXC est fourni par `yolo ops workspace-layout` via `apps/bxc` (not in repo).

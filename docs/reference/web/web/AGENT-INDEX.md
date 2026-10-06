@@ -2,7 +2,7 @@
 
 How a URL becomes a citable, deduplicated, searchable record, and where each
 stage lives. Numbers for every stage are produced by
-`bun docs/benchmarks/agent/run.ts` (see `docs/research/web/apps/bxc/benchmarks/results/`).
+`bun docs/benchmarks/agent/run.ts` (see `docs/research/web/apps/bxc/benchmarks/results/` (not in repo)).
 
 ```
 seeds / sitemaps / feeds

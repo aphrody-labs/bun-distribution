@@ -189,7 +189,7 @@ Other checks:
 
 - The fixtures were written together with the heuristics. Treat the 1.000
   scores as regression guards, not as a benchmark of unseen sites. The
-  `docs/research/web/apps/bxc/benchmarks` extraction F1 gold set is still to do.
+  `docs/research/web/apps/bxc/benchmarks` (not in repo) extraction F1 gold set is still to do.
 - Pages rendered by client-side JavaScript need a rendering profile
   (`--profile stealth` or the render tier) before extraction. The `http`
   profile only sees server HTML.

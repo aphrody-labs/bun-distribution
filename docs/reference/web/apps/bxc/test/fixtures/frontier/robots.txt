@@ -1,8 +1,0 @@
-User-agent: *
-Disallow: /private
-# Sitemap: https://example.com/commented.xml
-Sitemap: https://example.com/sitemap_index.xml
-sitemap:https://example.com/news-sitemap.xml # trailing comment
-  SITEMAP :   https://example.com/sitemap_index.xml
-Site-map: /relative-sitemap.xml
-Sitemap: not-a-url

@@ -69,5 +69,5 @@ Embedded `bun:sqlite` stores for crawl, inference and scraping logs.
 ### C. Shenron local caches
 
 Bounded SQLite mirrors in the Shenron shared root (`sharedRoot` of `shenron-site` in the
-catalog), backed up by the Shenron timers under [`systemd/`](../../../../systemd/)
+catalog), backed up by the Shenron timers under `systemd/`
 (`shenron-backup`, `shenron-sqlite-replica-backup`).

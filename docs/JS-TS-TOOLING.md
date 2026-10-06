@@ -7,7 +7,7 @@ runtime SDK; its applications, UI and product orchestration retain their owners.
 This is a source and native API consolidation. It does not establish a rebuilt
 Bun builtin, a complete VS Code migration or measured memory/startup gains.
 
-The dated [migration receipt](migration/n2b-oxc-2026-10-05.json) records source
+The dated migration receipt records source
 revisions, file hashes and the scope of qualification. The runtime architecture
 remains governed by [GOAL](../GOAL.md), [PLAN](../PLAN.md) and
 [the ABI contract](RUNTIME-ABI.md).
@@ -16,13 +16,13 @@ remains governed by [GOAL](../GOAL.md), [PLAN](../PLAN.md) and
 
 | Surface | Yolo owner | Preserved contract |
 | --- | --- | --- |
-| Report types and JSON schema | [aphrody-n2b-types](../crates/aphrody-n2b-types) | Schema version 2, original `$id`, Rust types and `REPORT_SCHEMA_V2` |
-| Migration rules | [aphrody-n2b-registry](../crates/aphrody-n2b-registry) | Existing rule identities and rule registry |
-| Recursive scan, fixes and reports | [aphrody-n2b-core](../crates/aphrody-n2b-core) | Existing Rust API plus bounded jobs and mapped results |
-| Migration C ABI | [aphrody-n2b-native](../crates/aphrody-n2b-native) | `node2bun_*`, ABI 2, library-owned strings |
-| Compatibility CLI | [aphrody-n2b](../crates/aphrody-n2b) | Existing `n2b` binary and native in-process engine |
-| Runtime discovery and pins | [aphrody-toolchains](../crates/aphrody-toolchains) | Bun/uv/Nushell discovery and launch environment; discovery is not engine embedding |
-| Native parser, formatter, linter and minifier | [aphrody-oxc-bridge](../crates/aphrody-oxc-bridge) | `aphrody_oxc_*`, ABI 1, official Oxc APIs |
+| Report types and JSON schema | aphrody-n2b-types | Schema version 2, original `$id`, Rust types and `REPORT_SCHEMA_V2` |
+| Migration rules | aphrody-n2b-registry | Existing rule identities and rule registry |
+| Recursive scan, fixes and reports | aphrody-n2b-core | Existing Rust API plus bounded jobs and mapped results |
+| Migration C ABI | aphrody-n2b-native | `node2bun_*`, ABI 2, library-owned strings |
+| Compatibility CLI | aphrody-n2b | Existing `n2b` binary and native in-process engine |
+| Runtime discovery and pins | aphrody-toolchains | Bun/uv/Nushell discovery and launch environment; discovery is not engine embedding |
+| Native parser, formatter, linter and minifier | aphrody-oxc-bridge | `aphrody_oxc_*`, ABI 1, official Oxc APIs |
 | Grouped optional provider | [aphrody-ffi](../crates/interop/ffi) feature `tooling` | Reexports the two C ABIs from `libaphrody_ffi`; group ABI 1 (`yolo_tooling_abi_version`); no second engine implementation |
 | Repository mapper, watcher and polyglot inspection | [yolo-core](../crates/engine/yolo-core) with `repository-tools` | `mapper` and `polyglot`; Aphrody's `aphrody_yolo` library reexports them |
 
@@ -36,10 +36,10 @@ The four transferred Bun packages retain their names and version 0.6.2:
 
 | Package | Source | Behavior |
 | --- | --- | --- |
-| `@aphrody/n2b-core` | [packages/n2b-client](../packages/n2b-client) | Default scan calls the native SDK; compatibility CLI helpers are explicit |
-| `@aphrody/n2b-plugin` | [packages/n2b-plugin](../packages/n2b-plugin) | Bun build plugin scans once and indexes findings; it does not implement migration rules |
-| `@aphrody/n2b-shims` | [packages/n2b-shims](../packages/n2b-shims) | Compatibility exports of the single Bun shim implementation |
-| `@aphrody/n2b-types` | [packages/n2b-types](../packages/n2b-types) | Type aliases to the generated SDK schema |
+| `@aphrody/n2b-core` | packages/n2b-client | Default scan calls the native SDK; compatibility CLI helpers are explicit |
+| `@aphrody/n2b-plugin` | packages/n2b-plugin | Bun build plugin scans once and indexes findings; it does not implement migration rules |
+| `@aphrody/n2b-shims` | packages/n2b-shims | Compatibility exports of the single Bun shim implementation |
+| `@aphrody/n2b-types` | packages/n2b-types | Type aliases to the generated SDK schema |
 
 The plugin's `auto` and `required` policies both require the native provider.
 `native: "off"` selects the historical CLI adapter explicitly. The `rules`,
@@ -48,7 +48,7 @@ These exceptions do not implement an alternative parser or a process-per-file sc
 
 ## Native calls and ownership
 
-[The light SDK](../packages/runtime/src/tooling.ts) owns `NativeTooling` and the
+[The light SDK](../packages/engine/runtime/src/tooling.ts) owns `NativeTooling` and the
 shared convenience functions. `@aphrody/yolo-core/compiler` reexports that owner
 and adds the official ESTree JSON types. Importing the SDK does not load a library;
 the first operation or explicit probe loads and verifies the selected artifact.
@@ -139,7 +139,7 @@ some individual file errors; it is not a substitute for N2B's strict traversal.
 The canonical report schema is
 [crates/contracts/schema/v2.json](../crates/contracts/schema/v2.json).
 Its generated TypeScript surface is
-[packages/runtime/src/tooling-schema.ts](../packages/runtime/src/tooling-schema.ts);
+[packages/runtime/src/tooling-schema.ts](../packages/engine/runtime/src/tooling-schema.ts);
 the compatibility package aliases it. The Yolo schema generator owns both that
 output and the Rust schema output; the Aphrody command remains a compatibility
 route while consumers migrate. Regeneration must preserve the original version-2

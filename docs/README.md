@@ -33,7 +33,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | architecture | [upstream-bun](architecture/upstream-bun/) vendored upstream copy | 2 | - |
 | architecture | [upstream-oxc](architecture/upstream-oxc/) vendored upstream copy | 3 | - |
 | architecture | [upstream-victauri](architecture/upstream-victauri/) vendored upstream copy | 1 | - |
-| architecture | [web](architecture/web/) | 4 | - |
+| architecture | [web](architecture/web/) | 2 | - |
 | architecture | [workspace](architecture/workspace/) | 3 | - |
 | apis | [ai](apis/ai/) | 5 | - |
 | apis | [compat](apis/compat/) | 2 | - |
@@ -57,31 +57,37 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [upstream-oxc](guides/upstream-oxc/) vendored upstream copy | 1 | - |
 | guides | [upstream-terminal](guides/upstream-terminal/) vendored upstream copy | 1 | - |
 | guides | [upstream-WSL](guides/upstream-WSL/) vendored upstream copy | 1 | - |
-| guides | [web](guides/web/) | 5 | - |
+| guides | [web](guides/web/) | 4 | - |
 | guides | [workspace](guides/workspace/) | 4 | [Parcours Workspace Aphrody](guides/workspace/README.md) |
+| operations | [(files)](operations/) | 1 | - |
 | operations | [ai](operations/ai/) | 9 | - |
+| operations | [cloud](operations/cloud/) | 3 | - |
+| operations | [container](operations/container/) | 1 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
-| operations | [infra](operations/infra/) | 110 | - |
+| operations | [infra](operations/infra/) | 112 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
 | operations | [web](operations/web/) | 1 | - |
 | operations | [workspace](operations/workspace/) | 2 | - |
+| plans | [agent-home-pipeline](plans/agent-home-pipeline/) | 1 | [Agent home, one database, one pipeline, one RAG](plans/agent-home-pipeline/PLAN.md) |
 | plans | [ai](plans/ai/) | 17 | [Delivery plan](plans/ai/PLAN.md) |
 | plans | [compat](plans/compat/) | 3 | [PLAN — aphrody-compat](plans/compat/PLAN.md) |
 | plans | [contracts](plans/contracts/) | 1 | [PLAN — aphrody-contracts](plans/contracts/PLAN.md) |
 | plans | [convergence](plans/convergence/) | 1 | - |
 | plans | [discord](plans/discord/) | 2 | [Aphrody Discord plan](plans/discord/PLAN.md) |
-| plans | [fusion](plans/fusion/) | 15 | - |
+| plans | [fusion](plans/fusion/) | 26 | - |
 | plans | [infra](plans/infra/) | 4 | [Aphrody Infra plan](plans/infra/PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
 | plans | [runtime](plans/runtime/) | 3 | - |
 | plans | [shell](plans/shell/) | 1 | - |
+| plans | [tauri-cef](plans/tauri-cef/) | 2 | [One desktop runtime: `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4)](plans/tauri-cef/PLAN.md) |
 | plans | [upstream-bun](plans/upstream-bun/) vendored upstream copy | 1 | - |
 | plans | [upstream-oxc](plans/upstream-oxc/) vendored upstream copy | 1 | - |
 | plans | [vu](plans/vu/) | 7 | [`vu`: the Aphrody Python runtime](plans/vu/PLAN.md) |
-| plans | [web](plans/web/) | 6 | - |
+| plans | [web](plans/web/) | 4 | - |
 | plans | [workspace](plans/workspace/) | 1 | [Aphrody — FFI unique et consolidation Rust, Python, Bun](plans/workspace/PLAN.md) |
+| plans | [x-bun-import](plans/x-bun-import/) | 2 | [`@aphrody/x`: a thin Bun import over `aphrody-x`](plans/x-bun-import/PLAN.md) |
 | products | [ai](products/ai/) | 29 | [Aphrody AI](products/ai/README.md) |
 | products | [compat](products/compat/) | 5 | [Aphrody Compat](products/compat/README.md) |
 | products | [contracts](products/contracts/) | 5 | [Aphrody Contracts](products/contracts/README.md) |
@@ -99,7 +105,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [upstream-victauri](products/upstream-victauri/) vendored upstream copy | 1 | [README.md](products/upstream-victauri/README.md) |
 | products | [upstream-WSL](products/upstream-WSL/) vendored upstream copy | 1 | [Welcome to the Windows Subsystem for Linux (WSL) repository](products/upstream-WSL/README.md) |
 | products | [upstream-wslg](products/upstream-wslg/) vendored upstream copy | 1 | [Welcome to WSLg](products/upstream-wslg/README.md) |
-| products | [web](products/web/) | 10 | [Aphrody Web](products/web/README.md) |
+| products | [web](products/web/) | 7 | [Aphrody Web](products/web/README.md) |
 | products | [workspace](products/workspace/) | 1 | [Aphrody source workspace](products/workspace/README.md) |
 | reference | [ai](reference/ai/) | 240 | - |
 | reference | [compat](reference/compat/) | 102 | - |
@@ -116,7 +122,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [upstream-terminal](reference/upstream-terminal/) vendored upstream copy | 2 | - |
 | reference | [upstream-victauri](reference/upstream-victauri/) vendored upstream copy | 6 | - |
 | reference | [upstream-WSL](reference/upstream-WSL/) vendored upstream copy | 18 | - |
-| reference | [web](reference/web/) | 96 | - |
+| reference | [web](reference/web/) | 49 | - |
 | reference | [workspace](reference/workspace/) | 14 | [Workspace documentation](reference/workspace/INDEX.md) |
 | reference | [yolo](reference/yolo/) | 1 | - |
 | research | [ai](research/ai/) | 50 | - |
@@ -129,13 +135,13 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | research | [upstream-jan](research/upstream-jan/) vendored upstream copy | 11 | - |
 | research | [upstream-oxc](research/upstream-oxc/) vendored upstream copy | 7 | - |
 | research | [upstream-victauri](research/upstream-victauri/) vendored upstream copy | 1 | - |
-| research | [web](research/web/) | 117 | - |
+| research | [web](research/web/) | 3 | - |
 | research | [workspace](research/workspace/) | 3 | - |
 | (root) (outside the category layout) | [(files)](./) | 41 | - |
 | ai (outside the category layout) | [(files)](ai/) | 2 | - |
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
-| migration (outside the category layout) | [(files)](migration/) | 136 | [Migration records](migration/README.md) |
+| migration (outside the category layout) | [(files)](migration/) | 137 | [Migration records](migration/README.md) |
 | migration (outside the category layout) | [a2a-os-move-2026-10-01](migration/a2a-os-move-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-clean-clone-2026-10-01](migration/contracts-clean-clone-2026-10-01/) | 4 | - |
 | migration (outside the category layout) | [contracts-qualification-2026-10-01](migration/contracts-qualification-2026-10-01/) | 6 | - |
@@ -149,4 +155,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 8 | - |
 | migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 4558 files.
+Total: 4413 files.

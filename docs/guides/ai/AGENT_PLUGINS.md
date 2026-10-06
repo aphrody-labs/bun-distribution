@@ -97,8 +97,8 @@ scope utilisateur. Un scope interdit échoue avant les mutations.
 | agy         | Installation native globale; entrée `plugins.json` filtrée pour le projet                                          | `plugin validate`                                                                         |
 | Tous        | YAML, JSON, TOML, chemins confinés, versions, liens et MCP; skills liées avec leurs ressources                     | `aphrody-skills validate --json` si installé                                              |
 
-Pour agy, le MCP du projet est un petit plugin sous `.agents/aphrody-mcp`,
-enregistré dans `.agents/plugins.json`; un fichier `.agents/mcp_config.json`
+Pour agy, le MCP du projet est un petit plugin sous `.agents/aphrody-mcp` (not in repo),
+enregistré dans `.agents/plugins.json` (not in repo); un fichier `.agents/mcp_config.json` (not in repo)
 seul n'est pas une surface documentée. Les MCP globaux agy et Codex sont
 réconciliés directement pour préserver les options privées; Claude emploie
 `mcp add-json`. Les headers HTTP sont convertis en `http_headers` pour Codex.

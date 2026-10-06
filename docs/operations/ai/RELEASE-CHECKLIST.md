@@ -56,7 +56,7 @@ and tick boxes as you go.
 
 ## 5. Tag and push
 
-- [ ] Build + install the Linux release binaries with `./scripts/deploy.sh`,
+- [ ] Build + install the Linux release binaries with `scripts/tools/ai/scripts/deploy.sh`,
       then smoke-test `aphrody --version` / `aphrody doctor` on supported targets.
 - [ ] Create the local commit and annotated tag
       (`git tag -a v<version> -m "v<version>"`).

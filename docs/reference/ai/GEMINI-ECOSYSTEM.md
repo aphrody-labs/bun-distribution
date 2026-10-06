@@ -25,7 +25,7 @@ Master map of official Google open-source repositories, SDKs, agent blueprints, 
 
 | Upstream Resource | Aphrody Subsystem | Role |
 |---|---|---|
-| `google-genai` / `vertexai` | `py/aphrody/aphrody/vertex.py` | Keyless access to Gemini 3.8 Flash via on-device Antigravity OAuth tokens. |
+| `google-genai` / `vertexai` | `py/packages/aphrody/src/aphrody/vertex.py` | Keyless access to Gemini 3.8 Flash via on-device Antigravity OAuth tokens. |
 | `google-antigravity/antigravity-cli` | `crates/infra/aphrody-command/src/commands.rs` (`aphrody agy`) & `agy_loop.rs` | Auto-discovery and zero-overhead execution of the official `agy` binary with autonomous looping. |
 | `google-antigravity` (SDK) | `py/antigravity-sdk-python/` | Agent loop, tool context, thinking effort levels (`minimal`, `low`, `medium`, `high`). |
 | `gemini-cli` / Cloud Code | `crates/infra/aphrody-command/src/agy_backend.rs` | High-throughput in-process chat dispatch over Cloud Code daily endpoint. |

@@ -213,11 +213,11 @@ commit trailers in each repo for any fix that landed):
 - **aphrody-os**: zero hits against the catalog; no fix needed.
 - **aphrody-ai**: every literal that duplicates a canonical `APHRODY_AI_*` value already resolves
   through that env var first; nothing trivial to fix. One drift found and fixed 2026-09-26:
-  `crates/ai/rag-eval/src/main.rs`'s `DEFAULT_MCP_URL` defaulted to `https://aphrody.com/mcp`,
+  `crates/ai/rag-eval/src/main.rs` (not in repo)'s `DEFAULT_MCP_URL` defaulted to `https://aphrody.com/mcp`,
   a path/host with no live entry in `config/host/nginx/routes.json` (its `aphrody-site` backend is
   retired). Made env-driven (`APHRODY_MCP_HTTP_URL`, checked before the local default) with the
   local default repointed at `http://127.0.0.1:8789/mcp` — `aphrody-mcp http`'s own `--bind`
-  default and `/mcp` mount (`crates/ai/mcp/src/main.rs`), the one MCP HTTP origin this
+  default and `/mcp` mount (`crates/ai/mcp/src/main.rs` (not in repo)), the one MCP HTTP origin this
   ecosystem actually runs locally by convention. `--url` (CLI) still wins over both.
 - **aphrody-ui**: same pattern (env-first, literal only as fallback); nothing trivial to fix. One
   drift flagged for the owner: `m3/packages/app-ui/src/shenron-studio.tsx` (not in repo)'s "local model inference"

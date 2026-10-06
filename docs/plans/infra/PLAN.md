@@ -3,7 +3,7 @@
 # Aphrody Infra plan
 
 Open infrastructure work. `config/` owns topology/routing and
-[inventory](../../../inventory/) holds dated observations. Execute authorized tasks
+inventory holds dated observations. Execute authorized tasks
 under [NHITL](../../reference/infra/AGENTS.md); backups, integrity checks and rollback remain technical gates.
 Each live result is dated and scoped in the decision ledger; historical host
 observations below must be revalidated before operational use.
@@ -45,7 +45,7 @@ observation found some active; reconcile binary and catalog revisions before
 relying on that snapshot. Source review found timer entries were mapped to
 their associated `.service`; the current service-status path checks the
 catalogued timer itself. The CLI syntax is defined in
-[`crates/infra/infra/src/main.rs`](../../../crates/infra/infra/src/main.rs)
+`crates/infra/infra/src/main.rs` (not in repo)
 and its behavior in
 [`crates/infra/infra/src/lifecycle.rs`](../../../crates/infra/infra/src/lifecycle.rs).
 
@@ -497,7 +497,7 @@ sections current and store operational detail in its existing runbook.
   Obscura APIs, and the modified `agent-browser` CLI is not on crates.io. No replacement was made.
   The UI-invalid fixture also passes the expanded copied-package scan without opening UI files.
 - **2026-09-28:** installed the locked `aphrody-train` full Python extra in its isolated
-  `py/aphrody-train/.venv`; Torch 2.8 CUDA 12.9 imports successfully and detects the RTX 4070.
+  `py/aphrody-train/.venv` (not in repo); Torch 2.8 CUDA 12.9 imports successfully and detects the RTX 4070.
   Aphrody's model pull for `qwen3-coder-30b-a3b-q4km` was paused at 7.26/17.28 GiB in the
   user model store and can be resumed with `target/debug/aphrody model pull
   qwen3-coder-30b-a3b-q4km`. Bun remains identical to `upstream/main`; training is pending a

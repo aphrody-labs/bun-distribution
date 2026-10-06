@@ -381,7 +381,7 @@ d'exécuter le kernel privilégié dans une application Bun ordinaire.
 | Provenance | Rust → `aphrody/crates` | Bun/TS → `aphrody/packages`, `apps` | Python → `aphrody-py` |
 | --- | --- | --- | --- |
 | Contracts, Native, Shell, Compat | Toutes les bibliothèques, N2B, schémas/générateurs et wrappers natifs | Bindings, plugins et outils existants | Scripts et outils présents, à inventorier |
-| AI, Koharu, Discord | CLI/MCP/app-server, AI/manga, protocoles et extensions PyO3 | SDK, plugins, façades et outils | `py/aphrody`, SDK Antigravity, entraînement, tous scripts autonomes |
+| AI, Koharu, Discord | CLI/MCP/app-server, AI/manga, protocoles et extensions PyO3 | SDK, plugins, façades et outils | `py/aphrody` (not in repo), SDK Antigravity, entraînement, tous scripts autonomes |
 | OS, UI, Web | Kernel/Files, rendu/M3, hôtes, moteur Web unifié | Apps web/desktop, M3/SVG, Drive, BXC transitoire | Automatisations et traitement d'assets |
 | Infra | Git/SSH/VPN, contrôleur, maintenance, YOLO | `@aphrody/workspace`, OVH, audits et opérations | Outils de maintenance ; configuration reste Infra |
 | IECODE, NIE | Moteurs métier, formats/forge, FFI et anciennes crates en absorption | `iecode-ffi`, packages NIE, plugin, vues et applications | `iepy`, `niepy`, projets IECODE, Python NIE/Blender |

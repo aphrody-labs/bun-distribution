@@ -17,7 +17,7 @@ establish that a running backend implements every method.
 | Which repository owns a capability? | Organization and ownership, [generated ecosystem inventory](../ecosystem/ECOSYSTEM.md) |
 | What does each capability contribute to the product? | Capability integration |
 | What remains for Koharu, Aphrody and Shenron? | Koharu convergence work packages |
-| What is the dated cross-repository Shenron pillar snapshot? | [ROADMAP-AGENT-PILLARS.md](../plans/ai/ROADMAP-AGENT-PILLARS.md) (historical metrics; verify against owners) |
+| What is the dated cross-repository Shenron pillar snapshot? | ROADMAP-AGENT-PILLARS.md (historical metrics; verify against owners) |
 | What does responsive mean? | Latency budgets |
 | How are changes maintained and checked? | DOCUMENTATION-PIPELINE.md, agent rules |
 

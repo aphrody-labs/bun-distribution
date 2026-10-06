@@ -4,13 +4,13 @@
 Relevé source : 2026-10-03. Yolo possède le fork/import et les moteurs ;
 Aphrody possède les applications Next concernées.
 Architecture et workflow : [PLAN racine](../../../../PLAN.md).
-Import/fork : [Yolo VENDORING](../../../../../yolo/docs/VENDORING.md).
+Import/fork : [Yolo VENDORING](../../../VENDORING.md).
 
 ## État vérifié
 
 Checkout existant : `../yolo/vendor/next`, branche `yolo`.
 Pins source : vendor manifest/lock Yolo. Scaffold : `templates/stack.toml`
-et `apps/cli/src/create.ts` côté Yolo. Le parser actuel accepte les variantes
+et `apps/yolo/cli/src/create.ts` côté Yolo. Le parser actuel accepte les variantes
 framework Hono/Elysia ; Next reste une proposition, pas un flag livré.
 
 L'ancien document était une seule ligne avec 230 séquences newline échappées.

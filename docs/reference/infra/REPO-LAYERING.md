@@ -6,7 +6,7 @@ validate its workspace crate graph. Each node is a crate directory such as
 `crates/os/kernel`; each path dependency between workspace crates is an edge.
 The command fails on a missing workspace target, metadata error, or crate
 cycle. `--json` prints all nodes, edges, external path sources, and errors.
-The [test](../../../scripts/repo-layering.test.ts) exercises both a fixture
+The test exercises both a fixture
 graph and the current workspace. The ecosystem catalog reads the same Cargo
 metadata, and `bun scripts/tools/workspace/ecosystem.ts --check` validates its generated view.
 

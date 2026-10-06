@@ -12,13 +12,13 @@ pas un résultat de validation.
 Racines actives : `aphrody`, `aphrody-py`, `iecode` sous `/home/aphro`.
 `~/src` est une archive legacy. Le checkout séparé `aphrody-ui` reste
 sous la responsabilité de son agent. Les anciens plans importés sont des
-preuves historiques : [ancien plan](docs/migration/PLAN-before-reorganization-2026-10-01.md)
+preuves historiques : ancien plan
 (conserver la base racine pour ses anciens liens).
 
 ## État vérifié
 
 - Inventaire des crates, packages et apps par domaine, exclusions du workspace et
-  état du code : [STATE.md](docs/reference/workspace/STATE.md), généré par
+  état du code : [STATE.md](../../../reference/workspace/STATE.md), généré par
   `bun run docs:gen` (vérifié par `bun run docs:check`). Aucun compte n'est tenu à la main.
 - 27 déplacements de propriétaires puis 155 raccourcissements de chemins.
   Les identités publiques Cargo et les noms `@aphrody/*` sont conservés.
@@ -39,11 +39,11 @@ preuves historiques : [ancien plan](docs/migration/PLAN-before-reorganization-20
 - Pipeline généré : 15 étapes, 222 commandes déclarées ; 69 packages manquent
   d’au moins un script de qualification. Le pipeline complet n’a pas été exécuté.
 
-Preuves : [scan du dépôt](docs/migration/repository-state-2026-10-01.json),
-[nettoyage](docs/migration/cleanup-2026-10-01.json),
-[chemins courts](docs/migration/short-paths-2026-10-01.json),
-[installation des exécutables](docs/migration/runtime-install-before-cleanup.json),
-[pipeline](config/pipeline.json).
+Preuves : scan du dépôt,
+nettoyage,
+chemins courts,
+installation des exécutables,
+[pipeline](../../../../config/pipeline.json).
 Les liens documentaires non résolus du scan restent des candidats à examiner :
 routes de sites, exemples et snapshots historiques demandent une classification.
 
@@ -70,9 +70,9 @@ routes de sites, exemples et snapshots historiques demandent une classification.
   consommée via Cargo Git au commit exact. 379 tests du consommateur layout
   et 109 tests du clone autonome passent ; check/clippy Linux, puis check
   Windows MSVC et WASM réussis. Version 0.12.1 et features conservées.
-  [Provenance Taffy](docs/migration/taffy-git-registry-2026-10-03.json).
+  Provenance Taffy.
 
-Preuve et hashes : [migration des packages](docs/migration/package-registry-2026-10-03.json).
+Preuve et hashes : migration des packages.
 
 - [x] IECODE : retirer le sous-module Citro3D inutilisé, conserver son historique
   et vérifier workspace/licences/docs dans son dépôt canonique.
@@ -80,7 +80,7 @@ Preuve et hashes : [migration des packages](docs/migration/package-registry-2026
   `aphrody-labs/antigravity-sdk-python`. uv consomme son commit exact ;
   supprimer le chemin éditable vers le checkout Aphrody. Wheel validé et
   cinq tests du bridge consommateurs réussis. LangExtract reste sur PyPI.
-  [Provenance SDK](docs/migration/python-sdk-registry-2026-10-03.json).
+  Provenance SDK.
 
 - [x] Audit final délégué : corriger les références opérationnelles Material Web
   et le manifeste Python imbriqué ; le gate Google installe le SDK depuis le
@@ -105,8 +105,8 @@ Preuve et hashes : [migration des packages](docs/migration/package-registry-2026
 - [ ] Adapter les références complètes TypeDoc/rustdoc/Sphinx si leurs
   consommateurs les nécessitent ; corriger le reste des liens du corpus.
 
-Guide : [gestion documentaire](docs/guides/workspace/documentation.md).
-Recherche : [pratiques documentaires](docs/research/workspace/documentation-practices.md).
+Guide : [gestion documentaire](../../../guides/workspace/documentation.md).
+Recherche : [pratiques documentaires](../../../research/workspace/documentation-practices.md).
 
 ## Plugins agents — 2026-10-03
 
@@ -156,13 +156,13 @@ Recherche : [pratiques documentaires](docs/research/workspace/documentation-prac
   (22,5 Mo), 51 fixtures, 38 code, 22 docs, 13 licences, 23 autres, 9 configs
   conventionnelles, 2 vides. 13 copies `scripts/` sans consommateur, doublons
   de leur paquet propriétaire, supprimées (liste dans
-  [SCRIPTS-INVENTORY.md](docs/reference/workspace/SCRIPTS-INVENTORY.md)) ;
+  [SCRIPTS-INVENTORY.md](../../../reference/workspace/SCRIPTS-INVENTORY.md)) ;
   `crates/ui/app/ui-dist/fonts` : 226 copies identiques à leurs sources
   canoniques (`design/aphrody-m3/packages/assets`, `design/aphrody-m3/packages/m3-fonts`, `crates/ui/bun`),
   déjà ignorées par `.gitignore` et recopiées par `build.rs` depuis
   `ui-dist.manifest` avant l’embarquement Tauri : retirées de l’index (≈ 20 Mo),
   fichiers conservés sur disque. Chaque groupe restant est qualifié dans
-  [DUPLICATES-QUALIFICATION.md](docs/reference/workspace/DUPLICATES-QUALIFICATION.md) :
+  [DUPLICATES-QUALIFICATION.md](../../../reference/workspace/DUPLICATES-QUALIFICATION.md) :
   conservés par rôle (URL publiques, bundles, licences, gabarits, sorties de
   build), ou copies documentaires UI/OS/Web à consolider par `docs-consolidate`.
   UI : consolidation exacte effectuée le 2026-10-03 (32 copies supprimées avec
@@ -180,7 +180,7 @@ Recherche : [pratiques documentaires](docs/research/workspace/documentation-prac
   `docs:check-links` : 0 lien cassé, 0 chemin mort.
 - [x] Classer les scripts importés par commande utilisée, propriétaire et
   références entrantes ; supprimer ceux devenus inutilisés après preuve.
-  Inventaire 2026-10-03 : [SCRIPTS-INVENTORY.md](docs/reference/workspace/SCRIPTS-INVENTORY.md),
+  Inventaire 2026-10-03 : [SCRIPTS-INVENTORY.md](../../../reference/workspace/SCRIPTS-INVENTORY.md),
   456 scripts, 175 sans référence entrante (dont 21 tests), dont 31 aux imports
   relatifs cassés ; sur tous les `.ts`, 55 scripts réparés (imports résolus par
   `bun build`), 17 restent cassés (sources bxc absentes, wasm généré, kit discord
@@ -232,7 +232,7 @@ actifs, aucun import vers une ancienne implantation déplacée.
   décrit les racines actives, les workspaces racine, les propriétaires actuels,
   les frontières à qualifier et Shenron comme gate produit final.
 - L’ancienne page est préservée octet pour octet dans
-  [le snapshot](docs/migration/workspace-architecture-before-monorepo-2026-10-01.md).
+  le snapshot.
   Ses liens relatifs gardent pour base historique `docs/architecture/workspace/` ;
   ce snapshot n’est pas une documentation active à réparer.
 - Vérification : aucune destination non résolue dans la page canonique selon
@@ -268,7 +268,7 @@ actifs, aucun import vers une ancienne implantation déplacée.
   existants `config/shell-runtime.json` et
   `config/infra/inventory/aphrody-discord-dev-2026-09-29.md`. Le contrôle ne relève plus
   de destination manquante dans `docs/operations/infra/`.
-- [Rapport de revue](docs/migration/document-links-review-2026-10-01.json) :
+- Rapport de revue :
   1 930 destinations non résolues réparties sur 501 documents ; chaque
   destination et chaque action de revue sont conservées dans l’inventaire.
 - Répartition : 599 références de documentation Bun importée, 414 références
@@ -311,7 +311,7 @@ actifs, aucun import vers une ancienne implantation déplacée.
 - Python : retrait de l'override Git `langextract` dans la configuration imbriquée ;
   lock uv racine PyPI vérifié. Le SDK Antigravity local reste une exception explicite,
   car les extensions `voice` consommées ne figurent pas dans la roue publiée.
-- Preuves et empreintes : [rapport](docs/migration/registry-preference-2026-10-03.json).
+- Preuves et empreintes : rapport.
   Pas de revendication de parité Windows/macOS, de validation runtime ou de
   remplacement automatique des paquets tiers modifiés.
 
@@ -350,7 +350,7 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
 
 ### Qualification N2B Linux — 2026-10-01
 
-- FAIT : [rapport et logs](docs/migration/n2b-qualification-2026-10-01/report.json)
+- FAIT : rapport et logs
   conservés pour `aphrody-n2b`, `aphrody-n2b-core` et le client Bun.
 - Build verrouillé réussi ; 49 tests Rust et 15 tests Bun réussis. Le client
   utilise explicitement le binaire issu du checkout actuel, dont le SHA-256
@@ -377,7 +377,7 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
 
 ### Graphe direct des dépendances — 2026-10-01
 
-- FAIT : [inventaire des arêtes déclarées](docs/migration/dependency-graph-review-2026-10-01.json)
+- FAIT : inventaire des arêtes déclarées
   produit depuis les métadonnées Cargo verrouillées et les manifests des membres
   Bun actuels : 186 membres Cargo, 84 membres Bun ; 468 arêtes Cargo locales
   et 145 arêtes Bun locales, dont 142 et 68 traversent un domaine.
@@ -399,7 +399,7 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
 - FAIT : `a2a-client`, `a2a-server`, `a2a-grpc` et `a2a-coord` déplacés de
   `crates/contracts` vers `crates/os`. Noms publics, versions, features,
   licences et APIs conservés ; manifests racine et pipeline régénéré alignés.
-- [Preuve source-vers-cible et logs](docs/migration/a2a-os-move-2026-10-01/report.json) :
+- Preuve source-vers-cible et logs :
   62 fichiers avec empreintes avant/après ; sept fichiers ajustés pour clippy
   (conditions simplifiées, assertion de chaîne vide, méthode privée renommée).
 - Gates Linux features par défaut : 293 tests réussis après corrections,
@@ -415,7 +415,7 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
   `aphrody-subsystem` réussis (172 tests, doc-tests inclus), ainsi que quatre
   tests unitaires `aphrody-app-protocol`. Clippy all-targets verrouillé avec
   refus des avertissements réussi sur ces cinq packages.
-- [Logs](docs/migration/contracts-qualification-2026-10-01/contracts-tests.log)
+- Logs
   conservés avec le résultat clippy et les échecs upstream.
 - INCOMPLET : les deux tests `upstream_fixtures_test` d’app-protocol échouent
   parce que `tests/fixtures/upstream/FIXTURES_REV` et les schémas sont absents.
@@ -430,7 +430,7 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
 
 - FAIT : 13 schémas JSON upstream et `FIXTURES_REV` restaurés depuis les blobs
   Git du commit source `96d1453…`, avant suppression par le nettoyage historique.
-  [Rapport de provenance](docs/migration/app-protocol-fixtures-restored-2026-10-01.json)
+  Rapport de provenance
   avec commit complet, chemins source/cible et SHA-256 de chaque fichier.
 - Aucun schéma régénéré. Attribution upstream documentée ; le test vérifie
   maintenant la révision complète `78245b47af2a7aafcabe025828ceecca69db4df1`.
@@ -444,7 +444,7 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
 
 ### Contrats et consommateurs A2A depuis clone propre — 2026-10-01
 
-- FAIT : [rapport et logs](docs/migration/contracts-clean-clone-2026-10-01/report.json)
+- FAIT : rapport et logs
   depuis un clone du commit `92c44198`, propre avant et après les gates.
   Métadonnées : 186 membres, aucun chemin de dépendance locale hors du clone.
 - Neuf packages : cinq propriétaires Contrats et les quatre consommateurs
@@ -514,7 +514,7 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
   actuel `crates/infra/ssh`. Les overrides explicites restent disponibles.
 - Tests : un clone relocalisé reste découvrable depuis cwd/exécutable ; une
   archive legacy est rejetée ; le repli home exige le layout actuel.
-- [Logs de qualification](docs/migration/kernel-qualification-2026-10-01/test.log) :
+- Logs de qualification :
   79 tests réussis, un test GCS live ignoré faute de credentials/bucket de test.
   Check all-targets et clippy all-targets verrouillés avec refus des lint warnings
   réussis. Cargo conserve un avertissement de compatibilité future pour la
@@ -525,7 +525,7 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
 
 ### Kernel depuis clone propre — 2026-10-01
 
-- FAIT : [rapport et logs](docs/migration/kernel-clean-clone-2026-10-01/report.json)
+- FAIT : rapport et logs
   depuis le clone propre du commit `c8bd44d7`, avec features par défaut/builtins.
   79 tests réussis ; check et clippy all-targets verrouillés réussis. Sources
   du clone utilisées, artefacts de compilation et registre Cargo partagés.
@@ -594,7 +594,7 @@ aux trois racines actives. WSL : disques, processus, shell et chemins revérifi�
 - Le build de développement utilise `--locked`. Le test prouve qu’un manifest
   seul ne déclenche pas un build sans opt-in et que le mode explicite conserve
   la sélection du manifest et le verrouillage Cargo.
-- [Logs](docs/migration/kernel-source-optin-2026-10-01/test.log) : 80 tests
+- Logs : 80 tests
   réussis, un GCS live ignoré ; check et clippy all-targets verrouillés réussis,
   format et diff-check réussis. L’avertissement Cargo de compatibilité future
   `proc-macro-error2 2.0.1` reste présent.
@@ -958,13 +958,13 @@ Propriétaires : `crates/ai`, `crates/web`, `packages/ai`, `packages/web`.
 
 Cartographie : [architecture](../../../../m3/docs/architecture/drive/apps/server/ARCHITECTURE.md) (21 crates
 Rust, 3 paquets Bun, consommateurs, 16 écarts), contrat de service
-[docs/apis/web/WEB-SERVICE-CONTRACT.md](docs/apis/web/WEB-SERVICE-CONTRACT.md),
-configuration unique [config/web.json](config/web.json), automatisation
-[docs/operations/web/AUTOMATION.md](docs/operations/web/AUTOMATION.md), guides
-[smoke et crawl](docs/guides/web/WEB-SMOKE-AND-CRAWL.md),
-[debug Tauri](docs/guides/web/TAURI-DEBUG.md),
-[UI crawlable](docs/guides/web/CRAWLABLE-UI.md), enquête
-[docs/research/web/tauri-debugging-survey-2026-10-01.md](docs/research/web/tauri-debugging-survey-2026-10-01.md).
+[docs/apis/web/WEB-SERVICE-CONTRACT.md](../../../apis/web/WEB-SERVICE-CONTRACT.md),
+configuration unique [config/web.json](../../../../config/web.json), automatisation
+[docs/operations/web/AUTOMATION.md](../../../operations/web/AUTOMATION.md), guides
+[smoke et crawl](../../../guides/web/WEB-SMOKE-AND-CRAWL.md),
+[debug Tauri](../../../guides/web/TAURI-DEBUG.md),
+[UI crawlable](../../../guides/web/CRAWLABLE-UI.md), enquête
+[docs/research/web/tauri-debugging-survey-2026-10-01.md](../../../research/web/tauri-debugging-survey-2026-10-01.md).
 
 FAIT (vérifié) :
 - `aphrody-web crawl` ajouté au binaire (enveloppe `aphrody-web-crawl`, robots,
@@ -1360,7 +1360,7 @@ les adaptateurs de sessions canoniques et une mémoire commune.
 
 ### Coordination commune : audit et première configuration
 
-- Audit délégué terminé ; [résultats et reste à traiter](docs/migration/a2a-centralization-audit-2026-10-01.json).
+- Audit délégué terminé ; résultats et reste à traiter.
 - FAIT : registre A2A local, pairs retirés sans fallback public, Codex ajouté au
   runner, alias agycli et cwd commun. Contexte AGENTS et résumés `.coord/shared`
   injectés dans les prompts. CLAUDE.md et GEMINI.md pointent vers AGENTS.md.
@@ -1511,9 +1511,9 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   1 197 217 839 octets vérifiés à cette observation. Aucun nouvel entraînement
   ou appel d’inférence locale n’est revendiqué. Clippy CLI/MCP avec dépendances
   et intégrations Agent Home restent en correction ; gates produit ouverts.
-- Preuves : [runtime domaines](docs/operations/workspace/HISTORY.md),
-  [Docs DBFR](docs/operations/workspace/HISTORY.md),
-  [sauvegarde modèles](docs/operations/workspace/HISTORY.md).
+- Preuves : [runtime domaines](../../../operations/workspace/HISTORY.md),
+  [Docs DBFR](../../../operations/workspace/HISTORY.md),
+  [sauvegarde modèles](../../../operations/workspace/HISTORY.md).
 
 ### RAPTOR euclidien et gates Agent Home — 2026-10-01
 
@@ -1531,8 +1531,8 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   et des consommateurs RAG reste à qualifier ; aucune clôture globale.
 - FAIT : intégrations Agent Home hermétiques, 104 unitaires + trois intégrations
   + un doctest et Clippy ciblé réussis ; ancien gate profils privés corrigé.
-- Preuves : [RAPTOR euclidien](docs/operations/workspace/HISTORY.md),
-  [Agent Home](docs/operations/workspace/HISTORY.md).
+- Preuves : [RAPTOR euclidien](../../../operations/workspace/HISTORY.md),
+  [Agent Home](../../../operations/workspace/HISTORY.md).
 
 ### Règles Shenron et optimisation euclidienne — 2026-10-01
 
@@ -1552,8 +1552,8 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   0,704→0,317 ms pour 256×32×97 ; résultats identiques bit à bit à NumPy.
 - INCOMPLET : cette mesure ne qualifie pas le budget global, les autres formes
   ni les produits matriciels. Le gate CLI/MCP avec dépendances progresse.
-- Preuves : [règles canoniques](docs/operations/workspace/HISTORY.md),
-  [optimisation euclidienne](docs/operations/workspace/HISTORY.md).
+- Preuves : [règles canoniques](../../../operations/workspace/HISTORY.md),
+  [optimisation euclidienne](../../../operations/workspace/HISTORY.md).
 
 ### Chargeur natif partagé et gates transitifs — 2026-10-01
 
@@ -1571,8 +1571,8 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - INCOMPLET : gate CLI/MCP all-targets no-default arrêté sur trois lints du
   compilateur Discord ajouté concurremment, propriétaire informé ; ses sources
   sont préservées. Le déplacement persona FFI vers le profil DBFR est en cours.
-- Preuves : [chargeur](docs/operations/workspace/HISTORY.md),
-  [gates transitifs](docs/operations/workspace/HISTORY.md).
+- Preuves : [chargeur](../../../operations/workspace/HISTORY.md),
+  [gates transitifs](../../../operations/workspace/HISTORY.md).
 
 ### Ingestion RAG commune et gates AI — 2026-10-01
 
@@ -1588,7 +1588,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   Discord et neuf terminal-backend. Features de production, clone propre,
   artefacts installés et gates produit ouverts. Embeddings générés après la
   transaction ; leur génération complète n’est pas atomique avec les chunks.
-- Preuves : [rapport et logs](docs/operations/workspace/HISTORY.md).
+- Preuves : [rapport et logs](../../../operations/workspace/HISTORY.md).
   Checkout concurrent ; aucun remote Git configuré, commits locaux seulement.
 
 ### Gateway / Firefly et gate CLI/MCP — 2026-10-01
@@ -1603,7 +1603,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - Qualification Linux depuis le worktree, dans un target temporaire pour éviter
   le verrou d’une compilation concurrente ; sccache conservé. Clone propre,
   providers live, plateformes et features produit restent ouverts.
-- Preuves : [rapport et logs](docs/operations/workspace/HISTORY.md).
+- Preuves : [rapport et logs](../../../operations/workspace/HISTORY.md).
 
 ### NotebookLM et progression du gate CLI/MCP — 2026-10-01
 
@@ -1617,7 +1617,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - INCOMPLET : gate CLI/MCP no-default désormais arrêté sur un diagnostic terminal
   et deux du miroir Web. Famille terminal déléguée et miroir concurrent préservés.
   Features produit, clone propre, plateformes et artefacts installés restent ouverts.
-- Preuves : [rapport et logs](docs/operations/workspace/HISTORY.md).
+- Preuves : [rapport et logs](../../../operations/workspace/HISTORY.md).
 
 ### Navigation documentaire AI et périmètre réel — 2026-10-01
 
@@ -1628,7 +1628,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   zéro après sur 65 liens locaux. Existence des fichiers/dossiers vérifiée ;
   ancres, sites externes et vérité des pages liées ne sont pas qualifiés.
 - Index importé préservé octet pour octet dans
-  [son snapshot](docs/migration/ai-documentation-index-before-monorepo-2026-10-01.md) ;
+  son snapshot ;
   base historique `docs/products/ai/_source/` et hash consignés.
 - INCOMPLET : le vérificateur global exclut désormais `docs/products` et
   `_source`, entre autres catégories. Ses 5 870 documents inventoriés, 751 liens
@@ -1638,7 +1638,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - Gate CLI/MCP revalidé : mêmes trois diagnostics terminal/Web ; modifications
   concurrentes préservées. Diff documentaire contrôlé ; aucun test propriétaire
   répété pour ce lot sans changement de code.
-- Preuves : [audit direct, hashes et périmètres](docs/operations/workspace/HISTORY.md).
+- Preuves : [audit direct, hashes et périmètres](../../../operations/workspace/HISTORY.md).
 
 ### Audit Cargo par domaine — 2026-10-01
 
@@ -1656,7 +1656,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - Classement : `aphrody-ffi` → `aphrody` est intentionnel (un seul appel,
   `aphrody::run_async`, `crates/interop/ffi/src/lib.rs:987`) ; il se résout par
   l’extraction des capacités du CLI déjà listée en section Interop, pas isolément.
-- Preuves : [audit](docs/migration/cargo-domain-audit-2026-10-01.json).
+- Preuves : audit.
 
 ### Triage des 647 références non classées — 2026-10-01
 
@@ -1670,7 +1670,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - INCOMPLET : les classes sont des heuristiques, pas des défauts confirmés. Les
   150 candidates et les 229 sans propriétaire demandent une vérification manuelle
   contre la source pinnée avant correction ; aucun lien n’est réparé ici.
-- Preuves : [triage](docs/migration/document-links-unclassified-triage-2026-10-01.json).
+- Preuves : triage.
 
 ### Inventaire des références de scripts — 2026-10-01
 
@@ -1685,7 +1685,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   inutilisés ; rien n’est supprimé. Un second passage par nom de base dans les manifests et
   `pipeline.json` ramène les candidats de 741 à 688. Reste : comparer aux commandes déclarées du
   pipeline (`config/pipeline.json`) et aux `scripts` des manifests.
-- Preuves : [inventaire](docs/migration/scripts-reference-inventory-2026-10-01.json).
+- Preuves : inventaire.
 
 ### Effets d’import M3 Design et frontière `use client` — 2026-10-01
 
@@ -1743,7 +1743,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   Les deux pages de navigation AI sont maintenant couvertes, sans défaut de cible.
 - Les ancres et sites externes ne sont pas vérifiés. Documents de packages/apps
   hors `docs` non inventoriés. Aucune preuve historique réécrite.
-- Preuves : [rapport, tests et inventaire exhaustif](docs/operations/workspace/HISTORY.md).
+- Preuves : [rapport, tests et inventaire exhaustif](../../../operations/workspace/HISTORY.md).
 
 ### Script `test` de `@rosegriffon/discord-sync` — 2026-10-01
 
@@ -1796,7 +1796,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   d’exécution matérielle GPU.
   Doctor dégradé et recherche éventuellement vide ne prouvent pas un produit prêt.
   Gate CLI/MCP terminal/Web Frames encore ouvert ; aucun gate global vert annoncé.
-- Preuves : [rapport, hashes binaires et logs](docs/operations/workspace/HISTORY.md).
+- Preuves : [rapport, hashes binaires et logs](../../../operations/workspace/HISTORY.md).
 
 - 2026-10-01: isolate workspace operation loading through lazy imports and add private IECODE package archive preparation with allowlists, checksums and dirty-source provenance. Five dispatcher/packaging tests pass (26 assertions); staged whitespace check passes. External IECODE workspace memberships and consumer installation migration remain pending.
 
@@ -1898,7 +1898,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
       pas de validateur natif de plugins. Préparation idempotente vérifiée.
 - [x] Références opérationnelles réparées, overlays synchronisés, YAML et
       hooks corrigés. Recherche déléguée à Codex, Claude et agy via A2A et
-      `aphrody docs search`; [guide central](docs/guides/ai/AGENT_PLUGINS.md).
+      `aphrody docs search`; [guide central](../../../guides/ai/AGENT_PLUGINS.md).
 - [x] 173 tests Workspace passent, 19 conditionnels ignorés; 18 gates natifs
       supplémentaires passent (36 installations/retraits plugins/skills/MCP,
       scopes utilisateur/projet, profils temporaires). TypeScript Workspace et

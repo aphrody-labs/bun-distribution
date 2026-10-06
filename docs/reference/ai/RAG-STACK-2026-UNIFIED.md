@@ -134,7 +134,7 @@ L'écosystème Aphrody est déjà rigoureusement aligné avec ce standard d'exce
 1. **Socle Rust** :
    - Crate `aphrody-rag-core` : implémente le store SQLite, l'indexation FTS5, la fusion RRF et l'extraction de sections.
    - Crate `aphrody-gateway` : routeur HTTP OpenAI-compatible desservant les modèles avec SSE streaming token-par-token.
-   - Extension C-ABI Maturin (`py/aphrody/src/lib.rs`) fournissant le calcul vectoriel SIMD natif (`reciprocal_rank_fusion`, `cosine_similarity`).
+   - Extension C-ABI Maturin (`py/aphrody/src/lib.rs` (not in repo)) fournissant le calcul vectoriel SIMD natif (`reciprocal_rank_fusion`, `cosine_similarity`).
 2. **Collecte & Ingestion Bun** :
    - Moteur BXC (`packages/bxc` (not in repo)) assurant le crawling furtif et la conversion HTML en Markdown propre sans dépendances Node.
 3. **Intelligence Python (uv)** :

@@ -40,7 +40,7 @@ The legacy `chat` path does not qualify the desktop runtime.
 | Processes and capability owners | [Architecture](../../architecture/ai/ARCHITECTURE.md), [source of truth](../../reference/ai/SOURCE_OF_TRUTH.md) |
 | Wire subset and handshake | [App-server](../../../crates/ai/app-server/README.md) |
 | Setup, models and configuration | [Install](../../guides/ai/INSTALL.md), [local models](../../reference/ai/LOCAL-AI-MODELS.md), [config](../../reference/ai/config.md) |
-| AI/LLM agent skills | [Unified Aphrody plugin](../../../plugins/aphrody/README.md) |
+| AI/LLM agent skills | Unified Aphrody plugin |
 | All guides | [Index](./_source/README.md) |
 | NHITL workflow and checks | [AGENTS.md](../../reference/ai/AGENTS.md) |
 
@@ -49,7 +49,7 @@ The legacy `chat` path does not qualify the desktop runtime.
 `aphrody-ffi` exposes Shenron's lexical search ABI; editorial data and review stay
 in Shenron. Its consumer selects the library through `SHENRON_FFI_LIB` (legacy
 `APHRODY_FFI_LIB`). See [FFI](./crates/aphrody-ffi/README.md) and
-[manga](../../../crates/ai/manga/README.md) for their actual contracts.
+manga for their actual contracts.
 
 The CLI ships through GitHub Releases; this workspace uses `publish = false`.
 First-party AI code is Apache-2.0. Preserve [Codex provenance](../../reference/ai/THIRD_PARTY_CODEX.md)

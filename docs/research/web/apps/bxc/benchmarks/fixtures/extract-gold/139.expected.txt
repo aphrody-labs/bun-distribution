@@ -1,6 +1,0 @@
-Postgres query suddenly slow after upgrading to version 16
-A reporting query that used to take 200 ms now takes 40 seconds after upgrading from 14 to 16. The plan shows a nested loop over a sequential scan instead of the hash join we had before.
-Table sizes and indexes are identical. Any idea what changed?
-Did you run ANALYZE after the upgrade? pg_upgrade does not carry over planner statistics, so the planner is working with default estimates and badly underestimates row counts.
-That was it. Running vacuumdb --all --analyze-in-stages brought the query back to 180 ms. I cannot believe I missed that step in the upgrade checklist.
-Everyone misses it once. The upgrade script even prints a reminder at the end, but it scrolls past with the rest of the output.

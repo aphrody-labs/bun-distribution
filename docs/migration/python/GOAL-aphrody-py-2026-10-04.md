@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # GOAL — aphrody-py
 
-Directive propriétaire du 2026-10-04. Pendants : [Aphrody](../GOAL.md) (produits) et
-[Yolo](../yolo/GOAL.md) (bibliothèque partagée native).
+Directive propriétaire du 2026-10-04. Pendants : Aphrody (produits) et
+Yolo (bibliothèque partagée native).
 
 ## Rôle
 

@@ -36,7 +36,7 @@ own repositories.
 | AI | [README](../../products/ai/_source/README.md.a7d252bc425b), [index](../../products/ai/_source/README.md), [architecture](../../architecture/ai/ARCHITECTURE.md) |
 | System | [README](../../products/os/_source/README.md.712b5622bf2b) |
 | UI | [README](../../../m3/docs/products/_source/README.md.8c1fe132fe5c), [index](../../../m3/docs/products/_source/README.md) |
-| Manga, OCR and databook review | [Aphrody manga adapter](../../../crates/ai/manga/README.md), Shenron review boundary |
+| Manga, OCR and databook review | Aphrody manga adapter, Shenron review boundary |
 | Web | [README](../../products/web/README.md) |
 | Contracts | [README](../../products/contracts/README.md), [A2A](../../products/contracts/a2a/README.md) |
 | Native | [README](../../products/native/README.md) |

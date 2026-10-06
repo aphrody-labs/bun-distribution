@@ -23,7 +23,7 @@ Host deployment belongs to `crates/infra` and `packages/infra/workspace`.
 
 | Script | Platform | Purpose |
 |---|---|---|
-| [`scripts/release/deploy.sh`](../../../../scripts/deploy.sh) | Linux bash | Stable entry point for clean selected-remote `main` local binary installation; delegates to `scripts/tools/ai/scripts/deploy.sh`. |
+| [`scripts/release/deploy.sh`](../../../../scripts/tools/ai/scripts/deploy.sh) | Linux bash | Stable entry point for clean selected-remote `main` local binary installation; delegates to `scripts/tools/ai/scripts/deploy.sh`. |
 | `run-qwen3-moe.sh` | Linux bash | Run local Qwen3 MoE inference with optional speculative decoding. |
 
 ## Benchmarks & Diagnostics

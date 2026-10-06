@@ -5,7 +5,7 @@
 
 ## Current structure
 
-- First-party crates live in domain directories under `crates/`. The IECODE import is grouped in `crates/iecode/` (not in repo); Koharu in `crates/koharu/`; Obscura in `crates/web/`.
+- First-party crates live in domain directories under `crates/`. The IECODE import is grouped in `crates/iecode/` (not in repo); Koharu in `crates/koharu/` (not in repo); Obscura in `crates/web/`.
 - The workspace has one direct `wgpu` dependency (30.0.1) and one shared context/adapter policy crate, `aphrody-gpu-backend`. GPU dependencies remain optional for CPU-only and WASM consumers.
 - `nie-render3d` uses the shared GPU crate for adapter/device creation and surface policy. `aphrody-render` still creates its own context in addition to accepting an externally supplied device and queue. Its rendering pipeline and shaders are renderer-owned and should stay there.
 - No active first-party Cargo member directly depends on Bevy, winit, SDL, glutin, or tao. The NIE reference design selects Bevy as a future game host and keeps emulation headless. This is a design decision, not an active windowing integration.

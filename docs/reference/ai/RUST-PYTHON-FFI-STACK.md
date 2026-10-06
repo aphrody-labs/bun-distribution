@@ -18,11 +18,11 @@ réserve actuellement aux projets Python purs. `uv` reste le frontend qui lance
 ## Dépendances centralisées
 
 La version PyO3 est déclarée une seule fois dans le `[workspace.dependencies]`
-Cargo racine. `py/aphrody/Cargo.toml` l'hérite et n'ajoute que la feature
+Cargo racine. `py/aphrody/Cargo.toml` (not in repo) l'hérite et n'ajoute que la feature
 `extension-module`. La feature `abi3-py311` est donc commune à la workspace.
 
 Le backend Python est borné à `maturin>=1.14.1,<2.0` dans
-`py/aphrody/pyproject.toml`. La borne haute empêche une rupture silencieuse du
+`py/packages/aphrody/pyproject.toml`. La borne haute empêche une rupture silencieuse du
 backend lors d'une prochaine version majeure.
 
 ## Règles FFI

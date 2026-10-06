@@ -3,7 +3,7 @@
 
 The current producer direction and delivery gates live in the root
 [PLAN.md](../PLAN.md). The cross-repository architecture lives in
-[Aphrody PLAN.md](../../aphrody/PLAN.md).
+[Aphrody PLAN.md](../PLAN.md).
 
 Yolo owns the precompiled Bun/Tauri/Obscura runtime and light SDK. Aphrody owns
 application behavior and migrates one qualified consumer at a time. This is the

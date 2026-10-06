@@ -2,7 +2,7 @@
 # Infrastructure monitoring
 
 Two distinct tools report on Infra state. The root Bun monitor
-[`scripts/tools/infra/infra-status.ts`](../../../scripts/infra-status.ts) reports checks,
+`scripts/tools/infra/infra-status.ts` reports checks,
 selected host resources and probes. The native `aphrody-infra` CLI reports
 catalogued host services and lifecycle state. Neither replaces a complete live
 host inventory or application-level readiness checks.

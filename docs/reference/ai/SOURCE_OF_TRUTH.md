@@ -10,7 +10,7 @@ build, configuration, target and workload. None substitutes for the others.
 
 | Concern | Owner and authority |
 | --- | --- |
-| Agent loop, model clients, tools, sessions, RAG, OCR, voice, training and unified Aphrody/Dragon Ball plugin | `aphrody-ai`; [architecture](../../architecture/ai/ARCHITECTURE.md), [unified plugin](../../../plugins/aphrody/README.md) and implementation crates |
+| Agent loop, model clients, tools, sessions, RAG, OCR, voice, training and unified Aphrody/Dragon Ball plugin | `aphrody-ai`; [architecture](../../architecture/ai/ARCHITECTURE.md), unified plugin and implementation crates |
 | Thread, turn and item wire types; extension negotiation | [aphrody-contracts](../../products/contracts/README.md) |
 | Desktop presentation, M3, accessibility, broker and Drive integration | [aphrody-ui GUI contract](../../../m3/docs/reference/GUI.md), [UI design](../../../m3/docs/architecture/UI-DESIGN.md), [UI rules](../../../m3/docs/reference/UI-RULES.md) |
 | Process supervision, sandbox, execution policy, secrets and system tools | [aphrody-os](../../products/os/README.md) |

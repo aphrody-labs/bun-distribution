@@ -9,13 +9,13 @@ actuel des consommateurs.
 ## Vérification IECODE ajoutée à l'audit canonique
 
 Le VFS Python IEVR appartient au workspace IECODE sous `src/niepy`. Les
-[règles](../../../../iecode/AGENTS.md) et le [plan IECODE](../../../../iecode/PLAN.md)
+règles et le plan IECODE
 déclarent ce propriétaire unique. Le chemin Ren'Py de copie
 `src/iepy/inazuma-love/game/libs/nie/python-packages/niepy/` cité par le
 précédent miroir est absent du checkout au contrôle du 2026-10-02. Le nombre de
 copies de ce relevé antérieur n'est donc plus présenté comme un état courant.
 La provenance de migration reste dans le
-[manifeste IECODE](../../../../iecode/docs/migrations/ievr-to-iecode-2026-10-01.json).
+manifeste IECODE.
 
 Cette vérification de chemins n'exclut pas d'autres consommateurs dynamiques.
 Le contenu de la matrice de doublons et les autres limites sont maintenus dans

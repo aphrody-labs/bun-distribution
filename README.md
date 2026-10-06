@@ -10,7 +10,7 @@ Current evidence: [MEMORY.md](MEMORY.md). Working rules: [AGENTS.md](AGENTS.md).
 | `apps/<domain>/<app>` | Product applications |
 | `packages/<domain>/<package>` | Bun packages |
 | `crates/<domain>/<crate>` | Rust capabilities |
-| [`m3/`](m3/README.md) | UI framework, shared components and `packages/app-ui` |
+| [`m3/`](m3/README.md) | UI framework, shared components and `m3/packages/app-ui` |
 | `config/` | Build, product, host and deployment declarations |
 | `scripts/` | Audit, build, dev, migration, release and tools |
 | `docs/` | Canonical guides, contracts and generated references |

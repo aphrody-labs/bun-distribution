@@ -37,4 +37,4 @@ private, non-commercial; every licence is acceptable but recorded.
 - Ops: unique backups, dedup, WSL Supabase dev stack (see the operations
   docs).
 
-Claim: `.coord/claims/sql-convergence.json`.
+Claim: `.coord/claims/sql-convergence.json` (not in repo).

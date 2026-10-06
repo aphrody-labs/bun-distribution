@@ -103,10 +103,10 @@ booter depuis ce checkout ; leurs stores et conversations sont filtrés par prof
 | Environnement IA résolu | `aphrody ai env --help` |
 | Inspection mémoire disponible | `aphrody memory --help` |
 
-`agent-live` publie `.coord/shared/LIVE.json` et `LIVE.md` en observateur passif.
+`agent-live` publie `.coord/shared/LIVE.json` (not in repo) et `LIVE.md` en observateur passif.
 Depuis le lot `bb0cfd33f` du 2026-10-03, `agent-sync` possède l’import natif MCP
 des sessions et de la mémoire pour un domaine sélectionné ; il vérifie le domaine
-du kernel et publie `.coord/shared/AGENT-SYNC.json`. Le service installé
+du kernel et publie `.coord/shared/AGENT-SYNC.json` (not in repo). Le service installé
 `aphrody-agent-session-sync.service` est configuré pour Aphrody. Les instances
 historiques `aphrody-agent-domain-sync@<domaine>.service` doivent être vérifiées
 avant usage : un seul propriétaire doit consommer les offsets d’un domaine.

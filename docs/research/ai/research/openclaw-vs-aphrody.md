@@ -68,7 +68,7 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 | Sessions | `src/sessions` | no | `crates/ai/session` | `session/src/lib.rs` | ✅ |
 | Memory / RAG | `extensions/memory-*`, `memory-lancedb`, `memory-wiki` | no | `crates/ai/memory` | `lancedb.rs`, `hnsw.rs`, `honcho.rs`/`honcho_v3.rs`, `mem0.rs`/`mem0_v3.rs`, `jsonl.rs`, `eviction.rs` | ✅ (richer: LanceDB + HNSW + Honcho/mem0 v3) |
 | Skills | `skills/`, `src/skills` | no | `crates/ai/skills`, `aphrody-skills-forge` | `skills/src/{lib,hooks,permissions}.rs`, `runtime/` | ✅ |
-| Skills registry (ClawHub) | `skills/clawhub` | no | `crates/ai/marketplace` | `marketplace/src/awesome.rs` | ✅ |
+| Skills registry (ClawHub) | `skills/clawhub` | no | `crates/ai/marketplace` (not in repo) | `marketplace/src/awesome.rs` | ✅ |
 | Hooks | `src/hooks` (gmail, message, plugin) | no | `aphrody-skills/src/hooks.rs`, `aphrody-events`, MCP `native_hooks` | `events/src/lib.rs` | ✅ (Gmail Pub/Sub hook = not ported, see GAPS) |
 | Permissions / tool policy | `src/security/audit-tool-policy` | no | `aphrody-skills/src/permissions.rs`, `aphrody-tools/src/permissions.rs` | builtin tools | ✅ |
 | Tools | `src/tools` (browser, canvas, cron, sessions) | no | `crates/ai/tools` | `tools/src/builtin`, `aphrody-terminal-browser` | ✅ |

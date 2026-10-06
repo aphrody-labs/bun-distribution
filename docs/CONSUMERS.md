@@ -6,7 +6,7 @@ Yolo produces the precompiled native runtime and lightweight SDK. Aphrody keeps
 application behavior and consumes pinned archives; sibling repositories are not
 Bun workspace members. The current Web consumer is delivered in Aphrody commit
 `22f0c8f06`, with evidence in
-[its receipt](../../aphrody/docs/migration/runtime-web-consumer-2026-10-03.json).
+[its receipt](migration/runtime-web-consumer-2026-10-03.json).
 
 ## Current Web contract
 
@@ -34,7 +34,7 @@ yolo ops aphrody-packages prepare --package @aphrody/runtime-sdk --destination <
 ```
 
 Archives are canonical and named by their SHA-256; the consumer pins them in its
-`config/aphrody-packages.json` and refuses drift. Packing disables package hooks,
+`config/aphrody-packages.json` (not in repo) and refuses drift. Packing disables package hooks,
 refuses dirty sources and never compiles native engines.
 
 The runtime artifacts a workspace may activate are pinned separately in

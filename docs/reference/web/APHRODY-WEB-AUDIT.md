@@ -89,7 +89,7 @@ Security:
 - `APHRODY_WEB_BIN` is read from env (web-bridge resolve.rs/error.rs, agent-browser config.ts); a poisoned env can redirect execution.
 - Secrets in config: not scanned (unverified); `config/web.json` not read.
 Licences: obscura* Apache-2.0 manifests; taffy MIT with local patches (`docs/reference/web/VENDOR.md`). Upstream licences of wreq, obscura upstream not verified. `sd-server` (drive-server) is Spacedrive-derived (AGPL upstream; unverified), excluded from the workspace.
-Stale docs: `docs/reference/web/VENDOR.md` still points at `crates/aphrody-obscura/vendor/taffy` (not in repo) and `crates/aphrody-obscura/crates/obscura-render`, and "latest published taffy 0.12.2" (dated 2026-09-25); current path is `crates/web/taffy`. Also `docs/reference/web/_source` (not in repo), `apps`, `chromium` subdirs not reviewed.
+Stale docs: `docs/reference/web/VENDOR.md` still points at `crates/aphrody-obscura/vendor/taffy` (not in repo) and `crates/aphrody-obscura/crates/obscura-render` (not in repo), and "latest published taffy 0.12.2" (dated 2026-09-25); current path is `crates/web/taffy` (not in repo). Also `docs/reference/web/_source` (not in repo), `apps`, `chromium` subdirs not reviewed.
 Dead code:
 - `aphrody-web-engine`: zero Cargo consumers, but it is the binary package (fine).
 - `drive-server` (sd-server): excluded, zero consumers, no tests.
@@ -133,4 +133,4 @@ Dead code:
 - obscura-cdp `child_frame_tree` flake: `build_document_frames` gives the event loop a fixed 8x50 ms wall-clock budget and stops
   at the first round with no frame work, so under heavy parallel load the child documents may not have landed when the test read
   the tree. The tests now pump the page until the nested frames (and the detach events) are observed, with a 30 s deadline.
-- `VENDOR.md` paths fixed to `crates/web/taffy` and `crates/web/obscura-render`.
+- `VENDOR.md` paths fixed to `crates/web/taffy` (not in repo) and `crates/web/obscura-render`.

@@ -4,7 +4,7 @@
 Triage of 2026-09-25 (aphrody-infra PLAN item 25). Every entry states the upstream, the local
 delta, and the decision (keep / drop / move).
 
-## `crates/web/taffy` — keep
+## `crates/web/taffy` (not in repo) — keep
 
 | Field | Value |
 | --- | --- |

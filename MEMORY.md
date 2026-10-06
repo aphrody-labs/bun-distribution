@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- docs-links: external-paths (dated evidence: backtick paths name the layout of their date) -->
 # Aphrody — mémoire factuelle
 
 Relevé : 2026-10-03, sections datées 2026-10-05 ci-dessous. [PLAN.md](PLAN.md) est l'autorité architecture/queue ;
@@ -18,11 +19,11 @@ consommateur, sans recopier les décisions ni les jalons producteur.
 | Chemins propres à l'hôte | `6e5a3faf3`…`b7ca3ae0d` : `path-audit --repository` (8 familles, zones, ratchet `config/host-paths.baseline.json`) ; 14 197 → 148 occurrences ; racine des sources amont `.cache/upstream` ; outils distants via `SHENRON_REMOTE_HOME`/`APHRODY_REMOTE_HOME`/`SHENRON_SYNC_PEER`/`IECODE_VPS_REPO` | Reste 148 : 29 catalogue VPS/CI importée, 95 prose historique sans équivalent unique, 15 code, 5 relevés ; `aphrody-wsl`/`diagnostics`/`ovh` compilés et testés (check/test ciblés) ; test du déploiement Shenron exige root ; exécuté : CLI `aphrody-ops` et `yolo` compilés pour Windows x64 et lancés sous wine (version, parcours de chemins `Z:\...`) ; compilés seulement pour macOS arm64/x64 et Linux arm64 ; `aphrody-wsl` vérifié (`cargo check`) pour windows-msvc et apple-darwin, `aphrody-diagnostics`, `aphrody-ovh` et `aphrody-command` compilent via `cargo zigbuild` pour aarch64-apple-darwin, les deux premières aussi pour x86_64-pc-windows-gnu (`aphrody-command` échoue sur la build de `v8` pour windows-gnu) ; Windows 11 réel (Bun 1.4.2 natif, depuis `\\wsl.localhost`) : 9 tests pass (host-paths, inline-interpreters, paths) et parité des archives IECODE octet pour octet ; `build-factory.test.ts` exige les `node_modules` Linux, donc un checkout Windows avec son installation (refusé par le propriétaire le 2026-10-04) ; aucun macOS réel |
 | Windows 11 natif (MSVC) | `248a65ad7`, `38ad193d8` : `aphrody-ops system-packages` (apt et winget depuis `config/system-packages.json`, pwsh 7.6.6 en un processus, module `Microsoft.WinGet.Client` sous Windows natif, `winget export` depuis WSL) ; Build Tools 2022 désinstallés, Build Tools 2026 18.10 (MSVC 14.51) installés ; Windows SDK 10.0.26100, .NET SDK 10.0.401 ; `scripts/dev/windows-cargo.ps1` (vswhere, Launch-VsDevShell, aucun réglage machine) ; tests natifs MSVC sur Windows 11 : `aphrody-winclean` (36+7+3+5), `aphrody-diagnostics` 38, `aphrody-a2a-coord` 5, `aphrody-a2a-pb` 63+4, `aphrody-wsl` 3 ; bogues trouvés et corrigés par ces exécutions : `winclean` (tests Windows jamais compilés, hash du registre périmé), `a2a-pb/build.rs` (dépendait du répertoire courant), `automation-inventory` (séparateurs) | Build Tools 2026 : `isComplete=0` après code 1603, toolset présent ; le dépôt est lu via `W:` (`net use W: \\wsl.localhost\Ubuntu-24.04`) car `protoc` ne lit pas les chemins UNC ; pas de checkout Windows séparé ; aucun macOS |
 
-Pin SDK : [config/sibling-checkouts.json](config/sibling-checkouts.json) ;
+Pin SDK : `config/sibling-checkouts.json` (retiré le 2026-10-05) ;
 catalog et [bun.lock](bun.lock). SDK 0.1.0, archive `155af9d2`, producteur
 `1e9b76e199b6c07d8ad55aefc4fd080e6ee85911`, runtime ABI 1.4 (relevé du pin le
 2026-10-05 ; l'ancien relevé `b2d69b27`/`ad2ec0d2` était périmé). Artefact natif et matrice :
-[mémoire Yolo](../yolo/MEMORY.md). Révision SDK et révision native sont distinctes.
+mémoire Yolo (fusionnée ici). Révision SDK et révision native sont distinctes.
 
 Obligations conservées : contrats Shenron/RG/Koharu, UI canonique Aphrody,
 stores séparés et assets servis. RG : release/activation non démontrées par ce lot. Shenron DBFR : données persistantes observées ;

@@ -63,7 +63,7 @@ training.
 
 Redaction recognizes credential keys and common token patterns; inspect any
 dataset before sharing it outside the local training environment. See the
-[Python training README](../../products/ai/py/aphrody-train/README.md) for worker entry points.
+[Python training README](../../../py/packages/aphrody-train/README.md) for worker entry points.
 
 ## Bun Qwen3-Coder 30B adapter delivery
 
@@ -103,7 +103,7 @@ full-precision smoke; no 30B QLoRA run or Bun quality evaluation has passed.
   must load against the catalog base, with matching model architecture,
   tokenizer and target tensor names. Conversion support for this Qwen3 MoE
   variant is an explicit gate, not an assumption.
-- The locked `py/aphrody-train/.venv` has Torch 2.8 CUDA 12.9, Transformers,
+- The locked `py/aphrody-train/.venv` (not in repo) has Torch 2.8 CUDA 12.9, Transformers,
   PEFT and TRL; CUDA import was observed on the local 4070. It does not yet
   pin `bitsandbytes` or implement QLoRA. Add a dedicated locked training
   extra and prove its NF4 kernels on the selected host before a 30B job.

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # FFI Policy — Rust ↔ C/C++ ↔ Bun
 
-> Réf. : `crates/interop/ffi/`, `py/aphrody/`, `../aphrody-native/`.
+> Réf. : `crates/interop/ffi/`, `py/aphrody/` (not in repo), `../aphrody-native/`.
 > Politique mémoire : `mimalloc` global, zero-copy, ownership transfert explicite.
 
 ## Principes

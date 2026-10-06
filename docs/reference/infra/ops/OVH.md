@@ -1,12 +1,12 @@
 # OVH — accounts, zones, records and procedures
 
-Measured on this VPS (`51.77.147.152`) on **2026-09-07** with `scripts/ops/ovh.py`, `dig`,
+Measured on this VPS (`51.77.147.152`) on **2026-09-07** with `scripts/ops/ovh.py` (not in repo), `dig`,
 `curl` and `openssl`; the OVH zone-list result was rechecked on **2026-09-29** after rotating
 the local and VPS API credentials. Where this file and a plan disagree, this file is right.
 [`docs/reference/infra/TOPOLOGY.md`](../TOPOLOGY.md) says what answers on which port; this one says
 what DNS and the registrar hold, and how to change it without breaking mail or TLS.
 
-> Update 2026-10-05: the Python script `scripts/ops/ovh.py` (kept as `py/tools/infra/scripts/ops/ovh.py`) was
+> Update 2026-10-05: the Python script `scripts/ops/ovh.py` (not in repo) (kept as `py/tools/infra/scripts/ops/ovh.py` (not in repo)) was
 > removed as superseded by the Rust CLI. Use `aphrody ovh dns <zones|info|records|add|delete|refresh|export|backup>`
 > with `--profile <domain>` (see `aphrody ovh profiles`) in place of `--account`; `info` replaces `zone`. Writes keep
 > requiring `--apply`. The command examples below are the measured 2026-09-07 procedure and keep the old
@@ -25,7 +25,7 @@ does not exist" and sends you to the registrar instead of to the other key file.
 | `dbfr` | `~/.config/ovh/dbfr.conf`, and `/etc/letsencrypt/ovh-dbfr.ini` with `dns_ovh_*` keys | `[ovh-eu]` ini | `gl839461-ovh` — `dragonballfrdiscord@gmail.com` | `dragonballfr.com` |
 
 The three files are secrets: never print them, never copy a value into a document, a log or a
-commit. `scripts/ops/ovh.py` reads them and prints only the answers.
+commit. `scripts/ops/ovh.py` (not in repo) reads them and prints only the answers.
 
 The python `ovh` module is **not** installed and there is no plan to install it. Requests are
 signed by hand:
@@ -39,7 +39,7 @@ string on a `GET`. Endpoint: `https://eu.api.ovh.com/1.0`.
 
 ## 2. The tool
 
-`scripts/ops/ovh.py` — read-only by default; **every write requires `--apply`** and is followed
+`scripts/ops/ovh.py` (not in repo) — read-only by default; **every write requires `--apply`** and is followed
 by a zone refresh, because a record created without a refresh is invisible to resolvers.
 
 ```bash

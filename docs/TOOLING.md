@@ -38,7 +38,7 @@ that reason. `--changed` selects only the gates whose file surfaces match the wo
 
 The report (`yolo.verify/1`, `--json`, or Markdown with `--md`, the default) holds, per gate, the status, exit code,
 start offset and duration in milliseconds, the output tail of a failure and the reason of a skip, plus the commit,
-whether the tree was dirty, the wall time, the summed gate time and their ratio. It is written to `var/verify/latest.json`
+whether the tree was dirty, the wall time, the summed gate time and their ratio. It is written to `var/verify/latest.json` (not in repo)
 and a timestamped copy, and `yolo verify --last` prints it again. Exit code 0 means every selected gate passed, 1 that
 one failed or was skipped, 2 a usage error.
 
@@ -133,7 +133,7 @@ The installed user service runs the owner CLI directly. `KillMode=process`
 lets a stopped watcher release its lock while preserving active factory workers;
 the next watcher adopts their handles. Private state and logs live in
 `~/.aphrody/state/commit-sync/`, outside Git. Configuration and build profiles
-belong to [Aphrody commit-sync](../../aphrody/config/commit-sync.json).
+belong to [Aphrody commit-sync](../config/commit-sync.json).
 
 Yolo's bounded profile is `bash scripts/release/factory-current.sh`: scoped native
 check/test/strict Clippy, runtime build, artifact/SDK packaging, compiled CLI,
@@ -151,7 +151,7 @@ job count and resource settings still require separate qualification before use.
 
 `yolo ship [--apply] [--sha X] [--force] [--wait]` (refuses below the free-space floor of the build host, 20 % by default and variable, see [SERVER.md](SERVER.md)) is this repository's CI and release host: GitHub
 Actions is not available to it (billing), so the Aphrody build factory runs the gates of
-`.github/workflows/ci.yml`, the runtime artifact, the release assets and the D0/D2 install/deploy
+`.github/workflows/ci.yml` (not in repo), the runtime artifact, the release assets and the D0/D2 install/deploy
 smoke instead, as `yolo/ship` commit statuses. Each build is a detached tmux session
 (`yolo-ship-<sha12>`, survives an ssh disconnect) running `scripts/release/ship_unit.sh`, which
 serializes behind the Aphrody heavy lock, checks the commit and its submodules out, then runs
@@ -159,7 +159,7 @@ serializes behind the Aphrody heavy lock, checks the commit and its submodules o
 ceilings lifted. A build already running for a commit is left alone unless `--force`; `.coord`
 gets a claim naming the lock and the session so another agent does not stop it by mistake. When
 the built commit is the `v<VERSION>` tag and `main` contains it, `scripts/release/publish_remote.sh`
-publishes the GitHub release the same way `.github/workflows/release.yml`'s `publish` job would.
+publishes the GitHub release the same way `.github/workflows/release.yml` (not in repo)'s `publish` job would.
 
 ```sh
 bun run cli ship --apply --wait   # fetch HEAD, build, block until ok/failed/stopped
@@ -176,7 +176,7 @@ would run, the `.coord` claim; no network, no remote access).
 `yolo host <audit|reclaim|archive|services|tune|net|mount|journal> --host vps|dbfr|local` manages a Linux
 server through `aphrody-infra ssh exec` (the local host runs commands directly). Every subcommand is a plan
 until `--apply`, applied steps are journaled in `var/host/<host>/journal.jsonl`, and the safety rules are
-hard-coded in `apps/cli/src/host-safety.ts`. Policy lives in `host-policy.toml`. Full description, the Bun
+hard-coded in `apps/yolo/cli/src/host-safety.ts`. Policy lives in `host-policy.toml`. Full description, the Bun
 feature map and the verification status are in [SERVER.md](SERVER.md); the decision is D26 in
 [DECISIONS.md](DECISIONS.md). Tests: `bun test test/host.test.ts` (no network, no remote access; the
 `--apply` paths run on `local` in temporary directories).
@@ -207,4 +207,4 @@ Cargo fetch under the installed ABI 1.4 supervisor. No engine compilation is
 performed. Missing/stale locks and failures remain explicit. The full manager
 milestone stays open beyond this Linux x64 dependency-acquisition tranche.
 See [qualification](package-manager-2026-10-04.json) and
-[core API](../packages/core/README.md).
+[core API](../packages/engine/core/README.md).

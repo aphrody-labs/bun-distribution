@@ -4,7 +4,7 @@
 Owner: Infra. Policy: [`config/build-factory.json`](../../../config/build-factory.json).
 Requested placement: [`production-topology.json`](../../../config/production-topology.json).
 
-Current owner decision, 2026-10-03: [Yolo PLAN](../../../../yolo/PLAN.md#build-et-release)
+Current owner decision, 2026-10-03: [Yolo PLAN](../../../PLAN.md#build-et-release)
 reserves VPS for execution and retires its build toolchains and factory workspace.
 The previous VPS setup below is historical procedure, not authority to recreate
 that role. `executionOnlyTargets: ["vps"]` in the current factory configuration

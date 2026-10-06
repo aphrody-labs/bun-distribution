@@ -5,7 +5,7 @@ Welcome to the Aphrody Web core documentation. Aphrody Web is a high-performance
 ## Architecture & Core Philosophy
 
 - [Aphrody Web Browser ecosystem](./WEB-BROWSER-ECOSYSTEM.md) - Kernel, Bun, Rust, Python, actors, crawl frontier, mirror and RAG contracts.
-- [Architecture Overview & Ecosystem](../../../products/web/apps/bxc/README.md#runtime-profiles) - High-level overview of Aphrody Web runtime profiles, CLI commands, and native layers.
+- Architecture Overview & Ecosystem - High-level overview of Aphrody Web runtime profiles, CLI commands, and native layers.
 - [Google Ecosystem Atlas](./GOOGLE-ATLAS.md) - Mapping and intelligent routing across 5000+ Google domains and infrastructures (Wiz, Angular, Lit, GFE).
 - [Google Module & Chrome DevTools MCP](./bxc-google-module-chrome-mcp.md) - Deep architectural analysis of Google services integration and DevTools protocols.
 - [Chromium & Rust Bridge](./CHROMIUM-RUST.md) - Rust FFI architecture connecting Bun with native DOM, V8, and networking crates.
@@ -36,11 +36,11 @@ Welcome to the Aphrody Web core documentation. Aphrody Web is a high-performance
 - [Repository layout](../../../products/web/README.md) - Crates, Bun workspace packages and sibling dependencies of `aphrody-web`.
 - [`@aphrody/x`](../../../../packages/web/x/README.md) - Headless X/Twitter client, `x-algorithm` ranking implementation and X function tools (`XTools`) for model tool calling.
 - xAI / Grok: bxc calls the xAI REST API through its own client (`apps/bxc/src/integrations/xai.ts` (not in repo)). The full `@aphrody/xai` SDK is AI-layer code in the sibling `aphrody-ai` repository, which consumes `@aphrody/x` from here; this repository never depends on it.
-- [`@aphrody/bxc-test`](../../../products/web/packages/bxc-test/README.md) - Playwright-compatible test runner, Next.js instant navigation (`@aphrody/bxc-test/next`), and canonical site presets (`@aphrody/bxc-test/sites`).
+- `@aphrody/bxc-test` - Playwright-compatible test runner, Next.js instant navigation (`@aphrody/bxc-test/next`), and canonical site presets (`@aphrody/bxc-test/sites`).
 
 ## Governance & Agent Guidelines
 
-- [Instructions Agents (`AGENTS.md`)](../apps/bxc/AGENTS.md) - Strict repository rules, naming contracts, and language guidelines.
-- [Claude Code Guide (`CLAUDE.md`)](../apps/bxc/CLAUDE.md) - Primary operating manual for AI agents working in this repository.
-- [Gemini CLI Pointer (`GEMINI.md`)](../apps/bxc/GEMINI.md) - Thin pointer synchronizing Gemini CLI instructions with CLAUDE.md.
-- [Skills Matrix (`SKILLS.md`)](../apps/bxc/SKILLS.md) - Inventory of active MCP and agent skills in Aphrody Web.
+- Instructions Agents (`AGENTS.md`) - Strict repository rules, naming contracts, and language guidelines.
+- Claude Code Guide (`CLAUDE.md`) - Primary operating manual for AI agents working in this repository.
+- Gemini CLI Pointer (`GEMINI.md`) - Thin pointer synchronizing Gemini CLI instructions with CLAUDE.md.
+- Skills Matrix (`SKILLS.md`) - Inventory of active MCP and agent skills in Aphrody Web.

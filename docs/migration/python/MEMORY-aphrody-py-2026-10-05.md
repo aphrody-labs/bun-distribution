@@ -15,7 +15,7 @@ privés ou intégrations opt-in ; ils ne constituent pas des preuves.
 Deux builds isolés de la distribution Python depuis sources natives épinglées
 (direct et depuis sdist) produisent des wheels byte-identiques ; sources,
 ressources, licences et provenance vérifiées. Deux installations hors checkout
-passent les imports publics et calculs PyO3. [Reçu complet](docs/migration/python-yolo-runtime/wheel-qualification.json)
+passent les imports publics et calculs PyO3. Reçu complet
 en mode worktree-snapshot : révision HEAD antérieure au commit de ce lot,
 empreintes des entrées exactes incluses.
 
@@ -23,7 +23,7 @@ La wheel directe installée dans un troisième venv hors checkout passe les
 22 tests C ABI sous Python -I : Linux x64, ABI 1.4, quatre familles actuellement
 advertisées (stats, bench, process, HTTP). Révision producteur
 0ade1c71ccb52bcc9d255188a252c28c5b789b48 ; détail dans le
-[handoff](docs/migration/python-yolo-runtime/HANDOFF.md).
+handoff.
 Quatre intégrations Python vers le vrai app-server installé passent en 2,51 s ;
 le test consommateur Bun est désélectionné conformément au périmètre Python.
 
@@ -40,7 +40,7 @@ des compilations, de l'installation ou de l'activation hors Python.
 
 Le client natif existant porte les sessions ADK, les callbacks d'outils hôtes,
 les permissions explicites, l'annulation et les images ; pas de second transport,
-installeur ou magasin. [Preuves et limites ADK](docs/migration/jan-absorption/python-adk/HANDOFF.md).
+installeur ou magasin. Preuves et limites ADK.
 Les RPC modèle/reset indisponibles restent explicitement refusés.
 
 Découverte portable : argument/configuration puis PATH ; suppression des
@@ -48,14 +48,14 @@ répertoires Blender et versions figées, suffixe Windows natif, chemins avec
 espaces et home étendu, erreur explicite pour un exécutable invalide. SessionDB
 résout APHRODY_HOME à chaque construction. Aucun déplacement de magasin protégé.
 
-[Reçu de validation](docs/migration/python-portability-2026-10-04.json) :
+Reçu de validation :
 665 tests passent, 22 ignorés, 0 échec en 23,44 s ; Ruff passe, Mypy passe sur
 146 fichiers. Résolution Windows/macOS simulée ; exécution native, wheels et
 installation multiplateforme non qualifiées. Métadonnées de licence du nouveau
 module ADK et wheel mixte restent à qualifier ; aucune publication.
 
-Relevé : 2026-10-03, Linux, hôte `APHRODY`. Le [plan](PLAN.md) conserve la
-queue et le [contrat Agent-First](docs/architecture/agent-first.md) les décisions.
+Relevé : 2026-10-03, Linux, hôte `APHRODY`. Le plan conserve la
+queue et le contrat Agent-First les décisions.
 Mémoire fichier uniquement ; aucune synchronisation fournisseur revendiquée.
 
 ## Lot orchestration Agent-First
@@ -168,7 +168,7 @@ La façade UnifiedInferenceClient réutilise le client HTTP/Harmony existant :
 endpoint requis (Jan loopback par défaut), historique/système/modèle transmis,
 erreurs propagées, compteurs fournisseur ou estimations identifiés. Elle ne
 passe plus par le sampler simulé. Migration et limites dans les
-[propriétaires IA](docs/architecture/ai/OWNERS.md).
+propriétaires IA.
 
 Validation : 100 tests ciblés passent ; suite Python complète : 721 pass,
 22 skip en 28,51 s ; Ruff check et format passent (305 fichiers), Mypy passe
@@ -198,7 +198,7 @@ Suite complète finale : 737 pass, 22 skip en 38,27 s ; Ruff check/format passen
 (309 fichiers), Mypy passe sur 150 sources. Tests SDK, vrai subprocess CLI,
 manager MCP et HTTP loopback couvrent mêmes requêtes/résultats, premiers deltas,
 erreurs et compteurs. Onze liens du document de propriétaires passent.
-[Contrats et limites](docs/architecture/ai/OWNERS.md).
+Contrats et limites.
 
 Yolo partage désormais son registre entre CLI/MCP/HTTP : 135 tests cœur et
 43 tests ciblés passent (suites partiellement communes), TypeScript/lint/format

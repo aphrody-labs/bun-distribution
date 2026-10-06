@@ -37,4 +37,4 @@ produit. Les builds macOS, les assets courants, install/upgrade/rollback et les
 jalons moteur restent soumis aux gates de leurs propriétaires.
 
 Le détail et les hashes des fichiers livrés sont dans le
-[reçu Yolo](../../../../yolo/docs/delivery-metadata-2026-10-04.json).
+[reçu Yolo](../../delivery-metadata-2026-10-04.json).

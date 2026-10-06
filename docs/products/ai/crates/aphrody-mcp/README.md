@@ -47,7 +47,7 @@ Then point your MCP client at the binary. Example `mcp.json` snippet:
 
 ## Exposed tools
 
-Source of truth: `crates/ai/mcp/src/main.rs` (`#[tool_router]` impl on
+Source of truth: `crates/ai/mcp/src/main.rs` (not in repo) (`#[tool_router]` impl on
 `GoogleMcpServer`). The current registry exposes eight tools:
 
 | Tool | Description |

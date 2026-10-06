@@ -46,7 +46,7 @@ La release Discord de développement observée était
 ### 0. Reconstituer la vérité courante
 
 1. Lire les règles, `README.md`, ce plan, `docs/PLAN.md` (not in repo),
-   [`docs/UPSTREAMS.md` (not in repo)](../../reference/discord/UPSTREAMS.md), [`m3/packages/material-web/docs/STACK.md`](../../reference/discord/STACK.md)
+   [`docs/UPSTREAMS.md` (not in repo)](../../reference/discord/UPSTREAMS.md), [`m3/packages/material-web/docs/STACK.md` (not in repo)](../../reference/discord/STACK.md)
    et les audits. Dans Shenron lire `AGENTS.md`, `shenron:docs/products/GOALS.md`,
    `shenron:docs/operations/ADMIN-REPORTS.md`, `shenron:docs/operations/INFRA-DELEGATION.md`. Dans Infra lire les
    contrats et runbooks de release. `aphrody-ui` appartient à son agent : ne

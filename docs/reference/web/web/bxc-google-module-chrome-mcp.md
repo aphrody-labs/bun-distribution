@@ -153,7 +153,7 @@ domain/secure/path matching, CDP-cookie ingest, `httpOnly` JS-visibility split �
 
 ### 4.1 The MCP server: `crates/ai/mcp/` (binary `aphrody-mcp`)
 
-`crates/ai/mcp/src/main.rs` is an `rmcp` stdio server. Chrome-relevant tools:
+`crates/ai/mcp/src/main.rs` (not in repo) is an `rmcp` stdio server. Chrome-relevant tools:
 
 - **`auth_extract`** (`main.rs:511-559`) — Windows-only forensic credential extraction. Reads Chrome **Canary**
   (`Google/Chrome SxS/User Data`) DPAPI-wrapped cookies via `backend::chromium::ChromiumParser`, looks for
@@ -245,7 +245,7 @@ crates/
         └── refresh.rs             #   re-run bootstrap on NotebookError::Auth (401/403) → set_tokens()
 ```
 
-MCP wiring — add one tool to `crates/ai/mcp/src/main.rs` alongside `auth_extract`:
+MCP wiring — add one tool to `crates/ai/mcp/src/main.rs` (not in repo) alongside `auth_extract`:
 
 ```
 google_session_bootstrap { profile?: "chrome131"|"chrome142", cookies_path?: String, target?: String }

@@ -9,7 +9,7 @@ suppression de fonctionnalités.
 ## Frontière de dépôt et origine publique
 
 `aphrody-web` owns the Aphrody Web product: `docs/products/web/crates/aphrody-site` (HTTP origin),
-`apps/bxc` (Bun implementation), `crates/aphrody-web-*`, Obscura
+`apps/bxc` (not in repo) (Bun implementation), `crates/aphrody-web-*`, Obscura
 (`crates/aphrody-obscura`), the `bxc-test` and `x`
 packages, and `docs/web` (not in repo) (`@aphrody/fut` is hosted in standalone repository `../fut`). `aphrody-os` owns the kernel and the subsystem contract
 (`aphrody-subsystem`) that `aphrody-browser` implements.

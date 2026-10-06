@@ -26,7 +26,7 @@ Since 2026-10-05 the fork has a single Aphrody working branch, **`main`** (also 
 `oven-sh/bun` and the prototype branch `aphrody`; none of them feeds the pin.
 
 - `main` = upstream `oven-sh/bun:main` + the Aphrody patches, as commits on top (Tauri-aware type
-  definitions [`packages/bun-types/tauri.d.ts`](../vendor/bun/packages/bun-types/tauri.d.ts), modules resolved
+  definitions `packages/bun-types/tauri.d.ts` (not in repo), modules resolved
   as built-ins, Rust native dependencies of the Linux linker).
 - Upstream arrives by merge (`upstream/main` into `main`), never by rebase or force push.
 - Optional `patches/bun/*.patch` files (root of this repo) are reapplied by the sync engine with

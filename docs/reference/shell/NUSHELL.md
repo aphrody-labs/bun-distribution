@@ -37,7 +37,7 @@ variables d’environnement parent sont copiées directement dans `EngineState`;
 
 Le shell interactif et les plugins Nu du poste sont des outils facultatifs,
 installés hors du graphe Cargo de ce dépôt par
-[`scripts/dev/setup.nu`](../../../scripts/setup.nu) avec
+`scripts/dev/setup.nu` avec
 `--developer-cli` (inspection) ou `--developer-cli --apply` (installation et
 enregistrement des plugins). La liste maintenue est dans
 [`developer-cli-tools.json`](../../../config/developer-cli-tools.json).

@@ -4,7 +4,7 @@
 Compacted state of one Claude lead session and its background workers, so
 Codex or agy can finish if the lead stops. Rules: [AGENTS.md](../../../AGENTS.md)
 (owner directives section is binding). Claim:
-[`.coord/claims/sql-convergence.json`](../../../.coord/claims/sql-convergence.json).
+`.coord/claims/sql-convergence.json` (not in repo).
 Decision record: [decisions/infra/sql-convergence.md](../../decisions/infra/sql-convergence.md).
 IEVR/IECODE side: `~/iecode/docs/development/AGENT-HANDOFF-2026-10-01.md`.
 
@@ -116,7 +116,7 @@ Each worker reports in its own files; check them, do not assume success.
 4. Only after 2–3 pass: rehearse `crates/ai/train/migrations/0001_registry.sql`
    on a Neon TTL branch (`neon checkout <name> --create`), then apply to
    `production` with `APHRODY_TRAINING_DATABASE_URL` (direct).
-5. Update `.coord/claims/sql-convergence.json` state, then one integrating
+5. Update `.coord/claims/sql-convergence.json` (not in repo) state, then one integrating
    agent commits by scope (no AI trailers), e.g. `docs(infra): …`,
    `feat(infra): aphrody-sql …`.
 6. Still blocked on the owner (needs a browser device flow):
@@ -153,7 +153,7 @@ deleted after verified backups; `dot-aphrody` is under `aphrody-code`;
 (15 GB, includes the 7.5 GB bxc release assets). Nothing on vps, dbfr or C:.
 
 **Deduplicated**: 339 Shenron script mirrors, 129 docs copies, plugin copies
-(259 doc files), `py/aphrody-train`, 236 UI binaries (staged by `build.rs`), 93
+(259 doc files), `py/aphrody-train` (not in repo), 236 UI binaries (staged by `build.rs`), 93
 shared site assets (generated from `@shenron/ui` and `@rosegriffon/assets`);
 dbfr 26 GB of media identical to vps; vps leftover checkouts.
 

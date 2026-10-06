@@ -5,7 +5,7 @@
 Patched Rust implementations are tracked inside the Aphrody Cargo workspace. Only optional build inputs live under the source root
 (`.cache/upstream`, override with `APHRODY_SOURCE_ROOT`); everything else is a catalogue entry that is read live.
 
-## Integrated Rust implementations (6)
+## Integrated Rust implementations (7)
 
 Source, tests and licences are tracked in the monorepo; Cargo needs no sibling checkout.
 
@@ -17,6 +17,7 @@ Source, tests and licences are tracked in the monorepo; Cargo needs no sibling c
 | `serde-saphyr` | 0.0.16 | `crates/compat/serde-saphyr` | `patches/serde-saphyr-0.0.16-regex.patch` |
 | `aphrody-llama` | 0.83.5 | `crates/ml/llama` |  |
 | `aphrody-obscura` | 0.1.0 | `crates/web/obscura` |  |
+| `taffy` | 0.12.1 | `crates/vendor/taffy` |  |
 
 ## Vital checkouts (0)
 
@@ -31,7 +32,7 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 | Id | Repository | Ref | Observed | What it is for | Used by |
 | --- | --- | --- | --- | --- | --- |
 | `mcp-server-tauri` | [hypothesi/mcp-server-tauri](https://github.com/hypothesi/mcp-server-tauri) | `main` | 4451b2b1d1 | Bridge upstream reference; the build consumes only its patched crates.io package. | Cargo.toml tauri-plugin-mcp-bridge; config/tauri-upstream.json |
-| `tauri` | [tauri-apps/tauri](https://github.com/tauri-apps/tauri) | `v3` | a8703ee487 | Tauri 3 branch; only crates/tauri-driver is read (primary Tauri 3 WebDriver proxy). | config/tauri-upstream.json debuggers; docs/guides/web/TAURI-DEBUG.md |
+| `tauri` | [tauri-apps/tauri](https://github.com/tauri-apps/tauri) | `v3` | a8703ee487 | Tauri 3 branch; only crates/tauri-runtime-cef is read: the one desktop runtime (CEF + tauri-winit + GTK 4). The local patch for tauri-apps/tauri#16189 (patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch, base 3.0.0-alpha.5) is re-checked against it; drop the patch once upstream merges a fix. | config/tauri-upstream.json patches (tauri-runtime-cef-glib-work-source) and debuggers; docs/guides/web/TAURI-DEBUG.md; vendor.toml |
 | `tauri-plugin-webdriver` | [Choochmeque/tauri-plugin-webdriver](https://github.com/Choochmeque/tauri-plugin-webdriver) | `main` | 007d18ece8 | In-process W3C WebDriver server for Tauri 2; reading base for the Tauri 3 downcast_ref patch. | config/tauri-upstream.json debuggers |
 | `victauri` | [4DA-Systems/Victauri](https://github.com/4DA-Systems/Victauri) | `main` | bb17a65296 | Rust-native Tauri MCP; read for its hardening and tool surface. | config/tauri-upstream.json debuggers; aphrody-mcp Tauri tools design |
 | `jan` | [janhq/jan](https://github.com/janhq/jan) | `14a720628f9592c8e60f7e081ef733076db8a6a9` | 14a720628f | Pinned Jan source for owner-authorized absorption; existing Aphrody capability owners remain canonical. Initial model-hub search adapted with Fuse.js 7.1.0; full parity pending. Pinned checkout: ../aphrody-py/vendor/jan. Root LICENSE Apache-2.0, Menlo Research 2025; selected search adaptation retains attribution. Python/JS ADK manifests declare AGPL-3.0; do not assume a uniform repository license. | m3/packages/app-ui/src/models-hub-state.ts; config/jan-absorption.json; docs/migration/jan-absorption |

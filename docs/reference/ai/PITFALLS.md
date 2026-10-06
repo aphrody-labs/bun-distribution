@@ -189,7 +189,7 @@ repository's docs.
 ## Working with other agents
 
 - **One checkout, one git index.** Agents in the same checkout share
-  `.git/index`: whatever one stages, the other's next commit takes. Commit
+  `.git/index` (not in repo): whatever one stages, the other's next commit takes. Commit
   through a private index (`GIT_INDEX_FILE=.git/index-<agent>`,
   `git read-tree HEAD`, `git add <paths>`), and check `git diff -- <path>`
   first: a private index does not protect against a peer editing the same

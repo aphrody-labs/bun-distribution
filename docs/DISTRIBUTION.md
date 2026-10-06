@@ -55,7 +55,7 @@ bun run pack:deploy    # dist/<name>-<target>.tar.gz: executable + runtime libra
 
 `scripts/release/release.ts` (per target) builds `yolo-<version>-<target>.tar.gz` (executable, runtime artifact, SDK, templates,
 icons), `yolo-<version>-crates.tar.gz`, the installers, `SHA256SUMS` and `release.json`;
-`scripts/release/release_merge.ts` merges the per-target directories. `.github/workflows/release.yml` runs both for the five
+`scripts/release/release_merge.ts` merges the per-target directories. `.github/workflows/release.yml` (not in repo) runs both for the five
 targets on a `vX.Y.Z` tag and publishes the GitHub release. The version is `VERSION`.
 
 ```bash

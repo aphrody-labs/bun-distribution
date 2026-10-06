@@ -60,7 +60,7 @@ L'écosystème Python a franchi un point de bascule historique avec l'arrivée c
 
 ### Pilier 5 : Apache Arrow & Polars
 - Échange de données en mémoire sans copie entre Rust et Python grâce à la spécification Arrow IPC.
-- `yolo` expose des batchs de données nativement convertibles en DataFrame Polars via [`to_polars()`](file:///home/aphro/yolo/packages/python/python/yolo/__init__.py).
+- `yolo` expose des batchs de données nativement convertibles en DataFrame Polars via [`to_polars()`](../packages/engine/python/python/yolo/__init__.py).
 
 ---
 

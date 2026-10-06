@@ -66,5 +66,5 @@ In a Yolo-based app, the primary HTTP server is `Bun.serve`, reaching Rust logic
 
 - Canonical Yolo Report: `yolo/docs/STACK-REPORT-2026-10.md`
 - Yolo Architecture Decisions: `yolo/docs/DECISIONS.md` (Decision D27)
-- Aphrody Product Plan: [`PLAN.md`](file://PLAN.md)
+- Aphrody Product Plan: `PLAN.md`
 - Primary Sources: crates.io API, npm download metrics, HTTP Arena benchmarks, Hetzner & OVHcloud 2026 price notices.

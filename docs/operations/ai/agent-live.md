@@ -13,7 +13,7 @@ yolo ops agent-live --json
 systemctl --user status aphrody-agent-live.service
 ```
 
-Chaque passe publie atomiquement `.coord/shared/LIVE.json` et `LIVE.md`, privés
+Chaque passe publie atomiquement `.coord/shared/LIVE.json` (not in repo) et `LIVE.md`, privés
 et ignorés par Git. Le service de référence est
 l’unité `aphrody-agent-live.service` du catalogue yolo, avec une période de 30 s.
 Le runner A2A fournit aussi `LIVE.md` aux nouveaux agents.

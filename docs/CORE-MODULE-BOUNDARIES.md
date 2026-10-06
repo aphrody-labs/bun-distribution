@@ -60,7 +60,7 @@ amélioration du compilateur n’est déduite de cet arbitrage.
 | Fork Bun, dans `vendor/bun` | Hôte JavaScript et APIs natives existantes | Patch interne seulement pour un besoin d’intégration VM ou un gain mesuré |
 
 Les quatre modules `runtime:*` figurent déjà dans le
-[preload](../packages/runtime/src/preload.ts). Desktop et browser ont du code en
+[preload](../packages/engine/runtime/src/preload.ts). Desktop et browser ont du code en
 cours ; leur présence ne qualifie pas R3/R4 ni une distribution installable.
 
 ## Ce qui entre dans le cœur
@@ -77,7 +77,7 @@ l’orchestration. Il réutilise les APIs Bun pour fichiers, HTTP, cryptographie
 clients natifs déjà couverts. Les règles de catalogue, déploiement et gestionnaire
 de paquets restent des modules du CLI/SDK ; elles ne deviennent pas des builtins
 de la VM. L’acquisition Bun/uv/Cargo utilise les binaires globaux et le wrapper
-Cargo sérialisé déjà présents dans [pm](../packages/core/src/pm/index.ts).
+Cargo sérialisé déjà présents dans [pm](../packages/engine/core/src/pm/index.ts).
 
 Une fonction ne rejoint le cœur natif que si son contrat est commun à plusieurs
 consommateurs, si elle y apporte une garantie native utile, et si ses dépendances
@@ -87,7 +87,7 @@ suffit pas : `turbo-tasks` et `turbo-tasks-fs` restent internes au compilateur.
 ## Desktop : conserver le fournisseur, sélectionner les extensions
 
 Tauri, Wry et Tao restent ensemble comme plugin optionnel. Le
-[SDK desktop](../packages/runtime/src/desktop.ts) supervise actuellement un hôte
+[SDK desktop](../packages/engine/runtime/src/desktop.ts) supervise actuellement un hôte
 précompilé séparé ; ce chemin transitoire n’est pas l’absorption demandée.
 L’intégration dans Bun doit respecter la boucle UI principale et ses règles de thread.
 La source générique et les artefacts moteur appartiennent à Yolo ; les fenêtres,
@@ -97,7 +97,7 @@ Les 30 `tauri-plugin-*` restent des extensions Tauri. En particulier,
 `fs/http/shell/process/os` servent les appels WebView soumis aux permissions
 Tauri ; les opérations serveur utilisent Bun et les services Yolo existants.
 Les transformer chacun en module Bun ajouterait des dépendances GUI aux usages
-serveur. Le [plugin HTTP](../crates/aphrody-tauri-plugin-http/Cargo.toml) dépend
+serveur. Le [plugin HTTP](../crates/tauri/aphrody-tauri-plugin-http/Cargo.toml) dépend
 effectivement de Tauri, du plugin FS et de reqwest.
 
 `tauri-build`, macros, codegen, bundler, CLI, signature, générateurs de schémas et
@@ -116,11 +116,11 @@ consommait ; `next` vient de npm et la compilation passe par `Bun.build`.
 
 | Besoin | Mécanisme retenu | Preuve ou condition |
 | :-- | :-- | :-- |
-| Imports `runtime:*` à l’exécution | `Bun.plugin()` et modules virtuels | [Preload existant](../packages/runtime/src/preload.ts) |
-| Résolution de ces imports au build | Plugin `Bun.build` | [Adaptateur existant](../packages/runtime/src/bundler.ts) ; l’artefact natif reste à distribuer |
-| Transformations natives du code source | Addon N-API `onBeforeParse`, si le besoin correspond | [Contrat Bun épinglé](../vendor/bun/docs/bundler/plugins.mdx) ; respecter les threads de parsing |
+| Imports `runtime:*` à l’exécution | `Bun.plugin()` et modules virtuels | [Preload existant](../packages/engine/runtime/src/preload.ts) |
+| Résolution de ces imports au build | Plugin `Bun.build` | [Adaptateur existant](../packages/engine/runtime/src/bundler.ts) ; l’artefact natif reste à distribuer |
+| Transformations natives du code source | Addon N-API `onBeforeParse`, si le besoin correspond | [Contrat Bun épinglé](reference/upstream-bun/bundler/plugins.mdx) ; respecter les threads de parsing |
 | Service natif partagé Rust/Bun/Python | C ABI versionnée, `bun:ffi` côté Bun | [Contrat Yolo](RUNTIME-ABI.md), ownership et arrêt explicites |
-| Accès interne à la VM | Patch du fork Bun, build et tests propres | [Registre des builtins](../vendor/bun/src/resolve_builtins/HardcodedModule.rs) |
+| Accès interne à la VM | Patch du fork Bun, build et tests propres | Registre des builtins |
 
 `Bun.plugin()` ne commute pas JSC vers V8 et ne remplace pas globalement
 `Bun.file`. Obscura possède son propre backend V8 ; R5/R6 qualifient désormais
@@ -136,7 +136,7 @@ Les déclarations `bun-types/tauri.d.ts` ne prouvent pas un builtin Tauri exécu
 | VFS / IEVR | Contrat générique de montage, handles, buffers et permissions dans Yolo ; fournisseur IEVR chez son propriétaire IECODE. Réutiliser le trait VFS d’Aphrody avant d’en inventer un. `runtime:vfs` est une surface proposée, absente du preload. |
 | WebGPU / rendu | Fournisseur optionnel ; contrats partagés seulement si nécessaires aux consommateurs. Aphrody garde le rendu produit. `runtime:gpu` n’est ni exposé ni qualifié aujourd’hui. |
 | IA, RAG, entraînement | Aphrody et Aphrody Python conservent les comportements produit, modèles et données ; les transports génériques peuvent être partagés. Le PyO3 Yolo actuel expose du calcul générique, pas un moteur ML. |
-| `plugins/` et `packages/plugins` | Marketplace et génération de plugins agents ; distincts des modules et addons Bun. |
+| `plugins/` et `packages/plugins` (not in repo) | Marketplace et génération de plugins agents ; distincts des modules et addons Bun. |
 | `design/aphrody-m3` | Sources et ressources de design ; UI canonique dans Aphrody. Aucun rôle dans le cœur natif. |
 
 ## Déduplication Yolo / Aphrody

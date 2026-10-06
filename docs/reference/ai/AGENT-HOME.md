@@ -6,7 +6,7 @@ Le générateur des inventaires locaux est
 [`agent-home.ts`](../../../packages/infra/workspace/src/agent-home.ts) ; les
 fichiers d'amorçage sont intégrés dans
 [`onboard.rs`](../../../crates/ai/agent-home/src/onboard.rs) depuis
-[`plugins/aphrody/home`](../../../plugins/aphrody/home).
+`plugins/aphrody/home`.
 
 ## Modèle de portée
 

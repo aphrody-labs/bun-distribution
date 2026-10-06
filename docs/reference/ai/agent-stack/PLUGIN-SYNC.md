@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # First-party plugin marketplace
 
-The canonical catalog is `.agents/plugins/marketplace.json`. It currently
+The canonical catalog is `.agents/plugins/marketplace.json` (not in repo). It currently
 contains the `aphrody` and `yolo` plugins. Generated adapters are written to
 `plugins/aphrody/.claude-plugin/marketplace.json` and the user's agy skills registry.
 

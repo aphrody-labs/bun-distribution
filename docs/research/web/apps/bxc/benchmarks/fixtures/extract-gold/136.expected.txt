@@ -1,8 +1,0 @@
-Laptop fan spins at full speed after BIOS update
-Since updating the BIOS to version 1.14 last week, the fan on my laptop runs at full speed as soon as I log in, even when the CPU is idle at 3 percent. Temperatures look normal, around 45 degrees.
-I already tried resetting the embedded controller by holding the power button for thirty seconds. Has anyone else seen this?
-Same model here, same problem. It looks like the new firmware ignores the fan curve set by the vendor utility. Reinstalling the utility after the update fixed it for me.
-Reinstalled the utility and rebooted twice, no change. Is there a way to roll back the BIOS?
-You can roll back, but only to 1.12, because 1.13 changed the secure boot keys. Download the older package from the support site, run it from Windows, and choose the downgrade option when it warns you.
-Before you do that, check whether the thermal sensor reading in the firmware setup screen is plausible. A faulty sensor reporting 95 degrees would explain a fan stuck at maximum.
-The setup screen showed 97 degrees on a cold machine, so it was the sensor after all. Support replaced the motherboard under warranty. Thanks everyone, marking this solved.

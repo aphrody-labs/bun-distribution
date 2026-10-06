@@ -10,10 +10,10 @@ le gestionnaire conserve le résultat de chaque probe et son chemin de binaire.
 ## Sources locales
 
 - [Plugins](../../../../m3/docs/reference/tauri/plugins.md)
-- [Skills](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/skills.md)
-- [Enregistrements JSON](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/json_configs.md)
-- [MCP](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/mcp_servers.md)
-- [Hooks](~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/hooks.md)
+- Skills
+- Enregistrements JSON
+- MCP
+- Hooks
 
 ## Commandes observées
 
@@ -44,7 +44,7 @@ avec la skill.
 La découverte globale emploie `~/.gemini/config/plugins` et
 `~/.gemini/config/skills`. Les enregistrements explicites sont
 `~/.gemini/config/plugins.json` et `skills.json`. Dans le projet, agy lit
-`.agents/plugins.json` et `.agents/skills.json`, également dans les répertoires
+`.agents/plugins.json` (not in repo) et `.agents/skills.json` (not in repo), également dans les répertoires
 parents entre le cwd et la racine du projet. Une entrée scanne exactement un
 niveau; `include_only` filtre les noms de sous-dossiers.
 

@@ -9,7 +9,7 @@ monorepo and must not be used to locate current implementations.
 
 The Google domain is `crates/google/*` (8 crates: `aphrody-google`, `-gemini-runtime`,
 `-gemini-web`, `-antigravity`, `-model-antigravity`, `-notebooklm`, `-google-mcp`, `-gcs`),
-`packages/google/google` (`@aphrody/google`) and `packages/google/antigravity-sdk-python`
+`packages/google/google` (`@aphrody/google`) and `packages/google/antigravity-sdk-python` (not in repo)
 (`google-antigravity`, consumed by `aphrody-py` as a path dependency). Each crate builds and
 tests on its own; the verifier checks them one by one.
 
