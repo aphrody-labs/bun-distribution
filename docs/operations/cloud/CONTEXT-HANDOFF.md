@@ -31,7 +31,7 @@ Evidence lives in [MEMORY.md](../../../MEMORY.md), [PLAN.md](../../../PLAN.md) a
 7. No guardrails on tools in cloud sessions (Cargo, Git, any CLI). No human in the loop: commit and push finished
    batches directly, author `aphrody-dev <contact@aphrody.com>`, no assistant attribution or co-author trailer.
 8. Downloads: Aphrody MCP, CLIs and plugins served from our site and GitHub releases, APIs served permanently
-   on the VPS (work in progress, see MEMORY.md).
+   on the VPS. Live and verified 2026-10-06: `https://downloads.aphrody.com` serves `aphrody` and `yolo` (linux x86_64) and the three plugins (`bun run downloads:publish verify`: SHA-256, `--version`, MCP handshake); Windows `aphrody`, macOS and Windows `yolo` are not published ([DOWNLOADS.md](../infra/DOWNLOADS.md)).
 
 ## Rules that stay
 
