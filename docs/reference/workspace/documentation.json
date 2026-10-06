@@ -26,8 +26,8 @@
     {
       "path": "GOAL.md",
       "title": "GOAL — Aphrody",
-      "sha256": "7c7d47fb218ce964309e80b5522fef0d6b95eb0eaa0bf28189bd9f9f2da166d9",
-      "bytes": 10960,
+      "sha256": "96c3e083564bb889042257413bffcbd5e1a960fd6d1f81bb5b0e4039ea064a47",
+      "bytes": 11037,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3126,8 +3126,8 @@
     {
       "path": "docs/TOOLING.md",
       "title": "Tooling",
-      "sha256": "b993b1d645916ca2d9ceaed63bebacaec1b5abb569149e446564b1c602353c1f",
-      "bytes": 14416,
+      "sha256": "56634242598699dcbaf138fa79e52e99bde30cb47d31388b092e35bb8582801a",
+      "bytes": 14405,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3346,8 +3346,8 @@
     {
       "path": "docs/apis/generated/python-google.md",
       "title": "Source reference: python-google",
-      "sha256": "9edababc60c4b02d984443000914ff5b3b2ddc5c8aac6e8fdac49a76e859e309",
-      "bytes": 729,
+      "sha256": "caadb054a4b665bbf768d8454efc09b8f3a6456ec438163ccab95bc4cf02876c",
+      "bytes": 732,
       "domain": "generated",
       "status": "generated",
       "visibility": "private",
@@ -5016,8 +5016,8 @@
     {
       "path": "docs/architecture/workspace/ARCHITECTURE.md",
       "title": "Workspace architecture",
-      "sha256": "1f34d902f61b1eeaff486bb04b463eadb12937cfcad24428b11a7f466e5dadde",
-      "bytes": 6243,
+      "sha256": "f05bc84bc009eb65a1c92826ad5d1deb6a0ad73d06c0532aa52005a4efe7db6f",
+      "bytes": 6290,
       "domain": "workspace",
       "status": "historical",
       "visibility": "private",
@@ -5046,8 +5046,8 @@
     {
       "path": "docs/cli/HELP.md",
       "title": "yolo CLI reference",
-      "sha256": "5eba3e89474c6d0f8b8bb6756a78a66e2f84ad8677bca8dbf744dfe21c5fb5b1",
-      "bytes": 18754,
+      "sha256": "6d0f5b09a00091c75bfeffae14aac42ee89b3a2185446ad5745cb7444d42affd",
+      "bytes": 18837,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -8876,8 +8876,8 @@
     {
       "path": "docs/operations/infra/update/UV.md",
       "title": "Python and uv updates (yolo update uv)",
-      "sha256": "accdebd91f740d3e11925fa20df86afbd898b57afefb303464d1da965260ff67",
-      "bytes": 12753,
+      "sha256": "2ff7c1fe853f1fdfc224753ef14d91725d3ddf1b4bb889e5133d1b84a2c0ff50",
+      "bytes": 12669,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -9586,8 +9586,8 @@
     {
       "path": "docs/plans/vu/INVENTORY-py-vs-aphrody.md",
       "title": "Inventory: py/ against the rest of the Aphrody monorepo",
-      "sha256": "259669fa05792561f4c9b7d3149caa84d429a3f72dd1e3fc7b1c8ba428082f27",
-      "bytes": 13676,
+      "sha256": "09345eeb9e5754f4ddc0e1bfc5f94ab80a0a77b7d293103f12fe49880f0b6c74",
+      "bytes": 13790,
       "domain": "vu",
       "status": "canonical",
       "visibility": "private",
@@ -9596,8 +9596,8 @@
     {
       "path": "docs/plans/vu/PLAN.md",
       "title": "vu: the Aphrody Python runtime",
-      "sha256": "63281b029cc561daea8da94d9252efec2a1205ea4cdf9e672aa0a3ef2bbe01e6",
-      "bytes": 38152,
+      "sha256": "b53de925e24bf2c0d223559218a245f36804aaa722a1fef097bc03cf04975912",
+      "bytes": 50422,
       "domain": "vu",
       "status": "canonical",
       "visibility": "private",
@@ -12626,8 +12626,8 @@
     {
       "path": "docs/reference/ai/config.md",
       "title": "Aphrody Configuration Guide (config.toml)",
-      "sha256": "0a15812389e69c6197d24f57c229302548c8086decf74e2c391764988edf3fee",
-      "bytes": 13238,
+      "sha256": "fadcbe214b5296e135aaba9c3c4dcc05fa0f89dadab9dd78f44c79669a49e776",
+      "bytes": 13227,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -13566,8 +13566,8 @@
     {
       "path": "docs/reference/ai/training.md",
       "title": "Aphrody training",
-      "sha256": "68801f8ed8344b8915319fd4c0520870325dcc4ee2ab9e420eea6128f51ad3e8",
-      "bytes": 12581,
+      "sha256": "2e99156f6682087eeef4b30b1276f27cb6d89b886baf0bd207a877a67eb9e347",
+      "bytes": 12560,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -13606,8 +13606,8 @@
     {
       "path": "docs/reference/compat/N2B-OXC-MAP.md",
       "title": "N2B and Oxc map (Rust and Bun)",
-      "sha256": "c681ea42492580df4eaab8bf25b4d88208726c6e9f380f9b1c6958d4a1e28bec",
-      "bytes": 15015,
+      "sha256": "72fa42b7868182d59669164d242aac401a1eb02c08507914a76375cf39db71fc",
+      "bytes": 15043,
       "domain": "compat",
       "status": "historical",
       "visibility": "private",
@@ -40656,7 +40656,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "4b79a5cce1c422befd16bea5127890b4c8d304a95a0dc75060339de6db12d830",
+      "sha256": "cb82ae49e7ce1d73121747f363493b0b55fc41afa2dd26775993d5493a9dbb54",
       "bytes": 52784,
       "domain": "workspace",
       "status": "generated",
@@ -40946,8 +40946,8 @@
     {
       "path": "docs/research/ai/research/aphrody-search-upgrades.md",
       "title": "aphrody search upgrades — local-filesystem index, magika-typed + store search",
-      "sha256": "801238de0ee6001024c1f0802f0affa070f504270715991337c37e6aeecd7301",
-      "bytes": 6483,
+      "sha256": "77f0d8f345b1d2041cb8ca5e40fd09cbbc8a65c9867417965d58828cfc327221",
+      "bytes": 6497,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -41016,8 +41016,8 @@
     {
       "path": "docs/research/ai/research/openclaw-vs-aphrody.md",
       "title": "OpenClaw vs aphrody — Comparative Audit",
-      "sha256": "8204464be0416d286ce61cf572546c2d4d02d6e66a086b57083a91c4b9a6ff75",
-      "bytes": 12804,
+      "sha256": "621d3c9f480d59623688965875d849b5b76ecf040491c59c73df76ff39d15471",
+      "bytes": 12818,
       "domain": "ai",
       "status": "historical",
       "visibility": "private",
@@ -46106,8 +46106,8 @@
     {
       "path": "py/PLAN.md",
       "title": "Python workspace modernization",
-      "sha256": "03ae609e989b3d6f0f4218aa93bd894c3b45d9abdabc136442a2abdb493541ac",
-      "bytes": 3375,
+      "sha256": "04743f4e9964be6d3ffbbe049462c6288d95d9ddbd309ab41efa658bda141cae",
+      "bytes": 3425,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46116,8 +46116,8 @@
     {
       "path": "py/README.md",
       "title": "Aphrody Python",
-      "sha256": "b85fe8929cab8e707c20aacdfcb3385c47f713229bfccc92ca79d68347f66fc8",
-      "bytes": 3657,
+      "sha256": "690d2320430c6e79cf4a3e2d4af54b7df80932df263130f2cf1cf2ba74627995",
+      "bytes": 3710,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46166,8 +46166,8 @@
     {
       "path": "py/docs/README.md",
       "title": "Technical Documentation & Quickstart: Aphrody Python Workspace",
-      "sha256": "620d0ba72b2da521127d7100670549721b80097837adf0fd874ad04f61df4dcc",
-      "bytes": 6399,
+      "sha256": "7532f5ee2ba3256836165da21d3161dc0d4f99b5a7c1a02e26c7f2c88528d32a",
+      "bytes": 6463,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46176,8 +46176,8 @@
     {
       "path": "py/docs/architecture/agent-first.md",
       "title": "Architecture Agent-First",
-      "sha256": "daa6a63d6f553c53864078e917fe637dd7045332533bfdc729931082e2331c58",
-      "bytes": 7144,
+      "sha256": "6ca502a42c29f356256ce1cdc4873ce6b7c7f798496446226cf9692f8d95b98f",
+      "bytes": 6824,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46356,8 +46356,8 @@
     {
       "path": "py/tools/infra/README.md",
       "title": "Infra Python tools",
-      "sha256": "787223daaa8aa7a585ab8151ab5be009a6cc8900c605d15dfd20ad8a382a374f",
-      "bytes": 1113,
+      "sha256": "5daef5d4b81a6810981f9172c2d0defdc568ba2208852f0dceb9447767ed4953",
+      "bytes": 924,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -46402,27 +46402,19 @@
       "root": ".",
       "id": "workspace-typescript",
       "language": "typescript",
-      "paths": [
-        "packages/infra/workspace/src/index.ts",
-        "packages/infra/workspace/src/client.ts"
-      ]
+      "paths": ["packages/infra/workspace/src/index.ts", "packages/infra/workspace/src/client.ts"]
     },
     {
       "root": ".",
       "id": "infra-rust",
       "language": "rust",
-      "paths": [
-        "crates/infra/infra/src/lib.rs",
-        "crates/infra/git/src/lib.rs"
-      ]
+      "paths": ["crates/infra/infra/src/lib.rs", "crates/infra/git/src/lib.rs"]
     },
     {
-      "root": "../aphrody-py",
+      "root": ".",
       "id": "python-google",
       "language": "python",
-      "paths": [
-        "packages/aphrody/src/aphrody/google.py"
-      ]
+      "paths": ["py/packages/aphrody/src/aphrody/google.py"]
     }
   ],
   "excluded": [

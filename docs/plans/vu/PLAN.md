@@ -259,8 +259,9 @@ config/host/vps-cargo.json); no second build mechanism is added.
 | P2 | `vps-cargo --repo` (done, `445a854fd`); repository seeded and pushed (private, `f9d6b3d`, `6de8f0d`: launcher, embedding, Bun scripts with 19 tests); T0 build on the build host: `uv`, `ruff`, `vu`, artifact, glibc audit, smoke, receipt; no activation | done 2026-10-05: receipt `7c3db189` of the `vu` repository (`df8a358`): uv 94 s, ruff 159 s, vu 161 s, tests 508 s, clippy 54 s, assemble 7 s, smoke 12 s; artifact `0.1.0-7c3db189`, 3 491 files, 1 049 links, 187 MB; glibc ceiling 2.39 (J15); no activation |
 | P3 | `vu python` (embedded CPython) parity and the SDK wheel smoke inside the runtime | done 2026-10-05: the smoke of the receipt proves `vu python` parity (sys.version, prefix, executable, path, extension modules), exit status and stdin, and the SDK wheel (`aphrody.aphrody_rust.cosine_similarity` returned 1.0 inside `vu python`) (J15) |
 | P4 | `yolo py` resolves and verifies the artifact, falls back to PATH | done 2026-10-05 (`caa20e186`, 17 tests); no artifact is installed, so the PATH fallback is the active mode |
-| P5 | Installation and activation through Infra's catalog and runbook; never implied by a source change | open (not executed here) |
+| P5 | Installation and activation through Infra's catalog and runbook; never implied by a source change | done 2026-10-06 (J18): scripts/install.ts of the `vu` repository (plan by default, `--apply` required) archived the artifact `0.1.0-7c3db189` on the build host, downloaded it with `aphrody infra ssh sftp`, compared the sha256, verified every file against the manifest and activated it under `~/.vu`; `yolo py status` uses it; rollback is `--rollback`. Not published to the public downloads channel (D1: private, no publication authority for `vu`) |
 | P6 | Converge `packages/engine/python` and `crates/engine/yolo-pyo3` (second Python package and second PyO3 module crate) with the runtime; untrack the compiled `.so` | done 2026-10-06: the compiled `_yolo_native` extension is untracked and ignored; the two bindings stay separate by design (D17) |
+| P7 | Scope extension of 2026-10-06 (section 13): AI stack, one tool for Python, Hugging Face, SDK migration with measurements, shared libpython | source and test done for the hardware plan, Hugging Face and shared libpython (J20); the rest open (section 13) |
 
 Execution order is the table order; each batch is committed and pushed (aphrody monorepo and, from P2, the private `vu`
 repository) before the next starts.
@@ -271,12 +272,12 @@ repository) before the next starts.
 | --- | --- | --- |
 | Internal API drift of uv-* and ruff_* crates | Descriptions "internal component crate"; `uv::main` documentation (J4) | T0 only (D3): the CLI is the contract; exact pins; forks to carry patches |
 | glibc mismatch between build host and WSL | 2.43 against 2.39 (J9); MEMORY.md records a factory-built binary refused by WSL | audit in every receipt (6.2); libm symbols or older sysroot if needed |
-| Build time and memory | check: 232 s and 92 s; release build times measured in P2 (J15); peak memory not measured | factory locks, sccache; results recorded in the plan |
+| Build time and memory | check: 232 s and 92 s; release build times measured in P2 (J15); peak memory measured on 2026-10-06 (J19) | factory locks, sccache; results recorded in the plan |
 | Release builds hold the heavy lock | Other agents wait for the lock up to 1 800 s | each Cargo step is a separate job, so the lock is released between steps |
 | Toolchain deviation | uv and ruff pin 1.99.0 upstream; the build uses 1.98.1 (their MSRV is 1.97) | checked compile (J7); the receipt records the toolchain |
 | Licences | uv MIT OR Apache-2.0, ruff MIT, PyO3 MIT OR Apache-2.0, uv-pep440/508 Apache-2.0 OR BSD-2-Clause, astral-pubgrub and python-build-standalone MPL-2.0 (J1, J8) | recorded; not a blocking criterion (owner: the monorepo is multi-licensed); notices ship in the artifact |
 | Static embedding is not first-class in PyO3 | PyO3 guide (J10) | shared libpython (D4) |
-| `extension-module` is deprecated upstream | PyO3 guide (J10); `crates/ai/rag-python` still enables it | drop the feature after a wheel build without it is verified on the build host (open item) |
+| `extension-module` is deprecated upstream | PyO3 guide (J10) | closed 2026-10-06: dropped from `crates/ai/rag-python`; the wheel builds and works without it (J17); maturin sets `PYO3_BUILD_EXTENSION_MODULE` itself |
 | ty tree mismatch | ty 0.0.84 vendors ruff 11aaa39f, 107 commits behind the pin (J5) | ty is not shipped (D6) |
 | Wheel size grew when the native crate moved to rag-core | `aphrody_rust.abi3.so` 790 160 bytes (old standalone crate) against 1 161 480 bytes (in-tree crate with the default features of rag-core) (J12) | gate the chunkers of rag-core behind a feature if the size matters; not done |
 | Remote pages or scripts gaining host access through the runtime | Repository rule | permissions contract (section 5) |
@@ -302,20 +303,31 @@ Settled by the executing agent on the owner's order of 2026-10-05; each carries 
 | D12 | ABI | The CLI and the manifest schema 1 (`compatibility.cliMajor`); no C ABI | Out-of-process keeps two language runtimes and their threads apart; panic contract (D10) stays trivial |
 | D13 | Build host and forge | VPS under the factory locks through `vps-cargo --repo vu`; Bun assemble scripts in the vu repository; `yolo forge` untouched | The VPS cannot read private repositories (J14), `vps-cargo` already pushes snapshots over SSH; the Bun forge is bound to the Bun toolchain |
 | D14 | What stays Python product code | Everything unique under py/packages, py/apps, py/docs, py/uv.lock and the Python packaging qualification tools; the Rust-owned parts (binding, kernels) are not Python | Inventory: no Rust counterpart with parity evidence; thin adapters already delegate arithmetic to `aphrody_rust` |
-| D15 | py/tools/workspace (Bun supervisor) | Stays until the Yolo runtime SDK is installable in this checkout, then moves into `yolo py` | It is the bounded supervisor built on `@aphrody/runtime-sdk`; its tests cannot run here without an installed workspace, so a rewrite would be unverified |
+| D15 | py/tools/workspace (Bun supervisor) | Moved into `yolo py` on 2026-10-06 (`packages/infra/workspace/src/python-workspace.ts`, subcommands `check`, `locks`, `distributions`, `providers`, `typecheck`, `format:check`, `plan`); the nested py/package.json, py/tsconfig.json and the SDK-archive channel are gone | `@aphrody/runtime-sdk` is a member of the root Bun workspace (`packages/engine/runtime`), so the supervisor and its 12 tests run in the Aphrody checkout against the installed Yolo runtime (J17) |
 | D16 | Order of absorption | Section 7, table order | Each phase needs the previous artifact |
 | D17 | Converge `yolo-pyo3` with `rag-python`? | No: two modules stay (`yolo._yolo_native` over `yolo-core`, `aphrody.aphrody_rust` over `aphrody-rag-core`); both take PyO3 from `workspace.dependencies` (0.29.3); the compiled extension of `packages/engine/python` is untracked | Different capability owners and different wheels; a merged module would couple the Yolo engine release to the RAG kernels; the only duplication was the committed build output |
 
-## 10. Staged follow-ups from the py fusion
+## 10. Follow-ups from the py fusion (closed 2026-10-06)
 
-Not edited by the fusion batches because they are host and factory catalog entries (Infra plans before it applies):
-the former repository `aphrody-py` is still wired into config/update/pins.json, config/google-stack-release.json,
-config/docs/documentation.json, config/github/templates.json, config/ai/agent-plugin-providers.json, config/deps/watch.json,
-config/build-factory.json, config/host/toolchain.json, config/commit-sync.json, the systemd unit catalog
-(source-sync `--repo aphrody-py`), scripts/dev/bootstrap and clone-and-bootstrap, scripts/tools/shell/setup, and the root
-GOAL.md. Also staged: the nested `py/package.json` workspace identity (D15), the SDK-archive channel
-`py/config/sibling-checkouts.json`, the legacy Infra dispatcher `py/tools/infra/scripts/python-workspace-dispatch.py`, and the
-tracked compiled extension of `packages/engine/python` (P6).
+The former repository `aphrody-py` is retired from every wiring. Done in `7a377bdaf` (source catalogs only; Infra's plan
+before apply stays the way a host receives them, and no host was edited): config/update/pins.json (the uv pins now target
+`py/pyproject.toml` and `py/README.md`; the nested workflow target is gone), config/google-stack-release.json,
+config/docs/documentation.json (the `python-google` source reads `py/` through the repository root),
+config/github/templates.json, config/ai/agent-plugin-providers.json, config/deps/watch.json, config/build-factory.json,
+config/host/toolchain.json, config/commit-sync.json, the systemd unit catalog (source-sync no longer lists the repository),
+scripts/dev/bootstrap and clone-and-bootstrap (the latter also pointed at a bootstrap path that never existed),
+scripts/tools/shell/setup, the root GOAL.md, the factory, repo-sync and documentation allowlists, the ecosystem catalog
+roots, the uv module's Python root default, the training runner and the `aphrody runtime` default project (`py`).
+Done in `afbf8d38f`: D15 (the supervisor is `yolo py`), the nested py/package.json and py/tsconfig.json, the
+SDK-archive channel, the legacy Infra dispatcher. P6 was verified: the compiled `_yolo_native` extension is not tracked
+and its pattern is ignored.
+
+Kept on purpose: the package identity `aphrody-py-workspace` (a compatibility contract, section 5), the historical
+migration manifests and research notes under py/docs/migration and docs/research (dated evidence), and the one-shot
+consolidation importers of packages/infra/workspace (they name the old sibling as a source of a finished migration).
+Not done: applying the catalog changes to the hosts (a separate Infra plan and apply); the engine wheel
+(`packages/engine/python`) still lists `pyo3/extension-module` in its maturin features (a different capability owner,
+D17).
 
 ## 11. Verification journal (2026-10-05)
 
@@ -340,6 +352,10 @@ and Bun scripts; raw outputs were kept in the session scratch space and are summ
 | J14 | Repository and build host access | `POST /orgs/aphrody-labs/repos` (201, private, empty); `git ls-remote` of the new repository from the build host | `aphrody-labs/vu` is private; the build host fails with "gh: not found" in its credential helper and cannot read it |
 | J15 | First complete build of the runtime | `vu` repository `scripts/forge.ts` (not in repo) on the build host under the factory locks (receipt `receipts/7c3db189-2026-10-05T21-13-26-131Z.json`, schema `aphrody.vu-forge/1`); `bun test scripts` 20 passed; `vps-cargo --repo vu` clippy `-D warnings` and `cargo test --workspace` green on 2026-10-06 | all ten steps ok at `7c3db189` (rustc 1.98.1); `vu --version --json` reports vu 0.1.0, uv 0.12.23, ruff 0.16.10, Python 3.12.15, PyO3 0.29.3; glibc needs: vu, uv, ruff 2.39, libpython 2.17, highest 2.39 within the 2.39 of WSL |
 | J16 | `yolo py` against the real artifact | the artifact tarred on the build host (65 MB zstd), downloaded with `aphrody infra ssh sftp`, extracted under a scratch `VU_HOME` (`runtime/x86_64-unknown-linux-gnu/<version>-<rev8>`, `current` link); `yolo py status` and `--vu-full`; `uv sync --frozen` and `uv run pytest` of `py/` through the artifact's uv in a scratch environment (workspace members not installed, torch excluded) | quick and full manifest checks `verified` (bytecode caches excluded as derived data); `yolo py status` reports uv 0.12.23 (46b84fd0b), Python 3.12.15 and ruff 0.16.10 from the runtime; pytest 707 passed, 18 skipped, 3 failed (subprocess tests that import the installed `aphrody` wheel, not installable while the Cargo workspace is mid-edit by another batch); nothing installed under the real `~/.vu` (P5 stays open) |
+| J17 | The SDK wheel without `extension-module`, the supervisor in the checkout | `uv build --wheel py/packages/aphrody` (maturin 1.14.1, rustc 1.98.1) on the build host from an exact copy of the worktree, under the heavy lock, target on the home volume (the `/srv` volume was at 100 %); wheel installed with the runtime's uv and interpreter; `bun test packages/infra/workspace/test/python-workspace.test.ts`; `yolo py locks` through the installed Yolo runtime | wheel 788 601 bytes (788 600 before), sha256 `300b3b325f3a978b03f0b6167207146ea22d89b537f6ea84802dfeba2c5d2b5a`, build 1 min 18 s, maturin sets `PYO3_BUILD_EXTENSION_MODULE` itself; `aphrody.aphrody_rust.cosine_similarity` returned 1.0 from the installed wheel; supervisor 12 tests passed; `yolo py locks` exited 0 in 214 ms with ABI 1.4 |
+| J18 | Install and activation | `scripts/install.ts --apply` of the `vu` repository: archive on the build host, `aphrody infra ssh sftp` download, sha256 equal to the host's, every file checked against the manifest, `current` flipped atomically; `yolo py status` and `--vu-full`; `uv sync --frozen` and `uv run pytest` of `py/` through the runtime's uv | artifact `0.1.0-7c3db189` (3 491 files, 1 049 links) under `~/.vu/runtime/x86_64-unknown-linux-gnu`, glibc ceiling 2.39 runs on this WSL; quick and full checks `verified`; `vu --version --json`: vu 0.1.0, uv 0.12.23, ruff 0.16.10, Python 3.12.15, PyO3 0.29.3; pytest 687 passed, 38 skipped (optional extras and the live Rust binary), 0 failed, with the wheel of J17 as `aphrody.aphrody_rust` (the three earlier failures needed it) |
+| J19 | Peak memory of the release builds | `/usr/bin/time -v` (largest process) and a 0.5 s sampler of the summed RSS of the build's process group, each step under the heavy lock, cold target on the home volume, rustc 1.98.1, `--jobs 4`, `nice 10`, build host with 47 GB RAM shared with other agents | wheel of aphrody-rust (maturin): 1 min 18 s, largest process 610 MiB, group peak 2.88 GiB; uv release: 20 min 38 s, largest process 6.02 GiB (the final rustc), group peak 6.08 GiB; the ruff and vu release builds were still queued behind other jobs on the heavy lock when this entry was written (the measurement script keeps running on the host and writes /home/ubuntu/vu-finish/summary.txt), so those two are not yet measured |
+| J20 | Scope extension evidence (section 13) | `uv pip install --dry-run --torch-backend cu128 torch`; `bun scripts/huggingface.ts download` then `huggingface_hub` offline; `bun test scripts` of the `vu` repository (42 tests, with the end-to-end shared-libpython test enabled by `VU_TEST_SITE`); 60-run medians of process start | CUDA wheels resolved (28 packages) on a host without GPU; a public model file round-trips between vu and `huggingface_hub`; one libpython mapped, PyO3 extension called from Bun returns 1.0; start medians: python 10.3 ms (Ubuntu 3.12.3) against 6.4 ms (artifact 3.12.15), uv 3.1 ms against 2.9 ms, `vu uv` launcher 4.7 ms |
 
 ## 12. Checklist
 
@@ -351,7 +367,38 @@ and Bun scripts; raw outputs were kept in the session scratch space and are summ
 - [x] Provenance in config/upstream-sources.json; pins gate and tests.
 - [x] Feasibility: `cargo check` of uv and ruff at the pins; probe binary linking uv, ruff and PyO3.
 - [x] Every decision settled (section 9); private repository created.
-- [x] `vps-cargo --repo`; repository seeded; first `vu` build with a receipt; glibc audit; release build times (peak memory not measured).
+- [x] `vps-cargo --repo`; repository seeded; first `vu` build with a receipt; glibc audit; release build times and peak memory (J19).
 - [x] Embedded CPython parity test (`vu python` against `python`) and the SDK wheel smoke inside it (J15).
 - [x] `yolo py` consumes the verified artifact: quick and full checks pass on the artifact pulled from the build host (J16).
-- [ ] Installation and activation through Infra (never claimed from source alone).
+- [x] Installation and activation through Infra's runbook (J18): plan by default, explicit `--apply`, receipt `install-*.json` in the `vu` repository.
+- [x] Every reference to `aphrody-py` retired from the catalogs and scripts (section 10).
+- [x] D15 done: the supervisor is `yolo py`; P6 verified.
+- [x] `extension-module` dropped from `crates/ai/rag-python` after a wheel build without it (J17).
+- [x] `py/` pytest: 0 failed through the runtime's uv (J18).
+- [x] Peak memory of the release builds measured (J19, partly); `vu` scope extension recorded with criteria and states (section 13).
+- [ ] Apply the retired catalog entries to the hosts (Infra plan, then apply; source catalogs are done).
+- [ ] Public distribution of the runtime: not planned (D1: private, no publication authority).
+
+## 13. Scope extension (owner directive 2026-10-06)
+
+The owner extended `vu` beyond P5. Each point below has measurable criteria, and its state is kept apart for source, test,
+package (built artifact), installation and activation. A state is claimed only with the evidence named; nothing here
+claims a GPU validation or a performance gain that was not measured.
+
+| Point | Criteria (measurable) | Source | Test | Package | Installed and active | Open |
+| --- | --- | --- | --- | --- | --- | --- |
+| 13.1 Native AI stack (PyTorch, PyCUDA, JAX, vLLM; CUDA, ROCm, CPU wheels chosen from the hardware) | on a CUDA host: `torch.cuda.is_available()` is true and a matmul benchmark runs; JAX sees the device; vLLM serves one prompt; the same commands pick CPU or ROCm wheels elsewhere with no flag | `vu` `4f688bb`: scripts/hardware.ts (detects `nvidia-smi` CUDA version, `/opt/rocm`, `VU_ACCELERATOR` override; maps to the newest published PyTorch tag; per-family uv arguments; marks PyCUDA and vLLM unsupported without the matching hardware) | 6 unit tests; wheel resolution only: `uv pip install --dry-run --torch-backend cu128 torch` resolved 28 packages with the pinned uv on this CPU host (J20) | not in the artifact (a Bun script of the `vu` repository, not yet a `vu` subcommand) | no | no GPU on any host reachable here, so no GPU run, no vLLM, JAX or PyCUDA run; the `vu install-ai` subcommand (Rust) that applies the plan; a measured run on an NVIDIA and an AMD host |
+| 13.2 vu alone: package manager, runtime, linter, compiler, FFI, Python version manager (automatic install and activation of versions, as Bun does for Bun) | `vu python install 3.14` then a directory with `.python-version` runs that version with no other tool; `vu uv`, `vu ruff`, `vu python` are the only entry points used by the py gates | package manager: pinned uv, linter: pinned ruff, runtime: embedded CPython, FFI: PyO3 and the shared libpython (13.5), version pins: 3.12.15 and 3.14.8 in `vendor.json` | `yolo py` uses the three tools of the artifact (J16, J18) | artifact `0.1.0-7c3db189` ships 3.12.15 only | yes for uv, ruff and python 3.12 (J18) | the automatic Python version manager (`vu python install|use`, `.python-version` activation, the 3.14.8 interpreter in the artifact or fetched by sha256); a "compiler" (bytecode or AOT such as Cython or Nuitka) has no design yet and no owner decision on which; type checking (`ty`) stays out (D6) |
+| 13.3 Native Hugging Face configuration (cache, token, hub, model download) | `HF_HOME`, `HF_HUB_CACHE`, `HF_ENDPOINT`, token resolution identical to `huggingface_hub`; a model file downloaded by vu is read by `huggingface_hub` offline, and the reverse; the token is never printed | `4f688bb`: scripts/huggingface.ts (`status`, `download`; hub cache layout `models--org--name/{blobs,snapshots,refs}`; Bearer only to the configured endpoint; offline mode) | 6 unit tests with a fake fetch; real run on 2026-10-06: `hf-internal-testing/tiny-random-bert` `config.json` downloaded into a scratch `HF_HOME`, then `huggingface_hub.hf_hub_download` returned the same snapshot path with `HF_HUB_OFFLINE=1` (J20) | not in the artifact | no | whole-repository snapshots, resumable and parallel LFS downloads, `login` and token storage, gated repositories (no token was tried), the `vu hf` subcommand in Rust |
+| 13.4 Migrate the whole Python SDK (py/, rag-python, ...) to vu with comparable before and after measurements (target: double the performance, to be demonstrated) | a fixed benchmark set run before and after on the same host: interpreter start, `uv sync --frozen`, `uv run pytest` of py/, `import aphrody`, the RAG kernels (cosine, top-k, normalise) against NumPy; the plan states the ratio of each, and a ratio below 2 is reported as such | the SDK already runs through the artifact's uv and interpreter (`yolo py`, J18); no code migration beyond that | pytest 687 passed, 38 skipped, 0 failed through the artifact (J18) | the wheel is built by the build host with maturin (J17) | the tools are active for `yolo py` | first measurements (J20): median interpreter start 10.3 ms (Ubuntu `python3` 3.12.3) against 6.4 ms (the artifact's python 3.12.15), 1.6 times, a different build of the same language, not a vu gain in the strict sense; uv start 3.1 ms (PATH) against 2.9 ms (artifact), the same pinned version, no gain; `vu uv` through the launcher costs 4.7 ms. So the 2 times target is not met and not supported by any measurement yet; the benchmark set, the SDK kernels and the training paths remain to be measured |
+| 13.5 One CPython library shared by Bun, libaphrody and the Rust extension (one libpython loaded, ABI documented, end-to-end test) | the process maps exactly one `libpython3*`; Bun calls Python through it; a PyO3 extension on the same library returns a value to Bun; the ABI is written down | `4f688bb`: scripts/shared-libpython.ts (bun:ffi `dlopen` of `<artifact>/lib/libpython3.12.so.1.0`, `PYTHONHOME` set to the artifact, the CPython C API `Py_InitializeEx`, `Py_GetVersion`, `PyRun_SimpleString`, `Py_FinalizeEx`) | 3 end-to-end tests in a child Bun: Python 3.12.15 runs in-process; exactly one libpython mapping in `/proc/self/maps`; `aphrody.aphrody_rust.cosine_similarity` (the wheel of J17, Rust) returned 1.0 to Bun on the same library (J20) | the library is already in the artifact (shared, D4) | usable from `~/.vu` | the Bun fork opening the library itself (bun:ffi maps it `RTLD_LOCAL`, so the test promotes the same mapping with `ctypes.CDLL(..., RTLD_GLOBAL)`; the fork should open it global); `libaphrody` (Rust) hosting Python on the same library instead of a second one; ABI stability test across vu versions |
+
+ABI of 13.5 (documented, not yet frozen): the C API of CPython 3.12 named above, plus abi3 (`abi3-py311`) extensions, which
+do not link libpython and resolve their `Py*` symbols from the one global library; values cross the boundary as bytes,
+files or pipes, never as shared objects; `PYTHONHOME` is the artifact prefix; Python is initialised once per process.
+Compatibility follows the manifest (`compatibility.cliMajor`); a change of the libpython soname is a major.
+
+Milestones, in order: M1 (done at source and test level) hardware plan, Hugging Face configuration, shared libpython end
+to end; M2 `vu python install|use` and the 3.14.8 interpreter; M3 `vu` subcommands for 13.1 and 13.3 in Rust, so the
+artifact itself carries them; M4 GPU measurements on real hardware (13.1) and the full benchmark set (13.4); M5 the Bun
+fork and `libaphrody` on the shared library (13.5). Each milestone ends with a receipt in the `vu` repository.

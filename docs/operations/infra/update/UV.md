@@ -3,8 +3,8 @@
 
 Owner: Infra (`packages/infra/update/src/ecosystems/uv.ts`, exported as `runUv` / `runUvWith`). It bumps everything that
 is Python or uv: the uv pin, the managed CPython interpreters, every `uv.lock` of the Python workspace and the gates that
-prove the result. The pipeline overview is [UPDATE.md](../UPDATE.md). The Python workspace is a separate repository,
-`~/aphrody-py` (`aphrody-labs/aphrody-py`); the module finds it through `inventory.pythonRoots` of
+prove the result. The pipeline overview is [UPDATE.md](../UPDATE.md). The Python workspace is `py/` of this repository
+(fused on 2026-10-05, [plan](../../../plans/vu/PLAN.md)); the module finds it through `inventory.pythonRoots` of
 `config/deps/watch.json` (override with `--py-root <dir>` or `APHRODY_PY_ROOT`).
 
 ## What is locked, and where
@@ -91,12 +91,12 @@ bun packages/infra/update/src/ecosystems/uv.ts rollback
 
 `apply` does not install uv: do that first with `yolo update tools uv --apply`. The monorepo side of a bump
 (`config/system-packages.json`, the CLI and TOOLS reference tables, the holds file, the journal) is committed in the
-monorepo; the Python side (locks, pyprojects, workflow, README) is committed in `~/aphrody-py` with the owner identity.
+monorepo; the Python side (locks, pyprojects, workflow, README) is committed in `py/` of the same repository.
 
 ## Rollback
 
 1. `bun packages/infra/update/src/ecosystems/uv.ts rollback` restores every `uv.lock` from the newest snapshot, or
-   `git -C ~/aphrody-py checkout -- uv.lock packages/ai/py/aphrody/uv.lock packages/ai/py/aphrody-train/uv.lock`.
+   `git checkout -- py/uv.lock`.
 2. `uv sync --all-packages --locked --extra rag --extra dedup` realigns the environment.
 3. A uv bump is undone with `uv self update <old>` followed by `yolo update pins apply uv <old>`.
 4. Record why in `config/deps/uv-holds.json` so the next run does not retry it blindly.
@@ -104,7 +104,7 @@ monorepo; the Python side (locks, pyprojects, workflow, README) is committed in 
 ## How a major bump is done
 
 1. `status`: pick an `open` row of kind `major`, or a `held` row whose blocker moved.
-2. Read the release notes (GitHub releases, changelog, Context7) and grep the real usage in `~/aphrody-py`.
+2. Read the release notes (GitHub releases, changelog, Context7) and grep the real usage in `py/`.
 3. Edit the specifier in the owning pyproject and delete or update the hold entry and the comment next to the cap.
 4. `apply --upgrade-package <name>` re-resolves only that package (and what it drags in) in every lock, then runs the
    whole verify pass. For torch, run the Windows CPU smoke as well: the verify pass is Linux only.
