@@ -63,58 +63,41 @@ export function formatSize(bytes: number): string {
   return `${bytes} B`;
 }
 
+const cmd = (label: string, text: string) =>
+  `<button class="cmd" data-copy="${text}" title="Copy"><i></i><code>${text}</code></button>`;
+
 export function renderIndex(manifest: Manifest | null): string {
-  const base = manifest?.baseUrl ?? "";
-  const rows = (manifest?.artifacts ?? [])
-    .map(
-      (a) => `<tr>
-<td><strong>${escapeHtml(a.name)}</strong><br><small>${escapeHtml(a.kind ?? "")}</small></td>
-<td>${escapeHtml(a.version)}</td>
-<td>${escapeHtml(a.platform)}</td>
-<td class="num">${formatSize(a.size)}</td>
-<td><a href="${escapeHtml(a.url)}">download</a> · <a href="${escapeHtml(a.url)}.sha256">sha256</a><br><code>${escapeHtml(a.sha256)}</code></td>
-</tr>`,
-    )
-    .join("\n");
-  const notes = (manifest?.notes ?? []).map((n) => `<li>${escapeHtml(n)}</li>`).join("");
-  const release = manifest
-    ? `Release <code>${escapeHtml(manifest.release.id)}</code>${manifest.release.commit ? ` (commit <code>${escapeHtml(manifest.release.commit.slice(0, 12))}</code>)` : ""}, ${escapeHtml(manifest.generatedAt)}.`
-    : "No release is published yet.";
+  const base = escapeHtml(manifest?.baseUrl ?? "https://downloads.aphrody.com");
+  const desktop = (manifest?.artifacts ?? []).find(
+    (a) => a.kind === "desktop" || /desktop|studio/i.test(a.name),
+  );
+  const button = desktop
+    ? `<a class="btn" href="${escapeHtml(desktop.url)}">Desktop app</a>`
+    : `<span class="btn off">Desktop app</span>`;
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Aphrody downloads</title>
+<title>Aphrody</title>
 <style>
 :root{--bg:#fff;--fg:#1b1b1f;--muted:#5c5c66;--line:#d9d9e0;--accent:#4c5bd4;--code:#f2f2f6}
 @media (prefers-color-scheme:dark){:root{--bg:#121214;--fg:#e6e6ea;--muted:#a0a0ab;--line:#2c2c33;--accent:#a8b4ff;--code:#1d1d22}}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
-main{max-width:60rem;margin:0 auto;padding:2rem 1rem}
-h1{font-size:1.6rem;margin:0 0 .25rem}h2{font-size:1.1rem;margin-top:2rem}
-a{color:var(--accent)}code,pre{background:var(--code);border-radius:6px;font:13px/1.4 ui-monospace,monospace}
-code{padding:.1rem .3rem;word-break:break-all}pre{padding:.75rem 1rem;overflow-x:auto}
-table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:.5rem;border-bottom:1px solid var(--line);vertical-align:top}
-.num{text-align:right;white-space:nowrap}small{color:var(--muted)}
-.wrap{overflow-x:auto}
+main{max-width:40rem;margin:0 auto;padding:3rem 1rem;display:grid;gap:.75rem}
+h1{font-size:1.4rem;margin:0 0 .5rem}
+.cmd{display:grid;gap:.25rem;text-align:left;width:100%;padding:.75rem 1rem;border:1px solid var(--line);border-radius:8px;background:var(--code);color:inherit;cursor:pointer;font:inherit}
+.cmd i{font-style:normal;font-size:.8rem;color:var(--muted)}.cmd code{font:13px/1.4 ui-monospace,monospace;word-break:break-all}
+.cmd.ok i::after{content:" - copied";color:var(--accent)}
+.btn{display:block;text-align:center;padding:.75rem 1rem;border-radius:8px;background:var(--accent);color:var(--bg);text-decoration:none;font-weight:600}
+.btn.off{opacity:.4}
 </style></head><body><main>
-<h1>Aphrody downloads</h1>
-<p>${release}</p>
-<h2>Install</h2>
-<p>Linux and macOS shells (the <code>aphrody</code> binary carries the MCP server, <code>aphrody-mcp</code>):</p>
-<pre>curl -fsSL ${escapeHtml(base)}/install.sh | sh</pre>
-<p>Windows PowerShell:</p>
-<pre>irm ${escapeHtml(base)}/install.ps1 | iex</pre>
-<p>Components: <code>APHRODY_COMPONENTS="aphrody yolo plugin-aphrody plugin-yolo plugin-shenron"</code>.</p>
-<h2>Artifacts</h2>
-<div class="wrap"><table><thead><tr><th>Name</th><th>Version</th><th>Platform</th><th class="num">Size</th><th>Files and SHA-256</th></tr></thead><tbody>
-${rows || '<tr><td colspan="5">Nothing published.</td></tr>'}
-</tbody></table></div>
-<h2>Manifests</h2>
-<p><a href="/latest.json">latest.json</a> · <a href="/SHA256SUMS">SHA256SUMS</a> · <a href="/install.sh">install.sh</a> · <a href="/install.ps1">install.ps1</a></p>
-${notes ? `<h2>Notes</h2><ul>${notes}</ul>` : ""}
+<h1>Aphrody</h1>
+${cmd("Linux / macOS", `curl -fsSL ${base}/install.sh | sh`)}
+${cmd("Windows", `irm ${base}/install.ps1 | iex`)}
+${button}
+<script>for(const b of document.querySelectorAll(".cmd"))b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy).then(()=>{b.classList.add("ok");setTimeout(()=>b.classList.remove("ok"),1500)})}</script>
 </main></body></html>
 `;
 }
 
-/** Resolves `/files/<name>` to a file below `<root>/files`, refusing any traversal or symlink escape. */
 export function resolveFile(root: string, name: string): string | null {
   if (name === "" || name.includes("\0") || name.includes("/") || name.includes("\\")) return null;
   if (name.startsWith(".")) return null;

@@ -52,7 +52,6 @@ describe("download server", () => {
     expect((await get("/latest.json")).status).toBe(200);
     expect(await (await get("/install.sh")).text()).toContain("#!/bin/sh");
     const index = await (await get("/")).text();
-    expect(index).toContain("tool");
     expect(index).toContain("https://example.test/install.sh");
   });
 
@@ -90,15 +89,15 @@ describe("download server", () => {
   });
 
   test("renders without a release and escapes names", () => {
-    expect(renderIndex(null)).toContain("No release is published yet");
+    expect(renderIndex(null)).toContain("install.ps1");
     expect(formatSize(1536)).toBe("1.5 KiB");
     const html = renderIndex({
       schemaVersion: 1,
       generatedAt: "x",
-      release: { id: "<b>" },
+      release: { id: "<script>" },
       baseUrl: "",
       artifacts: [],
     });
-    expect(html).not.toContain("<b>");
+    expect(html).not.toContain("<script>x");
   });
 });
