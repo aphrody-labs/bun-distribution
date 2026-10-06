@@ -1,0 +1,683 @@
+diff -ruN -w -x render-repros a/obscura-dom/Cargo.toml b/obscura-dom/Cargo.toml
+--- a/obscura-dom/Cargo.toml	2026-10-06 18:04:08.901444299 +0200
++++ b/obscura-dom/Cargo.toml	2026-10-06 18:04:08.901444299 +0200
+@@ -1,18 +1,29 @@
+ [package]
+ name = "obscura-dom"
+-version.workspace = true
+-edition.workspace = true
+-license.workspace = true
+-repository.workspace = true
++description = "Aphrody platform crate obscura-dom."
++version = "0.1.1"
++edition = "2021"
++license = "Apache-2.0"
++repository = "https://github.com/h4ckf0r0day/obscura"
+ 
+ [dependencies]
+ html5ever = { workspace = true }
+-markup5ever = { workspace = true }
+-selectors = { workspace = true }
+-servo_arc = { workspace = true }
+-cssparser = { workspace = true }
+-thiserror = { workspace = true }
+-tracing = { workspace = true }
++selectors = "0.38"
++cssparser = "0.37"
+ precomputed-hash = "0.1"
+ 
+ [dev-dependencies]
++
++# Vendored upstream code (h4ckf0r0day/obscura): not held to the aphrody lint
++# set, so the workspace -D warnings gate does not rewrite upstream style.
++[lints.rust]
++warnings = "allow"
++unexpected_cfgs = "allow"
++# `-D warnings` on the command line outranks the group above; name the groups
++# upstream code actually trips so the vendored tree stays out of the gate.
++unused = { level = "allow", priority = -1 }
++deprecated = "allow"
++
++[lints.clippy]
++all = { level = "allow", priority = -1 }
++pedantic = { level = "allow", priority = -1 }
+diff -ruN -w -x render-repros a/obscura-dom/LICENSE b/obscura-dom/LICENSE
+--- a/obscura-dom/LICENSE	1970-01-01 01:00:00.000000000 +0100
++++ b/obscura-dom/LICENSE	2026-10-06 18:04:08.901444299 +0200
+@@ -0,0 +1,201 @@
++Apache License
++                           Version 2.0, January 2004
++                        http://www.apache.org/licenses/
++
++   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
++
++   1. Definitions.
++
++      "License" shall mean the terms and conditions for use, reproduction,
++      and distribution as defined by Sections 1 through 9 of this document.
++
++      "Licensor" shall mean the copyright owner or entity authorized by
++      the copyright owner that is granting the License.
++
++      "Legal Entity" shall mean the union of the acting entity and all
++      other entities that control, are controlled by, or are under common
++      control with that entity. For the purposes of this definition,
++      "control" means (i) the power, direct or indirect, to cause the
++      direction or management of such entity, whether by contract or
++      otherwise, or (ii) ownership of fifty percent (50%) or more of the
++      outstanding shares, or (iii) beneficial ownership of such entity.
++
++      "You" (or "Your") shall mean an individual or Legal Entity
++      exercising permissions granted by this License.
++
++      "Source" form shall mean the preferred form for making modifications,
++      including but not limited to software source code, documentation
++      source, and configuration files.
++
++      "Object" form shall mean any form resulting from mechanical
++      transformation or translation of a Source form, including but
++      not limited to compiled object code, generated documentation,
++      and conversions to other media types.
++
++      "Work" shall mean the work of authorship, whether in Source or
++      Object form, made available under the License, as indicated by a
++      copyright notice that is included in or attached to the work
++      (an example is provided in the Appendix below).
++
++      "Derivative Works" shall mean any work, whether in Source or Object
++      form, that is based on (or derived from) the Work and for which the
++      editorial revisions, annotations, elaborations, or other modifications
++      represent, as a whole, an original work of authorship. For the purposes
++      of this License, Derivative Works shall not include works that remain
++      separable from, or merely link (or bind by name) to the interfaces of,
++      the Work and Derivative Works thereof.
++
++      "Contribution" shall mean any work of authorship, including
++      the original version of the Work and any modifications or additions
++      to that Work or Derivative Works thereof, that is intentionally
++      submitted to Licensor for inclusion in the Work by the copyright owner
++      or by an individual or Legal Entity authorized to submit on behalf of
++      the copyright owner. For the purposes of this definition, "submitted"
++      means any form of electronic, verbal, or written communication sent
++      to the Licensor or its representatives, including but not limited to
++      communication on electronic mailing lists, source code control systems,
++      and issue tracking systems that are managed by, or on behalf of, the
++      Licensor for the purpose of discussing and improving the Work, but
++      excluding communication that is conspicuously marked or otherwise
++      designated in writing by the copyright owner as "Not a Contribution."
++
++      "Contributor" shall mean Licensor and any individual or Legal Entity
++      on behalf of whom a Contribution has been received by Licensor and
++      subsequently incorporated within the Work.
++
++   2. Grant of Copyright License. Subject to the terms and conditions of
++      this License, each Contributor hereby grants to You a perpetual,
++      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
++      copyright license to reproduce, prepare Derivative Works of,
++      publicly display, publicly perform, sublicense, and distribute the
++      Work and such Derivative Works in Source or Object form.
++
++   3. Grant of Patent License. Subject to the terms and conditions of
++      this License, each Contributor hereby grants to You a perpetual,
++      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
++      (except as stated in this section) patent license to make, have made,
++      use, offer to sell, sell, import, and otherwise transfer the Work,
++      where such license applies only to those patent claims licensable
++      by such Contributor that are necessarily infringed by their
++      Contribution(s) alone or by combination of their Contribution(s)
++      with the Work to which such Contribution(s) was submitted. If You
++      institute patent litigation against any entity (including a
++      cross-claim or counterclaim in a lawsuit) alleging that the Work
++      or a Contribution incorporated within the Work constitutes direct
++      or contributory patent infringement, then any patent licenses
++      granted to You under this License for that Work shall terminate
++      as of the date such litigation is filed.
++
++   4. Redistribution. You may reproduce and distribute copies of the
++      Work or Derivative Works thereof in any medium, with or without
++      modifications, and in Source or Object form, provided that You
++      meet the following conditions:
++
++      (a) You must give any other recipients of the Work or
++          Derivative Works a copy of this License; and
++
++      (b) You must cause any modified files to carry prominent notices
++          stating that You changed the files; and
++
++      (c) You must retain, in the Source form of any Derivative Works
++          that You distribute, all copyright, patent, trademark, and
++          attribution notices from the Source form of the Work,
++          excluding those notices that do not pertain to any part of
++          the Derivative Works; and
++
++      (d) If the Work includes a "NOTICE" text file as part of its
++          distribution, then any Derivative Works that You distribute must
++          include a readable copy of the attribution notices contained
++          within such NOTICE file, excluding those notices that do not
++          pertain to any part of the Derivative Works, in at least one
++          of the following places: within a NOTICE text file distributed
++          as part of the Derivative Works; within the Source form or
++          documentation, if provided along with the Derivative Works; or,
++          within a display generated by the Derivative Works, if and
++          wherever such third-party notices normally appear. The contents
++          of the NOTICE file are for informational purposes only and
++          do not modify the License. You may add Your own attribution
++          notices within Derivative Works that You distribute, alongside
++          or as an addendum to the NOTICE text from the Work, provided
++          that such additional attribution notices cannot be construed
++          as modifying the License.
++
++      You may add Your own copyright statement to Your modifications and
++      may provide additional or different license terms and conditions
++      for use, reproduction, or distribution of Your modifications, or
++      for any such Derivative Works as a whole, provided Your use,
++      reproduction, and distribution of the Work otherwise complies with
++      the conditions stated in this License.
++
++   5. Submission of Contributions. Unless You explicitly state otherwise,
++      any Contribution intentionally submitted for inclusion in the Work
++      by You to the Licensor shall be under the terms and conditions of
++      this License, without any additional terms or conditions.
++      Notwithstanding the above, nothing herein shall supersede or modify
++      the terms of any separate license agreement you may have executed
++      with Licensor regarding such Contributions.
++
++   6. Trademarks. This License does not grant permission to use the trade
++      names, trademarks, service marks, or product names of the Licensor,
++      except as required for reasonable and customary use in describing the
++      origin of the Work and reproducing the content of the NOTICE file.
++
++   7. Disclaimer of Warranty. Unless required by applicable law or
++      agreed to in writing, Licensor provides the Work (and each
++      Contributor provides its Contributions) on an "AS IS" BASIS,
++      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
++      implied, including, without limitation, any warranties or conditions
++      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
++      PARTICULAR PURPOSE. You are solely responsible for determining the
++      appropriateness of using or redistributing the Work and assume any
++      risks associated with Your exercise of permissions under this License.
++
++   8. Limitation of Liability. In no event and under no legal theory,
++      whether in tort (including negligence), contract, or otherwise,
++      unless required by applicable law (such as deliberate and grossly
++      negligent acts) or agreed to in writing, shall any Contributor be
++      liable to You for damages, including any direct, indirect, special,
++      incidental, or consequential damages of any character arising as a
++      result of this License or out of the use or inability to use the
++      Work (including but not limited to damages for loss of goodwill,
++      work stoppage, computer failure or malfunction, or any and all
++      other commercial damages or losses), even if such Contributor
++      has been advised of the possibility of such damages.
++
++   9. Accepting Warranty or Additional Liability. While redistributing
++      the Work or Derivative Works thereof, You may choose to offer,
++      and charge a fee for, acceptance of support, warranty, indemnity,
++      or other liability obligations and/or rights consistent with this
++      License. However, in accepting such obligations, You may act only
++      on Your own behalf and on Your sole responsibility, not on behalf
++      of any other Contributor, and only if You agree to indemnify,
++      defend, and hold each Contributor harmless for any liability
++      incurred by, or claims asserted against, such Contributor by reason
++      of your accepting any such warranty or additional liability.
++
++   END OF TERMS AND CONDITIONS
++
++   APPENDIX: How to apply the Apache License to your work.
++
++      To apply the Apache License to your work, attach the following
++      boilerplate notice, with the fields enclosed by brackets "[]"
++      replaced with your own identifying information. (Don't include
++      the brackets!)  The text should be enclosed in the appropriate
++      comment syntax for the file format. We also recommend that a
++      file or class name and description of purpose be included on the
++      same "printed page" as the copyright notice for easier
++      identification within third-party archives.
++
++   Copyright [yyyy] [name of copyright owner]
++
++   Licensed under the Apache License, Version 2.0 (the "License");
++   you may not use this file except in compliance with the License.
++   You may obtain a copy of the License at
++
++       http://www.apache.org/licenses/LICENSE-2.0
++
++   Unless required by applicable law or agreed to in writing, software
++   distributed under the License is distributed on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++   See the License for the specific language governing permissions and
++   limitations under the License.
+diff -ruN -w -x render-repros a/obscura-dom/README.md b/obscura-dom/README.md
+--- a/obscura-dom/README.md	1970-01-01 01:00:00.000000000 +0100
++++ b/obscura-dom/README.md	2026-10-06 18:04:08.901444299 +0200
+@@ -0,0 +1,12 @@
++<!-- SPDX-License-Identifier: Apache-2.0 -->
++# obscura-dom
++
++Vendored Obscura DOM backend from Aphrody Web commit
++`bbeb5ef4c497f7d27f546ad2cc15a250dcc93c83`. Aphrody Web records its
++upstream at `h4ckf0r0day/obscura` commit
++`1a3169da276d7720732c7b20535474942917fb83`; see `LICENSE`.
++
++The Rust sources are copied without modification. The Cargo manifest version
++is adapted to `0.1.1` to coexist temporarily with version `0.1.0` still used
++by checkout dependencies. The canonical Aphrody Web extractor depends on this
++local crate. Broader Obscura backend consolidation remains a separate cutover.
+diff -ruN -w -x render-repros a/obscura-dom/src/selector.rs b/obscura-dom/src/selector.rs
+--- a/obscura-dom/src/selector.rs	2026-10-06 18:04:08.941599567 +0200
++++ b/obscura-dom/src/selector.rs	2026-10-06 18:04:09.044960574 +0200
+@@ -1,16 +1,18 @@
+ use cssparser::{CowRcStr, ToCss};
+ use html5ever::{LocalName, Namespace};
+ use precomputed_hash::PrecomputedHash;
+-use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
+-use selectors::bloom::BloomFilter;
+-use selectors::context::QuirksMode;
+-use selectors::matching::{
++use selectors::{
++    attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint},
++    bloom::BloomFilter,
++    context::QuirksMode,
++    matching::{
+     ElementSelectorFlags, MatchingContext, MatchingForInvalidation, MatchingMode,
+     NeedsSelectorFlags,
++    },
++    parser::{self, ParseRelative, SelectorParseErrorKind},
++    visitor::SelectorVisitor,
++    Element, OpaqueElement, SelectorList,
+ };
+-use selectors::parser::{self, ParseRelative, SelectorParseErrorKind};
+-use selectors::visitor::SelectorVisitor;
+-use selectors::{Element, OpaqueElement, SelectorList};
+ 
+ use crate::tree::{DomTree, NodeData, NodeId};
+ 
+@@ -1119,9 +1121,12 @@
+     /// Shadow-tree stylesheets use this to retain only `:host` selectors when
+     /// matching against the host in their own tree scope.
+     pub fn matches_featureless_host(&self) -> bool {
+-        self.sel
+-            .matches_featureless_host_selector_or_pseudo_element()
+-            .contains(parser::FeaturelessHostMatches::FOR_HOST)
++        // selectors 0.38 replaced `FeaturelessHostMatches::FOR_HOST` with
++        // `matches_featureless_host(scope_matches_featureless_host)`. Passing
++        // `false` keeps the old meaning: only a real `:host` component (alone
++        // or in an all-featureless `:is()`/`:where()`) qualifies, never a bare
++        // `:scope`.
++        self.sel.matches_featureless_host(false).may_match()
+     }
+ 
+     /// Whether this selector contains the `::slotted()` pseudo-element and
+@@ -1288,14 +1293,19 @@
+     use html5ever::{LocalName, Namespace, QualName};
+     use selectors::Element;
+ 
+-    use crate::tree::{Attribute, NodeData, ShadowRootMode};
+-    use crate::tree_sink::parse_html;
+-
+     use super::{DomElement, SelectorKey};
++    use crate::{
++        tree::{Attribute, NodeData, ShadowRootMode},
++        tree_sink::parse_html,
++    };
+ 
+     #[test]
+     fn streaming_selectors_keep_scope_order_and_see_reparented_matches() {
+-        let tree = parse_html("<!doctype html><i id='duplicate'></i><main id='root'><section id='duplicate' class='hit early'><b class='hit'></b></section>text<!--gap--><span class='hit late'></span></main><aside class='hit'></aside>");
++        let tree = parse_html(
++            "<!doctype html><i id='duplicate'></i><main id='root'><section id='duplicate' \
++             class='hit early'><b class='hit'></b></section>text<!--gap--><span class='hit \
++             late'></span></main><aside class='hit'></aside>",
++        );
+         let root = tree.get_element_by_id("root").unwrap();
+         let hits = tree.query_selector_all_from(root, ".hit").unwrap();
+         assert_eq!(hits.len(), 3);
+@@ -1334,7 +1344,8 @@
+     fn borrowed_selector_traversal_preserves_links_and_shadow_boundaries() {
+         let payload = "x".repeat(4096);
+         let tree = parse_html(&format!(
+-            "<main id='parent' data-payload='{payload}'>text<!--gap--><i id='a'></i>text<!--gap--><b id='b'></b></main><div id='host'></div>"
++            "<main id='parent' data-payload='{payload}'>text<!--gap--><i \
++             id='a'></i>text<!--gap--><b id='b'></b></main><div id='host'></div>"
+         ));
+         let parent = tree.get_element_by_id("parent").unwrap();
+         let a = tree.get_element_by_id("a").unwrap();
+@@ -1411,7 +1422,7 @@
+             SelectorKey::Attribute(attribute) => node.get_attribute(attribute).is_some(),
+             SelectorKey::Local(local) => node
+                 .as_element()
+-                .is_some_and(|element| element.local.as_ref() == local),
++                .is_some_and(|element| (&*element.local) == local),
+         }
+     }
+ 
+@@ -1580,7 +1591,7 @@
+         let result = tree.query_selector("h1").unwrap();
+         assert!(result.is_some());
+         let node = tree.get_node(result.unwrap()).unwrap();
+-        assert_eq!(node.as_element().unwrap().local.as_ref(), "h1");
++        assert_eq!(&*node.as_element().unwrap().local, "h1");
+     }
+ 
+     #[test]
+@@ -1672,7 +1683,7 @@
+         let result = tree.query_selector("#outer span").unwrap();
+         assert!(result.is_some());
+         let node = tree.get_node(result.unwrap()).unwrap();
+-        assert_eq!(node.as_element().unwrap().local.as_ref(), "span");
++        assert_eq!(&*node.as_element().unwrap().local, "span");
+     }
+ 
+     #[test]
+diff -ruN -w -x render-repros a/obscura-dom/src/serialize.rs b/obscura-dom/src/serialize.rs
+--- a/obscura-dom/src/serialize.rs	2026-10-06 18:04:08.945615094 +0200
++++ b/obscura-dom/src/serialize.rs	2026-10-06 18:04:09.046819677 +0200
+@@ -231,8 +231,10 @@
+ mod tests {
+     use html5ever::{LocalName, QualName};
+ 
+-    use crate::tree::{NodeData, ShadowRootMode};
+-    use crate::tree_sink::parse_html;
++    use crate::{
++        tree::{NodeData, ShadowRootMode},
++        tree_sink::parse_html,
++    };
+ 
+     #[test]
+     fn test_outer_html() {
+diff -ruN -w -x render-repros a/obscura-dom/src/tree.rs b/obscura-dom/src/tree.rs
+--- a/obscura-dom/src/tree.rs	2026-10-06 18:04:08.961677201 +0200
++++ b/obscura-dom/src/tree.rs	2026-10-06 18:04:09.062082260 +0200
+@@ -1,8 +1,11 @@
++use std::{
++    cell::RefCell,
++    collections::{HashMap, HashSet},
++    fmt,
++    sync::Arc,
++};
++
+ use html5ever::{LocalName, Namespace, Prefix, QualName};
+-use std::cell::RefCell;
+-use std::collections::{HashMap, HashSet};
+-use std::fmt;
+-use std::sync::Arc;
+ 
+ #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+ pub struct NodeId(pub(crate) u32);
+@@ -84,11 +87,11 @@
+         match &self.name.prefix {
+             Some(prefix) => {
+                 name.len() == prefix.len() + self.name.local.len() + 1
+-                    && name.starts_with(prefix.as_ref())
++                    && name.starts_with(&**prefix)
+                     && name.as_bytes().get(prefix.len()) == Some(&b':')
+-                    && &name[prefix.len() + 1..] == self.name.local.as_ref()
++                    && &name[prefix.len() + 1..] == &*self.name.local
+             }
+-            None => self.name.local.as_ref() == name,
++            None => &*self.name.local == name,
+         }
+     }
+ }
+@@ -197,7 +200,7 @@
+     // Read a namespaced attribute by (namespace, localName).
+     pub fn get_attribute_ns(&self, ns: &str, local: &str) -> Option<&str> {
+         self.attrs()?.iter().find_map(|a| {
+-            if a.name.ns.as_ref() == ns && a.name.local.as_ref() == local {
++            if &*a.name.ns == ns && &*a.name.local == local {
+                 Some(a.value.as_str())
+             } else {
+                 None
+@@ -216,7 +219,7 @@
+             };
+             if let Some(attr) = attrs
+                 .iter_mut()
+-                .find(|a| a.name.ns.as_ref() == ns && a.name.local.as_ref() == local)
++                .find(|a| &*a.name.ns == ns && &*a.name.local == local)
+             {
+                 attr.name.prefix = prefix;
+                 attr.value = value;
+@@ -231,7 +234,7 @@
+ 
+     pub fn remove_attribute_ns(&mut self, ns: &str, local: &str) {
+         if let NodeData::Element { attrs, .. } = &mut self.data {
+-            attrs.retain(|a| !(a.name.ns.as_ref() == ns && a.name.local.as_ref() == local));
++            attrs.retain(|a| !(&*a.name.ns == ns && &*a.name.local == local));
+         }
+     }
+ 
+@@ -419,7 +422,7 @@
+         else {
+             return false;
+         };
+-        if element.local.as_ref() != "style" {
++        if (&*element.local) != "style" {
+             return false;
+         }
+         let sheet = inner
+@@ -856,7 +859,7 @@
+         };
+ 
+         if let NodeData::Element { ref attrs, .. } = data {
+-            if let Some(id_attr) = attrs.iter().find(|a| a.name.local.as_ref() == "id") {
++            if let Some(id_attr) = attrs.iter().find(|a| &*a.name.local == "id") {
+                 // Keep the FIRST element created with a given id. Parse order is
+                 // document order, so getElementById / querySelector('#id') return
+                 // the first-in-tree-order element on duplicate ids, per spec.
+@@ -1433,7 +1436,7 @@
+     pub fn is_html_slot_element(&self, node: NodeId) -> bool {
+         self.with_node(node, |node| {
+             node.as_element().is_some_and(|name| {
+-                name.ns.as_ref() == "http://www.w3.org/1999/xhtml" && name.local.as_ref() == "slot"
++                &*name.ns == "http://www.w3.org/1999/xhtml" && &*name.local == "slot"
+             })
+         })
+         .unwrap_or(false)
+@@ -1778,7 +1781,7 @@
+         for child in self.children(doc) {
+             if let Some(n) = self.get_node(child) {
+                 if n.as_element()
+-                    .map(|name| name.local.as_ref() == "html")
++                    .map(|name| &*name.local == "html")
+                     .unwrap_or(false)
+                 {
+                     return child;
+@@ -2088,7 +2091,11 @@
+ 
+     #[test]
+     fn streaming_descendants_match_snapshots_and_keep_shadow_roots_separate() {
+-        let tree = crate::parse_html("<!doctype html><main id='root'>text<!--gap--><div><i></i><b></b></div><p></p></main><aside id='host'></aside>");
++        let tree = crate::parse_html(
++            "<!doctype html><main \
++             id='root'>text<!--gap--><div><i></i><b></b></div><p></p></main><aside \
++             id='host'></aside>",
++        );
+         let host = tree.get_element_by_id("host").unwrap();
+         let shadow = tree.attach_shadow_root(host, ShadowRootMode::Open).unwrap();
+         let child = element(&tree, "span");
+@@ -2250,7 +2257,7 @@
+             Some(ShadowRoot {
+                 id: root,
+                 host,
+-                mode: ShadowRootMode::Closed,
++                mode: ShadowRootMode::Closed
+             })
+         );
+         assert!(tree.is_shadow_root(root));
+diff -ruN -w -x render-repros a/obscura-dom/src/tree_sink.rs b/obscura-dom/src/tree_sink.rs
+--- a/obscura-dom/src/tree_sink.rs	2026-10-06 18:04:08.968300110 +0200
++++ b/obscura-dom/src/tree_sink.rs	2026-10-06 18:04:09.066098969 +0200
+@@ -1,10 +1,10 @@
+-use std::borrow::Cow;
+-use std::cell::Ref;
+-use std::fmt;
+-
+-use html5ever::tendril::StrTendril;
+-use html5ever::tree_builder::{ElemName, ElementFlags, NodeOrText, QuirksMode, TreeSink};
+-use html5ever::{Attribute as HtmlAttribute, LocalName, Namespace, QualName};
++use std::{borrow::Cow, cell::Ref, fmt};
++
++use html5ever::{
++    tendril::StrTendril,
++    tree_builder::{ElemName, ElementFlags, NodeOrText, QuirksMode, TreeSink},
++    Attribute as HtmlAttribute, LocalName, Namespace, QualName,
++};
+ 
+ use crate::tree::{Attribute, DomTree, NodeData, NodeId, ShadowRootMode};
+ 
+@@ -315,7 +315,7 @@
+         attrs: &[HtmlAttribute],
+     ) -> bool {
+         let mode = attrs.iter().find_map(|attr| {
+-            if attr.name.local.as_ref() != "shadowrootmode" {
++            if &*attr.name.local != "shadowrootmode" {
+                 return None;
+             }
+             match attr.value.as_ref() {
+@@ -363,8 +363,7 @@
+ }
+ 
+ pub fn parse_html(html: &str) -> DomTree {
+-    use html5ever::tendril::TendrilSink;
+-    use html5ever::{parse_document, ParseOpts};
++    use html5ever::{parse_document, tendril::TendrilSink, ParseOpts};
+ 
+     let tree = DomTree::new();
+     tree.set_allow_declarative_shadow_roots(true);
+@@ -385,8 +384,7 @@
+ /// top-level `<tr>` and mis-parses select/template fragments. Browsers instead
+ /// use the receiver element as the fragment parsing context.
+ pub fn parse_fragment_with_context(html: &str, context_name: QualName) -> DomTree {
+-    use html5ever::tendril::TendrilSink;
+-    use html5ever::{parse_fragment, ParseOpts};
++    use html5ever::{parse_fragment, tendril::TendrilSink, ParseOpts};
+     let tree = DomTree::new();
+     // Obscura's fragment parser backs innerHTML in a scripting-enabled
+     // document. html5ever 0.39 makes that context flag explicit; keeping it
+diff -ruN -w -x render-repros a/obscura-dom/tests/slot_query_allocations.rs b/obscura-dom/tests/slot_query_allocations.rs
+--- a/obscura-dom/tests/slot_query_allocations.rs	2026-10-06 18:04:08.901444299 +0200
++++ b/obscura-dom/tests/slot_query_allocations.rs	2026-10-06 18:04:09.098232639 +0200
+@@ -1,16 +1,16 @@
+ use obscura_dom::{parse_html, ShadowRootMode};
+ 
+-#[path = "../../test-support/allocations.rs"]
++#[path = "support/allocations.rs"]
+ mod allocations;
+ 
+ #[test]
+ fn slot_queries_do_not_copy_unrelated_attributes_or_text() {
+     let payload = "x".repeat(64 * 1024);
+     let tree = parse_html(&format!(
+-        "<x-card id=host><b id=light slot=title data-payload='{payload}'></b>{payload}</x-card>\
+-         <div id=outside data-payload='{payload}'></div>\
+-         <div id=source><slot id=named name=title data-payload='{payload}'></slot>\
+-         <slot id=default></slot></div>"
++        "<x-card id=host><b id=light slot=title \
++         data-payload='{payload}'></b>{payload}</x-card><div id=outside \
++         data-payload='{payload}'></div><div id=source><slot id=named name=title \
++         data-payload='{payload}'></slot><slot id=default></slot></div>"
+     ));
+     let host = tree.get_element_by_id("host").unwrap();
+     let light = tree.get_element_by_id("light").unwrap();
+@@ -22,7 +22,8 @@
+     tree.append_child(root, named);
+     tree.append_child(root, default);
+ 
+-    let (result, bytes) = allocations::measure(|| (
++    let (result, bytes) = allocations::measure(|| {
++        (
+         tree.is_html_slot_element(named),
+         tree.is_html_slot_element(outside),
+         tree.assigned_slot(outside),
+@@ -30,21 +31,35 @@
+         tree.assigned_slot(text),
+         tree.assigned_nodes(named),
+         tree.assigned_nodes(default),
+-    ));
+-    assert_eq!(result, (true, false, None, Some(named), Some(default),
+-        Some(vec![light]), Some(vec![text])));
++        )
++    });
++    assert_eq!(
++        result,
++        (
++            true,
++            false,
++            None,
++            Some(named),
++            Some(default),
++            Some(vec![light]),
++            Some(vec![text])
++        )
++    );
+     // Small traversal/result vectors are allowed, copying a 64KiB DOM payload is not.
+-    assert!(bytes < 4096, "slot queries allocated {bytes} bytes for a two-slot tree");
++    assert!(
++        bytes < 4096,
++        "slot queries allocated {bytes} bytes for a two-slot tree"
++    );
+ }
+ 
+ #[test]
+ fn relational_selector_walks_do_not_copy_unrelated_payloads() {
+     let payload = "x".repeat(64 * 1024);
+     let tree = parse_html(&format!(
+-        "<section id=scope data-payload='{payload}'>\
+-         <i id=first data-payload='{payload}'></i>{payload}\
+-         <b id=target class=item data-payload='{payload}'></b><!--ignored-->\
+-         <em id=last data-payload='{payload}'></em></section>"
++        "<section id=scope data-payload='{payload}'><i id=first \
++         data-payload='{payload}'></i>{payload}<b id=target class=item \
++         data-payload='{payload}'></b><!--ignored--><em id=last \
++         data-payload='{payload}'></em></section>"
+     ));
+     let scope = tree.get_element_by_id("scope").unwrap();
+     let target = tree.get_element_by_id("target").unwrap();
+diff -ruN -w -x render-repros a/obscura-dom/tests/support/allocations.rs b/obscura-dom/tests/support/allocations.rs
+--- a/obscura-dom/tests/support/allocations.rs	1970-01-01 01:00:00.000000000 +0100
++++ b/obscura-dom/tests/support/allocations.rs	2026-10-06 18:04:08.905459826 +0200
+@@ -0,0 +1,45 @@
++// Test-only allocation traffic, scoped to the calling test thread.
++use std::{
++    alloc::{GlobalAlloc, Layout, System},
++    cell::Cell,
++};
++
++thread_local! {
++    static ALLOCATED: Cell<Option<usize>> = const { Cell::new(None) };
++}
++
++struct CountAllocations;
++
++fn record(bytes: usize) {
++    let _ = ALLOCATED.try_with(|count| {
++        if let Some(current) = count.get() {
++            count.set(Some(current + bytes));
++        }
++    });
++}
++
++unsafe impl GlobalAlloc for CountAllocations {
++    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
++        record(layout.size());
++        unsafe { System.alloc(layout) }
++    }
++
++    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
++        unsafe { System.dealloc(ptr, layout) }
++    }
++
++    unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, size: usize) -> *mut u8 {
++        record(size);
++        unsafe { System.realloc(ptr, layout, size) }
++    }
++}
++
++#[global_allocator]
++static ALLOCATOR: CountAllocations = CountAllocations;
++
++pub fn measure<T>(f: impl FnOnce() -> T) -> (T, usize) {
++    ALLOCATED.with(|count| count.set(Some(0)));
++    let result = f();
++    let bytes = ALLOCATED.with(|count| count.replace(None).unwrap());
++    (result, bytes)
++}
