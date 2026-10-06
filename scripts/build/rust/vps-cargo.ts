@@ -474,8 +474,10 @@ async function ssh(config: VpsCargoConfig, script: string): Promise<number> {
 
 /** Commit the exact worktree (tracked + untracked, ignores honoured) without touching index or HEAD. */
 export async function snapshot(config: VpsCargoConfig, cwd = ROOT): Promise<string> {
-  const index = join(cwd, ".git", "vps-cargo.index");
-  await Bun.write(index, Bun.file(join(cwd, ".git", "index")));
+  // `.git` is a file in a linked worktree: ask git for the per-worktree directory holding the index.
+  const gitDir = (await $`git rev-parse --absolute-git-dir`.cwd(cwd).text()).trim();
+  const index = join(gitDir, "vps-cargo.index");
+  await Bun.write(index, Bun.file(join(gitDir, "index")));
   const env = { ...process.env, GIT_INDEX_FILE: index };
   await $`git add -A`.cwd(cwd).env(env).quiet();
   const changed = (await $`git diff --cached --name-only HEAD`.cwd(cwd).env(env).text())
