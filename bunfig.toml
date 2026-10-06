@@ -1,8 +1,8 @@
 [install]
 linker = "isolated"
 hoist = false
-# react-selecto 1.26 imports these without declaring them (phantom dependencies).
-publicHoistPattern = ["@daybrush/utils", "framework-utils"]
+# react-selecto 1.26 imports the first two without declaring them, swiper 14 imports react (phantom dependencies).
+publicHoistPattern = ["@daybrush/utils", "framework-utils", "react", "react-dom"]
 saveTextLockfile = true
 minimumReleaseAge = 259200
 # Owner-published forks use exact pins. Security fixes (next, nodemailer, undici) and Tauri v3 alphas must track the Rust crates in real time (config/update, tauri sync).
