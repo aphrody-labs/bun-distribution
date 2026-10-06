@@ -102,47 +102,47 @@ export function TaskRow({
     <span className="flex items-center justify-center">
       {hasActions ? (
         <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <button
-                type="button"
-                aria-label="Task Actions"
-                className={clsx(
-                  "flex size-8 items-center justify-center rounded-full text-on-surface-variant",
-                  "opacity-0 transition-[opacity,background-color] duration-200 ease-standard",
-                  "hover:bg-on-surface/8 active:bg-on-surface/10",
-                  "group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100",
-                  focusRing,
-                )}
-              >
-                <Icon name="more_vert" size={20} />
-              </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content align="end" sideOffset={4}>
-              {onStatusChange &&
-                TASK_STATUS_ORDER.filter((s) => s !== task.status).map((s) => (
-                  <DropdownMenu.Item
-                    key={s}
-                    onClick={() => {
-                      onStatusChange(task, s);
-                    }}
-                  >
-                    <TaskStatusIcon status={s} size={20} label="" />
-                    <span>{TASK_STATUS_LABEL[s]}</span>
-                  </DropdownMenu.Item>
-                ))}
-              {onStatusChange && onDelete && <DropdownMenu.Separator />}
-              {onDelete && (
-                <DropdownMenu.Item
-                  onClick={() => {
-                    onDelete(task);
-                  }}
-                  className="text-error"
-                >
-                  <Icon name="delete" size={20} />
-                  <span>Delete</span>
-                </DropdownMenu.Item>
+          <DropdownMenu.Trigger asChild>
+            <button
+              type="button"
+              aria-label="Task Actions"
+              className={clsx(
+                "flex size-8 items-center justify-center rounded-full text-on-surface-variant",
+                "opacity-0 transition-[opacity,background-color] duration-200 ease-standard",
+                "hover:bg-on-surface/8 active:bg-on-surface/10",
+                "group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100",
+                focusRing,
               )}
-            </DropdownMenu.Content>
+            >
+              <Icon name="more_vert" size={20} />
+            </button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content align="end" sideOffset={4}>
+            {onStatusChange &&
+              TASK_STATUS_ORDER.filter((s) => s !== task.status).map((s) => (
+                <DropdownMenu.Item
+                  key={s}
+                  onClick={() => {
+                    onStatusChange(task, s);
+                  }}
+                >
+                  <TaskStatusIcon status={s} size={20} label="" />
+                  <span>{TASK_STATUS_LABEL[s]}</span>
+                </DropdownMenu.Item>
+              ))}
+            {onStatusChange && onDelete && <DropdownMenu.Separator />}
+            {onDelete && (
+              <DropdownMenu.Item
+                onClick={() => {
+                  onDelete(task);
+                }}
+                className="text-error"
+              >
+                <Icon name="delete" size={20} />
+                <span>Delete</span>
+              </DropdownMenu.Item>
+            )}
+          </DropdownMenu.Content>
         </DropdownMenu.Root>
       ) : null}
     </span>

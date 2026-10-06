@@ -83,6 +83,28 @@ Helpers from `types.ts`: `pairTranscriptSteps`, `tryParseJson`, `isErrorResult`,
 `TASK_STATUS_ORDER`, `TASK_STATUS_LABEL`, `TASK_PRIORITY_LABEL`, and the transcript, task and
 model types.
 
+## Local chat
+
+Everything a chat over an OpenAI-compatible server (llama-server, vLLM, the Aphrody gateway)
+needs, with no visible string hard-coded:
+
+| Export                                                                                                  | Role                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ChatLabels`, `chatLabelsFr` / `chatLabelsEn` / `chatLabelsJa`, `resolveChatLabels`, `formatLabel`      | One dictionary for every visible string and aria-label. Every chat component takes `labels?: Partial<ChatLabels>`; missing keys fall back on English.                                                                                                     |
+| `streamChatCompletion`, `createSseParser`, `parseChatCompletionChunk`, `chatReducer`, `ChatStreamError` | Pure streaming client of `POST <baseUrl>/chat/completions` (`stream: true`): SSE framing, content / `reasoning_content` / tool-call deltas, `finish_reason`, top-level `citations` and `refusal`. Network failures and 404/502/503/504 are `unavailable`. |
+| `useOpenAIChat({ baseUrl, model, fetch?, headers?, initialMessages?, preamble?, body? })`               | React hook: `{ messages, send, stop, status, error, reset, setMessages }`, `status` is `idle`, `streaming`, `error` or `unavailable`.                                                                                                                     |
+| `ConversationList`                                                                                      | Navigation-drawer list: new conversation, optional search, rename / delete callbacks, empty state, localized dates.                                                                                                                                       |
+| `ModelUnavailable`                                                                                      | Downloading / loading / unavailable state with a determinate linear indicator and a retry button.                                                                                                                                                         |
+| `CitedMarkdown`, `CitationChip`, `CitationList`, `RefusalNotice`                                        | Grounded answers: `[n]` markers as chips, the numbered sources, the "not established in the sources" notice. `MessageBubble` takes `citations` and `refusal` directly.                                                                                    |
+| `MemoryPanel`                                                                                           | Saved memories with per-item deletion and a confirmed "clear all" (`confirmClear` injects your own dialog).                                                                                                                                               |
+| `ChatIcon`                                                                                              | The chat icons as inline Material Symbols SVG: no icon font is needed by the chat components.                                                                                                                                                             |
+
+`Markdown` (and `MessageBubble`, `CitedMarkdown`) open external links with
+`target="_blank" rel="noopener noreferrer"` and take `onLinkClick(href, event)` (call
+`event.preventDefault()` to open the system browser from a Tauri webview) or `renderLink`.
+`ChatComposer` takes `disabled` (the model is unavailable: input, send, voice and selectors are
+inert), distinct from `isSending`.
+
 ## Tests
 
 ```sh

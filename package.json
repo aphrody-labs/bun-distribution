@@ -270,7 +270,7 @@
   },
   "packageManager": "bun@1.4.2",
   "aphrody": {
-    "m3Version": "3.3.4"
+    "m3Version": "3.3.5"
   },
   "patchedDependencies": {
     "@discordjs/rest@2.6.3": "patches/@discordjs%2Frest@2.6.3.patch",

@@ -155,7 +155,11 @@ const toolRenderers: Record<string, ToolRenderer> = {
 
   read: fileRead(["filePath", "file_path"]),
   write: fileWrite(["filePath", "file_path"]),
-  edit: fileEdit(["filePath", "file_path"], ["oldString", "old_string"], ["newString", "new_string"]),
+  edit: fileEdit(
+    ["filePath", "file_path"],
+    ["oldString", "old_string"],
+    ["newString", "new_string"],
+  ),
 
   glob: {
     summary(pair) {
@@ -583,7 +587,8 @@ function renderResult(pair: ToolCallPair, renderer: ToolRenderer): React.ReactNo
   if (!pair.resultRaw) return null;
 
   // Check if result contains an interactive MCP-UI resource or app
-  const mcpResourceUri = (pair.result?._meta as any)?.ui?.resourceUri || (pair.result?.ui as any)?.resourceUri;
+  const mcpResourceUri =
+    (pair.result?._meta as any)?.ui?.resourceUri || (pair.result?.ui as any)?.resourceUri;
   const mcpHtml = (pair.result as any)?.html || (pair.result as any)?.uiHtml;
   if (mcpResourceUri || mcpHtml) {
     return (

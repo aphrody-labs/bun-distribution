@@ -3,16 +3,12 @@
 
 "use client";
 
-import {
-  Icon,
-  Popover,
-  usePopover,
-  SelectPill,
-  type SelectPillProps,
-} from "@aphrody/m3-primitives";
+import { Popover, usePopover, SelectPill, type SelectPillProps } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 
+import { type ChatLabels, formatLabel, resolveChatLabels } from "./chatLabels";
+import { ChatIcon } from "./chatIcons";
 import { focusRing } from "./internal";
 import type { ModelOption } from "./types";
 
@@ -37,6 +33,8 @@ export interface ModelSelectorProps {
   className?: string;
   /** Disabled state */
   disabled?: boolean;
+  /** Visible strings; `placeholder` / `searchPlaceholder` win over them. English defaults. */
+  labels?: Partial<ChatLabels>;
 }
 
 /** Group models by provider, keeping the order of first appearance. */
@@ -67,6 +65,7 @@ export interface ModelOptionListProps {
   /** Called when a model is picked */
   onSelect: (value: string) => void;
   className?: string;
+  labels?: Partial<ChatLabels>;
 }
 
 /**
@@ -74,7 +73,14 @@ export interface ModelOptionListProps {
  * 48 dp two-line items (`text-label-large` + `text-body-small` supporting text), the selected
  * item on `secondary-container`, capabilities as small outlined chips.
  */
-export function ModelOptionList({ grouped, value, onSelect, className }: ModelOptionListProps) {
+export function ModelOptionList({
+  grouped,
+  value,
+  onSelect,
+  className,
+  labels,
+}: ModelOptionListProps) {
+  const l = resolveChatLabels(labels);
   const providers = Object.entries(grouped);
   const models = providers.flatMap(([, providerModels]) => providerModels);
   const [focusedId, setFocusedId] = useState(value);
@@ -85,7 +91,7 @@ export function ModelOptionList({ grouped, value, onSelect, className }: ModelOp
     <div
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- M3 menu whose options are rich rows (headers, supporting text, chips); a native <select>/<datalist> cannot render them.
       role="listbox"
-      aria-label="Models"
+      aria-label={l.models}
       tabIndex={-1}
       onKeyDown={(event) => {
         if (event.defaultPrevented) return;
@@ -158,7 +164,9 @@ export function ModelOptionList({ grouped, value, onSelect, className }: ModelOp
                             selected ? "text-on-secondary-container" : "text-on-surface-variant",
                           )}
                         >
-                          {model.context_window.toLocaleString()} tokens
+                          {formatLabel(l.contextTokens, {
+                            count: model.context_window.toLocaleString(),
+                          })}
                         </span>
                       ) : null}
                       {model.capabilities?.map((capability) => (
@@ -175,7 +183,7 @@ export function ModelOptionList({ grouped, value, onSelect, className }: ModelOp
                     </div>
                   ) : null}
                 </div>
-                {selected && <Icon name="check" size={20} className="shrink-0" />}
+                {selected && <ChatIcon name="check" size={20} />}
               </button>
             );
           })}
@@ -183,7 +191,7 @@ export function ModelOptionList({ grouped, value, onSelect, className }: ModelOp
       ))}
       {providers.length === 0 && (
         <div className="px-3 py-3 text-center text-body-small text-on-surface-variant">
-          No models found
+          {l.noModels}
         </div>
       )}
     </div>
@@ -212,7 +220,7 @@ function ModelSearchField({
   return (
     <div className="px-2 pb-2">
       <label className="flex h-10 items-center gap-2 rounded-full bg-surface-container-high px-3 text-on-surface-variant focus-within:bg-surface-container-highest">
-        <Icon name="search" size={20} className="shrink-0" />
+        <ChatIcon name="search" size={20} />
         <input
           ref={inputRef}
           value={value}
@@ -232,16 +240,18 @@ export const ModelSelector = forwardRef<HTMLButtonElement, ModelSelectorProps>(
       models,
       value,
       onChange,
-      placeholder = "Select model...",
-      searchPlaceholder = "Search models...",
+      placeholder,
+      searchPlaceholder,
       variant,
       size,
       popover: externalPopover,
       className,
       disabled,
+      labels,
     },
     ref,
   ) => {
+    const l = resolveChatLabels(labels);
     const internalPopover = usePopover();
     const popover = externalPopover ?? internalPopover;
     const [search, setSearch] = useState("");
@@ -265,9 +275,13 @@ export const ModelSelector = forwardRef<HTMLButtonElement, ModelSelectorProps>(
             size={size}
             disabled={disabled}
             aria-haspopup="listbox"
+            hideCaret
             className={clsx("w-full", className)}
           >
-            {selectedModel?.name ?? placeholder}
+            <span className="min-w-0 flex-1 truncate">
+              {selectedModel?.name ?? placeholder ?? l.selectModel}
+            </span>
+            <ChatIcon name="expand_more" size={18} />
           </SelectPill>
         </Popover.Trigger>
         <Popover.Content
@@ -277,13 +291,18 @@ export const ModelSelector = forwardRef<HTMLButtonElement, ModelSelectorProps>(
           className="overflow-hidden rounded-extra-small! py-2"
         >
           {/* Search */}
-          <ModelSearchField value={search} onChange={setSearch} placeholder={searchPlaceholder} />
+          <ModelSearchField
+            value={search}
+            onChange={setSearch}
+            placeholder={searchPlaceholder ?? l.searchModels}
+          />
 
           {/* Grouped results */}
           <div className="max-h-[320px] overflow-y-auto">
             <ModelOptionList
               grouped={grouped}
               value={value}
+              labels={labels}
               onSelect={(id) => {
                 onChange(id);
                 popover.setOpen(false);

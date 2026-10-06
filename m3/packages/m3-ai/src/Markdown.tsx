@@ -3,12 +3,14 @@
 
 "use client";
 
-import { Icon } from "@aphrody/m3-primitives";
 import { clsx } from "clsx";
 import { forwardRef, isValidElement, useEffect, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
+
+import { type ChatLabels, resolveChatLabels } from "./chatLabels";
+import { ChatIcon } from "./chatIcons";
 
 type MarkdownSize = "small" | "medium" | "large";
 
@@ -22,7 +24,40 @@ interface MarkdownProps {
    * trusted content.
    */
   allowHtml?: boolean;
+  /** Element overrides merged over the M3 renderers (e.g. citation links). */
+  components?: Components;
+  /**
+   * Called on every link activation. Call `event.preventDefault()` to handle it yourself (e.g.
+   * open the system browser from a Tauri webview).
+   */
+  onLinkClick?: MarkdownLinkHandler;
+  /** Replaces the link element entirely. */
+  renderLink?: MarkdownLinkRenderer;
+  /** Visible strings of the code blocks; English defaults. */
+  labels?: Partial<ChatLabels>;
 }
+
+/** Link activation callback of {@link Markdown}. */
+export type MarkdownLinkHandler = (
+  href: string,
+  event: React.MouseEvent<HTMLAnchorElement>,
+) => void;
+
+/** Custom link renderer of {@link Markdown}. */
+export type MarkdownLinkRenderer = (link: {
+  href: string;
+  children: React.ReactNode;
+  external: boolean;
+}) => React.ReactNode;
+
+/** Whether `href` leaves the page: an absolute URL with a scheme, or protocol-relative. */
+export function isExternalHref(href: string | undefined): boolean {
+  if (!href) return false;
+  return /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith("//");
+}
+
+/** Safe defaults of an external link: a new browsing context without opener or referrer. */
+export const externalLinkProps = { target: "_blank", rel: "noopener noreferrer" } as const;
 
 const bodyClass: Record<MarkdownSize, string> = {
   small: "text-body-small",
@@ -123,6 +158,8 @@ export interface CodeBlockProps extends Omit<React.HTMLAttributes<HTMLDivElement
   language?: string;
   onCopy?: (code: string) => void;
   children?: ReactNode;
+  /** `copy`, `copyCode`, `copied`; English defaults. */
+  labels?: Partial<ChatLabels>;
 }
 
 export function CodeBlock({
@@ -131,8 +168,10 @@ export function CodeBlock({
   onCopy,
   className,
   children,
+  labels,
   ...restProps
 }: CodeBlockProps) {
+  const l = resolveChatLabels(labels);
   // Strip node passed by ReactMarkdown to avoid rendering node="[object Object]" in DOM
   const { node: _node, ...props } = restProps as Record<string, any>;
 
@@ -202,15 +241,15 @@ export function CodeBlock({
               : "text-on-surface-variant hover:bg-on-surface/8 hover:text-on-surface active:bg-on-surface/12",
             "focus-visible:outline-2 focus-visible:outline-primary",
           )}
-          aria-label={copied ? "Copied" : "Copy code"}
-          title={copied ? "Copied!" : "Copy code"}
+          aria-label={copied ? l.copied : l.copyCode}
+          title={copied ? l.copied : l.copyCode}
         >
-          <Icon
+          <ChatIcon
             name={copied ? "check" : "content_copy"}
             size={16}
             className={copied ? "text-success" : undefined}
           />
-          <span>{copied ? "Copied!" : "Copy"}</span>
+          <span>{copied ? l.copied : l.copy}</span>
         </button>
       </div>
       <pre className="overflow-x-auto p-3 font-code text-body-small text-on-surface bg-surface-container-highest [&_code]:bg-transparent [&_code]:p-0 [&_code]:text-[length:inherit]">
@@ -508,7 +547,13 @@ export function remarkMathPlugin() {
 // Element overrides mapping markdown onto M3 typescale and color roles
 // ---------------------------------------------------------------------------
 
-function m3Components(size: MarkdownSize): Components {
+interface LinkOptions {
+  onLinkClick?: MarkdownLinkHandler;
+  renderLink?: MarkdownLinkRenderer;
+  labels?: Partial<ChatLabels>;
+}
+
+function m3Components(size: MarkdownSize, link: LinkOptions = {}): Components {
   const body = bodyClass[size];
   return {
     h1: ({ node: _node, className, children, ...props }) => (
@@ -562,18 +607,28 @@ function m3Components(size: MarkdownSize): Components {
     p: ({ node: _node, className, ...props }) => (
       <p className={clsx("my-2 first:mt-0 last:mb-0", body, className)} {...props} />
     ),
-    a: ({ node: _node, className, children, ...props }) => (
-      <a
-        className={clsx(
-          "text-primary underline underline-offset-2 hover:decoration-2",
-          "rounded-extra-small outline-none focus-visible:outline-3 focus-visible:outline-secondary focus-visible:outline-offset-2",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </a>
-    ),
+    a: ({ node: _node, className, children, href, onClick, ...props }) => {
+      const external = isExternalHref(href);
+      if (link.renderLink) return <>{link.renderLink({ href: href ?? "", children, external })}</>;
+      return (
+        <a
+          className={clsx(
+            "text-primary underline underline-offset-2 hover:decoration-2",
+            "rounded-extra-small outline-none focus-visible:outline-3 focus-visible:outline-secondary focus-visible:outline-offset-2",
+            className,
+          )}
+          href={href}
+          {...(external ? externalLinkProps : {})}
+          onClick={(event) => {
+            onClick?.(event);
+            if (href) link.onLinkClick?.(href, event);
+          }}
+          {...props}
+        >
+          {children}
+        </a>
+      );
+    },
     strong: ({ node: _node, className, ...props }) => (
       <strong className={clsx("font-semibold text-on-surface", className)} {...props} />
     ),
@@ -611,7 +666,7 @@ function m3Components(size: MarkdownSize): Components {
       />
     ),
     pre: ({ node: _node, children, className, style }) => (
-      <CodeBlock className={className} style={style}>
+      <CodeBlock className={className} style={style} labels={link.labels}>
         {children}
       </CodeBlock>
     ),
@@ -677,7 +732,20 @@ function m3Components(size: MarkdownSize): Components {
 }
 
 const Markdown = forwardRef<HTMLDivElement, MarkdownProps>(
-  ({ content, className, size = "medium", allowHtml = false }, ref) => {
+  (
+    {
+      content,
+      className,
+      size = "medium",
+      allowHtml = false,
+      components,
+      onLinkClick,
+      renderLink,
+      labels,
+    },
+    ref,
+  ) => {
+    const base = m3Components(size, { onLinkClick, renderLink, labels });
     return (
       <div
         ref={ref}
@@ -686,7 +754,7 @@ const Markdown = forwardRef<HTMLDivElement, MarkdownProps>(
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMathPlugin]}
           rehypePlugins={allowHtml ? [rehypeRaw] : undefined}
-          components={m3Components(size)}
+          components={components ? { ...base, ...components } : base}
         >
           {content}
         </ReactMarkdown>

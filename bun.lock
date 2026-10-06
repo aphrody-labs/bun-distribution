@@ -238,7 +238,7 @@
     },
     "m3/apps/showcase": {
       "name": "@aphrody/m3-showcase",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/ag-ui": "workspace:*",
         "@aphrody/assets": "workspace:*",
@@ -282,7 +282,7 @@
     },
     "m3/apps/web": {
       "name": "@aphrody/m3-web",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3": "workspace:*",
         "@aphrody/m3-front": "workspace:*",
@@ -422,7 +422,7 @@
     },
     "m3/packages/m3": {
       "name": "@aphrody/m3",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "bin": {
         "m3": "./bin/m3.ts",
       },
@@ -454,7 +454,7 @@
     },
     "m3/packages/m3-ai": {
       "name": "@aphrody/m3-ai",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/ag-ui": "workspace:*",
         "@aphrody/m3-motion": "workspace:*",
@@ -477,7 +477,7 @@
     },
     "m3/packages/m3-baseui": {
       "name": "@aphrody/m3-baseui",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@base-ui/react": "catalog:",
       },
@@ -498,7 +498,7 @@
     },
     "m3/packages/m3-bun": {
       "name": "@aphrody/m3-bun",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "bin": {
         "m3-bun": "./bin/m3-bun.ts",
       },
@@ -513,7 +513,7 @@
     },
     "m3/packages/m3-codemods": {
       "name": "@aphrody/m3-codemods",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "jscodeshift": "catalog:",
       },
@@ -524,7 +524,7 @@
     },
     "m3/packages/m3-config": {
       "name": "@aphrody/m3-config",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@happy-dom/global-registrator": "catalog:",
         "element-internals-polyfill": "catalog:",
@@ -532,7 +532,7 @@
     },
     "m3/packages/m3-design": {
       "name": "@aphrody/m3-design",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/bun": "^3.3.0",
         "@material/material-color-utilities": "catalog:",
@@ -543,7 +543,7 @@
     },
     "m3/packages/m3-explorer": {
       "name": "@aphrody/m3-explorer",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3-primitives": "workspace:*",
         "clsx": "catalog:",
@@ -559,14 +559,14 @@
     },
     "m3/packages/m3-fonts": {
       "name": "@aphrody/m3-fonts",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
       },
     },
     "m3/packages/m3-forms": {
       "name": "@aphrody/m3-forms",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3-primitives": "workspace:*",
         "clsx": "catalog:",
@@ -584,7 +584,7 @@
     },
     "m3/packages/m3-front": {
       "name": "@aphrody/m3-front",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/material-web": "catalog:",
@@ -597,7 +597,7 @@
     },
     "m3/packages/m3-icons": {
       "name": "@aphrody/m3-icons",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/bun": "^3.3.0",
       },
@@ -616,7 +616,7 @@
     },
     "m3/packages/m3-mcp": {
       "name": "@aphrody/m3-mcp",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3-os-themes": "workspace:*",
         "@aphrody/material-design-icons": "workspace:*",
@@ -626,7 +626,7 @@
     },
     "m3/packages/m3-motion": {
       "name": "@aphrody/m3-motion",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "motion": "catalog:",
       },
@@ -640,7 +640,7 @@
     },
     "m3/packages/m3-next": {
       "name": "@aphrody/m3-next",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "bin": {
         "m3-next": "./bin/m3-next.ts",
       },
@@ -670,7 +670,7 @@
     },
     "m3/packages/m3-next-migrate": {
       "name": "@aphrody/m3-next-migrate",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "bin": {
         "m3-next-migrate": "./dist/cli.js",
         "next-migrate": "./dist/cli.js",
@@ -685,7 +685,7 @@
     },
     "m3/packages/m3-next/examples/app": {
       "name": "@aphrody/m3-next-example",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3-baseui": "workspace:*",
         "@aphrody/m3-next": "workspace:*",
@@ -707,7 +707,7 @@
     },
     "m3/packages/m3-next/examples/tauri": {
       "name": "@aphrody/m3-next-tauri-example",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3-baseui": "workspace:*",
         "@aphrody/m3-next": "workspace:*",
@@ -728,7 +728,7 @@
     },
     "m3/packages/m3-os-themes": {
       "name": "@aphrody/m3-os-themes",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "bin": {
         "m3-os-themes": "./src/cli.ts",
       },
@@ -743,7 +743,7 @@
     },
     "m3/packages/m3-primitives": {
       "name": "@aphrody/m3-primitives",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3-motion": "workspace:*",
         "@base-ui/react": "catalog:",
@@ -766,7 +766,7 @@
     },
     "m3/packages/m3-react": {
       "name": "@aphrody/m3-react",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/material-web": "catalog:",
@@ -782,7 +782,7 @@
     },
     "m3/packages/m3-reader": {
       "name": "@aphrody/m3-reader",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@tanstack/react-virtual": "catalog:",
         "lucide-react": "catalog:",
@@ -799,7 +799,7 @@
     },
     "m3/packages/m3-tailwind": {
       "name": "@aphrody/m3-tailwind",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
       },
@@ -816,7 +816,7 @@
     },
     "m3/packages/m3-theme": {
       "name": "@aphrody/m3-theme",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
       },
@@ -831,7 +831,7 @@
     },
     "m3/packages/m3-tokens": {
       "name": "@aphrody/m3-tokens",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@material/material-color-utilities": "catalog:",
       },
@@ -1045,7 +1045,7 @@
     },
     "packages/interop/native": {
       "name": "@aphrody/bun",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "dependencies": {
         "@aphrody/runtime-sdk": "workspace:*",
         "@aphrody/update": "workspace:*",

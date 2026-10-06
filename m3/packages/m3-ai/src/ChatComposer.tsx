@@ -3,12 +3,14 @@
 
 "use client";
 
-import { CircleButton, Icon, Popover, SelectPill, usePopover } from "@aphrody/m3-primitives";
+import { CircleButton, Popover, SelectPill, usePopover } from "@aphrody/m3-primitives";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
 import { clsx } from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import { type ReactNode } from "react";
 
+import { type ChatLabels, resolveChatLabels } from "./chatLabels";
+import { ChatIcon } from "./chatIcons";
 import { focusRing } from "./internal";
 import { ModelSelector } from "./ModelSelector";
 import type { ModelOption } from "./types";
@@ -26,6 +28,11 @@ export interface ChatComposerProps {
   heading?: ReactNode;
   /** Disable the composer — draft can still change, but send/voice are blocked */
   isSending?: boolean;
+  /**
+   * Disable the whole composer (e.g. the model is unavailable): the textarea, send, voice and
+   * the selectors are all inert. Distinct from `isSending`, which keeps the draft editable.
+   */
+  disabled?: boolean;
   /** Project selector config — omit to hide */
   projectSelector?: {
     value: string;
@@ -47,6 +54,8 @@ export interface ChatComposerProps {
   onStop?: () => void;
   /** Additional className on the composer container */
   className?: string;
+  /** Visible strings (placeholder, aria-labels); English defaults. `placeholder` wins over it. */
+  labels?: Partial<ChatLabels>;
 }
 
 const iconButtonEnter = {
@@ -72,24 +81,28 @@ export function ChatComposer({
   draft,
   onDraftChange,
   onSend,
-  placeholder = "Ask something...",
+  placeholder,
   heading,
   isSending = false,
+  disabled = false,
   projectSelector,
   modelSelector,
   onOpenVoice,
   toolbarExtra,
   onStop,
   className,
+  labels,
 }: ChatComposerProps) {
-  const canSend = !isSending && draft.trim().length > 0;
-  const showStop = isSending && !!onStop;
+  const l = resolveChatLabels(labels);
+  const hint = placeholder ?? l.composerPlaceholder;
+  const canSend = !disabled && !isSending && draft.trim().length > 0;
+  const showStop = !disabled && isSending && !!onStop;
 
   return (
     <>
       {heading && (
         <div className="mb-3 flex items-center gap-2 px-1 text-title-small text-on-surface-variant">
-          <Icon name="auto_awesome" size={18} filled className="text-primary" />
+          <ChatIcon name="auto_awesome_filled" size={18} className="text-primary" />
           {heading}
         </div>
       )}
@@ -107,12 +120,13 @@ export function ChatComposer({
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
-              onSend();
+              if (canSend) onSend();
             }
           }}
-          placeholder={placeholder}
-          aria-label={placeholder}
+          placeholder={hint}
+          aria-label={hint}
           rows={2}
+          disabled={disabled}
           className="block w-full resize-none border-0 bg-transparent px-1 text-body-large text-on-surface caret-primary outline-none placeholder:text-on-surface-variant focus:outline-none focus:ring-0"
         />
 
@@ -124,8 +138,14 @@ export function ChatComposer({
                 onOpenChange={projectSelector.popover.setOpen}
               >
                 <Popover.Trigger asChild>
-                  <SelectPill className="w-full" aria-haspopup="listbox">
-                    {projectSelector.value}
+                  <SelectPill
+                    className="w-full"
+                    aria-haspopup="listbox"
+                    disabled={disabled}
+                    hideCaret
+                  >
+                    <span className="min-w-0 flex-1 truncate">{projectSelector.value}</span>
+                    <ChatIcon name="expand_more" size={18} />
                   </SelectPill>
                 </Popover.Trigger>
                 <Popover.Content
@@ -136,7 +156,7 @@ export function ChatComposer({
                   <div
                     // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- M3 menu in a popover with icon rows; a native <select>/<datalist> cannot render it.
                     role="listbox"
-                    aria-label="Projects"
+                    aria-label={l.projects}
                   >
                     {projectSelector.options.map((option) => {
                       const selected = option === projectSelector.value;
@@ -162,7 +182,7 @@ export function ChatComposer({
                           )}
                         >
                           <span className="min-w-0 flex-1 truncate">{option}</span>
-                          {selected && <Icon name="check" size={20} />}
+                          {selected && <ChatIcon name="check" size={20} />}
                         </button>
                       );
                     })}
@@ -182,6 +202,8 @@ export function ChatComposer({
                   value={modelSelector.value}
                   onChange={modelSelector.onChange}
                   size="md"
+                  disabled={disabled}
+                  labels={labels}
                 />
               </div>
             )}
@@ -190,11 +212,11 @@ export function ChatComposer({
 
             {onOpenVoice && (
               <CircleButton
-                icon="mic"
+                icon={<ChatIcon name="mic" size={20} />}
                 variant="standard"
                 onClick={onOpenVoice}
-                disabled={isSending}
-                aria-label="Open Voice Input"
+                disabled={isSending || disabled}
+                aria-label={l.openVoice}
               />
             )}
 
@@ -205,14 +227,14 @@ export function ChatComposer({
                   type="button"
                   {...iconButtonEnter}
                   onClick={onStop}
-                  aria-label="Stop"
+                  aria-label={l.stop}
                   className={clsx(
                     "flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary",
                     "transition-colors duration-200 ease-standard hover:bg-primary/92 active:bg-primary/90",
                     focusRing,
                   )}
                 >
-                  <Icon name="stop" size={24} filled />
+                  <ChatIcon name="stop_filled" size={24} />
                 </motion.button>
               ) : canSend ? (
                 <motion.button
@@ -220,14 +242,14 @@ export function ChatComposer({
                   type="button"
                   {...iconButtonEnter}
                   onClick={onSend}
-                  aria-label="Send"
+                  aria-label={l.send}
                   className={clsx(
                     "flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary",
                     "transition-colors duration-200 ease-standard hover:bg-primary/92 active:bg-primary/90",
                     focusRing,
                   )}
                 >
-                  <Icon name="arrow_upward" size={24} />
+                  <ChatIcon name="arrow_upward" size={24} />
                 </motion.button>
               ) : null}
             </AnimatePresence>

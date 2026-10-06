@@ -163,14 +163,18 @@ export class AgUiEventAccumulator {
 
       case EventType.TOOL_CALL_RESULT: {
         const tcResult = event as ToolCallResultEvent;
-        const resultContent = typeof tcResult.content === "string"
-          ? tcResult.content
-          : JSON.stringify(tcResult.content);
+        const resultContent =
+          typeof tcResult.content === "string"
+            ? tcResult.content
+            : JSON.stringify(tcResult.content);
 
         // Check if tool result contains A2UI operations
         this.inspectA2uiOperations(tcResult.content);
 
-        const toolName = this.toolCallNames.get(tcResult.toolCallId) || (tcResult.metadata?.toolName as string) || "tool";
+        const toolName =
+          this.toolCallNames.get(tcResult.toolCallId) ||
+          (tcResult.metadata?.toolName as string) ||
+          "tool";
         this.steps.push({
           type: "tool_result",
           call_id: tcResult.toolCallId,
@@ -437,7 +441,7 @@ export function agUiEventToCoordEnvelope(
       id: val.id || id,
       from: val.from || from,
       to: val.to || to,
-      kind: (kind as EnvelopeKind),
+      kind: kind as EnvelopeKind,
       topic: val.topic || "a2a-coordination",
       body: val.body || "",
       re: val.re,

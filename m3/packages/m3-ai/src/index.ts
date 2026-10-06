@@ -32,12 +32,21 @@ export {
 // Components
 export { ToolCall } from "./ToolCall";
 export type { ToolCallProps } from "./ToolCall";
-export { Markdown, CodeBlock, InlineMath, BlockMath } from "./Markdown";
+export {
+  Markdown,
+  CodeBlock,
+  InlineMath,
+  BlockMath,
+  externalLinkProps,
+  isExternalHref,
+} from "./Markdown";
 export type {
   MarkdownProps,
   CodeBlockProps,
   InlineMathProps,
   BlockMathProps,
+  MarkdownLinkHandler,
+  MarkdownLinkRenderer,
 } from "./Markdown";
 export { MessageBubble } from "./MessageBubble";
 export type { MessageBubbleProps } from "./MessageBubble";
@@ -53,10 +62,7 @@ export type { ChatComposerProps } from "./ChatComposer";
 // Google & Gemini Desktop / Web benchmark components
 export { GoogleSpotlightBar } from "./GoogleSpotlightBar";
 export type { GoogleSpotlightBarProps } from "./GoogleSpotlightBar";
-export {
-  GeminiAccountMenu,
-  ComposerMoreUploadsMenu,
-} from "./GeminiAccountMenu";
+export { GeminiAccountMenu, ComposerMoreUploadsMenu } from "./GeminiAccountMenu";
 export type {
   GeminiAccountMenuProps,
   ComposerMoreUploadsMenuProps,
@@ -64,7 +70,6 @@ export type {
 } from "./GeminiAccountMenu";
 export { GeminiPersonalContextEdit } from "./GeminiPersonalContextEdit";
 export type { GeminiPersonalContextEditProps } from "./GeminiPersonalContextEdit";
-
 
 // Task components
 export { TaskStatusIcon } from "./TaskStatusIcon";
@@ -105,3 +110,64 @@ export type { A2ATaskTimelineProps, TimelineStep } from "./A2ATaskTimeline";
 // MCP-UI Generative Card
 export { McpAppCard } from "./McpAppCard";
 export type { McpAppCardProps } from "./McpAppCard";
+
+// Local chat: injectable labels, OpenAI-compatible streaming, conversations, grounding, memory
+export {
+  chatLabelsEn,
+  chatLabelsFr,
+  chatLabelsJa,
+  chatLabelsByLang,
+  defaultChatLabels,
+  resolveChatLabels,
+  formatLabel,
+} from "./chatLabels";
+export type { ChatLabels } from "./chatLabels";
+export {
+  ChatStreamError,
+  accumulateToolCall,
+  chatCompletionsUrl,
+  chatReducer,
+  createSseParser,
+  initialChatState,
+  isUnavailableStatus,
+  newMessageId,
+  parseChatCompletionChunk,
+  streamChatCompletion,
+  toOpenAIMessages,
+} from "./openaiChatStream";
+export type {
+  ChatAction,
+  ChatMessage,
+  ChatRole,
+  ChatState,
+  ChatStatus,
+  ChatStreamErrorKind,
+  ChatStreamEvent,
+  OpenAIToolCall,
+  StreamChatOptions,
+} from "./openaiChatStream";
+export { useOpenAIChat } from "./useOpenAIChat";
+export type { UseOpenAIChatOptions, UseOpenAIChatResult } from "./useOpenAIChat";
+export { ConversationList, filterConversations } from "./ConversationList";
+export type { ConversationListProps, ConversationSummary } from "./ConversationList";
+export { ModelUnavailable, clampProgress } from "./ModelUnavailable";
+export type { ModelAvailabilityPhase, ModelUnavailableProps } from "./ModelUnavailable";
+export {
+  CitationChip,
+  CitationList,
+  CitedMarkdown,
+  RefusalNotice,
+  citedNumbers,
+  linkCitationMarkers,
+} from "./citations";
+export type {
+  Citation,
+  CitationChipProps,
+  CitationListProps,
+  CitedMarkdownProps,
+  RefusalNoticeProps,
+} from "./citations";
+export { MemoryPanel } from "./MemoryPanel";
+export type { MemoryItem, MemoryPanelProps } from "./MemoryPanel";
+export { ChatIcon, chatIconNames } from "./chatIcons";
+export type { ChatIconName, ChatIconProps } from "./chatIcons";

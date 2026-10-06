@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-showcase",
-  "version": "3.3.4",
+  "version": "3.3.5",
   "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable shown by the aphrody-app desktop (aphrody-app --showcase).",
   "license": "Apache-2.0",
   "type": "module",
