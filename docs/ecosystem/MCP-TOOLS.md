@@ -7,7 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 21 servers, 393 tool registrations, 376 unique tool names.
+Totals: 20 servers, 379 tool registrations, 377 unique tool names.
 
 ## aphrody — @aphrody/m3-mcp
 
@@ -34,10 +34,10 @@ Kind: kernel-subsystem. 6 tools.
 | Tool | Description |
 | --- | --- |
 | `workspace_automation_inventory` | Scripts under scripts/ directories of a repository or of every repository below a source root, classified check/release/sync/deploy/product (CLI: automation-inventory --json). |
-| `workspace_binaries` | Installed and workspace-built Aphrody binaries with their source and catalogue status; never arbitrary PATH files (CLI: aphrody-ops binaries). |
-| `workspace_bridges` | Rust, Bun, package and API bridge catalogue used by aphrody-ops bridge (CLI: aphrody-ops bridge status). |
+| `workspace_binaries` | Installed and workspace-built Aphrody binaries with their source and catalogue status; never arbitrary PATH files (CLI: yolo ops binaries). |
+| `workspace_bridges` | Rust, Bun, package and API bridge catalogue used by yolo ops bridge (CLI: yolo ops bridge status). |
 | `workspace_build_factory_status` | Where heavy Cargo/Bun work runs (factory or local) and why, from config/build-factory.json and this host's environment (CLI: build-factory status). |
-| `workspace_fleet` | Repositories, pipeline stages and binaries declared for the Aphrody fleet (CLI: aphrody-ops fleet). |
+| `workspace_fleet` | Repositories, pipeline stages and binaries declared for the Aphrody fleet (CLI: yolo ops fleet). |
 | `workspace_inline_inventory` | Inline Python/Bun/Node invocations with scope, reason and the ratchet against config/inline-interpreters.baseline.json (CLI: automation-inventory --inline). |
 
 ## aphrody — aphrody-agent-tools
@@ -195,13 +195,15 @@ Kind: json-catalog. 15 tools.
 
 ## aphrody — aphrody-mcp (GoogleMcpServer)
 
-Kind: rmcp. 64 tools.
+Kind: rmcp. 66 tools.
 
 | Tool | Description |
 | --- | --- |
 | `advanced_recon` | Resolve a host's A/AAAA records and probe a list of TCP ports for OPEN / CLOSED-FILTERED / TIMEOUT, using async tokio sockets (5 s resolve budget, 200 ms per port; ports default to 80, 443, 8080). Th… |
 | `aphrody_a2a_call` | Call the local Aphrody A2A v1 JSON-RPC backend through aphrody-mcp. The endpoint is APHRODY_A2A_ENDPOINT (legacy APHRODY_A2A_URL) or http://127.0.0.1:8788/; only canonical A2A methods are accepted. |
 | `aphrody_describe_image` | Describe an image with a local vision-language model: caption (one short description), dense_region (per-region descriptions with normalised boxes), full_page_ocr (text only, never a description), or… |
+| `aphrody_home_query` | Search the agent home database (one SQLite file per home: `<home>/db/aphrody.sqlite`) with a single hybrid query over document chunks, code-graph nodes and memories (FTS5 plus one reciprocal-rank fus… |
+| `aphrody_home_status` | Status of the agent home database: path, schema version and table counts (sources, files, docs, chunks, graph nodes and edges, memories, sessions). |
 | `aphrody_jev_decide` | Answer typed questions about a state with the Jev decision models, without generating text. Each question is a noul (probability of yes), a choice (one option out of a set) or a score (position along… |
 | `aphrody_job_status` | Inspect the background job queue. With `id`: the job plus its trailing NDJSON log lines. Without: a filtered listing (state/kind/limit). Both include queue-wide counts so a job that no worker handles… |
 | `aphrody_job_submit` | Submit a background job to the persistent queue at ~/.aphrody/jobs/jobs.db and return its id immediately. Executes nothing and downloads nothing: the job stays queued until a worker claims it. Return… |
@@ -308,29 +310,6 @@ Kind: kernel-subsystem. 8 tools.
 | `systemd_start_unit` | Start or activate a systemd service or target |
 | `systemd_stop_unit` | Stop or deactivate a systemd service or target |
 | `systemd_unit_status` | Get detailed status, state, PID, uptime, and dependencies of a specific systemd unit |
-
-## aphrody — aphrody-tauri-mcp (TauriMcp)
-
-Kind: rmcp. 16 tools.
-
-| Tool | Description |
-| --- | --- |
-| `tauri_dom_snapshot` | Read DOM text and accessible elements in a local Aphrody Tauri window. |
-| `tauri_driver_session` | Start, stop or inspect the local Tauri automation session. |
-| `tauri_execute_js` | Evaluate JavaScript in a local Aphrody Tauri webview for explicit UI inspection. |
-| `tauri_find_element` | Find elements by CSS selector in a local Aphrody Tauri window. |
-| `tauri_get_setup_instructions` | Return Aphrody-specific setup instructions for the Tauri MCP consumer. |
-| `tauri_get_styles` | Read computed CSS styles for a local Aphrody Tauri element. |
-| `tauri_interact` | Click, fill, type, focus or scroll an element in a local Aphrody Tauri window. |
-| `tauri_keyboard` | Dispatch a keydown or keyup event to a local Aphrody Tauri element. |
-| `tauri_manage_window` | List, inspect or resize a local Tauri window. |
-| `tauri_read_logs` | Read console entries explicitly buffered by a local Aphrody Tauri webview. |
-| `tauri_screenshot` | Capture a local Aphrody Tauri window as a PNG image. |
-| `tauri_viewport_read` | Read rendered text and viewport dimensions in a local Aphrody Tauri webview. |
-| `tauri_wait_for` | Wait for a CSS selector or text to appear in a local Aphrody Tauri webview. |
-| `tauri_window_list` | List local Aphrody Tauri windows. |
-| `webview_get_pointed_element` | Inspect the DOM element at viewport coordinates in a local Tauri webview. |
-| `webview_select_element` | Select a DOM element by CSS selector and return its geometry in a local Tauri webview. |
 
 ## aphrody — aphrody-winclean
 
