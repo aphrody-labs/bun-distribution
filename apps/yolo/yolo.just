@@ -29,13 +29,13 @@ typecheck:
 
 # Run the installed toolchain binaries directly, without package execution/download runners.
 lint:
-    oxlint apps/yolo/cli/src/ apps/yolo/cli/test/ apps/yolo/web/src/ apps/yolo/forge/src/ packages/engine/
+    oxlint apps/yolo/cli/src/ apps/yolo/cli/test/ apps/yolo/forge/src/ packages/engine/
 
 fmt:
-    oxfmt --write apps/yolo/cli/src/ apps/yolo/cli/test/ apps/yolo/web/src/ apps/yolo/forge/src/ packages/engine/
+    oxfmt --write apps/yolo/cli/src/ apps/yolo/cli/test/ apps/yolo/forge/src/ packages/engine/
 
 fmt-check:
-    oxfmt --check apps/yolo/cli/src/ apps/yolo/cli/test/ apps/yolo/web/src/ apps/yolo/forge/src/ packages/engine/
+    oxfmt --check apps/yolo/cli/src/ apps/yolo/cli/test/ apps/yolo/forge/src/ packages/engine/
 
 # Minimal owned source formatting; imported engines keep an explicit upstream gate.
 rust-fmt:
@@ -97,10 +97,10 @@ cli *args:
     bun run apps/yolo/cli/src/index.ts {{args}}
 
 web-build:
-    cd apps/yolo/web && bun run build
+    cd m3/packages/app-ui && bun run build
 
 web-dev:
-    cd apps/yolo/web && bun run dev
+    cd m3/packages/app-ui && bun run dev
 
 # The desktop host is aphrody-app (--host-info, --runtime-host); the artifact reads target/runtime/aphrody-app.
 desktop-build:
@@ -237,7 +237,7 @@ docs-serve:
 
 # Cleaning
 clean:
-    rm -rf apps/yolo/web/dist apps/yolo/forge/dist
+    rm -rf apps/yolo/forge/dist
     @echo -e "\033[1;32m[OK] Yolo build outputs cleaned\033[0m"
 
 # Publishing (dry-run by default; real publish needs explicit *-run recipes)

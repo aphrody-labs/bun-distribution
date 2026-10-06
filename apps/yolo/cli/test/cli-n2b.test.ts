@@ -17,7 +17,13 @@ afterAll(() => rmSync(work, { recursive: true, force: true }));
 
 function run(args: string[], cwd = work, library = missingLibrary) {
   return Bun.spawnSync(
-    [process.execPath, "--no-install", join(repository, "apps/yolo/cli/src/index.ts"), "n2b", ...args],
+    [
+      process.execPath,
+      "--no-install",
+      join(repository, "apps/yolo/cli/src/index.ts"),
+      "n2b",
+      ...args,
+    ],
     {
       cwd,
       env: {

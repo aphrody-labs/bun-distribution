@@ -118,8 +118,7 @@ describe("parseDfSizeAvail", () => {
 });
 
 describe("yolo host space", () => {
-  const { runHostCommand } =
-    require("../src/host") as typeof import("../src/host");
+  const { runHostCommand } = require("../src/host") as typeof import("../src/host");
   const root = new URL("..", import.meta.url).pathname;
   const transport = (find: string, df: string) => ({
     host: "local" as const,
@@ -228,8 +227,7 @@ describe("variable floor", () => {
   });
 
   it("is read from host-policy.toml per host", () => {
-    const { parsePolicy } =
-      require("../src/host-safety") as typeof import("../src/host-safety");
+    const { parsePolicy } = require("../src/host-safety") as typeof import("../src/host-safety");
     const toml = `[space]\nmin_free = 0.3\nparallel = 4\n[hosts.vps.space]\nmin_free = 0.5\nsplit_depth = 3\n`;
     expect(parsePolicy(toml, "dbfr").space).toEqual({ minFree: 0.3, parallel: 4, splitDepth: 2 });
     expect(parsePolicy(toml, "vps").space).toEqual({ minFree: 0.5, parallel: 4, splitDepth: 3 });
@@ -238,8 +236,7 @@ describe("variable floor", () => {
 });
 
 describe("limiter", () => {
-  const { limiter } =
-    require("../src/host-space") as typeof import("../src/host-space");
+  const { limiter } = require("../src/host-space") as typeof import("../src/host-space");
 
   it("never runs more than the limit at once, keeps every result and runs all tasks", async () => {
     for (const limit of [1, 3, 8]) {

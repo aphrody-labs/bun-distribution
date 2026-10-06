@@ -2,8 +2,15 @@
 import { expect, test } from "bun:test";
 import { resolve } from "node:path";
 import { UnifiedInferenceEngine } from "../../../../packages/engine/core/src/gemma4/inference";
-import { executeTool, TOOLS, ToolExecutionContext } from "../../../../packages/engine/core/src/tools/registry";
-import { handleMcpMessage, TOOLS as compatibilityTools } from "../../../../packages/engine/core/src/mcp/server";
+import {
+  executeTool,
+  TOOLS,
+  ToolExecutionContext,
+} from "../../../../packages/engine/core/src/tools/registry";
+import {
+  handleMcpMessage,
+  TOOLS as compatibilityTools,
+} from "../../../../packages/engine/core/src/mcp/server";
 import { NativeRedisClient } from "../../../../packages/engine/core/src/redis/client";
 import { createApiServer } from "../../../../packages/engine/core/src/server/http";
 

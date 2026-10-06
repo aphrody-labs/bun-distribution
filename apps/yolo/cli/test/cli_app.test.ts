@@ -14,7 +14,7 @@ const rootDir = resolve(import.meta.dir, "../../../..");
 const haveBunFork = existsSync(resolve(rootDir, "vendor/bun/LATEST"));
 const cliPkgPath = resolve(rootDir, "apps/yolo/cli/package.json");
 const cliEntryPath = resolve(rootDir, "apps/yolo/cli/src/index.ts");
-const generatedCatalogPath = resolve(rootDir, "apps/yolo/web/src/generated/bun-catalog.ts");
+const generatedCatalogPath = resolve(rootDir, "m3/packages/app-ui/src/generated/bun-catalog.ts");
 
 describe("YOLO apps/cli Suite (Zero External Dependencies, 100% Native Bun)", () => {
   it("should have apps/cli package.json with zero external runtime dependencies", async () => {

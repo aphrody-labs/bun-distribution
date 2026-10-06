@@ -7,10 +7,12 @@ import { studioSection, studioSections, type StudioSection } from "./navigation"
 export { studioSections, type StudioSection } from "./navigation";
 import { DriveStudio } from "./DriveStudio";
 import { A2AStudio } from "./A2AStudio";
+import { RuntimeStudio } from "./RuntimeStudio";
 
 const panels: Record<StudioSection, ComponentType> = {
   a2a: A2AStudio,
   drive: DriveStudio,
+  runtime: RuntimeStudio,
 };
 
 export function StudioRoute() {

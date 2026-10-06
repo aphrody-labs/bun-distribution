@@ -111,6 +111,6 @@ bun scripts/bundle-report.ts --examples    # bundle sizes (docs/reports/M3-NEXT-
 bun run test                               # unit tests, then the DOM tests (happy-dom preload)
 ```
 
-`yolo web build|dev` runs `bun run build|dev` in `$YOLO_HOME/apps/yolo/web`; `scripts/yolo-example.ts` points `YOLO_HOME` at a temporary
-directory whose `apps/yolo/web` is the example (a symlink under the temp dir), so nothing is written into yolo or this repository.
+`yolo web build|dev` runs `bun run build|dev` in `$YOLO_HOME/m3/packages/app-ui`; `scripts/yolo-example.ts` points `YOLO_HOME` at a temporary
+directory whose `m3/packages/app-ui` is the example (a symlink under the temp dir), so nothing is written into yolo or this repository.
 Migrating an existing app to this stack: `@aphrody/m3-next-migrate` (`next-migrate codemod all <dir>`).

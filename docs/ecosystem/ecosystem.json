@@ -2836,12 +2836,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/yolo-web",
-          "path": "apps/yolo/web",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "@aphrody/yt-subs-sorter",
           "path": "apps/community/creator-kit/extensions/yt-subs-sorter",
           "description": "WebExtension (Chrome, Edge, Brave, Firefox) to sort YouTube subscriptions into groups. No dependency, no network.",
@@ -11768,7 +11762,7 @@
     "sharedRepos": 0,
     "crates": 236,
     "binaries": 9,
-    "bunPackages": 134,
+    "bunPackages": 133,
     "pythonPackages": 8,
     "cliBinaries": 19,
     "cliCommands": 870,

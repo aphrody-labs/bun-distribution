@@ -4,8 +4,8 @@
 //
 //   bun scripts/yolo-example.ts <build|serve|start|export|bench|check> [--example app|tauri] [--json]
 //
-// yolo's `web` verb runs `bun run build|dev` in `$YOLO_HOME/apps/yolo/web`. This script points YOLO_HOME at a directory
-// whose `apps/yolo/web` is the example (a symlink under the temp dir; nothing is written into this repository) and runs
+// yolo's `web` verb runs `bun run build|dev` in `$YOLO_HOME/m3/packages/app-ui`. This script points YOLO_HOME at a directory
+// whose `m3/packages/app-ui` is the example (a symlink under the temp dir; nothing is written into this repository) and runs
 // `bun $YOLO_ROOT/apps/yolo/cli/src/index.ts web build|dev` (YOLO_ROOT: this Aphrody checkout by default). The example
 // scripts run `yolo m3 next`, so Next, Turbopack workers included, runs on Bun; no Node is involved.
 //
@@ -51,14 +51,14 @@ export const ROUTES: Record<Example, [string, number][]> = {
   ],
 };
 
-/** A YOLO_HOME whose `apps/yolo/web` is the example; created under the temp dir, repaired when it points elsewhere. */
+/** A YOLO_HOME whose `m3/packages/app-ui` (the `yolo web` app directory) is the example; created under the temp dir, repaired when it points elsewhere. */
 export function yoloHome(
   example: Example,
   root: string = join(tmpdir(), `m3-next-yolo-${process.getuid?.() ?? 0}`),
 ): string {
   const home = join(root, example);
-  const web = join(home, "apps", "yolo", "web");
-  mkdirSync(join(home, "apps", "yolo"), { recursive: true });
+  const web = join(home, "m3", "packages", "app-ui");
+  mkdirSync(join(home, "m3", "packages"), { recursive: true });
   const target = exampleDir(example);
   try {
     if (lstatSync(web).isSymbolicLink() && readlinkSync(web) === target) return home;

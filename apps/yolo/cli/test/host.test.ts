@@ -921,7 +921,9 @@ keep = ["only-on-dbfr"]
   });
 
   it("the shipped host-policy.toml parses", async () => {
-    const text = await Bun.file(join(import.meta.dir, "../../../../config/host/host-policy.toml")).text();
+    const text = await Bun.file(
+      join(import.meta.dir, "../../../../config/host/host-policy.toml"),
+    ).text();
     const p = parsePolicy(text, "vps");
     expect(p.reclaim.excludeNames).toContain("aphrody-ui");
     expect(p.services.keep).toContain("fail2ban");

@@ -154,16 +154,6 @@
       "canonical": "apps/yolo/cli/README.md"
     },
     {
-      "path": "apps/yolo/web/README.md",
-      "title": "@aphrody/yolo-web",
-      "sha256": "8deb42a19ac1f55edddae206bb99e86dce613e5914d33eb7348777aecb6f9f3b",
-      "bytes": 884,
-      "domain": "yolo",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "apps/yolo/web/README.md"
-    },
-    {
       "path": "config/host/aphrody-os/VPS-TUNING.md",
       "title": "Linux VPS performance tuning (reference)",
       "sha256": "8fcfb4e33e88add9ce387b3621c983ee1bccc260c631e812f72ffa9d539ddfca",
@@ -5206,8 +5196,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "e548d0af2889fdd496d6bce4830a6e18df0b3255784a345f363a38dfe47d1a61",
-      "bytes": 67933,
+      "sha256": "f31d7f27131d2ff7ee009d3e5484b24eb50efafebe7a1e79cb33505a0bfc27b5",
+      "bytes": 67887,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -40806,8 +40796,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "b5fb5f3e6e3d34c724dfd682ea53dc36ab75abaaf2bc7d2dde4a14e653637698",
-      "bytes": 54768,
+      "sha256": "313f22c6ff51ea2a906c6eb1c74bd591f8226a2cffca968f3c6d21be2f2c21fb",
+      "bytes": 54651,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -45696,8 +45686,8 @@
     {
       "path": "m3/packages/m3-next/README.md",
       "title": "@aphrody/m3-next",
-      "sha256": "ddb359386dda6415c67e1808137f3800e45abe10909dfd35d0f1baaa5a2e9fa9",
-      "bytes": 7172,
+      "sha256": "87387462a9f2a65b1b6f0a4b8fc6dd27c3cf18b7b0abd93b01bbd2100d332de1",
+      "bytes": 7182,
       "domain": "",
       "status": "canonical",
       "visibility": "private",

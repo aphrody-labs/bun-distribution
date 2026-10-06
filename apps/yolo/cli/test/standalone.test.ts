@@ -160,7 +160,10 @@ describe("compiled CLI without an installed Bun", () => {
     expect(report.home).toBe(home);
     expect(report.yoloVersion).toBe(version);
     expect(report.runtime.installed).toBe(false);
-    for (const path of ["packages/engine/python/pyproject.toml", "crates/engine/yolo-pyo3/Cargo.toml"]) {
+    for (const path of [
+      "packages/engine/python/pyproject.toml",
+      "crates/engine/yolo-pyo3/Cargo.toml",
+    ]) {
       expect(
         report.components.find((component: { path: string }) => component.path === path).required,
       ).toBe(false);

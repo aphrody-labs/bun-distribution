@@ -50,13 +50,6 @@
         "bun-forge": "./src/main.ts",
       },
     },
-    "apps/yolo/web": {
-      "name": "@aphrody/yolo-web",
-      "version": "0.1.0",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
     "crates/tauri/aphrody-tauri-api": {
       "name": "@aphrody/api",
       "version": "3.0.0-alpha.2",
@@ -1546,8 +1539,6 @@
     "@aphrody/yolo-cli": ["@aphrody/yolo-cli@workspace:apps/yolo/cli"],
 
     "@aphrody/yolo-core": ["@aphrody/yolo-core@workspace:packages/engine/core"],
-
-    "@aphrody/yolo-web": ["@aphrody/yolo-web@workspace:apps/yolo/web"],
 
     "@babel/code-frame": ["@babel/code-frame@7.29.7", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw=="],
 

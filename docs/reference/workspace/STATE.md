@@ -6,7 +6,7 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **235 crates**, **98 packages**, **6 apps** (236 Rust, 103 Bun).
+Totals: **235 crates**, **98 packages**, **5 apps** (236 Rust, 102 Bun).
 
 ## Per domain
 
@@ -32,7 +32,7 @@ Totals: **235 crates**, **98 packages**, **6 apps** (236 Rust, 103 Bun).
 | [tauri](#tauri) | 50 | 28 | 0 | 34 |
 | [ui](#ui) | 15 | 0 | 0 | 0 |
 | [web](#web) | 18 | 7 | 0 | 0 |
-| [yolo](#yolo) | 0 | 0 | 3 | 0 |
+| [yolo](#yolo) | 0 | 0 | 2 | 0 |
 
 ## Workspace exclusions
 
@@ -519,4 +519,3 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `@aphrody/yolo-cli` | [apps/yolo/cli](../../../apps/yolo/cli) | bun app | 1.0.0 | bin | yes | 0 | 2026-10-06 |
 | `@aphrody/bun-forge` | [apps/yolo/forge](../../../apps/yolo/forge) | bun app | 0.1.0 | private | yes | 0 | 2026-10-06 |
-| `@aphrody/yolo-web` | [apps/yolo/web](../../../apps/yolo/web) | bun app | 0.1.0 | private | yes | 0 | 2026-10-05 |

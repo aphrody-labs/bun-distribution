@@ -46,7 +46,7 @@ test("catalog produces a formatted artifact with source/runtime provenance and s
   expect(check.exitCode).toBe(0);
   await generateBunCatalog(root);
   expect(await Bun.file(report.targetCatalogPath).text()).toBe(first);
-  expect(readdirSync(join(root, "apps/yolo/web/src/generated"))).toEqual(["bun-catalog.ts"]);
+  expect(readdirSync(join(root, "m3/packages/app-ui/src/generated"))).toEqual(["bun-catalog.ts"]);
 });
 async function isolatedGeneration(root: string, path: string) {
   const program = `import { generateBunCatalog } from ${JSON.stringify(resolve(import.meta.dir, "../../../../packages/engine/core/src/vendor/catalog.ts"))}; try { await generateBunCatalog(${JSON.stringify(root)}); process.exitCode=0; } catch(error) { console.error(String(error)); process.exitCode=2; }`;
@@ -65,14 +65,14 @@ test("missing global formatter is explicit and cannot report an unwritten artifa
   const result = await isolatedGeneration(root, path);
   expect(result.code).toBe(2);
   expect(result.stderr).toContain("Installed global oxfmt is required");
-  expect(existsSync(join(root, "apps/yolo/web/src/generated/bun-catalog.ts"))).toBe(false);
+  expect(existsSync(join(root, "m3/packages/app-ui/src/generated/bun-catalog.ts"))).toBe(false);
 });
 test.skipIf(process.platform === "win32")(
   "formatter failure preserves the prior artifact and removes only its unique draft",
   async () => {
     const root = fixture();
     const path = join(root, "bin");
-    const directory = join(root, "apps/yolo/web/src/generated");
+    const directory = join(root, "m3/packages/app-ui/src/generated");
     mkdirSync(path);
     mkdirSync(directory, { recursive: true });
     writeFileSync(join(directory, "bun-catalog.ts"), "prior artifact\n");
@@ -95,5 +95,5 @@ test("missing checkout data fails before producing a misleading catalog", async 
   const root = fixture();
   rmSync(join(root, "vendor/bun/docs"), { recursive: true });
   await expect(generateBunCatalog(root)).rejects.toThrow("source data");
-  expect(existsSync(join(root, "apps/yolo/web/src/generated/bun-catalog.ts"))).toBe(false);
+  expect(existsSync(join(root, "m3/packages/app-ui/src/generated/bun-catalog.ts"))).toBe(false);
 });

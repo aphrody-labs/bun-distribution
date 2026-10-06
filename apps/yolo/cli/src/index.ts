@@ -82,6 +82,9 @@ export const renderBenchMarkdown: Bench["renderBenchMarkdown"] = (...args) =>
 let cachedRoot: string | undefined;
 /** The yolo home, resolved on first use (it walks parent directories, which `version` and `help` do not need). */
 const rootDir = (): string => (cachedRoot ??= yoloHome());
+
+/** `yolo web|desktop|tauri`: the web frontend of the single desktop app (m3/packages/app-ui, embedded by crates/ui/app). */
+export const WEB_APP_DIR = "m3/packages/app-ui";
 /** The checkout enclosing the working directory, else the working directory (ai, mcp, api). */
 const workspaceRoot = (): string => findCheckout() ?? process.cwd();
 
@@ -323,7 +326,8 @@ async function main(): Promise<void> {
     case "desktop":
     case "tauri": {
       const sub = args[1] || "build";
-      const webDir = resolve(rootDir(), "apps/yolo/web");
+      // The web frontend of the single desktop app (crates/ui/app embeds its build).
+      const webDir = resolve(rootDir(), WEB_APP_DIR);
       if (!existsSync(webDir)) {
         console.error(`\x1b[31mError:\x1b[0m web app not found at ${webDir}`);
         process.exit(1);

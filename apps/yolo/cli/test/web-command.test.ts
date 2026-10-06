@@ -4,9 +4,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 const fixture = mkdtempSync(join(tmpdir(), "yolo-web-exit-"));
-mkdirSync(join(fixture, "apps/yolo/web"), { recursive: true });
+mkdirSync(join(fixture, "m3/packages/app-ui"), { recursive: true });
 writeFileSync(
-  join(fixture, "apps/yolo/web/package.json"),
+  join(fixture, "m3/packages/app-ui/package.json"),
   JSON.stringify({
     scripts: { build: "bun -e 'process.exit(23)'", dev: "bun -e 'process.exit(24)'" },
   }),

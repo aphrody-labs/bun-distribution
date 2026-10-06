@@ -43,9 +43,14 @@ describe("stack manifest", () => {
     const stack = await loadStack(rootDir);
     const pkg = JSON.parse(readFileSync(join(rootDir, "package.json"), "utf8"));
     const catalog = pkg.workspaces?.catalog ?? {};
-    const ts = pkg.devDependencies.typescript === "catalog:" ? catalog.typescript : pkg.devDependencies.typescript;
-    const oxlint = pkg.devDependencies.oxlint === "catalog:" ? catalog.oxlint : pkg.devDependencies.oxlint;
-    const oxfmt = pkg.devDependencies.oxfmt === "catalog:" ? catalog.oxfmt : pkg.devDependencies.oxfmt;
+    const ts =
+      pkg.devDependencies.typescript === "catalog:"
+        ? catalog.typescript
+        : pkg.devDependencies.typescript;
+    const oxlint =
+      pkg.devDependencies.oxlint === "catalog:" ? catalog.oxlint : pkg.devDependencies.oxlint;
+    const oxfmt =
+      pkg.devDependencies.oxfmt === "catalog:" ? catalog.oxfmt : pkg.devDependencies.oxfmt;
     expect(stack.meta["typescript"]).toBe(ts);
     expect(stack.meta["oxlint"]).toBe(oxlint);
     expect(stack.meta["oxfmt"]).toBe(oxfmt);
@@ -90,7 +95,9 @@ describe("yolo create", () => {
     }
     const pkg = JSON.parse(readFileSync(join(sandbox, "demo-app/package.json"), "utf8"));
     expect(pkg.name).toBe("demo-app");
-    expect(pkg.dependencies["@aphrody/runtime-sdk"]).toMatch(new RegExp(`^file:${rootDir}/packages/(engine/)?runtime$`));
+    expect(pkg.dependencies["@aphrody/runtime-sdk"]).toMatch(
+      new RegExp(`^file:${rootDir}/packages/(engine/)?runtime$`),
+    );
   });
 
   it("applies features in order: web replaces home.ts, desktop adds Tauri and icons", async () => {
@@ -132,7 +139,9 @@ describe("yolo create", () => {
     }
     // the dev dependencies of the base template survive the merge, and the tsconfig compiles TSX
     expect(pkg.devDependencies.typescript).toBeDefined();
-    expect(pkg.dependencies["@aphrody/runtime-sdk"]).toMatch(new RegExp(`^file:${rootDir}/packages/(engine/)?runtime$`));
+    expect(pkg.dependencies["@aphrody/runtime-sdk"]).toMatch(
+      new RegExp(`^file:${rootDir}/packages/(engine/)?runtime$`),
+    );
     const tsconfig = JSON.parse(readFileSync(join(sandbox, "react-app/tsconfig.json"), "utf8"));
     expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
   });

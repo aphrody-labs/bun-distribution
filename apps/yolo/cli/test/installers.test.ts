@@ -73,11 +73,20 @@ function fixture(installer: Installer, externalRuntime = false) {
   const main = join(dir, "main");
   const temp = join(dir, "temp");
   const runtime = externalRuntime ? join(dir, "external-runtime") : join(home, "runtime");
-  for (const path of [home, release, temp, join(main, "bin"), join(main, "packages/engine/runtime")])
+  for (const path of [
+    home,
+    release,
+    temp,
+    join(main, "bin"),
+    join(main, "packages/engine/runtime"),
+  ])
     mkdirSync(path, { recursive: true });
   cpSync(binary, join(main, "bin", installer.executable));
   writeFileSync(join(main, "VERSION"), "2.0.0\n");
-  writeFileSync(join(main, "packages/engine/runtime/package.json"), '{"name":"@aphrody/runtime-sdk"}\n');
+  writeFileSync(
+    join(main, "packages/engine/runtime/package.json"),
+    '{"name":"@aphrody/runtime-sdk"}\n',
+  );
   writeFileSync(join(home, "VERSION"), "1.0.0\n");
   for (const part of ["bin", "packages", "templates", "crates", "sdk", "stack"])
     mkdirSync(join(home, part));
@@ -133,7 +142,13 @@ function pack(
 
 function run(entry: Fixture, installer: Installer) {
   const args = installer.script.endsWith(".ps1")
-    ? [installer.shell, "-NoProfile", "-NonInteractive", "-File", join(root, "apps/yolo", installer.script)]
+    ? [
+        installer.shell,
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        join(root, "apps/yolo", installer.script),
+      ]
     : [installer.shell, join(root, "apps/yolo", installer.script)];
   return Bun.spawnSync(args, {
     cwd: entry.dir,
