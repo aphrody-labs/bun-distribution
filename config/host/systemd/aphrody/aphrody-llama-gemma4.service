@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: Apache-2.0
+# Gemma 4 E2B IT (GGUF Q4_K_M, catalog id gemma-4-e2b-it-q4km) preloaded and served OpenAI-compatible
+# on the vps for dragonballfr.com (shenron-site, shenron-bot), model alias `gemma4-e2b`.
+# Weights: `aphrody model pull gemma-4-e2b-it-q4km` (digest-checked store ~/.aphrody/models).
+# Runtime: upstream llama.cpp release b11415 in ~/.aphrody/runtimes (driven, not linked).
+# Port 8798 is loopback only and never proxied by nginx; health: GET /health (200 once the model is loaded).
+# Weights are locked in RAM (--load-mode mlock) so the first request never waits on a page-in.
+[Unit]
+Description=Aphrody llama-server: Gemma 4 E2B IT preloaded (OpenAI-compatible, 127.0.0.1:8798)
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=10
+StartLimitIntervalSec=600
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/.aphrody/runtimes/llama-b11415
+Environment=LD_LIBRARY_PATH=/home/ubuntu/.aphrody/runtimes/llama-b11415
+ExecStart=/home/ubuntu/.aphrody/runtimes/llama-b11415/llama-server \
+  --model /home/ubuntu/.aphrody/models/hf/unsloth/gemma-4-E2B-it-GGUF/0314792d7f1f7e229411f620751375812bb9faf2/gemma-4-E2B-it-Q4_K_M.gguf \
+  --alias gemma4-e2b \
+  --host 127.0.0.1 --port 8798 \
+  --ctx-size 16384 --parallel 2 --threads 6 --threads-batch 8 \
+  --jinja --reasoning off --cache-reuse 256 \
+  --load-mode mlock --no-webui --metrics
+Restart=always
+RestartSec=5
+TimeoutStartSec=180
+TimeoutStopSec=20
+LimitMEMLOCK=infinity
+MemoryAccounting=true
+MemoryHigh=6G
+MemoryMax=8G
+CPUWeight=80
+Nice=5
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=CAP_IPC_LOCK
+AmbientCapabilities=CAP_IPC_LOCK
+SystemCallArchitectures=native
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-llama-gemma4
+
+[Install]
+WantedBy=multi-user.target

@@ -33,6 +33,28 @@
       "public": true
     },
     {
+      "id": "aphrody-llama-gemma4",
+      "application": "aphrody",
+      "kind": "llama-server-openai",
+      "runtime": "native",
+      "unit": "aphrody-llama-gemma4.service",
+      "health": "http://127.0.0.1:8798/health",
+      "port": 8798,
+      "capabilities": [
+        "chat"
+      ],
+      "sourceRepo": "aphrody",
+      "workingDirectory": "/home/ubuntu/.aphrody/runtimes/llama-b11415",
+      "model": {
+        "catalogId": "gemma-4-e2b-it-q4km",
+        "alias": "gemma4-e2b",
+        "ref": "hf:unsloth/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf@0314792d7f1f7e229411f620751375812bb9faf2",
+        "sha256": "740185b21d22ceb83a11c3aa62ad5842ef32c70f6096d756bbee85a1e4ec34b8"
+      },
+      "note": "Gemma 4 E2B IT preloaded (weights locked in RAM) by upstream llama.cpp b11415, OpenAI-compatible /v1 on loopback only, never proxied by nginx; consumers on the vps (shenron-site, shenron-bot) read APHRODY_AI_CHAT_BASE_URL=http://127.0.0.1:8798/v1 and APHRODY_AI_CHAT_MODEL=gemma4-e2b. Weights pulled by `aphrody model pull gemma-4-e2b-it-q4km`; unit config/host/systemd/aphrody/aphrody-llama-gemma4.service",
+      "public": false
+    },
+    {
       "id": "aphrody-discord-dev",
       "application": "aphrody-discord",
       "kind": "discord-interactions-and-gateway",
