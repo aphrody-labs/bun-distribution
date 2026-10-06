@@ -14,8 +14,15 @@ ligne de table. Les bindings sont des adaptateurs sans logique :
 | Cible | Crate / package | Forme |
 | :-- | :-- | :-- |
 | Web | `crates/ai/rag-wasm` (wasm-bindgen `--target web`) + `@aphrody/rag-core/wasm` | ESM, `loadRagWasm()` |
-| `cargo check -p aphrody-ffi` (re-export `aphrody_rag_*`) | ok ; présence des symboles dans le cdylib `aphrody-ffi` complet non vérifiée (pas de build release) |
+| `cargo check -p aphrody-ffi` (re-export `aphrody_rag_*`) | ok ; `cargo build --release -p aphrody-ffi` (VPS, 5 min 39 s) : `nm -D` montre les 6 symboles `aphrody_rag_*` ; les 23 tests Bun FFI passent contre ce cdylib complet (395 Mo, non strippé), top-10 cosinus 20 000 x 384 en 3,2 ms |
 | `cargo clippy -D warnings` (3 crates, `--all-targets`) | ok |
+| `nextest run -p aphrody-command` après ajout de `Commands::Pure` | 195 tests ok sur 195 |
+| `cargo test` pure, wasm, translate-core, translate | 8 + 2 + 15 + 3 tests et doctests ok |
+| `cargo clippy -D warnings` (pure, wasm, translate-core, translate, command, `--all-targets`) | ok |
+| `cargo check --target wasm32-unknown-unknown` (aphrody-command, translate, translate-core, pure) | ok, 0 avertissement |
+| wasm32 `release` (`aphrody-command-wasm`, tout le crate pur) | 5 600 803 o bindgen, 4 234 221 o après `wasm-opt -Oz`, 1,54 Mo gzip |
+| `@aphrody/cli-wasm` : tests Bun, dont parité avec `aphrody pure` natif (`APHRODY_NATIVE_BIN`, build debug) | 7 tests, 15 cas à sortie et code identiques |
+| `bun pm pack --dry-run` (`@aphrody/cli-wasm`, `@aphrody/rag-core`, `@aphrody/shell-web`) | 8, 12 et 7 fichiers, `.wasm` inclus |
 | Desktop natif | dépendance Rust directe sur `aphrody-rag-core` (pas de binding) | rlib |
 | Backend Bun | `crates/ai/rag-ffi` (rlib), réexporté par l'unique cdylib `aphrody-ffi` + `@aphrody/rag-core/ffi` | `openRagFfi()` |
 
@@ -61,19 +68,30 @@ Le `.wasm` n'était pas dans le paquet. `build:wasm` passe maintenant par le mê
 invalide pour un Worker, `location` absent de l'objet) retiré dans `src/index.ts` et `src/worker.ts`, ce qui
 rétablit le typecheck et le test du transport worker.
 
-## WASM de la CLI `aphrody`
+## WASM de la CLI `aphrody` : crate pur
 
-Mesuré le 2026-10-06 (`cargo check --target wasm32-unknown-unknown`) :
+Mesure de départ (2026-10-06) : `aphrody-command` compile déjà en wasm32 (26 s) mais comme stub (`run_wasm` :
+version et aide), tout le reste de `Commands` et ses dépendances (tokio, mio, reqwest, rustls/ring, git, ssh,
+obscura, ort, rusqlite) étant sous `cfg(not(target_arch = "wasm32"))`. Les capacités pures, elles, compilaient
+déjà en wasm32 (rag-core oxc inclus, toolcall-repair, web-extract, translate).
 
-- `aphrody-command` compile déjà en wasm32 (26 s, 0 avertissement), mais comme stub voulu : `run_wasm` n'affiche
-  que version et aide ; toutes les variantes de `Commands` et leurs dépendances (tokio full, mio, reqwest,
-  rustls/ring, git, ssh, obscura, web-service, ort, rusqlite) sont sous `cfg(not(target_arch = "wasm32"))`.
-- Les capacités pures, elles, compilent en wasm32 : `aphrody-rag-core` (oxc inclus), `aphrody-toolcall-repair`,
-  `aphrody-web-extract`, `aphrody-translate`.
-- Bloquant pour un vrai WASM de la CLI : `Commands` est une énumération clap unique couplée au runtime async natif ;
-  exposer des sous-commandes pures impose de séparer un crate pur (parsing clap + exécution sans E/S), ce qui touche
-  `aphrody-command` (hors claim). Non fait. Voie retenue : le WASM porte les capacités (`api.rs`), pas la CLI ;
-  `toolcall-repair` et `web-extract` peuvent rejoindre une surface `call_json` du même modèle, sans binaire CLI.
+Réalisé (claim `aphrody-command-pure`) :
+
+- `crates/infra/aphrody-command-pure` : parsing clap et exécution de `aphrody pure <groupe> <commande>`, sans
+  réseau, processus, tokio, git ni ssh. Entrées par un trait `PureIo` (`StdIo` natif et wasip1, `MemoryIo`
+  navigateur et tests). Groupes : `rag` (`ops`, `call`, `chunk` : forwarde vers `rag-core::api`, source unique
+  partagée avec les bindings wasm et FFI), `toolcall` (`repair`, `validate`, `extract`), `html` (`extract`,
+  `markdown`, `simhash`), `text` (`comments`, `scrub`, `aphrodify`, `is-japanese`).
+- `crates/ai/translate-core` : étages purs de `aphrody-translate` (extraction de commentaires, nettoyage des
+  marqueurs IA, style Aphrody, détection du japonais) déplacés et réexportés par `aphrody-translate`, dont le
+  réseau (reqwest, tokio) reste. Chemins publics inchangés. Doctest préexistant cassé de `cli.rs` corrigé.
+- `aphrody-command` consomme le crate pur : variante `Commands::Pure` (dispatch natif, plus bras de `run_wasm`).
+- `crates/infra/aphrody-command-wasm` (wasm-bindgen, une fonction `run`) et `packages/infra/cli-wasm`
+  (`@aphrody/cli-wasm`, `loadCliWasm`, `cli.json/text/run`) ; pack à blanc seulement.
+
+Non couvert, et pourquoi : `translate` réseau (MyMemory) et `web` avec fetch dépendent de reqwest/tokio ; `rag`
+index/recherche (`aphrody-rag`) dépend de SQLite et de l'embedding natif. Un sous-ensemble de plus dans le crate
+pur demande d'abord de séparer sa partie sans E/S, comme pour translate.
 
 ## Résultats (2026-10-06)
 
@@ -86,6 +104,6 @@ Mesuré le 2026-10-06 (`cargo check --target wasm32-unknown-unknown`) :
 | Bun, backend FFI | 23 tests (contrat sur les deux backends, résultat plus grand que le scratch) ok |
 | Dérive des exports C (`ffi-drift`, `ffi-symbols`) | ok |
 | Micro-mesures Bun (20 000 x 384 f32, top-10 cosinus) | wasm 8,0 ms, FFI 4,4 ms ; chunk 1,3 Mo de prose : wasm 16 ms, FFI 11,5 ms |
-| `cargo check -p aphrody-ffi` (re-export `aphrody_rag_*`) | ok ; présence des symboles dans le cdylib `aphrody-ffi` complet non vérifiée (pas de build release) |
+| `cargo check -p aphrody-ffi` (re-export `aphrody_rag_*`) | ok ; `cargo build --release -p aphrody-ffi` (VPS, 5 min 39 s) : `nm -D` montre les 6 symboles `aphrody_rag_*` ; les 23 tests Bun FFI passent contre ce cdylib complet (395 Mo, non strippé), top-10 cosinus 20 000 x 384 en 3,2 ms |
 | `cargo clippy -D warnings` (3 crates, `--all-targets`) | ok |
 | Desktop natif | `aphrody-rag-core` testé en natif (rlib, mêmes 21 tests) ; aucune couche de binding |

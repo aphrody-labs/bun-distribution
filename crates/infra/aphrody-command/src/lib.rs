@@ -309,6 +309,8 @@ impl AgentOptions {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
+    Pure(aphrody_command_pure::PureArgs),
     /// Index and retrieve local code and documentation.
     #[cfg(all(not(target_arch = "wasm32"), feature = "rag"))]
     Rag(rag_cmd::RagArgs),
@@ -1673,6 +1675,11 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         Some(Commands::Auth { force }) => {
             commands::AuthCommand { force }.execute(ctx).await?;
         },
+        Some(Commands::Pure(args)) => {
+            let output = aphrody_command_pure::run(&args.command, &mut aphrody_command_pure::StdIo)
+                .map_err(|e| miette::miette!("{e}"))?;
+            print!("{output}");
+        },
         Some(Commands::Version { json }) => {
             VersionCommand { json }.execute(ctx).await?;
         },
@@ -2399,8 +2406,15 @@ pub fn run_wasm() {
                 env!("CARGO_PKG_VERSION"),
             );
         },
+        Some(Commands::Pure(args)) => {
+            match aphrody_command_pure::run(&args.command, &mut aphrody_command_pure::StdIo) {
+                Ok(output) => print!("{output}"),
+                Err(error) => eprintln!("{error}"),
+            }
+        },
         Some(other) => {
             let name = match other {
+                Commands::Pure(_) => unreachable!(),
                 Commands::Auth { .. } => "auth",
                 Commands::Mirror { .. } => "mirror",
 

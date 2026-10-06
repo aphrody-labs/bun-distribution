@@ -4,9 +4,11 @@
 //!
 //! Exemples :
 //!
-//!     aphrody-translate --root . --dry-run
-//!     aphrody-translate --root . --in-place --languages rust,ts
-//!     aphrody-translate --root . --no-translate     # juste scrub + aphrodify
+//! ```text
+//! aphrody-translate --root . --dry-run
+//! aphrody-translate --root . --in-place --languages rust,ts
+//! aphrody-translate --root . --no-translate     # juste scrub + aphrodify
+//! ```
 
 use std::{
     ffi::OsString,

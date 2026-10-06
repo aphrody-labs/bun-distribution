@@ -140,13 +140,7 @@ impl Translator {
 
     /// Détecte si le texte contient des caractères japonais (Kanji, Hiragana, Katakana).
     pub fn is_japanese(text: &str) -> bool {
-        text.chars().any(|c| {
-            matches!(c,
-                '\u{3040}'..='\u{309F}' | // Hiragana
-                '\u{30A0}'..='\u{30FF}' | // Katakana
-                '\u{4E00}'..='\u{9FAF}'   // CJK Unified Ideographs
-            )
-        })
+        aphrody_translate_core::is_japanese(text)
     }
 
     /// Traduit un texte vers le français (source japonaise détectée, sinon anglaise).

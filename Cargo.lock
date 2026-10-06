@@ -947,6 +947,7 @@ dependencies = [
  "aphrody-bindgen",
  "aphrody-chat",
  "aphrody-code-graph",
+ "aphrody-command-pure",
  "aphrody-config",
  "aphrody-create-tauri-app",
  "aphrody-diagnostics",
@@ -1050,6 +1051,27 @@ dependencies = [
  "webbrowser",
  "which 8.0.6",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "aphrody-command-pure"
+version = "1.0.0"
+dependencies = [
+ "aphrody-rag-core",
+ "aphrody-toolcall-repair",
+ "aphrody-translate-core",
+ "aphrody-web-extract",
+ "clap",
+ "serde_json",
+]
+
+[[package]]
+name = "aphrody-command-wasm"
+version = "1.0.0"
+dependencies = [
+ "aphrody-command-pure",
+ "serde_json",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -3975,11 +3997,11 @@ name = "aphrody-translate"
 version = "1.0.0"
 dependencies = [
  "anyhow",
+ "aphrody-translate-core",
  "clap",
  "dashmap",
  "hex",
  "ignore",
- "regex",
  "reqwest 0.13.5",
  "rustls",
  "serde",
@@ -3991,6 +4013,13 @@ dependencies = [
  "urlencoding",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+]
+
+[[package]]
+name = "aphrody-translate-core"
+version = "1.0.0"
+dependencies = [
+ "regex",
 ]
 
 [[package]]

@@ -7,101 +7,15 @@
 //!   3. translate   → appelle MyMemory (gratuit) avec cache JSON persistant
 //!   4. aphrodify   → applique le style Aphrody (sobre, impersonnel, focus code)
 
-pub mod ai_patterns;
-pub mod aphrodify;
 #[cfg(not(target_arch = "wasm32"))]
 mod cli;
-pub mod extract;
 pub mod translate;
-
-use std::path::Path;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use cli::cli_main;
+// The pure stages (extraction, AI-marker scrubbing, Aphrody style, language detection) live in
+// `aphrody-translate-core`; they are re-exported here so existing paths keep working.
+pub use aphrody_translate_core::{
+    Comment, CommentStyle, Lang, ai_patterns, aphrodify, extract, is_japanese,
+};
 pub use translate::{Backend, Translator};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Lang {
-    Rust,
-    TypeScript,
-    JavaScript,
-    Python,
-    Go,
-    C,
-    Cpp,
-    Shell,
-    Toml,
-    Markdown,
-    Other,
-}
-
-impl Lang {
-    pub fn from_path(p: &Path) -> Self {
-        let ext = p.extension().and_then(|s| s.to_str()).unwrap_or("");
-        match ext {
-            "rs" => Lang::Rust,
-            "ts" | "tsx" => Lang::TypeScript,
-            "js" | "jsx" | "mjs" | "cjs" => Lang::JavaScript,
-            "py" | "pyi" => Lang::Python,
-            "go" => Lang::Go,
-            "c" | "h" => Lang::C,
-            "cc" | "cpp" | "cxx" | "hpp" | "hxx" => Lang::Cpp,
-            "sh" | "bash" | "zsh" => Lang::Shell,
-            "toml" => Lang::Toml,
-            "md" | "markdown" => Lang::Markdown,
-            _ => Lang::Other,
-        }
-    }
-
-    pub fn supports_comments(&self) -> bool {
-        !matches!(self, Lang::Other)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Comment {
-    pub raw: String,
-    pub body: String,
-    pub start: usize,
-    pub end: usize,
-    pub style: CommentStyle,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CommentStyle {
-    LineSlashSlash,
-    LineHash,
-    BlockSlashStar,
-    DocSlashSlashSlash,
-    DocSlashSlashBang,
-    DocSlashStarStar,
-    PythonTripleQuote,
-    HtmlBlock,
-}
-
-impl CommentStyle {
-    pub fn rewrap(&self, body: &str) -> String {
-        match self {
-            CommentStyle::LineSlashSlash => format!("// {body}"),
-            CommentStyle::LineHash => format!("# {body}"),
-            CommentStyle::DocSlashSlashSlash => format!("/// {body}"),
-            CommentStyle::DocSlashSlashBang => format!("//! {body}"),
-            CommentStyle::BlockSlashStar => {
-                if body.contains('\n') {
-                    format!("/*\n{body}\n */")
-                } else {
-                    format!("/* {body} */")
-                }
-            },
-            CommentStyle::DocSlashStarStar => {
-                if body.contains('\n') {
-                    format!("/**\n{body}\n */")
-                } else {
-                    format!("/** {body} */")
-                }
-            },
-            CommentStyle::PythonTripleQuote => format!("\"\"\"{body}\"\"\""),
-            CommentStyle::HtmlBlock => format!("<!-- {body} -->"),
-        }
-    }
-}

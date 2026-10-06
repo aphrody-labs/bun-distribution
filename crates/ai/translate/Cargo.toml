@@ -20,7 +20,7 @@ workspace = true
 
 # --- Unconditional deps (pure Rust, no OS primitives required) ---------------
 [dependencies]
-regex        = { workspace = true }
+aphrody-translate-core = { workspace = true }
 serde        = { workspace = true }
 serde_json   = { workspace = true }
 anyhow       = { workspace = true }

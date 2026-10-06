@@ -91,6 +91,8 @@ clap_complete = { workspace = true }
 miette        = { workspace = true }
 async-trait   = { workspace = true }
 aphrody-base          = { workspace = true }
+# Pure sub-commands shared with the wasm32 targets.
+aphrody-command-pure  = { workspace = true }
 serde         = { workspace = true }
 serde_json    = { workspace = true }
 chrono        = { workspace = true, features = ["serde"] }

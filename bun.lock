@@ -1011,6 +1011,14 @@
         "googleapis": "catalog:",
       },
     },
+    "packages/infra/cli-wasm": {
+      "name": "@aphrody/cli-wasm",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/infra/ovh": {
       "name": "@aphrody/ovh",
       "version": "0.2.0",
@@ -1352,6 +1360,8 @@
     "@aphrody/bun-test-dom": ["@aphrody/bun-test-dom@workspace:packages/bun/test-dom"],
 
     "@aphrody/canvas": ["@aphrody/canvas@workspace:m3/packages/canvas"],
+
+    "@aphrody/cli-wasm": ["@aphrody/cli-wasm@workspace:packages/infra/cli-wasm"],
 
     "@aphrody/discord-kit": ["@aphrody/discord-kit@workspace:packages/discord/kit"],
 
