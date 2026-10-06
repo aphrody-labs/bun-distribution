@@ -21,6 +21,8 @@ export interface ForgeConfig {
   branch: string;
   profile: string;
   lto: boolean;
+  /** Highest GLIBC version the artifact may require (hosts that install it run an older glibc than the build host); null disables the step. */
+  glibcCeiling: string | null;
   scratch: { mode: ScratchMode; size: string };
   watch: { intervalSeconds: number; everyCommit: boolean; historyDepth: number };
   toolchain: {
@@ -442,6 +444,7 @@ export interface Receipt {
   steps: StepRecord[];
   ok: boolean;
   artifact?: { path: string; sha256: string; bytes: number };
+  glibc?: { ceiling: string; maxBefore: string | null; maxAfter: string | null; patched: string[] };
   smoke?: unknown;
   startedAt: string;
   finishedAt: string;

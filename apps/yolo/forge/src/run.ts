@@ -14,6 +14,7 @@ import {
   statfsSync,
   writeFileSync,
 } from "node:fs";
+import { auditGlibc, lowerGlibcCeiling } from "./glibc.ts";
 import { availableParallelism, totalmem, userInfo } from "node:os";
 import { dirname, join } from "node:path";
 import {
@@ -480,7 +481,17 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
       const dest = join(out, "bun");
       await Bun.write(dest, Bun.file(built));
       await run(["chmod", "+x", dest]);
-      const bytes = await Bun.file(dest).bytes();
+      let bytes = await Bun.file(dest).bytes();
+      const ceiling = options.config.glibcCeiling;
+      if (ceiling) {
+        const maxBefore = auditGlibc(bytes, ceiling).maxGlibc;
+        const result = lowerGlibcCeiling(bytes, ceiling);
+        if (result.patched.length > 0) {
+          await Bun.write(dest, bytes);
+          bytes = await Bun.file(dest).bytes();
+        }
+        receipt.glibc = { ceiling, maxBefore, maxAfter: result.maxGlibc, patched: result.patched };
+      }
       receipt.artifact = {
         path: dest,
         sha256: new Bun.CryptoHasher("sha256").update(bytes).digest("hex"),

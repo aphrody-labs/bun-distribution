@@ -5,6 +5,7 @@
   "branch": "main",
   "profile": "release",
   "lto": true,
+  "glibcCeiling": "2.39",
   "scratch": {
     "mode": "auto",
     "size": "96G"
