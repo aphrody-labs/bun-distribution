@@ -86,6 +86,15 @@ Code graph: Graphify (`uv tool install graphifyy`, skill `/graphify`) indexes fi
 `graphify query "<question>"`, `graphify explain "<node>"` or `graphify path "A" "B"` over broad greps when
 `graphify-out/graph.json` exists. The output is machine-local and git-ignored.
 
+Agent home (one database, one pipeline, one RAG; plan in
+[docs/plans/agent-home-pipeline/PLAN.md](docs/plans/agent-home-pipeline/PLAN.md)): `aphrody home index [dir]` scans,
+builds the code graph, chunks and indexes into `<home>/db/aphrody.sqlite` (`~/.aphrody`, or a domain home with
+`--profile aphrody|dbfr|ie`), incrementally by content hash; `aphrody home query "<text>"` is the single hybrid
+search over chunks, graph nodes and memories (MCP `aphrody_home_query`); `aphrody graph build|query|explain|path|report`
+is the native code graph (Graphify stays the parity oracle until the measured criteria pass). `yolo scan --ingest`
+and `yolo train` delegate to the same binary. Migrations and imports are additive: `aphrody home import ...` is a dry
+run unless `--apply`, and every apply takes a checksum-verified backup first.
+
 ## Builds and validation
 
 Bun gates (root `package.json`): `bun run bun:check`, `typecheck`, `lint`,
