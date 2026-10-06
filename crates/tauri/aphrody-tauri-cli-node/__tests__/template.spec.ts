@@ -18,7 +18,7 @@ import { beforeAll, describe, it } from 'bun:test'
 if (!process.env.CI) {
   beforeAll(() => {
     const cliDir = resolve(__dirname, '..')
-    exec('pnpm', ['build:debug'], { cwd: cliDir })
+    exec('bun', ['run', 'build:debug'], { cwd: cliDir })
   })
 }
 
@@ -49,7 +49,8 @@ describe('[CLI] @aphrody/cli template', () => {
       process.cwd(),
       '--force',
       '--tauri-path',
-      resolve(__dirname, '../../..'),
+      // The monorepo root: the generated project depends on <root>/crates/tauri/aphrody-*.
+      resolve(__dirname, '../../../..'),
       '--before-build-command',
       '',
       '--before-dev-command',

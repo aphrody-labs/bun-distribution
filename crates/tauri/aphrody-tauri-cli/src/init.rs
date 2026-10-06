@@ -311,7 +311,7 @@ fn render_tauri_config(
 /// `use tauri::…` and `tauri/custom-protocol` keep working.
 ///
 /// When `tauri_path` is provided the dependencies point to the crates inside that directory
-/// (`<tauri_path>/crates/aphrody-*`).
+/// (`<tauri_path>/crates/tauri/aphrody-*`, the monorepo layout).
 fn tauri_dependencies_data(
   tauri_path: Option<&Path>,
   metadata: &VersionMetadata,
@@ -321,7 +321,7 @@ fn tauri_dependencies_data(
     let path_dep = |package: &str| {
       to_json(format!(
         "{{  package = {package:?}, path = {:?} }}",
-        resolve_tauri_path(tauri_path, &format!("crates/{package}"))
+        resolve_tauri_path(tauri_path, &format!("crates/tauri/{package}"))
       ))
     };
     data.insert("tauri_dep", path_dep("aphrody-tauri"));
@@ -425,7 +425,7 @@ mod tests {
     );
     assert_eq!(
       dep.get("package").and_then(|p| p.as_str()),
-      crate_dir.strip_prefix("crates/"),
+      crate_dir.strip_prefix("crates/tauri/"),
       "dependency must use the Aphrody package: {dep:?}"
     );
     let path = dep
@@ -439,17 +439,17 @@ mod tests {
     assert_path_dependency(
       dependency(manifest, "dependencies", "tauri"),
       tauri_path,
-      "crates/aphrody-tauri",
+      "crates/tauri/aphrody-tauri",
     );
     assert_path_dependency(
       dependency(manifest, "build-dependencies", "tauri-build"),
       tauri_path,
-      "crates/aphrody-tauri-build",
+      "crates/tauri/aphrody-tauri-build",
     );
     assert_path_dependency(
       dependency(manifest, "dependencies", "tauri-runtime-cef"),
       tauri_path,
-      "crates/aphrody-tauri-runtime-cef",
+      "crates/tauri/aphrody-tauri-runtime-cef",
     );
     assert!(
       !manifest.contains_key("patch"),
