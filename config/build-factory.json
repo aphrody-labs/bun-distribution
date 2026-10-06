@@ -53,8 +53,7 @@
   "repositories": {
     "aphrody": "/srv/aphrody-build/workspaces/aphrody",
     "yolo": "/srv/aphrody-build/workspaces/yolo",
-    "iecode": "/srv/aphrody-build/workspaces/iecode",
-    "aphrody-py": "/srv/aphrody-build/workspaces/aphrody-py"
+    "iecode": "/srv/aphrody-build/workspaces/iecode"
   },
   "next": {
     "image": "node:22-bookworm-slim",

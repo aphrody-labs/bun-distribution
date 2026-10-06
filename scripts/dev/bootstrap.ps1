@@ -70,7 +70,7 @@ if (-not $SkipSources) { bun run sources:sync; if ($LASTEXITCODE -ne 0) { throw 
 cargo fetch --locked
 if ($LASTEXITCODE -ne 0) { throw 'Cargo dependency fetch failed' }
 if (-not $SkipPython) {
-  $pyRoot = Join-Path (Split-Path $root -Parent) 'aphrody-py'
+  $pyRoot = Join-Path $root 'py'
   if (Test-Path (Join-Path $pyRoot 'pyproject.toml')) {
     Push-Location $pyRoot
     try { uv sync --all-packages --locked; if ($LASTEXITCODE -ne 0) { throw 'Python workspace sync failed' } }

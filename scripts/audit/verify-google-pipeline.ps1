@@ -4,7 +4,7 @@
 [CmdletBinding()]
 param(
     [string]$AphrodyRoot = (Join-Path $PSScriptRoot '..\..'),
-    [string]$PythonRoot = (Join-Path $PSScriptRoot '..\..\..\aphrody-py'),
+    [string]$PythonRoot = (Join-Path $PSScriptRoot '..\..\py'),
     [switch]$StaticOnly
 )
 
@@ -103,7 +103,7 @@ $pythonUvVersion = $pythonUvMatch.Groups[1].Value
 $toolchainManifestValue = Get-Content -LiteralPath $toolchainManifest -Raw | ConvertFrom-Json
 $monorepoUvVersion = [string]$toolchainManifestValue.toolchains.uv.version
 if ($pythonUvVersion -ne $monorepoUvVersion) {
-    throw "uv pin mismatch: monorepo config/system-packages.json requires $monorepoUvVersion, but aphrody-py requires $pythonUvVersion. Align the workspace manifests before running the Python gate."
+    throw "uv pin mismatch: monorepo config/system-packages.json requires $monorepoUvVersion, but py/ requires $pythonUvVersion. Align the workspace manifests before running the Python gate."
 }
 
 # These source checks reject literal key assignments without reading local env
@@ -132,7 +132,7 @@ if ($StaticOnly) { return }
 $uvVersionOutput = & uv --version
 if ($LASTEXITCODE -ne 0) { throw 'Could not query the uv version for the Python gate.' }
 if ($uvVersionOutput -notmatch "\b$([regex]::Escape($pythonUvVersion))\b") {
-    throw "Python gate requires uv $pythonUvVersion from aphrody-py/pyproject.toml; found $uvVersionOutput."
+    throw "Python gate requires uv $pythonUvVersion from py/pyproject.toml; found $uvVersionOutput."
 }
 
 $pwsh = (Get-Command pwsh -ErrorAction Stop).Source

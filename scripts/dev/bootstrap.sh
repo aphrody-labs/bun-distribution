@@ -54,7 +54,7 @@ bun install --frozen-lockfile
 if (( skip_sources == 0 )); then bun run sources:sync; fi
 cargo fetch --locked
 if (( skip_python == 0 )); then
-  py_root="$(dirname "$root")/aphrody-py"
+  py_root="$root/py"
   if [[ -f "$py_root/pyproject.toml" ]]; then (cd "$py_root" && uv sync --all-packages --locked); fi
 fi
 printf 'Bootstrap complete for %s (Rust %s, Bun %s, uv %s).\n' "$root" "$channel" "$bun_pin" "$uv_pin"

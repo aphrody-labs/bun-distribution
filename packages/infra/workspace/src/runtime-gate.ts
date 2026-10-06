@@ -19,12 +19,12 @@ export async function runRuntimeGate(args: string[]): Promise<number> {
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--python-root") pythonRoot = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: yolo ops runtime-gate [--root <aphrody>] [--python-root <aphrody-py>]");
+      console.log("Usage: yolo ops runtime-gate [--root <aphrody>] [--python-root <py>]");
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
   if (!root) throw new Error("--root requires an aphrody-ai repository path");
-  pythonRoot = resolve(root, pythonRoot ?? "../aphrody-py");
+  pythonRoot = resolve(root, pythonRoot ?? "py");
   const checks: Check[] = [
     { name: "Bun runtime", command: "bun", args: ["--version"] },
     { name: "Bun Google tests", command: "bun", args: ["test", "packages/google/test"] },

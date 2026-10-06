@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Python / uv ecosystem module: one structured, documented, automated bump of the uv pin, every `uv.lock` of the
- * Python workspace (default `~/aphrody-py`, the first `inventory.pythonRoots` entry of config/deps/watch.json),
+ * Python workspace (default `py/`, the first `inventory.pythonRoots` entry of config/deps/watch.json),
  * the managed interpreters and the Python gates. Doc: docs/operations/infra/update/UV.md.
  *
  *   status    uv installed vs pinned vs latest, `required-version` and CI pins, `uv lock --check` per lock,
@@ -564,7 +564,7 @@ export function pythonRoot(c: Ctx, override?: string): string | undefined {
   const configured =
     c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("config/deps/watch.json", {}).inventory
       ?.pythonRoots ?? [];
-  const candidates = [override, process.env.APHRODY_PY_ROOT, ...configured, "~/aphrody-py"]
+  const candidates = [override, process.env.APHRODY_PY_ROOT, ...configured, "py"]
     .filter((x): x is string => !!x)
     .map((x) => resolve(c.root, expandHome(x)));
   return candidates.find(

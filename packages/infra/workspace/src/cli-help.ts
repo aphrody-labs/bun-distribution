@@ -25,7 +25,7 @@ interface SourceCli {
 
 async function sourceCliIndex(catalog: any, root: string): Promise<SourceCli[]> {
   const repositories = catalog.repos.filter((repo: any) =>
-    ["aphrody", "aphrody-py", "iecode"].includes(repo.name),
+    ["aphrody", "iecode"].includes(repo.name),
   );
   const groups = await Promise.all(
     repositories.map(async (repo: any) => {

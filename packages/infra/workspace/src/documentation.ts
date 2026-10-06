@@ -112,7 +112,7 @@ export function loadDocumentationConfig(root: string): DocumentationConfig {
     if (!/^[a-z0-9][a-z0-9-]*$/.test(source.id) || ids.has(source.id))
       throw new Error(`Duplicate or invalid documentation source id: ${source.id}`);
     ids.add(source.id);
-    if (![".", "../aphrody-py", "../iecode"].includes(source.root))
+    if (![".", "../iecode"].includes(source.root))
       throw new Error(`Unmanaged source root: ${source.root}`);
   }
   return config;
@@ -264,7 +264,7 @@ export async function generateDocumentation(
   )
     failures++;
   for (const target of config.sources) {
-    // Sibling repositories (../aphrody-py, ../iecode) are not checked out on every host.
+    // Sibling repositories (../iecode) are not checked out on every host.
     if (!existsSync(resolve(root, target.root))) {
       console.warn(`docs: skipped ${target.root}: repository not present on this host`);
       continue;

@@ -56,7 +56,7 @@ pub struct JobOutcome {
     pub duration_secs: f64,
 }
 
-/// Locate the shared `aphrody-py` workspace from the checkout or its sibling.
+/// Locate the shared Python workspace: `APHRODY_PY_ROOT`, else the `py/` directory of the checkout.
 #[must_use]
 pub fn find_python_train_project(repo_root: &Path) -> PathBuf {
     if let Some(configured) = std::env::var_os("APHRODY_PY_ROOT") {
@@ -70,16 +70,8 @@ pub fn find_python_train_project(repo_root: &Path) -> PathBuf {
     if is_workspace(repo_root) {
         return repo_root.to_path_buf();
     }
-    for ancestor in repo_root.ancestors() {
-        if let Some(parent) = ancestor.parent() {
-            let sibling = parent.join("aphrody-py");
-            if is_workspace(&sibling) {
-                return sibling;
-            }
-        }
-    }
 
-    repo_root.join("../aphrody-py")
+    repo_root.join("py")
 }
 
 /// Execute a training job under an exclusive GPU lease.

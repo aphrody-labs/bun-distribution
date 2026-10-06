@@ -122,8 +122,7 @@
   ],
   "bunxScanSources": [
     "aphrody",
-    "yolo",
-    "aphrody-py"
+    "yolo"
   ],
   "releaseBinaries": {
     "ovhcloud": "https://github.com/ovh/ovhcloud-cli/releases/download/v{version}/ovhcloud-cli_{Linux_x86_64|Windows_x86_64}",

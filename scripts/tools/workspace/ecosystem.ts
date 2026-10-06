@@ -15,8 +15,8 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from
 import { dirname, join, resolve } from "node:path";
 import { loadCargoMetadata } from "./repo-layering.ts";
 
-/** The three active roots; retired category repositories remain migration history. */
-export const APHRODY_REPOS = ["aphrody", "aphrody-py", "iecode"] as const;
+/** The two active roots; retired category repositories remain migration history. */
+export const APHRODY_REPOS = ["aphrody", "iecode"] as const;
 
 // ---------------------------------------------------------------------------------------------
 // Types
@@ -911,7 +911,6 @@ export function collect(root: string): Ecosystem {
       kind: "aphrody",
       role: {
         aphrody: "Canonical Rust/Bun monorepo",
-        "aphrody-py": "Active Python workspace",
         iecode: "Active game-domain workspace",
       }[repo],
       crates: [],

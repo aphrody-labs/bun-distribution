@@ -322,7 +322,7 @@ export async function runFactoryWorker(
     !validToken(job.token) ||
     job.token !== expectedToken ||
     !/^[a-f0-9]{40}$/u.test(job.revision) ||
-    !["yolo", "aphrody", "aphrody-py"].includes(job.repo) ||
+    !["yolo", "aphrody"].includes(job.repo) ||
     resolve(path) !== join(expectedStateRoot, "builds", `${job.repo}.json`)
   )
     throw new Error("Invalid protected factory job");

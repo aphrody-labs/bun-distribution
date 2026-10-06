@@ -73,7 +73,6 @@ async function fixture() {
     repositories: {
       aphrody: join(root, "workspaces/aphrody"),
       yolo: join(root, "workspaces/yolo"),
-      "aphrody-py": join(root, "workspaces/aphrody-py"),
     },
   };
   await mkdir(join(root, "locks"), { recursive: true });

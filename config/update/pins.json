@@ -5,27 +5,47 @@
     "bun": {
       "latest": { "github": "oven-sh/bun", "stripTag": "^bun-v" },
       "targets": [
-        { "file": "config/system-packages.json", "re": "\"bun\": \\{\\s*\"version\": \"(\\d+\\.\\d+\\.\\d+)\"" },
+        {
+          "file": "config/system-packages.json",
+          "re": "\"bun\": \\{\\s*\"version\": \"(\\d+\\.\\d+\\.\\d+)\""
+        },
         { "file": "package.json", "re": "\"packageManager\": \"bun@(\\d+\\.\\d+\\.\\d+)\"" },
         { "file": "package.json", "re": "\"@types/bun\": \"(\\d+\\.\\d+\\.\\d+)\"" },
         { "file": "package.json", "re": "\"bun-types\": \"\\^(\\d+\\.\\d+\\.\\d+)\"" },
-        { "glob": "{package.json,config/*/package.json,apps/**/package.json,packages/**/package.json,crates/**/package.json}", "re": "\"bun\": \">=(\\d+\\.\\d+\\.\\d+)\"" },
+        {
+          "glob": "{package.json,config/*/package.json,apps/**/package.json,packages/**/package.json,crates/**/package.json}",
+          "re": "\"bun\": \">=(\\d+\\.\\d+\\.\\d+)\""
+        },
         { "file": "docs/plans/workspace/PLAN.md", "re": "utilise Bun (\\d+\\.\\d+\\.\\d+)" },
         { "file": "docs/reference/workspace/CLI.md", "re": "Bun `(\\d+\\.\\d+\\.\\d+)`" },
-        { "file": "docs/reference/workspace/CLI.md", "re": "\\| `bun` \\| (\\d+\\.\\d+\\.\\d+) \\|" },
-        { "file": "docs/reference/workspace/CLI.md", "re": "\\| `bunx` \\| (\\d+\\.\\d+\\.\\d+) \\|" }
+        {
+          "file": "docs/reference/workspace/CLI.md",
+          "re": "\\| `bun` \\| (\\d+\\.\\d+\\.\\d+) \\|"
+        },
+        {
+          "file": "docs/reference/workspace/CLI.md",
+          "re": "\\| `bunx` \\| (\\d+\\.\\d+\\.\\d+) \\|"
+        }
       ]
     },
     "uv": {
       "latest": { "pypi": "uv", "github": "astral-sh/uv" },
       "targets": [
-        { "file": "config/system-packages.json", "re": "\"uv\": \\{\\s*\"version\": \"(\\d+\\.\\d+\\.\\d+)\"" },
+        {
+          "file": "config/system-packages.json",
+          "re": "\"uv\": \\{\\s*\"version\": \"(\\d+\\.\\d+\\.\\d+)\""
+        },
         { "file": "docs/reference/workspace/CLI.md", "re": "uv `(\\d+\\.\\d+\\.\\d+)`" },
         { "file": "docs/reference/workspace/CLI.md", "re": "uvx? (\\d+\\.\\d+\\.\\d+) \\(x86_64" },
-        { "file": "docs/reference/workspace/TOOLS.md", "re": "uvx? (\\d+\\.\\d+\\.\\d+) \\(x86_64" },
-        { "file": "../aphrody-py/pyproject.toml", "re": "required-version = \"==(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "../aphrody-py/README.md", "re": "Requires uv `(\\d+\\.\\d+\\.\\d+)`" },
-        { "file": "../aphrody-py/.github/workflows/python-sdk.yml", "re": "setup-uv@[^\\n]*\\n\\s+with:\\n\\s+version: \"(\\d+\\.\\d+\\.\\d+)\"" }
+        {
+          "file": "docs/reference/workspace/TOOLS.md",
+          "re": "uvx? (\\d+\\.\\d+\\.\\d+) \\(x86_64"
+        },
+        {
+          "file": "py/pyproject.toml",
+          "re": "required-version = \"(?:>=|==)(\\d+\\.\\d+\\.\\d+)\""
+        },
+        { "file": "py/README.md", "re": "Requires uv (\\d+\\.\\d+\\.\\d+)" }
       ]
     },
     "rust": {
@@ -33,8 +53,14 @@
       "targets": [
         { "file": "rust-toolchain.toml", "re": "channel = \"(\\d+\\.\\d+\\.\\d+)\"" },
         { "file": "config/system-packages.json", "re": "\"channel\": \"(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "docs/operations/workspace/rust-toolchains-and-cross-builds.md", "re": "épingle Rust `(\\d+\\.\\d+\\.\\d+)`" },
-        { "file": "docs/reference/infra/SYSTEM-PREREQUISITES.md", "re": "\\(`(\\d+\\.\\d+\\.\\d+)`, le même" },
+        {
+          "file": "docs/operations/workspace/rust-toolchains-and-cross-builds.md",
+          "re": "épingle Rust `(\\d+\\.\\d+\\.\\d+)`"
+        },
+        {
+          "file": "docs/reference/infra/SYSTEM-PREREQUISITES.md",
+          "re": "\\(`(\\d+\\.\\d+\\.\\d+)`, le même"
+        },
         { "file": "docs/reference/workspace/CLI.md", "re": "Rust/Cargo `(\\d+\\.\\d+\\.\\d+)`" },
         { "file": "docs/reference/workspace/CLI.md", "re": "cargo (\\d+\\.\\d+\\.\\d+) \\(" },
         { "file": "docs/reference/workspace/CLI.md", "re": "rustc (\\d+\\.\\d+\\.\\d+) \\(" }
@@ -43,7 +69,11 @@
     "nushell": {
       "latest": { "crate": "nu-protocol" },
       "targets": [
-        { "file": "Cargo.toml", "re": "^nu-[a-z-]+ = \\{ version = \"(\\d+\\.\\d+\\.\\d+)\"", "multiline": true }
+        {
+          "file": "Cargo.toml",
+          "re": "^nu-[a-z-]+ = \\{ version = \"(\\d+\\.\\d+\\.\\d+)\"",
+          "multiline": true
+        }
       ]
     },
     "oxlint": {

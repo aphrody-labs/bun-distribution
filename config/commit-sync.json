@@ -27,21 +27,6 @@
         "--bin",
         "aphrody"
       ]
-    },
-    {
-      "id": "aphrody-py",
-      "path": "../aphrody-py",
-      "remote": "origin",
-      "sourceBranch": "main",
-      "destinationBranch": "main",
-      "fastForward": true,
-      "buildCommand": [
-        "uv",
-        "build",
-        "--all-packages",
-        "--out-dir",
-        "/srv/aphrody-build/artifacts/aphrody-py/wheels"
-      ]
     }
   ]
 }

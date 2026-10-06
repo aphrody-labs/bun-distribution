@@ -134,8 +134,8 @@ pub struct LlamaConfig {
 /// `[train]` — training surface configuration (P10, feature `train`).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TrainConfig {
-    /// Path to the shared `aphrody-py` uv workspace, if not the sibling
-    /// default.
+    /// Path to the shared Python uv workspace, if not the `py/` directory
+    /// of the checkout.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub python_project: Option<String>,
     /// Directory where trained artifacts (ONNX, GGUF, event logs) are

@@ -44,11 +44,11 @@
   "domain": {
     "rust": "crates/google",
     "bun": "packages/google",
-    "python": "../aphrody-py"
+    "python": "py"
   },
   "pythonSdkSource": {
     "repository": "https://github.com/aphrody-labs/antigravity-sdk-python",
     "rev": "02fa7fa362d815f788074ae09998041b34f9a770",
-    "consumer": "../aphrody-py/pyproject.toml"
+    "consumer": "py/pyproject.toml"
   }
 }

@@ -116,7 +116,7 @@ checkout at `/srv/aphrody-build/workspaces/yolo`. Preparation and a scoped Cargo
 check were dispatched under the shared heavy lock; completion is still pending.
 
 The active committed-history workflow is `yolo ops repo-sync`: exactly Yolo
-(`dev` to remote `main`), Aphrody and aphrody-py (`main` to remote `main`).
+(`dev` to remote `main`), and Aphrody (`main` to remote `main`).
 It watches Git refs with a 250 ms debounce and a 60 s fallback, fetches and checks
 ancestry before a normal push, then prepares the exact synchronized SHA over
 native Infra SSH. Pending builds retain the newest SHA per repository while a

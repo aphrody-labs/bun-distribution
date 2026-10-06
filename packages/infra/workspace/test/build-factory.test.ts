@@ -30,10 +30,9 @@ test("preparation plans restrict source owners, aliases, revisions and sibling w
     repositories: {
       aphrody: "/srv/aphrody-build/workspaces/aphrody",
       yolo: "/srv/aphrody-build/workspaces/yolo",
-      "aphrody-py": "/srv/aphrody-build/workspaces/aphrody-py",
     },
   };
-  for (const repository of ["yolo", "aphrody", "aphrody-py"]) {
+  for (const repository of ["yolo", "aphrody"]) {
     const source = {
       path: `/source/${repository}`,
       remote: repository === "aphrody" ? "workspace" : "origin",
@@ -138,7 +137,6 @@ async function preparationFixture() {
     repositories: {
       aphrody: join(root, "workspaces/aphrody"),
       yolo: checkout,
-      "aphrody-py": join(root, "workspaces/aphrody-py"),
     },
   };
   const pin = { path: source, remote: "origin", url: remoteUrl, owners: ["aphrody-labs"] };
@@ -362,13 +360,6 @@ test.skipIf(process.platform === "win32")(
               id: "aphrody",
               path: root,
               remote: "workspace",
-              sourceBranch: "main",
-              destinationBranch: "main",
-            },
-            {
-              id: "aphrody-py",
-              path: join(f.root, "py"),
-              remote: "origin",
               sourceBranch: "main",
               destinationBranch: "main",
             },

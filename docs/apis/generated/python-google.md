@@ -3,7 +3,7 @@
 
 Python stdlib AST definitions, signatures and docstrings. Project modules are never imported; runtime exports are not evaluated.
 
-## Source: packages/aphrody/src/aphrody/google.py
+## Source: py/packages/aphrody/src/aphrody/google.py
 
 SHA-256: `6f69e79e78f161889219bbcb1a9d1e070477e983a69452b843d72b34d4f30c08`
 

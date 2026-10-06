@@ -14,7 +14,7 @@ layout; they are not current checkout instructions.
 
 ## Active roots and workspaces
 
-`../aphrody-py` owns Python implementation. `../iecode`
+`py/` owns Python implementation (fused into this repository on 2026-10-05). `../iecode`
 owns game-domain implementation. `~/src` is a legacy source archive,
 kept intact while migration consumers are qualified. The canonical UI framework is the [`m3/` submodule](../../../m3/README.md),
 with the product app at `m3/packages/app-ui`. The separate `aphrody-ui`

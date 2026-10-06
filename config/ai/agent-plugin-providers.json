@@ -57,7 +57,7 @@
     }
   ],
   "scopes": {
-    "aphrody": ["{home}/aphrody", "{home}/aphrody-py"],
+    "aphrody": ["{home}/aphrody"],
     "iecode": ["{home}/iecode"],
     "shenron": ["{home}/shenron"],
     "rose-griffon": ["{home}/aphrody"],

@@ -3,7 +3,7 @@
 //!
 //! Provides:
 //! - Exclusive GPU lease acquisition preempting `llama-server` inference.
-//! - Subprocess runner driving the shared `aphrody-py` workspace with live NDJSON event streaming.
+//! - Subprocess runner driving the shared `py/` workspace with live NDJSON event streaming.
 //! - Gold-leak guarded dataset triples generation.
 //! - Metric-driven candidate promotion gates (ΔRecall@5 ≥ +0.01, per-tag regression ≤ 0.03).
 //! - Automatic model registration in [`aphrody_models::ModelStore`].

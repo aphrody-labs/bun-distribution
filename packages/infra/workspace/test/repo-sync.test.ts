@@ -85,10 +85,7 @@ test("declaration uses existing owner remotes and explicit main destinations", a
       repo.sourceBranch,
       repo.destinationBranch,
     ]),
-  ).toEqual([
-    ["aphrody", "workspace", "main", "main"],
-    ["aphrody-py", "origin", "main", "main"],
-  ]);
+  ).toEqual([["aphrody", "workspace", "main", "main"]]);
 });
 test("plan does not fetch or push and dirty source commits synchronize without staging private files", async () => {
   const value = await fixture();
@@ -599,7 +596,7 @@ test("repo-sync status reads live receipts and pending metadata without exposing
   await mkdir(join(value.root, "config"));
   const config = {
     ...value.config,
-    repositories: ["yolo", "aphrody", "aphrody-py"].map((id) =>
+    repositories: ["yolo", "aphrody"].map((id) =>
       Object.assign({}, value.repository, { id, buildCommand: ["fixture"] }),
     ),
   };
@@ -650,11 +647,7 @@ test("repo-sync status reads live receipts and pending metadata without exposing
     const status = await readRepoSyncStatus(value.root, state);
     expect(status.state).toBe("watching");
     expect(status.owner).toMatchObject({ pid: process.pid, live: true });
-    expect(status.repositories.map((repository) => repository.repo)).toEqual([
-      "yolo",
-      "aphrody",
-      "aphrody-py",
-    ]);
+    expect(status.repositories.map((repository) => repository.repo)).toEqual(["yolo", "aphrody"]);
     expect(status.jobs[0]).toMatchObject({
       pid: child.pid,
       processAlive: true,

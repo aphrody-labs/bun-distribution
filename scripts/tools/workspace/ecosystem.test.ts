@@ -178,9 +178,7 @@ test("pyproject name, description and scripts", () => {
 });
 
 const root = resolve(import.meta.dir, "..", "..", "..", "..");
-const activeRootsPresent = ["aphrody", "aphrody-py", "iecode"].every((repo) =>
-  existsSync(join(root, repo)),
-);
+const activeRootsPresent = ["aphrody", "iecode"].every((repo) => existsSync(join(root, repo)));
 
 describe.skipIf(!activeRootsPresent)("ecosystem catalog", () => {
   test("committed docs/ecosystem output is up to date (run: bun scripts/tools/workspace/ecosystem.ts)", () => {

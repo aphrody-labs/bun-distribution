@@ -53,7 +53,6 @@ const REPOS: readonly RepoSpec[] = [
     dir: "shenron",
     role: "Produit Shenron (dragonballfr.com) et Koharu ; consomme Aphrody par npm et crates.io.",
   },
-  { dir: "aphrody-py", role: "Workspace Python actif." },
   { dir: "iecode", role: "Workspace actif du domaine jeu." },
 ];
 
@@ -402,7 +401,7 @@ function renderRepos(all: readonly RepoFacts[], generatedAt: string, source: str
   lines.push("## Points d'attention", "");
   lines.push(
     "- Le monorepo `aphrody` contient les domaines Rust/Bun ; ne pas restaurer les anciens checkouts catégoriels.",
-    "- Python reste dans `aphrody-py`, le domaine jeu dans sa racine active vérifiée.",
+    "- Python vit dans `py/` du monorepo, le domaine jeu dans sa racine active vérifiée.",
     "- Les contextes Agent Home `aphrody`, `dbfr` (Shenron) et `ie` restent distincts.",
     "- Un seul contexte par domaine est partagé par Claude, Codex, agy et les modèles locaux.",
     "- Les poids, conversations, mémoires et bases utilisateur restent dans leurs stores privés.",

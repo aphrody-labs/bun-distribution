@@ -3,7 +3,7 @@
 
 Directive propriétaire du 2026-10-04, réécrite et vérifiée contre l'état réel du poste
 (commandes citées en fin de document). Pendants : [Yolo](GOAL.md) pour la bibliothèque
-partagée et aphrody-py pour la surface Python IA/ML.
+partagée ; la surface Python IA/ML est le répertoire `py/` d'Aphrody (fusionné le 2026-10-05).
 
 ## 1. Rôle
 
@@ -28,7 +28,7 @@ Axes prioritaires :
 - **UI** : `m3/packages/app-ui` et `crates/ui/*` restent canoniques ;
 - **IA** : agents, passerelle compatible OpenAI, MCP, A2A, inférence locale.
 
-La surface Python IA/ML vit dans `aphrody-py`, pas dans le code Rust ou Bun d'Aphrody.
+La surface Python IA/ML vit dans `py/` (runtime `vu`, plan `docs/plans/vu/PLAN.md`), pas dans le code Rust ou Bun d'Aphrody.
 
 Langages (directive du 2026-10-04) :
 
@@ -75,7 +75,7 @@ aphrody.com est le point d'entrée de développement et de déploiement de :
 ## 6. Hôtes et hébergement
 
 - **Les deux VPS** sont dédiés à la compilation, aux VFS très lourds, aux bases de données lourdes (Redis, SQL) et à l'IA sur CPU.
-  - Exemple : Gemma 4 E2B via aphrody-py, l'IA Rust d'Aphrody et l'interface IA en Bun.
+  - Exemple : Gemma 4 E2B via `py/`, l'IA Rust d'Aphrody et l'interface IA en Bun.
   - Les anciens plans, documents et usages RG des VPS sont abandonnés.
 - **RG et Shenron** deviennent entièrement serverless : Vercel, Fly.io, Docker ou Coolify, choisi après benchmark comparatif.
   - Yolo les transforme, les lint, les formate et les compile (serveur natif et web selon les guides 2026).

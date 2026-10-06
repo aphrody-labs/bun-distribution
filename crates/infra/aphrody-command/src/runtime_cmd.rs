@@ -70,7 +70,7 @@ pub(crate) fn run(action: RuntimeAction) -> Result<()> {
 fn project_root(project: Option<PathBuf>) -> Result<PathBuf> {
     let root = project
         .or_else(|| std::env::var_os("APHRODY_PY_ROOT").map(PathBuf::from))
-        .unwrap_or_else(|| PathBuf::from("../aphrody-py"));
+        .unwrap_or_else(|| PathBuf::from("py"));
     let root = if root.is_absolute() {
         root
     } else {
