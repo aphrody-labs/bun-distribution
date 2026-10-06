@@ -72,7 +72,8 @@ describe('[CLI] @aphrody/cli template', () => {
     const config = readFileSync(configPath).toString()
     writeFileSync(configPath, config.replace('com.tauri.dev', 'com.tauri.test'))
 
-    await cli.run(['build', '-vv'])
+    // AppImage bundling downloads its tooling and needs a tty: bundle a .deb on Linux, which is offline and deterministic.
+    await cli.run(['build', '-vv', ...(process.platform === 'linux' ? ['--bundles', 'deb'] : [])])
     process.chdir(cwd)
   }, 15 * 60 * 1000)
 })
