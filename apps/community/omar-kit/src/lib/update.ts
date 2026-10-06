@@ -34,24 +34,25 @@ export const omarApp = (version: string): AppIdentity => ({
 /** `base` overrides the site (tests, and a pack that names another one): default is the access pack's, then the public site. */
 export async function updateKit(
   ctx: Context,
-  options: { checkOnly?: boolean; base?: string } = {},
+  options: { checkOnly?: boolean; base?: string; artifact?: string; app?: AppIdentity } = {},
 ): Promise<UpdateResult> {
+  const name = options.artifact ?? KIT_ARTIFACT;
   const base =
     options.base ??
     (await loadProfile(ctx.paths))?.downloadsBase ??
     "https://downloads.aphrody.com";
   const manifest = await fetchManifest(base, ctx.fetchImpl);
-  const release = toRelease(manifest, KIT_ARTIFACT, currentPlatform());
+  const release = toRelease(manifest, name, currentPlatform());
   if (!release)
     return { status: "skipped", detail: "aucune mise à jour de ce programme n'est publiée" };
-  const artifact = pickArtifact(manifest, KIT_ARTIFACT, WINDOWS_PLATFORM, ".tar.gz");
+  const artifact = pickArtifact(manifest, name, WINDOWS_PLATFORM, ".tar.gz");
   if (artifact) checkArtifact(base, artifact, await fetchSums(base, ctx.fetchImpl));
   return updateFromRelease(release, {
     version: ctx.version,
     execPath: ctx.exePath,
     checkOnly: options.checkOnly ?? false,
     fetchImpl: ctx.fetchImpl,
-    statePath: stateFile(ctx.sys.env, omarApp(ctx.version)),
+    statePath: stateFile(ctx.sys.env, options.app ?? omarApp(ctx.version)),
   });
 }
 

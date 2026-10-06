@@ -1,0 +1,17 @@
+{
+  "name": "@aphrody/setup",
+  "version": "0.1.0",
+  "private": true,
+  "description": "One-click Aphrody installer for everyone (Aphrody-Setup.exe): aphrody (CLI and MCP), yolo, the desktop app, the Claude plugins and the MCP declaration, with optional administrator and creator roles.",
+  "license": "Apache-2.0",
+  "bin": {
+    "aphrody-setup": "src/cli.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "bun src/cli.ts",
+    "test": "bun test",
+    "typecheck": "tsgo --noEmit -p tsconfig.json",
+    "stage": "bun ../../../scripts/release/stage-setup.ts"
+  }
+}

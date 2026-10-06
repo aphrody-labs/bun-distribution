@@ -96,8 +96,16 @@ fn locate(kit: Kit) -> Option<(PathBuf, Vec<String>)> {
         && cfg!(windows)
         && let Some(local) = std::env::var_os("LOCALAPPDATA")
     {
-        // Where the kit copies itself (`stepKit` of omar-kit).
+        // Where the kit copies itself (`stepKit` of omar-kit) and where Aphrody-Setup installs it.
         candidates.push(PathBuf::from(local).join("Aphrody").join("Omar").join("Aphrody-Omar.exe"));
+    }
+    if kit == Kit::Creator
+        && cfg!(windows)
+        && let Some(local) = std::env::var_os("LOCALAPPDATA")
+    {
+        // Where Aphrody-Setup installs creator-kit (role « créateur »).
+        candidates
+            .push(PathBuf::from(local).join("Aphrody").join("Creator").join("creator-kit.exe"));
     }
     if let Some(found) = candidates.into_iter().find(|path| path.is_file()) {
         return Some((found, Vec::new()));

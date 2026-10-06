@@ -458,9 +458,10 @@ test("yolo step: waits while unpublished, then uses yolo's own installer on a ve
   const { ctx, sys } = testContext({
     fetchImpl: downloads({ artifacts: [artifact], sums: sumsFor(file) }),
   });
+  // Without a copy of the repository the site's installer is used, and refused when it checks nothing.
   const early = await stepYolo.run(ctx, "executer", state());
-  expect(early.state).toBe("attente");
-  expect(early.detail).toContain("copie du dépôt");
+  expect(early.state).toBe("echec");
+  expect(early.detail).toContain("ne vérifie pas les empreintes");
   touch(join(ctx.paths.repoDir, "apps", "yolo", "install.ps1"), "# official");
   let release: string[] = [];
   sys.handlers.push({
@@ -480,6 +481,38 @@ test("yolo step: waits while unpublished, then uses yolo's own installer on a ve
   expect(call.options.env).toMatchObject({ YOLO_NO_CRATES: "1" });
   expect(call.options.env?.YOLO_RELEASE_DIR).toContain("yolo-release");
   expect(existsSync(join(ctx.paths.installDir, "tmp", "yolo-release"))).toBe(false);
+});
+
+test("yolo step without the repository runs the site's verified installer", async () => {
+  const file = "yolo-0.2.0-x-x86_64-pc-windows-msvc.tar.gz";
+  const artifact = {
+    name: "yolo",
+    version: "0.2.0",
+    platform: "windows-x86_64",
+    url: `${BASE}/files/${file}`,
+    sha256: SHA,
+    size: 13,
+    file,
+  };
+  const base = downloads({ artifacts: [artifact], sums: sumsFor(file) });
+  const { ctx, sys } = testContext({
+    fetchImpl: async (input, init) =>
+      String(input).endsWith("/install-yolo.ps1")
+        ? new Response("Get-Content SHA256SUMS; Get-FileHash x")
+        : base(input, init),
+  });
+  const script = join(ctx.paths.installDir, "tmp", "install-yolo.ps1");
+  sys.handlers.push({
+    match: /^powershell .*install-yolo\.ps1/,
+    result: () => {
+      expect(readFileSync(script, "utf8")).toContain("Get-FileHash");
+      touch(join(ctx.paths.home, ".yolo", "bin", "yolo.exe"));
+      return {};
+    },
+  });
+  sys.handlers.push({ match: /yolo\.exe --version/, result: { stdout: "yolo 0.2.0" } });
+  expect((await stepYolo.run(ctx, "executer", state())).state).toBe("fait");
+  expect(existsSync(script)).toBe(false);
 });
 
 test("MCP step: declares the server in Claude Desktop with a backup, once", async () => {

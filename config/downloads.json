@@ -27,7 +27,8 @@
     "install.ps1": "apps/web/downloads/install.ps1",
     "install-yolo.sh": "apps/yolo/install.sh",
     "pet.webp": "crates/ui/identity/assets/aphrody/sprites/spritesheet.webp",
-    "icon.svg": "apps/web/downloads/icon.svg"
+    "icon.svg": "apps/web/downloads/icon.svg",
+    "install-yolo.ps1": "apps/yolo/install.ps1"
   },
   "artifacts": [
     {
@@ -115,6 +116,44 @@
           "bunTarget": "bun-windows-x64",
           "enabled": false,
           "reason": "no packaged yolo-runtime artifact for Windows (dist/runtime/x86_64-pc-windows-msvc)"
+        }
+      ]
+    },
+    {
+      "id": "aphrody-setup",
+      "kind": "desktop",
+      "description": "Aphrody-Setup.exe, the one-click installer for everyone (apps/community/setup): aphrody, yolo, the desktop app, the Claude plugins and the MCP declaration, optional administrator and creator roles; the « Download Aphrody » button of the site",
+      "versionFrom": { "packageJson": "apps/community/setup/package.json" },
+      "stage": { "script": "scripts/release/stage-setup.ts", "manifest": "aphrody-setup.manifest.json" },
+      "platforms": [
+        {
+          "platform": "windows-x86_64",
+          "target": "x86_64-pc-windows-msvc",
+          "enabled": true,
+          "note": "Bun compile (bun-windows-x64-baseline) branded with the pet icon by rcedit under Wine, not signed; the exe (kind desktop) and its flat tar.gz update archive (kind update)"
+        }
+      ]
+    },
+    {
+      "id": "omar-kit",
+      "kind": "kit",
+      "description": "Aphrody-Omar.exe, the administrator kit (apps/community/omar-kit): the Windows pack zip and the flat tar.gz its updater reads; installed by Aphrody-Setup for the administrator role",
+      "versionFrom": { "packageJson": "apps/community/omar-kit/package.json" },
+      "stage": { "script": "scripts/release/stage-omar-kit.ts", "manifest": "omar-kit.manifest.json" },
+      "platforms": [
+        { "platform": "windows-x86_64", "target": "x86_64-pc-windows-msvc", "enabled": true }
+      ]
+    },
+    {
+      "id": "aphrody-app",
+      "kind": "desktop-app",
+      "description": "Tauri NSIS installer of the single desktop app (crates/ui/app); Aphrody-Setup installs it silently (/S) once it is published",
+      "platforms": [
+        {
+          "platform": "windows-x86_64",
+          "target": "x86_64-pc-windows-msvc",
+          "enabled": false,
+          "reason": "no Windows build of the desktop app (CEF and Tauri bundle) is produced by the factory yet"
         }
       ]
     },

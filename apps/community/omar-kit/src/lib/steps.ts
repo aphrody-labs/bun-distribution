@@ -81,8 +81,13 @@ const WINGET_ARGS = [
 ];
 const psQuote = (value: string): string => `'${value.replaceAll("'", "''")}'`;
 
-async function createShortcut(ctx: Context, lnk: string, target: string): Promise<boolean> {
-  const script = `$s=(New-Object -ComObject WScript.Shell).CreateShortcut(${psQuote(lnk)}); $s.TargetPath=${psQuote(target)}; $s.WorkingDirectory=${psQuote(dirname(target))}; $s.Description='Aphrody - kit administrateur'; $s.Save()`;
+export async function createShortcut(
+  ctx: Context,
+  lnk: string,
+  target: string,
+  description = "Aphrody - kit administrateur",
+): Promise<boolean> {
+  const script = `$s=(New-Object -ComObject WScript.Shell).CreateShortcut(${psQuote(lnk)}); $s.TargetPath=${psQuote(target)}; $s.WorkingDirectory=${psQuote(dirname(target))}; $s.Description=${psQuote(description)}; $s.Save()`;
   const result = await ctx.sys.run(["powershell", "-NoProfile", "-Command", script], {
     timeoutMs: 30_000,
   });
@@ -550,13 +555,8 @@ export const stepYolo: Step = {
     const version = installed ? await toolVersion(sys, installed) : undefined;
     if (version && compareVersions(version, artifact.version) >= 0)
       return { state: "deja", detail: `version ${version}` };
-    const script = join(paths.repoDir, "apps", "yolo", "install.ps1");
-    if (!existsSync(script))
-      return {
-        state: "attente",
-        detail: "l'installateur de yolo vient avec la copie du dépôt, qui n'est pas encore là",
-        action: "Relance après la copie du dépôt.",
-      };
+    // The official installer: from the copy of the repository when there is one, else the site's copy of it.
+    const repoScript = join(paths.repoDir, "apps", "yolo", "install.ps1");
     if (mode === "simuler")
       return {
         state: "a-faire",
@@ -580,6 +580,21 @@ export const stepYolo: Step = {
     const file = artifact.file ?? basename(artifact.url);
     const archive = new Uint8Array(await (await fetchImpl(artifact.url)).arrayBuffer());
     await writeFile(join(dir, file), archive);
+    let script = repoScript;
+    if (!existsSync(script)) {
+      const text = await (
+        await fetchImpl(`${base}/install-yolo.ps1`, { signal: AbortSignal.timeout(30_000) })
+      ).text();
+      if (!text.includes("SHA256SUMS") || !text.includes("Get-FileHash"))
+        return {
+          state: "echec",
+          detail:
+            "le script d'installation de yolo du site ne vérifie pas les empreintes : je ne le lance pas",
+          action: "Prévenir l'équipe.",
+        };
+      script = join(paths.installDir, "tmp", "install-yolo.ps1");
+      await writeFile(script, text);
+    }
     const run = await sys.run(
       ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script],
       {
@@ -588,6 +603,7 @@ export const stepYolo: Step = {
         env: { YOLO_RELEASE_DIR: dir, YOLO_NO_CRATES: "1" },
       },
     );
+    if (script !== repoScript) await rm(script, { force: true }).catch(() => undefined);
     await rm(dir, { recursive: true, force: true }).catch(() => undefined);
     ctx.log(`install.ps1 yolo -> ${run.code}`);
     const after = findTool(sys, paths, "yolo");
@@ -679,9 +695,10 @@ export async function runInstall(
   ctx: Context,
   mode: Mode,
   state: InstallState = { repoReady: false },
+  steps: Step[] = STEPS,
 ): Promise<InstallReport> {
   const results: InstallReport["results"] = [];
-  for (const step of STEPS) {
+  for (const step of steps) {
     ctx.ui.say(`${STEP_MARK["a-faire"]} ${step.titre}...`);
     let result: StepResult;
     try {

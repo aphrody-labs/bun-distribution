@@ -36,6 +36,13 @@
         "aphrody-omar": "src/cli.ts",
       },
     },
+    "apps/community/setup": {
+      "name": "@aphrody/setup",
+      "version": "0.1.0",
+      "bin": {
+        "aphrody-setup": "src/cli.ts",
+      },
+    },
     "apps/yolo/cli": {
       "name": "@aphrody/yolo-cli",
       "version": "1.0.0",
@@ -1515,6 +1522,8 @@
     "@aphrody/runtime-sdk": ["@aphrody/runtime-sdk@workspace:packages/engine/runtime"],
 
     "@aphrody/scaffold": ["@aphrody/scaffold@workspace:m3/packages/scaffold"],
+
+    "@aphrody/setup": ["@aphrody/setup@workspace:apps/community/setup"],
 
     "@aphrody/shell-web": ["@aphrody/shell-web@workspace:packages/shell/web"],
 

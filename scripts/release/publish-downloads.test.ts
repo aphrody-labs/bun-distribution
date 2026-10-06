@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import {
   archiveName,
   buildManifest,
@@ -13,9 +13,11 @@ import {
   scanName,
   scanTree,
   sha256Bytes,
+  stagedFiles,
 } from "./publish-downloads";
 
 const cfg = loadConfig();
+const root = resolve(import.meta.dir, "../..");
 
 describe("publish-downloads", () => {
   test("release id and archive names are stable and sortable", () => {
@@ -114,12 +116,53 @@ describe("publish-downloads", () => {
     expect(cfg.artifacts.map((a) => a.id)).toEqual([
       "aphrody",
       "yolo",
+      "aphrody-setup",
+      "omar-kit",
+      "aphrody-app",
       "plugin-aphrody",
       "plugin-yolo",
       "plugin-shenron",
     ]);
     for (const release of cfg.github.releases)
       expect(release.repository.startsWith("aphrody-labs/")).toBe(true);
-    expect(Object.keys(cfg.assets)).toEqual(["install.sh", "install.ps1", "install-yolo.sh"]);
+    expect(Object.keys(cfg.assets)).toEqual([
+      "install.sh",
+      "install.ps1",
+      "install-yolo.sh",
+      "pet.webp",
+      "icon.svg",
+      "install-yolo.ps1",
+    ]);
+    for (const source of Object.values(cfg.assets))
+      expect(existsSync(join(root, source))).toBe(true);
+    // The site's « Download Aphrody » button takes the first `desktop` artifact: the one-click installer.
+    expect(cfg.artifacts.filter((a) => a.kind === "desktop").map((a) => a.id)).toEqual([
+      "aphrody-setup",
+    ]);
+    for (const a of cfg.artifacts.filter((x) => x.stage)) {
+      expect(existsSync(join(root, a.stage!.script))).toBe(true);
+      expect(a.versionFrom?.packageJson).toBeDefined();
+    }
+  });
+
+  test("staged entries must name their component and carry a file name and a hash", () => {
+    const setup = cfg.artifacts.find((a) => a.id === "aphrody-setup")!;
+    const windows = setup.platforms![0]!;
+    const entry = {
+      name: "aphrody-setup",
+      version: "0.1.0",
+      platform: "windows-x86_64",
+      target: "x86_64-pc-windows-msvc",
+      kind: "desktop",
+      file: "aphrody-setup-0.1.0-abcdef123-x86_64-pc-windows-msvc.exe",
+      size: 1,
+      sha256: "a".repeat(64),
+    };
+    expect(stagedFiles(setup, windows, [entry, { ...entry, platform: "linux-x86_64" }])).toEqual([
+      entry,
+    ]);
+    expect(() => stagedFiles(setup, windows, [{ ...entry, name: "omar-kit" }])).toThrow("expected");
+    expect(() => stagedFiles(setup, windows, [{ ...entry, file: "../x.exe" }])).toThrow("invalid");
+    expect(() => stagedFiles(setup, windows, [])).toThrow("nothing");
   });
 });

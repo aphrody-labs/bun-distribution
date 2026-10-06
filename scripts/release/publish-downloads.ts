@@ -7,7 +7,7 @@
  *   plan                          what would be built, staged and published (no mutation)
  *   build  --revision <sha>       prepare + build the factory binaries (aphrody-ops build-factory), wait for the jobs
  *   release --revision <sha>      stage every artifact, scan for secrets, upload to the host, flip `current`
- *   assets                        republish install.sh, install.ps1 and install-yolo.sh into the current release
+ *   assets                        republish the installers (cfg.assets) into the current release
  *   github --release <id>         create/refresh the GitHub release of each configured EXISTING repository
  *   verify [--release <id>]       download from the public URL, check SHA-256, run the binaries
  *   host-plan | host-apply        install the declared unit, nginx vhost and app on the host (plan by default)
@@ -53,9 +53,15 @@ export interface PlatformConfig {
 
 export interface ArtifactConfig {
   id: string;
-  kind: "factory-binary" | "bun-compile" | "plugin";
+  /**
+   * `desktop`: what the « Download Aphrody » button of the site points at (Aphrody-Setup.exe); `kit`: a Bun kit exe;
+   * `desktop-app`: the Tauri installer of the desktop app, installed by Aphrody-Setup when it is published.
+   */
+  kind: "factory-binary" | "bun-compile" | "plugin" | "desktop" | "kit" | "desktop-app";
   description: string;
-  versionFrom?: { cargoWorkspace?: string; file?: string };
+  versionFrom?: { cargoWorkspace?: string; file?: string; packageJson?: string };
+  /** Local Bun stage script (`bun <script> --out <dir>`) and the manifest of entries it writes into `<dir>`. */
+  stage?: { script: string; manifest: string };
   executable?: string;
   provides?: string[];
   platforms?: PlatformConfig[];
@@ -284,6 +290,9 @@ const q = (value: string): string => `'${value.replace(/'/g, `'\\''`)}'`;
 function artifactVersion(artifact: ArtifactConfig): string {
   const from = artifact.versionFrom;
   if (from?.file) return readFileSync(join(root, from.file), "utf8").trim();
+  if (from?.packageJson)
+    return (JSON.parse(readFileSync(join(root, from.packageJson), "utf8")) as { version: string })
+      .version;
   if (from?.cargoWorkspace) {
     const text = readFileSync(join(root, from.cargoWorkspace), "utf8");
     const section = /\[workspace\.package\]([\s\S]*?)(\n\[|$)/.exec(text)?.[1] ?? "";
@@ -427,6 +436,83 @@ export async function stagePlugin(
       });
     }
     void commit;
+    return out;
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+}
+
+/** One entry of the manifest a stage script writes (scripts/release/stage-setup.ts, stage-omar-kit.ts). */
+export interface StagedEntry {
+  name: string;
+  version: string;
+  platform: string;
+  target: string;
+  kind: string;
+  file: string;
+  size: number;
+  sha256: string;
+}
+
+/** The staged entries of one artifact that belong to `platform`, checked against the declared component. */
+export function stagedFiles(
+  artifact: ArtifactConfig,
+  platform: PlatformConfig,
+  entries: StagedEntry[],
+): StagedEntry[] {
+  const mine = entries.filter((e) => e.platform === platform.platform);
+  for (const entry of mine) {
+    if (entry.name !== artifact.id)
+      throw new Error(`${artifact.stage!.manifest} names ${entry.name}, expected ${artifact.id}`);
+    if (!/^[A-Za-z0-9._-]+$/.test(entry.file) || !/^[0-9a-f]{64}$/.test(entry.sha256))
+      throw new Error(`${artifact.stage!.manifest}: invalid entry ${entry.file}`);
+  }
+  if (mine.length === 0)
+    throw new Error(`${artifact.id}: the stage produced nothing for ${platform.platform}`);
+  return mine;
+}
+
+/** Runs the artifact's local Bun stage script, re-hashes what it wrote and copies it into the release stage. */
+export async function stageLocal(
+  artifact: ArtifactConfig,
+  platform: PlatformConfig,
+  id: string,
+  cfg: DownloadsConfig,
+): Promise<PublishedFile[]> {
+  const work = mkdtempSync(join(tmpdir(), `stage-${artifact.id}-`));
+  try {
+    await run(["bun", join(root, artifact.stage!.script), "--out", work]);
+    const entries = JSON.parse(
+      readFileSync(join(work, artifact.stage!.manifest), "utf8"),
+    ) as StagedEntry[];
+    const dir = join(stageRoot(id), "files");
+    mkdirSync(dir, { recursive: true });
+    const out: PublishedFile[] = [];
+    for (const entry of stagedFiles(artifact, platform, entries)) {
+      const source = join(work, entry.file);
+      const got = await sha256File(source);
+      if (got !== entry.sha256)
+        throw new Error(`${entry.file}: staged hash ${got} != ${entry.sha256}`);
+      const hits = [
+        ...scanName(entry.file, cfg.secrets.deniedNames),
+        ...scanBytes(entry.file, new Uint8Array(readFileSync(source)), cfg.secrets.contentPatterns),
+      ];
+      if (hits.length)
+        throw new Error(
+          `secret scan failed for ${entry.file}: ${hits.map((h) => h.rule).join(", ")}`,
+        );
+      await run(["cp", source, join(dir, entry.file)]);
+      out.push({
+        component: artifact.id,
+        version: entry.version,
+        platform: entry.platform,
+        target: entry.target,
+        kind: entry.kind,
+        file: entry.file,
+        sha256: entry.sha256,
+        size: statSync(source).size,
+      });
+    }
     return out;
   } finally {
     rmSync(work, { recursive: true, force: true });
@@ -621,7 +707,9 @@ async function plan(cfg: DownloadsConfig) {
     }
     for (const p of a.platforms ?? []) {
       console.log(
-        `  ${a.id} ${artifactVersion(a)} ${p.platform}: ${p.enabled ? "published" : `SKIPPED (${p.reason})`}`,
+        p.enabled
+          ? `  ${a.id} ${artifactVersion(a)} ${p.platform}: published${a.stage ? ` (local stage ${a.stage.script})` : ""}`
+          : `  ${a.id} ${p.platform}: SKIPPED (${p.reason})`,
       );
     }
   }
@@ -729,11 +817,13 @@ async function releaseTree(cfg: DownloadsConfig, commit: string, id: string) {
           continue;
         }
       }
-      files.push(
-        a.kind === "factory-binary"
-          ? await stageFactoryBinary(cfg, a, p, id, commit)
-          : await stageYolo(a, p, id, commit, cfg),
-      );
+      if (a.stage) files.push(...(await stageLocal(a, p, id, cfg)));
+      else
+        files.push(
+          a.kind === "factory-binary"
+            ? await stageFactoryBinary(cfg, a, p, id, commit)
+            : await stageYolo(a, p, id, commit, cfg),
+        );
     }
   }
 
