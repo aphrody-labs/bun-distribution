@@ -415,11 +415,18 @@ export function remoteCheckoutScript(config: VpsCargoConfig, sha: string, pull: 
     remoteSeedScript(config),
     `cd ${shellQuote(config.remoteWorkspace)}`,
     fetch,
+    // Moving the shared checkout under a running job would corrupt its build: when the factory lock is held, the move
+    // is deferred to the job itself (remoteRunScript checks out the snapshot once it owns the lock).
+    `if flock -n ${shellQuote(config.remoteHeavyLock)} true; then`,
     `git checkout --quiet --detach --force ${sha}`,
     // Untracked leftovers of a previous snapshot go; ignored outputs (node_modules) stay.
     "git clean -fdq",
     `test "$(git rev-parse HEAD)" = ${sha}`,
     `echo "vps checkout at ${sha.slice(0, 12)}"`,
+    "else",
+    `git cat-file -e ${sha}^{commit}`,
+    `echo "vps factory busy: checkout of ${sha.slice(0, 12)} deferred to the job"`,
+    "fi",
   ].join("\n");
 }
 
@@ -444,9 +451,11 @@ export function remoteRunScript(
     // Deterministic file modes: tests assert 0o644/0o600 and the builder user's default umask is 002.
     "umask 022",
     `cd ${shellQuote(config.remoteWorkspace)}`,
-    `test "$(git rev-parse HEAD)" = ${sha} || { echo "checkout moved away from ${sha}" >&2; exit 2; }`,
+    `git cat-file -e ${sha}^{commit} || { echo "snapshot ${sha} is not in the checkout" >&2; exit 2; }`,
     `export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`,
-    `exec env ${env.join(" ")} flock --close ${shellQuote(config.remoteHeavyLock)} ${shellQuote(config.cargoSerial ?? "scripts/build/rust/cargo-serial.sh")} ${cargoArgs.map(shellQuote).join(" ")}`,
+    // The shared checkout is moved to the job snapshot only once this job holds the factory lock: another session may
+    // have synced its own snapshot while this job waited, and building then would compile the wrong tree.
+    `exec env ${env.join(" ")} flock --close ${shellQuote(config.remoteHeavyLock)} sh -c ${shellQuote(`git checkout -q -f ${sha} || { echo "checkout moved away from ${sha}" >&2; exit 2; }; exec "$@"`)} sh ${shellQuote(config.cargoSerial ?? "scripts/build/rust/cargo-serial.sh")} ${cargoArgs.map(shellQuote).join(" ")}`,
   ].join("; ");
   const window = `bash -c ${shellQuote(`(${body}) > ${log} 2>&1; echo $? > ${exit}`)}`;
   const session = shellQuote(config.remoteSession);
