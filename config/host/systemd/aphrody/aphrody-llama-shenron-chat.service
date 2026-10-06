@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: Apache-2.0
+# Fine-tuned Shenron chat model `shenron-chat-v2`: Qwen3-4B-Instruct-2507 (GGUF Q4_K_M) + LoRA adapter GGUF,
+# served OpenAI-compatible on the vps next to gemma4 (aphrody-llama-gemma4, 8798), which stays the fallback.
+# Base: unsloth/Qwen3-4B-Instruct-2507-GGUF in the model store. Adapter: ~/.aphrody/models/adapters/shenron-chat-v2/adapter.gguf
+# (extracted from shenron-train-chat-v2.tar.gz, sha256 checked against its SHA256SUMS; see docs/operations/infra/LLAMA-MODELS.md).
+# Runtime: upstream llama.cpp release b11415 in ~/.aphrody/runtimes (driven, not linked).
+# Port 8799 is loopback only and never proxied by nginx; health: GET /health (200 once the model is loaded).
+[Unit]
+Description=Aphrody llama-server: shenron-chat-v2 (Qwen3-4B-Instruct-2507 + LoRA, OpenAI-compatible, 127.0.0.1:8799)
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=10
+StartLimitIntervalSec=600
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/.aphrody/runtimes/llama-b11415
+Environment=LD_LIBRARY_PATH=/home/ubuntu/.aphrody/runtimes/llama-b11415
+ExecStart=/home/ubuntu/.aphrody/runtimes/llama-b11415/llama-server \
+  --model /home/ubuntu/.aphrody/models/hf/unsloth/Qwen3-4B-Instruct-2507-GGUF/a06e946bb6b655725eafa393f4a9745d460374c9/Qwen3-4B-Instruct-2507-Q4_K_M.gguf \
+  --lora /home/ubuntu/.aphrody/models/adapters/shenron-chat-v2/adapter.gguf \
+  --alias shenron-chat-v2 \
+  --host 127.0.0.1 --port 8799 \
+  --ctx-size 8192 --parallel 2 --threads 6 --threads-batch 8 \
+  --jinja --cache-reuse 256 \
+  --load-mode mlock --no-webui --metrics
+Restart=always
+RestartSec=5
+TimeoutStartSec=180
+TimeoutStopSec=20
+LimitMEMLOCK=infinity
+MemoryAccounting=true
+MemoryHigh=6G
+MemoryMax=8G
+CPUWeight=80
+Nice=5
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadOnlyPaths=/home/ubuntu/.aphrody/models/adapters
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=CAP_IPC_LOCK
+AmbientCapabilities=CAP_IPC_LOCK
+SystemCallArchitectures=native
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-llama-shenron-chat
+
+[Install]
+WantedBy=multi-user.target

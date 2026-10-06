@@ -139,6 +139,14 @@
       "targetHost": "vps"
     },
     {
+      "service": "aphrody-llama-shenron-chat",
+      "unit": "aphrody-llama-shenron-chat.service",
+      "path": "systemd/aphrody/aphrody-llama-shenron-chat.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
       "service": "aphrody-mcp-http",
       "unit": "aphrody-mcp-http.service",
       "path": "systemd/aphrody/aphrody-mcp-http.service",
@@ -212,6 +220,14 @@
       "service": "aphrody-llama-gemma4",
       "unit": "aphrody-llama-gemma4.service",
       "path": "systemd/aphrody/aphrody-llama-gemma4.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-llama-shenron-chat",
+      "unit": "aphrody-llama-shenron-chat.service",
+      "path": "systemd/aphrody/aphrody-llama-shenron-chat.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "vps"
