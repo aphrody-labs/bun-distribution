@@ -25,7 +25,8 @@
   "assets": {
     "install.sh": "apps/web/downloads/install.sh",
     "install.ps1": "apps/web/downloads/install.ps1",
-    "install-yolo.sh": "apps/yolo/install.sh"
+    "install-yolo.sh": "apps/yolo/install.sh",
+    "pet.webp": "crates/ui/identity/assets/aphrody/sprites/spritesheet.webp"
   },
   "artifacts": [
     {

@@ -42,7 +42,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   "x-content-type-options": "nosniff",
   "referrer-policy": "no-referrer",
   "content-security-policy":
-    "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
 };
 
 const TEXT_TYPES: Record<string, string> = {
@@ -51,6 +51,7 @@ const TEXT_TYPES: Record<string, string> = {
   ".json": "application/json; charset=utf-8",
   ".sha256": "text/plain; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
+  ".webp": "image/webp",
 };
 
 const escapeHtml = (value: string): string =>
@@ -63,8 +64,23 @@ export function formatSize(bytes: number): string {
   return `${bytes} B`;
 }
 
+// The Aphrody pet, idle track of crates/ui/identity (atlas row 0, six timed cells), drawn by CSS
+// at half scale from /pet.webp so the page carries no script for it.
+const PET = { cell: [192, 208], atlas: [1536, 2288], idle: [280, 110, 110, 140, 140, 320] };
+const petKeyframes = (): string => {
+  const total = PET.idle.reduce((a, b) => a + b, 0);
+  let at = 0;
+  return PET.idle
+    .map((ms, i) => {
+      const pct = ((at / total) * 100).toFixed(2);
+      at += ms;
+      return `${pct}%{background-position:-${(i * PET.cell[0]) / 2}px 0}`;
+    })
+    .join("");
+};
+
 const cmd = (label: string, text: string) =>
-  `<button class="cmd" data-copy="${text}" title="Copy"><i></i><code>${text}</code></button>`;
+  `<button class="cmd" data-copy="${text}" aria-label="Copy ${label} command"><span>${label}</span><code>${text}</code></button>`;
 
 export function renderIndex(manifest: Manifest | null): string {
   const base = escapeHtml(manifest?.baseUrl ?? "https://downloads.aphrody.com");
@@ -72,27 +88,32 @@ export function renderIndex(manifest: Manifest | null): string {
     (a) => a.kind === "desktop" || /desktop|studio/i.test(a.name),
   );
   const button = desktop
-    ? `<a class="btn" href="${escapeHtml(desktop.url)}">Desktop app</a>`
-    : `<span class="btn off">Desktop app</span>`;
+    ? `<a class="btn" href="${escapeHtml(desktop.url)}">Download Aphrody</a>`
+    : `<span class="btn off" aria-disabled="true">Download Aphrody</span>`;
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Aphrody</title>
 <style>
-:root{--bg:#fff;--fg:#1b1b1f;--muted:#5c5c66;--line:#d9d9e0;--accent:#4c5bd4;--code:#f2f2f6}
-@media (prefers-color-scheme:dark){:root{--bg:#121214;--fg:#e6e6ea;--muted:#a0a0ab;--line:#2c2c33;--accent:#a8b4ff;--code:#1d1d22}}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
-main{max-width:40rem;margin:0 auto;padding:3rem 1rem;display:grid;gap:.75rem}
-h1{font-size:1.4rem;margin:0 0 .5rem}
-.cmd{display:grid;gap:.25rem;text-align:left;width:100%;padding:.75rem 1rem;border:1px solid var(--line);border-radius:8px;background:var(--code);color:inherit;cursor:pointer;font:inherit}
-.cmd i{font-style:normal;font-size:.8rem;color:var(--muted)}.cmd code{font:13px/1.4 ui-monospace,monospace;word-break:break-all}
-.cmd.ok i::after{content:" - copied";color:var(--accent)}
-.btn{display:block;text-align:center;padding:.75rem 1rem;border-radius:8px;background:var(--accent);color:var(--bg);text-decoration:none;font-weight:600}
-.btn.off{opacity:.4}
+:root{--md-sys-color-background:#fef7ff;--md-sys-color-on-background:#1d1b20;--md-sys-color-primary:#6750a4;--md-sys-color-on-primary:#fff;--md-sys-color-surface-container:#f3edf7;--md-sys-color-on-surface-variant:#49454f;--md-sys-color-outline-variant:#cac4d0}
+@media (prefers-color-scheme:dark){:root{--md-sys-color-background:#141218;--md-sys-color-on-background:#e6e0e9;--md-sys-color-primary:#d0bcff;--md-sys-color-on-primary:#381e72;--md-sys-color-surface-container:#211f26;--md-sys-color-on-surface-variant:#cac4d0;--md-sys-color-outline-variant:#49454f}}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--md-sys-color-background);color:var(--md-sys-color-on-background);font:16px/1.5 Roboto,system-ui,sans-serif}
+main{width:min(100% - 2rem,26rem);display:grid;gap:1rem;justify-items:center;padding:2rem 0}
+.pet{width:96px;height:104px;background:url(/pet.webp) 0 0/768px 1144px no-repeat;animation:idle 1.1s step-end infinite}
+@keyframes idle{${petKeyframes()}}
+@media (prefers-reduced-motion:reduce){.pet{animation:none}}
+h1{font:400 2rem/1.2 Roboto,system-ui,sans-serif;margin:0;letter-spacing:0}
+.btn{display:inline-flex;align-items:center;height:40px;padding:0 24px;border-radius:20px;background:var(--md-sys-color-primary);color:var(--md-sys-color-on-primary);text-decoration:none;font:500 .875rem/1 Roboto,system-ui,sans-serif;letter-spacing:.1px}
+.btn.off{opacity:.38;pointer-events:none}
+.cmd{display:grid;gap:.25rem;width:100%;box-sizing:border-box;text-align:left;padding:.75rem 1rem;border:1px solid var(--md-sys-color-outline-variant);border-radius:12px;background:var(--md-sys-color-surface-container);color:inherit;cursor:pointer;font:inherit}
+.cmd span{font-size:.75rem;letter-spacing:.5px;color:var(--md-sys-color-on-surface-variant)}
+.cmd code{font:13px/1.4 ui-monospace,monospace;word-break:break-all}
+.cmd.ok span::after{content:" \u00B7 copied";color:var(--md-sys-color-primary)}
 </style></head><body><main>
+<div class="pet" role="img" aria-label="Aphrody"></div>
 <h1>Aphrody</h1>
+${button}
 ${cmd("Linux / macOS", `curl -fsSL ${base}/install.sh | sh`)}
 ${cmd("Windows", `irm ${base}/install.ps1 | iex`)}
-${button}
 <script>for(const b of document.querySelectorAll(".cmd"))b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy).then(()=>{b.classList.add("ok");setTimeout(()=>b.classList.remove("ok"),1500)})}</script>
 </main></body></html>
 `;
@@ -181,9 +202,14 @@ export function createHandler(rootInput: string): (request: Request) => Promise<
     }
 
     if (
-      ["/latest.json", "/SHA256SUMS", "/install.sh", "/install.ps1", "/install-yolo.sh"].includes(
-        path,
-      )
+      [
+        "/latest.json",
+        "/SHA256SUMS",
+        "/install.sh",
+        "/install.ps1",
+        "/install-yolo.sh",
+        "/pet.webp",
+      ].includes(path)
     ) {
       const file = Bun.file(join(root, path.slice(1)));
       if (!(await file.exists()))
