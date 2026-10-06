@@ -15,6 +15,7 @@ them lives in `../aphrody-ai`.
 | gRPC binding | `aphrody-a2a-grpc` | tonic transport for client and server |
 | Coordination | `aphrody-a2a-coord` | `ai.json`, JSONL mailboxes, HTTP bridge, native peer dispatch |
 | Client / duel | `aphrody-a2a-client`, `a2a_duel_loop` (example) | Remote calls and file-based duel ticks |
+| TypeScript client | `@aphrody/a2a` (`packages/os/a2a`) | Agent Card discovery, JSON-RPC and HTTP+JSON bindings, SSE, push configs, legacy-dialect shim; types generated from `a2a.proto` |
 
 ## Quick start (from `../aphrody-ai`)
 
@@ -104,6 +105,16 @@ envelope. Lines are forwarded verbatim; validating them is the producer's job.
 The earlier file-transport specification (`docs/PROTOCOL.md` (not in repo) of the monorepo,
 with `type`/`subject` envelopes and a `.well-known/ai.json` copy) no longer
 matches the implementation and was removed.
+
+## TypeScript client
+
+`@aphrody/a2a` ([`packages/os/a2a`](../../../../packages/os/a2a/README.md)) is the Bun client of
+the server above. Its types are generated from `crates/os/a2a-pb/proto/a2a.proto` (`bun run generate`
+in the package), the schema `aphrody-a2a-pb` compiles, and its tests run against an in-process fake
+agent and against `aphrody a2a serve` in dry-run mode. It speaks only A2A 1.0 (`SendMessage`,
+`GetTask`, ...); `LegacyBridge` (`@aphrody/a2a/legacy`) serves the pre-1.0 dialect (`message/send`,
+`tasks/get`, `tasks/update`, `kind`/`type` parts) from a 1.0 agent, with the mapping documented in
+the package README. Not published to npm.
 
 ## References
 
