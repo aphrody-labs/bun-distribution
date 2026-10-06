@@ -28,7 +28,7 @@ secrets: never commit them, never print them.
 | `APHRODY_SSH_USER` | login, default `ubuntu` |
 | `APHRODY_WSL_HOST`, `APHRODY_WSL_PORT`, `APHRODY_WSL_USER` | optional: WSL reachable through a reverse tunnel or the private network ([PRIVATE-TUNNEL.md](../infra/PRIVATE-TUNNEL.md)) |
 | `APHRODY_DOWNLOAD_BASE` | optional: `https://downloads.aphrody.com`, installs the released `aphrody` and `yolo` |
-| `GH_TOKEN` | optional: GitHub token for `aphrody git api` and pushes over HTTPS |
+| `GH_TOKEN` | GitHub token for `gh` and HTTPS pushes (`cloud-ssh.sh` sets the identity and the credential helper) |
 
 `SHENRON_SSH_KEY_B64`, `SHENRON_VPS_HOST`, `SHENRON_DBFR_HOST` and `SHENRON_SSH_USER` remain accepted.
 `cloud-ssh.sh` writes the `vps`, `dbfr` and `wsl` aliases in `~/.ssh/config` so `aphrody infra ssh exec --host <alias>`
