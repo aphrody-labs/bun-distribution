@@ -5,7 +5,7 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use super::{FileExtract, RawEdge, ids::make_id, rust::is_blocklisted};
+use super::{FileExtract, NodeClass, RawEdge, ids::{file_stem, make_id}, rust::is_blocklisted};
 use crate::graph::{Confidence, Edge, Graph, Node, NodeKind};
 
 /// Counters describing an assembly.
@@ -78,7 +78,13 @@ pub fn assemble(files: Vec<FileExtract>) -> (Graph, AssembleStats) {
     let mut calls = Vec::new();
     for f in files {
         for n in f.nodes {
-            match nodes.get(&n.id) {
+            match nodes.get_mut(&n.id) {
+                Some(existing) if existing.file.is_empty() && n.file.is_empty() => {
+                    // Two stubs of one id: keep the proper-case label (`Json` over `json`).
+                    if existing.label == existing.id && n.label != n.id {
+                        existing.label = n.label;
+                    }
+                },
                 Some(existing) if !existing.file.is_empty() || n.file.is_empty() => {},
                 _ => {
                     nodes.insert(n.id.clone(), n);
@@ -91,12 +97,12 @@ pub fn assemble(files: Vec<FileExtract>) -> (Graph, AssembleStats) {
 
     // 2. Fold sourceless stubs onto a unique sourced node of the same label (types only).
     let mut by_label: HashMap<String, Vec<String>> = HashMap::new();
-    for n in nodes.values().filter(|n| !n.file.is_empty() && !n.label.ends_with(')') && !n.label.ends_with('!')) {
-        by_label.entry(n.label.clone()).or_default().push(n.id.clone());
+    for n in nodes.values().filter(|n| matches!(n.class, NodeClass::Type | NodeClass::Variant)) {
+        by_label.entry(n.label.to_lowercase()).or_default().push(n.id.clone());
     }
     let mut rewire: HashMap<String, String> = HashMap::new();
     for n in nodes.values().filter(|n| n.file.is_empty()) {
-        if let Some(candidates) = by_label.get(&n.label)
+        if let Some(candidates) = by_label.get(&n.label.to_lowercase())
             && let [only] = candidates.as_slice()
         {
             rewire.insert(n.id.clone(), only.clone());
@@ -111,6 +117,40 @@ pub fn assemble(files: Vec<FileExtract>) -> (Graph, AssembleStats) {
     for id in rewire.keys() {
         nodes.remove(id);
     }
+
+    // 2b. Import targets: a unique type with that name, else a unique file with that stem, else a
+    // concept node labelled by the imported name.
+    let mut by_stem: HashMap<String, Vec<String>> = HashMap::new();
+    for n in nodes.values().filter(|n| n.class == NodeClass::File) {
+        let stem = file_stem(n.file.rsplit('/').next().unwrap_or(&n.file));
+        by_stem.entry(stem.to_lowercase()).or_default().push(n.id.clone());
+    }
+    let mut import_targets: HashMap<String, String> = HashMap::new();
+    let mut concepts: Vec<String> = Vec::new();
+    for e in edges.iter().filter(|e| e.relation == "imports_from" && !nodes.contains_key(&e.dst)) {
+        if import_targets.contains_key(&e.dst) {
+            continue;
+        }
+        let resolved = match (by_label.get(&e.dst).map(Vec::as_slice), by_stem.get(&e.dst).map(Vec::as_slice)) {
+            (Some([only]), _) | (None | Some([]), Some([only])) => only.clone(),
+            _ => {
+                concepts.push(e.dst.clone());
+                e.dst.clone()
+            },
+        };
+        import_targets.insert(e.dst.clone(), resolved);
+    }
+    for e in &mut edges {
+        if e.relation == "imports_from"
+            && let Some(t) = import_targets.get(&e.dst)
+        {
+            e.dst.clone_from(t);
+        }
+    }
+    for id in concepts {
+        nodes.entry(id.clone()).or_insert(super::RawNode { id: id.clone(), label: id, file: String::new(), loc: String::new(), class: NodeClass::Stub });
+    }
+    stats.stubs_folded += import_targets.len();
 
     // 3. Resolve call sites.
     let mut defs: HashMap<(String, bool), Vec<(String, String)>> = HashMap::new(); // (name, method) -> (nid, file)
@@ -172,7 +212,7 @@ pub fn assemble(files: Vec<FileExtract>) -> (Graph, AssembleStats) {
     for (id, n) in &nodes {
         index.insert(id.clone(), graph_nodes.len());
         let mut node = Node::code(id, &n.label, if n.file.is_empty() { None } else { Some(&n.file) });
-        node.kind = NodeKind::Code;
+        node.kind = if n.file.is_empty() { NodeKind::Concept } else { NodeKind::Code };
         node.loc = if n.loc.is_empty() { None } else { Some(n.loc.clone()) };
         node.lang = lang_of(&n.file);
         graph_nodes.push(node);
@@ -212,8 +252,8 @@ mod tests {
         assert_eq!(edge("run()", "local()").map(|e| e.confidence), Some(Confidence::Extracted));
         assert_eq!(edge("run()", "remote()").map(|e| e.confidence), Some(Confidence::Inferred));
         assert!(edge("run()", "new()").is_none(), "generic names are not resolved across files");
-        assert_eq!((stats.same_file, stats.cross_file), (1, 1));
-        assert_eq!(stats.unresolved, 2);
+        assert_eq!((stats.same_file, stats.cross_file), (0, 1));
+        assert_eq!(stats.unresolved, 1);
     }
 
     #[test]

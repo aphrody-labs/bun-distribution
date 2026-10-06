@@ -2,11 +2,11 @@
 //! Rust extraction with tree-sitter: files, functions, methods, types, traits, impl blocks,
 //! macros, `use` imports, type references of signatures and call sites.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use tree_sitter::{Node, Parser};
 
-use super::{FileExtract, RawCall, RawEdge, RawNode, ids::{file_stem, make_id}};
+use super::{FileExtract, NodeClass, RawCall, RawEdge, RawNode, ids::{file_stem, make_id}};
 use crate::graph::Confidence;
 
 /// Std and prelude names that would otherwise become hubs of every Rust corpus.
@@ -43,6 +43,10 @@ struct Ctx<'a> {
     seen: HashSet<String>,
     local_types: HashSet<String>,
     bodies: Vec<(String, Node<'a>)>,
+    macros: HashMap<String, String>,
+    labels: HashMap<String, String>,
+    type_nids: HashSet<String>,
+    pairs: HashSet<(String, String)>,
 }
 
 fn text<'a>(node: Node<'_>, src: &'a [u8]) -> &'a str {
@@ -54,9 +58,9 @@ fn line(node: Node<'_>) -> usize {
 }
 
 impl<'a> Ctx<'a> {
-    fn add_node(&mut self, id: &str, label: &str, line: usize) {
+    fn add_node(&mut self, id: &str, label: &str, line: usize, class: NodeClass) {
         if self.seen.insert(id.to_owned()) {
-            self.out.nodes.push(RawNode { id: id.to_owned(), label: label.to_owned(), file: self.rel.to_owned(), loc: format!("L{line}") });
+            self.out.nodes.push(RawNode { id: id.to_owned(), label: label.to_owned(), file: self.rel.to_owned(), loc: format!("L{line}"), class });
         }
     }
 
@@ -82,7 +86,9 @@ impl<'a> Ctx<'a> {
         }
         let stub = make_id(&[name]);
         if self.seen.insert(stub.clone()) {
-            self.out.nodes.push(RawNode { id: stub.clone(), label: name.to_owned(), file: String::new(), loc: String::new() });
+            self.out.nodes.push(RawNode { id: stub.clone(), label: name.to_owned(), file: String::new(), loc: String::new(), class: NodeClass::Stub });
+        } else if let Some(node) = self.out.nodes.iter_mut().find(|n| n.id == stub && n.file.is_empty() && n.label == stub) {
+            node.label = name.to_owned();
         }
         stub
     }
@@ -223,7 +229,7 @@ impl<'a> Ctx<'a> {
                     let name = text(*id, self.src).to_owned();
                     if !name.is_empty() {
                         let nid = make_id(&[owner, &name]);
-                        self.add_node(&nid, &name, at);
+                        self.add_node(&nid, &name, at, NodeClass::Variant);
                         self.add_edge(owner, &nid, "case_of", at, None);
                     }
                 }
@@ -260,12 +266,12 @@ impl<'a> Ctx<'a> {
                     let at = line(node);
                     let nid = if let Some(parent) = impl_nid {
                         let nid = make_id(&[parent, &name]);
-                        self.add_node(&nid, &format!(".{name}()"), at);
+                        self.add_node(&nid, &format!(".{name}()"), at, NodeClass::Function);
                         self.add_edge(parent, &nid, "method", at, None);
                         nid
                     } else {
                         let nid = make_id(&[self.stem, &name]);
-                        self.add_node(&nid, &format!("{name}()"), at);
+                        self.add_node(&nid, &format!("{name}()"), at, NodeClass::Function);
                         let file = self.file_nid.clone();
                         self.add_edge(&file, &nid, "contains", at, None);
                         nid
@@ -281,7 +287,8 @@ impl<'a> Ctx<'a> {
                     let name = text(name, self.src).to_owned();
                     let at = line(node);
                     let nid = make_id(&[self.stem, "macro", &name]);
-                    self.add_node(&nid, &format!("{name}!"), at);
+                    self.add_node(&nid, &format!("{name}!"), at, NodeClass::Macro);
+                    self.macros.entry(name.clone()).or_insert_with(|| nid.clone());
                     let file = self.file_nid.clone();
                     self.add_edge(&file, &nid, "contains", at, None);
                 }
@@ -291,7 +298,7 @@ impl<'a> Ctx<'a> {
                     let name = text(name, self.src).to_owned();
                     let at = line(node);
                     let nid = make_id(&[self.stem, &name]);
-                    self.add_node(&nid, &name, at);
+                    self.add_node(&nid, &name, at, NodeClass::Type);
                     let file = self.file_nid.clone();
                     self.add_edge(&file, &nid, "contains", at, None);
                     if node.kind() == "struct_item" {
@@ -325,17 +332,20 @@ impl<'a> Ctx<'a> {
                 let at = line(node);
                 let type_name = text(ty, self.src).trim().to_owned();
                 let nid = make_id(&[self.stem, &type_name]);
-                self.add_node(&nid, &type_name, at);
-                let file = self.file_nid.clone();
-                if !self.out.edges.iter().any(|e| e.src == file && e.dst == nid && e.relation == "contains") {
-                    self.add_edge(&file, &nid, "contains", at, None);
-                }
+                self.add_node(&nid, &type_name, at, NodeClass::Type);
                 if let Some(tr) = node.child_by_field_name("trait") {
                     let mut trefs = Vec::new();
                     self.type_refs(Some(tr), false, &mut trefs);
-                    if let Some((name, _)) = trefs.first() {
+                    for (idx, (name, _)) in trefs.iter().enumerate() {
                         let target = self.named(name);
-                        self.add_edge(&nid, &target, "implements", at, None);
+                        if target == nid {
+                            continue;
+                        }
+                        if idx == 0 {
+                            self.add_edge(&nid, &target, "implements", at, None);
+                        } else {
+                            self.add_edge(&nid, &target, "references", at, Some("generic_arg"));
+                        }
                     }
                 }
                 if let Some(body) = node.child_by_field_name("body") {
@@ -351,12 +361,12 @@ impl<'a> Ctx<'a> {
                     let at = line(node);
                     let nid = if let Some(parent) = impl_nid {
                         let nid = make_id(&[parent, &name]);
-                        self.add_node(&nid, &format!(".{name}"), at);
+                        self.add_node(&nid, &format!(".{name}"), at, NodeClass::Const);
                         self.add_edge(parent, &nid, "contains", at, None);
                         nid
                     } else {
                         let nid = make_id(&[self.stem, &name]);
-                        self.add_node(&nid, &name, at);
+                        self.add_node(&nid, &name, at, NodeClass::Const);
                         let file = self.file_nid.clone();
                         self.add_edge(&file, &nid, "contains", at, None);
                         nid
@@ -366,18 +376,13 @@ impl<'a> Ctx<'a> {
             },
             "use_declaration" => {
                 if let Some(arg) = node.child_by_field_name("argument") {
-                    let path = text(arg, self.src);
-                    let module = path.split(['{', ',']).next().unwrap_or(path).trim().trim_end_matches("::").trim_end_matches('*').trim_end_matches("::");
-                    let module = match module.rsplit_once("::") {
-                        Some((m, _)) if !path.contains('{') && !path.ends_with("::*") => m,
-                        _ => module,
-                    };
-                    if !module.is_empty() {
-                        let label = module.rsplit("::").next().unwrap_or(module);
-                        let target = make_id(&[module]);
-                        if self.seen.insert(target.clone()) {
-                            self.out.nodes.push(RawNode { id: target.clone(), label: label.to_owned(), file: String::new(), loc: String::new() });
-                        }
+                    let raw = text(arg, self.src);
+                    let clean = raw.split('{').next().unwrap_or(raw).trim_end_matches(':').trim_end_matches('*').trim_end_matches(':');
+                    let name = clean.rsplit("::").next().unwrap_or(clean).trim();
+                    if !name.is_empty() {
+                        // The target is resolved at corpus level (a type, a file, or a concept
+                        // node); it is not a node of this file, so calls never match it.
+                        let target = make_id(&[name]);
                         let file = self.file_nid.clone();
                         self.add_edge(&file, &target, "imports_from", line(node), Some("import"));
                     }
@@ -400,31 +405,71 @@ impl<'a> Ctx<'a> {
         }
     }
 
+    fn prepare_resolution(&mut self) {
+        for n in &self.out.nodes {
+            let normalised = n.label.trim_matches(|c| c == '(' || c == ')').trim_start_matches('.').to_owned();
+            self.labels.insert(normalised, n.id.clone());
+            if !n.label.ends_with(')') {
+                self.type_nids.insert(n.id.clone());
+            }
+        }
+    }
+
+    fn call_edge(&mut self, from: &str, target: &str, relation: &str, context: &str, at: usize) {
+        if target == from || !self.pairs.insert((from.to_owned(), target.to_owned())) {
+            return;
+        }
+        self.add_edge(from, target, relation, at, Some(context));
+    }
+
+    /// Resolve the calls of one function body the way Graphify does: a name defined in this file
+    /// is an EXTRACTED `calls` edge (a `references` edge for a type used as a constructor); a plain
+    /// call of an unknown name is kept for corpus resolution; scoped and member calls are only
+    /// matched inside the file.
     fn collect_calls(&mut self, from: &str, node: Node<'a>) {
+        if node.kind() == "function_item" {
+            return;
+        }
+        if node.kind() == "macro_invocation"
+            && let Some(m) = node.child_by_field_name("macro")
+            && m.kind() == "identifier"
+        {
+            let name = text(m, self.src).to_owned();
+            if let Some(target) = self.macros.get(&name).cloned() {
+                self.call_edge(from, &target, "calls", "call", line(node));
+            }
+        }
         if node.kind() == "call_expression"
             && let Some(func) = node.child_by_field_name("function")
         {
-            {
-                let (name, method) = match func.kind() {
-                    "identifier" => (text(func, self.src).to_owned(), false),
-                    "scoped_identifier" => (
-                        func.child_by_field_name("name").map_or_else(String::new, |n| text(n, self.src).to_owned()),
-                        true,
-                    ),
-                    "field_expression" => (
-                        func.child_by_field_name("field").map_or_else(String::new, |n| text(n, self.src).to_owned()),
-                        true,
-                    ),
-                    "generic_function" => (
-                        func.child_by_field_name("function")
-                            .map(|f| text(f, self.src).rsplit("::").next().unwrap_or("").to_owned())
-                            .unwrap_or_default(),
-                        false,
-                    ),
-                    _ => (String::new(), false),
-                };
-                if !name.is_empty() {
-                    self.out.calls.push(RawCall { from: from.to_owned(), name, method, file: self.rel.to_owned(), loc: format!("L{}", line(node)) });
+            let (name, member, scoped) = match func.kind() {
+                "identifier" => (text(func, self.src).to_owned(), false, false),
+                "field_expression" => (
+                    func.child_by_field_name("field").map_or_else(String::new, |n| text(n, self.src).to_owned()),
+                    true,
+                    false,
+                ),
+                "scoped_identifier" => (
+                    func.child_by_field_name("name").map_or_else(String::new, |n| text(n, self.src).to_owned()),
+                    false,
+                    true,
+                ),
+                _ => (String::new(), false, false),
+            };
+            let builtin = BUILTIN_TYPES.contains(&name.as_str()) && !self.local_types.contains(&name);
+            if !name.is_empty() && !builtin {
+                if let Some(target) = self.labels.get(&name).cloned() {
+                    let constructor = self.type_nids.contains(&target);
+                    let (relation, context) = if constructor { ("references", "constructor") } else { ("calls", "call") };
+                    self.call_edge(from, &target, relation, context, line(node));
+                } else if !member && !scoped && !is_blocklisted(&name.to_lowercase()) {
+                    self.out.calls.push(RawCall {
+                        from: from.to_owned(),
+                        name,
+                        method: false,
+                        file: self.rel.to_owned(),
+                        loc: format!("L{}", line(node)),
+                    });
                 }
             }
         }
@@ -457,12 +502,17 @@ pub fn extract(rel_path: &str, source: &[u8]) -> FileExtract {
         seen: HashSet::new(),
         local_types: HashSet::new(),
         bodies: Vec::new(),
+        macros: HashMap::new(),
+        labels: HashMap::new(),
+        type_nids: HashSet::new(),
+        pairs: HashSet::new(),
     };
     let file_name = rel_path.rsplit('/').next().unwrap_or(rel_path);
-    ctx.add_node(&file_nid, file_name, 1);
+    ctx.add_node(&file_nid, file_name, 1, NodeClass::File);
     let root = tree.root_node();
     ctx.scan_local_types(root);
     ctx.walk(root, None);
+    ctx.prepare_resolution();
     let bodies = std::mem::take(&mut ctx.bodies);
     for (nid, body) in bodies {
         ctx.collect_calls(&nid, body);
@@ -534,13 +584,14 @@ fn helper(q: &str) -> Hit { Hit }
     }
 
     #[test]
-    fn call_sites_are_recorded_with_their_form() {
-        let f = extract("a.rs", SRC.as_bytes());
-        let find = |n: &str| f.calls.iter().find(|c| c.name == n);
-        assert!(find("init").is_some_and(|c| !c.method && c.from == "a_ragstore_open"));
-        assert!(find("open").is_some_and(|c| c.method));
-        assert!(find("open_reader").is_some_and(|c| c.method));
-        assert!(find("helper").is_some());
+    fn calls_inside_the_file_are_edges_and_unknown_plain_calls_wait_for_the_corpus() {
+        let f = extract("a.rs", format!("{SRC}\nfn caller() {{ outside(); self_less::scoped(); x.member(); }}").as_bytes());
+        let has = |s: &str, d: &str, r: &str| f.edges.iter().any(|e| e.src == s && e.dst == d && e.relation == r);
+        assert!(has("a_ragstore_open", "a_init", "calls"));
+        assert!(has("a_ragstore_search", "a_helper", "calls"));
+        // Only a plain unknown call is kept for corpus resolution; scoped and member calls are not.
+        let pending: Vec<&str> = f.calls.iter().map(|c| c.name.as_str()).collect();
+        assert_eq!(pending, ["outside"]);
     }
 
     #[test]

@@ -14,6 +14,26 @@ use serde::{Deserialize, Serialize};
 
 use crate::graph::Confidence;
 
+/// What a raw node is; corpus resolution folds stubs only onto types.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum NodeClass {
+    /// A file node.
+    File,
+    /// A struct, enum, trait or the type of an impl block.
+    Type,
+    /// A function or method.
+    Function,
+    /// A constant or static.
+    Const,
+    /// An enum variant.
+    Variant,
+    /// A macro.
+    Macro,
+    /// A sourceless stub awaiting resolution.
+    #[default]
+    Stub,
+}
+
 /// A node as read from one file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RawNode {
@@ -25,6 +45,9 @@ pub struct RawNode {
     pub file: String,
     /// `Lnn` location.
     pub loc: String,
+    /// Class of the node.
+    #[serde(default)]
+    pub class: NodeClass,
 }
 
 /// An edge as read from one file; `dst` may name a stub.
