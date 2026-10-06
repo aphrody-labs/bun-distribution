@@ -193,6 +193,9 @@ def isolated_distributions(python: str = "3.12") -> None:
                     isolated,
                     ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache"),
                 )
+                if not (isolated / "conftest.py").exists():
+                    # shared loopback inference fixtures live in py/conftest.py
+                    shutil.copy2(ROOT / "conftest.py", isolated / "conftest.py")
                 config = work / name / "pytest.ini"
                 write(
                     config,
