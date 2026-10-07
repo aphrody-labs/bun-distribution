@@ -218,3 +218,9 @@ Dragon Ball avec le profil privé `aphrody`, label
 sur Saikyo Jump (`/news/01_4460`). Ces pages de site officiel apportent des références
 et actualités, pas le texte intégral des 42 tomes ni une preuve d'exhaustivité de
 Dragon Ball Super. Aucun scan ni transcription de manga n'a été copié dans le dépôt.
+
+Reprise de la frontier existante (même profil, label, URL autorisée, profondeur 2,
+budget 25) : rapport natif à 50 tentatives cumulées, 36 pages écrites, 115 chunks,
+0 erreur et 55 URL en attente; `complete:false`. Une nouvelle recherche `home query`
+retrouve les documents indexés sous ce label. La reprise augmente les références
+officielles disponibles, sans changer la limite de couverture documentaire ci-dessus.
