@@ -10,7 +10,10 @@
     "scripts",
     "src",
     "undeclared-deps.ts",
-    "showcase"
+    "showcase",
+    "build-wasm-os.ts",
+    "prove-wasm-os.ts",
+    "tsconfig.wasm-os.json"
   ],
   "type": "module",
   "main": "./src/index.ts",
@@ -24,6 +27,7 @@
     "access": "public"
   },
   "scripts": {
+    "build:wasm-os": "bun run build-wasm-os.ts",
     "dev": "bun ../../../packages/engine/yolo/src/index.ts m3 dev",
     "build": "bun run build.ts",
     "check": "oxlint src/app.tsx && tsc --noEmit",
@@ -41,9 +45,11 @@
     "showcase:typecheck": "cd showcase && tsc -p tsconfig.json --noEmit",
     "showcase:test": "cd showcase && bun test ./test && bun run test:dom",
     "showcase:tauri": "cd showcase && bun scripts/tauri.ts",
-    "showcase:test:dom": "cd showcase && bun test --preload @aphrody/m3-config/test/dom ./test-dom"
+    "showcase:test:dom": "cd showcase && bun test --preload @aphrody/m3-config/test/dom ./test-dom",
+    "prove:wasm-os": "bun run prove-wasm-os.ts"
   },
   "dependencies": {
+    "@aphrody/shell-web": "workspace:*",
     "@aphrody/api": "workspace:*",
     "@aphrody/assets": "workspace:*",
     "@aphrody/canvas": "workspace:*",

@@ -60,8 +60,23 @@
       "default": "./dist/config.js"
     },
     "./react": {
+      "bun": "./src/react.tsx",
       "types": "./dist/react.d.ts",
       "default": "./dist/react.js"
+    },
+    "./native": {
+      "bun": "./src/native-layout.ts",
+      "types": "./dist/native-layout.d.ts",
+      "browser": "./src/native-layout.ts",
+      "import": "./src/native-layout.ts",
+      "default": "./dist/native-layout.js"
+    },
+    "./native-react": {
+      "bun": "./src/native-layout-react.tsx",
+      "types": "./dist/native-layout-react.d.ts",
+      "browser": "./src/native-layout-react.tsx",
+      "import": "./src/native-layout-react.tsx",
+      "default": "./dist/native-layout-react.js"
     },
     "./lit": {
       "types": "./dist/lit.d.ts",
@@ -88,6 +103,7 @@
   },
   "dependencies": {
     "@aphrody/bun": "^3.3.0",
+    "@aphrody/canvas": "workspace:*",
     "@aphrody/m3-fonts": "workspace:*",
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-react": "workspace:*",
