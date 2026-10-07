@@ -61,4 +61,25 @@ mod tests {
         assert!(out["stdout"].as_str().unwrap().contains("# T"));
         assert!(run_json(&args, "", "[1]").is_err());
     }
+
+    #[test]
+    fn dragon_ball_projection_runs_through_same_wasm_adapter() {
+        let args = [
+            "html",
+            "dragon-ball",
+            "-",
+            "--kind",
+            "toei",
+            "--base-url",
+            "https://lineup.toei-anim.co.jp/ja/tv/dragon/episode/1/",
+        ]
+        .map(str::to_owned);
+        let output:serde_json::Value=serde_json::from_str(&run_json(&args,"<h1 class='story_caption_title'>The first episode</h1><div class='text_details_inner'>Source synopsis.</div>","").unwrap()).unwrap();
+        assert_eq!(output["code"], 0);
+        let episode: serde_json::Value =
+            serde_json::from_str(output["stdout"].as_str().unwrap()).unwrap();
+        assert_eq!(episode[0]["series"], "dragon_ball");
+        assert_eq!(episode[0]["episodeNumber"], 1);
+        assert_eq!(episode[0]["broadcastDate"], serde_json::Value::Null);
+    }
 }

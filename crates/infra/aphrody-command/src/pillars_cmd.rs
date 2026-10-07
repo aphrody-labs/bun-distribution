@@ -141,7 +141,7 @@ pub(crate) async fn handle_os(action: OsAction) -> miette::Result<()> {
     Ok(())
 }
 
-mod web;
+pub(crate) mod web;
 pub(crate) use web::{WebAction, handle_web};
 
 // --- 4. INFRA PILLAR: `aphrody infra` is the aphrody-infra control plane (multicall.rs) ---

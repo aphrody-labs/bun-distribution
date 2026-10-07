@@ -32,6 +32,57 @@ static HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
         .expect("static search HTTP client")
 });
 
+pub(super) async fn public_json(url: Url) -> Result<Value, String> {
+    let mut response = HTTP
+        .get(url)
+        .header("user-agent", DESKTOP_UA)
+        .send()
+        .await
+        .map_err(|error| error.to_string())?
+        .error_for_status()
+        .map_err(|error| error.to_string())?;
+    let mut bytes = Vec::new();
+    while let Some(chunk) = response.chunk().await.map_err(|error| error.to_string())? {
+        if bytes.len().saturating_add(chunk.len()) > 8 * 1024 * 1024 {
+            return Err("Google discovery response exceeds 8 MiB".into());
+        }
+        bytes.extend_from_slice(&chunk);
+    }
+    serde_json::from_slice(&bytes).map_err(|error| error.to_string())
+}
+
+/// The same domain-scoped cookie and native/browser owners as the Web SERP.
+pub(super) async fn discovery_html(url: &Url, options: &SearchOptions) -> Result<String, String> {
+    if !url.host_str().is_some_and(is_google_domain) {
+        return Err("discovery HTML URL must belong to Google".into());
+    }
+    let owned = options.clone();
+    let cookies = blocking(move || search_cookies(&owned)).await?;
+    let transports: &[SearchTransport] = match options.transport {
+        SearchTransport::Auto => &[SearchTransport::Fetch, SearchTransport::Http],
+        SearchTransport::Fetch => &[SearchTransport::Fetch],
+        SearchTransport::Http => &[SearchTransport::Http],
+    };
+    let mut failures = Vec::new();
+    for transport in transports {
+        let response = match transport {
+            SearchTransport::Fetch => native_fetch(url, &cookies, &options.domain).await,
+            SearchTransport::Http => browser_fetch(url, &cookies, &options.domain).await,
+            SearchTransport::Auto => unreachable!(),
+        };
+        match response {
+            Ok(html) if !is_blocked_serp_html(&html) && html.len() <= 8 * 1024 * 1024 => {
+                return Ok(html);
+            },
+            Ok(_) => {
+                failures.push("blocked, empty or oversized Google discovery response".to_owned())
+            },
+            Err(error) => failures.push(error),
+        }
+    }
+    Err(failures.join("; "))
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SearchTransport {

@@ -33,6 +33,7 @@ mod canonical;
 mod chunk;
 mod date;
 mod dom;
+pub mod dragon_ball;
 mod extract;
 pub mod media;
 mod meta;

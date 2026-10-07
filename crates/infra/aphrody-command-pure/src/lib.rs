@@ -177,6 +177,17 @@ pub enum ToolcallCommand {
 
 #[derive(Debug, Subcommand)]
 pub enum HtmlCommand {
+    /// Source-aware Dragon Ball projection as JSON, shared with native Web.
+    DragonBall {
+        file: String,
+        /// catalogue, gallery, inventory, toei, jump, translation or official.
+        #[arg(long)]
+        kind: String,
+        #[arg(long)]
+        base_url: String,
+        #[arg(long, default_value = "")]
+        slug: String,
+    },
     /// Main-content extraction as JSON (title, byline, Markdown, blocks, SimHash).
     Extract {
         /// File, or `-` for stdin.
@@ -365,6 +376,9 @@ fn toolcall(command: &ToolcallCommand, io: &mut dyn PureIo) -> Result<String, Pu
 
 fn html(command: &HtmlCommand, io: &mut dyn PureIo) -> Result<String, PureError> {
     match command {
+        HtmlCommand::DragonBall { file, kind, base_url, slug } => Ok(
+            aphrody_web_extract::dragon_ball::project_json(kind, &io.read(file)?, base_url, slug)?,
+        ),
         HtmlCommand::Extract { file, base_url } => {
             Ok(aphrody_web_extract::extract_main_json(&io.read(file)?, base_url.as_deref()))
         },
@@ -500,6 +514,43 @@ mod tests {
         let hash = run_with(&["html", "simhash", "-"], "same text here", &[]);
         assert_eq!(hash.stdout.trim().len(), 16);
         assert_eq!(hash, run_with(&["html", "simhash", "-"], "same text here", &[]));
+    }
+
+    #[test]
+    fn dragon_ball_projection_uses_shared_source_parser() {
+        let result = run_with(
+            &[
+                "html",
+                "dragon-ball",
+                "-",
+                "--kind",
+                "official",
+                "--base-url",
+                "https://dragon-ball-official.com/news/01_1.html",
+            ],
+            "<h3 class='news-post__title'>Interview</h3><time datetime='2026-10-07'></time>",
+            &[],
+        );
+        let value = json_of(&result);
+        assert_eq!(value[0]["title"], "Interview");
+        assert_eq!(value[0]["date"], "2026-10-07");
+        assert_eq!(
+            run_with(
+                &[
+                    "html",
+                    "dragon-ball",
+                    "-",
+                    "--kind",
+                    "unknown",
+                    "--base-url",
+                    "https://example.org"
+                ],
+                "",
+                &[]
+            )
+            .code,
+            1
+        );
     }
 
     #[test]

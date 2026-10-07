@@ -2,6 +2,7 @@
 //! Shared crawl frontier, page processing and injectable network transport.
 
 mod blocking;
+pub mod dragon_ball;
 mod frontier;
 mod mediawiki;
 mod mirror;
@@ -14,7 +15,10 @@ pub mod wiki;
 
 pub use blocking::BlockingCrawler;
 pub use frontier::{AddRequest, Frontier, FrontierOptions, FrontierStats, Lease, RequestState};
-pub use mediawiki::{MediaWikiDocument, MediaWikiError, MediaWikiOptions, crawl_mediawiki};
+pub use mediawiki::{
+    MediaWikiDocument, MediaWikiError, MediaWikiOptions, crawl_mediawiki,
+    crawl_mediawiki_with_transport,
+};
 pub use mirror::{
     MirrorError, MirrorFailure, MirrorFile, MirrorOptions, MirrorReport, mirror_site,
 };

@@ -118,6 +118,7 @@ aphrody-web-frames                = { workspace = true }
 aphrody-x                         = { workspace = true }
 obscura                           = { workspace = true }
 obscura-dom                       = { workspace = true }
+obscura-browser                   = { workspace = true }
 obscura-net                       = { workspace = true }
 aphrody-n2b                       = { workspace = true }
 aphrody-translate         = { workspace = true }

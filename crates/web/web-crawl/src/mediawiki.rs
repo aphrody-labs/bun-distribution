@@ -7,6 +7,7 @@
 
 use std::time::{Duration, Instant};
 
+use crate::{CrawlTransport, FetchResult};
 use aphrody_web_extract::{extract_main, html_to_markdown};
 use obscura_net::ObscuraHttpClient;
 use regex::Regex;
@@ -101,6 +102,27 @@ pub async fn crawl_mediawiki(
     client: &ObscuraHttpClient,
     options: &MediaWikiOptions,
 ) -> Result<Vec<MediaWikiDocument>, MediaWikiError> {
+    crawl_mediawiki_with_transport(&MediaWikiTransport(client), options).await
+}
+
+struct MediaWikiTransport<'a>(&'a ObscuraHttpClient);
+impl CrawlTransport for MediaWikiTransport<'_> {
+    async fn fetch(&self, url: &Url) -> Result<FetchResult, String> {
+        let response = self.0.fetch(url).await.map_err(|error| error.to_string())?;
+        Ok(FetchResult {
+            url: response.url.clone(),
+            status: response.status,
+            content_type: response.content_type().map(str::to_owned),
+            body: response.text(),
+        })
+    }
+}
+
+/// The same API crawler using an injectable capture/budget transport.
+pub async fn crawl_mediawiki_with_transport<T: CrawlTransport>(
+    client: &T,
+    options: &MediaWikiOptions,
+) -> Result<Vec<MediaWikiDocument>, MediaWikiError> {
     validate_options(options)?;
     let include = compile_patterns(&options.include_url_regex, "include")?;
     let exclude = compile_patterns(&options.exclude_url_regex, "exclude")?;
@@ -132,7 +154,8 @@ pub async fn crawl_mediawiki(
             params.push(("continue", generic_continue.clone()));
         }
 
-        let response = request_json(client, options, &params, &mut last_request).await?;
+        let response =
+            request_json_with_transport(client, options, &params, &mut last_request).await?;
         if let Some(error) = api_error(&response) {
             return Err(MediaWikiError::Api(error));
         }
@@ -168,7 +191,8 @@ pub async fn crawl_mediawiki(
                 ("page", title.clone()),
                 ("prop", "text".to_owned()),
             ];
-            let parsed = request_json(client, options, &params, &mut last_request).await?;
+            let parsed =
+                request_json_with_transport(client, options, &params, &mut last_request).await?;
             if let Some(error) = api_error(&parsed) {
                 return Err(MediaWikiError::Api(error));
             }
@@ -266,6 +290,15 @@ pub(crate) async fn request_json(
     params: &[(&str, String)],
     last_request: &mut Option<Instant>,
 ) -> Result<Value, MediaWikiError> {
+    request_json_with_transport(&MediaWikiTransport(client), options, params, last_request).await
+}
+
+async fn request_json_with_transport<T: CrawlTransport>(
+    client: &T,
+    options: &MediaWikiOptions,
+    params: &[(&str, String)],
+    last_request: &mut Option<Instant>,
+) -> Result<Value, MediaWikiError> {
     if let Some(previous) = last_request {
         let elapsed = previous.elapsed();
         if elapsed < options.request_interval {
@@ -286,7 +319,7 @@ pub(crate) async fn request_json(
     if !(200..300).contains(&response.status) {
         return Err(MediaWikiError::HttpStatus { url: url.to_string(), status: response.status });
     }
-    serde_json::from_str(&response.text())
+    serde_json::from_str(&response.body)
         .map_err(|error| MediaWikiError::InvalidResponse(error.to_string()))
 }
 
