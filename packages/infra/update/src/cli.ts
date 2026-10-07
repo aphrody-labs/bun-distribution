@@ -22,6 +22,9 @@ export const updateHelp = `yolo update: one entry point for toolchain pins, depe
   yolo update cargo [--apply]           Cargo.lock refresh within manifest ranges (dry run by default)
   yolo update deps <sub> [...]          dependency pipeline: plan|apply|facts|fix|changelog|memory|inventory|baseline|run
   yolo update systemd [check|install|restart]
+  yolo update systemd jobs --binary-sha256 HEX [--apply]   qualify and activate the declared local MCP and worker units
+  yolo update systemd jobs-clients --host vps|dbfr|wsl --binary-sha256 HEX [--apply]   prepare protected native MCP clients; repeat --host for each selected host
+  yolo update systemd jobs-clients --host vps --host dbfr --host wsl --binary-sha256 HEX --qualify --apply   prove each current worker with a durable read-only native Web job
   yolo update sources [status|sync|verify|drift|forks|repo|bump]   upstream source checkouts, upstream pins, forks, git state
   yolo update rust|bun|uv <status|plan|apply|verify>   per-ecosystem structured bump (docs/operations/infra/update/{RUST,BUN,UV}.md)
   yolo update upstream [list|drift|refresh|fetch|prune|docs]   reference upstreams: catalogue, live drift, disposable fetch
