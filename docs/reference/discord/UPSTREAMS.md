@@ -26,7 +26,7 @@ support packages:
 `create-discord-bot`, and `discord.js`.
 
 The three upstream apps are kept in `apps/guide` (not in repo), `iecode/apps/rg/website`, and
-`docs/products/discord/apps/proxy-container`. DiscordX's existing Docusaurus app remains in `docs/`;
+`docs/products/discord/apps/proxy-container` (not in repo) (external DiscordX application layout). DiscordX's existing Docusaurus app remains in `docs/`;
 it covers the DiscordX framework and is not a duplicate of the Discord.js API
 reference or guide.
 

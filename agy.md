@@ -1,5 +1,7 @@
 # agy.md — reprise du travail (état au 2026-10-06 22:30 Paris)
 
+> Path reconciliation (2026-10-07): `crates/interop/python-ffi` (not in repo) → `crates/interop/ffi/src/python_ffi.rs`. Original dated observations below retain their historical scope.
+
 Lis d'abord `AGENTS.md`, `PLAN.md`, `MEMORY.md`. Règles du propriétaire : réponses en français concises, aucun humain dans la
 boucle, commit et push directs sur `workspace/main` (jamais de force-push, jamais de `reset --hard`), commits
 `aphrody-dev <contact@aphrody.com>` sans mention d'IA ni co-auteur, corriger les erreurs préexistantes, Cargo lourd
@@ -12,10 +14,10 @@ des frameworks.
 
 ## Déjà sur `main` (ne pas refaire)
 - App desktop unique : routes `admin` (omar-kit) et `creator` (creator-kit) dans `m3/packages/app-ui`, `crates/ui/app/src/kits.rs`,
-  `m3/apps/web` fusionné dans `showcase`, `apps/yolo/web` absorbé (Studio › Moteur), `Aphrody-Setup.exe` (`apps/community/setup`).
+  `m3/apps/web` (not in repo) (former app directory merged into showcase) fusionné dans `showcase`, `apps/yolo/web` absorbé (Studio › Moteur), `Aphrody-Setup.exe` (`apps/community/setup`).
 - Kit Omar zéro ligne de commande (`apps/community/omar-kit`), plan WireGuard `wg1` + compte `omar` déclarés (non appliqués).
 - aphrody.com : page M3 minimale servie par `apps/web/downloads` (pet, bouton desktop, curl/pwsh), thème et icônes = pet.
-- vu : `crates/interop/python-ffi` (libpython RTLD_GLOBAL, dlsym), `yolo py` délègue à vu ; fork Bun qualifié sur la fabrique.
+- vu : `crates/interop/ffi/src/python_ffi.rs` (libpython RTLD_GLOBAL, dlsym), `yolo py` délègue à vu ; fork Bun qualifié sur la fabrique.
 - Shenron : `@aphrody/a2a`, rag-core API unique + wasm + ffi, `shenron-chat-v2` servi sur vps `127.0.0.1:8799`, CDN `shenron-cdn-sync` local.
 - Release downloads courante : `20261006T191420Z-5bf7eed5a42c` (aphrody Linux+Windows, yolo Linux, plugins).
 
@@ -23,7 +25,7 @@ des frameworks.
 1. **Release downloads** : `bun run downloads:publish plan|build|release|verify --revision <sha main>` pour publier
    `aphrody-setup` (kind desktop → bouton « Download Aphrody »), `omar-kit`. `host-apply` seulement si `server.ts`/vhost changent.
 2. **yolo Windows** : `config/downloads.json` artefact `yolo`/`windows-x86_64` est `enabled:false` (pas de runtime artifact
-   `dist/runtime/x86_64-pc-windows-msvc`). Cross-build de `aphrody-ffi` (profil `runtime`, `cargo xwin`) sur la fabrique, packaging
+   `dist/runtime/x86_64-pc-windows-msvc` (not in repo) (generated or machine-local artifact; presence depends on the build host)). Cross-build de `aphrody-ffi` (profil `runtime`, `cargo xwin`) sur la fabrique, packaging
    `scripts/release/runtime_artifact.ts`, activer, build/release/verify. Dernier commit lié : `fa0681c6f` (profil runtime, identité d'artefact).
 3. **Shenron en production** : les env `/etc/rose-griffon/shenron-{site,bot}.env` pointent déjà vers `shenron-chat-v2` (8799) ;
    redémarrer `shenron-site` et `shenron-bot` APRÈS la fin de la release Shenron (`/home/ubuntu/shenron-release.log`, `== EXIT`),

@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Unified agent stack (VPS snapshot)
 
+> Historical source references (2026-10-07): links to removed modules use verified Git revisions. These records do not establish a current CLI route or installed capability.
+
 Snapshot date: **2026-06-03**. CLI `--help` captures and `llms.txt` mirrors live under this directory.
 
 ## CLIs on this host
@@ -113,7 +115,7 @@ Curated memory: `~/.aphrody/workspace/MEMORY.md`.
 | Twitter/X + bxc | [`../x/README.md`](../../web/x/README.md) |
 | xAI Grok | [`../grok/README.md`](../grok/README.md) |
 | X Pro (Gryphon decks) | [`x-pro-integration.md`](../../../reference/ai/agent-stack/x-pro-integration.md) → canonical `../aphrody-web/docs/web/x/X_PRO.md` |
-| agy ↔ aphrody map | [`../agy-cli/aphrody-agy-map.md`](../../../reference/ai/agy-cli/aphrody-agy-map.md) |
+| agy ↔ aphrody map | [`../agy-cli/aphrody-agy-map.md`](https://github.com/aphrody-labs/aphrody/blob/4d258700316af92c6f358902c60df130d8f60edf/docs/reference/ai/agy-cli/aphrody-agy-map.md) |
 
 ## Diagnostics et smoke optionnel
 

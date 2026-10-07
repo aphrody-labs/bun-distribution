@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Messagerie Aphrody
 
+> Historical source references (2026-10-07): links to removed modules use verified Git revisions. These records do not establish a current CLI route or installed capability.
+
 ## État vérifié
 
 `contact@aphrody.com` est l'identité d'envoi et de réception prévue. La zone
@@ -103,7 +105,7 @@ réception principale. Le domaine `aphrody.com` a été ajouté au compte Resend
 zone OVH. Resend doit encore passer l'état `Pending` après propagation DNS;
 les MX OVH restent en place pour la réception.
 
-Le connecteur Rust est [`aphrody-messaging::ResendConnector`](../../../crates/ai/messaging/src/resend.rs).
+Le connecteur Rust est [`aphrody-messaging::ResendConnector`](https://github.com/aphrody-labs/aphrody/blob/4d258700316af92c6f358902c60df130d8f60edf/crates/ai/messaging/src/resend.rs).
 La commande opérateur est `aphrody mail health` (lecture seule), puis
 `aphrody mail send --to ... --subject ... --message ...` pour un envoi explicite.
 Passer `--idempotency-key` pour rendre une relance sûre côté Resend ; la clé

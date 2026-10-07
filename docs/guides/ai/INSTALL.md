@@ -32,7 +32,7 @@ cargo build --release --locked -p aphrody
 ```
 
 Le binaire est produit dans `target/<target>/release/` si la configuration
-Cargo fixe une cible, sinon dans `target/release/`.
+Cargo fixe une cible, sinon dans `target/release/` (not in repo) (generated or machine-local artifact; availability depends on the build host).
 
 ```bash
 # Windows PowerShell

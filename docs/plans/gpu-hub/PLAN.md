@@ -38,7 +38,7 @@ GPU process for page WebGPU: that is Chromium's design, not something the hub ca
    the hub is wgpu **30.0.1**. Port it to wgpu 30 as an integrated patch under `crates/web/obscura-js`
    (provenance in `config/upstream-sources.json`), share the hub device, gate it per context
    (`webgpu: true`), apply `apply_limit_buckets` for remote pages. Spec reference: the wgpu
-   `webgpu-specs` skill (WebGPU/WGSL sources under `target/claude/`, gpuweb `454d33cf`, 2026-09-23).
+   `webgpu-specs` skill (WebGPU/WGSL sources under `target/claude/` (not in repo) (generated or machine-local artifact; availability depends on the build host), gpuweb `454d33cf`, 2026-09-23).
 4. **JSC instead of V8** (fusion plan §11.3): the `JsEngine` seam is still to be written; Bun-in-Rust
    (`bun.com/blog/bun-in-rust`) and `bun:ffi` (`JSCallback`, `linkSymbols`, `cc`) are the binding path.
 5. **NVIDIA in containers**: NVIDIA's userspace (libcuda, EGL/GBM, Vulkan ICD) is glibc-only, so the

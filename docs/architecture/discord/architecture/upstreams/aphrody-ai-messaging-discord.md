@@ -1,15 +1,17 @@
 # Upstream: `aphrody-ai` messaging / Discord
 
+> Historical source references (2026-10-07): links to removed modules use verified Git revisions. These records do not establish a current CLI route or installed capability.
+
 Scope reviewed: `aphrody-ai` at its local `main` checkout (clean apart from an existing modified `thirdparty/codex` submodule marker). This report describes source contracts; it does not claim current deployment state. No credential values were read.
 
 ## Architecture and entry points
 
-- **Crate:** `crates/ai/messaging/Cargo.toml`, package `aphrody-messaging` version `1.0.0-canary`, unpublished workspace crate. `src/lib.rs` houses outbound-only `Connector`s and bidirectional channels in `channels` (Discord is the latter).
-- **Shared contract:** [`src/channels/mod.rs`](../../../../../crates/ai/messaging/src/channels/mod.rs) defines `MessagingChannel` and common `MessageRef`, `InboundMessage`, `Attachment`, `RoomInfo`, `RoomKind`, and `ChannelError` types. The trait covers text send, file send, inbox stream, and room enumeration; it is async, `Send + Sync`, and not object-safe because of its opaque stream return type.
-- **Discord implementation:** [`src/channels/discord.rs`](../../../../../crates/ai/messaging/src/channels/discord.rs), `DiscordChannel`; REST API v10 only. Constructor: `new(token)` or `from_env()`. `channels/mod.rs` exports `discord`.
+- **Crate:** `crates/ai/messaging/Cargo.toml` (not in repo) (retired source path; retained as historical evidence), package `aphrody-messaging` version `1.0.0-canary`, unpublished workspace crate. `src/lib.rs` houses outbound-only `Connector`s and bidirectional channels in `channels` (Discord is the latter).
+- **Shared contract:** [`src/channels/mod.rs`](https://github.com/aphrody-labs/aphrody/blob/4d258700316af92c6f358902c60df130d8f60edf/crates/ai/messaging/src/channels/mod.rs) defines `MessagingChannel` and common `MessageRef`, `InboundMessage`, `Attachment`, `RoomInfo`, `RoomKind`, and `ChannelError` types. The trait covers text send, file send, inbox stream, and room enumeration; it is async, `Send + Sync`, and not object-safe because of its opaque stream return type.
+- **Discord implementation:** [`src/channels/discord.rs`](https://github.com/aphrody-labs/aphrody/blob/4d258700316af92c6f358902c60df130d8f60edf/crates/ai/messaging/src/channels/discord.rs), `DiscordChannel`; REST API v10 only. Constructor: `new(token)` or `from_env()`. `channels/mod.rs` exports `discord`.
 - **CLI notify:** `crates/infra/aphrody-command/src/lib.rs` declares the `notify` channel selector and command surface; `crates/infra/aphrody-command/src/commands.rs` dispatches to `DiscordChannel`. A room argument takes precedence over the environment fallback. A room written `@<user-id>` invokes `open_dm` before sending. Text is sent first; each requested attachment is then sent as a separate message. Success output is `channel_id message_id room`.
-- **Live agent:** [`crates/infra/aphrody-command/src/agent_cmd.rs`](../../../../../crates/infra/aphrody-command/src/agent_cmd.rs) runs `aphrody hermes --channel discord` against `MessagingChannel`: inbox events go through chat/optional voice processing and replies use the channel sink. `--trigger` can filter inbound text; without a trigger it processes all eligible input. `--simulate` avoids live channel construction. The CLI uses the same `DISCORD_BOT_TOKEN` key.
-- **Internal dependency path:** `apps/cli/Cargo.toml` depends on workspace `aphrody-messaging`; root `Cargo.toml` maps it to `crates/ai/messaging` at `1.0.0-canary`. `aphrody-agent-home` provides agent-home/templates, not this REST adapter.
+- **Live agent:** [`crates/infra/aphrody-command/src/agent_cmd.rs` (not in repo) (retired source path; retained as historical evidence)](https://github.com/aphrody-labs/aphrody/blob/4d258700316af92c6f358902c60df130d8f60edf/crates/infra/aphrody-command/src/agent_cmd.rs) runs `aphrody hermes --channel discord` against `MessagingChannel`: inbox events go through chat/optional voice processing and replies use the channel sink. `--trigger` can filter inbound text; without a trigger it processes all eligible input. `--simulate` avoids live channel construction. The CLI uses the same `DISCORD_BOT_TOKEN` key.
+- **Internal dependency path:** `apps/cli/Cargo.toml` depends on workspace `aphrody-messaging`; root `Cargo.toml` maps it to `crates/ai/messaging` (not in repo) (retired source path; retained as historical evidence) at `1.0.0-canary`. `aphrody-agent-home` provides agent-home/templates, not this REST adapter.
 
 ## Discord behavior and contracts
 
@@ -53,8 +55,8 @@ No Discord SDK or WebSocket/Gateway client is a dependency of this module. Cargo
 
 ## Useful source references
 
-- Shared contract and types: `crates/ai/messaging/src/channels/mod.rs`
-- Discord adapter: `crates/ai/messaging/src/channels/discord.rs`
+- Shared contract and types: `crates/ai/messaging/src/channels/mod.rs` (not in repo) (retired source path; retained as historical evidence)
+- Discord adapter: `crates/ai/messaging/src/channels/discord.rs` (not in repo) (retired source path; retained as historical evidence)
 - CLI command declarations/dispatch: `aphrody-ai/crates/aphrody/src/lib.rs`
 - Notify implementation: `aphrody-ai/crates/aphrody/src/commands.rs`
 - Hermes channel runtime: `aphrody-ai/crates/aphrody/src/agent_cmd.rs`

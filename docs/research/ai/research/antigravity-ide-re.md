@@ -34,10 +34,10 @@ Source : `var/data/antigravity-ide-re/tree-map.json` (not in repo) (l.4-8) + `re
 Réf. `tree-map.json` (1578 entrées top-level IDE) + `scan-tree.json` (récursif `resources/app` : **38 914 fichiers, 697 Mo, 25 685 `.js`**).
 
 Sous-dossiers cœur `resources/app/extensions/antigravity/` :
-- `dist/extension.js` — 1.96 Mo, point d'entrée VSCode (mince : juste de la glu).
+- `dist/extension.js` (not in repo) (generated or machine-local artifact; presence depends on the build host) — 1.96 Mo, point d'entrée VSCode (mince : juste de la glu).
 - `bin/language_server_windows_x64.exe` (not in repo) — **133 599 744 octets (~133 Mo)** : le vrai cerveau (Go, Codeium-derived).
 - `bin/sandbox-wrapper.sh` (not in repo) + `.LICENSE` — wrapper d'exécution sandboxée du code agent.
-- `dist/languageServer/cert.pem` — 1250 octets : certificat pour le endpoint HTTPS local self-signed du LS.
+- `dist/languageServer/cert.pem` (not in repo) (generated or machine-local artifact; presence depends on the build host) — 1250 octets : certificat pour le endpoint HTTPS local self-signed du LS.
 - `out/jetskiAgent/main.js` — **12.4 Mo** : webview de l'agent UI « Jetski ».
 - `cascade-panel.html`, `auth-success-jetski.html` — webviews.
 - `schemas/mcp_config.schema.json`, `customEditor/`, `assets/auth/google_signin.svg` (not in repo).

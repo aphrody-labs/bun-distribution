@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Delivery plan
 
+> Historical source references (2026-10-07): links to removed modules use verified Git revisions. These records do not establish a current CLI route or installed capability.
+
 Active cross-repository backlog, updated 2026-09-29. [Architecture](../../architecture/ai/ARCHITECTURE.md)
 owns boundaries; [GUI](../../../m3/docs/reference/GUI.md), [UI design](../../../m3/docs/architecture/UI-DESIGN.md)
 and [UX](../../../m3/docs/architecture/UX-DESIGN.md) own product behavior.
@@ -294,7 +296,7 @@ following source inventory does not qualify an installed workflow.
 | Tasks, goals, autonomy | [`aphrody-agent-runtime`](../../../crates/ai/agent-runtime/src/config.rs) has per-turn FullAuto/Gated; the CLI has a goal loop; OS owns [durable jobs](../../../crates/os/jobs/src/lib.rs). | **INCOMPLET:** no shared task/goal state machine, approved autonomous wake, or task API in [`aphrody-app-server`](../../../crates/ai/app-server/src/lib.rs). M3 task components receive props but have no task backend. | P1 |
 | Schedules | OS has [`aphrody-cron`](../../../crates/os/cron/src/lib.rs) and [`aphrody-task-runner`](../../../crates/os/task-runner/src/lib.rs). | **INCOMPLET:** the scheduler calculates when to run and does not execute agent work; no app-server cron API, durable agent-run result, or UI workflow. | P1 |
 | Memory | [`aphrody-memory`](../../../crates/ai/memory/src/types.rs) stores flat records with tags and metadata through local and hosted providers; CLI commands exist. | **INCOMPLET:** no Spacebot-equivalent typed graph, edges, cross-channel working memory, or app-server memory CRUD/search. | P1 |
-| Messaging and skills | [`aphrody-messaging`](../../../crates/ai/messaging/src/lib.rs) has channel adapters; [`aphrody-skills`](../../../crates/ai/skills/src/lib.rs) has skill loading and installation. | **INCOMPLET:** neither is connected to a multi-agent, per-channel app-server lifecycle; automatic reflection and skill capture are unqualified. | P2 |
+| Messaging and skills | [`aphrody-messaging`](https://github.com/aphrody-labs/aphrody/blob/4d258700316af92c6f358902c60df130d8f60edf/crates/ai/messaging/src/lib.rs) has channel adapters; [`aphrody-skills`](../../../crates/ai/skills/src/lib.rs) has skill loading and installation. | **INCOMPLET:** neither is connected to a multi-agent, per-channel app-server lifecycle; automatic reflection and skill capture are unqualified. | P2 |
 | Indexed-content screening | Drive has trust tiers and quarantine fields, and [`aphrody-jev`](../../../crates/ai/jev/src/rag.rs) can judge retrieved passages. | **NON_FAIT:** [Drive's upstream-identical `SafetyModel`](../../../crates/os/drive/crates/archive/src/safety.rs) always returns safe; its optional screening feature is disabled. No production caller in this repository uses the Jev passage judge, and retrieval-time filtering cannot establish pre-index quarantine. Do not claim Prompt Guard 2 protection. | P0 |
 
 **Ownership and order.** P0: replace the always-safe Drive screening path with an

@@ -51,8 +51,8 @@ A make warning during perf compilation reported a generated object 0.39 seconds 
 ## Qualified artifacts
 
 - Kernel release: `6.18.40.1-microsoft-standard-WSL2+` (obtained from make, not guessed from Makefile fields).
-- bzImage: `.cache/upstream/build/aphrody/kernel/arch/x86/boot/bzImage`, recognized as Linux x86 boot executable.
-- Modules VHDX: `.cache/upstream/build/aphrody/kernel/modules.vhdx`, approximately 1.2 GiB apparent size.
+- bzImage: `.cache/upstream/build/aphrody/kernel/arch/x86/boot/bzImage` (not in repo) (generated or machine-local artifact; presence depends on the build host), recognized as Linux x86 boot executable.
+- Modules VHDX: `.cache/upstream/build/aphrody/kernel/modules.vhdx` (not in repo) (generated or machine-local artifact; presence depends on the build host), approximately 1.2 GiB apparent size.
 - Machine-readable source/toolchain/artifact hashes: `build-manifest.json`; checksum file: `SHA256SUMS`, both next to the output artifacts.
 - Configuration retains built-in Hyper-V, Hyper-V sockets, DXGKRNL, ext4, 9P and devtmpfs.
 - A second incremental build passed without clock warnings or compiler/link errors; its log is `verify-build.log`.

@@ -12,7 +12,7 @@ frontend, duplicating its engine protocol or starting another process.
 
 ## Source state and provenance
 
-Inspected `.cache/upstream/vllm`, clean at commit
+Inspected `.cache/upstream/vllm` (not in repo) (generated or machine-local artifact; presence depends on the build host), clean at commit
 `ab5266769e702434a0968d47319d0731d8ccac35`, identical to the catalogue's recorded
 commit. The catalogue entry remains `pinned: false`, `role: reference`,
 `ref: main`; a recorded revision must not be described as an immutable sync pin.

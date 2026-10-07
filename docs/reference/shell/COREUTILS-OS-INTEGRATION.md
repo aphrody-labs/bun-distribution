@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody OS utility runtime integration plan
 
+> Path reconciliation (2026-10-07): `crates/os/coreutils` (not in repo) → `crates/os/kernel/src/coreutils.rs`. Original dated observations below retain their historical scope.
+
 ## Objective
 
 Make the pinned, headless Aphrody OS utility runtime available to interactive
@@ -225,7 +227,7 @@ and every unsupported capability states its platform/owner.
 
 | Repository | Owner paths | Purpose |
 | --- | --- | --- |
-| `aphrody-os` | `crates/os/coreutils`, `crates/os/kernel`, `third_party/uutils-*`, build/package scripts | Runtime and MCP authority |
+| `aphrody-os` | `crates/os/kernel/src/coreutils.rs`, `crates/os/kernel`, `third_party/uutils-*`, build/package scripts | Runtime and MCP authority |
 | `aphrody-contracts` when needed | transport/client contract only | Break any dependency cycle without duplication |
 | `aphrody-shell` | `crates/shell/nu`, `crates/shell/terminal-backend`, tests and this document | IPC bridge, structured commands, opted-in PTY bootstrap |
 | `aphrody-infra` | package/deployment evidence | Runtime artifact and live-host proof |

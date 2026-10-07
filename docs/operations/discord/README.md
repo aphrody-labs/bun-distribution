@@ -7,7 +7,7 @@ This directory contains production runbooks and operating procedures for Discord
 ## Operational Documents
 
 - [**Systemd Services and Autonomous Binary Deployment**](SYSTEMD-SERVICES.md):
-  Detailed guide for running `@shenron/bot` and `@rosegriffon/bot` as standalone compiled native binaries (`dist/shenron`, `dist/rg-bot`) under systemd without host Bun or `node_modules`.
+  Detailed guide for running `@shenron/bot` and `@rosegriffon/bot` as standalone compiled native binaries (`dist/shenron` (not in repo) (generated or machine-local artifact; presence depends on the build host), `dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host)) under systemd without host Bun or `node_modules`.
 
 ## Key Operational Commands
 

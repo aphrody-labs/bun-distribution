@@ -254,7 +254,7 @@ flowchart LR
 All 9 local models and their peripheral operations converge into the 4 architectural pillars of Aphrody:
 1. **Aphrody Core (`apps/cli`)**: Central CLI commands (`aphrody model`, `aphrody doc`, `aphrody reason`) managing model states, offload configurations, and runtimes.
 2. **Aphrody AI API (`crates/ai/mcp`)**: Standard loopback REST endpoints (`/v1/models`, `/v1/chat/completions`, `/api/v1/aphrody/status`) proxying to local `llama-server` and serving clients.
-3. **Aphrody Chat (`crates/ai/chat`)**: Interactive REPL turn loop featuring `LocalBackend` with zero-config auto-fallback from `agy` to local inference on `127.0.0.1:8080/v1`.
+3. **Aphrody Chat (`crates/ai/chat` (not in repo) (retired source path; retained as historical evidence))**: Interactive REPL turn loop featuring `LocalBackend` with zero-config auto-fallback from `agy` to local inference on `127.0.0.1:8080/v1`.
 4. **Aphrody Kernel (`crates/os/kernel`, `aphrody-llama-server`)**: Hardware offload planner, process supervisor, and resource leasing on RTX 4070.
 
 ### 9.1 Unified Multi-Runtime Storage Hierarchy

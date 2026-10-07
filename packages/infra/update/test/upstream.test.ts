@@ -12,11 +12,37 @@ const text = JSON.stringify({
   schemaVersion: 1,
   root: "../source",
   sources: [
-    { id: "dep", kind: "crate", crate: "dep", version: "1.0.0", role: "dependency", pinned: true, cargoPathDep: "", hold: "consumer needs 1.0.0", patches: [] },
+    {
+      id: "dep",
+      kind: "crate",
+      crate: "dep",
+      version: "1.0.0",
+      role: "dependency",
+      pinned: true,
+      cargoPathDep: "",
+      hold: "consumer needs 1.0.0",
+      patches: [],
+    },
   ],
   reference: [
-    { id: "alpha", kind: "git", tier: "reference", url: "https://github.com/o/alpha.git", ref: "main", observedCommit: sha("a"), purpose: "reads alpha", consumers: "docs/a.md" },
-    { id: "beta", kind: "git", tier: "build", url: "https://github.com/o/beta", purpose: "build input", consumers: "config/b.json" },
+    {
+      id: "alpha",
+      kind: "git",
+      tier: "reference",
+      url: "https://github.com/o/alpha.git",
+      ref: "main",
+      observedCommit: sha("a"),
+      purpose: "reads alpha",
+      consumers: "docs/a.md",
+    },
+    {
+      id: "beta",
+      kind: "git",
+      tier: "build",
+      url: "https://github.com/o/beta",
+      purpose: "build input",
+      consumers: "config/b.json",
+    },
   ],
 });
 
@@ -54,6 +80,9 @@ describe("reference catalogue", () => {
     expect(doc).toContain("held: consumer needs 1.0.0");
     expect(doc).toContain("[o/alpha](https://github.com/o/alpha)");
     expect(doc).toContain("## Build-on-demand upstreams (1)");
+    expect(doc).toContain("crates/infra/aphrody-command/src/wsl");
+    expect(doc).not.toContain("crates/os/aphrody-wsl");
+    expect(doc).toContain("(not in repo), an untracked machine-local cache");
     expect(renderDocs(m)).toBe(doc);
   });
 });

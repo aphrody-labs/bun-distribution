@@ -18,7 +18,7 @@ adopting its API-key auth model.
 
 **Sources (aphrody, read-only cross-ref):** `crates/google/gemini-runtime/`,
 `crates/google/gemini-web/`, `crates/ai/mcp/`, `crates/aphrody-images/` (not in repo),
-`crates/google/antigravity/`, `crates/infra/aphrody-command/src/agy_backend.rs`,
+`crates/google/antigravity/`, `crates/infra/aphrody-command/src/agy_backend.rs` (not in repo) (retired source path; retained as historical evidence),
 `crates/ai/gateway/src/byok/gemini.rs` (not in repo).
 
 ---
@@ -33,7 +33,7 @@ built around two auth modes — **API key** (`generativelanguage.googleapis.com`
 `generativelanguage` host (`401 ACCESS_TOKEN_TYPE_UNSUPPORTED` /
 `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT`, documented at
 `crates/google/antigravity/src/endpoints.rs:67-74` and
-`crates/infra/aphrody-command/src/agy_backend.rs:27-31`), so aphrody reaches Gemini via two
+`crates/infra/aphrody-command/src/agy_backend.rs:27-31` (not in repo) (retired source path; retained as historical evidence)), so aphrody reaches Gemini via two
 keyless transports instead:
 
 1. **Cloud Code modelbackend** — `POST cloudcode-pa.googleapis.com/v1internal:generateContent`,

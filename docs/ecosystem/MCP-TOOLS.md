@@ -281,7 +281,7 @@ Kind: kernel-subsystem. 3 tools.
 | Tool | Description |
 | --- | --- |
 | `nu_commands` | List Nushell commands with their descriptions, optionally filtered. |
-| `nu_eval` | Evaluate Nushell code and return its value as JSON (tables are arrays of records). Pass data through `vars` (read as $env.<name>) instead of splicing it into code. External command output is captured… |
+| `nu_eval` | Evaluate Nushell code and return its value as JSON (tables are arrays of records). Pass data through `vars` (read as $env.<name>; non-strings arrive as JSON text) instead of splicing it into code. |
 | `nu_help` | Full help of one Nushell command: signature, flags, examples. |
 
 ## aphrody — aphrody-rag

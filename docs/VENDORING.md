@@ -1,6 +1,6 @@
 # Vendoring the Tauri stack
 
-The Rust crates of the forks (`vendor/tauri`, `plugins-workspace`,
+The Rust crates of the forks (`vendor/tauri` (not in repo) (historical or proposed upstream checkout; not a current source owner), `plugins-workspace`,
 `create-tauri-app`, `next`; `wry` and `tao` left with decision 21: one desktop runtime, `tauri-runtime-cef`) live in one Cargo workspace under `crates/tauri/aphrody-*`.
 The submodules stay pinned, read-only sources; `yolo import` regenerates the crates from them.
 
@@ -10,7 +10,7 @@ The submodules stay pinned, read-only sources; `yolo import` regenerates the cra
 | :--- | :--- |
 | `main` | Released state. |
 | `dev` | Integration branch: imported crates **plus** our own changes (plugin-name handling, CLI templates, unified tooling). |
-| `vendor` | Generated imports only, never edited by hand. It lives in the worktree `.cache/vendor`. |
+| `vendor` | Generated imports only, never edited by hand. It lives in the worktree `.cache/vendor` (not in repo) (generated or machine-local artifact; presence depends on the build host). |
 
 Each fork keeps `main` as an upstream mirror and `yolo` as the branch the submodules track.
 

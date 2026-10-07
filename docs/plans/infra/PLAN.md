@@ -58,6 +58,22 @@ observations in the append-only ledger retain their original dates and scope.
 
 ## 3. Open work, ordered
 
+### P0 — single release train across sites and binaries
+
+Owner directive (2026-10-07): one release build/train ID and one `latest`
+manifest must cover every participating Aphrody site and binary. Keep component
+SemVer/source revisions for compatibility, but bind them to the same immutable
+train; build once from pinned sources, stage and verify every target before
+promotion, and advance the canonical latest pointer only after every required
+site is healthy. The detailed contract, current gaps, migration sequence and
+acceptance gates are in [Unified release train](./unified-release-train/PLAN.md).
+
+Current downloads, creator, Shenron and RG publishers still have independent
+release IDs/current pointers. Do not describe them as unified or remove their
+independent adapters until the coordinator, cross-site rollback tests and
+compatibility projections pass. Do not reactivate retired Aphrody services as
+part of this release work.
+
 ### P0 — Aphrody Bun fork
 
 - Treat the Aphrody Bun fork as the primary platform
@@ -301,7 +317,7 @@ sections current and store operational detail in its existing runbook.
 - **2026-09-28:** first-party Rust audit found 190 crates across Aphrody repos, no duplicate
   crate names and no byte-identical Rust source files in crate `src/` trees. The UI workspace
 
-  manifest still references missing `aphrody-icons/vendor/woff2` and Obscura `vendor/taffy`
+  manifest still references missing `aphrody-icons/vendor/woff2` and Obscura `vendor/taffy` (not in repo) (historical or proposed upstream checkout; not a current source owner)
 
   paths, so Cargo metadata/build cannot validate that graph. UI third-party checkout is about
 

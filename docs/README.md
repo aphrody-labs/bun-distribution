@@ -50,12 +50,12 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [upstream-bun](guides/upstream-bun/) vendored upstream copy | 203 | - |
 | guides | [web](guides/web/) | 4 | - |
 | guides | [workspace](guides/workspace/) | 4 | [Parcours Workspace Aphrody](guides/workspace/README.md) |
-| operations | [(files)](operations/) | 2 | - |
+| operations | [(files)](operations/) | 3 | - |
 | operations | [ai](operations/ai/) | 6 | - |
 | operations | [cloud](operations/cloud/) | 4 | - |
-| operations | [container](operations/container/) | 1 | - |
+| operations | [container](operations/container/) | 2 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
-| operations | [infra](operations/infra/) | 23 | - |
+| operations | [infra](operations/infra/) | 25 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
 | operations | [web](operations/web/) | 1 | - |
@@ -67,7 +67,8 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [convergence](plans/convergence/) | 1 | - |
 | plans | [discord](plans/discord/) | 2 | [Aphrody Discord plan](plans/discord/PLAN.md) |
 | plans | [fusion](plans/fusion/) | 26 | - |
-| plans | [infra](plans/infra/) | 4 | [Aphrody Infra plan](plans/infra/PLAN.md) |
+| plans | [gpu-hub](plans/gpu-hub/) | 1 | [GPU hub, Aphrody OS image and WASM target](plans/gpu-hub/PLAN.md) |
+| plans | [infra](plans/infra/) | 5 | [Aphrody Infra plan](plans/infra/PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
 | plans | [os-kernel](plans/os-kernel/) | 1 | [Architecture cible de aphrody-kernel](plans/os-kernel/PLAN.md) |
@@ -118,4 +119,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 3220 files.
+Total: 3226 files.

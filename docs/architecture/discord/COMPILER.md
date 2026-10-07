@@ -14,7 +14,7 @@ Running Discord bots in production using standard Node.js or raw interpreted Typ
 3. **Runtime Drift**: Divergence between local developer Bun/Node versions and server runtimes.
 4. **Decorator Resolution Fragility**: TypeScript experimental decorators (`reflect-metadata`, `tsyringe`, `discordx`) require strict evaluation sequencing that often fails under standard bundling.
 
-The Aphrody Discord Compiler solves these issues by producing **single self-contained native executable binaries** (`dist/shenron`, `dist/rg-bot`) that embed:
+The Aphrody Discord Compiler solves these issues by producing **single self-contained native executable binaries** (`dist/shenron` (not in repo) (generated or machine-local artifact; presence depends on the build host), `dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host)) that embed:
 - The optimized Bun engine (compiled for target architecture, e.g. Linux x64)
 - All AOT-compiled application bytecode and NPM dependencies
 - Embedded assets (fonts, icons, styling)
@@ -22,9 +22,9 @@ The Aphrody Discord Compiler solves these issues by producing **single self-cont
 
 ---
 
-## 2. Rust Crate Architecture (`crates/discord/aphrody-discord-compiler`)
+## 2. Rust Crate Architecture (`crates/discord/aphrody-discord-compiler` (not in repo) (retired source path; retained as historical evidence))
 
-The core orchestrator is implemented in Rust as `aphrody-discord-compiler`, a first-party workspace member located in `crates/discord/aphrody-discord-compiler`.
+The core orchestrator is implemented in Rust as `aphrody-discord-compiler`, a first-party workspace member located in `crates/discord/aphrody-discord-compiler` (not in repo) (retired source path; retained as historical evidence).
 
 ```mermaid
 flowchart TD
@@ -40,9 +40,9 @@ flowchart TD
 ### Core Rust Structures
 
 - **`BotTarget`**: Enum identifying supported targets:
-  - `BotTarget::Shenron`: Root `shenron:apps/bot`, entry `src/entry-standalone.ts`, output `dist/shenron`.
-  - `BotTarget::RoseGriffon`: Root `iecode/apps/rg/bot`, entry `src/entry-standalone.ts`, output `dist/rg-bot`.
-  - `BotTarget::Achillea`: Root `apps/rg/achillea-bot` (not in repo), entry `src/main.ts`, output `dist/achillea`.
+  - `BotTarget::Shenron`: Root `shenron:apps/bot`, entry `src/entry-standalone.ts`, output `dist/shenron` (not in repo) (generated or machine-local artifact; presence depends on the build host).
+  - `BotTarget::RoseGriffon`: Root `iecode/apps/rg/bot`, entry `src/entry-standalone.ts`, output `dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host).
+  - `BotTarget::Achillea`: Root `apps/rg/achillea-bot` (not in repo), entry `src/main.ts`, output `dist/achillea` (not in repo) (generated or machine-local artifact; presence depends on the build host).
   - `BotTarget::Custom(PathBuf)`: Arbitrary external Discord bot.
 - **`CompilerOptions`**:
   ```rust
@@ -188,7 +188,7 @@ In `shenron:apps/bot/src/lib/logger.ts`, logger initialization checks `isCompile
 
 ## 4. Compilation Results and Binary Profiles
 
-| Property | Shenron Bot (`dist/shenron`) | Rose Griffon Bot (`dist/rg-bot`) |
+| Property | Shenron Bot (`dist/shenron` (not in repo) (generated or machine-local artifact; presence depends on the build host)) | Rose Griffon Bot (`dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host)) |
 | :--- | :--- | :--- |
 | **Source Directory** | `shenron:apps/bot` | `iecode/apps/rg/bot` |
 | **Entrypoint** | `src/entry-standalone.ts` | `src/entry-standalone.ts` |

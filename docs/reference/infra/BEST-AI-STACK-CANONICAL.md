@@ -1,13 +1,15 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Canonical AI stack
 
+> Path reconciliation (2026-10-07): `crates/os/execpolicy` (not in repo) → `crates/os/kernel/src/execpolicy`; `plugins/aphrody/skills/best-stack-2026` (not in repo) → `plugins/yolo/skills/best-stack-2026`. Original dated observations below retain their historical scope.
+
 > The source paths below include historical category-repository locations.
 > Resolve current ownership using the monorepo root workspace and current
 > manifests before adding or changing a dependency; package/crate names may
 > remain stable while their paths have moved.
 
 Single source of truth for AI/agent technology choices across the Aphrody repositories. The
-`best-stack-2026` skill (`plugins/aphrody/skills/best-stack-2026`) points here for
+`best-stack-2026` skill (`plugins/yolo/skills/best-stack-2026`) points here for
 every AI row; general Rust crate choices stay in that skill.
 
 Audited 2026-09-26 against live release pages (links per row). Versions drift: re-check the
@@ -35,7 +37,7 @@ linked page before pinning, and never copy a number from this file without re-ve
 | Server inference (GPU hosts) | served behind `aphrody-infra` catalog, consumed by `aphrody-ai` model clients | [vLLM](https://github.com/vllm-project/vllm/releases), [SGLang](https://github.com/sgl-project/sglang/releases) | vLLM nightly wheels ([docs](https://docs.vllm.ai/en/latest/getting_started/installation/)); SGLang `main` | vLLM `v0.30.0`; SGLang `v0.5.20` |
 | Model catalog / download | `crates/ai/models` | [Hugging Face Hub](https://huggingface.co/models) | HF `sort=createdAt` per org | pinned digest in the catalog |
 | Agent loop / runtime | `crates/ai/engine`, `aphrody-agent-runtime`, `aphrody-agent-tools`; `aphrody app-server` | reference: [rig](https://github.com/0xPlaygrounds/rig/releases) (`v0.42.0`) for ideas only | — | — |
-| Sandbox / exec policy | `crates/os/sandbox` (Landlock/seccomp, Windows backends), `crates/os/execpolicy`, supervised by `aphrody-kernel` | reference: Firecracker, E2B (third-party cloud, not used) | — | — |
+| Sandbox / exec policy | `crates/os/sandbox` (Landlock/seccomp, Windows backends), `crates/os/kernel/src/execpolicy`, supervised by `aphrody-kernel` | reference: Firecracker, E2B (third-party cloud, not used) | — | — |
 | Agent protocols | `crates/contracts/a2a*` (A2A), `aphrody-ai/crates/aphrody-mcp` + `aphrody mcp` | [rmcp](https://crates.io/crates/rmcp) | rmcp git `main` | `3.4.1` |
 | Embeddings | `crates/ai/embed` (fastembed/ONNX) | [fastembed-rs](https://github.com/Anush008/fastembed-rs/releases); models [Qwen3-Embedding](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF), [Qwen3-VL-Embedding](https://huggingface.co/Qwen/Qwen3-VL-Embedding-2B), [embeddinggemma-300m](https://huggingface.co/google/embeddinggemma-300m) | fastembed `v7.1.0` | same |
 | RAG / rerank | `crates/ai/rag`, `aphrody-rag-core`, `aphrody-rag-eval`; `aphrody rag` | [Qwen3-Reranker](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B), [Qwen3-VL-Reranker](https://huggingface.co/Qwen/Qwen3-VL-Reranker-2B); vector stores [lancedb](https://github.com/lancedb/lancedb/releases) `v0.39.0`, [qdrant-client](https://github.com/qdrant/rust-client/releases) `v1.19.0` (only if the in-tree store is outgrown) | — | — |

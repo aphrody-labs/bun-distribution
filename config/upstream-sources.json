@@ -57,7 +57,7 @@
       "ref": "master",
       "tier": "build",
       "purpose": "Microsoft WSL; native WSL build recipe input.",
-      "consumers": "config/os/wsl-build.json; crates/os/aphrody-wsl",
+      "consumers": "config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl",
       "observedCommit": "11c74d836cc76e45cbb8259cd4efcdb474920395"
     },
     {
@@ -67,7 +67,7 @@
       "ref": "linux-msft-wsl-6.18.y",
       "tier": "build",
       "purpose": "WSL2 Linux kernel; kernel build recipe input.",
-      "consumers": "config/os/wsl-build.json; crates/os/aphrody-wsl",
+      "consumers": "config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl",
       "observedCommit": "14794180686c2fb6307fbe359c359bec765249f3"
     },
     {
@@ -78,7 +78,7 @@
       "license": "GPL-2.0-only WITH Linux-syscall-note",
       "tier": "build",
       "purpose": "kernel.org stable Linux with Rust-for-Linux; mainline kernel recipe input. `aphrody-wsl latest --apply` moves the pin.",
-      "consumers": "config/os/wsl-build.json; crates/os/aphrody-wsl",
+      "consumers": "config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl",
       "observedCommit": "5fce161649b4d779d1b76d9fcd52dc77779774b8"
     },
     {

@@ -184,13 +184,6 @@
           "features": []
         },
         {
-          "name": "aphrody-base",
-          "path": "crates/os/base",
-          "description": "Foundational primitives for Aphrody crates (no_std-compatible).",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-bindgen",
           "path": "crates/ml/bindgen",
           "description": "Bindgen-based generator for dynamically loaded native-library bindings.",
@@ -376,26 +369,13 @@
           ]
         },
         {
-          "name": "aphrody-events",
-          "path": "crates/os/events",
-          "description": "In-process async event bus for aphrody — broadcast + topic filtering + NDJSON audit sink, no external broker required.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-execpolicy",
-          "path": "crates/os/execpolicy",
-          "description": "Codex-compatible execution policy engine: prefix-based rules, max(severity) resolution, and No-HITL (approval_policy=never) prompt-to-forbid transformation with structured explanations.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-ffi",
           "path": "crates/interop/ffi",
           "description": "Native C-ABI surface for aphrody — load the full CLI in-process from Bun (bun:ffi) or any C host.",
           "bins": [],
           "features": [
             "browser",
+            "cuda",
             "default",
             "forensics",
             "gpu",
@@ -462,10 +442,12 @@
         {
           "name": "aphrody-gpu-backend",
           "path": "crates/native/gpu-backend",
-          "description": "Shared wgpu instance, adapter, device and surface-configuration boundary for Aphrody and IECODE renderers.",
+          "description": "Shared wgpu instance, adapter, device and surface-configuration boundary for Aphrody and IECODE renderers, plus the process-wide GPU hub (wgpu + CUDA).",
           "bins": [],
           "features": [
+            "cuda",
             "default",
+            "hub",
             "native-backends",
             "webgl",
             "webgpu",
@@ -1040,13 +1022,6 @@
           "name": "aphrody-ssh",
           "path": "crates/infra/ssh",
           "description": "Aphrody SSH operator: safe command execution and diagnostics for configured hosts.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-stdio-capture",
-          "path": "crates/os/stdio-capture",
-          "description": "Cross-platform in-process stdout/stderr capture (dup2 on unix / SetStdHandle on Windows, to a temp file). Shared by aphrody-ffi and the Tauri app. Distinct from aphrody-capture (Windows screen capture).",
           "bins": [],
           "features": []
         },
@@ -1800,13 +1775,6 @@
           "features": []
         },
         {
-          "name": "aphrody-wsl",
-          "path": "crates/os/aphrody-wsl",
-          "description": "Pinned WSL, Linux kernel, WSLg and Aphrody OS distribution build workbench",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-x",
           "path": "crates/web/x",
           "description": "X / Twitter native GraphQL + REST client (cookie auth, no API key required)",
@@ -1950,7 +1918,9 @@
           "bins": [],
           "features": [
             "browser",
-            "default"
+            "cuda",
+            "default",
+            "gpu"
           ]
         }
       ],
@@ -7044,84 +7014,6 @@
       ]
     },
     {
-      "binary": "aphrody wsl",
-      "crate": "aphrody-wsl",
-      "repo": "aphrody",
-      "source": "crates/os/aphrody-wsl/src/cli.rs#Args",
-      "commands": [
-        {
-          "name": "doctor",
-          "about": "Verify source pins and installed build tools.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "sources",
-          "about": "Inspect source revisions and dirtiness.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "plan",
-          "about": "Show exact build commands without executing them.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "dependencies",
-          "about": "Install host Linux dependencies (Windows prerequisites use native setup).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "build",
-          "about": "Compile an upstream component or assemble the guest root filesystem.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "all",
-          "about": "Build both kernels, WSLg, Windows WSL and the Aphrody OS guest in sequence.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "latest",
-          "about": "Resolve the newest kernel.org stable tag; --apply moves the linux-stable pin to it.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "status",
-          "about": "Read build evidence; missing and failed reports remain visible.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "verify",
-          "about": "Hash and validate expected nonempty artifacts.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "import",
-          "about": "Import a new distro, preserving every existing distribution.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        }
-      ]
-    },
-    {
       "binary": "aphrody x",
       "crate": "aphrody-x",
       "repo": "aphrody",
@@ -8894,7 +8786,7 @@
         },
         {
           "name": "nu_eval",
-          "description": "Evaluate Nushell code and return its value as JSON (tables are arrays of records). Pass data through `vars` (read as $env.<name>) instead of splicing it into code. External command output is captured, stdout then stderr.",
+          "description": "Evaluate Nushell code and return its value as JSON (tables are arrays of records). Pass data through `vars` (read as $env.<name>; non-strings arrive as JSON text) instead of splicing it into code.",
           "file": "crates/shell/nu/src/lib.rs"
         },
         {
@@ -9961,12 +9853,12 @@
     "aphrodyRepos": 1,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 210,
+    "crates": 205,
     "binaries": 9,
     "bunPackages": 130,
     "pythonPackages": 8,
-    "cliBinaries": 16,
-    "cliCommands": 676,
+    "cliBinaries": 15,
+    "cliCommands": 666,
     "mcpServers": 19,
     "mcpTools": 369,
     "mcpUniqueToolNames": 367

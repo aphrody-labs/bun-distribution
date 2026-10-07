@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Shell / terminal stack: wasm, web, Tauri, serverless (definitive plan)
 
+> Path reconciliation (2026-10-07): `crates/os/coreutils` (not in repo) → `crates/os/kernel/src/coreutils.rs`; `crates/shell/aphrody-shell-sandbox-host-e2b` (not in repo) → `crates/shell/aphrody-shell-sandbox-host/src/e2b.rs`; `crates/shell/aphrody-shell-vfs-opfs` (not in repo) → `crates/shell/web/src/opfs.rs`. Original dated observations below retain their historical scope.
+
 Date: 2026-10-02. Status: active implementation plan. Section 1 is the baseline read from before implementation;
 the task status and [current shell status](../../products/shell/STATUS.md) record subsequent changes.
 Rules: root `CLAUDE.md`. Workers never run Cargo; the lead runs one check at a time through
@@ -17,8 +19,8 @@ Rules: root `CLAUDE.md`. Workers never run Cargo; the lead runs one check at a t
 | TS transports | `packages/shell/web/src/index.ts` | Real: `webSocketTransport`, `tauriTransport`, `localTransport`, `attach`. Tests: `shell-web.test.ts`, `browser.test.ts` (headless Chrome), `live-backend.test.ts` (live PTY). |
 | Native PTY + WS server | `crates/shell/terminal-backend` | Real (portable-pty, 1598 lines). Native only. |
 | Nushell | `crates/shell/nu` (nu 0.115.1, features `brotli`, `os`, `rmp-serde`, `sqlite`) | Real, native only. Not built for wasm; wasm viability is unproven. |
-| Ratatui TUI | `crates/shell/tui` | Real, native only. Out of scope here. |
-| Coreutils | `crates/os/coreutils` | **Adapter only.** `subsystem.rs` spawns a pinned uutils multicall binary (`APHRODY_COREUTILS_BIN` or `target/aphrody-uutils/...`) as a subprocess; also wraps findutils/grep/sed/diffutils/tar companions. No uutils library code is linked, nothing compiles for wasm. MCP tools `coreutils_status/catalog/run` and `uutils_*` front it. uutils sources are not in `.cache/upstream` and not in `config/upstream-sources.json`'s listing; locate or add before T7. |
+| Ratatui TUI | `crates/shell/tui` (not in repo) (retired source path; retained as historical evidence) | Real, native only. Out of scope here. |
+| Coreutils | `crates/os/kernel/src/coreutils.rs` | **Adapter only.** `subsystem.rs` spawns a pinned uutils multicall binary (`APHRODY_COREUTILS_BIN` or `target/aphrody-uutils/...`) as a subprocess; also wraps findutils/grep/sed/diffutils/tar companions. No uutils library code is linked, nothing compiles for wasm. MCP tools `coreutils_status/catalog/run` and `uutils_*` front it. uutils sources are not in `.cache/upstream` (not in repo) (generated or machine-local artifact; presence depends on the build host) and not in `config/upstream-sources.json`'s listing; locate or add before T7. |
 | Sandbox | `crates/os/sandbox` | **Native policy + helper real** (Landlock/seccomp unix, Low-IL windows, `SandboxPolicy`, `CommandRunner` trait, `MockCommandRunner`, `patch_guard`). **wasm is a stub** (`wasm.rs`: two no-op functions; `runner.rs` gates tokio on non-wasm). It is a command-confinement crate, not a remote-sandbox abstraction. |
 | VFS / OPFS | none | No shell VFS exists. `crates/os/fsindex` and `crates/os/drive` are different concerns (indexing, cloud drive); reuse only the ideas. |
 | Renderer | wterm/Ghostty DOM in `crates/ui/app` | Active renderer by decision (ENGINE-SELECTION.md). Native wgpu renderer is the UI owner's future work. |
@@ -45,7 +47,7 @@ Decisions:
    Before writing a parser, T6 checks `best-stack-2026` and the ecosystem catalog for an existing wasm-clean crate
    (candidates to evaluate: `brush-parser` for POSIX/bash parsing only, `shlex`, `nu-parser` with default-features off,
    `uucore`). Choose by wasm32 build and licence; record the choice in an ADR under `docs/decisions/shell/`.
-3. **Coreutils in wasm = a `ShellCommand` registry over VFS and pipeline bytes.** `crates/os/coreutils` stays the native
+3. **Coreutils in wasm = a `ShellCommand` registry over VFS and pipeline bytes.** `crates/os/kernel/src/coreutils.rs` stays the native
    subprocess owner. T6 measured that `uu_echo` compiles for wasm but writes to process stdout, while `uu_wc` fails
    on `errno` for the unknown OS target. Link a uutils utility only when its API can consume VFS and return byte output;
    the measured allow-list (cat, echo, head, tail, wc, sort, uniq, tr, cut, basename, dirname, printf, true/false,
@@ -128,7 +130,7 @@ serially.
   `tauriTransport` update is T8's.
 
 ### T5. OPFS Vfs backend + worker host
-- Owner: `crates/shell/aphrody-shell-vfs-opfs/` (portable snapshot mirror), `crates/shell/web/` (WASM binding), and
+- Owner: `crates/shell/web/src/opfs.rs` (portable snapshot mirror), `crates/shell/web/` (WASM binding), and
   `packages/shell/web/src/worker.ts`.
 - Deps: T2 (trait + conformance suite), T3 (engine to host).
 - Content: `OpfsVfs` mirrors `MemVfs` synchronously and encodes bounded, checksummed images. The worker owns the
@@ -146,11 +148,11 @@ serially.
 - Test: ADR lists the exact commands and results; no claim without a recorded build.
 
 ### T7. Coreutils-in-wasm registry
-- Owner: `crates/shell/aphrody-shell-wasm-utils/` (`aphrody-shell-wasm-utils`); consumed by T3 via the `ShellCommand` trait.
+- Owner: `crates/shell/web/src/utils.rs` (module of `aphrody-shell-web`, folded from the former utilities crate); consumed by T3 via the `ShellCommand` trait.
 - Deps: T1 (trait), T2 (Vfs), T6 (allow-list).
 - Content: per-utility registration over `Vfs`. Link uutils crates only where the measured library API can use that
   VFS and return pipeline bytes; the current measured set needs small implementations instead. Each utility is tagged
-  `source = own` in the [generated table](../../reference/shell/WASM-UTILITIES.md). Does not touch `crates/os/coreutils`.
+  `source = own` in the [generated table](../../reference/shell/WASM-UTILITIES.md). Does not touch `crates/os/kernel/src/coreutils.rs`.
 - Test: golden tests comparing output with the native pinned uutils binary (`coreutils_run` MCP tool / `APHRODY_COREUTILS_BIN`)
   on the same fixtures (native, lead); wasm32 check; Bun test in T8 that runs `ls | wc -l` end to end.
 
@@ -188,7 +190,7 @@ serially.
   live test with `APHRODY_SHELL_LIVE_BIN`.
 
 ### T12. Cloud provider adapter (first one only)
-- Owner: `crates/shell/aphrody-shell-sandbox-host-e2b/`, `docs/decisions/shell/sandbox-provider.md`.
+- Owner: `crates/shell/aphrody-shell-sandbox-host/src/e2b.rs`, `docs/decisions/shell/sandbox-provider.md`.
 - Deps: T10, T11. Decision first: pick one provider from {Cloudflare Containers/Sandbox, E2B, Fly Machines, Firecracker on
   owned hosts}; use `aphrody:deploy` and `docs` skills for current APIs; record cost, cold start and licence. Secrets stay
   in the existing protected stores; never in the repo.

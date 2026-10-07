@@ -1,9 +1,11 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # First-party plugin marketplace
 
+> Path reconciliation (2026-10-07): `plugins/aphrody/.claude-plugin/marketplace.json` (not in repo) → `plugins/.claude-plugin/marketplace.json`. Original dated observations below retain their historical scope.
+
 The canonical catalog is `.agents/plugins/marketplace.json` (not in repo). It currently
 contains the `aphrody` and `yolo` plugins. Generated adapters are written to
-`plugins/aphrody/.claude-plugin/marketplace.json` and the user's agy skills registry.
+`plugins/.claude-plugin/marketplace.json` and the user's agy skills registry.
 
 Run `bun run plugins:sync` after editing a plugin. Use `bun run plugins:watch`
 during development to synchronize manifest and skill edits automatically.

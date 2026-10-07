@@ -162,7 +162,7 @@ curl --fail --silent http://127.0.0.1:8790/health
 
 `--prune-debug-target` peut retirer uniquement `nie/target/debug` après une
 lecture de `/proc`; il ne s'exécute pas si un processus utilise un exécutable
-de ce répertoire. `target/release`, les données de jeu, les bases, les logs et
+de ce répertoire. `target/release` (not in repo) (generated or machine-local artifact; presence depends on the build host), les données de jeu, les bases, les logs et
 les caches d'outils ne sont pas effacés par défaut.
 
 Le serveur modèle est configuré avec un budget CPK et un pool bornés, sans

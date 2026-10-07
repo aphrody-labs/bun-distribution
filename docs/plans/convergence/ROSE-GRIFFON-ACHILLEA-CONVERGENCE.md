@@ -9,7 +9,7 @@ Ce document constitue la feuille de route canonique de consolidation définitive
 
 1. **Unification des Daemons de Bots Discord (`@rosegriffon/bot`)** :
    - Rapatrier le bot Achilléa sous forme de profil dédié (`achillea`) aux côtés des profils existants `rg` et `azalee` au sein de `iecode/apps/rg/bot`.
-   - Produire un **unique binaire ELF autonome compilé AOT** (`dist/rg-bot`, ~145-150 Mo) via `aphrody discord compile rg --smoke`.
+   - Produire un **unique binaire ELF autonome compilé AOT** (`dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host), ~145-150 Mo) via `aphrody discord compile rg --smoke`.
    - Zéro framework HTTP (`express`, `@tsed/*`) dans le processus Discord.
 
 2. **Unification de la Couche Serveur & API (`@rosegriffon/api`)** :

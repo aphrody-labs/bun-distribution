@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Shenron : trois cibles RAG (WASM web, natif desktop, FFI Bun)
 
+> Path reconciliation (2026-10-07): `crates/ai/rag-ffi` (not in repo) → `crates/interop/ffi/src/rag_ffi.rs`. Original dated observations below retain their historical scope.
+
 Date : 2026-10-06. Claim `shenron-targets`. Owner des capacités : `crates/ai/rag-core`
 ([plan RAG](rag-native-integration.md)). Aucune capacité n'est redéclarée dans un binding.
 
@@ -24,7 +26,7 @@ ligne de table. Les bindings sont des adaptateurs sans logique :
 | `@aphrody/cli-wasm` : tests Bun, dont parité avec `aphrody pure` natif (`APHRODY_NATIVE_BIN`, build debug) | 7 tests, 15 cas à sortie et code identiques |
 | `bun pm pack --dry-run` (`@aphrody/cli-wasm`, `@aphrody/rag-core`, `@aphrody/shell-web`) | 8, 12 et 7 fichiers, `.wasm` inclus |
 | Desktop natif | dépendance Rust directe sur `aphrody-rag-core` (pas de binding) | rlib |
-| Backend Bun | `crates/ai/rag-ffi` (rlib), réexporté par l'unique cdylib `aphrody-ffi` + `@aphrody/rag-core/ffi` | `openRagFfi()` |
+| Backend Bun | `crates/interop/ffi/src/rag_ffi.rs` (rlib), réexporté par l'unique cdylib `aphrody-ffi` + `@aphrody/rag-core/ffi` | `openRagFfi()` |
 
 Le paquet `packages/ai/rag-core` expose une façade typée unique (`createRagCore(transport)`) : wasm et FFI
 n'implémentent que le transport. `test/contract.test.ts` exécute le même contrat sur chaque backend construit ;

@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # `@aphrody/x` against `aphrody-x`: inventory
 
+> Path reconciliation (2026-10-07): `data/x-policy.json` (not in repo) → `crates/web/x/data/x-policy.json`. Original dated observations below retain their historical scope.
+
 Date: 2026-10-05. Scope: `packages/web/x` (TypeScript, 47 files) against `crates/web/x` (Rust crate `aphrody-x`) and the
 in-process FFI (`crates/interop/ffi`, package `@aphrody/bun`). Companion: [PLAN.md](PLAN.md) (design and decisions).
 
@@ -103,7 +105,7 @@ in-process: the TypeScript package re-implements them.
 | `startSyncCron`, `SyncOptions` (`services/cron.ts`, 71 lines) | CLI `jobs` prints a scheduler snippet | none | `jobs` | `Bun.cron` schedule and store writes | `thin`: orchestration (scheduling is a Bun capability) |
 | `Crawler`, `CrawlerOptions` (`services/crawler.ts`, 337 lines) | none | none | none | breadth-first crawl with visited sets, raw SQL on the store | `thin`: orchestration; raw SQL replaced by native store ops (`store_known_usernames`, `store_known_communities`) and one batched `store_ingest` per step |
 | `purgeFollowing`, `captureFollowGraph`, `collectFollowing`, `collectFollowers`, `buildQueue`, `loadState`, `saveState`, `estimateEta`, `sleep`, `RateGovernor`, `WINDOW_MS`, `DAY_MS`, `UNFOLLOW_DEFAULTS`, types (`services/unfollow.ts`, 536 lines) | none (CLI `unfollow` is a single call) | none | none | resumable journal, ordering (non-mutuals first), pacing | `thin`: orchestration, kept with its 734-line test; calls the native client |
-| `purge-engine` exports: `runMutationQueue`, `readWithBackoff`, `PACING_DEFAULTS`, `TERMINAL_CODES`, `AUTH_CODES`, `writeJsonPrivate`, `errorCode`, `errorStatus`, `errorMessage`, `isRateLimitError`, `isTerminalError`, types (561 lines) | none | none | none | pacing governor with injected clocks, error taxonomy, mutation loop | `thin` for the loop and the journal writer; the **taxonomy** (`TERMINAL_CODES`, `AUTH_CODES`, rate-limit rule) has one owner, Rust `policy.rs`, shared as data (`data/x-policy.json`) and consumed by both |
+| `purge-engine` exports: `runMutationQueue`, `readWithBackoff`, `PACING_DEFAULTS`, `TERMINAL_CODES`, `AUTH_CODES`, `writeJsonPrivate`, `errorCode`, `errorStatus`, `errorMessage`, `isRateLimitError`, `isTerminalError`, types (561 lines) | none | none | none | pacing governor with injected clocks, error taxonomy, mutation loop | `thin` for the loop and the journal writer; the **taxonomy** (`TERMINAL_CODES`, `AUTH_CODES`, rate-limit rule) has one owner, Rust `policy.rs`, shared as data (`crates/web/x/data/x-policy.json`) and consumed by both |
 | `purgeTweets`, `captureArchive`, `collectTimeline`, `buildTweetQueue`, `classifyPost`, `retweetIsOwnStatus`, `loadTweetState`, `saveTweetState`, `ARCHIVE_SOURCES`, `TWEET_PURGE_DEFAULTS`, types (`services/purge-tweets.ts`, 662 lines) | none | none | none | classification, least-liked-first queue, journal | `thin`: orchestration, kept with its 868-line test |
 
 ### 2.5 Store and archive

@@ -32,15 +32,15 @@ client_secret**.
 
 | # | Surface | Auth mechanism | Keyless | Proof (file:line) |
 |---|---|---|---|---|
-| 1 | `aphrody chat` (default) | OAuth Bearer (agy) → Cloud Code `v1internal:generateContent` | yes | `crates/infra/aphrody-command/src/commands.rs:1872`; `crates/infra/aphrody-command/src/agy_backend.rs:56` |
+| 1 | `aphrody chat` (default) | OAuth Bearer (agy) → Cloud Code `v1internal:generateContent` | yes | `crates/infra/aphrody-command/src/commands.rs:1872`; `crates/infra/aphrody-command/src/agy_backend.rs:56` (not in repo) (retired source path; retained as historical evidence) |
 | 2 | `aphrody chat --web` | Google session cookies + SAPISIDHASH | yes | `crates/google/gemini-web/src/auth.rs:80` |
 | 3 | `aphrody chat --stub` | none (deterministic offline) | n/a | `crates/infra/aphrody-command/src/commands.rs:1852` |
 | 4 | `AgyBackend` (Cloud Code) | `Authorization: Bearer <token>` per request | yes | `crates/aphrody-antigravity/src/client.rs:96,131` |
 | 5 | agy login / refresh | OAuth 2.0 PKCE S256, public client_id, no secret | yes | `crates/aphrody-antigravity/src/oauth.rs:19,151`; `auth.rs:30` |
-| 6 | `aphrody hermes` / `aphrody agent` | same stub/web/agy order (Google = keyless) | yes | `crates/infra/aphrody-command/src/agent_cmd.rs:464-495` |
+| 6 | `aphrody hermes` / `aphrody agent` | same stub/web/agy order (Google = keyless) | yes | `crates/infra/aphrody-command/src/agent_cmd.rs:464-495` (not in repo) (retired source path; retained as historical evidence) |
 | 7 | MCP `gemini_chat` / `gemini_image` / `gemini_video` / `gemini_deep_research` | Gemini-web cookies | yes | `crates/aphrody-mcp/src/gemini_tools.rs:22,72,107,126` |
 | 8 | `aphrody image generate` (Nano Banana) | cookies (`from_default_cookies`) | yes | `crates/aphrody/src/image_cmd.rs:6,62` |
-| 9 | `aphrody notebooklm …` | Google cookies **or** Bearer OAuth, never a key | yes | `crates/google/notebooklm/src/auth.rs:69-108` |
+| 9 | `aphrody notebooklm …` | Google cookies **or** Bearer OAuth, never a key | yes | `crates/google/notebooklm/src/auth.rs:69-108` (not in repo) (retired source path; retained as historical evidence) |
 | 10 | `aphrody gemini …` (passthrough) | spawns external `gemini` binary; aphrody injects nothing | yes (aphrody side) | `crates/infra/aphrody-command/src/commands.rs:810-836` |
 
 ## Token source (exact)

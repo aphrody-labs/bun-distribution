@@ -63,7 +63,7 @@ Les entrypoints `docs:translate` et `docs:ai` restent compatibles.
 
 ## Export privé
 
-`docs:site` exporte uniquement `site.include` vers `.cache/documentation-site` :
+`docs:site` exporte uniquement `site.include` vers `.cache/documentation-site` (not in repo) (generated or machine-local artifact; presence depends on the build host) :
 HTML, Markdown canonique, index agents et manifeste vérifié. Refuser chemins
 dangereux, symlinks et contenu étranger. HTML/MDX sources restent du texte ;
 aucune exécution ni publication. Le serveur privé doit imposer l'authentification.

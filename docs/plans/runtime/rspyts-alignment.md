@@ -10,7 +10,7 @@ révision `adecf388e0bbb4d90a9c91cc774af0ef6b8c1161`, checkout existant
 `/tmp/rspyts`. Aucun nouveau clone requis ; aucune source transplantée.
 
 Retenir la séparation logique Rust / ABI C / clients Bun / bindings Python.
-Ne pas reprendre le chargement direct `target/release/librspyts_ffi.so`,
+Ne pas reprendre le chargement direct `target/release/librspyts_ffi.so` (not in repo) (generated or machine-local artifact; presence depends on the build host),
 l'absence de négociation ABI/erreurs structurées ou le rebuild moteur consommateur.
 Aucune mesure Rspyts de performance ou zero-copy reproduite.
 

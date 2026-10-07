@@ -1,5 +1,7 @@
 # N2B and Oxc map (Rust and Bun)
 
+> Path reconciliation (2026-10-07): `crates/compat/n2b-native` (not in repo) → `crates/interop/ffi/src/n2b_native.rs`; `packages/engine/n2b-plugin/src/index.ts` (not in repo) → `packages/engine/n2b-client/src/plugin.ts`; `plugins/aphrody/agents/node2bun.md` (not in repo) → `plugins/yolo/agents/node2bun.md`. Original dated observations below retain their historical scope.
+
 Snapshot of 2026-10-02, read from the working tree (uncommitted changes of
 other agents included). Evidence is `file:line`. "Unverified" means the fact
 was not checked against a build or a run; nothing here was compiled.
@@ -15,7 +17,7 @@ All crates live in `crates/compat/`, inherit versions from the root
 | `aphrody-n2b` | `crates/compat/n2b` | lib + bin `n2b` (`src/main.rs`) | n2b-core, `aphrody-toolchains` | clap, tokio, octocrab, which, similar, colored; dev: assert_cmd, jsonschema | `default = []`, `ai = ["dep:fastembed"]` |
 | `aphrody-n2b-core` | `crates/compat/n2b-core` | lib; modules `ai`, `audit`, `github`, `llmstxt`, `manifest`, `report`, `report_card`, `rules`, `run`, `scanners`, `util` | n2b-types, n2b-registry | **oxc_allocator, oxc_parser, oxc_ast, oxc_ast_visit, oxc_span** (`rules/imports_ast.rs`), serde_yaml, regex, memchr, crossbeam-channel, ignore, globset, url, walkdir, which, reqwest, octocrab, tokio, colored; dev: proptest | `default = []` |
 | `aphrody-n2b-registry` | `crates/compat/n2b-registry` | lib; rule tables `registry/{apis,modules,packages,cli,globals}.toml` | n2b-types | toml, regex | none |
-| `aphrody-n2b-native` | `crates/compat/n2b-native` | rlib (C ABI exported via `aphrody-ffi`) | n2b-core | memchr; dev: tempfile | none |
+| `aphrody-n2b-native` | `crates/interop/ffi/src/n2b_native.rs` | rlib (C ABI exported via `aphrody-ffi`) | n2b-core | memchr; dev: tempfile | none |
 | `aphrody-n2b-types` | `crates/compat/n2b-types` | lib (generated `schema.rs` + `types.rs`) | none | serde | none |
 
 Integration tests of n2b-core: `crates/compat/n2b-core/tests/proptest_package_json.rs`, `crates/compat/n2b-core/tests/proptest_source.rs`,
@@ -49,7 +51,7 @@ Other surfaces:
 |---|---|
 | Root script | `package.json:290` `"n2b:google": "aphrody n2b packages/google/google"` |
 | Skill | `plugins/aphrody/skills/n2b/SKILL.md` |
-| Agent | `plugins/aphrody/agents/node2bun.md` |
+| Agent | `plugins/yolo/agents/node2bun.md` |
 | Scripts | `scripts/tools/compat/scripts/n2b/{autofix-toolchain.ps1,coverage-daemon.ts,generate-schema-types.ts}`, `scripts/audit/compat/scripts/n2b/coverage-check.ts` |
 | Docs | `docs/<category>/compat/n2b/{node,plugin,bun}` (bun: 26 residual files; canonical Bun docs are `docs/<category>/upstream-bun`) |
 
@@ -83,9 +85,9 @@ Workspace crates using Oxc:
 | `aphrody-rag-core` | `crates/ai/rag-core/Cargo.toml:15,20,32-35` | feature `oxc` (**default-on**) -> JS/TS chunker `src/jsts_chunker.rs`; off for wasm32 |
 
 Consumers of `aphrody-oxc-bridge`: `crates/interop/ffi/Cargo.toml:54`
-(`src/lib.rs:67` re-export) and `crates/discord/aphrody-discord-compiler/Cargo.toml:12`
+(`src/lib.rs:67` re-export) and `crates/discord/aphrody-discord-compiler/Cargo.toml:12` (not in repo) (retired source path; retained as historical evidence)
 (`src/lib.rs:246,444`). Consumers of `aphrody-rag-core` (and thus Oxc by default):
-`crates/interop/ffi`, `crates/ai/rag-python`, `crates/ai/memory`, `crates/ai/ai`,
+`crates/interop/ffi`, `crates/ai/rag-python`, `crates/ai/memory`, `crates/ai/ai` (not in repo) (retired source path; retained as historical evidence),
 `crates/ai/rag-eval`.
 
 ## 4. Oxc, Bun side
@@ -135,7 +137,7 @@ Live code (behaviour depends on a `bun:aphrody` module that stock Bun lacks):
 | File:line | Reference |
 |---|---|
 | `crates/os/kernel/src/runtimes.rs:23` | probes `require('bun:aphrody').moduleVersion` |
-| `packages/engine/n2b-plugin/src/index.ts:79` | specifier `"bun:aphrody"` |
+| `packages/engine/n2b-client/src/plugin.ts` (former source location packages/engine/n2b-plugin/src/index.ts:79) | specifier `"bun:aphrody"` |
 | `packages/interop/native/src/library.ts:293` | owner type `"@aphrody/bun" \| "bun:aphrody"` |
 | `packages/interop/native/fixtures/bun-fork-native.ts:18,31` | fixture for `bun:aphrody` |
 

@@ -50,7 +50,7 @@ Source: https://github.com/coder/ghostty-web, `1858a5947767a3e1c9e98dbf53b2ff87f
 | Description | Ghostty VT parser compiled to WASM, ~400 KB, zero runtime deps, canvas renderer (`CanvasRenderer`) |
 | Build | Zig + Bun; Ghostty source plus `patches/ghostty-wasm-api.patch` (not in repo). Not built by us |
 | Load wasm | `import { init, Terminal } from 'ghostty-web'; await init();` (`init()` calls `Ghostty.load()` once, shared instance). The wasm is `ghostty-vt.wasm`, exported as `ghostty-web/ghostty-vt.wasm` and copied to `dist/`. Custom instance: `const ghostty = await Ghostty.load(); new Terminal({ ghostty })`. How `Ghostty.load()` resolves the URL (import.meta.url vs path option): unverified, read `lib/ghostty.ts` |
-| Entry points | ESM `dist/ghostty-web.js`, UMD `dist/ghostty-web.umd.cjs`, types `dist/index.d.ts` |
+| Entry points | ESM `dist/ghostty-web.js` (not in repo) (generated or machine-local artifact; presence depends on the build host), UMD `dist/ghostty-web.umd.cjs` (not in repo) (generated or machine-local artifact; presence depends on the build host), types `dist/index.d.ts` (not in repo) (generated or machine-local artifact; presence depends on the build host) |
 
 xterm.js-compatible surface (from `lib/index.ts`, `lib/terminal.ts`, `lib/addons/fit.ts`):
 

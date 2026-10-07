@@ -30,7 +30,7 @@ Everything except `check`, `pins` and `systemd check` is report-only until `--ap
   -> `docs/research/workspace/deps/<date>.md`.
 - `fix [--apply-fixes]`: runs the consumer gates (tsc, `cargo check`), subtracts `config/deps/baseline.json`, matches
   `config/deps/fix-rules.json`, writes `.coord/shared/deps-fix-<date>.md`. Only `kind: script` rules edit files.
-- `inventory`: whole-repo scan (about 45 s, six-hour cache in `target/deps-inventory/cache`) of `Cargo.lock` vs the
+- `inventory`: whole-repo scan (about 45 s, six-hour cache in `target/deps-inventory/cache` (not in repo) (generated or machine-local artifact; presence depends on the build host)) of `Cargo.lock` vs the
   crates.io sparse index, git remotes via `git ls-remote` (any host), `bun.lock` vs npm, Python pins vs PyPI, and one
   OSV.dev batch for advisories -> `docs/reference/workspace/DEPS-INVENTORY.md`.
 - `changelog`: `CHANGELOG.md` from conventional commits (`config/changelog.json`) and the journal.

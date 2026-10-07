@@ -92,7 +92,7 @@ the kernel's event stream is not automatically the durable/auditable event strea
 the local events capability.
 
 Evidence: [`kernel/src/lib.rs`](../../../crates/os/kernel/src/lib.rs) (`AgentBus` ownership),
-[`events/src/lib.rs`](../../../crates/os/events/src/lib.rs) (`EventBus`), and workspace dependency
+[`events/src/lib.rs`](../../../crates/os/kernel/src/events.rs) (`EventBus`), and workspace dependency
 metadata (no consumer of `aphrody-events`).
 
 **Direction:** decide whether `aphrody-events` is a reusable library awaiting integration or an

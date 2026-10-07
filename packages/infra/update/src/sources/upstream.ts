@@ -95,7 +95,7 @@ export function renderDocs(manifest: Manifest, forks: ForkEntry[] = []): string 
 # Upstreams
 
 Patched Rust implementations are tracked inside the Aphrody Cargo workspace. Only optional build inputs live under the source root
-(\`${manifest.root}\`, override with \`APHRODY_SOURCE_ROOT\`); everything else is a catalogue entry that is read live.
+(\`${manifest.root}\` (not in repo), an untracked machine-local cache; override with \`APHRODY_SOURCE_ROOT\`); everything else is a catalogue entry that is read live.
 
 ## Integrated Rust implementations (${manifest.integrated?.length ?? 0})
 
@@ -121,7 +121,7 @@ ${rows("reference").join("\n")}
 
 ## Build-on-demand upstreams (${(manifest.reference ?? []).filter((r) => r.tier === "build").length})
 
-Inputs of the WSL build (\`config/os/wsl-build.json\`, \`crates/os/aphrody-wsl\`). Restore one with
+Inputs of the WSL build (\`config/os/wsl-build.json\`, \`crates/infra/aphrody-command/src/wsl\`). Restore one with
 \`yolo update sources sync --only <id> --apply\` before a WSL build; remove it afterwards with
 \`yolo update upstream prune --apply\`.
 

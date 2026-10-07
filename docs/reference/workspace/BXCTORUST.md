@@ -22,7 +22,7 @@ Supprimer la dépendance externe à l'environnement Bun/Zig/Chromium de BXC en t
 | :--- | :--- | :--- | :--- |
 | **HTTP & Fetching** | `transport/`, `profiles/` | `aphrody web fetch`, `obscura-net` | ✅ Porté : `wreq_client` (BoringSSL/Chrome 145) + `reqwest` natif. |
 | **Stealth & Anti-Bot** | `profiles/ghost/`, `profiles/auto-escalation.ts` | `web-detect` (détection) + `obscura-net` | ✅ Porté : Profil stealth avec JA3/JA4, sec-ch-ua et spoofing headers. |
-| **Moteur DOM Léger** | `vendor/zigquery-wrapper/` (Zig cdylib), Lightpanda | `web-extract`, `obscura-dom` (html5ever) | ✅ Porté : html5ever + `obscura_dom` sans aucune FFI Zig externe. |
+| **Moteur DOM Léger** | `vendor/zigquery-wrapper/` (not in repo) (historical benchmark source checkout) (Zig cdylib), Lightpanda | `web-extract`, `obscura-dom` (html5ever) | ✅ Porté : html5ever + `obscura_dom` sans aucune FFI Zig externe. |
 | **Crawl Continu 24/7** | `cli/crawl-worker.ts`, `crawler/`, `queue/` | `web-crawl` (`crawl_daemon` & `crawl_bounded`) | ✅ Porté : `crawl_daemon` 24/7, promotion revisit, recover_stale & flag `--daemon`. |
 | **Frontier & File d'attente** | `queue/sharded/`, SQLite FTS5 | `web-crawl::Frontier` (SQLite WAL) | ✅ Porté : Frontier persistante SQLite WAL multi-host avec OPIC scoring. |
 | **Scraper FUT** | `cli/fut.ts`, `scrapers/fut.ts` | `@aphrody/fut` (TypeScript local) | Traité : Délégation pure locale TS/Bun sans binaire BXC. |

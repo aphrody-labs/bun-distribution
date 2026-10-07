@@ -103,7 +103,7 @@ The native Infra factory gates passed. The separate NIE check used the actual
 pair Aphrody `98a728a9fe31c76526e566341d752ec9bcad942c` and IECODE
 `c832e6c553a99ccad92cc64e4ff5b952f7c28c42`. After scoped lock reconciliation,
 compilation reached `aphrody-nie-wiki` and failed on six ignored compile-time
-inputs under IECODE's `data/azalee/`:
+inputs under IECODE's `data/azalee/` (not in repo) (external IECODE data store):
 
 - `menu-gallery-manifest.json`
 - `item-enrichment.json`

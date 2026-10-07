@@ -118,7 +118,7 @@ unless `APHRODY_BROWSER_CDP_URL` names a running one.
 
 Defaults, then `config/web.json`, then environment variables, then explicit
 options. Binary resolution: `APHRODY_WEB_BIN`, otherwise the most recently built
-of `target/debug/aphrody-web` (not in repo), `target/release/aphrody-web` and
+of `target/debug/aphrody-web` (not in repo), `target/release/aphrody-web` (not in repo) (generated or machine-local artifact; presence depends on the build host) and
 `~/.local/bin/aphrody-web`, otherwise `PATH`. Secrets, cookies and browser
 profiles are never read from or written to this configuration; the Chromium
 cookie reader (`aphrody-web-chromium`) redacts values from `Debug` output.

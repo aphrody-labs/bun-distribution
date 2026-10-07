@@ -16,7 +16,7 @@ Every row carries its decision, marked `tranché`: **remove** (deleted), **migra
   `rg -i` over the working tree, `.gitignore` honoured.
 - Left out on purpose: `Cargo.lock` (diffed separately), `CHANGELOG.md` files (upstream release notes),
   `docs/plans/fusion` (owned by the V8/JSC arbiter; it already records decision 21 and receives a message),
-  generated catalogues (`docs/ecosystem`, `docs/migration`), and the five crates being deleted.
+  generated catalogues (`docs/ecosystem`, `docs/migration` (not in repo) (former migration record directory; retained as a historical reference)), and the five crates being deleted.
 - JavaScriptCore/WebKit as Bun's engine (the V8 versus JSC work) is a different subject and is not matched.
 - Result: 305 files with 1544 matches outside the deletion set, plus the deletion set itself: 243 files,
   69,209 lines, 2.5 MB (`aphrody-wry` 19,577 lines, `aphrody-tao` 38,826, `aphrody-tao-macros` 702,

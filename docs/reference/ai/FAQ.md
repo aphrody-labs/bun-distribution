@@ -2,6 +2,8 @@
 
 # Frequently Asked Questions
 
+> Path reconciliation (2026-10-07): `plugins/aphrody/skills/yolo` (not in repo) → `plugins/yolo/skills/yolo`. Original dated observations below retain their historical scope.
+
 Pre-answers to the questions most likely to surface in a Show HN thread, an
 issue tracker, or a `#general` Slack ping. Cross-links go to authoritative
 docs; if an answer here disagrees with the linked source, the linked source
@@ -86,7 +88,7 @@ in [`PERFORMANCE.md`](./PERFORMANCE.md) and [`PERFORMANCE-HISTORY.md`](./PERFORM
 
 An autonomous agent orchestration mode. Each tick drives
 open items toward verified completion. The mode is implemented as the
-`yolo` skill under `plugins/aphrody/skills/yolo/`.
+`yolo` skill under `plugins/yolo/skills/yolo`.
 
 ### How do I contribute?
 

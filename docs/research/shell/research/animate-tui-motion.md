@@ -5,7 +5,7 @@
 **Statut** : recommandation de recherche. Aucune dépendance ajoutée par cette note.
 
 > **Contexte depuis le découpage en dépôts (2026-09-25)** : le front TUI de ce dépôt est
-> `aphrody-tui` (`crates/shell/tui`, Ratatui 0.30) — la question « `aphrody-terminal` est-il
+> `aphrody-tui` (`crates/shell/tui` (not in repo) (retired source path; retained as historical evidence), Ratatui 0.30) — la question « `aphrody-terminal` est-il
 > Ratatui-based ? » ci-dessous est donc tranchée : oui, la feature `ratatui` d'`animate`
 > s'applique. le logo vit désormais dans ce monorepo, module `logo` de
 > `aphrody-identity` (`crates/ui/identity/src/logo.rs`, ex-crate `aphrody-logo`).

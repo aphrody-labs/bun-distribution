@@ -48,7 +48,7 @@ Mission keeps only Discord + X.
 
 | Channel | openclaw | aphrody | Evidence |
 |---------|----------|---------|----------|
-| **Discord** | `extensions/discord`, `skills/discord` | ✅ | `crates/ai/messaging/src/channels/discord.rs`, `aphrody-voice/src/discord_shim.rs` (voice), hermes |
+| **Discord** | `extensions/discord`, `skills/discord` | ✅ | `crates/ai/messaging/src/channels/discord.rs` (not in repo) (retired source path; retained as historical evidence), `aphrody-voice/src/discord_shim.rs` (voice), hermes |
 | **X (Twitter)** | (not a channel in openclaw) | ✅ net-new | `crates/aphrody-x-client` (not in repo) (158 GraphQL ops, cookie auth, no key), `aphrody-messaging/src/channels/x.rs`, hermes |
 
 Aphrody additionally retains Slack/Telegram/Matrix connectors (`aphrody-messaging/src/channels/`)

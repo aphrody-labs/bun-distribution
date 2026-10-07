@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # aphrody-compat: agent rules
 
+> Path reconciliation (2026-10-07): `crates/compat/n2b-native/src/lib.rs` (not in repo) → `crates/interop/ffi/src/n2b_native.rs`. Original dated observations below retain their historical scope.
+
 Owns N2B migration, toolchain discovery and offline Bun documentation.
 `aphrody-bun` / `@aphrody/bun` now belong to UI.
 Follow [workspace rules](../workspace/AGENTS.md) and the user's global policy:
@@ -27,7 +29,7 @@ otherwise add a new rule or flag instead of altering an existing one.
 | Exit codes (`0` clean, `1` findings, `2` error) | `crates/compat/n2b/src/commands/scan.rs`, `crates/compat/n2b/src/main.rs` (not in repo) |
 | JSON report v2 (bump to v3 on a breaking change) | `../aphrody-contracts/schema/v2.json` |
 | Rule IDs (`cli/*`, `imports/node-prefix`, `shebang/node`, ...) | `crates/compat/n2b-registry/registry/*.toml`, `crates/compat/n2b-core/src/rules/` |
-| cdylib ABI v2 (`find_newlines_u16`, `node2bun_abi_version`, `node2bun_scan_json`, `node2bun_scan_with_options_json`, `node2bun_string_free`) | `crates/compat/n2b-native/src/lib.rs` |
+| cdylib ABI v2 (`find_newlines_u16`, `node2bun_abi_version`, `node2bun_scan_json`, `node2bun_scan_with_options_json`, `node2bun_string_free`) | `crates/interop/ffi/src/n2b_native.rs` |
 
 - Safety net: `crates/compat/n2b/tests/contract.rs` (`assert_cmd` + `jsonschema` against the
   contracts schema, over `test/fixture/`) and `crates/compat/n2b/src/schema_test.rs` (round-trip

@@ -26,6 +26,7 @@
 - [PLAN — aphrody-compat](../../plans/compat/PLAN.md)
 - [PLAN — aphrody-contracts](../../plans/contracts/PLAN.md)
 - [Aphrody Discord plan](../../plans/discord/PLAN.md)
+- [GPU hub, Aphrody OS image and WASM target](../../plans/gpu-hub/PLAN.md)
 - [Aphrody Infra plan](../../plans/infra/PLAN.md)
 - [PLAN — aphrody-native](../../plans/native/PLAN.md)
 - [Architecture cible de aphrody-kernel](../../plans/os-kernel/PLAN.md)

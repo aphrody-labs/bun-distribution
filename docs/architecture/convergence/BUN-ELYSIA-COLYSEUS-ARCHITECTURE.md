@@ -105,7 +105,7 @@ export const gameServer = defineServer({
    ```bash
    aphrody discord compile rg --smoke
    ```
-   Génère l'exécutable ELF autonome `dist/rg-bot` incorporant les profils `rg`, `azalee`, et `achillea`.
+   Génère l'exécutable ELF autonome `dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host) incorporant les profils `rg`, `azalee`, et `achillea`.
 2. **Démarrage de l'API Unifiée** :
    ```bash
    bun run --filter @rosegriffon/api start

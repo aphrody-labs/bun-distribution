@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Dependency inventory
 
-Generated 2026-10-04T03:38:40.421Z by `aphrody-update deps inventory` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: `target/deps-inventory/inventory.json` (not committed).
+Generated 2026-10-04T03:38:40.421Z by `aphrody-update deps inventory` (crates.io sparse index, npm, PyPI, git ls-remote, OSV). Full data: `target/deps-inventory/inventory.json` (not in repo) (generated or machine-local artifact; presence depends on the build host) (not committed).
 
 ## Rust (Cargo.lock)
 

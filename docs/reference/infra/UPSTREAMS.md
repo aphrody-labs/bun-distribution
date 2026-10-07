@@ -3,7 +3,7 @@
 # Upstreams
 
 Patched Rust implementations are tracked inside the Aphrody Cargo workspace. Only optional build inputs live under the source root
-(`.cache/upstream`, override with `APHRODY_SOURCE_ROOT`); everything else is a catalogue entry that is read live.
+(`.cache/upstream` (not in repo), an untracked machine-local cache; override with `APHRODY_SOURCE_ROOT`); everything else is a catalogue entry that is read live.
 
 ## Integrated Rust implementations (7)
 
@@ -40,15 +40,15 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 
 ## Build-on-demand upstreams (9)
 
-Inputs of the WSL build (`config/os/wsl-build.json`, `crates/os/aphrody-wsl`). Restore one with
+Inputs of the WSL build (`config/os/wsl-build.json`, `crates/infra/aphrody-command/src/wsl`). Restore one with
 `yolo update sources sync --only <id> --apply` before a WSL build; remove it afterwards with
 `yolo update upstream prune --apply`.
 
 | Id | Repository | Ref | Observed | What it is for | Used by |
 | --- | --- | --- | --- | --- | --- |
-| `WSL` | [microsoft/WSL](https://github.com/microsoft/WSL) | `master` | 11c74d836c | Microsoft WSL; native WSL build recipe input. | config/os/wsl-build.json; crates/os/aphrody-wsl |
-| `WSL2-Linux-Kernel` | [microsoft/WSL2-Linux-Kernel](https://github.com/microsoft/WSL2-Linux-Kernel) | `linux-msft-wsl-6.18.y` | 1479418068 | WSL2 Linux kernel; kernel build recipe input. | config/os/wsl-build.json; crates/os/aphrody-wsl |
-| `linux-stable` | https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git | `v7.2.9` | 5fce161649 | kernel.org stable Linux with Rust-for-Linux; mainline kernel recipe input. `aphrody-wsl latest --apply` moves the pin. | config/os/wsl-build.json; crates/os/aphrody-wsl |
+| `WSL` | [microsoft/WSL](https://github.com/microsoft/WSL) | `master` | 11c74d836c | Microsoft WSL; native WSL build recipe input. | config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl |
+| `WSL2-Linux-Kernel` | [microsoft/WSL2-Linux-Kernel](https://github.com/microsoft/WSL2-Linux-Kernel) | `linux-msft-wsl-6.18.y` | 1479418068 | WSL2 Linux kernel; kernel build recipe input. | config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl |
+| `linux-stable` | https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git | `v7.2.9` | 5fce161649 | kernel.org stable Linux with Rust-for-Linux; mainline kernel recipe input. `aphrody-wsl latest --apply` moves the pin. | config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl |
 | `terminal` | [microsoft/terminal](https://github.com/microsoft/terminal) | `main` | 2b5336c1fc | Windows Terminal; WSL build recipe input. | config/os/wsl-build.json |
 | `wslg` | [microsoft/wslg](https://github.com/microsoft/wslg) | `main` | 6942bb534b | WSLg; system distro build recipe input. | config/os/wsl-build.json; scripts/build/os/build-wslg.py |
 | `vu-uv` | [astral-sh/uv](https://github.com/astral-sh/uv) | `0.12.23` | 46b84fd0bf | uv 0.12.23 (resolver, installer, Python manager; crates uv-* 0.0.90) pinned for the vu runtime of the planned vu monorepo; the fork carries no Aphrody patch yet. Fork aphrody-labs/uv created 2026-10-05, branch vu-pin-0.12.23 at the release commit. crates.io uv 0.12.23 and uv-* 0.0.90 carry .cargo_vcs_info.json sha1 46b84fd0 (verified). Cargo.lock: 737 packages, no git source, no ruff and no pyo3. The uv-* crates are internal components upstream; the CLI is the public interface. | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |

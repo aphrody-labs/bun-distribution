@@ -86,7 +86,7 @@ named in `needs`; the fresh-install adapter above executes the SSH/WireGuard sub
 
 ### Firewall and coordination with Shenron
 
-- Rules carry the comment `aphrody-wg-<peer>`. `scripts/ops/admin-access.ts` of Shenron only deletes rules whose comment is
+- Rules carry the comment `aphrody-wg-<peer>`. `scripts/ops/admin-access.ts` (not in repo) (Shenron repository source) of Shenron only deletes rules whose comment is
   `shenron-admin`, and its host script skips every RFC 1918 address outside `10.8.0.`, so the tunnel subnet never enters
   ufw, fail2ban, `pg_hba`, `SHENRON_ADMIN_IPS` or `SHENRON_MCP_ALLOWED_IPS`. Nothing of Shenron is edited.
 - UDP 51821 on the vps: one rule, `allow from 92.170.252.46 ... proto udp comment 'aphrody-wg-omar'` (Omar's address). No

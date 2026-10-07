@@ -2,6 +2,8 @@
 
 # Cœur Yolo, modules Bun et fournisseurs natifs
 
+> Path reconciliation (2026-10-07): `vendor/obscura` (not in repo) → `crates/web/obscura`. Original dated observations below retain their historical scope.
+
 Décision du 2026-10-04, issue de l’examen des manifestes, points d’entrée et
 consommateurs Yolo/Aphrody. **Yolo absorbe les contrats communs ; les moteurs
 restent des fournisseurs optionnels précompilés, exposés par quelques modules
@@ -56,7 +58,7 @@ amélioration du compilateur n’est déduite de cet arbitrage.
 | `yolo-pyo3` : 1 crate propre | Adaptateur Python optionnel du même cœur | `_yolo_native` ; l’IA/ML reste dans Aphrody Python |
 | Tauri/Wry/Tao et outillage : 54 imports, dont 30 plugins Tauri | Fournisseur desktop et ses outils de fabrication | Sélection de plugins par application et permissions Tauri ; aucune API Bun par crate |
 | Next/Turbo/Turbopack | Retiré le 2026-10-05 : aucun consommateur, `next` vient de npm | Historique Git |
-| Obscura et son V8, dans `vendor/obscura` | Fournisseur navigateur optionnel | `runtime:browser` ; conserver le graphe de build du moteur |
+| Obscura et son V8, dans `crates/web/obscura` | Fournisseur navigateur optionnel | `runtime:browser` ; conserver le graphe de build du moteur |
 | Fork Bun, dans `vendor/bun` | Hôte JavaScript et APIs natives existantes | Patch interne seulement pour un besoin d’intégration VM ou un gain mesuré |
 
 Les quatre modules `runtime:*` figurent déjà dans le
@@ -156,7 +158,7 @@ de limite incompatible est refusée explicitement. Les builds et mesures de
 l’addon complet restent nécessaires pour qualifier l’effet applicatif.
 
 Les deux workspaces ont encore des graphes Obscura : dépendances Rust locales
-dans Aphrody et `vendor/obscura` dans Yolo. Les fichiers du moteur JS comparés ont
+dans Aphrody et `crates/web/obscura` dans Yolo. Les fichiers du moteur JS comparés ont
 des hashes différents (voir recensement). Tauri suit aussi deux lignes : imports
 générés préfixés dans Yolo, registry et patches produit dans Aphrody.
 

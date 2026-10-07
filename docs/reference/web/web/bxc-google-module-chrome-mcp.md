@@ -41,7 +41,7 @@ Google "auth" is the synthetic anonymous `CONSENT` cookie for SERP scraping (`se
 
 Consequence: Aphrody Web's contribution to aphrody is **not** an auth bootstrap — it is the **Chrome TLS-impersonation
 transport** and the **anti-bot detection heuristics**. The Boq `batchexecute` bootstrap already exists, far more
-completely, inside aphrody's own `crates/google/notebooklm/` (see §4.2). The upgrade grafts Aphrody Web's impersonation onto
+completely, inside aphrody's own `crates/google/notebooklm/` (not in repo) (retired source path; retained as historical evidence) (see §4.2). The upgrade grafts Aphrody Web's impersonation onto
 that existing bootstrap.
 
 ### 1.3 The Rust bridge (`var/data/bxc-ref/rust-bridge/crates/` (not in repo))
@@ -168,7 +168,7 @@ domain/secure/path matching, CDP-cookie ingest, `httpOnly` JS-visibility split �
 Summary: **the chrome MCP today can read a real Chrome's on-disk/in-memory secrets, but has no capability to
 *originate* a convincing Google session over the wire.** That is the gap.
 
-### 4.2 The existing pure-HTTP Google bootstrap: `crates/google/notebooklm/`
+### 4.2 The existing pure-HTTP Google bootstrap: `crates/google/notebooklm/` (not in repo) (retired source path; retained as historical evidence)
 
 This is aphrody's real Boq client and the thing Aphrody Web's transport would enhance:
 
@@ -292,5 +292,5 @@ It must return **booleans/labels only — never token or cookie VALUES** (those 
 ## Provenance
 
 All aphrody web claims cite `var/data/bxc-ref/...` (clone of `aphrody-code/bxc`, depth 1). aphrody claims cite
-`crates/ai/mcp/` and `crates/google/notebooklm/`. No cookie/token values appear in this document; the example
+`crates/ai/mcp/` and `crates/google/notebooklm/` (not in repo) (retired source path; retained as historical evidence). No cookie/token values appear in this document; the example
 account is referred to only as `<user>`. This file is design + reference only — no `crates/` code was modified.

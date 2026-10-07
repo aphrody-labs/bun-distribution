@@ -1,12 +1,14 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # n2b scripts
 
+> Path reconciliation (2026-10-07): `packages/engine/n2b-types/src/index.ts` (not in repo) → `packages/engine/n2b-client/src/types.ts`. Original dated observations below retain their historical scope.
+
 Audit + coverage automation pour le plugin `n2b`.
 
 > Scope. Scripts live in `scripts/tools/compat/scripts/n2b/` (`autofix-toolchain.ps1`,
 > `coverage-daemon.ts`, `generate-schema-types.ts`) and `scripts/audit/compat/scripts/n2b/`
 > (`coverage-check.ts`). `generate-schema-types.ts` regenerates
-> `crates/compat/n2b-types/src/schema.rs` and `packages/engine/n2b-types/src/index.ts` from
+> `crates/compat/n2b-types/src/schema.rs` and `packages/engine/n2b-client/src/types.ts` from
 > `crates/contracts/schema/v2.json`. `coverage-check.ts` reads the canonical Bun docs
 > (`docs/reference/upstream-bun/`, override `N2B_DOCS_BUN`), the n2b notes
 > (`docs/reference/compat/n2b/plugin/n2b/`) and the plugin tree (`plugins/aphrody/`, override

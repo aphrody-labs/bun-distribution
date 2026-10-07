@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody — FFI unique et consolidation Rust, Python, Bun
 
+> Path reconciliation (2026-10-07): `crates/compat/n2b-native` (not in repo) → `crates/interop/ffi/src/n2b_native.rs`. Original dated observations below retain their historical scope.
+
 Décision de cible : 2026-09-29. Ce plan organise le travail demandé ; ses
 cases ouvertes ne décrivent pas une migration livrée. Les étapes s'exécutent
 sur des révisions relevées à nouveau, avec preuves de parité et retour arrière.
@@ -73,7 +75,7 @@ répertoires ; son total ne prouve pas la couverture complète de `src`.
 | `aphrody-ui/packages/bun/src/`, `packages/svg/src/` (not in repo) | Plusieurs chargements du même `bun_rs`, recherche de `target/`, appels natifs dès l'import du module principal. M3, Sass, icônes, SVG, rendu et reproduction doivent tous être conservés. |
 | `crates/interop/ffi/src/lib.rs` | ABI Aphrody v1, exports CLI, Shenron/RAG/persona et manga, runtime Tokio persistant, capture stdio. Le seul wrapper `bun/index.ts` ne couvre pas toute cette surface. |
 | `bun/src/js/bun/aphrody.ts` | Le module **`bun:aphrody`** charge séparément `aphrody_ffi` ABI 1, N2B ABI 2 et Oxc ABI 1. Il expose `runCaptured`, scan, format, minify et lint. Ce n'est pas encore une liaison Rust statique au moteur. |
-| `crates/compat/n2b-native`, `oxc/apps/aphrody-oxc` | Sources natives spécifiques déjà présentes ; comparer leur graphe Oxc, leurs fonctions et leurs features avant fusion. |
+| `crates/interop/ffi/src/n2b_native.rs`, `oxc/apps/aphrody-oxc` | Sources natives spécifiques déjà présentes ; comparer leur graphe Oxc, leurs fonctions et leurs features avant fusion. |
 | `aphrody-web/Cargo.toml` | Web est déjà une famille de crates : moteur, bridge, FFI, render, extract, index, service, Chromium et Obscura ; sa simple façade ne supprime pas leurs duplications. |
 | `iecode/crates/ffi`, `nie/crates/engine/nie-ffi`, `iecode/packages/nie` | ABI/bindings du domaine en migration. Une présence dans deux dépôts n'est pas une raison suffisante pour supprimer un côté. |
 | `aphrody-ai/py/aphrody/Cargo.toml` | Extension PyO3 `aphrody-rust`, cdylib indépendante : destination Rust dans `aphrody`, packaging Python dans `aphrody-py`. |
@@ -744,9 +746,9 @@ bilan de lien dans `document-import.json`.
   n'affirme donc pas que tous les liens sont valides.
 - 214 entrées ne sont pas copiées : docs Enterprise LiteLLM (licence séparée),
   openfox (licence non vérifiée), fichiers absents du checkout sparse Tauri,
-  assets de plus de 10 MiB et docs `vendor/third_party`. Chaque motif reste
+  assets de plus de 10 MiB et docs `vendor/third_party` (not in repo) (historical or proposed upstream checkout; not a current source owner). Chaque motif reste
   visible dans la carte source.
-- Les checkouts dans `.cache/upstream` restent intacts; le snapshot mcp-server-tauri
+- Les checkouts dans `.cache/upstream` (not in repo) (generated or machine-local artifact; presence depends on the build host) restent intacts; le snapshot mcp-server-tauri
   indique des changements de travail préexistants. L'import n'a modifié que
   les documents Aphrody et la carte/report générés.
 

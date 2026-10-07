@@ -115,7 +115,7 @@ monorepo; the Python side (locks, pyprojects, workflow, README) is committed in 
 
 ## Automation
 
-`status` and `plan` are report-only and network-bound (PyPI with a six-hour cache in `target/deps-inventory/cache`,
+`status` and `plan` are report-only and network-bound (PyPI with a six-hour cache in `target/deps-inventory/cache` (not in repo) (generated or machine-local artifact; presence depends on the build host),
 shared with `deps inventory`, plus one OSV batch). They belong in the weekly `aphrody-update.timer` run next to `tools`;
 `apply` is never scheduled. `deps inventory` already lists the PyPI rows of the Python root in
 `docs/reference/workspace/DEPS-INVENTORY.md`.

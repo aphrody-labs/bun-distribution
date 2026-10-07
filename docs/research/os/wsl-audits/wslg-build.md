@@ -1,20 +1,20 @@
 # WSLg source build audit — 2026-10-01
 
-Source: `.cache/upstream/wslg`, commit `6942bb534b537302a7a22617261d9274db3cfa37`. The tracked upstream files remain unmodified. Recipe read directly from `CONTRIBUTING.md`, `Dockerfile`, `build-and-export.sh`.
+Source: `.cache/upstream/wslg` (not in repo) (generated or machine-local artifact; presence depends on the build host), commit `6942bb534b537302a7a22617261d9274db3cfa37`. The tracked upstream files remain unmodified. Recipe read directly from `CONTRIBUTING.md`, `Dockerfile`, `build-and-export.sh`.
 
 The complete system-distro recipe builds DirectX-Headers, Mesa (swrast and d3d12), PulseAudio, FreeRDP, rdpapplist, Weston RDP/RAIL shell and WSLGd. It installs those artifacts into an Azure Linux 3.0 runtime container, exports the filesystem tar and converts it with hcsshim `tar2ext4` v0.13.0 into an ext4-backed VHD. XWayland is a distro RPM in this recipe; its source is not compiled by the WSLg Dockerfile. Windows integration DLL WSLDVCPlugin is a separate Visual Studio v143 project, not a Linux container target.
 
 ## Source and dependency provenance
 
-Five vendor clones use the official contributing recipe. Exact URLs/commits are recorded in `.cache/upstream/build/aphrody/wslg/sources.json`; there are no local patches. Azure Linux image `mcr.microsoft.com/azurelinux/base/core:3.0` pulled successfully, manifest digest `sha256:1324a2cf7ed34e5f48a1022816b205782b86c7305651658e611dcd3d30756751`.
+Five vendor clones use the official contributing recipe. Exact URLs/commits are recorded in `.cache/upstream/build/aphrody/wslg/sources.json` (not in repo) (generated or machine-local artifact; presence depends on the build host); there are no local patches. Azure Linux image `mcr.microsoft.com/azurelinux/base/core:3.0` pulled successfully, manifest digest `sha256:1324a2cf7ed34e5f48a1022816b205782b86c7305651658e611dcd3d30756751`.
 
 Existing Podman 4.9.3/Buildah 1.33.7 uses rootless overlay storage. The Dockerfile runs with `podman build --format docker --network host`, keeping its compiler/dependency installation isolated in the build container. Native Debian/Ubuntu packages `golang-go` and `debootstrap` installed successfully; (removed) records the transaction. hcsshim v0.13.0 requires Go >= 1.23, so the system Go 1.22 installer automatically downloads the official Go 1.26.8 toolchain, recorded in `tar2ext4-build.log`.
 
 ## Actual build
 
-Build started, exact argv: `.cache/upstream/build/aphrody/wslg/build-command.json`; complete persistent log: (removed). Seven version/vendor arguments are explicit, avoiding the Dockerfile placeholder gate. Version is `dev`, architecture `x86_64`.
+Build started, exact argv: `.cache/upstream/build/aphrody/wslg/build-command.json` (not in repo) (generated or machine-local artifact; presence depends on the build host); complete persistent log: (removed). Seven version/vendor arguments are explicit, avoiding the Dockerfile placeholder gate. Version is `dev`, architecture `x86_64`.
 
-Output image tag: `localhost/aphrody-wslg:x64`. Intended exports: `system_x64.tar`, `system_x64.vhd` in `.cache/upstream/build/aphrody/wslg`.
+Output image tag: `localhost/aphrody-wslg:x64`. Intended exports: `system_x64.tar`, `system_x64.vhd` in `.cache/upstream/build/aphrody/wslg` (not in repo) (generated or machine-local artifact; presence depends on the build host).
 
 No active WSL system distro has been replaced or restarted. A built VHD and a successful boot/GUI integration check are separate gates. Selecting the private image is done through `systemDistro=...` in Windows `.wslconfig` and takes effect only after a separately scheduled WSL restart.
 
@@ -26,11 +26,11 @@ DirectX-Headers and all 1055 Mesa targets compiled and installed successfully. P
 
 All seven Linux source components have now compiled and installed successfully into the official builder: DirectX-Headers, Mesa, PulseAudio, FreeRDP, rdpapplist, Weston and WSLGd. The runtime container dependency installation remains active before the final filesystem export.
 
-Windows WSLDVCPlugin Release x64 also built successfully, with zero errors and zero warnings. DLL and PDB, build log and SHA256SUMS are in `.cache/upstream/build/aphrody/wslg/plugin`. DLL SHA256: `f68452311343c0615ddbce1a5c4aed954f286994f16f236b2c75b3a81a837d25`. RC generation uses upstream UpdateRCVersion.ps1 in a staging copy, with its unsupported Windows PowerShell 5 encoding label replaced by equivalent .NET code page 1252; the canonical upstream source remains unchanged.
+Windows WSLDVCPlugin Release x64 also built successfully, with zero errors and zero warnings. DLL and PDB, build log and SHA256SUMS are in `.cache/upstream/build/aphrody/wslg/plugin` (not in repo) (generated or machine-local artifact; presence depends on the build host). DLL SHA256: `f68452311343c0615ddbce1a5c4aed954f286994f16f236b2c75b3a81a837d25`. RC generation uses upstream UpdateRCVersion.ps1 in a staging copy, with its unsupported Windows PowerShell 5 encoding label replaced by equivalent .NET code page 1252; the canonical upstream source remains unchanged.
 
 ## Final artifacts and validation
 
-Complete official Dockerfile build and filesystem/VHD export succeeded (exit 0). Image ID `2923ce7c3f11fb73b89d28625464ad2e6ab505d63e4995bb04dcd667b6942df7`. Artifact directory `.cache/upstream/build/aphrody/wslg` contains:
+Complete official Dockerfile build and filesystem/VHD export succeeded (exit 0). Image ID `2923ce7c3f11fb73b89d28625464ad2e6ab505d63e4995bb04dcd667b6942df7`. Artifact directory `.cache/upstream/build/aphrody/wslg` (not in repo) (generated or machine-local artifact; presence depends on the build host) contains:
 
 - `system_x64.tar`, 748511744 bytes, SHA256 `776058d8d9788bcf43caf2606a8e7da88a43a908b382c61b4bd3476ed14d4c8d`.
 - `system_x64.vhd`, 772051456 bytes, SHA256 `86db6d99e80ed1137668c58dee9d0d877c3699ed96d1fa2b0ead9a1648722f8c`.

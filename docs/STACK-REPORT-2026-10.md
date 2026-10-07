@@ -194,5 +194,5 @@ On the Rust side: use Dioxus 0.7 for all-Rust apps (inside the Tauri shell), or 
 - `@aphrody/material-web` on npm
 
 ### Local Repositories
-- `yolo`: `templates/stack.toml`, `docs/DECISIONS.md` (D8, D15, D18, D21, D27), `AGENTS.md`, `vendor/create-tauri-app/templates/`
+- `yolo`: `templates/stack.toml`, `docs/DECISIONS.md` (D8, D15, D18, D21, D27), `AGENTS.md`, `vendor/create-tauri-app/templates/` (not in repo) (historical upstream template layout)
 - `aphrody`: `PLAN.md` §1, root `package.json` dependency catalog, `packages/ui/m3-*`, `config/production-topology.json`, `config/local-ai.json`

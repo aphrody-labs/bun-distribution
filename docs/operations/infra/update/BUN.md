@@ -44,7 +44,7 @@ Root `package.json` `overrides` force one resolution for everything that depends
 | Override | Why |
 | --- | --- |
 | `axios` `^1.20.0`, `qs` `^6.16.0`, `undici` `^7.30.0` | Floors for transitive consumers so the lockfile resolves the patched releases (2026-10-01 advisory pass). `undici` stays on 7: its dependents ask for `^7` (`@ai-sdk/provider-utils`, `cheerio`, `jsdom`, `shadcn`, `@dotenvx`), `miniflare` pins 7.29.0 and Discord's libraries are forced up from 6. |
-| `@rosegriffon/azalee`, `@rosegriffon/inagle`, `@rosegriffon/inagle-cross` | Local tarballs under `.cache/iecode-packages` (the IECODE packages, one commit hash each). `status` flags a missing tarball. |
+| `@rosegriffon/azalee`, `@rosegriffon/inagle`, `@rosegriffon/inagle-cross` | Local tarballs under `.cache/iecode-packages` (not in repo) (generated or machine-local artifact; presence depends on the build host) (the IECODE packages, one commit hash each). `status` flags a missing tarball. |
 
 `yolo update bun status` prints each override with the versions `bun.lock` resolves and the registry latest, so a
 floor that no longer matters can be dropped.

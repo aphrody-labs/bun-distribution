@@ -13,7 +13,7 @@ As of **October 1, 2026**, Aphrody has achieved **complete Discord autonomy**:
 - **Centralized Dependency Catalog**: All canonical Discord libraries (`discordx`, `@discordx/di`, `@discordx/pagination`, `@discordx/importer`, `@discordx/utilities`, `discord.js`, `discord-api-types`, `@discordjs/rest`) are managed strictly through `workspaces.catalog` in the root `package.json` under **Bun 1.4.2** and **TypeScript 7.0.2**.
 - **Unified Shared Core (`@aphrody/discord-kit`)**: Shared bot runtime infrastructure (intent preflight negotiation, cache limits & sweepers, resilient interaction handling, graceful lifecycle shutdown, runtime environment detection).
 - **Domain Channel Adapter (`@aphrody/messaging`)**: Zero-runtime-dependency message/room abstractions and Bun-native Discord REST operations.
-- **Dual Rust + Bun Compiler (`aphrody-discord-compiler`)**: Native compilation orchestrator generating self-contained ELF/Mach-O binaries (`dist/shenron`, `dist/rg-bot`) embedding the Bun runtime and AOT-compiled bytecode, enabling host deployment without `node_modules` or host Bun runtimes.
+- **Dual Rust + Bun Compiler (`aphrody-discord-compiler`)**: Native compilation orchestrator generating self-contained ELF/Mach-O binaries (`dist/shenron` (not in repo) (generated or machine-local artifact; presence depends on the build host), `dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host)) embedding the Bun runtime and AOT-compiled bytecode, enabling host deployment without `node_modules` or host Bun runtimes.
 
 ```mermaid
 flowchart TD
@@ -111,7 +111,7 @@ Every Discord bot and library imports these via `"catalog:"`, guaranteeing zero 
    - Platform-neutral channel communication contracts (`ChannelPort`, `SendMessageOptions`, `MessageRef`, `RoomRef`).
    - Pure Bun REST adapter with automatic 429 rate limit backoff and retry handling, multipart file uploads, and cancellable inbox streaming.
 
-### Layer 3: Dual Compiler Pipeline (`crates/discord/aphrody-discord-compiler`)
+### Layer 3: Dual Compiler Pipeline (`crates/discord/aphrody-discord-compiler` (not in repo) (retired source path; retained as historical evidence))
 
 Detailed in [`COMPILER.md`](COMPILER.md):
 - Written in Rust with native CLI integration (`aphrody discord compile [target] [--smoke]`).
@@ -125,12 +125,12 @@ Detailed in [`COMPILER.md`](COMPILER.md):
 1. **`shenron:apps/bot` (`@shenron/bot`)**:
    - Dragon Ball canon database, interactive commands, card games, OCR integration, and public HTTP/REST/GraphQL API server on port 5006.
    - Entry point: `src/entry-standalone.ts`.
-   - Output binary: `dist/shenron` (~151.6 MB).
+   - Output binary: `dist/shenron` (not in repo) (generated or machine-local artifact; presence depends on the build host) (~151.6 MB).
 2. **`iecode/apps/rg/bot` (`@rosegriffon/bot`)**:
    - Rose Griffon / Azalée Inazuma Eleven community bot, moderation, tournament coordination, XP and role sync.
    - Dual-profile dynamic dispatching (`rg` vs `azalee`) via static module loader registry (`src/modules.ts`).
    - Entry point: `src/entry-standalone.ts`.
-   - Output binary: `dist/rg-bot` (~144.9 MB).
+   - Output binary: `dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host) (~144.9 MB).
 3. **`apps/rg/achillea-bot` (not in repo) (`@rosegriffon/achillea-bot`)**:
    - Tournament match automation and bracket management.
 

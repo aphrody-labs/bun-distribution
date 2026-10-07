@@ -130,7 +130,7 @@ open; a lossless reader then reports an incomplete-output error. Escaped process
 groups are outside the owned group and are not silently claimed terminated.
 Runtime execution on Windows/macOS/ARM remains separate from cross-target checks.
 
-The producer packager selects `target/runtime/` (or an explicit
+The producer packager selects `target/runtime/` (not in repo) (generated or machine-local artifact; availability depends on the build host) (or an explicit
 `YOLO_RUNTIME_LIB`), independently of the runtime installed by the developer.
 The `runtime-test` recipe uses that same build for SDK tests. Build provenance
 also tracks the current Git ref and packed refs, so a new commit on the same

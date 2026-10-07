@@ -45,9 +45,9 @@ aphrody/
 
 | Application | Domain | Standalone Binary | Systemd Unit |
 | :--- | :--- | :--- | :--- |
-| **`@shenron/bot`** | Dragon Ball universe, card games, OCR, public API (`:5006`) | `dist/shenron` (~151.6 MB) | `yolo/config/host/systemd/shenron/shenron-bot.service` |
-| **`@rosegriffon/bot`** | Inazuma Eleven community, Azalée game bot, moderation, XP | `dist/rg-bot` (~144.9 MB) | `iecode/config/rg/host/systemd/rg-bot.service` |
-| **`@rosegriffon/achillea-bot`** | Inazuma Eleven tournament automation | `dist/achillea` | `iecode/config/rg/host/systemd/rg-achillea-bot.service` |
+| **`@shenron/bot`** | Dragon Ball universe, card games, OCR, public API (`:5006`) | `dist/shenron` (not in repo) (generated or machine-local artifact; presence depends on the build host) (~151.6 MB) | `yolo/config/host/systemd/shenron/shenron-bot.service` |
+| **`@rosegriffon/bot`** | Inazuma Eleven community, Azalée game bot, moderation, XP | `dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host) (~144.9 MB) | `iecode/config/rg/host/systemd/rg-bot.service` |
+| **`@rosegriffon/achillea-bot`** | Inazuma Eleven tournament automation | `dist/achillea` (not in repo) (generated or machine-local artifact; presence depends on the build host) | `iecode/config/rg/host/systemd/rg-achillea-bot.service` |
 
 ---
 
@@ -79,7 +79,7 @@ Aphrody Discord bots are compiled ahead-of-time (AOT) into standalone native exe
 2. **Static Loader Table (`iecode/apps/rg/bot/src/modules.ts`)**:
    Replaces dynamic directory scans (`fs.readdirSync`) with explicit static import loaders (`MODULE_LOADERS`), allowing Bun's bundler to discover and compile all 50+ command modules while preserving runtime profile selection (`rg` vs `azalee`).
 3. **Host Zero-Dependency Model**:
-   The output binaries (`dist/shenron`, `dist/rg-bot`) are completely self-contained. Target hosts running `systemd` do not need `node_modules` or a host Bun installation.
+   The output binaries (`dist/shenron` (not in repo) (generated or machine-local artifact; presence depends on the build host), `dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host)) are completely self-contained. Target hosts running `systemd` do not need `node_modules` or a host Bun installation.
 
 ---
 
@@ -118,4 +118,4 @@ This single gate verifies:
 2. `@aphrody/discord-kit` (typecheck, 16 unit tests, build)
 3. `@aphrody/messaging` (typecheck, 9 unit tests, build)
 4. Consumer bots (`@shenron/bot` 412 unit tests, `@rosegriffon/bot` 1,228 unit tests)
-5. Standalone native compilation (`dist/shenron`, `dist/rg-bot`) and smoke test execution (`--help`).
+5. Standalone native compilation (`dist/shenron` (not in repo) (generated or machine-local artifact; presence depends on the build host), `dist/rg-bot` (not in repo) (generated or machine-local artifact; presence depends on the build host)) and smoke test execution (`--help`).

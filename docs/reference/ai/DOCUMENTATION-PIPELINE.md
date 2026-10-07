@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Documentation pipeline
 
+> Historical source references (2026-10-07): links to removed modules use verified Git revisions. These records do not establish a current CLI route or installed capability.
+
 Documentation must answer what exists, who owns it, what remains, and what
 proves completion. [PLAN.md](../../plans/ai/PLAN.md) is the only active product plan.
 [Source of truth](./SOURCE_OF_TRUTH.md) defines the evidence required for a claim.
@@ -14,7 +16,7 @@ proves completion. [PLAN.md](../../plans/ai/PLAN.md) is the only active product 
 | Operational guides | `docs/guides/ai/INSTALL.md`, `CLI.md`, `config.md`, topic directories | Check commands against the actual binary and owning implementation. |
 | Historical evidence | Dated audits, research and retained implementation reports | Keep revision, scope and limitations; link to the current plan when superseded. |
 | Compatibility entry | Former plan paths such as `ROADMAP.md` and `plans/codex-oss.md` | Retain short redirects and referenced anchors; no second task list. |
-| Generated | `docs/reference/ai/SUMMARY.md`, `docs/llms.txt` (not in repo), `docs/_root/` (not in repo) | Regenerate through `aphrody-summary`; never edit by hand. |
+| Generated | `docs/reference/ai/SUMMARY.md`, `docs/llms.txt` (not in repo), `docs/_root/` (not in repo) | Historical outputs of the retired `aphrody-summary` owner. Current repository indexes use `yolo ops docs generate`. |
 
 ## Editing workflow
 
@@ -36,9 +38,8 @@ proves completion. [PLAN.md](../../plans/ai/PLAN.md) is the only active product 
 5. Regenerate and run documentation gates from the repository root:
 
 ```powershell
-$env:RUSTC_WRAPPER = ''
-aphrody summary
-aphrody summary -- --check
+yolo ops docs generate
+yolo ops docs generate --check
 bun run docs:check-links
 git diff --check
 ```
@@ -48,10 +49,10 @@ Documentation-only work does not require broad runtime test reruns. A change
 to behavior, a generator or a validation script needs its focused checks and
 the owning repository's applicable gates.
 
-## Generator behavior
+## Historical generator behavior
 
-[aphrody-summary](../../../crates/ai/summary/src/lib.rs) builds the Markdown
-navigation and context output from the docs tree. It also mirrors selected
+[aphrody-summary](https://github.com/aphrody-labs/aphrody/blob/72551ef2a984838019724839a5e90a1ca204f50f/crates/ai/summary/src/lib.rs) previously built the Markdown
+navigation and context output from the docs tree. It also mirrored selected
 root files into `docs/_root/` (not in repo); generation happens before the `--check`
 comparison, so `--check` can refresh those mirrors.
 

@@ -21,7 +21,7 @@ metadata:
   override, so keep `~/.local/bin/n2b` fresh.
 
 **bxc CLI version is compile-time baked.** `bin/bxc` (not in repo) execs the compiled
-`dist/standalone/bxc-linux-x64` when present; that binary embeds `BUILD_VERSION`
+`dist/standalone/bxc-linux-x64` (not in repo) (generated or machine-local artifact; presence depends on the build host) when present; that binary embeds `BUILD_VERSION`
 via `bun build --compile --define` (from `package.json` at build time). Bumping
 `package.json` does NOT change `bxc --version` until you rebuild the standalone:
 `env -u CARGO_TARGET_DIR bun scripts/build-standalone.ts` (needs the rust-bridge

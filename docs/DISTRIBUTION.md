@@ -90,7 +90,7 @@ The configured factory still targets `vps`, which the owner decision in
 factory must be designated before heavy gates or `yolo ship --apply`; do not
 bootstrap build tooling onto the retired factory.
 
-The existing local `dist/release/0.1.0` has four matching SHA-256 entries. Its
+The existing local `dist/release/0.1.0` (not in repo) (generated or machine-local artifact; presence depends on the build host) has four matching SHA-256 entries. Its
 manifest identifies commit `ee1a466528fdd0c20ebd058d1f15f1202c528995` and ABI 1.3,
 so it cannot establish qualification of the current ABI 1.4 sources. Hash checks
 prove file integrity only, not installation, upgrade, rollback or activation.

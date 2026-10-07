@@ -509,4 +509,4 @@ bun install
 .\scripts\build-windows.ps1 -SkipLightpanda
 ```
 
-C'est tout. Les artefacts sont dans `dist/standalone/windows/`.
+C'est tout. Les artefacts sont dans `dist/standalone/windows/` (not in repo) (generated or machine-local artifact; availability depends on the build host).

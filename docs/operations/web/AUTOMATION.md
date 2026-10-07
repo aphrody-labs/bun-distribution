@@ -21,7 +21,7 @@ Architecture and gaps: [`docs/architecture/web/ARCHITECTURE.md`](../../architect
 (`aphrody-web.verify/1`, `aphrody-web.smoke/1`).
 
 Use a freshly built engine: `cargo build -p aphrody-web-engine --bins`. The Bun client picks the
-most recently built of `target/debug`, `target/release` and `~/.local/bin`, or `APHRODY_WEB_BIN`.
+most recently built of `target/debug`, `target/release` (not in repo) (generated or machine-local artifact; presence depends on the build host) and `~/.local/bin`, or `APHRODY_WEB_BIN`.
 A binary without the `crawl` subcommand fails the smoke with the rebuild command.
 
 ## Configuration
