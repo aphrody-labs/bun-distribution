@@ -236,8 +236,8 @@ async fn build_pipeline(config: &RagConfig, mode: RagModeArg) -> miette::Result<
 }
 
 pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Result<()> {
-    let config = crate::exec_cmd::load_config(&overrides)?;
-    let state_root = crate::exec_cmd::profile_state_root(&config)?;
+    let config = crate::profile::load_config(&overrides)?;
+    let state_root = crate::profile::profile_state_root(&config)?;
     let explicit_local_db = args.db.is_some();
     let db = match (args.db, config.rag.db_path.as_deref()) {
         (Some(db), _) => db,

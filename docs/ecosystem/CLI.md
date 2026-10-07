@@ -6,13 +6,13 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 20 binaries with a clap surface, 878 commands.
+Totals: 16 binaries with a clap surface, 676 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 310 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 223 commands.
 
 - `aphrody pure` — Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
   - `aphrody pure rag` — RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.
@@ -38,24 +38,14 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 310 comma
   - `aphrody rag search` — Search the index and report source paths, lines and effective mode.
   - `aphrody rag context` — Assemble source context for a model prompt.
   - `aphrody rag stats` — Report document, chunk and vector counts.
-- `aphrody exec` — Execute an autonomous agent task with optional Codex-compatible JSONL. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody exec resume` — Continue a recorded session in place.
-  - `aphrody exec fork` — Start a new session with the recorded conversation as its history.
-- `aphrody resume` — Continue a persisted agent session. _(cfg: not(target_arch = "wasm32"))_
-- `aphrody fork` — Fork a persisted agent conversation into a new session. _(cfg: not(target_arch = "wasm32"))_
 - `aphrody gateway` — Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795). _(cfg: not(target_arch = "wasm32"))_
   - `aphrody gateway serve` — Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8795).
   - `aphrody gateway status` — Query the status of a running gateway.
   - `aphrody gateway models` — List models available through the gateway.
-- `aphrody app-server` — Serve the local app-server protocol over stdio or loopback HTTP. _(cfg: not(target_arch = "wasm32"))_
 - `aphrody config` — Manage, show, or import Codex-compatible configuration. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody config show` — Show the active or effective resolved configuration.
   - `aphrody config path` — Print the path to the user's config.toml file (~/.aphrody/config.toml).
   - `aphrody config import-codex` — Import and layer configuration from ~/.codex/config.toml.
-- `aphrody ai` — Resolve the local AI environment; mirror external agent sessions. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody ai env` — Resolve and publish the local AI environment (`~/.aphrody/ai/local-ai.{json,env}`).
-  - `aphrody ai status` — Inspect active AI router, models, and provider status.
-  - `aphrody ai sync-sessions` — Mirror the sessions of the other coding agents on this machine (Antigravity CLI, Codex, Claude Code) into `~/.aphrody/sessions/<agent>/<session_id>.jsonl`, incrementally, and feed their user/assistan…
 - `aphrody native` — Native platform probes for CPU, memory, CUDA and monotonic time. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody native status` — Diagnostic summary of host platform probes
   - `aphrody native self-test` — Check native topology and monotonic clock probes
@@ -98,15 +88,12 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 310 comma
 - `aphrody shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody shell status` — Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)
   - `aphrody shell start` — Start interactive Nushell / Ratatui terminal session
-- `aphrody codex` — Forward vers le binaire natif OpenAI Codex (`codex`). _(cfg: not(target_arch = "wasm32"))_
 - `aphrody train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
   - `aphrody train status` — Show training status, GPU lock availability, and active jobs.
   - `aphrody train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
   - `aphrody train run` — Run a training or fine-tuning job.
   - `aphrody train registry-migrate` — Apply the training registry migrations (schema `training`) over the direct `APHRODY_TRAINING_DATABASE_URL`.
   - `aphrody train promote` — Reserved for measured shadow-index A/B promotion; currently refuses installation.
-- `aphrody auth` — Authentification Google (God Mode / OAuth2)
-- `aphrody mirror` — Gère le mirroring des assets MD3 (start, stop, status).
 - `aphrody version` — Affiche la version et l'état du système
 - `aphrody doctor` — Diagnostic env + intégration A2A + supply-chain (first-impression)
 - `aphrody a2a` — A2A coordination (serve, tick, invoke peers)
@@ -115,23 +102,11 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 310 comma
   - `aphrody a2a invoke` — Invoke a native peer CLI (grok, agy, claude, codex, bxc).
   - `aphrody a2a send` — JSON-RPC `message/send` to a federation peer (HTTP `/a2a` or `.coord` fallback).
   - `aphrody a2a peers` — List resolved federation peers (env > aphrody-infra catalog > default).
-- `aphrody cros` — Compilation hyper-optimisée de ChromeOS
-  - `aphrody cros sync` — Synchronisation ultra-rapide (shallow clone)
-  - `aphrody cros build` — Compilation GN/Ninja avec SCCache et optimisation multi-coeur
 - `aphrody search` — Recherche Google Native
-- `aphrody gemini` — [DÉPRÉCIÉ] Alias de `agy` — le Gemini CLI a migré vers l'Antigravity CLI. Honore encore `APHRODY_GEMINI_BIN` / un fork in-tree ; sinon forwarde vers `agy`. Préférez `aphrody agy`.
-- `aphrody agy` — Forward vers le binaire natif Antigravity CLI (`agy`).
 - `aphrody google` — Écosystème Google natif (DNS, Suggest, Translate, Gemini Web, Antigravity, Runtime) _(cfg: not(target_arch = "wasm32"))_
 - `aphrody translate` — Traduction unifiée via aphrody-translate _(cfg: not(target_arch = "wasm32"))_
 - `aphrody n2b` — Execute the integrated N2B engine (Node 2 Bun) in-process; also the `n2b` link.
-- `aphrody nie` — Forward vers le CLI natif Niers (`niers`).
 - `aphrody ssh` — Safe cross-platform operator CLI for configured SSH hosts. _(cfg: not(target_arch = "wasm32"))_
-- `aphrody agy-loop` — Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la… _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody agy-loop start` — Arme la boucle pour le workspace courant avec un objectif.
-  - `aphrody agy-loop stop` — Désarme la boucle (efface l'état) pour le workspace courant.
-  - `aphrody agy-loop status` — Affiche l'état courant de la boucle en JSON.
-  - `aphrody agy-loop hook` — Driver des hooks `Stop` et `PostInvocation` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.
-  - `aphrody agy-loop hooks-json` — Affiche le fragment `hooks.json` (format natif agy) qui câble la boucle sur `Stop` et `PostInvocation`.
 - `aphrody term` — Pont WebSocket-PTY pour le frontend WASM (localhost uniquement)
 - `aphrody mcp` — Model Context Protocol — manage TOML servers, read legacy JSON, call tools. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody mcp add` — Add a server to ~/.aphrody/config.toml.
@@ -186,9 +161,6 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 310 comma
 - `aphrody index` — Persistent local-filesystem search index (SQLite FTS5). _(cfg: all(not(target_arch = "wasm32"), feature = "index"))_
   - `aphrody index build` — Walk a directory and (re)build the local-file index. Metadata only — file contents are never read.
   - `aphrody index search` — Full-text search the index by file name / path (FTS5 prefix match).
-- `aphrody firefly` — Adobe Firefly Services image generation to disk. _(cfg: all(not(target_arch = "wasm32"), feature = "firefly"))_
-  - `aphrody firefly generate` — Generate an image from a prompt and save it to a directory.
-  - `aphrody firefly events` — Drain the Adobe I/O Events journal (event-driven job completion).
 - `aphrody memory` — Memory: an application's local memory file (write, recall, list, delete, clear) and Tier-1 provider migration. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody memory write` — Store one memory; prints `{"id": …}`. An existing `--id` is replaced.
   - `aphrody memory recall` — Records best matching `--query` (lexical); prints `{"records": [… "score"]}`.
@@ -241,15 +213,6 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 310 comma
     - `aphrody ocr db list` — List stored pages, newest deposit first.
     - `aphrody ocr db show` — Print the full stored record for one page.
   - `aphrody ocr databooks` — Transcribe a Shenron Dragon Ball databook lot with the safe preset.
-- `aphrody chat` — Run the unified turn-loop chat agent. _(cfg: not(target_arch = "wasm32"))_
-- `aphrody hermes` — Agent multi-canaux voice-to-voice (Discord + X) — surpasse hermes-agent. _(cfg: not(target_arch = "wasm32"))_
-- `aphrody agent` — Launch an autonomous agent — aphrody's flagship Antigravity-in-Rust surface. _(cfg: not(target_arch = "wasm32"))_
-- `aphrody session` — Serve the local Codex-shaped JSON-RPC app-server over stdin/stdout. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody session serve` — Multiplex threads and local model turns over newline-delimited JSON-RPC.
-- `aphrody notify` — Envoie un message via Slack / Telegram / Matrix / Discord.
-- `aphrody mail` — Check or send transactional email through Resend or OVH SMTP. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody mail health` — Verify provider credentials and connectivity without sending a message.
-  - `aphrody mail send` — Send one plain-text email using the configured provider.
 - `aphrody completions` — Génère des completions shell pour bash / zsh / fish / pwsh / elvish
 - `aphrody self` — Installer / bootstrap natif (remplace les .ps1/.sh scripts/).
   - `aphrody self install-path` — Register the release binary on the user PATH (HKCU on Windows, symlink into $HOME/.local/bin on Unix) and link the former standalone binary names (aphrody-infra, aphrody-kernel, …) to it.
@@ -267,56 +230,6 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 310 comma
 - `aphrody scan` — Repo analytics : scan tree (size/file-count) + scan manifests (Cargo/JSON/TOML).
   - `aphrody scan tree` — Size + file-count breakdown for top-level groups (vendor/packages/ crates by default).
   - `aphrody scan manifests` — Walk the repo for Cargo.toml / package.json / pyproject.toml / etc. and emit metadata (name, version, dependency count, workspace members).
-- `aphrody oc-onboard` — (ported from openclaw) Bootstrap aphrody local state + seed config. _(cfg: not(target_arch = "wasm32"))_
-- `aphrody oc-reset` — (ported from openclaw) Reset local state. Choose a scope: `config`, `config-creds-sessions`, or `full`. _(cfg: not(target_arch = "wasm32"))_
-- `aphrody oc-uninstall` — (ported from openclaw) Uninstall aphrody scopes (service / state / workspace / app, or `--all`). _(cfg: not(target_arch = "wasm32"))_
-- `aphrody oc-pairing` — (ported from openclaw) Secure DM pairing — list / approve / inject requests against the local pairing store (~/.aphrody/pairing.json). _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody oc-pairing list` — List pending pairing requests (optionally filtered by channel).
-  - `aphrody oc-pairing approve` — Approve a pending pairing code for a channel.
-  - `aphrody oc-pairing add` — Inject a pending pairing request (for tests / external integrations).
-- `aphrody oc-docs` — (ported from openclaw) Open or search the documentation site. _(cfg: not(target_arch = "wasm32"))_
-- `aphrody notebooklm` — Google NotebookLM RPC client — notebooks / sources / chat / artifacts. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody notebooklm list` — List every notebook owned by the active account.
-  - `aphrody notebooklm create` — Create a fresh empty notebook.
-  - `aphrody notebooklm delete` — Delete a notebook by id.
-  - `aphrody notebooklm upload` — Attach a source to a notebook (URL or local file path, auto-detected).
-  - `aphrody notebooklm chat` — Send a chat message and print the reply on stdout.
-  - `aphrody notebooklm generate` — Kick off an artifact generation workflow.
-  - `aphrody notebooklm download` — Wait for an artifact to reach `COMPLETE` state and download it locally.
-- `aphrody antigravity` — Native Google AI Ultra / Gemini client (Antigravity). Scriptable, non-interactive, JSON output — `models`, `whoami`, `load`, `chat`. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody antigravity models` — List the models available to the signed-in account / tier (`v1internal:fetchAvailableModels`).
-  - `aphrody antigravity whoami` — Print the signed-in user's profile (email + name) from Google's OpenID `userinfo` endpoint.
-  - `aphrody antigravity load` — Bootstrap the Code Assist session — project / tier / entitlements (`v1internal:loadCodeAssist`).
-  - `aphrody antigravity chat` — Send a single prompt to a Gemini model and print the raw `generateContent` response as JSON.
-  - `aphrody antigravity onboard` — Onboard the signed-in user to a Code Assist tier (`v1internal:onboardUser`). Returns the long-running operation JSON (`done` field; `done = false` while provisioning is ongoing).
-  - `aphrody antigravity refresh` — Obtain a fresh access token and print a non-sensitive confirmation (lengths + expiry hint only — no token bytes are printed).
-  - `aphrody antigravity login` — Interactively sign in via the Google OAuth 2.0 loopback PKCE flow.
-  - `aphrody antigravity token-info` — Inspect the token stored in the credential store.
-  - `aphrody antigravity config` — Inspect the Antigravity config file (`~/.gemini/config/config.json`).
-  - `aphrody antigravity state-sync` — Decode a `state.vscdb` `antigravityUnifiedStateSync.*` blob.
-  - `aphrody antigravity item-table` — Summarise a JSON dump of the `state.vscdb` `ItemTable`.
-  - `aphrody antigravity cloud-code` — Generic Cloud Code `v1internal` RPC call.
-- `aphrody logo` — Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`). _(cfg: not(target_arch = "wasm32"))_
-- `aphrody design` — Material 3 design-token tooling (color CSS export + UI fusion sheet). _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody design tokens` — Emit Material 3 color tokens as CSS custom properties.
-- `aphrody ide` — Antigravity IDE installation inspector — info, extensions, RE, state, and launch. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody ide info` — Detect the Antigravity IDE installation and emit key metadata as JSON.
-  - `aphrody ide extensions` — List the built-in extensions bundled with the IDE.
-  - `aphrody ide re` — Reverse-engineer the IDE Electron executable and the sidecar language server binary using the `aphrody-re` pipeline.
-  - `aphrody ide state` — Decode the `state.vscdb` global-storage database (structural view only).
-  - `aphrody ide launch` — Launch the Antigravity IDE, forwarding all arguments to the launcher.
-- `aphrody vpn` — Gestion du VPN Mullvad et du contournement géo pour Google AI / agy. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody vpn status` — Afficher le statut actuel du tunnel Mullvad VPN et du proxy VPS US.
-  - `aphrody vpn connect` — Connecter le VPN local Mullvad (optionnellement cibler un pays/serveur, ex: 'us', 'ch', 'se').
-  - `aphrody vpn disconnect` — Déconnecter le VPN local Mullvad.
-  - `aphrody vpn ensure-agy` — Assurer une connexion US / non-EEE (Mullvad local ou tunnel SSH VPS) pour agy.
-  - `aphrody vpn proxy` — Gérer le tunnel SSH et le proxy SOCKS5 US hébergé sur le VPS.
-  - `aphrody vpn app` — Piloter le routage US ciblé sur les applications (Chrome, Antigravity 2, AGY CLI).
-    - `aphrody vpn app gemini` — Lancer Google Gemini App en fenêtre PWA dédiée sous proxy SOCKS5 US
-    - `aphrody vpn app desktop` — Lancer AGY Desktop (Antigravity 2) sous proxy SOCKS5 US
-    - `aphrody vpn app agy` — Lancer AGY CLI configuré sur le proxy SOCKS5 US (tunnel VPS)
-    - `aphrody vpn app setup` — Configurer les raccourcis stricts (Gemini App, AGY Desktop, AGY CLI)
-    - `aphrody vpn app status` — Afficher le statut des 3 applications cibles et du tunnel US
 - `aphrody winclean` — Native Windows computer use and OS control via the in-process aphrody-winclean crate. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody winclean doctor` — Show backend initialisation, the linked version and catalog drift.
   - `aphrody winclean tools` — List the WinClean tool catalog.
@@ -324,19 +237,6 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 310 comma
   - `aphrody winclean call` — Invoke any tool.
   - `aphrody winclean observe` — Observe a window (metadata + UI Automation tree + PNG) — `computer_observe`.
   - `aphrody winclean screenshot` — Capture the primary desktop — `computer_capture_screen`.
-
-### `aphrody agent-home`
-
-Crate `aphrody-agent-home`, parser `crates/ai/agent-home/src/cli.rs#Cli`, 8 commands.
-
-- `aphrody agent-home roots` — Print the resolved homes root and the homes it holds.
-- `aphrody agent-home revision` — Print the `sha256-v1` content revision of a home.
-- `aphrody agent-home profile` — Print (and optionally update) the profile fields of a home.
-- `aphrody agent-home new` — Instantiate a new home from a template directory.
-- `aphrody agent-home merge` — Merge SOURCE into TARGET (dry run unless `--apply`).
-- `aphrody agent-home sync` — Two-way last-writer-wins sync of two homes (dry run unless `--apply`).
-- `aphrody agent-home restore` — Restore a verified merge backup into a home.
-- `aphrody agent-home rename` — Rename a home and migrate its memories and references (dry run unless `--apply`).
 
 ### `aphrody bindgen`
 
@@ -365,10 +265,9 @@ Crate `aphrody-rag`, parser `crates/ai/rag/src/home_cli.rs#Cli`, 3 commands.
 
 ### `aphrody host-service`
 
-Crate `aphrody-kernel`, parser `crates/os/kernel/src/cli.rs#Cli`, 7 commands.
+Crate `aphrody-kernel`, parser `crates/os/kernel/src/cli.rs#Cli`, 6 commands.
 
 - `aphrody host-service serve` — Serve the kernel with the built-in subsystems on the local endpoint.
-- `aphrody host-service mcp` — MCP over stdio: relay to the running kernel, or run one in-process.
 - `aphrody host-service tools` — List tools as JSON.
 - `aphrody host-service skills` — List skills as JSON.
 - `aphrody host-service call` — Call one tool.
@@ -377,7 +276,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/src/cli.rs#Cli`, 7 commands.
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 387 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 300 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -418,24 +317,14 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 387 commands.
     - `aphrody infra ssh rag search` — Search the index and report source paths, lines and effective mode.
     - `aphrody infra ssh rag context` — Assemble source context for a model prompt.
     - `aphrody infra ssh rag stats` — Report document, chunk and vector counts.
-  - `aphrody infra ssh exec` — Execute an autonomous agent task with optional Codex-compatible JSONL. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh exec resume` — Continue a recorded session in place.
-    - `aphrody infra ssh exec fork` — Start a new session with the recorded conversation as its history.
-  - `aphrody infra ssh resume` — Continue a persisted agent session. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody infra ssh fork` — Fork a persisted agent conversation into a new session. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody infra ssh gateway` — Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795). _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh gateway serve` — Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8795).
     - `aphrody infra ssh gateway status` — Query the status of a running gateway.
     - `aphrody infra ssh gateway models` — List models available through the gateway.
-  - `aphrody infra ssh app-server` — Serve the local app-server protocol over stdio or loopback HTTP. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody infra ssh config` — Manage, show, or import Codex-compatible configuration. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh config show` — Show the active or effective resolved configuration.
     - `aphrody infra ssh config path` — Print the path to the user's config.toml file (~/.aphrody/config.toml).
     - `aphrody infra ssh config import-codex` — Import and layer configuration from ~/.codex/config.toml.
-  - `aphrody infra ssh ai` — Resolve the local AI environment; mirror external agent sessions. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh ai env` — Resolve and publish the local AI environment (`~/.aphrody/ai/local-ai.{json,env}`).
-    - `aphrody infra ssh ai status` — Inspect active AI router, models, and provider status.
-    - `aphrody infra ssh ai sync-sessions` — Mirror the sessions of the other coding agents on this machine (Antigravity CLI, Codex, Claude Code) into `~/.aphrody/sessions/<agent>/<session_id>.jsonl`, incrementally, and feed their user/assistan…
   - `aphrody infra ssh native` — Native platform probes for CPU, memory, CUDA and monotonic time. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh native status` — Diagnostic summary of host platform probes
     - `aphrody infra ssh native self-test` — Check native topology and monotonic clock probes
@@ -478,15 +367,12 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 387 commands.
   - `aphrody infra ssh shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh shell status` — Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)
     - `aphrody infra ssh shell start` — Start interactive Nushell / Ratatui terminal session
-  - `aphrody infra ssh codex` — Forward vers le binaire natif OpenAI Codex (`codex`). _(cfg: not(target_arch = "wasm32"))_
   - `aphrody infra ssh train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
     - `aphrody infra ssh train status` — Show training status, GPU lock availability, and active jobs.
     - `aphrody infra ssh train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
     - `aphrody infra ssh train run` — Run a training or fine-tuning job.
     - `aphrody infra ssh train registry-migrate` — Apply the training registry migrations (schema `training`) over the direct `APHRODY_TRAINING_DATABASE_URL`.
     - `aphrody infra ssh train promote` — Reserved for measured shadow-index A/B promotion; currently refuses installation.
-  - `aphrody infra ssh auth` — Authentification Google (God Mode / OAuth2)
-  - `aphrody infra ssh mirror` — Gère le mirroring des assets MD3 (start, stop, status).
   - `aphrody infra ssh version` — Affiche la version et l'état du système
   - `aphrody infra ssh doctor` — Diagnostic env + intégration A2A + supply-chain (first-impression)
   - `aphrody infra ssh a2a` — A2A coordination (serve, tick, invoke peers)
@@ -495,23 +381,11 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 387 commands.
     - `aphrody infra ssh a2a invoke` — Invoke a native peer CLI (grok, agy, claude, codex, bxc).
     - `aphrody infra ssh a2a send` — JSON-RPC `message/send` to a federation peer (HTTP `/a2a` or `.coord` fallback).
     - `aphrody infra ssh a2a peers` — List resolved federation peers (env > aphrody-infra catalog > default).
-  - `aphrody infra ssh cros` — Compilation hyper-optimisée de ChromeOS
-    - `aphrody infra ssh cros sync` — Synchronisation ultra-rapide (shallow clone)
-    - `aphrody infra ssh cros build` — Compilation GN/Ninja avec SCCache et optimisation multi-coeur
   - `aphrody infra ssh search` — Recherche Google Native
-  - `aphrody infra ssh gemini` — [DÉPRÉCIÉ] Alias de `agy` — le Gemini CLI a migré vers l'Antigravity CLI. Honore encore `APHRODY_GEMINI_BIN` / un fork in-tree ; sinon forwarde vers `agy`. Préférez `aphrody agy`.
-  - `aphrody infra ssh agy` — Forward vers le binaire natif Antigravity CLI (`agy`).
   - `aphrody infra ssh google` — Écosystème Google natif (DNS, Suggest, Translate, Gemini Web, Antigravity, Runtime) _(cfg: not(target_arch = "wasm32"))_
   - `aphrody infra ssh translate` — Traduction unifiée via aphrody-translate _(cfg: not(target_arch = "wasm32"))_
   - `aphrody infra ssh n2b` — Execute the integrated N2B engine (Node 2 Bun) in-process; also the `n2b` link.
-  - `aphrody infra ssh nie` — Forward vers le CLI natif Niers (`niers`).
   - `aphrody infra ssh ssh` — Safe cross-platform operator CLI for configured SSH hosts. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody infra ssh agy-loop` — Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la… _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh agy-loop start` — Arme la boucle pour le workspace courant avec un objectif.
-    - `aphrody infra ssh agy-loop stop` — Désarme la boucle (efface l'état) pour le workspace courant.
-    - `aphrody infra ssh agy-loop status` — Affiche l'état courant de la boucle en JSON.
-    - `aphrody infra ssh agy-loop hook` — Driver des hooks `Stop` et `PostInvocation` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.
-    - `aphrody infra ssh agy-loop hooks-json` — Affiche le fragment `hooks.json` (format natif agy) qui câble la boucle sur `Stop` et `PostInvocation`.
   - `aphrody infra ssh term` — Pont WebSocket-PTY pour le frontend WASM (localhost uniquement)
   - `aphrody infra ssh mcp` — Model Context Protocol — manage TOML servers, read legacy JSON, call tools. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh mcp add` — Add a server to ~/.aphrody/config.toml.
@@ -566,9 +440,6 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 387 commands.
   - `aphrody infra ssh index` — Persistent local-filesystem search index (SQLite FTS5). _(cfg: all(not(target_arch = "wasm32"), feature = "index"))_
     - `aphrody infra ssh index build` — Walk a directory and (re)build the local-file index. Metadata only — file contents are never read.
     - `aphrody infra ssh index search` — Full-text search the index by file name / path (FTS5 prefix match).
-  - `aphrody infra ssh firefly` — Adobe Firefly Services image generation to disk. _(cfg: all(not(target_arch = "wasm32"), feature = "firefly"))_
-    - `aphrody infra ssh firefly generate` — Generate an image from a prompt and save it to a directory.
-    - `aphrody infra ssh firefly events` — Drain the Adobe I/O Events journal (event-driven job completion).
   - `aphrody infra ssh memory` — Memory: an application's local memory file (write, recall, list, delete, clear) and Tier-1 provider migration. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh memory write` — Store one memory; prints `{"id": …}`. An existing `--id` is replaced.
     - `aphrody infra ssh memory recall` — Records best matching `--query` (lexical); prints `{"records": [… "score"]}`.
@@ -621,15 +492,6 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 387 commands.
       - `aphrody infra ssh ocr db list` — List stored pages, newest deposit first.
       - `aphrody infra ssh ocr db show` — Print the full stored record for one page.
     - `aphrody infra ssh ocr databooks` — Transcribe a Shenron Dragon Ball databook lot with the safe preset.
-  - `aphrody infra ssh chat` — Run the unified turn-loop chat agent. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody infra ssh hermes` — Agent multi-canaux voice-to-voice (Discord + X) — surpasse hermes-agent. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody infra ssh agent` — Launch an autonomous agent — aphrody's flagship Antigravity-in-Rust surface. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody infra ssh session` — Serve the local Codex-shaped JSON-RPC app-server over stdin/stdout. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh session serve` — Multiplex threads and local model turns over newline-delimited JSON-RPC.
-  - `aphrody infra ssh notify` — Envoie un message via Slack / Telegram / Matrix / Discord.
-  - `aphrody infra ssh mail` — Check or send transactional email through Resend or OVH SMTP. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh mail health` — Verify provider credentials and connectivity without sending a message.
-    - `aphrody infra ssh mail send` — Send one plain-text email using the configured provider.
   - `aphrody infra ssh completions` — Génère des completions shell pour bash / zsh / fish / pwsh / elvish
   - `aphrody infra ssh self` — Installer / bootstrap natif (remplace les .ps1/.sh scripts/).
     - `aphrody infra ssh self install-path` — Register the release binary on the user PATH (HKCU on Windows, symlink into $HOME/.local/bin on Unix) and link the former standalone binary names (aphrody-infra, aphrody-kernel, …) to it.
@@ -647,56 +509,6 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 387 commands.
   - `aphrody infra ssh scan` — Repo analytics : scan tree (size/file-count) + scan manifests (Cargo/JSON/TOML).
     - `aphrody infra ssh scan tree` — Size + file-count breakdown for top-level groups (vendor/packages/ crates by default).
     - `aphrody infra ssh scan manifests` — Walk the repo for Cargo.toml / package.json / pyproject.toml / etc. and emit metadata (name, version, dependency count, workspace members).
-  - `aphrody infra ssh oc-onboard` — (ported from openclaw) Bootstrap aphrody local state + seed config. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody infra ssh oc-reset` — (ported from openclaw) Reset local state. Choose a scope: `config`, `config-creds-sessions`, or `full`. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody infra ssh oc-uninstall` — (ported from openclaw) Uninstall aphrody scopes (service / state / workspace / app, or `--all`). _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody infra ssh oc-pairing` — (ported from openclaw) Secure DM pairing — list / approve / inject requests against the local pairing store (~/.aphrody/pairing.json). _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh oc-pairing list` — List pending pairing requests (optionally filtered by channel).
-    - `aphrody infra ssh oc-pairing approve` — Approve a pending pairing code for a channel.
-    - `aphrody infra ssh oc-pairing add` — Inject a pending pairing request (for tests / external integrations).
-  - `aphrody infra ssh oc-docs` — (ported from openclaw) Open or search the documentation site. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody infra ssh notebooklm` — Google NotebookLM RPC client — notebooks / sources / chat / artifacts. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh notebooklm list` — List every notebook owned by the active account.
-    - `aphrody infra ssh notebooklm create` — Create a fresh empty notebook.
-    - `aphrody infra ssh notebooklm delete` — Delete a notebook by id.
-    - `aphrody infra ssh notebooklm upload` — Attach a source to a notebook (URL or local file path, auto-detected).
-    - `aphrody infra ssh notebooklm chat` — Send a chat message and print the reply on stdout.
-    - `aphrody infra ssh notebooklm generate` — Kick off an artifact generation workflow.
-    - `aphrody infra ssh notebooklm download` — Wait for an artifact to reach `COMPLETE` state and download it locally.
-  - `aphrody infra ssh antigravity` — Native Google AI Ultra / Gemini client (Antigravity). Scriptable, non-interactive, JSON output — `models`, `whoami`, `load`, `chat`. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh antigravity models` — List the models available to the signed-in account / tier (`v1internal:fetchAvailableModels`).
-    - `aphrody infra ssh antigravity whoami` — Print the signed-in user's profile (email + name) from Google's OpenID `userinfo` endpoint.
-    - `aphrody infra ssh antigravity load` — Bootstrap the Code Assist session — project / tier / entitlements (`v1internal:loadCodeAssist`).
-    - `aphrody infra ssh antigravity chat` — Send a single prompt to a Gemini model and print the raw `generateContent` response as JSON.
-    - `aphrody infra ssh antigravity onboard` — Onboard the signed-in user to a Code Assist tier (`v1internal:onboardUser`). Returns the long-running operation JSON (`done` field; `done = false` while provisioning is ongoing).
-    - `aphrody infra ssh antigravity refresh` — Obtain a fresh access token and print a non-sensitive confirmation (lengths + expiry hint only — no token bytes are printed).
-    - `aphrody infra ssh antigravity login` — Interactively sign in via the Google OAuth 2.0 loopback PKCE flow.
-    - `aphrody infra ssh antigravity token-info` — Inspect the token stored in the credential store.
-    - `aphrody infra ssh antigravity config` — Inspect the Antigravity config file (`~/.gemini/config/config.json`).
-    - `aphrody infra ssh antigravity state-sync` — Decode a `state.vscdb` `antigravityUnifiedStateSync.*` blob.
-    - `aphrody infra ssh antigravity item-table` — Summarise a JSON dump of the `state.vscdb` `ItemTable`.
-    - `aphrody infra ssh antigravity cloud-code` — Generic Cloud Code `v1internal` RPC call.
-  - `aphrody infra ssh logo` — Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`). _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody infra ssh design` — Material 3 design-token tooling (color CSS export + UI fusion sheet). _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh design tokens` — Emit Material 3 color tokens as CSS custom properties.
-  - `aphrody infra ssh ide` — Antigravity IDE installation inspector — info, extensions, RE, state, and launch. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh ide info` — Detect the Antigravity IDE installation and emit key metadata as JSON.
-    - `aphrody infra ssh ide extensions` — List the built-in extensions bundled with the IDE.
-    - `aphrody infra ssh ide re` — Reverse-engineer the IDE Electron executable and the sidecar language server binary using the `aphrody-re` pipeline.
-    - `aphrody infra ssh ide state` — Decode the `state.vscdb` global-storage database (structural view only).
-    - `aphrody infra ssh ide launch` — Launch the Antigravity IDE, forwarding all arguments to the launcher.
-  - `aphrody infra ssh vpn` — Gestion du VPN Mullvad et du contournement géo pour Google AI / agy. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh vpn status` — Afficher le statut actuel du tunnel Mullvad VPN et du proxy VPS US.
-    - `aphrody infra ssh vpn connect` — Connecter le VPN local Mullvad (optionnellement cibler un pays/serveur, ex: 'us', 'ch', 'se').
-    - `aphrody infra ssh vpn disconnect` — Déconnecter le VPN local Mullvad.
-    - `aphrody infra ssh vpn ensure-agy` — Assurer une connexion US / non-EEE (Mullvad local ou tunnel SSH VPS) pour agy.
-    - `aphrody infra ssh vpn proxy` — Gérer le tunnel SSH et le proxy SOCKS5 US hébergé sur le VPS.
-    - `aphrody infra ssh vpn app` — Piloter le routage US ciblé sur les applications (Chrome, Antigravity 2, AGY CLI).
-      - `aphrody infra ssh vpn app gemini` — Lancer Google Gemini App en fenêtre PWA dédiée sous proxy SOCKS5 US
-      - `aphrody infra ssh vpn app desktop` — Lancer AGY Desktop (Antigravity 2) sous proxy SOCKS5 US
-      - `aphrody infra ssh vpn app agy` — Lancer AGY CLI configuré sur le proxy SOCKS5 US (tunnel VPS)
-      - `aphrody infra ssh vpn app setup` — Configurer les raccourcis stricts (Gemini App, AGY Desktop, AGY CLI)
-      - `aphrody infra ssh vpn app status` — Afficher le statut des 3 applications cibles et du tunnel US
   - `aphrody infra ssh winclean` — Native Windows computer use and OS control via the in-process aphrody-winclean crate. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh winclean doctor` — Show backend initialisation, the linked version and catalog drift.
     - `aphrody infra ssh winclean tools` — List the WinClean tool catalog.
@@ -767,18 +579,6 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 387 commands.
   - `aphrody infra secrets decrypt` — Decrypt an EncryptedManifest to verify integrity or inspect schema.
   - `aphrody infra secrets render` — Safely provision a decrypted environment file for systemd with 0400 permissions.
 
-### `aphrody kernel`
-
-Crate `aphrody-kernel`, parser `crates/os/kernel/src/cli.rs#Cli`, 7 commands.
-
-- `aphrody kernel serve` — Serve the kernel with the built-in subsystems on the local endpoint.
-- `aphrody kernel mcp` — MCP over stdio: relay to the running kernel, or run one in-process.
-- `aphrody kernel tools` — List tools as JSON.
-- `aphrody kernel skills` — List skills as JSON.
-- `aphrody kernel call` — Call one tool.
-- `aphrody kernel run-skill` — Run one skill.
-- `aphrody kernel a2a` — Send an A2A envelope through the same kernel tool dispatcher.
-
 ### `aphrody m3-reproduce`
 
 Crate `aphrody-m3-reproduce`, parser `crates/ui/m3-reproduce/src/cli.rs#Cli`, 0 commands.
@@ -800,29 +600,6 @@ Crate `aphrody-mcp`, parser `crates/ai/mcp/src/lib.rs#Cli`, 7 commands.
 ### `aphrody rag-eval`
 
 Crate `aphrody-rag-eval`, parser `crates/ai/rag-eval/src/cli.rs#Args`, 0 commands.
-
-_No subcommands (flags only)._
-
-### `aphrody skills`
-
-Crate `aphrody-skills`, parser `crates/ai/skills/src/cli.rs#Cli`, 12 commands.
-
-- `aphrody skills list` — Flat table of every discovered skill.
-- `aphrody skills validate` — Validate frontmatter against the required contract.
-- `aphrody skills to-prompt` — Emit the SKILL.md body for one skill (for prompt injection).
-- `aphrody skills info` — Print the full SKILL.md for one skill.
-- `aphrody skills where` — Print the absolute path(s) of one named skill.
-- `aphrody skills sources` — Print the source registry with discovered counts.
-- `aphrody skills install` — Copy one SKILL.md into $APHRODY_SKILLS_HOME.
-- `aphrody skills sync` — Mirror SKILL.md files (locally or from a GitHub repo).
-- `aphrody skills remove` — Uninstall a skill from $APHRODY_SKILLS_HOME (inverse of `install`). _(aliases: rm, uninstall)_
-- `aphrody skills find` — Search discovered skills by keyword (name + description, scriptable).
-- `aphrody skills init` — Scaffold a new SKILL.md template in a directory.
-- `aphrody skills update` — Refresh installed skills from their recorded source path.
-
-### `aphrody translate-project`
-
-Crate `aphrody-translate`, parser `crates/ai/translate/src/cli.rs#Args`, 0 commands.
 
 _No subcommands (flags only)._
 
@@ -994,15 +771,9 @@ Crate `aphrody-store`, parser `crates/ai/store/src/cli.rs#Cli`, 8 commands.
 
 ## Binaries without a detected clap surface
 
-- `aphrody agent-home-memory` (aphrody / `aphrody-memory`)
-- `aphrody agent-train` (aphrody / `aphrody-train`)
 - `aphrody backend` (aphrody / `aphrody-backend`)
 - `aphrody canvas` (aphrody / `aphrody-render`)
 - `aphrody embed` (aphrody / `aphrody-embed`)
-- `aphrody gemini-web` (aphrody / `aphrody-gemini-web`)
-- `aphrody jev` (aphrody / `aphrody-jev`)
-- `aphrody llama` (aphrody / `aphrody-llama-server`)
-- `aphrody llama-daemon` (aphrody / `aphrody-llama-server`)
 - `aphrody-app` (aphrody / `aphrody-app`)
 - `aphrody-fake-llama-server` (aphrody / `aphrody-llama-server`)
 - `aphrody-llama-daemon` (aphrody / `aphrody-llama-server`)

@@ -2,15 +2,13 @@
 //! `aphrody package`: a thin compatibility group over the single `aphrody` binary.
 //!
 //! Aphrody used to ship four separately cloned, built and installed command-line tools (`aphrody`,
-//! `bxc`, `n2b`, `nie`). There is one binary now: `bxc`, `bxc-mcp`, `n2b` and every former
+//! `n2b`, `nie`). There is one binary now: `n2b` and every former
 //! standalone name are links to it (multi-call dispatch, see `multicall.rs`). This group reports
-//! and repairs those links; it never clones, builds or updates anything. `nie` (IECODE) is an
-//! externally managed tool: reported, never installed or removed.
+//! and repairs those links; it never clones, builds or updates anything.
 
 use std::{
     fs,
     path::{Path, PathBuf},
-    process::Command,
 };
 
 use clap::Subcommand;
@@ -67,13 +65,11 @@ pub(crate) enum PackageAction {
 }
 
 /// Names of the absorbed products: links to the single binary kept for compatibility.
-const COMPAT_NAMES: &[&str] = &["bxc", "bxc-mcp", "n2b"];
+const COMPAT_NAMES: &[&str] = &["n2b"];
 
 /// Names `package` accepted before the unification; they all designate the single binary now.
-const LEGACY_PACKAGES: &[&str] = &["aphrody", "bxc", "bxc-mcp", "n2b", "all"];
+const LEGACY_PACKAGES: &[&str] = &["aphrody", "n2b", "all"];
 
-/// IECODE's CLI, managed outside Aphrody: `aphrody nie` forwards to it.
-const EXTERNAL_BINARY: &str = "niers";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -146,13 +142,7 @@ pub(crate) fn run(action: PackageAction) -> miette::Result<()> {
 fn legacy_package(name: &str) -> miette::Result<Vec<String>> {
     match name {
         "aphrody" | "all" => Ok(all_link_names()),
-        "bxc" => Ok(vec!["bxc".to_owned(), "bxc-mcp".to_owned()]),
-        "bxc-mcp" => Ok(vec!["bxc-mcp".to_owned()]),
         "n2b" => Ok(vec!["n2b".to_owned()]),
-        "nie" | "niers" => Err(miette::miette!(
-            "`nie` est géré par IECODE, pas par Aphrody : installer `{EXTERNAL_BINARY}` depuis son \
-             dépôt (ou définir NIE_BIN) ; `aphrody nie` le relaie."
-        )),
         other => Err(miette::miette!(
             "paquet inconnu `{other}` : il n'y a qu'un binaire (`{}`)",
             LEGACY_PACKAGES.join("`, `")
@@ -258,34 +248,6 @@ fn on_path(dir: &Path) -> bool {
     })
 }
 
-#[derive(Serialize)]
-struct External {
-    name: &'static str,
-    binary: &'static str,
-    managed_by: &'static str,
-    installed: bool,
-    path: Option<String>,
-    version: Option<String>,
-}
-
-fn external() -> External {
-    let path = crate::commands::resolve_nie_bin();
-    let version = path.as_deref().and_then(command_version);
-    External {
-        name: "nie",
-        binary: EXTERNAL_BINARY,
-        managed_by: "IECODE (dépôt aphrody-labs/iecode)",
-        installed: path.is_some(),
-        path: path.map(|path| path.display().to_string()),
-        version,
-    }
-}
-
-fn command_version(path: &Path) -> Option<String> {
-    let output = Command::new(path).arg("--version").output().ok()?;
-    output.status.success().then(|| String::from_utf8_lossy(&output.stdout).trim().to_owned())
-}
-
 fn print_json(value: &serde_json::Value) -> miette::Result<()> {
     println!("{}", serde_json::to_string_pretty(value).into_diagnostic()?);
     Ok(())
@@ -302,7 +264,6 @@ fn catalog(json: bool) -> miette::Result<()> {
             "binary": "aphrody",
             "version": env!("CARGO_PKG_VERSION"),
             "links": rows,
-            "external": [external_catalog()],
         }));
     }
     println!("aphrody {}  binaire unique", env!("CARGO_PKG_VERSION"));
@@ -313,22 +274,7 @@ fn catalog(json: bool) -> miette::Result<()> {
         };
         println!("  {name:<26} {kind}");
     }
-    let external = external_catalog();
-    println!(
-        "{:<28} {}",
-        external["name"].as_str().unwrap_or("nie"),
-        external["note"].as_str().unwrap_or_default()
-    );
     Ok(())
-}
-
-fn external_catalog() -> serde_json::Value {
-    serde_json::json!({
-        "name": "nie",
-        "binary": EXTERNAL_BINARY,
-        "managed_by": "IECODE (dépôt aphrody-labs/iecode)",
-        "note": "géré ailleurs : `aphrody nie` relaie vers `niers`, jamais installé ici",
-    })
 }
 
 struct Inventory {
@@ -353,7 +299,6 @@ impl Inventory {
 
 fn status(json: bool) -> miette::Result<()> {
     let report = Inventory::collect()?;
-    let external = external();
     if json {
         return print_json(&serde_json::json!({
             "binary": {
@@ -365,21 +310,12 @@ fn status(json: bool) -> miette::Result<()> {
             "on_path": report.on_path,
             "healthy": report.healthy(),
             "links": report.links,
-            "external": [external],
         }));
     }
     println!("aphrody {}  {}", env!("CARGO_PKG_VERSION"), report.binary.display());
     for link in &report.links {
         println!("  {:<26} {:<9} {}", link.name, link.state.label(), link.path);
     }
-    println!(
-        "nie        {}",
-        external.version.as_deref().unwrap_or(if external.installed {
-            "installé (version inconnue)"
-        } else {
-            "non installé (géré par IECODE)"
-        })
-    );
     Ok(())
 }
 
@@ -522,11 +458,7 @@ mod tests {
     fn legacy_package_arguments_designate_links_never_builds() {
         assert_eq!(legacy_package("all").unwrap(), all_link_names());
         assert_eq!(legacy_package("aphrody").unwrap(), all_link_names());
-        assert_eq!(legacy_package("bxc").unwrap(), names(&["bxc", "bxc-mcp"]));
         assert_eq!(legacy_package("n2b").unwrap(), names(&["n2b"]));
-        let nie = legacy_package("nie").unwrap_err().to_string();
-        assert!(nie.contains("IECODE"), "{nie}");
-        assert!(legacy_package("niers").is_err());
         assert!(legacy_package("bogus").unwrap_err().to_string().contains("paquet inconnu"));
     }
 
@@ -540,7 +472,7 @@ mod tests {
 
     #[test]
     fn uninstall_needs_yes_unless_it_is_a_dry_run() {
-        let error = uninstall(&names(&["bxc"]), false, false).unwrap_err().to_string();
+        let error = uninstall(&names(&["n2b"]), false, false).unwrap_err().to_string();
         assert!(error.contains("--yes"), "{error}");
     }
 

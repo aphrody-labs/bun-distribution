@@ -15,7 +15,6 @@
           ],
           "features": [
             "default",
-            "firefly",
             "forensics",
             "index",
             "infer",
@@ -229,13 +228,6 @@
           "features": []
         },
         {
-          "name": "aphrody-chat",
-          "path": "crates/ai/chat",
-          "description": "Unified turn-loop REPL that orchestrates the aphrody building blocks (gemini-runtime + tools + memory + session + permissions + hooks + prompts + router + cost + context + events) into a complete chat agent. Replaces the dependency on the packaged TypeScript gemini-cli.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-code-graph",
           "path": "crates/ai/code-graph",
           "description": "aphrody-code-graph: native code graph (nodes, EXTRACTED/INFERRED edges with confidence, communities, god nodes, query/path/explain, report, graph.json) stored in the home database. Port of the Graphify concepts (Apache-2.0, see NOTICE).",
@@ -251,7 +243,6 @@
           "bins": [],
           "features": [
             "default",
-            "firefly",
             "forensics",
             "index",
             "infer",
@@ -281,13 +272,6 @@
           "features": []
         },
         {
-          "name": "aphrody-compat",
-          "path": "crates/os/compat",
-          "description": "Cross-platform runtime compatibility layer for Aphrody OS: Wine, Proton, .NET and PowerShell Core (pwsh).",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-config",
           "path": "crates/ai/config",
           "description": "Codex-compatible config.toml model for aphrody: ConfigToml, model providers (managed llama-server, Ollama, LM Studio, vLLM, Antigravity, OpenAI, Anthropic, ChatGPT), layered merge (built-ins < Codex-compat < user < project < profile < -c overrides < CLI flags), dotted -c override parsing, and the No-Human-In-The-Loop policy defaults. Pure, no filesystem access in the core, wasm32-safe.",
@@ -303,13 +287,6 @@
             "default",
             "tokenizers"
           ]
-        },
-        {
-          "name": "aphrody-coreutils",
-          "path": "crates/os/coreutils",
-          "description": "Kernel adapter for the pinned upstream uutils/coreutils multicall distribution.",
-          "bins": [],
-          "features": []
         },
         {
           "name": "aphrody-create-tauri-app",
@@ -420,7 +397,6 @@
           "features": [
             "browser",
             "default",
-            "firefly",
             "forensics",
             "gpu",
             "index",
@@ -693,13 +669,6 @@
           ]
         },
         {
-          "name": "aphrody-messaging",
-          "path": "crates/ai/messaging",
-          "description": "Tier-1 messaging connectors (Telegram, Slack, Resend Email API, and native SMTP).",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-ml-config",
           "path": "crates/ml/ml-config",
           "description": "Extensible typed TOML configuration storage of the Aphrody ML base (~/.koharu/config.toml).",
@@ -771,13 +740,6 @@
           "name": "aphrody-native",
           "path": "crates/native/native",
           "description": "Host hardware topology and monotonic clock probes for Aphrody.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-notebooklm",
-          "path": "crates/google/notebooklm",
-          "description": "NotebookLM Boq RPC client — pure-HTTP, cookie/OAuth auth, batchexecute envelope codec, artifacts/sources/chat/research surface.",
           "bins": [],
           "features": []
         },
@@ -1014,13 +976,6 @@
           "features": []
         },
         {
-          "name": "aphrody-shell-sandbox-host-e2b",
-          "path": "crates/shell/aphrody-shell-sandbox-host-e2b",
-          "description": "E2B remote sandbox adapter for Aphrody shell sessions",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-shell-session",
           "path": "crates/shell/session",
           "description": "Transport-neutral shell session and engine traits (input bytes in, output bytes out) with a scripted fake engine.",
@@ -1038,20 +993,6 @@
           "name": "aphrody-shell-vfs",
           "path": "crates/shell/vfs",
           "description": "Byte-path virtual filesystem trait, in-memory backend and shared conformance suite for the WASM shell.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-shell-vfs-opfs",
-          "path": "crates/shell/aphrody-shell-vfs-opfs",
-          "description": "Snapshot-backed VFS bridge for the browser OPFS shell worker.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-shell-wasm-utils",
-          "path": "crates/shell/aphrody-shell-wasm-utils",
-          "description": "VFS-backed byte utilities for the local WebAssembly shell.",
           "bins": [],
           "features": []
         },
@@ -1146,13 +1087,6 @@
             "m3",
             "raster"
           ]
-        },
-        {
-          "name": "aphrody-systemd",
-          "path": "crates/os/systemd",
-          "description": "Rust implementation of systemd init, service manager, unit dependency DAG, process watchdog and journal for Aphrody OS.",
-          "bins": [],
-          "features": []
         },
         {
           "name": "aphrody-task-runner",
@@ -1774,13 +1708,6 @@
           "features": []
         },
         {
-          "name": "aphrody-tui",
-          "path": "crates/shell/tui",
-          "description": "Full-screen interactive agent surface for aphrody, built on Ratatui 0.30 + crossterm. A thin client over the SQ/EQ NDJSON protocol: renders the streamed Event timeline (agent message deltas, reasoning, tool calls, exec output) and turns key input into Submission/UserInput. Inspired by the OpenAI Codex TUI (Apache-2.0).",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-vision",
           "path": "crates/ai/vision",
           "description": "Visual transcription over local GGUF vision models: caption, dense-region description, full-page OCR and VQA.",
@@ -2038,12 +1965,6 @@
           "name": "@aphrody/a2a",
           "path": "packages/os/a2a",
           "description": "A2A 1.0 client for Bun and the web platform: Agent Card discovery, JSON-RPC and HTTP+JSON bindings, SSE streaming, push notification configs, and a legacy-dialect shim",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/ag-ui",
-          "path": "m3/packages/ag-ui",
-          "description": "Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges.",
           "bins": []
         },
         {
@@ -2315,7 +2236,7 @@
         {
           "name": "@aphrody/m3-mcp",
           "path": "m3/packages/m3-mcp",
-          "description": "Single design/UI MCP server of aphrody-m3: packages, M3 tokens (lookup, validate), docs search, research links, templates, Material Symbols SVG, SVG to Tauri icons.",
+          "description": "Design/UI tool host of aphrody-m3 (served through the single aphrody-mcp): packages, M3 tokens (lookup, validate), docs search, research links, templates, Material Symbols SVG, SVG to Tauri icons.",
           "bins": []
         },
         {
@@ -2409,24 +2330,6 @@
           "name": "@aphrody/n2b-core",
           "path": "packages/engine/n2b-client",
           "description": "Native N2B SDK scan, explicit legacy CLI helpers and Bun shims",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/n2b-plugin",
-          "path": "packages/engine/n2b-plugin",
-          "description": "Bun plugin scanning through the native Yolo tooling SDK; explicit legacy CLI opt-in",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/n2b-shims",
-          "path": "packages/engine/n2b-shims",
-          "description": "Alias de compatibilité : ré-exporte @aphrody/n2b-core/shims (polyfills Bun-natifs env, fs, path, shell).",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/n2b-types",
-          "path": "packages/engine/n2b-types",
-          "description": "Compatibility aliases of the canonical Yolo native tooling report schema",
           "bins": []
         },
         {
@@ -3110,48 +3013,6 @@
           ]
         },
         {
-          "name": "exec",
-          "about": "Execute an autonomous agent task with optional Codex-compatible JSONL.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "resume",
-              "about": "Continue a recorded session in place.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "fork",
-              "about": "Start a new session with the recorded conversation as its history.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "resume",
-          "about": "Continue a persisted agent session.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
-          "name": "fork",
-          "about": "Fork a persisted agent conversation into a new session.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
           "name": "gateway",
           "about": "Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795).",
           "aliases": [],
@@ -3183,15 +3044,6 @@
           ]
         },
         {
-          "name": "app-server",
-          "about": "Serve the local app-server protocol over stdio or loopback HTTP.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
           "name": "config",
           "about": "Manage, show, or import Codex-compatible configuration.",
           "aliases": [],
@@ -3216,37 +3068,6 @@
             {
               "name": "import-codex",
               "about": "Import and layer configuration from ~/.codex/config.toml.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "ai",
-          "about": "Resolve the local AI environment; mirror external agent sessions.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "env",
-              "about": "Resolve and publish the local AI environment (`~/.aphrody/ai/local-ai.{json,env}`).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "status",
-              "about": "Inspect active AI router, models, and provider status.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "sync-sessions",
-              "about": "Mirror the sessions of the other coding agents on this machine (Antigravity CLI, Codex, Claude Code) into `~/.aphrody/sessions/<agent>/<session_id>.jsonl`, incrementally, and feed their user/assistant turns into the local memory store.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -3564,15 +3385,6 @@
           ]
         },
         {
-          "name": "codex",
-          "about": "Forward vers le binaire natif OpenAI Codex (`codex`).",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
           "name": "train",
           "about": "Machine learning training and fine-tuning engine.",
           "aliases": [],
@@ -3616,20 +3428,6 @@
               "children": []
             }
           ]
-        },
-        {
-          "name": "auth",
-          "about": "Authentification Google (God Mode / OAuth2)",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "mirror",
-          "about": "Gère le mirroring des assets MD3 (start, stop, status).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
         },
         {
           "name": "version",
@@ -3689,44 +3487,8 @@
           ]
         },
         {
-          "name": "cros",
-          "about": "Compilation hyper-optimisée de ChromeOS",
-          "aliases": [],
-          "cfg": [],
-          "children": [
-            {
-              "name": "sync",
-              "about": "Synchronisation ultra-rapide (shallow clone)",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "build",
-              "about": "Compilation GN/Ninja avec SCCache et optimisation multi-coeur",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
           "name": "search",
           "about": "Recherche Google Native",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "gemini",
-          "about": "[DÉPRÉCIÉ] Alias de `agy` — le Gemini CLI a migré vers l'Antigravity CLI. Honore encore `APHRODY_GEMINI_BIN` / un fork in-tree ; sinon forwarde vers `agy`. Préférez `aphrody agy`.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "agy",
-          "about": "Forward vers le binaire natif Antigravity CLI (`agy`).",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -3757,13 +3519,6 @@
           "children": []
         },
         {
-          "name": "nie",
-          "about": "Forward vers le CLI natif Niers (`niers`).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
           "name": "ssh",
           "about": "Safe cross-platform operator CLI for configured SSH hosts.",
           "aliases": [],
@@ -3771,51 +3526,6 @@
             "not(target_arch = \"wasm32\")"
           ],
           "children": []
-        },
-        {
-          "name": "agy-loop",
-          "about": "Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook` est le driver invoqué par…",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "start",
-              "about": "Arme la boucle pour le workspace courant avec un objectif.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "stop",
-              "about": "Désarme la boucle (efface l'état) pour le workspace courant.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "status",
-              "about": "Affiche l'état courant de la boucle en JSON.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "hook",
-              "about": "Driver des hooks `Stop` et `PostInvocation` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "hooks-json",
-              "about": "Affiche le fragment `hooks.json` (format natif agy) qui câble la boucle sur `Stop` et `PostInvocation`.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
         },
         {
           "name": "term",
@@ -4228,30 +3938,6 @@
           ]
         },
         {
-          "name": "firefly",
-          "about": "Adobe Firefly Services image generation to disk.",
-          "aliases": [],
-          "cfg": [
-            "all(not(target_arch = \"wasm32\"), feature = \"firefly\")"
-          ],
-          "children": [
-            {
-              "name": "generate",
-              "about": "Generate an image from a prompt and save it to a directory.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "events",
-              "about": "Drain the Adobe I/O Events journal (event-driven job completion).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
           "name": "memory",
           "about": "Memory: an application's local memory file (write, recall, list, delete, clear) and Tier-1 provider migration.",
           "aliases": [],
@@ -4639,81 +4325,6 @@
           ]
         },
         {
-          "name": "chat",
-          "about": "Run the unified turn-loop chat agent.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
-          "name": "hermes",
-          "about": "Agent multi-canaux voice-to-voice (Discord + X) — surpasse hermes-agent.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
-          "name": "agent",
-          "about": "Launch an autonomous agent — aphrody's flagship Antigravity-in-Rust surface.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
-          "name": "session",
-          "about": "Serve the local Codex-shaped JSON-RPC app-server over stdin/stdout.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "serve",
-              "about": "Multiplex threads and local model turns over newline-delimited JSON-RPC.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "notify",
-          "about": "Envoie un message via Slack / Telegram / Matrix / Discord.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "mail",
-          "about": "Check or send transactional email through Resend or OVH SMTP.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "health",
-              "about": "Verify provider credentials and connectivity without sending a message.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "send",
-              "about": "Send one plain-text email using the configured provider.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
           "name": "completions",
           "about": "Génère des completions shell pour bash / zsh / fish / pwsh / elvish",
           "aliases": [],
@@ -4841,385 +4452,6 @@
           ]
         },
         {
-          "name": "oc-onboard",
-          "about": "(ported from openclaw) Bootstrap aphrody local state + seed config.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
-          "name": "oc-reset",
-          "about": "(ported from openclaw) Reset local state. Choose a scope: `config`, `config-creds-sessions`, or `full`.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
-          "name": "oc-uninstall",
-          "about": "(ported from openclaw) Uninstall aphrody scopes (service / state / workspace / app, or `--all`).",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
-          "name": "oc-pairing",
-          "about": "(ported from openclaw) Secure DM pairing — list / approve / inject requests against the local pairing store (~/.aphrody/pairing.json).",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "list",
-              "about": "List pending pairing requests (optionally filtered by channel).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "approve",
-              "about": "Approve a pending pairing code for a channel.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "add",
-              "about": "Inject a pending pairing request (for tests / external integrations).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "oc-docs",
-          "about": "(ported from openclaw) Open or search the documentation site.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
-          "name": "notebooklm",
-          "about": "Google NotebookLM RPC client — notebooks / sources / chat / artifacts.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "list",
-              "about": "List every notebook owned by the active account.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "create",
-              "about": "Create a fresh empty notebook.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "delete",
-              "about": "Delete a notebook by id.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "upload",
-              "about": "Attach a source to a notebook (URL or local file path, auto-detected).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "chat",
-              "about": "Send a chat message and print the reply on stdout.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "generate",
-              "about": "Kick off an artifact generation workflow.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "download",
-              "about": "Wait for an artifact to reach `COMPLETE` state and download it locally.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "antigravity",
-          "about": "Native Google AI Ultra / Gemini client (Antigravity). Scriptable, non-interactive, JSON output — `models`, `whoami`, `load`, `chat`.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "models",
-              "about": "List the models available to the signed-in account / tier (`v1internal:fetchAvailableModels`).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "whoami",
-              "about": "Print the signed-in user's profile (email + name) from Google's OpenID `userinfo` endpoint.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "load",
-              "about": "Bootstrap the Code Assist session — project / tier / entitlements (`v1internal:loadCodeAssist`).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "chat",
-              "about": "Send a single prompt to a Gemini model and print the raw `generateContent` response as JSON.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "onboard",
-              "about": "Onboard the signed-in user to a Code Assist tier (`v1internal:onboardUser`). Returns the long-running operation JSON (`done` field; `done = false` while provisioning is ongoing).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "refresh",
-              "about": "Obtain a fresh access token and print a non-sensitive confirmation (lengths + expiry hint only — no token bytes are printed).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "login",
-              "about": "Interactively sign in via the Google OAuth 2.0 loopback PKCE flow.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "token-info",
-              "about": "Inspect the token stored in the credential store.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "config",
-              "about": "Inspect the Antigravity config file (`~/.gemini/config/config.json`).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "state-sync",
-              "about": "Decode a `state.vscdb` `antigravityUnifiedStateSync.*` blob.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "item-table",
-              "about": "Summarise a JSON dump of the `state.vscdb` `ItemTable`.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "cloud-code",
-              "about": "Generic Cloud Code `v1internal` RPC call.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "logo",
-          "about": "Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`).",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": []
-        },
-        {
-          "name": "design",
-          "about": "Material 3 design-token tooling (color CSS export + UI fusion sheet).",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "tokens",
-              "about": "Emit Material 3 color tokens as CSS custom properties.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "ide",
-          "about": "Antigravity IDE installation inspector — info, extensions, RE, state, and launch.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "info",
-              "about": "Detect the Antigravity IDE installation and emit key metadata as JSON.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "extensions",
-              "about": "List the built-in extensions bundled with the IDE.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "re",
-              "about": "Reverse-engineer the IDE Electron executable and the sidecar language server binary using the `aphrody-re` pipeline.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "state",
-              "about": "Decode the `state.vscdb` global-storage database (structural view only).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "launch",
-              "about": "Launch the Antigravity IDE, forwarding all arguments to the launcher.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "vpn",
-          "about": "Gestion du VPN Mullvad et du contournement géo pour Google AI / agy.",
-          "aliases": [],
-          "cfg": [
-            "not(target_arch = \"wasm32\")"
-          ],
-          "children": [
-            {
-              "name": "status",
-              "about": "Afficher le statut actuel du tunnel Mullvad VPN et du proxy VPS US.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "connect",
-              "about": "Connecter le VPN local Mullvad (optionnellement cibler un pays/serveur, ex: 'us', 'ch', 'se').",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "disconnect",
-              "about": "Déconnecter le VPN local Mullvad.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "ensure-agy",
-              "about": "Assurer une connexion US / non-EEE (Mullvad local ou tunnel SSH VPS) pour agy.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "proxy",
-              "about": "Gérer le tunnel SSH et le proxy SOCKS5 US hébergé sur le VPS.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "app",
-              "about": "Piloter le routage US ciblé sur les applications (Chrome, Antigravity 2, AGY CLI).",
-              "aliases": [],
-              "cfg": [],
-              "children": [
-                {
-                  "name": "gemini",
-                  "about": "Lancer Google Gemini App en fenêtre PWA dédiée sous proxy SOCKS5 US",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "desktop",
-                  "about": "Lancer AGY Desktop (Antigravity 2) sous proxy SOCKS5 US",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "agy",
-                  "about": "Lancer AGY CLI configuré sur le proxy SOCKS5 US (tunnel VPS)",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "setup",
-                  "about": "Configurer les raccourcis stricts (Gemini App, AGY Desktop, AGY CLI)",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "status",
-                  "about": "Afficher le statut des 3 applications cibles et du tunnel US",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            }
-          ]
-        },
-        {
           "name": "winclean",
           "about": "Native Windows computer use and OS control via the in-process aphrody-winclean crate.",
           "aliases": [],
@@ -5270,70 +4502,6 @@
               "children": []
             }
           ]
-        }
-      ]
-    },
-    {
-      "binary": "aphrody agent-home",
-      "crate": "aphrody-agent-home",
-      "repo": "aphrody",
-      "source": "crates/ai/agent-home/src/cli.rs#Cli",
-      "commands": [
-        {
-          "name": "roots",
-          "about": "Print the resolved homes root and the homes it holds.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "revision",
-          "about": "Print the `sha256-v1` content revision of a home.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "profile",
-          "about": "Print (and optionally update) the profile fields of a home.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "new",
-          "about": "Instantiate a new home from a template directory.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "merge",
-          "about": "Merge SOURCE into TARGET (dry run unless `--apply`).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "sync",
-          "about": "Two-way last-writer-wins sync of two homes (dry run unless `--apply`).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "restore",
-          "about": "Restore a verified merge backup into a home.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "rename",
-          "about": "Rename a home and migrate its memories and references (dry run unless `--apply`).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
         }
       ]
     },
@@ -5432,13 +4600,6 @@
         {
           "name": "serve",
           "about": "Serve the kernel with the built-in subsystems on the local endpoint.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "mcp",
-          "about": "MCP over stdio: relay to the running kernel, or run one in-process.",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -5767,48 +4928,6 @@
               ]
             },
             {
-              "name": "exec",
-              "about": "Execute an autonomous agent task with optional Codex-compatible JSONL.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "resume",
-                  "about": "Continue a recorded session in place.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "fork",
-                  "about": "Start a new session with the recorded conversation as its history.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "resume",
-              "about": "Continue a persisted agent session.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
-              "name": "fork",
-              "about": "Fork a persisted agent conversation into a new session.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
               "name": "gateway",
               "about": "Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795).",
               "aliases": [],
@@ -5840,15 +4959,6 @@
               ]
             },
             {
-              "name": "app-server",
-              "about": "Serve the local app-server protocol over stdio or loopback HTTP.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
               "name": "config",
               "about": "Manage, show, or import Codex-compatible configuration.",
               "aliases": [],
@@ -5873,37 +4983,6 @@
                 {
                   "name": "import-codex",
                   "about": "Import and layer configuration from ~/.codex/config.toml.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "ai",
-              "about": "Resolve the local AI environment; mirror external agent sessions.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "env",
-                  "about": "Resolve and publish the local AI environment (`~/.aphrody/ai/local-ai.{json,env}`).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "status",
-                  "about": "Inspect active AI router, models, and provider status.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "sync-sessions",
-                  "about": "Mirror the sessions of the other coding agents on this machine (Antigravity CLI, Codex, Claude Code) into `~/.aphrody/sessions/<agent>/<session_id>.jsonl`, incrementally, and feed their user/assistant turns into the local memory store.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -6221,15 +5300,6 @@
               ]
             },
             {
-              "name": "codex",
-              "about": "Forward vers le binaire natif OpenAI Codex (`codex`).",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
               "name": "train",
               "about": "Machine learning training and fine-tuning engine.",
               "aliases": [],
@@ -6273,20 +5343,6 @@
                   "children": []
                 }
               ]
-            },
-            {
-              "name": "auth",
-              "about": "Authentification Google (God Mode / OAuth2)",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "mirror",
-              "about": "Gère le mirroring des assets MD3 (start, stop, status).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
             },
             {
               "name": "version",
@@ -6346,44 +5402,8 @@
               ]
             },
             {
-              "name": "cros",
-              "about": "Compilation hyper-optimisée de ChromeOS",
-              "aliases": [],
-              "cfg": [],
-              "children": [
-                {
-                  "name": "sync",
-                  "about": "Synchronisation ultra-rapide (shallow clone)",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "build",
-                  "about": "Compilation GN/Ninja avec SCCache et optimisation multi-coeur",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
               "name": "search",
               "about": "Recherche Google Native",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "gemini",
-              "about": "[DÉPRÉCIÉ] Alias de `agy` — le Gemini CLI a migré vers l'Antigravity CLI. Honore encore `APHRODY_GEMINI_BIN` / un fork in-tree ; sinon forwarde vers `agy`. Préférez `aphrody agy`.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "agy",
-              "about": "Forward vers le binaire natif Antigravity CLI (`agy`).",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -6414,13 +5434,6 @@
               "children": []
             },
             {
-              "name": "nie",
-              "about": "Forward vers le CLI natif Niers (`niers`).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
               "name": "ssh",
               "about": "Safe cross-platform operator CLI for configured SSH hosts.",
               "aliases": [],
@@ -6428,51 +5441,6 @@
                 "not(target_arch = \"wasm32\")"
               ],
               "children": []
-            },
-            {
-              "name": "agy-loop",
-              "about": "Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook` est le driver invoqué par…",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "start",
-                  "about": "Arme la boucle pour le workspace courant avec un objectif.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "stop",
-                  "about": "Désarme la boucle (efface l'état) pour le workspace courant.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "status",
-                  "about": "Affiche l'état courant de la boucle en JSON.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "hook",
-                  "about": "Driver des hooks `Stop` et `PostInvocation` : lit le JSON du hook sur stdin, émet une décision sur stdout. Câblé par le plugin agy — pas pour usage manuel.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "hooks-json",
-                  "about": "Affiche le fragment `hooks.json` (format natif agy) qui câble la boucle sur `Stop` et `PostInvocation`.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
             },
             {
               "name": "term",
@@ -6885,30 +5853,6 @@
               ]
             },
             {
-              "name": "firefly",
-              "about": "Adobe Firefly Services image generation to disk.",
-              "aliases": [],
-              "cfg": [
-                "all(not(target_arch = \"wasm32\"), feature = \"firefly\")"
-              ],
-              "children": [
-                {
-                  "name": "generate",
-                  "about": "Generate an image from a prompt and save it to a directory.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "events",
-                  "about": "Drain the Adobe I/O Events journal (event-driven job completion).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
               "name": "memory",
               "about": "Memory: an application's local memory file (write, recall, list, delete, clear) and Tier-1 provider migration.",
               "aliases": [],
@@ -7296,81 +6240,6 @@
               ]
             },
             {
-              "name": "chat",
-              "about": "Run the unified turn-loop chat agent.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
-              "name": "hermes",
-              "about": "Agent multi-canaux voice-to-voice (Discord + X) — surpasse hermes-agent.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
-              "name": "agent",
-              "about": "Launch an autonomous agent — aphrody's flagship Antigravity-in-Rust surface.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
-              "name": "session",
-              "about": "Serve the local Codex-shaped JSON-RPC app-server over stdin/stdout.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "serve",
-                  "about": "Multiplex threads and local model turns over newline-delimited JSON-RPC.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "notify",
-              "about": "Envoie un message via Slack / Telegram / Matrix / Discord.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "mail",
-              "about": "Check or send transactional email through Resend or OVH SMTP.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "health",
-                  "about": "Verify provider credentials and connectivity without sending a message.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "send",
-                  "about": "Send one plain-text email using the configured provider.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
               "name": "completions",
               "about": "Génère des completions shell pour bash / zsh / fish / pwsh / elvish",
               "aliases": [],
@@ -7494,385 +6363,6 @@
                   "aliases": [],
                   "cfg": [],
                   "children": []
-                }
-              ]
-            },
-            {
-              "name": "oc-onboard",
-              "about": "(ported from openclaw) Bootstrap aphrody local state + seed config.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
-              "name": "oc-reset",
-              "about": "(ported from openclaw) Reset local state. Choose a scope: `config`, `config-creds-sessions`, or `full`.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
-              "name": "oc-uninstall",
-              "about": "(ported from openclaw) Uninstall aphrody scopes (service / state / workspace / app, or `--all`).",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
-              "name": "oc-pairing",
-              "about": "(ported from openclaw) Secure DM pairing — list / approve / inject requests against the local pairing store (~/.aphrody/pairing.json).",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "list",
-                  "about": "List pending pairing requests (optionally filtered by channel).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "approve",
-                  "about": "Approve a pending pairing code for a channel.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "add",
-                  "about": "Inject a pending pairing request (for tests / external integrations).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "oc-docs",
-              "about": "(ported from openclaw) Open or search the documentation site.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
-              "name": "notebooklm",
-              "about": "Google NotebookLM RPC client — notebooks / sources / chat / artifacts.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "list",
-                  "about": "List every notebook owned by the active account.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "create",
-                  "about": "Create a fresh empty notebook.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "delete",
-                  "about": "Delete a notebook by id.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "upload",
-                  "about": "Attach a source to a notebook (URL or local file path, auto-detected).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "chat",
-                  "about": "Send a chat message and print the reply on stdout.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "generate",
-                  "about": "Kick off an artifact generation workflow.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "download",
-                  "about": "Wait for an artifact to reach `COMPLETE` state and download it locally.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "antigravity",
-              "about": "Native Google AI Ultra / Gemini client (Antigravity). Scriptable, non-interactive, JSON output — `models`, `whoami`, `load`, `chat`.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "models",
-                  "about": "List the models available to the signed-in account / tier (`v1internal:fetchAvailableModels`).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "whoami",
-                  "about": "Print the signed-in user's profile (email + name) from Google's OpenID `userinfo` endpoint.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "load",
-                  "about": "Bootstrap the Code Assist session — project / tier / entitlements (`v1internal:loadCodeAssist`).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "chat",
-                  "about": "Send a single prompt to a Gemini model and print the raw `generateContent` response as JSON.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "onboard",
-                  "about": "Onboard the signed-in user to a Code Assist tier (`v1internal:onboardUser`). Returns the long-running operation JSON (`done` field; `done = false` while provisioning is ongoing).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "refresh",
-                  "about": "Obtain a fresh access token and print a non-sensitive confirmation (lengths + expiry hint only — no token bytes are printed).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "login",
-                  "about": "Interactively sign in via the Google OAuth 2.0 loopback PKCE flow.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "token-info",
-                  "about": "Inspect the token stored in the credential store.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "config",
-                  "about": "Inspect the Antigravity config file (`~/.gemini/config/config.json`).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "state-sync",
-                  "about": "Decode a `state.vscdb` `antigravityUnifiedStateSync.*` blob.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "item-table",
-                  "about": "Summarise a JSON dump of the `state.vscdb` `ItemTable`.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "cloud-code",
-                  "about": "Generic Cloud Code `v1internal` RPC call.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "logo",
-              "about": "Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`).",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": []
-            },
-            {
-              "name": "design",
-              "about": "Material 3 design-token tooling (color CSS export + UI fusion sheet).",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "tokens",
-                  "about": "Emit Material 3 color tokens as CSS custom properties.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "ide",
-              "about": "Antigravity IDE installation inspector — info, extensions, RE, state, and launch.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "info",
-                  "about": "Detect the Antigravity IDE installation and emit key metadata as JSON.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "extensions",
-                  "about": "List the built-in extensions bundled with the IDE.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "re",
-                  "about": "Reverse-engineer the IDE Electron executable and the sidecar language server binary using the `aphrody-re` pipeline.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "state",
-                  "about": "Decode the `state.vscdb` global-storage database (structural view only).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "launch",
-                  "about": "Launch the Antigravity IDE, forwarding all arguments to the launcher.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "vpn",
-              "about": "Gestion du VPN Mullvad et du contournement géo pour Google AI / agy.",
-              "aliases": [],
-              "cfg": [
-                "not(target_arch = \"wasm32\")"
-              ],
-              "children": [
-                {
-                  "name": "status",
-                  "about": "Afficher le statut actuel du tunnel Mullvad VPN et du proxy VPS US.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "connect",
-                  "about": "Connecter le VPN local Mullvad (optionnellement cibler un pays/serveur, ex: 'us', 'ch', 'se').",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "disconnect",
-                  "about": "Déconnecter le VPN local Mullvad.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "ensure-agy",
-                  "about": "Assurer une connexion US / non-EEE (Mullvad local ou tunnel SSH VPS) pour agy.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "proxy",
-                  "about": "Gérer le tunnel SSH et le proxy SOCKS5 US hébergé sur le VPS.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "app",
-                  "about": "Piloter le routage US ciblé sur les applications (Chrome, Antigravity 2, AGY CLI).",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": [
-                    {
-                      "name": "gemini",
-                      "about": "Lancer Google Gemini App en fenêtre PWA dédiée sous proxy SOCKS5 US",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "desktop",
-                      "about": "Lancer AGY Desktop (Antigravity 2) sous proxy SOCKS5 US",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "agy",
-                      "about": "Lancer AGY CLI configuré sur le proxy SOCKS5 US (tunnel VPS)",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "setup",
-                      "about": "Configurer les raccourcis stricts (Gemini App, AGY Desktop, AGY CLI)",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    },
-                    {
-                      "name": "status",
-                      "about": "Afficher le statut des 3 applications cibles et du tunnel US",
-                      "aliases": [],
-                      "cfg": [],
-                      "children": []
-                    }
-                  ]
                 }
               ]
             },
@@ -8378,63 +6868,6 @@
       ]
     },
     {
-      "binary": "aphrody kernel",
-      "crate": "aphrody-kernel",
-      "repo": "aphrody",
-      "source": "crates/os/kernel/src/cli.rs#Cli",
-      "commands": [
-        {
-          "name": "serve",
-          "about": "Serve the kernel with the built-in subsystems on the local endpoint.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "mcp",
-          "about": "MCP over stdio: relay to the running kernel, or run one in-process.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "tools",
-          "about": "List tools as JSON.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "skills",
-          "about": "List skills as JSON.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "call",
-          "about": "Call one tool.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "run-skill",
-          "about": "Run one skill.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "a2a",
-          "about": "Send an A2A envelope through the same kernel tool dispatcher.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        }
-      ]
-    },
-    {
       "binary": "aphrody m3-reproduce",
       "crate": "aphrody-m3-reproduce",
       "repo": "aphrody",
@@ -8504,108 +6937,6 @@
       "crate": "aphrody-rag-eval",
       "repo": "aphrody",
       "source": "crates/ai/rag-eval/src/cli.rs#Args",
-      "commands": []
-    },
-    {
-      "binary": "aphrody skills",
-      "crate": "aphrody-skills",
-      "repo": "aphrody",
-      "source": "crates/ai/skills/src/cli.rs#Cli",
-      "commands": [
-        {
-          "name": "list",
-          "about": "Flat table of every discovered skill.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "validate",
-          "about": "Validate frontmatter against the required contract.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "to-prompt",
-          "about": "Emit the SKILL.md body for one skill (for prompt injection).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "info",
-          "about": "Print the full SKILL.md for one skill.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "where",
-          "about": "Print the absolute path(s) of one named skill.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "sources",
-          "about": "Print the source registry with discovered counts.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "install",
-          "about": "Copy one SKILL.md into $APHRODY_SKILLS_HOME.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "sync",
-          "about": "Mirror SKILL.md files (locally or from a GitHub repo).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "remove",
-          "about": "Uninstall a skill from $APHRODY_SKILLS_HOME (inverse of `install`).",
-          "aliases": [
-            "rm",
-            "uninstall"
-          ],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "find",
-          "about": "Search discovered skills by keyword (name + description, scriptable).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "init",
-          "about": "Scaffold a new SKILL.md template in a directory.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "update",
-          "about": "Refresh installed skills from their recorded source path.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        }
-      ]
-    },
-    {
-      "binary": "aphrody translate-project",
-      "crate": "aphrody-translate",
-      "repo": "aphrody",
-      "source": "crates/ai/translate/src/cli.rs#Args",
       "commands": []
     },
     {
@@ -9600,16 +7931,6 @@
   ],
   "binariesWithoutClap": [
     {
-      "binary": "aphrody agent-home-memory",
-      "crate": "aphrody-memory",
-      "repo": "aphrody"
-    },
-    {
-      "binary": "aphrody agent-train",
-      "crate": "aphrody-train",
-      "repo": "aphrody"
-    },
-    {
       "binary": "aphrody backend",
       "crate": "aphrody-backend",
       "repo": "aphrody"
@@ -9622,26 +7943,6 @@
     {
       "binary": "aphrody embed",
       "crate": "aphrody-embed",
-      "repo": "aphrody"
-    },
-    {
-      "binary": "aphrody gemini-web",
-      "crate": "aphrody-gemini-web",
-      "repo": "aphrody"
-    },
-    {
-      "binary": "aphrody jev",
-      "crate": "aphrody-jev",
-      "repo": "aphrody"
-    },
-    {
-      "binary": "aphrody llama",
-      "crate": "aphrody-llama-server",
-      "repo": "aphrody"
-    },
-    {
-      "binary": "aphrody llama-daemon",
-      "crate": "aphrody-llama-server",
       "repo": "aphrody"
     },
     {
@@ -9676,68 +7977,6 @@
     }
   ],
   "mcp": [
-    {
-      "server": "@aphrody/m3-mcp",
-      "repo": "aphrody",
-      "kind": "bun-mcp",
-      "tools": [
-        {
-          "name": "m3_docs_search",
-          "description": "Case-insensitive line search over aphrody-m3 docs/ (md, mdx); returns path:line hits.",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        },
-        {
-          "name": "m3_list_packages",
-          "description": "List the aphrody-m3 workspace packages with versions.",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        },
-        {
-          "name": "m3_list_templates",
-          "description": "List UI templates, examples and Tauri example apps.",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        },
-        {
-          "name": "m3_os_themes_generate",
-          "description": "Return the text content of one generated OS theme file (path from m3_os_themes_list). Never writes to disk or the system.",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        },
-        {
-          "name": "m3_os_themes_list",
-          "description": "List the files m3-os-themes would generate for a seed colour and target (nothing is written).",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        },
-        {
-          "name": "m3_research_links",
-          "description": "List docs/research files and the curated dated Google design/research link index.",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        },
-        {
-          "name": "m3_svg_to_ico",
-          "description": "Generate Tauri desktop icons (ico, icns, png) from a symbol name or SVG file.",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        },
-        {
-          "name": "m3_symbol_search",
-          "description": "Search the full Material Symbols catalogue (4150 names) by substring; returns matching symbol names.",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        },
-        {
-          "name": "m3_symbol_svg",
-          "description": "Return path and SVG source of a Material Symbol from the forked catalogue.",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        },
-        {
-          "name": "m3_token_lookup",
-          "description": "Look up Material 3 design tokens (--md-*) by name or value fragment in m3-tokens.",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        },
-        {
-          "name": "m3_token_validate",
-          "description": "Validate that every --md-* custom property in a CSS snippet or name list exists in m3-tokens.",
-          "file": "m3/packages/m3-mcp/src/server.ts"
-        }
-      ]
-    },
     {
       "server": "@aphrody/workspace subsystem `workspace`",
       "repo": "aphrody",
@@ -9989,61 +8228,14 @@
       ]
     },
     {
-      "server": "aphrody-compat subsystem `compat`",
+      "server": "aphrody-kernel",
       "repo": "aphrody",
-      "kind": "kernel-subsystem",
+      "kind": "json-catalog",
       "tools": [
         {
-          "name": "compat_dotnet_exec",
-          "description": "Execute a .NET assembly or application using the dotnet CLI",
-          "file": "crates/os/compat/src/subsystem.rs"
-        },
-        {
-          "name": "compat_pwsh_eval",
-          "description": "Evaluate a PowerShell Core (pwsh) or Windows PowerShell script with output capture",
-          "file": "crates/os/compat/src/subsystem.rs"
-        },
-        {
-          "name": "compat_runtimes_status",
-          "description": "Detect and report availability of Wine, Proton, .NET and PowerShell Core runtimes",
-          "file": "crates/os/compat/src/subsystem.rs"
-        },
-        {
-          "name": "compat_wine_exec",
-          "description": "Execute a Windows binary using Proton/Wine (or native Windows fallback)",
-          "file": "crates/os/compat/src/subsystem.rs"
-        }
-      ]
-    },
-    {
-      "server": "aphrody-coreutils subsystem `coreutils`",
-      "repo": "aphrody",
-      "kind": "kernel-subsystem",
-      "tools": [
-        {
-          "name": "coreutils_catalog",
-          "description": "List every command compiled into the pinned uutils/coreutils multicall binary",
-          "file": "crates/os/coreutils/src/subsystem.rs"
-        },
-        {
-          "name": "coreutils_run",
-          "description": "Run one command from the pinned uutils/coreutils distribution without a shell",
-          "file": "crates/os/coreutils/src/subsystem.rs"
-        },
-        {
-          "name": "coreutils_status",
-          "description": "Report the resolved pinned uutils/coreutils binary and whether it is available",
-          "file": "crates/os/coreutils/src/subsystem.rs"
-        },
-        {
-          "name": "uutils_catalog",
-          "description": "List supported pinned uutils companion utilities and their availability",
-          "file": "crates/os/coreutils/src/subsystem.rs"
-        },
-        {
-          "name": "uutils_run",
-          "description": "Run a pinned uutils companion utility (find, grep, sed, diff, or tar) without a shell",
-          "file": "crates/os/coreutils/src/subsystem.rs"
+          "name": "probe",
+          "description": "d",
+          "file": "crates/os/kernel/src/tool_host.rs"
         }
       ]
     },
@@ -10081,6 +8273,65 @@
           "name": "github_tree",
           "description": "List tree entries (blobs, trees, sizes) at a specific Git reference or path",
           "file": "crates/os/kernel/src/cloud.rs"
+        }
+      ]
+    },
+    {
+      "server": "aphrody-kernel subsystem `compat`",
+      "repo": "aphrody",
+      "kind": "kernel-subsystem",
+      "tools": [
+        {
+          "name": "compat_dotnet_exec",
+          "description": "Execute a .NET assembly or application using the dotnet CLI",
+          "file": "crates/os/kernel/src/compat/subsystem.rs"
+        },
+        {
+          "name": "compat_pwsh_eval",
+          "description": "Evaluate a PowerShell Core (pwsh) or Windows PowerShell script with output capture",
+          "file": "crates/os/kernel/src/compat/subsystem.rs"
+        },
+        {
+          "name": "compat_runtimes_status",
+          "description": "Detect and report availability of Wine, Proton, .NET and PowerShell Core runtimes",
+          "file": "crates/os/kernel/src/compat/subsystem.rs"
+        },
+        {
+          "name": "compat_wine_exec",
+          "description": "Execute a Windows binary using Proton/Wine (or native Windows fallback)",
+          "file": "crates/os/kernel/src/compat/subsystem.rs"
+        }
+      ]
+    },
+    {
+      "server": "aphrody-kernel subsystem `coreutils`",
+      "repo": "aphrody",
+      "kind": "kernel-subsystem",
+      "tools": [
+        {
+          "name": "coreutils_catalog",
+          "description": "List every command compiled into the pinned uutils/coreutils multicall binary",
+          "file": "crates/os/kernel/src/coreutils.rs"
+        },
+        {
+          "name": "coreutils_run",
+          "description": "Run one command from the pinned uutils/coreutils distribution without a shell",
+          "file": "crates/os/kernel/src/coreutils.rs"
+        },
+        {
+          "name": "coreutils_status",
+          "description": "Report the resolved pinned uutils/coreutils binary and whether it is available",
+          "file": "crates/os/kernel/src/coreutils.rs"
+        },
+        {
+          "name": "uutils_catalog",
+          "description": "List supported pinned uutils companion utilities and their availability",
+          "file": "crates/os/kernel/src/coreutils.rs"
+        },
+        {
+          "name": "uutils_run",
+          "description": "Run a pinned uutils companion utility (find, grep, sed, diff, or tar) without a shell",
+          "file": "crates/os/kernel/src/coreutils.rs"
         }
       ]
     },
@@ -10125,6 +8376,53 @@
           "name": "runtime_resolve",
           "description": "Resolve Bun, uv and Nushell: path, source, installed version, repository pin, pin compliance and Aphrody Bun module version when present",
           "file": "crates/os/kernel/src/runtimes.rs"
+        }
+      ]
+    },
+    {
+      "server": "aphrody-kernel subsystem `systemd`",
+      "repo": "aphrody",
+      "kind": "kernel-subsystem",
+      "tools": [
+        {
+          "name": "systemd_journal_query",
+          "description": "Query log messages from systemd journald with unit, severity level, and limit filtering",
+          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+        },
+        {
+          "name": "systemd_list_units",
+          "description": "List all active and configured systemd units, targets and services",
+          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+        },
+        {
+          "name": "systemd_load_unit_file",
+          "description": "Load and register a new systemd unit from INI text content",
+          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+        },
+        {
+          "name": "systemd_reload_unit",
+          "description": "Reload configuration for a systemd service",
+          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+        },
+        {
+          "name": "systemd_restart_unit",
+          "description": "Restart a systemd service",
+          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+        },
+        {
+          "name": "systemd_start_unit",
+          "description": "Start or activate a systemd service or target",
+          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+        },
+        {
+          "name": "systemd_stop_unit",
+          "description": "Stop or deactivate a systemd service or target",
+          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+        },
+        {
+          "name": "systemd_unit_status",
+          "description": "Get detailed status, state, PID, uptime, and dependencies of a specific systemd unit",
+          "file": "crates/os/kernel/src/systemd/subsystem.rs"
         }
       ]
     },
@@ -10625,53 +8923,6 @@
           "name": "web_ingest",
           "description": "Retrieve a web page through Aphrody OS and index it into the local RAG store so later rag_search/rag_context calls can retrieve it.",
           "file": "crates/ai/rag/src/tools.rs"
-        }
-      ]
-    },
-    {
-      "server": "aphrody-systemd subsystem `systemd`",
-      "repo": "aphrody",
-      "kind": "kernel-subsystem",
-      "tools": [
-        {
-          "name": "systemd_journal_query",
-          "description": "Query log messages from systemd journald with unit, severity level, and limit filtering",
-          "file": "crates/os/systemd/src/subsystem.rs"
-        },
-        {
-          "name": "systemd_list_units",
-          "description": "List all active and configured systemd units, targets and services",
-          "file": "crates/os/systemd/src/subsystem.rs"
-        },
-        {
-          "name": "systemd_load_unit_file",
-          "description": "Load and register a new systemd unit from INI text content",
-          "file": "crates/os/systemd/src/subsystem.rs"
-        },
-        {
-          "name": "systemd_reload_unit",
-          "description": "Reload configuration for a systemd service",
-          "file": "crates/os/systemd/src/subsystem.rs"
-        },
-        {
-          "name": "systemd_restart_unit",
-          "description": "Restart a systemd service",
-          "file": "crates/os/systemd/src/subsystem.rs"
-        },
-        {
-          "name": "systemd_start_unit",
-          "description": "Start or activate a systemd service or target",
-          "file": "crates/os/systemd/src/subsystem.rs"
-        },
-        {
-          "name": "systemd_stop_unit",
-          "description": "Stop or deactivate a systemd service or target",
-          "file": "crates/os/systemd/src/subsystem.rs"
-        },
-        {
-          "name": "systemd_unit_status",
-          "description": "Get detailed status, state, PID, uptime, and dependencies of a specific systemd unit",
-          "file": "crates/os/systemd/src/subsystem.rs"
         }
       ]
     },
@@ -11710,14 +9961,14 @@
     "aphrodyRepos": 1,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 220,
+    "crates": 210,
     "binaries": 9,
-    "bunPackages": 134,
+    "bunPackages": 130,
     "pythonPackages": 8,
-    "cliBinaries": 20,
-    "cliCommands": 878,
+    "cliBinaries": 16,
+    "cliCommands": 676,
     "mcpServers": 19,
-    "mcpTools": 379,
-    "mcpUniqueToolNames": 377
+    "mcpTools": 369,
+    "mcpUniqueToolNames": 367
   }
 }

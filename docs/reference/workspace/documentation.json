@@ -46,8 +46,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan",
-      "sha256": "030eddc92b4dcebc03e8f76dd2d36be2f432733bdc7da7c8af944a7240fe6708",
-      "bytes": 5793,
+      "sha256": "ab8fc613ebb65714ceb915a8dc506f510b65d17f15cbbe78b88a2042f234805f",
+      "bytes": 5940,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -56,7 +56,7 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "f6a76e405473c9a3c9914bd78f89083dba1c731c02cf1d2d2de5779177e62a2e",
+      "sha256": "c72a8b8c125f0a767448a8af3e4cae977610be397ef598f258d75e188a485bc0",
       "bytes": 1145,
       "domain": "",
       "status": "generated",
@@ -3106,8 +3106,8 @@
     {
       "path": "docs/JS-TS-TOOLING.md",
       "title": "Shared native JavaScript and TypeScript tooling",
-      "sha256": "4e9a81ac34ba59db1e68fc2e8c8993054d08652facd6cea15d186afcbcd4cfff",
-      "bytes": 11827,
+      "sha256": "9969a43d600ad98c175410687eb4ce1071728571e407e2e32035ddd0b92f818d",
+      "bytes": 11492,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3126,7 +3126,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "be02e4d6dbf929e46be35205636bf42bf94b9a991e5a7f9540ab372736fa50f5",
+      "sha256": "ba5911544ef299a446063725debcb812f42a8aad183a456e46f64683c35ecdef",
       "bytes": 8066,
       "domain": "",
       "status": "generated",
@@ -3704,16 +3704,6 @@
       "canonical": "docs/architecture/ai/plugins/aphrody/agents/web-x-grok-architect.md"
     },
     {
-      "path": "docs/architecture/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/architecture.md",
-      "title": "Google Antigravity SDK Architecture",
-      "sha256": "478ae70cfdd3f53a299ea2accf3ff2aa76ba96b7312833dcd19a40658f735902",
-      "bytes": 2342,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/architecture/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/architecture.md"
-    },
-    {
       "path": "docs/architecture/ai/research/adobe-connector/skills/adobe-design-from-template/SKILL.md",
       "title": "Adobe Design from Template",
       "sha256": "db9045243be9af3398b01a5870890aa62952ce67918ae13c4d302f420167578e",
@@ -4016,8 +4006,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "237c541a4abfb3d6028e69841a0244af20f69126266dca075c72af6fad91640d",
-      "bytes": 93404,
+      "sha256": "9f37238926575f0df68d63dfc2d54252384470e1117ebe3b2527f6a544f44dad",
+      "bytes": 69361,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -4026,8 +4016,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "35a36e8013485cdc31a5240243f3f319d4ce41d3453e0d16ee8d1451e18d6dfe",
-      "bytes": 65317,
+      "sha256": "e44f396a942f7ff0fb47ca93b221b782de0a57a1dfb013d6fc655b288c53d200",
+      "bytes": 62785,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -4036,8 +4026,8 @@
     {
       "path": "docs/ecosystem/MCP-TOOLS.md",
       "title": "MCP tools",
-      "sha256": "5d57d5c3d7b94032a96e45c8acacda4f07ccfebfcdcf66c249c6b192740c29e1",
-      "bytes": 63361,
+      "sha256": "cd09aedb34de0aa44f93c01fefc05b3a2d7384e593e52a58ba382fb0773d1e14",
+      "bytes": 62181,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -4102,16 +4092,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/guides/ai/MCP_SETUP.md"
-    },
-    {
-      "path": "docs/guides/ai/py/antigravity-sdk-python/CONTRIBUTING.md",
-      "title": "How to Contribute",
-      "sha256": "04afb6b037e8f18382077ee95e4d9301c96f5a3e73f9a0aeefd7f988098d4d78",
-      "bytes": 358,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/ai/py/antigravity-sdk-python/CONTRIBUTING.md"
     },
     {
       "path": "docs/guides/ai/research/google-local-install-map.md",
@@ -7276,8 +7256,8 @@
     {
       "path": "docs/plans/os-kernel/PLAN.md",
       "title": "Architecture cible de aphrody-kernel",
-      "sha256": "b871912d95dd90dbc635cb47d339ad3fb2682e7a09d372502d40379ebcea2d7c",
-      "bytes": 1915,
+      "sha256": "be35b9df1dae55df6818b1bca2e83b80ba3635f7f365d235666b8f2880e5f7a9",
+      "bytes": 1976,
       "domain": "os-kernel",
       "status": "canonical",
       "visibility": "private",
@@ -7504,16 +7484,6 @@
       "canonical": "docs/products/ai/agent-stack/README.md"
     },
     {
-      "path": "docs/products/ai/agy-cli/README.md",
-      "title": "Antigravity 2.0 & agy CLI — référence aphrody",
-      "sha256": "a52277948b770086755d45b6f3737e15834f810061927ffbe861b709017b2f7f",
-      "bytes": 9620,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/ai/agy-cli/README.md"
-    },
-    {
       "path": "docs/products/ai/cargo/README.md",
       "title": "Cargo workspace notes",
       "sha256": "dc1e24d069c3d77ca2404b3168df66376daddac882e736c1ca9c93df257e2d5d",
@@ -7612,126 +7582,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/products/ai/grok/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/README.md",
-      "title": "Google Antigravity SDK",
-      "sha256": "8c4b9acb25e5affe4d89f30fc2a9af09bdf93ad1021be033b0fbdd6399633d8c",
-      "bytes": 9795,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/examples/README.md",
-      "title": "Google Antigravity SDK — Examples",
-      "sha256": "f3b584ff999eb7a1fb5ca80aac0caef4c060d9cd33e3e5e7592125b30c6a07c3",
-      "bytes": 2204,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/examples/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/examples/deep_dives/README.md",
-      "title": "Deep Dives",
-      "sha256": "94e82ff4863f109af177d1a1c918f06092e317f4841305ce0fadacb7da7b8988",
-      "bytes": 4545,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/examples/deep_dives/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/examples/getting_started/README.md",
-      "title": "Getting Started with Google Antigravity SDK",
-      "sha256": "8d95f02cbf7972b3b1b3ee7e200403ef2bc75cf812873e30dcc9727a73d6fa46",
-      "bytes": 3956,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/examples/getting_started/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/examples/voice_web_app/README.md",
-      "title": "Application Web Parole-à-Parole Material Design 3",
-      "sha256": "74591d188588654ea2d8eb0710a159164ed0bf7dac5a4d29d20148ff7c573dba",
-      "bytes": 5442,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/examples/voice_web_app/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/connections/README.md",
-      "title": "Google Antigravity SDK Connections",
-      "sha256": "a4b453e9871a1b93dfaf9d61bacf640f9df860b0002b76a28cf50d3b9b382073",
-      "bytes": 4428,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/connections/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/conversation/README.md",
-      "title": "Google Antigravity SDK Conversation",
-      "sha256": "8c006efc0553e252be132def8b77454c11bdb2e9536c1ee8b27070c487a5991c",
-      "bytes": 5955,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/conversation/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/hooks/README.md",
-      "title": "Antigravity Hook Architecture: Design and Implementation",
-      "sha256": "041b26eba421fa777d6e7968cb17c877a534cf71b1d8499b8fd1d5f6f8565c33",
-      "bytes": 13307,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/hooks/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/mcp/README.md",
-      "title": "Google Antigravity SDK MCP Integration",
-      "sha256": "f14642a35bbf13ffd2983a17fe0ff074c140353bbf4d8d2772e8cea1c4bf3815",
-      "bytes": 1421,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/mcp/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/tools/README.md",
-      "title": "Google Antigravity SDK Tools",
-      "sha256": "df039d11ab06393f8e18d013dccd9ce46a3eb178d7e4da35f419c99c4c49dd66",
-      "bytes": 4615,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/tools/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/triggers/README.md",
-      "title": "Google Antigravity SDK Triggers",
-      "sha256": "ea20baaf77294e0140c6e4b49284013cbab63b73a401a5ae9dac4db9305489db",
-      "bytes": 5569,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/google/antigravity/triggers/README.md"
-    },
-    {
-      "path": "docs/products/ai/py/antigravity-sdk-python/skills/README.md",
-      "title": "Google Antigravity SDK Skills",
-      "sha256": "1cf78c9f77bd4bfcb3b82681639e9cfa4b0396f8c30c6469f93c13eadc5391a5",
-      "bytes": 1199,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/ai/py/antigravity-sdk-python/skills/README.md"
     },
     {
       "path": "docs/products/ai/py/aphrody/blender_addon/README.md",
@@ -9264,16 +9114,6 @@
       "canonical": "docs/reference/ai/agent-stack/x-pro-integration.md"
     },
     {
-      "path": "docs/reference/ai/agy-cli/aphrody-agy-map.md",
-      "title": "Cartographie aphrody agy — forwarder, binaire agy (Antigravity CLI) et écosystème",
-      "sha256": "5f95578b14697beaf82ad4b7f3a1d9d87cab3889158dca8265c79f001595af0f",
-      "bytes": 29322,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/agy-cli/aphrody-agy-map.md"
-    },
-    {
       "path": "docs/reference/ai/antigravity-language-server.md",
       "title": "The Go languageserver.exe (Antigravity / Codeium engine)",
       "sha256": "68e07149d3ac66afa04955820bef4dc643a0884095078608bc1515c3d4ca18ad",
@@ -10114,216 +9954,6 @@
       "canonical": "docs/reference/ai/py/GEMINI.md"
     },
     {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/.github/ISSUE_TEMPLATE/feature_request.md",
-      "title": "Problem Statement",
-      "sha256": "67e7f1676feafb35bce738db4da7b82215cb9b9eb5ec7ea2c8991b4daa4b075f",
-      "bytes": 374,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/.github/ISSUE_TEMPLATE/feature_request.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/CODE_OF_CONDUCT.md",
-      "title": "Code of Conduct",
-      "sha256": "d41623f776bdd7a56b98547e4c013d76e9774b8299d00eeccf585f68ed55517d",
-      "bytes": 125,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/CODE_OF_CONDUCT.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/SKILL.md",
-      "title": "Google Antigravity SDK",
-      "sha256": "cd93d854705f31c61865de790901bf4260ddd323d92eb938a6ffd192af5aa43c",
-      "bytes": 5018,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/SKILL.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/agent_skills.md",
-      "title": "Filesystem-Based Skill Loading",
-      "sha256": "a42068b3c1201938b3f69794fb6f8037dcd2555e10b5ae9ed7fcffd83e1564d6",
-      "bytes": 1658,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/agent_skills.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/app_data_dir_override.md",
-      "title": "Application Data Directory Override",
-      "sha256": "edcfa663358889ebf3e3659112eb843ad722635b6f83a47d18d5cfe1e6bc45a4",
-      "bytes": 1057,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/app_data_dir_override.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/custom_tool.md",
-      "title": "Custom Tool Example",
-      "sha256": "c7fd45fe63fd8fa41f71b13e4c808f3281037cb26ada46afc1cea3e75691f618",
-      "bytes": 3091,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/custom_tool.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/hello_world.md",
-      "title": "Hello World Example",
-      "sha256": "bc3a0de18317360361387b1570a05b1207ead28847b225cf9d7793017ea3f897",
-      "bytes": 2726,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/hello_world.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/hooks.md",
-      "title": "Hooks",
-      "sha256": "d3ff1bbe7387120c84cedfed986a27080eed5415cb9a599d9488be4a31eb0161",
-      "bytes": 3247,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/hooks.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/mcp_tools.md",
-      "title": "Model Context Protocol (MCP)",
-      "sha256": "9556cc91df4029a2394ea9c0d2e837abb90ed2cdc6e430836897c75a9c87034c",
-      "bytes": 4500,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/mcp_tools.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/multimodal.md",
-      "title": "Multimodal Examples",
-      "sha256": "21005a37cc05fd615d8cab84af310af38d7542840181145d9494fe7daaa7dc42",
-      "bytes": 1908,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/multimodal.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/periodic_trigger.md",
-      "title": "Triggers and Periodic Checks",
-      "sha256": "961f769fd586c46a5ae56e60dc3675bea33b5955eca0f3aebe2f415ac46fc136",
-      "bytes": 2816,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/periodic_trigger.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/persistence.md",
-      "title": "Conversation Persistence",
-      "sha256": "e41184bf13aed8a97876d3834da2bebdc384d105e87d24abc3a0e21b821e831c",
-      "bytes": 1492,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/persistence.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/persona_config.md",
-      "title": "System Instructions and Persona",
-      "sha256": "4444e3327eec5ae2de3538720e01bcbff8c4e7b21c82c1ef179e0b83b4186fbb",
-      "bytes": 2326,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/persona_config.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/structured_output.md",
-      "title": "Structured Output",
-      "sha256": "c63b17360b37eb1bf685349daf28cfd52b1c6895557b7c16c8ada87e37f36527",
-      "bytes": 1426,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/structured_output.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/subagents.md",
-      "title": "Subagents Example",
-      "sha256": "6df28671a8719f52cdd902a9b9e2f01a89d857e6fac6307bbdde53d7675c8aab",
-      "bytes": 1090,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/examples/getting_started/subagents.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/agent_configuration.md",
-      "title": "Advanced Agent Configuration Guide",
-      "sha256": "540ca8884a5f2f5dd280385e1d127ef7d664270957da1d4b440c5590e59538a3",
-      "bytes": 3325,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/agent_configuration.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/built_in_tools.md",
-      "title": "Built-in Tools Reference",
-      "sha256": "36ab3334d695ca50bb3662c91df71b788b95df989ab78f96b7a1c389174097ce",
-      "bytes": 1540,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/built_in_tools.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/error_handling.md",
-      "title": "Error Handling and Debugging in Google Antigravity SDK",
-      "sha256": "faaf328cffb3c1424b9646e13322f2099c9766aa426a4267f5818518944e5555",
-      "bytes": 3575,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/error_handling.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/mcp_integration.md",
-      "title": "MCP Integration in Google Antigravity SDK",
-      "sha256": "ec13b25eb9ec1223d4f7f184e831a10902378e375f54605984c34b6b478dca22",
-      "bytes": 5606,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/mcp_integration.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/observability.md",
-      "title": "Observability",
-      "sha256": "8f5c3b7a823011051f45449414c475f6b0cec8ab081faaa4e540146f4f886d83",
-      "bytes": 3148,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/observability.md"
-    },
-    {
-      "path": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/safety_policies.md",
-      "title": "Safety Policies in Google Antigravity SDK",
-      "sha256": "afbc03ad689dc7cb2f825a762c5490284e4bfb083b5ec96046ed4e19389fb4a4",
-      "bytes": 6840,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/py/antigravity-sdk-python/skills/google-antigravity-sdk/references/safety_policies.md"
-    },
-    {
       "path": "docs/reference/ai/py/aphrody/docs/agent.md",
       "title": "Python agent client",
       "sha256": "14a24fe19b18eecb5fa0de094a37b94ac284e6c92b6c5e991118e64a94fe7fd5",
@@ -10426,8 +10056,8 @@
     {
       "path": "docs/reference/compat/N2B-OXC-MAP.md",
       "title": "N2B and Oxc map (Rust and Bun)",
-      "sha256": "226971bcd3d20babe71c9013b2c4e7ddb6d59986e3222808c55fd0909a8b4f62",
-      "bytes": 14877,
+      "sha256": "f602a7950ddd9dcd5b0f3964e2d36bf491879f3b5063b7c3177f5c4ceed9925d",
+      "bytes": 14475,
       "domain": "compat",
       "status": "historical",
       "visibility": "private",
@@ -11496,8 +11126,8 @@
     {
       "path": "docs/reference/infra/APHRODY-BUN-PLATFORM.md",
       "title": "Aphrody Bun platform",
-      "sha256": "82921e80cec65fe7b4b313c6b393a6b1cb03f926c1cc37d8958dceda19470765",
-      "bytes": 3987,
+      "sha256": "b7143f4db35836886e70a4d8822f1c1c34f05ad9dce4aedc36457f96f058f43e",
+      "bytes": 3958,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -32126,8 +31756,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "8210bfdb9eba95d312447245c02aa5ce19050c88150437a6853daf77fc3357da",
-      "bytes": 52634,
+      "sha256": "5e3ea07326ed78ed3e4e25c07aa41201f7e4dcfbcc3d5087b12ea62ce91a6f82",
+      "bytes": 50643,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -32272,26 +31902,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/research/ai/plugins/aphrody/agents/web-researcher.md"
-    },
-    {
-      "path": "docs/research/ai/py/antigravity-sdk-python/.github/ISSUE_TEMPLATE/bug_report.md",
-      "title": "Environment",
-      "sha256": "41738cab5bf756a52d8943f2edcbd4b1c8fe958c28b255cd2dec7b3c2dac42b6",
-      "bytes": 646,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/research/ai/py/antigravity-sdk-python/.github/ISSUE_TEMPLATE/bug_report.md"
-    },
-    {
-      "path": "docs/research/ai/py/antigravity-sdk-python/SECURITY.md",
-      "title": "Security Policy",
-      "sha256": "7e867455f1e15c31010e5ed0f64befc5ce5005480c1f97850d1132cb44408ae8",
-      "bytes": 424,
-      "domain": "ai",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/research/ai/py/antigravity-sdk-python/SECURITY.md"
     },
     {
       "path": "docs/research/ai/rag-benchmark.md",
@@ -36514,16 +36124,6 @@
       "canonical": "m3/examples/tauri/streaming/README.md"
     },
     {
-      "path": "m3/packages/ag-ui/README.md",
-      "title": "@aphrody/ag-ui",
-      "sha256": "23ed25d352d13aba9972813721123e1dcdc6ff71a9ed16cc171d2e785118ca17",
-      "bytes": 1060,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/ag-ui/README.md"
-    },
-    {
       "path": "m3/packages/app-ui/QUALIFICATION.md",
       "title": "App UI qualification — 2026-10-05",
       "sha256": "667f10c89b8ba7046d222bb9b5f6946eec85b1eefc1ee3b523116d34a96c717a",
@@ -36796,8 +36396,8 @@
     {
       "path": "m3/packages/m3-mcp/README.md",
       "title": "@aphrody/m3-mcp",
-      "sha256": "ae571003eefc186c5cb72b54dd4a9e165e316ebf8d61b5448b1ab9324e5ca1f5",
-      "bytes": 1040,
+      "sha256": "a86e9f4b5a667d0708956fb30317b607ab6ed19bb2f995009d4ba3413d56d688",
+      "bytes": 1274,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -37136,8 +36736,8 @@
     {
       "path": "packages/engine/core/README.md",
       "title": "YOLO Core Library (@aphrody/yolo-core)",
-      "sha256": "233ebabb8c0def39473f0d39a31582cdc0ba8656f301918b807c5a7f9617c5d2",
-      "bytes": 3999,
+      "sha256": "289aa0b9b683890524010cd73c9f334425e34a5c9665fa6481e8d633577bb52d",
+      "bytes": 4051,
       "domain": "engine",
       "status": "canonical",
       "visibility": "private",

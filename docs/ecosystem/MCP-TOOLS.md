@@ -7,25 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 19 servers, 379 tool registrations, 377 unique tool names.
-
-## aphrody — @aphrody/m3-mcp
-
-Kind: bun-mcp. 11 tools.
-
-| Tool | Description |
-| --- | --- |
-| `m3_docs_search` | Case-insensitive line search over aphrody-m3 docs/ (md, mdx); returns path:line hits. |
-| `m3_list_packages` | List the aphrody-m3 workspace packages with versions. |
-| `m3_list_templates` | List UI templates, examples and Tauri example apps. |
-| `m3_os_themes_generate` | Return the text content of one generated OS theme file (path from m3_os_themes_list). Never writes to disk or the system. |
-| `m3_os_themes_list` | List the files m3-os-themes would generate for a seed colour and target (nothing is written). |
-| `m3_research_links` | List docs/research files and the curated dated Google design/research link index. |
-| `m3_svg_to_ico` | Generate Tauri desktop icons (ico, icns, png) from a symbol name or SVG file. |
-| `m3_symbol_search` | Search the full Material Symbols catalogue (4150 names) by substring; returns matching symbol names. |
-| `m3_symbol_svg` | Return path and SVG source of a Material Symbol from the forked catalogue. |
-| `m3_token_lookup` | Look up Material 3 design tokens (--md-*) by name or value fragment in m3-tokens. |
-| `m3_token_validate` | Validate that every --md-* custom property in a CSS snippet or name list exists in m3-tokens. |
+Totals: 19 servers, 369 tool registrations, 367 unique tool names.
 
 ## aphrody — @aphrody/workspace subsystem `workspace`
 
@@ -105,28 +87,13 @@ Kind: kernel-subsystem. 4 tools.
 | `bun_docs_search` | Search the vendored Bun docs (runtime, bundler, package manager, test runner, guides). Returns ranked pages with slug, url and a snippet; set include_content to also return the best page. |
 | `bun_node_equivalent` | Bun equivalent of a Node module (`fs`, `node:child_process`), npm package (`dotenv`, `jest`) or Node API, from the n2b registry, with matching Bun docs pages. |
 
-## aphrody — aphrody-compat subsystem `compat`
+## aphrody — aphrody-kernel
 
-Kind: kernel-subsystem. 4 tools.
-
-| Tool | Description |
-| --- | --- |
-| `compat_dotnet_exec` | Execute a .NET assembly or application using the dotnet CLI |
-| `compat_pwsh_eval` | Evaluate a PowerShell Core (pwsh) or Windows PowerShell script with output capture |
-| `compat_runtimes_status` | Detect and report availability of Wine, Proton, .NET and PowerShell Core runtimes |
-| `compat_wine_exec` | Execute a Windows binary using Proton/Wine (or native Windows fallback) |
-
-## aphrody — aphrody-coreutils subsystem `coreutils`
-
-Kind: kernel-subsystem. 5 tools.
+Kind: json-catalog. 1 tools.
 
 | Tool | Description |
 | --- | --- |
-| `coreutils_catalog` | List every command compiled into the pinned uutils/coreutils multicall binary |
-| `coreutils_run` | Run one command from the pinned uutils/coreutils distribution without a shell |
-| `coreutils_status` | Report the resolved pinned uutils/coreutils binary and whether it is available |
-| `uutils_catalog` | List supported pinned uutils companion utilities and their availability |
-| `uutils_run` | Run a pinned uutils companion utility (find, grep, sed, diff, or tar) without a shell |
+| `probe` | d |
 
 ## aphrody — aphrody-kernel subsystem `cloud`
 
@@ -140,6 +107,29 @@ Kind: kernel-subsystem. 6 tools.
 | `github_branches` | List local and tracking remote branches with upstream synchronization status |
 | `github_status` | Inspect current branch, ahead/behind tracking, modified/untracked files and recent commits for a Git repository |
 | `github_tree` | List tree entries (blobs, trees, sizes) at a specific Git reference or path |
+
+## aphrody — aphrody-kernel subsystem `compat`
+
+Kind: kernel-subsystem. 4 tools.
+
+| Tool | Description |
+| --- | --- |
+| `compat_dotnet_exec` | Execute a .NET assembly or application using the dotnet CLI |
+| `compat_pwsh_eval` | Evaluate a PowerShell Core (pwsh) or Windows PowerShell script with output capture |
+| `compat_runtimes_status` | Detect and report availability of Wine, Proton, .NET and PowerShell Core runtimes |
+| `compat_wine_exec` | Execute a Windows binary using Proton/Wine (or native Windows fallback) |
+
+## aphrody — aphrody-kernel subsystem `coreutils`
+
+Kind: kernel-subsystem. 5 tools.
+
+| Tool | Description |
+| --- | --- |
+| `coreutils_catalog` | List every command compiled into the pinned uutils/coreutils multicall binary |
+| `coreutils_run` | Run one command from the pinned uutils/coreutils distribution without a shell |
+| `coreutils_status` | Report the resolved pinned uutils/coreutils binary and whether it is available |
+| `uutils_catalog` | List supported pinned uutils companion utilities and their availability |
+| `uutils_run` | Run a pinned uutils companion utility (find, grep, sed, diff, or tar) without a shell |
 
 ## aphrody — aphrody-kernel subsystem `infra`
 
@@ -160,6 +150,21 @@ Kind: kernel-subsystem. 1 tools.
 | Tool | Description |
 | --- | --- |
 | `runtime_resolve` | Resolve Bun, uv and Nushell: path, source, installed version, repository pin, pin compliance and Aphrody Bun module version when present |
+
+## aphrody — aphrody-kernel subsystem `systemd`
+
+Kind: kernel-subsystem. 8 tools.
+
+| Tool | Description |
+| --- | --- |
+| `systemd_journal_query` | Query log messages from systemd journald with unit, severity level, and limit filtering |
+| `systemd_list_units` | List all active and configured systemd units, targets and services |
+| `systemd_load_unit_file` | Load and register a new systemd unit from INI text content |
+| `systemd_reload_unit` | Reload configuration for a systemd service |
+| `systemd_restart_unit` | Restart a systemd service |
+| `systemd_start_unit` | Start or activate a systemd service or target |
+| `systemd_stop_unit` | Stop or deactivate a systemd service or target |
+| `systemd_unit_status` | Get detailed status, state, PID, uptime, and dependencies of a specific systemd unit |
 
 ## aphrody — aphrody-mcp
 
@@ -288,21 +293,6 @@ Kind: kernel-subsystem. 3 tools.
 | `rag_context` | Assemble a prompt-ready <retrieved_context> block bounded by token budget for direct model ingestion. |
 | `rag_search` | Search indexed codebase files and documentation using hybrid retrieval (FTS5 BM25 + dense vector scan + RRF fusion). |
 | `web_ingest` | Retrieve a web page through Aphrody OS and index it into the local RAG store so later rag_search/rag_context calls can retrieve it. |
-
-## aphrody — aphrody-systemd subsystem `systemd`
-
-Kind: kernel-subsystem. 8 tools.
-
-| Tool | Description |
-| --- | --- |
-| `systemd_journal_query` | Query log messages from systemd journald with unit, severity level, and limit filtering |
-| `systemd_list_units` | List all active and configured systemd units, targets and services |
-| `systemd_load_unit_file` | Load and register a new systemd unit from INI text content |
-| `systemd_reload_unit` | Reload configuration for a systemd service |
-| `systemd_restart_unit` | Restart a systemd service |
-| `systemd_start_unit` | Start or activate a systemd service or target |
-| `systemd_stop_unit` | Stop or deactivate a systemd service or target |
-| `systemd_unit_status` | Get detailed status, state, PID, uptime, and dependencies of a specific systemd unit |
 
 ## aphrody — aphrody-winclean
 

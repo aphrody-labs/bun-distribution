@@ -69,10 +69,6 @@ ocr = ["dep:aphrody-ocr", "aphrody-ocr/sqlite", "dep:sha2", "infer"]
 jobs = ["dep:aphrody-jobs"]
 
 
-# Adobe Firefly Services image generation to disk (`aphrody firefly generate`),
-# backed by aphrody-firefly (IMS OAuth S2S + v3 async generate). Host-only.
-#   cargo build -p aphrody --features firefly
-firefly = ["dep:aphrody-firefly"]
 
 # YARA-X pattern matching (`aphrody re yara --rules <rules.yara> <binary>`).
 # Pure Rust (BSD-3-Clause). Activates the `yara` feature in aphrody-re.
@@ -88,7 +84,6 @@ yara = ["aphrody-re/yara"]
 #   buildable from the same crate.
 
 [dependencies]
-webbrowser = { workspace = true }
 clap          = { workspace = true }
 # clap_complete is unconditional: Shell is referenced in the Commands enum which
 # compiles on all targets. clap_complete itself has no OS-specific code and
@@ -113,7 +108,6 @@ aphrody-ssh               = { workspace = true }
 reqwest                   = { workspace = true }
 regex                     = { workspace = true }
 which                     = { workspace = true }
-indicatif                 = { workspace = true }
 colored                   = { workspace = true }
 mimalloc                  = { workspace = true }
 # In-process page fetch with profiles and the shared browser session (`aphrody web fetch|browser`).
@@ -139,7 +133,6 @@ aphrody-a2a-client                = { workspace = true }
 aphrody-a2a-coord                 = { workspace = true }
 futures                   = { workspace = true }
 thiserror                 = { workspace = true }
-aphrody-vpn               = { workspace = true }
 # `aphrody winclean` — in-process aphrody-winclean crate (Windows computer use + OS control).
 aphrody-winclean          = { workspace = true }
 aphrody-kernel            = { workspace = true, features = ["builtins"] }
@@ -156,13 +149,9 @@ aphrody-rag-eval          = { workspace = true }
 # `aphrody tauri` and `aphrody create-tauri-app`: the vendored Tauri CLIs served in process.
 tauri-cli                 = { path = "../../tauri/aphrody-tauri-cli", package = "aphrody-tauri-cli", version = "3.0.0-alpha.4" }
 create-tauri-app          = { path = "../../tauri/aphrody-create-tauri-app", package = "aphrody-create-tauri-app", version = "4.7.4" }
-aphrody-gemini-web        = { workspace = true }
-aphrody-jev               = { workspace = true, features = ["server"] }
 aphrody-embed             = { workspace = true, features = ["server"] }
-aphrody-skills            = { workspace = true }
 # Messaging (outbound connectors + bidirectional channels: Slack/Telegram/Matrix/Discord/X).
 # Native-only because reqwest + tokio do not compile on wasm32.
-aphrody-messaging         = { workspace = true }
 aphrody-oxc-bridge         = { workspace = true }
 # `aphrody hermes` voice-to-voice agent — STT (Whisper/ElevenLabs) + TTS (ElevenLabs).
 aphrody-voice             = { workspace = true }
@@ -189,8 +178,6 @@ rusqlite                  = { workspace = true, optional = true }
 # `aphrody index build/search` — persistent local-filesystem FTS5 index
 # (`--features index`). Bundled libsqlite3 via the workspace rusqlite.
 aphrody-fsindex           = { workspace = true, optional = true }
-# `aphrody firefly generate` — Adobe Firefly image gen (`--features firefly`).
-aphrody-firefly           = { workspace = true, optional = true }
 # `aphrody forensics map` — SHA-256 of small files + hex encoding for the
 # `tree.json` map. Optional, gated by the `forensics` feature (shared with the
 # read-only SQLite schema dump). Reuses the workspace pins so no new
@@ -203,22 +190,18 @@ hex                       = { workspace = true, optional = true }
 aphrody-identity          = { workspace = true }
 # `aphrody design tokens [--fusion]` — Material 3 color tokens as CSS custom
 # properties (+ shadcn/Tailwind fusion sheet). Native-only (std export).
-aphrody-m3-tokens                 = { workspace = true }
 # `aphrody chat` — unified turn-loop REPL composing every aphrody building
 # block (gemini-runtime + tools + memory + session + permissions + hooks +
 # prompts + router + cost + context + events). Phase 1 wires --prompt
 # one-shot mode; ratatui REPL + slash-commands land in Phase 2.
-aphrody-chat              = { workspace = true }
 # Pre-main process hardening (no-dump / no-ptrace / strip LD_*-DYLD_*) wired into
 # the binary's `main`. Native-only effect; no-op on wasm. cf. CLAUDE.md §0.1.
-aphrody-guard             = { workspace = true }
 # `aphrody memory migrate` — provider-to-provider migration (R3.4). Native-only
 # because the SqliteLocal provider uses rusqlite (libsqlite3 bundled C lib) and
 # the Mem0/Honcho providers use reqwest, neither of which compile on wasm32.
 aphrody-memory            = { workspace = true }
 # `aphrody ai sync-sessions` — external agent session mirror (agy, Codex,
 # Claude Code) + its feed into the local memory store (`memory` feature).
-aphrody-session           = { workspace = true, features = ["memory"] }
 # `aphrody model {...}` — local model lifecycle (catalog / pull / verify / gc).
 # Native-only: the store needs a filesystem and the downloader a reqwest client
 # (rustls/ring), neither of which links on wasm32.
@@ -235,7 +218,6 @@ aphrody-jobs              = { workspace = true, optional = true }
 dirs                      = { workspace = true }
 # `aphrody notebooklm {...}` — Google NotebookLM Boq RPC client (native HTTP,
 # no browser automation in-process).
-aphrody-notebooklm                = { workspace = true }
 # `aphrody antigravity {...}` — native Google AI Ultra / Gemini client (WS3).
 # Reads the OAuth token at runtime (Windows Credential Manager); never embeds a
 # secret. Native-only: it builds a reqwest::Client (rustls/ring) and reads the
@@ -249,7 +231,6 @@ aphrody-google                = { workspace = true }
 aphrody-agent-home        = { workspace = true, features = ["git"] }
 # aphrody-prompts — source of the unified BXC/YOLO doctrine prepended to every
 # agent session's system prompt (see exec_cmd::runtime_config).
-aphrody-prompts           = { workspace = true }
 # In-process stdout/stderr capture backing `aphrody::run_captured` (the
 # structured entry the Tauri app + aphrody-ffi consume). Host-only.
 aphrody-stdio-capture     = { workspace = true }
@@ -262,23 +243,14 @@ aphrody-stdio-capture     = { workspace = true }
 aphrody-agent-runtime     = { workspace = true }
 aphrody-config            = { workspace = true }
 aphrody-diagnostics       = { workspace = true }
-aphrody-engine            = { workspace = true }
 aphrody-toolcall          = { workspace = true }
-tracing                  = { workspace = true }
 toml                     = { workspace = true }
-aphrody-model-client      = { workspace = true }
-jsonschema                = { workspace = true }
-aphrody-rollout           = { workspace = true }
-aphrody-app-protocol      = { workspace = true }
-anyhow                    = { workspace = true }
 aphrody-rag               = { workspace = true }
 aphrody-code-graph        = { workspace = true }
 aphrody-llama-server      = { workspace = true }
 aphrody-train             = { workspace = true }
 aphrody-app-server        = { workspace = true }
 aphrody-gateway           = { workspace = true }
-aphrody-tui               = { workspace = true }
-aphrody-agent-proto       = { workspace = true }
 
 # --- Windows-only deps (HKCU registry edit for `aphrody self install-path`) -
 [target.'cfg(target_os = "windows")'.dependencies]
@@ -296,14 +268,10 @@ tokio         = { version = "1.52", default-features = false, features = ["sync"
 
 # --- Dev/test dependencies (integration tests only, native targets) --------
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-pretty_assertions = { workspace = true }
-assert_cmd    = { workspace = true }
-predicates    = { workspace = true }
 serde_json    = { workspace = true }
 tempfile      = { workspace = true }
 tokio         = { workspace = true, features = ["macros", "rt"] }
 # `cold_start` bench — measures `aphrody version` p50/p95/p99 (PLAN R-A R1.5).
-criterion     = { workspace = true }
 
 
 [package.metadata.cargo-machete]

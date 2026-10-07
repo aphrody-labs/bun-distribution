@@ -28,7 +28,6 @@ index = ["aphrody-command/index"]
 infer = ["aphrody-command/infer"]
 ocr = ["aphrody-command/ocr"]
 jobs = ["aphrody-command/jobs"]
-firefly = ["aphrody-command/firefly"]
 yara = ["aphrody-command/yara"]
 
 [dependencies]

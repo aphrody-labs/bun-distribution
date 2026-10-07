@@ -22,7 +22,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | Category | Domain | Files | Entry |
 | --- | --- | ---: | --- |
 | architecture | [(files)](architecture/) | 2 | - |
-| architecture | [ai](architecture/ai/) | 7 | - |
+| architecture | [ai](architecture/ai/) | 6 | - |
 | architecture | [compat](architecture/compat/) | 1 | - |
 | architecture | [convergence](architecture/convergence/) | 1 | - |
 | architecture | [discord](architecture/discord/) | 4 | [Aphrody Discord Architecture](architecture/discord/README.md) |
@@ -44,14 +44,14 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | decisions | [ai](decisions/ai/) | 1 | - |
 | decisions | [infra](decisions/infra/) | 2 | - |
 | decisions | [shell](decisions/shell/) | 2 | - |
-| guides | [ai](guides/ai/) | 9 | - |
+| guides | [ai](guides/ai/) | 8 | - |
 | guides | [compat](guides/compat/) | 5 | - |
 | guides | [discord](guides/discord/) | 1 | - |
 | guides | [upstream-bun](guides/upstream-bun/) vendored upstream copy | 203 | - |
 | guides | [web](guides/web/) | 4 | - |
 | guides | [workspace](guides/workspace/) | 4 | [Parcours Workspace Aphrody](guides/workspace/README.md) |
 | operations | [(files)](operations/) | 2 | - |
-| operations | [ai](operations/ai/) | 7 | - |
+| operations | [ai](operations/ai/) | 6 | - |
 | operations | [cloud](operations/cloud/) | 4 | - |
 | operations | [container](operations/container/) | 1 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
@@ -80,7 +80,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [workspace](plans/workspace/) | 1 | [Aphrody — FFI unique et consolidation Rust, Python, Bun](plans/workspace/PLAN.md) |
 | plans | [x-bun-import](plans/x-bun-import/) | 2 | [`@aphrody/x`: a thin Bun import over `aphrody-x`](plans/x-bun-import/PLAN.md) |
 | plans | [yolo-fork-unified](plans/yolo-fork-unified/) | 1 | [yolo et le fork Bun : un seul produit runtime](plans/yolo-fork-unified/PLAN.md) |
-| products | [ai](products/ai/) | 29 | [Aphrody AI](products/ai/README.md) |
+| products | [ai](products/ai/) | 16 | [Aphrody AI](products/ai/README.md) |
 | products | [compat](products/compat/) | 5 | [Aphrody Compat](products/compat/README.md) |
 | products | [contracts](products/contracts/) | 5 | [Aphrody Contracts](products/contracts/README.md) |
 | products | [discord](products/discord/) | 3 | [Aphrody Discord Ecosystem](products/discord/README.md) |
@@ -91,7 +91,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [upstream-bun](products/upstream-bun/) vendored upstream copy | 65 | [with install script (recommended)](products/upstream-bun/README.md) |
 | products | [web](products/web/) | 7 | [Aphrody Web](products/web/README.md) |
 | products | [workspace](products/workspace/) | 1 | [Aphrody source workspace](products/workspace/README.md) |
-| reference | [ai](reference/ai/) | 240 | - |
+| reference | [ai](reference/ai/) | 215 | - |
 | reference | [compat](reference/compat/) | 102 | - |
 | reference | [contracts](reference/contracts/) | 2 | - |
 | reference | [discord](reference/discord/) | 41 | - |
@@ -105,7 +105,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [web](reference/web/) | 48 | - |
 | reference | [workspace](reference/workspace/) | 13 | [Workspace documentation](reference/workspace/INDEX.md) |
 | reference | [yolo](reference/yolo/) | 1 | - |
-| research | [ai](research/ai/) | 50 | - |
+| research | [ai](research/ai/) | 48 | - |
 | research | [compat](research/compat/) | 11 | - |
 | research | [discord](research/discord/) | 1 | - |
 | research | [infra](research/infra/) | 3 | - |
@@ -118,4 +118,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 3263 files.
+Total: 3220 files.

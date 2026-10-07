@@ -7,37 +7,9 @@
 //! and system dependencies are not linkable there.
 
 #[cfg(not(target_arch = "wasm32"))]
-mod agent_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-mod agent_run;
-#[cfg(not(target_arch = "wasm32"))]
-mod agy_backend;
-#[cfg(not(target_arch = "wasm32"))]
-mod agy_loop;
-#[cfg(not(target_arch = "wasm32"))]
-mod agy_provision;
-#[cfg(not(target_arch = "wasm32"))]
 mod ecosystem;
 #[cfg(not(target_arch = "wasm32"))]
-mod exec_events;
-#[cfg(not(target_arch = "wasm32"))]
-mod project_doc;
-#[cfg(not(target_arch = "wasm32"))]
-mod summary;
-#[cfg(not(target_arch = "wasm32"))]
-mod ai_env_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-mod ai_sync_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-mod antigravity_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-mod app_server_cmd;
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod auto_command;
-#[cfg(not(target_arch = "wasm32"))]
-mod bxc_compat;
-#[cfg(not(target_arch = "wasm32"))]
-mod codex_provision;
 #[cfg(not(target_arch = "wasm32"))]
 mod commands;
 #[cfg(not(target_arch = "wasm32"))]
@@ -45,25 +17,17 @@ mod config_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod context;
 #[cfg(not(target_arch = "wasm32"))]
-mod design_cmd;
-#[cfg(not(target_arch = "wasm32"))]
 mod discord_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod discord_compiler;
 #[cfg(not(target_arch = "wasm32"))]
 mod docs_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-mod exec_cmd;
-#[cfg(all(not(target_arch = "wasm32"), feature = "firefly"))]
-mod firefly_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "forensics"))]
 mod forensics_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod gateway_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod git_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-mod ide_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "index"))]
 mod index_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "infer"))]
@@ -80,8 +44,6 @@ pub(crate) mod model_cmd;
 mod multicall;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod nl_tokens;
-#[cfg(not(target_arch = "wasm32"))]
-mod oc_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "ocr"))]
 mod ocr_cmd;
 #[cfg(not(target_arch = "wasm32"))]
@@ -92,6 +54,7 @@ mod package_cmd;
 mod pillars_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod platform;
+mod profile;
 #[cfg(all(not(target_arch = "wasm32"), feature = "rag"))]
 mod rag_cmd;
 #[cfg(not(target_arch = "wasm32"))]
@@ -102,12 +65,8 @@ mod runtime_cmd;
 mod scan_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod self_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-mod session_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "train"))]
 mod train_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-mod vpn_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod winclean_cmd;
 
@@ -119,7 +78,7 @@ use clap::{Parser, Subcommand};
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::{
-    commands::{DoctorCommand, MirrorCommand, SubprocessExit, VersionCommand},
+    commands::{DoctorCommand, SubprocessExit, VersionCommand},
     context::{GoogleContext, TerminalCommand},
 };
 
@@ -151,61 +110,6 @@ impl From<CompletionsShell> for clap_complete::Shell {
     }
 }
 
-/// Messaging-channel selector for `aphrody notify`.
-///
-/// Mirrors the production adapters in `aphrody-channels` (Slack, Telegram,
-/// Matrix, Discord). Declared at the top level (not gated) so the clap surface
-/// is identical on native and wasm32 builds.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-pub(crate) enum NotifyChannel {
-    /// Slack Bot API (chat.postMessage). Reads `SLACK_BOT_TOKEN` + `SLACK_CHANNEL`.
-    Slack,
-    /// Telegram Bot API (sendMessage). Reads `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`.
-    Telegram,
-    /// Matrix Client-Server API v3. Reads `MATRIX_HOMESERVER`, `MATRIX_ACCESS_TOKEN`,
-    /// `MATRIX_USER_ID` + `MATRIX_ROOM_ID`.
-    Matrix,
-    /// Discord REST v10 (`channels/{id}/messages`). Reads `DISCORD_BOT_TOKEN` +
-    /// `DISCORD_DM_CHANNEL_ID`. A room written `@<user id>` opens (or reuses) the
-    /// private DM channel with that user before sending.
-    Discord,
-}
-
-/// Actions for the environment-configured transactional mail connector.
-#[cfg(not(target_arch = "wasm32"))]
-#[derive(Subcommand, Debug, Clone)]
-pub(crate) enum MailAction {
-    /// Verify provider credentials and connectivity without sending a message.
-    Health,
-    /// Send one plain-text email using the configured provider.
-    Send {
-        /// Recipient address, optionally in `Name <address>` form.
-        #[arg(long, short)]
-        to: String,
-        /// Subject line.
-        #[arg(long, short)]
-        subject: String,
-        /// Plain-text message body.
-        #[arg(long, short)]
-        message: String,
-        /// Optional friendly sender override.
-        #[arg(long)]
-        from: Option<String>,
-        /// Stable key used by Resend to deduplicate retries.
-        #[arg(long)]
-        idempotency_key: Option<String>,
-    },
-}
-
-/// Channel selector for `aphrody hermes`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-pub(crate) enum HermesChannelArg {
-    /// Discord (REST v10 bot). Reads `DISCORD_BOT_TOKEN`.
-    Discord,
-    /// X / Twitter (cookie-auth `aphrody-x`). Reads `X_HANDLE`.
-    X,
-}
-
 #[derive(Parser)]
 #[command(name = "aphrody")]
 #[command(version = "1.0.0-canary")]
@@ -216,17 +120,8 @@ struct Cli {
     #[cfg(not(target_arch = "wasm32"))]
     #[command(flatten)]
     agent_options: AgentOptions,
-    /// Open the interactive agent with an initial prompt.
-    #[cfg(not(target_arch = "wasm32"))]
-    #[arg(short = 'i', long = "interactive", global = true)]
-    interactive: Option<String>,
     #[command(subcommand)]
     command: Option<Commands>,
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-fn bare_cli_opens_tui(stdin_is_terminal: bool, stdout_is_terminal: bool) -> bool {
-    stdin_is_terminal && stdout_is_terminal
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -247,8 +142,6 @@ fn missing_command_feature(args: &[String]) -> Option<&'static str> {
         "ocr" => Some("ocr"),
         #[cfg(not(feature = "forensics"))]
         "forensics" => Some("forensics"),
-        #[cfg(not(feature = "firefly"))]
-        "firefly" => Some("firefly"),
         _ => None,
     }
 }
@@ -294,27 +187,6 @@ impl AgentOptions {
         }
     }
 
-    /// Merge options closest to the selected agent command last.
-    fn apply_to(
-        &self,
-        mut inherited: aphrody_config::CliOverrides,
-    ) -> aphrody_config::CliOverrides {
-        if let Some(model) = &self.model {
-            inherited.model = Some(model.clone());
-        }
-        if let Some(profile) = &self.profile {
-            inherited.profile = Some(profile.clone());
-        }
-        if let Some(provider) = &self.local_provider {
-            inherited.local_provider = Some(provider.clone());
-        }
-        if let Some(cwd) = &self.cd {
-            inherited.cwd = Some(cwd.clone());
-        }
-        inherited.oss |= self.oss;
-        inherited.config_overrides.extend(self.config.iter().cloned());
-        inherited
-    }
 }
 
 #[derive(Subcommand)]
@@ -332,54 +204,17 @@ enum Commands {
         #[arg(long)]
         role: String,
     },
-    /// Execute an autonomous agent task with optional Codex-compatible JSONL.
-    #[cfg(not(target_arch = "wasm32"))]
-    Exec(Box<exec_cmd::ExecArgs>),
-    /// Continue a persisted agent session.
-    #[cfg(not(target_arch = "wasm32"))]
-    Resume(session_cmd::SessionArgs),
-    /// Fork a persisted agent conversation into a new session.
-    #[cfg(not(target_arch = "wasm32"))]
-    Fork(session_cmd::SessionArgs),
     /// Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795).
     #[cfg(not(target_arch = "wasm32"))]
     Gateway {
         #[command(subcommand)]
         action: Option<gateway_cmd::GatewayAction>,
     },
-    /// Serve the local app-server protocol over stdio or loopback HTTP.
-    #[cfg(not(target_arch = "wasm32"))]
-    AppServer {
-        #[arg(long)]
-        http: bool,
-        #[arg(long, default_value = "127.0.0.1:8765")]
-        addr: String,
-    },
     /// Manage, show, or import Codex-compatible configuration.
     #[cfg(not(target_arch = "wasm32"))]
     Config {
         #[command(subcommand)]
         action: config_cmd::ConfigAction,
-    },
-    /// Resolve the local AI environment; mirror external agent sessions.
-    ///
-    /// `aphrody ai sync-sessions [--json] [--agent agy|codex|claude] [--watch
-    /// --interval-secs N]` mirrors the Antigravity CLI, Codex and Claude Code
-    /// transcripts into `~/.aphrody/sessions/<agent>/` incrementally.
-    ///
-    /// `aphrody ai env` writes `~/.aphrody/ai/local-ai.{json,env}` with the
-    /// eighteen canonical `APHRODY_AI_*` names this machine currently
-    /// resolves for the local/open-source AI stack (chat/code/reasoning/small,
-    /// vision, OCR, STT, embed, rerank, plus the `aphrody`/`aphrody-mcp`
-    /// binaries) — the same contract
-    /// `config/local-ai.json` documents. Add `--print
-    /// --format env|json|nu|pwsh` to also print them.
-    ///
-    /// Example: aphrody ai env --print --format nu
-    #[cfg(not(target_arch = "wasm32"))]
-    Ai {
-        #[command(subcommand)]
-        action: ai_env_cmd::AiAction,
     },
     /// Native platform probes for CPU, memory, CUDA and monotonic time.
     #[cfg(not(target_arch = "wasm32"))]
@@ -405,26 +240,9 @@ enum Commands {
         #[command(subcommand)]
         action: pillars_cmd::ShellAction,
     },
-    /// Forward vers le binaire natif OpenAI Codex (`codex`).
-    #[cfg(not(target_arch = "wasm32"))]
-    Codex {
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        args: Vec<String>,
-    },
     /// Machine learning training and fine-tuning engine.
     #[cfg(all(not(target_arch = "wasm32"), feature = "train"))]
     Train(train_cmd::TrainArgs),
-    /// Authentification Google (God Mode / OAuth2)
-    Auth {
-        #[arg(short, long)]
-        force: bool,
-    },
-    /// Gère le mirroring des assets MD3 (start, stop, status).
-    Mirror {
-        /// Action to perform: start, stop, or status.
-        #[arg(default_value = "start")]
-        action: String,
-    },
 
     /// Affiche la version et l'état du système
     Version {
@@ -444,30 +262,10 @@ enum Commands {
         #[command(subcommand)]
         action: A2aAction,
     },
-    /// Compilation hyper-optimisée de ChromeOS
-    Cros {
-        #[command(subcommand)]
-        action: CrosActions,
-    },
     /// Recherche Google Native
     Search {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         query: Vec<String>,
-    },
-    /// [DÉPRÉCIÉ] Alias de `agy` — le Gemini CLI a migré vers l'Antigravity
-    /// CLI. Honore encore `APHRODY_GEMINI_BIN` / un fork in-tree ; sinon
-    /// forwarde vers `agy`. Préférez `aphrody agy`.
-    Gemini {
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        args: Vec<String>,
-    },
-    /// Forward vers le binaire natif Antigravity CLI (`agy`).
-    ///
-    /// Résolution : $APHRODY_AGY_BIN > %LOCALAPPDATA%\agy\bin\agy.exe > PATH.
-    /// Pour la surface API pure (token + RPC, sans binaire), voir `antigravity`.
-    Agy {
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        args: Vec<String>,
     },
     /// Écosystème Google natif (DNS, Suggest, Translate, Gemini Web, Antigravity, Runtime)
     #[cfg(not(target_arch = "wasm32"))]
@@ -504,26 +302,11 @@ enum Commands {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Forward vers le CLI natif Niers (`niers`).
-    Nie {
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        args: Vec<String>,
-    },
     /// Safe cross-platform operator CLI for configured SSH hosts.
     #[cfg(not(target_arch = "wasm32"))]
     Ssh {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
-    },
-    /// Boucle de codage autonome pour le CLI Antigravity (`agy`) via ses hooks
-    /// `Stop` (pilote) et `PostInvocation` (comptage par tour). Câblé par le
-    /// plugin aphrody-agy ; `start`/`stop`/`status` pilotent la boucle, `hook`
-    /// est le driver invoqué par agy, `hooks-json` affiche le câblage.
-    #[cfg(not(target_arch = "wasm32"))]
-    #[command(name = "agy-loop")]
-    AgyLoop {
-        #[command(subcommand)]
-        action: agy_loop::AgyLoopAction,
     },
     /// Pont WebSocket-PTY pour le frontend WASM (localhost uniquement)
     Term {
@@ -643,17 +426,6 @@ enum Commands {
         #[command(subcommand)]
         action: index_cmd::IndexAction,
     },
-    /// Adobe Firefly Services image generation to disk.
-    ///
-    /// Built only with `--features firefly`. OAuth server-to-server (IMS):
-    /// reads `FIREFLY_CLIENT_ID` / `FIREFLY_CLIENT_SECRET` from the environment.
-    ///
-    /// Example: aphrody firefly generate "a realistic cat coding" --out ./out
-    #[cfg(all(not(target_arch = "wasm32"), feature = "firefly"))]
-    Firefly {
-        #[command(subcommand)]
-        action: firefly_cmd::FireflyAction,
-    },
     /// Memory: an application's local memory file (write, recall, list, delete, clear) and
     /// Tier-1 provider migration.
     ///
@@ -720,139 +492,6 @@ enum Commands {
         #[command(subcommand)]
         action: ocr_cmd::OcrAction,
     },
-    /// Run the unified turn-loop chat agent.
-    ///
-    /// Composes every aphrody building block (gemini-runtime + tools +
-    /// memory + session + permissions + hooks + prompts + router + cost +
-    /// context + events) into a complete chat agent. When `--prompt <text>`
-    /// is supplied, drives a single user→assistant turn and prints the assistant
-    /// reply. When omitted, launches an interactive multi-turn REPL session
-    /// supporting slash commands (`/help`, `/model`, `/tools`, `/exit`).
-    #[cfg(not(target_arch = "wasm32"))]
-    Chat {
-        /// One-shot prompt to send. When omitted, starts the interactive REPL.
-        #[arg(long, short)]
-        prompt: Option<String>,
-        /// Vendor-qualified model id (`gemini/default`, `anthropic/claude-opus-4-7`).
-        /// Default: `gemini/default`.
-        #[arg(long, short)]
-        model: Option<String>,
-        /// Override the default system prompt.
-        #[arg(long)]
-        system: Option<String>,
-        /// Force the in-process stub backend (skip live LLM detection).
-        /// Useful for CI / smoke runs that must not require any LLM backend.
-        #[arg(long)]
-        stub: bool,
-        /// Attach one or more local files (images, PDFs, documents, etc.) to the chat.
-        #[arg(long, short, value_name = "PATH")]
-        attach: Vec<std::path::PathBuf>,
-        /// Route chat directly to local LLM backend (llama-server / vLLM on loopback :8080).
-        #[arg(long, short = 'l')]
-        local: bool,
-    },
-    /// Agent multi-canaux voice-to-voice (Discord + X) — surpasse hermes-agent.
-    ///
-    /// Écoute un canal, répond via Gemini 3.5 Flash (token agy keyless), et —
-    /// avec `--voice` — transcrit l'audio entrant (Whisper) et synthétise la
-    /// réponse en audio (ElevenLabs) : boucle voice-to-voice complète, là où
-    /// hermes-agent ne fait que transcrire. Le canal X n'existe pas chez hermes.
-    ///
-    /// Credentials via env : `DISCORD_BOT_TOKEN` / `X_HANDLE`,
-    /// `OPENAI_API_KEY` (STT), `ELEVENLABS_API_KEY` (TTS).
-    #[cfg(not(target_arch = "wasm32"))]
-    Hermes {
-        /// Canal d'écoute.
-        #[arg(long, value_enum)]
-        channel: HermesChannelArg,
-        /// Active la boucle voice-to-voice (STT entrant + TTS sortant).
-        #[arg(long)]
-        voice: bool,
-        /// Ne répondre qu'aux messages contenant ce trigger (ex. `@aphrody`).
-        /// Vide = répondre à tout.
-        #[arg(long, default_value = "")]
-        trigger: String,
-        /// Id de modèle (défaut : flash tier via agy).
-        #[arg(long, short)]
-        model: Option<String>,
-        /// Backend stub déterministe (aucun LLM live) — pour CI / smoke headless.
-        #[arg(long)]
-        stub: bool,
-        /// Traite un message synthétique et sort (vérification headless, sans token canal).
-        #[arg(long)]
-        simulate: Option<String>,
-    },
-    /// Launch an autonomous agent — aphrody's flagship Antigravity-in-Rust surface.
-    ///
-    /// `aphrody agent "do X"` assembles the agent engine
-    /// (`aphrody-agent-runtime`) and runs it immediately. By default it drives
-    /// one full headless turn and prints the final agent message; `--tui`
-    /// launches the full-screen interactive surface (`aphrody-tui`) instead.
-    ///
-    /// The backend is a live Gemini client (`GEMINI_API_KEY` / `GOOGLE_API_KEY`)
-    /// unless `--stub` selects a deterministic offline replay (no network, no
-    /// key — handy for CI / smoke runs). Autonomy is full-auto per CLAUDE.md
-    /// §0.1; `--gated` requires approval for each tool call. When no prompt is
-    /// given in headless mode, one is read from stdin.
-    #[cfg(not(target_arch = "wasm32"))]
-    Agent {
-        /// The task prompt. When omitted (and not `--tui`), read from stdin.
-        prompt: Option<String>,
-        /// Launch the full-screen interactive TUI instead of a headless turn.
-        #[arg(long)]
-        tui: bool,
-        /// Deterministic offline backend (no network, no API key). For smoke / CI.
-        #[arg(long)]
-        stub: bool,
-        /// Model id (default: a fast Gemini flash tier).
-        #[arg(long, short)]
-        model: Option<String>,
-        /// Override the system prompt prepended to every model request.
-        #[arg(long)]
-        system: Option<String>,
-        /// Require approval for each tool call (`AutonomyMode::Gated`).
-        #[arg(long)]
-        gated: bool,
-        /// Working directory the tools resolve relative paths against.
-        #[arg(long)]
-        cwd: Option<PathBuf>,
-        /// In headless mode, echo streamed text / tool events on stderr.
-        #[arg(long, short)]
-        verbose: bool,
-    },
-    /// Serve the local Codex-shaped JSON-RPC app-server over stdin/stdout.
-    #[cfg(not(target_arch = "wasm32"))]
-    Session {
-        #[command(subcommand)]
-        action: SessionAction,
-    },
-    /// Envoie un message via Slack / Telegram / Matrix / Discord.
-    ///
-    /// Credentials lus depuis l'environnement (voir `aphrody notify --help`).
-    Notify {
-        /// Channel cible : slack, telegram, matrix ou discord.
-        #[arg(long, value_enum)]
-        channel: NotifyChannel,
-        /// Texte du message (plain-text).
-        #[arg(long, short)]
-        message: String,
-        /// Destinataire (chat ID Telegram, channel ID Slack, room ID Matrix,
-        /// channel ID Discord — ou `@<user id>` pour un DM Discord).
-        ///
-        /// Si absent, lu depuis `SLACK_CHANNEL`, `TELEGRAM_CHAT_ID`,
-        /// `MATRIX_ROOM_ID` ou `DISCORD_DM_CHANNEL_ID` selon le `--channel` choisi.
-        #[arg(long, short)]
-        room: Option<String>,
-        /// Fichiers à joindre au message (Discord uniquement pour l'instant).
-        #[arg(long = "attach", short = 'a')]
-        attach: Vec<std::path::PathBuf>,
-    },
-    /// Check or send transactional email through Resend or OVH SMTP.
-    #[cfg(not(target_arch = "wasm32"))]
-    Mail {
-        #[command(subcommand)]
-        action: MailAction,
-    },
     /// Génère des completions shell pour bash / zsh / fish / pwsh / elvish
     Completions {
         #[arg(value_enum)]
@@ -881,141 +520,6 @@ enum Commands {
         #[command(subcommand)]
         action: ScanAction,
     },
-    /// (ported from openclaw) Bootstrap aphrody local state + seed config.
-    #[cfg(not(target_arch = "wasm32"))]
-    OcOnboard {
-        /// Override the default agent workspace directory.
-        #[arg(long)]
-        workspace: Option<PathBuf>,
-        /// Run without interactive prompts (CI / scripts).
-        #[arg(long)]
-        non_interactive: bool,
-        /// Required with `--non-interactive`: acknowledge security defaults.
-        #[arg(long)]
-        accept_risk: bool,
-        /// Overwrite an existing aphrody.json instead of bailing out.
-        #[arg(long, short)]
-        force: bool,
-        /// Skip seeding the optional persona files (SOUL/IDENTITY/USER/
-        /// HEARTBEAT/BOOT); AGENTS.md and TOOLS.md are always seeded.
-        #[arg(long)]
-        skip_bootstrap: bool,
-    },
-    /// (ported from openclaw) Reset local state. Choose a scope:
-    /// `config`, `config-creds-sessions`, or `full`.
-    #[cfg(not(target_arch = "wasm32"))]
-    OcReset {
-        /// Reset scope.
-        #[arg(long, value_enum)]
-        scope: oc_cmd::ResetScope,
-        /// Confirm the destructive operation (required unless --dry-run).
-        #[arg(long)]
-        yes: bool,
-        /// Preview deletions without touching disk.
-        #[arg(long)]
-        dry_run: bool,
-    },
-    /// (ported from openclaw) Uninstall aphrody scopes (service / state /
-    /// workspace / app, or `--all`).
-    #[cfg(not(target_arch = "wasm32"))]
-    OcUninstall {
-        #[arg(long)]
-        service: bool,
-        #[arg(long)]
-        state: bool,
-        #[arg(long)]
-        workspace: bool,
-        #[arg(long)]
-        app: bool,
-        #[arg(long)]
-        all: bool,
-        #[arg(long)]
-        yes: bool,
-        #[arg(long)]
-        dry_run: bool,
-    },
-    /// (ported from openclaw) Secure DM pairing — list / approve / inject
-    /// requests against the local pairing store (~/.aphrody/pairing.json).
-    #[cfg(not(target_arch = "wasm32"))]
-    OcPairing {
-        #[command(subcommand)]
-        action: oc_cmd::PairingAction,
-    },
-    /// (ported from openclaw) Open or search the documentation site.
-    #[cfg(not(target_arch = "wasm32"))]
-    OcDocs {
-        /// Free-form search query (joined with spaces).
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        query: Vec<String>,
-        /// Print only the URL; do not attempt to open a browser.
-        #[arg(long)]
-        url_only: bool,
-    },
-    /// Google NotebookLM RPC client — notebooks / sources / chat / artifacts.
-    ///
-    /// Honours `NOTEBOOKLM_OAUTH_TOKEN` or `NOTEBOOKLM_COOKIES` env vars.
-    /// Also requires `NOTEBOOKLM_AT_TOKEN` + `NOTEBOOKLM_BL_TOKEN` (the
-    /// per-session XSRF + bootstrap config strings the web UI exports).
-    #[cfg(not(target_arch = "wasm32"))]
-    Notebooklm {
-        #[command(subcommand)]
-        action: NotebooklmActions,
-    },
-    /// Native Google AI Ultra / Gemini client (Antigravity). Scriptable,
-    /// non-interactive, JSON output — `models`, `whoami`, `load`, `chat`.
-    ///
-    /// Reads the OAuth token at runtime from the platform credential store
-    /// (Windows Credential Manager entry `gemini:antigravity`); no secret is
-    /// embedded in the binary. On platforms without a credential store the
-    /// underlying SDK returns an "unsupported platform" error.
-    ///
-    /// Example: aphrody antigravity chat --model gemini-2.0-flash --prompt "hi" | jq
-    /// '.candidates[0].content'
-    #[cfg(not(target_arch = "wasm32"))]
-    Antigravity {
-        #[command(subcommand)]
-        action: antigravity_cmd::AntigravityAction,
-    },
-    /// Export the canonical aphrody logo (`crates/ui/identity/assets/logo/aphrody.webp`).
-    #[cfg(not(target_arch = "wasm32"))]
-    Logo {
-        /// Write a multi-resolution Windows `.ico` (16/32/48/64/128/256) here.
-        #[arg(long)]
-        ico: Option<std::path::PathBuf>,
-        /// Write a scalable `.svg` here.
-        #[arg(long)]
-        svg: Option<std::path::PathBuf>,
-        /// Write an M3 maskable adaptive-icon PNG here (uses `--size`).
-        #[arg(long)]
-        maskable: Option<std::path::PathBuf>,
-        /// Pixel side for the maskable PNG export.
-        #[arg(long, default_value_t = 512)]
-        size: u32,
-    },
-    /// Material 3 design-token tooling (color CSS export + UI fusion sheet).
-    #[cfg(not(target_arch = "wasm32"))]
-    Design {
-        #[command(subcommand)]
-        action: DesignActions,
-    },
-    /// Antigravity IDE installation inspector — info, extensions, RE, state,
-    /// and launch.
-    ///
-    /// All sub-commands are read-only except `launch`. Resolution order for
-    /// the install dir: env `APHRODY_IDE_DIR` > OS default paths.
-    ///
-    /// Example: aphrody ide info --json | jq '.ideVersion'
-    #[cfg(not(target_arch = "wasm32"))]
-    Ide {
-        #[command(subcommand)]
-        action: ide_cmd::IdeAction,
-    },
-    /// Gestion du VPN Mullvad et du contournement géo pour Google AI / agy.
-    #[cfg(not(target_arch = "wasm32"))]
-    Vpn {
-        #[command(subcommand)]
-        action: vpn_cmd::VpnAction,
-    },
     /// Native Windows computer use and OS control via the in-process aphrody-winclean crate.
     ///
     /// Example: aphrody winclean call computer_click --arg windowHandle=0 --arg x=120 --arg y=48
@@ -1030,123 +534,6 @@ enum Commands {
     // dispatch arm uses `Commands::Auto(_)`. Native dispatch reads it.
     #[cfg_attr(target_arch = "wasm32", allow(dead_code))]
     Auto(Vec<String>),
-}
-
-/// Local app-server lifecycle commands.
-#[cfg(not(target_arch = "wasm32"))]
-#[derive(Subcommand)]
-enum SessionAction {
-    /// Multiplex threads and local model turns over newline-delimited JSON-RPC.
-    Serve {
-        /// Expose HTTP JSON-RPC instead of stdio.
-        #[arg(long)]
-        http: bool,
-        /// Local bind address for HTTP mode (app-server port; 8789 belongs to aphrody-mcp http).
-        #[arg(long, default_value = "127.0.0.1:8765")]
-        addr: String,
-    },
-}
-
-/// Actions for the `design` subcommand.
-#[cfg(not(target_arch = "wasm32"))]
-#[derive(Subcommand, Debug, Clone)]
-pub(crate) enum DesignActions {
-    /// Emit Material 3 color tokens as CSS custom properties.
-    ///
-    /// Default: the M3 `--md-sys-color-*` `:root` block only. With `--fusion`,
-    /// also emit the shadcn/ui alias block and the Tailwind v4 `@theme inline`
-    /// block — the materialised three-way UI fusion (see docs/design/FUSION-PLAN.md).
-    Tokens {
-        /// Output format: raw CSS, or a shadcn `registry:theme` item (JSON).
-        #[arg(long, value_enum, default_value_t = TokensFormat::Css)]
-        format: TokensFormat,
-        /// (CSS format) Also emit shadcn + Tailwind v4 alias sheets (fusion).
-        #[arg(long)]
-        fusion: bool,
-        /// Use the M3 dark baseline palette instead of the light one.
-        #[arg(long)]
-        dark: bool,
-        /// Write to this file instead of stdout.
-        #[arg(short, long)]
-        output: Option<std::path::PathBuf>,
-    },
-}
-
-/// Output format for `design tokens`.
-#[cfg(not(target_arch = "wasm32"))]
-#[derive(clap::ValueEnum, Debug, Clone, Default)]
-pub(crate) enum TokensFormat {
-    /// Raw CSS custom properties (`:root { --md-sys-color-* }`; `--fusion` adds
-    /// the shadcn + Tailwind v4 alias sheets).
-    #[default]
-    Css,
-    /// shadcn/ui `registry:theme` item (JSON): `cssVars.theme` aliases shadcn
-    /// tokens to `var(--md-sys-color-*)`, `cssVars.light`/`dark` carry the M3
-    /// palette. Consumable via `shadcn add <url>`.
-    ShadcnRegistry,
-}
-
-/// Actions for the `notebooklm` kernel subcommand.
-#[cfg(not(target_arch = "wasm32"))]
-#[derive(Subcommand, Debug, Clone)]
-pub(crate) enum NotebooklmActions {
-    /// List every notebook owned by the active account.
-    List,
-    /// Create a fresh empty notebook.
-    Create {
-        /// Title to assign to the new notebook (uses upstream default if absent).
-        #[arg(long, short)]
-        title: Option<String>,
-    },
-    /// Delete a notebook by id.
-    Delete {
-        /// Notebook id to delete.
-        notebook_id: String,
-    },
-    /// Attach a source to a notebook (URL or local file path, auto-detected).
-    Upload {
-        /// Target notebook id.
-        notebook_id: String,
-        /// URL (http://, https://) or path to a local file.
-        source: String,
-    },
-    /// Send a chat message and print the reply on stdout.
-    Chat {
-        /// Target notebook id.
-        notebook_id: String,
-        /// Prompt to send.
-        prompt: String,
-    },
-    /// Kick off an artifact generation workflow.
-    Generate {
-        /// Target notebook id.
-        notebook_id: String,
-        /// Kind of artifact (`audio`, `report`, `video`, `quiz`, `mind_map`,
-        /// `flashcards`, `infographic`, `slide_deck`, `data_table`).
-        #[arg(long, short)]
-        kind: String,
-        /// Optional natural-language instructions for the workflow.
-        #[arg(long, short)]
-        prompt: Option<String>,
-    },
-    /// Wait for an artifact to reach `COMPLETE` state and download it locally.
-    Download {
-        /// Target notebook id (used to scope the poll).
-        notebook_id: String,
-        /// Artifact id returned by a previous `generate` call.
-        artifact_id: String,
-        /// Output path for the downloaded payload.
-        #[arg(long, short)]
-        output: std::path::PathBuf,
-    },
-}
-
-#[derive(Subcommand)]
-enum CrosActions {
-    /// Synchronisation ultra-rapide (shallow clone)
-    Sync,
-    /// Compilation GN/Ninja avec SCCache et optimisation multi-coeur
-    Build,
 }
 
 /// `aphrody a2a` — file JSONL coordination + A2A 1.0 HTTP listener.
@@ -1588,60 +975,11 @@ use crate::nl_tokens::is_natural_language_prompt;
 #[cfg(not(target_arch = "wasm32"))]
 async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
     let overrides = cli.agent_options.overrides();
-    if let Some(prompt) = cli.interactive.as_ref() {
-        if cli.command.is_some() {
-            return Err(miette::miette!("-i/--interactive cannot be combined with a subcommand"));
-        }
-        agent_run::run(
-            agent_run::AgentArgs {
-                prompt: Some(prompt.clone()),
-                tui: true,
-                stub: false,
-                model: None,
-                system: None,
-                gated: false,
-                cwd: None,
-                verbose: false,
-            },
-            overrides,
-        )
-        .await?;
-        return Ok(());
-    }
     match cli.command {
         #[cfg(feature = "rag")]
         Some(Commands::Rag(args)) => rag_cmd::run(args, overrides).await?,
         Some(Commands::LlamaDaemon { state_root, role }) => {
             oss_cmd::run_daemon(state_root, role).await?
-        },
-        Some(Commands::Exec(mut args)) => {
-            if cli.agent_options.yolo {
-                args.max_tool_iterations = 0;
-            }
-            exec_cmd::run(*args, overrides).await?;
-        },
-        Some(Commands::Resume(args)) => {
-            exec_cmd::run(
-                exec_cmd::ExecArgs {
-                    command: Some(exec_cmd::ExecCommand::Resume(args)),
-                    ..Default::default()
-                },
-                overrides,
-            )
-            .await?;
-        },
-        Some(Commands::Fork(args)) => {
-            exec_cmd::run(
-                exec_cmd::ExecArgs {
-                    command: Some(exec_cmd::ExecCommand::Fork(args)),
-                    ..Default::default()
-                },
-                overrides,
-            )
-            .await?;
-        },
-        Some(Commands::AppServer { http, addr }) => {
-            app_server_cmd::run(SessionAction::Serve { http, addr }).await?;
         },
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Gateway { action }) => {
@@ -1656,10 +994,6 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 cli.agent_options.local_provider.clone(),
             )
             .await?;
-        },
-        #[cfg(not(target_arch = "wasm32"))]
-        Some(Commands::Ai { action }) => {
-            ai_env_cmd::run(action).await?;
         },
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Native { action }) => {
@@ -1677,14 +1011,8 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         Some(Commands::Shell { action }) => {
             pillars_cmd::handle_shell(action)?;
         },
-        Some(Commands::Codex { args }) => {
-            commands::CodexCommand { args }.execute(ctx).await?;
-        },
         #[cfg(feature = "train")]
         Some(Commands::Train(args)) => train_cmd::run(args).await?,
-        Some(Commands::Auth { force }) => {
-            commands::AuthCommand { force }.execute(ctx).await?;
-        },
         Some(Commands::Pure(args)) => {
             let output = aphrody_command_pure::run(&args.command, &mut aphrody_command_pure::StdIo)
                 .map_err(|e| miette::miette!("{e}"))?;
@@ -1696,27 +1024,12 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         Some(Commands::Doctor { json }) => {
             DoctorCommand { json_output: json }.execute(ctx).await?;
         },
-        Some(Commands::Mirror { action }) => {
-            MirrorCommand { action }.execute(ctx).await?;
-        },
 
         Some(Commands::A2a { action }) => {
             commands::dispatch_a2a(action, ctx).await?;
         },
-        Some(Commands::Cros { action }) => {
-            commands::CrosCommand { action }.execute(ctx).await?;
-        },
         Some(Commands::Search { query }) => {
             commands::SearchCommand { query }.execute(ctx).await?;
-        },
-        Some(Commands::Gemini { args }) => {
-            commands::GeminiCommand { args }.execute(ctx).await?;
-        },
-        Some(Commands::AgyLoop { action }) => {
-            agy_loop::run(action)?;
-        },
-        Some(Commands::Agy { args }) => {
-            commands::AgyCommand { args }.execute(ctx).await?;
         },
         Some(Commands::Google { args }) => {
             commands::GoogleCommand { args }.execute(ctx).await?;
@@ -1728,9 +1041,6 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         },
         Some(Commands::N2b { args }) => {
             commands::N2bCommand { args }.execute(ctx).await?;
-        },
-        Some(Commands::Nie { args }) => {
-            commands::NieCommand { args }.execute(ctx).await?;
         },
         Some(Commands::Ssh { args }) => {
             commands::SshCommand { args }.execute(ctx).await?;
@@ -2020,44 +1330,9 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
             ocr_cmd::run(action).await?;
         },
 
-        #[cfg(feature = "firefly")]
-        Some(Commands::Firefly { action }) => {
-            firefly_cmd::run(action).await?;
-        },
         #[cfg(feature = "forensics")]
         Some(Commands::Forensics { action }) => {
             forensics_cmd::run(action).await?;
-        },
-        Some(Commands::Chat { prompt, model, system, stub, attach, local }) => {
-            commands::ChatCommand { prompt, model, system, stub, attach, local }
-                .execute(ctx)
-                .await?;
-        },
-        Some(Commands::Notify { channel, message, room, attach }) => {
-            commands::NotifyCommand { channel, message, room, attach }.execute(ctx).await?;
-        },
-        #[cfg(not(target_arch = "wasm32"))]
-        Some(Commands::Mail { action }) => {
-            commands::MailCommand { action }.execute(ctx).await?;
-        },
-        #[cfg(not(target_arch = "wasm32"))]
-        Some(Commands::Hermes { channel, voice, trigger, model, stub, simulate }) => {
-            let ch = match channel {
-                HermesChannelArg::Discord => agent_cmd::HermesChannel::Discord,
-                HermesChannelArg::X => agent_cmd::HermesChannel::X,
-            };
-            agent_cmd::run(ch, voice, trigger, model, stub, simulate).await?;
-        },
-        #[cfg(not(target_arch = "wasm32"))]
-        Some(Commands::Agent { prompt, tui, stub, model, system, gated, cwd, verbose }) => {
-            agent_run::run(
-                agent_run::AgentArgs { prompt, tui, stub, model, system, gated, cwd, verbose },
-                overrides,
-            )
-            .await?;
-        },
-        Some(Commands::Session { action }) => {
-            app_server_cmd::run(action).await?;
         },
         Some(Commands::Completions { shell }) => {
             let mut cmd = Cli::command();
@@ -2108,71 +1383,6 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 scan_cmd::ManifestsCommand { root, output }.execute(ctx).await?;
             },
         },
-        Some(Commands::OcOnboard {
-            workspace,
-            non_interactive,
-            accept_risk,
-            force,
-            skip_bootstrap,
-        }) => {
-            oc_cmd::OnboardCommand {
-                workspace,
-                non_interactive,
-                accept_risk,
-                force,
-                skip_bootstrap,
-            }
-            .execute(ctx)
-            .await?;
-        },
-        Some(Commands::OcReset { scope, yes, dry_run }) => {
-            oc_cmd::ResetCommand { scope, yes, dry_run }.execute(ctx).await?;
-        },
-        Some(Commands::OcUninstall { service, state, workspace, app, all, yes, dry_run }) => {
-            oc_cmd::UninstallCommand { service, state, workspace, app, all, yes, dry_run }
-                .execute(ctx)
-                .await?;
-        },
-        Some(Commands::OcPairing { action }) => {
-            oc_cmd::PairingCommand { action }.execute(ctx).await?;
-        },
-        Some(Commands::OcDocs { query, url_only }) => {
-            oc_cmd::DocsCommand { query, url_only }.execute(ctx).await?;
-        },
-        Some(Commands::Notebooklm { action }) => {
-            commands::NotebooklmCommand { action }.execute(ctx).await?;
-        },
-        Some(Commands::Antigravity { action }) => antigravity_cmd::run(action).await?,
-        Some(Commands::Logo { ico, svg, maskable, size }) => {
-            use aphrody_identity::logo;
-            let mut wrote = false;
-            if let Some(p) = ico {
-                logo::write_ico(&p).map_err(|e| miette::miette!("logo ico: {e}"))?;
-                println!("wrote {}", p.display());
-                wrote = true;
-            }
-            if let Some(p) = svg {
-                logo::write_svg(&p).map_err(|e| miette::miette!("logo svg: {e}"))?;
-                println!("wrote {}", p.display());
-                wrote = true;
-            }
-            if let Some(p) = maskable {
-                let png = logo::maskable_png(size, logo::BRAND_BG)
-                    .map_err(|e| miette::miette!("logo maskable: {e}"))?;
-                std::fs::write(&p, png)
-                    .map_err(|e| miette::miette!("write {}: {e}", p.display()))?;
-                println!("wrote {}", p.display());
-                wrote = true;
-            }
-            if !wrote {
-                println!(
-                    "Choose an output: --ico <path>, --svg <path>, or --maskable <path> (PNG; --size sets its pixel side)."
-                );
-            }
-        },
-        Some(Commands::Design { action }) => design_cmd::run(action)?,
-        Some(Commands::Ide { action }) => ide_cmd::run(action).await?,
-        Some(Commands::Vpn { action }) => vpn_cmd::run(action).await?,
         Some(Commands::Winclean { action }) => winclean_cmd::run(action).await?,
         Some(Commands::Auto(args)) => {
             if let Some(feature) = missing_command_feature(&args) {
@@ -2199,25 +1409,7 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
             }
         },
         None => {
-            use std::io::IsTerminal as _;
-            if bare_cli_opens_tui(std::io::stdin().is_terminal(), std::io::stdout().is_terminal()) {
-                agent_run::run(
-                    agent_run::AgentArgs {
-                        prompt: None,
-                        tui: true,
-                        stub: false,
-                        model: None,
-                        system: None,
-                        gated: false,
-                        cwd: None,
-                        verbose: false,
-                    },
-                    overrides,
-                )
-                .await?;
-            } else {
-                commands::AutoCommand { args: vec![] }.execute(ctx).await?;
-            }
+            commands::AutoCommand { args: vec![] }.execute(ctx).await?;
         },
     }
 
@@ -2425,26 +1617,15 @@ pub fn run_wasm() {
         Some(other) => {
             let name = match other {
                 Commands::Pure(_) => unreachable!(),
-                Commands::Auth { .. } => "auth",
-                Commands::Mirror { .. } => "mirror",
 
                 Commands::A2a { .. } => "a2a",
-                Commands::Cros { .. } => "cros",
                 Commands::Search { .. } => "search",
-                Commands::Gemini { .. } => "gemini",
-                Commands::Agy { .. } => "agy",
                 Commands::N2b { .. } => "n2b",
-                Commands::Nie { .. } => "nie",
                 Commands::Doctor { .. } => "doctor",
                 Commands::Term { .. } => "term",
-                Commands::Notify { .. } => "notify",
-                #[cfg(not(target_arch = "wasm32"))]
-                Commands::Mail { .. } => "mail",
                 Commands::Completions { .. } => "completions",
                 Commands::SelfCmd { .. } => "self",
                 Commands::Scan { .. } => "scan",
-                #[cfg(not(target_arch = "wasm32"))]
-                Commands::Vpn { .. } => "vpn",
                 #[cfg(not(target_arch = "wasm32"))]
                 Commands::Winclean { .. } => "winclean",
                 Commands::Auto(_) => "auto",
@@ -2506,36 +1687,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(target_arch = "wasm32"))]
-    fn session_serve_http_defaults_to_app_server_port() {
-        in_large_stack(|| {
-            let cli = Cli::try_parse_from(["aphrody", "session", "serve", "--http"])
-                .expect("session serve parses");
-            match cli.command {
-                Some(Commands::Session { action: SessionAction::Serve { http, addr } }) => {
-                    assert!(http);
-                    assert_eq!(addr, "127.0.0.1:8765");
-                },
-                _ => panic!("expected session serve"),
-            }
-        });
-    }
-
-    #[test]
-    #[cfg(not(target_arch = "wasm32"))]
-    fn interactive_entry_requires_two_terminals_and_accepts_prompt() {
-        assert!(bare_cli_opens_tui(true, true));
-        assert!(!bare_cli_opens_tui(true, false));
-        assert!(!bare_cli_opens_tui(false, true));
-        in_large_stack(|| {
-            let cli = Cli::try_parse_from(["aphrody", "-i", "inspect the workspace"])
-                .expect("interactive prompt parses");
-            assert_eq!(cli.interactive.as_deref(), Some("inspect the workspace"));
-            assert!(cli.command.is_none());
-        });
-    }
-
-    #[test]
     #[cfg(all(not(target_arch = "wasm32"), not(feature = "rag")))]
     fn disabled_feature_command_reports_required_feature() {
         in_large_stack(|| {
@@ -2551,42 +1702,6 @@ mod tests {
     fn command_graph_has_no_inherited_agent_flag_conflicts() {
         in_large_stack(|| {
             Cli::command().debug_assert();
-        });
-    }
-
-    #[test]
-    #[cfg(not(target_arch = "wasm32"))]
-    fn agent_flags_preserve_legacy_short_flags_and_mcp_config_type() {
-        in_large_stack(|| {
-            let cli = Cli::try_parse_from(["aphrody", "chat", "-p", "hello", "-m", "legacy-model"])
-                .expect("chat keeps its prompt shorthand");
-            assert!(
-                matches!(cli.command, Some(Commands::Chat { prompt: Some(prompt), .. }) if prompt == "hello")
-            );
-            let cli = Cli::try_parse_from(["aphrody", "mcp", "list", "--config", "custom.json"])
-                .expect("MCP config remains a filesystem path");
-            assert!(cli.agent_options.config.is_empty());
-            let cli = Cli::try_parse_from([
-                "aphrody",
-                "-m",
-                "root-model",
-                "exec",
-                "--stub",
-                "-m",
-                "exec-model",
-                "resume",
-                "--last",
-                "-m",
-                "session-model",
-                "continue",
-            ])
-            .expect("agent options work at each agent command boundary");
-            let Some(Commands::Exec(args)) = cli.command else { panic!("exec") };
-            let inherited = args.options.apply_to(cli.agent_options.overrides());
-            let Some(exec_cmd::ExecCommand::Resume(session)) = args.command else {
-                panic!("resume")
-            };
-            assert_eq!(session.options.apply_to(inherited).model.as_deref(), Some("session-model"));
         });
     }
 

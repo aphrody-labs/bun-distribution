@@ -67,7 +67,6 @@ aphrody-backend = { path = "crates/os/backend", version = "1.0.0-canary", featur
 aphrody-base = { path = "crates/os/base", version = "1.0.0-canary", features = [] }
 aphrody-boq = { path = "crates/google/boq", version = "1.0.0", features = [] }
 aphrody-capture = { path = "crates/os/capture", version = "1.0.0-canary", features = [] }
-aphrody-chat = { path = "crates/ai/chat", version = "1.0.0", features = [] }
 aphrody-config = { path = "crates/ai/config", version = "1.0.0", features = [] }
 aphrody-diagnostics = { path = "crates/os/diagnostics", version = "1.0.0" }
 aphrody-context = { path = "crates/ai/context", version = "1.0.0", features = [] }
@@ -97,7 +96,6 @@ aphrody-mcp = { path = "crates/ai/mcp", version = "1.0.0" }
 aphrody-mcp-client = { path = "crates/ai/mcp-client", version = "1.0.0", features = [] }
 aphrody-mcp-oauth = { path = "crates/ai/mcp-oauth", version = "1.0.0", features = [] }
 aphrody-memory = { path = "crates/ai/memory", version = "1.0.0", features = [] }
-aphrody-messaging = { path = "crates/ai/messaging", version = "1.0.0", features = [] }
 aphrody-model-antigravity = { path = "crates/google/model-antigravity", version = "1.0.0", features = [] }
 aphrody-model-client = { path = "crates/ai/model-client", version = "1.0.0", features = [] }
 aphrody-models = { path = "crates/ai/models", version = "1.0.0", features = [] }
@@ -105,7 +103,6 @@ aphrody-n2b = { path = "crates/compat/n2b", version = "0.6.2", features = [] }
 aphrody-n2b-core = { path = "crates/compat/n2b-core", version = "0.6.2", features = [] }
 aphrody-n2b-types = { path = "crates/compat/n2b-types", version = "0.6.2", features = [] }
 aphrody-native = { path = "crates/native/native", version = "1.0.0-canary", features = [] }
-aphrody-notebooklm = { path = "crates/google/notebooklm", version = "1.0.0", features = [] }
 aphrody-ocr = { path = "crates/ai/ocr", version = "1.0.0", features = [] }
 aphrody-ocr-core = { path = "crates/ai/ocr-core", version = "1.0.0", features = [] }
 aphrody-ocr-onnx = { path = "crates/ai/ocr-onnx", version = "1.0.0", features = [] }
@@ -143,7 +140,6 @@ aphrody-translate = { path = "crates/ai/translate", version = "1.0.0", features 
 aphrody-command-wasm = { path = "crates/infra/aphrody-command-wasm", version = "1.0.0", features = [] }
 aphrody-command-pure = { path = "crates/infra/aphrody-command-pure", version = "1.0.0", features = [] }
 aphrody-translate-core = { path = "crates/ai/translate-core", version = "1.0.0", features = [] }
-aphrody-tui = { path = "crates/shell/tui", version = "1.0.0-canary", features = [] }
 aphrody-vision = { path = "crates/ai/vision", version = "1.0.0", features = [] }
 aphrody-voice = { path = "crates/ai/voice", version = "1.0.0", features = [] }
 aphrody-vpn = { path = "crates/infra/vpn", version = "0.1.0", features = [] }

@@ -404,11 +404,11 @@ pub(crate) fn profile_sqlite_path(overrides: &CliOverrides) -> miette::Result<Pa
         overrides.profile.as_deref(),
         std::env::var(aphrody_config::profile::ENV_APHRODY_PROFILE).ok().as_deref(),
     );
-    let config = crate::exec_cmd::load_config(&overrides)?;
+    let config = crate::profile::load_config(&overrides)?;
     if config.active_profile.is_none() {
         return Ok(default_sqlite_path());
     }
-    let root = crate::exec_cmd::profile_state_root(&config)?;
+    let root = crate::profile::profile_state_root(&config)?;
     let services = aphrody_agent_home::ProfileServiceContext::from_config(root, &config)
         .map_err(|error| miette::miette!("memory profile: {error}"))?;
     services.local_memory_path().map(Path::to_path_buf).ok_or_else(|| {
