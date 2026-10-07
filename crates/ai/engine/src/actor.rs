@@ -11,7 +11,7 @@
 
 use std::sync::Arc;
 
-use aphrody_agent_proto::{Event, Op, Submission};
+use aphrody_agent_proto::{Event, EventMsg, Op, Submission};
 use aphrody_model_client::ModelClient;
 use aphrody_rollout::RolloutRecorder;
 use aphrody_toolcall::ToolRegistry;
@@ -22,7 +22,7 @@ use crate::{
     config::AutonomyMode,
     session::Session,
     sink::EventSink,
-    turn::{InterruptFlag, SteerQueue, record_compaction_checkpoint, run_turn_with_controls},
+    turn::{InterruptFlag, SteerQueue, emit, record_compaction_checkpoint, run_turn_with_controls},
 };
 
 /// Handle to a spawned session actor.
@@ -185,18 +185,45 @@ async fn compact_session(
     rollout: Option<&RolloutRecorder>,
     events: &EventSink,
 ) {
-    let Some(report) = session.compact(context_window) else { return };
-    tracing::info!(
-        compacted_messages = report.compacted_messages,
-        retained_messages = report.retained_messages,
-        tokens_before = report.tokens_before,
-        tokens_after = report.tokens_after,
-        within_target = report.within_target,
-        source_fingerprint = %report.source_fingerprint,
-        "explicitly compacted agent history"
-    );
-    if let Err(error) = record_compaction_checkpoint(session, rollout).await {
-        events.emit(aphrody_agent_proto::EventMsg::Error { message: error.to_string() });
+    let item_id = Submission::new(Op::Compact).id;
+    if let Err(error) =
+        emit(events, rollout, EventMsg::ContextCompactionStarted { item_id: item_id.clone() }).await
+    {
+        compaction_failed(events, rollout, error).await;
+        return;
+    }
+    if let Some(report) = session.compact(context_window) {
+        tracing::info!(
+            compacted_messages = report.compacted_messages,
+            retained_messages = report.retained_messages,
+            tokens_before = report.tokens_before,
+            tokens_after = report.tokens_after,
+            within_target = report.within_target,
+            source_fingerprint = %report.source_fingerprint,
+            "explicitly compacted agent history"
+        );
+        if let Err(error) = record_compaction_checkpoint(session, rollout).await {
+            compaction_failed(events, rollout, error).await;
+            return;
+        }
+    }
+    if let Err(error) =
+        emit(events, rollout, EventMsg::ContextCompactionCompleted { item_id }).await
+    {
+        compaction_failed(events, rollout, error).await;
+    }
+}
+
+async fn compaction_failed(
+    events: &EventSink,
+    rollout: Option<&RolloutRecorder>,
+    error: crate::EngineError,
+) {
+    let msg = EventMsg::Error { message: error.to_string() };
+    // Try to persist the terminal error, but a failed recorder must not
+    // prevent the live client from observing failure and releasing its turn.
+    if emit(events, rollout, msg.clone()).await.is_err() {
+        events.emit(msg);
     }
 }
 

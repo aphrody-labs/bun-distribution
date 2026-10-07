@@ -152,12 +152,17 @@ struct PendingCall {
 
 /// Emit `msg` to the sink and, when a recorder is present, mirror it to the
 /// rollout as a serialized [`Event`].
-async fn emit(
+pub(crate) async fn emit(
     events: &EventSink,
     rollout: Option<&RolloutRecorder>,
     msg: EventMsg,
 ) -> Result<(), EngineError> {
-    let complete = matches!(&msg, EventMsg::TurnComplete { .. });
+    let complete = matches!(
+        &msg,
+        EventMsg::TurnComplete { .. }
+            | EventMsg::ContextCompactionCompleted { .. }
+            | EventMsg::Error { .. }
+    );
     let event = Event::new(msg);
     if let Some(rec) = rollout {
         rec.record_async(serde_json::to_value(&event).map_err(RolloutError::from)?).await?;

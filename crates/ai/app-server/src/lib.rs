@@ -28,8 +28,8 @@ use aphrody_app_protocol::{
     ClientRequest, ConfigReadParams, InitializeParams, JSONRPCError, JSONRPCNotification,
     JSONRPCRequest, JSONRPCResponse, ListMcpServerStatusParams, LlamaStatusResponse,
     LoginAccountParams, ModelListParams, RequestId, ShutdownResponse, ThreadArchiveParams,
-    ThreadCloseParams, ThreadCloseResponse, ThreadCompactStartParams, ThreadForkParams,
-    ThreadListParams, ThreadReadParams, ThreadResumeParams, ThreadStartParams,
+    ThreadCloseParams, ThreadCloseResponse, ThreadCompactStartParams, ThreadCompactStartResponse,
+    ThreadForkParams, ThreadListParams, ThreadReadParams, ThreadResumeParams, ThreadStartParams,
     ThreadUnarchiveParams, ThreadUnarchiveResponse, ToolsListParams, TrainStatusResponse,
     TurnEventsParams, TurnEventsResponse, TurnInterruptParams, TurnStartParams, TurnSteerParams,
     UserInput,
@@ -279,6 +279,7 @@ struct ThreadState {
     handle: aphrody_engine::SessionHandle,
     _provider_lease: ProviderLease,
     active_turn: Option<Value>,
+    is_compaction: bool,
     interrupt_requested: bool,
     message_started: bool,
     /// Tool calls started but not yet finished, keyed by provider call id.
@@ -670,6 +671,7 @@ impl AppServer {
                 handle,
                 _provider_lease: provider_lease,
                 active_turn: None,
+                is_compaction: false,
                 interrupt_requested: false,
                 message_started: false,
                 open_tool_calls: HashMap::new(),
@@ -995,6 +997,9 @@ impl AppServer {
                 let thread = self.threads.get_mut(thread_id).ok_or_else(|| {
                     AppServerError::InvalidRequest(format!("unknown thread: {thread_id}"))
                 })?;
+                while let Ok(event) = thread.events.try_recv() {
+                    self.notifications.extend(thread.observe(&event));
+                }
                 if thread.active_turn.is_some() {
                     return Err(AppServerError::InvalidRequest(
                         "cannot compact while a turn is active".into(),
@@ -1004,7 +1009,17 @@ impl AppServer {
                     .handle
                     .submit(Op::Compact)
                     .map_err(|_| AppServerError::Runtime("session actor stopped".into()))?;
-                Ok(json!({"status": "started"}))
+                // Reserve the turn before returning, so another request cannot
+                // race the actor's compaction-start notification.
+                thread.active_turn = Some(json!({
+                    "id": format!("{thread_id}-turn-{}", thread.info.turns.len() + 1),
+                    "items": [], "status": "inProgress", "error": null,
+                }));
+                thread.is_compaction = true;
+                thread.interrupt_requested = false;
+                thread.message_started = false;
+                thread.info.status = json!({"type": "active", "activeFlags": []});
+                Ok(serde_json::to_value(ThreadCompactStartResponse {})?)
             },
             ClientRequest::TurnEvents { params: TurnEventsParams { thread_id }, .. } => {
                 let thread = self.threads.get_mut(&thread_id).ok_or_else(|| {
@@ -1151,6 +1166,11 @@ impl AppServer {
                         "turnId does not match the active turn".into(),
                     ));
                 }
+                if thread.is_compaction {
+                    return Err(AppServerError::InvalidRequest(
+                        "native structural compaction cannot be interrupted".into(),
+                    ));
+                }
                 thread
                     .handle
                     .submit(Op::Interrupt)
@@ -1243,6 +1263,7 @@ impl AppServer {
                     .submit(Op::UserInput { items })
                     .map_err(|_| AppServerError::Runtime("session actor stopped".into()))?;
                 thread.active_turn = Some(turn.clone());
+                thread.is_compaction = false;
                 thread.interrupt_requested = false;
                 thread.message_started = false;
                 thread.info.status = json!({"type": "active", "activeFlags": []});
@@ -1430,6 +1451,28 @@ const BXC_TOOL_NAMES: [&str; 5] = ["web_search", "web_scrape", "js_eval", "googl
 
 impl ThreadState {
     fn observe(&mut self, event: &Event) -> Vec<Value> {
+        if let EventMsg::ContextCompactionStarted { item_id } = &event.msg {
+            self.is_compaction = true;
+            let turn = self.active_turn.get_or_insert_with(|| {
+                json!({
+                    "id": format!("{}-turn-{}", self.info.id, self.info.turns.len() + 1),
+                    "items": [], "status": "inProgress", "error": null,
+                })
+            });
+            let item = json!({"type": "contextCompaction", "id": item_id});
+            let started =
+                notification("turn/started", json!({"threadId": self.info.id, "turn": turn}));
+            turn["items"].as_array_mut().expect("turn items").push(item.clone());
+            self.info.status = json!({"type": "active", "activeFlags": []});
+            self.info.updated_at = now();
+            return vec![
+                started,
+                notification(
+                    "item/started",
+                    json!({"threadId": self.info.id, "turnId": turn["id"], "item": item}),
+                ),
+            ];
+        }
         let Some(turn) = self.active_turn.as_mut() else { return Vec::new() };
         let mut messages = Vec::new();
         let turn_id = turn["id"].as_str().unwrap_or_default().to_string();
@@ -1489,6 +1532,30 @@ impl ThreadState {
                     json!({"threadId": self.info.id, "turnId": turn_id, "item": item}),
                 ));
             },
+            EventMsg::ContextCompactionCompleted { item_id } => {
+                let item = turn["items"].as_array().and_then(|items| {
+                    items.iter().find(|item| {
+                        item["type"] == "contextCompaction"
+                            && item["id"].as_str() == Some(item_id.as_str())
+                    })
+                });
+                let Some(item) = item else { return messages };
+                messages.push(notification(
+                    "item/completed",
+                    json!({"threadId": self.info.id, "turnId": turn_id, "item": item}),
+                ));
+                turn["status"] = json!("completed");
+                messages.push(notification(
+                    "turn/completed",
+                    json!({"threadId": self.info.id, "turn": turn}),
+                ));
+                if let Some(turn) = self.active_turn.take() {
+                    self.info.turns.push(turn);
+                }
+                self.is_compaction = false;
+                self.info.status = json!({"type": "idle"});
+                self.info.updated_at = now();
+            },
             EventMsg::TurnComplete { .. } | EventMsg::Error { .. } => {
                 turn["status"] = json!(if matches!(event.msg, EventMsg::Error { .. }) {
                     "failed"
@@ -1507,6 +1574,7 @@ impl ThreadState {
                 if let Some(turn) = self.active_turn.take() {
                     self.info.turns.push(turn);
                 }
+                self.is_compaction = false;
                 self.info.status = json!({"type": "idle"});
                 self.info.updated_at = now();
             },
@@ -1573,8 +1641,15 @@ fn restore_ui_turns(
     use aphrody_model_client::{ChatMessage, ImageSource, Part, Role};
     let mut turns: Vec<Value> = Vec::new();
     let mut started = false;
+    let mut replacement_history = false;
     for line in lines {
         if line.item["type"] == aphrody_engine::ROLLOUT_HISTORY_ITEM {
+            replacement_history |= line.item["compaction_checkpoint"] == true;
+            if replacement_history {
+                // The checkpoint and retained suffix replace model context;
+                // they must not duplicate the original UI transcript.
+                continue;
+            }
             let message: ChatMessage = serde_json::from_value(line.item["message"].clone())?;
             let needs_turn = turns.last().is_none_or(|turn| {
                 message.role == Role::User
@@ -1632,10 +1707,19 @@ fn restore_ui_turns(
             if !user_content.is_empty() {
                 items.push(json!({"type": "userMessage", "id": format!("{turn_id}-user-{}", items.len()), "content": user_content}));
             }
+        } else if line.item["msg"]["type"] == "context_compaction_started" {
+            replacement_history = false;
+            turns.push(json!({
+                "id": format!("{thread_id}-turn-{}", turns.len() + 1),
+                "items": [{"type": "contextCompaction", "id": line.item["msg"]["item_id"]}],
+                "status": "inProgress", "error": null,
+            }));
+            started = true;
         } else if let Some(turn) = turns.last_mut() {
+            replacement_history = false;
             match line.item["msg"]["type"].as_str() {
                 Some("turn_started") => started = true,
-                Some("turn_complete") => {
+                Some("turn_complete" | "context_compaction_completed") => {
                     turn["status"] = json!("completed");
                     started = false;
                 },
@@ -2299,7 +2383,8 @@ wire_api = "chat"
     async fn initialize_returns_the_sanitized_profile_home() {
         let mut server = test_server();
         let expected = std::path::absolute(server.base_home.join("workspace-team")).unwrap();
-        let initialized = request(&mut server, "initialize", json!({"profile": "../.."})).await;
+        let initialized =
+            request(&mut server, "initialize", json!({"profile": "../../Team"})).await;
         assert_eq!(initialized["result"]["codexHome"], expected.to_string_lossy().as_ref());
         assert_eq!(server.home, expected);
     }
@@ -2354,10 +2439,19 @@ model_provider = "fixture"
         let mut server = initialized_server().await;
         let parent = request(&mut server, "thread/start", json!({})).await;
         let parent_id = parent["result"]["thread"]["id"].as_str().unwrap().to_string();
+        request(&mut server, "thread/close", json!({"threadId": parent_id})).await;
+        let parent_reopened =
+            request(&mut server, "thread/resume", json!({"threadId": parent_id})).await;
+        assert_eq!(parent_reopened["result"]["thread"]["id"], parent_id);
         let fork = request(&mut server, "thread/fork", json!({"threadId": parent_id})).await;
         let fork_id = fork["result"]["thread"]["id"].as_str().unwrap().to_string();
         assert_ne!(fork_id, parent_id);
         assert_eq!(fork["result"]["thread"]["model"], parent["result"]["thread"]["model"]);
+        // Closing is the native recorder's persistence barrier. Verify the
+        // independent fork survives a real reopen before inspecting disk.
+        request(&mut server, "thread/close", json!({"threadId": fork_id})).await;
+        let reopened = request(&mut server, "thread/resume", json!({"threadId": fork_id})).await;
+        assert_eq!(reopened["result"]["thread"]["id"], fork_id);
         let sessions = aphrody_rollout::list_sessions(server.home.join("sessions")).await.unwrap();
         let fork_session =
             sessions.sessions.iter().find(|session| session.meta.id == fork_id).unwrap();
@@ -2365,7 +2459,7 @@ model_provider = "fixture"
         assert!(sessions.sessions.iter().any(|session| session.meta.id == parent_id));
         let compact =
             request(&mut server, "thread/compact/start", json!({"threadId": fork_id})).await;
-        assert_eq!(compact["result"]["status"], "started");
+        assert_eq!(compact["result"], json!({}));
         let bad = request(&mut server, "thread/fork", json!({"threadId": "missing"})).await;
         assert_eq!(bad["error"]["code"], -32602);
         let missing_compact =
@@ -2391,6 +2485,148 @@ model_provider = "fixture"
         let unarchived =
             request(&mut server, "thread/unarchive", json!({"threadId": parent_id})).await;
         assert_eq!(unarchived["result"]["archived"], false);
+    }
+
+    #[tokio::test]
+    async fn compact_returns_empty_ack_then_native_items_and_terminal_turn() {
+        let mut server = initialized_server().await;
+        let start = request(&mut server, "thread/start", json!({})).await;
+        let id = start["result"]["thread"]["id"].as_str().unwrap().to_string();
+        server.drain_notifications();
+        let response = request(&mut server, "thread/compact/start", json!({"threadId": id})).await;
+        assert_eq!(response["result"], json!({}));
+        let interrupt = request(&mut server, "turn/interrupt", json!({"threadId":id})).await;
+        assert_eq!(interrupt["error"]["code"], -32602);
+        assert!(interrupt["error"]["message"].as_str().unwrap().contains("structural compaction"));
+        let duplicate = request(&mut server, "thread/compact/start", json!({"threadId": id})).await;
+        assert_eq!(duplicate["error"]["code"], -32602);
+        let new_turn =
+            request(&mut server, "turn/start", json!({"threadId": id, "input": "racing turn"}))
+                .await;
+        assert_eq!(new_turn["error"]["code"], -32602);
+        let notifications = tokio::time::timeout(std::time::Duration::from_secs(2), async {
+            let mut notifications = Vec::new();
+            loop {
+                notifications.extend(server.drain_notifications());
+                if notifications.iter().any(|event| event["method"] == "turn/completed") {
+                    break notifications;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let methods =
+            notifications.iter().map(|event| event["method"].as_str().unwrap()).collect::<Vec<_>>();
+        assert_eq!(methods, ["turn/started", "item/started", "item/completed", "turn/completed"]);
+        let item = &notifications[1]["params"]["item"];
+        assert_eq!(item["type"], "contextCompaction");
+        let typed_item: aphrody_app_protocol::ThreadItem =
+            serde_json::from_value(item.clone()).unwrap();
+        assert_eq!(serde_json::to_value(typed_item).unwrap(), *item);
+        assert_eq!(&notifications[2]["params"]["item"], item);
+        assert_eq!(notifications[3]["params"]["turn"]["status"], "completed");
+        assert!(server.threads[&id].active_turn.is_none());
+        let read =
+            request(&mut server, "thread/read", json!({"threadId": id,"includeTurns":true})).await;
+        assert_eq!(read["result"]["thread"]["turns"][0]["items"][0], *item);
+        request(&mut server, "thread/close", json!({"threadId":id})).await;
+        let resumed = request(&mut server, "thread/resume", json!({"threadId":id})).await;
+        assert_eq!(resumed["result"]["thread"]["turns"][0]["items"][0], *item);
+        assert_eq!(resumed["result"]["thread"]["turns"][0]["status"], "completed");
+        request(&mut server, "thread/close", json!({"threadId":id})).await;
+    }
+
+    #[tokio::test]
+    async fn compaction_failure_releases_the_reserved_turn() {
+        let mut server = initialized_server().await;
+        let start = request(&mut server, "thread/start", json!({})).await;
+        let id = start["result"]["thread"]["id"].as_str().unwrap().to_string();
+        let thread = server.threads.get_mut(&id).unwrap();
+        thread.observe(&Event::new(EventMsg::ContextCompactionStarted {
+            item_id: "compact-failed".into(),
+        }));
+        let notifications = thread
+            .observe(&Event::new(EventMsg::Error { message: "checkpoint flush failed".into() }));
+        assert_eq!(notifications[0]["method"], "turn/completed");
+        assert_eq!(notifications[0]["params"]["turn"]["status"], "failed");
+        assert!(thread.active_turn.is_none());
+        assert_eq!(thread.info.status["type"], "idle");
+        request(&mut server, "thread/close", json!({"threadId":id})).await;
+    }
+
+    #[tokio::test]
+    async fn a_normal_turn_can_be_interrupted_before_its_first_engine_item() {
+        let mut server = initialized_server().await;
+        let start = request(&mut server, "thread/start", json!({})).await;
+        let id = start["result"]["thread"]["id"].as_str().unwrap().to_string();
+        let turn = request(
+            &mut server,
+            "turn/start",
+            json!({"threadId":id,"input":[{"type":"text","text":"hello"}]}),
+        )
+        .await;
+        assert_eq!(turn["result"]["turn"]["status"], "inProgress");
+        // No provider event has been drained; the actor has not supplied an
+        // assistant item. Turn kind must not be inferred from visible items.
+        server.threads.get_mut(&id).unwrap().active_turn.as_mut().unwrap()["items"] = json!([]);
+        let interrupted = request(
+            &mut server,
+            "turn/interrupt",
+            json!({"threadId":id,"turnId":turn["result"]["turn"]["id"]}),
+        )
+        .await;
+        assert!(interrupted.get("error").is_none(), "{interrupted}");
+        assert!(server.threads[&id].interrupt_requested);
+        request(&mut server, "thread/close", json!({"threadId":id})).await;
+    }
+
+    #[test]
+    fn ui_replay_compaction_failure_and_missing_completion_are_terminal() {
+        let started =
+            json!({"msg":{"type":"context_compaction_started","item_id":"compact-failure"}});
+        let lines =
+            [started.clone(), json!({"msg":{"type":"error","message":"checkpoint flush failed"}})]
+                .into_iter()
+                .map(|item| aphrody_rollout::RolloutLine { ts: String::new(), item })
+                .collect::<Vec<_>>();
+        let failed = restore_ui_turns("thread", &lines).unwrap();
+        assert_eq!(failed[0]["status"], "failed");
+        assert_eq!(failed[0]["error"]["message"], "checkpoint flush failed");
+        // If a recorder stays unavailable even for the failure event, an
+        // unfinished durable start is interrupted after restart, never success.
+        let unfinished = restore_ui_turns(
+            "thread",
+            &[aphrody_rollout::RolloutLine { ts: String::new(), item: started }],
+        )
+        .unwrap();
+        assert_eq!(unfinished[0]["status"], "interrupted");
+    }
+
+    #[test]
+    fn ui_replay_preserves_compaction_item_without_duplicating_checkpoint_history() {
+        let user = json!({"role":"user","parts":[{"text":"original question"}]});
+        let answer = json!({"role":"model","parts":[{"text":"original answer"}]});
+        let items = [
+            json!({"type":"history_item","message":user}),
+            json!({"msg":{"type":"turn_started"}}),
+            json!({"type":"history_item","message":answer}),
+            json!({"msg":{"type":"turn_complete"}}),
+            json!({"msg":{"type":"context_compaction_started","item_id":"compact-1"}}),
+            json!({"type":"history_item","compaction_checkpoint":true,"message":{"role":"user","parts":[{"text":"structural checkpoint"}]}}),
+            json!({"type":"history_item","compaction_checkpoint":false,"message":user}),
+            json!({"type":"history_item","compaction_checkpoint":false,"message":answer}),
+            json!({"msg":{"type":"context_compaction_completed","item_id":"compact-1"}}),
+        ];
+        let lines = items
+            .into_iter()
+            .map(|item| aphrody_rollout::RolloutLine { ts: String::new(), item })
+            .collect::<Vec<_>>();
+        let turns = restore_ui_turns("thread", &lines).unwrap();
+        assert_eq!(turns.len(), 2);
+        assert_eq!(turns[0]["items"].as_array().unwrap().len(), 2);
+        assert_eq!(turns[1]["items"], json!([{"type":"contextCompaction","id":"compact-1"}]));
+        assert_eq!(turns[1]["status"], "completed");
     }
 
     #[tokio::test]

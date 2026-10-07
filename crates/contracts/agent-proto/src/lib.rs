@@ -212,6 +212,16 @@ impl Event {
 pub enum EventMsg {
     /// A new turn has started.
     TurnStarted,
+    /// A native structural compaction has started; both events share this item id.
+    ContextCompactionStarted {
+        /// Stable context-compaction item identifier.
+        item_id: String,
+    },
+    /// Native compaction and its persistent checkpoint have completed.
+    ContextCompactionCompleted {
+        /// Identifier from the matching start event.
+        item_id: String,
+    },
     /// A streamed fragment of the agent's visible message.
     AgentMessageDelta {
         /// The text delta to append.
@@ -417,6 +427,8 @@ mod tests {
     #[test]
     fn event_msg_variants_roundtrip() {
         roundtrip_msg(EventMsg::TurnStarted);
+        roundtrip_msg(EventMsg::ContextCompactionStarted { item_id: "compact-1".into() });
+        roundtrip_msg(EventMsg::ContextCompactionCompleted { item_id: "compact-1".into() });
         roundtrip_msg(EventMsg::AgentMessageDelta { delta: "tok".into() });
         roundtrip_msg(EventMsg::AgentMessage { text: "full message".into() });
         roundtrip_msg(EventMsg::SteerApplied { text: "focus on tests first".into() });

@@ -152,6 +152,18 @@ export function buildThreadCompactPayload(threadId: string): { threadId: string 
   return { threadId };
 }
 
+export function shouldAutoCompactThread(
+  turn: { status?: string; items?: { type?: string }[] } | undefined,
+  displayedTurns: number,
+  compactedAtTurns = 0,
+): boolean {
+  return (
+    turn?.status === "completed" &&
+    displayedTurns - compactedAtTurns >= 25 &&
+    !turn.items?.some((item) => item.type === "contextCompaction")
+  );
+}
+
 export interface ThreadDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -1582,6 +1594,7 @@ export function CodexChatRoute() {
   const [connectionAttempt, setConnectionAttempt] = useState(0);
   const [ready, setReady] = useState(false);
   const stopRequested = useRef(false);
+  const compactedAtTurns = useRef(new Map<string, number>());
   const approvalReplies = useRef(new Set<string>());
   const confirmedApprovalReplies = useRef(new Set<string>());
 
@@ -1876,7 +1889,12 @@ export function CodexChatRoute() {
           args?: Record<string, unknown>;
           result?: Record<string, unknown>;
         };
-        turn?: { id?: string; status?: string; error?: { message?: string } };
+        turn?: {
+          id?: string;
+          status?: string;
+          error?: { message?: string };
+          items?: { type?: string }[];
+        };
       };
     };
 
@@ -2110,12 +2128,25 @@ export function CodexChatRoute() {
           params.turn.error?.message ??
             "Le tour a échoué : relancez le message ou consultez les logs app-server",
         );
+      } else if (
+        params?.turn?.status === "completed" &&
+        params.turn.items?.some((item) => item.type === "contextCompaction")
+      ) {
+        if (activeThreadId) compactedAtTurns.current.set(activeThreadId, turns.length);
+        toast.success("Compactage du fil terminé");
       }
       void loadThreads().catch((error) => toast.error(chatErrorMessage(error)));
 
       // Auto-compact context (NHITL / YOLO continuous mode)
       // When turns accumulate (>= 25), trigger compact to maintain fast inference & low memory.
-      if (activeThreadId && turns.length >= 25) {
+      if (
+        activeThreadId &&
+        shouldAutoCompactThread(
+          params?.turn,
+          turns.length,
+          compactedAtTurns.current.get(activeThreadId),
+        )
+      ) {
         void chatRpc("thread/compact/start", { threadId: activeThreadId }).catch((err) =>
           console.warn("Auto-compact context skipped:", err),
         );
@@ -2415,12 +2446,8 @@ export function CodexChatRoute() {
 
   const handleCompactThread = async (id: string) => {
     try {
-      const result = await chatRpc("thread/compact/start", { threadId: id });
-      if (result.status !== "started") throw new Error("Le compactage n’a pas été confirmé.");
-      toast.success("Compactage du fil lancé");
-      if (id === threadIdRef.current) {
-        await switchThread(id);
-      }
+      await chatRpc("thread/compact/start", buildThreadCompactPayload(id));
+      toast.info("Compactage du fil lancé");
       await loadThreads();
     } catch (e) {
       toast.error(`Compactage impossible : ${chatErrorMessage(e)}`);

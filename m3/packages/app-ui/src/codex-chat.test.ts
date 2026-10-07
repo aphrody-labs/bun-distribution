@@ -8,6 +8,7 @@ import {
   buildThreadRenamePayload,
   buildThreadForkPayload,
   buildThreadCompactPayload,
+  shouldAutoCompactThread,
   type ApprovalItem,
   type ThreadSummary,
   type Turn,
@@ -175,6 +176,22 @@ describe("Codex Chat - Thread Actions & Wire Payloads", () => {
     });
   });
 
+  it("does not schedule another compaction when its terminal turn arrives", () => {
+    expect(
+      shouldAutoCompactThread({ status: "completed", items: [{ type: "agentMessage" }] }, 25),
+    ).toBe(true);
+    expect(
+      shouldAutoCompactThread({ status: "completed", items: [{ type: "contextCompaction" }] }, 25),
+    ).toBe(false);
+    expect(
+      shouldAutoCompactThread({ status: "failed", items: [{ type: "agentMessage" }] }, 25),
+    ).toBe(false);
+    expect(shouldAutoCompactThread({ status: "interrupted" }, 25)).toBe(false);
+    expect(shouldAutoCompactThread({ status: "completed" }, 24)).toBe(false);
+    expect(shouldAutoCompactThread({ status: "completed" }, 26, 25)).toBe(false);
+    expect(shouldAutoCompactThread({ status: "completed" }, 50, 25)).toBe(true);
+  });
+
   it("updates thread state when renaming without mutating unrelated threads", () => {
     const threads: ThreadSummary[] = [
       { id: "t-1", name: "Initial 1", preview: "Init 1", createdAt: 1700000000 },
@@ -182,10 +199,12 @@ describe("Codex Chat - Thread Actions & Wire Payloads", () => {
     ];
 
     const updated = threads.map((t) =>
-      t.id === "t-1" ? Object.assign(t, {
-	name: 'Renamed 1',
-	preview: 'Renamed 1'
-}) : t,
+      t.id === "t-1"
+        ? Object.assign(t, {
+            name: "Renamed 1",
+            preview: "Renamed 1",
+          })
+        : t,
     );
 
     expect(updated[0].name).toBe("Renamed 1");

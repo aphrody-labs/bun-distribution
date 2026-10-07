@@ -289,6 +289,4 @@ pub struct ThreadCompactStartParams {
 /// Response returned by `thread/compact/start`.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ThreadCompactStartResponse {
-    pub status: String,
-}
+pub struct ThreadCompactStartResponse {}

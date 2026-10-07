@@ -5,9 +5,12 @@
 //! scripted in-memory stream), so the rustls "No provider set" panic
 //! (CLAUDE.md §7) cannot occur.
 
-use std::sync::{
-    Arc, Mutex,
-    atomic::{AtomicUsize, Ordering},
+use std::{
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicUsize, Ordering},
+    },
+    time::Duration,
 };
 
 use aphrody_agent_proto::{Event, EventMsg, InputItem, Op, ReviewDecision};
@@ -144,6 +147,8 @@ fn kinds(msgs: &[EventMsg]) -> Vec<&'static str> {
 fn kind(msg: &EventMsg) -> &'static str {
     match msg {
         EventMsg::TurnStarted => "TurnStarted",
+        EventMsg::ContextCompactionStarted { .. } => "ContextCompactionStarted",
+        EventMsg::ContextCompactionCompleted { .. } => "ContextCompactionCompleted",
         EventMsg::AgentMessageDelta { .. } => "AgentMessageDelta",
         EventMsg::AgentMessage { .. } => "AgentMessage",
         EventMsg::SteerApplied { .. } => "SteerApplied",
@@ -1329,15 +1334,66 @@ async fn compact_op_replaces_history_and_rollout_resume_uses_checkpoint() {
 
     let client: Arc<dyn ModelClient> = Arc::new(MockModelClient::scripted(Vec::new()));
     let session = Session::with_history(EngineConfig::new("mock-model"), history);
-    let handle =
+    let mut handle =
         crate::spawn_session(session, client, Arc::new(ToolRegistry::new()), Some(recorder));
+    let mut events = handle.events().unwrap();
     handle.submit(Op::Compact).unwrap();
+    let started =
+        tokio::time::timeout(Duration::from_secs(2), events.recv()).await.unwrap().unwrap();
+    let EventMsg::ContextCompactionStarted { item_id } = started.msg else {
+        panic!("expected native compaction start");
+    };
+    let completed =
+        tokio::time::timeout(Duration::from_secs(2), events.recv()).await.unwrap().unwrap();
+    assert_eq!(completed.msg, EventMsg::ContextCompactionCompleted { item_id });
+    // Completion is the durability barrier: read the live rollout before
+    // shutting down the actor or allowing its shutdown flush to help.
+    let lines = aphrody_rollout::resume(&path).await.unwrap();
+    let restored = restore_history(&lines);
+    assert_eq!(restored.undecodable, 0);
+    assert!(is_compaction_checkpoint(&restored.messages[0]));
+    assert!(lines.iter().any(|line| line.item["msg"]["type"] == "context_compaction_completed"));
     handle.submit(Op::Shutdown).unwrap();
     let final_session = handle.join().await.unwrap();
 
     assert!(is_compaction_checkpoint(&final_session.history()[0]));
-    let lines = aphrody_rollout::resume(path).await.unwrap();
-    let restored = restore_history(&lines);
-    assert_eq!(restored.undecodable, 0);
     assert_eq!(restored.messages, final_session.history());
+}
+
+#[tokio::test]
+async fn compact_noop_emits_a_complete_native_lifecycle() {
+    let client: Arc<dyn ModelClient> = Arc::new(MockModelClient::scripted(Vec::new()));
+    let session = Session::new(EngineConfig::new("mock-model"));
+    let mut handle = crate::spawn_session(session, client, Arc::new(ToolRegistry::new()), None);
+    let mut events = handle.events().unwrap();
+    handle.submit(Op::Compact).unwrap();
+    let started =
+        tokio::time::timeout(Duration::from_secs(2), events.recv()).await.unwrap().unwrap();
+    let EventMsg::ContextCompactionStarted { item_id } = started.msg else {
+        panic!("expected native compaction start");
+    };
+    let completed =
+        tokio::time::timeout(Duration::from_secs(2), events.recv()).await.unwrap().unwrap();
+    assert_eq!(completed.msg, EventMsg::ContextCompactionCompleted { item_id });
+    handle.submit(Op::Shutdown).unwrap();
+    assert!(handle.join().await.unwrap().history().is_empty());
+}
+
+#[tokio::test]
+async fn compact_closed_rollout_fails_without_announcing_completion() {
+    let directory = tempfile::tempdir().unwrap();
+    let recorder = RolloutRecorder::new(directory.path(), None).await.unwrap();
+    recorder.clone().shutdown().await.unwrap();
+    let history = long_history(12, 400);
+    let client: Arc<dyn ModelClient> = Arc::new(MockModelClient::scripted(Vec::new()));
+    let session = Session::with_history(EngineConfig::new("mock-model"), history.clone());
+    let mut handle =
+        crate::spawn_session(session, client, Arc::new(ToolRegistry::new()), Some(recorder));
+    let mut events = handle.events().unwrap();
+    handle.submit(Op::Compact).unwrap();
+    let event = tokio::time::timeout(Duration::from_secs(2), events.recv()).await.unwrap().unwrap();
+    assert!(matches!(event.msg, EventMsg::Error { .. }));
+    assert!(events.try_recv().is_err());
+    handle.submit(Op::Shutdown).unwrap();
+    assert_eq!(handle.join().await.unwrap().history(), history);
 }

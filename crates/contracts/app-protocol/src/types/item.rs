@@ -37,6 +37,8 @@ pub enum ThreadItem {
     #[serde(rename_all = "camelCase")]
     AgentMessage { id: String, text: String },
     #[serde(rename_all = "camelCase")]
+    ContextCompaction { id: String },
+    #[serde(rename_all = "camelCase")]
     FunctionCallOutput {
         id: String,
         name: String,
