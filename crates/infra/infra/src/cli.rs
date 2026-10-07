@@ -1343,7 +1343,9 @@ fn deploy(
 fn validate_catalogs(root: &Path, as_json: bool, run: &mut Run) -> Result<()> {
     let mut report = validate::run(root)?;
     let catalog = crate::catalog::load_service_catalog(root)?;
-    report.errors.extend(validate::check_unit_templates(&validate::host_systemd_root(), &catalog));
+    report
+        .errors
+        .extend(validate::check_unit_templates(&root.join("tools/config/host/systemd"), &catalog));
     run.action(
         "validate",
         if report.errors.is_empty() { "success" } else { "failed" },
