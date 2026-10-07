@@ -1098,7 +1098,7 @@ mod tests {
     fn static_catalog() -> Value {
         json!({
             "services": [
-                { "id": "site", "unit": "site.service", "health": "http://127.0.0.1:8100/health" },
+                { "id": "site", "unit": "site.service", "health": "http://127.0.0.1:8100/health", "public": true },
                 { "id": "creator", "kind": "nginx-static", "runtime": "none", "public": true }
             ]
         })

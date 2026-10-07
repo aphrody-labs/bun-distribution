@@ -209,6 +209,23 @@
       "pairs": "aphrody-ovh-watch.service"
     },
     {
+      "service": "aphrody-selfheal",
+      "unit": "aphrody-selfheal.service",
+      "path": "systemd/aphrody/aphrody-selfheal.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-selfheal-timer",
+      "unit": "aphrody-selfheal.timer",
+      "path": "systemd/aphrody/aphrody-selfheal.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "aphrody-selfheal.service"
+    },
+    {
       "service": "aphrody-downloads",
       "unit": "aphrody-downloads.service",
       "path": "systemd/aphrody/aphrody-downloads.service",
