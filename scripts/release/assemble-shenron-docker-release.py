@@ -44,6 +44,20 @@ def health(command, start="30s"):
     }
 
 
+def configure_native_cache(service):
+    # Bun extracts embedded native modules under its documented TMPDIR.
+    # Keep /tmp noexec; only the private native module cache needs mmap(PROT_EXEC).
+    user = str(service["user"])
+    if not re.fullmatch(r"[1-9][0-9]*(?::[0-9]+)?", user):
+        raise ValueError("native cache requires an explicit non-root numeric user")
+    uid, _, gid = user.partition(":")
+    directory = "/var/cache/shenron-native"
+    service.setdefault("environment", {})["TMPDIR"] = directory
+    service.setdefault("tmpfs", []).append(
+        f"{directory}:rw,exec,nosuid,nodev,uid={uid},gid={gid or uid},mode=0700,size=128m"
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("release", type=pathlib.Path)
@@ -138,6 +152,7 @@ def main():
     for service in services.values():
         service.pop("build", None)
         service["image"] = args.image_id
+    configure_native_cache(services["bot"])
     vfs = args.public_vfs.resolve(strict=True)
     if not vfs.is_relative_to(pathlib.Path("/srv/shenron/shared/server")):
         parser.error("public VFS must stay in server shared store")

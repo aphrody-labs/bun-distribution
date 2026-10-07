@@ -19,6 +19,19 @@ spec.loader.exec_module(assembly)
 
 
 class AssemblyPrivacyTests(unittest.TestCase):
+    def test_embedded_native_modules_use_a_private_cache_without_relaxing_tmp(self):
+        service = {"user": "1234:5678", "tmpfs": ["/tmp:rw,noexec,nosuid,size=64m"]}
+        assembly.configure_native_cache(service)
+        self.assertEqual(service["environment"]["TMPDIR"], "/var/cache/shenron-native")
+        self.assertEqual(service["tmpfs"][0], "/tmp:rw,noexec,nosuid,size=64m")
+        self.assertIn("uid=1234,gid=5678,mode=0700", service["tmpfs"][1])
+        self.assertIn("rw,exec,nosuid,nodev", service["tmpfs"][1])
+
+    def test_native_cache_rejects_root_and_named_users(self):
+        for user in ("0:0", "root", "ubuntu"):
+            with self.subTest(user=user), self.assertRaises(ValueError):
+                assembly.configure_native_cache({"user": user})
+
     def test_expanded_private_environment_never_creates_release(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
