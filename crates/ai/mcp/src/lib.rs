@@ -3122,8 +3122,14 @@ async fn run_http_server(bind: SocketAddr) -> Result<()> {
     auth.warn_if_unusable();
     let app = http_app(auth);
     let listener = tokio::net::TcpListener::bind(bind).await?;
+    let mut native = kernel_tools::native_daemon().await?;
     tracing::info!(address = %listener.local_addr()?, "Starting Aphrody MCP Streamable HTTP server");
-    axum::serve(listener, app).await?;
+    tokio::select! {
+        result = std::future::IntoFuture::into_future(axum::serve(listener, app)) => result?,
+        result = native.join_next(), if !native.is_empty() => {
+            anyhow::bail!("native daemon task stopped: {result:?}");
+        },
+    }
     Ok(())
 }
 

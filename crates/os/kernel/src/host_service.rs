@@ -78,6 +78,19 @@ fn read_config(
     Ok((config, console))
 }
 
+/// Keep a protected bridge alive on the caller's runtime, without a second service
+/// or process. The canonical MCP daemon owns the returned future and its shutdown.
+///
+/// # Errors
+/// An invalid configuration or an unsupported host platform.
+#[cfg(target_os = "linux")]
+pub async fn run_bridge(path: PathBuf) -> Result<(), String> {
+    let (config, _) =
+        read_config(vec!["aphrody-host-bridge".into(), "--config".into(), path.into_os_string()])
+            .map_err(|error| error.to_string())?;
+    run(config).await.map_err(|error| error.to_string())
+}
+
 /// Entry point of the former `aphrody-host-service` binary, now reached through the `aphrody`
 /// multi-call binary. `args[0]` is the program name (argv convention). Returns the process exit code.
 pub fn host_service_main(args: Vec<std::ffi::OsString>) -> i32 {
@@ -242,6 +255,13 @@ async fn bridge(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
                 forward(message, "linux", &config.peer, Arc::clone(&remote), Arc::clone(&local), Arc::clone(&limit), &mut calls).await;
             },
             _ = heartbeat.tick() => {
+                // Windows automation can keep the peer busy longer than the
+                // idle ping deadline. In-flight calls already have bounded
+                // deadlines; EOF still ends the bridge immediately. Do not
+                // cancel a valid operation by probing it on that same stream.
+                if !calls.is_empty() {
+                    continue;
+                }
                 remote.request("ping", json!({}), Duration::from_secs(3)).await?;
                 local.request("ping", json!({}), Duration::from_secs(3)).await?;
             },

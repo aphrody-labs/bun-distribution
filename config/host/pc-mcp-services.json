@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "$comment": "Private PC MCP forwarding catalog. Native Aphrody SSH binds client ports only to loopback; WireGuard carries SSH. Bearer credentials remain in protected host stores. Omar endpoints stay excluded until their own authenticated activation is verified.",
+  "services": [
+    {
+      "id": "owner-wsl-mcp",
+      "target": "aphro-wsl:127.0.0.1:8793",
+      "health": "http://127.0.0.1:8793/healthz"
+    }
+  ]
+}

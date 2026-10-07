@@ -85,7 +85,23 @@
       "Windows account and SSH inbound setup",
       "Authenticated native desktop bridge test",
       "Actual authenticated Codex/AGY/Claude A2A endpoints"
-    ]
+    ],
+    "serverFollowup": {
+      "observedAt": "2026-10-07T13:01:28.526207+00:00",
+      "guildId": "1554189180030947338",
+      "channelId": "1557354118710829117",
+      "channelName": "start-here",
+      "messageIds": [
+        "1557376931291209898",
+        "1557376932285386815",
+        "1557376933535289472",
+        "1557376934923731096"
+      ],
+      "omarExplicitlyMentioned": true,
+      "codexLocalSetupPromptIncluded": true,
+      "codexDistinctDiscordIdentityObserved": false,
+      "containsPrivateCredentials": false
+    }
   },
   "limits": [
     "No complete bidirectional Drive or agent-memory synchronization is asserted.",
@@ -106,8 +122,8 @@
       "aphrody-host-bridge@desktop.service",
       "aphrody-host-bridge@privileged.service"
     ],
-    "enabled": true,
-    "state": "active",
+    "enabled": false,
+    "state": "superseded-by-bun-pc-agent",
     "credentialRefresh": "Linux protected client files refreshed from the already rotated Windows policy; verified backups retained.",
     "nativeObservationFacade": "aphrody winclean call desktop_computer_observe",
     "observationVerified": true,
@@ -143,6 +159,87 @@
         "x86_64-pc-windows-msvc": "passed (cargo xwin check, no-default-features)",
         "wasm32-unknown-unknown": "not applicable to native socket and stdio hosting"
       }
-    }
+    },
+    "evidenceScope": "Historical qualification before the 2026-10-07 Bun service cutover"
+  },
+  "remotePcMcp": {
+    "observedAt": "2026-10-07T14:20:39.258Z",
+    "transport": "WireGuard SSH native Aphrody persistent forwarding",
+    "clientHosts": ["vps", "dbfr"],
+    "clientEndpoint": "http://127.0.0.1:18793/mcp",
+    "ownerEndpoint": "http://127.0.0.1:8793/mcp",
+    "forwardingUnit": "aphrody-pc-mcp-forward.service",
+    "enabled": true,
+    "unauthenticatedStatus": 401,
+    "ownerSudoUid": 0,
+    "ownerWindowsAdministrator": true,
+    "protectedBearer": true,
+    "containsPrivateCredentials": false,
+    "computerUse": {
+      "captureVerified": true,
+      "captureScope": "Owned disposable WinForms probe PID 16440, HWND 2754018",
+      "capturedPngBytes": 10829,
+      "nativeTypeAccepted": true,
+      "automatedExactTextReadback": false,
+      "ownerVisualAcknowledgement": true,
+      "probeClosed": true,
+      "capturesPublished": false
+    },
+    "clientHostsVerifiedAfterRestart": ["vps", "dbfr"]
+  },
+  "bunUnifiedAgent": {
+    "state": "deployed-active",
+    "sourceSnapshot": "7e9329297ba356d34b074b3565391ae24f5e1253",
+    "entry": "packages/interop/native/src/pc-agent.ts",
+    "canonicalFfi": "aphrody_ffi",
+    "canonicalMcpCrate": "aphrody-mcp",
+    "unit": "aphrody-pc-agent.service",
+    "worker": "Bun Worker thread in the host PID",
+    "scope": "One Linux PC control-plane process; Windows brokers keep their OS session boundaries",
+    "runtimeCutoverVerified": true,
+    "qualification": {
+      "kernelTestsPassed": 124,
+      "mcpTestsPassed": 111,
+      "networkTestsIgnored": 2,
+      "strictClippyPassed": true,
+      "typescriptPassed": true,
+      "oxlintPassed": true,
+      "systemdVerifyPassed": true,
+      "unitCatalogTestsPassed": 3,
+      "globalHostCatalogCheck": "Five unrelated unlisted inventory/unit files remain in concurrent Shenron work",
+      "windowsMcpCheck": "passed (x86_64-pc-windows-msvc, no-default-features)"
+    },
+    "observedAt": "2026-10-07T14:20:39.258Z",
+    "mainPid": 3386674,
+    "processCountInServiceCgroup": 1,
+    "bunVersion": "1.4.2",
+    "sdkPackageVersion": "3.3.7",
+    "ffiSha256": "3212bfd18223e188e4cb2bc4bcd6ab4027a9359d522d5ba59d34c3e297789d3d",
+    "ffiBytes": 237999112,
+    "glibcMaximum": "2.39",
+    "developmentArtifactMode": false,
+    "consumerSmoke": "passed",
+    "toolCount": 644,
+    "desktopToolCount": 166,
+    "windowsToolCount": 166,
+    "rootUid": 0,
+    "windowsAdministrator": true,
+    "unauthenticatedStatus": 401,
+    "kernelSocketOwner": "aphro:aphro 0600",
+    "restartRecoveryVerified": true,
+    "imageMcpContentVerified": true,
+    "pngBytes": 1050524,
+    "longWindowsCallMs": 8234,
+    "longWindowsCallTimedOut": false,
+    "oldUserUnitsDisabled": [
+      "aphrody-kernel.service",
+      "aphrody-host-bridge@windows.service",
+      "aphrody-host-bridge@desktop.service",
+      "aphrody-host-bridge@privileged.service",
+      "aphrody-pc-mcp-http.service"
+    ],
+    "oldSystemUnitsDisabled": ["aphrody-privileged-kernel.service"],
+    "windowsBrokerScope": "Native Windows system and interactive brokers retain their separate sessions",
+    "retiredDuplicatedToolExposure": "Privileged bridge names are replaced by native root calls; separate Bun tool hosts are disabled in this daemon"
   }
 }

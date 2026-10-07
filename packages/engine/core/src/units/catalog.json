@@ -187,6 +187,21 @@
       }
     },
     {
+      "name": "aphrody-pc-mcp-forward",
+      "unit": {
+        "Description": "Persistent native Aphrody SSH forward to the authenticated PC MCP over WireGuard",
+        "After": "network-online.target",
+        "Wants": "network-online.target"
+      },
+      "service": {
+        "ExecStart": "%h/.local/bin/aphrody ssh tunnel --catalog %h/.aphrody/private/connectivity/service-catalog.json --services owner-wsl-mcp --offset 10000",
+        "Restart": "on-failure",
+        "RestartSec": "3",
+        "UMask": "0077",
+        "NoNewPrivileges": "yes"
+      }
+    },
+    {
       "name": "aphrody-host-bridge@",
       "unit": {
         "Description": "Aphrody native Hyper-V tunnel to %i",
