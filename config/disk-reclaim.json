@@ -121,6 +121,14 @@
       "sshAlias": "dbfr",
       "paths": [
         {
+          "path": "shenron-build/node_modules",
+          "reason": "regenerable build dependencies; the production release carries its own runtime dependencies"
+        },
+        {
+          "path": "shenron-build/target",
+          "reason": "regenerable Cargo build output; no active compiler process uses this tree"
+        },
+        {
           "path": ".bun/install/cache",
           "reason": "4.5 GiB Bun package download cache, unused by the observed services and re-fetched on demand; production release dependencies remain under /srv"
         },
