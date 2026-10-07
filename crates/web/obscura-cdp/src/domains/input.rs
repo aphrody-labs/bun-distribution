@@ -305,8 +305,8 @@ pub async fn handle(
                          clickTarget.closest('button') : null);var submitButtonType = \
                          submitButton ? ((submitButton.getAttribute('type') || '').toLowerCase()) \
                          : '';if (link) {{var href = link.getAttribute('href');if (href && \
-                         !href.startsWith('javascript:')) {{if (href.startsWith('#')) \
-                         history.pushState(null, '', href);else location.assign(href);}}}} else \
+                         !href.startsWith('javascript:')) {{if (!globalThis.__obscura_activateFragment(href)) \
+                         location.assign(href);}}}} else \
                          if (submitButton && submitButtonType !== 'button' && submitButtonType \
                          !== 'reset' && !globalThis.__obscura_isDisabled(submitButton)) {{var \
                          form = submitButton.closest ? submitButton.closest('form') : null;if \

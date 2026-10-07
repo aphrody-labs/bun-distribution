@@ -4157,7 +4157,8 @@ class Element extends Node {
       const link = this.tagName === 'A' ? this : (this.closest ? this.closest('a[href]') : null);
       if (link) {
         const href = link.getAttribute('href');
-        if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+        if (href && !href.startsWith('javascript:')) {
+          if (globalThis.__obscura_activateFragment(href)) return;
           location.assign(href);
           return;
         }
@@ -7145,6 +7146,23 @@ globalThis.__virtualUrl = null;
 function __currentUrl() {
   return globalThis.__virtualUrl || _domParse("document_url") || "about:blank";
 }
+// Share native fragment activation between DOM clicks and CDP pointer input.
+globalThis.__obscura_activateFragment = function(href) {
+  let target, current;
+  try { target = new URL(href, __currentUrl()); current = new URL(__currentUrl()); }
+  catch { return false; }
+  if (!target.href.includes("#") || target.origin !== current.origin ||
+      target.pathname !== current.pathname || target.search !== current.search) return false;
+  if (target.href !== current.href) history.pushState(null, "", target.href);
+  let name = target.hash.slice(1);
+  try { name = decodeURIComponent(name); } catch {}
+  const element = document.getElementById(name) ||
+    Array.from(document.querySelectorAll("a[name]")).find(a => a.getAttribute("name") === name);
+  if (element) element.scrollIntoView({block: "start", inline: "nearest"});
+  else if (!name || name.toLowerCase() === "top") globalThis.scrollTo(0, 0);
+  return true;
+};
+
 globalThis.location = {
   get href() { return __currentUrl(); },
   set href(url) { var r = _resolveUrl(url); globalThis.__virtualUrl = r; __obscuraCore.ops.op_navigate(r, 'GET', ''); },
