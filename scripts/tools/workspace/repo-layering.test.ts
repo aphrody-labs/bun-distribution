@@ -10,7 +10,7 @@ const fixture = {
     {
       id: "app",
       name: "app",
-      manifest_path: `${root}/apps/cli/app/Cargo.toml`,
+      manifest_path: `${root}/crates/infra/aphrody/app/Cargo.toml`,
       dependencies: [
         { name: "core", path: `${root}/crates/os/core` },
         { name: "upstream", path: `${root}/../source/upstream` },
@@ -29,9 +29,9 @@ const fixture = {
 describe("monorepo Cargo graph", () => {
   test("resolves workspace crate edges and records upstream paths separately", () => {
     const graph = graphFromMetadata(root, fixture);
-    expect(graph.nodes).toEqual(["apps/cli/app", "crates/os/core"]);
+    expect(graph.nodes).toEqual(["crates/infra/aphrody/app", "crates/os/core"]);
     expect(graph.edges).toEqual([
-      { from: "apps/cli/app", to: "crates/os/core", kind: "dependency", evidence: "app -> core" },
+      { from: "crates/infra/aphrody/app", to: "crates/os/core", kind: "dependency", evidence: "app -> core" },
     ]);
     expect(graph.externalPaths).toEqual(["../source/upstream"]);
     expect(graph.errors).toEqual([]);
@@ -54,10 +54,10 @@ describe("monorepo Cargo graph", () => {
       ...fixture,
       packages: [
         fixture.packages[0]!,
-        { ...fixture.packages[1]!, dependencies: [{ name: "app", path: `${root}/apps/cli/app` }] },
+        { ...fixture.packages[1]!, dependencies: [{ name: "app", path: `${root}/crates/infra/aphrody/app` }] },
       ],
     });
-    expect(cycles(cycle.nodes, cycle.edges)).toEqual([["apps/cli/app", "crates/os/core"]]);
+    expect(cycles(cycle.nodes, cycle.edges)).toEqual([["crates/infra/aphrody/app", "crates/os/core"]]);
   });
 
   test("does not confuse a sibling prefix with a path inside the repository", () => {

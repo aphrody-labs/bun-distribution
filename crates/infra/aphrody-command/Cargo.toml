@@ -9,7 +9,7 @@ homepage.workspace    = true
 repository.workspace  = true
 description           = "Reusable in-process Aphrody command parser and dispatch for CLI and FFI hosts."
 
-# Shared command implementation; apps/cli and the FFI are thin consumers.
+# Shared command implementation; crates/infra/aphrody and the FFI are thin consumers.
 
 [lints]
 workspace = true

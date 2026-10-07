@@ -10,7 +10,7 @@
 //! Defining the functions in this library resolves every reference at link time, so no versioned
 //! import is left; at run time the host's own libm is still preferred for unversioned lookups. The
 //! implementations are the `libm` crate (musl ported to Rust). The same technique protects the
-//! `aphrody` binary (`apps/cli/src/main.rs`). Gate: `bun scripts/audit/elf-glibc-imports.ts
+//! `aphrody` binary (`crates/infra/aphrody/src/main.rs`). Gate: `bun scripts/audit/elf-glibc-imports.ts
 //! <libaphrody_ffi.so> --max 2.39` must report no offending import.
 //!
 //! The functions are deliberately not `pub`: they are not part of the Aphrody C ABI, so the ABI

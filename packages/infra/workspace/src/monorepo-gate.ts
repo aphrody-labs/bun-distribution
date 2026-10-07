@@ -413,7 +413,7 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
       (arg, index) => arg !== "--root" && args[index - 1] !== "--root",
     );
     const dispatched = await routeHeavyBuild(
-      ["bun", "apps/yolo/cli/src/index.ts", "ops", "monorepo-gate", ...remoteArgs],
+      ["bun", "packages/engine/yolo/src/index.ts", "ops", "monorepo-gate", ...remoteArgs],
       plan.root,
     );
     if (dispatched !== undefined) return dispatched;

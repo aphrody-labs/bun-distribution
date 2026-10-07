@@ -31,7 +31,7 @@ flowchart TD
 
     subgraph Toolchain ["Compilation Toolchain"]
         RUST["aphrody-discord-compiler\n(crates/discord/aphrody-discord-compiler)"]
-        CLI["aphrody discord compile | inspect | verify\n(apps/cli)"]
+        CLI["aphrody discord compile | inspect | verify\n(crates/infra/aphrody)"]
         OXC["aphrody_oxc_bridge\n(AST & Decorator Validation)"]
         BUN_AOT["bun build --compile --minify\n(scripts/build/compile-discord-bot.ts)"]
     end

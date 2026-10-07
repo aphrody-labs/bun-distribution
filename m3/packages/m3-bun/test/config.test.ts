@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { COMPILE_TARGETS, compileTarget, defineM3Bun, findWorkspaceRoot, loadApp } from "../src/config.ts";
+import {
+  COMPILE_TARGETS,
+  compileTarget,
+  defineM3Bun,
+  findWorkspaceRoot,
+  loadApp,
+} from "../src/config.ts";
 import { slug } from "../src/util.ts";
 import { cleanup, fixtureCopy, FIXTURE } from "./helpers.ts";
 
@@ -22,7 +28,10 @@ describe("loadApp", () => {
 
   test("an app without a `bun` export still loads, with defaults", async () => {
     const dir = fixtureCopy();
-    await Bun.write(join(dir, "m3.config.ts"), 'import { defineM3Config } from "@aphrody/m3/config";\nexport default defineM3Config({ entry: "src/index.html", port: 4001 });\n');
+    await Bun.write(
+      join(dir, "m3.config.ts"),
+      'import { defineM3Config } from "@aphrody/m3/config";\nexport default defineM3Config({ entry: "src/index.html", port: 4001 });\n',
+    );
     const app = await loadApp(dir);
     expect(app.api).toBeUndefined();
     expect(app.port).toBe(4001);
@@ -31,11 +40,28 @@ describe("loadApp", () => {
 
   test("a bad minify level and a missing api module are errors", async () => {
     const dir = fixtureCopy();
-    await Bun.write(join(dir, "m3.config.ts"), 'import { defineM3Config } from "@aphrody/m3/config";\nexport default defineM3Config({ entry: "src/index.html" });\nexport const bun = { minify: "extreme" };\n');
+    await Bun.write(
+      join(dir, "m3.config.ts"),
+      'import { defineM3Config } from "@aphrody/m3/config";\nexport default defineM3Config({ entry: "src/index.html" });\nexport const bun = { minify: "extreme" };\n',
+    );
     await expect(loadApp(dir)).rejects.toThrow(/minify must be none, basic or full/);
-    await Bun.write(join(dir, "m3.config.ts"), 'import { defineM3Config } from "@aphrody/m3/config";\nexport default defineM3Config({ entry: "src/index.html" });\nexport const bun = { api: "src/nope.ts" };\n');
+    await Bun.write(
+      join(dir, "m3.config.ts"),
+      'import { defineM3Config } from "@aphrody/m3/config";\nexport default defineM3Config({ entry: "src/index.html" });\nexport const bun = { api: "src/nope.ts" };\n',
+    );
     await expect(loadApp(dir)).rejects.toThrow(/api module not found/);
   });
+});
+
+test("an embedded module uses its product identity without another package manifest", async () => {
+  const dir = fixtureCopy();
+  await Bun.write(
+    join(dir, "m3.config.ts"),
+    'import { defineM3Config } from "@aphrody/m3/config";\nexport default defineM3Config({ entry: "src/index.html" });\nexport const bun = { name: "embedded-module", version: "4.5.6" };\n',
+  );
+  const app = await loadApp(dir);
+  expect(app.name).toBe("embedded-module");
+  expect(app.version).toBe("4.5.6");
 });
 
 describe("helpers", () => {

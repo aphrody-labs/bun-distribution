@@ -8,7 +8,7 @@ P/Invoke) — not only by spawning the `aphrody` binary.
 
 ## How it works
 
-The `aphrody` package (`apps/cli/`) is split into a **library** (`src/lib.rs`,
+The `aphrody` package (`crates/infra/aphrody/`) is split into a **library** (`src/lib.rs`,
 all command logic) and a **thin binary** (`src/main.rs`, ~25 lines). This crate
 depends on that library and wraps its async entry point — `aphrody::run_async`,
 driven on a persistent `tokio` runtime — behind a handful of `extern "C"`

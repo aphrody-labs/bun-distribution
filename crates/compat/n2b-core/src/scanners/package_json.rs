@@ -231,7 +231,7 @@ const ECOSYSTEM_GUIDES: &[(&str, &str, &str, &str)] = &[
         "https://v2.tauri.app/",
         "Tauri v2 API (core frontend bindings)",
     ),
-    ("@tauri-apps/cli", "tauri-v2", "https://v2.tauri.app/", "Tauri v2 CLI"),
+    ("@tauri-crates/infra/aphrody", "tauri-v2", "https://v2.tauri.app/", "Tauri v2 CLI"),
     (
         "@tauri-apps/plugin-shell",
         "tauri-v2-plugin",

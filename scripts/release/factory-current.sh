@@ -20,7 +20,7 @@ export YOLO_TOOLING_LIB="$factory_yolo_root/target/runtime/libaphrody_ffi.so"
 bun scripts/release/runtime_artifact.ts
 bun test --timeout 30000 test/
 bun scripts/release/release.ts --out "dist/release/$factory_yolo_sha"
-factory_yolo_version=$(cat apps/yolo/VERSION)
+factory_yolo_version=$(cat packages/engine/yolo/VERSION)
 factory_yolo_release="dist/release/$factory_yolo_sha/$factory_yolo_version"
 factory_yolo_previous=${YOLO_PREVIOUS_RUNTIME_ARTIFACT:-}
 bash scripts/release/smoke_remote.sh "$factory_yolo_release" ${factory_yolo_previous:+"$factory_yolo_previous"}

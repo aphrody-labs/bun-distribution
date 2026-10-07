@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Creator tools: the creator-kit commands (Challonge, wiki images, compression, Adobe and disk
 // cleaning, video subtitles, update, crash report) as forms. The logic stays in
-// apps/community/creator-kit.
+// packages/infra/product.
 import { KitSurface } from "../kit/KitSurface";
 
 export function CreatorRoute() {

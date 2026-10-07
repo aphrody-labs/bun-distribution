@@ -18,8 +18,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
         run: |
-          bun apps/yolo/cli/src/index.ts update tools --root .
-          bun apps/yolo/cli/src/index.ts update deps facts --root .
+          bun packages/engine/yolo/src/index.ts update tools --root .
+          bun packages/engine/yolo/src/index.ts update deps facts --root .
       - uses: actions/upload-artifact@v4
         with:
           name: update-facts

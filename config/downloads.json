@@ -23,12 +23,12 @@
     "jobPrefix": "downloads"
   },
   "assets": {
-    "install.sh": "apps/web/downloads/install.sh",
-    "install.ps1": "apps/web/downloads/install.ps1",
-    "install-yolo.sh": "apps/yolo/install.sh",
+    "install.sh": "packages/infra/workspace/assets/downloads/install.sh",
+    "install.ps1": "packages/infra/workspace/assets/downloads/install.ps1",
+    "install-yolo.sh": "packages/engine/yolo/install.sh",
     "pet.webp": "crates/ui/identity/assets/aphrody/sprites/spritesheet.webp",
-    "icon.svg": "apps/web/downloads/icon.svg",
-    "install-yolo.ps1": "apps/yolo/install.ps1"
+    "icon.svg": "packages/infra/workspace/assets/downloads/icon.svg",
+    "install-yolo.ps1": "packages/engine/yolo/install.ps1"
   },
   "artifacts": [
     {
@@ -91,8 +91,8 @@
       "id": "yolo",
       "kind": "bun-compile",
       "description": "yolo Bun CLI (bun build --compile) with its verified native runtime artifact, runtime SDK and project templates",
-      "versionFrom": { "file": "apps/yolo/VERSION" },
-      "entry": "apps/yolo/cli/src/index.ts",
+      "versionFrom": { "file": "packages/engine/yolo/VERSION" },
+      "entry": "packages/engine/yolo/src/index.ts",
       "compileFlags": [
         "--bytecode",
         "--no-compile-autoload-dotenv",
@@ -122,8 +122,8 @@
     {
       "id": "aphrody-setup",
       "kind": "desktop",
-      "description": "Aphrody-Setup.exe, the one-click installer for everyone (apps/community/setup): aphrody, yolo, the desktop app, the Claude plugins and the MCP declaration, optional administrator and creator roles; the « Download Aphrody » button of the site",
-      "versionFrom": { "packageJson": "apps/community/setup/package.json" },
+      "description": "Aphrody-Setup.exe, the one-click installer for everyone (packages/infra/product): aphrody, yolo, the desktop app, the Claude plugins and the MCP declaration, optional administrator and creator roles; the « Download Aphrody » button of the site",
+      "versionFrom": { "packageJson": "packages/infra/product/package.json" },
       "stage": {
         "script": "scripts/release/stage-setup.ts",
         "manifest": "aphrody-setup.manifest.json"
@@ -140,8 +140,8 @@
     {
       "id": "omar-kit",
       "kind": "kit",
-      "description": "Aphrody-Omar.exe, the administrator kit (apps/community/omar-kit): the Windows pack zip and the flat tar.gz its updater reads; installed by Aphrody-Setup for the administrator role",
-      "versionFrom": { "packageJson": "apps/community/omar-kit/package.json" },
+      "description": "Aphrody-Omar.exe, the administrator kit (packages/infra/product): the Windows pack zip and the flat tar.gz its updater reads; installed by Aphrody-Setup for the administrator role",
+      "versionFrom": { "packageJson": "packages/infra/product/package.json" },
       "stage": {
         "script": "scripts/release/stage-omar-kit.ts",
         "manifest": "omar-kit.manifest.json"

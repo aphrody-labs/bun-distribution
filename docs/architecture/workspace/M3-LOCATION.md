@@ -9,7 +9,7 @@ submodule at `m3/`. The old `design/aphrody-m3/` source path is retired.
 | --- | --- |
 | `m3/packages/app-ui` | Product UI and native/backend client contracts |
 | `m3/packages/*` | Shared framework, components, themes and product UI libraries |
-| `m3/apps/*` | Framework examples and showcase |
+| `m3/packages/app-ui/showcase/*` | Framework examples and showcase |
 | `m3/forks/*` | Pinned upstream forks, with their history and notices |
 | `crates/ui/*` | Native Aphrody hosts, rendering and token contracts |
 | `packages/infra/workspace` | Workspace and build orchestration |

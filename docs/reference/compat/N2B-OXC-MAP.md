@@ -30,8 +30,8 @@ Resolved external versions (Cargo.lock): `fastembed 5.17.3`, `octocrab 0.54.2` (
 
 | Consumer | Evidence | Uses |
 |---|---|---|
-| `apps/cli` (`aphrody` binary) | `apps/cli/Cargo.toml:130` | `aphrody-n2b`; subcommand `aphrody n2b` = `Commands::N2b` (`crates/infra/aphrody-command/src/lib.rs:521`, dispatch `:1742` -> `commands::N2bCommand`) |
-| `apps/cli` package manager | `crates/infra/aphrody-command/src/package_cmd.rs:18,104,107` | `PackageName::N2b`, `cargo_package: Some("n2b")` (the Cargo package is `aphrody-n2b`; whether this resolves is unverified) |
+| `crates/infra/aphrody` (`aphrody` binary) | `crates/infra/aphrody/Cargo.toml:130` | `aphrody-n2b`; subcommand `aphrody n2b` = `Commands::N2b` (`crates/infra/aphrody-command/src/lib.rs:521`, dispatch `:1742` -> `commands::N2bCommand`) |
+| `crates/infra/aphrody` package manager | `crates/infra/aphrody-command/src/package_cmd.rs:18,104,107` | `PackageName::N2b`, `cargo_package: Some("n2b")` (the Cargo package is `aphrody-n2b`; whether this resolves is unverified) |
 | `crates/ai/mcp` (MCP server) | `crates/ai/mcp/Cargo.toml:146-147` | n2b-core, n2b-types; MCP tool `n2b` (`crates/ai/mcp/src/main.rs:2216-2240` (not in repo), modes check/fix/migrate, renders with `aphrody_n2b_core::report::render_json`), contract `n2b` in `aphrody_schema` (`main.rs:2182-2187`, `include_str!` of `crates/contracts/schema/v2.json`) |
 | `crates/compat/bun-docs` | `crates/compat/bun-docs/Cargo.toml:16` | n2b-registry (Node->Bun equivalents; listed as MCP tool `bun_node_equivalent` in `docs/reference/workspace/TOOLS.md:157`) |
 | `crates/interop/ffi` (`aphrody-ffi`) | `crates/interop/ffi/Cargo.toml:53`, `src/lib.rs:65` | re-exports `aphrody_n2b_native::*` |

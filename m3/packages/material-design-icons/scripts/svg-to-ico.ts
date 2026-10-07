@@ -52,7 +52,7 @@ export function runSvgToIco(args: string[]): number {
   const tauri = tauriCli();
   if (!tauri) {
     console.error(
-      "svg-to-ico: no Tauri CLI (install @tauri-apps/cli in the app, or put `tauri` on PATH)",
+      "svg-to-ico: no Tauri CLI (install @tauri-crates/infra/aphrody in the app, or put `tauri` on PATH)",
     );
     return 127;
   }

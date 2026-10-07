@@ -4,9 +4,9 @@
   "description": "Sample Next.js 16 app on the M3 stack: App Router, Cache Components, proxy.ts, React Compiler, typed routes, Tailwind v4 and Base UI, built and served on Bun through yolo.",
   "type": "module",
   "scripts": {
-    "dev": "bun ../../../../../apps/yolo/cli/src/index.ts m3 next dev",
-    "build": "bun ../../../../../apps/yolo/cli/src/index.ts m3 next build",
-    "start": "bun ../../../../../apps/yolo/cli/src/index.ts m3 next start",
+    "dev": "bun ../../../../../packages/engine/yolo/src/index.ts m3 next dev",
+    "build": "bun ../../../../../packages/engine/yolo/src/index.ts m3 next build",
+    "start": "bun ../../../../../packages/engine/yolo/src/index.ts m3 next start",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test ./test/"
   },

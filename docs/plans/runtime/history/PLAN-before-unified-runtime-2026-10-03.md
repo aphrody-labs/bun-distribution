@@ -22,7 +22,7 @@ preuves historiques : ancien plan
   `bun run docs:gen` (vérifié par `bun run docs:check`). Aucun compte n'est tenu à la main.
 - 27 déplacements de propriétaires puis 155 raccourcissements de chemins.
   Les identités publiques Cargo et les noms `@aphrody/*` sont conservés.
-- CLI : `apps/cli` ; bindings : `crates/interop/ffi`,
+- CLI : `crates/infra/aphrody` ; bindings : `crates/interop/ffi`,
   `packages/interop/native` ; Infra : `packages/infra/workspace`.
 - Clients kernel : `crates/os/kernel-client`, `packages/os/kernel-client`.
   UI regroupée sous `design/aphrody-m3/packages`. Adaptateur Python : `crates/ai/rag-python`.
@@ -386,7 +386,7 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
   prouve pas la pureté des sources ni des dépendances externes.
 - INCOMPLET : revue sémantique des dépendances croisées, pureté des contrats,
   résolution transitive et qualification des features/targets restent ouvertes.
-- La FFI dépend toujours de `apps/cli` : deux appels directs à
+- La FFI dépend toujours de `crates/infra/aphrody` : deux appels directs à
   `locate_home_shenron` et `run_async`, avec neuf features transférées au CLI.
   L’extraction doit conserver dispatch, ABI et ces features ; supprimer seulement
   la dépendance casserait la surface exportée actuelle.
@@ -458,12 +458,12 @@ ABI, erreurs et annulation vérifiés par des cas qui traversent les frontières
 
 ## 2. Interop et CLI
 
-Propriétaires : `crates/interop/ffi`, `packages/interop/native`, `apps/cli`.
+Propriétaires : `crates/interop/ffi`, `packages/interop/native`, `crates/infra/aphrody`.
 
 - [x] Extraire les capacités partagées encore prises dans le CLI ; la FFI ne
   doit pas dépendre de l’application pour obtenir la logique de bibliothèque.
   Fait par Codex (498ef3b3d, docs e89e094fa) : bibliothèque `aphrody-command`
-  (52 sources déplacées, façade `apps/cli` conservée) ; la FFI n’en dépend plus
+  (52 sources déplacées, façade `crates/infra/aphrody` conservée) ; la FFI n’en dépend plus
   de l’application. 247 tests Rust, 15 Bun natifs ; check/clippy Linux
   all-targets et WASM verts ; catalogue 63 CLI / 1280 commandes conservé.
 - [x] Unifier découverte, chargement et durée de vie de la bibliothèque native.
@@ -1648,7 +1648,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - Cycles de domaines : `os` ↔ `shell` (kernel→shell optionnel,
   terminal-backend→a2a-coord, nu→kernel-client) ; `ai` ↔ `web`
   (`aphrody-web-bridge` → `aphrody-translate`). Inversions : `aphrody-ffi` →
-  `aphrody` (apps/cli) et `aphrody-yolo` (infra) → kernel-client.
+  `aphrody` (crates/infra/aphrody) et `aphrody-yolo` (infra) → kernel-client.
 - FAIT Bun : 83 packages résolus (l’en-tête en annonce 84, écart à expliquer),
   aucun package → app, aucun cycle ; arêtes `apps` → `packages` uniquement.
 - INCOMPLET : dépendances dev/par cible et résolution par features

@@ -108,7 +108,7 @@ wired today.
 
 Covered in §1. `ort 2.0.0-rc.12`, MIT OR Apache-2.0. This is aphrody's only
 real neural-inference dependency today, pulled transitively by `magika` and
-declared as an optional direct dep in `apps/cli/Cargo.toml`
+declared as an optional direct dep in `crates/infra/aphrody/Cargo.toml`
 (`ort = { version = "=2.0.0-rc.12", optional = true }`) behind the `magika`
 feature. The pin is exact (`=2.0.0-rc.12`) because the 2.x line is a release
 candidate (production-ready but not API-stable). Verified building offline
@@ -147,7 +147,7 @@ Grepped the workspace `Cargo.toml` files for `candle`, `ort`, `tokenizers`,
 | Crate | Status | Where |
 |-------|--------|-------|
 | `magika` | **WIRED** (opt-in `magika` feature) | `crates/os/re/Cargo.toml` (`magika = "1.1.0"`), impl in `crates/os/re/src/magika.rs` |
-| `ort` | **WIRED** (transitive via `magika` + optional direct dep) | `apps/cli/Cargo.toml` (`=2.0.0-rc.12`, `magika` feature) |
+| `ort` | **WIRED** (transitive via `magika` + optional direct dep) | `crates/infra/aphrody/Cargo.toml` (`=2.0.0-rc.12`, `magika` feature) |
 | `lancedb` | **WIRED** | workspace `Cargo.toml` (`0.29`), `crates/ai/memory/Cargo.toml` |
 | `arrow-array` / `arrow-schema` | **WIRED** (LanceDB backend) | `crates/ai/memory/Cargo.toml` |
 | `candle` | not used | — (recommended for future in-process inference) |

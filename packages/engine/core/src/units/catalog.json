@@ -46,7 +46,7 @@
       },
       "service": {
         "WorkingDirectory": "%h/aphrody",
-        "ExecStart": "%h/.bun/bin/bun %h/aphrody/apps/yolo/cli/src/index.ts ops agent-sync --domain aphrody --watch --interval-secs 2",
+        "ExecStart": "%h/.bun/bin/bun %h/aphrody/packages/engine/yolo/src/index.ts ops agent-sync --domain aphrody --watch --interval-secs 2",
         "Restart": "on-failure",
         "RestartSec": "10",
         "UMask": "0077",
@@ -63,7 +63,7 @@
       },
       "service": {
         "WorkingDirectory": "%h/aphrody",
-        "ExecStart": "%h/.bun/bin/bun %h/aphrody/apps/yolo/cli/src/index.ts ops workspace-subsystem --serve",
+        "ExecStart": "%h/.bun/bin/bun %h/aphrody/packages/engine/yolo/src/index.ts ops workspace-subsystem --serve",
         "Restart": "on-failure",
         "RestartSec": "10",
         "UMask": "0077",
@@ -114,9 +114,9 @@
       "service": {
         "WorkingDirectory": "%h/aphrody",
         "ExecStart": [
-          "%h/.bun/bin/bun apps/yolo/cli/src/index.ts update tools --root %h/aphrody",
-          "%h/.bun/bin/bun apps/yolo/cli/src/index.ts update deps facts --root %h/aphrody",
-          "%h/.bun/bin/bun apps/yolo/cli/src/index.ts update check --root %h/aphrody"
+          "%h/.bun/bin/bun packages/engine/yolo/src/index.ts update tools --root %h/aphrody",
+          "%h/.bun/bin/bun packages/engine/yolo/src/index.ts update deps facts --root %h/aphrody",
+          "%h/.bun/bin/bun packages/engine/yolo/src/index.ts update check --root %h/aphrody"
         ]
       },
       "timer": {
@@ -357,7 +357,7 @@
       },
       "service": {
         "WorkingDirectory": "%h/aphrody",
-        "ExecStart": "%h/.bun/bin/bun %h/aphrody/apps/yolo/cli/src/index.ts ops agent-live --watch --interval-secs 30 --json",
+        "ExecStart": "%h/.bun/bin/bun %h/aphrody/packages/engine/yolo/src/index.ts ops agent-live --watch --interval-secs 30 --json",
         "Restart": "on-failure",
         "RestartSec": "10",
         "UMask": "0077",
@@ -399,7 +399,7 @@
         "IOSchedulingClass": "idle",
         "WorkingDirectory": "%h/aphrody",
         "Environment": "PATH=%h/.cargo/bin:%h/.bun/bin:/usr/local/bin:/usr/bin:/bin",
-        "ExecStart": "%h/.bun/bin/bun apps/yolo/cli/src/index.ts ops docs generate --root %h/aphrody --deps"
+        "ExecStart": "%h/.bun/bin/bun packages/engine/yolo/src/index.ts ops docs generate --root %h/aphrody --deps"
       },
       "timer": {
         "description": "Daily refresh of the Aphrody generated docs",

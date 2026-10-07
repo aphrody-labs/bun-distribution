@@ -43,8 +43,8 @@ async function checkout() {
     `${root}/crates/ai/mcp/Cargo.toml`,
     '[package]\nname = "aphrody-mcp"\n\n[[bin]]\nname = "aphrody-mcp"\npath = "src/main.rs"\n',
   );
-  await Bun.write(`${root}/apps/cli/Cargo.toml`, '[package]\nname = "aphrody-cli"\n');
-  await Bun.write(`${root}/apps/cli/src/main.rs`, "fn main() {}\n");
+  await Bun.write(`${root}/crates/infra/aphrody/Cargo.toml`, '[package]\nname = "aphrody-cli"\n');
+  await Bun.write(`${root}/crates/infra/aphrody/src/main.rs`, "fn main() {}\n");
   return root;
 }
 

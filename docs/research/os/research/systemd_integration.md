@@ -129,7 +129,7 @@ pub fn notify_systemd(message: &str) -> std::io::Result<bool> {
 
 ## 4. Aphrody Watchdog & Notification Implementation
 
-In Aphrody, we implement systemd integration natively in `crates/shell/terminal-backend` and `apps/cli` using the zero-dependency standard library pattern.
+In Aphrody, we implement systemd integration natively in `crates/shell/terminal-backend` and `crates/infra/aphrody` using the zero-dependency standard library pattern.
 
 ### 4.1 readiness Notifications
 

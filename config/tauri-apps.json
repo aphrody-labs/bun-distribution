@@ -24,7 +24,7 @@
       "generated": [
         "crates/ui/app/gen"
       ],
-      "note": "Desktop agent console, the only desktop application. Embeds the prebuilt ui-dist bundle until @aphrody/app-ui joins the workspace. Also the Yolo desktop SDK host (--host-info, --runtime-host: former yolo-desktop), opens the M3 showcase window with --showcase (former m3-showcase; the Bun sidecar of m3/apps/showcase serves UI and API) and hosts the real-webview shell e2e as the shell_e2e example (former aphrody-shell-tauri-e2e)."
+      "note": "Desktop agent console, the only desktop application. Embeds the prebuilt ui-dist bundle until @aphrody/app-ui joins the workspace. Also the Yolo desktop SDK host (--host-info, --runtime-host: former yolo-desktop), opens the M3 showcase window with --showcase (former m3-showcase; the Bun sidecar of m3/packages/app-ui/showcase serves UI and API) and hosts the real-webview shell e2e as the shell_e2e example (former aphrody-shell-tauri-e2e)."
     },
     {
       "id": "aphrody-drive",

@@ -3,7 +3,7 @@ import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 
 export const PRIVATE_OWNER_ROOT = resolve(import.meta.dir, "../../..");
-/** The repository that folds the M3 owner into its single Bun workspace (`m3/apps/*`, ...). */
+/** The repository that folds the M3 owner into its single Bun workspace (`m3/packages/app-ui/showcase/*`, ...). */
 const REPOSITORY_ROOT = resolve(PRIVATE_OWNER_ROOT, "..");
 
 /** Private packages resolve only in their declared source owner workspace. */

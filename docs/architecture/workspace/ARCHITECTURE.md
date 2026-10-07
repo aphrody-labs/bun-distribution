@@ -34,7 +34,7 @@ history under `upstream/`.
 | Native | `crates/native`: native compute foundations and bridge contracts |
 | Compat and Bun | `crates/compat`, `packages/compat` (not in repo), `packages/bun`: compatibility engines and runtime clients |
 | Interop | [Rust FFI](../../../crates/interop/ffi), [Bun native adapter](../../../packages/interop/native): shared library boundary |
-| CLI | [apps/cli](../../../apps/cli): argument handling, configuration and invocation of owner libraries |
+| CLI | [crates/infra/aphrody](../../../crates/infra/aphrody): argument handling, configuration and invocation of owner libraries |
 | OS and Shell | `crates/os`, `packages/os`, `crates/shell`: system capabilities, kernel, process supervision, jobs and shell facilities |
 | Infra | `crates/infra`, [workspace orchestrator](../../../packages/infra/workspace): inventories, topology, qualification and operations |
 | UI | `crates/ui`, `m3/packages`: rendering, tokens, components and presentation |

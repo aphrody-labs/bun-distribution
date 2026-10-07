@@ -171,7 +171,7 @@ messaging ; `aphrody-command` ← `aphrody-ffi`, `aphrody` (CLI) ; `aphrody-web-
 | `packages/engine/runtime` (SDK) | Extension navigateur précompilée : `yolo_browser_*` via `bun:ffi` (`src/browser.ts:1-60`), capacités `browser.navigate/dom/capture/contexts`. |
 | `packages/interop/native` (`@aphrody/bun`) | 56 symboles `aphrody_web_*` dont `aphrody_web_parse_html`, `query_selector*`, `aphrody_web_obscura_fetch(_submit)` (`src/library.ts:97-101`, `src/engine.ts:258-573`). |
 | `packages/web/x` | `webObscuraFetchSubmit` (`src/tools/web-recon.ts:4,36`). |
-| `apps/yolo/cli` | `yolo browser …` : une commande CDP sur l'endpoint Obscura (`src/index.ts:121`, `src/package-commands.ts:114`). |
+| `packages/engine/yolo` | `yolo browser …` : une commande CDP sur l'endpoint Obscura (`src/index.ts:121`, `src/package-commands.ts:114`). |
 | MCP | `obscura-mcp` : 37 noms `browser_*` (`crates/web/obscura-mcp/src/lib.rs`) publiés `aphrody_browser_*` par `aphrody-mcp` ; clients `crates/ai/mcp-client/src/{bxc,web}.rs`. |
 | Python | `py/packages/aphrody/src/aphrody/web_browser.py:251` (« `render` uses Obscura »). |
 | Config / docs | `config/web.json` (`engine.port 9222`, `allowPrivateNetwork:false`, env `OBSCURA_*` l. 35-36, 54, 88-94), `config/live-audit.json:7`, `docs/architecture/web/ARCHITECTURE.md:20-60` (règle « Obscura/V8 renders remote pages », l. 36), `docs/reference/web/web/obscura-integration-spec.md`, `docs/APHRODY-RUST-TAURI-OBSCURA-BUN.md` (inventaire lexical). |

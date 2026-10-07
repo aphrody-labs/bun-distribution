@@ -23,7 +23,7 @@ the retired `aphrody` monolith (docs/vps/APIS.md) and updated to the category re
 |---|---|---|---|
 | `aphrody-web-api` | BXC REST + GraphQL (Elysia, GraphQL Yoga), compiled to one Bun binary | `aphrody-web` apps/bxc/src/server/ (bxc retiré du monorepo) | Loopback; Nginx forwards only the `internal` paths of `aphrody.com` |
 | `aphrody-site` | Public `aphrody.com` origin (Rust) | `aphrody-web` crates/aphrody-site (hors du monorepo) | Public host route |
-| `aphrody-a2a` | A2A JSON-RPC listener (`aphrody a2a serve`) | `aphrody-ai` `apps/cli` over the `aphrody-contracts` A2A stack | Loopback; RPC path and agent card routed on `aphrody.com` |
+| `aphrody-a2a` | A2A JSON-RPC listener (`aphrody a2a serve`) | `aphrody-ai` `crates/infra/aphrody` over the `aphrody-contracts` A2A stack | Loopback; RPC path and agent card routed on `aphrody.com` |
 | `aphrody-ai-http` | AI REST gateway (`aphrody-mcp http`) | `aphrody-ai` `crates/ai/mcp` | Loopback; model and RAG read paths routed on `aphrody.com` |
 | `aphrody-shenron-embed` | E5 embeddings (Rust, `aphrody-embed serve`) | `aphrody-ai` `crates/ai/embed` | Loopback only |
 | `shenron-mcp` | Retired 2026-09-25; its tools are `dragonball.*` in `aphrody-mcp` | `aphrody-ai` `crates/ai/mcp` (feature `dragonball`) | None (route retired) |

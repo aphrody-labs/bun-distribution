@@ -31,7 +31,7 @@ nom `yolo` il exécute le CLI embarqué ; sous le nom `vu` le CLI délègue à l
   `test/js/first_party/runtime/dlopen-global.test.ts` (2, deux bibliothèques C dont une liée `-z now`) et
   `argv0-bun-alias.test.ts` (2).
 - [x] `bun-forge` : l'artefact est `yolo` ; `--yolo-root <monorepo>` (+ `--yolo-asset`, `BUN_FORGE_YOLO_ROOT`)
-  compile le CLI (`apps/yolo/cli/src/index.ts`, drapeaux de `scripts/release/compile-flags.ts`) sur le moteur construit ;
+  compile le CLI (`packages/engine/yolo/src/index.ts`, drapeaux de `scripts/release/compile-flags.ts`) sur le moteur construit ;
   les liens `bun` et `vu` sont créés ; la fumée exécute le moteur par `bun` (`argv0` vérifié), `yolo version` (CLI
   embarqué) et `vu --version` (`argv0` `vu`, code 127 sans artefact) ; le plafond glibc 2.39 s'applique au fichier
   final. Les tests `first_party` tournent sur le moteur tel que construit (un `yolo` compilé relancerait son CLI quand
@@ -43,10 +43,10 @@ nom `yolo` il exécute le CLI embarqué ; sous le nom `vu` le CLI délègue à l
   `1.4.3-canary.1+a4d88d124`, `vu --version` délègue au vrai artefact `~/.vu` (CPython 3.12.15, uv 0.12.23, ruff
   0.16.10), `dlopen` de la libpython de l'artefact avec `{ global: true }` : `Py_GetVersion()` répond, une seule
   libpython mappée.
-- [x] CLI : `yolo vu …` et `vu …` (`apps/yolo/cli/src/vu.ts`, `runVu`, `isVuArgv0`) vérifient le manifeste de
+- [x] CLI : `yolo vu …` et `vu …` (`packages/engine/yolo/src/vu.ts`, `runVu`, `isVuArgv0`) vérifient le manifeste de
   l'artefact puis l'exécutent ; 127 sans artefact, 1 si la vérification échoue ; l'artefact est chargé, jamais lié.
 - [x] Packaging : `scripts/release/release.ts` empaquette l'artefact de la forge (`YOLO_BINARY`) avec les liens
-  `bun` et `vu` (chemin `apps/yolo/cli` corrigé) ; `apps/yolo/install.sh` vérifie l'alias `bun` de la livraison et
+  `bun` et `vu` (chemin `packages/engine/yolo` corrigé) ; `packages/engine/yolo/install.sh` vérifie l'alias `bun` de la livraison et
   accepte `YOLO_NO_ALIASES=1` pour ne pas masquer un `bun`/`vu` existant du PATH.
 - [ ] Ouvert : activation locale (les liens `~/.local/bin/yolo`, `bun`, `vu` pointent encore vers l'ancien CLI
   compilé et le Bun officiel 1.4.2 ; `packageManager` `bun@1.4.2` dans 20 manifestes) ; `install.ps1` et Windows

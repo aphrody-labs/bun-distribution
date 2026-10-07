@@ -14,8 +14,8 @@ des frameworks.
 
 ## Déjà sur `main` (ne pas refaire)
 - App desktop unique : routes `admin` (omar-kit) et `creator` (creator-kit) dans `m3/packages/app-ui`, `crates/ui/app/src/kits.rs`,
-  `m3/apps/web` (not in repo) (former app directory merged into showcase) fusionné dans `showcase`, `apps/yolo/web` absorbé (Studio › Moteur), `Aphrody-Setup.exe` (`apps/community/setup`).
-- Kit Omar zéro ligne de commande (`apps/community/omar-kit`), plan WireGuard `wg1` + compte `omar` déclarés (non appliqués).
+  `m3/apps/web` (not in repo) (former app directory merged into showcase) fusionné dans `showcase`, `packages/engine/yolo/web` absorbé (Studio › Moteur), `Aphrody-Setup.exe` (`packages/infra/product`).
+- Kit Omar zéro ligne de commande (`packages/infra/product`), plan WireGuard `wg1` + compte `omar` déclarés (non appliqués).
 - aphrody.com : page M3 minimale servie par `apps/web/downloads` (pet, bouton desktop, curl/pwsh), thème et icônes = pet.
 - vu : `crates/interop/ffi/src/python_ffi.rs` (libpython RTLD_GLOBAL, dlsym), `yolo py` délègue à vu ; fork Bun qualifié sur la fabrique.
 - Shenron : `@aphrody/a2a`, rag-core API unique + wasm + ffi, `shenron-chat-v2` servi sur vps `127.0.0.1:8799`, CDN `shenron-cdn-sync` local.
@@ -42,7 +42,7 @@ des frameworks.
 7. **vu / fork / yolo** : benchmark `uv sync` régression ×0.74, ratchet résidus produit (431 fichiers), activation PATH du fork
    (`bun`/`yolo`/`vu` pointent encore vers les anciens binaires), embed `libaphrody_ffi`, test de `python-ffi` contre la libpython de l'artefact vu,
    Windows pour `python-ffi`, liaison `bun:ffi`. Plan : `docs/plans/vu/PLAN.md` (D18), `docs/plans/yolo-fork-unified/PLAN.md`.
-8. **Échecs préexistants connus** : `web:verify` (binaire moteur absent, A2A local sans `grok`), 4 tests de `apps/yolo/cli/test/cli_app.test.ts`
+8. **Échecs préexistants connus** : `web:verify` (binaire moteur absent, A2A local sans `grok`), 4 tests de `packages/engine/yolo/test/cli_app.test.ts`
    (`libaphrody_ffi` absent), `aphrody infra validate` (voir 4), typecheck global, `dbfr` : `shenron-cdn` n'a plus de pull.
 9. **Worktrees** : ~18 worktrees `.claude/worktrees/agent-*` obsolètes (commits déjà sur `main` pour la plupart) : vérifier `git cherry workspace/main <branche>`
    puis supprimer ceux qui ne portent plus rien (`git worktree remove`), sans toucher `omar-access` ni `shenron-targets` s'ils sont dirty.

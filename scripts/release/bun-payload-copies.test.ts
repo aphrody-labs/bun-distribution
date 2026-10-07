@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "../..");
 const copies = [
-  ["config/bun-forge.json", "apps/yolo/forge/src/defaults.json"],
+  ["config/bun-forge.json", "packages/engine/forge/src/defaults.json"],
   ["crates/ai/agent-home/sync-contract.json", "packages/google/google/src/sync-contract.json"],
   ...["x-graphql-catalog.json", "gryphon-graphql-catalog.json", "x-policy.json"].map((name) => [
     `crates/web/x/data/${name}`,

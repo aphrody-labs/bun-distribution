@@ -39,7 +39,7 @@ just host audit --host vps                              # same thing through the
   scan roots and tuning targets, with `[hosts.<name>.*]` overlays. Lists are unioned with the built-in
   defaults and the file can only make the tool more conservative: it cannot empty the hard-coded rules.
 
-## Safety invariants (hard-coded in `apps/yolo/cli/src/host-safety.ts`, tested in `test/host.test.ts`)
+## Safety invariants (hard-coded in `packages/engine/yolo/src/host-safety.ts`, tested in `test/host.test.ts`)
 
 1. Nothing is deleted unless it is regenerable (apt cache, rotated logs, journal, stopped containers and
    dangling images, docker build cache, build output found with its project marker, listed cache
@@ -94,7 +94,7 @@ on 2026-10-03. `host space` applies the exact rule instead: unlinking a set of p
 (`%b`, 512 bytes) of an inode if and only if every one of its links (`%n`) is inside the set. It reports the sum per
 name, the unique bytes, the bytes really freed and the bytes kept alive from outside, then checks the free-space
 floor on the result: free >= ceil(total x ratio), in integer arithmetic. The functions are pure
-(`apps/yolo/cli/src/host-space.ts`); `test/host-space.test.ts` checks freed <= unique <= naive on 300 seeded random sets
+(`packages/engine/yolo/src/host-space.ts`); `test/host-space.test.ts` checks freed <= unique <= naive on 300 seeded random sets
 and the shenron case, and a real run on hard-linked files gave 9.5 MiB freed and 47.7 MiB kept for a copy that
 shared 50 MB with a live one, matching `du`.
 
@@ -127,7 +127,7 @@ jobs run detached (`nohup`) because the ssh exec transport times out after about
 
 "Verified" means the API is present in `vendor/bun/packages/bun-types` and documented under
 `vendor/bun/docs`, and `typeof` was checked at runtime on this Bun 1.4.2 build. Status: **used** = in
-`apps/cli/src/host*.ts` today; **planned** = fits server management, not implemented; **n/a** = verified to
+`crates/infra/aphrody/src/host*.ts` today; **planned** = fits server management, not implemented; **n/a** = verified to
 exist but not relevant to server management.
 
 | Bun feature | Verified in | Use for server management | Status |

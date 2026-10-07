@@ -69,7 +69,7 @@ describe("app template", () => {
     const pkg = JSON.parse(text(files["package.json"]));
     expect(pkg.dependencies["@aphrody/api"]).toBe(TAURI_3.jsApi);
     expect(pkg.dependencies["@aphrody/plugin-opener"]).toBe(TAURI_3.jsPluginOpener);
-    expect(pkg.devDependencies["@tauri-apps/cli"]).toBe(TAURI_3.jsCli);
+    expect(pkg.devDependencies["@tauri-crates/infra/aphrody"]).toBe(TAURI_3.jsCli);
     expect(pkg.dependencies["@aphrody/plugin-shell"]).toBeUndefined();
 
     const cargo = text(files["src-tauri/Cargo.toml"]);

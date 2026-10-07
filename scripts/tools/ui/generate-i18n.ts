@@ -5,7 +5,7 @@
  * Generates symmetric bilingual translations (EN & FR) mapped directly
  * from the real Aphrody backend systems:
  * - FFI (@aphrody/bun, HCT maths, palettes)
- * - CLI (apps/cli pillars & commands)
+ * - CLI (crates/infra/aphrody pillars & commands)
  * - App-Server (crates/ai/app-server JSON-RPC)
  * - OS Kernel (crates/os/kernel subsystems & tools)
  * - Drive (crates/ui/drive, sd-daemon, VDFS)

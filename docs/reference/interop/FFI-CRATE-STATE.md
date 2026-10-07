@@ -22,7 +22,7 @@ Columns: Kind = lib/bin/cdylib targets; FFI = how the crate reaches the single `
 
 | Path | Package | Kind | FFI | Bun consumer | Tests | Stubs | Gates (wasm/win) | Membership |
 |---|---|---|---|---|---:|---:|---|---|
-| `apps/cli` | `aphrody` | lib+bin*1 | aphrody_run / run_json / run_captured (CLI surface in-process; direct dep) | @aphrody/bun (engine.ts); shenron_run* too | 231 | 0/0 | 173/41 | member(glob) |
+| `crates/infra/aphrody` | `aphrody` | lib+bin*1 | aphrody_run / run_json / run_captured (CLI surface in-process; direct dep) | @aphrody/bun (engine.ts); shenron_run* too | 231 | 0/0 | 173/41 | member(glob) |
 | `crates/ai/agent-home` | `aphrody-agent-home` | lib | linked (direct dep); shenron persona/auth adapters | @aphrody/bun/shenron (engine.ts) | 111 | 0/0 | 17/2 | member(glob) |
 | `crates/ai/agent-runtime` | `aphrody-agent-runtime` | lib | linked transitively, no C symbols | - | 37 | 0/0 | 0/6 | member(glob) |
 | `crates/ai/agent-tools` | `aphrody-agent-tools` | lib | linked transitively, no C symbols | - | 39 | 0/0 | 0/13 | member(glob) |
@@ -147,7 +147,7 @@ Columns: Kind = lib/bin/cdylib targets; FFI = how the crate reaches the single `
 | `crates/os/compat` | `aphrody-compat` | lib | linked transitively, no C symbols | - | 4 | 0/0 | 0/0 | member(glob) |
 | `crates/os/coreutils` | `aphrody-coreutils` | lib | linked transitively, no C symbols | - | 3 | 0/0 | 0/0 | member(glob) |
 | `crates/os/cron` | `aphrody-cron` | lib | not linked | - | 14 | 0/0 | 0/0 | member(glob) |
-| `crates/os/drive/apps/cli` | `sd-cli` | bin*1 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
+| `crates/os/drive/crates/infra/aphrody` | `sd-cli` | bin*1 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
 | `crates/os/drive/core` | `sd-core` | lib+bin*6 | not linked | - | 599 | 8/1 | 0/67 | EXCLUDED (crates/os/drive) |
 | `crates/os/drive/core/benchmarks` | `sd-bench` | lib+bin*2 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
 | `crates/os/drive/crates/actors` | `sd-actors` | lib | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |

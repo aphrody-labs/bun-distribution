@@ -31,7 +31,7 @@ supply-chain delay. `minimumReleaseAgeExcludes` lists the packages that must tra
 | --- | --- |
 | `next`, `@next/env`, `@next/swc-*` | Security fixes ship as patch releases and must land on the day. The platform binaries must follow `next`. |
 | `nodemailer`, `undici` | Security fixes (SMTP and HTTP clients). |
-| `@tauri-apps/cli`, `@aphrody/api`, `@tauri-apps/cli-linux-x64-gnu` | The 3.0.0 alphas must track the Rust crates (`tauri sync`). |
+| `@tauri-crates/infra/aphrody`, `@aphrody/api`, `@tauri-crates/infra/aphrody-linux-x64-gnu` | The 3.0.0 alphas must track the Rust crates (`tauri sync`). |
 
 `yolo update bun` honours the gate: a release younger than the window is reported as `waiting`, and `apply` writes
 the newest release that is old enough (`pickEligible` from `tauri/sync.ts`, prereleases ignored when the latest is

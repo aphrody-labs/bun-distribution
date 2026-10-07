@@ -138,7 +138,7 @@ vu/
   `previous` links for rollback; default `$VU_HOME` is `~/.vu`. The manifest (schema 1, name `vu-runtime`) lists every
   file with its sha256 and size, the target, the toolchain, the revisions of the vu repository and the pins, and
   `compatibility.cliMajor`.
-- `yolo py` (D2, implemented in apps/yolo/cli/src/vu.ts and python.ts, commit `caa20e186`): resolves the active artifact
+- `yolo py` (D2, implemented in packages/engine/yolo/src/vu.ts and python.ts, commit `caa20e186`): resolves the active artifact
   (`$VU_HOME`, or `--vu <dir>` for one directory), verifies the manifest, the target, the CLI major and the sha256 of
   bin/vu, bin/uv and bin/ruff (`--vu-full`: every file), and runs `uv` and `ruff` from the artifact's bin/ with it first in
   PATH; without an artifact it falls back to the tools on PATH and says so in `yolo py status`; a damaged artifact is

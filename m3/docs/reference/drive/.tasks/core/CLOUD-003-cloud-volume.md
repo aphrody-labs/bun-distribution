@@ -65,7 +65,7 @@ Implement support for a cloud storage provider (e.g., S3-compatible service) as 
 
 **CLI:**
 
-- `apps/cli/src/domains/volume/` - CLI commands
+- `crates/infra/aphrody/src/domains/volume/` - CLI commands
 
 **Query System:**
 

@@ -55,7 +55,7 @@ if (process.argv.includes("--full")) {
 
 // 5. Gate native standalone compilation if requested with --compile
 if (process.argv.includes("--compile")) {
-  run(root, "run", "apps/yolo/cli/src/index.ts", "ops", "discord", "compile", "all", "--smoke");
+  run(root, "run", "packages/engine/yolo/src/index.ts", "ops", "discord", "compile", "all", "--smoke");
 }
 
 console.log(

@@ -9,7 +9,7 @@ P/Invoke) — not only by spawning the `aphrody` binary.
 ## How it works
 
 All command logic lives in the `aphrody-command` library
-(`crates/infra/aphrody-command`); the `aphrody` package (`apps/cli`) is a thin
+(`crates/infra/aphrody-command`); the `aphrody` package (`crates/infra/aphrody`) is a thin
 binary facade over it. This crate depends on `aphrody-command` and wraps its
 async entry point — `aphrody_command::run_async`, driven on a persistent `tokio`
 runtime — behind a handful of `extern "C"` symbols. The library defines no

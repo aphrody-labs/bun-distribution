@@ -95,7 +95,7 @@ ordinary merge into the existing private fork's `main`, preserving the previous 
 [`085dd0ad5e2356f805ecb1b5d51f7cc28da802af`](https://github.com/aphrody-labs/bun/commit/085dd0ad5e2356f805ecb1b5d51f7cc28da802af).
 Its tree `91167c557c37aebf1145fc00186552c7c204b854` exactly matches the qualified candidate.
 
-The merged revision was rebuilt through the source owner, `apps/yolo/forge`, on the VPS with both
+The merged revision was rebuilt through the source owner, `packages/engine/forge`, on the VPS with both
 factory locks, an isolated mirror/state/scratch directory, shared toolchain/build caches, release
 ThinLTO, four build jobs and `--tests`. `--yolo-root` selected the clean Aphrody checkout `81cd80a`
 with frozen Bun dependencies, compiling the Yolo CLI onto that engine.

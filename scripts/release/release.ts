@@ -36,7 +36,7 @@ import { toolingAsset } from "./tooling-asset";
 const root = resolve(import.meta.dir, "../..");
 const outIndex = Bun.argv.indexOf("--out");
 const outRoot = resolve(root, outIndex > 0 ? (Bun.argv[outIndex + 1] as string) : "dist/release");
-const version = readFileSync(join(root, "apps/yolo/VERSION"), "utf8").trim();
+const version = readFileSync(join(root, "packages/engine/yolo/VERSION"), "utf8").trim();
 const target = hostTarget();
 const windows = target.includes("windows");
 const dir = join(outRoot, version);
@@ -88,7 +88,7 @@ if (prebuilt) {
     ...(tooling?.flags ?? []),
     "--define",
     `YOLO_VERSION=${JSON.stringify(version)}`,
-    "apps/yolo/cli/src/index.ts",
+    "packages/engine/yolo/src/index.ts",
     "--outfile",
     exe,
   ]);

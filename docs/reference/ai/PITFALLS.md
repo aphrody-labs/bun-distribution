@@ -49,7 +49,7 @@ repository's docs.
   may be the Microsoft Store stub. Point the build at the uv interpreter:
   `PYO3_PYTHON="$(uv python find 3.14)"`.
 - **The crate named `aphrody`** is the CLI; select it with `-p aphrody` (its
-  directory is `apps/cli`).
+  directory is `crates/infra/aphrody`).
 - **Build profiles are all in use.** `dist` and `reproducible` inherit from
   `release`; switching `release` to thin LTO degrades them. For a fast
   optimized build use `--profile release-fast`.

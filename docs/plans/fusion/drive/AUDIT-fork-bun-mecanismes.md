@@ -81,7 +81,7 @@ Les chemins `src/…`, `scripts/…` et `packages/…` sont relatifs à `vendor/
 - Classes : `src/runtime/yolo/*.classes.ts` + `#[bun_jsc::JsClass]`.
 - Un module natif « pur Rust » au sens `NativeModuleList.h` n'existe pas : ce mécanisme est en C++.
 
-**Test de fumée existant à étendre.** `apps/yolo/forge/src/plan.ts:412-423` (`ABSORBED` et `SMOKE_SCRIPT` : `require.resolve(s) === s`).
+**Test de fumée existant à étendre.** `packages/engine/forge/src/plan.ts:412-423` (`ABSORBED` et `SMOKE_SCRIPT` : `require.resolve(s) === s`).
 
 ---
 
@@ -141,7 +141,7 @@ Les chemins `src/…`, `scripts/…` et `packages/…` sont relatifs à `vendor/
 
 | Option | Fonctionne localement | Fonctionne sous bun-forge | Remarques |
 |---|---|---|---|
-| **path dep** `../../../crates/web/obscura-dom` | Oui (`vendor/bun` est imbriqué dans le monorepo, qui n'en fait pas un membre : `Cargo.toml:4-10` du monorepo) | **Non.** bun-forge construit un `git worktree` frais du seul dépôt fork (`apps/yolo/forge/src/run.ts:443-447`) : le chemin n'existe pas. | Les champs `workspace = true` d'Obscura se résolvent contre la racine du monorepo. Couplage fort. |
+| **path dep** `../../../crates/web/obscura-dom` | Oui (`vendor/bun` est imbriqué dans le monorepo, qui n'en fait pas un membre : `Cargo.toml:4-10` du monorepo) | **Non.** bun-forge construit un `git worktree` frais du seul dépôt fork (`packages/engine/forge/src/run.ts:443-447`) : le chemin n'existe pas. | Les champs `workspace = true` d'Obscura se résolvent contre la racine du monorepo. Couplage fort. |
 | **git dep** `{ git = "…/aphrody", rev = … }` | Oui | Oui si le dépôt est accessible | Cargo clone tout le monorepo dans `CARGO_HOME/git`. L'héritage `workspace = true` est supporté pour les dépendances git. Lourd. |
 | **sous-module git** | — | **Non** sans modifier bun-forge (`worktree add` sans `submodule update`) | Contraire à la convention Bun : les `vendor/` ne sont pas des sous-modules (`CLAUDE.md` du fork). |
 | **Vendoring dans `vendor/<nom>`** | — | — | `/vendor` est **ignoré par git** dans le fork (`.gitignore:148`). Il faut donc soit une crate copiée sous `src/<nom>` comme membre (soumise aux lints de l'espace de travail sauf `[lints]` propres), soit le patron ci-dessous. |
@@ -176,7 +176,7 @@ Autres contraintes :
   Rust est émis en bitcode (`-C linker-plugin-lto`, `rust.ts:508`) dès `release && !asan` (`scripts/build/flags.ts:1504-1506`). Chaque crate forme une seule unité de code (`Cargo.toml:131`).
   **Conséquence** : toute crate ajoutée passe dans l'optimisation LTO du lien final, donc plus de temps de lien et de RAM, et compile ses gros crates sur un seul thread.
 - **Graphe.** Codegen d'environ 20 étapes, puis rustc par crate (pipeline `.rmeta` sous `oven-sh/ninja`), dépendances C/C++ en `direct`, `nested-cmake` ou `prebuilt`, lien clang++/lld, puis contrôles (`scripts/build/CLAUDE.md`, Phase 2).
-- **bun-forge** (`apps/yolo/forge/src/{main,plan,run}.ts`, `config/bun-forge.json`) :
+- **bun-forge** (`packages/engine/forge/src/{main,plan,run}.ts`, `config/bun-forge.json`) :
   - dépôt `aphrody-labs/bun`, branche `main`, profil `release`, `lto: true` ;
   - scratch `auto` de **96 G** (loop ext4, tmpfs ou répertoire, `plan.ts:289-344`) ;
   - LLVM 23.1.1, cmake 3.30.5, rustup 1.28.2 ; paquets apt dont `golang`, `nasm`, `perl`, `ruby` ;
@@ -244,10 +244,10 @@ Aucun commit de `main` ne fixe encore de patron de **module intégré natif** (`
 
 - **`aphrody-labs/yolo` existe déjà** (`git ls-remote git@github-dev:aphrody-labs/yolo.git HEAD` → `048886bf…`). `PLAN.md:166` prévoit de l'archiver comme « absorbé ».
   GitHub refuse un renommage vers un nom pris, archivé compris : il faut d'abord renommer ou supprimer l'ancien `yolo`. Après le renommage, GitHub redirige `aphrody-labs/bun`, tant qu'aucun nouveau dépôt ne reprend ce nom.
-- **Binaire `yolo`** : collision avec le CLI Bun `yolo` du monorepo (`apps/yolo/cli/package.json` `bin.yolo`, PLAN §5 « un seul CLI `yolo` »). C'est une décision à prendre : soit le fork devient l'hôte du CLI `yolo`, soit les deux noms sont séparés.
+- **Binaire `yolo`** : collision avec le CLI Bun `yolo` du monorepo (`packages/engine/yolo/package.json` `bin.yolo`, PLAN §5 « un seul CLI `yolo` »). C'est une décision à prendre : soit le fork devient l'hôte du CLI `yolo`, soit les deux noms sont séparés.
 - **26 fichiers du monorepo** citent `aphrody-labs/bun`, notamment :
   - `config/vendor.json:8`, `config/bun-forge.json` (`repository`), `config/bun-absorb.json` ;
-  - `apps/yolo/forge/src/{plan,main}.ts`, `apps/yolo/cli/src/{index,package-commands}.ts` ;
+  - `packages/engine/forge/src/{plan,main}.ts`, `packages/engine/yolo/src/{index,package-commands}.ts` ;
   - `scripts/tools/vendor/bun_upstream_{sync,tracker}.ts`, `scripts/audit/workspace/bun-absorb.ts` ;
   - les docs.
 - Le remote `origin` de `vendor/bun` pointe aussi vers ce nom.

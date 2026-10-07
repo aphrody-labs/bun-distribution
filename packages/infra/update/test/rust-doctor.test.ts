@@ -146,7 +146,7 @@ describe("format and git helpers", () => {
     expect(parseFmtList(text, "/repo")).toEqual(["../source/up/src/lib.rs", "crates/a/src/lib.rs", "crates/b/src/x.rs"]);
   });
   test("crateOfFile picks the longest member directory", () => {
-    const dirs: [string, string][] = [["crates/web", "outer"], ["crates/web/taffy", "taffy"], ["apps/cli", "aphrody"]];
+    const dirs: [string, string][] = [["crates/web", "outer"], ["crates/web/taffy", "taffy"], ["crates/infra/aphrody", "aphrody"]];
     expect(crateOfFile("crates/web/taffy/src/lib.rs", dirs)).toBe("taffy");
     expect(crateOfFile("crates/web/x.rs", dirs)).toBe("outer");
     expect(crateOfFile("crates/webby/x.rs", dirs)).toBeUndefined();

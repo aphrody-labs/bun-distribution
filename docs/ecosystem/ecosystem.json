@@ -8,7 +8,7 @@
       "crates": [
         {
           "name": "aphrody",
-          "path": "apps/cli",
+          "path": "crates/infra/aphrody",
           "description": "Aphrody — cross-platform Rust CLI (Linux / Windows / macOS / WebAssembly).",
           "bins": [
             "aphrody"
@@ -1969,7 +1969,7 @@
         },
         {
           "name": "@aphrody/bun-forge",
-          "path": "apps/yolo/forge",
+          "path": "packages/engine/forge",
           "description": "yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
           "bins": [
             "bun-forge"
@@ -2069,7 +2069,7 @@
         },
         {
           "name": "@aphrody/creator-kit",
-          "path": "apps/community/creator-kit",
+          "path": "packages/infra/product",
           "description": "Small local tools for a content creator: Challonge bot, wiki image fetch, Adobe and disk cleaners, image compression, video translation.",
           "bins": [
             "creator-kit"
@@ -2262,7 +2262,7 @@
         },
         {
           "name": "@aphrody/m3-showcase",
-          "path": "m3/apps/showcase",
+          "path": "m3/packages/app-ui/showcase",
           "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable shown by the aphrody-app desktop (aphrody-app --showcase).",
           "bins": []
         },
@@ -2306,7 +2306,7 @@
         },
         {
           "name": "@aphrody/omar-kit",
-          "path": "apps/community/omar-kit",
+          "path": "packages/infra/product",
           "description": "Zero-command Windows kit for the Aphrody administrator: installs the tools, connects the private tunnel, checks that everything is ready and runs simplified model training on the hosts over SSH.",
           "bins": [
             "aphrody-omar"
@@ -2526,7 +2526,7 @@
         },
         {
           "name": "@aphrody/setup",
-          "path": "apps/community/setup",
+          "path": "packages/infra/product",
           "description": "One-click Aphrody installer for everyone (Aphrody-Setup.exe): aphrody (CLI and MCP), yolo, the desktop app, the Claude plugins and the MCP declaration, with optional administrator and creator roles.",
           "bins": [
             "aphrody-setup"
@@ -2596,7 +2596,7 @@
         },
         {
           "name": "@aphrody/yolo-cli",
-          "path": "apps/yolo/cli",
+          "path": "packages/engine/yolo",
           "description": "Zero-dependency programmatic CLI for the YOLO Bun Industrial Engine",
           "bins": [
             "yolo"
@@ -2610,7 +2610,7 @@
         },
         {
           "name": "@aphrody/yt-subs-sorter",
-          "path": "apps/community/creator-kit/extensions/yt-subs-sorter",
+          "path": "packages/infra/product/extensions/yt-subs-sorter",
           "description": "WebExtension (Chrome, Edge, Brave, Firefox) to sort YouTube subscriptions into groups. No dependency, no network.",
           "bins": []
         },

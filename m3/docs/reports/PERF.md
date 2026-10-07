@@ -24,7 +24,7 @@ Harness, best of 3 complete runs, `bun scripts/bench/run.ts --repeat 3 --cold-ca
 
 | Metric (command) | Before | After | Change |
 | --- | ---: | ---: | ---: |
-| yolo CLI `bun ~/yolo/apps/cli/src/index.ts version` (20 runs) | 19.9 ms (p95 20.5) | 7.59 ms (p95 8.34) | -62% |
+| yolo CLI `bun ~/yolo/crates/infra/aphrody/src/index.ts version` (20 runs) | 19.9 ms (p95 20.5) | 7.59 ms (p95 8.34) | -62% |
 | yolo `version --json` (the preflight of every wrapper task) | 19.8 ms | 7.67 ms | -61% |
 | yolo `status --json` (default command of a checkout) | 159.2 ms (p95 195.6) | 12.5 ms (p95 14.3) | -92% |
 | compiled yolo `version` (`bun build --compile`) | 17.1 ms (p95 18.1) | 3.25 ms (p95 3.44) | -81% |
@@ -63,8 +63,8 @@ runtime on a loaded disk (120 ms to 2.5 s for the same command) and are not a re
 
 | Fix | Where | Measured effect | Trade-off |
 | --- | --- | --- | --- |
-| Load each CLI command on demand; the programmatic API forwards to the module that defines it; `version` loads two small modules | yolo `apps/cli/src/index.ts`, `version.ts`, `packages/runtime/src/target.ts` (e05c82e) | `version` 19.9 to 6.5 ms, every other command 5 to 15 ms faster | first call of an API function pays its import (about 1 to 5 ms); `hostTarget` moved to a leaf module, `artifact` re-exports it |
-| Compile the standalone yolo with `--bytecode`, without `.env`/`bunfig.toml` autoload; no top-level `await` in the entry guards; `isCompiled()` also checks `Bun.main` (a bytecode build reports the build-time path as `import.meta.dir`) | yolo `scripts/release/compile-flags.ts`, `release.ts`, `apps/cli/src/*.ts` guards, `packages/core/src/vfs/home.ts` (e05c82e) | compiled `version` 17.1 to 3.25 ms | +2.7 MiB binary; the installed binary no longer reads the cwd's `.env`/`bunfig.toml` (yolo reads neither) |
+| Load each CLI command on demand; the programmatic API forwards to the module that defines it; `version` loads two small modules | yolo `crates/infra/aphrody/src/index.ts`, `version.ts`, `packages/runtime/src/target.ts` (e05c82e) | `version` 19.9 to 6.5 ms, every other command 5 to 15 ms faster | first call of an API function pays its import (about 1 to 5 ms); `hostTarget` moved to a leaf module, `artifact` re-exports it |
+| Compile the standalone yolo with `--bytecode`, without `.env`/`bunfig.toml` autoload; no top-level `await` in the entry guards; `isCompiled()` also checks `Bun.main` (a bytecode build reports the build-time path as `import.meta.dir`) | yolo `scripts/release/compile-flags.ts`, `release.ts`, `crates/infra/aphrody/src/*.ts` guards, `packages/core/src/vfs/home.ts` (e05c82e) | compiled `version` 17.1 to 3.25 ms | +2.7 MiB binary; the installed binary no longer reads the cwd's `.env`/`bunfig.toml` (yolo reads neither) |
 | `status`: inspect the submodules once instead of twice, count the first 250 files with `readdirSync` instead of a recursive `Bun.Glob` (55 ms on `vendor/next`) | yolo `packages/core/src/vendor/status.ts` (f3253ca) | `status --json` 159.2 to 12.5 ms; `inspectPackages` 75 to 3 ms | `readVendorStatus` takes an optional second argument; counts identical on all eight submodules (251, 251, 251, 251, 251, 92, 134, 251) |
 | Memoise `rolesFor` per (seed, variant, mode), frozen results, 32 entries | m3-os-themes `src/color.ts` (f5d206a) | warm `generate()` 10.3 to 1.04 ms, first call 26.3 to 11.0 ms; one `generate()` called `schemeFromSeed` about 17 times for 2 distinct schemes | shared frozen object (a caller that mutated roles would now throw; none does) |
 | Load the theme generators and the symbol catalogue on first use | m3-mcp `src/server.ts` (970d122) | cold start -8 ms (-12% A/B) | first call of those tools pays about 16 ms |

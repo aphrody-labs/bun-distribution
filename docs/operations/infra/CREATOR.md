@@ -3,11 +3,11 @@
 # creator.aphrody.com: creator-kit download and auto-update
 
 Owner order of 2026-10-06: a minimal Material 3 page with one download button and automatic updates for
-`apps/community/creator-kit`. Static site, no application origin: nginx serves the `current` release tree.
+`packages/infra/product`. Static site, no application origin: nginx serves the `current` release tree.
 
 | Path                           | Content                                                                                                                               |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                            | page (Aphrody M3 tokens, Google Sans Flex, MAKIT logo and favicons), built by `apps/community/creator-kit/site/build.ts`                             |
+| `/`                            | page (Aphrody M3 tokens, Google Sans Flex, MAKIT logo and favicons), built by `packages/infra/product/resources/creator/site/build.ts`                             |
 | `/download/windows`            | current Windows pack (`.zip`, stable name, never cached)                                                                              |
 | `/latest.json`                 | manifest read by the page and by `creator-kit self-update`: `version`, `artifacts[]` (`kind` pack or update, `url`, `sha256`, `size`) |
 | `/SHA256SUMS`, `/files/<file>` | checksums and immutable versioned archives                                                                                            |
@@ -24,7 +24,7 @@ bun run creator:publish verify     # public download and SHA-256 of every artifa
 bun run creator:publish host-apply --apply   # release root, certificate, vhost (first install or repair)
 ```
 
-Bump `version` in `apps/community/creator-kit/package.json` before a release: the updater installs a release only
+Bump `version` in `packages/infra/product/package.json` before a release: the updater installs a release only
 when its version is newer. The exe is compiled with `bun build --compile --target=bun-windows-x64`; its icon and
 version resources are set with the pinned rcedit (SHA-256 in the script) under Wine because `--windows-icon` only
 works when compiling on Windows. `release` refuses a pack that holds a denied file name or a token-shaped string.

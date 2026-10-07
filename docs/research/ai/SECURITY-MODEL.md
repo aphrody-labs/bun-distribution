@@ -114,7 +114,7 @@ explicit operator acknowledgement.
 - **Build integrity**: `cargo-auditable` embeds an SBOM in the binary;
   `dtolnay/rust-toolchain` action pinned by SHA in every workflow.
 - **Web**: rustls 0.23 with the `ring` provider initialised before the first
-  `reqwest::Client::new()` call (see `apps/cli/src/main.rs`).
+  `reqwest::Client::new()` call (see `crates/infra/aphrody/src/main.rs`).
 - **Crypto**: AES-GCM via the `aes-gcm` crate (RFC 5116); no hand-rolled
   primitives.
 - **Sandboxing**: Flatpak manifest declares minimal `finish-args`

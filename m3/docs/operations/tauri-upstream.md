@@ -39,7 +39,7 @@ Root `package.json` `workspaces.catalog` holds `@aphrody/api` and
 | `tauri-build`, `tauri-plugin`, all `tauri-plugin-*`                 | 3.0.0-alpha.2                     |
 | `tauri-runtime-cef`                                                 | 3.0.0-alpha.5 (`cef =152.3.0`)    |
 | `tauri-specta` (git tag `v2.0.0-rc.25-koharu.1`)                    | 2.0.0-rc.25                       |
-| `@aphrody/api` / `@aphrody/plugin-opener` / `@tauri-apps/cli` | 3.0.0-alpha.2 / alpha.1 / alpha.3 |
+| `@aphrody/api` / `@aphrody/plugin-opener` / `@tauri-crates/infra/aphrody` | 3.0.0-alpha.2 / alpha.1 / alpha.3 |
 
 `plugin-opener` JS stays at alpha.1 while alpha.2 is younger than the repository
 `minimumReleaseAge` (3 days, `bunfig.toml`); the sync script reports it as

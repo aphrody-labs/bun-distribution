@@ -233,7 +233,7 @@ export async function generateProject(
     }
   }
   files["package.json"] =
-    `${JSON.stringify({ name: crateName(config.name), version: "0.1.0", private: true, type: "module", scripts, devDependencies: { "@tauri-apps/cli": TAURI_3.jsCli } }, null, 2)}\n`;
+    `${JSON.stringify({ name: crateName(config.name), version: "0.1.0", private: true, type: "module", scripts, devDependencies: { "@tauri-crates/infra/aphrody": TAURI_3.jsCli } }, null, 2)}\n`;
   files["wrap-plan.json"] = `${JSON.stringify(plan, null, 2)}\n`;
   files["README.md"] = readme(plan);
 

@@ -255,7 +255,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `a2a-lf` (staged, no commit yet); updates to `a2a`, `a2a-client`,
   `a2a-grpc`, `a2a-pb`, `a2a-server`, `aphrody-translate` READMEs
   (staged, no commit yet).
-- `apps/cli/tests/doctor.rs` — 6 integration tests using `assert_cmd`
+- `crates/infra/aphrody/tests/doctor.rs` — 6 integration tests using `assert_cmd`
   + `predicates`, nextest exit 0, DEGRADED exit 0, JSON deserialise
   verified (commit b228509).
 - `crates/os/backend/benches/backend_bench.rs` — 180-line criterion bench

@@ -48,7 +48,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 - `config/container/aphrody-os/vm/aphrody-init`
 - `crates/ai/code-graph/tests/fixtures/rust`
 - `crates/os/drive`
-- `crates/os/drive/apps/cli`
+- `crates/os/drive/crates/infra/aphrody`
 - `crates/os/drive/core`
 - `crates/os/drive/core/benchmarks`
 - `crates/os/drive/crates/actors`
@@ -142,7 +142,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `@aphrody/m3-showcase` | [m3/apps/showcase](../../../m3/apps/showcase) | bun package | 3.3.6 | private | yes | 0 | 2026-10-07 |
+| `@aphrody/m3-showcase` | [m3/packages/app-ui/showcase](../../../m3/packages/app-ui/showcase) | bun package | 3.3.6 | private | yes | 0 | 2026-10-07 |
 
 ## bun
 
@@ -154,15 +154,15 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody` | [apps/cli](../../../apps/cli) | rust app | 1.0.0 | bin, lib | yes | 0 | 2026-10-07 |
+| `aphrody` | [crates/infra/aphrody](../../../crates/infra/aphrody) | rust app | 1.0.0 | bin, lib | yes | 0 | 2026-10-07 |
 
 ## community
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `@aphrody/creator-kit` | [apps/community/creator-kit](../../../apps/community/creator-kit) | bun app | 0.2.4 | bin | yes | 0 | 2026-10-07 |
-| `@aphrody/omar-kit` | [apps/community/omar-kit](../../../apps/community/omar-kit) | bun app | 0.1.0 | bin | yes | 0 | 2026-10-07 |
-| `@aphrody/setup` | [apps/community/setup](../../../apps/community/setup) | bun app | 0.1.0 | bin | yes | 0 | 2026-10-07 |
+| `@aphrody/creator-kit` | [packages/infra/product](../../../packages/infra/product) | bun app | 0.2.4 | bin | yes | 0 | 2026-10-07 |
+| `@aphrody/omar-kit` | [packages/infra/product](../../../packages/infra/product) | bun app | 0.1.0 | bin | yes | 0 | 2026-10-07 |
+| `@aphrody/setup` | [packages/infra/product](../../../packages/infra/product) | bun app | 0.1.0 | bin | yes | 0 | 2026-10-07 |
 
 ## compat
 
@@ -484,5 +484,5 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `@aphrody/yolo-cli` | [apps/yolo/cli](../../../apps/yolo/cli) | bun app | 1.0.0 | bin | yes | 0 | 2026-10-07 |
-| `@aphrody/bun-forge` | [apps/yolo/forge](../../../apps/yolo/forge) | bun app | 0.1.1 | bin | yes | 0 | 2026-10-07 |
+| `@aphrody/yolo-cli` | [packages/engine/yolo](../../../packages/engine/yolo) | bun app | 1.0.0 | bin | yes | 0 | 2026-10-07 |
+| `@aphrody/bun-forge` | [packages/engine/forge](../../../packages/engine/forge) | bun app | 0.1.1 | bin | yes | 0 | 2026-10-07 |

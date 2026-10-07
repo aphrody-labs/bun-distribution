@@ -20,11 +20,11 @@ See `workbench/core/storage/VIRTUAL_SIDECAR_SYSTEM_V2.md` Section "CLI Integrati
 
 ## Implementation Files
 
-- `apps/cli/src/domains/sidecar/mod.rs` - New sidecar command domain
-- `apps/cli/src/domains/sidecar/args.rs` - Command arguments
-- `apps/cli/src/domains/sidecar/list.rs` - List sidecars
-- `apps/cli/src/domains/sidecar/usage.rs` - Storage usage reporting
-- `apps/cli/src/domains/sidecar/cleanup.rs` - Cleanup operations
+- `crates/infra/aphrody/src/domains/sidecar/mod.rs` - New sidecar command domain
+- `crates/infra/aphrody/src/domains/sidecar/args.rs` - Command arguments
+- `crates/infra/aphrody/src/domains/sidecar/list.rs` - List sidecars
+- `crates/infra/aphrody/src/domains/sidecar/usage.rs` - Storage usage reporting
+- `crates/infra/aphrody/src/domains/sidecar/cleanup.rs` - Cleanup operations
 
 ## Tasks
 

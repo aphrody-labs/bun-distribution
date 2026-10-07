@@ -6,7 +6,7 @@
     {
       "name": "@aphrody/yolo-cli",
       "version": "1.0.0",
-      "path": "apps/yolo/cli/package.json",
+      "path": "packages/engine/yolo/package.json",
       "status": "blocked",
       "sha256": "627955987d341744c8709393edff6e8c809880fbd3ab709d21657517bd1f575c",
       "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
@@ -14,7 +14,7 @@
     {
       "name": "@aphrody/bun-forge",
       "version": "0.1.1",
-      "path": "apps/yolo/forge/package.json",
+      "path": "packages/engine/forge/package.json",
       "status": "published",
       "sha256": "3bbe994ce0c3bf67d01a9f639828cbeca14b607c68e14591e71c72458f791dd5",
       "integrity": "sha512-hc7zgd41pEtHkaf8OrGn4vmkNOS6M5vRlpvFF4Db1o45N8jOxYxB9st/H/wQ4yLsjh9RS7csnSSQBg39/Tm5gg==",

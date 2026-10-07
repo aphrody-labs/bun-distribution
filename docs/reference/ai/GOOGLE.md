@@ -1,4 +1,4 @@
-﻿<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 # GOOGLE.md â€” Alignement Google ecosystem
 
 > **Statut :** 2026-05-17 â€” aligned production-grade cross-platform.
@@ -23,17 +23,17 @@ Catalogue Google complet : voir `google.json`.
 > hybride NT + fork C++ de Windows Terminal) a été **abandonnée au pivot
 > 2026-05-17** (cf. [`SOURCE_OF_TRUTH.md`](./SOURCE_OF_TRUTH.md) §7). Les crates
 > `bun_ffi`, `gui` et `google_os` ont été supprimés/archivés. État réel : un
-> cœur 100 % Rust cross-platform (`apps/cli`, `base`, `backend`, …) + une
+> cœur 100 % Rust cross-platform (`crates/infra/aphrody`, `base`, `backend`, …) + une
 > bibliothèques Material Design 3 en Bun/TS (`packages/*`). Table
 > conservée pour mémoire historique uniquement.
 
 | Pilier (historique) | Tech | Rôle (abandonné) |
 |---|---|---|
-| **I. Rust Core** | `apps/cli`, `base`, `backend` (`bun_ffi`/`gui`/`google_os` supprimés) | Binaire principal cross-platform, FFI zero-copy |
+| **I. Rust Core** | `crates/infra/aphrody`, `base`, `backend` (`bun_ffi`/`gui`/`google_os` supprimés) | Binaire principal cross-platform, FFI zero-copy |
 | **II. Native Terminal** | C++ `Microsoft.WindowsTerminalCanary` (Windows uniquement) | ❌ fork abandonné — terminal LLM-first en Rust pur |
 | **III. Bun + MD3** | `packages/*` (`@aphrody-code/*`) | Bibliothèques UI du monorepo M3 Bun + Turborepo |
 
-**Axe principal cross-platform actuel** : le cœur Rust (`apps/cli`) — voir [`docs/reference/ai/cargo/CROSS_PLATFORM.md`](./cargo/CROSS_PLATFORM.md).
+**Axe principal cross-platform actuel** : le cœur Rust (`crates/infra/aphrody`) — voir [`docs/reference/ai/cargo/CROSS_PLATFORM.md`](./cargo/CROSS_PLATFORM.md).
 
 ## 3. Patterns adoptÃ©s depuis Google
 

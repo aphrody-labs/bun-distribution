@@ -46,7 +46,7 @@ Le tableau ci-dessous est produit depuis les archives auditées et les réponses
 | `@aphrody/app-ui` | `0.1.0` | Qualification restante | [manifest](../../m3/packages/app-ui/package.json) |
 | `@aphrody/assets` | `0.1.1` | Publié | [manifest](../../m3/packages/assets/package.json) |
 | `@aphrody/bun` | `3.3.7` | Qualification restante | [manifest](../../packages/interop/native/package.json) |
-| `@aphrody/bun-forge` | `0.1.1` | Publié | [manifest](../../apps/yolo/forge/package.json) |
+| `@aphrody/bun-forge` | `0.1.1` | Publié | [manifest](../../packages/engine/forge/package.json) |
 | `@aphrody/bun-test-dom` | `0.1.1` | Publié | [manifest](../../packages/bun/test-dom/package.json) |
 | `@aphrody/canvas` | `1.0.9-aphrody.4` | Publié | [manifest](../../m3/packages/canvas/package.json) |
 | `@aphrody/cli-wasm` | `0.1.1` | Publié | [manifest](../../packages/infra/cli-wasm/package.json) |
@@ -130,5 +130,5 @@ Le tableau ci-dessous est produit depuis les archives auditées et les réponses
 | `@aphrody/workspace` | `0.1.0` | Qualification restante | [manifest](../../packages/infra/workspace/package.json) |
 | `@aphrody/x` | `1.3.0` | Qualification restante | [manifest](../../packages/web/x/package.json) |
 | `@aphrody/xai` | `1.1.6` | Qualification restante | [manifest](../../packages/ai/xai/package.json) |
-| `@aphrody/yolo-cli` | `1.0.0` | Qualification restante | [manifest](../../apps/yolo/cli/package.json) |
+| `@aphrody/yolo-cli` | `1.0.0` | Qualification restante | [manifest](../../packages/engine/yolo/package.json) |
 | `@aphrody/yolo-core` | `1.0.1` | Publié | [manifest](../../packages/engine/core/package.json) |

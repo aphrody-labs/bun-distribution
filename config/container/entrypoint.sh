@@ -46,19 +46,19 @@ case "$cmd" in
     if command -v yolo >/dev/null 2>&1; then
       exec yolo api --host 0.0.0.0 --port "${PORT:-8999}" "$@"
     fi
-    [ -f "$root/apps/yolo/cli/src/index.ts" ] || {
+    [ -f "$root/packages/engine/yolo/src/index.ts" ] || {
       echo "aphrody-entrypoint: the Yolo CLI is required for the API" >&2
       exit 127
     }
-    exec bun "$root/apps/yolo/cli/src/index.ts" api --host 0.0.0.0 --port "${PORT:-8999}" "$@"
+    exec bun "$root/packages/engine/yolo/src/index.ts" api --host 0.0.0.0 --port "${PORT:-8999}" "$@"
     ;;
   yolo)
     if command -v yolo >/dev/null 2>&1; then exec yolo "$@"; fi
-    [ -f "$root/apps/yolo/cli/src/index.ts" ] || {
+    [ -f "$root/packages/engine/yolo/src/index.ts" ] || {
       echo "aphrody-entrypoint: the Yolo CLI is not installed in this image" >&2
       exit 127
     }
-    exec bun "$root/apps/yolo/cli/src/index.ts" "$@"
+    exec bun "$root/packages/engine/yolo/src/index.ts" "$@"
     ;;
   aphrody)
     command -v aphrody >/dev/null 2>&1 || {

@@ -71,7 +71,7 @@ Each worker reports in its own files; check them, do not assume success.
 3. **Rust — DONE and validated by the lead** (cargo-serial): `aphrody-sql`
    (`crates/infra/sql`), `aphrody-train` feature `registry`
    (`migrations/0001_registry.sql`, `src/registry.rs`), consumers rag/mcp/memory,
-   CLI `aphrody train registry-migrate` (`apps/cli` feature `train` now enables
+   CLI `aphrody train registry-migrate` (`crates/infra/aphrody` feature `train` now enables
    the registry). Checks green; tests: aphrody-sql 35, aphrody-train 14,
    aphrody-rag 52, aphrody-memory 90. Registry schema applied to Neon
    `aphrody` production after a branch rehearsal (idempotent re-run verified).

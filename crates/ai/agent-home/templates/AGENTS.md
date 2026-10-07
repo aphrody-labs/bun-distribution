@@ -33,7 +33,7 @@ est propriétaire.
   ses `AGENTS.md`, `CLAUDE.md` et manifestes avant toute écriture.
 - Monorepo Aphrody (si présent, repérable par `crates/os/kernel` et
   `packages/infra/workspace`) : crates Rust sous `crates/<domaine>/<crate>`,
-  CLI sous `apps/cli`, apps et packages Bun sous `apps/` et `packages/`,
+  CLI sous `crates/infra/aphrody`, apps et packages Bun sous `apps/` et `packages/`,
   plugin agent sous `plugins/aphrody`.
 - Hors monorepo : utiliser les binaires installés (`aphrody`,
   `aphrody-kernel`, ou `APHRODY_KERNEL_BIN`) ; ne jamais supposer un chemin

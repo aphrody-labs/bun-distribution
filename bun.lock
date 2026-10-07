@@ -22,50 +22,6 @@
         "undici-types": "catalog:",
       },
     },
-    "apps/community/creator-kit": {
-      "name": "@aphrody/creator-kit",
-      "version": "0.2.4",
-      "bin": {
-        "creator-kit": "src/cli.ts",
-      },
-    },
-    "apps/community/omar-kit": {
-      "name": "@aphrody/omar-kit",
-      "version": "0.1.0",
-      "bin": {
-        "aphrody-omar": "src/cli.ts",
-      },
-    },
-    "apps/community/setup": {
-      "name": "@aphrody/setup",
-      "version": "0.1.0",
-      "bin": {
-        "aphrody-setup": "src/cli.ts",
-      },
-    },
-    "apps/yolo/cli": {
-      "name": "@aphrody/yolo-cli",
-      "version": "1.0.0",
-      "bin": {
-        "yolo": "./src/index.ts",
-      },
-      "dependencies": {
-        "@aphrody/plugins": "workspace:*",
-        "@aphrody/runtime-sdk": "workspace:*",
-        "@aphrody/workspace": "workspace:*",
-        "@aphrody/yolo-core": "workspace:*",
-      },
-    },
-    "apps/yolo/forge": {
-      "name": "@aphrody/bun-forge",
-      "version": "0.1.1",
-      "bin": {
-        "bun-forge": "./src/main.ts",
-      },
-      "dependencies": {
-        "@aphrody/yolo-core": "workspace:*",
-      },
-    },
     "crates/tauri/aphrody-tauri-api": {
       "name": "@aphrody/api",
       "version": "3.0.0-alpha.3",
@@ -259,13 +215,16 @@
         "@aphrody/api": "workspace:*",
       },
     },
-    "m3/apps/showcase": {
-      "name": "@aphrody/m3-showcase",
-      "version": "3.3.6",
+    "m3/packages/app-ui": {
+      "name": "@aphrody/app-ui",
+      "version": "0.1.0",
       "dependencies": {
+        "@aphrody/api": "workspace:*",
         "@aphrody/assets": "workspace:*",
         "@aphrody/canvas": "workspace:*",
+        "@aphrody/drive-client": "workspace:*",
         "@aphrody/eslint-plugin-m3": "workspace:*",
+        "@aphrody/fuzzy": "workspace:*",
         "@aphrody/identity": "workspace:*",
         "@aphrody/m3": "workspace:*",
         "@aphrody/m3-ai": "workspace:*",
@@ -289,38 +248,10 @@
         "@aphrody/m3-theme": "workspace:*",
         "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/material-design-icons": "workspace:*",
-        "@aphrody/scaffold": "workspace:*",
-        "@aphrody/webview-page": "workspace:*",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "react-hook-form": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-      },
-    },
-    "m3/packages/app-ui": {
-      "name": "@aphrody/app-ui",
-      "version": "0.1.0",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-        "@aphrody/assets": "workspace:*",
-        "@aphrody/drive-client": "workspace:*",
-        "@aphrody/fuzzy": "workspace:*",
-        "@aphrody/identity": "workspace:*",
-        "@aphrody/m3-ai": "workspace:*",
-        "@aphrody/m3-explorer": "workspace:*",
-        "@aphrody/m3-fonts": "workspace:*",
-        "@aphrody/m3-motion": "workspace:*",
-        "@aphrody/m3-primitives": "workspace:*",
-        "@aphrody/m3-theme": "workspace:*",
-        "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/plugin-dialog": "workspace:*",
         "@aphrody/qr": "workspace:*",
+        "@aphrody/scaffold": "workspace:*",
+        "@aphrody/webview-page": "workspace:*",
         "@dnd-kit/core": "catalog:",
         "@dnd-kit/sortable": "catalog:",
         "@dnd-kit/utilities": "catalog:",
@@ -346,12 +277,14 @@
       },
       "devDependencies": {
         "@aphrody/m3": "workspace:*",
+        "@aphrody/m3-config": "workspace:*",
         "@types/d3": "catalog:",
         "@types/prismjs": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "@types/three": "catalog:",
         "tailwindcss": "catalog:",
+        "typescript": "catalog:",
       },
     },
     "m3/packages/assets": {
@@ -960,6 +893,16 @@
         "@oxc-project/types": "catalog:",
       },
     },
+    "packages/engine/forge": {
+      "name": "@aphrody/bun-forge",
+      "version": "0.1.1",
+      "bin": {
+        "bun-forge": "./src/main.ts",
+      },
+      "dependencies": {
+        "@aphrody/yolo-core": "workspace:*",
+      },
+    },
     "packages/engine/n2b-client": {
       "name": "@aphrody/n2b-core",
       "version": "0.6.4",
@@ -975,6 +918,19 @@
       "name": "@aphrody/runtime-sdk",
       "version": "0.1.1",
     },
+    "packages/engine/yolo": {
+      "name": "@aphrody/yolo-cli",
+      "version": "1.0.0",
+      "bin": {
+        "yolo": "./src/index.ts",
+      },
+      "dependencies": {
+        "@aphrody/plugins": "workspace:*",
+        "@aphrody/runtime-sdk": "workspace:*",
+        "@aphrody/workspace": "workspace:*",
+        "@aphrody/yolo-core": "workspace:*",
+      },
+    },
     "packages/google/google": {
       "name": "@aphrody/google",
       "version": "1.0.0-canary.1",
@@ -988,7 +944,7 @@
     },
     "packages/infra/cli-wasm": {
       "name": "@aphrody/cli-wasm",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "devDependencies": {
         "@types/bun": "catalog:",
         "typescript": "catalog:",
@@ -1004,6 +960,16 @@
     "packages/infra/paths": {
       "name": "@aphrody/paths",
       "version": "0.1.1",
+    },
+    "packages/infra/product": {
+      "name": "@aphrody/product",
+      "version": "0.3.0",
+      "bin": {
+        "aphrody-product": "src/cli.ts",
+        "aphrody-setup": "src/cli.ts",
+        "aphrody-omar": "src/cli.ts",
+        "creator-kit": "src/cli.ts",
+      },
     },
     "packages/infra/sql": {
       "name": "@aphrody/sql",
@@ -1035,7 +1001,7 @@
     },
     "packages/interop/native": {
       "name": "@aphrody/bun",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/runtime-sdk": "workspace:*",
         "@aphrody/update": "workspace:*",
@@ -1335,15 +1301,13 @@
 
     "@aphrody/bun": ["@aphrody/bun@workspace:packages/interop/native"],
 
-    "@aphrody/bun-forge": ["@aphrody/bun-forge@workspace:apps/yolo/forge"],
+    "@aphrody/bun-forge": ["@aphrody/bun-forge@workspace:packages/engine/forge"],
 
     "@aphrody/bun-test-dom": ["@aphrody/bun-test-dom@workspace:packages/bun/test-dom"],
 
     "@aphrody/canvas": ["@aphrody/canvas@workspace:m3/packages/canvas"],
 
     "@aphrody/cli-wasm": ["@aphrody/cli-wasm@workspace:packages/infra/cli-wasm"],
-
-    "@aphrody/creator-kit": ["@aphrody/creator-kit@workspace:apps/community/creator-kit"],
 
     "@aphrody/discord-kit": ["@aphrody/discord-kit@workspace:packages/discord/kit"],
 
@@ -1407,8 +1371,6 @@
 
     "@aphrody/m3-reader": ["@aphrody/m3-reader@workspace:m3/packages/m3-reader"],
 
-    "@aphrody/m3-showcase": ["@aphrody/m3-showcase@workspace:m3/apps/showcase"],
-
     "@aphrody/m3-tailwind": ["@aphrody/m3-tailwind@workspace:m3/packages/m3-tailwind"],
 
     "@aphrody/m3-theme": ["@aphrody/m3-theme@workspace:m3/packages/m3-theme"],
@@ -1424,8 +1386,6 @@
     "@aphrody/messaging": ["@aphrody/messaging@workspace:packages/discord/aphrody-messaging"],
 
     "@aphrody/n2b-core": ["@aphrody/n2b-core@workspace:packages/engine/n2b-client"],
-
-    "@aphrody/omar-kit": ["@aphrody/omar-kit@workspace:apps/community/omar-kit"],
 
     "@aphrody/os": ["@aphrody/os@workspace:packages/os/kernel-client"],
 
@@ -1489,6 +1449,8 @@
 
     "@aphrody/plugins": ["@aphrody/plugins@workspace:packages/engine/plugins"],
 
+    "@aphrody/product": ["@aphrody/product@workspace:packages/infra/product"],
+
     "@aphrody/qr": ["@aphrody/qr@workspace:packages/web/qr"],
 
     "@aphrody/rag-core": ["@aphrody/rag-core@workspace:packages/ai/rag-core"],
@@ -1496,8 +1458,6 @@
     "@aphrody/runtime-sdk": ["@aphrody/runtime-sdk@workspace:packages/engine/runtime"],
 
     "@aphrody/scaffold": ["@aphrody/scaffold@workspace:m3/packages/scaffold"],
-
-    "@aphrody/setup": ["@aphrody/setup@workspace:apps/community/setup"],
 
     "@aphrody/shell-web": ["@aphrody/shell-web@workspace:packages/shell/web"],
 
@@ -1521,7 +1481,7 @@
 
     "@aphrody/xai": ["@aphrody/xai@workspace:packages/ai/xai"],
 
-    "@aphrody/yolo-cli": ["@aphrody/yolo-cli@workspace:apps/yolo/cli"],
+    "@aphrody/yolo-cli": ["@aphrody/yolo-cli@workspace:packages/engine/yolo"],
 
     "@aphrody/yolo-core": ["@aphrody/yolo-core@workspace:packages/engine/core"],
 

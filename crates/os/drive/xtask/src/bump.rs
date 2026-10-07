@@ -11,7 +11,7 @@ fn version_files(root: &Path) -> Vec<(PathBuf, FileType)> {
 	vec![
 		(root.join("core/Cargo.toml"), FileType::CargoToml),
 		(root.join("apps/server/Cargo.toml"), FileType::CargoToml),
-		(root.join("apps/cli/Cargo.toml"), FileType::CargoToml),
+		(root.join("crates/infra/aphrody/Cargo.toml"), FileType::CargoToml),
 	]
 }
 

@@ -32,7 +32,7 @@
 | **TOTAL Rust Tracké** | **505** | **171 151** | **6.07 Mo** | **~1.67 M tokens** |
 
 ### Découpage par pôle de crates :
-- **`apps/cli`** : 35 fichiers, 15 254 lignes (589 Ko)
+- **`crates/infra/aphrody`** : 35 fichiers, 15 254 lignes (589 Ko)
 - **`crates/aphrody-x-client` (not in repo)** : 15 fichiers, 7 166 lignes (260 Ko)
 - **`crates/ai/memory`** : 19 fichiers, 6 943 lignes (274 Ko)
 - **`crates/os/re`** : 11 fichiers, 6 594 lignes (256 Ko)

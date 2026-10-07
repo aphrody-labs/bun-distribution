@@ -32,8 +32,9 @@ UI is canonical in `m3/packages/app-ui` and `crates/ui/*`.
 
 ## Ownership map
 
-- Rust: `crates/<domain>/<crate>`; general CLI: `apps/cli`.
-- Bun apps/packages: `apps/<domain>/<app>`, `packages/<domain>/<package>`.
+- Rust: `crates/<domain>/<crate>`; general CLI: `crates/infra/aphrody`.
+- Bun: `packages/<domain>/<package>`; installation/admin/creator are modules of `packages/infra/product`.
+- No first-party `apps/` or `community/` tree: fold product surfaces into their capability owner; UI stays in `m3/packages/app-ui`.
 - Docs: `docs/<category>/<domain>`; scripts: `scripts/{audit,build,dev,migration,release,tools}`.
 - Infra: `config/host/` (`inventory/`, `systemd/`, `nginx/`, `rg/`, `nie/`, Shenron host plane); live
   audits: `scripts/audit/live*`. Shenron and Koharu source live in `aphrody-labs/shenron`.

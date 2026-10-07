@@ -21,7 +21,7 @@ describe("docs-gen", () => {
     expect(domainOf("crates/ai/mcp")).toBe("ai");
     expect(domainOf("packages/infra/workspace")).toBe("infra");
     expect(domainOf("apps/rg/website")).toBe("rg");
-    expect(domainOf("apps/cli")).toBe("cli");
+    expect(domainOf("crates/infra/aphrody")).toBe("cli");
   });
 
   test("renderState counts crates, packages and apps per domain", () => {
@@ -30,7 +30,7 @@ describe("docs-gen", () => {
         unit({}),
         unit({ name: "y", path: "crates/ai/y", todos: 2, tests: false }),
         unit({ ecosystem: "bun", name: "@aphrody/z", path: "packages/ai/z", role: "package" }),
-        unit({ name: "cli", path: "apps/cli", domain: "cli", role: "app", kinds: ["bin"] }),
+        unit({ name: "cli", path: "crates/infra/aphrody", domain: "cli", role: "app", kinds: ["bin"] }),
       ],
       ["crates/os/drive"],
       [],

@@ -72,7 +72,7 @@ Bun APIs: `@aphrody/agent-browser` exports `./client ./types ./cdp ./config ./en
 ## 4. Runtime state
 
 - `aphrody-web --version`: `aphrody-web 1.0.0`; target `installed-20261001/aphrody-web`, size 664 MB (debug-sized), mtime 2026-10-01 11:34:52 +0200.
-- Latest source change under `crates/web`: commit `df8bc7604` 2026-10-02 07:36 (`git log -1 -- crates/web apps/cli/src`). Per-crate last commit dates: bridge, crawl, engine 2026-10-02; others 2026-10-01. Installed binary is older than bridge/crawl/engine changes, so STALE. Uncommitted working-tree edits not assessed.
+- Latest source change under `crates/web`: commit `df8bc7604` 2026-10-02 07:36 (`git log -1 -- crates/web crates/infra/aphrody/src`). Per-crate last commit dates: bridge, crawl, engine 2026-10-02; others 2026-10-01. Installed binary is older than bridge/crawl/engine changes, so STALE. Uncommitted working-tree edits not assessed.
 - `obscura --version`: 0.2.3 (source crates are 0.1.x manifests, `Cargo.toml:219-226`; the binary is not built from this tree, or version mapping unverified). `lightpanda version`: 1.0.0-nightly.9909+f086b75d5.
 - Processes: no obscura/lightpanda/aphrody-web/chrom process. No listener on 9222 (`ss -ltn`). Other listeners belong to agy.
 - `~/.aphrody/web-browser` (Oct 2 09:41):

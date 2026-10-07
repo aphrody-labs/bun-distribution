@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/ml/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "apps/cli", "crates/web/*", "crates/engine/*", "crates/tauri/*"]
+members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/ml/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "crates/web/*", "crates/engine/*", "crates/tauri/*"]
 exclude = [
   "crates/contracts/schema",
   "crates/os/drive",
@@ -44,7 +44,7 @@ aphrody-store = { path = "crates/ai/store", version = "1.0.0", features = [] }
 pyo3 = { version = "0.29", features = [] }
 anyhow = "1.0.104"
 aes-gcm = { version = "0.11", features = [] }
-aphrody = { path = "apps/cli", version = "1.0.0", features = [] }
+aphrody = { path = "crates/infra/aphrody", version = "1.0.0", features = [] }
 aphrody-command = { path = "crates/infra/aphrody-command", version = "1.0.0", features = [] }
 aphrody-a2a = { path = "crates/contracts/a2a", version = "0.3", features = [] }
 aphrody-a2a-client = { path = "crates/os/a2a-client", version = "0.1", default-features = false, features = [] }
@@ -444,7 +444,7 @@ debug = false
 [profile.test]
 debug = "line-tables-only"
 
-# Precompiled runtime artifact (docs/RUNTIME-ABI.md, apps/yolo/yolo.just runtime-build): release with unwinding panics.
+# Precompiled runtime artifact (docs/RUNTIME-ABI.md, packages/engine/yolo/yolo.just runtime-build): release with unwinding panics.
 [profile.runtime]
 inherits = "release"
 panic = "unwind"

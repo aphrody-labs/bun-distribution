@@ -52,7 +52,7 @@ export const GATES: readonly Gate[] = [
   {
     id: "lint",
     title: "oxlint",
-    command: ["oxlint", "scripts/", "test/", "packages/", "apps/cli/src/", "apps/web/src/"],
+    command: ["oxlint", "scripts/", "test/", "packages/", "crates/infra/aphrody/src/", "apps/web/src/"],
     surfaces: TS,
   },
   {
@@ -64,7 +64,7 @@ export const GATES: readonly Gate[] = [
       "scripts/",
       "test/",
       "packages/",
-      "apps/cli/src/",
+      "crates/infra/aphrody/src/",
       "apps/web/src/",
     ],
     surfaces: TS,
@@ -99,7 +99,7 @@ export const GATES: readonly Gate[] = [
     command: [
       "bun",
       "run",
-      "apps/yolo/cli/src/index.ts",
+      "packages/engine/yolo/src/index.ts",
       "import",
       "--check",
       "--out",

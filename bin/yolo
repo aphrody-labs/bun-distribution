@@ -2,6 +2,6 @@
 set -e
 # `yolo mcp` skips the CLI dispatcher: its static imports cost ~7 ms of the ~22 ms startup.
 if [ "${1:-}" = "mcp" ] && [ $# -eq 1 ]; then
-  exec bun run "$(dirname "$0")/../apps/yolo/cli/src/mcp.ts"
+  exec bun run "$(dirname "$0")/../packages/engine/yolo/src/mcp.ts"
 fi
-exec bun run "$(dirname "$0")/../apps/yolo/cli/src/index.ts" "$@"
+exec bun run "$(dirname "$0")/../packages/engine/yolo/src/index.ts" "$@"

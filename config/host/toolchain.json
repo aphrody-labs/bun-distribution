@@ -114,7 +114,7 @@
     "vite",
     "@mikro-orm/cli",
     "sharp-cli",
-    "@tauri-apps/cli@3.0.0-alpha.4",
+    "@tauri-crates/infra/aphrody@3.0.0-alpha.4",
     "@material-design-icons/scripts",
     "wasm-pack@0.15.0",
     "context-mode",

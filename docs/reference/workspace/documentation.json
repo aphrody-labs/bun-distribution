@@ -94,94 +94,94 @@
       "canonical": "agy.md"
     },
     {
-      "path": "apps/community/creator-kit/README.md",
+      "path": "packages/infra/product/README.md",
       "title": "creator-kit",
       "sha256": "a2353881351e38402d57cc3220db7b1fee3250adb96ff791fc51a780052b8646",
       "bytes": 9065,
       "domain": "community",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "apps/community/creator-kit/README.md"
+      "canonical": "packages/infra/product/README.md"
     },
     {
-      "path": "apps/community/creator-kit/docs-challonge.md",
+      "path": "packages/infra/product/docs-challonge.md",
       "title": "challonge : tournois Challonge en CLI et bot Discord",
       "sha256": "f389c13934230c338787bdd4daeb8c24bbe3204f7eee97fadc416e14fd8f8b10",
       "bytes": 15660,
       "domain": "community",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "apps/community/creator-kit/docs-challonge.md"
+      "canonical": "packages/infra/product/docs-challonge.md"
     },
     {
-      "path": "apps/community/creator-kit/docs-video-translate.md",
+      "path": "packages/infra/product/docs-video-translate.md",
       "title": "video-translate",
       "sha256": "724bd2e6734e5d92f5858e69db036366687d8cff15315f356ae20d5de96d418c",
       "bytes": 26117,
       "domain": "community",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "apps/community/creator-kit/docs-video-translate.md"
+      "canonical": "packages/infra/product/docs-video-translate.md"
     },
     {
-      "path": "apps/community/creator-kit/extensions/yt-subs-sorter/README.md",
+      "path": "packages/infra/product/extensions/yt-subs-sorter/README.md",
       "title": "YouTube Subs Sorter",
       "sha256": "38e295b98eee9107942bce3579cfd3a2e64484e0aacf8480bd9cc71fc5919a8f",
       "bytes": 8156,
       "domain": "community",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "apps/community/creator-kit/extensions/yt-subs-sorter/README.md"
+      "canonical": "packages/infra/product/extensions/yt-subs-sorter/README.md"
     },
     {
-      "path": "apps/community/creator-kit/patches/pngtuber-plus-hotkey-combos/README.md",
+      "path": "packages/infra/product/patches/pngtuber-plus-hotkey-combos/README.md",
       "title": "PNGTuber-Plus : raccourcis en combinaison (Ctrl / Maj / Alt + touche)",
       "sha256": "542616dbc5be06488e847c70584d64b049bf35e784d74f70222e2b7bc16bd659",
       "bytes": 7668,
       "domain": "community",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "apps/community/creator-kit/patches/pngtuber-plus-hotkey-combos/README.md"
+      "canonical": "packages/infra/product/patches/pngtuber-plus-hotkey-combos/README.md"
     },
     {
-      "path": "apps/community/creator-kit/windows/README.md",
+      "path": "packages/infra/product/windows/README.md",
       "title": "creator-kit / windows",
       "sha256": "3b76fe3c9479f1026f5ed466aaf7bf2d964451d0b013792d3e22434166deb746",
       "bytes": 14076,
       "domain": "community",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "apps/community/creator-kit/windows/README.md"
+      "canonical": "packages/infra/product/windows/README.md"
     },
     {
-      "path": "apps/community/omar-kit/README.md",
+      "path": "packages/infra/product/README.md",
       "title": "omar-kit",
       "sha256": "7fac13c5a9bf12d765c7dc9d97f6bebb2271224e248427668260786dc6fdfcaa",
       "bytes": 3509,
       "domain": "community",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "apps/community/omar-kit/README.md"
+      "canonical": "packages/infra/product/README.md"
     },
     {
-      "path": "apps/community/setup/README.md",
+      "path": "packages/infra/product/README.md",
       "title": "setup",
       "sha256": "a3107b8bc571314dcc767fdf563ad8b70b581a4948a780adbf812ffe44752882",
       "bytes": 3718,
       "domain": "community",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "apps/community/setup/README.md"
+      "canonical": "packages/infra/product/README.md"
     },
     {
-      "path": "apps/yolo/cli/README.md",
+      "path": "packages/engine/yolo/README.md",
       "title": "@aphrody/yolo-cli",
       "sha256": "8576cc16c4ad136fdf87ce8c18c570c7d8ad0aa0a6dd8409872273ba5b564255",
       "bytes": 1676,
       "domain": "yolo",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "apps/yolo/cli/README.md"
+      "canonical": "packages/engine/yolo/README.md"
     },
     {
       "path": "config/container/desktop/README.md",
@@ -32764,14 +32764,14 @@
       "canonical": "m3/README.md"
     },
     {
-      "path": "m3/apps/showcase/README.md",
+      "path": "m3/packages/app-ui/showcase/README.md",
       "title": "Aphrody M3 showcase",
       "sha256": "4157839f2ddbbbfb632bd18e7b193d1e59b2fd92eb6af12424a542e216560f9d",
       "bytes": 2534,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "m3/apps/showcase/README.md"
+      "canonical": "m3/packages/app-ui/showcase/README.md"
     },
     {
       "path": "m3/docs/apis/WRAP-CONFIG.md",

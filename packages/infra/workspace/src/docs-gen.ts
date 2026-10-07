@@ -458,7 +458,7 @@ export async function runDocsGen(args: string[]): Promise<number> {
   apply("docs/README.md", renderDocsIndex(root));
 
   const bun = process.execPath;
-  const upstreamArgs = ["apps/yolo/cli/src/index.ts", "update", "upstream", "docs", "--root", root];
+  const upstreamArgs = ["packages/engine/yolo/src/index.ts", "update", "upstream", "docs", "--root", root];
   if (delegate(root, "UPSTREAMS.md", [bun, ...upstreamArgs, ...(check ? [] : ["--apply"])]) !== 0)
     failures++;
   if (ecosystem) {
@@ -469,7 +469,7 @@ export async function runDocsGen(args: string[]): Promise<number> {
     if (
       delegate(root, "DEPS-INVENTORY.md", [
         bun,
-        "apps/yolo/cli/src/index.ts",
+        "packages/engine/yolo/src/index.ts",
         "update",
         "deps",
         "inventory",

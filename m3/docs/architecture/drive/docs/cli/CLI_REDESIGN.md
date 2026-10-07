@@ -217,15 +217,15 @@ sd logs follow                    # Follow logs in real-time
 **Tasks:**
 
 1. Create new domain modules:
-   - `apps/cli/src/domains/browse/` (new)
-   - `apps/cli/src/domains/pair/` (split from network)
-   - `apps/cli/src/domains/share/` (split from network)
-   - `apps/cli/src/domains/collection/` (new)
+   - `crates/infra/aphrody/src/domains/browse/` (new)
+   - `crates/infra/aphrody/src/domains/pair/` (split from network)
+   - `crates/infra/aphrody/src/domains/share/` (split from network)
+   - `crates/infra/aphrody/src/domains/collection/` (new)
 
 2. Remove obsolete modules:
-   - `apps/cli/src/domains/index/` (merge into location + browse)
+   - `crates/infra/aphrody/src/domains/index/` (merge into location + browse)
 
-3. Update `apps/cli/src/main.rs`:
+3. Update `crates/infra/aphrody/src/main.rs`:
    - Restructure `Commands` enum to match new hierarchy
    - Remove merged commands
    - Update command routing

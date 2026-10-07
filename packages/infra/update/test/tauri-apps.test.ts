@@ -106,12 +106,12 @@ version = "3"
 test("npmTauriDeps ignores peer ranges and unrelated packages", () => {
   const manifest = JSON.stringify({
     dependencies: { "@tauri-apps/api": "catalog:", react: "19" },
-    devDependencies: { "@tauri-apps/cli": "^3.0.0", "tauri-plugin-foo-api": "1" },
+    devDependencies: { "@tauri-crates/infra/aphrody": "^3.0.0", "tauri-plugin-foo-api": "1" },
     peerDependencies: { "@tauri-apps/api": ">=3" },
   });
   expect(npmTauriDeps(manifest)).toEqual([
     { name: "@tauri-apps/api", version: "catalog:" },
-    { name: "@tauri-apps/cli", version: "^3.0.0" },
+    { name: "@tauri-crates/infra/aphrody", version: "^3.0.0" },
     { name: "tauri-plugin-foo-api", version: "1" },
   ]);
 });

@@ -1,6 +1,6 @@
 # Cargo owns the dependency order; @aphrody/workspace owns orchestration.
 # Yolo recipes (runtime, providers, factory, release): `just yolo::<recipe>`.
-mod yolo "apps/yolo/yolo.just"
+mod yolo "packages/engine/yolo/yolo.just"
 
 check:
     scripts/build/rust/cargo-serial.sh check --workspace --all-targets --locked

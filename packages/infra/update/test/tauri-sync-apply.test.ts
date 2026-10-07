@@ -48,7 +48,7 @@ async function fixture(gate: string[]) {
     upstream: {},
     policy: { npmMinimumReleaseAgeSeconds: 0 },
     rust: { crates: ["tauri"], forks: [] },
-    js: { catalog: [], cli: { package: "@tauri-apps/cli", version: "3.0.0-alpha.3" } },
+    js: { catalog: [], cli: { package: "@tauri-crates/infra/aphrody", version: "3.0.0-alpha.3" } },
     gate: { bun: gate },
     patches: [],
   });

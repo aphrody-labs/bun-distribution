@@ -71,7 +71,7 @@ copying from them:
   `crates/aphrody-router/src/lib.rs:917,977`. Pulled transitively via
   `aphrody-chat`, but instantiated only in `aphrody-router/tests/`.
 - `aphrody-gateway` (`GOOGLE_ANTIGRAVITY_API_KEY`, BYOK `x-goog-api-key`) — not
-  a dependency of `apps/cli` at all.
+  a dependency of `crates/infra/aphrody` at all.
 - `gemini-runtime::WebSearchConfig::with_api_key` — `web_search.rs:227`;
   constructed only in `tests/` and doc examples.
 
@@ -91,7 +91,7 @@ Whisper/OpenAI (`OPENAI_API_KEY`), Mem0 (`MEM0_API_KEY`), Honcho
 2. Drop `aphrody-router` from `aphrody-chat`'s deps if only `AnthropicBackend`
    is wanted, or isolate the Gemini-key router behind an explicit `byok`
    feature.
-3. Add a CI guard that fails if a **non-test** path in `apps/cli`
+3. Add a CI guard that fails if a **non-test** path in `crates/infra/aphrody`
    (transitively) constructs a Google-API-key auth, to lock the invariant. To
    avoid false positives on the dormant code above, this must assert at the
    construction boundary, not by a naive source grep.

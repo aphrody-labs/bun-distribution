@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, describe, expect, test } from "bun:test";
-import { KIT_PROTOCOL as KIT_SOURCE_PROTOCOL } from "../../../../apps/community/creator-kit/src/lib/desktop";
+import { KIT_PROTOCOL as KIT_SOURCE_PROTOCOL } from "../../../../packages/infra/product/src/shared/desktop";
 import {
   idleRun,
   KIT_PROTOCOL,

@@ -62,7 +62,7 @@ export function yoloVersion(): string {
 export function findCheckout(start: string = process.cwd()): string | null {
   let dir = resolve(start);
   for (;;) {
-    if (existsSync(join(dir, "vendor.toml")) && existsSync(join(dir, "apps/yolo/cli/src/index.ts"))) {
+    if (existsSync(join(dir, "vendor.toml")) && existsSync(join(dir, "packages/engine/yolo/src/index.ts"))) {
       return dir;
     }
     const parent = dirname(dir);

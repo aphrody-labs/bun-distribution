@@ -4,7 +4,7 @@ members = [
 	# "apps/cloud",
 	# "apps/desktop/crates/*",
 	# "apps/desktop/src-tauri",
-	"apps/cli",
+	"crates/infra/aphrody",
 	# "apps/gpui-photo-grid",
 	"core",
 	"core/benchmarks",
@@ -14,7 +14,7 @@ members = [
 # The HTTP site is owned by aphrody-web. This nested FSL workspace builds the
 # Drive backend, daemon and CLI without joining the Apache-2.0 OS workspace.
 default-members = [
-	"apps/cli",
+	"crates/infra/aphrody",
 	"core",
 	"core/benchmarks",
 	"crates/*",

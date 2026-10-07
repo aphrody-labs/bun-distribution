@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Aphrody download server (downloads.aphrody.com, aphrody.com): read-only Bun.serve over the published
-# release tree. Source: apps/web/downloads/src/server.ts (installed as /srv/aphrody-downloads/app/server.ts).
+# release tree. Source: packages/infra/workspace/src/downloads/server.ts (installed as /srv/aphrody-downloads/app/server.ts).
 # Release tree: /srv/aphrody-downloads/releases/<id>, `current` is flipped by scripts/release/publish-downloads.ts.
 # Port 8797 is loopback only; nginx (nginx/aphrody/downloads.aphrody.com.conf) is the single public entry.
 [Unit]

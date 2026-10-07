@@ -145,15 +145,15 @@ Aucun patch fonctionnel ne porte sur wry ou tao.
 - `scaffold` (1,4 k lignes) génère des coquilles Tauri 3 (`src/tauri.ts`, épingles `src/pins.ts` dans
   `config/tauri-upstream.json` mirrors).
 - `web-to-tauri` (4,2 k lignes) génère des projets autour de `aphrody-tauri-wrap`.
-- `m3/apps/showcase/scripts/tauri.ts:1-8` : pas de coquille Tauri ; un sidecar Bun compilé sert UI et API
+- `m3/packages/app-ui/showcase/scripts/tauri.ts:1-8` : pas de coquille Tauri ; un sidecar Bun compilé sert UI et API
   sur loopback dans la fenêtre d'aphrody-app. C'est le précédent le plus proche de « Bun en backend ».
 - `m3/examples/tauri/*` : 10 exemples ; `m3/templates/desktop/src-tauri`.
 
 **Applications et paquets Bun.**
 
-- `apps/yolo/web/src/main.ts:1` : `invoke`, dépendance `@aphrody/api`.
-- La commande `yolo tauri|desktop|web` ne fait que `bun run build|dev` dans `apps/yolo/web`
-  (`apps/yolo/cli/src/index.ts:317-339`).
+- `packages/engine/yolo/web/src/main.ts:1` : `invoke`, dépendance `@aphrody/api`.
+- La commande `yolo tauri|desktop|web` ne fait que `bun run build|dev` dans `packages/engine/yolo/web`
+  (`packages/engine/yolo/src/index.ts:317-339`).
 - `packages/web/agent-browser/src/tauri.ts:1-13` : client WebSocket du pont de debug.
 - `packages/infra/update` : `tauri-sync` et `tauri-apps` (`package.json:199-227`).
 
@@ -240,7 +240,7 @@ décision de publication, pas seulement de code.
    appelée par `bun:ffi` (PLAN §3), ou dans des processus. Les plugins deviennent :
    - API Bun natives : fs → `Bun.file` plus portées ; store → `Bun.file`/`bun:sqlite` ; os → `node:os` ;
      process ; log ; opener → `Bun.spawn` ; single-instance et deep-link → verrou plus socket ;
-     autostart → XDG/LaunchAgent/Run ; updater → `yolo upgrade` (`apps/yolo/cli/src/distribution.ts`) ;
+     autostart → XDG/LaunchAgent/Run ; updater → `yolo upgrade` (`packages/engine/yolo/src/distribution.ts`) ;
    - côté hôte (crates.io) : dialog → rfd, clipboard → arboard, notification, global-shortcut → global-hotkey,
      tray → tray-icon, menus → muda.
 4. **Empaquetage** : `bun build --compile` produit un seul exécutable (UI embarquée par import HTML / `type:
@@ -316,7 +316,7 @@ et leurs auteurs n'existent que sur GitHub.
 - 2 362 identiques à HEAD ;
 - 1 550 présents seulement dans l'historique : Turbopack/Next (59 crates retirées par `b9609c7da`), anciennes
   versions de `config/host`, tests, docs ;
-- 65 absents. Presque tous ont un homologue modifié (tests sous `apps/yolo/cli/test/*`, `crates/compat/n2b-core`,
+- 65 absents. Presque tous ont un homologue modifié (tests sous `packages/engine/yolo/test/*`, `crates/compat/n2b-core`,
   `crates/compat/toolchains`, fichiers racine).
 
 Éléments réellement uniques :
@@ -357,15 +357,15 @@ Le renommage en `yolo-legacy` (ou autre) est obligatoire pour libérer le nom.
 
 Dans `plugins/`, on trouve 3 occurrences de `aphrody-labs/bun`, 9 de `vendor/bun` et aucune de
 `aphrody-labs/yolo` (`yolo/skills/bun-upstream/SKILL.md:13-15`, `plugin-sources.json:142`). Aucune unité
-systemd suivie n'est concernée : l'unité bun-forge est générée par `apps/yolo/forge/src/plan.ts:468-487`, avec
+systemd suivie n'est concernée : l'unité bun-forge est générée par `packages/engine/forge/src/plan.ts:468-487`, avec
 une description qui cite `aphrody-labs/bun`.
 
 **À renommer** (opérationnel) :
 
 - `config/vendor.json:8` (url) et `config/bun-forge.json:3-4` (repository) ;
 - `scripts/tools/vendor/bun_upstream_sync.ts:2,93-94,244` ;
-- `apps/yolo/forge/{src/main.ts:3,23; src/plan.ts:412,471; package.json:4}` ;
-- `apps/yolo/cli/src/{index.ts:122; package-commands.ts:119}` et `scripts/audit/workspace/bun-absorb.ts:9` ;
+- `packages/engine/forge/{src/main.ts:3,23; src/plan.ts:412,471; package.json:4}` ;
+- `packages/engine/yolo/src/{index.ts:122; package-commands.ts:119}` et `scripts/audit/workspace/bun-absorb.ts:9` ;
 - docs vivantes : `docs/BUN_FORK.md:3,42`, `docs/BUN_UPSTREAM_TRACKER.md:4`, `docs/cli/HELP.md:40,272`,
   `docs/ecosystem/*` (généré), `PLAN.md:115`, `MEMORY.md:40-54` (factuel daté, ajouter une note) ;
 - `plugins/yolo/skills/bun-upstream/SKILL.md:13-15` ;
@@ -395,17 +395,17 @@ une description qui cite `aphrody-labs/bun`.
 - `scripts/tools/vendor/bun_upstream_tracker.ts:312,346-352` utilise `checkout yolo` / `push origin yolo` sur
   une branche supprimée.
 - Épingle en retard : `config/vendor.json:10` = `954db0c0`, alors que le checkout et `main` sont à `c439b6fbd`.
-- `apps/yolo/cli/test/{cli_app,stack}.test.ts` lisent `vendor/bun/LATEST` et parlent de « submodule ».
+- `packages/engine/yolo/test/{cli_app,stack}.test.ts` lisent `vendor/bun/LATEST` et parlent de « submodule ».
 
 **Références à `aphrody-labs/yolo` qui changeraient silencieusement de sens** (elles désignaient l'ancien
 dépôt et pointeraient vers le fork Bun) :
 
-- `apps/yolo/cli/src/distribution.ts:18` (`DEFAULT_REPO`, `yolo upgrade` par releases),
-  `apps/yolo/install.sh:4-17` et `install.ps1:2-11` ;
+- `packages/engine/yolo/src/distribution.ts:18` (`DEFAULT_REPO`, `yolo upgrade` par releases),
+  `packages/engine/yolo/install.sh:4-17` et `install.ps1:2-11` ;
 - `py/config/sibling-checkouts.json:4` (révision introuvable dans le fork : cassé) ;
 - `packages/engine/plugins/src/generator.ts:82` ;
 - `crates/engine/yolo-core/README.md:5`, `vendor.toml:5` et 48 champs `repository` des crates Tauri ;
-- les tests `apps/yolo/cli/test/{import,aphrody,upgrade}.test.ts` et
+- les tests `packages/engine/yolo/test/{import,aphrody,upgrade}.test.ts` et
   `packages/infra/workspace/test/build-factory*.test.ts` (fixtures, sans effet réseau) ;
 - `docs/DISTRIBUTION.md:8-12`.
 
@@ -422,17 +422,17 @@ branches Aphrody. Le checkout local n'a que `main`.
 
 **Sens actuels de « yolo ».**
 
-1. CLI Bun `yolo` : `@aphrody/yolo-cli`, `apps/yolo/cli`, bin `yolo` (`bin/yolo`), plus de 40 sous-commandes.
+1. CLI Bun `yolo` : `@aphrody/yolo-cli`, `packages/engine/yolo`, bin `yolo` (`bin/yolo`), plus de 40 sous-commandes.
 2. Outil Rust multi-call `aphrody yolo` (`crates/infra/yolo`, crate `aphrody-yolo`,
    `crates/infra/aphrody-command/src/multicall.rs:35`).
 3. Crates `yolo-core` (moteur), `yolo-runtime` (ABI C, rlib) et `yolo-pyo3` (cdylib `_yolo_native`).
 4. Paquets `@aphrody/yolo-core` (`packages/engine/core`), `@aphrody/yolo-web` et `@aphrody/bun-forge`
-   (`apps/yolo/forge`).
+   (`packages/engine/forge`).
 5. SDK runtime « Yolo » : symboles `yolo_*` d'`aphrody_ffi`, protocole `yolo.desktop/1`, `~/.yolo`, `YOLO_ROOT`,
    `YOLO_REPO`.
 6. MCP `yolo mcp` (`yolo_*`) et plugin Claude `yolo` (`plugins/yolo`).
 7. Projet Python `yolo` (`packages/engine/python/pyproject.toml:6`).
-8. Profils et sources `"yolo"` (`apps/yolo/cli/src/host.ts:1463-1628`, workspace profiles).
+8. Profils et sources `"yolo"` (`packages/engine/yolo/src/host.ts:1463-1628`, workspace profiles).
 9. Ancien dépôt `aphrody-labs/yolo`.
 10. Branches `yolo` des forks `aphrody-labs/{tauri,wry,tao,plugins-workspace,create-tauri-app,obscura,next.js}`.
 

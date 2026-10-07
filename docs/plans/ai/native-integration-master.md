@@ -15,7 +15,7 @@ Références upstream via leurs propriétaires, sans nouveau clone ni copie sour
 | --- | --- | --- |
 | Retrieval/index/mémoire | `rag*`, `embed`, `memory`, `context` | [RAG](rag-native-integration.md) |
 | Inférence/modèles/protocoles | `model-client`, `models`, `llama-server`, `engine-mistralrs`, `gateway` | [Inférence](inference-native-integration.md) |
-| CLI/config/MCP/plugins/peers | `apps/cli`, `aphrody-command`, propriétaires AI correspondants | [CLI](cli-native-integration.md) |
+| CLI/config/MCP/plugins/peers | `crates/infra/aphrody`, `aphrody-command`, propriétaires AI correspondants | [CLI](cli-native-integration.md) |
 | UI et façade toolkit-neutral | `ui/app`, `ui/local-ai`, `ui/gui-core`, `m3-ai`, app-server | [GUI](../../../m3/docs/plans/local-ai-gui-native-integration.md) |
 
 Compléments : `project-doc` possède AGENTS ; `agent-runtime`, `exec-events`,

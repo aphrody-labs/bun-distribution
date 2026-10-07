@@ -137,7 +137,7 @@ function localSource(
     return { path: join(driveRoot, entry.path), owner: "web/site" };
   }
   if (
-    entry.path.startsWith("apps/cli/") ||
+    entry.path.startsWith("crates/infra/aphrody/") ||
     entry.path.startsWith("core/") ||
     entry.path.startsWith("crates/") ||
     entry.path.startsWith("adapters/")

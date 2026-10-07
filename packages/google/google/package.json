@@ -19,8 +19,8 @@
   },
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --format esm",
-    "google:status": "bun ../../../apps/yolo/cli/src/index.ts google drive status",
-    "google:sync": "bun ../../../apps/yolo/cli/src/index.ts google drive sync",
+    "google:status": "bun ../../../packages/engine/yolo/src/index.ts google drive status",
+    "google:sync": "bun ../../../packages/engine/yolo/src/index.ts google drive sync",
     "test": "bun test ./test",
     "verify": "bun run test && bun run build"
   },

@@ -8,7 +8,7 @@ import { SUPPORTED_TARGETS, hostTarget } from "../../runtime/src/artifact";
 import { hostTarget as leafHostTarget } from "../../runtime/src/target";
 import { COMPILE_FLAGS } from "../../../../scripts/release/compile-flags";
 
-const cli = resolve(import.meta.dir, "../../../../apps/yolo/cli/src/index.ts");
+const cli = resolve(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts");
 
 describe("CLI start-up", () => {
   it("version prints the same line and JSON through the lazy entry", () => {

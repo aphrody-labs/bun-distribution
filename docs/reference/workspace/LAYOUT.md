@@ -2,7 +2,7 @@
 
 `crates/<domaine>/<rôle>` contient une bibliothèque Rust ; `packages/<domaine>/<rôle>`
 contient un package Bun/TypeScript ; `apps/<produit>` contient une application.
-Le CLI général vit dans `apps/cli`. Un domaine ne désigne pas le runtime client.
+Le CLI général vit dans `crates/infra/aphrody`. Un domaine ne désigne pas le runtime client.
 
 Les dossiers ne répètent pas le préfixe `aphrody-`. Les noms publics des packages
 Cargo et `@aphrody/*` restent des contrats de compatibilité indépendants des

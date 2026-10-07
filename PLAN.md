@@ -20,12 +20,13 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 
 | Surface | Target |
 | --- | --- |
-| Rust CLI | `aphrody` multicall binary (`apps/cli`, `crates/infra/aphrody-command`); former tool names are links |
-| Bun CLI | `yolo` (`apps/yolo/cli`) |
+| Rust CLI | `aphrody` multicall binary (`crates/infra/aphrody`, `crates/infra/aphrody-command`); former tool names are links |
+| Bun CLI | `yolo` (`packages/engine/yolo`) |
 | FFI | `aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate |
 | MCP | `aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `aphrody kernel mcp`, `yolo mcp` and `m3-mcp` are deprecated aliases (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers |
 | Desktop | `aphrody-app` on `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4); routes `admin`, `creator` |
 | Python | `vu` runtime (uv + ruff + PyO3 + shared CPython), plan in `docs/plans/vu/PLAN.md` |
+| Bun product | One package, `packages/infra/product`, one entrypoint and `Aphrody-Setup.exe`: installation, administration and creator modules; showcase folded into canonical app-ui. |
 
 ## Contracts
 
@@ -58,7 +59,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | code-graph | Python/TS extractors and `scripts/audit/ai/graph-parity.ts`; Graphify stays the parity oracle |
 | Publication | npm `@aphrody/*`, crates.io (316 crates: metadata, `publish = false`, path versions, 14 taken names), PyPI |
 | Repository hygiene | Archive absorbed GitHub repos and integrated forks; deprecate absorbed npm packages; prune stale worktrees |
-| Known failures | `web:verify`, 4 `apps/yolo/cli` tests (`libaphrody_ffi` absent), `aphrody infra validate`, global typecheck |
+| Known failures | `web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate`, global typecheck |
 
 ## Success
 

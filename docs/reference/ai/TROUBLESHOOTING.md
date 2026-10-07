@@ -15,7 +15,7 @@ using `packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml` (not in re
   any `reqwest::Client::new()` call. Without it the TLS stack panics on first
   use.
 - **Fix**: This should NOT happen in the shipped binary — it is already wired
-  in `apps/cli/src/main.rs:177` via
+  in `crates/infra/aphrody/src/main.rs:177` via
   `rustls::crypto::ring::default_provider().install_default()`. If you observe
   the panic you are likely running an outdated binary. Confirm with
   `aphrody doctor` (rustls CryptoProvider section).

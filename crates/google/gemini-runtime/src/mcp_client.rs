@@ -4,7 +4,7 @@
 //! The one MCP client of the workspace is [`aphrody_mcp_client`]. It owns the JSON-RPC framing,
 //! the stdio and streamable HTTP transports, header validation and the timeouts; this module no
 //! longer carries a second implementation of any of it. What remains is the public surface that
-//! `aphrody mcp` (`apps/cli`), [`crate::tools::McpProxyTool`] and the existing tests were written
+//! `aphrody mcp` (`crates/infra/aphrody`), [`crate::tools::McpProxyTool`] and the existing tests were written
 //! against: an `async` [`McpClient::from_stdio`] taking `HashMap` environments,
 //! [`McpClient::from_http_headers`], an owned [`ServerInfo`], tools whose description is a plain
 //! `String`, and a `call_tool` that returns the raw JSON-RPC result. Everything below is

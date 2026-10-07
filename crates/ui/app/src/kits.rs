@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Kit bridge of the main window (protocol `aphrody.kit/1`): the `admin` and `creator` routes of the UI run the
-//! Bun kits `apps/community/omar-kit` and `apps/community/creator-kit` as child processes, `<kit> desktop catalog`
+//! Bun kits `packages/infra/product` and `packages/infra/product` as child processes, `<kit> desktop catalog`
 //! or `<kit> desktop run <action> [input-json]`. The kits keep their logic; this module only starts them, forwards
 //! their JSON-line events to the window over a channel and writes the answers of its dialogs to their stdin.
 //!
@@ -47,6 +47,12 @@ enum Kit {
 }
 
 impl Kit {
+    fn product_role(self) -> &'static str {
+        match self {
+            Self::Omar => "admin",
+            Self::Creator => "creator",
+        }
+    }
     fn parse(name: &str) -> Result<Self, String> {
         match name {
             "omar" => Ok(Self::Omar),
@@ -86,6 +92,28 @@ fn on_path(name: &str) -> Option<PathBuf> {
 
 /// Program and leading arguments of one kit.
 fn locate(kit: Kit) -> Option<(PathBuf, Vec<String>)> {
+    // One product contains both roles. Arguments remain fixed by this native bridge.
+    let mut product_candidates = Vec::new();
+    if let Some(dir) =
+        std::env::current_exe().ok().and_then(|exe| exe.parent().map(Path::to_path_buf))
+    {
+        product_candidates.push(dir.join(executable_name("Aphrody-Setup")));
+        product_candidates.push(dir.join(executable_name("aphrody-product")));
+    }
+    if cfg!(windows)
+        && let Some(local) = std::env::var_os("LOCALAPPDATA")
+    {
+        product_candidates
+            .push(PathBuf::from(local).join("Aphrody").join("Setup").join("Aphrody-Setup.exe"));
+    }
+    if let Some(product) = product_candidates
+        .into_iter()
+        .find(|path| path.is_file())
+        .or_else(|| on_path("aphrody-product"))
+        .or_else(|| on_path("aphrody-setup"))
+    {
+        return Some((product, vec![kit.product_role().into()]));
+    }
     let mut candidates = Vec::new();
     if let Some(dir) =
         std::env::current_exe().ok().and_then(|exe| exe.parent().map(Path::to_path_buf))
@@ -114,12 +142,11 @@ fn locate(kit: Kit) -> Option<(PathBuf, Vec<String>)> {
         return Some((found, Vec::new()));
     }
     // A development checkout runs the kit from its sources.
-    let source = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../apps/community")
-        .join(kit.source_dir())
-        .join("src/cli.ts");
+    let source =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../packages/infra/product/src/cli.ts");
     if source.is_file() {
-        return on_path("bun").map(|bun| (bun, vec![source.display().to_string()]));
+        return on_path("bun")
+            .map(|bun| (bun, vec![source.display().to_string(), kit.product_role().into()]));
     }
     None
 }
@@ -278,6 +305,8 @@ mod tests {
     fn only_fixed_kits_and_verbs_are_accepted() {
         assert_eq!(Kit::parse("omar"), Ok(Kit::Omar));
         assert_eq!(Kit::parse("creator"), Ok(Kit::Creator));
+        assert_eq!(Kit::Omar.product_role(), "admin");
+        assert_eq!(Kit::Creator.product_role(), "creator");
         assert!(Kit::parse("../omar").is_err());
         assert!(validate(&["catalog".into()]).is_ok());
         assert!(validate(&["run".into(), "pc.1".into()]).is_ok());

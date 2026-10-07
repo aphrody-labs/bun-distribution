@@ -204,7 +204,7 @@ test("the committed config parses and lists every tracked crate", async () => {
 
 const mirror = {
   file: "scaffolder.ts",
-  keys: { tauri: "tauri", jsApi: "@tauri-apps/api", jsCli: "@tauri-apps/cli" },
+  keys: { tauri: "tauri", jsApi: "@tauri-apps/api", jsCli: "@tauri-crates/infra/aphrody" },
 };
 const mirrorText =
   'export const TAURI_3 = {\n  tauri: "3.0.0-alpha.2",\n  jsApi: "3.0.0-alpha.2",\n  jsCli: "3.0.0-alpha.3",\n} as const;\n';
@@ -213,7 +213,7 @@ test("mirror drift detection and rewriting", () => {
   const central = {
     tauri: "3.0.0-alpha.3",
     "@tauri-apps/api": "3.0.0-alpha.2",
-    "@tauri-apps/cli": "3.0.0-alpha.3",
+    "@tauri-crates/infra/aphrody": "3.0.0-alpha.3",
     unused: null,
   };
   const drift = mirrorDrift(mirrorText, mirror, central);

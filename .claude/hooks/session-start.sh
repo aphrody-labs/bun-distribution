@@ -19,7 +19,7 @@ fi
 if [[ -x "$bun_bin" ]]; then
     mkdir -p "$HOME/.local/bin"
     ln -sf "$bun_bin" "$HOME/.local/bin/bun"
-    printf '#!/bin/sh\nexec bun "%s/apps/yolo/cli/src/index.ts" "$@"\n' "$root" > "$HOME/.local/bin/yolo"
+    printf '#!/bin/sh\nexec bun "%s/packages/engine/yolo/src/index.ts" "$@"\n' "$root" > "$HOME/.local/bin/yolo"
     chmod +x "$HOME/.local/bin/yolo"
 fi
 

@@ -60,7 +60,7 @@
       "@tauri-apps/plugin-opener"
     ],
     "cli": {
-      "package": "@tauri-apps/cli",
+      "package": "@tauri-crates/infra/aphrody",
       "version": "3.0.0-alpha.4"
     }
   },
@@ -143,7 +143,7 @@
         "pluginOpener": "tauri-plugin-opener",
         "jsApi": "@tauri-apps/api",
         "jsPluginOpener": "@tauri-apps/plugin-opener",
-        "jsCli": "@tauri-apps/cli"
+        "jsCli": "@tauri-crates/infra/aphrody"
       }
     }
   ],

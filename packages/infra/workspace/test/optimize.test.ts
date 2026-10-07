@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { optimizationPrompt } from "../src/optimize.ts";
 
 // `yolo optimize` is the only command line of this module.
-const yolo = join(import.meta.dir, "../../../../apps/yolo/cli/src/index.ts");
+const yolo = join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts");
 
 test("requires a bounded task", () => {
   expect(() => optimizationPrompt("  ")).toThrow("bounded");

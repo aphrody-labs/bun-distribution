@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Administration: the omar-kit console (install, private tunnel, MCP, checks, training over SSH,
-// « Mon PC ») as panels. The logic stays in apps/community/omar-kit.
+// « Mon PC ») as panels. The logic stays in packages/infra/product.
 import { KitSurface } from "../kit/KitSurface";
 
 export function AdminRoute() {

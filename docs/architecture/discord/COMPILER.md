@@ -59,7 +59,7 @@ flowchart TD
 - **`DiscordCompiler`**:
   Finds the monorepo root (detecting `bun.lock` and `Cargo.toml`), resolves the active `bun` binary, executes pre-build hooks, invokes `bun build --compile`, and executes immediate smoke verification of the resulting binary.
 
-### CLI Integration (`apps/cli`)
+### CLI Integration (`crates/infra/aphrody`)
 
 The Aphrody CLI exposes the compiler through dedicated subcommands in `crates/infra/aphrody-command/src/discord_cmd.rs`:
 

@@ -27,8 +27,8 @@ export const SITE = {
 };
 
 const repo = resolve(import.meta.dir, "../..");
-const appDir = join(repo, "apps/community/creator-kit");
-import { build as buildPage, SEED } from "../../apps/community/creator-kit/site/build.ts";
+const appDir = join(repo, "packages/infra/product");
+import { build as buildPage, SEED } from "../../packages/infra/product/resources/creator/site/build.ts";
 import { brandExe } from "./windows-exe.ts";
 const TARGET = {
   platform: "windows-x64",
@@ -162,7 +162,7 @@ export async function scanPack(dir: string): Promise<void> {
 /** Icon and version resources of the Windows exe (shared rcedit-under-Wine helper). */
 async function brand(exe: string, ver: string): Promise<void> {
   await brandExe(exe, {
-    icon: join(appDir, "assets/creator-kit.ico"),
+    icon: join(appDir, "assets/creator/creator-kit.ico"),
     version: `${ver}.0`,
     strings: {
       ProductName: "Creator Kit",
@@ -207,7 +207,7 @@ async function stage(): Promise<{
   await brand(join(pack, TARGET.exe), ver);
   for (const path of PACK_PATHS) {
     await mkdir(join(pack, path, ".."), { recursive: true });
-    await cp(join(appDir, path), join(pack, path), { recursive: true });
+    await cp(join(appDir, "resources/creator", path), join(pack, path), { recursive: true });
   }
   // Windows M3 theme (light and dark) from the logo source colour; installers are dry-run until -Apply and revert with -Uninstall.
   const themeOut = join(dir, "theme");

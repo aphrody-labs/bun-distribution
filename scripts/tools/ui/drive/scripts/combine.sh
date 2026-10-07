@@ -10,7 +10,7 @@ usage() {
     echo  "  docs     Combine documentation files (.mdx) from 'docs/'."
     echo  "  rust [path]             Combine Rust files (.rs) from a given path (default: '.')."
     echo  "                          Respects .gitignore."
-    echo  "  cli                     Combine Rust files (.rs) from 'apps/cli'."
+    echo  "  cli                     Combine Rust files (.rs) from 'crates/infra/aphrody'."
     echo  "                          Respects .gitignore."
     echo  "  tasks                   Combine task files (.md) from '.tasks/'."
 
@@ -111,7 +111,7 @@ case $COMMAND in
             "./apps/ios/*"
          ;;
     cli)
-        combine_files "./apps/cli" "*.rs" "combined_cli_rust_files.txt" "Combined CLI Rust Files" "rust" "true"
+        combine_files "./crates/infra/aphrody" "*.rs" "combined_cli_rust_files.txt" "Combined CLI Rust Files" "rust" "true"
          ;;
     tasks)
         combine_files "./.tasks" "*.md" "combined_tasks.txt" "Combined Task Files" "markdown" "false"

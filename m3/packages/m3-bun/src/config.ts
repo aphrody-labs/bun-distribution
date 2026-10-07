@@ -45,6 +45,8 @@ export interface M3BunDeploy {
 export interface M3BunConfig {
   /** App name (default: `package.json` name without scope). */
   name?: string;
+  /** Version supplied by the product owning an embedded module. */
+  version?: string;
   /** API module, relative to the config file: its default export is the routes. */
   api?: string;
   /** Port of the server (default 3000; `PORT` overrides at run time). */
@@ -65,7 +67,15 @@ export interface M3BunConfig {
     /** Embed JavaScriptCore bytecode for a faster start (default true; the executable grows by about 1.5 MB). */
     bytecode?: boolean;
     /** Windows executable metadata. */
-    windows?: { icon?: string; title?: string; publisher?: string; version?: string; description?: string; copyright?: string; hideConsole?: boolean };
+    windows?: {
+      icon?: string;
+      title?: string;
+      publisher?: string;
+      version?: string;
+      description?: string;
+      copyright?: string;
+      hideConsole?: boolean;
+    };
   };
   deploy?: M3BunDeploy;
 }
@@ -95,17 +105,22 @@ const MINIFY = new Set(["none", "basic", "full"]);
 /** Load `m3.config.ts` and its optional `bun` export from `dir` and resolve every default. */
 export async function loadApp(dir: string = process.cwd(), configFile?: string): Promise<M3App> {
   const m3 = await loadM3Config(dir, configFile);
-  const mod = (await import(pathToFileURL(m3.file ?? join(m3.dir, "m3.config.ts")).href)) as { bun?: M3BunConfig };
+  const mod = (await import(pathToFileURL(m3.file ?? join(m3.dir, "m3.config.ts")).href)) as {
+    bun?: M3BunConfig;
+  };
   const bun = mod.bun ?? {};
-  if (bun.minify !== undefined && !MINIFY.has(bun.minify)) throw new Error(`m3-bun: minify must be none, basic or full, got ${String(bun.minify)}`);
+  if (bun.minify !== undefined && !MINIFY.has(bun.minify))
+    throw new Error(`m3-bun: minify must be none, basic or full, got ${String(bun.minify)}`);
   const manifestFile = join(m3.dir, "package.json");
-  const manifest = existsSync(manifestFile) ? (JSON.parse(readFileSync(manifestFile, "utf8")) as { name?: string; version?: string }) : {};
+  const manifest = existsSync(manifestFile)
+    ? (JSON.parse(readFileSync(manifestFile, "utf8")) as { name?: string; version?: string })
+    : {};
   const api = bun.api ? resolve(m3.dir, bun.api) : undefined;
   if (api && !existsSync(api)) throw new Error(`m3-bun: api module not found: ${api}`);
   return {
     dir: m3.dir,
     name: slug(bun.name ?? manifest.name ?? basename(m3.dir)),
-    version: manifest.version ?? "0.0.0",
+    version: bun.version ?? manifest.version ?? "0.0.0",
     m3,
     bun,
     ...(api ? { api } : {}),
@@ -116,9 +131,12 @@ export async function loadApp(dir: string = process.cwd(), configFile?: string):
 }
 
 /** The `bun build --compile` target string for a friendly name or the host. */
-export function compileTarget(name: CompileTargetName | undefined): Bun.Build.CompileTarget | undefined {
+export function compileTarget(
+  name: CompileTargetName | undefined,
+): Bun.Build.CompileTarget | undefined {
   if (!name) return undefined;
-  if (!(COMPILE_TARGETS as readonly string[]).includes(name)) throw new Error(`m3-bun: unknown compile target ${name} (${COMPILE_TARGETS.join(", ")})`);
+  if (!(COMPILE_TARGETS as readonly string[]).includes(name))
+    throw new Error(`m3-bun: unknown compile target ${name} (${COMPILE_TARGETS.join(", ")})`);
   return `bun-${name}` as Bun.Build.CompileTarget;
 }
 
@@ -127,7 +145,11 @@ export function findWorkspaceRoot(start: string): string | undefined {
   let dir = resolve(start);
   for (;;) {
     const file = join(dir, "package.json");
-    if (existsSync(file) && (JSON.parse(readFileSync(file, "utf8")) as { workspaces?: unknown }).workspaces) return dir;
+    if (
+      existsSync(file) &&
+      (JSON.parse(readFileSync(file, "utf8")) as { workspaces?: unknown }).workspaces
+    )
+      return dir;
     const parent = dirname(dir);
     if (parent === dir) return undefined;
     dir = parent;

@@ -79,7 +79,7 @@
 | 1:1 | `ecosystem/serde` | crate Rust `serde` détecté (Serde (ser/deserialize)) — doc : https://serde.rs/ | `https://serde.rs/` |
 | 1:1 | `ecosystem/serde-json` | crate Rust `serde_json` détecté (serde_json) — doc : https://docs.rs/serde_json | `https://docs.rs/serde_json` |
 
-## `apps/cli/Cargo.toml`
+## `crates/infra/aphrody/Cargo.toml`
 
 | ligne | règle | message | remplacement |
 | --- | --- | --- | --- |

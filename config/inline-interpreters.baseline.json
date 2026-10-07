@@ -2,32 +2,32 @@
   "schemaVersion": 1,
   "$comment": "Ratchet for inline interpreter invocations. Counts may only fall; new files fail the check.",
   "files": {
-    "apps/yolo/cli/test/startup-benchmark.test.ts": {
+    "packages/engine/yolo/test/startup-benchmark.test.ts": {
       "count": 1,
       "scope": "unclassified",
       "reason": ""
     },
-    "apps/yolo/cli/test/upgrade.test.ts": {
+    "packages/engine/yolo/test/upgrade.test.ts": {
       "count": 1,
       "scope": "unclassified",
       "reason": ""
     },
-    "apps/yolo/cli/test/verify-python.test.ts": {
+    "packages/engine/yolo/test/verify-python.test.ts": {
       "count": 1,
       "scope": "unclassified",
       "reason": ""
     },
-    "apps/yolo/cli/test/web-command.test.ts": {
+    "packages/engine/yolo/test/web-command.test.ts": {
       "count": 2,
       "scope": "unclassified",
       "reason": ""
     },
-    "apps/yolo/install.sh": {
+    "packages/engine/yolo/install.sh": {
       "count": 1,
       "scope": "unclassified",
       "reason": ""
     },
-    "apps/yolo/yolo.just": {
+    "packages/engine/yolo/yolo.just": {
       "count": 1,
       "scope": "unclassified",
       "reason": ""

@@ -210,7 +210,7 @@ pub fn bundle_project(settings: &Settings) -> crate::Result<Vec<PathBuf>> {
   cmd
     .current_dir(&output_path)
     .env("APPDIR", &app_dir)
-    // At least on my local machine this was required, worked fine without in CI / using published tauri-apps/cli-cef.
+    // At least on my local machine this was required, worked fine without in CI / using published tauri-crates/infra/aphrody-cef.
     .env("MAIN_BIN", app_dir_bin.join(settings.main_binary()?.name()))
     .env("OUTPUT_APPIMAGE", "1")
     .env("OUTNAME", &appimage_filename)

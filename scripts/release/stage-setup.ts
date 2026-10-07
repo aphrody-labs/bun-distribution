@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 /* oxlint-disable no-await-in-loop -- sequential staging */
 /**
- * Build the one-click Windows installer of apps/community/setup locally. Nothing is uploaded or published.
+ * Build the one-click Windows installer of packages/infra/product locally. Nothing is uploaded or published.
  *
  *   bun scripts/release/stage-setup.ts [--out <dir>] [--smoke]
  *
- * Writes into `<out>` (default apps/community/setup/dist, ignored by Git):
+ * Writes into `<out>` (default packages/infra/product/dist, ignored by Git):
  *   aphrody-setup-<version>-<commit9>-x86_64-pc-windows-msvc.exe     the download (« Download Aphrody », kind `desktop`)
  *   aphrody-setup-<version>-<commit9>-x86_64-pc-windows-msvc.tar.gz  flat update archive (kind `update`) read by its updater
  *   SHA256SUMS and aphrody-setup.manifest.json (the entries scripts/release/publish-downloads.ts publishes).
@@ -21,7 +21,7 @@ import { scanPack, sha256File } from "./publish-creator.ts";
 import { brandExe } from "./windows-exe.ts";
 
 const repo = resolve(import.meta.dir, "../..");
-const appDir = join(repo, "apps/community/setup");
+const appDir = join(repo, "packages/infra/product");
 const EXE = "Aphrody-Setup.exe";
 const TARGET = "x86_64-pc-windows-msvc";
 const ICON = join(repo, "crates/ui/identity/assets/brand/favicon.ico");
@@ -104,7 +104,30 @@ export async function stageSetup(out: string, smoke: boolean): Promise<StagedEnt
       if (!printed.includes(version))
         throw new Error(`smoke: --version printed ${JSON.stringify(printed)}`);
       await run([...runner, join(pack, EXE), "--oui", "--simuler"], repo, env);
-      console.log("smoke ok (the exe starts, prints its version and simulates the installation)");
+      for (const role of ["admin", "creator"]) {
+        const roleVersion = await run([...runner, join(pack, EXE), role, "--version"], repo, env);
+        if (!roleVersion.includes(version)) throw new Error(`${role}: product version mismatch`);
+        await run([...runner, join(pack, EXE), role, "--help"], repo, env);
+        const events = await run(
+          [...runner, join(pack, EXE), role, "desktop", "catalog"],
+          repo,
+          env,
+        );
+        const catalog = events
+          .split(/\r?\n/)
+          .filter(Boolean)
+          .map((line) => JSON.parse(line));
+        if (!catalog.some((event) => event.catalog?.protocol === "aphrody.kit/1"))
+          throw new Error(`${role}: desktop protocol missing`);
+      }
+      await run(
+        [...runner, join(pack, EXE), "--oui", "--roles", "admin,createur", "--simuler"],
+        repo,
+        env,
+      );
+      console.log(
+        "smoke ok (version, installation simulation, both role CLIs and desktop catalogs)",
+      );
     }
     await mkdir(out, { recursive: true });
     await copyFile(join(pack, EXE), join(out, names.exe));

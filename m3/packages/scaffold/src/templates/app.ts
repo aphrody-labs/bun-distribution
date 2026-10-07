@@ -67,7 +67,7 @@ export function appFiles(options: AppTemplateOptions): FileMap {
       "@types/react-dom": "catalog:",
       "@aphrody/m3-config": "workspace:*",
       typescript: "catalog:",
-      ...(tauri ? { "@tauri-apps/cli": TAURI_3.jsCli } : {}),
+      ...(tauri ? { "@tauri-crates/infra/aphrody": TAURI_3.jsCli } : {}),
     },
     engines: { bun: ">=1.4.2" },
   };

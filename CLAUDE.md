@@ -32,7 +32,7 @@ UI is canonical in `m3/packages/app-ui` and `crates/ui/*`.
 
 ## Ownership map
 
-- Rust: `crates/<domain>/<crate>`; general CLI: `apps/cli`.
+- Rust: `crates/<domain>/<crate>`; general CLI: `crates/infra/aphrody`.
 - Bun apps/packages: `apps/<domain>/<app>`, `packages/<domain>/<package>`.
 - Docs: `docs/<category>/<domain>`; scripts: `scripts/{audit,build,dev,migration,release,tools}`.
 - Infra: `config/host/` (`inventory/`, `systemd/`, `nginx/`, `rg/`, `nie/`, Shenron host plane); live

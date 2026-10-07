@@ -8,7 +8,7 @@
 //   bun scripts/bench/run.ts --compare before.json after.json [--md]
 //
 // Groups (all but `build` run by default; `--cold-cache` adds a registry download to `install`):
-//   yolo       `bun $YOLO_ROOT/apps/cli/src/index.ts version`, 20 runs after 3 warm-ups
+//   yolo       `bun $YOLO_ROOT/crates/infra/aphrody/src/index.ts version`, 20 runs after 3 warm-ups
 //   mcp        m3 tool host cold start: spawn to the `list` answer (served through aphrody-mcp)
 //   themes     m3-os-themes: CLI wall time, and in-process import / first / warm generation
 //   install    `bun install --frozen-lockfile` in a manifest-only copy of the workspace (cold node_modules, warm no-op)
@@ -411,7 +411,7 @@ async function compileYolo(ctx: Ctx): Promise<void> {
     "--define",
     `YOLO_VERSION=${JSON.stringify(version)}`,
     ...flags,
-    "apps/cli/src/index.ts",
+    "crates/infra/aphrody/src/index.ts",
     "--outfile",
     exe,
   ];

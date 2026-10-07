@@ -34,7 +34,7 @@ RUN (userdel -r ubuntu 2>/dev/null || true) && useradd -m -u 1000 -s /bin/bash a
 FROM runtime-base AS artifacts
 ARG APHRODY_DOWNLOAD_URL=https://downloads.aphrody.com
 ARG APHRODY_RELEASE
-COPY apps/web/downloads/install.sh /tmp/aphrody-install.sh
+COPY packages/infra/workspace/assets/downloads/install.sh /tmp/aphrody-install.sh
 RUN apt-get update \
  && apt-get install -y --no-install-recommends binutils coreutils gawk grep tar \
  && rm -rf /var/lib/apt/lists/*

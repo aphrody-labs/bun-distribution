@@ -3,9 +3,9 @@
 
 Shared command parser and in-process dispatch for Aphrody hosts. Domain
 implementations remain in their existing libraries; this crate assembles their
-command bindings. It owns the implementation formerly in `apps/cli/src`.
+command bindings. It owns the implementation formerly in `crates/infra/aphrody/src`.
 
-`apps/cli` retains the `aphrody` package, binary, compatibility exports and
+`crates/infra/aphrody` retains the `aphrody` package, binary, compatibility exports and
 feature names. `aphrody-ffi` consumes this library directly, preserving its C
 symbols, argument convention and captured stdout/stderr. The library installs
 no global allocator and introduces no subprocess boundary between the FFI and

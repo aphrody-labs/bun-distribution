@@ -55,7 +55,7 @@ Constats sur `main` (`c439b6fbd`), preuves dans le rapport d'audit `prep-bun-mec
 
 ## 5. Collisions du nom `yolo` (décision à prendre avant J0)
 
-Le nom porte aujourd'hui dix sens dans `aphrody` : le CLI Bun `yolo` (`apps/yolo/cli`, qui vient d'absorber `ops`, `workspace`, `update`, `forge`, `m3`…), les crates `yolo-core`, `yolo-runtime`, `yolo-pyo3`, les paquets `@aphrody/yolo-*`, le SDK runtime, `apps/yolo/*`, `yolo.just`, le plugin Claude `yolo`, l'ancien dépôt `aphrody-labs/yolo`, et le runtime `~/.yolo`. Si le binaire du runtime devient `yolo`, ses sous-commandes `create`, `update`, `upgrade`, `help`, `--version` entrent en collision avec celles du CLI Bun actuel, et toute commande intégrée masque un script `package.json` du même nom (comportement de Bun). Options :
+Le nom porte aujourd'hui dix sens dans `aphrody` : le CLI Bun `yolo` (`packages/engine/yolo`, qui vient d'absorber `ops`, `workspace`, `update`, `forge`, `m3`…), les crates `yolo-core`, `yolo-runtime`, `yolo-pyo3`, les paquets `@aphrody/yolo-*`, le SDK runtime, `packages/engine/yolo/*`, `yolo.just`, le plugin Claude `yolo`, l'ancien dépôt `aphrody-labs/yolo`, et le runtime `~/.yolo`. Si le binaire du runtime devient `yolo`, ses sous-commandes `create`, `update`, `upgrade`, `help`, `--version` entrent en collision avec celles du CLI Bun actuel, et toute commande intégrée masque un script `package.json` du même nom (comportement de Bun). Options :
 
 1. Le CLI Bun `yolo` devient l'ensemble des commandes de plugins du runtime (`yolo ops`, `yolo forge`… chargés comme plugin JS par le binaire `yolo`) : un seul `yolo`, conforme à « un seul CLI ».
 2. Le CLI Bun est renommé (par exemple `aphrody-ops`, ou repli sous `aphrody`) et `yolo` est réservé au runtime.

@@ -15,7 +15,7 @@ installed runtime and data parity remain unqualified.
 ## Boundaries
 
 - `core/` owns Drive's operations, persistence, indexing, sync and `sd-daemon`.
-- `crates/`, `apps/cli/`, `xtask/`, `patches/` and `adapters/` stay beside core
+- `crates/`, `crates/infra/aphrody/`, `xtask/`, `patches/` and `adapters/` stay beside core
   because core and CLI use them at build or runtime.
 - The HTTP site belongs to `aphrody-web/crates/aphrody-site` and is absent here.
 - The desktop/web UI and TypeScript client remain in `aphrody-ui` until their

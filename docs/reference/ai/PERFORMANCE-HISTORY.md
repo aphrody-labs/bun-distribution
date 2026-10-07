@@ -155,7 +155,7 @@ CI version captures per-PR deltas. Both views matter.
 ## 8. Reference
 
 - `crates/os/backend/benches/backend_bench.rs` — backend primitives bench source
-- `apps/cli/benches/cold_start.rs` — `aphrody version` cold-start bench
+- `crates/infra/aphrody/benches/cold_start.rs` — `aphrody version` cold-start bench
   (R-A R1.5 phase 1)
 - `crates/ai/mcp/benches/initialize_handshake.rs` — `aphrody-mcp` stdio
   MCP handshake bench (R-A R1.5 phase 2)

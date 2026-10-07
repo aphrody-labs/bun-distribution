@@ -690,7 +690,7 @@ fn scaffold_tauri(dest: &Path, name: &str) -> Result<()> {
     "@tauri-apps/api": "^2"
   }},
   "devDependencies": {{
-    "@tauri-apps/cli": "^2"
+    "@tauri-crates/infra/aphrody": "^2"
   }}
 }}
 "#

@@ -48,7 +48,7 @@
 //! but with a `url` is a streamable HTTP server.
 //!
 //! [`McpConfig`], [`McpServerConfig`] and [`McpTransportConfig`] are the **legacy view** that
-//! `aphrody mcp` (`apps/cli/src/mcp_cmd.rs`) was written against. They are kept, with identical
+//! `aphrody mcp` (`crates/infra/aphrody/src/mcp_cmd.rs`) was written against. They are kept, with identical
 //! parsing, until that command migrates to the canonical model; new code must not use them.
 
 use std::{

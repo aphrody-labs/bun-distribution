@@ -2,22 +2,64 @@
   "readme": {
     "summary": "Private Rust/Bun monorepo: the Bun fork runtime (`yolo`), the Python runtime (`vu`), the `aphrody` CLI/MCP/FFI and the M3 UI framework.",
     "layout": [
-      ["apps/<domain>/<app>", "Applications"],
-      ["packages/<domain>/<package>", "Bun packages"],
-      ["crates/<domain>/<crate>", "Rust crates"],
-      ["m3/", "UI framework, `m3/packages/app-ui`"],
-      ["py/", "Python packages"],
-      ["config/", "Build, product, host and deployment declarations"],
-      ["scripts/", "audit, build, dev, migration, release, tools"],
-      ["docs/", "Guides, contracts, generated references"],
-      [".coord/", "Claims and receipts"]
+      [
+        "apps/<domain>/<app>",
+        "Applications"
+      ],
+      [
+        "packages/<domain>/<package>",
+        "Bun packages"
+      ],
+      [
+        "crates/<domain>/<crate>",
+        "Rust crates"
+      ],
+      [
+        "m3/",
+        "UI framework, `m3/packages/app-ui`"
+      ],
+      [
+        "py/",
+        "Python packages"
+      ],
+      [
+        "config/",
+        "Build, product, host and deployment declarations"
+      ],
+      [
+        "scripts/",
+        "audit, build, dev, migration, release, tools"
+      ],
+      [
+        "docs/",
+        "Guides, contracts, generated references"
+      ],
+      [
+        ".coord/",
+        "Claims and receipts"
+      ]
     ],
     "links": [
-      ["PLAN.md", "Architecture, contracts, open queue"],
-      ["MEMORY.md", "Dated evidence and limits"],
-      ["AGENTS.md", "Working rules"],
-      ["docs/README.md", "Documentation index"],
-      ["docs/reference/workspace/STATE.md", "Workspace inventory"]
+      [
+        "PLAN.md",
+        "Architecture, contracts, open queue"
+      ],
+      [
+        "MEMORY.md",
+        "Dated evidence and limits"
+      ],
+      [
+        "AGENTS.md",
+        "Working rules"
+      ],
+      [
+        "docs/README.md",
+        "Documentation index"
+      ],
+      [
+        "docs/reference/workspace/STATE.md",
+        "Workspace inventory"
+      ]
     ],
     "installation": [
       "## One install par agent IA",
@@ -62,12 +104,30 @@
   },
   "plan": {
     "owners": [
-      ["Aphrody", "Products, workflows, UI, integrations"],
-      ["Yolo", "Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`)"],
-      ["Workspace/Infra", "Orchestration, inventories, factories, release, hosts"],
-      ["`m3/packages/app-ui`, `crates/ui/*`", "Canonical UI"],
-      ["`crates/ai/rag-python`", "Sole owner of the `aphrody-rust` Python binding"],
-      ["IECODE", "Separate repository, store and authority"],
+      [
+        "Aphrody",
+        "Products, workflows, UI, integrations"
+      ],
+      [
+        "Yolo",
+        "Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`)"
+      ],
+      [
+        "Workspace/Infra",
+        "Orchestration, inventories, factories, release, hosts"
+      ],
+      [
+        "`m3/packages/app-ui`, `crates/ui/*`",
+        "Canonical UI"
+      ],
+      [
+        "`crates/ai/rag-python`",
+        "Sole owner of the `aphrody-rust` Python binding"
+      ],
+      [
+        "IECODE",
+        "Separate repository, store and authority"
+      ],
       [
         "Kernel",
         "`aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest"
@@ -76,9 +136,12 @@
     "targets": [
       [
         "Rust CLI",
-        "`aphrody` multicall binary (`apps/cli`, `crates/infra/aphrody-command`); former tool names are links"
+        "`aphrody` multicall binary (`crates/infra/aphrody`, `crates/infra/aphrody-command`); former tool names are links"
       ],
-      ["Bun CLI", "`yolo` (`apps/yolo/cli`)"],
+      [
+        "Bun CLI",
+        "`yolo` (`packages/engine/yolo`)"
+      ],
       [
         "FFI",
         "`aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate"
@@ -94,6 +157,10 @@
       [
         "Python",
         "`vu` runtime (uv + ruff + PyO3 + shared CPython), plan in `docs/plans/vu/PLAN.md`"
+      ],
+      [
+        "Bun product",
+        "One package, `packages/infra/product`, one entrypoint and `Aphrody-Setup.exe`: installation, administration and creator modules; showcase folded into canonical app-ui."
       ]
     ],
     "contracts": [
@@ -170,7 +237,7 @@
       ],
       [
         "Known failures",
-        "`web:verify`, 4 `apps/yolo/cli` tests (`libaphrody_ffi` absent), `aphrody infra validate`, global typecheck"
+        "`web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate`, global typecheck"
       ]
     ],
     "success": [
@@ -203,6 +270,11 @@
             "2026-10-07",
             "WSL crate folded into `aphrody-command/src/wsl`, preserving multicall identities. Missing sha2 and moved fixture paths corrected. VPS snapshot `95c1ec042163591d98b0ddb94cf6c66ea366c5f7`: scoped check, test and strict Clippy all-targets passed; command 95 tests and code-graph 33 unit + 2 oracle tests, 130 total, zero failures or ignored.",
             "Linux factory gates; installed full CLI not rebuilt or activated by this integration. Windows WSL execution remains to qualify."
+          ],
+          [
+            "2026-10-07",
+            "Owner-requested product fusion: top-level `apps/` and `m3/apps/` removed; setup/admin/creator in `@aphrody/product` 0.3.0, Rust CLI in `crates/infra/aphrody`, Yolo CLI/Forge in `packages/engine/{yolo,forge}`, downloads in Workspace, showcase in app-ui. Product 348 tests, Forge 28, downloads 18, showcase 18 + 3 DOM, bridge 6 and embedded configuration 7 passed; scoped TypeScript/lint and repository links passed. CLI Cargo check passed on the VPS; Windows installer compiled and started under Wine.",
+            "Rust test/Clippy and native desktop qualification are pending. Wine is not physical Windows; Omar remains offline. Private stores and concurrent feature work are preserved. No performance improvement is claimed."
           ]
         ]
       },
@@ -221,7 +293,7 @@
           ],
           [
             "2026-10-06",
-            "`main` `41a2ff302d` (upstream `3f1765a6de`): factory build 546 s, 156 `first_party` tests green, Bun 1.4.3; libm symbols rewritten to glibc 2.39 (`apps/yolo/forge/src/glibc.ts`), `elf-glibc-imports.ts --max 2.39` clean.",
+            "`main` `41a2ff302d` (upstream `3f1765a6de`): factory build 546 s, 156 `first_party` tests green, Bun 1.4.3; libm symbols rewritten to glibc 2.39 (`packages/engine/forge/src/glibc.ts`), `elf-glibc-imports.ts --max 2.39` clean.",
             "`/srv` on the factory was full; build ran with `BUN_FORGE_HOME` on the system disk."
           ],
           [
@@ -326,7 +398,7 @@
           ],
           [
             "2026-10-06",
-            "One app: kit bridge `aphrody.kit/1`, routes `admin`/`creator`, `m3/apps/web` merged into showcase, `apps/yolo/web` into Studio › Engine; `Aphrody-Setup.exe`; app-ui 215 tests.",
+            "One app: kit bridge `aphrody.kit/1`, routes `admin`/`creator`, `m3/apps/web` merged into showcase, `packages/engine/yolo/web` into Studio › Engine; `Aphrody-Setup.exe`; app-ui 215 tests.",
             "Unsigned exes; nothing run on physical Windows."
           ]
         ]
@@ -404,7 +476,11 @@
             "Cloud session host: 4 CPU, 15 GB RAM, ~30 GB disk; scoped `-p <crate>` gates only.",
             "Full workspace, V8, Tauri, WebKit builds go to the VPS."
           ],
-          ["2026-10-05", "CI jobs do not start (account billing).", "Owner-side."],
+          [
+            "2026-10-05",
+            "CI jobs do not start (account billing).",
+            "Owner-side."
+          ],
           [
             "2026-10-07",
             "Private GHCR runtime digest `sha256:9584253e39340758b4efcb1d11e86aa48f165a3e045759f75bb4a600559c3031` passed registry pull, readonly-root token-file API health and shutdown. Alpine AMD64/ARM64 digest `sha256:7506e634d1ab1acfadaaceb6a59d52629a02b62bd59ec1507c334816e7b55aad` passed both architecture runtime/WASM probes.",

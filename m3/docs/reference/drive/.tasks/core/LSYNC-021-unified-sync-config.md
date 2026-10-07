@@ -714,9 +714,9 @@ export SD_PRUNING_STRATEGY=conservative
 
 1. `core/src/infra/sync/config.rs` - Configuration types
 2. `core/migrations/mXXXXXXXXX_add_sync_config.rs` - Database schema
-3. `apps/cli/src/domains/sync/config.rs` - CLI commands
+3. `crates/infra/aphrody/src/domains/sync/config.rs` - CLI commands
 
-**Modified Files (6):** 4. `core/src/infra/sync/mod.rs` - Export config types 5. `core/src/service/sync/mod.rs` - Accept and use config 6. `core/src/service/sync/backfill.rs` - Replace constants with config 7. `core/src/service/sync/peer.rs` - Replace constants with config 8. `core/src/library/mod.rs` - Add config load/save methods 9. `apps/cli/src/domains/sync/mod.rs` - Add config subcommand
+**Modified Files (6):** 4. `core/src/infra/sync/mod.rs` - Export config types 5. `core/src/service/sync/mod.rs` - Accept and use config 6. `core/src/service/sync/backfill.rs` - Replace constants with config 7. `core/src/service/sync/peer.rs` - Replace constants with config 8. `core/src/library/mod.rs` - Add config load/save methods 9. `crates/infra/aphrody/src/domains/sync/mod.rs` - Add config subcommand
 
 **Documentation (1):** 10. `docs/core/library-sync.mdx` - Add configuration section
 

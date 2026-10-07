@@ -49,7 +49,7 @@ browser   = ["yolo-runtime/browser"]
 # empty module so `cargo check --target wasm32-unknown-unknown` stays green.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # `aphrody-command` (crates/infra/aphrody-command) is the library that owns the
-# full command dispatch; apps/cli is only its binary facade. It defines no
+# full command dispatch; crates/infra/aphrody is only its binary facade. It defines no
 # `#[global_allocator]`, so this crate installs its own mimalloc below without
 # a conflict.
 aphrody-command = { workspace = true }

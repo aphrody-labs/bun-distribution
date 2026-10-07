@@ -6,7 +6,7 @@ plus the expected output, so you can verify the recipe end-to-end before
 adapting it to your project. For background reading see
 [`INSTALL.md`](../../guides/ai/INSTALL.md), [`PROTOCOL.md`](../../products/contracts/a2a/README.md), and
 [`PERFORMANCE.md`](./PERFORMANCE.md). Every command was cross-checked against
-the real clap surface in `apps/cli/src/main.rs`.
+the real clap surface in `crates/infra/aphrody/src/main.rs`.
 
 ---
 

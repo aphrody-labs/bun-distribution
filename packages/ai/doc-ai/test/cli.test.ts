@@ -148,7 +148,7 @@ async function invokeOffline(args: string[], cwd: string, requireOnline = false)
   const child = Bun.spawn(
     [
       process.execPath,
-      path.resolve(import.meta.dir, "../../../../apps/yolo/cli/src/index.ts"),
+      path.resolve(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts"),
       "doc-ai",
       ...args,
     ],

@@ -1513,7 +1513,7 @@ async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
   const certDir = `/etc/letsencrypt/live/${cfg.site.certName}`;
   const steps = [
     `create ${rootDir}/{releases,app} owned by ubuntu`,
-    `upload apps/web/downloads/src/server.ts -> ${rootDir}/app/server.ts`,
+    `upload packages/infra/workspace/src/downloads/server.ts -> ${rootDir}/app/server.ts`,
     `upload ${unit}, install to /etc/systemd/system, daemon-reload, enable and restart ${cfg.host.service}`,
     `certificate ${cfg.site.certName} (HTTP-01, ${cfg.site.hosts.join(", ")}) through ${cert} when ${certDir} is absent`,
     `upload ${vhost}, install to /etc/nginx/conf.d, retire aphrody-acme-temp.conf (saved under /etc/nginx/retired/), nginx -t, reload`,
@@ -1527,7 +1527,7 @@ async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
     cfg,
     `sudo install -d -o ubuntu -g ubuntu ${rootDir} ${rootDir}/releases ${rootDir}/app`,
   );
-  await put(cfg, join(root, "apps/web/downloads/src/server.ts"), `${rootDir}/app/server.ts`);
+  await put(cfg, join(root, "packages/infra/workspace/src/downloads/server.ts"), `${rootDir}/app/server.ts`);
   await put(cfg, join(root, unit), "/tmp/aphrody-downloads.service");
   await remote(
     cfg,

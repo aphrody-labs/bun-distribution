@@ -6,7 +6,7 @@
 //
 // yolo's `web` verb runs `bun run build|dev` in `$YOLO_HOME/m3/packages/app-ui`. This script points YOLO_HOME at a directory
 // whose `m3/packages/app-ui` is the example (a symlink under the temp dir; nothing is written into this repository) and runs
-// `bun $YOLO_ROOT/apps/yolo/cli/src/index.ts web build|dev` (YOLO_ROOT: this Aphrody checkout by default). The example
+// `bun $YOLO_ROOT/packages/engine/yolo/src/index.ts web build|dev` (YOLO_ROOT: this Aphrody checkout by default). The example
 // scripts run `yolo m3 next`, so Next, Turbopack workers included, runs on Bun; no Node is involved.
 //
 //   build    yolo web build            (cold: `.next` removed first)
@@ -31,7 +31,7 @@ import { join, resolve } from "node:path";
 
 const PKG = resolve(import.meta.dir, "..");
 export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? resolve(PKG, "../../..");
-export const YOLO_CLI = join(YOLO_ROOT, "apps/yolo/cli/src/index.ts");
+export const YOLO_CLI = join(YOLO_ROOT, "packages/engine/yolo/src/index.ts");
 
 export type Example = "app" | "tauri";
 export const exampleDir = (name: Example): string => join(PKG, "examples", name);

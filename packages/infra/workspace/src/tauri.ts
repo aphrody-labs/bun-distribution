@@ -106,7 +106,7 @@ export async function runTauri(args: string[]): Promise<number> {
     const suffix = host.includes("windows") ? ".exe" : "";
     let source = Bun.env.APHRODY_SIDECAR_SOURCE ?? "";
     if (!source) {
-      const workspace = sidecarWorkspace("aphrody", "apps/cli");
+      const workspace = sidecarWorkspace("aphrody", "crates/infra/aphrody");
       const { manifest } = workspace;
       const metadata = Bun.spawnSync(
         ["cargo", "metadata", "--format-version", "1", "--no-deps", "--manifest-path", manifest],
@@ -195,7 +195,7 @@ export async function runTauri(args: string[]): Promise<number> {
       runSync(
         [
           process.execPath,
-          join(repo, "apps/yolo/cli/src/index.ts"),
+          join(repo, "packages/engine/yolo/src/index.ts"),
           "ops",
           "drive-daemon",
           "--root",

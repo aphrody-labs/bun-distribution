@@ -34,7 +34,7 @@ step() { # name command...
   "$@" || { status "failed: $name"; echo "FAILED: $name"; exit 1; }
 }
 cd "$ws" || exit 1
-version=$(cat apps/yolo/VERSION)
+version=$(cat packages/engine/yolo/VERSION)
 step "toolchain bootstrap" bash scripts/release/bootstrap_remote.sh
 command -v sccache >/dev/null && export RUSTC_WRAPPER=sccache
 step "bun install" bun install --frozen-lockfile

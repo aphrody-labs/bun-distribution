@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Kit bridge (protocol `aphrody.kit/1`): the `admin` and `creator` surfaces run the Bun kits
-// (apps/community/omar-kit, apps/community/creator-kit) through the main-window commands of
+// (packages/infra/product, packages/infra/product) through the main-window commands of
 // crates/ui/app/src/kits.rs. The kits own the logic and the catalog; this module only types the
 // events and keeps the state of one run. The protocol source is
-// apps/community/creator-kit/src/lib/desktop.ts (a test checks both stay in step).
+// packages/infra/product/src/shared/desktop.ts (a test checks both stay in step).
 import { Channel, invoke } from "@aphrody/api/core";
 import { isTauri } from "./tauri-bridge";
 

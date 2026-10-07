@@ -74,7 +74,7 @@ Every change below is a `[[rewrite]]` or a source removal in `vendor.toml` so a 
 | :--- | :--- | :--- |
 | `vendor.toml` sources `wry`, `tao`; crates upstream `tauri-runtime-wry`, upstream `tauri-driver`; the `wgpu = "23"` rewrite for wry | **remove** | The importer must not bring the deleted crates back. |
 | `vendor.lock`, `docs/CRATES.md` | **migrate** | Entries removed by hand: `yolo import` needs the `vendor/*` checkouts, absent in this tree, so `yolo import --check` cannot run here. |
-| `apps/yolo/cli/test/import.test.ts` | **migrate** | The `tauri-driver` fixture is replaced by a surviving binary crate; the importer tests keep their coverage. |
+| `packages/engine/yolo/test/import.test.ts` | **migrate** | The `tauri-driver` fixture is replaced by a surviving binary crate; the importer tests keep their coverage. |
 | `packages/engine/core/src/vendor/status.ts`, `packages/engine/core/test/startup.test.ts` | **migrate** | Submodule lists drop `wry` and `tao`. |
 | `scripts/tools/vendor/packages_upstream_sync.ts` | **migrate** | Same list. |
 | `config/upstream-sources.json` | **migrate** | `tauri` reference no longer sparse-reads upstream `tauri-driver`; entry for the CEF runtime patch. |
@@ -86,7 +86,7 @@ Every change below is a `[[rewrite]]` or a source removal in `vendor.toml` so a 
 | Item | Decision | Why |
 | :--- | :--- | :--- |
 | `scripts/build/desktop/artifact.ts` | **migrate** | Notices pointed at `aphrody-wry` and `aphrody-tao` (dead paths even before this change); the artifact now ships the CEF payload and the CEF notices. |
-| `packages/engine/runtime/src/desktop-artifact.ts`, `desktop.ts`, README, `apps/yolo/cli` help and tests | **migrate** | `engine: "cef"`; manifest schema `yolo.desktop-artifact/2` with nested payload paths (`locales/en-US.pak`), still no symlinks, no traversal, no unlisted entries. |
+| `packages/engine/runtime/src/desktop-artifact.ts`, `desktop.ts`, README, `packages/engine/yolo` help and tests | **migrate** | `engine: "cef"`; manifest schema `yolo.desktop-artifact/2` with nested payload paths (`locales/en-US.pak`), still no symlinks, no traversal, no unlisted entries. |
 | `packages/infra/workspace/src/desktop-smoke.ts`, `native-desktop.ts` | **migrate** | The smoke test drove WebView2 through `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`; it now opens the app's opt-in CEF remote debugging port. |
 | `config/host/vps-cargo.json` | **migrate** | `CEF_PATH` under the factory cache (`/srv/aphrody-build/cache/cef`) so the 1.5 GB distribution is downloaded once and never lands in the repository or in one copy per profile. `desktopSysCrates` keeps `gtk4-sys`; the GTK3 names are dropped. |
 | `config/system-packages.json`, `scripts/release/bootstrap_remote.sh`, `scripts/tools/ui/drive/scripts/setup.*` | **migrate** | GTK 4 + CEF prerequisites replace `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`; not added to the `dbfr` set (minimum host surface). |

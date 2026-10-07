@@ -67,7 +67,7 @@ training stores**, **more than a dozen user-facing entry points** that index, se
 
 | Owner | Role | Store | Notes |
 | --- | --- | --- | --- |
-| `apps/yolo/cli/src/scan.ts` + `packages/engine/core/src/vfs/scan.ts` | `yolo scan`: parallel repo scan, per-extension stats, wyhash tree fingerprint, JSON/MD | none (report only) | a fingerprinting scanner, not an ingester; same concern as stage `scan` |
+| `packages/engine/yolo/src/scan.ts` + `packages/engine/core/src/vfs/scan.ts` | `yolo scan`: parallel repo scan, per-extension stats, wyhash tree fingerprint, JSON/MD | none (report only) | a fingerprinting scanner, not an ingester; same concern as stage `scan` |
 | `yolo train` | **does not exist** as a command (verified with `yolo --help`) | n/a | training is `aphrody train` / `aphrody-agent-train` (Rust) and the Redis `TrainDb` below |
 | `packages/engine/core/src/redis/{traindb,vector}.ts` | Redis-backed train instructions/triples and cosine vector store | Redis (cache only per ADR D1) | MCP tools `yolo_traindb_stats`, `yolo_vector_search`; AI CLI `yolo ai call` |
 | `packages/engine/core/src/tools/registry.ts` | MCP/AI tool catalog including `yolo_scan` | n/a | single schema list |
@@ -348,7 +348,7 @@ in `MEMORY.md` for this claim.
   entries are committed with a pathspec/index-level extraction of this claim's hunks only.
 - `crates/infra/aphrody-command` and `crates/ai/mcp` are held by the bxc/n2b agent: the new
   logic lives in new crates and the wiring hunks are minimal and re-read before editing.
-- `rag-python` and `apps/yolo/cli/src/{vu,python}.ts` belong to the vu agent: no edit there.
+- `rag-python` and `packages/engine/yolo/src/{vu,python}.ts` belong to the vu agent: no edit there.
 - Large corpora (about 740 transcript files, 440 MB) make a full message import heavy and
   sensitive: metadata-only by default.
 - A native port of a 428 KB extractor is long; parity is measured per language and the
