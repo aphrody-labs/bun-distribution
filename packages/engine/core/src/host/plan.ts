@@ -63,6 +63,34 @@ const sq = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
 const socketPattern = (sockets: string[]) =>
   "^(" + sockets.map((socket) => socket.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")$";
 
+/** Retain immutable pins without duplicate bytes; never write through a live binary or rollback symlink. */
+export function pinnedBinaryInstall(
+  binary: string,
+  artifact: { from: string; sha256: string },
+  marker: string,
+): string {
+  const next = `${binary}.new`,
+    previous = `${binary}.prev`,
+    previousNext = `${previous}.new`;
+  const linkOrCopy = (from: string, to: string) =>
+    `(ln -- ${sq(from)} ${sq(to)} 2>/dev/null || cp -p -- ${sq(from)} ${sq(to)})`;
+  return [
+    "set -e",
+    `test -f ${sq(artifact.from)} && test ! -L ${sq(artifact.from)} && test -x ${sq(artifact.from)} && test "$(stat -c %a -- ${sq(artifact.from)})" = 755 || exit 1`,
+    `install -d -m 0755 ${sq(binary.slice(0, binary.lastIndexOf("/")))}`,
+    `test ! -d ${sq(next)} && test ! -d ${sq(previousNext)} && test ! -d ${sq(previous)}`,
+    `rm -f -- ${sq(next)} ${sq(previousNext)}`,
+    `trap ${sq(`rm -f -- ${sq(next)} ${sq(previousNext)}`)} EXIT`,
+    linkOrCopy(artifact.from, next),
+    `echo ${artifact.sha256}'  '${sq(next)} | sha256sum -c --quiet -`,
+    `if [ -L ${sq(binary)} ]; then cp -Pp -- ${sq(binary)} ${sq(previousNext)}; elif [ -e ${sq(binary)} ]; then ${linkOrCopy(binary, previousNext)}; fi`,
+    `if [ -e ${sq(previousNext)} ] || [ -L ${sq(previousNext)} ]; then mv -fT -- ${sq(previousNext)} ${sq(previous)}; fi`,
+    `mv -fT -- ${sq(next)} ${sq(binary)}`,
+    `touch ${sq(marker)}`,
+    "trap - EXIT",
+  ].join("; ");
+}
+
 /** Only an explicitly declared private relay may share a native service's port. */
 function socketRelays(repoRoot: string, facts: UnitFacts): string[] {
   const root = join(repoRoot, "tools/config/host");
@@ -473,14 +501,13 @@ function unitSteps(
     }
   }
   if (install) {
-    const dir = f.binary.slice(0, f.binary.lastIndexOf("/"));
     steps.push(
       step(
         "provision",
         "mutate",
         "install-binary",
         `install the build as ${f.binary}, the previous one is kept as ${f.binary}.prev (rollback: mv it back)`,
-        `install -d -m 0755 ${dir} && install -m 0755 ${sq(install.from)} ${f.binary}.new && echo ${install.sha256}'  '${sq(`${f.binary}.new`)} | sha256sum -c --quiet - && { [ ! -e ${f.binary} ] || cp -p ${f.binary} ${f.binary}.prev; } && mv -f ${f.binary}.new ${f.binary} && touch ${sq(`${stage}.binary-installed`)}`,
+        pinnedBinaryInstall(f.binary, install, `${stage}.binary-installed`),
       ),
     );
   }
