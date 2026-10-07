@@ -385,7 +385,8 @@ and Bun scripts; raw outputs were kept in the session scratch space and are summ
 - [x] `py/` pytest: 0 failed through the runtime's uv (J18).
 - [x] Peak memory of the release builds measured (J19: wheel, uv, ruff, vu).
 - [x] Scope extension (section 13): Python version manager, native subcommands, compiler decision, benchmark set, shared libpython with the fork: source, test and package state recorded; installed and active for the artifact `0.1.0-cf385dd2`.
-- [ ] Apply the retired catalog entries to the hosts (Infra plan, then apply; source catalogs are done).
+- [x] Apply the retired catalog entries to the hosts (2026-10-07): `aphrody infra sync --target vps|dbfr` plans no
+  action, and neither host keeps an `aphrody-py` systemd unit, cron entry or checkout; nothing to apply.
 - [ ] Public distribution of the runtime: not planned (D1: private, no publication authority).
 
 ## 13. Scope extension (owner directive 2026-10-06)
