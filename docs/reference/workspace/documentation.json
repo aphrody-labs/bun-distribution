@@ -56,8 +56,8 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "9a991a1f7d708e67257a0d8f6c0332bcec7e21162abaa957a91de171b113536d",
-      "bytes": 2831,
+      "sha256": "bc342b93437184b146a40b9a092e8f2c5ceeb1b0d4a46b25fbdf7644e0507ab0",
+      "bytes": 3399,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3136,7 +3136,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "6cc091d913f67bdf6c378bc544945f366d822027639d98e02208ea86f21c53bc",
+      "sha256": "1185f5b1bed68b388c94a233fe76672daddb25c368cb1881df0050df0b3fb586",
       "bytes": 8177,
       "domain": "",
       "status": "generated",
@@ -3316,8 +3316,8 @@
     {
       "path": "docs/apis/generated/workspace-typescript.md",
       "title": "Source reference: workspace-typescript",
-      "sha256": "d12313083de971a358885bf8c79dc81e5d8cd1ebd0812ea3c7700c7338157172",
-      "bytes": 7564,
+      "sha256": "d8cac2ee1da69474f139afe1898804f73debbbca05f8b00ce556b2b494b044e4",
+      "bytes": 7573,
       "domain": "generated",
       "status": "generated",
       "visibility": "private",
@@ -4026,8 +4026,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "f9700d11d0e8437c1d0531582a8efb247aaae525042f3b7746d251b5318429b5",
-      "bytes": 61949,
+      "sha256": "e577f4a5e56dcd7c1a1b08a83946d4cbde380d2d3c01750ebbce7ea3f828e25c",
+      "bytes": 61960,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -6352,6 +6352,26 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/ai/shenron-local-bridge.md"
+    },
+    {
+      "path": "docs/operations/bun-packages.md",
+      "title": "Packages Bun : installation et release",
+      "sha256": "d957db456ef1768e59ee7ca598aba5ccde25d706123475a4472273fc627dd5bf",
+      "bytes": 13599,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/bun-packages.md"
+    },
+    {
+      "path": "docs/operations/bun-release-2026-10-07.md",
+      "title": "Livraison Bun du 2026-10-07",
+      "sha256": "442a66f33e0d99638a6657e2494015d91525dd80c111f4e5204e74d4f91e542f",
+      "bytes": 3604,
+      "domain": "",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/bun-release-2026-10-07.md"
     },
     {
       "path": "docs/operations/cloud/AGENT-HOME-SETUP.md",
@@ -31836,7 +31856,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "a718d295a2caa1d3b7f8826f3bc39a357540668b48292812af83df69dac8f54c",
+      "sha256": "298fc57689d8076de5ae15492b2e53afa20dd935caf792fa309bd9dbd728e6fc",
       "bytes": 50037,
       "domain": "workspace",
       "status": "generated",
@@ -37362,6 +37382,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "var/mirror/README.md"
+    },
+    {
+      "path": "var/reports/shenron-cutover-2026-10-07/TODO.md",
+      "title": "Shenron vps → dbfr",
+      "sha256": "bbc1d3ddd9f870b7978ab782335125969fd6f812600dcab38c13cb9166389a3c",
+      "bytes": 447,
+      "domain": "",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "var/reports/shenron-cutover-2026-10-07/TODO.md"
     }
   ],
   "duplicates": [

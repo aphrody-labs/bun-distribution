@@ -239,7 +239,9 @@
     "docs:site": "bun apps/yolo/cli/src/index.ts ops docs site --root .",
     "cli:help": "bun apps/yolo/cli/src/index.ts ops cli-help",
     "build:factory": "bun apps/yolo/cli/src/index.ts ops build-factory",
-    "audit:product-residue": "bun scripts/audit/workspace/product-residue.ts"
+    "audit:product-residue": "bun scripts/audit/workspace/product-residue.ts",
+    "packages:audit": "bun scripts/release/bun-packages.ts audit",
+    "packages:install": "bun scripts/release/install-bun-packages.ts"
   },
   "dependencies": {
     "@neon/config": "^1.8.2",
@@ -268,7 +270,7 @@
   },
   "packageManager": "bun@1.4.2",
   "aphrody": {
-    "m3Version": "3.3.6"
+    "m3Version": "3.3.7"
   },
   "patchedDependencies": {
     "@discordjs/rest@2.6.3": "patches/@discordjs%2Frest@2.6.3.patch",

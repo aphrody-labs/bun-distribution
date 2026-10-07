@@ -3,7 +3,7 @@
 //! Everything here is deterministic and covered by test/forge.test.ts; side effects live in run.ts.
 
 import { join } from "node:path";
-import defaults from "../../../../config/bun-forge.json";
+import defaults from "./defaults.json";
 
 export type ScratchMode = "auto" | "loop" | "tmpfs" | "dir";
 export type Command =

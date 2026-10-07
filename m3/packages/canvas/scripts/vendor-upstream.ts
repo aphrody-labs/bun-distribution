@@ -13,13 +13,21 @@
 //
 // Copies are byte-identical to their sources after line-ending normalization to LF.
 
-import { readdir } from "node:fs/promises";
+import { readdir, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 export const PACKAGE_DIR = resolve(import.meta.dir, "..");
-export const REPO_DIR = resolve(PACKAGE_DIR, "../../../..");
+export const REPO_DIR = resolve(PACKAGE_DIR, "../../..");
 export const UPSTREAM_DIR = join(REPO_DIR, "third_party", "canvas");
-export const SCENE_TYPES_SOURCE = join(REPO_DIR, "packages", "bun", "aphrody", "src", "scene-types.ts");
+export const SCENE_TYPES_SOURCE = join(
+  REPO_DIR,
+  "packages",
+  "interop",
+  "native",
+  "src",
+  "scene-types.ts",
+);
 export const UPSTREAM_REPOSITORY = "https://github.com/Brooooooklyn/canvas";
 export const UPSTREAM_PACKAGE = "@napi-rs/canvas";
 
@@ -106,6 +114,58 @@ export async function readUpstream(): Promise<UpstreamSnapshot> {
     files,
     platformPackages: platformPackages.toSorted(),
   };
+}
+
+/** Verify an absorbed upstream against its immutable npm release, without restoring a checkout. */
+export async function verifyRegistryCopies(): Promise<Drift[]> {
+  const record = await Bun.file(join(PACKAGE_DIR, "vendor/UPSTREAM.md")).text();
+  const version = /`@napi-rs\/canvas@([^`]+)`/.exec(record)?.[1];
+  if (!version || !/^\d+\.\d+\.\d+$/.test(version))
+    throw new Error("invalid recorded upstream version");
+  const response = await fetch(`https://registry.npmjs.org/@napi-rs%2fcanvas/${version}`, {
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!response.ok) throw new Error(`upstream metadata: HTTP ${response.status}`);
+  const metadata = (await response.json()) as { dist: { tarball: string; integrity: string } };
+  if (!metadata.dist.tarball.startsWith("https://registry.npmjs.org/"))
+    throw new Error("unexpected upstream tarball origin");
+  const download = await fetch(metadata.dist.tarball, { signal: AbortSignal.timeout(30000) });
+  if (!download.ok) throw new Error(`upstream tarball: HTTP ${download.status}`);
+  const bytes = await download.arrayBuffer();
+  const integrity = `sha512-${new Bun.CryptoHasher("sha512").update(bytes).digest("base64")}`;
+  if (integrity !== metadata.dist.integrity) throw new Error("upstream tarball integrity mismatch");
+  const dir = await mkdtemp(join(tmpdir(), "aphrody-canvas-upstream-"));
+  try {
+    const tarball = join(dir, "upstream.tgz");
+    await Bun.write(tarball, bytes);
+    const drift: Drift[] = [];
+    const hashes = parseRecordedHashes(record);
+    for (const name of VENDORED_FILES) {
+      const extracted = Bun.spawnSync(["tar", "-xOf", tarball, `package/${name}`], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      if (extracted.exitCode !== 0) throw new Error(`upstream file missing: ${name}`);
+      const expected = normalizeEol(extracted.stdout.toString());
+      if (sha256(expected) !== hashes.get(name))
+        drift.push({
+          path: `vendor/${name}`,
+          reason: "recorded hash differs from immutable npm upstream",
+        });
+      if ((await readText(`vendor/${name}`)) !== expected)
+        drift.push({ path: `vendor/${name}`, reason: "differs from immutable npm upstream" });
+    }
+    if (
+      (await readText("scene-types.d.ts")) !==
+      normalizeEol(await Bun.file(SCENE_TYPES_SOURCE).text())
+    )
+      drift.push({ path: "scene-types.d.ts", reason: "differs from the native owner" });
+    if ((await readText("vendor/package.json")) !== VENDOR_MANIFEST)
+      drift.push({ path: "vendor/package.json", reason: "incorrect CommonJS boundary" });
+    return drift;
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 export function renderUpstreamRecord(upstream: UpstreamSnapshot): string {
@@ -204,6 +264,12 @@ export async function writeCopies(upstream: UpstreamSnapshot): Promise<string[]>
 }
 
 if (import.meta.main) {
+  if (Bun.argv.includes("--check") && !(await upstreamCheckedOut())) {
+    const drift = await verifyRegistryCopies();
+    for (const { path, reason } of drift) console.error(`drift  ${path}: ${reason}`);
+    console.log(`@aphrody/canvas immutable npm provenance: ${drift.length} drift(s)`);
+    process.exit(drift.length === 0 ? 0 : 1);
+  }
   const upstream = await readUpstream().catch((error: unknown) => {
     console.error(`@aphrody/canvas: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);

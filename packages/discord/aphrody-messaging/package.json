@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/messaging",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Aphrody messaging channel contracts and Discord REST adapter.",
   "license": "Apache-2.0",
   "files": [

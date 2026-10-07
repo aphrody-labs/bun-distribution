@@ -9,8 +9,8 @@ export const TAURI_3 = {
   runtimeCef: "3.0.0-alpha.5",
   build: "3.0.0-alpha.3",
   pluginOpener: "3.0.0-alpha.2",
-  jsApi: "3.0.0-alpha.2",
-  jsPluginOpener: "3.0.0-alpha.2",
+  jsApi: "3.0.0-alpha.3",
+  jsPluginOpener: "3.0.0-alpha.3",
   jsCli: "3.0.0-alpha.4",
 } as const;
 

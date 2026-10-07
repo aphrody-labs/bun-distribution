@@ -1,8 +1,8 @@
 /**
  * `yolo aphrody`: Thin CLI dispatcher delegating to @aphrody/yolo-core/coord.
  */
-export * from "../../../../packages/engine/core/src/coord/aphrody";
-import { runAphrodyCommand } from "../../../../packages/engine/core/src/coord/aphrody";
+export * from "@aphrody/yolo-core/src/coord/aphrody.ts";
+import { runAphrodyCommand } from "@aphrody/yolo-core/src/coord/aphrody.ts";
 
 if (import.meta.main) {
   const [command = "", ...args] = process.argv.slice(2);

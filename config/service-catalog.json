@@ -53,7 +53,9 @@
       "unit": "aphrody-llama-gemma4.service",
       "health": "http://127.0.0.1:8798/health",
       "port": 8798,
-      "capabilities": ["chat"],
+      "capabilities": [
+        "chat"
+      ],
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody/runtimes/llama-b11415",
       "model": {
@@ -137,7 +139,9 @@
       "unit": "aphrody-ai-http.service",
       "health": "http://127.0.0.1:8789/healthz",
       "port": 8789,
-      "capabilities": ["ai-http"],
+      "capabilities": [
+        "ai-http"
+      ],
       "sourceRepo": "aphrody-ai",
       "workingDirectory": "/srv/aphrody/current",
       "publicProxy": "nginx",
@@ -167,7 +171,9 @@
       "unit": "aphrody-shenron-embed.service",
       "health": "http://127.0.0.1:8794/health",
       "port": 8794,
-      "capabilities": ["embed"],
+      "capabilities": [
+        "embed"
+      ],
       "sourceRepo": "aphrody-ai",
       "workingDirectory": "/srv/aphrody/current",
       "public": false,
@@ -182,7 +188,9 @@
       "unit": "aphrody-a2a.service",
       "health": "http://127.0.0.1:8788/ping",
       "port": 8788,
-      "capabilities": ["a2a"],
+      "capabilities": [
+        "a2a"
+      ],
       "sourceRepo": "aphrody",
       "workingDirectory": "/srv/aphrody/shared/a2a",
       "a2a": {
@@ -305,6 +313,16 @@
       "unit": "shenron-neon-pull.timer",
       "note": "every 15 min: apps/bot/scripts/sync-neon-to-sqlite.ts of /srv/shenron/current refreshes /srv/shenron/shared/bot/data/bot.db from PostgreSQL (never empties a table without --allow-empty)",
       "public": false
+    },
+    {
+      "id": "shenron-container-backup",
+      "application": "shenron",
+      "kind": "backup",
+      "runtime": "native",
+      "unit": "shenron-container-backup.timer",
+      "host": "dbfr",
+      "public": false,
+      "note": "Daily container-owned PostgreSQL, Redis and live SQLite snapshots, integrity/checksum-verified; protected under /srv/shenron/shared/backups/container."
     }
   ],
   "policies": {
@@ -322,7 +340,10 @@
       "bundle": {
         "root": "/srv/aphrody-infra",
         "adapter": "scripts/release/atomic-deploy-bundle.sh",
-        "order": ["aphrody", "shenron"]
+        "order": [
+          "aphrody",
+          "shenron"
+        ]
       }
     },
     "applicationRoots": {
@@ -344,7 +365,12 @@
       "shenron-zswap.service",
       "filebrowser.service"
     ],
-    "sharedRuntimes": ["bun", "postgresql", "redis", "nginx"],
+    "sharedRuntimes": [
+      "bun",
+      "postgresql",
+      "redis",
+      "nginx"
+    ],
     "databasePolicy": "postgresql-primary-with-sqlite-local-cache",
     "authPolicy": "one-better-auth-contract-per-public-origin"
   }

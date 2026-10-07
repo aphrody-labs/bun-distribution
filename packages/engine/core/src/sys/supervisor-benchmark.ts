@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { hostTarget, libraryFileName, verifyArtifact } from "../../../runtime/src/artifact";
+import { hostTarget, libraryFileName, verifyArtifact } from "@aphrody/runtime-sdk/src/artifact.ts";
 
 type Mode = "direct" | "native";
 interface Sample {

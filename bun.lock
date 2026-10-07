@@ -49,203 +49,212 @@
       "bin": {
         "yolo": "./src/index.ts",
       },
+      "dependencies": {
+        "@aphrody/plugins": "workspace:*",
+        "@aphrody/runtime-sdk": "workspace:*",
+        "@aphrody/workspace": "workspace:*",
+        "@aphrody/yolo-core": "workspace:*",
+      },
     },
     "apps/yolo/forge": {
       "name": "@aphrody/bun-forge",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "bin": {
         "bun-forge": "./src/main.ts",
+      },
+      "dependencies": {
+        "@aphrody/yolo-core": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-api": {
       "name": "@aphrody/api",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
     },
     "crates/tauri/aphrody-tauri-plugin-autostart": {
       "name": "@aphrody/plugin-autostart",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-barcode-scanner": {
       "name": "@aphrody/plugin-barcode-scanner",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-biometric": {
       "name": "@aphrody/plugin-biometric",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-cli": {
       "name": "@aphrody/plugin-cli",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-clipboard-manager": {
       "name": "@aphrody/plugin-clipboard-manager",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-deep-link": {
       "name": "@aphrody/plugin-deep-link",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-dialog": {
       "name": "@aphrody/plugin-dialog",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-fs": {
       "name": "@aphrody/plugin-fs",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-geolocation": {
       "name": "@aphrody/plugin-geolocation",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-global-shortcut": {
       "name": "@aphrody/plugin-global-shortcut",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-haptics": {
       "name": "@aphrody/plugin-haptics",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-http": {
       "name": "@aphrody/plugin-http",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-log": {
       "name": "@aphrody/plugin-log",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-nfc": {
       "name": "@aphrody/plugin-nfc",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-notification": {
       "name": "@aphrody/plugin-notification",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-opener": {
       "name": "@aphrody/plugin-opener",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-os": {
       "name": "@aphrody/plugin-os",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-positioner": {
       "name": "@aphrody/plugin-positioner",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-process": {
       "name": "@aphrody/plugin-process",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-shell": {
       "name": "@aphrody/plugin-shell",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-sql": {
       "name": "@aphrody/plugin-sql",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-store": {
       "name": "@aphrody/plugin-store",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-stronghold": {
       "name": "@aphrody/plugin-stronghold",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-updater": {
       "name": "@aphrody/plugin-updater",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-upload": {
       "name": "@aphrody/plugin-upload",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-websocket": {
       "name": "@aphrody/plugin-websocket",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
     },
     "crates/tauri/aphrody-tauri-plugin-window-state": {
       "name": "@aphrody/plugin-window-state",
-      "version": "3.0.0-alpha.2",
+      "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
@@ -347,7 +356,7 @@
     },
     "m3/packages/assets": {
       "name": "@aphrody/assets",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "devDependencies": {
         "@types/react": "catalog:",
         "react": "catalog:",
@@ -358,7 +367,7 @@
     },
     "m3/packages/canvas": {
       "name": "@aphrody/canvas",
-      "version": "1.0.9-aphrody.3",
+      "version": "1.0.9-aphrody.4",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
       },
@@ -384,7 +393,7 @@
     },
     "m3/packages/eslint-plugin-m3": {
       "name": "@aphrody/eslint-plugin-m3",
-      "version": "3.3.3",
+      "version": "3.3.4",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
       },
@@ -397,7 +406,7 @@
     },
     "m3/packages/identity": {
       "name": "@aphrody/identity",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "devDependencies": {
         "@aphrody/m3": "workspace:*",
         "@types/react": "catalog:",
@@ -409,7 +418,7 @@
     },
     "m3/packages/m3": {
       "name": "@aphrody/m3",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "bin": {
         "m3": "./bin/m3.ts",
       },
@@ -441,7 +450,7 @@
     },
     "m3/packages/m3-ai": {
       "name": "@aphrody/m3-ai",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@ag-ui/a2ui-toolkit": "catalog:",
         "@ag-ui/client": "catalog:",
@@ -468,7 +477,7 @@
     },
     "m3/packages/m3-baseui": {
       "name": "@aphrody/m3-baseui",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@base-ui/react": "catalog:",
       },
@@ -489,7 +498,7 @@
     },
     "m3/packages/m3-bun": {
       "name": "@aphrody/m3-bun",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "bin": {
         "m3-bun": "./bin/m3-bun.ts",
       },
@@ -504,7 +513,7 @@
     },
     "m3/packages/m3-codemods": {
       "name": "@aphrody/m3-codemods",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "jscodeshift": "catalog:",
       },
@@ -515,7 +524,7 @@
     },
     "m3/packages/m3-config": {
       "name": "@aphrody/m3-config",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@happy-dom/global-registrator": "catalog:",
         "element-internals-polyfill": "catalog:",
@@ -523,7 +532,7 @@
     },
     "m3/packages/m3-design": {
       "name": "@aphrody/m3-design",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/bun": "^3.3.0",
         "@material/material-color-utilities": "catalog:",
@@ -534,7 +543,7 @@
     },
     "m3/packages/m3-explorer": {
       "name": "@aphrody/m3-explorer",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/m3-primitives": "workspace:*",
         "clsx": "catalog:",
@@ -550,14 +559,14 @@
     },
     "m3/packages/m3-fonts": {
       "name": "@aphrody/m3-fonts",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
       },
     },
     "m3/packages/m3-forms": {
       "name": "@aphrody/m3-forms",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/m3-primitives": "workspace:*",
         "clsx": "catalog:",
@@ -575,7 +584,7 @@
     },
     "m3/packages/m3-front": {
       "name": "@aphrody/m3-front",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/material-web": "catalog:",
@@ -588,7 +597,7 @@
     },
     "m3/packages/m3-icons": {
       "name": "@aphrody/m3-icons",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/bun": "^3.3.0",
       },
@@ -608,7 +617,7 @@
     },
     "m3/packages/m3-mcp": {
       "name": "@aphrody/m3-mcp",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/m3-os-themes": "workspace:*",
         "@aphrody/material-design-icons": "workspace:*",
@@ -617,7 +626,7 @@
     },
     "m3/packages/m3-motion": {
       "name": "@aphrody/m3-motion",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "motion": "catalog:",
       },
@@ -632,7 +641,7 @@
     },
     "m3/packages/m3-next": {
       "name": "@aphrody/m3-next",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "bin": {
         "m3-next": "./bin/m3-next.ts",
       },
@@ -663,7 +672,7 @@
     },
     "m3/packages/m3-next-migrate": {
       "name": "@aphrody/m3-next-migrate",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "bin": {
         "m3-next-migrate": "./dist/cli.js",
         "next-migrate": "./dist/cli.js",
@@ -721,7 +730,7 @@
     },
     "m3/packages/m3-os-themes": {
       "name": "@aphrody/m3-os-themes",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "bin": {
         "m3-os-themes": "./src/cli.ts",
       },
@@ -736,7 +745,7 @@
     },
     "m3/packages/m3-primitives": {
       "name": "@aphrody/m3-primitives",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/m3-motion": "workspace:*",
         "@base-ui/react": "catalog:",
@@ -759,7 +768,7 @@
     },
     "m3/packages/m3-react": {
       "name": "@aphrody/m3-react",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/material-web": "catalog:",
@@ -775,7 +784,7 @@
     },
     "m3/packages/m3-reader": {
       "name": "@aphrody/m3-reader",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@tanstack/react-virtual": "catalog:",
         "lucide-react": "catalog:",
@@ -792,7 +801,7 @@
     },
     "m3/packages/m3-tailwind": {
       "name": "@aphrody/m3-tailwind",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
       },
@@ -809,7 +818,7 @@
     },
     "m3/packages/m3-theme": {
       "name": "@aphrody/m3-theme",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
       },
@@ -824,7 +833,7 @@
     },
     "m3/packages/m3-tokens": {
       "name": "@aphrody/m3-tokens",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@material/material-color-utilities": "catalog:",
       },
@@ -835,7 +844,7 @@
     },
     "m3/packages/material-design-icons": {
       "name": "@aphrody/material-design-icons",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "bin": {
         "m3-svg-to-ico": "./scripts/svg-to-ico.ts",
       },
@@ -845,7 +854,7 @@
     },
     "m3/packages/scaffold": {
       "name": "@aphrody/scaffold",
-      "version": "1.0.0-canary",
+      "version": "1.0.0-canary.1",
       "bin": {
         "aphrody-scaffold": "./src/cli.ts",
       },
@@ -870,7 +879,7 @@
     },
     "packages/ai/doc-ai": {
       "name": "@aphrody/doc-ai",
-      "version": "3.2.6",
+      "version": "3.2.7",
       "bin": {
         "doc-ai": "./src/cli.ts",
       },
@@ -883,7 +892,7 @@
     },
     "packages/ai/inference": {
       "name": "@aphrody/inference",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@aphrody/paths": "workspace:*",
       },
@@ -894,7 +903,7 @@
     },
     "packages/ai/rag-core": {
       "name": "@aphrody/rag-core",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@aphrody/paths": "workspace:*",
       },
@@ -912,14 +921,14 @@
     },
     "packages/bun/test-dom": {
       "name": "@aphrody/bun-test-dom",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@happy-dom/global-registrator": "catalog:",
       },
     },
     "packages/discord/aphrody-messaging": {
       "name": "@aphrody/messaging",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@discordjs/rest": "catalog:",
       },
@@ -930,7 +939,7 @@
     },
     "packages/discord/kit": {
       "name": "@aphrody/discord-kit",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@aphrody/runtime-sdk": "workspace:*",
         "discord-api-types": "catalog:",
@@ -944,7 +953,7 @@
     },
     "packages/engine/core": {
       "name": "@aphrody/yolo-core",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@aphrody/runtime-sdk": "workspace:*",
         "@oxc-project/types": "catalog:",
@@ -952,27 +961,25 @@
     },
     "packages/engine/n2b-client": {
       "name": "@aphrody/n2b-core",
-      "version": "0.6.3",
+      "version": "0.6.4",
       "dependencies": {
         "@aphrody/runtime-sdk": "workspace:*",
       },
     },
     "packages/engine/plugins": {
       "name": "@aphrody/plugins",
-      "version": "1.0.0",
+      "version": "1.0.1",
     },
     "packages/engine/runtime": {
       "name": "@aphrody/runtime-sdk",
-      "version": "0.1.0",
+      "version": "0.1.1",
     },
     "packages/google/google": {
       "name": "@aphrody/google",
-      "version": "1.0.0-canary",
-      "bin": {
-        "aphrody-google": "./bin/aphrody-google.ts",
-      },
+      "version": "1.0.0-canary.1",
       "dependencies": {
         "@ai-sdk/google-vertex": "catalog:",
+        "@aphrody/yolo-core": "workspace:*",
         "ai": "catalog:",
         "google-auth-library": "catalog:",
         "googleapis": "catalog:",
@@ -980,7 +987,7 @@
     },
     "packages/infra/cli-wasm": {
       "name": "@aphrody/cli-wasm",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "devDependencies": {
         "@types/bun": "catalog:",
         "typescript": "catalog:",
@@ -988,25 +995,25 @@
     },
     "packages/infra/ovh": {
       "name": "@aphrody/ovh",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "bin": {
         "aphrody-ovh": "./src/cli.ts",
       },
     },
     "packages/infra/paths": {
       "name": "@aphrody/paths",
-      "version": "0.1.0",
+      "version": "0.1.1",
     },
     "packages/infra/sql": {
       "name": "@aphrody/sql",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "sqlite-vec": "catalog:",
       },
     },
     "packages/infra/update": {
       "name": "@aphrody/update",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@aphrody/paths": "workspace:*",
       },
@@ -1014,11 +1021,6 @@
     "packages/infra/workspace": {
       "name": "@aphrody/workspace",
       "version": "0.1.0",
-      "bin": {
-        "aphrody-ops": "./src/ops.ts",
-        "aphrody-optimize": "./src/optimize.ts",
-        "aphrody-workspace": "./src/cli.ts",
-      },
       "dependencies": {
         "@aphrody/os": "workspace:*",
         "@aphrody/paths": "workspace:*",
@@ -1031,7 +1033,7 @@
     },
     "packages/interop/native": {
       "name": "@aphrody/bun",
-      "version": "3.3.6",
+      "version": "3.3.7",
       "dependencies": {
         "@aphrody/runtime-sdk": "workspace:*",
         "@aphrody/update": "workspace:*",
@@ -1039,14 +1041,14 @@
     },
     "packages/os/a2a": {
       "name": "@aphrody/a2a",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "devDependencies": {
         "@types/bun": "catalog:",
       },
     },
     "packages/os/drive-client": {
       "name": "@aphrody/drive-client",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@aphrody/assets": "workspace:*",
         "type-fest": "catalog:",
@@ -1082,7 +1084,7 @@
     },
     "packages/shell/web": {
       "name": "@aphrody/shell-web",
-      "version": "0.1.0",
+      "version": "0.1.1",
     },
     "packages/web/agent-browser": {
       "name": "@aphrody/agent-browser",
@@ -1103,28 +1105,28 @@
     },
     "packages/web/fuzzy": {
       "name": "@aphrody/fuzzy",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "devDependencies": {
         "@types/bun": "catalog:",
       },
     },
     "packages/web/http": {
       "name": "@aphrody/http",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "devDependencies": {
         "@types/bun": "catalog:",
       },
     },
     "packages/web/qr": {
       "name": "@aphrody/qr",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "devDependencies": {
         "@types/bun": "catalog:",
       },
     },
     "packages/web/webview-page": {
       "name": "@aphrody/webview-page",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "devDependencies": {
         "@types/bun": "catalog:",
         "happy-dom": "catalog:",

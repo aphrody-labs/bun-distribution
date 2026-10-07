@@ -1,7 +1,19 @@
 {
   "name": "@aphrody/m3-codemods",
-  "version": "3.3.6",
+  "version": "3.3.7",
   "description": "Codemods MUI React -> @aphrody/m3-react (jscodeshift + ast-grep)",
+  "license": "Apache-2.0",
+  "files": [
+    "README.md",
+    "data",
+    "lib",
+    "mui-m3-map.json",
+    "rules",
+    "scripts",
+    "sgconfig.yml",
+    "src",
+    "transforms"
+  ],
   "type": "commonjs",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

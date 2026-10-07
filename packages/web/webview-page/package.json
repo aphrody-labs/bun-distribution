@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/webview-page",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Playwright-shaped page, locators, routing and events over Bun.WebView (Chrome backend over CDP)",
   "license": "Apache-2.0",
   "files": [

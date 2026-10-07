@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/shell-web",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Aphrody shell for browsers and Tauri webviews: WASM VT core, local shell and WebSocket/Tauri transports.",
   "license": "Apache-2.0",
   "files": [

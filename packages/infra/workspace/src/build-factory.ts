@@ -287,8 +287,7 @@ async function declaredFactorySource(
   repository: string,
   revision: string,
 ): Promise<FactorySource> {
-  const { loadSourceSyncConfig } =
-    await import("../../../../scripts/tools/workspace/source-sync.ts");
+  const { loadSourceSyncConfig } = await import("./source-sync.ts");
   const config = await loadSourceSyncConfig(root);
   const source = config.repositories.find((entry) => entry.id === repository);
   if (!source || source.destinationBranch !== "main")

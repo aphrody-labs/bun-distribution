@@ -1,8 +1,13 @@
 /**
  * High-level bridge to @aphrody/yolo-runtime C ABI 1.4 native engine.
  */
-import { Runtime } from "../../../runtime/src/index";
-import { sharedRuntime, closeSharedRuntime, system, processes } from "../../../runtime/src/modules";
+import { Runtime } from "@aphrody/runtime-sdk/src/index.ts";
+import {
+  sharedRuntime,
+  closeSharedRuntime,
+  system,
+  processes,
+} from "@aphrody/runtime-sdk/src/modules.ts";
 import {
   hostTarget,
   runtimeHome,
@@ -10,7 +15,7 @@ import {
   loadArtifact,
   installedArtifactDir,
   type ArtifactManifest,
-} from "../../../runtime/src/artifact";
+} from "@aphrody/runtime-sdk/src/artifact.ts";
 
 export {
   Runtime,

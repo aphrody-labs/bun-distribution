@@ -1,6 +1,11 @@
 {
   "name": "@aphrody/bun-test-dom",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "license": "Apache-2.0",
+  "files": [
+    "README.md",
+    "src"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

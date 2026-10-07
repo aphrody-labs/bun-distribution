@@ -1,4 +1,6 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { aphrodyCanvasVersion } from "./site";
 import {
@@ -14,6 +16,21 @@ import {
 } from "./scripts/vendor-upstream";
 
 const manifest = await Bun.file(join(PACKAGE_DIR, "package.json")).json();
+const packDir = mkdtempSync(join(tmpdir(), "aphrody-canvas-pack-"));
+afterAll(() => rmSync(packDir, { recursive: true, force: true }));
+const archive = join(packDir, "canvas.tgz");
+const pack = Bun.spawnSync(["bun", "pm", "pack", "--ignore-scripts", "--filename", archive], {
+  cwd: PACKAGE_DIR,
+  stdout: "pipe",
+  stderr: "pipe",
+});
+if (pack.exitCode !== 0) throw new Error(pack.stderr.toString());
+const packed = Bun.spawnSync(["tar", "-xOf", archive, "package/package.json"], {
+  stdout: "pipe",
+  stderr: "pipe",
+});
+if (packed.exitCode !== 0) throw new Error(packed.stderr.toString());
+const publishManifest = JSON.parse(packed.stdout.toString());
 const record = await Bun.file(join(PACKAGE_DIR, "vendor", "UPSTREAM.md")).text();
 const hasUpstream = await upstreamCheckedOut();
 
@@ -35,7 +52,7 @@ describe("@aphrody/canvas vendored upstream", () => {
     const upstreamVersion = /`@napi-rs\/canvas@([^`]+)`/.exec(record)?.[1];
     expect(upstreamVersion).toBeDefined();
     expect(manifest.version.startsWith(`${upstreamVersion}-aphrody.`)).toBe(true);
-    const optional: Record<string, string> = manifest.optionalDependencies;
+    const optional: Record<string, string> = publishManifest.optionalDependencies;
     expect(Object.keys(optional)).toContain(`${UPSTREAM_PACKAGE}-win32-x64-msvc`);
     expect(Object.keys(optional)).toContain(`${UPSTREAM_PACKAGE}-linux-x64-gnu`);
     for (const [name, version] of Object.entries(optional)) {
@@ -66,7 +83,7 @@ describe("@aphrody/canvas publishable manifest", () => {
       "devDependencies",
     ] as const;
     const offenders = sections.flatMap((section) =>
-      Object.entries<string>(manifest[section] ?? {})
+      Object.entries<string>(publishManifest[section] ?? {})
         .filter(([, spec]) => /^(workspace|catalog|file|link):/.test(spec))
         .map(([name, spec]) => `${section}.${name}=${spec}`),
     );

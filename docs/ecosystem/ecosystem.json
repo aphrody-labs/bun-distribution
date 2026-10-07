@@ -1971,7 +1971,9 @@
           "name": "@aphrody/bun-forge",
           "path": "apps/yolo/forge",
           "description": "yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
-          "bins": []
+          "bins": [
+            "bun-forge"
+          ]
         },
         {
           "name": "@aphrody/bun-test-dom",

@@ -383,3 +383,16 @@ describe("desktop-library routing", () => {
     );
   });
 });
+
+test("owner pins every Shenron checkout to DBFR and its own factory locks", async () => {
+  const primary = await loadConfig();
+  for (const name of ["shenron", "shenron-release", "shenron-omar"]) {
+    const { config } = repositoryConfig(primary, name);
+    expect(config.host).toBe("dbfr");
+    expect(config.remoteHeavyLock).toContain("/home/ubuntu/aphrody-build/");
+    expect(config.cargoSerial).toContain("/home/ubuntu/aphrody-build/");
+    expect(remoteRunScript(config, SHA, "shenron-routing", ["check"], 2)).not.toContain(
+      "/srv/aphrody-build/",
+    );
+  }
+});

@@ -13,7 +13,7 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { planPackageSync, syncPackages } from "../../core/src/pm";
 import { closeSharedRuntime, getRuntimeStatus } from "../../core/src/runtime";
-import { executeTool, ToolExecutionContext } from "../../core/src/mcp/server";
+import { executeTool, ToolExecutionContext } from "../src/tools/registry";
 
 async function run(argv: string[], cwd: string): Promise<void> {
   const child = Bun.spawn(argv, { cwd, stdout: "pipe", stderr: "pipe" });

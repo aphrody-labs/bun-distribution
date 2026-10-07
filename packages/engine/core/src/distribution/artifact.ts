@@ -10,4 +10,4 @@ export {
   verifyArtifact,
   loadArtifact,
   installedArtifactDir,
-} from "../../../runtime/src/artifact";
+} from "@aphrody/runtime-sdk/src/artifact.ts";

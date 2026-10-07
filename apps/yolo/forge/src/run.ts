@@ -18,7 +18,7 @@ import {
 import { auditGlibc, lowerGlibcCeiling } from "./glibc.ts";
 import { availableParallelism, totalmem, userInfo } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { COMPILE_FLAGS } from "../../../../scripts/release/compile-flags.ts";
+import { COMPILE_FLAGS } from "@aphrody/yolo-core/src/compiler/flags.ts";
 import {
   type Arch,
   type Options,

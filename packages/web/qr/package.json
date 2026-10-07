@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/qr",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "First-party QR Code encoder and canvas renderer (module-for-module parity with qrcode 1.5.4)",
   "license": "Apache-2.0",
   "files": [

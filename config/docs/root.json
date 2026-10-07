@@ -47,7 +47,17 @@
       "| Secrets de conteneur | [Coffre et sauvegardes chiffrées](docs/operations/container/SECRETS.md) |",
       "| Navigateur/WASM | [Paquet CLI WASM](packages/infra/cli-wasm/README.md) : ESM et module WASM unique |",
       "",
-      "Les installateurs Windows ont été exécutés sous Wine ; l’application desktop complète, macOS et le SDK FFI intégré demandent encore une qualification sur leurs cibles. Les résultats et limites sont consignés dans les runbooks et [MEMORY.md](MEMORY.md)."
+      "Les installateurs Windows ont été exécutés sous Wine ; l’application desktop complète, macOS et le SDK FFI intégré demandent encore une qualification sur leurs cibles. Les résultats et limites sont consignés dans les runbooks et [MEMORY.md](MEMORY.md).",
+      "",
+      "## Paquets Bun",
+      "",
+      "74 paquets publiés et vérifiés sur npm, avec versions épinglées et contrôle npm avant installation. Depuis ce clone, dans un projet ayant son `package.json` :",
+      "",
+      "```sh",
+      "bun run packages:install --cwd /chemin/du/projet",
+      "```",
+      "",
+      "Le [catalogue complet et les limites de qualification](docs/operations/bun-packages.md) couvre les 92 paquets distribuables. `--list` affiche les versions ; `--only @aphrody/qr,@aphrody/fuzzy` sélectionne des paquets. Les 18 paquets nécessitant encore des gates natifs ou d’intégration restent exclus de cette commande."
     ]
   },
   "plan": {

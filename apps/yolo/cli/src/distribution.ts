@@ -11,8 +11,8 @@ import {
   loadArtifact,
   runtimeHome,
   verifyArtifact,
-} from "../../../../packages/engine/runtime/src/artifact";
-import { install, list, rollback } from "../../../../packages/engine/runtime/src/release";
+} from "@aphrody/runtime-sdk/src/artifact.ts";
+import { install, list, rollback } from "@aphrody/runtime-sdk/src/release.ts";
 import { yoloHome, yoloVersion } from "./home";
 
 export const DEFAULT_REPO = "aphrody-labs/yolo";
@@ -28,8 +28,8 @@ export {
   renderDoctorMarkdown,
   type DoctorComponent,
   type DoctorReport,
-} from "../../../../packages/engine/core/src/sys/doctor";
-import { collectDoctorReport, renderDoctorMarkdown } from "../../../../packages/engine/core/src/sys/doctor";
+} from "@aphrody/yolo-core/src/sys/doctor.ts";
+import { collectDoctorReport, renderDoctorMarkdown } from "@aphrody/yolo-core/src/sys/doctor.ts";
 
 /** Checks the installation; returns 1 if something required is missing. */
 export function runDoctor(args: readonly string[] = []): number {

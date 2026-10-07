@@ -238,7 +238,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/app-ui` | m3/packages/app-ui |  |  |
 | `@aphrody/assets` | m3/packages/assets | File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces. |  |
 | `@aphrody/bun` | packages/interop/native | Native Rust FFI wrappers for Bun. |  |
-| `@aphrody/bun-forge` | apps/yolo/forge | yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit |  |
+| `@aphrody/bun-forge` | apps/yolo/forge | yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit | `bun-forge` |
 | `@aphrody/bun-test-dom` | packages/bun/test-dom |  |  |
 | `@aphrody/canvas` | m3/packages/canvas | Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime |  |
 | `@aphrody/cli` | crates/tauri/aphrody-tauri-cli-node | Command line interface for building Tauri apps | `tauri` |

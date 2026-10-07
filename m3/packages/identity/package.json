@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/identity",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, and the animated pet sprite (atlas, timed tracks, 16-way gaze) drawn from crates/ui/identity.",
   "keywords": [
     "aphrody",
@@ -11,6 +11,12 @@
   ],
   "license": "Apache-2.0",
   "author": "aphrody-code",
+  "files": [
+    "README.md",
+    "scripts",
+    "src",
+    "assets"
+  ],
   "type": "module",
   "sideEffects": false,
   "exports": {

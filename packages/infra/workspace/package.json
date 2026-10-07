@@ -6,7 +6,8 @@
   "author": "Aphrody",
   "files": [
     "src",
-    "README.md"
+    "README.md",
+    "docs/bun"
   ],
   "type": "module",
   "exports": {
@@ -68,7 +69,8 @@
     "./agent-sync": "./src/agent-sync.ts",
     "./native-runtime": "./src/native-runtime.ts",
     "./python-workspace": "./src/python-workspace.ts",
-    "./native-desktop": "./src/native-desktop.ts"
+    "./native-desktop": "./src/native-desktop.ts",
+    "./src/*": "./src/*"
   },
   "publishConfig": {
     "access": "public"

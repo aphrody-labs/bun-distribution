@@ -4,7 +4,7 @@ import type { Render3dPolicy, Scene, Scene3d } from "./scene-types.js";
 import type { Canvas, Image, SvgCanvas, SvgExportFlag } from "./vendor/index.js";
 
 export declare const aphrodyCanvasRuntime: "aphrody-canvas/skia";
-export declare const aphrodyCanvasVersion: "1.0.9-aphrody.2";
+export declare const aphrodyCanvasVersion: "1.0.9-aphrody.4";
 export type CanvasBackend = "browser" | "native-skia";
 export interface CanvasSize {
   width: number;

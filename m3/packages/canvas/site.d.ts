@@ -1,5 +1,5 @@
 export declare const aphrodyCanvasRuntime: "aphrody-canvas/skia";
-export declare const aphrodyCanvasVersion: "1.0.9-aphrody.2";
+export declare const aphrodyCanvasVersion: "1.0.9-aphrody.4";
 export type CanvasBackend = "browser" | "native-skia";
 export interface CanvasSize {
   width: number;

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-// Static drift gate (no native library needed): the C exports of crates/ai/rag-ffi vs RAG_SYMBOLS.
+// Static drift gate: the consolidated FFI owner's RAG exports vs RAG_SYMBOLS.
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { RAG_SYMBOLS } from "../src/ffi";
 
 const source = readFileSync(
-  join(import.meta.dir, "../../../../crates/ai/rag-ffi/src/lib.rs"),
+  join(import.meta.dir, "../../../../crates/interop/ffi/src/rag_ffi.rs"),
   "utf8",
 );
 const re =

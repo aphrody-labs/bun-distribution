@@ -12,7 +12,7 @@ import {
   projectionMarkdown,
   type NativeDocument,
 } from "./drive-markdown.ts";
-import syncContract from "../../../../crates/ai/agent-home/sync-contract.json";
+import syncContract from "./sync-contract.json";
 
 export const AGENT_HOME_DEFAULT_DOCS: readonly string[] = syncContract;
 const DEFAULT_DOCS = new Set<string>(AGENT_HOME_DEFAULT_DOCS);

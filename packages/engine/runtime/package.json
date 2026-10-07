@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/runtime-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI",
   "license": "MIT AND Apache-2.0",
   "repository": {
@@ -30,7 +30,8 @@
     "./desktop": "./src/desktop.ts",
     "./browser": "./src/browser.ts",
     "./gpu": "./src/gpu.ts",
-    "./desktop-artifact": "./src/desktop-artifact.ts"
+    "./desktop-artifact": "./src/desktop-artifact.ts",
+    "./src/*": "./src/*"
   },
   "publishConfig": {
     "access": "public"

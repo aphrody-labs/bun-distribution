@@ -1,6 +1,7 @@
 {
   "name": "@aphrody/m3-showcase",
   "version": "3.3.6",
+  "private": true,
   "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable shown by the aphrody-app desktop (aphrody-app --showcase).",
   "license": "Apache-2.0",
   "type": "module",
@@ -37,7 +38,6 @@
     "@aphrody/m3-forms": "workspace:*",
     "@aphrody/m3-front": "workspace:*",
     "@aphrody/m3-icons": "workspace:*",
-    "@aphrody/webview-page": "workspace:*",
     "@aphrody/m3-mcp": "workspace:*",
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-next": "workspace:*",
@@ -50,6 +50,7 @@
     "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/material-design-icons": "workspace:*",
     "@aphrody/scaffold": "workspace:*",
+    "@aphrody/webview-page": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:"

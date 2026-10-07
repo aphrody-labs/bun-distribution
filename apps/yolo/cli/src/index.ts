@@ -24,7 +24,7 @@ import type {
   TsParseResult,
   VendorSourceStatus,
   WorkspaceCargoSummary,
-} from "../../../../packages/engine/core/src/index";
+} from "@aphrody/yolo-core/src/index.ts";
 
 export type {
   SubmoduleStatus,
@@ -40,11 +40,11 @@ export type {
 // Startup cost: `yolo version` is a preflight that wrappers run before every task, so this file loads nothing but the
 // home resolver. Every command module is imported by its `case` below, and the programmatic API below forwards to the
 // core module that defines it on first call (the core barrel alone costs ~11 ms to evaluate).
-const vendorStatus = () => import("../../../../packages/engine/core/src/vendor/status");
-const vendorCargo = () => import("../../../../packages/engine/core/src/vendor/cargo");
-const vendorCatalog = () => import("../../../../packages/engine/core/src/vendor/catalog");
-const vfsParse = () => import("../../../../packages/engine/core/src/vfs/parse");
-const sysBench = () => import("../../../../packages/engine/core/src/sys/benchmark");
+const vendorStatus = () => import("@aphrody/yolo-core/src/vendor/status.ts");
+const vendorCargo = () => import("@aphrody/yolo-core/src/vendor/cargo.ts");
+const vendorCatalog = () => import("@aphrody/yolo-core/src/vendor/catalog.ts");
+const vfsParse = () => import("@aphrody/yolo-core/src/vfs/parse.ts");
+const sysBench = () => import("@aphrody/yolo-core/src/sys/benchmark.ts");
 type Status = Awaited<ReturnType<typeof vendorStatus>>;
 type Cargo = Awaited<ReturnType<typeof vendorCargo>>;
 type Catalog = Awaited<ReturnType<typeof vendorCatalog>>;
@@ -295,7 +295,7 @@ async function main(): Promise<void> {
     case "bench": {
       if (args.includes("--supervisor")) {
         const { runSupervisorBenchCli } =
-          await import("../../../../packages/engine/core/src/sys/supervisor-benchmark");
+          await import("@aphrody/yolo-core/src/sys/supervisor-benchmark.ts");
         process.exitCode = await runSupervisorBenchCli(args.slice(1));
         break;
       }
@@ -462,7 +462,7 @@ async function main(): Promise<void> {
     }
 
     case "tool": {
-      const { runToolHost } = await import("../../../../packages/engine/core/src/tools/host");
+      const { runToolHost } = await import("@aphrody/yolo-core/src/tools/host.ts");
       process.exitCode = await runToolHost(args.slice(1), workspaceRoot());
       break;
     }
@@ -475,7 +475,8 @@ async function main(): Promise<void> {
     }
 
     case "desktop-runtime": {
-      const { runDesktopRelease } = await import("../../../../scripts/tools/desktop-release");
+      const { runDesktopRelease } =
+        await import("@aphrody/yolo-core/src/distribution/desktop-release.ts");
       process.exitCode = runDesktopRelease(args.slice(1));
       break;
     }

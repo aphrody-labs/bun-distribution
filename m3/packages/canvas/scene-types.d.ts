@@ -6,7 +6,7 @@
 // `bun:ffi`.
 
 // Hand-maintained mirror of the JSON wire format produced by
-// `crates/ui/render/src/scene.rs` (`serde` derive output). Keep in sync
+// `crates/aphrody-render/src/scene.rs` (`serde` derive output). Keep in sync
 // with that module; `aphrody-render`'s own round-trip test
 // (`scene::tests::scene_round_trips_through_json`) is the source of truth.
 
@@ -81,7 +81,7 @@ export type Scene = {
 };
 
 // ---------------------------------------------------------------------------
-// 3D: hand-maintained mirror of `crates/ui/render/src/scene3d.rs` and
+// 3D: hand-maintained mirror of `crates/aphrody-render/src/scene3d.rs` and
 // `mesh3d.rs` (`serde` output). Optional fields take the Rust defaults.
 // ---------------------------------------------------------------------------
 

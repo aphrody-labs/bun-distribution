@@ -6,7 +6,7 @@
 // through the native client (a hand-built `XError`, a journal replayed from disk).
 
 import type { XErrorKind, XNativeErrorInfo } from "@aphrody/bun/x";
-import policy from "../../../../../crates/web/x/data/x-policy.json";
+import policy from "../../data/x-policy.json";
 
 export type { XErrorKind };
 

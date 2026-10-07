@@ -31,5 +31,7 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "private": true,
+  "license": "Apache-2.0"
 }

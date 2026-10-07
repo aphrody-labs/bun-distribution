@@ -14,7 +14,7 @@ import {
   type FileEntry,
   type ScanReport,
   type ScanOptions,
-} from "../../../../packages/engine/core/src/vfs/scan";
+} from "@aphrody/yolo-core/src/vfs/scan.ts";
 
 export {
   scanDirectory,

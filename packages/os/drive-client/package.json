@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/drive-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Type-safe TypeScript client for Spacedrive daemon",
   "keywords": [
     "client",

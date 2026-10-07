@@ -3,8 +3,8 @@
  */
 import { existsSync } from "node:fs";
 import { delimiter, join } from "node:path";
-import { hostTarget, loadArtifact, runtimeHome } from "../../../runtime/src/artifact";
-import { list } from "../../../runtime/src/release";
+import { hostTarget, loadArtifact, runtimeHome } from "@aphrody/runtime-sdk/src/artifact.ts";
+import { list } from "@aphrody/runtime-sdk/src/release.ts";
 import { isCompiled, yoloHome, yoloVersion } from "../vfs/home";
 
 export interface DoctorComponent {

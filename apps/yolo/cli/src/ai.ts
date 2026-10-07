@@ -5,7 +5,7 @@ import {
   executeTool,
   isAiTool,
   ToolExecutionContext,
-} from "../../../../packages/engine/core/src/tools/registry";
+} from "@aphrody/yolo-core/src/tools/registry.ts";
 
 export async function runAiCommand(args: string[], root: string): Promise<number> {
   if (args.length === 0 || args[0] === "--help" || args[0] === "help") {

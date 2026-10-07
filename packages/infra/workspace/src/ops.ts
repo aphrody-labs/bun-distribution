@@ -241,19 +241,19 @@ export async function runOps(argv: readonly string[]): Promise<number> {
     return await (await import("./tauri.ts")).runTauri(rest);
   }
   if (operation === "tauri-apps") {
-    return await (await import("../../update/src/tauri/apps.ts")).runTauriApps(rest);
+    return await (await import("@aphrody/update/src/tauri/apps.ts")).runTauriApps(rest);
   }
   if (operation === "tauri-sync") {
-    return await (await import("../../update/src/tauri/sync.ts")).runTauriSync(rest);
+    return await (await import("@aphrody/update/src/tauri/sync.ts")).runTauriSync(rest);
   }
   if (operation === "upstream-sources") {
-    return await (await import("../../update/src/sources/restore.ts")).runUpstreamSources(rest);
+    return await (await import("@aphrody/update/src/sources/restore.ts")).runUpstreamSources(rest);
   }
   if (operation === "deps-sync") {
-    return await (await import("../../update/src/deps/sync.ts")).runDepsSync(rest);
+    return await (await import("@aphrody/update/src/deps/sync.ts")).runDepsSync(rest);
   }
   if (operation === "update") {
-    return await (await import("../../update/src/cli.ts")).runUpdate(rest);
+    return await (await import("@aphrody/update/src/cli.ts")).runUpdate(rest);
   }
   if (operation === "stack-dedup") {
     return await (await import("./stack-dedup.ts")).runStackDedup(rest);

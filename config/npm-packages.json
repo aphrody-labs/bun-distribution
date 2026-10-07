@@ -1,0 +1,847 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-07",
+  "minimumBun": "1.4.2",
+  "packages": [
+    {
+      "name": "@aphrody/yolo-cli",
+      "version": "1.0.0",
+      "path": "apps/yolo/cli/package.json",
+      "status": "blocked",
+      "sha256": "627955987d341744c8709393edff6e8c809880fbd3ab709d21657517bd1f575c",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/bun-forge",
+      "version": "0.1.1",
+      "path": "apps/yolo/forge/package.json",
+      "status": "published",
+      "sha256": "3bbe994ce0c3bf67d01a9f639828cbeca14b607c68e14591e71c72458f791dd5",
+      "integrity": "sha512-hc7zgd41pEtHkaf8OrGn4vmkNOS6M5vRlpvFF4Db1o45N8jOxYxB9st/H/wQ4yLsjh9RS7csnSSQBg39/Tm5gg==",
+      "dependencies": ["@aphrody/yolo-core"]
+    },
+    {
+      "name": "@aphrody/api",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-api/package.json",
+      "status": "published",
+      "sha256": "1ae12a2062724291b8e03562292e2e63b18fe0eb2c4b31d6c9918ddb5fb5892e",
+      "integrity": "sha512-I1icW7SwRbGenqjba6X7wFMoiEQPiwdhVB+edFTGzY2qw4OrJ/6teG6FfkQtp1RbxkynrPZDCx3ywmT8IGzH3A==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/plugin-autostart",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-autostart/package.json",
+      "status": "published",
+      "sha256": "60a4e13a9a22c632a34fffde0346d56c61434b57625af51a987057d2fcaccaf9",
+      "integrity": "sha512-tlrvsfaHtRQD/fQ5ZnSpBq/6CnyjIXxxF6Pt5OOTtdKaa+90dRSTriszKxfvkbLzwqslBXWLFEqbcKyATHHKCw==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-barcode-scanner",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-barcode-scanner/package.json",
+      "status": "published",
+      "sha256": "aefeeb0812a225befe7bea0c50ab2c53325b39e5141968abd34365fccb7b9a31",
+      "integrity": "sha512-g2fEkY5gihKkAsnq5R77ta4SlfP1RM73V0QCNLD9at/3WzNZ0frPt+XouCjAvLikcT+cvcTKww6xM88rTWUtmA==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-biometric",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-biometric/package.json",
+      "status": "published",
+      "sha256": "3b839e45dfd7e0bbf6b3423526db5096c19253587a43238752bc66225e1cd0ec",
+      "integrity": "sha512-KjPvykoDf1rot3KXsRz8Hv94gmdMfB8GAiQIhNzohOtLkxukj8/Xn1Jd6MemMtPhj2UmEs2psQS3TCUSgYzxxg==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-cli",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-cli/package.json",
+      "status": "published",
+      "sha256": "3ca9b78f8d790d44e7a3f1ede8c7c13ef64bc65ce2ee90d7c46ce1b6cbd54c39",
+      "integrity": "sha512-Kbvay/tYekvfsjsoKDNGPbpScGbhCjMxTgusDRQB/0JebIZWRLTYS8eEI5kWgIhtWyDXbKWaoVnOVlN1r86FRw==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-clipboard-manager",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-clipboard-manager/package.json",
+      "status": "published",
+      "sha256": "4e7c2cac653fa34b511ef66f7bbc1ec4e1094b4040a3bbb98f0d9b6bd97b9fb7",
+      "integrity": "sha512-pDjXuZDHtrbxs0OXtWz6IVKYZtgzmn0Cb1H2XXePr8WLZYjnz3oLMSw//n1JlaWX532ozFlbDF09owxegXRUdQ==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-deep-link",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-deep-link/package.json",
+      "status": "published",
+      "sha256": "e8e2df430037ca64f8c6d62536e95f4c09cdc6f86a37df5fcfb2e6aef2e8656f",
+      "integrity": "sha512-8WUr9QPT4M1+BvlK0RkHn38eLtpCTnlFLECFnxFpSmgggDuHd3ntzQ6uZxGT4YrWuSk1061PhP24+nhqH+v8iw==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-dialog",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-dialog/package.json",
+      "status": "published",
+      "sha256": "e568f34f8978ae5b94aa906295918b091e6ea1e248cbb5d25126dbd1cc91153a",
+      "integrity": "sha512-KNRm6RWhBVhf3w7nSZpXhTx0IVZ2x1iblysXxeIUtbB/mNRQDYCfaV4awBBWhJeD4GFUEQcZbDmJGaBiH3C9GA==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-fs",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-fs/package.json",
+      "status": "published",
+      "sha256": "a4944dc6fab9947c9158fd5f85bfe3534a0ec1d577a18315017431f9020ee190",
+      "integrity": "sha512-nfzcMhe9me0rGLqF0gRLav7dQzVl/uBobFIHcVwRKLpY3QNn4GUXxGrLzis1JEBdTRFOG4Dg0ZwjSCXQif06TA==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-geolocation",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-geolocation/package.json",
+      "status": "published",
+      "sha256": "dc98b2c4f4073a7cba05ade1b3dcf0d8b7eaccb218104de7034a07504ffd8e86",
+      "integrity": "sha512-0Y9BmB5hwVMj3nqOyj8EvtDXdKvVfMWI5Oi3xOWA26UP8nTJIePlrsyVkykP7nxICwvMxzYeQbHXMYo+7oJkFQ==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-global-shortcut",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-global-shortcut/package.json",
+      "status": "published",
+      "sha256": "243cbbe1e92b6133f70c0927466ed7588f77eabbecebeee414379fb977299ebf",
+      "integrity": "sha512-fyWKI03Vd78bWBtyqAakP82pyx4mmGLEucSaVnIZSJunTEAZzqvMgTAU7KHuFSyZTqPOzCsoW5vy0XgBnIRtcA==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-haptics",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-haptics/package.json",
+      "status": "published",
+      "sha256": "9eead952420c8e35598e5844d1c003a8fe2edfbf37a2a609f9f34ef3815b9fb0",
+      "integrity": "sha512-JHXiETwj0giCmMRUSnSN1eupMOPgH9NTcXtHfteOc4qG0Sq37zv7rQQ7NU7IA4I3N4rQfl5Ggv3rxbROj9Vjlw==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-http",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-http/package.json",
+      "status": "published",
+      "sha256": "c72b4a5f5e6ef7787a1c99939b378293ba48e9e021c6bd6ba4d6c0896c0ffba9",
+      "integrity": "sha512-XSM6W9dHrJqFILoWiPC+RJykrv64Gz6FNEl5Wtqq9tiSoXI2wj3IHuQ9GenDGskvREUPjztuLVGxVjkTX5nQ9g==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-log",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-log/package.json",
+      "status": "published",
+      "sha256": "709a0067c451f2159dba3ae333557f1aee51e515cca0b4c308de9548c41fec03",
+      "integrity": "sha512-yDGT0EPl9zjIGzh9yMN2MWawj0UeYwOcPWDVFLKhwb+a0zvJM2WONgx4vH/whPXd63K1pK2qt6ZYBxbbwt191A==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-nfc",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-nfc/package.json",
+      "status": "published",
+      "sha256": "2447e937e5b02affe81064387efa961e781b20486a6a19d9f5a53519c59c2fd0",
+      "integrity": "sha512-WCNyqHUFvFOPxEc5/Pq2uDi5/DuM4/YSDVCCSMumONZtG/J5HC/EO4+62YiA9K+GIczl9Rfyho8RinfM/oDaRQ==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-notification",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-notification/package.json",
+      "status": "published",
+      "sha256": "c55108b177ecb48e0404a1f0ed3cd80acc4359a0d9992dcf081916bfe59af407",
+      "integrity": "sha512-vWmclX7pyb9leFbNkOf6F+02FTicOV3IbFOmTa4AGKnqjt/dk03GfH2VttbJayjU7WwPJgK2Cg3ZlNKdFPo3YQ==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-opener",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-opener/package.json",
+      "status": "published",
+      "sha256": "b31bac3194830854057fa04aee8c474a6ac22a61589c4485d963532fd70619a9",
+      "integrity": "sha512-R5YvkNvNo6hLRXXi17Oi4NGE+vk1O5ajYQijUFqJuejqhoJiytLZ2W8HvmSkHatqo6dIMmpMR72XDs5uxnW1Rw==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-os",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-os/package.json",
+      "status": "published",
+      "sha256": "818f5a12795df97b90103d28ca025ad5a1b24546fde22590ea3ef337280ad4bd",
+      "integrity": "sha512-GA2HFpNh71ty8eaFmNIJx140JVmwk1jkXcf+5AmYAbKKqgLvqxKILT11Bd/Av7tB2sbeLSdV76IQde0/21bUeQ==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-positioner",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-positioner/package.json",
+      "status": "published",
+      "sha256": "4d3a96e88bee9949b61b990c38475a5cc70988afd9300ef258082a2537c0eb28",
+      "integrity": "sha512-kCm9iApg0uXlSIdNz7EBzkFrNfnUOMkIMiK5l/tKczXcJ67cD2bnc0OskM83TqDOLkZJy8N0c4lutmpDqzVl6w==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-process",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-process/package.json",
+      "status": "published",
+      "sha256": "4fb142bfb6c24687ad2aaeb57c6fa94f225df738e0090a1ecce4c2b95250761d",
+      "integrity": "sha512-VkjBxF9ywRet7ANHdZgJJXOd3So9s6yOFV5NSn1tlrUCCHE0M8B5+9GM79XTj8vEo7plPI5zSOf4DhcG//8m2w==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-shell",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-shell/package.json",
+      "status": "published",
+      "sha256": "67be4538d69a3c8663f345fd45877636e0730c6527ba9ae0b0d85d5668d16ee9",
+      "integrity": "sha512-OFJSyzFMRndQH9MPfKyufrbpl5Bvu5Rek7QjazY1SdTHEGMosQKG7cP0eI4GReJSgrr+iMwi5NlGXen2zWcjDA==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-sql",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-sql/package.json",
+      "status": "published",
+      "sha256": "8431b6c9785bd638149ace13669337294557f62385a13bfff1d955d0936894db",
+      "integrity": "sha512-VtjVktJef7i1rHTbBWsMR8AjehlSmowOA1km25Zd6/gtoceHa8fIj0Ep5hG6PlKb6Kx9upG4d56QY1mWtaCWcQ==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-store",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-store/package.json",
+      "status": "published",
+      "sha256": "b8a687ef537d31f49b1b20ac7397f7604a7d934841489885f9001b9b4614c8de",
+      "integrity": "sha512-0emqTpZt2By59SJJwCSPJcG4GoQzO1FZilTrhM1nfgWm95MpxLKcNjqK/LtYu6SAaflBPRaTuBNWuN4YSGhVBA==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-stronghold",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-stronghold/package.json",
+      "status": "published",
+      "sha256": "f5b384fd65be5b475f7547d65fb92a0f761cbe42b1a45b9ed5f3c1118ec9c3e9",
+      "integrity": "sha512-4YtEyL6MLa1UJstVzcXVuNr4b6AuzwWPafhUBBHnV+jxJQXAgSLMCOok1WsAizZQxbd8yfS7LEiY1o7TDr/nDA==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-updater",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-updater/package.json",
+      "status": "published",
+      "sha256": "ff6a319bc0a546dfab307e31b0dc7aa56130afaca86e352a4cead71e77b9f270",
+      "integrity": "sha512-r1il3hD7ju4MeiKZUXtomksOQssloEk4H9XsCVLOI0M8/Ol7//VuQACat6TE+fl0VCzxav/foKQZfKLmgxcIAg==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-upload",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-upload/package.json",
+      "status": "published",
+      "sha256": "88d07b6b00087814b43810388b915bfc887f4a70b8fbb59cfd580883ed0e59d7",
+      "integrity": "sha512-mZUz033NSF/YrqP2h6TWafss9jWkKpNw3DPwDHkdN6FvB3RGXQKU26zIyfcOTIIC/vlvAEt2Npi7xQtikkQ+8w==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-websocket",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-websocket/package.json",
+      "status": "published",
+      "sha256": "7bf6e8420117e27d53c808fd7a0d619f6866098f95138a3314ff684cef74b722",
+      "integrity": "sha512-kqv/4ekrKGuuAYVOt6OQgFQhKtG5zOcCiNGOdk8c3mepPbVMga2x2FOs4NUTsaY3pY4xJ4DUM1PO5ablCYP99g==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/plugin-window-state",
+      "version": "3.0.0-alpha.3",
+      "path": "crates/tauri/aphrody-tauri-plugin-window-state/package.json",
+      "status": "published",
+      "sha256": "6c78fb833dc11d8161a325f55ce5cfc8fd2858c37dc20292a211357f039eab2a",
+      "integrity": "sha512-UQderhfTtnD9zxK4vODWdNjTwJx+OOstaRD1v5X/IAIKB+E6TjRD+8W1dMqLYAuU6UmSg44U9NB0LpWTbU8ygg==",
+      "dependencies": ["@aphrody/api"]
+    },
+    {
+      "name": "@aphrody/app-ui",
+      "version": "0.1.0",
+      "path": "m3/packages/app-ui/package.json",
+      "status": "blocked",
+      "sha256": "663cdd81cae87c856f62a6e5f4d84477f8ed210e882abd34d63373a81dbeaca2",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/assets",
+      "version": "0.1.1",
+      "path": "m3/packages/assets/package.json",
+      "status": "published",
+      "sha256": "862a8e74d454d668eeaed2ee735132255a8fb061af01470bc25fcfa54a657c25",
+      "integrity": "sha512-WjMc7QVhtZQuKr+tIATba3n3mDR4rYty9zKbPtRz31A6ahLEjvVSmQpBrRVJgeB/7hw62G/72/xCpCFQy8E+XQ==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/canvas",
+      "version": "1.0.9-aphrody.4",
+      "path": "m3/packages/canvas/package.json",
+      "status": "published",
+      "sha256": "28fdd766adf510b72cd429d155c185db21ed273e1b11e1d83244a7092f7563ab",
+      "integrity": "sha512-jq9OgADPJH/EsJLHr3MjVQydYRfhfinwpuhQiud5jNVYvM1vRtDBwbVtdUkQr1lPrs2zs+j6bAMTSrDr9t/QFQ==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/eslint-plugin-m3",
+      "version": "3.3.4",
+      "path": "m3/packages/eslint-plugin-m3/package.json",
+      "status": "published",
+      "sha256": "88f4176f28e1c4a0337893cb2229f1e8869b61f1968dab8a6fbd0ca44a7d8eec",
+      "integrity": "sha512-nI+UYZq7wCQ/CtpuqBKLsgOHwM8+U3K8lvrgFFa1/yp281Ur7kPaJzgmfh2ZHUp/JqNyIZ0qQRSkZycgGCzoqg==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/identity",
+      "version": "0.1.1",
+      "path": "m3/packages/identity/package.json",
+      "status": "published",
+      "sha256": "e20d3246d82d2fba90cd79bddfea6a29af13d86708c18acb5ca93b83a10ecca5",
+      "integrity": "sha512-9R6YxH6/0s8+gU8rPinr0R2jHYbpsJ8l7EkR2UkmjxPJxL8agp8AJvIvbtxsO5DncmIzMEB9d2p6PP65ECZOIw==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/m3-ai",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-ai/package.json",
+      "status": "published",
+      "sha256": "93cf1763a10b73e14537c87008a008bf0615bd5a188810902517c06a43301ca8",
+      "integrity": "sha512-gG7HygGtKDsjuGLFagbTpO+8GwR93o4ToNjxinyUUbGGPG8NytNe6ntbamcNeyye8RdOIFsqUpSFElWLEtX+Mw==",
+      "dependencies": [
+        "@ag-ui/a2ui-toolkit",
+        "@ag-ui/client",
+        "@ag-ui/core",
+        "@ag-ui/encoder",
+        "@ag-ui/proto",
+        "@aphrody/m3-motion",
+        "@aphrody/m3-primitives",
+        "@aphrody/mcp-ui",
+        "clsx",
+        "motion",
+        "react-markdown",
+        "rehype-raw",
+        "remark-gfm"
+      ]
+    },
+    {
+      "name": "@aphrody/m3-baseui",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-baseui/package.json",
+      "status": "published",
+      "sha256": "968902a48c0d8f7fb6a61a0372f1c915c42cff54cd3405fabaa079890f03e003",
+      "integrity": "sha512-WKDRg/gO9XJUky7z/4drGJSEWs/is7M2fNnwUPln0DSj3vWsdzbf+PF+FZAH1fHlHAeo8vmPWKEongDpeWp1jA==",
+      "dependencies": ["@base-ui/react"]
+    },
+    {
+      "name": "@aphrody/m3-bun",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-bun/package.json",
+      "status": "blocked",
+      "sha256": "97701b5a7901c303697bfae72452c5234b3b798b8c9628d3c8bb73d5369f5c0c",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/m3-codemods",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-codemods/package.json",
+      "status": "published",
+      "sha256": "f82901b9b969ff935640eba756f27ee55a30b3113fa299d42775f4351156d21b",
+      "integrity": "sha512-aCpvNLer5LSOfgxcmN383/naUF30TmBVhqVgo8nDTe4pwZQPg/mKkFJfHq+O8MrkWTlLv96b1ybmBLQZwDOy8w==",
+      "dependencies": ["jscodeshift"]
+    },
+    {
+      "name": "@aphrody/m3-config",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-config/package.json",
+      "status": "published",
+      "sha256": "eccab7ea2ecb2985fbce8d6b7abf8eee8c80bf592b4cbedc20776b305fabbb18",
+      "integrity": "sha512-Ni/fnVtM23sMk8dZSdbHCQRj2Vgz88vtxq84mRhitl07ME8fVNk68/inmicaHHvtRADb30p+E92SPxlWoMj3jQ==",
+      "dependencies": ["@happy-dom/global-registrator", "element-internals-polyfill"]
+    },
+    {
+      "name": "@aphrody/m3-design",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-design/package.json",
+      "status": "blocked",
+      "sha256": "898107cbbd7fb8b5d9acfb8ee96c343e9f8a7cbae9db4c80b32541a380fc32f3",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/m3-explorer",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-explorer/package.json",
+      "status": "published",
+      "sha256": "5c3af3ed77d7aeabf3a9ead2fea66e7082b30761502c1a10b9333f2da5d7b797",
+      "integrity": "sha512-8/QZMrmdDVBZf8aLKCGkgt4XXkrjsym3mT+kAOAyeX8rA1Vaa5JyQ23fuIq6Boqnpi0N3g9EomFzCxG3iGpF/g==",
+      "dependencies": ["@aphrody/m3-primitives", "clsx"]
+    },
+    {
+      "name": "@aphrody/m3-fonts",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-fonts/package.json",
+      "status": "published",
+      "sha256": "6c6159e5b7e2ec1a59b320efbedec9d6e8b2026d2aea5a46f2aa886d6cb54bed",
+      "integrity": "sha512-IlyU9Fug6sqotuXSg5I72GG6V2J5gpQk4KRi4EkLAGc8wWzC8Z0ZoMO7PKw8h8AmIKuPLDKGj9Ub+paWhH7SWA==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/m3-forms",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-forms/package.json",
+      "status": "published",
+      "sha256": "da36f43411f2b7c47198d6bda33c4b430872fb13369ec5c6da3ec1676ce49e8c",
+      "integrity": "sha512-u25FUNLmSjIXmhfXzUoTf2X80OPidV7DwyTfQ1pMZTNxH580cVycUTcTcOEf7YepvzSnCaUrsVn4d7E/DF/bDw==",
+      "dependencies": ["@aphrody/m3-primitives", "clsx"]
+    },
+    {
+      "name": "@aphrody/m3-front",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-front/package.json",
+      "status": "published",
+      "sha256": "4918d3682e873bed4ec889d62f10feaa02cfcfbe2ca16150e1665c1ac28e6d66",
+      "integrity": "sha512-qKiD8FTq3OHEIM9ChxQ0W0M6GaHRi1Z8cROaLlOweqAdCfxnxl7uV/DoisCzQ5H542V+zHG4egDWqnkvnK0sXg==",
+      "dependencies": ["@aphrody/m3-tokens", "@aphrody/material-web"]
+    },
+    {
+      "name": "@aphrody/m3-icons",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-icons/package.json",
+      "status": "blocked",
+      "sha256": "d045451e14060f836eb144559488acbf2dbb95aa9bd076cfb1187c5dd8685a3b",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/m3-mcp",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-mcp/package.json",
+      "status": "published",
+      "sha256": "4671bb0ea6cc198e5ec3e002f9f3fe0ff3cfdca938ec9391a4c9a58510007bf9",
+      "integrity": "sha512-IVICRta32v3WDimjSqjkI1TKo2HxihAKfOAeh6tSfMYy8XjDW5BBs4oUwGszFR2R9EtLHxhZRv8FTj6kB4ZYhw==",
+      "dependencies": ["@aphrody/m3-os-themes", "@aphrody/material-design-icons", "zod"]
+    },
+    {
+      "name": "@aphrody/m3-motion",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-motion/package.json",
+      "status": "published",
+      "sha256": "64d2dcc0c0c3d303a1347b93efc951e667e0f1f54a5e3b1b0fff456e61bf0aea",
+      "integrity": "sha512-EtdtqUGcTqonm1pCTWwbzDxdOTuSJUF/kIjnKCKFR6KzeWK6Y3Q0G4B4+0lGm1zNn8gd45eBLaaMD/ytjsixZQ==",
+      "dependencies": ["motion"]
+    },
+    {
+      "name": "@aphrody/m3-next-migrate",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-next-migrate/package.json",
+      "status": "blocked",
+      "sha256": "bd8ebf8628651c701eb6daeac0e388caf6965da590678fd8db732eca03eaec8a",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/m3-next",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-next/package.json",
+      "status": "blocked",
+      "sha256": "45056c1266ae3c1617a550b8a2a243e299c7ba9f93f14ae483a8e42a7bfcc96e",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/m3-os-themes",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-os-themes/package.json",
+      "status": "published",
+      "sha256": "39d0ed8c60de46b99c313b9ffb8b1e49c3a8af787ccae201d864be113241641a",
+      "integrity": "sha512-Ogw+c24x8OxZh06SC5v6oCYtjLMyn41B0D9tiChI9pi4gdUWlqWRUiS1lLvLVxZtc4qNx8XSex2MlT5OTMjZmw==",
+      "dependencies": ["@aphrody/m3-tokens"]
+    },
+    {
+      "name": "@aphrody/m3-primitives",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-primitives/package.json",
+      "status": "published",
+      "sha256": "e48aa0e5a5e6779a0478ec41d50563c91f2cea66dfefa6fae4aba319f6f92945",
+      "integrity": "sha512-jeIelP0saJufZz1KoYej4Fe588DOlrseyrwnWK66fnd7gdXUIO7xIXB5XkzhwM/FXuGMq8esOGSJVDf9TFyUDg==",
+      "dependencies": [
+        "@aphrody/m3-motion",
+        "@base-ui/react",
+        "class-variance-authority",
+        "clsx",
+        "motion",
+        "react-hook-form",
+        "react-resizable-layout",
+        "sonner",
+        "zod"
+      ]
+    },
+    {
+      "name": "@aphrody/m3-react",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-react/package.json",
+      "status": "published",
+      "sha256": "233e9c6298cfbdc90fe2c90f3439f3422c02a90e98041a50a1641cfe7c4f4cc1",
+      "integrity": "sha512-yjpiDcRuo+0kMG4Xwy/LUrYdCXPD+NqhNOOT7XlxDozJH2EA5fwbQgYdQOobCTQEstj7EqdGF6hce1rzFX+Xng==",
+      "dependencies": ["@aphrody/m3-tokens", "@aphrody/material-web", "@lit/react"]
+    },
+    {
+      "name": "@aphrody/m3-reader",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-reader/package.json",
+      "status": "published",
+      "sha256": "92cb391eb1e8063d8ac82a56a8ebdbf7046f36f013aa8737ab11a9c319add937",
+      "integrity": "sha512-ZnDYojsu8qRyIbr2i3RsM2IdVgCAUN/1uI8PYi9rAhu8pq7aqqtfipqbFaKcGrtibjqei3xK0EfsRX2IJWsVTA==",
+      "dependencies": ["@tanstack/react-virtual", "lucide-react", "swiper"]
+    },
+    {
+      "name": "@aphrody/m3-tailwind",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-tailwind/package.json",
+      "status": "published",
+      "sha256": "548ece0654da2cfdbe1e0ac330179468ad1ce8699c04b0bacbffa18066baa569",
+      "integrity": "sha512-8OiSxdDRM28z03LLAR4cGUhHz+S9tkggSRFhxaD6R6RaVCZikFtz6lbZc26iOMCvW/F7CVAiCnIfoUBWxNajzw==",
+      "dependencies": ["@aphrody/m3-tokens"]
+    },
+    {
+      "name": "@aphrody/m3-theme",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-theme/package.json",
+      "status": "blocked",
+      "sha256": "c2c143f77822c004b530c147d42275dfe7ca0e722c121e490fd7bc75c8c95b99",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/m3-tokens",
+      "version": "3.3.7",
+      "path": "m3/packages/m3-tokens/package.json",
+      "status": "published",
+      "sha256": "8d3b023cf864b2c4b886d154d1640bb25f654a2fe8e10db0a2116aee67381fc2",
+      "integrity": "sha512-SBgjx6Wujh6k+KP8dsOaqweBUa8e82LAmFpkujKlSufDzzxg2Re56trrk9MpS98zveuko5UbjHWdjZsZVw3NOg==",
+      "dependencies": ["@material/material-color-utilities"]
+    },
+    {
+      "name": "@aphrody/m3",
+      "version": "3.3.7",
+      "path": "m3/packages/m3/package.json",
+      "status": "blocked",
+      "sha256": "d784ac54f0664705795cd500ea422236893f4afafbce05b22d1b0c9741c5633e",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/material-design-icons",
+      "version": "1.0.1",
+      "path": "m3/packages/material-design-icons/package.json",
+      "status": "published",
+      "sha256": "3e7d67a2ed99f2ca130fc0bf9b8e3d032c555bd3f9fac2826f30d3a91e052609",
+      "integrity": "sha512-zrSoNL2dtFYe+SKXIfOXyqocuVaH7ik39QyP+1uajfYQ/2R0RGEPVhDhZ1IVcWtrKlr60HDbQQ2uzVS+qJaXbw==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/scaffold",
+      "version": "1.0.0-canary.1",
+      "path": "m3/packages/scaffold/package.json",
+      "status": "published",
+      "sha256": "3646a0280ac2a7baee5e6831bc899c041f107546b36918031e683df93decc476",
+      "integrity": "sha512-kJIwSbyAKZpCdSou8tAO13cSwJqanH807HmDHt9Ky3m5hm8OKu3avffIiNPp+ANNWWKAOZ+iqZi/nie/8GtYCA==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/web-to-tauri",
+      "version": "1.0.0-canary",
+      "path": "m3/packages/web-to-tauri/package.json",
+      "status": "blocked",
+      "sha256": "e8728be451b552f16b224bf47645d77737809dabf1b273c5b6fe1c266006e64f",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/doc-ai",
+      "version": "3.2.7",
+      "path": "packages/ai/doc-ai/package.json",
+      "status": "published",
+      "sha256": "26c2bc34eb6e4c418d381d9439e5b08b89d5e29795039178f262677ee1464a49",
+      "integrity": "sha512-XmPfb4i8AL0PnoCmriWxnI3PFtT9AGnYgkILA6qVjjZtqDz2p7h3c1Q4tHwzmfkMWUidqbThneg724VQle+wfw==",
+      "dependencies": ["@ai-sdk/google-vertex", "@opentelemetry/api", "ai", "zod"]
+    },
+    {
+      "name": "@aphrody/inference",
+      "version": "0.1.1",
+      "path": "packages/ai/inference/package.json",
+      "status": "published",
+      "sha256": "b4ef2ea23a5973d8bd8af7a5d45120754d51fa17466a872cc3df0f32eede71af",
+      "integrity": "sha512-JsZMDscK57Y8vVaKSIOWT1KwA6PjR5fTZkSawq2tNRl+3KD8BXAWgWsc9+IGSY8Z/RYih8KN5pO+WfNNQ8jeIg==",
+      "dependencies": ["@aphrody/paths"]
+    },
+    {
+      "name": "@aphrody/rag-core",
+      "version": "0.1.1",
+      "path": "packages/ai/rag-core/package.json",
+      "status": "published",
+      "sha256": "841be374ec4f2be78c5a0a46f1a291507a70b547c2feff826ac626cb7594248a",
+      "integrity": "sha512-I7VLMfo4x+hXWUaQI86/EC3gmLQ6m8qsbGoAHYwXzw4XN4xkyDbwmw6bP4qYd3oN1EBta6b9AJhtnN9RAHUZPg==",
+      "dependencies": ["@aphrody/paths"]
+    },
+    {
+      "name": "@aphrody/xai",
+      "version": "1.1.6",
+      "path": "packages/ai/xai/package.json",
+      "status": "blocked",
+      "sha256": "b833a0b0750383cba92e8e084808d94dbbd362a79ca74dcdee80a92211e29ec6",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/bun-test-dom",
+      "version": "0.1.1",
+      "path": "packages/bun/test-dom/package.json",
+      "status": "published",
+      "sha256": "024eef22ab17ca753146ce404d4ce77d0bc7c9e36a998763d43ecdf79b5618b3",
+      "integrity": "sha512-XZKt0FwXS8S4NiZIYr/X8BTCleTFlH72T4+W46tx1xrKXHDuIk4tOS+G3nLpuHbzinYiX+Efw+zfKlNuWlCoTA==",
+      "dependencies": ["@happy-dom/global-registrator"]
+    },
+    {
+      "name": "@aphrody/messaging",
+      "version": "0.1.1",
+      "path": "packages/discord/aphrody-messaging/package.json",
+      "status": "published",
+      "sha256": "daf05e8d5e8141e1a1425f9f85515bfff340f70ddca88563493b92095ffff49e",
+      "integrity": "sha512-73pf9hVE6kpoivdj6jU3Q70Q2uEGl/peD07ftdhpRaAnoQVUnp8HjQ3MwOBKs2ROF5nGBKgrbzmNF/ut7I54Ag==",
+      "dependencies": ["@discordjs/rest"]
+    },
+    {
+      "name": "@aphrody/discord-kit",
+      "version": "0.1.1",
+      "path": "packages/discord/kit/package.json",
+      "status": "published",
+      "sha256": "d9841496345be52cb8f3f3bf1dfb9c02afa8611d0e812cc3168aa62f287990ef",
+      "integrity": "sha512-tHM7ZOQ1iuD1HkorvxBMA7XdrsvrVpIWY3S1yuwb4wDGxAXTb+mk7W8xL3Xc629r7pupJV0WHo4We+tZXVqY3g==",
+      "dependencies": ["@aphrody/runtime-sdk", "discord-api-types", "discord.js", "discordx"]
+    },
+    {
+      "name": "@aphrody/yolo-core",
+      "version": "1.0.1",
+      "path": "packages/engine/core/package.json",
+      "status": "published",
+      "sha256": "de4a6acfe5205042336b811735dff3bce6a9f04f83496f8a28453db28d13ebed",
+      "integrity": "sha512-tTwSh2zbe0LjsJDNSKCNewhLaYHbwqqsw5z5QwI0YYpX2v8Znn44JDCOX5lDVp5W3F6z88gh0reqtuIDtT6GjQ==",
+      "dependencies": ["@aphrody/runtime-sdk", "@oxc-project/types"]
+    },
+    {
+      "name": "@aphrody/n2b-core",
+      "version": "0.6.4",
+      "path": "packages/engine/n2b-client/package.json",
+      "status": "published",
+      "sha256": "2702ca14e4bfa22e65d74f9b753ae0da0954200aa5deb259a498f22992bad4af",
+      "integrity": "sha512-eJgVqfYCgW0TMAep+VzPFWgoLxFKtSMLrhJuvwxi/Cab3TGYxxYX1sTaT8Gu1vTC83OxIEX8REKbGzm9TDKM2g==",
+      "dependencies": ["@aphrody/runtime-sdk"]
+    },
+    {
+      "name": "@aphrody/plugins",
+      "version": "1.0.1",
+      "path": "packages/engine/plugins/package.json",
+      "status": "published",
+      "sha256": "4fc388e968cad51f4812239de0e05dc812d3682fa9ccb7bf0a8c28f57fe56ab0",
+      "integrity": "sha512-WuJYSgyQ5n5cttxhUjqhuwgPqSudoY91SHf9DxhtGqQdDrFfkC7atz9gPNkVOuGAJY0gdXqD4/P1ruaUcb4caA==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/runtime-sdk",
+      "version": "0.1.1",
+      "path": "packages/engine/runtime/package.json",
+      "status": "published",
+      "sha256": "dfc41475692ee387afbe26f56b82b4ecb8d8817a8400a9a89967e57d6ca85326",
+      "integrity": "sha512-lu7ljEgQ5HZvtcMCYOTADCbpO6QmD3nSo7oETVTpBVRM5ECaGIBOwjzIIBd6r/ij4Ujzk8hGRYIvYGOQktQvHQ==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/google",
+      "version": "1.0.0-canary.1",
+      "path": "packages/google/google/package.json",
+      "status": "published",
+      "sha256": "7724baf23786d1b2711db9e954180c2c03eba974925aba6082ec60051123e95d",
+      "integrity": "sha512-giLeetziV/T5tCVh3C1goV8m9Q/WY3bYlL3Mv5ieO3mj8meWPO+nDiNIbl9ZaQDmRrq9jaggEvfyxemrT3BaHQ==",
+      "dependencies": [
+        "@ai-sdk/google-vertex",
+        "ai",
+        "google-auth-library",
+        "googleapis",
+        "@aphrody/yolo-core"
+      ]
+    },
+    {
+      "name": "@aphrody/cli-wasm",
+      "version": "0.1.1",
+      "path": "packages/infra/cli-wasm/package.json",
+      "status": "published",
+      "sha256": "25e82f30afe0af6db4faa54ac3a1657b88320dfc8488b08adab0414f09319c77",
+      "integrity": "sha512-NNfKYq17/KE6dBxxdCJR5jUp8GzIpm3pCPBmZgY1Ea5ti3J3Oi654tLMp9f6DPYXDPht8ohSX1Zt2KgHlzLaew==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/ovh",
+      "version": "0.2.1",
+      "path": "packages/infra/ovh/package.json",
+      "status": "published",
+      "sha256": "e28b662589d8b175e5d4ee5917d489739a342347fdded2d05ab2aba42fd0e68b",
+      "integrity": "sha512-21+WDJECt0QKdPUE3BCUtoaY9qxlgYy2dHAjpUNACiJKhWJLMBXrfZ5ZxsibvaOqNU45kxp0g3/1ImVnrWtPPw==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/paths",
+      "version": "0.1.1",
+      "path": "packages/infra/paths/package.json",
+      "status": "published",
+      "sha256": "08bafa385019601d2e37e9fa64b85fc304749e7b98e69729a52a15cd2b67a17a",
+      "integrity": "sha512-Vkh5d/Q/VZV71ddqtFCmF1D0CyLaKLtZk6usn2Mbi7u3jrgkyskcGplolBuzrv8QIzzi38oNytaiM4TS6WY0iA==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/sql",
+      "version": "0.1.1",
+      "path": "packages/infra/sql/package.json",
+      "status": "published",
+      "sha256": "90d638c670c729edce08ea518024a77e441474daef9c2924f58f4ea01c3e5377",
+      "integrity": "sha512-7CTZwv11lfxgfsFzFOU3Z49fV6ON1NPpbCNLFpFQWD87cpH25U1L6SEBoDdQSMw8iAKGhx5ObKqgEt5I8ISZ1Q==",
+      "dependencies": ["sqlite-vec"]
+    },
+    {
+      "name": "@aphrody/update",
+      "version": "0.1.1",
+      "path": "packages/infra/update/package.json",
+      "status": "published",
+      "sha256": "9a9892d53e65b393f2a4bf1d456b54c990ddc23aeb2ba80f8065c301259d9747",
+      "integrity": "sha512-XwjyjreWhCI3hYOmkPHU9oHPvmYTIG9NcRj5vpqgOMXwCgx02TjKUOibGYjL1yeDsL2uQUFBH4Jz3MUcW81MQA==",
+      "dependencies": ["@aphrody/paths"]
+    },
+    {
+      "name": "@aphrody/workspace",
+      "version": "0.1.0",
+      "path": "packages/infra/workspace/package.json",
+      "status": "blocked",
+      "sha256": "f2d6b98f18c2f8f1c7fce8c00842bfa3e8c969befd5db74c20c4909032662501",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/bun",
+      "version": "3.3.7",
+      "path": "packages/interop/native/package.json",
+      "status": "blocked",
+      "sha256": "5c6212d770efa7ba67fed8b0408545feaaf03dafaa278aa6b0136b173c9e80f6",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/a2a",
+      "version": "0.1.1",
+      "path": "packages/os/a2a/package.json",
+      "status": "published",
+      "sha256": "fdf9898847cdb0f2651d1f07dfde93ae4ee32742cbca087ac8bd7e22f9148688",
+      "integrity": "sha512-IqcWJ2FknplSiOWcBy7BAQmM8qGCGQAJn+hr5r7PK3xMvaL1O9y+Fy6z0Gyg84XkgzOBiFxiYMj6p2pgytGveQ==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/drive-client",
+      "version": "0.1.1",
+      "path": "packages/os/drive-client/package.json",
+      "status": "published",
+      "sha256": "a182aaa68ad68379413c1d5aa325371b72c5b751007290baab80f98f7e786472",
+      "integrity": "sha512-VFZrRg10LzmWKFL+5r6zyRaZvB0e/fK17n/zqMa1rbqZNHDqiYHDO3zuI0Iz6JIVNJvTii6xGftyk4Au5BBWog==",
+      "dependencies": ["@aphrody/assets", "type-fest", "valibot", "zustand"]
+    },
+    {
+      "name": "@aphrody/os",
+      "version": "0.1.0",
+      "path": "packages/os/kernel-client/package.json",
+      "status": "blocked",
+      "sha256": "7956dc59691c31bc1111a0f901e28029ecee47bf0b66217dbd3d16a778d72e17",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/winclean",
+      "version": "0.1.0",
+      "path": "packages/os/winclean/package.json",
+      "status": "blocked",
+      "sha256": "69374df8e9b0aa181a3ad634c441ff52f2e808ba39e1d71bfc42cab6e50d6fdc",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/shell-web",
+      "version": "0.1.1",
+      "path": "packages/shell/web/package.json",
+      "status": "published",
+      "sha256": "50d9a926a0b36858751d5871f86fb0f1ae1959853533d25ca12741c9edfb9494",
+      "integrity": "sha512-trxD+9YBw9x6F6mPrMK9ZCxQQfdjaFjUm7S1e9y/kiauShdRVsgFipGAuIRGH9iqF1n+W17yH9AYDN3wyxjbNA==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/agent-browser",
+      "version": "1.0.0-canary",
+      "path": "packages/web/agent-browser/package.json",
+      "status": "blocked",
+      "sha256": "534c9a91b131b822096d44209eeb0b76ce7fb47b456fcb08c75208545e689dbb",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/web-test",
+      "version": "0.2.6",
+      "path": "packages/web/aphrody-web-test/package.json",
+      "status": "blocked",
+      "sha256": "705780673d24943e67582f1c02777c3ca3f3913877c08eea8344d0c888a60f4d",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    },
+    {
+      "name": "@aphrody/fuzzy",
+      "version": "0.1.1",
+      "path": "packages/web/fuzzy/package.json",
+      "status": "published",
+      "sha256": "5046e1c86f8780c7a134113fd0d647944d033e8c884a0fdad22161c59a4ab3b8",
+      "integrity": "sha512-YG2VwP+FRfHz6sAhuFj6ug9os/iLzCZQzAXM8yyFJythoo/cQ4KKhDrjABkIkxR+ZV8gBWbl1uPy20iFew2Mww==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/http",
+      "version": "0.1.1",
+      "path": "packages/web/http/package.json",
+      "status": "published",
+      "sha256": "7c6d011e821823c643d003a890f3879c015feba7e4b984be51e157b926a04573",
+      "integrity": "sha512-Vgk/DHIJRFeNLtoK1bKOOt6NL3Pf28ju8lIdU0fKniWTWH6AGUeozDH+IiJbkBgvrfx3YJh+NA7pqicaYJ3LLw==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/qr",
+      "version": "0.1.1",
+      "path": "packages/web/qr/package.json",
+      "status": "published",
+      "sha256": "578ef0a7ebf21d7358282b84d320260782ec106119ac76271cac185e9259c338",
+      "integrity": "sha512-mQTI2Vn+hGFZetm5jwF0JH6IgvE932pIQyezy9YV/eebt3JOc6vkB1JbOoDlBpfnfTx5153IU7UsvNhf3Vg3Hw==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/webview-page",
+      "version": "0.1.1",
+      "path": "packages/web/webview-page/package.json",
+      "status": "published",
+      "sha256": "74b753a094fb1b533d160dc6a6887d8ff0385ca8593bdbba3851640c2dbaaffb",
+      "integrity": "sha512-Ld6xDr3nP/tOpmIJeGFHVayRIVqOX+ms2V7iBcKDBgJFzV50Y1doKSn/QT+yqRqPIFJ2iVFuVoD0P4ozxjXN9g==",
+      "dependencies": []
+    },
+    {
+      "name": "@aphrody/x",
+      "version": "1.3.0",
+      "path": "packages/web/x/package.json",
+      "status": "blocked",
+      "sha256": "049ca29eefd2908c6e0978e07dba001b2ad077f2ff2df4a064aee9d98a0733e7",
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+    }
+  ]
+}

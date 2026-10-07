@@ -19,7 +19,7 @@
 import { ForgeError, parseArgs } from "./plan.ts";
 import { bootstrap, build, doctor, status, unit, watch } from "./run.ts";
 
-const VERSION = "0.1.0";
+const VERSION = "0.1.1";
 const HELP =
   "yolo forge — builds the aphrody-labs/bun fork on a fresh Linux machine.\n\n  yolo forge doctor                      what the machine has and lacks\n  yolo forge bootstrap                   install the toolchain (apt with sudo; LLVM, cmake, rustup into the cache)\n  yolo forge build [--rev <sha>]         build one commit (default: head of the branch) in a temporary scratch space\n  yolo forge watch [--once] [--latest]   build every new commit of the branch, oldest first\n  yolo forge status | unit               last builds | systemd unit running `watch`\n\nOptions: --repository <url> --branch <name> --profile <p> --lto on|off --jobs <n>\n         --scratch auto|loop|tmpfs|dir --scratch-size <96G> --interval <s> --home <dir> --artifacts <dir>\n         --keep (leave the scratch space) --tests (run test/js/first_party with the new binary) --dry-run\n         --yolo-root <monorepo> --yolo-asset <lib> (compile the yolo CLI onto the new engine: one `yolo` file, aliases `bun` and `vu` selected by argv0)\nEnvironment: BUN_FORGE_HOME, BUN_FORGE_ARTIFACTS, BUN_FORGE_REPOSITORY, BUN_FORGE_BRANCH, BUN_FORGE_YOLO_ROOT, BUN_FORGE_YOLO_ASSET.\nA compiled host (yolo or the standalone executable) embeds Bun; the build's `bun` is that executable (BUN_BE_BUN=1).";
 

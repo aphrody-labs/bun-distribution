@@ -313,8 +313,7 @@ export async function runPythonCommand(
       console.error(`yolo py ${sub}: ${tools.refusal}`);
       return 3;
     }
-    const { runPythonWorkspace } =
-      await import("../../../../packages/infra/workspace/src/python-workspace.ts");
+    const { runPythonWorkspace } = await import("@aphrody/workspace/src/python-workspace.ts");
     const rest: string[] = [];
     for (let index = 0; index < args.length; index++) {
       const arg = args[index]!;

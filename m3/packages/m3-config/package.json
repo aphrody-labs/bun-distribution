@@ -1,9 +1,18 @@
 {
   "name": "@aphrody/m3-config",
-  "version": "3.3.6",
+  "version": "3.3.7",
   "description": "Shared build, typecheck and test presets for the @aphrody Material Design 3 packages: tsconfig, the Bun.build preset and the happy-dom test preload.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
+  "files": [
+    "README.md",
+    "bun-build.ts",
+    "cache-db.ts",
+    "tsconfig.build.json",
+    "tsconfig.check.json",
+    "tsconfig.json",
+    "test/dom.ts"
+  ],
   "type": "module",
   "exports": {
     "./package.json": "./package.json",

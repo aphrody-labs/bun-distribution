@@ -1,8 +1,14 @@
 {
   "name": "@aphrody/bun-forge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
   "license": "Apache-2.0",
+  "bin": {
+    "bun-forge": "./src/main.ts"
+  },
+  "files": [
+    "src"
+  ],
   "type": "module",
   "publishConfig": {
     "access": "public"
@@ -15,6 +21,9 @@
     "lint": "oxlint src test",
     "format": "oxfmt src test package.json tsconfig.json",
     "format:check": "oxfmt --check src test package.json tsconfig.json"
+  },
+  "dependencies": {
+    "@aphrody/yolo-core": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.2"

@@ -27,6 +27,8 @@ import { dirname, join, resolve } from "node:path";
 export type Forward = { bind: string; to: string; purpose?: string };
 /** An external repository built through the tunnel (`--repo <name>`). */
 export type RepositoryConfig = {
+  /** Owner-assigned host; overrides the generic primary host for this repository. */
+  host?: string;
   /** Local worktree, `~` expanded. */
   root: string;
   remoteWorkspace: string;
@@ -106,8 +108,18 @@ export function repositoryConfig(
   const repository = config.repositories?.[name];
   if (!repository)
     throw new Error(`unknown repository "${name}" (config/host/vps-cargo.json repositories)`);
+  if (repository.host && repository.host !== config.host) {
+    const host = config.hosts?.[repository.host];
+    if (!host) throw new Error(`repository "${name}" requires unknown host "${repository.host}"`);
+    config = {
+      ...config,
+      ...host,
+      host: repository.host,
+      remoteEnv: { ...config.remoteEnv, ...host.remoteEnv },
+    };
+  }
   const secondaries = Object.keys(config.hosts ?? {});
-  if (secondaries.includes(config.host)) {
+  if (!repository.host && secondaries.includes(config.host)) {
     throw new Error(
       `repository "${name}" is configured for the primary host only, not ${config.host}`,
     );

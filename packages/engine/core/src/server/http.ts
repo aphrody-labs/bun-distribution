@@ -1,6 +1,6 @@
 /** Native Bun HTTP transport sharing the capability owner and OpenAPI contract. */
 import { yoloHome, yoloVersion } from "../vfs/home";
-import { hostTarget } from "../../../runtime/src/artifact";
+import { hostTarget } from "@aphrody/runtime-sdk/src/artifact.ts";
 import {
   TOOLS,
   executeTool,

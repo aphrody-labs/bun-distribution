@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/http",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Portable in-process JSON transport shared by Aphrody service clients",
   "license": "Apache-2.0",
   "files": [

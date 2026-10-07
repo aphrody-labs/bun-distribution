@@ -28,7 +28,7 @@ export function createInfraClient(baseUrl = "http://127.0.0.1:8787"): InfraApiCl
 
 ## Source: packages/infra/workspace/src/index.ts
 
-SHA-256: `123bf4dc8fcc9605662d5dadb06160fb4261f21c620ae5e2899d09898c8e70ad`
+SHA-256: `d459464c75b1765f197f1fa38923f8138bbb66eb40d6fe2e62135609d4c0eeb6`
 
 ### Source line 1
 
@@ -153,19 +153,19 @@ export { runTauri } from "./tauri.ts";
 ### Source line 23
 
 ```typescript
-export { runTauriApps } from "../../update/src/tauri/apps.ts";
+export { runTauriApps } from "@aphrody/update/src/tauri/apps.ts";
 ```
 
 ### Source line 24
 
 ```typescript
-export { runTauriSync } from "../../update/src/tauri/sync.ts";
+export { runTauriSync } from "@aphrody/update/src/tauri/sync.ts";
 ```
 
 ### Source line 25
 
 ```typescript
-export { runUpstreamSources } from "../../update/src/sources/restore.ts";
+export { runUpstreamSources } from "@aphrody/update/src/sources/restore.ts";
 ```
 
 ### Source line 26

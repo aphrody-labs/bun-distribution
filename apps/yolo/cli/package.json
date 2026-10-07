@@ -23,7 +23,12 @@
     "test": "bun test test/cli_app.test.ts test/aphrody.test.ts test/api.test.ts test/host.test.ts test/host-space.test.ts test/import.test.ts test/mcp.test.ts test/package-commands.test.ts test/rename.test.ts test/scan.test.ts test/stack.test.ts test/verify.test.ts test/vu.test.ts test/python-supervised.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@aphrody/plugins": "workspace:*",
+    "@aphrody/runtime-sdk": "workspace:*",
+    "@aphrody/workspace": "workspace:*",
+    "@aphrody/yolo-core": "workspace:*"
+  },
   "engines": {
     "bun": ">=1.4.2"
   }
