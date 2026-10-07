@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "principal": "omar",
+  "authorizedBy": "owner directive 2026-10-07: Omar administrator throughout Aphrody",
+  "unix": { "user": "omar", "hosts": ["vps", "dbfr"], "sudo": "ALL" },
+  "discord": {
+    "primaryUserId": "1323725494184841256",
+    "alternateUserIds": ["1527405876695142620"],
+    "roleName": "Aphrody Administrator",
+    "permissions": "8",
+    "credentialFile": "/etc/aphrody-discord.env"
+  },
+  "github": { "organization": "aphrody-labs", "login": null, "role": "admin" },
+  "verification": {
+    "discordIdentity": "Discord user lookup and successful DM 1557349160041324594",
+    "githubIdentity": "unverified; never infer that KyrioFox is Omar"
+  }
+}
