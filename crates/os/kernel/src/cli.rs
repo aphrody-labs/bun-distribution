@@ -103,13 +103,13 @@ async fn builtin_kernel(
         .register(Arc::new(aphrody_bun_docs::BunDocsSubsystem::new()) as Arc<dyn SystemSubsystem>)
         .await?;
     kernel
-        .register(Arc::new(aphrody_systemd::SystemdSubsystem::new()) as Arc<dyn SystemSubsystem>)
+        .register(Arc::new(crate::systemd::SystemdSubsystem::new()) as Arc<dyn SystemSubsystem>)
         .await?;
     kernel
-        .register(Arc::new(aphrody_coreutils::CoreutilsSubsystem::new()) as Arc<dyn SystemSubsystem>)
+        .register(Arc::new(crate::coreutils::CoreutilsSubsystem::new()) as Arc<dyn SystemSubsystem>)
         .await?;
     kernel
-        .register(Arc::new(aphrody_compat::CompatSubsystem::new()) as Arc<dyn SystemSubsystem>)
+        .register(Arc::new(crate::compat::CompatSubsystem::new()) as Arc<dyn SystemSubsystem>)
         .await?;
     kernel.register(Arc::new(crate::InfraSubsystem::new()) as Arc<dyn SystemSubsystem>).await?;
     kernel.register(Arc::new(crate::CloudSubsystem::new()) as Arc<dyn SystemSubsystem>).await?;

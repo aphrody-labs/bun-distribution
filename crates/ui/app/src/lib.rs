@@ -89,9 +89,9 @@ async fn start_kernel(app: tauri::AppHandle) {
         windows,
         Arc::new(TauriWebviewSubsystem::new(app.clone())) as Arc<dyn SystemSubsystem>,
         admin,
-        Arc::new(aphrody_systemd::SystemdSubsystem::new()) as Arc<dyn SystemSubsystem>,
-        Arc::new(aphrody_coreutils::CoreutilsSubsystem::new()) as Arc<dyn SystemSubsystem>,
-        Arc::new(aphrody_compat::CompatSubsystem::new()) as Arc<dyn SystemSubsystem>,
+        Arc::new(aphrody_kernel::systemd::SystemdSubsystem::new()) as Arc<dyn SystemSubsystem>,
+        Arc::new(aphrody_kernel::coreutils::CoreutilsSubsystem::new()) as Arc<dyn SystemSubsystem>,
+        Arc::new(aphrody_kernel::compat::CompatSubsystem::new()) as Arc<dyn SystemSubsystem>,
         Arc::new(aphrody_kernel::InfraSubsystem::new()) as Arc<dyn SystemSubsystem>,
         Arc::new(aphrody_kernel::CloudSubsystem::new()) as Arc<dyn SystemSubsystem>,
     ] {

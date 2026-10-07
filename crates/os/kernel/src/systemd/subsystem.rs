@@ -9,7 +9,7 @@ use aphrody_subsystem::{
 use async_trait::async_trait;
 use serde_json::{Value, json};
 
-use crate::{
+use crate::systemd::{
     journal::{Journal, LogLevel},
     manager::ServiceManager,
 };

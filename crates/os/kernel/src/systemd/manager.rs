@@ -9,7 +9,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
+use crate::systemd::{
     journal::{Journal, LogLevel},
     unit::{ActiveState, Unit, UnitType},
 };

@@ -301,11 +301,8 @@ prost-types        = { version = "0.14" }
 pbjson             = { version = "0.9" }
 pbjson-types       = { version = "0.9" }
 pbjson-build       = { version = "0.9" }
-aphrody-compat = { path = "crates/os/compat", version = "1.0.0-canary", features = [] }
-aphrody-coreutils = { path = "crates/os/coreutils", version = "1.0.0-canary", features = [] }
 aphrody-cron = { path = "crates/os/cron", version = "1.0.0-canary", features = [] }
 aphrody-execpolicy = { path = "crates/os/execpolicy", version = "1.0.0-canary", features = [] }
-aphrody-systemd = { path = "crates/os/systemd", version = "1.0.0-canary", features = [] }
 aphrody-sandbox = { path = "crates/os/sandbox", version = "1.0.0-canary", features = [] }
 aphrody-task-runner = { path = "crates/os/task-runner", version = "1.0.0-canary", features = [] }
 aphrody-telemetry = { path = "crates/os/telemetry", version = "1.0.0-canary", features = [] }

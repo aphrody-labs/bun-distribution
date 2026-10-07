@@ -17,10 +17,7 @@ default = ["builtins"]
 builtins = [
     "dep:anyhow",
     "dep:aphrody-bun-docs",
-    "dep:aphrody-compat",
-    "dep:aphrody-coreutils",
     "dep:aphrody-nu",
-    "dep:aphrody-systemd",
     "dep:clap",
 ]
 
@@ -39,15 +36,13 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+log = { workspace = true }
 serde = { workspace = true }
 
 # The built-in subsystems (feature `builtins`).
 anyhow = { workspace = true, optional = true }
 aphrody-bun-docs = { workspace = true, optional = true }
-aphrody-compat = { workspace = true, optional = true }
-aphrody-coreutils = { workspace = true, optional = true }
 aphrody-nu = { workspace = true, optional = true }
-aphrody-systemd = { workspace = true, optional = true }
 clap = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
@@ -58,4 +53,4 @@ windows-sys = { workspace = true, features = ["Win32_Networking_WinSock", "Win32
 
 [dev-dependencies]
 tempfile = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net", "io-util"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net", "io-util", "test-util"] }

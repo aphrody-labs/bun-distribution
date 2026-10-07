@@ -47,9 +47,7 @@ tauri-build = { workspace = true }
 reqwest = { workspace = true }
 aphrody-app-server = { workspace = true }
 aphrody-capture = { workspace = true }
-aphrody-compat = { workspace = true }
 aphrody-diagnostics = { workspace = true }
-aphrody-coreutils = { workspace = true }
 aphrody-drive = { workspace = true }
 # Apache-2.0 fast file index (MFT/walk tree, FTS search) behind the explorer commands in src/explorer.rs.
 aphrody-fsindex = { workspace = true }
@@ -65,7 +63,6 @@ aphrody-sprite-sheet = { workspace = true }
 aphrody-subsystem = { workspace = true }
 # Loopback sidecar of the M3 showcase window (src/showcase.rs); no wrap.json plugin is registered.
 aphrody-tauri-wrap = { workspace = true }
-aphrody-systemd = { workspace = true }
 async-trait = { workspace = true }
 # Host probe and micro-benchmark commands (aphrody_system_stats, aphrody_benchmark).
 yolo-core = { path = "../../engine/yolo-core", version = "1.0.0" }

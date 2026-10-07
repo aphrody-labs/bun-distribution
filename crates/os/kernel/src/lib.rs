@@ -27,7 +27,11 @@ mod auth;
 #[cfg(feature = "builtins")]
 pub mod cli;
 pub mod client;
+#[cfg(feature = "builtins")]
+pub mod compat;
 pub mod cloud;
+#[cfg(feature = "builtins")]
+pub mod coreutils;
 mod gcs;
 mod cloud_git;
 pub mod host_service;
@@ -39,6 +43,8 @@ mod policy;
 mod remote;
 mod rpc;
 pub mod runtimes;
+#[cfg(feature = "builtins")]
+pub mod systemd;
 pub mod transport;
 
 #[cfg(feature = "builtins")]

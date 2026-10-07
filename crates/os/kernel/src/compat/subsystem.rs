@@ -7,7 +7,7 @@ use aphrody_subsystem::{SubsystemError, SystemSubsystem, ToolDefinition};
 use async_trait::async_trait;
 use serde_json::{Value, json};
 
-use crate::{dotnet, pwsh, wine_proton};
+use crate::compat::{dotnet, pwsh, wine_proton};
 
 #[derive(Default)]
 pub struct CompatSubsystem;

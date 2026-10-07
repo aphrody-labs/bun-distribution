@@ -5,7 +5,7 @@ use std::{env, path::Path};
 
 use serde::{Deserialize, Serialize};
 
-use crate::wine_proton::ExecResult;
+use crate::compat::wine_proton::ExecResult;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PwshRuntimeInfo {
