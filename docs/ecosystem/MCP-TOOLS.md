@@ -7,7 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 19 servers, 369 tool registrations, 367 unique tool names.
+Totals: 19 servers, 370 tool registrations, 368 unique tool names.
 
 ## aphrody — @aphrody/workspace subsystem `workspace`
 
@@ -193,7 +193,7 @@ Kind: json-catalog. 18 tools.
 
 ## aphrody — aphrody-mcp (GoogleMcpServer)
 
-Kind: rmcp. 66 tools.
+Kind: rmcp. 67 tools.
 
 | Tool | Description |
 | --- | --- |
@@ -203,6 +203,7 @@ Kind: rmcp. 66 tools.
 | `aphrody_home_query` | Search the agent home database (one SQLite file per home: `<home>/db/aphrody.sqlite`) with a single hybrid query over document chunks, code-graph nodes and memories (FTS5 plus one reciprocal-rank fus… |
 | `aphrody_home_status` | Status of the agent home database: path, schema version and table counts (sources, files, docs, chunks, graph nodes and edges, memories, sessions). |
 | `aphrody_jev_decide` | Answer typed questions about a state with the Jev decision models, without generating text. Each question is a noul (probability of yes), a choice (one option out of a set) or a score (position along… |
+| `aphrody_job_cancel` | Cancel a persistent job by id. Queued work is cancelled immediately; a running native handler stops at its next lease heartbeat. Returns durable state and queue stats. |
 | `aphrody_job_status` | Inspect the background job queue. With `id`: the job plus its trailing NDJSON log lines. Without: a filtered listing (state/kind/limit). Both include queue-wide counts so a job that no worker handles… |
 | `aphrody_job_submit` | Submit a background job to the persistent queue at ~/.aphrody/jobs/jobs.db and return its id immediately. Executes nothing and downloads nothing: the job stays queued until a worker claims it. Return… |
 | `aphrody_mcp_call` | Proxy-invoke a tool on any MCP server configured in mcp.json. Spawns/connects the target server transparently (stdio or HTTP), runs the `initialize` + `tools/call` handshake, and returns the target t… |

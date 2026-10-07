@@ -6,13 +6,13 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 16 binaries with a clap surface, 676 commands.
+Totals: 16 binaries with a clap surface, 706 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 223 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 238 commands.
 
 - `aphrody pure` — Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
   - `aphrody pure rag` — RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.
@@ -24,6 +24,7 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 223 comma
     - `aphrody pure toolcall validate` — Validate arguments against a JSON-Schema subset; prints `{"violations"}`.
     - `aphrody pure toolcall extract` — Extract inline tool calls (Hermes, Qwen XML, Mistral, OpenAI, bare JSON).
   - `aphrody pure html` — HTML main-content extraction, Markdown conversion and SimHash.
+    - `aphrody pure html dragon-ball` — Source-aware Dragon Ball projection as JSON, shared with native Web.
     - `aphrody pure html extract` — Main-content extraction as JSON (title, byline, Markdown, blocks, SimHash).
     - `aphrody pure html markdown` — Whole-document HTML to GitHub-flavoured Markdown.
     - `aphrody pure html simhash` — 64-bit SimHash of the text, as 16 hex digits.
@@ -74,6 +75,20 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 223 comma
   - `aphrody web browser` — Inspect a page through the shared native browser session
     - `aphrody web browser snapshot` — Navigate and capture a readable snapshot in the same browser session
   - `aphrody web crawl` — Crawl a bounded set of pages through the shared Rust frontier
+  - `aphrody web crawl-index` — Crawl into a private persistent frontier and index the selected home in process
+  - `aphrody web dragon-ball` — Native Dragon Ball campaign, provenance, export and home indexing
+    - `aphrody web dragon-ball discover` — Discover Google sources, media references and root technology evidence
+    - `aphrody web dragon-ball sources` — Inspect the embedded campaign and source registry
+    - `aphrody web dragon-ball plan` — Resolve a campaign without fetching or writing
+    - `aphrody web dragon-ball status` — Inspect existing campaign evidence without fetching or writing
+    - `aphrody web dragon-ball crawl` — Crawl and extract a native campaign into its protected corpus
+    - `aphrody web dragon-ball index` — Index existing campaign exports without any network collection
+    - `aphrody web dragon-ball assets` — Download campaign covers (and optional plates) into the protected asset store
+    - `aphrody web dragon-ball asset-plan` — Resolve asset requests without collection or writes
+    - `aphrody web dragon-ball asset-probe` — Probe at most three images; retain quota evidence but no media
+    - `aphrody web dragon-ball manga-volume` — Acquire original manga reader images through the native Web owners
+    - `aphrody web dragon-ball consolidate-bxc` — Consolidate legacy BXC stores into a new protected native store (sources remain read-only)
+    - `aphrody web dragon-ball export-bxc` — Read legacy BXC databases and export their native Shenron projection
   - `aphrody web mediawiki` — Enumerate and extract pages through a MediaWiki Action API
   - `aphrody web mirror` — Mirror HTML pages and their linked CSS/assets through Obscura
   - `aphrody web wiki-search` — Search a MediaWiki installation through its Action API
@@ -276,7 +291,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/src/cli.rs#Cli`, 6 commands.
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 300 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 315 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -303,6 +318,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 300 commands.
       - `aphrody infra ssh pure toolcall validate` — Validate arguments against a JSON-Schema subset; prints `{"violations"}`.
       - `aphrody infra ssh pure toolcall extract` — Extract inline tool calls (Hermes, Qwen XML, Mistral, OpenAI, bare JSON).
     - `aphrody infra ssh pure html` — HTML main-content extraction, Markdown conversion and SimHash.
+      - `aphrody infra ssh pure html dragon-ball` — Source-aware Dragon Ball projection as JSON, shared with native Web.
       - `aphrody infra ssh pure html extract` — Main-content extraction as JSON (title, byline, Markdown, blocks, SimHash).
       - `aphrody infra ssh pure html markdown` — Whole-document HTML to GitHub-flavoured Markdown.
       - `aphrody infra ssh pure html simhash` — 64-bit SimHash of the text, as 16 hex digits.
@@ -353,6 +369,20 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 300 commands.
     - `aphrody infra ssh web browser` — Inspect a page through the shared native browser session
       - `aphrody infra ssh web browser snapshot` — Navigate and capture a readable snapshot in the same browser session
     - `aphrody infra ssh web crawl` — Crawl a bounded set of pages through the shared Rust frontier
+    - `aphrody infra ssh web crawl-index` — Crawl into a private persistent frontier and index the selected home in process
+    - `aphrody infra ssh web dragon-ball` — Native Dragon Ball campaign, provenance, export and home indexing
+      - `aphrody infra ssh web dragon-ball discover` — Discover Google sources, media references and root technology evidence
+      - `aphrody infra ssh web dragon-ball sources` — Inspect the embedded campaign and source registry
+      - `aphrody infra ssh web dragon-ball plan` — Resolve a campaign without fetching or writing
+      - `aphrody infra ssh web dragon-ball status` — Inspect existing campaign evidence without fetching or writing
+      - `aphrody infra ssh web dragon-ball crawl` — Crawl and extract a native campaign into its protected corpus
+      - `aphrody infra ssh web dragon-ball index` — Index existing campaign exports without any network collection
+      - `aphrody infra ssh web dragon-ball assets` — Download campaign covers (and optional plates) into the protected asset store
+      - `aphrody infra ssh web dragon-ball asset-plan` — Resolve asset requests without collection or writes
+      - `aphrody infra ssh web dragon-ball asset-probe` — Probe at most three images; retain quota evidence but no media
+      - `aphrody infra ssh web dragon-ball manga-volume` — Acquire original manga reader images through the native Web owners
+      - `aphrody infra ssh web dragon-ball consolidate-bxc` — Consolidate legacy BXC stores into a new protected native store (sources remain read-only)
+      - `aphrody infra ssh web dragon-ball export-bxc` — Read legacy BXC databases and export their native Shenron projection
     - `aphrody infra ssh web mediawiki` — Enumerate and extract pages through a MediaWiki Action API
     - `aphrody infra ssh web mirror` — Mirror HTML pages and their linked CSS/assets through Obscura
     - `aphrody infra ssh web wiki-search` — Search a MediaWiki installation through its Action API

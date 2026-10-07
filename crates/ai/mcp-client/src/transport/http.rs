@@ -12,7 +12,7 @@ use serde_json::Value as JsonValue;
 use super::Transport;
 use crate::{
     error::{McpClientError, Result},
-    protocol::{jsonrpc_notification, jsonrpc_request, parse_response},
+    protocol::{jsonrpc_notification, jsonrpc_request, parse_response, parse_server_info},
 };
 
 /// `Accept` value mandated by the streamable HTTP transport: the server answers with either a
@@ -33,6 +33,8 @@ pub struct HttpTransport {
     /// Headers sent with every request: `Accept`, then the caller's headers, then `Authorization`
     /// when a bearer token is configured (the explicit token wins over a same-named header).
     headers: HeaderMap,
+    /// Negotiated only by a successful initialize response; never logged as a public value.
+    session_id: Option<HeaderValue>,
     next_id: u64,
 }
 
@@ -75,13 +77,21 @@ impl HttpTransport {
             .build()
             .map_err(McpClientError::Http)?;
 
-        Ok(Self { client, url: url.into(), headers: extra_headers, next_id: 1 })
+        Ok(Self { client, url: url.into(), headers: extra_headers, session_id: None, next_id: 1 })
     }
 
     fn next_id(&mut self) -> u64 {
         let id = self.next_id;
         self.next_id = self.next_id.wrapping_add(1);
         id
+    }
+
+    fn request_headers(&self) -> HeaderMap {
+        let mut headers = self.headers.clone();
+        if let Some(session_id) = &self.session_id {
+            headers.insert("mcp-session-id", session_id.clone());
+        }
+        headers
     }
 }
 
@@ -101,12 +111,13 @@ impl Transport for HttpTransport {
             .post(&self.url)
             .timeout(timeout_dur)
             .header("Content-Type", "application/json")
-            .headers(self.headers.clone())
+            .headers(self.request_headers())
             .body(frame)
             .send()
             .await
             .map_err(McpClientError::Http)?;
         let status = resp.status().as_u16();
+        let session_id = resp.headers().get("mcp-session-id").cloned();
         let text = resp.text().await.map_err(McpClientError::Http)?;
 
         if !(200..300).contains(&status) {
@@ -114,23 +125,46 @@ impl Transport for HttpTransport {
             return Err(McpClientError::HttpStatus { status, body });
         }
 
-        parse_response(&text)
+        let result = parse_response(&text)?;
+        if method == "initialize" {
+            // Use the client's existing handshake validator before accepting any session state.
+            parse_server_info(&result)?;
+            let session_id = session_id
+                .map(|mut value| {
+                    if value.as_bytes().is_empty()
+                        || !value.as_bytes().iter().all(|byte| (0x21..=0x7e).contains(byte))
+                    {
+                        return Err(McpClientError::Malformed("invalid MCP session id".to_owned()));
+                    }
+                    value.set_sensitive(true);
+                    Ok(value)
+                })
+                .transpose()?;
+            self.session_id = session_id;
+        }
+        Ok(result)
     }
 
     async fn notify(&mut self, method: &str, params: JsonValue) -> Result<()> {
         let frame = jsonrpc_notification(method, params);
 
-        // Notifications are fire-and-forget: the response (usually an empty 202) is not inspected.
-        let _response = self
+        // Notifications normally receive an empty 202, but rejection is still a transport error.
+        let response = self
             .client
             .post(&self.url)
             .timeout(NOTIFY_TIMEOUT)
             .header("Content-Type", "application/json")
-            .headers(self.headers.clone())
+            .headers(self.request_headers())
             .body(frame)
             .send()
             .await
             .map_err(McpClientError::Http)?;
+        let status = response.status().as_u16();
+        if !(200..300).contains(&status) {
+            let text = response.text().await.map_err(McpClientError::Http)?;
+            let body = text.chars().take(MAX_ERROR_BODY_CHARS).collect();
+            return Err(McpClientError::HttpStatus { status, body });
+        }
         Ok(())
     }
 

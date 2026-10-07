@@ -4,8 +4,8 @@
   "authorizedBy": "owner directive 2026-10-07: Omar administrator throughout Aphrody",
   "unix": { "user": "omar", "hosts": ["vps", "dbfr"], "sudo": "ALL" },
   "discord": {
-    "primaryUserId": "1323725494184841256",
-    "alternateUserIds": ["1527405876695142620"],
+    "primaryUserId": "1527405876695142620",
+    "alternateUserIds": ["1323725494184841256"],
     "roleName": "Aphrody Administrator",
     "permissions": "8",
     "credentialFile": "/etc/aphrody-discord.env"

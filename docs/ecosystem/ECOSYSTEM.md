@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 1 repositories (1 aphrody, 0 shared, 0 experiments), 205 crates, 9 binaries, 130 Bun packages, 8 uv packages, 676 CLI commands, 369 MCP tools.
+Totals: 1 repositories (1 aphrody, 0 shared, 0 experiments), 205 crates, 9 binaries, 128 Bun packages, 8 uv packages, 706 CLI commands, 370 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -227,7 +227,7 @@ Canonical Rust/Bun monorepo
 | `yolo-pyo3` | crates/engine/yolo-pyo3 | PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach) |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
 
-### Bun packages (130)
+### Bun packages (128)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -254,7 +254,6 @@ Canonical Rust/Bun monorepo
 | `@aphrody/cli-win32-arm64-msvc` | crates/tauri/aphrody-tauri-cli-node/npm/win32-arm64-msvc | Command line interface for building Tauri apps |  |
 | `@aphrody/cli-win32-ia32-msvc` | crates/tauri/aphrody-tauri-cli-node/npm/win32-ia32-msvc | Command line interface for building Tauri apps |  |
 | `@aphrody/cli-win32-x64-msvc` | crates/tauri/aphrody-tauri-cli-node/npm/win32-x64-msvc | Command line interface for building Tauri apps |  |
-| `@aphrody/creator-kit` | packages/infra/product | Small local tools for a content creator: Challonge bot, wiki image fetch, Adobe and disk cleaners, image compression, video translation. | `creator-kit` |
 | `@aphrody/discord-kit` | packages/discord/kit | Unified Discord bot core kit: pre-flight intent negotiation, memory-bounded caching, resilient interaction dispatching, lifecycle management and guards for Bun. |  |
 | `@aphrody/doc-ai` | packages/ai/doc-ai | AI-first documentation and automatic translation system |  |
 | `@aphrody/drive-client` | packages/os/drive-client | Type-safe TypeScript client for Spacedrive daemon |  |
@@ -284,14 +283,12 @@ Canonical Rust/Bun monorepo
 | `@aphrody/m3-primitives` | m3/packages/m3-primitives | Material Design 3 React primitives: the SpaceUI (@spacedrive/primitives) component set rebuilt on the M3 roles, shape, typescale, state layers and motion of the aphrody design system. |  |
 | `@aphrody/m3-react` | m3/packages/m3-react | React wrappers (@lit/react createComponent) for every <md-*> element of the @aphrody/material-web fork. |  |
 | `@aphrody/m3-reader` | m3/packages/m3-reader | Material 3 manga and illustrated book readers for React |  |
-| `@aphrody/m3-showcase` | m3/packages/app-ui/showcase | Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable shown by the aphrody-app desktop (aphrody-app --showcase). |  |
 | `@aphrody/m3-tailwind` | m3/packages/m3-tailwind | Tailwind v4 CSS-first preset for Material 3: generates @theme (colour roles, shape, typescale, elevation, easing) from @aphrody/m3-tokens. |  |
 | `@aphrody/m3-theme` | m3/packages/m3-theme | Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases). |  |
 | `@aphrody/m3-tokens` | m3/packages/m3-tokens | Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities. |  |
 | `@aphrody/material-design-icons` | m3/packages/material-design-icons | Material Symbols SVG catalogue (forks/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons. | `m3-svg-to-ico` |
 | `@aphrody/messaging` | packages/discord/aphrody-messaging | Aphrody messaging channel contracts and Discord REST adapter. |  |
 | `@aphrody/n2b-core` | packages/engine/n2b-client | Native N2B SDK scan, explicit legacy CLI helpers and Bun shims |  |
-| `@aphrody/omar-kit` | packages/infra/product | Zero-command Windows kit for the Aphrody administrator: installs the tools, connects the private tunnel, checks that everything is ready and runs simplified model training on the hosts over SSH. | `aphrody-omar` |
 | `@aphrody/os` | packages/os/kernel-client | Bun client for the Aphrody OS kernel: join the OS as a subsystem, call any OS tool or skill. |  |
 | `@aphrody/ovh` | packages/infra/ovh | OVH cloud library for Aphrody Infra: DNS, VPS, Email, and multi-profile operations in pure Bun (command line: aphrody ovh) |  |
 | `@aphrody/paths` | packages/infra/paths | Cross-platform path resolution for Aphrody workspaces and runtime data |  |
@@ -323,13 +320,14 @@ Canonical Rust/Bun monorepo
 | `@aphrody/plugin-websocket` | crates/tauri/aphrody-tauri-plugin-websocket |  |  |
 | `@aphrody/plugin-window-state` | crates/tauri/aphrody-tauri-plugin-window-state | Save window positions and sizes and restore them when the app is reopened. |  |
 | `@aphrody/plugins` | packages/engine/plugins | Unified YOLO & Bun-TS7 plugin engine: generator, schema validation, doctrine enforcement and autonomous hook runtime |  |
+| `@aphrody/product` | packages/infra/product | Aphrody installation, administration and creator workflows in one native Bun product. | `aphrody-omar`, `aphrody-product`, `aphrody-setup`, `creator-kit` |
 | `@aphrody/qr` | packages/web/qr | First-party QR Code encoder and canvas renderer (module-for-module parity with qrcode 1.5.4) |  |
 | `@aphrody/rag-core` | packages/ai/rag-core | Aphrody RAG core for the web (WebAssembly) and for Bun (bun:ffi): chunking, fusion, eval and vector kernels behind one typed facade. |  |
 | `@aphrody/runtime-sdk` | packages/engine/runtime | Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI |  |
 | `@aphrody/scaffold` | m3/packages/scaffold | The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web-to-tauri. | `aphrody-scaffold` |
-| `@aphrody/setup` | packages/infra/product | One-click Aphrody installer for everyone (Aphrody-Setup.exe): aphrody (CLI and MCP), yolo, the desktop app, the Claude plugins and the MCP declaration, with optional administrator and creator roles. | `aphrody-setup` |
 | `@aphrody/shell-web` | packages/shell/web | Aphrody shell for browsers and Tauri webviews: WASM VT core, local shell and WebSocket/Tauri transports. |  |
 | `@aphrody/sql` | packages/infra/sql | Shared Bun database mechanics for Aphrody: env/URL resolution, Bun.SQL and Redis factories, bun:sqlite open policy with optional sqlite-vec |  |
+| `@aphrody/timeline` | packages/web/timeline | Native Bun timeline collection, SQL, Redis, GraphQL and retrieval projections |  |
 | `@aphrody/update` | packages/infra/update | Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks |  |
 | `@aphrody/web-test` | packages/web/aphrody-web-test | Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server. |  |
 | `@aphrody/web-to-tauri` | m3/packages/web-to-tauri | Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original. | `web-to-tauri` |
@@ -340,7 +338,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/xai` | packages/ai/xai | Headless xAI Grok API client for Bun — high-level fluent Chat API (createChat/append/sample/stream/executeToolCalls/sampleStructured, reasoning, structured, XTools for native X tool fulfillment) + SUPER_GROK_TOKEN keyless + OIDC. OpenAI-compatible REST, deep native integration with @aphrody/x. |  |
 | `@aphrody/yolo-cli` | packages/engine/yolo | Zero-dependency programmatic CLI for the YOLO Bun Industrial Engine | `yolo` |
 | `@aphrody/yolo-core` | packages/engine/core | Unified core library for YOLO, modeled directly after Bun's core library architecture |  |
-| `@aphrody/yt-subs-sorter` | packages/infra/product/extensions/yt-subs-sorter | WebExtension (Chrome, Edge, Brave, Firefox) to sort YouTube subscriptions into groups. No dependency, no network. |  |
+| `@aphrody/yt-subs-sorter` | packages/infra/product/resources/creator/extensions/yt-subs-sorter | WebExtension (Chrome, Edge, Brave, Firefox) to sort YouTube subscriptions into groups. No dependency, no network. |  |
 | `@hypothesi/tauri-plugin-mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge | A Tauri plugin that exposes an MCP server interface via WebSockets. |  |
 | `@rosegriffon/ui` | m3/packages/rg-ui | Composants shadcn/ui partagés (new-york style, Tailwind v4) |  |
 | `@tauri-plugin/mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge/guest-js | Guest bindings for MCP Bridge Tauri plugin |  |

@@ -253,10 +253,11 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
   expect(
     rules
       .filter((r) => r.kind === "route")
-      .every((r) => /to 10\.200\.77\.[234] port 22/.test(r.text)),
+      .every((r) => /to 10\.200\.77\.[234] port (22|8793)/.test(r.text)),
   ).toBe(true);
   expect(rules.filter((r) => r.peer === "dbfr").map((r) => r.text)).toEqual([
     "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.4 port 22 proto tcp comment 'aphrody-wg-dbfr'",
+    "ufw allow in on wg1 from 10.200.77.3 to 10.200.77.1 port 8793 proto tcp comment 'aphrody-wg-dbfr'",
   ]);
 });
 
@@ -300,7 +301,7 @@ test("the plan carries no private key, names its inputs and repeats the shared s
   const dbfr = p.steps.filter((s) => s.host === "dbfr").map((s) => s.id);
   expect(dbfr).toContain("dbfr.account.omar.pg-no-group");
   expect(dbfr).toContain("dbfr.account.omar.pg-direct");
-  expect(p.steps.filter((s) => s.host === "dbfr" && s.run?.includes("ufw allow"))).toEqual([]);
+  expect(p.steps.filter((s) => s.host === "dbfr" && s.run?.includes("ufw allow"))).toHaveLength(3);
 });
 
 test("observe runs only read-only preflight steps, never a mutation", async () => {
@@ -421,7 +422,44 @@ test("the tunnel forwarder units bind the hub address only and compose from the 
   expect(service).toContain("DynamicUser=yes");
   expect(service).toContain("NoNewPrivileges=true");
   const proxied = t.services.filter((s) => s.expose === "socket-proxyd").map((s) => s.port);
-  expect(proxied).toEqual([8789, 8788]);
+  expect(proxied).toEqual([8793, 8788, 8793]);
+  const mcp = t.services.find((s) => s.id === "mcp-http")!;
+  expect(mcp.upstream).toBe("127.0.0.1:8793");
+  expect(mcp.auth).toBe("bearer-token");
+  expect(t.grants.dbfr).toContain("mcp-http");
+  const verify = plan().steps.find((s) => s.id === "vps.systemd-verify")!;
+  expect(verify.run).toContain("@8793.socket");
+  expect(verify.run).not.toContain("@8789.socket");
+});
+
+test("peer MCP projections bind the actual host and grant only private sources", () => {
+  const p = plan();
+  const socket = p.steps.find((step) => step.id === "dbfr.proxy-unit.socket")!;
+  const encoded = socket.run!.match(/echo ([A-Za-z0-9+/=]+)/)![1]!;
+  const text = Buffer.from(encoded, "base64").toString();
+  expect(text).toContain("ListenStream=10.200.77.3:%i");
+  expect(text).not.toContain("ListenStream=10.200.77.1:%i");
+  expect(text).not.toMatch(/ListenStream=(0\.0\.0\.0|\[::\])/);
+  const inputs = p.steps.filter((step) => step.id.startsWith("dbfr.proxy-ufw."));
+  expect(inputs).toHaveLength(3);
+  for (const step of inputs) {
+    expect(step.run).toContain("in on wg1");
+    expect(step.run).toContain("to 10.200.77.3 port 8793");
+    expect(step.run).not.toContain("from any");
+    expect(step.run).not.toContain("omar");
+  }
+  expect(inputs.some((step) => step.run!.includes("from 10.200.77.1"))).toBe(true);
+  const start = p.steps.find((step) => step.id === "dbfr.proxy-start")!;
+  expect(start.run).toContain("aphrody-wg-proxy@8793.socket");
+  const tmp = scratch(() => {});
+  try {
+    const t = loadTunnel(tmp);
+    t.services.find((service) => service.id === "mcp-http-dbfr")!.address = "10.200.77.1";
+    writeFileSync(join(tmp, "wireguard/aphrody-tunnel.json"), JSON.stringify(t));
+    expect(tunnelProblems(tmp).join("\n")).toContain("declared owner address");
+  } finally {
+    rmSync(tmp, { recursive: true });
+  }
 });
 
 test("no private key material anywhere in the declared tunnel and account files", () => {

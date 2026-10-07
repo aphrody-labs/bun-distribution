@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "aphrody-fleet": {
+      "command": "C:/Windows/System32/wsl.exe",
+      "args": [
+        "--exec",
+        "/usr/bin/ssh",
+        "-T",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "aphrody-vps-wg",
+        "/home/ubuntu/.bun/bin/bun",
+        "/srv/aphrody-lab/fleet-mcp.mjs"
+      ]
+    }
+  }
+}

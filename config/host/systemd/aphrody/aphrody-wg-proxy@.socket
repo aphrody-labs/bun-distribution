@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Tunnel listener of a loopback service of the vps: instance = port (aphrody-wg-proxy@8789.socket for MCP HTTP,
+# Tunnel listener of a loopback service of the vps: instance = port (aphrody-wg-proxy@8793.socket for MCP HTTP,
 # @8788 for A2A). Binds the hub address of the private tunnel only (10.200.77.1, declared in
 # wireguard/aphrody-tunnel.json), never the public address; FreeBind lets it bind before wg1 is up. ufw admits only
 # the granted peers on wg1 (rules commented aphrody-wg-<peer>); the loopback service itself stays loopback.

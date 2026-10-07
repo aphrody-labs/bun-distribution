@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "guildId": "1554189180030947338",
   "channelId": "1557354118710829117",
-  "omarUserIds": ["1323725494184841256", "1527405876695142620"],
+  "omarUserIds": ["1527405876695142620", "1323725494184841256"],
   "ownerId": "281114294152724491",
   "envFile": "/etc/aphrody-discord.env",
   "store": "/srv/aphrody-lab/state/omar-monitor/queue.sqlite",

@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "aphrody-fleet": {
+      "command": "ssh",
+      "args": [
+        "-T",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "aphrody-vps-wg",
+        "/home/ubuntu/.bun/bin/bun",
+        "/srv/aphrody-lab/fleet-mcp.mjs"
+      ]
+    }
+  }
+}

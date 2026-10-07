@@ -277,13 +277,27 @@ const SYMBOLS = {
 
 type NativeLibrary = ReturnType<typeof dlopen<typeof SYMBOLS>>;
 type NativeSymbols = NativeLibrary["symbols"];
+const PIPELINE_SYMBOLS = {
+  aphrody_web_pipeline_abi_version: { args: [], returns: FFIType.u32 },
+  aphrody_web_pipeline_pending_count: { args: [], returns: FFIType.u64_fast },
+  aphrody_web_pipeline_submit: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_command_submit: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
+  aphrody_mcp_tool_submit: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u64_fast },
+} as const;
+type PipelineLibrary = ReturnType<typeof dlopen<typeof PIPELINE_SYMBOLS>>;
 const LIBRARY_KEY = Symbol.for("aphrody.ffi.library.v1");
 interface SharedNativeLibrary {
   path: string;
   library: NativeLibrary;
   owner: "@aphrody/bun";
+  pipeline?: PipelineLibrary;
 }
 const sharedState = globalThis as typeof globalThis & { [LIBRARY_KEY]?: SharedNativeLibrary };
+// The native runtime is process-wide and has no shutdown ABI. Pin its image
+// after asynchronous use, so an idle Tokio thread never executes unmapped code.
+// Logical close still releases extension handles and allows a fresh binding.
+const PINNED_KEY = Symbol.for("aphrody.ffi.pinned-runtime-libraries.v1");
+const pinnedState = globalThis as typeof globalThis & { [PINNED_KEY]?: Map<string, NativeLibrary> };
 
 /** The explicit native library override, if any. */
 function configuredLibraryOverride(): string | undefined {
@@ -363,8 +377,45 @@ export function loadNativeLibrary(): NativeLibrary {
 
 /** @internal Close only after the engine binding has checked live resources. */
 export function closeNativeLibrary(): void {
-  sharedState[LIBRARY_KEY]?.library.close();
+  if (nativePipelinePendingCount() > 0)
+    throw new Error("Cannot close aphrody-ffi while native Web workflows are stopping");
+  const shared = sharedState[LIBRARY_KEY];
+  if (shared?.pipeline) {
+    const pinned = (pinnedState[PINNED_KEY] ??= new Map());
+    if (!pinned.has(shared.path)) pinned.set(shared.path, shared.library);
+    shared.pipeline.close();
+    if (pinned.get(shared.path) !== shared.library) shared.library.close();
+  } else {
+    shared?.library.close();
+  }
   delete sharedState[LIBRARY_KEY];
+}
+
+/** @internal Query a loaded extension without opening a new native handle. */
+export function nativePipelinePendingCount(): number {
+  return Number(
+    sharedState[LIBRARY_KEY]?.pipeline?.symbols.aphrody_web_pipeline_pending_count() ?? 0,
+  );
+}
+
+/** Optional workflow symbols from the same verified native artifact. Old
+ * libraries remain usable by existing bindings; this feature requires its
+ * additive extension only when called. Both handles share one mapped library,
+ * runtime and allocator, and close together after the engine's resource guard. */
+export function loadPipelineSymbols(): PipelineLibrary["symbols"] {
+  loadNativeLibrary();
+  const shared = sharedState[LIBRARY_KEY]!;
+  if (shared.pipeline) return shared.pipeline.symbols;
+  const loaded = dlopen(shared.path, PIPELINE_SYMBOLS);
+  try {
+    const version = loaded.symbols.aphrody_web_pipeline_abi_version();
+    if (version !== 1) throw new Error(`Web pipeline ABI mismatch: expected 1, found ${version}`);
+  } catch (error) {
+    loaded.close();
+    throw error;
+  }
+  shared.pipeline = loaded;
+  return loaded.symbols;
 }
 
 /** @internal Observe lazy loading without opening a library. */

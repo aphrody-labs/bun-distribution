@@ -10,6 +10,7 @@
 
 #![forbid(unsafe_code)]
 
+mod auth;
 pub mod bridge;
 pub mod card;
 pub mod claims;

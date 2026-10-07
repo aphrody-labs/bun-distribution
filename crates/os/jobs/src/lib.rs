@@ -85,7 +85,7 @@ pub mod worker;
 
 pub use error::{JobError, Result};
 pub use log::{JobLogs, LogLevel, LogLine};
-pub use spec::{Job, JobSpec, JobState};
+pub use spec::{HostAffinity, Job, JobSpec, JobState};
 pub use store::{DEFAULT_LEASE, JobStore, ListFilter, QueueStats, RecoveryReport};
 pub use worker::{HandlerError, JobContext, JobHandler, Outcome, Worker};
 

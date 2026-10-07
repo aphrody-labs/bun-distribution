@@ -239,13 +239,14 @@ fn load_inner(path: Option<&str>) -> i32 {
     }
     match sys::bind(handle) {
         Ok(api) => {
-            *slot = Some(Host { api, initialized: false, owned: false, saved: std::ptr::null_mut() });
+            *slot =
+                Some(Host { api, initialized: false, owned: false, saved: std::ptr::null_mut() });
             APHRODY_PY_OK
-        }
+        },
         Err(e) => {
             set_error(e);
             APHRODY_PY_ERR_LOAD
-        }
+        },
     }
 }
 
@@ -266,7 +267,7 @@ pub unsafe extern "C" fn aphrody_py_load(path: *const c_char) -> i32 {
                 Err(_) => {
                     set_error("path is not UTF-8");
                     return APHRODY_PY_ERR_ARG;
-                }
+                },
             }
         };
         load_inner(path)
@@ -308,7 +309,7 @@ fn api_ready() -> Result<Api, i32> {
         _ => {
             set_error("interpreter not initialised (call aphrody_py_init)");
             Err(APHRODY_PY_ERR_STATE)
-        }
+        },
     }
 }
 
@@ -316,7 +317,8 @@ fn api_ready() -> Result<Api, i32> {
 unsafe fn take_exception(api: &Api) {
     // SAFETY: GIL held by the caller; all objects are released.
     unsafe {
-        let (mut t, mut v, mut tb) = (std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut());
+        let (mut t, mut v, mut tb) =
+            (std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut());
         (api.err_fetch)(&mut t, &mut v, &mut tb);
         let mut text = String::from("Python exception");
         let subject = if v.is_null() { t } else { v };
@@ -366,11 +368,11 @@ unsafe fn object_to_owned(api: &Api, obj: PyObj, out: *mut *mut c_char) -> i32 {
                         *out = c.into_raw();
                     }
                     APHRODY_PY_OK
-                }
+                },
                 Err(_) => {
                     set_error("result contains NUL");
                     APHRODY_PY_ERR_PYTHON
-                }
+                },
             }
         };
         (api.decref)(s);
@@ -391,7 +393,7 @@ fn with_gil(body: impl FnOnce(&Api) -> i32) -> i32 {
             // SAFETY: matches the ensure above.
             unsafe { (api.gil_release)(state) };
             code
-        }
+        },
     })
 }
 
@@ -463,7 +465,8 @@ pub unsafe extern "C" fn aphrody_py_call(
     out: *mut *mut c_char,
 ) -> i32 {
     // SAFETY: caller contract.
-    let (Some(module), Some(function)) = (unsafe { cstr_arg(module) }, unsafe { cstr_arg(function) })
+    let (Some(module), Some(function)) =
+        (unsafe { cstr_arg(module) }, unsafe { cstr_arg(function) })
     else {
         set_error("module or function is null");
         return APHRODY_PY_ERR_ARG;

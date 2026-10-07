@@ -149,8 +149,9 @@ function unitSteps(
   const stage = `${STAGE_DIR}/${f.unit}`;
   const steps: PlanStep[] = [];
 
-  const mcp = f.service === "aphrody-mcp-http";
-  const install = mcp ? binary : undefined;
+  const mcp = f.service === "aphrody-mcp-http" || f.service === "aphrody-mcp-http-dbfr";
+  const a2a = f.service === "aphrody-a2a";
+  const install = mcp || a2a ? binary : undefined;
   if (install && !/^[0-9a-f]{64}$/.test(install.sha256)) {
     throw new Error(`${f.unit}: --binary-sha256 must be a 64 hex digit SHA-256`);
   }
@@ -230,13 +231,53 @@ function unitSteps(
       );
     const content = readFileSync(aiJson, "utf8");
     const dir = f.workingDirectory ?? "/srv/aphrody/shared/a2a";
+    const fleetPath = join(repoRoot, "config/host/agent-fleet.json");
+    const fleetConfigured = existsSync(fleetPath);
+    if (fleetConfigured) {
+      const { hub } = JSON.parse(readFileSync(fleetPath, "utf8")) as {
+        hub: { workspace: string; seed: string; branch: string; remote: string; profile: string };
+      };
+      if (hub.workspace !== dir || hub.branch !== "main")
+        throw new Error("A2A fleet workspace and unit must agree on the dedicated main checkout");
+      const revision = Bun.spawnSync(["git", "-C", repoRoot, "rev-parse", "HEAD"]);
+      const sha = revision.stdout.toString().trim();
+      if (revision.exitCode !== 0 || !/^[0-9a-f]{40}$/.test(sha))
+        throw new Error("Cannot qualify the A2A workspace source revision");
+      steps.push(
+        step(
+          "preflight",
+          "check",
+          "agent-workspace-source",
+          "the factory seed contains the declared source revision before creating the checkout",
+          `git -C ${sq(hub.seed)} cat-file -e ${sq(`${sha}^{commit}`)}`,
+        ),
+      );
+      steps.push(
+        step(
+          "provision",
+          "mutate",
+          "agent-workspace",
+          `dedicated private checkout at ${sha}; existing work is never reset`,
+          `set -e; if [ ! -e ${sq(dir)} ]; then sudo -n install -d -o ubuntu -g ubuntu -m 0700 ${sq(dir)}; fi; if [ ! -e ${sq(`${dir}/.git`)} ]; then git clone --no-hardlinks --no-checkout ${sq(hub.seed)} ${sq(dir)}; git -C ${sq(dir)} checkout -B main ${sha}; git -C ${sq(dir)} remote set-url origin ${sq(hub.remote)}; git -C ${sq(dir)} config user.name aphrody-dev; git -C ${sq(dir)} config user.email contact@aphrody.com; fi; test -d ${sq(`${dir}/.git`)}; test "$(git -C ${sq(dir)} branch --show-current)" = main; test "$(git -C ${sq(dir)} remote get-url origin)" = ${sq(hub.remote)}`,
+        ),
+        step(
+          "provision",
+          "mutate",
+          "agent-profile",
+          "seed the selected private profile rules only when absent; preserve authentication and existing home documents",
+          `install -d -m 0700 ${sq(hub.profile)} && { [ -e ${sq(`${hub.profile}/AGENTS.md`)} ] || install -m 0600 ${sq(`${dir}/AGENTS.md`)} ${sq(`${hub.profile}/AGENTS.md`)}; }`,
+        ),
+      );
+    }
     steps.push(
       step(
         "provision",
-        "mutate",
+        fleetConfigured ? "check" : "mutate",
         "ai-json",
         `ai.json of the repository revision into ${dir} (replaces the dangling link to the retired /srv/aphrody/current)`,
-        `rm -f ${dir}/ai.json && printf %s ${sq(b64(content))} | base64 -d > ${dir}/ai.json && chmod 0644 ${dir}/ai.json`,
+        fleetConfigured
+          ? `test -s ${sq(`${dir}/ai.json`)}`
+          : `rm -f ${dir}/ai.json && printf %s ${sq(b64(content))} | base64 -d > ${dir}/ai.json && chmod 0644 ${dir}/ai.json`,
       ),
       step(
         "provision",
@@ -247,14 +288,16 @@ function unitSteps(
       ),
     );
   }
-  if (mcp && tokenFile) {
+  const tokenEnv = mcp ? MCP_TOKEN_ENV : "APHRODY_A2A_COORD_TOKEN";
+  if ((mcp || f.service === "aphrody-a2a") && tokenFile) {
     // The token is made on the host and never leaves it: nothing here prints it, and the plan carries no value.
     const script = [
       "set -e",
       "umask 077",
+      `install -d -o root -g root -m 0755 ${sq(tokenFile.slice(0, tokenFile.lastIndexOf("/")))}`,
       `f=${tokenFile}`,
       'touch "$f"',
-      `grep -q "^${MCP_TOKEN_ENV}=.\\{32,\\}" "$f" || printf "${MCP_TOKEN_ENV}=%s\\n" "$(openssl rand -hex 32)" >> "$f"`,
+      `grep -q "^${tokenEnv}=.\\{32,\\}" "$f" || printf "${tokenEnv}=%s\\n" "$(openssl rand -hex 32)" >> "$f"`,
       'chown root:root "$f"',
       'chmod 0600 "$f"',
     ].join("; ");
@@ -263,10 +306,36 @@ function unitSteps(
         "provision",
         "mutate",
         "generate-token",
-        `${tokenFile} (root:root 0600) holds ${MCP_TOKEN_ENV}, generated here with openssl and kept when already set`,
+        `${tokenFile} (root:root 0600) holds ${tokenEnv}, generated here with openssl and kept when already set`,
         `sudo -n sh -c ${sq(script)}`,
       ),
     );
+    const fleetPath = join(repoRoot, "config/host/agent-fleet.json");
+    if (f.service === "aphrody-a2a" && existsSync(fleetPath)) {
+      const { hub } = JSON.parse(readFileSync(fleetPath, "utf8")) as {
+        hub: { clientTokenFile: string };
+      };
+      const parent = hub.clientTokenFile.slice(0, hub.clientTokenFile.lastIndexOf("/"));
+      const clientCredentialScript = [
+        "set -e",
+        "umask 077",
+        `a2a_bearer_value="$(sed -n 's/^APHRODY_A2A_COORD_TOKEN=//p' ${sq(tokenFile)} | tail -n 1)"`,
+        '[ "${#a2a_bearer_value}" -ge 32 ]',
+        `printf %s "$a2a_bearer_value" > ${sq(`${hub.clientTokenFile}.new`)}`,
+        `chown ubuntu:ubuntu ${sq(`${hub.clientTokenFile}.new`)}`,
+        `chmod 0600 ${sq(`${hub.clientTokenFile}.new`)}`,
+        `mv -f ${sq(`${hub.clientTokenFile}.new`)} ${sq(hub.clientTokenFile)}`,
+      ].join("; ");
+      steps.push(
+        step(
+          "provision",
+          "mutate",
+          "a2a-client-credential",
+          "host-local protected credential for authenticated stdio MCP clients; no token leaves the host",
+          `install -d -m 0700 ${sq(parent)} && sudo -n sh -c ${sq(clientCredentialScript)}`,
+        ),
+      );
+    }
   }
   if (install) {
     const dir = f.binary.slice(0, f.binary.lastIndexOf("/"));
@@ -276,7 +345,7 @@ function unitSteps(
         "mutate",
         "install-binary",
         `install the build as ${f.binary}, the previous one is kept as ${f.binary}.prev (rollback: mv it back)`,
-        `install -d -m 0755 ${dir} && install -m 0755 ${sq(install.from)} ${f.binary}.new && { [ ! -e ${f.binary} ] || cp -p ${f.binary} ${f.binary}.prev; } && mv -f ${f.binary}.new ${f.binary}`,
+        `install -d -m 0755 ${dir} && install -m 0755 ${sq(install.from)} ${f.binary}.new && echo ${install.sha256}'  '${sq(`${f.binary}.new`)} | sha256sum -c --quiet - && { [ ! -e ${f.binary} ] || cp -p ${f.binary} ${f.binary}.prev; } && mv -f ${f.binary}.new ${f.binary}`,
       ),
     );
   }
@@ -340,33 +409,53 @@ function unitSteps(
         "check",
         "listen-loopback",
         `every listener on :${port} is loopback (never 0.0.0.0, [::] or a public address)`,
-        `l=$(ss -H -ltn "sport = :${port}" | awk '{print $4}'); [ -n "$l" ] && ! echo "$l" | grep -qvE '^(127\\.0\\.0\\.1|\\[::1\\]):'`,
+        `n=0; until ss -H -ltn "sport = :${port}" | grep -q .; do n=$((n+1)); [ "$n" -lt 20 ] || exit 1; sleep 0.25; done; l=$(ss -H -ltn "sport = :${port}" | awk '{print $4}'); [ -n "$l" ] && ! echo "$l" | grep -qvE '^(127\\.0\\.0\\.1|\\[::1\\]):'`,
       ),
     );
   }
   if (svc?.health) {
     steps.push(
-      step("verify", "check", "health", `GET ${svc.health}`, `curl -fsS -m 5 ${svc.health}`),
+      step(
+        "verify",
+        "check",
+        "health",
+        `GET ${svc.health}`,
+        `curl -fsS -m 5 --retry 5 --retry-delay 1 --retry-connrefused ${svc.health}`,
+      ),
     );
   }
-  if (mcp && port !== undefined) {
+  if ((mcp || (a2a && tokenFile)) && port !== undefined) {
+    const endpoint = `http://127.0.0.1:${port}/${mcp ? "mcp" : ""}`;
     const post = `curl -s -o /dev/null -m 5 -w '%{http_code}' -X POST -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"ping"}'`;
     steps.push(
       step(
         "verify",
         "check",
         "auth-required",
-        "/mcp refuses a request without a token (401)",
-        `[ "$(${post} http://127.0.0.1:${port}/mcp)" = 401 ]`,
+        "the private endpoint refuses a request without a token (401)",
+        `[ "$(${post} ${endpoint})" = 401 ]`,
       ),
       step(
         "verify",
         "check",
         "auth-wrong-token",
-        "/mcp refuses a wrong token (401)",
-        `[ "$(${post} -H 'Authorization: Bearer 0000000000000000000000000000000000000000000000000000000000000000' http://127.0.0.1:${port}/mcp)" = 401 ]`,
+        "the private endpoint refuses a wrong token (401)",
+        `[ "$(${post} -H 'Authorization: Bearer 0000000000000000000000000000000000000000000000000000000000000000' ${endpoint})" = 401 ]`,
       ),
     );
+    if (a2a) {
+      steps.push(
+        step(
+          "verify",
+          "check",
+          "auth-valid-token",
+          "the protected task API accepts the host-local credential; no task body is printed",
+          `curl -fsS -o /dev/null -m 5 -H "Authorization: Bearer $(sudo -n sed -n 's/^${tokenEnv}=//p' ${sq(tokenFile!)} | tail -n 1)" http://127.0.0.1:${port}/coord/aphrody/tasks`,
+        ),
+      );
+    }
+  }
+  if (mcp && port !== undefined) {
     const script = readFileSync(join(repoRoot, "scripts/tools/infra/mcp-tools-count.ts"), "utf8");
     const expect = expectTools !== undefined ? ` --expect ${expectTools}` : "";
     const token = tokenFile
@@ -414,6 +503,13 @@ export function hostPlan(units: string[], options: PlanOptions = {}): Plan {
       throw new Error(`${entry.unit}: only .service units are planned`);
     return entry;
   });
+  // MCP consumes the A2A environment file; provision and activate its owner first.
+  const mcpAt = entries.findIndex((entry) => entry.service === "aphrody-mcp-http");
+  const a2aAt = entries.findIndex((entry) => entry.service === "aphrody-a2a");
+  if (mcpAt >= 0 && a2aAt > mcpAt) {
+    const [a2aEntry] = entries.splice(a2aAt, 1);
+    entries.splice(mcpAt, 0, a2aEntry!);
+  }
   const targets = new Set(entries.map((e) => e.targetHost));
   const target = options.target ?? [...targets][0];
   if (!target || targets.size > 1 || !targets.has(target)) {

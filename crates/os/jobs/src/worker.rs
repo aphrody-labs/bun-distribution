@@ -10,7 +10,14 @@
 //! keeps this crate free of every model dependency, and means adding a task
 //! type is a registration, not a schema change.
 
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    future::{Future, poll_fn},
+    num::NonZeroUsize,
+    pin::Pin,
+    sync::Arc,
+    task::Poll,
+};
 
 use chrono::Duration;
 
@@ -55,6 +62,8 @@ pub trait JobHandler: Send + Sync {
     ///
     /// `ctx` carries the log sink, so a long-running handler can report
     /// progress that is readable while the job is still in flight.
+    /// The future is dropped if the claim is cancelled or lost. Own all child
+    /// operations and make dropping the future cancel them; do not detach mutations.
     ///
     /// # Errors
     ///
@@ -115,6 +124,7 @@ pub struct Worker {
     name: String,
     lease: Duration,
     backoff: Duration,
+    host: Option<String>,
 }
 
 impl core::fmt::Debug for Worker {
@@ -124,6 +134,7 @@ impl core::fmt::Debug for Worker {
             .field("lease", &self.lease)
             .field("kinds", &self.handlers.keys().collect::<Vec<_>>())
             .field("backoff", &self.backoff)
+            .field("host", &self.host)
             .field("store", &self.store.path())
             .field("logs", &self.logs.root())
             .finish()
@@ -143,6 +154,7 @@ impl Worker {
             name: name.into(),
             lease: crate::store::DEFAULT_LEASE,
             backoff: Duration::seconds(5),
+            host: None,
         }
     }
 
@@ -150,6 +162,13 @@ impl Worker {
     #[must_use]
     pub fn with_handler(mut self, handler: Arc<dyn JobHandler>) -> Self {
         self.handlers.insert(handler.kind().to_owned(), handler);
+        self
+    }
+
+    /// Catalog host identity used by the persistent placement filter.
+    #[must_use]
+    pub fn with_host(mut self, host: impl Into<String>) -> Self {
+        self.host = Some(host.into());
         self
     }
 
@@ -202,34 +221,47 @@ impl Worker {
     /// [`Outcome::Failed`], because a failing job is the queue working, not the
     /// worker breaking.
     pub async fn run_once(&self) -> Result<Option<Outcome>> {
-        let Some(job) = self.store.claim(&self.name, self.lease)? else {
+        let kinds = self.kinds();
+        let Some(job) =
+            self.store.claim_matching(&self.name, self.host.as_deref(), &kinds, self.lease)?
+        else {
             return Ok(None);
         };
 
         let Some(handler) = self.handlers.get(&job.kind).map(Arc::clone) else {
-            // An unregistered kind is permanent for *this* worker but not for
-            // the queue: another worker may know the kind. Failing the job
-            // outright would delete work a differently-configured process could
-            // do, so it goes back with its attempt refunded only in the sense
-            // that the error names the missing handler.
-            let message = JobError::UnknownKind(job.kind.clone()).to_string();
-            let _ = self.logs.error(&job.id, message.clone());
-            let after = self.store.fail(&job.id, &message)?;
-            return Ok(Some(if after.state == crate::JobState::Queued {
-                Outcome::Retrying(job.id)
-            } else {
-                Outcome::Failed(job.id)
-            }));
+            // The immutable registry supplied the same capability list to the claim.
+            return Err(JobError::UnknownKind(job.kind.clone()));
         };
 
         let ctx = JobContext { job_id: job.id.clone(), logs: self.logs.clone() };
         ctx.info(format!("attempt {}/{} of `{}`", job.attempts, job.max_attempts, job.kind));
 
-        let outcome = handler.run(&job, &ctx).await;
+        let lease = self
+            .lease
+            .to_std()
+            .map_err(|_| JobError::InvalidWorkerConfig("lease must be positive"))?;
+        let outcome = {
+            let mut heartbeat =
+                tokio::time::interval((lease / 3).max(std::time::Duration::from_nanos(1)));
+            heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+            let execution = handler.run(&job, &ctx);
+            tokio::pin!(execution);
+            loop {
+                tokio::select! {
+                    _ = heartbeat.tick() => {
+                        if !self.store.heartbeat_owned(&job.id, &self.name, job.attempts, self.lease)? {
+                            ctx.info("claim cancelled or lost; cancelling the owned handler future");
+                            return Ok(Some(Outcome::Cancelled(job.id.clone())));
+                        }
+                    }
+                    outcome = &mut execution => break outcome,
+                }
+            }
+        };
 
         // The job may have been cancelled while the handler ran. Writing a
         // result over a cancellation would make `cancel` a lie.
-        if !self.store.heartbeat(&job.id, &self.name, self.lease)? {
+        if !self.store.heartbeat_owned(&job.id, &self.name, job.attempts, self.lease)? {
             ctx.info("claim lost while running (cancelled, or recovered by another worker)");
             return Ok(Some(Outcome::Cancelled(job.id)));
         }
@@ -237,18 +269,31 @@ impl Worker {
         match outcome {
             Ok(result) => {
                 ctx.info("succeeded");
-                self.store.succeed(&job.id, &result)?;
-                Ok(Some(Outcome::Succeeded(job.id)))
+                Ok(Some(
+                    if self
+                        .store
+                        .succeed_owned(&job.id, &self.name, job.attempts, &result)?
+                        .is_some()
+                    {
+                        Outcome::Succeeded(job.id)
+                    } else {
+                        Outcome::Cancelled(job.id)
+                    },
+                ))
             },
             Err(err) => {
                 let message = err.to_string();
                 let _ = self.logs.error(&job.id, message.clone());
-                let after = if err.is_retryable() {
-                    self.store.fail_at(&job.id, &message, chrono::Utc::now(), Some(self.backoff))?
-                } else {
-                    // A permanent failure must not consume the remaining
-                    // attempts one identical error at a time.
-                    self.store.fail_permanently(&job.id, &message)?
+                let Some(after) = self.store.fail_owned(
+                    &job.id,
+                    &self.name,
+                    job.attempts,
+                    &message,
+                    err.is_retryable(),
+                    self.backoff,
+                )?
+                else {
+                    return Ok(Some(Outcome::Cancelled(job.id)));
                 };
                 Ok(Some(if after.state == crate::JobState::Queued {
                     Outcome::Retrying(job.id)
@@ -278,6 +323,76 @@ impl Worker {
         Ok(outcomes)
     }
 
+    /// Execute up to `max_jobs` with a bounded number of native handler futures.
+    /// SQLite mutations remain synchronous on their owning thread; handlers run
+    /// concurrently without sharing a connection across threads or spawning processes.
+    ///
+    /// # Errors
+    /// As [`Self::run_once`]. A store failure stops new claims but the already
+    /// owned futures are joined before the error is returned.
+    pub async fn drain_parallel(
+        &self,
+        max_jobs: usize,
+        concurrency: NonZeroUsize,
+    ) -> Result<Vec<Outcome>> {
+        type Pending<'a> = Pin<Box<dyn Future<Output = Result<Option<Outcome>>> + 'a>>;
+        let mut pending: Vec<Pending<'_>> = (0..max_jobs.min(concurrency.get()))
+            .map(|_| Box::pin(self.run_once()) as Pending<'_>)
+            .collect();
+        let mut submitted = pending.len();
+        let mut outcomes = Vec::new();
+        let mut failure = None;
+        while !pending.is_empty() {
+            let (index, result) = poll_fn(|cx| {
+                for (index, future) in pending.iter_mut().enumerate() {
+                    if let Poll::Ready(result) = future.as_mut().poll(cx) {
+                        return Poll::Ready((index, result));
+                    }
+                }
+                Poll::Pending
+            })
+            .await;
+            drop(pending.swap_remove(index));
+            match result {
+                Ok(Some(outcome)) => {
+                    outcomes.push(outcome);
+                    if failure.is_none() && submitted < max_jobs {
+                        pending.push(Box::pin(self.run_once()));
+                        submitted += 1;
+                    }
+                },
+                Ok(None) => {},
+                Err(error) => {
+                    if failure.is_none() {
+                        failure = Some(error);
+                    }
+                },
+            }
+        }
+        failure.map_or(Ok(outcomes), Err)
+    }
+
+    /// Persistent worker loop with bounded parallelism and idle crash recovery.
+    /// The host/service owner owns shutdown and placement; no remote transport is invented here.
+    ///
+    /// # Errors
+    /// As [`Self::drain_parallel`].
+    pub async fn run_forever_parallel(
+        &self,
+        concurrency: NonZeroUsize,
+        idle: std::time::Duration,
+    ) -> Result<()> {
+        self.recover()?;
+        loop {
+            // Bound retained outcome history even when producers never stop.
+            let batch_size = concurrency.get().saturating_mul(8);
+            if self.drain_parallel(batch_size, concurrency).await?.is_empty() {
+                tokio::time::sleep(idle).await;
+            }
+            self.recover()?;
+        }
+    }
+
     /// Run forever: recover, then consume, sleeping `idle` between empty polls.
     ///
     /// Returns only on a store error — the caller owns the shutdown signal and
@@ -304,6 +419,7 @@ impl Worker {
 mod tests {
     use super::*;
     use crate::{JobSpec, JobState, store::ListFilter};
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
     struct Fixed {
         kind: &'static str,
@@ -339,6 +455,110 @@ mod tests {
         let store = JobStore::in_memory().unwrap();
         let logs = JobLogs::new(dir.path());
         (Worker::new(store, logs, "test-worker").with_handler(Arc::new(handler)), dir)
+    }
+
+    struct Slow {
+        active: Arc<AtomicUsize>,
+        peak: Arc<AtomicUsize>,
+        finished: Arc<AtomicBool>,
+    }
+
+    struct Running(Arc<AtomicUsize>);
+    impl Drop for Running {
+        fn drop(&mut self) {
+            self.0.fetch_sub(1, Ordering::SeqCst);
+        }
+    }
+    #[async_trait::async_trait]
+    impl JobHandler for Slow {
+        fn kind(&self) -> &'static str {
+            "slow"
+        }
+        async fn run(
+            &self,
+            _job: &Job,
+            _ctx: &JobContext,
+        ) -> core::result::Result<serde_json::Value, HandlerError> {
+            let count = self.active.fetch_add(1, Ordering::SeqCst) + 1;
+            self.peak.fetch_max(count, Ordering::SeqCst);
+            let _running = Running(Arc::clone(&self.active));
+            tokio::time::sleep(std::time::Duration::from_millis(120)).await;
+            self.finished.store(true, Ordering::SeqCst);
+            Ok(serde_json::json!({"done":true}))
+        }
+    }
+    fn slow_worker(
+        store: JobStore,
+        dir: &std::path::Path,
+    ) -> (Worker, Arc<AtomicUsize>, Arc<AtomicUsize>, Arc<AtomicBool>) {
+        let active = Arc::new(AtomicUsize::new(0));
+        let peak = Arc::new(AtomicUsize::new(0));
+        let finished = Arc::new(AtomicBool::new(false));
+        let worker = Worker::new(store, JobLogs::new(dir.join("logs")), "slow-worker")
+            .with_host("vps")
+            .with_handler(Arc::new(Slow {
+                active: Arc::clone(&active),
+                peak: Arc::clone(&peak),
+                finished: Arc::clone(&finished),
+            }))
+            .with_lease(Duration::milliseconds(30));
+        (worker, active, peak, finished)
+    }
+
+    #[tokio::test]
+    async fn a_long_running_native_handler_keeps_its_lease_while_a_sibling_recovers() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("jobs.db");
+        let store = JobStore::open(&path).unwrap();
+        let job = store.submit(&JobSpec::new("slow", serde_json::json!({}))).unwrap();
+        let observer = JobStore::open(&path).unwrap();
+        let (worker, _, _, finished) = slow_worker(store, dir.path());
+        let observation = async {
+            tokio::time::sleep(std::time::Duration::from_millis(70)).await;
+            assert!(observer.recover().unwrap().is_clean());
+            assert!(
+                observer
+                    .claim_matching("sibling", Some("vps"), &["slow"], Duration::seconds(1))
+                    .unwrap()
+                    .is_none()
+            );
+        };
+        let (result, ()) = tokio::join!(worker.run_once(), observation);
+        assert_eq!(result.unwrap(), Some(Outcome::Succeeded(job.id)));
+        assert!(finished.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn cancellation_drops_an_owned_handler_before_it_finishes() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("jobs.db");
+        let store = JobStore::open(&path).unwrap();
+        let job = store.submit(&JobSpec::new("slow", serde_json::json!({}))).unwrap();
+        let observer = JobStore::open(&path).unwrap();
+        let (worker, active, _, finished) = slow_worker(store, dir.path());
+        let cancellation = async {
+            tokio::time::sleep(std::time::Duration::from_millis(25)).await;
+            observer.cancel(&job.id).unwrap();
+        };
+        let (result, ()) = tokio::join!(worker.run_once(), cancellation);
+        assert_eq!(result.unwrap(), Some(Outcome::Cancelled(job.id)));
+        assert_eq!(active.load(Ordering::SeqCst), 0);
+        assert!(!finished.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn bounded_parallel_handlers_run_together_without_overclaiming_the_batch() {
+        let dir = tempfile::tempdir().unwrap();
+        let (worker, active, peak, _) = slow_worker(JobStore::in_memory().unwrap(), dir.path());
+        for _ in 0..9 {
+            worker.store().submit(&JobSpec::new("slow", serde_json::json!({}))).unwrap();
+        }
+        let outcomes = worker.drain_parallel(7, NonZeroUsize::new(3).unwrap()).await.unwrap();
+        assert_eq!(outcomes.len(), 7);
+        assert_eq!(peak.load(Ordering::SeqCst), 3);
+        assert_eq!(active.load(Ordering::SeqCst), 0);
+        assert_eq!(worker.store().stats().unwrap().queued, 2);
+        assert!(worker.drain_parallel(0, NonZeroUsize::new(3).unwrap()).await.unwrap().is_empty());
     }
 
     #[tokio::test]
@@ -398,14 +618,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn an_unregistered_kind_is_reported_by_name() {
+    async fn an_unregistered_kind_stays_queued_without_consuming_attempts() {
         let (w, _dir) =
             worker(Fixed { kind: "known", answer: Ok(serde_json::json!(1)), permanent: false });
         let job = w.store().submit(&JobSpec::new("unknown", serde_json::json!({}))).unwrap();
 
-        assert_eq!(w.run_once().await.unwrap(), Some(Outcome::Failed(job.id.clone())));
+        assert_eq!(w.run_once().await.unwrap(), None);
         let after = w.store().get(&job.id).unwrap();
-        assert!(after.last_error.as_deref().unwrap().contains("unknown"), "{after:?}");
+        assert_eq!(after.state, JobState::Queued);
+        assert_eq!(after.attempts, 0);
+        assert!(after.last_error.is_none());
     }
 
     #[tokio::test]

@@ -4,12 +4,14 @@
 //! The former `aphrody-mcp` binary is the [`cli_main`] entry point of this library, reached
 //! through the `aphrody` multi-call binary (invocation name `aphrody-mcp` or the
 //! `aphrody mcp-server` subcommand).
+mod a2a_auth;
 mod client_cmd;
+mod environment;
 #[cfg(not(target_arch = "wasm32"))]
 mod gemini_tools;
+mod http_rest;
 #[cfg(not(target_arch = "wasm32"))]
 mod kernel_tools;
-mod http_rest;
 mod native_crawl_tools;
 mod public_web_tools;
 #[cfg(not(target_arch = "wasm32"))]
@@ -38,14 +40,14 @@ mod photoshop_bridge;
 // backend the base server has no use for; `--features toolbox` turns on all
 // three. Native-only for the same reason as the voice tools: every backend
 // spawns a child process or touches a real filesystem.
+#[cfg(feature = "rag")]
+mod home_tools;
 #[cfg(all(feature = "jobs", not(target_arch = "wasm32")))]
 mod jobs_tools;
 #[cfg(all(feature = "ocr", not(target_arch = "wasm32")))]
 mod ocr_tools;
 #[cfg(all(feature = "rag", not(target_arch = "wasm32")))]
 mod rag_tools;
-#[cfg(feature = "rag")]
-mod home_tools;
 #[cfg(all(feature = "stt-local", not(target_arch = "wasm32")))]
 mod stt_local_tools;
 #[cfg(all(feature = "vision", not(target_arch = "wasm32")))]
@@ -109,6 +111,9 @@ use crate::client_cmd::{ClientArgs, run as run_client};
              `tools/list` over stdio is the only authoritative count."
 )]
 struct Cli {
+    /// Load a protected dotenv file before starting the native runtime.
+    #[arg(long, global = true, env = "APHRODY_MCP_ENV_FILE")]
+    env_file: Option<std::path::PathBuf>,
     #[command(subcommand)]
     command: Option<TopCommand>,
 }
@@ -2132,8 +2137,13 @@ impl GoogleMcpServer {
         }
         let endpoint = a2a_endpoint();
         let id = A2A_REQUEST_ID.fetch_add(1, Ordering::Relaxed);
-        let response = context7_client()
-            .post(&endpoint)
+        let request = context7_client().post(&endpoint);
+        let request = match a2a_auth::token() {
+            Ok(Some(token)) => request.bearer_auth(token),
+            Ok(None) => request,
+            Err(reason) => return json!({ "error": "A2A_AUTH", "reason": reason }).to_string(),
+        };
+        let response = request
             .json(&json!({
                 "jsonrpc": "2.0",
                 "id": id,
@@ -2597,6 +2607,18 @@ impl GoogleMcpServer {
     ) -> String {
         jobs_tools::status(req).await
     }
+
+    #[tool(
+        description = "Cancel a persistent job by id. Queued work is cancelled immediately; a running \
+                          native handler stops at its next lease heartbeat. Returns durable state \
+                          and queue stats."
+    )]
+    async fn aphrody_job_cancel(
+        &self,
+        Parameters(req): Parameters<jobs_tools::JobCancelRequest>,
+    ) -> String {
+        jobs_tools::cancel(req).await
+    }
 }
 
 // Own impl block (see the note above the toolbox routers): the tool is
@@ -2645,11 +2667,13 @@ impl GoogleMcpServer {
         rag_tools::context(req).await
     }
 
-    #[tool(description = "Search the agent home database (one SQLite file per home: `<home>/db/aphrody.sqlite`) \
+    #[tool(
+        description = "Search the agent home database (one SQLite file per home: `<home>/db/aphrody.sqlite`) \
                           with a single hybrid query over document chunks, code-graph nodes and \
                           memories (FTS5 plus one reciprocal-rank fusion). Optional kinds filter \
                           (chunk, node, memory) and profile (aphrody, dbfr, ie). Build it with \
-                          `aphrody home index <dir>`. Returns ranked hits with path, line and snippet.")]
+                          `aphrody home index <dir>`. Returns ranked hits with path, line and snippet."
+    )]
     async fn aphrody_home_query(
         &self,
         Parameters(req): Parameters<home_tools::HomeQueryRequest>,
@@ -2657,8 +2681,10 @@ impl GoogleMcpServer {
         home_tools::query(req).await
     }
 
-    #[tool(description = "Status of the agent home database: path, schema version and table counts \
-                          (sources, files, docs, chunks, graph nodes and edges, memories, sessions).")]
+    #[tool(
+        description = "Status of the agent home database: path, schema version and table counts \
+                          (sources, files, docs, chunks, graph nodes and edges, memories, sessions)."
+    )]
     async fn aphrody_home_status(
         &self,
         Parameters(req): Parameters<home_tools::HomeStatusRequest>,
@@ -2839,9 +2865,12 @@ impl ServerHandler for GoogleMcpServer {
     async fn list_tools(
         &self,
         _request: Option<rmcp::model::PaginatedRequestParams>,
-        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<rmcp::model::ListToolsResult, rmcp::ErrorData> {
-        Ok(rmcp::model::ListToolsResult::with_all_items(Self::every_tool().await))
+        Ok(protocol::cacheable_result(
+            rmcp::model::ListToolsResult::with_all_items(Self::every_tool().await),
+            context.protocol_version(),
+        ))
     }
 
     fn get_tool(&self, name: &str) -> Option<rmcp::model::Tool> {
@@ -2890,28 +2919,44 @@ impl ServerHandler for GoogleMcpServer {
     async fn list_resources(
         &self,
         _request: Option<rmcp::model::PaginatedRequestParams>,
-        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<rmcp::model::ListResourcesResult, rmcp::ErrorData> {
-        Ok(protocol::list_resources())
+        Ok(protocol::cacheable_result(protocol::list_resources(), context.protocol_version()))
+    }
+
+    async fn list_resource_templates(
+        &self,
+        _request: Option<rmcp::model::PaginatedRequestParams>,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<rmcp::model::ListResourceTemplatesResult, rmcp::ErrorData> {
+        Ok(protocol::cacheable_result(
+            rmcp::model::ListResourceTemplatesResult::default(),
+            context.protocol_version(),
+        ))
     }
 
     async fn read_resource(
         &self,
         request: rmcp::model::ReadResourceRequestParams,
-        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<rmcp::model::ReadResourceResponse, rmcp::ErrorData> {
         let tools = Self::every_tool().await;
-        protocol::read_resource(&request.uri, &tools).map(Into::into).ok_or_else(|| {
-            rmcp::ErrorData::resource_not_found(format!("unknown resource {}", request.uri), None)
-        })
+        protocol::read_resource(&request.uri, &tools)
+            .map(|result| protocol::cacheable_result(result, context.protocol_version()).into())
+            .ok_or_else(|| {
+                rmcp::ErrorData::resource_not_found(
+                    format!("unknown resource {}", request.uri),
+                    None,
+                )
+            })
     }
 
     async fn list_prompts(
         &self,
         _request: Option<rmcp::model::PaginatedRequestParams>,
-        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<rmcp::model::ListPromptsResult, rmcp::ErrorData> {
-        Ok(protocol::list_prompts())
+        Ok(protocol::cacheable_result(protocol::list_prompts(), context.protocol_version()))
     }
 
     async fn get_prompt(
@@ -3005,9 +3050,27 @@ fn set_default_env_var(key: &str, val: &str) {
     }
 }
 
-fn init_adaptive_env() {
+fn init_adaptive_env(env_file: Option<&std::path::Path>) -> Result<()> {
     // 1. Load the nearest .env file (gemini-cli walk-up rules)
-    let _ = aphrody_a2a_server::load_environment(None);
+    if let Some(path) = env_file {
+        for (key, value) in
+            environment::read_private_environment(path).map_err(anyhow::Error::msg)?
+        {
+            if matches!(
+                key.as_str(),
+                "APHRODY_HOME" | "APHRODY_WORKSPACE" | "APHRODY_PROFILE" | "APHRODY_AGENT_DOMAIN"
+            ) && std::env::var_os(&key).is_some()
+            {
+                continue;
+            }
+            // SAFETY: cli_main calls this before creating the runtime or starting its threads.
+            unsafe {
+                std::env::set_var(key, value);
+            }
+        }
+    } else {
+        let _ = aphrody_a2a_server::load_environment(None);
+    }
 
     // 2. Resolve project root
     let root = find_project_root().unwrap_or_else(|| {
@@ -3047,6 +3110,7 @@ fn init_adaptive_env() {
     // set, rather than silently trying a port nothing is listening on.
     set_default_env_var("REDIS_URL", "redis://127.0.0.1:6379");
     set_default_env_var("GOOGLE_CLOUD_PROJECT", "aphrody");
+    Ok(())
 }
 
 /// Entry point of the former `aphrody-mcp` binary, now reached through the `aphrody` multi-call binary.
@@ -3060,6 +3124,10 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
             return code;
         },
     };
+    if let Err(error) = init_adaptive_env(cli.env_file.as_deref()) {
+        eprintln!("Error: {error}");
+        return 1;
+    }
     let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
         Ok(runtime) => runtime,
         Err(err) => {
@@ -3077,9 +3145,6 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
 }
 
 async fn run(cli: Cli) -> Result<()> {
-    // Set up adaptive environment first
-    init_adaptive_env();
-
     // reqwest is built with `rustls-no-provider`; a CryptoProvider must be
     // installed before the first TLS connection or reqwest panics at runtime
     // with "No provider set" (async_impl/client.rs). The workspace `rustls`

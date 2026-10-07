@@ -140,7 +140,7 @@ export function webNormalizeUrl(url: string): string {
 
 export interface WebHttpRequestOptions {
   method?: "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS";
-  headers?: HeadersInit;
+  headers?: ConstructorParameters<typeof Headers>[0];
   body?: string;
   cookies?: string;
   timeoutMs?: number;
@@ -475,7 +475,11 @@ export function webJobCancel(id: number): boolean {
 }
 
 /** Wait for a native job without blocking Bun, then release its handle. */
-export async function webJobWait(id: number, timeoutMs = 30_000): Promise<string> {
+export async function webJobWait(
+  id: number,
+  timeoutMs = 30_000,
+  options: { signal?: AbortSignal } = {},
+): Promise<string> {
   validateJobId(id);
   if (!Number.isFinite(timeoutMs) || timeoutMs < 0) {
     throw new RangeError("native job timeout must be non-negative");
@@ -483,6 +487,7 @@ export async function webJobWait(id: number, timeoutMs = 30_000): Promise<string
   const deadline = Date.now() + timeoutMs;
   try {
     while (true) {
+      options.signal?.throwIfAborted();
       const result = webJobTake(id);
       if (result !== null) return result;
       const remaining = deadline - Date.now();

@@ -16,6 +16,20 @@ export interface Outcome {
   stderr: string;
 }
 
+export interface DragonBallProjectionOptions {
+  kind:
+    | "catalogue"
+    | "gallery"
+    | "inventory"
+    | "toei"
+    | "jump"
+    | "translation"
+    | "official"
+    | "reader";
+  baseUrl: string;
+  slug?: string;
+}
+
 export interface Cli {
   /** Package version of the pure command crate. */
   readonly version: string;
@@ -25,6 +39,8 @@ export interface Cli {
   json<T = unknown>(args: readonly string[], options?: RunOptions): T;
   /** Run and return stdout; throws with stderr when the command fails. */
   text(args: readonly string[], options?: RunOptions): string;
+  /** Pure source projection; shares the native Web parser without network or filesystem access. */
+  dragonBall<T = unknown>(html: string, options: DragonBallProjectionOptions): T;
 }
 
 const exec = (args: readonly string[], options: RunOptions = {}): Outcome =>
@@ -43,6 +59,23 @@ function open(): Cli {
     text,
     json: <T = unknown>(args: readonly string[], options?: RunOptions) =>
       JSON.parse(text(args, options)) as T,
+    dragonBall: <T = unknown>(html: string, options: DragonBallProjectionOptions) =>
+      JSON.parse(
+        text(
+          [
+            "html",
+            "dragon-ball",
+            "-",
+            "--kind",
+            options.kind,
+            "--base-url",
+            options.baseUrl,
+            "--slug",
+            options.slug ?? "",
+          ],
+          { stdin: html },
+        ),
+      ) as T,
   };
 }
 

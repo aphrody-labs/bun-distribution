@@ -54,11 +54,11 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | operations | [ai](operations/ai/) | 6 | - |
 | operations | [cloud](operations/cloud/) | 4 | - |
 | operations | [container](operations/container/) | 2 | - |
-| operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
-| operations | [infra](operations/infra/) | 27 | - |
+| operations | [discord](operations/discord/) | 3 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
+| operations | [infra](operations/infra/) | 28 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
-| operations | [web](operations/web/) | 1 | - |
+| operations | [web](operations/web/) | 3 | - |
 | operations | [workspace](operations/workspace/) | 2 | - |
 | plans | [agent-home-pipeline](plans/agent-home-pipeline/) | 1 | [Agent home, one database, one pipeline, one RAG](plans/agent-home-pipeline/PLAN.md) |
 | plans | [ai](plans/ai/) | 18 | [Delivery plan](plans/ai/PLAN.md) |
@@ -119,4 +119,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 3231 files.
+Total: 3235 files.

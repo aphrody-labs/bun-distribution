@@ -7,6 +7,12 @@
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum JobError {
+    /// A scheduling request cannot be safely claimed.
+    #[error("invalid job specification: {0}")]
+    InvalidSpec(String),
+    /// A worker's lease or concurrency configuration is invalid.
+    #[error("invalid worker configuration: {0}")]
+    InvalidWorkerConfig(&'static str),
     /// The `SQLite` layer failed.
     #[error("sqlite error: {0}")]
     Sqlite(#[from] rusqlite::Error),

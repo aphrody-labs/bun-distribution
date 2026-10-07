@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: Apache-2.0
+# DBFR local queue control. Bearer token remains in this host's protected EnvironmentFile.
+[Unit]
+Description=Aphrody DBFR MCP Streamable HTTP server (aphrody-mcp http, 127.0.0.1:8793, loopback only, Bearer token)
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=10
+StartLimitIntervalSec=600
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/.aphrody
+Environment=HOME=/home/ubuntu
+Environment=XDG_CACHE_HOME=/home/ubuntu/.aphrody/xdg/cache
+Environment=XDG_CONFIG_HOME=/home/ubuntu/.aphrody/xdg/config
+Environment=XDG_DATA_HOME=/home/ubuntu/.aphrody/xdg/data
+Environment=RUST_LOG=info
+EnvironmentFile=/etc/aphrody/aphrody-mcp-http.env
+EnvironmentFile=-/etc/aphrody/aphrody-a2a.env
+ExecStart=/home/ubuntu/.local/bin/aphrody-mcp http --bind 127.0.0.1:8793
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+
+# Resources: the Shenron site and bot share the host, so this server yields under contention.
+MemoryAccounting=true
+MemoryHigh=3G
+MemoryMax=4G
+TasksMax=1024
+LimitNOFILE=65536
+CPUWeight=50
+Nice=5
+
+# Sandbox, on top of the run-as-ubuntu, sandbox-base, sandbox-kernel, net-inet-only and syscall-service drop-ins.
+# /home is an empty tmpfs: only the binary (read-only) and the state directory (read-write) are mapped in, so
+# ~/.ssh, ~/.config, other tokens and the other binaries are not visible. JIT needs W+X pages, hence no
+# MemoryDenyWriteExecute.
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody-mcp /home/ubuntu/.local/bin/aphrody
+BindPaths=/home/ubuntu/.aphrody
+ReadWritePaths=/home/ubuntu/.aphrody
+InaccessiblePaths=-/run/docker.sock -/var/run/docker.sock -/run/containerd -/var/lib/lxd -/run/user
+ProtectProc=invisible
+PrivateDevices=true
+RestrictNamespaces=true
+RestrictRealtime=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+# The in-process browser (V8) calls pkey_alloc at start; @system-service does not allow it and the process would die
+# with SIGSYS on the first browser tool (observed 2026-10-06 under this exact sandbox).
+SystemCallFilter=@pkey
+UMask=0077
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-mcp-http
+
+[Install]
+WantedBy=multi-user.target

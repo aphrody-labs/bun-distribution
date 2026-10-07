@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 use std::{net::SocketAddr, sync::Arc};
 
-use aphrody_a2a::AgentCapabilities;
+use aphrody_a2a::{AgentCapabilities, ListTasksRequest, TaskState};
 use aphrody_a2a_server::{
-    DefaultRequestHandler, InMemoryTaskStore, StaticAgentCard, agent_card::agent_card_router,
+    DefaultRequestHandler, FsTaskStore, StaticAgentCard, TaskStore, agent_card::agent_card_router,
     jsonrpc::jsonrpc_router, rest::rest_router,
 };
 use axum::{
@@ -40,12 +40,15 @@ struct AppState {
 pub fn router(cfg: &ListenerConfig) -> Router {
     let coord_dir = cfg.manifest.coord_dir(&cfg.repo_root);
     let mailbox = Mailbox::new(coord_dir);
-    router_with_mailbox(cfg, mailbox)
+    crate::auth::protect(router_with_mailbox(cfg, mailbox), crate::auth::token())
 }
 
 /// Build the HTTP surface with all A2A files scoped to one Home Agent profile.
 pub fn router_for_profile(cfg: &ListenerConfig, profile_root: &std::path::Path) -> Router {
-    router_with_mailbox(cfg, Mailbox::for_profile_root(profile_root))
+    crate::auth::protect(
+        router_with_mailbox(cfg, Mailbox::for_profile_root(profile_root)),
+        crate::auth::token(),
+    )
 }
 
 fn router_with_mailbox(cfg: &ListenerConfig, mailbox: Mailbox) -> Router {
@@ -67,9 +70,12 @@ fn router_with_mailbox(cfg: &ListenerConfig, mailbox: Mailbox) -> Router {
         cfg.repo_root.clone(),
         mailbox.clone(),
         dry_run,
+    )
+    .with_default_peer(
+        crate::executor::default_peer_from_env().unwrap_or(crate::peer::PeerId::Grok),
     );
     let handler = Arc::new(
-        DefaultRequestHandler::new(executor, InMemoryTaskStore::default())
+        DefaultRequestHandler::new(executor, FsTaskStore::new(mailbox.coord_dir.join("a2a")))
             .with_capabilities(capabilities),
     );
     let a2a_rpc = jsonrpc_router(handler.clone());
@@ -90,11 +96,429 @@ fn router_with_mailbox(cfg: &ListenerConfig, mailbox: Mailbox) -> Router {
         .merge(crate::bridge::a2a_router(state_mailbox, cfg.manifest.id.clone()))
         .merge(crate::task_api::task_api_router(
             task_api_root,
-            std::env::var("APHRODY_A2A_COORD_TOKEN").ok().filter(|token| !token.is_empty()),
+            None, // The outer listener layer authenticates every private route.
         ))
         .merge(agent_card_router(card_producer))
         .merge(a2a_rpc)
         .merge(a2a_rest)
+}
+
+#[cfg(test)]
+mod auth_tests {
+    use super::*;
+    use axum::{body::Body, http::Request};
+    use tower::ServiceExt;
+
+    fn config(root: &std::path::Path) -> ListenerConfig {
+        ListenerConfig {
+            bind: "127.0.0.1:8788".parse().unwrap(),
+            manifest: serde_json::from_value(serde_json::json!({
+                "version":"1", "spec":"a2a/v1.0", "id":"aphrody-test",
+                "schema_version":"1", "kind":"agent", "coord":{"mailbox_dir":".coord"}
+            }))
+            .unwrap(),
+            repo_root: root.to_path_buf(),
+            dry_run: true,
+        }
+    }
+
+    fn saved_task(id: &str, state: TaskState) -> aphrody_a2a::Task {
+        serde_json::from_value(serde_json::json!({
+            "id":id, "contextId":"saved-context", "status":{"state":state},
+            "history":[{"messageId":"saved-message", "role":"ROLE_USER", "parts":[{"text":"saved history"}]}],
+            "artifacts":[{"artifactId":"saved-artifact", "parts":[{"text":"saved result"}]}],
+            "metadata":{"owner":"preserved"}
+        }))
+        .unwrap()
+    }
+
+    #[tokio::test]
+    async fn every_private_binding_rejects_missing_and_wrong_bearers() {
+        let root = tempfile::tempdir().unwrap();
+        let private = tempfile::tempdir().unwrap();
+        let app = crate::auth::protect(
+            legacy_router(&config(root.path()), private.path()),
+            Some("test-credential".into()),
+        );
+        for (method, path) in [
+            ("POST", "/"),
+            ("POST", "/a2a"),
+            ("POST", "/msg"),
+            ("GET", "/coord"),
+            ("POST", "/message:send"),
+            ("GET", "/tasks"),
+            ("GET", "/coord/aphrody/tasks"),
+            ("POST", "/coord/aphrody/envelopes"),
+            ("POST", "/jsonrpc"),
+            ("GET", "/events"),
+        ] {
+            for credential in [None, Some("Bearer wrong")] {
+                let mut request = Request::builder().method(method).uri(path);
+                if let Some(credential) = credential {
+                    request = request.header("authorization", credential);
+                }
+                let response =
+                    app.clone().oneshot(request.body(Body::empty()).unwrap()).await.unwrap();
+                assert_eq!(response.status(), StatusCode::UNAUTHORIZED, "{method} {path}");
+            }
+        }
+        for path in ["/ping", "/.well-known/agent-card.json"] {
+            let response = app
+                .clone()
+                .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+        }
+        assert!(!root.path().join(".coord").exists());
+    }
+
+    #[tokio::test]
+    async fn authenticated_tasks_use_the_explicit_private_directory() {
+        let root = tempfile::tempdir().unwrap();
+        let private = tempfile::tempdir().unwrap();
+        let app = crate::auth::protect(
+            legacy_router(&config(root.path()), private.path()),
+            Some("test-credential".into()),
+        );
+        let request = Request::builder()
+            .method("POST")
+            .uri("/coord/aphrody/tasks")
+            .header("authorization", "Bearer test-credential")
+            .header("content-type", "application/json")
+            .body(Body::from(r#"{"id":"owned-task","body":"private"}"#))
+            .unwrap();
+        assert_eq!(app.clone().oneshot(request).await.unwrap().status(), StatusCode::CREATED);
+        assert!(private.path().join("agents/aphrody/tasks/owned-task.json").is_file());
+        assert!(!root.path().join(".coord").exists());
+        let request = Request::builder()
+            .uri("/tasks")
+            .header("authorization", "Bearer test-credential")
+            .body(Body::empty())
+            .unwrap();
+        assert_eq!(app.oneshot(request).await.unwrap().status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn protocol_tasks_remain_queryable_after_reconstructing_the_listener() {
+        use http_body_util::BodyExt;
+
+        let root = tempfile::tempdir().unwrap();
+        let private = tempfile::tempdir().unwrap();
+        let cfg = config(root.path());
+        let response = legacy_router(&cfg, private.path())
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::json!({
+                            "jsonrpc":"2.0", "id":1, "method":"SendMessage",
+                            "params":{"message":{
+                                "messageId":"durable-probe", "role":"ROLE_USER",
+                                "parts":[{"text":"@codex durable probe"}]
+                            }}
+                        })
+                        .to_string(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let value: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert!(value.get("error").is_none(), "protocol probe failed: {value}");
+        let task_id = value["result"]["task"]["id"]
+            .as_str()
+            .or_else(|| value["result"]["id"].as_str())
+            .expect("completed protocol task");
+        assert!(private.path().join("a2a/tasks").join(format!("{task_id}.json")).is_file());
+        let response = legacy_router(&cfg, private.path())
+            .oneshot(
+                Request::builder().uri(format!("/tasks/{task_id}")).body(Body::empty()).unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(!root.path().join(".coord").exists());
+    }
+
+    #[tokio::test]
+    async fn immediate_submission_acknowledges_before_peer_completion() {
+        use aphrody_a2a_server::TaskStore;
+        use http_body_util::BodyExt;
+
+        let root = tempfile::tempdir().unwrap();
+        let private = tempfile::tempdir().unwrap();
+        let response = legacy_router(&config(root.path()), private.path())
+            .oneshot(
+                Request::builder().method("POST").uri("/")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::json!({
+                        "jsonrpc":"2.0", "id":1, "method":"SendMessage",
+                        "params":{
+                            "message":{"messageId":"immediate-probe", "role":"ROLE_USER", "parts":[{"text":"@codex immediate probe"}]},
+                            "configuration":{"returnImmediately":true}
+                        }
+                    }).to_string())).unwrap(),
+            ).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let value: serde_json::Value =
+            serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())
+                .unwrap();
+        let task = &value["result"]["task"];
+        assert!(matches!(
+            task["status"]["state"].as_str(),
+            Some("TASK_STATE_WORKING" | "TASK_STATE_COMPLETED")
+        ));
+        let id = task["id"].as_str().unwrap();
+        let store = aphrody_a2a_server::FsTaskStore::new(private.path().join("a2a"));
+        let completed = tokio::time::timeout(std::time::Duration::from_secs(2), async {
+            loop {
+                if let Ok(Some(task)) = store.get(id).await
+                    && task.status.state.is_terminal()
+                {
+                    break task;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!(completed.status.state, aphrody_a2a::TaskState::Completed);
+    }
+
+    #[tokio::test]
+    async fn closing_the_stream_does_not_cancel_the_background_task() {
+        use aphrody_a2a::TaskState;
+        use aphrody_a2a_server::TaskStore;
+
+        let root = tempfile::tempdir().unwrap();
+        let private = tempfile::tempdir().unwrap();
+        let response = legacy_router(&config(root.path()), private.path())
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/message:stream")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::json!({"message":{
+                            "messageId":"disconnect-probe", "taskId":"disconnected-task",
+                            "contextId":"disconnect-context", "role":"ROLE_USER",
+                            "parts":[{"text":"@codex disconnected probe"}]
+                        }})
+                        .to_string(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        drop(response);
+        let store = FsTaskStore::new(private.path().join("a2a"));
+        tokio::time::timeout(std::time::Duration::from_secs(2), async {
+            loop {
+                if let Some(task) = store.get("disconnected-task").await.unwrap()
+                    && task.status.state == TaskState::Completed
+                {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("background execution survived the disconnected stream");
+    }
+
+    #[tokio::test]
+    async fn peer_launcher_failure_becomes_a_durable_failed_task_after_ack() {
+        use http_body_util::BodyExt;
+
+        let root = tempfile::tempdir().unwrap();
+        let private = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(root.path().join(".coord/shared")).unwrap();
+        std::fs::write(root.path().join(".coord/shared/branch"), "private-branch-detail\n")
+            .unwrap();
+        let response = legacy_router(&config(root.path()), private.path())
+            .oneshot(
+                Request::builder().method("POST").uri("/")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::json!({
+                        "jsonrpc":"2.0", "id":1, "method":"SendMessage",
+                        "params":{
+                            "message":{"messageId":"failure-input", "taskId":"failure-task", "contextId":"failure-context", "role":"ROLE_USER", "parts":[{"text":"@codex failure probe"}]},
+                            "configuration":{"returnImmediately":true}
+                        }
+                    }).to_string())).unwrap(),
+            )
+            .await
+            .unwrap();
+        let value: serde_json::Value =
+            serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())
+                .unwrap();
+        assert!(value.get("error").is_none());
+        let acknowledged = &value["result"]["task"];
+        assert_eq!(acknowledged["id"], "failure-task");
+        assert!(matches!(
+            acknowledged["status"]["state"].as_str(),
+            Some("TASK_STATE_WORKING" | "TASK_STATE_FAILED")
+        ));
+        let store = FsTaskStore::new(private.path().join("a2a"));
+        let failed = tokio::time::timeout(std::time::Duration::from_secs(2), async {
+            loop {
+                if let Some(task) = store.get("failure-task").await.unwrap()
+                    && task.status.state.is_terminal()
+                {
+                    break task;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!(failed.status.state, TaskState::Failed);
+        assert_eq!(failed.context_id, "failure-context");
+        let value = serde_json::to_value(&failed).unwrap();
+        assert_eq!(value["history"][0]["messageId"], "failure-input");
+        assert_eq!(value["metadata"], acknowledged["metadata"]);
+        let status = serde_json::to_string(&failed.status).unwrap();
+        assert!(status.contains("shared checkout branch mismatch"));
+        assert!(!status.contains("private-branch-detail"));
+        assert_eq!(
+            FsTaskStore::new(private.path().join("a2a")).get("failure-task").await.unwrap(),
+            Some(failed)
+        );
+    }
+
+    #[tokio::test]
+    async fn restart_recovery_covers_all_pages_and_preserves_suspended_and_other_profiles() {
+        let private = tempfile::tempdir().unwrap();
+        let other = tempfile::tempdir().unwrap();
+        let store = FsTaskStore::new(private.path().join("a2a"));
+        let other_store = FsTaskStore::new(other.path().join("a2a"));
+        let outside = saved_task("other-profile", TaskState::Working);
+        other_store.create(outside.clone()).await.unwrap();
+        let mut interrupted = Vec::new();
+        for index in 0..103 {
+            let state = if index % 2 == 0 { TaskState::Submitted } else { TaskState::Working };
+            let task = saved_task(&format!("interrupted-{index:03}"), state);
+            store.create(task.clone()).await.unwrap();
+            interrupted.push(task);
+        }
+        let suspended = [
+            saved_task("auth-required", TaskState::AuthRequired),
+            saved_task("input-required", TaskState::InputRequired),
+            saved_task("completed", TaskState::Completed),
+        ];
+        for task in &suspended {
+            store.create(task.clone()).await.unwrap();
+        }
+        assert_eq!(reconcile_interrupted_tasks(private.path()).await.unwrap(), 103);
+        let reopened = FsTaskStore::new(private.path().join("a2a"));
+        for task in interrupted {
+            let failed = reopened.get(&task.id).await.unwrap().unwrap();
+            assert_eq!(failed.status.state, TaskState::Failed);
+            assert_eq!(failed.context_id, task.context_id);
+            assert_eq!(failed.artifacts, task.artifacts);
+            assert_eq!(failed.history, task.history);
+            assert_eq!(failed.metadata, task.metadata);
+            assert!(failed.status.timestamp.is_some());
+        }
+        for task in suspended {
+            assert_eq!(reopened.get(&task.id).await.unwrap(), Some(task));
+        }
+        assert_eq!(other_store.get(&outside.id).await.unwrap(), Some(outside));
+        assert_eq!(reconcile_interrupted_tasks(private.path()).await.unwrap(), 0);
+    }
+
+    #[tokio::test]
+    async fn router_construction_and_failed_bind_do_not_recover_live_tasks() {
+        let root = tempfile::tempdir().unwrap();
+        let occupied = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut cfg = config(root.path());
+        cfg.bind = occupied.local_addr().unwrap();
+        let coord = cfg.manifest.coord_dir(root.path());
+        let store = FsTaskStore::new(coord.join("a2a"));
+        let working = saved_task("live-task", TaskState::Working);
+        store.create(working.clone()).await.unwrap();
+        let _app = router(&cfg);
+        assert_eq!(store.get(&working.id).await.unwrap(), Some(working.clone()));
+        assert!(serve(cfg.clone()).await.is_err());
+        assert_eq!(store.get(&working.id).await.unwrap(), Some(working.clone()));
+        assert!(
+            serve_with_options(cfg, ServeOptions { coord_dir: Some(coord), ..Default::default() },)
+                .await
+                .is_err()
+        );
+        assert_eq!(store.get(&working.id).await.unwrap(), Some(working));
+    }
+
+    #[tokio::test]
+    async fn unsupported_native_cancellation_preserves_the_durable_task() {
+        use http_body_util::BodyExt;
+
+        let root = tempfile::tempdir().unwrap();
+        let private = tempfile::tempdir().unwrap();
+        let store = FsTaskStore::new(private.path().join("a2a"));
+        let task = saved_task("uncancellable-task", TaskState::Working);
+        store.create(task.clone()).await.unwrap();
+        let response = legacy_router(&config(root.path()), private.path())
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::json!({
+                            "jsonrpc":"2.0", "id":1, "method":"CancelTask",
+                            "params":{"id":"uncancellable-task"}
+                        })
+                        .to_string(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let value: serde_json::Value =
+            serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())
+                .unwrap();
+        assert_eq!(value["error"]["code"], aphrody_a2a::error_code::TASK_NOT_CANCELABLE);
+        assert_eq!(store.get(&task.id).await.unwrap(), Some(task));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn unix_bind_preserves_an_active_owner_and_non_socket_paths() {
+        let root = tempfile::tempdir().unwrap();
+        let private = tempfile::tempdir().unwrap();
+        let path = private.path().join("active.sock");
+        let active = tokio::net::UnixListener::bind(&path).unwrap();
+        let store = FsTaskStore::new(private.path().join("a2a"));
+        let task = saved_task("live-unix-task", TaskState::Working);
+        store.create(task.clone()).await.unwrap();
+        assert!(
+            serve_with_options(
+                config(root.path()),
+                ServeOptions {
+                    no_tcp: true,
+                    unix: Some(path.clone()),
+                    coord_dir: Some(private.path().to_path_buf()),
+                },
+            )
+            .await
+            .is_err()
+        );
+        assert!(tokio::net::UnixStream::connect(&path).await.is_ok());
+        assert_eq!(store.get(&task.id).await.unwrap(), Some(task));
+        drop(active);
+        let _replacement = bind_unix(&path).await.unwrap();
+        let file = private.path().join("owned-file");
+        std::fs::write(&file, "preserved").unwrap();
+        assert!(bind_unix(&file).await.is_err());
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "preserved");
+    }
 }
 
 async fn handle_ping() -> impl IntoResponse {
@@ -135,10 +559,64 @@ async fn handle_coord(
     }
 }
 
+/// Called once after every listener has bound and before accepting requests.
+/// Interrupted code is never replayed; suspended auth/input contracts are retained.
+async fn reconcile_interrupted_tasks(
+    coord_dir: &std::path::Path,
+) -> Result<usize, aphrody_a2a::A2AError> {
+    let store = FsTaskStore::new(coord_dir.join("a2a"));
+    let mut request = ListTasksRequest {
+        context_id: None,
+        status: None,
+        page_size: Some(100),
+        page_token: None,
+        history_length: None,
+        status_timestamp_after: None,
+        include_artifacts: Some(true),
+        tenant: None,
+    };
+    let mut interrupted = Vec::new();
+    loop {
+        let page = store.list(&request).await?;
+        interrupted.extend(
+            page.tasks
+                .into_iter()
+                .filter(|task| {
+                    matches!(task.status.state, TaskState::Submitted | TaskState::Working)
+                })
+                .map(|task| task.id),
+        );
+        if page.next_page_token.is_empty() {
+            break;
+        }
+        request.page_token = Some(page.next_page_token);
+    }
+    // Collect every page first: changing status timestamps must not reorder a
+    // later page and leave interrupted tasks behind.
+    let mut recovered = 0;
+    for id in interrupted {
+        if let Some(task) = store.get(&id).await?
+            && matches!(task.status.state, TaskState::Submitted | TaskState::Working)
+        {
+            store
+                .update(crate::executor::failed_task(
+                    task,
+                    "execution interrupted by server restart",
+                ))
+                .await?;
+            recovered += 1;
+        }
+    }
+    Ok(recovered)
+}
+
 /// Run the listener until shutdown.
 pub async fn serve(cfg: ListenerConfig) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let app = router(&cfg);
+    crate::executor::default_peer_from_env()?;
+    crate::auth::validate_bind(cfg.bind, crate::auth::token().as_deref())?;
     let listener = TcpListener::bind(cfg.bind).await?;
+    reconcile_interrupted_tasks(&cfg.manifest.coord_dir(&cfg.repo_root)).await?;
+    let app = router(&cfg);
     info!(%cfg.bind, "aphrody A2A coord listener started");
     axum::serve(listener, app).await?;
     Ok(())
@@ -149,8 +627,11 @@ pub async fn serve_profile(
     cfg: ListenerConfig,
     profile_root: &std::path::Path,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let app = router_for_profile(&cfg, profile_root);
+    crate::executor::default_peer_from_env()?;
+    crate::auth::validate_bind(cfg.bind, crate::auth::token().as_deref())?;
     let listener = TcpListener::bind(cfg.bind).await?;
+    reconcile_interrupted_tasks(&Mailbox::for_profile_root(profile_root).coord_dir).await?;
+    let app = router_for_profile(&cfg, profile_root);
     info!(%cfg.bind, profile_root = %profile_root.display(), "aphrody A2A coord listener started");
     axum::serve(listener, app).await?;
     Ok(())
@@ -170,17 +651,50 @@ pub struct ServeOptions {
 
 /// Router = regular surface + legacy broker (`/jsonrpc`, `/events`).
 pub fn router_with_legacy_broker(cfg: &ListenerConfig, coord_dir: &std::path::Path) -> Router {
-    router(cfg).merge(crate::legacy_broker::legacy_broker_router(
-        crate::legacy_broker::LegacyBroker::new(coord_dir),
-    ))
+    crate::auth::protect(legacy_router(cfg, coord_dir), crate::auth::token())
+}
+
+fn legacy_router(cfg: &ListenerConfig, coord_dir: &std::path::Path) -> Router {
+    router_with_mailbox(cfg, Mailbox::new(coord_dir.to_path_buf())).merge(
+        crate::legacy_broker::legacy_broker_router(crate::legacy_broker::LegacyBroker::new(
+            coord_dir,
+        )),
+    )
 }
 
 #[cfg(unix)]
-async fn serve_unix(
-    app: Router,
+async fn bind_unix(
     path: &std::path::Path,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    use std::os::unix::fs::PermissionsExt as _;
+) -> Result<tokio::net::UnixListener, Box<dyn std::error::Error + Send + Sync>> {
+    use std::os::unix::fs::{FileTypeExt as _, PermissionsExt as _};
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            if !metadata.file_type().is_socket() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::AlreadyExists,
+                    "Unix listener path is not a stale socket",
+                )
+                .into());
+            }
+            match tokio::net::UnixStream::connect(path).await {
+                Ok(_) => {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::AddrInUse,
+                        "Unix listener is already active",
+                    )
+                    .into());
+                },
+                Err(error)
+                    if matches!(
+                        error.kind(),
+                        std::io::ErrorKind::ConnectionRefused | std::io::ErrorKind::NotFound
+                    ) => {},
+                Err(error) => return Err(error.into()),
+            }
+        },
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+        Err(error) => return Err(error.into()),
+    }
     match std::fs::remove_file(path) {
         Ok(()) => {},
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {},
@@ -190,9 +704,7 @@ async fn serve_unix(
     if let Err(e) = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o666)) {
         tracing::warn!("chmod socket failed: {e}");
     }
-    info!(socket = %path.display(), "aphrody A2A coord listener started (unix)");
-    axum::serve(listener, app).await?;
-    Ok(())
+    Ok(listener)
 }
 
 /// Run the listener with the legacy broker routes, on TCP and/or a Unix socket.
@@ -200,29 +712,44 @@ pub async fn serve_with_options(
     cfg: ListenerConfig,
     opts: ServeOptions,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    crate::executor::default_peer_from_env()?;
+    if opts.no_tcp && opts.unix.is_none() {
+        return Err("--no-tcp requires --unix".into());
+    }
+    #[cfg(not(unix))]
+    if opts.unix.is_some() {
+        return Err("--unix is not supported on this platform".into());
+    }
+    if !opts.no_tcp {
+        crate::auth::validate_bind(cfg.bind, crate::auth::token().as_deref())?;
+    }
     let coord_dir =
         opts.coord_dir.clone().unwrap_or_else(|| cfg.manifest.coord_dir(&cfg.repo_root));
+    let tcp_listener = if opts.no_tcp { None } else { Some(TcpListener::bind(cfg.bind).await?) };
+    #[cfg(unix)]
+    let unix_listener = match opts.unix.as_deref() {
+        Some(path) => Some(bind_unix(path).await?),
+        None => None,
+    };
+    reconcile_interrupted_tasks(&coord_dir).await?;
     let app = router_with_legacy_broker(&cfg, &coord_dir);
     let tcp = async {
-        if opts.no_tcp {
+        let Some(listener) = tcp_listener else {
             return std::future::pending::<Result<(), Box<dyn std::error::Error + Send + Sync>>>()
                 .await;
-        }
-        let listener = TcpListener::bind(cfg.bind).await?;
+        };
         info!(%cfg.bind, "aphrody A2A coord listener started");
         axum::serve(listener, app.clone()).await?;
         Ok(())
     };
     let unix = async {
-        let served: Result<(), Box<dyn std::error::Error + Send + Sync>> = match opts.unix.as_deref() {
-            #[cfg(unix)]
-            Some(path) => serve_unix(app.clone(), path).await,
-            #[cfg(not(unix))]
-            Some(_) => Err("--unix is not supported on this platform".into()),
-            None if opts.no_tcp => Err("--no-tcp requires --unix".into()),
-            None => std::future::pending().await,
-        };
-        served
+        #[cfg(unix)]
+        if let Some(listener) = unix_listener {
+            info!(socket = ?opts.unix, "aphrody A2A coord listener started (unix)");
+            axum::serve(listener, app.clone()).await?;
+            return Ok(());
+        }
+        std::future::pending::<Result<(), Box<dyn std::error::Error + Send + Sync>>>().await
     };
     tokio::try_join!(tcp, unix).map(|_| ())
 }

@@ -15,7 +15,7 @@
 //! to avoid, and would tie the work's lifetime to the client's.
 //!
 //! Consequence a caller must understand: a submitted job stays `queued` until
-//! a worker (`aphrody job worker`) claims it. `aphrody_job_status` therefore
+//! a worker (`aphrody job run`) claims it. `aphrody_job_status` therefore
 //! reports the queue-wide stats alongside the job, so "nothing is happening"
 //! is visible rather than mistaken for slowness.
 //!
@@ -34,7 +34,7 @@
 
 use std::path::PathBuf;
 
-use aphrody_jobs::{JobLogs, JobSpec, JobStore, ListFilter};
+use aphrody_jobs::{HostAffinity, JobLogs, JobSpec, JobStore, ListFilter};
 use rmcp::schemars::{self, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -55,6 +55,14 @@ const DEFAULT_LOG_TAIL: usize = 20;
 /// through the MCP transport.
 const MAX_LOG_TAIL: usize = 500;
 
+/// Placement references existing catalog hosts; it grants no remote authority.
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+#[serde(tag = "mode", content = "hosts", rename_all = "kebab-case")]
+pub(crate) enum JobHostAffinity {
+    Any,
+    Hosts(Vec<String>),
+}
+
 /// Input schema for `aphrody_job_submit`.
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub(crate) struct JobSubmitRequest {
@@ -64,9 +72,20 @@ pub(crate) struct JobSubmitRequest {
                               queued until a worker registers a handler for it.")]
     pub kind: String,
 
+    /// Optional persistent placement; absent means any capable local worker.
+    #[serde(default)]
+    pub host_affinity: Option<JobHostAffinity>,
+
+    /// Durable caller intent key (1-256 bytes). Retry with identical arguments after a lost acknowledgement.
+    #[serde(default)]
+    pub idempotency_key: Option<String>,
+
     /// Opaque handler arguments. Max 256 KiB serialised.
-    #[schemars(description = "Handler-specific arguments, opaque JSON object. Max 256 KiB \
-                              serialised. Pass large inputs by path, not inline.")]
+    #[schemars(
+        description = "Handler-specific arguments, opaque JSON object. web-pipeline accepts \
+                              {args:[crawl-index|dragon-ball,...]} without aphrody/web prefixes. Max 256 KiB \
+                              serialised. Pass large inputs by path, not inline."
+    )]
     #[serde(default)]
     pub payload: Option<serde_json::Value>,
 
@@ -117,6 +136,12 @@ pub(crate) struct JobStatusRequest {
     pub log_tail: Option<u32>,
 }
 
+/// Cancel a durable job; a running handler stops at its fenced heartbeat.
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+pub(crate) struct JobCancelRequest {
+    pub id: String,
+}
+
 fn pretty(value: &serde_json::Value) -> String {
     serde_json::to_string_pretty(value).unwrap_or_else(|_| value.to_string())
 }
@@ -162,7 +187,45 @@ fn build_spec(req: &JobSubmitRequest) -> Result<JobSpec, String> {
         return Err(format!("payload is {encoded_len}B (> max {MAX_PAYLOAD_BYTES}B)"));
     }
 
+    if kind == "web-pipeline" {
+        let object = payload.as_object().ok_or("web-pipeline payload must be an object")?;
+        if object.len() != 1 || !object.contains_key("args") {
+            return Err("web-pipeline payload accepts only args".into());
+        }
+        let args = object["args"].as_array().ok_or("web-pipeline args must be an array")?;
+        if args.iter().any(|arg| !arg.is_string())
+            || !matches!(
+                args.first().and_then(serde_json::Value::as_str),
+                Some("crawl-index" | "dragon-ball")
+            )
+        {
+            return Err("web-pipeline args must start with crawl-index or dragon-ball".into());
+        }
+    }
     let mut spec = JobSpec::new(kind, payload);
+    if let Some(affinity) = &req.host_affinity {
+        spec = spec.with_host_affinity(match affinity {
+            JobHostAffinity::Any => HostAffinity::Any,
+            JobHostAffinity::Hosts(hosts) => {
+                if hosts.is_empty()
+                    || hosts.len() > 64
+                    || hosts.iter().any(|host| host.trim().is_empty() || host.len() > 128)
+                {
+                    return Err(
+                        "hosts must contain 1-64 non-empty catalog identities (max 128 bytes each)"
+                            .into(),
+                    );
+                }
+                HostAffinity::Hosts(hosts.clone())
+            },
+        });
+    }
+    if let Some(key) = &req.idempotency_key {
+        if key.trim().is_empty() || key.len() > 256 {
+            return Err("idempotency_key must contain 1-256 bytes".into());
+        }
+        spec = spec.with_idempotency_key(key);
+    }
     if let Some(attempts) = req.max_attempts {
         if attempts == 0 || attempts > MAX_ATTEMPTS_CEILING {
             return Err(format!(
@@ -219,6 +282,8 @@ pub(crate) async fn submit(req: JobSubmitRequest) -> String {
         "kind": job.kind,
         "state": job.state.as_str(),
         "priority": job.priority,
+        "host_affinity": job.host_affinity,
+        "idempotency_key": job.idempotency_key,
         "max_attempts": job.max_attempts,
         "created_at": job.created_at,
         "run_after": job.run_after,
@@ -227,7 +292,7 @@ pub(crate) async fn submit(req: JobSubmitRequest) -> String {
         "queue": stats,
         // Stated on every submission because "queued forever" and "slow" look
         // identical from the client side.
-        "note": "queued only; a worker (`aphrody job worker`) must be running for it to execute",
+        "note": "queued only; a worker (`aphrody job run`) must be running for it to execute",
     }))
 }
 
@@ -311,6 +376,26 @@ pub(crate) async fn status(req: JobStatusRequest) -> String {
     }
 }
 
+/// Dispatch the existing queue's cancellation through authenticated MCP.
+pub(crate) async fn cancel(req: JobCancelRequest) -> String {
+    let id = req.id.trim();
+    if id.is_empty() || id.len() > 128 {
+        return error_envelope("JOB_BAD_REQUEST", "id must contain 1-128 bytes");
+    }
+    let id = id.to_owned();
+    let joined = tokio::task::spawn_blocking(move || {
+        let (store, _) = open_store()?;
+        let job = store.cancel(&id).map_err(|error| format!("cancel failed: {error}"))?;
+        Ok::<_, String>(json!({"job":job,"queue":stats_value(&store)}))
+    })
+    .await;
+    match joined {
+        Ok(Ok(value)) => pretty(&value),
+        Ok(Err(reason)) => error_envelope("JOB_STORE_ERROR", reason),
+        Err(error) => error_envelope("JOB_INTERNAL", format!("cancel task panicked: {error}")),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -318,6 +403,8 @@ mod tests {
     fn req(kind: &str) -> JobSubmitRequest {
         JobSubmitRequest {
             kind: kind.to_owned(),
+            host_affinity: None,
+            idempotency_key: None,
             payload: None,
             max_attempts: None,
             priority: None,
@@ -329,7 +416,15 @@ mod tests {
     fn both_schemas_expose_their_documented_fields() {
         let submit = serde_json::to_string(&rmcp::schemars::schema_for!(JobSubmitRequest))
             .expect("schema serialise");
-        for field in ["kind", "payload", "max_attempts", "priority", "run_after"] {
+        for field in [
+            "kind",
+            "payload",
+            "host_affinity",
+            "idempotency_key",
+            "max_attempts",
+            "priority",
+            "run_after",
+        ] {
             assert!(submit.contains(&format!("\"{field}\"")), "submit missing {field}");
         }
         let status = serde_json::to_string(&rmcp::schemars::schema_for!(JobStatusRequest))
@@ -337,6 +432,60 @@ mod tests {
         for field in ["id", "state", "kind", "limit", "log_tail"] {
             assert!(status.contains(&format!("\"{field}\"")), "status missing {field}");
         }
+    }
+
+    #[test]
+    fn web_arguments_and_placement_survive_submission_and_cancellation() {
+        let request: JobSubmitRequest = serde_json::from_value(json!({
+            "kind": "web-pipeline",
+            "payload": {"args":["crawl-index","https://aphrody.com","--label","fleet-probe"]},
+            "host_affinity": {"mode":"hosts","hosts":["vps","wsl"]},
+            "idempotency_key": "remote-intent-test"
+        }))
+        .unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let store = JobStore::open(dir.path().join("jobs.db")).unwrap();
+        let job = store.submit(&build_spec(&request).unwrap()).unwrap();
+        assert_eq!(job.host_affinity, HostAffinity::Hosts(vec!["vps".into(), "wsl".into()]));
+        assert_eq!(job.state, aphrody_jobs::JobState::Queued);
+        assert_eq!(job.attempts, 0);
+        assert_eq!(store.submit(&build_spec(&request).unwrap()).unwrap().id, job.id);
+        let cancelled = store.cancel(&job.id).unwrap();
+        assert_eq!(cancelled.state, aphrody_jobs::JobState::Cancelled);
+        drop(store);
+        assert_eq!(
+            JobStore::open(dir.path().join("jobs.db")).unwrap().get(&job.id).unwrap(),
+            cancelled
+        );
+    }
+
+    #[test]
+    fn web_shell_payload_and_empty_placement_are_refused() {
+        for payload in [
+            json!({"args": []}),
+            json!({"args":["aphrody","web"]}),
+            json!({"args":["status"]}),
+            json!({"args":["crawl-index",3]}),
+            json!({"args":["crawl-index"],"shell":"forbidden"}),
+        ] {
+            let mut request = req("web-pipeline");
+            request.payload = Some(payload);
+            assert!(build_spec(&request).is_err());
+        }
+        let mut request = req("transcribe");
+        request.host_affinity = Some(JobHostAffinity::Hosts(vec![]));
+        assert!(build_spec(&request).is_err());
+        request.host_affinity = Some(JobHostAffinity::Hosts(vec![" ".into()]));
+        assert!(build_spec(&request).is_err());
+    }
+
+    #[tokio::test]
+    async fn blank_cancel_id_is_rejected_before_opening_the_store() {
+        let result: serde_json::Value =
+            serde_json::from_str(&cancel(JobCancelRequest { id: " ".into() }).await).unwrap();
+        assert_eq!(result["error"], "JOB_BAD_REQUEST");
+        let schema = serde_json::to_value(rmcp::schemars::schema_for!(JobCancelRequest)).unwrap();
+        assert!(schema["properties"].get("id").is_some());
     }
 
     #[test]

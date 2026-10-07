@@ -39,8 +39,5 @@
       }
     ]
   },
-  "enabledPlugins": {
-    "chrome-devtools-mcp@claude-plugins-official": true,
-    "browser-use@claude-plugins-official": true
-  }
+  "enabledPlugins": {}
 }

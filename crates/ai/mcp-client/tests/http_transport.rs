@@ -15,7 +15,11 @@ use std::{
     time::Duration,
 };
 
-use aphrody_mcp_client::{McpClient, McpClientError, protocol::parse_call_tool_result};
+use aphrody_mcp_client::{
+    McpClient, McpClientError,
+    protocol::parse_call_tool_result,
+    transport::{HttpTransport, Transport},
+};
 use serde_json::{Value, json};
 
 /// One request observed by the fixture: request line, lower-cased headers, JSON-RPC body.
@@ -61,6 +65,14 @@ fn read_request(reader: &mut BufReader<TcpStream>) -> Seen {
 
 /// Serve `expected` sequential requests, answering each by JSON-RPC method.
 fn serve(listener: TcpListener, expected: usize) -> thread::JoinHandle<Vec<Seen>> {
+    serve_with_session(listener, expected, None)
+}
+
+fn serve_with_session(
+    listener: TcpListener,
+    expected: usize,
+    session: Option<&'static str>,
+) -> thread::JoinHandle<Vec<Seen>> {
     thread::spawn(move || {
         let mut seen = Vec::new();
         for _ in 0..expected {
@@ -100,9 +112,17 @@ fn serve(listener: TcpListener, expected: usize) -> thread::JoinHandle<Vec<Seen>
                 other => panic!("unexpected method: {other}"),
             };
             let status = if response.is_empty() { "202 Accepted" } else { "200 OK" };
+            let session_header = if request.2["method"] == "initialize" {
+                session.map(|id| format!("Mcp-Session-Id: {id}\r\n")).unwrap_or_default()
+            } else if request.2["method"] == "tools/list" {
+                // A successful non-initialize response cannot replace the negotiated session.
+                "Mcp-Session-Id: wrong-method-session\r\n".to_owned()
+            } else {
+                String::new()
+            };
             write!(
                 reader.get_mut(),
-                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: \
+                "HTTP/1.1 {status}\r\n{session_header}Content-Type: application/json\r\nContent-Length: \
                  {}\r\nConnection: close\r\n\r\n{response}",
                 response.len()
             )
@@ -152,6 +172,7 @@ async fn headers_accept_and_bearer_reach_every_request_and_the_raw_result_surviv
             Some("application/json, text/event-stream")
         );
         assert_eq!(headers.get("content-type").map(String::as_str), Some("application/json"));
+        assert!(!headers.contains_key("mcp-session-id"), "stateless server invented a session");
     }
     let methods: Vec<&str> =
         seen.iter().filter_map(|(_, _, body)| body["method"].as_str()).collect();
@@ -159,6 +180,115 @@ async fn headers_accept_and_bearer_reach_every_request_and_the_raw_result_surviv
     let call = &seen[3].2;
     assert_eq!(call["params"]["name"], "echo");
     assert_eq!(call["params"]["arguments"]["text"], "hi");
+}
+
+#[tokio::test]
+async fn initialized_session_reaches_notifications_and_calls_and_ignores_unrelated_headers() {
+    install_crypto_provider();
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind fixture");
+    let address = listener.local_addr().expect("fixture address");
+    let server = serve_with_session(listener, 4, Some("fixture-session"));
+    let mut client =
+        McpClient::from_http(format!("http://{address}/mcp"), Some("fixture-secret".into()), None)
+            .expect("HTTP client");
+    client.initialize().await.expect("initialize");
+    client.list_tools().await.expect("tools/list");
+    client.call_tool_raw("echo", json!({})).await.expect("tools/call");
+    let seen = server.join().expect("fixture");
+    assert!(!seen[0].1.contains_key("mcp-session-id"));
+    for (_, headers, _) in &seen[1..] {
+        assert_eq!(headers.get("mcp-session-id").map(String::as_str), Some("fixture-session"));
+        assert_eq!(headers.get("authorization").map(String::as_str), Some("Bearer fixture-secret"));
+    }
+    assert_eq!(seen[1].2["method"], "notifications/initialized");
+    assert_eq!(seen[3].2["method"], "tools/call");
+}
+
+#[tokio::test]
+async fn rejected_or_malformed_initialize_cannot_install_a_session() {
+    install_crypto_provider();
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind fixture");
+    let address = listener.local_addr().expect("fixture address");
+    let server = thread::spawn(move || {
+        let mut seen = Vec::new();
+        for case in 0..4 {
+            let mut reader = accept(&listener);
+            let request = read_request(&mut reader);
+            let (status, result, session) = match case {
+                0 => ("403 Forbidden", json!({"error": "rejected"}), "bogus-session"),
+                1 => (
+                    "200 OK",
+                    json!({"jsonrpc":"2.0","id":request.2["id"],"error":{"code":-32603,"message":"rejected"}}),
+                    "bogus-session",
+                ),
+                2 => (
+                    "200 OK",
+                    json!({"jsonrpc":"2.0","id":request.2["id"],"result":{}}),
+                    "bogus-session",
+                ),
+                _ => (
+                    "200 OK",
+                    json!({"jsonrpc":"2.0","id":request.2["id"],"result":{"serverInfo":{"name":"fixture"}}}),
+                    "invalid session",
+                ),
+            };
+            let body = result.to_string();
+            write!(
+                reader.get_mut(),
+                "HTTP/1.1 {status}\r\nMcp-Session-Id: {session}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            )
+            .expect("reject initialize");
+            seen.push(request);
+            let mut reader = accept(&listener);
+            let notification = read_request(&mut reader);
+            reader
+                .get_mut()
+                .write_all(
+                    b"HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                )
+                .expect("accept notification");
+            seen.push(notification);
+        }
+        seen
+    });
+    let mut transport =
+        HttpTransport::new(format!("http://{address}/mcp"), None, None).expect("HTTP transport");
+    for _ in 0..4 {
+        let error = transport
+            .call("initialize", json!({}), Duration::from_secs(5))
+            .await
+            .expect_err("invalid initialization must fail");
+        assert!(!error.to_string().contains("bogus-session"));
+        assert!(!error.to_string().contains("invalid session"));
+        transport.notify("notifications/initialized", json!({})).await.expect("notification");
+    }
+    for (_, headers, _) in server.join().expect("fixture") {
+        assert!(!headers.contains_key("mcp-session-id"), "invalid initialize installed a session");
+    }
+}
+
+#[tokio::test]
+async fn notification_rejection_is_reported_with_a_bounded_body() {
+    install_crypto_provider();
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind fixture");
+    let address = listener.local_addr().expect("fixture address");
+    let server = thread::spawn(move || {
+        let mut reader = accept(&listener);
+        let _request = read_request(&mut reader);
+        let body = "x".repeat(4096);
+        write!(
+            reader.get_mut(),
+            "HTTP/1.1 403 Forbidden\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        )
+        .expect("reject notification");
+    });
+    let mut transport =
+        HttpTransport::new(format!("http://{address}/mcp"), None, None).expect("HTTP transport");
+    let error = transport.notify("notifications/initialized", json!({})).await.expect_err("403");
+    assert!(matches!(error, McpClientError::HttpStatus { status:403,body } if body.len()==1024));
+    server.join().expect("fixture");
 }
 
 #[tokio::test]

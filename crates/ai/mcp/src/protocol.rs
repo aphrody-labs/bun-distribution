@@ -18,8 +18,9 @@
 //! - **Prompts**: ready workflows (research, fetch, crawl, Node-to-Bun).
 
 use rmcp::model::{
-    CallToolResult, GetPromptResult, ListPromptsResult, ListResourcesResult, ProtocolVersion,
-    ReadResourceResult, Tool, ToolAnnotations,
+    CacheScope, CallToolResult, GetPromptResult, ListPromptsResult, ListResourceTemplatesResult,
+    ListResourcesResult, ListToolsResult, ProtocolVersion, ReadResourceResult, ResultType, Tool,
+    ToolAnnotations,
 };
 use serde_json::{Value, json};
 
@@ -210,6 +211,50 @@ pub(crate) fn negotiate(requested: &ProtocolVersion) -> ProtocolVersion {
     }
 }
 
+pub(crate) trait CacheableResult {
+    fn add_cache_defaults(&mut self);
+}
+
+macro_rules! impl_cacheable_result {
+    ($($result:ty),+ $(,)?) => {
+        $(
+            impl CacheableResult for $result {
+                fn add_cache_defaults(&mut self) {
+                    if self.result_type.as_ref().is_none_or(ResultType::is_complete) {
+                        self.result_type.get_or_insert(ResultType::COMPLETE);
+                        self.ttl_ms.get_or_insert(0);
+                        self.cache_scope.get_or_insert(CacheScope::Private);
+                    }
+                }
+            }
+        )+
+    };
+}
+
+impl_cacheable_result!(
+    ListToolsResult,
+    ListPromptsResult,
+    ListResourcesResult,
+    ListResourceTemplatesResult,
+    ReadResourceResult,
+);
+
+/// MCP 2026-07-28 requires caching hints on complete list/read results.
+/// SDK constructors leave them absent for compatibility with older peers.
+/// Keep declared hints; default fresh responses to private and immediately stale.
+/// See https://modelcontextprotocol.io/specification/2026-07-28/server/utilities/caching.
+pub(crate) fn cacheable_result<T: CacheableResult>(
+    mut result: T,
+    protocol_version: Option<ProtocolVersion>,
+) -> T {
+    if protocol_version
+        .is_some_and(|version| version.as_str() >= ProtocolVersion::V_2026_07_28.as_str())
+    {
+        result.add_cache_defaults();
+    }
+    result
+}
+
 /// Mirrors a single JSON-object text answer into `structuredContent`.
 pub(crate) fn add_structured_content(result: &mut CallToolResult) {
     if result.structured_content.is_some() || result.content.len() != 1 {
@@ -383,6 +428,70 @@ mod tests {
     fn version_negotiation_echoes_known_versions() {
         assert_eq!(negotiate(&ProtocolVersion::V_2025_06_18), ProtocolVersion::V_2025_06_18);
         assert_eq!(negotiate(&ProtocolVersion::V_2024_11_05), ProtocolVersion::V_2024_11_05);
+    }
+
+    #[test]
+    fn modern_tools_list_has_required_private_cache_hints() {
+        let result = cacheable_result(
+            ListToolsResult::with_all_items(Vec::new()),
+            Some(ProtocolVersion::V_2026_07_28),
+        );
+        assert_eq!(
+            serde_json::to_value(result).unwrap(),
+            json!({ "resultType": "complete", "tools": [], "ttlMs": 0, "cacheScope": "private" }),
+        );
+    }
+
+    #[test]
+    fn legacy_tools_list_keeps_its_wire_shape() {
+        let original = ListToolsResult::with_all_items(Vec::new());
+        for version in
+            [None, Some(ProtocolVersion::V_2024_11_05), Some(ProtocolVersion::V_2025_11_25)]
+        {
+            let result = cacheable_result(original.clone(), version);
+            assert_eq!(result, original);
+            let mut response = rmcp::model::ServerResult::ListToolsResult(result);
+            response.strip_result_type_for_legacy_peer();
+            assert_eq!(serde_json::to_value(response).unwrap(), json!({ "tools": [] }));
+        }
+    }
+
+    #[test]
+    fn modern_caching_preserves_declared_hints() {
+        let original = ListToolsResult::with_all_items(Vec::new())
+            .with_ttl_ms(60_000)
+            .with_cache_scope(CacheScope::Public);
+        let result = cacheable_result(original.clone(), Some(ProtocolVersion::V_2026_07_28));
+        assert_eq!(result, original);
+    }
+
+    #[test]
+    fn interim_results_do_not_receive_cache_hints() {
+        let mut original = ListToolsResult::with_all_items(Vec::new());
+        original.result_type = Some(ResultType::INPUT_REQUIRED);
+        let result = cacheable_result(original.clone(), Some(ProtocolVersion::V_2026_07_28));
+        assert_eq!(result, original);
+    }
+
+    #[test]
+    fn modern_resource_and_prompt_results_have_required_cache_hints() {
+        let version = Some(ProtocolVersion::V_2026_07_28);
+        let results = [
+            serde_json::to_value(cacheable_result(list_resources(), version.clone())).unwrap(),
+            serde_json::to_value(cacheable_result(list_prompts(), version.clone())).unwrap(),
+            serde_json::to_value(cacheable_result(
+                ListResourceTemplatesResult::default(),
+                version.clone(),
+            ))
+            .unwrap(),
+            serde_json::to_value(cacheable_result(read_resource(GUIDE_URI, &[]).unwrap(), version))
+                .unwrap(),
+        ];
+        for result in results {
+            assert_eq!(result["resultType"], "complete");
+            assert_eq!(result["ttlMs"], 0);
+            assert_eq!(result["cacheScope"], "private");
+        }
     }
 
     #[test]

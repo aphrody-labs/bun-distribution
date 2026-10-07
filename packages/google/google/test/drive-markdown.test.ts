@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtemp, open, readdir, rm, stat, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { projectRetrievalCandidate } from "../src/drive-sync.ts";
+import { projectRetrievalCandidate, reviewedSnapshotHashes } from "../src/drive-sync.ts";
 import {
   nativeMarkdown,
   normalizeMarkdown,
@@ -12,6 +12,15 @@ import {
   type NativeDocument,
 } from "../src/drive-markdown.ts";
 const paragraph = (text: string) => ({ paragraph: { elements: [{ textRun: { content: text } }] } });
+test("reviewed seed rejects a remote edit that arrived after the reviewed snapshot", () => {
+  const snapshot = JSON.stringify({ body: { content: [paragraph("Reviewed content\n")] } });
+  const original = new Bun.CryptoHasher("sha256").update("Reviewed content\n").digest("hex");
+  const concurrent = new Bun.CryptoHasher("sha256").update("New remote content\n").digest("hex");
+  expect(reviewedSnapshotHashes(snapshot, original).sourceRenderedHash).toBe(original);
+  expect(() => reviewedSnapshotHashes(snapshot, concurrent)).toThrow(
+    "Reviewed native snapshot no longer matches current remote content",
+  );
+});
 describe("read-only native Google Docs Markdown projection", () => {
   test("retains avatar smart chips and Github text links in flattened MCP snapshots", () => {
     const doc: NativeDocument = {

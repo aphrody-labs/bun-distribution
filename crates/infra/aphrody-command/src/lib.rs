@@ -7,8 +7,6 @@
 //! and system dependencies are not linkable there.
 
 #[cfg(not(target_arch = "wasm32"))]
-mod ecosystem;
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod auto_command;
 #[cfg(not(target_arch = "wasm32"))]
 mod commands;
@@ -22,6 +20,8 @@ mod discord_cmd;
 mod discord_compiler;
 #[cfg(not(target_arch = "wasm32"))]
 mod docs_cmd;
+#[cfg(not(target_arch = "wasm32"))]
+mod ecosystem;
 #[cfg(all(not(target_arch = "wasm32"), feature = "forensics"))]
 mod forensics_cmd;
 #[cfg(not(target_arch = "wasm32"))]
@@ -34,8 +34,12 @@ mod index_cmd;
 mod infer_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "jobs"))]
 mod job_cmd;
+#[cfg(all(not(target_arch = "wasm32"), feature = "jobs"))]
+pub use job_cmd::create_job_worker;
 #[cfg(not(target_arch = "wasm32"))]
 mod mcp_cmd;
+#[cfg(not(target_arch = "wasm32"))]
+pub use mcp_cmd::run_mcp_tool_http;
 #[cfg(not(target_arch = "wasm32"))]
 mod memory_cmd;
 #[cfg(not(target_arch = "wasm32"))]
@@ -52,6 +56,8 @@ mod oss_cmd;
 mod package_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod pillars_cmd;
+#[cfg(not(target_arch = "wasm32"))]
+pub use pillars_cmd::web::run_web_pipeline;
 #[cfg(not(target_arch = "wasm32"))]
 mod platform;
 mod profile;
@@ -188,7 +194,6 @@ impl AgentOptions {
             ..Default::default()
         }
     }
-
 }
 
 #[derive(Subcommand)]
@@ -1588,7 +1593,8 @@ where
     I: IntoIterator<Item = T>,
     T: Into<std::ffi::OsString> + Clone,
 {
-    let (code, stdout, stderr) = aphrody_backend::stdio_capture::with_captured_stdio(|| run_from_args(args));
+    let (code, stdout, stderr) =
+        aphrody_backend::stdio_capture::with_captured_stdio(|| run_from_args(args));
     CapturedRun { code, stdout, stderr }
 }
 

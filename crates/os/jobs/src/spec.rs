@@ -67,13 +67,20 @@ impl core::fmt::Display for JobState {
     }
 }
 
-/// What a caller asks for.
-///
-/// The queue is deliberately **agnostic about the work**: `kind` names a
-/// handler and `payload` is opaque JSON that only that handler interprets. A
-/// queue that enumerated every task type would have to be recompiled to gain
-/// one, and would drag OCR, transcription and inference dependencies into a
-/// crate whose job is bookkeeping.
+/// Placement constraint using existing catalog host identities.
+/// Connectivity and authentication remain the network owner's responsibility.
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "mode", content = "hosts", rename_all = "kebab-case")]
+pub enum HostAffinity {
+    /// Any host with the required handler may claim the job.
+    #[default]
+    Any,
+    /// Only one of these catalog host identities may claim the job.
+    /// The queue never grants connectivity or authentication to a host.
+    Hosts(Vec<String>),
+}
+
+/// Handler arguments and scheduling requirements, persisted before execution.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct JobSpec {
     /// Handler name, e.g. `transcribe`.
@@ -87,12 +94,40 @@ pub struct JobSpec {
     pub priority: i64,
     /// Do not start before this instant.
     pub run_after: Option<DateTime<Utc>>,
+    /// Placement is explicit; old requests without the field remain portable.
+    #[serde(default)]
+    pub host_affinity: HostAffinity,
+    /// Stable caller intent key; retries after a lost acknowledgement reuse the same job.
+    #[serde(default)]
+    pub idempotency_key: Option<String>,
 }
 
 impl JobSpec {
     /// A job of `kind` carrying `payload`, run once, at default priority.
     pub fn new(kind: impl Into<String>, payload: serde_json::Value) -> Self {
-        Self { kind: kind.into(), payload, max_attempts: 1, priority: 0, run_after: None }
+        Self {
+            kind: kind.into(),
+            payload,
+            max_attempts: 1,
+            priority: 0,
+            run_after: None,
+            host_affinity: HostAffinity::Any,
+            idempotency_key: None,
+        }
+    }
+
+    /// Deduplicate remote submission retries for the same durable caller intent.
+    #[must_use]
+    pub fn with_idempotency_key(mut self, key: impl Into<String>) -> Self {
+        self.idempotency_key = Some(key.into());
+        self
+    }
+
+    /// Set an optional caller key without changing the unkeyed submission contract.
+    #[must_use]
+    pub fn with_optional_idempotency_key(mut self, key: Option<String>) -> Self {
+        self.idempotency_key = key;
+        self
     }
 
     /// Allow up to `attempts` total runs.
@@ -116,6 +151,13 @@ impl JobSpec {
     #[must_use]
     pub const fn run_after(mut self, when: DateTime<Utc>) -> Self {
         self.run_after = Some(when);
+        self
+    }
+
+    /// Restrict execution to declared host identities; does not move private inputs between domains.
+    #[must_use]
+    pub fn with_host_affinity(mut self, affinity: HostAffinity) -> Self {
+        self.host_affinity = affinity;
         self
     }
 }
@@ -152,6 +194,12 @@ pub struct Job {
     /// Message from the most recent failure, kept even after a later success
     /// so a flaky job is visible rather than silently self-healing.
     pub last_error: Option<String>,
+    /// Durable placement restriction; execution always also requires a registered handler.
+    #[serde(default)]
+    pub host_affinity: HostAffinity,
+    /// Stable caller intent key; retries after a lost acknowledgement reuse the same job.
+    #[serde(default)]
+    pub idempotency_key: Option<String>,
 }
 
 impl Job {

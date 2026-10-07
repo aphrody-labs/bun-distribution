@@ -40,6 +40,13 @@ function required(name: string): string {
 function digest(data: string): string {
   return createHash("sha256").update(data).digest("hex");
 }
+/** A reviewed snapshot must still describe the current remote content when promoted. */
+export function reviewedSnapshotHashes(snapshot: string, remoteHash: string) {
+  const sourceRenderedHash = digest(nativeMarkdown(JSON.parse(snapshot) as NativeDocument));
+  if (sourceRenderedHash !== remoteHash)
+    throw new Error("Reviewed native snapshot no longer matches current remote content");
+  return { sourceSnapshotHash: digest(snapshot), sourceRenderedHash };
+}
 async function save(path: string, data: string): Promise<void> {
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
   const temp = `${path}.${process.pid}.tmp`;
@@ -211,8 +218,7 @@ export async function syncAgentHome(
           localHash,
           remoteHash,
           remoteModifiedTime: doc.modifiedTime,
-          sourceSnapshotHash: digest(snapshot),
-          sourceRenderedHash: digest(nativeMarkdown(JSON.parse(snapshot) as NativeDocument)),
+          ...reviewedSnapshotHashes(snapshot, remoteHash),
         };
         if (!options.dryRun) {
           await save(join(privateRoot, "markdown-reviewed-baseline", name), localText);

@@ -70,7 +70,6 @@ const COMPAT_NAMES: &[&str] = &["n2b"];
 /// Names `package` accepted before the unification; they all designate the single binary now.
 const LEGACY_PACKAGES: &[&str] = &["aphrody", "n2b", "all"];
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 enum LinkState {

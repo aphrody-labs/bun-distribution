@@ -5,10 +5,7 @@
 //! proves only that a file exists. The caller must perform a protocol handshake
 //! before reporting a service as live or exposing its tools.
 
-use std::{
-    env,
-    path::PathBuf,
-};
+use std::{env, path::PathBuf};
 
 /// The repository that owns a capability and its implementation.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -15,6 +15,7 @@ mod media;
 mod native_http;
 mod net;
 mod net_aliases;
+mod pipeline;
 mod text;
 mod x;
 
@@ -28,6 +29,7 @@ pub use media::*;
 pub use native_http::*;
 pub use net::*;
 pub use net_aliases::*;
+pub use pipeline::*;
 pub use text::*;
 pub use x::*;
 

@@ -2068,14 +2068,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/creator-kit",
-          "path": "packages/infra/product",
-          "description": "Small local tools for a content creator: Challonge bot, wiki image fetch, Adobe and disk cleaners, image compression, video translation.",
-          "bins": [
-            "creator-kit"
-          ]
-        },
-        {
           "name": "@aphrody/discord-kit",
           "path": "packages/discord/kit",
           "description": "Unified Discord bot core kit: pre-flight intent negotiation, memory-bounded caching, resilient interaction dispatching, lifecycle management and guards for Bun.",
@@ -2261,12 +2253,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/m3-showcase",
-          "path": "m3/packages/app-ui/showcase",
-          "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable shown by the aphrody-app desktop (aphrody-app --showcase).",
-          "bins": []
-        },
-        {
           "name": "@aphrody/m3-tailwind",
           "path": "m3/packages/m3-tailwind",
           "description": "Tailwind v4 CSS-first preset for Material 3: generates @theme (colour roles, shape, typescale, elevation, easing) from @aphrody/m3-tokens.",
@@ -2303,14 +2289,6 @@
           "path": "packages/engine/n2b-client",
           "description": "Native N2B SDK scan, explicit legacy CLI helpers and Bun shims",
           "bins": []
-        },
-        {
-          "name": "@aphrody/omar-kit",
-          "path": "packages/infra/product",
-          "description": "Zero-command Windows kit for the Aphrody administrator: installs the tools, connects the private tunnel, checks that everything is ready and runs simplified model training on the hosts over SSH.",
-          "bins": [
-            "aphrody-omar"
-          ]
         },
         {
           "name": "@aphrody/os",
@@ -2499,6 +2477,17 @@
           "bins": []
         },
         {
+          "name": "@aphrody/product",
+          "path": "packages/infra/product",
+          "description": "Aphrody installation, administration and creator workflows in one native Bun product.",
+          "bins": [
+            "aphrody-omar",
+            "aphrody-product",
+            "aphrody-setup",
+            "creator-kit"
+          ]
+        },
+        {
           "name": "@aphrody/qr",
           "path": "packages/web/qr",
           "description": "First-party QR Code encoder and canvas renderer (module-for-module parity with qrcode 1.5.4)",
@@ -2525,14 +2514,6 @@
           ]
         },
         {
-          "name": "@aphrody/setup",
-          "path": "packages/infra/product",
-          "description": "One-click Aphrody installer for everyone (Aphrody-Setup.exe): aphrody (CLI and MCP), yolo, the desktop app, the Claude plugins and the MCP declaration, with optional administrator and creator roles.",
-          "bins": [
-            "aphrody-setup"
-          ]
-        },
-        {
           "name": "@aphrody/shell-web",
           "path": "packages/shell/web",
           "description": "Aphrody shell for browsers and Tauri webviews: WASM VT core, local shell and WebSocket/Tauri transports.",
@@ -2542,6 +2523,12 @@
           "name": "@aphrody/sql",
           "path": "packages/infra/sql",
           "description": "Shared Bun database mechanics for Aphrody: env/URL resolution, Bun.SQL and Redis factories, bun:sqlite open policy with optional sqlite-vec",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/timeline",
+          "path": "packages/web/timeline",
+          "description": "Native Bun timeline collection, SQL, Redis, GraphQL and retrieval projections",
           "bins": []
         },
         {
@@ -2610,7 +2597,7 @@
         },
         {
           "name": "@aphrody/yt-subs-sorter",
-          "path": "packages/infra/product/extensions/yt-subs-sorter",
+          "path": "packages/infra/product/resources/creator/extensions/yt-subs-sorter",
           "description": "WebExtension (Chrome, Edge, Brave, Firefox) to sort YouTube subscriptions into groups. No dependency, no network.",
           "bins": []
         },
@@ -2878,6 +2865,13 @@
               "aliases": [],
               "cfg": [],
               "children": [
+                {
+                  "name": "dragon-ball",
+                  "about": "Source-aware Dragon Ball projection as JSON, shared with native Web.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
                 {
                   "name": "extract",
                   "about": "Main-content extraction as JSON (title, byline, Markdown, blocks, SimHash).",
@@ -3251,6 +3245,105 @@
               "aliases": [],
               "cfg": [],
               "children": []
+            },
+            {
+              "name": "crawl-index",
+              "about": "Crawl into a private persistent frontier and index the selected home in process",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "dragon-ball",
+              "about": "Native Dragon Ball campaign, provenance, export and home indexing",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "discover",
+                  "about": "Discover Google sources, media references and root technology evidence",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "sources",
+                  "about": "Inspect the embedded campaign and source registry",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "plan",
+                  "about": "Resolve a campaign without fetching or writing",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "status",
+                  "about": "Inspect existing campaign evidence without fetching or writing",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "crawl",
+                  "about": "Crawl and extract a native campaign into its protected corpus",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "index",
+                  "about": "Index existing campaign exports without any network collection",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "assets",
+                  "about": "Download campaign covers (and optional plates) into the protected asset store",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "asset-plan",
+                  "about": "Resolve asset requests without collection or writes",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "asset-probe",
+                  "about": "Probe at most three images; retain quota evidence but no media",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "manga-volume",
+                  "about": "Acquire original manga reader images through the native Web owners",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "consolidate-bxc",
+                  "about": "Consolidate legacy BXC stores into a new protected native store (sources remain read-only)",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "export-bxc",
+                  "about": "Read legacy BXC databases and export their native Shenron projection",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
             },
             {
               "name": "mediawiki",
@@ -4794,6 +4887,13 @@
                   "cfg": [],
                   "children": [
                     {
+                      "name": "dragon-ball",
+                      "about": "Source-aware Dragon Ball projection as JSON, shared with native Web.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
                       "name": "extract",
                       "about": "Main-content extraction as JSON (title, byline, Markdown, blocks, SimHash).",
                       "aliases": [],
@@ -5166,6 +5266,105 @@
                   "aliases": [],
                   "cfg": [],
                   "children": []
+                },
+                {
+                  "name": "crawl-index",
+                  "about": "Crawl into a private persistent frontier and index the selected home in process",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "dragon-ball",
+                  "about": "Native Dragon Ball campaign, provenance, export and home indexing",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "discover",
+                      "about": "Discover Google sources, media references and root technology evidence",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "sources",
+                      "about": "Inspect the embedded campaign and source registry",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "plan",
+                      "about": "Resolve a campaign without fetching or writing",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "status",
+                      "about": "Inspect existing campaign evidence without fetching or writing",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "crawl",
+                      "about": "Crawl and extract a native campaign into its protected corpus",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "index",
+                      "about": "Index existing campaign exports without any network collection",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "assets",
+                      "about": "Download campaign covers (and optional plates) into the protected asset store",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "asset-plan",
+                      "about": "Resolve asset requests without collection or writes",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "asset-probe",
+                      "about": "Probe at most three images; retain quota evidence but no media",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "manga-volume",
+                      "about": "Acquire original manga reader images through the native Web owners",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "consolidate-bxc",
+                      "about": "Consolidate legacy BXC stores into a new protected native store (sources remain read-only)",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "export-bxc",
+                      "about": "Read legacy BXC databases and export their native Shenron projection",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
                 },
                 {
                   "name": "mediawiki",
@@ -8531,6 +8730,11 @@
           "file": "crates/ai/mcp/src/lib.rs"
         },
         {
+          "name": "aphrody_job_cancel",
+          "description": "Cancel a persistent job by id. Queued work is cancelled immediately; a running native handler stops at its next lease heartbeat. Returns durable state and queue stats.",
+          "file": "crates/ai/mcp/src/lib.rs"
+        },
+        {
           "name": "aphrody_job_status",
           "description": "Inspect the background job queue. With `id`: the job plus its trailing NDJSON log lines. Without: a filtered listing (state/kind/limit). Both include queue-wide counts so a job that no worker handles is visible as queued rather than mistaken for slow.",
           "file": "crates/ai/mcp/src/lib.rs"
@@ -9935,12 +10139,12 @@
     "sharedRepos": 0,
     "crates": 205,
     "binaries": 9,
-    "bunPackages": 130,
+    "bunPackages": 128,
     "pythonPackages": 8,
     "cliBinaries": 16,
-    "cliCommands": 676,
+    "cliCommands": 706,
     "mcpServers": 19,
-    "mcpTools": 369,
-    "mcpUniqueToolNames": 367
+    "mcpTools": 370,
+    "mcpUniqueToolNames": 368
   }
 }

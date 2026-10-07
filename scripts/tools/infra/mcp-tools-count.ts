@@ -19,15 +19,66 @@ export interface ToolsCount {
   tools: string[];
 }
 
-async function messages(response: Response): Promise<Array<Record<string, any>>> {
-  const text = await response.text();
-  if ((response.headers.get("content-type") ?? "").includes("text/event-stream")) {
-    return text
-      .split("\n")
-      .filter((line) => line.startsWith("data:") && line.slice(5).trim())
-      .map((line) => JSON.parse(line.slice(5)));
+async function message(response: Response, id: number): Promise<Record<string, any> | undefined> {
+  const find = (value: any) =>
+    (Array.isArray(value) ? value : [value]).find((item) => item?.id === id);
+  if (!(response.headers.get("content-type") ?? "").includes("text/event-stream")) {
+    const text = await response.text();
+    return text.trim() ? find(JSON.parse(text)) : undefined;
   }
-  return text.trim() ? [JSON.parse(text)] : [];
+  if (!response.body) return undefined;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let pending = "";
+  let data: string[] = [];
+  const dispatch = () => {
+    const payload = data.join("\n");
+    data = [];
+    return payload.trim() ? find(JSON.parse(payload)) : undefined;
+  };
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      pending += decoder.decode(value, { stream: !done });
+      let newline: RegExpExecArray | null;
+      while ((newline = /\r\n|\r|\n/.exec(pending))) {
+        if (!done && newline[0] === "\r" && newline.index === pending.length - 1) break;
+        const line = pending.slice(0, newline.index);
+        pending = pending.slice(newline.index + newline[0].length);
+        if (line === "") {
+          const reply = dispatch();
+          if (reply) return reply;
+        } else if (line === "data" || line.startsWith("data:")) {
+          data.push(line.slice(5).replace(/^ /, ""));
+        }
+      }
+      if (done) return undefined;
+    }
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+}
+
+async function result(
+  response: Response,
+  id: number,
+  method: string,
+): Promise<Record<string, any>> {
+  if (!response.ok) {
+    await response.body?.cancel();
+    const hint =
+      response.status === 401 || response.status === 503
+        ? " (token missing, wrong or not configured)"
+        : "";
+    throw new Error(`${method}: HTTP ${response.status}${hint}`);
+  }
+  const reply = await message(response, id);
+  if (reply?.error) {
+    throw new Error(`${method}: JSON-RPC ${reply.error.code}: ${reply.error.message}`);
+  }
+  if (!reply?.result) throw new Error(`${method}: no result (HTTP ${response.status})`);
+  return reply.result;
 }
 
 export async function countTools(url: string, token?: string): Promise<ToolsCount> {
@@ -51,29 +102,37 @@ export async function countTools(url: string, token?: string): Promise<ToolsCoun
       clientInfo: { name: "mcp-tools-count", version: "1" },
     },
   });
-  if (!init.ok) {
-    const hint =
-      init.status === 401 || init.status === 503 ? " (token missing, wrong or not configured)" : "";
-    throw new Error(`initialize: HTTP ${init.status}${hint}`);
-  }
   const session = init.headers.get("mcp-session-id") ?? undefined;
-  const info = (await messages(init)).find((m) => m.id === 1)?.result?.serverInfo;
-  await post({ jsonrpc: "2.0", method: "notifications/initialized" }, session);
-  const tools: string[] = [];
-  let cursor: string | undefined;
-  do {
-    const reply = await post(
-      { jsonrpc: "2.0", id: 2, method: "tools/list", params: cursor ? { cursor } : {} },
+  try {
+    const info = (await result(init, 1, "initialize")).serverInfo;
+    const initialized = await post(
+      { jsonrpc: "2.0", method: "notifications/initialized" },
       session,
     );
-    const result = (await messages(reply)).find((m) => m.id === 2)?.result;
-    if (!result) throw new Error(`tools/list: no result (HTTP ${reply.status})`);
-    for (const tool of result.tools) tools.push(tool.name);
-    cursor = result.nextCursor;
-  } while (cursor);
-  if (session)
-    await fetch(url, { method: "DELETE", headers: { "mcp-session-id": session } }).catch(() => {});
-  return { server: info ? `${info.name}@${info.version}` : "unknown", tools };
+    await initialized.body?.cancel();
+    if (!initialized.ok) throw new Error(`notifications/initialized: HTTP ${initialized.status}`);
+    const tools: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const reply = await post(
+        { jsonrpc: "2.0", id: 2, method: "tools/list", params: cursor ? { cursor } : {} },
+        session,
+      );
+      const page = await result(reply, 2, "tools/list");
+      for (const tool of page.tools) tools.push(tool.name);
+      cursor = page.nextCursor;
+    } while (cursor);
+    return { server: info ? `${info.name}@${info.version}` : "unknown", tools };
+  } finally {
+    if (session)
+      await fetch(url, {
+        method: "DELETE",
+        headers: { ...base, "mcp-session-id": session },
+        signal: AbortSignal.timeout(20_000),
+      })
+        .then((response) => response.body?.cancel())
+        .catch(() => {});
+  }
 }
 
 if (import.meta.main) {

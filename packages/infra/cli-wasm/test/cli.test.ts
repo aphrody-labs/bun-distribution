@@ -44,6 +44,14 @@ const cases: [string, string[], RunOptions][] = [
   ],
   ["html markdown", ["html", "markdown", "-", "--base-url", "https://x.test/"], { stdin: PAGE }],
   ["html extract", ["html", "extract", "-"], { stdin: PAGE }],
+  [
+    "Dragon Ball reader",
+    ["html", "dragon-ball", "-", "--kind", "reader", "--base-url", "https://example.test/"],
+    {
+      stdin:
+        '<script>ts_reader.run({"sources":[{"images":["https://example.test/1.webp"]}]});</script>',
+    },
+  ],
   ["html simhash", ["html", "simhash", "-"], { stdin: "same text here" }],
   [
     "text comments",
@@ -127,6 +135,18 @@ describe.skipIf(!built)("wasm", () => {
     expect(missing.code).toBe(1);
     expect(missing.stderr).toContain("no such file");
     expect(() => cli.text(["toolcall", "repair", "-"], { stdin: "  " })).toThrow();
+  });
+
+  test("Dragon Ball portable projection retains source identity and refuses credential URLs", () => {
+    expect(
+      cli.dragonBall<string[]>(
+        '<script>ts_reader.run({"sources":[{"images":["https://example.test/1.webp"]}]});</script>',
+        { kind: "reader", baseUrl: "https://example.test/" },
+      ),
+    ).toEqual(["https://example.test/1.webp"]);
+    expect(() =>
+      cli.dragonBall("", { kind: "reader", baseUrl: "https://user:secret@example.test/" }),
+    ).toThrow("credential-free");
   });
 
   const native = process.env.APHRODY_NATIVE_BIN;

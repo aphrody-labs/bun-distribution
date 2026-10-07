@@ -94,9 +94,9 @@ pub use bun_rs::*;
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
 mod n2b_native;
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
-pub use n2b_native::*;
-#[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
 pub use aphrody_oxc_bridge::*;
+#[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
+pub use n2b_native::*;
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
 mod tooling;
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
@@ -322,6 +322,22 @@ mod native {
     fn capture_lock() -> std::sync::MutexGuard<'static, ()> {
         static CAPTURE_LOCK: Mutex<()> = Mutex::new(());
         CAPTURE_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    /// Capture an async command on its local executor using the same lock as
+    /// the synchronous ABI. Error JSON passes through without inventing a code.
+    pub(crate) fn capture_job(execute: impl FnOnce() -> String) -> String {
+        let _guard = capture_lock();
+        let mut result = None;
+        let (_, stdout, stderr) = with_captured_stdio(|| {
+            result = Some(execute());
+            0
+        });
+        let result = result.expect("capture callback executed");
+        match result.parse::<i32>() {
+            Ok(code) => json_result(code, &stdout, &stderr),
+            Err(_) => result,
+        }
     }
 
     /// Best-effort message extracted from a `catch_unwind` panic payload.

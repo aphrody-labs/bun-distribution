@@ -8,18 +8,39 @@
   "subnet": "10.200.77.0/24",
   "clientAllowedIps": "10.200.77.0/24",
   "keepalive": 25,
-  "keyFiles": { "private": "/etc/wireguard/wg1.key", "public": "/etc/wireguard/wg1.pub" },
+  "keyFiles": {
+    "private": "/etc/wireguard/wg1.key",
+    "public": "/etc/wireguard/wg1.pub"
+  },
   "existingNetworks": [
     {
       "name": "wg0, historical Shenron link (vps 10.8.0.1, dbfr 10.8.0.3, ufw trusts the whole /24 for every port, PostgreSQL and the Shenron admin list)",
       "cidr": "10.8.0.0/24"
     },
-    { "name": "docker0 of the vps", "cidr": "172.17.0.0/16" },
-    { "name": "other Docker bridges, WSL2 NAT, RFC 1918 172.16/12", "cidr": "172.16.0.0/12" },
-    { "name": "Mullvad tunnel addresses and SOCKS5 (10.64.0.1)", "cidr": "10.64.0.0/10" },
-    { "name": "Tailscale and carrier-grade NAT", "cidr": "100.64.0.0/10" },
-    { "name": "typical home and office LANs", "cidr": "192.168.0.0/16" },
-    { "name": "link-local", "cidr": "169.254.0.0/16" }
+    {
+      "name": "docker0 of the vps",
+      "cidr": "172.17.0.0/16"
+    },
+    {
+      "name": "other Docker bridges, WSL2 NAT, RFC 1918 172.16/12",
+      "cidr": "172.16.0.0/12"
+    },
+    {
+      "name": "Mullvad tunnel addresses and SOCKS5 (10.64.0.1)",
+      "cidr": "10.64.0.0/10"
+    },
+    {
+      "name": "Tailscale and carrier-grade NAT",
+      "cidr": "100.64.0.0/10"
+    },
+    {
+      "name": "typical home and office LANs",
+      "cidr": "192.168.0.0/16"
+    },
+    {
+      "name": "link-local",
+      "cidr": "169.254.0.0/16"
+    }
   ],
   "hub": {
     "peer": "vps",
@@ -37,7 +58,9 @@
       "address": "10.200.77.2",
       "publicKey": "WFynN57cgG2iRqQ+bsk0ofJ3dphXkHAyfjX4UuATyxk=",
       "keyOrigin": "wg genkey on the WSL at apply; the public half is collected by the plan",
-      "udpSource": { "mode": "covered-by-shenron-admin" }
+      "udpSource": {
+        "mode": "covered-by-shenron-admin"
+      }
     },
     {
       "id": "dbfr",
@@ -46,7 +69,9 @@
       "address": "10.200.77.3",
       "publicKey": "o1eCVLfJXLScX3wKMxBeXr70zyUdq/61XI6qTdYG6Fc=",
       "keyOrigin": "wg genkey on dbfr at apply; the public half is collected by the plan",
-      "udpSource": { "mode": "covered-by-shenron-admin" }
+      "udpSource": {
+        "mode": "covered-by-shenron-admin"
+      }
     },
     {
       "id": "aphro-pc",
@@ -68,7 +93,11 @@
       "publicKey": "A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=",
       "keyOrigin": "WireGuard app on Omar's Windows PC (empty tunnel); he sends only the public key",
       "publicKeyNote": "supplied by the owner on 2026-10-06, replacing the key announced earlier that day (withdrawn: tunnel cancelled, private key lost; never reuse it)",
-      "udpSource": { "mode": "ufw", "ips": ["92.170.252.46"], "comment": "aphrody-wg-omar" }
+      "udpSource": {
+        "mode": "ufw",
+        "ips": ["92.170.252.46"],
+        "comment": "aphrody-wg-omar"
+      }
     }
   ],
   "services": [
@@ -112,13 +141,13 @@
       "id": "mcp-http",
       "host": "vps",
       "address": "10.200.77.1",
-      "port": 8789,
+      "port": 8793,
       "proto": "tcp",
       "expose": "socket-proxyd",
-      "upstream": "127.0.0.1:8789",
+      "upstream": "127.0.0.1:8793",
       "unit": "aphrody-mcp-http",
-      "auth": "none",
-      "caveat": "/mcp has no authentication, only a Host header check: a peer that reaches it can call every tool. Port 8789 on the vps is also held today by the WSL compute reverse tunnel (sshd, GatewayPorts yes), so the tunnel address would reach the WSL MCP. Owner decision required before apply (docs/operations/infra/MCP-A2A.md, findings 1 and 2)."
+      "auth": "bearer-token",
+      "caveat": "Private WireGuard socket-proxyd reaches the canonical loopback MCP listener. /mcp requires APHRODY_MCP_HTTP_TOKEN from its protected host store; no public listener. Tool capabilities are verified from the deployed binary."
     },
     {
       "id": "a2a",
@@ -140,13 +169,26 @@
       "expose": "peer-listener",
       "status": "pending",
       "pendingReason": "no training service with a declared port exists in the catalogs (managed llama ports are dynamic per run); the owner names the ports, then the routed ufw rules are generated"
+    },
+    {
+      "id": "mcp-http-dbfr",
+      "host": "dbfr",
+      "address": "10.200.77.3",
+      "port": 8793,
+      "proto": "tcp",
+      "expose": "socket-proxyd",
+      "upstream": "127.0.0.1:8793",
+      "unit": "aphrody-mcp-http-dbfr",
+      "auth": "bearer-token",
+      "caveat": "DBFR protected host-local bearer and queue; enable only after native jobs binary and authenticated endpoint probes pass."
     }
   ],
   "grants": {
     "omar": ["ssh-vps", "ssh-dbfr", "ssh-wsl", "mcp-http", "a2a", "training"],
-    "aphro-pc": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "training"],
-    "wsl": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a"],
-    "dbfr": ["ssh-aphro-pc"]
+    "aphro-pc": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "training", "mcp-http-dbfr"],
+    "wsl": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "mcp-http-dbfr"],
+    "dbfr": ["ssh-aphro-pc", "mcp-http"],
+    "vps": ["mcp-http-dbfr"]
   },
   "firewall": {
     "marker": "aphrody-wg",

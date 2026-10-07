@@ -687,12 +687,66 @@
       "targetHost": "dbfr"
     },
     {
-      "service": "aphrody-pc-agent",
-      "unit": "aphrody-pc-agent.service",
-      "path": "systemd/aphrody/aphrody-pc-agent.service",
+      "service": "shenron-compute",
+      "unit": "shenron-compute.service",
+      "path": "systemd/shenron/shenron-compute.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "wsl"
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-container-backup",
+      "unit": "shenron-container-backup.service",
+      "path": "systemd/shenron/shenron-container-backup.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-container-backup",
+      "unit": "shenron-container-backup.timer",
+      "path": "systemd/shenron/shenron-container-backup.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-embed",
+      "unit": "shenron-embed.service",
+      "path": "systemd/shenron/shenron-embed.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-jobs-worker-vps",
+      "unit": "aphrody-jobs-worker-vps.service",
+      "path": "systemd/aphrody/aphrody-jobs-worker-vps.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-jobs-worker-dbfr",
+      "unit": "aphrody-jobs-worker-dbfr.service",
+      "path": "systemd/aphrody/aphrody-jobs-worker-dbfr.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-mcp-http-dbfr",
+      "unit": "aphrody-mcp-http-dbfr.service",
+      "path": "systemd/aphrody/aphrody-mcp-http-dbfr.service",
+      "dropIns": [
+        "run-as-ubuntu",
+        "sandbox-base",
+        "sandbox-kernel",
+        "net-inet-only",
+        "syscall-service"
+      ],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
     },
     {
       "service": "aphrody-drive-sync",
@@ -709,6 +763,14 @@
       "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-pc-agent",
+      "unit": "aphrody-pc-agent.service",
+      "path": "systemd/aphrody/aphrody-pc-agent.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "wsl"
     }
   ],
   "nginx": [

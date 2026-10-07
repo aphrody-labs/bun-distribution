@@ -49,12 +49,14 @@ pub fn extract_streaming_players(html: &str, page_url: Option<&str>) -> Vec<Stri
 
     // 2. Check data-src or data-player attributes
     for id in dom.query_selector_all("[data-src], [data-player], [data-url]").unwrap_or_default() {
-        let candidate = dom.with_node(id, |node| {
-            node.get_attribute("data-src")
-                .or_else(|| node.get_attribute("data-player"))
-                .or_else(|| node.get_attribute("data-url"))
-                .map(str::to_owned)
-        }).flatten();
+        let candidate = dom
+            .with_node(id, |node| {
+                node.get_attribute("data-src")
+                    .or_else(|| node.get_attribute("data-player"))
+                    .or_else(|| node.get_attribute("data-url"))
+                    .map(str::to_owned)
+            })
+            .flatten();
 
         if let Some(raw) = candidate {
             if let Some(resolved) = resolve_link(&raw, page_url) {

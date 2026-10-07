@@ -171,7 +171,7 @@ export function tunnelProblems(root: string, file = TUNNEL_FILE): string[] {
         problems.push(`${file}: peer ${p.id} comment must be ${t.firewall.marker}-${p.id}`);
     }
   }
-  const ids = new Set(t.peers.map((p) => p.id));
+  const ids = new Set([t.hub.peer, ...t.peers.map((p) => p.id)]);
   const services = new Map(t.services.map((s) => [s.id, s]));
   for (const s of t.services) {
     if (s.port !== undefined && (s.port < 1 || s.port > 65535))
@@ -184,8 +184,14 @@ export function tunnelProblems(root: string, file = TUNNEL_FILE): string[] {
       problems.push(`${file}: service ${s.id} address outside the subnet`);
     if (s.expose === "socket-proxyd" && (!s.upstream || !/^127\.0\.0\.1:\d+$/.test(s.upstream)))
       problems.push(`${file}: service ${s.id} upstream must be loopback`);
-    if (s.expose === "socket-proxyd" && s.address !== t.hub.address)
-      problems.push(`${file}: service ${s.id} must listen on the hub address`);
+    if (s.expose === "socket-proxyd") {
+      const ownerAddress =
+        s.host === t.hub.peer
+          ? t.hub.address
+          : t.peers.find((peer) => peer.host === s.host)?.address;
+      if (s.address !== ownerAddress)
+        problems.push(`${file}: service ${s.id} must listen on its declared owner address`);
+    }
   }
   for (const [peer, list] of Object.entries(t.grants)) {
     if (!ids.has(peer)) problems.push(`${file}: grant for unknown peer ${peer}`);
@@ -421,7 +427,8 @@ export function ufwRules(t: Tunnel): UfwRule[] {
   for (const [peerId, ids] of Object.entries(t.grants))
     for (const id of ids) {
       const s = services.get(id);
-      const p = t.peers.find((x) => x.id === peerId);
+      const p =
+        peerId === t.hub.peer ? { address: t.hub.address } : t.peers.find((x) => x.id === peerId);
       if (!s || !p || s.status === "pending" || s.port === undefined || s.address === p.address)
         continue;
       const comment = `comment '${t.firewall.marker}-${peerId}'`;
@@ -755,7 +762,9 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     clients[p.id] = { interface: s.interface, peer: s.peer, pasteBlock: clientPasteBlock(t, p.id) };
   }
   const rules = ufwRules(t);
-  const proxies = t.services.filter((s) => s.expose === "socket-proxyd" && s.port !== undefined);
+  const proxies = t.services.filter(
+    (s) => s.host === t.hub.peer && s.expose === "socket-proxyd" && s.port !== undefined,
+  );
   const pending: string[] = [];
   for (const p of t.peers)
     if (p.publicKey === null)
@@ -985,7 +994,7 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
     "install",
     "check",
     "systemd accepts the units",
-    `systemd-analyze verify /etc/systemd/system/aphrody-wg-proxy@8789.socket /etc/systemd/system/aphrody-wg-proxy@8789.service`,
+    `systemd-analyze verify ${proxies.flatMap((s) => [`/etc/systemd/system/aphrody-wg-proxy@${s.port}.socket`, `/etc/systemd/system/aphrody-wg-proxy@${s.port}.service`]).join(" ")}`,
   );
   vps(
     "start",
@@ -1118,6 +1127,54 @@ export function buildPlan(t: Tunnel, ctx: PlanContext): WgPlan {
       `enable ${t.interface} at boot`,
       `systemctl enable --now wg-quick@${t.interface}`,
     );
+    const localProxies = t.services.filter(
+      (service) =>
+        service.host === host && service.expose === "socket-proxyd" && service.port !== undefined,
+    );
+    if (localProxies.length > 0) {
+      for (const ext of ["socket", "service"] as const) {
+        const unit = `aphrody-wg-proxy@.${ext}`;
+        // The same owner template is rendered for the actual peer address.
+        const text = ctx.compose(unit).replaceAll(t.hub.address, p.address);
+        h(
+          `proxy-unit.${ext}`,
+          "install",
+          "mutate",
+          `install ${unit} for ${host} at ${p.address}`,
+          `set -eu\necho ${b64(text)} | base64 -d > /etc/systemd/system/${unit}\nchmod 0644 /etc/systemd/system/${unit}`,
+        );
+      }
+      h(
+        "proxy-verify",
+        "install",
+        "check",
+        "systemd accepts this host's private proxy instances",
+        `systemd-analyze verify ${localProxies.flatMap((service) => [`/etc/systemd/system/aphrody-wg-proxy@${service.port}.socket`, `/etc/systemd/system/aphrody-wg-proxy@${service.port}.service`]).join(" ")}`,
+      );
+      for (const [source, services] of Object.entries(t.grants)) {
+        const sourceAddress =
+          source === t.hub.peer
+            ? t.hub.address
+            : t.peers.find((peer) => peer.id === source)?.address;
+        if (!sourceAddress || sourceAddress === p.address) continue;
+        for (const service of localProxies.filter((candidate) => services.includes(candidate.id))) {
+          h(
+            `proxy-ufw.${source}.${service.id}`,
+            "install",
+            "mutate",
+            `private input: ${source} -> ${service.id}`,
+            `ufw allow in on ${t.interface} from ${sourceAddress} to ${p.address} port ${service.port} proto tcp comment '${t.firewall.marker}-${source}'`,
+          );
+        }
+      }
+      h(
+        "proxy-start",
+        "install",
+        "mutate",
+        `enable ${host} private proxy instances`,
+        `set -eu\nsystemctl daemon-reload\nsystemctl enable --now ${localProxies.map((service) => `aphrody-wg-proxy@${service.port}.socket`).join(" ")}`,
+      );
+    }
     if (host === "dbfr") steps.push(...accountSteps(ctx, t, "dbfr"));
     h(
       "verify-handshake",

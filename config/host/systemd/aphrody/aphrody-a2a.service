@@ -3,12 +3,11 @@
 # mailbox. Catalog entry `aphrody-a2a` (config/service-catalog.json), vps.
 # Loopback only: 127.0.0.1:8788, never proxied by nginx, never published (the former public routes of aphrody.com stay
 # retired). The agent card announces http://127.0.0.1:8788.
-# `aphrody a2a serve` walks up from its working directory to find ai.json: /srv/aphrody/shared/a2a/ai.json is a copy
-# of the repository ai.json at the deployed revision (host-plan step), no longer the retired /srv/aphrody/current link.
-# State: --coord-dir /srv/aphrody/shared/coord (messages.jsonl, tasks.json), kept across restarts and reinstalls.
-# APHRODY_A2A_DRY_RUN=1: a message is recorded and answered but no peer agent CLI (codex, claude, agy) is spawned on
-# the host; lifting it is an owner decision. Optional settings (names in config/secrets-contract.json, for example
-# APHRODY_A2A_COORD_TOKEN guarding the task API): /etc/aphrody/aphrody-a2a.env, absent by default.
+# The dedicated private checkout is independent of the factory and interactive clients.
+# State: --coord-dir /srv/aphrody/shared/coord (mailboxes and a2a/tasks), retained across restarts.
+# The owner requested persistent autonomous coding agents on 2026-10-07. The required
+# root-owned environment authenticates every private route. Existing Codex authentication
+# remains in its protected home; no provider credentials are copied into the checkout.
 [Unit]
 Description=Aphrody A2A server (aphrody a2a serve, 127.0.0.1:8788, loopback only)
 After=network-online.target
@@ -18,30 +17,35 @@ StartLimitIntervalSec=600
 
 [Service]
 Type=simple
-WorkingDirectory=/srv/aphrody/shared/a2a
-Environment=HOME=/srv/aphrody/shared/a2a
-Environment=APHRODY_A2A_DRY_RUN=1
+WorkingDirectory=/srv/aphrody/shared/agent-workspaces/aphrody
+Environment=HOME=/home/ubuntu
+Environment=PATH=/home/ubuntu/.local/bin:/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
+Environment=CODEX_BIN=/home/ubuntu/.codex/packages/standalone/current/bin/codex
+Environment=APHRODY_A2A_DEFAULT_PEER=codex
+Environment="APHRODY_YOLO_TOOL_HOST=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/yolo-tool-host.mjs"
+Environment="APHRODY_M3_TOOL_HOST=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/m3-tool-host.mjs"
+UnsetEnvironment=APHRODY_A2A_DRY_RUN A2A_SOCKET
 Environment=RUST_LOG=aphrody_a2a_coord=info
-EnvironmentFile=-/etc/aphrody/aphrody-a2a.env
+EnvironmentFile=/etc/aphrody/aphrody-a2a.env
 ExecStart=/home/ubuntu/.local/bin/aphrody a2a serve --bind 127.0.0.1:8788 --coord-dir /srv/aphrody/shared/coord
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=15
 
 MemoryAccounting=true
-MemoryHigh=512M
-MemoryMax=1G
+MemoryHigh=2G
+MemoryMax=4G
 TasksMax=256
 LimitNOFILE=16384
 CPUWeight=50
 Nice=5
 
 # Sandbox, on top of the run-as-ubuntu, sandbox-base, sandbox-kernel, net-inet-only and syscall-service drop-ins.
-# /home is an empty tmpfs: only the binary is mapped in (read-only); the writable paths are the A2A working
-# directory and the coord mailbox.
+# Map only the native binary, existing Codex home and selected Aphrody state.
 ProtectHome=tmpfs
-BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody
-ReadWritePaths=/srv/aphrody/shared/a2a /srv/aphrody/shared/coord
+BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody /home/ubuntu/.local/bin/aphrody-mcp /home/ubuntu/.ssh /home/ubuntu/.bun/bin/bun
+BindPaths=/home/ubuntu/.codex /home/ubuntu/.aphrody
+ReadWritePaths=/srv/aphrody/shared/agent-workspaces/aphrody /srv/aphrody/shared/coord /home/ubuntu/.codex /home/ubuntu/.aphrody
 InaccessiblePaths=-/run/docker.sock -/var/run/docker.sock -/run/containerd -/var/lib/lxd -/run/user
 ProtectProc=invisible
 PrivateDevices=true
@@ -50,6 +54,8 @@ RestrictRealtime=true
 CapabilityBoundingSet=
 AmbientCapabilities=
 SystemCallArchitectures=native
+# The canonical MCP child uses V8's protection-key syscalls for browser tools.
+SystemCallFilter=@pkey
 UMask=0077
 
 StandardOutput=journal

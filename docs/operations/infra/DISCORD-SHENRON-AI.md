@@ -177,6 +177,16 @@ Le reçu cloud `agent-sync-vps-status.json` publie uniquement les compteurs ; le
 salon Drive le distingue explicitement du reçu WSL. Les écritures Google Docs
 et la fusion bidirectionnelle restent à implémenter.
 
+Le home cloud a ensuite reçu les sept documents DBFR et leurs références
+Markdown/natives validées du magasin privé WSL : 22 fichiers avec le checkpoint,
+tous vérifiés par SHA-256 et écrits en 0600 sur les seuls chemins déclarés.
+Le checkpoint cloud initial reste sauvegardé. Aucun fichier d'authentification
+n'est copié par ce bootstrap ; les versions actives déjà présentes et divergentes
+sont refusées. Le passage Google natif confirme alors trois éléments inchangés,
+deux locaux en avance et deux distants staged, sans upload. La revue autonome
+du rapprochement conserve ses propositions, snapshots et explications dans le
+magasin privé ; un plan de revue ne constitue pas une écriture Google appliquée.
+
 Validation : 48 tests ciblés Workspace, Google, Discord et plan d'hôte réussis ;
 TypeScript, lint strict et format des chemins modifiés passent.
 

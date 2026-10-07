@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: Apache-2.0 -->
+﻿<!-- SPDX-License-Identifier: Apache-2.0 -->
 # GOOGLE.md â€” Alignement Google ecosystem
 
 > **Statut :** 2026-05-17 â€” aligned production-grade cross-platform.

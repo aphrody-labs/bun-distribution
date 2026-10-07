@@ -15,11 +15,11 @@
 //! and the payload is opaque JSON. The real handlers are registered here,
 //! where the model crates already are.
 
-use std::{path::PathBuf, sync::Arc};
+use std::{future::Future, num::NonZeroUsize, path::PathBuf, sync::Arc};
 
 use aphrody_jobs::{
-    HandlerError, Job, JobContext, JobHandler, JobLogs, JobSpec, JobState, JobStore, ListFilter,
-    Outcome, Worker,
+    HandlerError, HostAffinity, Job, JobContext, JobHandler, JobLogs, JobSpec, JobState, JobStore,
+    ListFilter, Outcome, Worker,
 };
 use aphrody_models::Report;
 
@@ -52,6 +52,12 @@ pub(crate) enum JobAction {
         /// Higher runs first.
         #[arg(long, default_value_t = 0)]
         priority: i64,
+        /// Restrict placement to these existing catalog host identities.
+        #[arg(long = "host", value_name = "HOST")]
+        hosts: Vec<String>,
+        /// Stable durable intent key for safe retries after a lost acknowledgement.
+        #[arg(long)]
+        idempotency_key: Option<String>,
         #[command(flatten)]
         output: OutputOpts,
     },
@@ -70,6 +76,12 @@ pub(crate) enum JobAction {
         /// Higher runs first.
         #[arg(long, default_value_t = 0)]
         priority: i64,
+        /// Restrict placement to these existing catalog host identities.
+        #[arg(long = "host", value_name = "HOST")]
+        hosts: Vec<String>,
+        /// Stable durable intent key for safe retries after a lost acknowledgement.
+        #[arg(long)]
+        idempotency_key: Option<String>,
         #[command(flatten)]
         output: OutputOpts,
     },
@@ -134,6 +146,12 @@ pub(crate) enum JobAction {
         /// Name recorded on every claim this worker takes.
         #[arg(long)]
         worker: Option<String>,
+        /// This worker's catalog host identity, used for placement filtering.
+        #[arg(long)]
+        host: Option<String>,
+        /// Maximum jobs executing concurrently on this host.
+        #[arg(long, default_value = "1")]
+        concurrency: NonZeroUsize,
         #[command(flatten)]
         output: OutputOpts,
     },
@@ -169,6 +187,8 @@ pub(crate) async fn run(action: JobAction) -> miette::Result<()> {
             language,
             max_attempts,
             priority,
+            hosts,
+            idempotency_key,
             output,
         } => {
             let payload = serde_json::json!({
@@ -180,15 +200,29 @@ pub(crate) async fn run(action: JobAction) -> miette::Result<()> {
             submit(
                 &JobSpec::new(TranscribeHandler::KIND, payload)
                     .with_max_attempts(max_attempts)
-                    .with_priority(priority),
+                    .with_priority(priority)
+                    .with_host_affinity(affinity(hosts))
+                    .with_optional_idempotency_key(idempotency_key),
                 &output,
             )
         },
-        JobAction::Submit { kind, payload, max_attempts, priority, output } => {
+        JobAction::Submit {
+            kind,
+            payload,
+            max_attempts,
+            priority,
+            hosts,
+            idempotency_key,
+            output,
+        } => {
             let parsed: serde_json::Value = serde_json::from_str(&payload)
                 .map_err(|e| miette::miette!("--payload is not valid JSON: {e}"))?;
             submit(
-                &JobSpec::new(kind, parsed).with_max_attempts(max_attempts).with_priority(priority),
+                &JobSpec::new(kind, parsed)
+                    .with_max_attempts(max_attempts)
+                    .with_priority(priority)
+                    .with_host_affinity(affinity(hosts))
+                    .with_optional_idempotency_key(idempotency_key),
                 &output,
             )
         },
@@ -198,8 +232,8 @@ pub(crate) async fn run(action: JobAction) -> miette::Result<()> {
         JobAction::Status { id, output } => status(&id, &output),
         JobAction::Logs { id, tail } => logs(&id, tail),
         JobAction::Cancel { id, output } => cancel(&id, &output),
-        JobAction::Run { forever, max_jobs, idle_secs, worker, output } => {
-            run_worker(forever, max_jobs, idle_secs, worker, &output).await
+        JobAction::Run { forever, max_jobs, idle_secs, worker, host, concurrency, output } => {
+            run_worker(forever, max_jobs, idle_secs, worker, host, concurrency, &output).await
         },
         JobAction::Stats { output } => stats(&output),
         JobAction::Purge { older_than_days, output } => purge(older_than_days, &output),
@@ -330,8 +364,75 @@ fn classify(err: aphrody_voice::stt::SttError) -> HandlerError {
     }
 }
 
-fn worker(name: String) -> miette::Result<Worker> {
-    Ok(Worker::new(store()?, job_logs()?, name).with_handler(Arc::new(TranscribeHandler)))
+fn affinity(hosts: Vec<String>) -> HostAffinity {
+    if hosts.is_empty() { HostAffinity::Any } else { HostAffinity::Hosts(hosts) }
+}
+
+/// Construct the product worker against the protected local queue and logs.
+/// Service owners drive its bounded loop directly, without command-output capture.
+///
+/// # Errors
+/// Returns an error when the queue or protected state directory cannot be opened.
+pub fn create_job_worker(name: String, host: Option<String>) -> miette::Result<Worker> {
+    let worker = Worker::new(store()?, job_logs()?, name)
+        .with_handler(Arc::new(TranscribeHandler))
+        .with_handler(Arc::new(WebPipelineHandler));
+    Ok(match host {
+        Some(host) => worker.with_host(host),
+        None => worker,
+    })
+}
+
+/// Product Web ingestion runs through the same owner as the CLI and FFI.
+struct WebPipelineHandler;
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WebPipelinePayload {
+    args: Vec<String>,
+}
+
+#[async_trait::async_trait]
+impl JobHandler for WebPipelineHandler {
+    fn kind(&self) -> &str {
+        "web-pipeline"
+    }
+
+    async fn run(&self, job: &Job, ctx: &JobContext) -> Result<serde_json::Value, HandlerError> {
+        let payload: WebPipelinePayload = serde_json::from_value(job.payload.clone())
+            .map_err(|error| HandlerError::Permanent(format!("bad Web payload: {error}")))?;
+        ctx.info("running native Web pipeline");
+        let result = run_owned_local(move || crate::run_web_pipeline(payload.args)).await?;
+        result.map_err(|error| HandlerError::Permanent(format!("Web pipeline failed: {error}")))
+    }
+}
+
+/// Native browser futures are not Send. Their factory crosses into the existing
+/// runtime's blocking pool; construction, polling and destruction remain on that
+/// one thread. Dropping the handler closes the channel and cancels the local
+/// future, including when its lease was lost. No new runtime or child process.
+async fn run_owned_local<F, Fut, T>(factory: F) -> Result<T, HandlerError>
+where
+    F: FnOnce() -> Fut + Send + 'static,
+    Fut: Future<Output = T>,
+    T: Send + 'static,
+{
+    let handle = tokio::runtime::Handle::current();
+    let (_cancel_on_drop, mut cancelled) = tokio::sync::oneshot::channel::<()>();
+    let task = tokio::task::spawn_blocking(move || {
+        handle.block_on(async move {
+            let local = factory();
+            tokio::pin!(local);
+            tokio::select! {
+                biased;
+                _ = &mut cancelled => None,
+                result = &mut local => Some(result),
+            }
+        })
+    });
+    task.await
+        .map_err(|error| HandlerError::Retryable(format!("native worker task failed: {error}")))?
+        .ok_or_else(|| HandlerError::Permanent("native worker was cancelled".into()))
 }
 
 // -- actions ------------------------------------------------------------------
@@ -466,10 +567,12 @@ async fn run_worker(
     max_jobs: usize,
     idle_secs: u64,
     name: Option<String>,
+    host: Option<String>,
+    concurrency: NonZeroUsize,
     output: &OutputOpts,
 ) -> miette::Result<()> {
     let name = name.unwrap_or_else(default_worker_name);
-    let worker = worker(name.clone())?;
+    let worker = create_job_worker(name.clone(), host)?;
 
     let recovered = worker.recover().map_err(|e| miette::miette!("recovery failed: {e}"))?;
     if !recovered.is_clean() {
@@ -483,14 +586,16 @@ async fn run_worker(
     if forever {
         eprintln!("worker `{name}` consuming {:?}; ctrl-c to stop", worker.kinds());
         worker
-            .run_forever(std::time::Duration::from_secs(idle_secs))
+            .run_forever_parallel(concurrency, std::time::Duration::from_secs(idle_secs))
             .await
             .map_err(|e| miette::miette!("worker stopped: {e}"))?;
         return Ok(());
     }
 
-    let outcomes =
-        worker.drain(max_jobs).await.map_err(|e| miette::miette!("worker failed: {e}"))?;
+    let outcomes = worker
+        .drain_parallel(max_jobs, concurrency)
+        .await
+        .map_err(|e| miette::miette!("worker failed: {e}"))?;
 
     let mut report = Report::new("Ran", &["OUTCOME", "ID"]);
     for outcome in &outcomes {
@@ -506,6 +611,7 @@ async fn run_worker(
     let json = serde_json::json!({
         "worker": name,
         "recovered": recovered,
+        "concurrency": concurrency.get(),
         "ran": outcomes.len(),
     });
     output.emit_report(&report, &json)
@@ -575,10 +681,102 @@ mod tests {
     use super::*;
 
     #[test]
+    fn placement_and_concurrency_are_native_command_arguments() {
+        #[derive(clap::Parser)]
+        struct Request {
+            #[command(subcommand)]
+            action: JobAction,
+        }
+        use clap::Parser as _;
+        let submit = Request::try_parse_from([
+            "job",
+            "submit",
+            "web-pipeline",
+            "--host",
+            "vps",
+            "--host",
+            "wsl",
+        ])
+        .unwrap();
+        match submit.action {
+            JobAction::Submit { hosts, .. } => assert_eq!(hosts, ["vps", "wsl"]),
+            _ => panic!("expected submit"),
+        }
+        let run =
+            Request::try_parse_from(["job", "run", "--host", "vps", "--concurrency", "3"]).unwrap();
+        match run.action {
+            JobAction::Run { host, concurrency, .. } => {
+                assert_eq!(host.as_deref(), Some("vps"));
+                assert_eq!(concurrency.get(), 3);
+            },
+            _ => panic!("expected run"),
+        }
+        assert!(Request::try_parse_from(["job", "run", "--concurrency", "0"]).is_err());
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn local_native_future_is_created_and_polled_on_one_thread() {
+        let caller = std::thread::current().id();
+        let owner = run_owned_local(|| async {
+            let local = std::rc::Rc::new(std::thread::current().id());
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            assert_eq!(*local, std::thread::current().id());
+            *local
+        })
+        .await
+        .unwrap();
+        assert_ne!(owner, caller);
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn dropping_handler_cancels_its_owned_native_future() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        struct Dropped(Arc<AtomicBool>);
+        impl Drop for Dropped {
+            fn drop(&mut self) {
+                self.0.store(true, Ordering::SeqCst);
+            }
+        }
+        let dropped = Arc::new(AtomicBool::new(false));
+        let marker = dropped.clone();
+        let (started, ready) = tokio::sync::oneshot::channel();
+        let owned = tokio::spawn(run_owned_local(move || async move {
+            let _guard = Dropped(marker);
+            let local = std::rc::Rc::new(1);
+            let _ = started.send(());
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            *local
+        }));
+        ready.await.unwrap();
+        owned.abort();
+        assert!(owned.await.unwrap_err().is_cancelled());
+        tokio::time::timeout(std::time::Duration::from_secs(1), async {
+            while !dropped.load(Ordering::SeqCst) {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn web_handler_rejects_commands_outside_the_pipeline() {
+        let result =
+            run_owned_local(|| crate::run_web_pipeline(vec!["status".into()])).await.unwrap();
+        assert!(result.is_err());
+        assert!(
+            serde_json::from_value::<WebPipelinePayload>(serde_json::json!({
+                "args": ["crawl-index", "https://aphrody.com"], "shell": "not allowed"
+            }))
+            .is_err()
+        );
+    }
+
+    #[test]
     fn a_payload_without_a_model_falls_back_to_the_default_catalog_entry() {
         let payload: TranscribePayload =
             serde_json::from_value(serde_json::json!({ "input": "a.wav" })).unwrap();
-        assert_eq!(payload.model, "whisper-base-en");
+        assert_eq!(payload.model, aphrody_models::LocalRole::Stt.default_model());
         assert!(payload.out_text.is_none());
     }
 

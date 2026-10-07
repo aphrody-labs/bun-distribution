@@ -47,8 +47,25 @@ The active listener exposes an agent-scoped API under `/coord/{agent}/`:
 Records are stored beneath `<coord-dir>/agents/<agent>/tasks/` and
 `<coord-dir>/agents/<agent>/mailbox/`. Agent and task path segments accept only
 ASCII letters, digits, `_` and `-`. Set `APHRODY_A2A_COORD_TOKEN` on the listener
-to require `Authorization: Bearer <token>` on these routes. The legacy A2A and
-mailbox routes keep their existing contracts.
+to require `Authorization: Bearer <token>` on every task, mailbox, JSON-RPC,
+REST and legacy `/jsonrpc` or `/events` route. Only GET `/ping` and the public
+agent card remain anonymous. A TCP listener outside loopback refuses to start
+without this credential. Loopback without a token retains local compatibility.
+`--coord-dir` scopes all mailbox and durable-task routes, including the legacy
+broker, so a protected domain home can own their state.
+
+Protocol tasks and their results use the native filesystem task store beneath
+`<coord-dir>/a2a/tasks/`, including the JSON-RPC and REST bindings. They remain
+queryable after reconstructing the listener. Execution runs in the server's
+background task, independently of the requesting client; closing a terminal or
+MCP session does not cancel it. A service restart retains the records but does
+not automatically replay an interrupted coding task.
+
+The canonical MCP client sends the bearer credential from
+`APHRODY_A2A_TOKEN_FILE`, then `APHRODY_A2A_TOKEN`, then
+`APHRODY_A2A_COORD_TOKEN`. A configured unreadable or invalid file fails before
+the HTTP request; it never falls back to anonymous access. Credential files
+remain in the private store, and are read per call to support rotation.
 
 Shenron's server routes use this API when `APHRODY_A2A_COORD_API` is set to the
 Aphrody listener base URL, with optional `APHRODY_A2A_COORD_TOKEN`. They address
@@ -81,7 +98,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 | --- | --- |
 | `APHRODY_A2A_PUBLIC_URL` | Base URL advertised in the agent card (default `http://<bind>`). |
 | `APHRODY_A2A_DRY_RUN` | Never spawn peer CLIs, even when `ListenerConfig::dry_run` is false. |
-| `APHRODY_A2A_COORD_TOKEN` | Require a bearer token on `/coord/{agent}/tasks` and `/coord/{agent}/envelopes`. |
+| `APHRODY_A2A_DEFAULT_PEER` | Native provider for messages without an explicit peer (legacy default `grok`); invalid names refuse startup. The persistent VPS service selects `codex`. |
+| `APHRODY_A2A_COORD_TOKEN` | Require a bearer token on all private routes; mandatory outside loopback. |
 | `APHRODY_A2A_PEERS_FILE` | Peer catalog JSON read by `PeerRegistry::from_env`. |
 | `APHRODY_A2A_PEER_<ID>_URL` | Per-peer HTTP endpoint override. |
 | `APHRODY_AGY_BIN` | Path of the `agy` executable used by `PeerInvoker`. |

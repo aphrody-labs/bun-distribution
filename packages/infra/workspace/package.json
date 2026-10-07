@@ -84,6 +84,7 @@
     "test": "bun test test"
   },
   "dependencies": {
+    "@aphrody/a2a": "workspace:*",
     "@aphrody/os": "workspace:*",
     "@aphrody/paths": "workspace:*",
     "@aphrody/runtime-sdk": "workspace:*",

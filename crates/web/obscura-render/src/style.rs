@@ -6128,6 +6128,9 @@ fn resolve_contextual(value: &str, context: &LengthContext) -> Option<f32> {
         let end = find_matching_paren(rest)?;
         return eval_contextual_calc(&rest[..end], context);
     }
+    if value.starts_with("env(") {
+        return resolve_environment_length(value, |fallback| resolve_contextual(fallback, context));
+    }
     if let Some(rest) = value.strip_prefix("max(").or_else(|| value.strip_prefix("min(")) {
         let is_max = value.starts_with("max(");
         let end = find_matching_paren(rest)?;
@@ -6180,6 +6183,35 @@ fn round_css_value(value: f32, step: f32, strategy: &str) -> Option<f32> {
         _ => quotient.round(),
     };
     Some(rounded * step.abs())
+}
+
+/// The headless rectangular viewport has no display cutouts. Known safe-area
+/// variables are defined as zero; unknown variables use their CSS fallback.
+/// Keep fallbacks contextual so viewport/font units resolve at layout time.
+fn resolve_environment_length(
+    value: &str,
+    resolve_fallback: impl FnOnce(&str) -> Option<f32>,
+) -> Option<f32> {
+    let rest = value.strip_prefix("env(")?;
+    let end = find_matching_paren(rest)?;
+    if end + 5 != value.len() {
+        return None;
+    }
+    let (name, fallback) =
+        rest[..end].split_once(',').map_or((rest[..end].trim(), None), |(name, fallback)| {
+            (name.trim(), Some(fallback.trim()))
+        });
+    match name {
+        "safe-area-inset-top"
+        | "safe-area-inset-right"
+        | "safe-area-inset-bottom"
+        | "safe-area-inset-left"
+        | "safe-area-max-inset-top"
+        | "safe-area-max-inset-right"
+        | "safe-area-max-inset-bottom"
+        | "safe-area-max-inset-left" => Some(0.0),
+        _ => resolve_fallback(fallback?),
+    }
 }
 
 fn contextual_atom(value: &str, context: &LengthContext) -> Option<f32> {
@@ -6349,6 +6381,9 @@ fn resolve_length(value: &str) -> Option<f32> {
         let end = find_matching_paren(rest)?;
         return eval_calc(&rest[..end]);
     }
+    if v.starts_with("env(") {
+        return resolve_environment_length(v, resolve_length);
+    }
     if let Some(rest) = v.strip_prefix("max(").or_else(|| v.strip_prefix("min(")) {
         let is_max = v.starts_with("max(");
         let end = find_matching_paren(rest)?;
@@ -6390,7 +6425,7 @@ fn resolve_length(value: &str) -> Option<f32> {
         return round_css_value(resolved, step, strategy);
     }
     if v.contains('(') {
-        return None; // an unhandled function (env(), ...): no safe fallback
+        return None; // an unhandled function: no safe fallback
     }
     px_value(v).or_else(|| v.parse::<f32>().ok())
 }
@@ -10155,6 +10190,46 @@ mod tests {
     fn calc_add_and_subtract() {
         assert_eq!(resolve_length("calc(750px - 1px)"), Some(749.0));
         assert_eq!(resolve_length("calc(10px + 5px)"), Some(15.0));
+    }
+
+    #[test]
+    fn environment_lengths_preserve_safe_area_and_contextual_fallbacks() {
+        assert_eq!(resolve_length("env(safe-area-inset-bottom)"), Some(0.0));
+        assert_eq!(resolve_length("env(safe-area-inset-bottom, 42px)"), Some(0.0));
+        assert_eq!(
+            resolve_length("calc(80px + env(safe-area-inset-bottom) + 4.25rem)"),
+            Some(148.0)
+        );
+        assert_eq!(resolve_length("env(unknown-inset, calc(10px + 2px))"), Some(12.0));
+        assert_eq!(
+            resolve_contextual_length("env(unknown-inset, 2em)", 20.0, 16.0, 3.9, 8.44, 390.0),
+            Some(40.0)
+        );
+        assert_eq!(resolve_length("env(unknown-inset)"), None);
+        assert_eq!(resolve_length("env(SAFE-AREA-INSET-BOTTOM)"), None);
+        assert_eq!(resolve_length("env(safe-area-inset-bottom)garbage"), None);
+        assert_eq!(resolve_length("env(safe-area-inset-bottom"), None);
+    }
+
+    #[test]
+    fn mobile_safe_area_reserves_navigation_space_and_positions_floating_control() {
+        use obscura_dom::tree_sink::parse_html;
+
+        let tree = parse_html(
+            r#"<style>
+                :root { --nav-height: 80px; --nav-total: calc(var(--nav-height) + env(safe-area-inset-bottom)); }
+                body { margin: 0; padding-bottom: var(--nav-total); }
+                #invite { position: fixed; left: 16px; bottom: calc(var(--nav-total) + 4.25rem); width: 242px; height: 44px; }
+                #nav { position: fixed; bottom: 0; height: var(--nav-total); width: 100%; }
+            </style><div id="invite"></div><div id="nav"></div>"#,
+        );
+        let laid = crate::dom::layout_dom(&tree, (390.0, 844.0));
+        let invite = tree.query_selector("#invite").unwrap().unwrap();
+        let nav = tree.query_selector("#nav").unwrap().unwrap();
+        assert_eq!(laid.rects[&invite].y, 652.0);
+        assert_eq!(laid.rects[&nav].y, 764.0);
+        assert_eq!(laid.rects[&nav].height, 80.0);
+        assert!(laid.rects[&invite].y + laid.rects[&invite].height < laid.rects[&nav].y);
     }
 
     #[test]

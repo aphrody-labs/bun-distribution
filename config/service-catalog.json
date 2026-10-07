@@ -53,9 +53,7 @@
       "unit": "aphrody-llama-gemma4.service",
       "health": "http://127.0.0.1:8798/health",
       "port": 8798,
-      "capabilities": [
-        "chat"
-      ],
+      "capabilities": ["chat"],
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody/runtimes/llama-b11415",
       "model": {
@@ -75,9 +73,7 @@
       "unit": "aphrody-llama-shenron-chat.service",
       "health": "http://127.0.0.1:8799/health",
       "port": 8799,
-      "capabilities": [
-        "chat"
-      ],
+      "capabilities": ["chat"],
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody/runtimes/llama-b11415",
       "model": {
@@ -139,9 +135,7 @@
       "unit": "aphrody-ai-http.service",
       "health": "http://127.0.0.1:8789/healthz",
       "port": 8789,
-      "capabilities": [
-        "ai-http"
-      ],
+      "capabilities": ["ai-http"],
       "sourceRepo": "aphrody-ai",
       "workingDirectory": "/srv/aphrody/current",
       "publicProxy": "nginx",
@@ -159,9 +153,9 @@
       "health": "http://127.0.0.1:8793/healthz",
       "port": 8793,
       "sourceRepo": "aphrody",
-      "workingDirectory": "/home/ubuntu/.aphrody",
+      "workingDirectory": "/srv/aphrody/shared/agent-workspaces/aphrody",
       "public": false,
-      "note": "MCP Streamable HTTP of `aphrody mcp-server http` (toolbox build), loopback only and never proxied (the binary refuses a non-loopback bind). /mcp requires `Authorization: Bearer` (APHRODY_MCP_HTTP_TOKEN, generated on the host in /etc/aphrody/aphrody-mcp-http.env, constant-time comparison, 503 without a token); /healthz needs none. Port 8793, not 8789: the vps keeps 8789 for the WSL compute tunnel. Runbook: docs/operations/infra/MCP-A2A.md; unit config/host/systemd/aphrody/aphrody-mcp-http.service"
+      "note": "MCP Streamable HTTP of `aphrody-mcp http` (toolbox build), loopback only and never proxied (the binary refuses a non-loopback bind). /mcp requires `Authorization: Bearer` (APHRODY_MCP_HTTP_TOKEN, generated on the host in /etc/aphrody/aphrody-mcp-http.env, constant-time comparison, 503 without a token); /healthz needs none. Port 8793, not 8789: the vps keeps 8789 for the WSL compute tunnel. Runbook: docs/operations/infra/MCP-A2A.md; unit config/host/systemd/aphrody/aphrody-mcp-http.service"
     },
     {
       "id": "aphrody-shenron-embed",
@@ -171,9 +165,7 @@
       "unit": "aphrody-shenron-embed.service",
       "health": "http://127.0.0.1:8794/health",
       "port": 8794,
-      "capabilities": [
-        "embed"
-      ],
+      "capabilities": ["embed"],
       "sourceRepo": "aphrody-ai",
       "workingDirectory": "/srv/aphrody/current",
       "public": false,
@@ -188,11 +180,9 @@
       "unit": "aphrody-a2a.service",
       "health": "http://127.0.0.1:8788/ping",
       "port": 8788,
-      "capabilities": [
-        "a2a"
-      ],
+      "capabilities": ["a2a"],
       "sourceRepo": "aphrody",
-      "workingDirectory": "/srv/aphrody/shared/a2a",
+      "workingDirectory": "/srv/aphrody/shared/agent-workspaces/aphrody",
       "a2a": {
         "registry": "config/a2a-peers.json",
         "peer": "aphrody",
@@ -200,7 +190,7 @@
         "agentCardPath": "/.well-known/agent-card.json"
       },
       "public": false,
-      "note": "A2A 1.0 server of `aphrody a2a serve` on the coord mailbox (/srv/aphrody/shared/coord), loopback only: the former public routes of aphrody.com and api.aphrody.com stay removed and the registry peer `aphrody` stays retired (its https endpoint is the retired public edge). Peer agent CLIs are not spawned (APHRODY_A2A_DRY_RUN=1). Declared 2026-10-06, not applied. Runbook: docs/operations/infra/MCP-A2A.md; unit config/host/systemd/aphrody/aphrody-a2a.service"
+      "note": "Persistent native A2A service on loopback 8788, authenticated private routes (APHRODY_A2A_COORD_TOKEN), dedicated main checkout and existing Codex authentication. Protocol tasks/results remain in /srv/aphrody/shared/coord/a2a/tasks across client disconnects and service reconstruction; interrupted coding tasks are not replayed on restart. Canonical MCP child is available. Runbook: docs/operations/infra/MCP-A2A.md."
     },
     {
       "id": "shenron-site",
@@ -323,6 +313,44 @@
       "host": "dbfr",
       "public": false,
       "note": "Daily container-owned PostgreSQL, Redis and live SQLite snapshots, integrity/checksum-verified; protected under /srv/shenron/shared/backups/container."
+    },
+    {
+      "id": "aphrody-mcp-http-dbfr",
+      "application": "aphrody",
+      "kind": "rust-http",
+      "runtime": "rust",
+      "unit": "aphrody-mcp-http-dbfr.service",
+      "health": "http://127.0.0.1:8793/healthz",
+      "port": 8793,
+      "sourceRepo": "aphrody",
+      "workingDirectory": "/home/ubuntu/.aphrody",
+      "public": false,
+      "note": "DBFR canonical native MCP with jobs enabled, protected host-local bearer, loopback127.0.0.1:8793. Private WireGuard projection must bind DBFR address10.200.77.3, never the VPS hub address. Activation requires qualified jobs binary and authentication probes.",
+      "host": "dbfr"
+    },
+    {
+      "id": "aphrody-jobs-worker-vps",
+      "application": "aphrody",
+      "kind": "rust-worker",
+      "runtime": "rust",
+      "unit": "aphrody-jobs-worker-vps.service",
+      "sourceRepo": "aphrody",
+      "workingDirectory": "/home/ubuntu/.aphrody",
+      "public": false,
+      "host": "vps",
+      "note": "Persistent local SQLite queue with fenced leases, capability filtering and bounded native web-pipeline/transcribe handlers. Inputs and credentials remain in protected host stores; no training role or network transport is granted."
+    },
+    {
+      "id": "aphrody-jobs-worker-dbfr",
+      "application": "aphrody",
+      "kind": "rust-worker",
+      "runtime": "rust",
+      "unit": "aphrody-jobs-worker-dbfr.service",
+      "sourceRepo": "aphrody",
+      "workingDirectory": "/home/ubuntu/.aphrody",
+      "public": false,
+      "host": "dbfr",
+      "note": "Persistent local SQLite queue with fenced leases, capability filtering and bounded native web-pipeline/transcribe handlers. Inputs and credentials remain in protected host stores; no training role or network transport is granted."
     }
   ],
   "policies": {
@@ -340,10 +368,7 @@
       "bundle": {
         "root": "/srv/aphrody-infra",
         "adapter": "scripts/release/atomic-deploy-bundle.sh",
-        "order": [
-          "aphrody",
-          "shenron"
-        ]
+        "order": ["aphrody", "shenron"]
       }
     },
     "applicationRoots": {
@@ -365,12 +390,7 @@
       "shenron-zswap.service",
       "filebrowser.service"
     ],
-    "sharedRuntimes": [
-      "bun",
-      "postgresql",
-      "redis",
-      "nginx"
-    ],
+    "sharedRuntimes": ["bun", "postgresql", "redis", "nginx"],
     "databasePolicy": "postgresql-primary-with-sqlite-local-cache",
     "authPolicy": "one-better-auth-contract-per-public-origin"
   }

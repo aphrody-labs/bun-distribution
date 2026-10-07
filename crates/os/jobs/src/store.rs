@@ -27,11 +27,11 @@ use rusqlite::{Connection, OptionalExtension as _, params};
 
 use crate::{
     error::{JobError, Result},
-    spec::{Job, JobSpec, JobState},
+    spec::{HostAffinity, Job, JobSpec, JobState},
 };
 
 /// Schema version written to `PRAGMA user_version`.
-const SCHEMA_VERSION: i64 = 1;
+const SCHEMA_VERSION: i64 = 3;
 
 /// Default lease length. Long enough that a slow model load does not lose the
 /// claim, short enough that a crashed worker's job is picked up the same
@@ -180,13 +180,36 @@ impl JobStore {
                  lease_expires_at TEXT,
                  worker           TEXT,
                  result           TEXT,
-                 last_error       TEXT
+                 last_error       TEXT,
+                 host_affinity    TEXT NOT NULL DEFAULT '{\"mode\":\"any\"}',
+                 idempotency_key  TEXT
              );
              CREATE INDEX IF NOT EXISTS jobs_ready
                  ON jobs (state, priority DESC, created_at);
              CREATE INDEX IF NOT EXISTS jobs_lease ON jobs (state, lease_expires_at);",
         )?;
+        // Serialize additive schema upgrades across concurrently starting services.
+        // If migration fails, this newly opened connection is dropped and SQLite rolls back.
+        self.conn.execute_batch("BEGIN IMMEDIATE")?;
+        let affinity_exists: bool = self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM pragma_table_info('jobs') WHERE name = 'host_affinity')",
+            [],
+            |row| row.get(0),
+        )?;
+        if !affinity_exists {
+            self.conn.execute_batch("ALTER TABLE jobs ADD COLUMN host_affinity TEXT NOT NULL DEFAULT '{\"mode\":\"any\"}'")?;
+        }
+        let key_exists: bool = self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM pragma_table_info('jobs') WHERE name = 'idempotency_key')",
+            [],
+            |row| row.get(0),
+        )?;
+        if !key_exists {
+            self.conn.execute_batch("ALTER TABLE jobs ADD COLUMN idempotency_key TEXT")?;
+        }
+        self.conn.execute_batch("CREATE UNIQUE INDEX IF NOT EXISTS jobs_idempotency ON jobs(idempotency_key) WHERE idempotency_key IS NOT NULL")?;
         self.conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
+        self.conn.execute_batch("COMMIT")?;
         Ok(())
     }
 
@@ -205,6 +228,18 @@ impl JobStore {
     ///
     /// [`JobError::Sqlite`] on write failure.
     pub fn submit_at(&self, spec: &JobSpec, now: DateTime<Utc>) -> Result<Job> {
+        if let HostAffinity::Hosts(hosts) = &spec.host_affinity
+            && (hosts.is_empty() || hosts.iter().any(|host| host.trim().is_empty()))
+        {
+            return Err(JobError::InvalidSpec(
+                "host affinity needs nonempty host identities".to_owned(),
+            ));
+        }
+        if let Some(key) = &spec.idempotency_key
+            && (key.trim().is_empty() || key.len() > 256)
+        {
+            return Err(JobError::InvalidSpec("idempotency key must contain 1-256 bytes".into()));
+        }
         let job = Job {
             id: uuid::Uuid::new_v4().to_string(),
             kind: spec.kind.clone(),
@@ -220,12 +255,15 @@ impl JobStore {
             worker: None,
             result: None,
             last_error: None,
+            host_affinity: spec.host_affinity.clone(),
+            idempotency_key: spec.idempotency_key.clone(),
         };
-        self.conn.execute(
+        let inserted = self.conn.execute(
             "INSERT INTO jobs
                 (id, kind, payload, state, attempts, max_attempts, priority,
-                 created_at, updated_at, run_after)
-             VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7, ?7, ?8)",
+                 created_at, updated_at, run_after, host_affinity, idempotency_key)
+             VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7, ?7, ?8, ?9, ?10)
+             ON CONFLICT(idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING",
             params![
                 job.id,
                 job.kind,
@@ -235,8 +273,30 @@ impl JobStore {
                 job.priority,
                 rfc3339(now),
                 job.run_after.map(rfc3339),
+                serde_json::to_string(&job.host_affinity)?,
+                job.idempotency_key,
             ],
         )?;
+        if inserted == 0 {
+            let id: String = self.conn.query_row(
+                "SELECT id FROM jobs WHERE idempotency_key=?1",
+                params![spec.idempotency_key],
+                |row| row.get(0),
+            )?;
+            let existing = self.get(&id)?;
+            if existing.kind != spec.kind
+                || existing.payload != spec.payload
+                || existing.host_affinity != spec.host_affinity
+                || existing.max_attempts != spec.max_attempts.max(1)
+                || existing.priority != spec.priority
+                || existing.run_after.map(rfc3339) != spec.run_after.map(rfc3339)
+            {
+                return Err(JobError::InvalidSpec(
+                    "idempotency key already names a different job intent".into(),
+                ));
+            }
+            return Ok(existing);
+        }
         Ok(job)
     }
 
@@ -265,6 +325,39 @@ impl JobStore {
         lease: Duration,
         now: DateTime<Utc>,
     ) -> Result<Option<Job>> {
+        self.claim_filtered_at(worker, None, None, lease, now)
+    }
+
+    /// Claim only a kind handled by this worker and placement allowed for its host.
+    /// An empty capability list claims nothing and spends no retry budget.
+    ///
+    /// # Errors
+    /// As [`Self::claim`], or [`JobError::InvalidWorkerConfig`] for a nonpositive lease.
+    pub fn claim_matching(
+        &self,
+        worker: &str,
+        host: Option<&str>,
+        kinds: &[&str],
+        lease: Duration,
+    ) -> Result<Option<Job>> {
+        self.claim_filtered_at(worker, host, Some(kinds), lease, Utc::now())
+    }
+
+    fn claim_filtered_at(
+        &self,
+        worker: &str,
+        host: Option<&str>,
+        kinds: Option<&[&str]>,
+        lease: Duration,
+        now: DateTime<Utc>,
+    ) -> Result<Option<Job>> {
+        if lease <= Duration::zero() {
+            return Err(JobError::InvalidWorkerConfig("lease must be positive"));
+        }
+        if kinds.is_some_and(<[&str]>::is_empty) {
+            return Ok(None);
+        }
+        let kinds_json = kinds.map(serde_json::to_string).transpose()?;
         // One statement, so two workers cannot both take the same row: the
         // loser's `state = 'queued'` predicate no longer holds.
         let claimed: Option<String> = self
@@ -280,11 +373,16 @@ impl JobStore {
                       SELECT id FROM jobs
                        WHERE state = 'queued'
                          AND (run_after IS NULL OR run_after <= ?3)
+                         AND (?4 IS NULL OR kind IN (SELECT value FROM json_each(?4)))
+                         AND (json_extract(host_affinity, '$.mode') = 'any'
+                              OR (?5 IS NOT NULL AND EXISTS(
+                                  SELECT 1 FROM json_each(host_affinity, '$.hosts') WHERE value = ?5
+                              )))
                        ORDER BY priority DESC, created_at ASC
                        LIMIT 1
                   )
               RETURNING id",
-                params![worker, rfc3339(now + lease), rfc3339(now)],
+                params![worker, rfc3339(now + lease), rfc3339(now), kinds_json, host],
                 |row| row.get(0),
             )
             .optional()?;
@@ -307,6 +405,77 @@ impl JobStore {
     /// [`JobError::Sqlite`] on write failure.
     pub fn heartbeat(&self, id: &str, worker: &str, lease: Duration) -> Result<bool> {
         self.heartbeat_at(id, worker, lease, Utc::now())
+    }
+
+    /// Extend only this exact claim generation; a reclaimed job may reuse the worker name.
+    ///
+    /// # Errors
+    /// [`JobError::Sqlite`] on write failure.
+    pub fn heartbeat_owned(
+        &self,
+        id: &str,
+        worker: &str,
+        attempt: u32,
+        lease: Duration,
+    ) -> Result<bool> {
+        let now = Utc::now();
+        let changed = self.conn.execute(
+            "UPDATE jobs SET lease_expires_at=?1, updated_at=?2
+             WHERE id=?3 AND worker=?4 AND attempts=?5 AND state='running'",
+            params![rfc3339(now + lease), rfc3339(now), id, worker, attempt],
+        )?;
+        Ok(changed == 1)
+    }
+
+    /// Finish only the exact claim still owned by the caller, without overwriting cancellation/recovery.
+    /// Returns `None` when that claim no longer exists.
+    ///
+    /// # Errors
+    /// [`JobError::Sqlite`] or [`JobError::Json`] on persistence failure.
+    pub fn succeed_owned(
+        &self,
+        id: &str,
+        worker: &str,
+        attempt: u32,
+        result: &serde_json::Value,
+    ) -> Result<Option<Job>> {
+        let changed = self.conn.execute(
+            "UPDATE jobs SET state='succeeded', result=?1, worker=NULL, lease_expires_at=NULL, updated_at=?2
+             WHERE id=?3 AND worker=?4 AND attempts=?5 AND state='running'",
+            params![serde_json::to_string(result)?, rfc3339(Utc::now()), id, worker, attempt],
+        )?;
+        if changed == 1 { self.get(id).map(Some) } else { Ok(None) }
+    }
+
+    /// Record a handler failure only while its claim generation is still owned.
+    /// A permanent failure does not retry; a retryable one follows the stored attempt budget.
+    ///
+    /// # Errors
+    /// [`JobError::Sqlite`] or [`JobError::UnknownJob`] on persistence failure.
+    pub fn fail_owned(
+        &self,
+        id: &str,
+        worker: &str,
+        attempt: u32,
+        error: &str,
+        retryable: bool,
+        backoff: Duration,
+    ) -> Result<Option<Job>> {
+        let job = self.get(id)?;
+        if job.state != JobState::Running
+            || job.worker.as_deref() != Some(worker)
+            || job.attempts != attempt
+        {
+            return Ok(None);
+        }
+        let retry = retryable && job.has_attempts_left();
+        let now = Utc::now();
+        let changed = self.conn.execute(
+            "UPDATE jobs SET state=?1, worker=NULL, lease_expires_at=NULL, last_error=?2, run_after=?3, updated_at=?4
+             WHERE id=?5 AND worker=?6 AND attempts=?7 AND state='running'",
+            params![if retry {"queued"} else {"failed"}, error, retry.then(||rfc3339(now + backoff)),rfc3339(now),id,worker,attempt],
+        )?;
+        if changed == 1 { self.get(id).map(Some) } else { Ok(None) }
     }
 
     /// [`Self::heartbeat`] with an explicit clock.
@@ -628,7 +797,7 @@ impl JobStore {
 
 /// Column list, kept in one place so `get` and `list` cannot drift apart.
 const COLUMNS: &str = "id, kind, payload, state, attempts, max_attempts, priority, created_at, \
-                       updated_at, run_after, lease_expires_at, worker, result, last_error";
+                       updated_at, run_after, lease_expires_at, worker, result, last_error, host_affinity, idempotency_key";
 
 fn rfc3339(when: DateTime<Utc>) -> String {
     when.to_rfc3339_opts(chrono::SecondsFormat::Micros, true)
@@ -667,6 +836,8 @@ fn row_to_job(row: &rusqlite::Row<'_>) -> Result<Job> {
         None => None,
     };
 
+    let host_affinity = serde_json::from_str(&row.get::<_, String>(14)?)
+        .map_err(|error| corrupt(format!("invalid host affinity: {error}")))?;
     Ok(Job {
         id,
         kind: row.get(1)?,
@@ -682,12 +853,69 @@ fn row_to_job(row: &rusqlite::Row<'_>) -> Result<Job> {
         worker: row.get(11)?,
         result,
         last_error: row.get(13)?,
+        host_affinity,
+        idempotency_key: row.get(15)?,
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn lost_acknowledgement_retry_returns_the_durable_job_after_reopen() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("jobs.db");
+        let spec = JobSpec::new(
+            "web-pipeline",
+            serde_json::json!({"args":["crawl-index","https://aphrody.com"]}),
+        )
+        .with_host_affinity(HostAffinity::Hosts(vec!["vps".into()]))
+        .with_idempotency_key("shenron:intent:42");
+        let store = JobStore::open(&path).unwrap();
+        let submitted = store.submit(&spec).unwrap();
+        let first = store.get(&submitted.id).unwrap();
+        drop(store); // The acknowledgement never reached the caller.
+        let store = JobStore::open(&path).unwrap();
+        let retry = store.submit(&spec).unwrap();
+        assert_eq!(retry, first);
+        assert_eq!(store.stats().unwrap().queued, 1);
+        let mut collision = spec.clone();
+        collision.payload = serde_json::json!({"args":["dragon-ball"]});
+        assert!(matches!(store.submit(&collision), Err(JobError::InvalidSpec(_))));
+        collision = spec.clone();
+        collision.host_affinity = HostAffinity::Hosts(vec!["wsl".into()]);
+        assert!(matches!(store.submit(&collision), Err(JobError::InvalidSpec(_))));
+        let cancelled = store.cancel(&first.id).unwrap();
+        assert_eq!(store.submit(&spec).unwrap(), cancelled);
+        assert_eq!(store.stats().unwrap().cancelled, 1);
+    }
+
+    #[test]
+    fn concurrent_remote_retries_create_one_intent() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("jobs.db");
+        let stores = [JobStore::open(&path).unwrap(), JobStore::open(&path).unwrap()];
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+        let handles: Vec<_> = stores
+            .into_iter()
+            .map(|store| {
+                let barrier = barrier.clone();
+                std::thread::spawn(move || {
+                    let spec = JobSpec::new(
+                        "web-pipeline",
+                        serde_json::json!({"args":["crawl-index","https://aphrody.com"]}),
+                    )
+                    .with_idempotency_key("same-intent");
+                    barrier.wait();
+                    store.submit(&spec).unwrap().id
+                })
+            })
+            .collect();
+        let ids: Vec<_> = handles.into_iter().map(|handle| handle.join().unwrap()).collect();
+        assert_eq!(ids[0], ids[1]);
+        assert_eq!(JobStore::open(path).unwrap().stats().unwrap().queued, 1);
+    }
 
     fn spec(kind: &str) -> JobSpec {
         JobSpec::new(kind, serde_json::json!({ "n": 1 }))
@@ -937,6 +1165,160 @@ mod tests {
         let store = JobStore::open(&path).unwrap();
         assert_eq!(store.get(&id).unwrap().kind, "persisted");
         assert_eq!(store.path(), Some(path.as_path()));
+    }
+
+    #[test]
+    fn claims_match_both_handler_capabilities_and_durable_host_placement() {
+        let store = JobStore::in_memory().unwrap();
+        let unknown = store.submit(&spec("foreign").with_priority(100)).unwrap();
+        let pc = store
+            .submit(
+                &spec("native")
+                    .with_host_affinity(HostAffinity::Hosts(vec!["windows-local".to_owned()]))
+                    .with_priority(20),
+            )
+            .unwrap();
+        let vps = store
+            .submit(&spec("native").with_host_affinity(HostAffinity::Hosts(vec!["vps".to_owned()])))
+            .unwrap();
+        assert!(store.claim_matching("none", Some("vps"), &[], DEFAULT_LEASE).unwrap().is_none());
+        assert!(store.claim("unplaced", DEFAULT_LEASE).unwrap().is_some());
+        assert_eq!(store.get(&unknown.id).unwrap().attempts, 1);
+        let chosen = store
+            .claim_matching("vps-worker", Some("vps"), &["native"], DEFAULT_LEASE)
+            .unwrap()
+            .unwrap();
+        assert_eq!(chosen.id, vps.id);
+        assert_eq!(store.get(&pc.id).unwrap().attempts, 0);
+        assert_eq!(
+            store
+                .claim_matching("pc-worker", Some("windows-local"), &["native"], DEFAULT_LEASE)
+                .unwrap()
+                .unwrap()
+                .id,
+            pc.id
+        );
+    }
+
+    #[test]
+    fn host_affinity_survives_restart_and_legacy_schema_migration_preserves_running_work() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("jobs.db");
+        let placed;
+        {
+            let store = JobStore::open(&path).unwrap();
+            placed = store
+                .submit(&spec("x").with_host_affinity(HostAffinity::Hosts(vec!["dbfr".to_owned()])))
+                .unwrap();
+        }
+        let legacy;
+        {
+            let store = JobStore::open(&path).unwrap();
+            assert_eq!(store.get(&placed.id).unwrap().host_affinity, placed.host_affinity);
+            assert!(
+                store.claim_matching("vps", Some("vps"), &["x"], DEFAULT_LEASE).unwrap().is_none()
+            );
+            legacy =
+                store.claim_matching("dbfr", Some("dbfr"), &["x"], DEFAULT_LEASE).unwrap().unwrap();
+            // Simulate the prior additive schema only in this disposable fixture.
+            store
+                .conn
+                .execute_batch("ALTER TABLE jobs DROP COLUMN host_affinity; DROP INDEX jobs_idempotency; ALTER TABLE jobs DROP COLUMN idempotency_key; PRAGMA user_version=1;")
+                .unwrap();
+        }
+        let upgraded = JobStore::open(&path).unwrap();
+        let running = upgraded.get(&legacy.id).unwrap();
+        assert_eq!(running.state, JobState::Running);
+        assert_eq!(running.worker, legacy.worker);
+        assert_eq!(running.payload, legacy.payload);
+        assert_eq!(running.host_affinity, HostAffinity::Any);
+    }
+
+    #[test]
+    fn concurrent_connections_cannot_duplicate_a_placed_claim() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("jobs.db");
+        let store = JobStore::open(&path).unwrap();
+        store
+            .submit(&spec("x").with_host_affinity(HostAffinity::Hosts(vec!["vps".to_owned()])))
+            .unwrap();
+        let a = JobStore::open(&path).unwrap();
+        let b = JobStore::open(&path).unwrap();
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+        let left_barrier = std::sync::Arc::clone(&barrier);
+        let left = std::thread::spawn(move || {
+            left_barrier.wait();
+            a.claim_matching("a", Some("vps"), &["x"], DEFAULT_LEASE).unwrap()
+        });
+        let right = std::thread::spawn(move || {
+            barrier.wait();
+            b.claim_matching("b", Some("vps"), &["x"], DEFAULT_LEASE).unwrap()
+        });
+        assert_eq!(
+            usize::from(left.join().unwrap().is_some())
+                + usize::from(right.join().unwrap().is_some()),
+            1
+        );
+    }
+
+    #[test]
+    fn impossible_placement_and_nonpositive_leases_are_rejected_without_claiming() {
+        let store = JobStore::in_memory().unwrap();
+        assert!(store.submit(&spec("x").with_host_affinity(HostAffinity::Hosts(vec![]))).is_err());
+        assert!(
+            store
+                .submit(&spec("x").with_host_affinity(HostAffinity::Hosts(vec![" ".to_owned()])))
+                .is_err()
+        );
+        let job = store.submit(&spec("x")).unwrap();
+        assert!(store.claim("w", Duration::zero()).is_err());
+        assert_eq!(store.get(&job.id).unwrap().attempts, 0);
+    }
+
+    #[test]
+    fn a_stale_claim_cannot_heartbeat_or_finish_a_new_generation_with_the_same_worker_name() {
+        let store = JobStore::in_memory().unwrap();
+        let now = Utc::now();
+        let job = store.submit_at(&spec("x").with_max_attempts(3), now).unwrap();
+        let old = store.claim_at("same-name", Duration::seconds(1), now).unwrap().unwrap();
+        store.recover_at(now + Duration::seconds(2)).unwrap();
+        let new = store
+            .claim_at("same-name", DEFAULT_LEASE, now + Duration::seconds(2))
+            .unwrap()
+            .unwrap();
+        assert_eq!(new.attempts, old.attempts + 1);
+        assert!(!store.heartbeat_owned(&job.id, "same-name", old.attempts, DEFAULT_LEASE).unwrap());
+        assert!(
+            store
+                .succeed_owned(
+                    &job.id,
+                    "same-name",
+                    old.attempts,
+                    &serde_json::json!({"stale":true})
+                )
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            store
+                .fail_owned(&job.id, "same-name", old.attempts, "old error", true, Duration::zero())
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(store.get(&job.id).unwrap().state, JobState::Running);
+        store.cancel(&job.id).unwrap();
+        assert!(
+            store
+                .succeed_owned(
+                    &job.id,
+                    "same-name",
+                    new.attempts,
+                    &serde_json::json!({"cancelled":true})
+                )
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(store.get(&job.id).unwrap().state, JobState::Cancelled);
     }
 
     #[test]

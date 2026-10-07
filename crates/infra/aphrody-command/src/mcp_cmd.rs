@@ -372,41 +372,59 @@ pub(crate) struct McpCallCommand {
 #[async_trait]
 impl TerminalCommand for McpCallCommand {
     async fn execute(&self, _ctx: &GoogleContext) -> miette::Result<()> {
-        let cfg = resolve_config(self.config.as_deref())?;
-        let spec = cfg
-            .servers
-            .iter()
-            .find(|s| s.name == self.server)
-            .ok_or_else(|| miette::miette!("MCP server `{}` not in config", self.server))?;
-
         let parsed_args: serde_json::Value = serde_json::from_str(&self.args)
             .map_err(|e| miette::miette!("--args must be valid JSON: {e}"))?;
-        if !parsed_args.is_object() {
-            return Err(miette::miette!(
-                "--args must be a JSON object (got {})",
-                short_type(&parsed_args)
-            ));
-        }
-
-        let mut client = connect_client(&spec.transport)
-            .await
-            .map_err(|e| miette::miette!("connect to `{}` failed: {e}", self.server))?;
-        client
-            .initialize()
-            .await
-            .map_err(|e| miette::miette!("initialize `{}` failed: {e}", self.server))?;
-        let result = client.call_tool(&self.tool, parsed_args).await.map_err(|e| {
-            miette::miette!("tools/call `{}` on `{}` failed: {e}", self.tool, self.server)
-        })?;
-
-        let envelope = json!({
-            "server": self.server,
-            "tool": self.tool,
-            "result": result,
-        });
+        let envelope =
+            call_tool(self.config.as_deref(), &self.server, &self.tool, parsed_args, false).await?;
         println!("{envelope}");
         Ok(())
     }
+}
+
+/// Call the existing native MCP client without stdio capture or a child process.
+/// Configuration and authentication retain the CLI owner's resolution rules.
+pub async fn run_mcp_tool_http(
+    config: Option<PathBuf>,
+    server: String,
+    tool: String,
+    arguments: serde_json::Value,
+) -> miette::Result<serde_json::Value> {
+    // FFI callers bypass run_async's TLS bootstrap; retain that same provider.
+    let _ = rustls::crypto::ring::default_provider().install_default();
+    call_tool(config.as_deref(), &server, &tool, arguments, true).await
+}
+
+async fn call_tool(
+    config: Option<&Path>,
+    server: &str,
+    tool: &str,
+    arguments: serde_json::Value,
+    http_only: bool,
+) -> miette::Result<serde_json::Value> {
+    if !arguments.is_object() {
+        return Err(miette::miette!(
+            "--args must be a JSON object (got {})",
+            short_type(&arguments)
+        ));
+    }
+    let cfg = resolve_config(config)?;
+    let spec = cfg
+        .servers
+        .iter()
+        .find(|s| s.name == server)
+        .ok_or_else(|| miette::miette!("MCP server `{server}` not in config"))?;
+    if http_only && matches!(spec.transport, McpTransportConfig::Stdio { .. }) {
+        return Err(miette::miette!("direct MCP workflows require a configured HTTP transport"));
+    }
+    let mut client = connect_client(&spec.transport)
+        .await
+        .map_err(|e| miette::miette!("connect to `{server}` failed: {e}"))?;
+    client.initialize().await.map_err(|e| miette::miette!("initialize `{server}` failed: {e}"))?;
+    let result = client
+        .call_tool(tool, arguments)
+        .await
+        .map_err(|e| miette::miette!("tools/call `{tool}` on `{server}` failed: {e}"))?;
+    Ok(json!({"server": server, "tool": tool, "result": result}))
 }
 
 // ---------------------------------------------------------------------------

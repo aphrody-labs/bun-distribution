@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Livraison en cours
 
 Lot possédé : métadonnées de livraison Yolo, hors des claims UI, binaire autonome
@@ -38,12 +39,12 @@ vérifiés sur fixtures ; Windows natif et promotion de release restent ouverts.
 - [ ] Étape 2 / R3 : desktop, permissions, événements, arrêt (`desktop_r3`).
 - [ ] Étape 3 / R4 : navigation, extraction, capture et isolation (`browser_r4`).
 - [ ] Intégrer les preuves, gates sérialisés, commits et push ; traiter ensuite
-  les étapes dépendantes et conserver leurs exigences complètes dans les plans.
+      les étapes dépendantes et conserver leurs exigences complètes dans les plans.
 
 ## Media / administration unification — 2026-10-05
 
 - [x] Shenron and Koharu (manga, OCR review, translation, administration, editor) left for
-  aphrody-labs/shenron on 2026-10-05; Aphrody keeps the host plane and the `/api/v1/shenron/*` gateway.
+      aphrody-labs/shenron on 2026-10-05; Aphrody keeps the host plane and the `/api/v1/shenron/*` gateway.
 - [ ] Qualify consumer contracts, review gates and native boundaries.
 - [ ] Reuse Yolo supervision for Discord binaries; wire native Gemma inference and dbfr Agent Home.
 - [ ] Leave n2b/Oxc/runtime/CLI retirement to the concurrent Yolo owner.
@@ -60,3 +61,13 @@ vérifiés sur fixtures ; Windows natif et promotion de release restent ouverts.
 
 La qualification du SDK FFI intégré, l'activation du fork et les cibles desktop/native
 restent dans le plan global ; ce lot ne les déclare pas terminées.
+
+## Flotte Discord / Drive / MCP — 2026-10-07
+
+- [x] Activer la sync Drive Bun persistante sur VPS, isoler les candidats privés et pousser `69749a91a`.
+- [x] Qualifier le hub MCP/A2A authentifié, les clients WSL et une tâche Codex terminée après déconnexion.
+- [x] Valider les résultats MCP modernes (117 tests) et l'ACK A2A immédiat (54 tests).
+- [ ] Qualifier et installer le nouveau binaire natif ; vérifier Claude et le transport Windows.
+- [ ] Terminer le raccord DBFR et l'admission Discord Shenron ; vérifier le peer Omar.
+- [ ] Reconciler les versions Drive et les agent homes sans perdre leur structure ni exposer de contenu privé.
+- [ ] Livrer les seuls chemins/hunks possédés avec leurs preuves et limites.
