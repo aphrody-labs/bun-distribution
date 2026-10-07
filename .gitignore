@@ -133,6 +133,7 @@ npm-debug.log*
 .sccache/
 .uv-cache/
 .bun/
+*.bun-build
 .turbo/
 .next/
 .parcel-cache/

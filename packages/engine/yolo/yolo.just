@@ -2,7 +2,7 @@
 # Bridges Cargo (Rust), Bun (TS7/Native), and Just orchestrator
 
 set shell := ["bash", "-l", "-c"]
-set working-directory := "../.."
+set working-directory := "../../.."
 
 # Local/factory builds use Aphrody's shared Cargo lock, cache and resource guard.
 # The factory may override this with its installed owner wrapper.

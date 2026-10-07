@@ -15,6 +15,9 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
+import factoryPolicy from "../../../../../../tools/config/build-factory.json";
+import { withFactoryResource } from "../../../../../infra/workspace/src/build-factory-cleanup.ts";
+import type { BuildFactoryConfig } from "../../../../../infra/workspace/src/build-factory.ts";
 import { auditGlibc, lowerGlibcCeiling } from "./glibc.ts";
 import { availableParallelism, totalmem, userInfo } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -379,7 +382,13 @@ function withLock<T>(p: Paths, body: () => Promise<T>): Promise<T> {
     if (alive) fail(`another bun-forge (pid ${holder}) holds ${p.lock}`);
     writeFileSync(p.lock, String(process.pid));
   }
-  return body().finally(() => rmSync(p.lock, { force: true }));
+  const runLeased = async () => {
+    if (existsSync(factoryPolicy.lockPath)) {
+      return withFactoryResource(factoryPolicy as BuildFactoryConfig, body);
+    }
+    return body();
+  };
+  return runLeased().finally(() => rmSync(p.lock, { force: true }));
 }
 
 function readState(p: Paths): State {
@@ -412,6 +421,8 @@ async function step<T>(steps: StepRecord[], name: string, body: () => Promise<T>
 
 export async function buildRevision(options: Options, sha: string): Promise<Receipt> {
   const p = paths(options);
+  if (process.env.APHRODY_FACTORY_RESOURCE)
+    p.scratch = join(process.env.APHRODY_FACTORY_RESOURCE, "forge");
   const startedAt = new Date().toISOString();
   const steps: StepRecord[] = [];
   mkdirSync(p.logs, { recursive: true });
@@ -445,12 +456,18 @@ export async function buildRevision(options: Options, sha: string): Promise<Rece
     await step(steps, "fetch", () => fetchRevision(options, sha));
     const info = userInfo();
     mkdirSync(p.scratch, { recursive: true });
-    plan = scratchPlan(options.config.scratch.mode, options.config.scratch.size, p.scratch, sha, {
-      root: t.root,
-      freeBytes: Number(statfsSync(p.scratch).bavail) * Number(statfsSync(p.scratch).bsize),
-      uid: info.uid,
-      gid: info.gid,
-    });
+    plan = scratchPlan(
+      process.env.APHRODY_FACTORY_RESOURCE ? "dir" : options.config.scratch.mode,
+      options.config.scratch.size,
+      p.scratch,
+      sha,
+      {
+        root: t.root,
+        freeBytes: Number(statfsSync(p.scratch).bavail) * Number(statfsSync(p.scratch).bsize),
+        uid: info.uid,
+        gid: info.gid,
+      },
+    );
     receipt.scratch = plan.mode;
     const scratch = plan;
     await step(steps, `scratch (${scratch.mode})`, async () => {

@@ -2,6 +2,11 @@
 import { join, posix, resolve } from "node:path";
 import { infraRoot, runInfra } from "./runtime.ts";
 import {
+  factoryTransientShell,
+  validateFactoryCleanup,
+  type FactoryCleanupPolicy,
+} from "./build-factory-cleanup.ts";
+import {
   factorySourceScope,
   selectedSourceClean,
   selectedSourcePrelude,
@@ -23,6 +28,7 @@ export interface BuildFactoryConfig {
   commandTimeoutSeconds?: number;
   /** Local activation of built binaries (defaults: ~/.local/bin, ~/.local/lib/aphrody). */
   install?: unknown;
+  cleanup?: FactoryCleanupPolicy;
 }
 
 function shellQuote(value: string): string {
@@ -78,6 +84,7 @@ export function buildFactoryPlan(
   const cache = absolutePath(config.cacheRoot, "cacheRoot");
   const artifacts = absolutePath(config.artifactRoot, "artifactRoot");
   const lock = absolutePath(config.lockPath, "lockPath");
+  if (config.cleanup) validateFactoryCleanup(config, config.cleanup);
   const environment = [
     "APHRODY_BUILD_HOST=vps",
     `APHRODY_CARGO_JOBS=${config.rust.maxJobs}`,
@@ -111,7 +118,15 @@ export function buildFactoryPlan(
           "test -z \"$(git status --porcelain --untracked-files=all --ignore-submodules=none)\" || { echo 'Build factory source checkout is dirty' >&2; exit 2; }",
           `git submodule foreach --quiet --recursive 'test -z "$(git status --porcelain --untracked-files=all --ignore-submodules=none)"'`,
         ]),
-    `exec env ${environment.map(shellQuote).join(" ")} ${command.map(shellQuote).join(" ")}`,
+    ...(config.cleanup
+      ? factoryTransientShell(
+          config.cleanup.transientRoot,
+          "docker",
+          config.lockPath,
+          config.cleanup.privilegeBinary,
+        )
+      : []),
+    `${config.cleanup ? "" : "exec "}env ${environment.map(shellQuote).join(" ")} ${command.map(shellQuote).join(" ")}`,
   ].join("\n");
   // The supervisor owns the descriptor; long-lived cache daemons must not inherit it.
   const remoteCommand = `flock --close -- ${shellQuote(lock)} flock --close -- ${shellQuote(sourceLockPath(config, repository))} bash -c ${shellQuote(body)}`;
@@ -579,11 +594,27 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
     console.log(
-      "Usage: yolo ops build-factory <plan|run> --repo <aphrody|yolo|iecode> --revision <full-git-sha> [--submodules <gitlink[,gitlink]>] [--detach --job <stable-id>] -- <owner command> [arguments...]\n       yolo ops build-factory prepare --repo <aphrody|yolo> --revision <full-git-sha> [--apply] [--no-submodules | --submodules <gitlink[,gitlink]>]\n       yolo ops build-factory status [--route]\n       yolo ops build-factory status --job <stable-id> [--tail <0..200>]\n       yolo ops build-factory run ... --install [--bin a,b] -- <cargo build command>\n       yolo ops build-factory install --repo <repo> --revision <sha> [--job <id>] [--bin a,b] -- <cargo build command>\n--install (run, including --detach which then waits for the job) and install download each derived binary over SFTP, verify its SHA-256 against the factory copy, refuse it unless `<bin> --version` runs on this host (glibc/ABI), then atomically relink it in install.binDir (default ~/.local/bin, on PATH) from install.libRoot/factory-<rev12>/. Previous links are recorded in install.stateFile for rollback.\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\n--submodules prepares/verifies only selected root-tree gitlinks and their recursive descendants, plus parent source files/index. Unselected gitlinks are preserved; whole repository cleanliness is not asserted. Combine the same scope with plan/run. Selected scope cannot be combined with --no-submodules. Detached jobs retain the selected source scope in their request fingerprint.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
+      "Usage: yolo ops build-factory <plan|run> --repo <aphrody|yolo|iecode> --revision <full-git-sha> [--submodules <gitlink[,gitlink]>] [--detach --job <stable-id>] -- <owner command> [arguments...]\n       yolo ops build-factory prepare --repo <aphrody|yolo> --revision <full-git-sha> [--apply] [--no-submodules | --submodules <gitlink[,gitlink]>]\n       yolo ops build-factory cleanup [--apply]\n       yolo ops build-factory status [--route]\n       yolo ops build-factory status --job <stable-id> [--tail <0..200>]\n       yolo ops build-factory run ... --install [--bin a,b] -- <cargo build command>\n       yolo ops build-factory install --repo <repo> --revision <sha> [--job <id>] [--bin a,b] -- <cargo build command>\n--install (run, including --detach which then waits for the job) and install download each derived binary over SFTP, verify its SHA-256 against the factory copy, refuse it unless `<bin> --version` runs on this host (glibc/ABI), then atomically relink it in install.binDir (default ~/.local/bin, on PATH) from install.libRoot/factory-<rev12>/. Previous links are recorded in install.stateFile for rollback.\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\n--submodules prepares/verifies only selected root-tree gitlinks and their recursive descendants, plus parent source files/index. Unselected gitlinks are preserved; whole repository cleanliness is not asserted. Combine the same scope with plan/run. Selected scope cannot be combined with --no-submodules. Detached jobs retain the selected source scope in their request fingerprint.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
     );
     return 0;
   }
   const [action = "plan", ...rest] = args;
+  if (action === "cleanup") {
+    if (rest.some((arg) => arg !== "--apply"))
+      throw new Error("Usage: build-factory cleanup [--apply]");
+    const config = await readFactoryConfig(root);
+    if (!config?.cleanup) throw new Error("The factory cleanup policy is not declared");
+    const { factoryCleanupScript } = await import("./build-factory-cleanup.ts");
+    const script = factoryCleanupScript(config, config.cleanup, rest.includes("--apply"));
+    const result = await runInfra({
+      args: ["ssh", "exec", "--host", config.target, "--cmd", script],
+      cwd: root,
+      env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: "900" },
+    });
+    console.log(result.stdout);
+    if (result.stderr) console.error(result.stderr);
+    return result.exitCode;
+  }
   if (action === "status") {
     if (!rest.includes("--job")) {
       if (rest.some((arg) => arg !== "--route"))

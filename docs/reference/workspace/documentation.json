@@ -76,8 +76,8 @@
     {
       "path": "TODO.md",
       "title": "Livraison en cours",
-      "sha256": "647763e180d233e71885b77f4d7b0f0b184b573e4f8451df20f694968e394fed",
-      "bytes": 6189,
+      "sha256": "e4c26ef1c5908eb3d4ffe319721d3f0dd39d97c9c0b4acb79a6b075fcedb3c0d",
+      "bytes": 6238,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -2996,7 +2996,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "831057e505d765b53723fc60a4b350b017b7c288a65f149475b38f2db771efa4",
+      "sha256": "65a191ab530035a5e28f02027a4b54fb3d7a845941fb15c56e7b40c47734da9b",
       "bytes": 8164,
       "domain": "",
       "status": "generated",
@@ -6336,8 +6336,8 @@
     {
       "path": "docs/operations/forge-yolo-consolidation.md",
       "title": "Fusion Forge et Yolo — 2026-10-07",
-      "sha256": "67911c668ab1e8b7689401c64adbc45dd3de455a35646437c05cfa2253b936a3",
-      "bytes": 3392,
+      "sha256": "256071cb8a61da2c3fb8a8321506f6f08e7e3fc458a09f84fb54e4be0d72bd4c",
+      "bytes": 9847,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -6355,9 +6355,9 @@
     },
     {
       "path": "docs/operations/infra/BUILD-FACTORY.md",
-      "title": "Build factory transition and DBFR Shenron runtime",
-      "sha256": "7f5adc6183ee372f11ba8193dee0f236201a925d1a04e42a173db8308eab6265",
-      "bytes": 18622,
+      "title": "VPS build factory and DBFR Shenron runtime",
+      "sha256": "e9aa033da476b2d42bc4effccb7125ca9675fc28775845c10a1c35734165bbe0",
+      "bytes": 23117,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -6592,6 +6592,26 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/UPDATE.md"
+    },
+    {
+      "path": "docs/operations/infra/native-sudo-rs-20261007.md",
+      "title": "Native sudo-rs qualification, 2026-10-07",
+      "sha256": "2f90fc01a6449b1e341be51ffa9a7f5fa8425626379c1c9924c8babd987ca083",
+      "bytes": 1785,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/native-sudo-rs-20261007.md"
+    },
+    {
+      "path": "docs/operations/infra/srv-reclaim-20261007.md",
+      "title": "VPS factory reclamation, 2026-10-07",
+      "sha256": "0afc47053f95b5ada63a55f9d5dbaef2a801d193d91a29bed6b50703af46a2b6",
+      "bytes": 3045,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/srv-reclaim-20261007.md"
     },
     {
       "path": "docs/operations/infra/supabase-wsl-docker.md",
@@ -36706,8 +36726,8 @@
     {
       "path": "m3/templates/base/README.md",
       "title": "NAME",
-      "sha256": "cdacee0f11d0102597426e670e025542388f7b349d22fefa019c04ab3de81288",
-      "bytes": 1531,
+      "sha256": "3e2a1f4dd7489754ed48dd848d039325455fb831f3a06d3e72420687dc2d1129",
+      "bytes": 1481,
       "domain": "",
       "status": "canonical",
       "visibility": "private",

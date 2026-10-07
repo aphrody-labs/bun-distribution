@@ -1,21 +1,22 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Build factory transition and DBFR Shenron runtime
+# VPS build factory and DBFR Shenron runtime
 
 Owner: Infra. Policy: [`tools/config/build-factory.json`](../../../tools/config/build-factory.json).
 Requested placement: [`production-topology.json`](../../../tools/config/production-topology.json).
 
-Current owner decision, 2026-10-03: [Yolo PLAN](../../../PLAN.md#build-et-release)
-reserves VPS for execution and retires its build toolchains and factory workspace.
-The previous VPS setup below is historical procedure, not authority to recreate
-that role. `executionOnlyTargets: ["vps"]` in the current factory configuration
-refuses build dispatch there and keeps heavy local execution blocked by default.
-A replacement build host must be designated before executable CLI tests,
-engine builds or releases can resume. Explicit scoped local static diagnostics
-retain the existing owner policy; they do not designate a build host.
+Current policy, verified 2026-10-07: the factory configuration declares
+`enabled: true`, `target: "vps"` and `executionOnlyTargets: []`.
+The owner's current task uses this VPS for serialized Rust, Bun and runtime
+builds. This supersedes the execution-only placement documented on 2026-10-03.
+WSL keeps sources and scoped static checks; heavy local Cargo remains prohibited.
+Build from the exact requested revision through Workspace/Infra and the shared
+factory lock. Recheck `/srv` capacity before dispatch: root-filesystem capacity
+does not establish available space on the separate factory volume.
 
 ## Authority and execution
 
-Before the retirement decision, VPS (`ssh vps`) owned heavy Rust, Bun and Python builds, tests and releases.
+VPS (`ssh vps`) owns heavy Rust, Bun and Python builds, tests and releases under
+the current declared factory policy.
 WSL and Windows retain sources, editing, help, plans and scoped static checks.
 Shenron runtime moves to DBFR; RG runtime is requested stopped completely.
 These are desired placements, not a claim that migration is complete.
@@ -290,3 +291,77 @@ Only DBFR Redis restarts; its enabled state is unchanged. SHA-256 must match bef
 ### Shared compute transport
 
 Shenron's compute client requires a loopback HTTP endpoint. Keep the existing VPS compute service and protected model store in place; supervise the VPS→DBFR reverse tunnel with `tools/config/host/systemd/aphrody/aphrody-compute-dbfr-tunnel.service`. Install its helper at `/usr/local/libexec/aphrody-infra/shenron-compute-dbfr-tunnel.py` and the unit under `/etc/systemd/system`, then reload and enable it through Infra. Root reads only the port from the existing private compute environment before dropping to Ubuntu for SSH. No token is transferred or placed in process arguments. The SSH forward binds DBFR `127.0.0.1` to the same VPS loopback port, with forwarding failure and keepalive checks. Verify DBFR's listener is loopback-only and run the existing authenticated compute client probe before Shenron activation. This generic compute tunnel remains after the obsolete PostgreSQL tunnel is retired.
+
+## Single transient resource and targeted cleanup (2026-10-07)
+
+`tools/config/build-factory.json` declares one factory scratch root:
+`/srv/aphrody-build/transient`, mode 0700 and owned by the build user. All
+Workspace factory commands, including detached jobs, the exact-worktree VPS
+Cargo route and direct VPS Cargo/Forge routes share the existing
+`/srv/aphrody-build/locks/heavy.lock`. They set `TMPDIR` to that root and empty
+its contents before and after qualified foreground execution. Forge uses its
+`forge/` subtree instead of creating another loop device or tmpfs. Cargo target
+directories, global sccache, Bun/uv caches, source snapshots, retained artifacts
+and protected stores remain outside this transient resource.
+
+Direct-route reentry verifies the kernel FLOCK's device, inode and owner against
+the inherited process ancestry. Setting `APHRODY_FACTORY_RESOURCE` alone cannot
+skip the heavy lock. The direct-route supervisor also retains the lease after
+an abruptly terminated owner while a surviving build child uses the resource;
+a fixture verified that the competing lock stays blocked until that child exits,
+then the temporary contents are removed and the lease released. Foreground
+EXIT/INT/TERM cleanup preserves the original command status.
+
+Removal checks every visible process's cwd, executable, open descriptors,
+arguments and environment, plus mount points and running Docker bind mounts.
+A process proved by `/proc/locks` to be waiting on this exact heavy-lock inode
+may mention the resource in queued arguments/environment; actual cwd, executable
+and descriptor references still preserve it. This prevents a queued follower
+from blocking the current lease's terminal cleanup. Other queued references remain
+protected. Unreadable observations or live references preserve the resource; no live
+process is terminated. The resource is not reused while those references remain.
+These routes use the existing `/usr/bin/sudo-rs` on VPS and DBFR (observed
+0.2.13-0ubuntu1.2); local tests use the host's existing sudo without replacing it.
+An abrupt host failure retains contents for the next qualified cleanup.
+
+Use the existing Workspace/Infra owner to plan before apply:
+
+```sh
+bin/yolo ops build-factory cleanup
+bin/yolo ops build-factory cleanup --apply
+```
+
+Only declared retired immediate-child Cargo target directories are eligible.
+Each requires a regular terminal receipt, canonical directory identity, absence
+of nested mounts and fresh process/container isolation checks. Apply additionally
+holds the heavy lock. Missing targets are reported as absent, not reconstructed.
+Do not substitute the broad historical VPS reclaim target for this allowlist.
+
+The retained native apply receipt records 8,509,566,976 allocated bytes removed
+from `obscura-fork`, `vu-uv`, `vu-ruff` and `vu-wsl`; source and runtime receipts
+were retained. A subsequent read-only native observation found those four paths
+absent, transient allocation 4096 bytes and `/srv` availability 26,408,816,640
+bytes (92% use). These observations include intervening concurrent builds and do
+not establish an isolated before/after filesystem delta. The new transient
+route's native probe acquired the existing lock, wrote a payload and confirmed
+the root empty after terminal cleanup.
+
+Qualification: 90 scoped tests / 424 assertions passed across factory planning,
+cleanup, exact-worktree Cargo routing and Forge suites; Workspace and Yolo
+TypeScript checks, strict scoped oxlint, oxfmt and Bash syntax passed. Fixtures
+cover failure exit preservation, symlinks, live children, queued arguments,
+environment references, Docker bind mounts, inherited lease proof and owner
+termination. This receipt proves these declared host routes; it does not turn
+persistent compiler caches into disposable scratch or migrate arbitrary
+independently invoked container builds.
+
+
+The follow-up fifth allowlisted retirement removed the terminal `cargo/aphrody`
+target (30,700,023,808 allocated bytes). Its isolated native apply observed
+`/srv` availability rise from 24,378,413,056 to 55,078,424,576 bytes and use fall
+from 93% to 83%; concurrent `aphrody-wsl` builds, global caches and the existing
+sccache server remained live. The total allocated output removed in the two
+recorded batches is 39,209,590,784 bytes. See the
+[2026-10-07 retirement receipt](srv-reclaim-20261007.md). Process path checks
+match complete path tokens/descendants, so the active sibling `aphrody-wsl` is
+preserved without creating an exception for compiler daemons.

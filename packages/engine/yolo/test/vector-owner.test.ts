@@ -11,7 +11,7 @@ test("Gemma compatibility exports share the pure vector owner", () => {
 
 test("vector retrieval bundles without Gemma profiles or inference transport", async () => {
   const result = await Bun.build({
-    entrypoints: [new URL("../packages/engine/core/src/redis/vector.ts", import.meta.url).pathname],
+    entrypoints: [new URL("../../core/src/redis/vector.ts", import.meta.url).pathname],
     target: "bun",
     sourcemap: "external",
   });

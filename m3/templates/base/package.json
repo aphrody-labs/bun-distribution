@@ -15,7 +15,7 @@
     "pack:deploy": "bun run scripts/pack-deploy.ts"
   },
   "dependencies": {
-    "@aphrody/runtime-sdk": "file:__YOLO__/packages/runtime"
+    "@aphrody/runtime-sdk": "file:__YOLO__/packages/engine/runtime"
   },
   "devDependencies": {
     "@types/bun": "1.4.2",

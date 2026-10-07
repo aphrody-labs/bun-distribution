@@ -5,14 +5,14 @@ Aphrody stack scaffold (`yolo create`): a Bun server on the Rust-based Bun, the 
 
 ```bash
 bun install
-just -f __YOLO__/justfile runtime-build     # once: builds the light runtime library (no engines)
 bun run dev                                 # supervised server on http://127.0.0.1:3000
 bun test && bun run typecheck && bun run lint
 ```
 
-The SDK finds the library through `$YOLO_RUNTIME_LIB`, the installed artifact
-(`just runtime-install` in the yolo repository), or, by the project preload `scripts/preload.ts`,
-the `target/runtime/` build of the yolo checkout this project was scaffolded from.
+The SDK consumes the producer's precompiled library through `$YOLO_RUNTIME_LIB`,
+the embedded provider, or its installed artifact. The project preload selects
+the producer at `__YOLO__` when no runtime location was specified. A source
+checkout can provide `target/runtime/` as a local development fallback.
 
 | Path                   | Role                                                                                   |
 | :--------------------- | :------------------------------------------------------------------------------------- |

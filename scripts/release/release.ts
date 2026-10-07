@@ -56,7 +56,9 @@ async function run(argv: string[], cwd = root): Promise<string> {
   return out.trim();
 }
 
-const artifactDir = join(root, "dist/runtime", target);
+const artifactDir = process.env["YOLO_RUNTIME_ARTIFACT"]
+  ? resolve(process.env["YOLO_RUNTIME_ARTIFACT"]!)
+  : join(root, "dist/runtime", target);
 if (!existsSync(join(artifactDir, "manifest.json"))) {
   throw new Error(`No packaged runtime for ${target}: run \`just yolo::runtime-package\` first`);
 }
@@ -96,18 +98,26 @@ if (prebuilt) {
 
 // 2. data next to it: runtime artifact, SDK, templates
 cpSync(artifactDir, join(stage, "artifact"), { recursive: true });
-cpSync(join(root, "packages/runtime"), join(stage, "packages/runtime"), {
+cpSync(join(root, "packages/engine/runtime"), join(stage, "packages/engine/runtime"), {
   recursive: true,
   filter: (src) => !src.includes("node_modules"),
 });
-cpSync(join(root, "templates"), join(stage, "templates"), {
+cpSync(join(root, "m3/templates"), join(stage, "m3/templates"), {
   recursive: true,
   filter: (src) => !src.endsWith("awesome-audit.json"),
 });
 writeFileSync(join(stage, "VERSION"), `${version}\n`);
-cpSync(join(root, "LICENSE"), join(stage, "LICENSE"));
-cpSync(join(root, "NOTICE"), join(stage, "NOTICE"));
-cpSync(join(root, "LICENSES"), join(stage, "LICENSES"), { recursive: true });
+cpSync(join(root, "packages/engine/runtime/LICENSE-APACHE"), join(stage, "LICENSE"));
+mkdirSync(join(stage, "LICENSES"));
+cpSync(
+  join(root, "docs/reference/upstream-bun/LICENSE.md"),
+  join(stage, "LICENSES/Bun-LICENSE.md"),
+);
+cpSync(
+  join(root, "docs/reference/infra/THIRD_PARTY_LICENSES.md"),
+  join(stage, "LICENSES/THIRD_PARTY_LICENSES.md"),
+);
+cpSync(join(root, "vendor.lock"), join(stage, "vendor.lock"));
 
 const archive = `yolo-${version}-${target}.tar.gz`;
 await run(["tar", "-czf", join(dir, archive), "-C", stage, "."]);
@@ -117,17 +127,20 @@ const crates = `yolo-${version}-crates.tar.gz`;
 const crateStage = join(outRoot, ".stage-crates");
 rmSync(crateStage, { recursive: true, force: true });
 mkdirSync(crateStage, { recursive: true });
-cpSync(join(root, "NOTICE"), join(crateStage, "NOTICE"));
-cpSync(join(root, "LICENSES"), join(crateStage, "LICENSES"), { recursive: true });
+cpSync(join(stage, "LICENSES"), join(crateStage, "LICENSES"), { recursive: true });
+cpSync(join(root, "vendor.lock"), join(crateStage, "vendor.lock"));
 const imports = JSON.parse(readFileSync(join(root, "vendor.lock"), "utf8")) as {
   crates: { dir: string }[];
 };
 for (const imported of imports.crates) {
   const name = imported.dir.split("/").at(-1)!;
-  if (imported.dir !== `crates/${name}` || !name.startsWith("aphrody-")) {
+  if (
+    !/^crates\/[A-Za-z0-9_-]+\/aphrody-[A-Za-z0-9_-]+$/.test(imported.dir) ||
+    !name.startsWith("aphrody-")
+  ) {
     throw new Error(`Invalid imported crate path: ${imported.dir}`);
   }
-  cpSync(join(root, "crates", name), join(crateStage, "crates", name), {
+  cpSync(join(root, imported.dir), join(crateStage, imported.dir), {
     recursive: true,
     filter: (src) => !/(^|[\\/])(target|node_modules)([\\/]|$)/.test(src),
   });
@@ -136,7 +149,7 @@ await run(["tar", "-czf", join(dir, crates), "-C", crateStage, "."]);
 
 // 4. installers, checksums, provenance
 for (const script of ["install.sh", "install.ps1"])
-  cpSync(join(root, "apps/yolo", script), join(dir, script));
+  cpSync(join(root, "packages/engine/yolo", script), join(dir, script));
 const files = readdirSync(dir)
   .filter((f) => f !== "SHA256SUMS" && f !== "release.json")
   .toSorted();
@@ -154,9 +167,7 @@ writeFileSync(
       target,
       commit,
       runtime: { version: manifest.version, abi: manifest.abi, toolchain: manifest.toolchain },
-      tooling: tooling
-        ? { sha256: tooling.sha256, abi: tooling.abi, embedded: true }
-        : { embedded: false },
+      tooling: tooling ? { sha256: tooling.sha256, abi: tooling.abi, embedded: true } : null,
       binary: prebuilt
         ? { source: "bun-forge", sha256: sha256(prebuilt), aliases: ["bun", "vu"] }
         : null,

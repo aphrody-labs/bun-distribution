@@ -37,14 +37,14 @@ export const view = <div>{greeting.text}</div>;
 
 nativeTest("native module records retain physical requests and exclude decoys", () => {
   using tooling = new NativeTooling({ path: nativePath! });
-  const source = `// import phantom from "../../../../test/comment.js"; export const fake = 0;
-const decoy = 'import imaginary from "../../../../test/string.js";';
-import "../../../../test/side.js";
-import value, { type Shape, other as renamed } from "../../../../test/dep.ts";
+  const source = `// import phantom from "./comment.js"; export const fake = 0;
+const decoy = 'import imaginary from "./string.js";';
+import "./side.js";
+import value, { type Shape, other as renamed } from "./dep.ts";
 export { renamed as publicName };
-export * from "../../../../test/reexport.js";
-import "../../../../test/side.js";
-const later = import("../../../../test/dynamic.js");
+export * from "./reexport.js";
+import "./side.js";
+const later = import("./dynamic.js");
 `;
   const result = tooling.analyzeModule(source, "fixture.ts");
   expect(result.imports).toEqual(["./side.js", "./dep.ts", "./reexport.js", "./side.js"]);

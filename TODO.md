@@ -92,6 +92,6 @@ restent dans le plan global ; ce lot ne les déclare pas terminées.
 ## Suite active — runtime et fabrique unique
 
 - [ ] Gates des 11 consommateurs Rust hors OS de tools/config.
-- [ ] Compiler Yolo sur le fork disponible avec bytecode et SDK FFI embarqué ; qualifier avant activation.
-- [ ] Nettoyer les espaces de build VPS terminés et déclarer leur purge automatique dans la fabrique unique.
+- [x] Compiler Yolo bytecode et SDK FFI partagé ; archive réelle, installation isolée et rollback qualifiés (activation encore ouverte).
+- [x] Nettoyer les targets VPS retirés (~39,2 Go) et qualifier la ressource temporaire unique (90 tests), sous verrou global.
 - [ ] Absorber les 2 631 fichiers M3 selon la carte validée, après ce lot.

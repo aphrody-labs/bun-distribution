@@ -7,6 +7,7 @@
  * prebuilt artifact.
  */
 import { dlopen, FFIType, ptr, read, suffix, toArrayBuffer, type Pointer } from "bun:ffi";
+import { embeddedNativeLibraryPath } from "./ffi.ts";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
@@ -68,7 +69,7 @@ export interface BenchmarkResult {
 }
 
 export interface LoadOptions {
-  /** Path of the library; defaults to `$YOLO_RUNTIME_LIB`, then `target/runtime/`. */
+  /** Explicit provider; otherwise use the environment, embedded provider or installed artifact. */
   readonly libraryPath?: string;
   /** Maximum concurrent operations of the runtime (library default when omitted). */
   readonly maxOperations?: number;
@@ -82,12 +83,14 @@ export function libraryFile(): string {
 }
 
 /**
- * Resolution order: `$YOLO_RUNTIME_LIB`, the active installed artifact
+ * Resolution order: `$YOLO_RUNTIME_LIB`, the embedded sole FFI provider, the active installed artifact
  * (`$YOLO_RUNTIME_HOME` or `$YOLO_HOME/runtime`, default `~/.yolo/runtime`, `<target>/current`), then the local `target/runtime/`.
  */
 export function defaultLibraryPath(): string {
   const fromEnv = process.env["YOLO_RUNTIME_LIB"];
   if (fromEnv !== undefined && fromEnv !== "") return fromEnv;
+  const embedded = embeddedNativeLibraryPath("aphrody_ffi");
+  if (embedded !== null) return embedded;
   const runtimeHomeEnv = process.env["YOLO_RUNTIME_HOME"];
   const yoloHome = process.env["YOLO_HOME"];
   const base =

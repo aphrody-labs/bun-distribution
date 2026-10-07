@@ -61,5 +61,36 @@
     "cpus": 6,
     "memoryMiB": 16384,
     "maxOldSpaceSizeMiB": 8192
+  },
+  "cleanup": {
+    "transientRoot": "/srv/aphrody-build/transient",
+    "privilegeBinary": "/usr/bin/sudo-rs",
+    "retiredOutputs": [
+      {
+        "path": "/srv/aphrody-build/cache/cargo/obscura-fork",
+        "terminalReceipt": "/srv/aphrody-build/artifacts/wsl/obscura-fork-check.log.exit",
+        "reason": "Terminal native fork-check target; no live job or mounted container may use it"
+      },
+      {
+        "path": "/srv/aphrody-build/cache/cargo/vu-uv",
+        "terminalReceipt": "/srv/aphrody-build/workspaces/vu-wsl/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
+        "reason": "Terminal qualified vu build intermediates; runtime artifacts and source receipts retained"
+      },
+      {
+        "path": "/srv/aphrody-build/cache/cargo/vu-ruff",
+        "terminalReceipt": "/srv/aphrody-build/workspaces/vu-wsl/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
+        "reason": "Terminal qualified vu build intermediates; runtime artifacts and source receipts retained"
+      },
+      {
+        "path": "/srv/aphrody-build/cache/cargo/vu-wsl",
+        "terminalReceipt": "/srv/aphrody-build/workspaces/vu-wsl/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
+        "reason": "Terminal qualified vu build intermediates; runtime artifacts and source receipts retained"
+      },
+      {
+        "path": "/srv/aphrody-build/cache/cargo/aphrody",
+        "terminalReceipt": "/srv/aphrody-build/artifacts/factory-jobs/downloads-aphrody-windows-x86_64-5bf7eed5a/exit.json",
+        "reason": "Terminal 2026-10-06 Aphrody Linux/Windows packaging intermediates; deployed/rollback binaries, artifact receipts, source and shared caches retained"
+      }
+    ]
   }
 }

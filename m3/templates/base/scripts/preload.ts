@@ -1,9 +1,17 @@
-// Project preload: when no runtime artifact is installed (`just runtime-install`), fall back to the
-// library built in the yolo checkout this project was scaffolded from.
+// Prefer the installed precompiled runtime from the producer this project links to.
+// A source checkout may still provide an explicitly built local library.
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { defaultLibraryPath, libraryFile } from "@aphrody/runtime-sdk";
 
+if (
+  !process.env["YOLO_RUNTIME_LIB"] &&
+  !process.env["YOLO_RUNTIME_HOME"] &&
+  !process.env["YOLO_HOME"]
+) {
+  process.env["YOLO_HOME"] = "__YOLO__";
+}
 if (!existsSync(defaultLibraryPath())) {
-  process.env["YOLO_RUNTIME_LIB"] = join("__YOLO__", "target/runtime", libraryFile());
+  const local = join("__YOLO__", "target/runtime", libraryFile());
+  if (existsSync(local)) process.env["YOLO_RUNTIME_LIB"] = local;
 }

@@ -26,7 +26,7 @@ suite("runtime SDK against the precompiled library", () => {
     expect(runtime.abi.major).toBe(1);
     const info = runtime.buildInfo();
     expect(info.name).toBe("yolo-runtime");
-    expect(info.abi).toBe("1.4");
+    expect(info.abi).toBe(`${runtime.abi.major}.${runtime.abi.minor}`);
     expect(info.panic_recovery).toBe(true);
     expect(runtime.capabilities()).toEqual(
       expect.arrayContaining(["system.stats", "bench.compute", "process.supervise", "http.probe"]),

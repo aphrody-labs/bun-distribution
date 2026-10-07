@@ -7,7 +7,24 @@
 import { CString, dlopen, suffix, toArrayBuffer, type FFIFunction, type Pointer } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+
+/** Select one embedded provider before any native ABI call; ambiguity is an error. */
+export function embeddedNativeLibraryPath(
+  name: string,
+  files: readonly Blob[] = Bun.embeddedFiles,
+): string | null {
+  const stem = process.platform === "win32" ? name : `lib${name}`;
+  const escaped = stem.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`^${escaped}(?:-[A-Za-z0-9_-]+)?\\.${suffix}$`);
+  const matches = files.flatMap((file) => {
+    const path = (file as Blob & { name?: string }).name;
+    return typeof path === "string" && pattern.test(basename(path)) ? [path] : [];
+  });
+  if (matches.length > 1) throw new Error(`Multiple embedded native libraries for ${name}`);
+  const path = matches[0];
+  return path === undefined ? null : isAbsolute(path) ? path : join(dirname(Bun.main), path);
+}
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();

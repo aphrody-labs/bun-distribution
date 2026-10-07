@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-import { FFIType, suffix, type Pointer } from "bun:ffi";
+import { FFIType, type Pointer } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { nativeLibrary, readNativeString, toCString, type NativeLibrary } from "./ffi.ts";
+import { defaultLibraryPath } from "./index.ts";
 import type { Finding, N2BReport } from "./tooling-schema.ts";
 
 export type NodeProjectFinding = Finding;
@@ -146,16 +147,10 @@ export class NativeTooling {
         if (!path || !existsSync(path))
           throw new Error("Selected native tooling library is missing; selection preserved");
       } else {
-        const stem = process.platform === "win32" ? "aphrody_ffi" : "libaphrody_ffi";
-        const pattern = new RegExp(`^${stem}(?:-[A-Za-z0-9_-]+)?\\.${suffix}$`);
-        const embedded = Bun.embeddedFiles.flatMap((file) => {
-          const name = (file as Blob & { name?: string }).name;
-          return typeof name === "string" && pattern.test(basename(name)) ? [name] : [];
-        });
-        if (embedded.length > 1) throw new Error("Multiple embedded native tooling libraries");
-        const name = embedded[0];
-        path =
-          name === undefined ? undefined : isAbsolute(name) ? name : join(dirname(Bun.main), name);
+        const selected = defaultLibraryPath();
+        if (existsSync(selected)) path = selected;
+        else if (process.env.YOLO_RUNTIME_LIB)
+          throw new Error("Selected native runtime library is missing; selection preserved");
       }
       this.#library = nativeLibrary({
         name: "aphrody_ffi",

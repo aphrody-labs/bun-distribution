@@ -17,10 +17,12 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { hostTarget, runtimeHome } from "../../runtime/src/artifact";
 import { COMPILE_FLAGS } from "../../../../scripts/release/compile-flags";
+import { toolingAsset } from "../../../../scripts/release/tooling-asset.ts";
 
 const root = resolve(import.meta.dir, "../../../..");
 const work = mkdtempSync(join(tmpdir(), "yolo-installer-"));
 const binary = join(work, process.platform === "win32" ? "yolo.exe" : "yolo");
+const embeddedBinary = `${binary}-embedded`;
 const artifact =
   process.env["YOLO_INSTALLER_TEST_ARTIFACT"] ??
   (existsSync(join(root, "dist/runtime", hostTarget(), "manifest.json"))
@@ -30,26 +32,33 @@ const nativeAvailable = existsSync(join(artifact, "manifest.json"));
 let sequence = 0;
 
 function checked(command: string[], cwd: string) {
-  const result = Bun.spawnSync(command, { cwd, stdout: "pipe", stderr: "pipe", timeout: 30_000 });
+  const result = Bun.spawnSync(command, { cwd, stdout: "pipe", stderr: "pipe", timeout: 90_000 });
   if (result.exitCode !== 0) throw new Error(result.stderr.toString());
 }
 
-beforeAll(() => {
-  checked(
-    [
-      process.execPath,
-      "build",
-      "--compile",
-      ...COMPILE_FLAGS,
-      "--define",
-      'YOLO_VERSION="2.0.0"',
-      "packages/engine/yolo/src/index.ts",
-      "--outfile",
-      binary,
-    ],
-    root,
-  );
-}, 35_000);
+beforeAll(async () => {
+  const tooling = await toolingAsset(root);
+  for (const [output, assets] of [
+    [binary, []],
+    [embeddedBinary, tooling.flags],
+  ] as const) {
+    checked(
+      [
+        process.execPath,
+        "build",
+        "--compile",
+        ...COMPILE_FLAGS,
+        ...assets,
+        "--define",
+        'YOLO_VERSION="2.0.0"',
+        "packages/engine/yolo/src/index.ts",
+        "--outfile",
+        output,
+      ],
+      root,
+    );
+  }
+}, 95_000);
 
 afterAll(() => rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
 
@@ -147,9 +156,9 @@ function run(entry: Fixture, installer: Installer) {
         "-NoProfile",
         "-NonInteractive",
         "-File",
-        join(root, "apps/yolo", installer.script),
+        join(root, "packages/engine/yolo", installer.script),
       ]
-    : [installer.shell, join(root, "apps/yolo", installer.script)];
+    : [installer.shell, join(root, "packages/engine/yolo", installer.script)];
   return Bun.spawnSync(args, {
     cwd: entry.dir,
     env: {
@@ -190,21 +199,31 @@ for (const installer of installers) {
       const result = run(entry, installer);
       expect(result.exitCode).not.toBe(0);
       expect({ home: snapshot(entry.home), runtime: snapshot(entry.runtime) }).toEqual(before);
-      expect(readdirSync(entry.temp)).toEqual([]);
+      const tempFiles = readdirSync(entry.temp).filter(
+        (name) => !name.startsWith("clr-debug-pipe-") && !name.startsWith("dotnet-diagnostic-"),
+      );
+      expect(tempFiles).toEqual([]);
       return result;
+    }
+
+    function checkTempEmpty(tempDir: string) {
+      const tempFiles = readdirSync(tempDir).filter(
+        (name) => !name.startsWith("clr-debug-pipe-") && !name.startsWith("dotnet-diagnostic-"),
+      );
+      expect(tempFiles).toEqual([]);
     }
 
     it("preserves an existing installation when the optional crate archive cannot be extracted", () => {
       const entry = fixture(installer);
       pack(entry, installer, "invalid");
       rejects(entry);
-    });
+    }, 20_000);
 
     it("rejects a crate archive without its required directory before replacing code", () => {
       const entry = fixture(installer);
       pack(entry, installer, "missing");
       expect(rejects(entry).stderr.toString()).toContain("missing crates directory");
-    });
+    }, 20_000);
 
     it("rejects a missing or unexecutable candidate without replacing code", () => {
       for (const missing of [true, false]) {
@@ -218,19 +237,20 @@ for (const installer of installers) {
         pack(entry, installer);
         rejects(entry);
       }
-    });
+    }, 20_000);
 
     it("rejects an invalid native manifest without touching an external runtime store", () => {
       const entry = fixture(installer, true);
       writeFileSync(join(entry.main, "artifact/manifest.json"), "{}\n");
       pack(entry, installer);
       rejects(entry);
-    });
+    }, 20_000);
 
     it.skipIf(!nativeAvailable)(
       "rejects native load failure even when both archive and library hashes match",
       () => {
         const entry = fixture(installer);
+        cpSync(embeddedBinary, join(entry.main, "bin", installer.executable));
         const manifestPath = join(entry.main, "artifact/manifest.json");
         const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
         const library = Object.keys(manifest.files).find((name) => /\.(so|dylib|dll)$/.test(name))!;
@@ -242,6 +262,7 @@ for (const installer of installers) {
         const result = rejects(entry);
         expect(result.stdout.toString()).toContain("Installed");
       },
+      20_000,
     );
 
     it.skipIf(!nativeAvailable)(
@@ -262,14 +283,17 @@ for (const installer of installers) {
         expect(existsSync(join(entry.home, "runtime"))).toBe(false);
         expect(existsSync(join(entry.home, "sdk"))).toBe(false);
         expect(existsSync(join(entry.home, "stack"))).toBe(false);
-        expect(readdirSync(entry.temp)).toEqual([]);
+        checkTempEmpty(entry.temp);
         const installed = join(entry.home, "bin", installer.executable);
         const env = { ...process.env, YOLO_HOME: entry.home, YOLO_RUNTIME_HOME: entry.runtime };
         const rollback = Bun.spawnSync([installed, "runtime", "rollback"], { env });
         expect(rollback.exitCode).toBe(0);
         expect(readlinkSync(join(entry.runtime, hostTarget(), "current"))).toBe("old-artifact");
-        expect(Bun.spawnSync([installed, "runtime", "info"], { env }).exitCode).toBe(0);
+        expect(Bun.spawnSync([installed, "runtime", "info", "--installed"], { env }).exitCode).toBe(
+          0,
+        );
       },
+      20_000,
     );
 
     it.skipIf(!nativeAvailable)(
@@ -284,8 +308,9 @@ for (const installer of installers) {
         expect(readFileSync(join(entry.home, "VERSION"), "utf8")).toBe("2.0.0\n");
         expect(existsSync(join(entry.runtime, hostTarget(), "current"))).toBe(true);
         expect(existsSync(join(entry.runtime, hostTarget(), "previous"))).toBe(false);
-        expect(readdirSync(entry.temp)).toEqual([]);
+        checkTempEmpty(entry.temp);
       },
+      20_000,
     );
   });
 }

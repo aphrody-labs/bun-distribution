@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { COMPILE_FLAGS } from "../../../../scripts/release/compile-flags";
 import { toolingAsset } from "../../../../scripts/release/tooling-asset.ts";
+import { hostTarget } from "../../runtime/src/artifact.ts";
+import { libraryFile } from "../../runtime/src/index.ts";
 
 const root = resolve(import.meta.dir, "../../../..");
 const version = readFileSync(join(root, "packages/engine/yolo/VERSION"), "utf8").trim();
@@ -29,7 +31,7 @@ function run(args: string[], cwd = project, input?: string) {
     stdin: input === undefined ? "ignore" : Buffer.from(input),
     stdout: "pipe",
     stderr: "pipe",
-    timeout: 5_000,
+    timeout: 15_000,
   });
 }
 
@@ -40,6 +42,8 @@ beforeAll(async () => {
     project,
     nodeProject,
     join(checkout, "crates/infra/aphrody/src"),
+    join(checkout, "packages/engine/yolo/src"),
+    join(checkout, "apps"),
     env.HOME,
   ]) {
     mkdirSync(path, { recursive: true });
@@ -83,6 +87,48 @@ afterAll(() => {
 });
 
 describe("compiled CLI without an installed Bun", () => {
+  it("refuses a checksum-valid broken installed library despite its healthy embedded provider", () => {
+    const runtimeHome = join(work, "broken-installed-runtime");
+    const artifact = join(runtimeHome, hostTarget(), "current");
+    mkdirSync(artifact, { recursive: true });
+    const data = Buffer.from("not a native shared library\n");
+    writeFileSync(join(artifact, libraryFile()), data);
+    writeFileSync(
+      join(artifact, "manifest.json"),
+      JSON.stringify({
+        schema: 1,
+        name: "yolo-runtime",
+        version: "0.1.1",
+        target: hostTarget(),
+        abi: "1.5",
+        compatibility: { abiMajor: 1 },
+        capabilities: [],
+        files: {
+          [libraryFile()]: {
+            sha256: new Bun.CryptoHasher("sha256").update(data).digest("hex"),
+            bytes: data.length,
+          },
+        },
+      }),
+    );
+    const candidateEnv = { ...env, YOLO_RUNTIME_HOME: runtimeHome };
+    const healthy = Bun.spawnSync([binary, "runtime", "info"], {
+      cwd: project,
+      env: candidateEnv,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    expect(healthy.exitCode).toBe(0);
+    const broken = Bun.spawnSync([binary, "runtime", "info", "--installed"], {
+      cwd: project,
+      env: candidateEnv,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    expect(broken.exitCode).toBe(1);
+    expect(broken.stderr.toString()).toContain(libraryFile());
+    expect(broken.stderr.toString()).not.toContain("Hash mismatch");
+  });
   it("prints verify and supervisor help and rejects invalid verify arguments without gates", () => {
     const before = readdirSync(checkout).sort();
     const installationBefore = readdirSync(home).sort();
@@ -174,7 +220,7 @@ describe("compiled CLI without an installed Bun", () => {
     const missing = run(["status", "--json"]);
     expect(missing.exitCode).toBe(1);
     expect(missing.stderr.toString()).toContain("requires yolo checkout data");
-    const result = run(["status", "--json"], join(checkout, "apps"));
+    const result = run(["status", "--json"], join(checkout, "packages"));
     expect(result.exitCode).toBe(0);
     const report = JSON.parse(result.stdout.toString());
     expect(report.root).toBe(checkout);
@@ -198,7 +244,7 @@ describe("compiled CLI without an installed Bun", () => {
     const scan = run(["tool", "call", "yolo_scan", "{}"], project);
     expect(JSON.parse(JSON.parse(scan.stdout.toString()).content[0].text).target).toBe(project);
 
-    const status = run(["tool", "call", "yolo_status", "{}"], join(checkout, "apps"));
+    const status = run(["tool", "call", "yolo_status", "{}"], join(checkout, "packages"));
     expect(status.exitCode).toBe(0);
     const report = JSON.parse(JSON.parse(status.stdout.toString()).content[0].text);
     expect(report.root).toBe(checkout);

@@ -31,10 +31,23 @@ case "$cargo_command" in
         ;;
 esac
 
+# A resource marker is a routing hint, never proof of ownership. The owner checks
+# the actual kernel FLOCK and process ancestry before reusing the heavy lease.
+if [[ "$help_only" == false && -f "$factory_config" && ( "${APHRODY_BUILD_HOST:-}" == vps || -n "${APHRODY_FACTORY_RESOURCE:-}" ) ]]; then
+    resource_owner="$source_root/packages/infra/workspace/src/build-factory-cleanup.ts"
+    if ! bun "$resource_owner" --held; then
+        if [[ "${APHRODY_BUILD_HOST:-}" != vps ]]; then
+            echo "Factory resource marker has no inherited heavy lock" >&2
+            exit 64
+        fi
+        exec bun "$resource_owner" "$factory_config" bash "$source_root/scripts/build/rust/cargo-serial.sh" "$@"
+    fi
+fi
+
 default_jobs=6
 if [[ "${CLAUDE_CODE_REMOTE:-}" == true || "${APHRODY_CLOUD:-0}" == 1 ]]; then
     default_jobs="$(nproc)"
-    ((default_jobs > 6)) && default_jobs=6
+    if ((default_jobs > 6)); then default_jobs=6; fi
 fi
 jobs="${APHRODY_CARGO_JOBS:-$default_jobs}"
 if [[ ! "$jobs" =~ ^[1-6]$ ]]; then

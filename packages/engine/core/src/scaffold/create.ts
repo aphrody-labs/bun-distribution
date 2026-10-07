@@ -199,8 +199,6 @@ export async function runCreateCommand(
   console.log(
     `\x1b[1mCreated ${basename(target)}\x1b[0m (${files.length} files, features: base, ${features.join(", ")})`,
   );
-  console.log(
-    `\n  cd ${dir}\n  bun install\n  just -f ${join(yoloPath, "Justfile")} yolo::runtime-build   # once\n  bun run dev`,
-  );
+  console.log(`\n  cd ${dir}\n  bun install\n  bun run dev`);
   return 0;
 }

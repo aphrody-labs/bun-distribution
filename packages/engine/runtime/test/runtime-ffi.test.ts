@@ -1,7 +1,14 @@
 import { describe, expect, it } from "bun:test";
-import { ptr } from "bun:ffi";
+import { ptr, suffix } from "bun:ffi";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { defaultLibraryPath, libraryFile, Runtime } from "../src/index.ts";
+import { hostTarget } from "../src/target.ts";
+import { NativeTooling } from "../src/tooling.ts";
 import {
   nativeLibrary,
+  embeddedNativeLibraryPath,
   readNativeBytes,
   readNativeString,
   readOwnedBytes,
@@ -9,6 +16,67 @@ import {
 } from "../../runtime/src/ffi";
 
 describe("runtime SDK ffi helpers", () => {
+  const provider = process.env.YOLO_TOOLING_LIB;
+  it.skipIf(!provider || !existsSync(provider))(
+    "loads the same installed provider for runtime and tooling without explicit library variables",
+    () => {
+      const home = mkdtempSync(join(tmpdir(), "yolo-shared-installed-"));
+      const current = join(home, "runtime", hostTarget(), "current");
+      mkdirSync(current, { recursive: true });
+      const path = join(current, libraryFile());
+      symlinkSync(provider!, path, "file");
+      const keys = [
+        "YOLO_HOME",
+        "YOLO_RUNTIME_HOME",
+        "YOLO_RUNTIME_LIB",
+        "YOLO_TOOLING_LIB",
+      ] as const;
+      const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+      try {
+        for (const key of keys) delete process.env[key];
+        process.env.YOLO_HOME = home;
+        expect(defaultLibraryPath()).toBe(path);
+        using tooling = new NativeTooling();
+        const runtime = Runtime.load();
+        expect(tooling.probe().libraryPath).toBe(path);
+        expect(runtime.systemStats().os).toBe(
+          process.platform === "win32"
+            ? "windows"
+            : process.platform === "darwin"
+              ? "macos"
+              : process.platform,
+        );
+        runtime.close();
+        expect(
+          tooling.analyzeModule("export const retained = 1;", "retained.ts").exports,
+        ).toContain("retained");
+      } finally {
+        for (const key of keys) {
+          if (previous[key] === undefined) delete process.env[key];
+          else process.env[key] = previous[key];
+        }
+        rmSync(home, { recursive: true, force: true });
+      }
+    },
+  );
+  it("selects the sole embedded provider and ignores unrelated assets", () => {
+    const stem = process.platform === "win32" ? "aphrody_ffi" : "libaphrody_ffi";
+    const path = `/virtual/${stem}.${suffix}`;
+    expect(embeddedNativeLibraryPath("aphrody_ffi", [])).toBeNull();
+    expect(
+      embeddedNativeLibraryPath("aphrody_ffi", [new File([], "unrelated.so"), new File([], path)]),
+    ).toBe(path);
+  });
+
+  it("rejects competing embedded providers before any library load", () => {
+    const stem = process.platform === "win32" ? "aphrody_ffi" : "libaphrody_ffi";
+    expect(() =>
+      embeddedNativeLibraryPath("aphrody_ffi", [
+        new File([], `${stem}.${suffix}`),
+        new File([], `${stem}-other.${suffix}`),
+      ]),
+    ).toThrow("Multiple embedded native libraries");
+  });
   it("toCString appends a NUL", () => {
     expect([...toCString("ab")]).toEqual([97, 98, 0]);
   });

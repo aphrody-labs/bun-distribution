@@ -13,6 +13,8 @@ import {
   verifyArtifact,
 } from "@aphrody/runtime-sdk/src/artifact.ts";
 import { install, list, rollback } from "@aphrody/runtime-sdk/src/release.ts";
+import { Runtime } from "@aphrody/runtime-sdk";
+import { embeddedNativeLibraryPath } from "@aphrody/runtime-sdk/ffi";
 import { yoloHome, yoloVersion } from "./home";
 
 export const DEFAULT_REPO = "aphrody-labs/yolo";
@@ -114,7 +116,10 @@ export async function runRuntimeCommand(args: readonly string[]): Promise<number
       return 0;
     }
     case "info": {
-      using runtime = loadArtifact(join(runtimeHome(), hostTarget(), "current"));
+      using runtime =
+        !args.includes("--installed") && embeddedNativeLibraryPath("aphrody_ffi") !== null
+          ? Runtime.load()
+          : loadArtifact(join(runtimeHome(), hostTarget(), "current"));
       console.log(
         JSON.stringify(
           { build: runtime.buildInfo(), capabilities: runtime.capabilities() },
@@ -125,7 +130,9 @@ export async function runRuntimeCommand(args: readonly string[]): Promise<number
       return 0;
     }
     default:
-      console.error("usage: yolo runtime install <dir> | list | verify | rollback | info");
+      console.error(
+        "usage: yolo runtime install <dir> | list | verify | rollback | info [--installed]",
+      );
       return 1;
   }
 }
