@@ -11,6 +11,7 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/srv/aphrody-lab
 Environment=HOME=/home/ubuntu
+Environment=APHRODY_INFRA_ROOT=/home/ubuntu/.aphrody/automation/drive-vps
 Environment=PATH=/home/ubuntu/.bun/bin:/home/ubuntu/.local/bin:/usr/local/bin:/usr/bin:/bin
 Environment=APHRODY_GOOGLE_DRIVE_AUTH=service-account
 Environment=APHRODY_GOOGLE_SERVICE_ACCOUNT_JSON=/home/ubuntu/.aphrody/private/google/aphrody-bot.json

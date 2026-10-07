@@ -353,6 +353,36 @@ home SSH reste masqué. Aucun redémarrage du VPS avec une tâche de code en cou
 n'a été qualifié par ce smoke ; la conservation des enregistrements et l'absence
 de rejeu automatique restent les contrats décrits plus haut.
 
+## Preuves d’activation finales du 2026-10-07
+
+Le snapshot factory `c8ec56bc70d1f29c2f21f7f42bcde61fff267dc3` a produit
+l’artefact natif complet avec `mcp-toolbox` (298 220 552 octets), SHA-256
+`737f87d9a3ae1822dcc9741eaa1e16dce61ee5ac963e35de3deeda157d2b57d5`.
+Cet artefact remplace le binaire `2c8f5482…` sur les deux chemins canoniques
+VPS. Le SHA est vérifié aussi dans les namespaces des deux services : A2A
+a été relancé après MCP, sans tâche active, pour charger le nouvel inode.
+
+- A2A et MCP HTTP : actifs et activés au démarrage ; 401 sans jeton et avec
+  un mauvais jeton, 200 authentifié et 364 outils uniques (14 Yolo, 11 M3).
+- Protocole hérité et moderne : initialisation et catalogue qualifiés ;
+  discovery et les cinq résultats modernes ont `resultType=complete`,
+  `ttl=0` et cache privé. Claude WSL réel indique `Connected`. Claude Windows
+  natif 2.1.285 indique aussi `Connected` via WSL/SSH ; ce client négocie
+  `2025-11-25`, et le client WSL qualifie le protocole moderne `2026-07-28`.
+- Portes source : 60 tests coordination, 124 tests MCP réussis et un ignoré ;
+  strict Clippy tous targets sans dépendances réussi sur le snapshot exact.
+  Le check coordination Windows MSVC a réussi dans la factory DBFR.
+- Les six fichiers protégés contrôlés gardent leurs SHA et permissions.
+- Le client Bun A2A SDK a reçu l’ACK `WORKING` en 8 ms puis s’est fermé.
+  La tâche `01a11701-83ff-7475-8bfa-35a26646f98b` est ensuite
+  `COMPLETED`, avec un artefact et 7/7 vérifications : cwd dédié, main,
+  Bun, CLI native, GitHub, hooks MCP et checkout sans modification.
+
+Les listeners natifs restent sur loopback. Les relais WireGuard déclarés
+`10.200.77.1:8788` et `10.200.77.1:8793` sont acceptés par le contrôle
+de ports ; une adresse publique, wildcard ou un relais non déclaré est refusé.
+Les 18 tests de plan hôte et les contrôles TypeScript/lint/format passent.
+
 ## Synchronisation Drive indépendante des clients
 
 Le [worker VPS](../../../config/host/agent-sync-vps.json) utilise le propriétaire
@@ -390,6 +420,41 @@ en 0600 dans le magasin privé ; aucun contenu de document n’est publié.
 Cette application est distincte du timer de téléchargement et ne suffit pas
 à prouver un rapprochement bidirectionnel récurrent.
 
+Le [rapprochement récurrent](DRIVE-RECONCILIATION-WORKER.md) est désormais
+activé avec le worker Bun gelé `b066500744b6e1bffd1187f922afe2a2e51c24a4e8ca6f054484ad5b3b05e6e1`.
+Les sept artefacts installés correspondent à leurs SHA et le credential Google
+conserve son SHA et son mode 0600. Le passage réel de 15:52 UTC a qualifié
+les quatre jobs avec zéro échec : sept documents Drive inchangés, sept
+références vérifiées, 45 fichiers protégés copiés et deux homes DBFR/Shenron
+indexés (32 éléments indexés au total). Le reçu est publié et frais, sans
+revue en attente ; le oneshot termine avec `Result=success`, et son timer
+reste actif et activé au démarrage.
+
+Les générations des sept contrats sont immuables et publiées par une bascule
+atomique de `reviewed-current`. La revue réserve son intention avant
+l’envoi A2A, reprend son task ID durable et rafraîchit les révisions Docs
+avant la préflight et avant l’application. Les consommateurs attendent une
+génération vérifiée ; une application partielle bloque son rejeu.
+Le passage stable ci-dessus qualifie la récurrence et la propagation ; la
+branche d’écriture est couverte par les tests et le rapprochement réel des
+quatre Docs décrit plus haut.
+
+La première activation a refusé le module Google de 31 Mio à cause de la
+limite de documents. La correction distingue les modules (64 Mio) des
+documents (4 Mio), avec SHA, UID, mode 0600 et lien unique toujours contrôlés.
+Les 37 tests ciblés du contrôleur/worker passent, ainsi que TypeScript strict,
+lint et format ; le validateur Google compte 41 tests réussis. L’autre
+contrôle de sandbox a routé les journaux Infra vers
+`APHRODY_INFRA_ROOT=/home/ubuntu/.aphrody/automation/drive-vps`, au lieu du
+répertoire système en lecture seule ; un SSH réel dans ce sandbox réussit.
+
+L’ancien label `drive-dbfr-staged` a été vidé par le propriétaire natif
+après la bascule de policy et une sauvegarde vérifiée en 0600 : neuf documents
+retirés de l’index, zéro erreur, fichiers privés conservés. Le store VPS DBFR
+contient sept documents validés et 98 chunks. Les copies WSL vérifiées
+conservent aussi ces sept documents ; les authentifications des fournisseurs
+restent dans leurs magasins propres.
+
 Le reçu VPS local `/srv/aphrody-lab/state/agent-sync-vps-status.json` est distinct
 du reçu WSL. Le plan de contrôle Discord peut le lire via
 `sync.cloudAutomationReportPath` et n'affiche que les métadonnées autorisées. Un
@@ -399,9 +464,6 @@ Google et les documents restent dans leurs magasins privés.
 
 ## Limites encore ouvertes
 
-- Les changements modernes de protocole et de cache sont en cours de
-  qualification et de livraison. Les preuves du binaire `2c8f5482…` restent
-  valides pour sa version ; elles ne qualifient pas ces changements source.
 - Le PC d'Omar est hors ligne lors de cette qualification. Sa présence dans
   l'inventaire ne prouve pas une connexion WireGuard/SSH ni une exécution agente.
 - Le bot Shenron n'est pas encore admis dans le serveur Discord Aphrody. Les

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /* oxlint-disable no-await-in-loop -- Fixture promotion models the owner's sequential seven-file checkpoints. */
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, spyOn, test } from "bun:test";
 import { A2AClient, type Task, type Transport } from "@aphrody/a2a";
 import { createHash } from "node:crypto";
 import {
@@ -8,6 +8,7 @@ import {
   link,
   mkdir,
   mkdtemp,
+  open,
   readFile,
   readdir,
   readlink,
@@ -581,4 +582,97 @@ test("unchanged and out-of-scope documents never submit a review task", async ()
     "REMOTE_SCOPE_MISMATCH",
   );
   expect(submissions).toBe(0);
+});
+
+async function productionFixture() {
+  const value = await fixture(false);
+  const { config, documents } = value;
+  const source =
+    `const documents=${JSON.stringify(Object.fromEntries(documents))};
+export const nativeMarkdown=document=>document.text;
+export async function googleApi(identity){if(identity!=="service-account")throw Error("IDENTITY_MISMATCH");
+return {drive:{files:{get:async({fileId})=>({data:{id:fileId,name:fileId.slice(3),mimeType:"application/vnd.google-apps.document",parents:["folder"],trashed:false}})}},
+docs:{documents:{get:async({documentId})=>({data:documents[documentId]})}}};}` +
+    "\n/*" +
+    "x".repeat(5 * 1024 * 1024) +
+    "*/\n";
+  const validator =
+    "export const preflight=()=>{throw Error('UNEXPECTED_PREFLIGHT')}; export const apply=()=>{throw Error('UNEXPECTED_APPLY')}; export const refreshRevisions=()=>{throw Error('UNEXPECTED_REFRESH')};";
+  await Promise.all([
+    writeFile(config.ownerModule.path, source, { mode: 0o600 }),
+    writeFile(config.validatorModule.path, validator, { mode: 0o600 }),
+  ]);
+  config.ownerModule.sha256 = digest(source);
+  config.validatorModule.sha256 = digest(validator);
+  return value;
+}
+
+test("production loading accepts SHA-pinned private owner modules above the document limit without network or tasks", async () => {
+  const { config } = await productionFixture();
+  expect((await stat(config.ownerModule.path)).size).toBeGreaterThan(4 * 1024 * 1024);
+  const network = spyOn(globalThis, "fetch").mockImplementation(
+    Object.assign(
+      () => {
+        throw Error("UNEXPECTED_NETWORK");
+      },
+      {
+        preconnect: () => {
+          throw Error("UNEXPECTED_PRECONNECT");
+        },
+      },
+    ),
+  );
+  try {
+    expect(
+      await reconcileDriveReview(config, async () => {
+        throw Error("UNEXPECTED_CLI");
+      }),
+    ).toEqual({ unchanged: 7, verified: 7 });
+    expect(network).not.toHaveBeenCalled();
+    expect(await readdir(config.receiptRoot)).toEqual([]);
+    expect(await Bun.file(config.tokenFile).exists()).toBe(false);
+  } finally {
+    network.mockRestore();
+  }
+});
+
+test.each(["sha", "permissions", "hardlink", "oversize"])(
+  "production module loading preserves the %s guard before imports",
+  async (kind) => {
+    const { config } = await productionFixture();
+    if (kind === "sha") config.ownerModule.sha256 = "f".repeat(64);
+    if (kind === "permissions") await chmod(config.ownerModule.path, 0o644);
+    if (kind === "hardlink")
+      await link(config.ownerModule.path, config.ownerModule.path + ".linked");
+    if (kind === "oversize") {
+      const file = await open(config.ownerModule.path, "r+");
+      try {
+        await file.truncate(64 * 1024 * 1024 + 1);
+      } finally {
+        await file.close();
+      }
+    }
+    await expect(
+      reconcileDriveReview(config, async () => {
+        throw Error("UNEXPECTED_CLI");
+      }),
+    ).rejects.toThrow(kind === "sha" ? "OWNER_MODULE_CHANGED" : "UNSAFE_PRIVATE_FILE");
+    expect(await readdir(config.receiptRoot)).toEqual([]);
+  },
+);
+
+test("production module allowance leaves the four-MiB document bound intact", async () => {
+  const { config } = await productionFixture();
+  const file = await open(join(config.home, "AGENTS.md"), "r+");
+  try {
+    await file.truncate(4 * 1024 * 1024 + 1);
+  } finally {
+    await file.close();
+  }
+  await expect(
+    reconcileDriveReview(config, async () => {
+      throw Error("UNEXPECTED_CLI");
+    }),
+  ).rejects.toThrow("UNSAFE_PRIVATE_FILE");
+  expect(await readdir(config.receiptRoot)).toEqual([]);
 });

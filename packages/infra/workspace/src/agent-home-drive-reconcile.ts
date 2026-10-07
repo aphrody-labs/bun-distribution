@@ -27,6 +27,7 @@ const NAMES = [
   "BOOT.md",
 ];
 const MAX_BYTES = 4 * 1024 * 1024;
+const MODULE_BYTES = 64 * 1024 * 1024;
 type ObjectValue = Record<string, unknown>;
 type Run = (argv: string[], environment?: Record<string, string>) => Promise<string>;
 
@@ -482,7 +483,10 @@ async function bindPlan(path: string, inputs: Inputs) {
 }
 async function productionPorts(config: DriveReviewScope, run: Run): Promise<ReviewPorts> {
   for (const module of [config.ownerModule, config.validatorModule])
-    if (!hashPattern.test(module.sha256) || sha(await readPrivate(module.path)) !== module.sha256)
+    if (
+      !hashPattern.test(module.sha256) ||
+      sha(await readPrivate(module.path, MODULE_BYTES)) !== module.sha256
+    )
       throw new Error("OWNER_MODULE_CHANGED");
   const owner = (await import(pathToFileURL(config.ownerModule.path).href)) as GoogleOwner;
   const validator = (await import(pathToFileURL(config.validatorModule.path).href)) as Validator;
