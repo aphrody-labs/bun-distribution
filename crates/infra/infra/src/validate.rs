@@ -82,12 +82,14 @@ pub fn check_unit_templates(systemd_root: &Path, catalog: &ServiceCatalog) -> Ve
         .collect()
 }
 
+/// Validate the selected source snapshot. Live-host helpers resolve their own
+/// configuration root, independently of this explicit repository argument.
 pub fn run(root: &Path) -> Result<Report> {
     let catalog = load(root, "tools/config/service-catalog.json")?;
     let topology = load(root, "tools/config/production-topology.json")?;
     let contract = load_local_ai(root)?;
     let pipeline = load_pipeline_config(root)?;
-    let mut report = check(&catalog, &load(&host_config_root(), "nginx/routes.json")?);
+    let mut report = check(&catalog, &load(root, "tools/config/host/nginx/routes.json")?);
     report.merge(check_topology_ports(&catalog, &topology));
     report.merge(check_local_ai(&catalog, &topology, &contract));
     report.errors.extend(check_pipeline(&pipeline));
@@ -246,13 +248,40 @@ fn entries<'a>(value: &'a Value, key: &str) -> &'a [Value] {
     value.get(key).and_then(Value::as_array).map_or(&[], Vec::as_slice)
 }
 
+/// An absent or malformed host cannot establish independent listener ownership.
+fn service_host(service: &Value) -> Option<&str> {
+    str_field(service, "host")
+        .filter(|host| !host.is_empty() && !host.chars().any(char::is_whitespace))
+}
+
+type PortClaims<'a> = BTreeMap<u16, Vec<(&'a str, Option<&'a str>)>>;
+
+/// Keep every claim: an intervening listener on another host must not hide a
+/// previous claim on this host, and an unscoped listener conflicts with all hosts.
+fn claim_port<'a>(
+    report: &mut Report,
+    ports: &mut PortClaims<'a>,
+    id: &'a str,
+    service: &'a Value,
+    port: u16,
+) {
+    let host = service_host(service);
+    let claims = ports.entry(port).or_default();
+    if let Some((other, _)) = claims.iter().find(|(_, other_host)| {
+        !matches!((host, other_host), (Some(host), Some(other)) if host != *other)
+    }) {
+        report.errors.push(format!("port {port} partagé par {other} et {id}"));
+    }
+    claims.push((id, host));
+}
+
 /// The optional `port` names the primary listener: it must be a valid port and
 /// agree with the `health` probe; without `health` it joins the collision map.
 fn check_service_port<'a>(
     report: &mut Report,
-    ports: &mut BTreeMap<u16, &'a str>,
+    ports: &mut PortClaims<'a>,
     id: &'a str,
-    service: &Value,
+    service: &'a Value,
 ) {
     let Some(value) = service.get("port") else {
         return;
@@ -266,11 +295,7 @@ fn check_service_port<'a>(
             report.errors.push(format!("{id}: port {port} differs from health port {health}"))
         },
         Some(_) => {},
-        None => {
-            if let Some(other) = ports.insert(port, id) {
-                report.errors.push(format!("port {port} partagé par {other} et {id}"));
-            }
-        },
+        None => claim_port(report, ports, id, service, port),
     }
 }
 
@@ -352,8 +377,9 @@ fn topology_ports(topology: &Value, host: &str) -> Option<(BTreeSet<u64>, BTreeS
     Some((set("internalOnly"), set("publicPorts")))
 }
 
-/// Every explicit catalog `port` must be internal-only on some topology host
-/// and public on none: only nginx owns 80/443.
+/// Every service host must exist in the topology, including health-only listeners.
+/// Every explicit catalog `port` must be internal-only on its declared host
+/// (or some host when unscoped), and public on none: only nginx owns 80/443.
 pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
     let mut report = Report::default();
     let hosts: Vec<(BTreeSet<u64>, BTreeSet<u64>)> = topology
@@ -362,16 +388,40 @@ pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
         .map(|hosts| hosts.keys().filter_map(|host| topology_ports(topology, host)).collect())
         .unwrap_or_default();
     for service in entries(catalog, "services") {
-        let (Some(id), Some(port)) =
-            (str_field(service, "id"), service.get("port").and_then(Value::as_u64))
-        else {
+        let Some(id) = str_field(service, "id") else {
+            continue;
+        };
+        let declared_host = match service.get("host") {
+            None => None,
+            Some(_) => match service_host(service) {
+                Some(host) => Some(host),
+                None => {
+                    report
+                        .errors
+                        .push(format!("{id}: host must be a nonempty name without whitespace"));
+                    continue;
+                },
+            },
+        };
+        let internal = match declared_host {
+            Some(host) => match topology_ports(topology, host) {
+                Some((internal, _)) => internal,
+                None => {
+                    report.errors.push(format!("{id}: unknown topology host {host}"));
+                    continue;
+                },
+            },
+            None => hosts.iter().flat_map(|(internal, _)| internal.iter().copied()).collect(),
+        };
+        let Some(port) = service.get("port").and_then(Value::as_u64) else {
             continue;
         };
         if hosts.iter().any(|(_, public)| public.contains(&port)) {
             report.errors.push(format!("{id}: port {port} is a public topology port"));
-        } else if !hosts.iter().any(|(internal, _)| internal.contains(&port)) {
+        } else if !internal.contains(&port) {
+            let scope = declared_host.map_or(String::new(), |host| format!(" on host {host}"));
             report.errors.push(format!(
-                "{id}: port {port} is not internalOnly in tools/config/production-topology.json"
+                "{id}: port {port} is not internalOnly{scope} in tools/config/production-topology.json"
             ));
         }
     }
@@ -385,7 +435,7 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
 
     let mut by_id: BTreeMap<&str, &Value> = BTreeMap::new();
     let mut units = BTreeSet::new();
-    let mut ports: BTreeMap<u16, &str> = BTreeMap::new();
+    let mut ports = PortClaims::new();
     for service in services {
         let Some(id) = str_field(service, "id") else {
             report.errors.push("service sans id".into());
@@ -405,9 +455,7 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
                     if !is_private(host) {
                         report.errors.push(format!("{id}: health hors loopback/privé ({health})"));
                     }
-                    if let Some(other) = ports.insert(port, id) {
-                        report.errors.push(format!("port {port} partagé par {other} et {id}"));
-                    }
+                    claim_port(&mut report, &mut ports, id, service, port);
                 },
                 None => report.errors.push(format!("{id}: health sans host:port ({health})")),
             }
@@ -434,11 +482,7 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
                                     "{id}: additionalUpstreams hors loopback/privé ({address})"
                                 ));
                             }
-                            if let Some(other) = ports.insert(port, id) {
-                                report
-                                    .errors
-                                    .push(format!("port {port} partagé par {other} et {id}"));
-                            }
+                            claim_port(&mut report, &mut ports, id, service, port);
                         },
                         None => report
                             .errors
@@ -1246,6 +1290,79 @@ mod tests {
         assert_eq!(errors.len(), 3, "{errors:?}");
     }
 
+    fn listener(id: &str, host: Value, kind: u8, primary: u16) -> Value {
+        let mut service = json!({ "id": id, "host": host });
+        match kind {
+            0 => service["health"] = json!("http://127.0.0.1:8793/health"),
+            1 => service["port"] = json!(8793),
+            2 => {
+                service["health"] = json!(format!("http://127.0.0.1:{primary}/health"));
+                service["additionalUpstreams"] = json!(["127.0.0.1:8793"]);
+            },
+            _ => unreachable!("fixture listener kind"),
+        }
+        service
+    }
+
+    #[test]
+    fn distinct_explicit_hosts_can_reuse_every_listener_kind() {
+        for first in 0..3 {
+            for second in 0..3 {
+                let catalog = json!({ "services": [
+                    listener("vps-listener", json!("vps"), first, 8083),
+                    listener("dbfr-listener", json!("dbfr"), second, 8084)
+                ] });
+                let errors = check(&catalog, &json!({})).errors;
+                assert!(errors.is_empty(), "listener kinds {first}/{second}: {errors:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn same_host_listener_collisions_are_rejected_for_every_kind() {
+        for first in 0..3 {
+            for second in 0..3 {
+                let catalog = json!({ "services": [
+                    listener("first", json!("vps"), first, 8083),
+                    listener("second", json!("vps"), second, 8084)
+                ] });
+                let errors = check(&catalog, &json!({})).errors;
+                assert_eq!(errors.len(), 1, "listener kinds {first}/{second}: {errors:?}");
+                assert_error(&errors, "port 8793 partagé par first et second");
+            }
+        }
+    }
+
+    #[test]
+    fn unknown_host_scopes_never_establish_independent_listeners() {
+        for unknown in [Value::Null, json!(""), json!(" "), json!(" vps"), json!(7)] {
+            for unscoped_first in [false, true] {
+                let unknown = listener("unknown", unknown.clone(), 0, 8083);
+                let known = listener("known", json!("dbfr"), 1, 8084);
+                let services =
+                    if unscoped_first { vec![unknown, known] } else { vec![known, unknown] };
+                assert_eq!(check(&json!({ "services": services }), &json!({})).errors.len(), 1);
+            }
+        }
+        let catalog = json!({ "services": [
+            { "id": "unknown", "port": 8793 },
+            listener("known", json!("vps"), 2, 8083)
+        ] });
+        assert_error(&check(&catalog, &json!({})).errors, "port 8793 partagé");
+    }
+
+    #[test]
+    fn another_host_cannot_hide_an_earlier_listener_claim() {
+        let catalog = json!({ "services": [
+            listener("first-vps", json!("vps"), 0, 8083),
+            listener("dbfr", json!("dbfr"), 1, 8084),
+            listener("second-vps", json!("vps"), 2, 8085)
+        ] });
+        let errors = check(&catalog, &json!({})).errors;
+        assert_eq!(errors.len(), 1, "{errors:?}");
+        assert_error(&errors, "port 8793 partagé par first-vps et second-vps");
+    }
+
     #[test]
     fn retired_service_requires_a_plausible_retired_at() {
         let missing_date = json!({ "services": [
@@ -1323,6 +1440,39 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
         let report = run(&root).unwrap();
         assert!(report.errors.is_empty(), "{:#?}", report.errors);
+    }
+
+    #[test]
+    fn source_validation_reads_routes_from_the_selected_snapshot() {
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        let selected = tempfile::tempdir().expect("selected snapshot");
+        fs::create_dir_all(selected.path().join("tools/config/host/nginx")).unwrap();
+        for file in [
+            "service-catalog.json",
+            "production-topology.json",
+            "local-ai.json",
+            "pipeline.json",
+            "stack-training.json",
+        ] {
+            fs::copy(
+                source.join("tools/config").join(file),
+                selected.path().join("tools/config").join(file),
+            )
+            .expect("source catalog fixture");
+        }
+        fs::write(
+            selected.path().join("tools/config/host/nginx/routes.json"),
+            serde_json::to_vec(&json!({ "routes": [{
+                "host": "snapshot-fixture.invalid",
+                "service": "snapshot-fixture-only",
+                "upstream": "127.0.0.1:65000"
+            }] }))
+            .unwrap(),
+        )
+        .unwrap();
+        let report = run(selected.path()).expect("selected snapshot catalogs");
+        assert_eq!(report.routes, 1);
+        assert!(report.errors.iter().any(|error| error.contains("snapshot-fixture-only")));
     }
 
     #[test]
@@ -1626,6 +1776,54 @@ mod tests {
         assert_eq!(errors.len(), 2, "{errors:#?}");
         assert_error(&errors, "public: port 443 is a public topology port");
         assert_error(&errors, "stray: port 9999 is not internalOnly");
+    }
+
+    #[test]
+    fn topology_requires_internal_port_on_the_declared_host() {
+        let topology = json!({ "hosts": {
+            "vps": { "network": { "internalOnly": [8793], "publicPorts": [80, 443] } },
+            "dbfr": { "network": { "internalOnly": [8083], "publicPorts": [80, 443] } }
+        } });
+        let catalog = json!({ "services": [
+            { "id": "correct", "host": "vps", "port": 8793 },
+            { "id": "wrong-host", "host": "dbfr", "port": 8793 },
+            { "id": "legacy-unscoped", "port": 8793 }
+        ] });
+        let errors = check_topology_ports(&catalog, &topology).errors;
+        assert_eq!(errors.len(), 1, "{errors:?}");
+        assert_error(&errors, "wrong-host: port 8793 is not internalOnly on host dbfr");
+    }
+
+    #[test]
+    fn topology_rejects_explicit_unknown_or_malformed_host() {
+        let topology = json!({ "hosts": {
+            "vps": { "network": { "internalOnly": [8793] } }
+        } });
+        let catalog = json!({ "services": [
+            { "id": "unknown", "host": "missing-host", "health": "http://127.0.0.1:8793/health" },
+            { "id": "blank", "host": "", "additionalUpstreams": ["127.0.0.1:8793"] },
+            { "id": "null", "host": null, "port": 8793 },
+            { "id": "number", "host": 7 }
+        ] });
+        let errors = check_topology_ports(&catalog, &topology).errors;
+        assert_eq!(errors.len(), 4, "{errors:?}");
+        assert_error(&errors, "unknown: unknown topology host missing-host");
+        assert_error(&errors, "blank: host must be a nonempty name");
+        assert_error(&errors, "null: host must be a nonempty name");
+        assert_error(&errors, "number: host must be a nonempty name");
+    }
+
+    #[test]
+    fn declared_internal_host_does_not_allow_a_port_public_on_another_host() {
+        let topology = json!({ "hosts": {
+            "vps": { "network": { "internalOnly": [8793], "publicPorts": [80, 443] } },
+            "dbfr": { "network": { "internalOnly": [], "publicPorts": [8793] } }
+        } });
+        let catalog = json!({ "services": [{ "id": "private", "host": "vps", "port": 8793 }] });
+        assert_error(
+            &check_topology_ports(&catalog, &topology).errors,
+            "private: port 8793 is a public topology port",
+        );
     }
 
     fn training() -> Value {

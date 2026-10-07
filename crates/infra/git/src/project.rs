@@ -254,11 +254,56 @@ pub fn list_worktrees(path: impl AsRef<Path>) -> Result<Vec<GitWorktreeInfo>, Er
 mod tests {
     use super::*;
 
+    fn branch_fixture() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().expect("repository fixture");
+        for args in [
+            vec!["init", "--initial-branch=main"],
+            vec![
+                "-c",
+                "user.name=aphrody-dev",
+                "-c",
+                "user.email=contact@aphrody.com",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "--allow-empty",
+                "-m",
+                "branch fixture",
+            ],
+        ] {
+            let output = std::process::Command::new("git")
+                .current_dir(dir.path())
+                .args(args)
+                .output()
+                .expect("fixture git command");
+            assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+        }
+        dir
+    }
+
     #[test]
-    fn test_list_branches_in_current_repo() {
-        let branches = list_branches(".").expect("list_branches");
-        assert!(!branches.is_empty());
-        assert!(branches.iter().any(|b| b.is_head));
+    fn test_list_branches_identifies_attached_head() {
+        let dir = branch_fixture();
+        let branches = list_branches(dir.path()).expect("list_branches");
+        assert_eq!(branches.len(), 1);
+        assert_eq!(branches[0].name, "main");
+        assert!(branches[0].is_head);
+    }
+
+    #[test]
+    fn test_list_branches_accepts_detached_snapshot_without_branch_refs() {
+        let dir = branch_fixture();
+        for args in [vec!["checkout", "--detach"], vec!["update-ref", "-d", "refs/heads/main"]] {
+            assert!(
+                std::process::Command::new("git")
+                    .current_dir(dir.path())
+                    .args(args)
+                    .status()
+                    .expect("detach fixture")
+                    .success()
+            );
+        }
+        assert!(list_branches(dir.path()).expect("detached branches").is_empty());
     }
 
     #[test]
