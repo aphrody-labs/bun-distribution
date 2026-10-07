@@ -1308,6 +1308,10 @@ dependencies = [
 name = "aphrody-gpu-backend"
 version = "1.0.0-canary"
 dependencies = [
+ "cudarc",
+ "pollster 1.0.1",
+ "serde",
+ "serde_json",
  "wgpu",
 ]
 
@@ -29246,6 +29250,7 @@ dependencies = [
 name = "yolo-runtime"
 version = "1.0.0"
 dependencies = [
+ "aphrody-gpu-backend",
  "async-trait",
  "base64 0.23.1",
  "libc",

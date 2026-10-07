@@ -1,0 +1,224 @@
+diff -Naur a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+--- a/drivers/misc/Kconfig	2026-10-07 05:09:18.127884943 +0000
++++ b/drivers/misc/Kconfig	2026-10-07 05:09:18.130684785 +0000
+@@ -634,6 +634,20 @@
+ 	    - lan966x-miim (MDIO_MSCC_MIIM)
+ 	    - lan966x-switch (LAN966X_SWITCH)
+ 
++config APHRODY_RUNTIME
++	tristate "Aphrody userspace runtime registry"
++	depends on RUST
++	help
++	  Exposes /dev/aphrody-runtime, a misc device through which the
++	  userspace runtime driving the system (for instance an init process
++	  running on Bun) announces itself to the kernel. The registered name
++	  can be read back by any process.
++
++	  To compile this driver as a module, choose M here: the module will
++	  be called aphrody_runtime.
++
++	  If unsure, say N.
++
+ source "drivers/misc/c2port/Kconfig"
+ source "drivers/misc/eeprom/Kconfig"
+ source "drivers/misc/cb710/Kconfig"
+diff -Naur a/drivers/misc/Makefile b/drivers/misc/Makefile
+--- a/drivers/misc/Makefile	2026-10-07 05:09:18.127954660 +0000
++++ b/drivers/misc/Makefile	2026-10-07 05:09:18.130886501 +0000
+@@ -67,6 +67,7 @@
+ obj-$(CONFIG_TPS6594_ESM)	+= tps6594-esm.o
+ obj-$(CONFIG_TPS6594_PFSM)	+= tps6594-pfsm.o
+ obj-$(CONFIG_NSM)		+= nsm.o
++obj-$(CONFIG_APHRODY_RUNTIME)	+= aphrody_runtime.o
+ obj-$(CONFIG_MARVELL_CN10K_DPI)	+= mrvl_cn10k_dpi.o
+ lan966x-pci-objs		:= lan966x_pci.o
+ lan966x-pci-objs		+= lan966x_pci.dtbo.o
+diff -Naur a/drivers/misc/aphrody_runtime.rs b/drivers/misc/aphrody_runtime.rs
+--- a/drivers/misc/aphrody_runtime.rs	1970-01-01 00:00:00.000000000 +0000
++++ b/drivers/misc/aphrody_runtime.rs	2026-10-07 05:09:18.130933627 +0000
+@@ -0,0 +1,185 @@
++// SPDX-License-Identifier: GPL-2.0
++
++// Copyright (C) 2026 Aphrody.
++
++//! Userspace runtime registry.
++//!
++//! This driver exposes `/dev/aphrody-runtime`, a small misc device that lets
++//! the userspace runtime driving the system (for instance the init process
++//! written for Bun) announce itself to the kernel. The kernel validates the
++//! announced name, logs it and makes it available to any reader.
++//!
++//! Writing a name registers it, replacing any previous one. A trailing newline
++//! is ignored. Names must be between 1 and [`NAME_MAX`] bytes long and only
++//! contain printable ASCII characters.
++//!
++//! Reading the device returns the current registration:
++//!
++//! ```text
++//! runtime=bun 1.4.2
++//! registrations=1
++//! ```
++//!
++//! The number of registrations since boot can also be fetched with the
++//! [`GET_COUNT`] ioctl:
++//!
++//! ```c
++//! #define APHRODY_RUNTIME_GET_COUNT _IOR('A', 0x01, __u32)
++//! ```
++
++use kernel::{
++    fs::{
++        File,
++        Kiocb, //
++    },
++    ioctl::{
++        _IOC_SIZE,
++        _IOR, //
++    },
++    iov::{
++        IovIterDest,
++        IovIterSource, //
++    },
++    miscdevice::{
++        MiscDevice,
++        MiscDeviceOptions,
++        MiscDeviceRegistration, //
++    },
++    prelude::*,
++    str::CString,
++    uaccess::{
++        UserPtr,
++        UserSlice, //
++    },
++};
++
++/// Maximum length, in bytes, of a runtime name.
++const NAME_MAX: usize = 64;
++
++/// Ioctl command returning the number of registrations since boot as a `u32`.
++const GET_COUNT: u32 = _IOR::<u32>('A' as u32, 0x01);
++
++module! {
++    type: AphrodyRuntimeModule,
++    name: "aphrody_runtime",
++    authors: ["Aphrody"],
++    description: "Userspace runtime registry",
++    license: "GPL",
++}
++
++/// State shared by every opened file of the device.
++struct Registry {
++    /// Name of the registered runtime, empty if none.
++    name: [u8; NAME_MAX],
++    /// Number of valid bytes in `name`.
++    len: usize,
++    /// Number of successful registrations since boot.
++    count: u32,
++}
++
++kernel::sync::global_lock! {
++    // SAFETY: Initialized in the module initializer before the device is registered.
++    unsafe(uninit) static REGISTRY: Mutex<Registry> = Registry {
++        name: [0; NAME_MAX],
++        len: 0,
++        count: 0,
++    };
++}
++
++/// Returns `true` if `name` is a valid runtime name.
++fn is_valid_name(name: &[u8]) -> bool {
++    !name.is_empty()
++        && name.len() <= NAME_MAX
++        && name.iter().all(|c| c.is_ascii_graphic() || *c == b' ')
++}
++
++#[pin_data]
++struct AphrodyRuntimeModule {
++    #[pin]
++    _miscdev: MiscDeviceRegistration<AphrodyRuntime>,
++}
++
++impl kernel::InPlaceModule for AphrodyRuntimeModule {
++    fn init(_module: &'static ThisModule) -> impl PinInit<Self, Error> {
++        // SAFETY: Called exactly once, before the device is registered.
++        unsafe { REGISTRY.init() };
++
++        let options = MiscDeviceOptions {
++            name: c"aphrody-runtime",
++        };
++
++        try_pin_init!(Self {
++            _miscdev <- MiscDeviceRegistration::register(options),
++        })
++    }
++}
++
++/// An opened file of the device.
++///
++/// All the state lives in [`REGISTRY`], so opened files carry no data.
++struct AphrodyRuntime;
++
++#[vtable]
++impl MiscDevice for AphrodyRuntime {
++    type Ptr = KBox<Self>;
++
++    fn open(_file: &File, _misc: &MiscDeviceRegistration<Self>) -> Result<KBox<Self>> {
++        Ok(KBox::new(AphrodyRuntime, GFP_KERNEL)?)
++    }
++
++    fn read_iter(mut kiocb: Kiocb<'_, Self::Ptr>, iov: &mut IovIterDest<'_>) -> Result<usize> {
++        let report = {
++            let registry = REGISTRY.lock();
++            let name = core::str::from_utf8(&registry.name[..registry.len]).map_err(|_| EINVAL)?;
++
++            CString::try_from_fmt(fmt!("runtime={}\nregistrations={}\n", name, registry.count))?
++        };
++
++        iov.simple_read_from_buffer(kiocb.ki_pos_mut(), report.to_bytes())
++    }
++
++    fn write_iter(mut kiocb: Kiocb<'_, Self::Ptr>, iov: &mut IovIterSource<'_>) -> Result<usize> {
++        // One extra byte allows a trailing newline after a name of maximal length.
++        if iov.len() > NAME_MAX + 1 {
++            return Err(EMSGSIZE);
++        }
++
++        let mut buf = KVec::new();
++        let len = iov.copy_from_iter_vec(&mut buf, GFP_KERNEL)?;
++
++        let name = buf.strip_suffix(b"\n").unwrap_or(&buf);
++        if !is_valid_name(name) {
++            return Err(EINVAL);
++        }
++
++        let count = {
++            let mut registry = REGISTRY.lock();
++
++            registry.name[..name.len()].copy_from_slice(name);
++            registry.len = name.len();
++            registry.count = registry.count.saturating_add(1);
++            registry.count
++        };
++
++        // `name` was validated as printable ASCII above.
++        let name = core::str::from_utf8(name).map_err(|_| EINVAL)?;
++        pr_info!("runtime registered: {} (#{})\n", name, count);
++
++        *kiocb.ki_pos_mut() = 0;
++
++        Ok(len)
++    }
++
++    fn ioctl(_me: &AphrodyRuntime, _file: &File, cmd: u32, arg: usize) -> Result<isize> {
++        match cmd {
++            GET_COUNT => {
++                let count = REGISTRY.lock().count;
++                let mut writer = UserSlice::new(UserPtr::from_addr(arg), _IOC_SIZE(cmd)).writer();
++
++                writer.write::<u32>(&count)?;
++                Ok(0)
++            }
++            _ => Err(ENOTTY),
++        }
++    }
++}

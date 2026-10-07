@@ -18,6 +18,10 @@ mod process;
 pub use process::*;
 #[cfg(feature = "browser")]
 mod browser;
+#[cfg(feature = "gpu")]
+mod gpu;
+#[cfg(feature = "gpu")]
+pub use gpu::*;
 #[cfg(feature = "browser")]
 pub use browser::*;
 
@@ -30,7 +34,7 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 
 pub const ABI_MAJOR: u32 = 1;
-pub const ABI_MINOR: u32 = 4;
+pub const ABI_MINOR: u32 = 5;
 /// Upper bound for `max_operations`.
 pub const MAX_OPERATIONS_LIMIT: u32 = 64;
 const DEFAULT_MAX_OPERATIONS: u32 = 4;
@@ -477,6 +481,12 @@ pub unsafe extern "C" fn yolo_runtime_capabilities(
         "browser.capture",
         #[cfg(feature = "browser")]
         "browser.contexts",
+        #[cfg(feature = "gpu")]
+        "gpu.info",
+        #[cfg(feature = "gpu")]
+        "gpu.wgsl",
+        #[cfg(feature = "cuda")]
+        "gpu.cuda",
       ],
     )
   })

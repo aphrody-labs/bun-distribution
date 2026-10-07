@@ -238,15 +238,26 @@ fn build_info_and_capabilities_are_json() {
     unsafe { yolo_runtime_capabilities(rt, &mut out) },
     YoloStatus::Ok
   );
+  let capabilities = take_json(out);
+  let names: Vec<&str> = capabilities
+    .as_array()
+    .unwrap()
+    .iter()
+    .map(|c| c.as_str().unwrap())
+    .collect();
   assert_eq!(
-    take_json(out),
-    serde_json::json!([
-      "system.stats",
-      "bench.compute",
-      "process.supervise",
-      "http.probe"
-    ])
+    names[..4],
+    ["system.stats", "bench.compute", "process.supervise", "http.probe"]
   );
+  // Optional providers appear exactly when they are compiled in.
+  for (name, enabled) in [
+    ("browser.navigate", cfg!(feature = "browser")),
+    ("gpu.info", cfg!(feature = "gpu")),
+    ("gpu.wgsl", cfg!(feature = "gpu")),
+    ("gpu.cuda", cfg!(feature = "cuda")),
+  ] {
+    assert_eq!(names.contains(&name), enabled, "{name}");
+  }
   yolo_runtime_destroy(rt);
 }
 

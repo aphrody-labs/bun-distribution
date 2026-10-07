@@ -7,6 +7,13 @@
 
 pub use ::wgpu;
 
+#[cfg(feature = "cuda")]
+pub mod cuda;
+#[cfg(feature = "hub")]
+pub mod cuda_report;
+#[cfg(feature = "hub")]
+pub mod hub;
+
 /// Create an instance through the shared backend owner.
 #[must_use]
 pub fn create_instance(descriptor: wgpu::InstanceDescriptor) -> wgpu::Instance {

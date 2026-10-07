@@ -396,6 +396,9 @@ fontdue = {"version" = "0.9"}
 gltf = {"version" = "1.4.1", "default-features" = false, "features" = ["utils", "names", "KHR_materials_emissive_strength", "KHR_materials_unlit"]}
 tobj = {"version" = "4.0.5", "default-features" = false}
 wgpu = {"version" = "30.0.1", "default-features" = false}
+# CUDA host API (driver + NVRTC), loaded from the official NVIDIA driver at run time: builds
+# without the CUDA toolkit and degrades to "unavailable" on machines without libcuda.
+cudarc = {"version" = "0.19.10", "default-features" = false, "features" = ["std", "driver", "nvrtc", "dynamic-loading", "cuda-12080"]}
 bytemuck = {"version" = "1", "features" = ["derive"]}
 roxmltree = {"version" = "0.21"}
 svgtypes = {"version" = "0.16"}

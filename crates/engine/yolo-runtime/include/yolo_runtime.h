@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #define YOLO_ABI_MAJOR 1u
-#define YOLO_ABI_MINOR 4u
+#define YOLO_ABI_MINOR 5u
 #define YOLO_MAX_OPERATIONS_LIMIT 64u
 
 /* Opaque handle owned by the library; 0 is never valid. */
@@ -132,6 +132,16 @@ YoloStatus yolo_http_probe_start(YoloHandle runtime, const char *host, uint16_t 
 YoloStatus yolo_browser_create(YoloHandle runtime, const uint8_t *input, size_t input_len, YoloHandle *out);
 YoloStatus yolo_browser_call_start(YoloHandle browser, const uint8_t *input, size_t input_len, YoloHandle *out_operation);
 YoloStatus yolo_browser_close(YoloHandle browser);
+
+/* Optional GPU feature, ABI 1.5. Probe gpu.info / gpu.wgsl / gpu.cuda before resolving this symbol.
+ * One process-wide device (NVIDIA discrete first) is shared with every other host of the process.
+ * input: UTF-8 JSON {"op":"info"} | {"op":"wgsl","shader":"...","entryPoint":"main","workgroups":[x,y,z]}
+ *        | {"op":"cuda","source":"...","kernel":"name","blockSize":0}, 1 byte..1 MiB.
+ * data: job buffer (WGSL storage binding 0, or little-endian f32 for CUDA), 0..16 MiB, may be NULL
+ * when data_len is 0. Both are copied before the call returns. The operation yields the JSON report
+ * for info, or {"bytes":n,"data":"<base64>","elapsedMs":t} for jobs; GPU errors fail the operation. */
+YoloStatus yolo_gpu_call_start(YoloHandle runtime, const uint8_t *input, size_t input_len,
+                               const uint8_t *data, size_t data_len, YoloHandle *out_operation);
 
 /* Buffers and errors */
 void yolo_buffer_free(YoloBuffer *buffer); /* zeroes the buffer; no-op if already empty */

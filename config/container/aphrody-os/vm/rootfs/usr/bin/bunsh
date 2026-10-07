@@ -1,0 +1,45 @@
+#!/usr/bin/bun
+// SPDX-License-Identifier: Apache-2.0
+// bunsh: a POSIX-ish shell built on Bun's native shell (Bun.$). Installed as /bin/sh.
+
+import { $ } from "bun";
+import { createInterface } from "node:readline";
+
+$.nothrow();
+$.env({ ...process.env, PATH: process.env.PATH ?? "/usr/bin:/usr/sbin" });
+
+async function exec(line: string): Promise<number> {
+  const src = line.trim();
+  if (!src || src.startsWith("#")) return 0;
+  if (src === "exit") process.exit(0);
+  const cd = src.match(/^cd(?:\s+(.*))?$/);
+  if (cd) {
+    try {
+      process.chdir(cd[1]?.trim() || process.env.HOME || "/");
+      $.cwd(process.cwd());
+      return 0;
+    } catch (e) {
+      console.error(`bunsh: cd: ${(e as Error).message}`);
+      return 1;
+    }
+  }
+  const r = await $`${{ raw: src }}`.cwd(process.cwd());
+  return r.exitCode;
+}
+
+const args = process.argv.slice(2);
+if (args[0] === "-c") {
+  process.exit(await exec(args.slice(1).join(" ")));
+} else if (args[0]) {
+  process.exit(await exec(await Bun.file(args[0]).text()));
+}
+
+const user = process.getuid?.() === 0 ? "#" : "$";
+const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+const prompt = () => rl.setPrompt(`bunsh:${process.cwd()}${user} `) ?? rl.prompt();
+console.log(`bunsh on Bun ${Bun.version}. Builtins + uutils, eza, sudo-rs. Type 'exit' to power off.`);
+prompt();
+for await (const line of rl) {
+  await exec(line);
+  prompt();
+}

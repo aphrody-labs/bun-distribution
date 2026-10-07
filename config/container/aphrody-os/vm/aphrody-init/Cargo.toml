@@ -1,0 +1,18 @@
+[package]
+name = "aphrody-init"
+version = "0.1.0"
+edition = "2024"
+description = "First-stage PID 1: mounts the pseudo filesystems, then execs Bun"
+license = "Apache-2.0"
+
+[dependencies]
+rustix = { version = "1", features = ["mount", "fs", "process", "system"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+panic = "abort"
+strip = true
+
+# Standalone: not a member of the Aphrody workspace (built into the VM initramfs only).
+[workspace]

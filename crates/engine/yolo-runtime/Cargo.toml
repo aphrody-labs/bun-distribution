@@ -18,10 +18,15 @@ crate-type = ["rlib"]
 [features]
 default = []
 browser = ["dep:obscura-browser", "dep:obscura-net", "dep:tokio", "dep:url", "dep:base64", "dep:async-trait"]
+# Process-wide GPU hub (wgpu) shared with Obscura and Tauri hosts in the same process.
+gpu = ["dep:aphrody-gpu-backend", "aphrody-gpu-backend/hub", "dep:base64"]
+# NVIDIA CUDA through the official driver, loaded at run time.
+cuda = ["gpu", "aphrody-gpu-backend/cuda"]
 
 [dependencies]
 obscura-browser = { workspace = true, features = ["render"], optional = true }
 obscura-net = { workspace = true, optional = true }
+aphrody-gpu-backend = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 base64 = { workspace = true, optional = true }

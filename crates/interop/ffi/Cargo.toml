@@ -27,7 +27,9 @@ workspace = true
 default = ["tooling"]
 tooling = ["dep:aphrody-n2b-core", "dep:memchr", "dep:aphrody-oxc-bridge"]
 inference = ["dep:aphrody-llama-server", "dep:aphrody-model-client", "dep:aphrody-models", "dep:futures"]
-gpu = ["aphrody-bun/gpu"]
+gpu = ["aphrody-bun/gpu", "yolo-runtime/gpu"]
+# NVIDIA CUDA (official driver, loaded at run time) on top of the shared GPU hub.
+cuda = ["gpu", "yolo-runtime/cuda"]
 native-stealth = ["obscura-net/stealth"]
 # Forward aphrody-command's opt-in command features so a feature-rich cdylib can be
 # built (e.g. `cargo build -p aphrody-ffi --features forensics`). Inactive by

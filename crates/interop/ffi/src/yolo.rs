@@ -43,3 +43,7 @@ static BROWSER: Retained = Retained(&[
     rt::yolo_browser_call_start as *const (),
     rt::yolo_browser_close as *const (),
 ]);
+
+#[cfg(feature = "gpu")]
+#[used]
+static GPU: Retained = Retained(&[rt::yolo_gpu_call_start as *const ()]);
