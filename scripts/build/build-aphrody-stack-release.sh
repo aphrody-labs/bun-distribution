@@ -35,7 +35,7 @@ compute_release() {
   work="$(mktemp -d "$out/.source.XXXXXXXX")"
   mkdir -p "$work/aphrody" "$stage/"{bin,systemd,migrations,ops,.logs}
   git -C "$repo" archive --format=tar "$pin" | tar -xf - -C "$work/aphrody"
-  grep -Fq -- '--compute-only' "$work/aphrody/scripts/atomic-deploy-aphrody-stack.sh" || {
+  grep -Fq -- '--compute-only' "$work/aphrody/scripts/release/atomic-deploy-aphrody-stack.sh" || {
     echo "source commit lacks the compute adapter; source=$work" >&2; return 2;
   }
   # The release records its own commit; the export has no external source inputs to freeze.
@@ -64,7 +64,7 @@ compute_release() {
   sed -i 's|EnvironmentFile=-/etc/aphrody/aphrody-ai-http.env|EnvironmentFile=/etc/aphrody/aphrody-ai-http.env|' "$stage/systemd/aphrody-ai-http.service"
   sed -i 's|bin/aphrody-embed serve$|bin/aphrody-embed serve --threads 4|' "$stage/systemd/aphrody-shenron-embed.service"
   install -m 0644 "$work/aphrody/crates/ai/rag/migrations/0001_shenron_postgres.sql" "$stage/migrations/0001_shenron_postgres.sql"
-  install -m 0755 "$work/aphrody/scripts/atomic-deploy-aphrody-stack.sh" "$stage/ops/atomic-deploy-aphrody-stack.sh"
+  install -m 0755 "$work/aphrody/scripts/release/atomic-deploy-aphrody-stack.sh" "$stage/ops/atomic-deploy-aphrody-stack.sh"
   # The enclosing private store stays 0700. The release itself must retain
   # traversable directories when installed for the aphrody service account.
   chmod 0755 "$stage" "$stage/bin" "$stage/systemd" "$stage/migrations" "$stage/ops"
