@@ -116,6 +116,38 @@ export async function stageNativeConsumer(packageRoot: string, staging: string):
     seen.set(pkg.name, source);
     await cp(join(source, "src"), join(destination, "src"), { recursive: true });
     await copyFile(join(source, "package.json"), join(destination, "package.json"));
+    // Paths is a published compatibility facade over Workspace's canonical owner.
+    // Build that facade for the isolated consumer instead of relying on checkout siblings.
+    if (pkg.name === "@aphrody/paths") {
+      const entrypoint = join(source, "src/index.ts");
+      const owner = join(source, "../workspace/src/paths.ts");
+      const inputs = [entrypoint, owner].map((path) => ({
+        path: relative(source, path),
+        sha256: new Bun.CryptoHasher("sha256").update(readFileSync(path)).digest("hex"),
+      }));
+      const bundle = await Bun.build({
+        entrypoints: [entrypoint],
+        target: "bun",
+        packages: "external",
+      });
+      if (!bundle.success || bundle.outputs.length !== 1)
+        throw new Error("Cannot build canonical Paths facade for the native SDK");
+      const bytes = new Uint8Array(await bundle.outputs[0]!.arrayBuffer());
+      await Bun.write(join(destination, "src/index.ts"), bytes);
+      await Bun.write(
+        join(destination, "source-provenance.json"),
+        JSON.stringify({
+          schemaVersion: 1,
+          package: pkg.name,
+          inputs,
+          output: {
+            path: "src/index.ts",
+            sha256: new Bun.CryptoHasher("sha256").update(bytes).digest("hex"),
+          },
+          runtime: { version: Bun.version, revision: Bun.revision },
+        }) + "\n",
+      );
+    }
     const require = createRequire(join(source, "package.json"));
     for (const name of Object.keys(pkg.dependencies ?? {})) {
       let dependency = dirname(require.resolve(name));
