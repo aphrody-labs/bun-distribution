@@ -20,9 +20,25 @@ export type NativeJobTransport = (
   options: { timeoutMs: number; signal?: AbortSignal },
 ) => Promise<unknown>;
 const targets = {
-  vps: { url: "http://10.200.77.1:8793/mcp", slots: 4, unit: "aphrody-mcp-http.service" },
-  dbfr: { url: "http://10.200.77.3:8793/mcp", slots: 2, unit: "aphrody-mcp-http-dbfr.service" },
-  wsl: { url: "http://127.0.0.1:8791/mcp", slots: 2, unit: "aphrody-local-mcp.service" },
+  // WireGuard socket-proxyd is a TCP relay to this loopback authority. Preserve RMCP's Host protection.
+  vps: {
+    url: "http://10.200.77.1:8793/mcp",
+    authority: "127.0.0.1:8793",
+    slots: 4,
+    unit: "aphrody-mcp-http.service",
+  },
+  dbfr: {
+    url: "http://10.200.77.3:8793/mcp",
+    authority: "127.0.0.1:8793",
+    slots: 2,
+    unit: "aphrody-mcp-http-dbfr.service",
+  },
+  wsl: {
+    url: "http://127.0.0.1:8791/mcp",
+    authority: "127.0.0.1:8791",
+    slots: 2,
+    unit: "aphrody-local-mcp.service",
+  },
 } as const;
 type Run = (command: string, args: string[]) => SpawnSyncResult;
 
@@ -152,7 +168,7 @@ export function prepareNativeJobHostClients(
     if (existsSync(host.config)) ownedPrivateFile(host.config);
     durablePrivateWrite(
       host.config,
-      `[mcp_servers.aphrody]\nurl = "${targets[host.id].url}"\n[mcp_servers.aphrody.http_headers]\nAuthorization = "Bearer ${bearer}"\n`,
+      `[mcp_servers.aphrody]\nurl = "${targets[host.id].url}"\n[mcp_servers.aphrody.http_headers]\nHost = "${targets[host.id].authority}"\nAuthorization = "Bearer ${bearer}"\n`,
     );
   }
   durablePrivateWrite(join(directory, "hosts.json"), `${JSON.stringify(hosts, null, 2)}\n`);
@@ -216,12 +232,6 @@ export async function qualifyNativeJobHostClients(
       host.slots !== targets[host.id].slots
     )
       throw new Error("Job host does not match its declared placement");
-    const config = ownedPrivateFile(host.config);
-    if (
-      !config.includes(`url = "${targets[host.id].url}"`) ||
-      !config.includes("[mcp_servers.aphrody.http_headers]")
-    )
-      throw new Error("Job client differs from its purpose-bound declared route");
   }
   durablePrivateWrite(
     join(directory, "hosts.json"),
@@ -233,6 +243,26 @@ export async function qualifyNativeJobHostClients(
   );
   const qualified: NativeJobHost[] = [];
   for (const host of hosts) {
+    let config: {
+      mcp_servers?: {
+        aphrody?: { url?: unknown; http_headers?: { Host?: unknown; Authorization?: unknown } };
+      };
+    };
+    try {
+      config = Bun.TOML.parse(ownedPrivateFile(host.config));
+    } catch {
+      throw new Error("Native job client configuration is unavailable or malformed");
+    }
+    const server = config.mcp_servers?.aphrody;
+    if (
+      server?.url !== targets[host.id].url ||
+      server.http_headers?.Host !== targets[host.id].authority ||
+      typeof server.http_headers.Authorization !== "string" ||
+      !/^Bearer [a-f0-9]{64}$/.test(server.http_headers.Authorization)
+    )
+      throw new Error(
+        "Job client differs from its purpose-bound declared route and loopback authority",
+      );
     if (
       !Object.hasOwn(targets, host.id) ||
       !isAbsolute(host.config) ||

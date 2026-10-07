@@ -71,7 +71,9 @@ test("producer prepares only declared private routes and marks them unready befo
     expect(statSync(host.config).mode & 0o777).toBe(0o600);
     const text = readFileSync(host.config, "utf8");
     const parsed = Bun.TOML.parse(text) as {
-      mcp_servers: { aphrody: { url: string; http_headers: { Authorization: string } } };
+      mcp_servers: {
+        aphrody: { url: string; http_headers: { Authorization: string; Host: string } };
+      };
     };
     expect(parsed.mcp_servers.aphrody.url).toBe(
       `http://10.200.77.${host.id === "vps" ? 1 : 3}:8793/mcp`,
@@ -79,6 +81,7 @@ test("producer prepares only declared private routes and marks them unready befo
     expect(parsed.mcp_servers.aphrody.http_headers.Authorization).toBe(
       `Bearer ${f.tokens[host.id as "vps" | "dbfr"]}`,
     );
+    expect(parsed.mcp_servers.aphrody.http_headers.Host).toBe("127.0.0.1:8793");
     expect(text).toContain("[mcp_servers.aphrody.http_headers]");
     expect(text).toContain(f.tokens[host.id as "vps" | "dbfr"]);
   }
@@ -288,4 +291,30 @@ test("CLI qualification requires mutation scope and the native transport before 
   );
   expect(existsSync(f.manifest)).toBe(false);
   expect(f.calls).toHaveLength(0);
+});
+
+test("qualification rejects a foreign Host authority and revokes old readiness before native RPC", async () => {
+  const f = fixture();
+  const hosts = prepareNativeJobHostClients(f.context, ["vps"], f.pin, f);
+  hosts[0]!.workerReady = true;
+  writeFileSync(f.manifest, JSON.stringify(hosts), { mode: 0o600 });
+  const path = hosts[0]!.config;
+  writeFileSync(
+    path,
+    readFileSync(path, "utf8").replace('Host = "127.0.0.1:8793"', 'Host = "10.200.77.1:8793"'),
+    { mode: 0o600 },
+  );
+  let called = false;
+  await expect(
+    qualifyNativeJobHostClients(
+      hosts,
+      async () => {
+        called = true;
+        return wrap({});
+      },
+      f,
+    ),
+  ).rejects.toThrow("loopback authority");
+  expect(called).toBe(false);
+  expect(JSON.parse(readFileSync(f.manifest, "utf8"))[0].workerReady).toBe(false);
 });
