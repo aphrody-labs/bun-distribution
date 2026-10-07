@@ -1343,6 +1343,45 @@ export function renderPlan(plan: WgPlan, observed?: Map<string, Observed>): stri
   return lines.join("\n");
 }
 
+/** Project only the declared DBFR service proxy, never tunnel bootstrap or account steps. */
+export function selectedProxySteps(t: Tunnel, ctx: PlanContext, serviceId: string): WgStep[] {
+  const service = t.services.find((candidate) => candidate.id === serviceId);
+  const peer = t.peers.find((candidate) => candidate.host === "dbfr");
+  if (
+    !service ||
+    service.host !== "dbfr" ||
+    service.expose !== "socket-proxyd" ||
+    service.auth !== "bearer-token" ||
+    !service.port ||
+    service.port === 5432 ||
+    service.port === 6379 ||
+    !peer ||
+    peer.os !== "linux" ||
+    service.address !== peer.address ||
+    !inCidr(service.address, t.subnet) ||
+    !["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"].some((cidr) =>
+      inCidr(service.address, cidr),
+    ) ||
+    service.upstream !== `127.0.0.1:${service.port}`
+  )
+    throw new Error(
+      "Selected DBFR proxy must be its declared private authenticated loopback service",
+    );
+  const selected = {
+    ...t,
+    services: [service],
+    grants: Object.fromEntries(
+      Object.entries(t.grants).map(([source, ids]) => [
+        source,
+        ids.filter((id) => id === serviceId),
+      ]),
+    ),
+  };
+  return buildPlan(selected, ctx).steps.filter(
+    (step) => step.host === "dbfr" && step.id.startsWith("dbfr.proxy-"),
+  );
+}
+
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export async function wgMain(cmd: string, rest: string[], ctx: PlanContext): Promise<void> {

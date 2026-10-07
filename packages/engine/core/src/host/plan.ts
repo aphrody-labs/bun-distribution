@@ -9,7 +9,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { composeUnit, type HostUnit, hostRoot, loadCatalog } from "./index.ts";
-import { inCidr, loadTunnel, TUNNEL_FILE } from "./wireguard.ts";
+import { inCidr, loadTunnel, selectedProxySteps, TUNNEL_FILE, type WgStep } from "./wireguard.ts";
 
 export interface UnitFacts {
   unit: string;
@@ -155,6 +155,43 @@ function serviceEntry(repoRoot: string, id: string): ServiceEntry | undefined {
   if (!existsSync(file)) return undefined;
   const catalog = JSON.parse(readFileSync(file, "utf8")) as { services: ServiceEntry[] };
   return catalog.services.find((s) => s.id === id);
+}
+
+/** Track only resources introduced by this selected proxy apply; existing resources remain owned by their prior state. */
+export function trackProxyMutations(projection: WgStep[], state: string, port: number) {
+  const rules = projection.filter((proxy) => proxy.id.includes(".proxy-ufw."));
+  const markers = [
+    "ready",
+    "new-template.socket",
+    "new-template.service",
+    "active.socket",
+    "active.service",
+    "enabled.socket",
+    ...rules.map((_, index) => `new-rule.${index}`),
+  ];
+  const before = `set -e; install -d -m 0700 ${sq(state)}; rm -f ${markers.map((marker) => sq(`${state}/${marker}`)).join(" ")}; if systemctl is-active --quiet aphrody-wg-proxy@${port}.socket; then touch ${sq(`${state}/active.socket`)}; fi; if systemctl is-active --quiet aphrody-wg-proxy@${port}.service; then touch ${sq(`${state}/active.service`)}; fi; if systemctl is-enabled --quiet aphrody-wg-proxy@${port}.socket; then touch ${sq(`${state}/enabled.socket`)}; fi; touch ${sq(`${state}/ready`)}`;
+  const tracked = projection.map((proxy) => {
+    let prefix = "set -e; ";
+    for (const extension of ["socket", "service"] as const) {
+      if (proxy.id.endsWith(`proxy-unit.${extension}`))
+        prefix += `if [ ! -e /etc/systemd/system/aphrody-wg-proxy@.${extension} ]; then touch ${sq(`${state}/new-template.${extension}`)}; fi; `;
+    }
+    const rule = rules.findIndex((candidate) => candidate.id === proxy.id);
+    if (rule >= 0) {
+      const tuple = /from (\S+) to (\S+) port (\d+) proto tcp/.exec(proxy.run!);
+      if (!tuple) throw new Error("Unsupported selected proxy firewall command");
+      prefix += `known=$(ufw show added) || exit 1; known=$(printf %s "$known" | tr -d "'"); desired=$(printf %s ${sq(proxy.run!)} | tr -d "'"); if ! printf '%s\\n' "$known" | grep -Fx -- "$desired" >/dev/null; then if printf '%s\\n' "$known" | grep -F -- ${sq(tuple[1]!)} | grep -F -- ${sq(tuple[2]!)} | grep -F -- ${sq(`port ${tuple[3]!}`)} >/dev/null; then exit 1; fi; touch ${sq(`${state}/new-rule.${rule}`)}; fi; `;
+    }
+    return { ...proxy, run: prefix + proxy.run };
+  });
+  const cleanup = rules
+    .map(
+      (rule, index) =>
+        `if [ -e ${sq(`${state}/new-rule.${index}`)} ]; then ${rule.run!.replace(/^ufw /, "ufw --force delete ")}; fi`,
+    )
+    .join("; ");
+  const rollback = `if [ -e ${sq(`${state}/ready`)} ]; then if [ ! -e ${sq(`${state}/active.socket`)} ]; then systemctl stop aphrody-wg-proxy@${port}.socket; fi; if [ ! -e ${sq(`${state}/enabled.socket`)} ]; then systemctl disable aphrody-wg-proxy@${port}.socket; fi; if [ ! -e ${sq(`${state}/active.service`)} ]; then systemctl stop aphrody-wg-proxy@${port}.service; fi; ${cleanup}${cleanup ? "; " : ""}if [ -e ${sq(`${state}/new-template.socket`)} ]; then rm -f /etc/systemd/system/aphrody-wg-proxy@.socket; fi; if [ -e ${sq(`${state}/new-template.service`)} ]; then rm -f /etc/systemd/system/aphrody-wg-proxy@.service; fi; systemctl daemon-reload; fi`;
+  return { before, steps: tracked, rollback };
 }
 
 /** A pinned refresh may reuse only this unit's exact native listener. */
@@ -597,6 +634,78 @@ function unitSteps(
         : `sudo systemctl disable --now ${f.unit}; sudo rm -f /etc/systemd/system/${f.unit}; sudo systemctl daemon-reload; sudo systemctl reset-failed ${f.unit} 2>/dev/null; true`,
     ),
   );
+  if (mcp && f.targetHost === "dbfr" && relays.length) {
+    const root = join(repoRoot, "config/host");
+    const tunnel = loadTunnel(root);
+    const service = tunnel.services.find((candidate) => candidate.unit === f.service);
+    if (!service) throw new Error(`${f.unit}: declared private proxy missing`);
+    steps.push(
+      step(
+        "preflight",
+        "check",
+        "wireguard-live",
+        "the existing private interface has this host's declared address; no tunnel bootstrap is applied",
+        `ip -o -4 address show dev ${sq(tunnel.interface)} | awk '{print $4}' | grep -Fx ${sq(`${service.address}/32`)}`,
+      ),
+    );
+    for (const extension of ["socket", "service"] as const) {
+      const unit = `aphrody-wg-proxy@.${extension}`;
+      const desired = composeUnit(unit, root).replaceAll(tunnel.hub.address, service.address);
+      const path = `/etc/systemd/system/${unit}`;
+      steps.push(
+        step(
+          "preflight",
+          "check",
+          `wireguard-template:${extension}`,
+          "an existing shared proxy template must already match this host's declared owner template",
+          `[ ! -e ${sq(path)} ] || [ "$(sudo -n cat ${sq(path)})" = "$(printf %s ${sq(b64(desired))} | base64 -d)" ]`,
+        ),
+      );
+    }
+    const tracked = trackProxyMutations(
+      selectedProxySteps(
+        tunnel,
+        { root, catalog: loadCatalog(root), compose: (unit) => composeUnit(unit, root) },
+        service.id,
+      ),
+      `${stage}.proxy`,
+      service.port!,
+    );
+    steps.push(
+      step(
+        "verify",
+        "mutate",
+        "wireguard-state",
+        "retain only selected proxy resource ownership for rollback",
+        `sudo -n sh -c ${sq(tracked.before)}`,
+      ),
+    );
+    const rollback = steps.find((candidate) => candidate.phase === "rollback")!;
+    rollback.run = `sudo -n sh -c ${sq(tracked.rollback)}; ${rollback.run}`;
+    for (const proxy of tracked.steps) {
+      if (!proxy.run || (proxy.kind !== "check" && proxy.kind !== "mutate"))
+        throw new Error("Unsupported private proxy step");
+      // Provision only after the native endpoint and its authentication checks passed.
+      steps.push(
+        step(
+          "verify",
+          proxy.kind,
+          `wireguard:${proxy.id}`,
+          proxy.note,
+          `sudo -n sh -c ${sq(proxy.run)}`,
+        ),
+      );
+    }
+    steps.push(
+      step(
+        "verify",
+        "check",
+        "private-auth-required",
+        "the declared WireGuard endpoint is present and refuses missing credentials",
+        `[ "$(curl -s -o /dev/null -m 5 -w '%{http_code}' -X POST -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' http://${service.address}:${service.port}/mcp)" = 401 ]`,
+      ),
+    );
+  }
   return steps;
 }
 
