@@ -21,7 +21,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 
 | Category | Domain | Files | Entry |
 | --- | --- | ---: | --- |
-| architecture | [(files)](architecture/) | 2 | - |
+| architecture | [(files)](architecture/) | 3 | - |
 | architecture | [ai](architecture/ai/) | 6 | - |
 | architecture | [compat](architecture/compat/) | 1 | - |
 | architecture | [convergence](architecture/convergence/) | 1 | - |
@@ -119,4 +119,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 3237 files.
+Total: 3238 files.

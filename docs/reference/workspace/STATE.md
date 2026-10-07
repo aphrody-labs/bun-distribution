@@ -108,7 +108,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-prompts` | [crates/ai/prompts](../../../crates/ai/prompts) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-providers` | [crates/ai/providers](../../../crates/ai/providers) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-rag` | [crates/ai/rag](../../../crates/ai/rag) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-06 |
-| `aphrody-rag-core` | [crates/ai/rag-core](../../../crates/ai/rag-core) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-06 |
+| `aphrody-rag-core` | [crates/ai/rag-core](../../../crates/ai/rag-core) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-rag-eval` | [crates/ai/rag-eval](../../../crates/ai/rag-eval) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-rust` | [crates/ai/rag-python](../../../crates/ai/rag-python) | rust crate | 0.1.0 | cdylib | no | 0 | 2026-10-06 |
 | `aphrody-rollout` | [crates/ai/rollout](../../../crates/ai/rollout) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |

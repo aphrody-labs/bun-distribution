@@ -45,6 +45,9 @@ Since 2026-10-05 the fork has a single Aphrody working branch, **`main`** (also 
 
 ---
 
+The consolidation architecture follows the verified native source topology;
+see [Architecture de consolidation fondée sur Bun upstream](architecture/bun-upstream.md).
+
 ## 3. Automation Toolchain & CLI Commands
 
 The engines run directly with Bun (no `package.json` aliases):
