@@ -38,17 +38,25 @@ pub(crate) fn read_private_environment(path: &Path) -> Result<Vec<(String, Strin
     if contents.len() as u64 > MAX_BYTES || contents.contains('\0') {
         return Err("MCP environment file exceeds its content bound");
     }
-    let lines = contents
-        .lines()
-        .filter(|line| {
-            let line = line.trim();
-            !line.is_empty() && !line.starts_with('#')
-        })
-        .count();
-    let values = aphrody_a2a_server::parse_dotenv(&contents);
-    if lines != values.len() {
-        return Err("MCP environment file has invalid entries");
-    }
+    let values = if path.extension().is_some_and(|extension| extension == "json") {
+        serde_json::from_str::<std::collections::BTreeMap<String, String>>(&contents)
+            .map_err(|_| "MCP environment JSON must map names to strings")?
+            .into_iter()
+            .collect()
+    } else {
+        let lines = contents
+            .lines()
+            .filter(|line| {
+                let line = line.trim();
+                !line.is_empty() && !line.starts_with('#')
+            })
+            .count();
+        let values = aphrody_a2a_server::parse_dotenv(&contents);
+        if lines != values.len() {
+            return Err("MCP environment file has invalid entries");
+        }
+        values
+    };
     let mut keys = BTreeSet::new();
     for (key, value) in &values {
         let mut bytes = key.bytes();
@@ -85,6 +93,21 @@ mod tests {
             let error = read_private_environment(file.path()).unwrap_err();
             assert!(!error.contains("fixture-only"));
         }
+    }
+
+    #[test]
+    fn private_json_preserves_quoted_credentials_without_shell_expansion() {
+        let mut file = tempfile::Builder::new().suffix(".json").tempfile().unwrap();
+        file.write_all(br#"{"TOKEN":"fixture with \"quotes\" and $literal","ENDPOINT":"https://example.test/#fragment"}"#).unwrap();
+        let values = read_private_environment(file.path()).unwrap();
+        assert_eq!(values[1].1, "fixture with \"quotes\" and $literal");
+        file.as_file_mut().set_len(0).unwrap();
+        file.as_file_mut().seek(SeekFrom::Start(0)).unwrap();
+        file.write_all(br#"{"TOKEN":12}"#).unwrap();
+        assert_eq!(
+            read_private_environment(file.path()).unwrap_err(),
+            "MCP environment JSON must map names to strings"
+        );
     }
 
     #[cfg(unix)]

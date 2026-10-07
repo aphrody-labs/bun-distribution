@@ -16,9 +16,8 @@ use std::{
 };
 
 use aphrody_mcp_client::{
-    McpClient, McpClientError,
-    protocol::parse_call_tool_result,
-    transport::{HttpTransport, Transport},
+    HttpTransport, McpClient, McpClientError, protocol::parse_call_tool_result,
+    transport::Transport,
 };
 use serde_json::{Value, json};
 

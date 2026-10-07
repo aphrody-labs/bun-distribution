@@ -51,11 +51,18 @@ test("replica verifies every upload before indexing and repairs corrupted snapsh
         return "";
       }
       const command = argv[argv.indexOf("--cmd") + 1]!;
-      if (!command.startsWith("python3")) {
+      if (!command.startsWith("/home/ubuntu/.bun/bin/bun -e ")) {
         indexes++;
         return '{"errors":[],"indexed":3}';
       }
-      const child = Bun.spawn(["sh", "-c", command], { stdout: "pipe", stderr: "ignore" });
+      const nativeCommand = command.replace(
+        "/home/ubuntu/.bun/bin/bun",
+        "'" + process.execPath.replaceAll("'", "'\\''") + "'",
+      );
+      const child = Bun.spawn(["sh", "-c", nativeCommand], {
+        stdout: "pipe",
+        stderr: "ignore",
+      });
       const result = await new Response(child.stdout).text();
       if ((await child.exited) !== 0) throw Error("Remote verification failed");
       return result;

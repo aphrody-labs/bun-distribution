@@ -354,6 +354,15 @@ locaux en avance et deux distants staged, avec zéro contenu unsupported et
 zéro upload. La référence d'origine est conservée pour le rapprochement à
 trois voies ; elle n'est pas remplacée par une version distante non revue.
 
+Le rapprochement privé du 2026-10-07 a ensuite appliqué quatre mises à jour
+Docs minimales (89 insertions et 45 suppressions de spans), avec
+`writeControl.requiredRevisionId`, puis trois promotions locales. Les sept
+snapshots après écriture conservent les tabs, paragraphes, styles, enveloppes
+et caractères non concernés. Les originaux, propositions et reçus restent
+en 0600 dans le magasin privé ; aucun contenu de document n’est publié.
+Cette application est distincte du timer de téléchargement et ne suffit pas
+à prouver un rapprochement bidirectionnel récurrent.
+
 Le reçu VPS local `/srv/aphrody-lab/state/agent-sync-vps-status.json` est distinct
 du reçu WSL. Le plan de contrôle Discord peut le lire via
 `sync.cloudAutomationReportPath` et n'affiche que les métadonnées autorisées. Un

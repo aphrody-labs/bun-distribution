@@ -66,8 +66,10 @@ restent dans le plan global ; ce lot ne les déclare pas terminées.
 
 - [x] Activer la sync Drive Bun persistante sur VPS, isoler les candidats privés et pousser `69749a91a`.
 - [x] Qualifier le hub MCP/A2A authentifié, les clients WSL et une tâche Codex terminée après déconnexion.
-- [x] Valider les résultats MCP modernes (117 tests) et l'ACK A2A immédiat (54 tests).
-- [ ] Qualifier et installer le nouveau binaire natif ; vérifier Claude et le transport Windows.
-- [ ] Terminer le raccord DBFR et l'admission Discord Shenron ; vérifier le peer Omar.
-- [ ] Reconciler les versions Drive et les agent homes sans perdre leur structure ni exposer de contenu privé.
+- [x] Valider les résultats MCP modernes (117 tests), l'ACK A2A et les échecs/reprises durables (60 tests).
+- [x] Qualifier les transports MCP WSL, Windows via WSL et DBFR : 364 outils et relais A2A authentifié.
+- [ ] Qualifier et installer le nouveau binaire natif ; vérifier Claude au protocole moderne.
+- [ ] Admettre Shenron dans Discord et constater un handshake du PC Omar actuellement hors ligne.
+- [x] Rapprocher les sept contrats Drive : quatre Docs modifiés, trois promotions locales, structure et sauvegardes vérifiées.
+- [ ] Activer le rapprochement Drive récurrent et propager les homes validés sans écraser un changement concurrent.
 - [ ] Livrer les seuls chemins/hunks possédés avec leurs preuves et limites.

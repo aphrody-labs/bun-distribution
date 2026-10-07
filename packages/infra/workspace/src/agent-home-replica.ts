@@ -14,6 +14,14 @@ export interface ReplicaConfig {
   intervalSeconds: number;
 }
 type Run = (argv: string[], environment?: Record<string, string>) => Promise<string>;
+const remoteBun = (source: string) =>
+  "/home/ubuntu/.bun/bin/bun -e '" + source.replaceAll("'", "'\\''") + "'";
+const remoteCheck = [
+  'import { lstat } from "node:fs/promises";',
+  'import { join } from "node:path";',
+  "const regular = async p => { try { const s = await lstat(p); return s.isFile() && !s.isSymbolicLink(); } catch { return false; } };",
+  'const hash = async p => new Bun.CryptoHasher("sha256").update(await Bun.file(p).bytes()).digest("hex");',
+];
 export interface SnapshotFile {
   relative: string;
   sha256: string;
@@ -106,26 +114,32 @@ export async function replicateHome(
     run([aphrody, "infra", "ssh", "exec", "--host", "dbfr", "--cmd", command], environment);
   const path64 = Buffer.from(root).toString("base64");
   const manifest64 = Buffer.from(JSON.stringify(manifest)).toString("base64");
+  const input = [
+    `const root = Buffer.from("${path64}", "base64").toString();`,
+    `const files = JSON.parse(Buffer.from("${manifest64}", "base64").toString());`,
+  ];
   const ready = await exec(
-    "python3 -c '" +
+    remoteBun(
       [
-        `import base64,json,pathlib,hashlib; root=pathlib.Path(base64.b64decode("${path64}").decode()); files=json.loads(base64.b64decode("${manifest64}"))`,
-        'marker=root/"verified.json"',
-        "try: valid=marker.is_file() and not marker.is_symlink() and json.loads(marker.read_text())==files",
-        "except (ValueError,OSError): valid=False",
-        'valid=valid and all((root/f["relative"]).is_file() and not (root/f["relative"]).is_symlink() and hashlib.sha256((root/f["relative"]).read_bytes()).hexdigest()==f["sha256"] for f in files)',
-        'print("verified" if valid else "missing")',
-      ].join("\n") +
-      "'",
+        ...remoteCheck,
+        ...input,
+        'const marker = join(root, "verified.json");',
+        "let valid = false;",
+        "try { valid = await regular(marker) && JSON.stringify(await Bun.file(marker).json()) === JSON.stringify(files); } catch {}",
+        "if (valid) for (const file of files) { const p = join(root, file.relative); if (!await regular(p) || await hash(p) !== file.sha256) { valid = false; break; } }",
+        'console.log(valid ? "verified" : "missing");',
+      ].join("\n"),
+    ),
   );
   let copied = 0;
   if (ready.trim() !== "verified") {
     const prepare = [
-      `import base64,json,pathlib; root=pathlib.Path(base64.b64decode("${path64}").decode()); files=json.loads(base64.b64decode("${manifest64}"))`,
-      "for f in files:",
-      ' (root/f["relative"]).parent.mkdir(mode=0o700,parents=True,exist_ok=True)',
+      'import { mkdir } from "node:fs/promises";',
+      'import { dirname, join } from "node:path";',
+      ...input,
+      "for (const file of files) await mkdir(dirname(join(root, file.relative)), { recursive: true, mode: 0o700 });",
     ].join("\n");
-    await exec("python3 -c '" + prepare + "'");
+    await exec(remoteBun(prepare));
     for (const file of files) {
       await run(
         [
@@ -145,12 +159,15 @@ export async function replicateHome(
       copied++;
     }
     const verify = [
-      `import base64,json,pathlib,hashlib,os; root=pathlib.Path(base64.b64decode("${path64}").decode()); files=json.loads(base64.b64decode("${manifest64}"))`,
-      "for f in files:",
-      ' p=root/f["relative"]; assert p.is_file() and not p.is_symlink(); assert hashlib.sha256(p.read_bytes()).hexdigest()==f["sha256"]; os.chmod(p,0o600)',
-      'p=root/"verified.json"; t=p.with_suffix(".tmp"); t.write_text(json.dumps(files)); os.chmod(t,0o600); t.replace(p); print("snapshot-verified")',
+      'import { chmod, rename } from "node:fs/promises";',
+      ...remoteCheck,
+      ...input,
+      'for (const file of files) { const p = join(root, file.relative); if (!await regular(p) || await hash(p) !== file.sha256) throw Error("Snapshot checksum mismatch"); await chmod(p, 0o600); }',
+      'const marker = join(root, "verified.json"), temp = marker + "." + crypto.randomUUID() + ".tmp";',
+      "await Bun.write(temp, JSON.stringify(files), { mode: 0o600 }); await chmod(temp, 0o600); await rename(temp, marker);",
+      'console.log("snapshot-verified");',
     ].join("\n");
-    if ((await exec("python3 -c '" + verify + "'")).trim() !== "snapshot-verified")
+    if ((await exec(remoteBun(verify))).trim() !== "snapshot-verified")
       throw new Error("Remote snapshot verification failed");
   }
   const args = [

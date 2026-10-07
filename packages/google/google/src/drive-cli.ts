@@ -102,6 +102,13 @@ async function status(): Promise<void> {
 
 export async function runDriveCli(args: string[]): Promise<void> {
   const command = args[0];
+  const usage =
+    "Usage: yolo google drive <auth-login|status|sync [--download-only] [--dry-run] [--seed-reviewed directory]|sync-models>";
+  // Help must return before credential reads, login, seeding or synchronization.
+  if (command === "help" || args.includes("--help") || args.includes("-h")) {
+    console.log(usage);
+    return;
+  }
   if (args.includes("--legacy-bidirectional"))
     throw new Error(
       "Legacy plain-text Google Docs writes are disabled; use native download-only projection",
@@ -122,8 +129,5 @@ export async function runDriveCli(args: string[]): Promise<void> {
         ? args[args.indexOf("--seed-reviewed") + 1]
         : undefined,
     });
-  else
-    throw new Error(
-      "Usage: yolo google drive <auth-login|status|sync [--download-only] [--dry-run] [--seed-reviewed directory]|sync-models>",
-    );
+  else throw new Error(usage);
 }

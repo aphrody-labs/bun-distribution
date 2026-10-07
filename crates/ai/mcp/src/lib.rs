@@ -111,7 +111,7 @@ use crate::client_cmd::{ClientArgs, run as run_client};
              `tools/list` over stdio is the only authoritative count."
 )]
 struct Cli {
-    /// Load a protected dotenv file before starting the native runtime.
+    /// Load a protected dotenv file or JSON string map before starting the native runtime.
     #[arg(long, global = true, env = "APHRODY_MCP_ENV_FILE")]
     env_file: Option<std::path::PathBuf>,
     #[command(subcommand)]

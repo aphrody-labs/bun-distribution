@@ -5,6 +5,7 @@ import { chmod, mkdir, rename, rm, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { replicateHome, type ReplicaConfig } from "./agent-home-replica.ts";
 import { readRagStatus, type RagMonitorConfig } from "./agent-home-rag-status.ts";
+import { reconcileDriveReview, type DriveReviewConfig } from "./agent-home-drive-reconcile.ts";
 
 export interface SyncConfig {
   version: 1;
@@ -17,6 +18,7 @@ export interface SyncConfig {
   homes?: { profile: "aphrody" | "dbfr"; intervalSeconds: number }[];
   jobs?: SyncJobName[];
   retrieval?: { root: string; intervalSeconds: number };
+  driveReview?: DriveReviewConfig;
   replica?: ReplicaConfig;
   ragMonitor?: RagMonitorConfig;
   publication: { host: "vps" | "local"; directory: string; receiptName?: string };
@@ -27,6 +29,7 @@ export type SyncJobName =
   | "home-dbfr"
   | "home-aphrody"
   | "drive-retrieval"
+  | "drive-review"
   | "drive-replica"
   | "rag-monitor";
 export interface JobReceipt {
@@ -65,6 +68,11 @@ const numeric = [
   "source_count",
   "progress_current",
   "progress_total",
+  "reviewed",
+  "review_submitted",
+  "review_pending",
+  "review_blocked",
+  "review_applied",
 ];
 export function counters(value: Record<string, unknown>): Record<string, number> {
   return Object.fromEntries(
@@ -131,6 +139,24 @@ function jobs(config: SyncConfig) {
         return counters({ ...report.sessions?.counts, verified: report.backups?.verified });
       },
     })),
+    ...(config.driveReview
+      ? [
+          {
+            name: "drive-review",
+            interval: config.driveReview.intervalSeconds,
+            perform: (run: Runner) =>
+              reconcileDriveReview(
+                {
+                  ...config.driveReview!,
+                  home: config.drive.home,
+                  folderId: config.drive.folderId,
+                  yolo: config.yolo,
+                },
+                run,
+              ),
+          },
+        ]
+      : []),
     ...(config.retrieval
       ? [
           {
