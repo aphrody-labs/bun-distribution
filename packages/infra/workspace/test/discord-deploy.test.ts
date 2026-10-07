@@ -97,6 +97,44 @@ test("an active goal prevents uploads, builds, installs and restart", async () =
   expect(f.commands.some((command) => /mkdir|install|restart/.test(command))).toBe(false);
 });
 
+test("a stopped recovered monitor can upgrade without signaling a stale receipt PID", async () => {
+  const f = fixture();
+  const run = f.transport.run;
+  let activated = false;
+  f.transport.run = async (host, command) => {
+    const result = await run(host, command);
+    if (command.endsWith("-p MainPID --value")) result.stdout = "0\n";
+    if (command.includes("enable --now")) activated = true;
+    if (command.startsWith("systemctl is-active --quiet") && !activated) result.code = 3;
+    return result;
+  };
+  await deployDiscord(discordDeployment("omar-monitor", "vps", root), f.transport, quiet);
+  expect(f.uploads).toHaveLength(2);
+  expect(f.commands.some((command) => command.includes("--expect-pid"))).toBe(false);
+  expect(f.commands.some((command) => command.includes("--signal"))).toBe(false);
+});
+
+test("zero PID cannot bypass activation state or a durable executing goal", async () => {
+  await Promise.all(
+    [0, 3].map(async (activeCode) => {
+      const f = fixture();
+      const run = f.transport.run;
+      f.transport.run = async (host, command) => {
+        const result = await run(host, command);
+        if (command.endsWith("-p MainPID --value")) result.stdout = "0\n";
+        if (command.startsWith("systemctl is-active --quiet")) result.code = activeCode;
+        if (command.endsWith("--upgrade-check")) result.code = 1;
+        return result;
+      };
+      await expect(
+        deployDiscord(discordDeployment("omar-monitor", "vps", root), f.transport, quiet),
+      ).rejects.toThrow(activeCode === 0 ? "activating" : "active goals");
+      expect(f.uploads).toHaveLength(0);
+      expect(f.commands.some((command) => command.includes("--signal"))).toBe(false);
+    }),
+  );
+});
+
 test("drainage waits on the same live PID and leaves the goal running when observation expires", async () => {
   const f = fixture((command) => command.includes("--upgrade-check"), true);
   await expect(

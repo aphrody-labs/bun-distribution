@@ -98,6 +98,21 @@ export async function quiesceDiscord(
     `systemctl show ${quote(deployment.unit)} -p MainPID --value`,
   );
   const pid = pidResult.stdout.trim();
+  if (pidResult.code === 0 && pid === "0") {
+    const active = await transport.run(
+      deployment.target,
+      `systemctl is-active --quiet ${quote(deployment.unit)}`,
+    );
+    if (active.code !== 3 && active.code !== 4)
+      throw new Error("Cannot qualify stopped monitor: service may still be activating");
+    const idle = await transport.run(
+      deployment.target,
+      `${worker} --policy ${quote(deployment.policy.target)} --upgrade-check`,
+    );
+    if (idle.code !== 0)
+      throw new Error("Stopped monitor still owns active goals; recovery must be qualified first");
+    return null;
+  }
   if (pidResult.code !== 0 || !/^[1-9][0-9]*$/.test(pid))
     throw new Error("No live systemd monitor PID; activation must be qualified separately");
   let ready = false;

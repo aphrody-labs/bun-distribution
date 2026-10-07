@@ -20,10 +20,10 @@ incomplet ne fait jamais avancer le curseur au-delà d’un écart non collecté
 Une instance Codex `app-server --stdio` appartient au service. Elle utilise
 l’authentification déjà installée, sans modifier celle de la session Codex
 préexistante. L’intégration suit le [protocole officiel OpenAI](https://developers.openai.com/codex/app-server) :
-initialisation, thread, tour, événements et résultat terminal. Le seul MCP
-configuré pour ses threads est `/home/ubuntu/.local/bin/aphrody-mcp`.
+initialisation, thread, tour, événements et résultat terminal. Le MCP Aphrody configuré pour ses threads est le binaire canonique de leur
+hôte ; les éventuels services de domaine sont déclarés dans la politique.
 
-Pour chaque demande authentifiée d’Omar, un thread moniteur en lecture seule
+Pour chaque demande authentifiée d’Omar ou du propriétaire, un thread moniteur en lecture seule
 extrait toutes les demandes concrètes. Un thread exécuteur distinct prend
 l’ensemble des objectifs et leur message original. Il suit les règles du dépôt,
 les revendications de chemins, Infra et les verrous de build. Il peut déléguer
@@ -35,7 +35,12 @@ Un tour déjà terminé mais pas encore enregistré est relu; un tour en cours
 reste observé. Une échéance d’observation ne provoque ni nouvelle exécution,
 ni redémarrage. Une interruption terminale confirmée autorise la continuation
 sur le même thread, après contrôle de l’état réel. Un résultat sans preuve,
-une réponse invalide ou un échec reste un objectif ouvert.
+une réponse invalide ou un échec reste un objectif ouvert. Trois résultats
+consécutifs `continue` avec `needs` contredisent le contrat de progression :
+le moniteur conserve les preuves, classe la dépendance `blocked` et libère
+la demande suivante. La reformulation du besoin ne réinitialise pas ce contrôle.
+Les résultats intermédiaires sont transmis au plus une fois par minute, avec
+compteur persistant ; chaque résultat terminal est conservé dans l’outbox.
 
 Les commentaires achevés de l’exécuteur sont transmis dans le salon, au plus
 un toutes les cinq secondes. Les commandes, fichiers, sorties d’outils et
@@ -132,3 +137,48 @@ avec drainage effectivement observé du PID vivant. Le service résultant
 de démarrage a confirmé ce même PID vivant.
 La politique conserve le SHA-256
 `e81e34b86519fd9ae6a20796010731424e0621f30d739273b3fc94a4956f0762`.
+
+## Correction de boucle et routage du 2026-10-07
+
+Le diagnostic du salon a confirmé une boucle de réponses `continue` avec une
+information indispensable manquante. L’exécuteur répétait la même demande
+tronquée, monopolisant la file ; plus de trois réponses terminales concordantes
+et aucune commande dans les 500 derniers événements ont été vérifiées dans son
+rollout protégé. Après arrêt contrôlé du seul service moniteur et sortie de son
+processus Codex, une sauvegarde SQLite cohérente et son SHA-256 ont été vérifiés.
+La transition du seul objectif concerné vers `blocked` a conservé son thread,
+ses preuves et les six demandes suivantes. Aucune conversation n’est copiée ici.
+
+Le garde-fou appartient à [outcome.ts](../../../packages/discord/kit/src/omar-monitor/outcome.ts).
+Il conserve chaque résultat une seule fois, résiste à une reprise et limite les
+comptes rendus intermédiaires. Le workflow Workspace permet aussi de mettre à
+jour un service arrêté : PID zéro, état effectivement inactif et absence
+d’objectif actif doivent être prouvés avant tout upload. Il refuse toujours
+un service en démarrage, un objectif actif et un reçu provenant d’un autre PID.
+
+Les nouveaux objectifs utilisent le Codex complet du WSL du propriétaire via
+SSH stdio authentifié, sans transmettre les credentials du VPS. Le checkout,
+le MCP et l’authentification restent sur WSL. Les threads déjà persistés
+conservent leur hôte. Les demandes nécessitant explicitement le PC d’Omar
+restent bloquées tant que son endpoint est injoignable et que son environnement
+Codex/MCP n’a pas été qualifié ; aucun accès fictif n’est annoncé.
+
+Les prompts imposent NHITL pour les actions déjà autorisées et les gates du
+dépôt ; une information indispensable manquante doit être décrite dans `needs`,
+sans relance indéfinie. Les capacités et skills sont découverts dans leurs
+propriétaires actuels, sans nombre d’outils figé ni commande retirée.
+
+Qualification du correctif : 33 tests produit/routage/outbox/livraison réussis,
+TypeScript des deux propriétaires, oxlint strict, oxfmt et liens documentaires
+passent. Le routage SSH WSL a initialisé un app-server Codex 0.160.1 authentifié
+et créé un thread complet (`never`, `dangerFullAccess`) avec ses chemins locaux.
+Lors de la livraison, une réactivation concurrente du moniteur a déjà pris la
+demande suivante sur le VPS. Le workflow a alors refusé la mise à jour faute
+de drainage achevé et a repris le même PID ; aucune tâche active n’a été tuée.
+Ces gates qualifient les sources ; la nouvelle politique de routage et le
+nouveau bundle ne sont pas déclarés activés par cette seule qualification.
+
+Le gate documentaire global reste en échec sur les index générés concurrents
+STATE/ecosystem/documentation et sur le manifeste IECODE absent de l’inventaire.
+Les 2444 liens locaux et 2071 chemins de code contrôlés restent valides ; aucun
+index appartenant à un autre lot n’a été régénéré pour masquer cet échec.
