@@ -2,92 +2,62 @@
   "readme": {
     "summary": "Private Rust/Bun monorepo: the Bun fork runtime (`yolo`), the Python runtime (`vu`), the `aphrody` CLI/MCP/FFI and the M3 UI framework.",
     "layout": [
-      [
-        "apps/<domain>/<app>",
-        "Applications"
-      ],
-      [
-        "packages/<domain>/<package>",
-        "Bun packages"
-      ],
-      [
-        "crates/<domain>/<crate>",
-        "Rust crates"
-      ],
-      [
-        "m3/",
-        "UI framework, `m3/packages/app-ui`"
-      ],
-      [
-        "py/",
-        "Python packages"
-      ],
-      [
-        "config/",
-        "Build, product, host and deployment declarations"
-      ],
-      [
-        "scripts/",
-        "audit, build, dev, migration, release, tools"
-      ],
-      [
-        "docs/",
-        "Guides, contracts, generated references"
-      ],
-      [
-        ".coord/",
-        "Claims and receipts"
-      ]
+      ["apps/<domain>/<app>", "Applications"],
+      ["packages/<domain>/<package>", "Bun packages"],
+      ["crates/<domain>/<crate>", "Rust crates"],
+      ["m3/", "UI framework, `m3/packages/app-ui`"],
+      ["py/", "Python packages"],
+      ["config/", "Build, product, host and deployment declarations"],
+      ["scripts/", "audit, build, dev, migration, release, tools"],
+      ["docs/", "Guides, contracts, generated references"],
+      [".coord/", "Claims and receipts"]
     ],
     "links": [
-      [
-        "PLAN.md",
-        "Architecture, contracts, open queue"
-      ],
-      [
-        "MEMORY.md",
-        "Dated evidence and limits"
-      ],
-      [
-        "AGENTS.md",
-        "Working rules"
-      ],
-      [
-        "docs/README.md",
-        "Documentation index"
-      ],
-      [
-        "docs/reference/workspace/STATE.md",
-        "Workspace inventory"
-      ]
+      ["PLAN.md", "Architecture, contracts, open queue"],
+      ["MEMORY.md", "Dated evidence and limits"],
+      ["AGENTS.md", "Working rules"],
+      ["docs/README.md", "Documentation index"],
+      ["docs/reference/workspace/STATE.md", "Workspace inventory"]
+    ],
+    "installation": [
+      "## One install par agent IA",
+      "",
+      "Depuis ce clone privé, avec Codex installé et authentifié, lance une seule commande :",
+      "",
+      "```sh",
+      "codex exec --yolo -C . - < docs/operations/INSTALL-AGENT.md",
+      "```",
+      "",
+      "Sous PowerShell :",
+      "",
+      "```powershell",
+      "Get-Content -Raw docs/operations/INSTALL-AGENT.md | codex exec --yolo -C . -",
+      "```",
+      "",
+      "L’agent installe les produits publiés, les dépendances du poste, les plugins Aphrody/Yolo et le MCP canonique ; il configure Docker, les secrets montés et WASM, puis vérifie chaque composant. Les builds lourds passent par l’usine VPS. Avec un autre agent CLI, donne-lui directement [cette tâche d’installation](docs/operations/INSTALL-AGENT.md).",
+      "",
+      "Le dépôt et GHCR sont privés : les accès GitHub et fournisseur IA doivent déjà être authentifiés. Les composants absents pour une cible restent signalés dans le résultat d’installation.",
+      "",
+      "## Distribution et exécution",
+      "",
+      "| Besoin | Entrée |",
+      "| --- | --- |",
+      "| CLI, runtime et plugins | [Téléchargements et installateurs](https://downloads.aphrody.com/) : release immuable et SHA-256 |",
+      "| API/MCP Docker et Alpine AMD64/ARM64 | [Runbook Docker](docs/operations/container/CONTAINER.md) : images GHCR privées et digests qualifiés |",
+      "| Secrets de conteneur | [Coffre et sauvegardes chiffrées](docs/operations/container/SECRETS.md) |",
+      "| Navigateur/WASM | [Paquet CLI WASM](packages/infra/cli-wasm/README.md) : ESM et module WASM unique |",
+      "",
+      "Les installateurs Windows ont été exécutés sous Wine ; l’application desktop complète, macOS et le SDK FFI intégré demandent encore une qualification sur leurs cibles. Les résultats et limites sont consignés dans les runbooks et [MEMORY.md](MEMORY.md)."
     ]
   },
   "plan": {
     "owners": [
-      [
-        "Aphrody",
-        "Products, workflows, UI, integrations"
-      ],
-      [
-        "Yolo",
-        "Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`)"
-      ],
-      [
-        "Workspace/Infra",
-        "Orchestration, inventories, factories, release, hosts"
-      ],
-      [
-        "`m3/packages/app-ui`, `crates/ui/*`",
-        "Canonical UI"
-      ],
-      [
-        "`crates/ai/rag-python`",
-        "Sole owner of the `aphrody-rust` Python binding"
-      ],
-      [
-        "IECODE",
-        "Separate repository, store and authority"
-      ],
+      ["Aphrody", "Products, workflows, UI, integrations"],
+      ["Yolo", "Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`)"],
+      ["Workspace/Infra", "Orchestration, inventories, factories, release, hosts"],
+      ["`m3/packages/app-ui`, `crates/ui/*`", "Canonical UI"],
+      ["`crates/ai/rag-python`", "Sole owner of the `aphrody-rust` Python binding"],
+      ["IECODE", "Separate repository, store and authority"],
       [
         "Kernel",
         "`aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest"
@@ -98,10 +68,7 @@
         "Rust CLI",
         "`aphrody` multicall binary (`apps/cli`, `crates/infra/aphrody-command`); former tool names are links"
       ],
-      [
-        "Bun CLI",
-        "`yolo` (`apps/yolo/cli`)"
-      ],
+      ["Bun CLI", "`yolo` (`apps/yolo/cli`)"],
       [
         "FFI",
         "`aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate"
@@ -251,6 +218,11 @@
             "2026-10-06",
             "Single runtime `yolo` (fork `a4d88d124`: `argv0` aliases `bun`/`vu`, `dlopen(..., { global: true })`); `bun-forge --yolo-root` receipt green (569 s, 157 tests, sha256 `7c6b4c6e…5aa6`).",
             "PATH links, Windows and embedded native tooling not activated."
+          ],
+          [
+            "2026-10-07",
+            "Fork main `085dd0ad5e2356f805ecb1b5d51f7cc28da802af` built on the VPS with the Yolo CLI: 157 tests passed, 3 TODO; artifact 94,369,872 B, SHA-256 `0afedd2e225895f05b499340ce58d74b6925fe29d3d466f6601b8529ef11e510`, glibc max 2.38. Actual Bun → CPython → Rust smoke passed.",
+            "PATH/root vendor pin not activated; qualified embedded FFI parser SDK absent. No build-time or binary-size improvement claimed."
           ]
         ]
       },
@@ -282,13 +254,41 @@
       {
         "title": "Single binary, FFI, MCP",
         "rows": [
-          ["2026-10-05", "`aphrody-mcp` serves 164 tools; `aphrody kernel mcp` 329; `yolo mcp` 14; `aphrody plugins validate` 0 issues.", "Plugin repos kept on their remotes."],
-          ["2026-10-06", "`bxc`, `bxc-mcp`, `n2b` are multicall names of `aphrody`; `aphrody-web-bridge` removed; `crates/web/x` is the sole X implementation (Web ABI 5).", "Parity doc: `docs/migration/bxc-n2b-unification-2026-10-05.md`."],
-          ["2026-10-06", "`aphrody` release installed (`--locked`, VPS, 3 min), `aphrody package doctor` 34/34 links.", "Binary 370 MB unstripped vs 129 MB published."],
-          ["2026-10-06", "Dedup: removed `aphrody-search`, `aphrody-settings`, `packages/compat/tsconfig.base.json`; 21 orphan Rust files (2,962 lines) and 20 uncalled scripts removed; `docs:check-links` green (was 149 broken links).", "`aphrody-tools`/`aphrody-chat` deprecated but still called; `@aphrody/ovh` duplicates `aphrody-ovh`."],
-          ["2026-10-07", "Removed 17 unreferenced one-off scripts (graph leaves, no inbound reference) and one duplicate docs mirror.", "Only text references checked; no gate run."],
-          ["2026-10-07", "CLI purge: `aphrody` no longer carries `exec`, `resume`, `fork`, `app-server`, `codex`, `agy`, `agy-loop`, `antigravity`, `gemini`, `hermes`, `chat`, `agent`, `session`, `notebooklm`, `logo`, `design`, `ide`, `vpn`, `cros`, `mirror`, `auth`, `notify`, `mail`, `firefly`, `ai`, `nie`, `oc-*`, nor the multicall names `gemini-web`, `jev`, `skills`, `agent-home*`, `agent-train`, `llama*`, `bxc`, `bxc-mcp`, `summary`, `translate-project`; crates `aphrody-notebooklm`, `aphrody-messaging`, `aphrody-chat`, `aphrody-tui` and the `agy` doc trees removed.", "Clippy `-D warnings` on `aphrody-command` and `aphrody`; one MCP (`aphrody-mcp`) stays."],
-          ["2026-10-07", "`aphrody-mcp` enables `aphrody-kernel/builtins`; VPS snapshot `a11fc60987d5`, `test -p aphrody-mcp --lib`: 105 passed, 1 ignored; `855d7d3c8879`, `test -p aphrody-kernel`: 124 passed, 1 ignored, 8 integration tests and 1 doctest; strict Clippy `-D warnings` passed on `daa1f80c8b6f` (kernel) and `7748acc64e12` (MCP).", "Full CLI `build -p aphrody --bin aphrody --locked` remains open: snapshot `e9f3dea63b9f` fails on `sha2` imported by the active WSL fold without a declared dependency. No runtime rebuild or installation is claimed."]
+          [
+            "2026-10-05",
+            "`aphrody-mcp` serves 164 tools; `aphrody kernel mcp` 329; `yolo mcp` 14; `aphrody plugins validate` 0 issues.",
+            "Plugin repos kept on their remotes."
+          ],
+          [
+            "2026-10-06",
+            "`bxc`, `bxc-mcp`, `n2b` are multicall names of `aphrody`; `aphrody-web-bridge` removed; `crates/web/x` is the sole X implementation (Web ABI 5).",
+            "Parity doc: `docs/migration/bxc-n2b-unification-2026-10-05.md`."
+          ],
+          [
+            "2026-10-06",
+            "`aphrody` release installed (`--locked`, VPS, 3 min), `aphrody package doctor` 34/34 links.",
+            "Binary 370 MB unstripped vs 129 MB published."
+          ],
+          [
+            "2026-10-06",
+            "Dedup: removed `aphrody-search`, `aphrody-settings`, `packages/compat/tsconfig.base.json`; 21 orphan Rust files (2,962 lines) and 20 uncalled scripts removed; `docs:check-links` green (was 149 broken links).",
+            "`aphrody-tools`/`aphrody-chat` deprecated but still called; `@aphrody/ovh` duplicates `aphrody-ovh`."
+          ],
+          [
+            "2026-10-07",
+            "Removed 17 unreferenced one-off scripts (graph leaves, no inbound reference) and one duplicate docs mirror.",
+            "Only text references checked; no gate run."
+          ],
+          [
+            "2026-10-07",
+            "CLI purge: `aphrody` no longer carries `exec`, `resume`, `fork`, `app-server`, `codex`, `agy`, `agy-loop`, `antigravity`, `gemini`, `hermes`, `chat`, `agent`, `session`, `notebooklm`, `logo`, `design`, `ide`, `vpn`, `cros`, `mirror`, `auth`, `notify`, `mail`, `firefly`, `ai`, `nie`, `oc-*`, nor the multicall names `gemini-web`, `jev`, `skills`, `agent-home*`, `agent-train`, `llama*`, `bxc`, `bxc-mcp`, `summary`, `translate-project`; crates `aphrody-notebooklm`, `aphrody-messaging`, `aphrody-chat`, `aphrody-tui` and the `agy` doc trees removed.",
+            "Clippy `-D warnings` on `aphrody-command` and `aphrody`; one MCP (`aphrody-mcp`) stays."
+          ],
+          [
+            "2026-10-07",
+            "`aphrody-mcp` enables `aphrody-kernel/builtins`; VPS snapshot `a11fc60987d5`, `test -p aphrody-mcp --lib`: 105 passed, 1 ignored; `855d7d3c8879`, `test -p aphrody-kernel`: 124 passed, 1 ignored, 8 integration tests and 1 doctest; strict Clippy `-D warnings` passed on `daa1f80c8b6f` (kernel) and `7748acc64e12` (MCP).",
+            "Full CLI `build -p aphrody --bin aphrody --locked` remains open: snapshot `e9f3dea63b9f` fails on `sha2` imported by the active WSL fold without a declared dependency. No runtime rebuild or installation is claimed."
+          ]
         ]
       },
       {
@@ -384,10 +384,16 @@
             "Cloud session host: 4 CPU, 15 GB RAM, ~30 GB disk; scoped `-p <crate>` gates only.",
             "Full workspace, V8, Tauri, WebKit builds go to the VPS."
           ],
+          ["2026-10-05", "CI jobs do not start (account billing).", "Owner-side."],
           [
-            "2026-10-05",
-            "CI jobs do not start (account billing).",
-            "Owner-side."
+            "2026-10-07",
+            "Private GHCR runtime digest `sha256:9584253e39340758b4efcb1d11e86aa48f165a3e045759f75bb4a600559c3031` passed registry pull, readonly-root token-file API health and shutdown. Alpine AMD64/ARM64 digest `sha256:7506e634d1ab1acfadaaceb6a59d52629a02b62bd59ec1507c334816e7b55aad` passed both architecture runtime/WASM probes.",
+            "Alpine uses official musl Bun; it does not include the new GNU fork or native Aphrody ARM64 artifacts. Desktop/full release-builder qualification remains open."
+          ],
+          [
+            "2026-10-07",
+            "Downloads release `20261007T094136Z-2072d221e312-wasm-0b7fccd7`: 14 artifacts, prior 13 preserved. Portable WASM archive 1,562,486 B, SHA-256 `8d2a34b5a0cb6ca2a14108d84f80cb82b689e1013d1a4fa95a10074b70d538be`. Public download and package provenance verified; Node/V8 and Bun bytes/sync/HTTP streaming smokes passed; 26 tests passed.",
+            "Native CLI parity skipped; real browser execution unverified. Composite WASM source/patch provenance retained. Windows kits qualified under Wine, not physical Windows."
           ]
         ]
       }

@@ -4,7 +4,38 @@
 
 Private Rust/Bun monorepo: the Bun fork runtime (`yolo`), the Python runtime (`vu`), the `aphrody` CLI/MCP/FFI and the M3 UI framework.
 
-Totals: 209 crates, 94 packages, 6 apps.
+## One install par agent IA
+
+Depuis ce clone privé, avec Codex installé et authentifié, lance une seule commande :
+
+```sh
+codex exec --yolo -C . - < docs/operations/INSTALL-AGENT.md
+```
+
+Sous PowerShell :
+
+```powershell
+Get-Content -Raw docs/operations/INSTALL-AGENT.md | codex exec --yolo -C . -
+```
+
+L’agent installe les produits publiés, les dépendances du poste, les plugins Aphrody/Yolo et le MCP canonique ; il configure Docker, les secrets montés et WASM, puis vérifie chaque composant. Les builds lourds passent par l’usine VPS. Avec un autre agent CLI, donne-lui directement [cette tâche d’installation](docs/operations/INSTALL-AGENT.md).
+
+Le dépôt et GHCR sont privés : les accès GitHub et fournisseur IA doivent déjà être authentifiés. Les composants absents pour une cible restent signalés dans le résultat d’installation.
+
+## Distribution et exécution
+
+| Besoin | Entrée |
+| --- | --- |
+| CLI, runtime et plugins | [Téléchargements et installateurs](https://downloads.aphrody.com/) : release immuable et SHA-256 |
+| API/MCP Docker et Alpine AMD64/ARM64 | [Runbook Docker](docs/operations/container/CONTAINER.md) : images GHCR privées et digests qualifiés |
+| Secrets de conteneur | [Coffre et sauvegardes chiffrées](docs/operations/container/SECRETS.md) |
+| Navigateur/WASM | [Paquet CLI WASM](packages/infra/cli-wasm/README.md) : ESM et module WASM unique |
+
+Les installateurs Windows ont été exécutés sous Wine ; l’application desktop complète, macOS et le SDK FFI intégré demandent encore une qualification sur leurs cibles. Les résultats et limites sont consignés dans les runbooks et [MEMORY.md](MEMORY.md).
+
+## Repository
+
+Totals: 204 crates, 94 packages, 6 apps.
 
 | Path | Content |
 | --- | --- |

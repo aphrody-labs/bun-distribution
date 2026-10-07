@@ -4,7 +4,7 @@ import { join } from "node:path";
 type Pair = [string, string];
 type Row = [string, string, string];
 type Data = {
-  readme: { summary: string; layout: Pair[]; links: Pair[] };
+  readme: { summary: string; installation?: string[]; layout: Pair[]; links: Pair[] };
   plan: {
     owners: Pair[];
     targets: Pair[];
@@ -39,6 +39,10 @@ export function renderReadme(d: Data, totals: string): string {
     "# Aphrody",
     "",
     d.readme.summary,
+    "",
+    ...(d.readme.installation ?? []),
+    "",
+    "## Repository",
     "",
     totals,
     "",
@@ -87,10 +91,8 @@ export function renderMemory(d: Data): string {
     "",
     m.intro,
     "",
-    ...m.sections.flatMap((s) => [
-      `## ${s.title}`,
-      "",
-      ...table(["Date", "Evidence", "Limit"], s.rows),
-    ]),
+    ...m.sections.flatMap((s) =>
+      [`## ${s.title}`, ""].concat(table(["Date", "Evidence", "Limit"], s.rows)),
+    ),
   ]);
 }
