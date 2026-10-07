@@ -54,7 +54,7 @@
   "accounts": [
     {
       "user": "omar",
-      "hosts": ["vps", "dbfr"],
+      "hosts": ["vps", "dbfr", "wsl"],
       "groups": [],
       "authorizedKeys": "ssh/omar.authorized_keys",
       "sudoers": "sudoers/omar",
@@ -62,7 +62,7 @@
         {
           "file": "ssh/omar-sshd.conf",
           "install": "/etc/ssh/sshd_config.d/60-omar.conf",
-          "hosts": ["vps", "dbfr"]
+          "hosts": ["vps", "dbfr", "wsl"]
         },
         {
           "file": "ssh/postgres-no-login-sshd.conf",
@@ -70,7 +70,7 @@
           "hosts": ["dbfr"]
         }
       ],
-      "allowedFrom": ["92.170.252.46", "10.200.77.10"],
+      "allowedFrom": ["92.170.252.46", "10.200.77.10", "10.200.77.0/24"],
       "postgresAccess": "sudo-only",
       "findings": [
         "omar's ssh key is the same key pair as ~/.ssh/id_ed25519.pub of the owner's PC (owner's choice, keys confirmed as Omar's, SHA256:8G22L1q/zD3aUYPRqYNIuIQg7c0NWfofpXsaqZHuM/s): two people share one private key, so sshd and sudo logs tell them apart only by the Unix login, never by key",
@@ -80,6 +80,30 @@
     }
   ],
   "units": [
+    {
+      "service": "shenron-site-docker",
+      "unit": "shenron-site-docker.service",
+      "path": "systemd/shenron/shenron-site-docker.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-bot-docker",
+      "unit": "shenron-bot-docker.service",
+      "path": "systemd/shenron/shenron-bot-docker.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-shenron-build-runner",
+      "unit": "aphrody-shenron-build-runner.service",
+      "path": "systemd/aphrody/aphrody-shenron-build-runner.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
     {
       "service": "aphrody-compute-dbfr-tunnel",
       "unit": "aphrody-compute-dbfr-tunnel.service",

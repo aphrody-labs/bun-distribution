@@ -1,4 +1,4 @@
-# Installed as /etc/ssh/authorized_keys.d/omar (root:root, 0644) on vps and dbfr, read through the
+# Installed as /etc/ssh/authorized_keys.d/omar (root:root, 0644) on vps, dbfr and WSL, read through the
 # `AuthorizedKeysFile` of the `Match User omar` block of ssh/omar-sshd.conf. Root-owned on purpose.
 #
 # Public key supplied and confirmed by the owner on 2026-10-06 (SHA256:8G22L1q/zD3aUYPRqYNIuIQg7c0NWfofpXsaqZHuM/s).
@@ -7,7 +7,7 @@
 # the ubuntu account (full sudo): see `findings` of the omar account in catalog.json.
 # To give omar his own key, replace the single key line below (nothing else changes).
 #
-# from= lists his public address (direct ssh on :22) and his tunnel address (ssh through the tunnel, where the source
-# seen by sshd is 10.200.77.10 and only his WireGuard key can originate it). Drop the second entry to force the public
+# from= lists his public address and the authenticated private VPN subnet. Omar uses 10.200.77.10;
+# the owner can qualify the shared authorized key from the WSL peer 10.200.77.2. Drop the subnet entry to force the public
 # path only. `restrict` removes forwarding, agent, X11 and the pty; `pty` gives the pty back.
-from="92.170.252.46,10.200.77.10",restrict,pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)
+from="92.170.252.46,10.200.77.0/24",restrict,pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)

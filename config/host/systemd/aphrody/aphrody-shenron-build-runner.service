@@ -1,0 +1,25 @@
+[Unit]
+Description=Aphrody VPS build factory runner for private Shenron releases
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+ConditionPathExists=/home/shenron-build/runner/.runner
+
+[Service]
+Type=simple
+User=shenron-build
+Group=shenron-build
+SupplementaryGroups=docker
+WorkingDirectory=/home/shenron-build/runner
+Environment=PATH=/home/shenron-build/.bun/bin:/home/shenron-build/.cargo/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/shenron-build/runner/run.sh
+Restart=on-failure
+RestartSec=15
+KillMode=control-group
+KillSignal=SIGINT
+TimeoutStopSec=120
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

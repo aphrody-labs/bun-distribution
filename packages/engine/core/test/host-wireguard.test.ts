@@ -38,7 +38,14 @@ const repo = join(import.meta.dir, "..", "..", "..", "..");
 const root = join(repo, "config", "host");
 const catalog = loadCatalog(root);
 const tunnel = () => loadTunnel(root);
-const plan = () => buildPlan(tunnel(), { root, catalog, compose: (u) => composeUnit(u, root) });
+const unappliedTunnel = () => {
+  const t = tunnel();
+  t.hub.publicKey = null;
+  for (const p of t.peers) if (["wsl", "dbfr"].includes(p.id)) p.publicKey = null;
+  return t;
+};
+const plan = () =>
+  buildPlan(unappliedTunnel(), { root, catalog, compose: (u) => composeUnit(u, root) });
 const newKey = () => randomBytes(32).toString("base64");
 
 /** A copy of the declaration and the account files that a test may mutate. */
@@ -103,7 +110,7 @@ test("WireGuard key format: 44 base64 characters, 32 bytes", () => {
   ).toBe(false);
 });
 
-test("omar and aphro-pc have their WireGuard public keys; wsl and dbfr generate theirs", () => {
+test("registered peers have valid public keys after host-local generation", () => {
   const t = tunnel();
   expect(t.peers.find((p) => p.id === "omar")?.publicKey).toBe(
     "A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=",
@@ -112,12 +119,12 @@ test("omar and aphro-pc have their WireGuard public keys; wsl and dbfr generate 
   expect(t.peers.find((p) => p.id === "aphro-pc")?.publicKey).toBe(
     "iM+MggQed48HpejJsIkhfR6yDBgwq2IkT1w6WDgWSgM=",
   );
-  expect(t.hub.publicKey).toBeNull();
-  expect(t.peers.filter((p) => p.publicKey === null).map((p) => p.id)).toEqual(["wsl", "dbfr"]);
+  expect(isWgKey(t.hub.publicKey)).toBe(true);
+  expect(t.peers.every((p) => isWgKey(p.publicKey))).toBe(true);
 });
 
 test("client sections: split tunnel, no private key, hub key placeholder until it exists", () => {
-  const t = tunnel();
+  const t = unappliedTunnel();
   for (const p of t.peers) {
     const s = clientSections(t, p.id);
     const text = `${s.interface}\n${s.peer}`;
@@ -207,7 +214,7 @@ test("wg-client refuses to write a conf into the repository and writes it outsid
 });
 
 test("hub config: known keys inline, the others are apply-time inputs, no private key", () => {
-  const h = hubConfig(tunnel());
+  const h = hubConfig(unappliedTunnel());
   expect(h.text).toContain("ListenPort = 51821");
   expect(h.text).toContain("Address = 10.200.77.1/24");
   expect(h.text).toContain("PublicKey = iM+MggQed48HpejJsIkhfR6yDBgwq2IkT1w6WDgWSgM=");
@@ -227,7 +234,7 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
     expect(r.text).not.toContain("shenron-admin");
     expect(r.text).not.toMatch(/Anywhere|from any\b|0\.0\.0\.0/);
     expect(r.text).not.toMatch(/port (5432|6379)\b/);
-    expect(r.text).not.toContain("10.200.77.2 port"); // training on the wsl is pending
+    if (r.text.includes("10.200.77.2 port")) expect(r.text).toContain("port 22 proto tcp"); // SSH is active; training remains pending
   }
   const udp = rules.filter((r) => r.kind === "udp-source");
   expect(udp.map((r) => r.text)).toEqual([
@@ -236,9 +243,17 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
   const omar = rules
     .filter((r) => r.peer === "omar" && r.kind !== "udp-source")
     .map((r) => `${r.kind}:${r.service}`);
-  expect(omar).toEqual(["input:ssh-vps", "route:ssh-dbfr", "input:mcp-http", "input:a2a"]);
+  expect(omar).toEqual([
+    "input:ssh-vps",
+    "route:ssh-dbfr",
+    "route:ssh-wsl",
+    "input:mcp-http",
+    "input:a2a",
+  ]);
   expect(
-    rules.filter((r) => r.kind === "route").every((r) => r.text.includes("to 10.200.77.3 port 22")),
+    rules
+      .filter((r) => r.kind === "route")
+      .every((r) => /to 10\.200\.77\.[23] port 22/.test(r.text)),
   ).toBe(true);
   expect(rules.some((r) => r.peer === "dbfr")).toBe(false);
 });
@@ -307,7 +322,7 @@ test("the omar account files: no key invented, root-owned key file, one sudoers 
   const keys = readFileSync(join(root, "ssh/omar.authorized_keys"), "utf8");
   const lines = keys.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#"));
   expect(lines).toEqual([
-    'from="92.170.252.46,10.200.77.10",restrict,pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)',
+    'from="92.170.252.46,10.200.77.0/24",restrict,pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)',
   ]);
   expect(keys).toContain("shared pair");
   expect(catalog.accounts![0]!.findings?.join("\n")).toMatch(
@@ -365,7 +380,7 @@ test("account checks reject an unrestricted key, a wrong source, a group grant a
     );
     keyFile(`from="92.170.252.46",pty ssh-ed25519 ${blob} omar`);
     expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(/without restrict/);
-    keyFile(`from="92.170.252.46,10.200.77.10",restrict,pty ssh-ed25519 ${blob} omar`);
+    keyFile(`from="92.170.252.46,10.200.77.0/24",restrict,pty ssh-ed25519 ${blob} omar`);
     expect(accountProblems(dir, acct(), tunnel())).toEqual([]);
     writeFileSync(join(dir, "ssh/omar.authorized_keys"), `-----BEGIN OPENSSH PRIVATE KEY-----\n`);
     expect(accountProblems(dir, acct(), tunnel()).join("\n")).toMatch(/private key material/);

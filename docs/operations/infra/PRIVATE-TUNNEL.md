@@ -1,9 +1,47 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Private WireGuard tunnel and the `omar` account (declared 2026-10-06, not applied)
+# Private WireGuard tunnel and Omar administrator access
 
-Declared intent only. No host was changed: the apply needs the owner's written order in the main session. Observation
-was read-only (`aphrody infra ssh exec`, `ip`, `ss`, `wg show`, `ufw status`, `sshd -T`); the record is
+The owner authorized deployment on 2026-10-07. SSH and WireGuard are active on VPS,
+DBFR and WSL; MCP/A2A proxy units remain declared and were not activated by this batch.
+The original 2026-10-06 observation remains in
 `config/host/inventory/private-tunnel-2026-10-06.json`.
+
+## Verified activation on 2026-10-07
+
+- Hub `51.77.147.152:51821`, VPN `10.200.77.1`; WSL `.2`, DBFR `.3`, Omar `.10`.
+- VPS, DBFR and WSL have key-only `omar` accounts and validated root-owned sudoers.
+  Real SSH sessions as `omar` from WSL to all three VPN addresses executed
+  `sudo -n id -u` and returned `0`; existing host keys were checked strictly.
+- VPS reports real WireGuard handshakes with WSL and DBFR. Omar's Windows peer is
+  registered; its handshake remains zero until he activates his own private-key tunnel.
+- Host private keys were generated on their own hosts, kept 0600, and never exported.
+  The public hub key is `McWuNyGdzU81q9MEyfvnxoGYIHqGW1UcRqpcge3NxB4=`.
+- Existing `wg0`, owner SSH access, databases, protected stores and foreign firewall rules remain.
+  New rules admit private SSH to VPS/DBFR and route Omar SSH to WSL. No database ports
+  were opened. The supplied shared SSH key is allowed from the authenticated VPN subnet
+  as well as the declared public source; this allowed owner qualification from WSL `.2`.
+- WSL required `wireguard-tools` and `openssh-server`; both were installed. Its SSH
+  and `wg-quick@wg1` services, and both server VPN services, are enabled for boot.
+
+Canonical fresh-install adapter: `python3 scripts/tools/apply-omar-private-access.py`
+(plan), then `--apply`. It consumes the canonical generated plan, refuses an existing
+interface/configuration and applies SSH/WireGuard only. An interrupted fresh install
+requires inspecting the exact completed steps before continuing; do not remove keys
+or reset a working tunnel to rerun it.
+
+Omar keeps his own WireGuard private key and uses these public peer settings:
+
+```ini
+[Peer]
+PublicKey = McWuNyGdzU81q9MEyfvnxoGYIHqGW1UcRqpcge3NxB4=
+Endpoint = 51.77.147.152:51821
+AllowedIPs = 10.200.77.0/24
+PersistentKeepalive = 25
+```
+
+Set his existing tunnel interface address to `10.200.77.10/32`. SSH targets are
+`omar@10.200.77.1` (VPS), `omar@10.200.77.3` (DBFR), and `omar@10.200.77.2` (WSL).
+No replacement client private key is generated or provided.
 
 ## What is declared
 
@@ -23,8 +61,8 @@ bun packages/engine/core/src/host/cli.ts wg-client omar --format paste --hub-pub
 ```
 
 `wg-plan --observe` runs only `check`, `warn` and `info` steps of the preflight phase; a `mutate` step is never executed
-(tested with a recording runner). There is no apply command: the mutation steps are plain root shell text, with the
-apply-time inputs named in `needs` (`HUB_PUBLIC_KEY`, `WSL_PUBLIC_KEY`, `DBFR_PUBLIC_KEY`).
+(tested with a recording runner). The generated mutation steps are plain root shell text with public apply-time inputs
+named in `needs`; the fresh-install adapter above executes the SSH/WireGuard subset.
 
 ## Network design
 
@@ -80,7 +118,7 @@ MCP, 8798 gemma4, 8796, 8797) are not exposed: they belong to Shenron or to othe
 - `useradd` without password, no extra group (not in `sudo`, `adm`, `docker`, `postgres`), key-only: sshd drop-in
   `60-omar.conf` (`Match User omar`: `publickey` only, keys from the root-owned `/etc/ssh/authorized_keys.d/omar`, no
   forwarding, no tunnel, `GatewayPorts no`, `LogLevel VERBOSE` so the key fingerprint is journaled).
-- The key line is `from="92.170.252.46,10.200.77.10",restrict,pty ssh-ed25519 ...`: his public address and his tunnel
+- The key line is `from="92.170.252.46,10.200.77.0/24",restrict,pty ssh-ed25519 ...`: his public address and his tunnel
   address (through the tunnel sshd sees `10.200.77.10`; only his WireGuard key can originate it). Dropping the second
   address forces the public path.
 - **sudo**: `/etc/sudoers.d/omar`, one rule `omar ALL=(ALL:ALL) NOPASSWD: ALL` (no Unix password exists), validated by

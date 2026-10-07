@@ -1,8 +1,8 @@
 {
-  "$comment": "Private WireGuard tunnel between the vps (hub), dbfr, the WSL, the owner's Windows PC and Omar's Windows PC. Declared intent only: nothing here is applied until the owner orders it in the main session. No private key is ever written to this file or to the repository: each private key is born on its own peer (wg genkey on a host, the WireGuard app on Windows) and only public keys are recorded. Plan and client sections: bun packages/engine/core/src/host/cli.ts wg-plan | wg-client. Runbook: docs/operations/infra/PRIVATE-TUNNEL.md.",
+  "$comment": "Owner authorized full administrator access on 2026-10-07. SSH and WireGuard applied on vps/dbfr/WSL; MCP/A2A socket proxies remain unactivated. Private keys remain on their own hosts. Canonical application: scripts/tools/apply-omar-private-access.py; evidence: docs/operations/infra/PRIVATE-TUNNEL.md.",
   "schemaVersion": 1,
   "name": "aphrody-private",
-  "status": "declared-not-applied",
+  "status": "applied-ssh-and-wireguard",
   "interface": "wg1",
   "windowsTunnelName": "aphrody",
   "subnet": "10.200.77.0/24",
@@ -26,8 +26,8 @@
     "address": "10.200.77.1",
     "endpoint": "51.77.147.152:51821",
     "listenPort": 51821,
-    "publicKey": null,
-    "publicKeyNote": "generated on the vps at apply (wg genkey); read it back with `sudo wg show wg1 public-key` and pass it to wg-client --hub-public-key"
+    "publicKey": "McWuNyGdzU81q9MEyfvnxoGYIHqGW1UcRqpcge3NxB4=",
+    "publicKeyNote": "Generated on VPS and verified from the live wg1 interface on 2026-10-07; private key never exported."
   },
   "peers": [
     {
@@ -35,7 +35,7 @@
       "host": "wsl",
       "os": "linux",
       "address": "10.200.77.2",
-      "publicKey": null,
+      "publicKey": "WFynN57cgG2iRqQ+bsk0ofJ3dphXkHAyfjX4UuATyxk=",
       "keyOrigin": "wg genkey on the WSL at apply; the public half is collected by the plan",
       "udpSource": { "mode": "covered-by-shenron-admin" }
     },
@@ -44,7 +44,7 @@
       "host": "dbfr",
       "os": "linux",
       "address": "10.200.77.3",
-      "publicKey": null,
+      "publicKey": "o1eCVLfJXLScX3wKMxBeXr70zyUdq/61XI6qTdYG6Fc=",
       "keyOrigin": "wg genkey on dbfr at apply; the public half is collected by the plan",
       "udpSource": { "mode": "covered-by-shenron-admin" }
     },
@@ -91,6 +91,15 @@
       "auth": "ssh-key"
     },
     {
+      "id": "ssh-wsl",
+      "host": "wsl",
+      "address": "10.200.77.2",
+      "port": 22,
+      "proto": "tcp",
+      "expose": "peer-listener",
+      "auth": "ssh-key"
+    },
+    {
       "id": "mcp-http",
       "host": "vps",
       "address": "10.200.77.1",
@@ -125,7 +134,7 @@
     }
   ],
   "grants": {
-    "omar": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "training"],
+    "omar": ["ssh-vps", "ssh-dbfr", "ssh-wsl", "mcp-http", "a2a", "training"],
     "aphro-pc": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "training"],
     "wsl": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a"],
     "dbfr": []
