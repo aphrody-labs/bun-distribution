@@ -18,6 +18,9 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   if (operation === "plugins" || operation === "agent-plugins") {
     return await (await import("./agent-plugins.ts")).runAgentPlugins(rest);
   }
+  if (operation === "mcp-environment") {
+    return await (await import("./mcp-environment.ts")).runMcpEnvironment(rest);
+  }
   if (operation === "build-factory") {
     return await (await import("./build-factory.ts")).runBuildFactory(rest);
   }
