@@ -91,9 +91,9 @@ class AssemblyPrivacyTests(unittest.TestCase):
                 patch.object(argparse.ArgumentParser, "parse_args", return_value=args),
                 patch.object(assembly.subprocess, "run", return_value=result),
                 patch("sys.stderr", new_callable=io.StringIO),
+                self.assertRaises(SystemExit),
             ):
-                with self.assertRaises(SystemExit):
-                    assembly.main()
+                assembly.main()
             self.assertFalse(args.release.exists())
 
 
