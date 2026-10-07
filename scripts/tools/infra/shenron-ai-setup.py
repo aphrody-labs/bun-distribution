@@ -42,7 +42,7 @@ def compute_environment(environment):
     query = urllib.parse.parse_qs(url.query, keep_blank_values=True)
     query["options"] = ["-c search_path=shenron_compute,public"]
     database = urllib.parse.urlunsplit(
-        url._replace(query=urllib.parse.urlencode(query, doseq=True))
+        url._replace(query=urllib.parse.urlencode(query, doseq=True, quote_via=urllib.parse.quote))
     )
     return {
         "APHRODY_MCP_DATABASE_URL": database,
