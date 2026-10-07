@@ -124,16 +124,26 @@ native("native MCP calls retain authentication and sessions and run independentl
   });
   try {
     const config = join(directory, "config.toml");
+    const inlineConfig = join(directory, "inline.toml");
     await Bun.write(
       config,
       `[mcp_servers.aphrody]\nurl='http://127.0.0.1:${server.port}/mcp'\n[mcp_servers.aphrody.http_headers]\nAuthorization='Bearer fixture-only'\n`,
     );
+    await Bun.write(
+      inlineConfig,
+      `[mcp_servers.aphrody]\nurl='http://127.0.0.1:${server.port}/mcp'\nhttp_headers={Authorization='Bearer fixture-only'}\n`,
+    );
     const values = await Promise.all(
-      [1, 2].map((value) =>
+      [config, inlineConfig].map((selectedConfig, index) =>
         mcpTool<{
           content: { text: string }[];
         }>(
-          { config, server: "aphrody", tool: "fixture", arguments: { value } },
+          {
+            config: selectedConfig,
+            server: "aphrody",
+            tool: "fixture",
+            arguments: { value: index + 1 },
+          },
           { timeoutMs: 3000 },
         ),
       ),
