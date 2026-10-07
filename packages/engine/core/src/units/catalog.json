@@ -93,10 +93,16 @@
         "Description": "Aphrody Linux kernel control plane"
       },
       "service": {
-        "ExecStart": "%h/.local/bin/aphrody-kernel serve --no-browser",
+        "ExecStart": "%h/.local/bin/aphrody kernel serve --no-browser",
         "Restart": "on-failure",
         "RestartSec": "1",
-        "Environment": "APHRODY_AGENT_DOMAIN=aphrody"
+        "Environment": [
+          "APHRODY_AGENT_DOMAIN=aphrody",
+          "PATH=%h/.local/bin:%h/.bun/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin",
+          "\"APHRODY_YOLO_TOOL_HOST=%h/aphrody/bin/yolo tool\"",
+          "APHRODY_YOLO_MCP_BIN=",
+          "APHRODY_AI_MCP_BIN="
+        ]
       }
     },
     {
@@ -188,7 +194,7 @@
         "After": "aphrody-kernel.service"
       },
       "service": {
-        "ExecStart": "%h/.local/bin/aphrody-host-service --config %h/.config/aphrody/host-bridge/%i.json",
+        "ExecStart": "%h/.local/bin/aphrody host-service --config %h/.config/aphrody/host-bridge/%i.json",
         "Restart": "on-failure",
         "RestartSec": "1"
       }

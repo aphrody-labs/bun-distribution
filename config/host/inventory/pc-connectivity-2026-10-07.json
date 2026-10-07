@@ -97,5 +97,52 @@
     "wireguardPlan": "wireguard/aphrody-tunnel.json",
     "dbfrReturnRule": "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.4 port 22 proto tcp",
     "codexReference": "https://developers.openai.com/codex/mcp"
+  },
+  "persistentNativeBridge": {
+    "observedAt": "2026-10-07T12:48:13.696054+00:00",
+    "services": [
+      "aphrody-kernel.service",
+      "aphrody-host-bridge@windows.service",
+      "aphrody-host-bridge@desktop.service",
+      "aphrody-host-bridge@privileged.service"
+    ],
+    "enabled": true,
+    "state": "active",
+    "credentialRefresh": "Linux protected client files refreshed from the already rotated Windows policy; verified backups retained.",
+    "nativeObservationFacade": "aphrody winclean call desktop_computer_observe",
+    "observationVerified": true,
+    "reverseWindowsToLinuxCallVerified": true,
+    "eventsBothDirectionsVerified": true,
+    "invalidCredentialRejected": true,
+    "nativeA2ADesktopDispatchVerified": true,
+    "canonicalMcp": {
+      "installedToolCount": 871,
+      "installedNativeToolCount": 534,
+      "installedImportsNativeBridge": true,
+      "sourceImportAdded": true,
+      "runtimeQualification": "deployed and authenticated desktop observation verified",
+      "binarySnapshot": "7aa2681d8193",
+      "binarySha256": "3ec5531c459a2400a5f052144527eca8d149d9145ccb86dba12e83a802192f4f",
+      "glibcMaximum": "2.39",
+      "canonicalExecutable": "/home/aphro/.local/bin/aphrody-mcp",
+      "codexConfigurationRetainsCanonicalServer": true,
+      "nativeYoloToolHost": "/home/aphro/aphrody/bin/yolo tool",
+      "captureStorage": "Protected owner store; no screenshots posted to Discord."
+    },
+    "qualification": {
+      "mcpTestsPassed": 107,
+      "mcpNetworkTestsIgnored": 1,
+      "strictClippyPassed": true,
+      "unitCatalogTestsPassed": 3,
+      "systemdUnitVerifyPassed": true,
+      "bridgePingSamples": 10,
+      "bridgePingMedianMs": 0.0965595,
+      "bridgePingP95Ms": 0.150553,
+      "mcpCrossTargetChecks": {
+        "x86_64-unknown-linux-gnu": "passed (default-feature tests and strict Clippy)",
+        "x86_64-pc-windows-msvc": "passed (cargo xwin check, no-default-features)",
+        "wasm32-unknown-unknown": "not applicable to native socket and stdio hosting"
+      }
+    }
   }
 }
