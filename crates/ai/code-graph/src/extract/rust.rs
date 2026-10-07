@@ -57,6 +57,46 @@ fn line(node: Node<'_>) -> usize {
     node.start_position().row + 1
 }
 
+fn import_targets(node: Node<'_>, src: &[u8], prefix: &str, out: &mut Vec<String>) {
+    match node.kind() {
+        "scoped_use_list" => {
+            let path = node.child_by_field_name("path").map(|n| text(n, src)).unwrap_or("");
+            let full = if prefix.is_empty() { path.to_owned() } else { format!("{prefix}::{path}") };
+            if let Some(list) = node.child_by_field_name("list") {
+                import_targets(list, src, &full, out);
+            }
+        },
+        "use_list" => {
+            let mut cursor = node.walk();
+            for child in node.named_children(&mut cursor) {
+                import_targets(child, src, prefix, out);
+            }
+        },
+        "use_as_clause" => {
+            if let Some(path) = node.child_by_field_name("path") {
+                import_targets(path, src, prefix, out);
+            }
+        },
+        "use_wildcard" => {
+            if !prefix.is_empty() {
+                out.push(prefix.to_owned());
+            } else {
+                let path = text(node, src).trim_end_matches("::*");
+                if !path.is_empty() { out.push(path.to_owned()); }
+            }
+        },
+        "scoped_identifier" => {
+            let value = text(node, src);
+            out.push(value.rsplit("::").next().unwrap_or(value).to_owned());
+        },
+        "identifier" | "self" | "super" | "crate" => {
+            let value = text(node, src);
+            out.push(value.to_owned());
+        },
+        _ => {},
+    }
+}
+
 impl<'a> Ctx<'a> {
     fn add_node(&mut self, id: &str, label: &str, line: usize, class: NodeClass) {
         if self.seen.insert(id.to_owned()) {
@@ -376,13 +416,14 @@ impl<'a> Ctx<'a> {
             },
             "use_declaration" => {
                 if let Some(arg) = node.child_by_field_name("argument") {
-                    let raw = text(arg, self.src);
-                    let clean = raw.split('{').next().unwrap_or(raw).trim_end_matches(':').trim_end_matches('*').trim_end_matches(':');
-                    let name = clean.rsplit("::").next().unwrap_or(clean).trim();
-                    if !name.is_empty() {
+                    let mut targets = Vec::new();
+                    import_targets(arg, self.src, "", &mut targets);
+                    targets.sort();
+                    targets.dedup();
+                    for name in targets.into_iter().filter(|name| !name.is_empty()) {
                         // The target is resolved at corpus level (a type, a file, or a concept
                         // node); it is not a node of this file, so calls never match it.
-                        let target = make_id(&[name]);
+                        let target = make_id(&[&name]);
                         let file = self.file_nid.clone();
                         self.add_edge(&file, &target, "imports_from", line(node), Some("import"));
                     }
@@ -572,6 +613,15 @@ fn helper(q: &str) -> Hit { Hit }
         assert!(f.edges.iter().any(|e| e.relation == "imports_from"));
         // `Embedder: Send` — Send is a builtin and does not become an edge.
         assert!(!f.edges.iter().any(|e| e.relation == "inherits"));
+    }
+
+    #[test]
+    fn grouped_imports_emit_each_leaf_and_wildcards_keep_their_module() {
+        let src = b"use std::path::{Path, PathBuf};\nuse crate::{model::Model, store::Store as KvStore};\nuse std::fmt::*;\n";
+        let f = extract("imports.rs", src);
+        let mut targets: Vec<&str> = f.edges.iter().filter(|e| e.relation == "imports_from").map(|e| e.dst.as_str()).collect();
+        targets.sort_unstable();
+        assert_eq!(targets, ["model", "path", "pathbuf", "std_fmt", "store"]);
     }
 
     #[test]

@@ -57,6 +57,7 @@ Dated evidence only. Decisions and queue live in PLAN.md; rules in AGENTS.md. Hi
 | --- | --- | --- |
 | 2026-10-06 | `aphrody-store` (one SQLite per home, migrations 0001–0006), `aphrody-code-graph` (Rust tree-sitter, Louvain, query/path/explain), unified `aphrody home query` (chunks, nodes, memories, one RRF). | Lexical search only; no vector channel. |
 | 2026-10-06 | Graph parity vs Graphify on this repo: 105,977 nodes, 234,039 edges, 3,674 communities; node Jaccard 0.935; 1 of 55,000 functions missing. | Graphify remains the oracle until criteria P1–P6 pass. |
+| 2026-10-07 | Rust grouped `use` extraction emits each imported leaf, follows aliases to their source, and preserves wildcard module paths; code-graph tests and strict Clippy pass. | Python/TypeScript extraction and full parity criteria remain open. |
 | 2026-10-06 | Imports after dry-run: global home 14,331 memories, 720 sessions; dbfr 421 documents, 2,362 chunks; aphrody 37 memories. | Home sync is preview-first; `--apply` takes a verified backup. |
 
 ## Infra, hosts, release
