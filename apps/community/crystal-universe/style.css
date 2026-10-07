@@ -84,6 +84,14 @@ canvas {
   border: 1px solid #64799e;
   border-radius: 0.8rem;
 }
+#arena-webgpu {
+  aspect-ratio: 12 / 5;
+  height: auto;
+}
+.render-note {
+  color: #b7c5df;
+  font-size: 0.9rem;
+}
 .world-map {
   margin: 1.4rem 0;
   padding: 1rem;

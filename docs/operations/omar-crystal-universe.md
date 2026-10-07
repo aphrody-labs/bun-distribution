@@ -184,8 +184,9 @@ ni de personnages Xenoverse. Si le stockage est indisponible, l'avatar reste
 utilisable en mémoire.
 
 Vérification : test couvrant choix valides, normalisation de saisies invalides,
-sérialisation/relecture et JSON corrompu. L'éditeur est un prototype 2D : aucun morph
-3D, réglage avancé de proportions, équipement du jeu ou sauvegarde multijoueur.
+sérialisation/relecture et JSON corrompu. Ces choix pilotent désormais aussi des
+formes géométriques dans l'arène WebGPU ci-dessous, sans morph avancé de proportions,
+équipement du jeu ou sauvegarde multijoueur.
 
 ## 2026-10-07 — Filtre de recherche OCR du manga
 
@@ -228,3 +229,25 @@ budget maximum 25 par passe) : campagne achevée à 105 tentatives, 60 pages éc
 140 chunks, zéro erreur, frontier vide et `complete:true`. `aphrody home query`
 retrouve les documents indexés sous ce label. La recherche contient des références
 officielles, sans changer la limite de couverture documentaire ci-dessus.
+
+## 2026-10-07 — Arène 3D WebGPU et déplacement souris
+
+`apps/community/crystal-universe/webgpu.js` ajoute une scène originale faite de
+géométrie procédurale pour le combattant, les adversaires, le sol et les tirs.
+Le rendu utilise l'API WebGPU du navigateur, un pipeline WGSL, profondeur et
+redimensionnement par `ResizeObserver`; le Canvas 2D existant reste actif lorsque
+WebGPU ou son adaptateur est absent ou que le device est perdu. Aucun modèle
+Xenoverse ni asset tiers n'est importé. `game.js` relie le clic/glisser sur l'arène
+au déplacement du personnage; attaques et actions restent au clavier, à la manette
+et aux boutons tactiles. Race, peau, coiffure, cheveux et tenue sont traduits en
+formes originales.
+
+Contrôles : 8 tests du moteur / 32 assertions, dont le déplacement souris,
+oxlint strict, oxfmt et `git diff --check` passent; `bun build --target browser`
+groupe 6 modules. Les routes locales `/`, `/game.js`, `/engine.js`, `/webgpu.js`,
+`/style.css` répondent 200 et le proxy RAG manga renvoie 8 résultats pour `Goku`.
+L'outil Aphrody Browser refuse les URL
+loopback (`127.0.0.1`) comme IP privée; l'exécution réelle du pipeline et le rendu
+sur adaptateur GPU restent donc non qualifiés. Cette évolution est une arène
+prototype côté navigateur : elle n'intègre ni moteur Rust/WASM, ni multijoueur,
+ni données/assets Xenoverse 2.

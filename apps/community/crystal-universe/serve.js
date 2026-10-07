@@ -3,6 +3,7 @@ const files = new Set([
   "index.html",
   "style.css",
   "game.js",
+  "webgpu.js",
   "engine.js",
   "gamepad.js",
   "avatar.js",

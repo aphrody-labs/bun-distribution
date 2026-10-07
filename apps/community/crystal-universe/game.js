@@ -1,10 +1,32 @@
 // SPDX-License-Identifier: Apache-2.0
-import { createGame, step } from "./engine.js";
+import { createGame, pointerDirection, step } from "./engine.js";
 import { drawAge1000Map } from "./age1000-map.js";
 import { readGamepadInput } from "./gamepad.js";
 import { loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
+import { createWebGpuArena } from "./webgpu.js";
 const canvas = document.querySelector("#arena"),
   ctx = canvas.getContext("2d");
+const webGpuCanvas = document.querySelector("#arena-webgpu");
+let webGpuArena = null;
+createWebGpuArena(webGpuCanvas)
+  .then((renderer) => {
+    if (!renderer) return null;
+    webGpuArena = renderer;
+    canvas.hidden = true;
+    webGpuCanvas.hidden = false;
+    renderer.lost.then(() => {
+      if (webGpuArena !== renderer) return false;
+      webGpuArena = null;
+      webGpuCanvas.hidden = true;
+      canvas.hidden = false;
+      return true;
+    });
+    return renderer;
+  })
+  .catch(() => {
+    webGpuCanvas.hidden = true;
+    return null;
+  });
 const hud = document.querySelector("#hud"),
   result = document.querySelector("#result");
 const mapCanvas = document.querySelector("#world-map");
@@ -28,7 +50,8 @@ let game = createGame(),
 const held = new Set(),
   pointers = new Map();
 let controllerConnected = false,
-  gamepadStartWasPressed = false;
+  gamepadStartWasPressed = false,
+  mouseTarget = null;
 const keys = {
   ArrowLeft: "left",
   ArrowRight: "right",
@@ -57,6 +80,7 @@ for (const field of Object.values(avatarFields)) {
 function clear() {
   held.clear();
   pointers.clear();
+  mouseTarget = null;
 }
 function pause(value) {
   paused = value;
@@ -84,6 +108,22 @@ window.addEventListener("keydown", (e) => {
 window.addEventListener("keyup", (e) =>
   held.delete(keys[e.key.length === 1 ? e.key.toLowerCase() : e.key]),
 );
+for (const arenaCanvas of [canvas, webGpuCanvas]) {
+  arenaCanvas.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    const bounds = arenaCanvas.getBoundingClientRect();
+    mouseTarget = Math.max(0, Math.min(960, ((event.clientX - bounds.left) / bounds.width) * 960));
+  });
+  arenaCanvas.addEventListener("pointermove", (event) => {
+    if (event.buttons & 1) {
+      const bounds = arenaCanvas.getBoundingClientRect();
+      mouseTarget = Math.max(
+        0,
+        Math.min(960, ((event.clientX - bounds.left) / bounds.width) * 960),
+      );
+    }
+  });
+}
 window.addEventListener("gamepadconnected", () => {
   controllerConnected = true;
   result.textContent =
@@ -161,7 +201,7 @@ function fighter(x, y, color, transformed, facing = 1, customAvatar = null) {
   ctx.fillStyle = "#0b1020";
   ctx.fillRect(x + facing * 4 - 2, y - 45, 4, 4);
 }
-function draw() {
+function draw2d() {
   ctx.clearRect(0, 0, 960, 400);
   const gradient = ctx.createLinearGradient(0, 0, 0, 400);
   gradient.addColorStop(0, "#171d43");
@@ -197,6 +237,10 @@ function draw() {
     ctx.ellipse(s.x, s.y, 15, 8, 0, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+function draw() {
+  if (webGpuArena) webGpuArena.render(game, avatar);
+  else draw2d();
   drawAge1000Map(mapContext, mapCanvas.width, mapCanvas.height);
 }
 function frame(now) {
@@ -212,6 +256,9 @@ function frame(now) {
     const input = {};
     for (const action of [...held, ...pointers.values()]) input[action] = true;
     for (const [action, pressed] of Object.entries(gamepadInput)) input[action] ||= pressed;
+    const mouseDirection = pointerDirection(mouseTarget, game.player.x);
+    if (mouseDirection) input[mouseDirection] = true;
+    else mouseTarget = null;
     step(game, input, dt);
     if (game.status !== "playing") {
       active = false;
@@ -223,7 +270,7 @@ function frame(now) {
     }
   }
   const p = game.player;
-  hud.textContent = `${avatar.name} · Vie ${Math.ceil(p.hp)} / 100 · Énergie ${Math.floor(p.energy)} / 100 · Vague ${game.wave} / 5 · Score ${game.score}${p.transformed ? " · Transformation active" : ""}`;
+  hud.textContent = `${avatar.name} · Vie ${Math.ceil(p.hp)} / 100 · Énergie ${Math.floor(p.energy)} / 100 · Vague ${game.wave} / 5 · Score ${game.score}${p.transformed ? " · Transformation active" : ""} · ${webGpuArena ? "3D WebGPU" : "Canvas 2D"}`;
   draw();
   requestAnimationFrame(frame);
 }

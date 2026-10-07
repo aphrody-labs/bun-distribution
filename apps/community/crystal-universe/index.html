@@ -11,7 +11,10 @@
     <header>
       <p class="eyebrow">Le mini-jeu d'Omar · Prototype original</p>
       <h1>Dragon <span>Pixel</span></h1>
-      <p>Charge ton énergie. Transforme-toi. Repousse cinq vagues de guerriers.</p>
+      <p>
+        Charge ton énergie. Transforme-toi. Repousse cinq vagues de guerriers; clique dans l’arène
+        pour te déplacer.
+      </p>
     </header>
     <main>
       <section class="setup">
@@ -58,6 +61,18 @@
         aria-label="Arène de combat 2D. Les statistiques et le résultat sont affichés en texte."
         >Ce jeu nécessite un navigateur prenant en charge Canvas.</canvas
       >
+      <canvas
+        id="arena-webgpu"
+        width="960"
+        height="400"
+        role="img"
+        aria-label="Arène 3D WebGPU avec le combattant, les adversaires et les projectiles. Les statistiques sont affichées dans le texte adjacent."
+        hidden
+      ></canvas>
+      <p class="render-note">
+        Rendu 3D WebGPU si disponible; repli Canvas 2D sinon. J/K/L/T ou les boutons à l’écran
+        servent à combattre.
+      </p>
       <section class="world-map" aria-labelledby="world-map-title">
         <div>
           <p class="eyebrow">Carte d’expédition · AGE 1000</p>
