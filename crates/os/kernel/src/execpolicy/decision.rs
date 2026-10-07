@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{Error, Result};
+use crate::execpolicy::error::{Error, Result};
 
 /// Outcome of evaluating a command against an execution policy.
 ///

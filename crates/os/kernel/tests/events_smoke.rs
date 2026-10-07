@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Integration smoke tests for `aphrody-events`.
+//! Integration smoke tests for the kernel `events` module.
 //!
 //! These tests exercise the public surface end-to-end: subscriber dispatch,
 //! topic filtering, NDJSON sink durability, broadcast stream wiring,
@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use aphrody_events::{
+use aphrody_kernel::events::{
     CounterSubscriber, Event, EventBus, EventId, EventLevel, EventsError, MemorySinkSubscriber,
     NdjsonSinkSubscriber, Subscriber,
 };

@@ -9,7 +9,7 @@ use std::{
     },
 };
 
-use aphrody_events::{Event as AuditEvent, EventLevel, NdjsonSinkSubscriber};
+use crate::events::{Event as AuditEvent, EventLevel, NdjsonSinkSubscriber};
 use tokio::task::JoinHandle;
 
 use crate::AgentBus;

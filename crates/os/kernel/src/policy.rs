@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-use aphrody_execpolicy::{ApprovalPolicy, Policy, PolicyParser};
+use crate::execpolicy::{ApprovalPolicy, Policy, PolicyParser};
 use std::path::Path;
 #[derive(Clone)]
 pub(crate) struct DispatchPolicy(Policy);

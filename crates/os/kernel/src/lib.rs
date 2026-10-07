@@ -30,6 +30,8 @@ pub mod client;
 #[cfg(feature = "builtins")]
 pub mod compat;
 pub mod cloud;
+pub mod events;
+pub mod execpolicy;
 #[cfg(feature = "builtins")]
 pub mod coreutils;
 mod gcs;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Parser for `.codexpolicy` rules files.
 
-use crate::{
+use crate::execpolicy::{
     decision::Decision,
     error::{Error, Result},
     policy::Policy,

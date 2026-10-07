@@ -1141,29 +1141,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-events"
-version = "1.0.0-canary"
-dependencies = [
- "async-trait",
- "chrono",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "aphrody-execpolicy"
-version = "1.0.0-canary"
-dependencies = [
- "serde",
- "shlex 2.0.1",
- "thiserror 2.0.21",
-]
-
-[[package]]
 name = "aphrody-ffi"
 version = "1.0.0"
 dependencies = [
@@ -1461,14 +1438,13 @@ version = "1.0.0-canary"
 dependencies = [
  "anyhow",
  "aphrody-bun-docs",
- "aphrody-events",
- "aphrody-execpolicy",
  "aphrody-kernel-client",
  "aphrody-nu",
  "aphrody-subsystem",
  "aphrody-toolchains",
  "aphrody-winclean",
  "async-trait",
+ "chrono",
  "clap",
  "gix",
  "libc",
@@ -1477,6 +1453,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
+ "shlex 2.0.1",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",

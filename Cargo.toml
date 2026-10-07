@@ -73,7 +73,6 @@ aphrody-context = { path = "crates/ai/context", version = "1.0.0", features = []
 aphrody-embed = { path = "crates/ai/embed", version = "1.0.0", default-features = false, features = [] }
 aphrody-engine = { path = "crates/ai/engine", version = "1.0.0", features = [] }
 aphrody-engine-mistralrs = { path = "crates/ai/engine-mistralrs", version = "1.0.0" }
-aphrody-events = { path = "crates/os/events", version = "1.0.0-canary", features = [] }
 aphrody-firefly = { path = "crates/ai/firefly", version = "1.0.0", features = [] }
 aphrody-fsindex = { path = "crates/os/fsindex", version = "1.0.0-canary", features = [] }
 aphrody-gateway = { path = "crates/ai/gateway", version = "1.0.0", features = [] }
@@ -292,7 +291,6 @@ pbjson             = { version = "0.9" }
 pbjson-types       = { version = "0.9" }
 pbjson-build       = { version = "0.9" }
 aphrody-cron = { path = "crates/os/cron", version = "1.0.0-canary", features = [] }
-aphrody-execpolicy = { path = "crates/os/execpolicy", version = "1.0.0-canary", features = [] }
 aphrody-sandbox = { path = "crates/os/sandbox", version = "1.0.0-canary", features = [] }
 aphrody-task-runner = { path = "crates/os/task-runner", version = "1.0.0-canary", features = [] }
 aphrody-telemetry = { path = "crates/os/telemetry", version = "1.0.0-canary", features = [] }

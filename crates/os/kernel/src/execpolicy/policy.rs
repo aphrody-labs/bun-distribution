@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
+use crate::execpolicy::{
     decision::Decision,
     rule::{PrefixRule, RuleMatch},
 };
@@ -191,7 +191,7 @@ impl Policy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rule::PrefixPattern;
+    use crate::execpolicy::rule::PrefixPattern;
 
     #[test]
     fn test_policy_resolution_max_severity() {

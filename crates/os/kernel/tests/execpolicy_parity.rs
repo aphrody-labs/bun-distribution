@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 use std::fs;
 
-use aphrody_execpolicy::{ApprovalPolicy, Decision, PolicyParser};
+use aphrody_kernel::execpolicy::{ApprovalPolicy, Decision, PolicyParser};
 
 #[test]
 fn test_parse_upstream_example_codexpolicy() {

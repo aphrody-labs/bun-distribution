@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! aphrody-events — in-process async event bus for cross-crate observability.
+//! events — in-process async event bus for cross-crate observability.
 //!
 //! The event bus complements the existing aphrody runtime crates with a
 //! lightweight publish / subscribe surface that has no external broker
@@ -33,9 +33,9 @@
 //!
 //! ```no_run
 //! use std::sync::Arc;
-//! use aphrody_events::{Event, EventBus, EventLevel, CounterSubscriber};
+//! use aphrody_kernel::events::{Event, EventBus, EventLevel, CounterSubscriber};
 //!
-//! # async fn run() -> Result<(), aphrody_events::EventsError> {
+//! # async fn run() -> Result<(), aphrody_kernel::events::EventsError> {
 //! let bus = EventBus::new(1024);
 //! let counter = Arc::new(CounterSubscriber::new("counter", Vec::<String>::new()));
 //! bus.subscribe(counter.clone()).await;
