@@ -48,8 +48,13 @@ nom `yolo` il exécute le CLI embarqué ; sous le nom `vu` le CLI délègue à l
 - [x] Packaging : `scripts/release/release.ts` empaquette l'artefact de la forge (`YOLO_BINARY`) avec les liens
   `bun` et `vu` (chemin `packages/engine/yolo` corrigé) ; `packages/engine/yolo/install.sh` vérifie l'alias `bun` de la livraison et
   accepte `YOLO_NO_ALIASES=1` pour ne pas masquer un `bun`/`vu` existant du PATH.
-- [ ] Ouvert : activation locale (les liens `~/.local/bin/yolo`, `bun`, `vu` pointent encore vers l'ancien CLI
-  compilé et le Bun officiel 1.4.2 ; `packageManager` `bun@1.4.2` dans 20 manifestes) ; `install.ps1` et Windows
+- [x] Activation locale (2026-10-07) : la release qualifiée `qualification-20261007-embedded` (moteur `a4d88d124`,
+  `libaphrody_ffi` ABI 1.5 embarqué) est installée par `install.sh` dans `~/.yolo` (`yolo`, liens `bun` et `vu`) ;
+  `~/.bun/bin/bun` et `~/.local/bin/vu` pointent sur ces liens, `~/.local/bin/yolo` sur `~/.yolo/bin/yolo` ; le Bun
+  officiel reste en `~/.bun/bin/bun-1.4.2` (retour arrière : relier `bun` dessus) et `bunx` y pointe jusqu'à la
+  prochaine forge (fork `1ab54728c6` : `argv0` `bunx` = moteur) ; `bun-fork` et son répertoire sont retirés.
+- [ ] Ouvert : `packageManager` `bun@1.4.2` dans 20 manifestes (les sessions cloud installent le Bun officiel
+  qu'il nomme) ; `install.ps1` et Windows
   (pas de liens symboliques, pas de build fork Windows) ; fort découplage du `yolo` historique `~/.yolo` ; `libaphrody`
   (PyO3) en `RTLD_GLOBAL` est le côté du plan vu ; asset d'outillage natif (`--yolo-asset`) non embarqué dans le
   reçu ci-dessus (`asset: null`) : les commandes qui l'exigent restent à qualifier.
