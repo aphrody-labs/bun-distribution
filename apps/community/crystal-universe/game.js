@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createGame, step } from "./engine.js";
 import { drawAge1000Map } from "./age1000-map.js";
+import { readGamepadInput } from "./gamepad.js";
 const canvas = document.querySelector("#arena"),
   ctx = canvas.getContext("2d");
 const hud = document.querySelector("#hud"),
@@ -16,6 +17,8 @@ let game = createGame(),
   last = 0;
 const held = new Set(),
   pointers = new Map();
+let controllerConnected = false,
+  gamepadStartWasPressed = false;
 const keys = {
   ArrowLeft: "left",
   ArrowRight: "right",
@@ -57,6 +60,15 @@ window.addEventListener("keydown", (e) => {
 window.addEventListener("keyup", (e) =>
   held.delete(keys[e.key.length === 1 ? e.key.toLowerCase() : e.key]),
 );
+window.addEventListener("gamepadconnected", () => {
+  controllerConnected = true;
+  result.textContent =
+    "Manette connectée. Stick gauche ou croix pour bouger; A saute, X combo, B projectile, Y charge, LB transforme et Start met en pause.";
+});
+window.addEventListener("gamepaddisconnected", () => {
+  controllerConnected = [...navigator.getGamepads()].some(Boolean);
+  if (!controllerConnected) result.textContent = "Manette déconnectée.";
+});
 for (const button of document.querySelectorAll("[data-action]")) {
   button.addEventListener("pointerdown", (e) => {
     e.preventDefault();
@@ -138,9 +150,16 @@ function draw() {
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
+  const gamepad = [...navigator.getGamepads()].find(Boolean);
+  controllerConnected = Boolean(gamepad);
+  const { input: gamepadInput, startPressed: gamepadStartPressed } = readGamepadInput(gamepad);
+  if (gamepadStartPressed && !gamepadStartWasPressed && active && game.status === "playing")
+    pause(!paused);
+  gamepadStartWasPressed = gamepadStartPressed;
   if (active && !paused) {
     const input = {};
     for (const action of [...held, ...pointers.values()]) input[action] = true;
+    for (const [action, pressed] of Object.entries(gamepadInput)) input[action] ||= pressed;
     step(game, input, dt);
     if (game.status !== "playing") {
       active = false;

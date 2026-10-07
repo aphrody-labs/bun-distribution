@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-const files = new Set(["index.html", "style.css", "game.js", "engine.js", "age1000-map.js"]);
+const files = new Set([
+  "index.html",
+  "style.css",
+  "game.js",
+  "engine.js",
+  "gamepad.js",
+  "age1000-map.js",
+]);
 const shenronBase = process.env.SHENRON_API_BASE || "https://bot.dragonballfr.com";
 const server = Bun.serve({
   hostname: "127.0.0.1",

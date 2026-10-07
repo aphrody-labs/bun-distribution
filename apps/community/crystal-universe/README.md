@@ -6,7 +6,7 @@ Mini-jeu original jouable dans un navigateur : combattant personnalisable, arèn
 2D, combos, sauts, projectiles, charge d'énergie et transformation de huit secondes.
 Cinq vagues d'adversaires IA, score, victoire/défaite, pause et reprise.
 Trois styles (équilibré, vitesse, puissance) et couleur personnalisable.
-Clavier et sept boutons tactiles avec gestion des pointeurs simultanés.
+Clavier, manette Gamepad API et sept boutons tactiles avec gestion des pointeurs simultanés.
 
 La proposition fusionne la charge/transformation et le combat d'arène de Dragon
 Crystal avec la personnalisation et l'invasion par vagues de Warriors of the
@@ -25,6 +25,8 @@ Le serveur reste local. Aucun déploiement public n'a été effectué.
 Flèches ou Q/D : déplacement ; Espace : saut ; J : combo ; K : projectile ;
 L : charge ; T : transformation ; P : pause. Les commandes sont aussi affichées
 dans le jeu. Une perte de focus ou le passage en arrière-plan met en pause.
+Manette standard : stick gauche ou croix directionnelle, A saut, X combo, B
+projectile, Y charge, LB transformation, Start pause/reprise.
 
 La section **Carte d’expédition · AGE 1000** est un schéma Canvas original de West City
 et de ses voies d’accès. Elle utilise seulement les descriptions officielles (campus,

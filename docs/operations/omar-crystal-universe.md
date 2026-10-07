@@ -132,3 +132,19 @@ Ball et l’information des 42 volumes/519 chapitres, une fiche *Dragon Ball Sup
 et des extraits de l’arc Moro. Le corpus est documentaire et partiel : il ne contient
 pas les pages intégrales ni les images des 42 tomes; il ne prouve pas l’exhaustivité
 de DBS. Aucun profil aphrody/dbfr/ie n’a été utilisé pour cette campagne.
+
+## 2026-10-07 — Commandes manette
+
+Dragon Pixel lit maintenant l'API Gamepad du navigateur : stick gauche/croix pour
+le déplacement, boutons standard A saut, X combo, B projectile, Y charge, LB
+transformation et Start pause/reprise. Le Start est traité sur front montant pour
+que l'appui maintenu ne bascule pas plusieurs fois; le polling fonctionne également
+après reconnexion. Le module pur `gamepad.js` est servi par le serveur local.
+
+Vérification : ajout d'un test simulant axes, D-pad, boutons, Start et déconnexion;
+suite moteur `bun test apps/community/crystal-universe/engine.test.js` : 6 tests,
+24 assertions, tous verts. Oxlint strict, oxfmt et diff-check verts. Le serveur sur
+`127.0.0.1:4329` sert `/gamepad.js` (200) et la page (200); recherche RAG `Goku
+Namek` via ce serveur renvoie des résultats avec URL source. Aucun périphérique
+physique n'était connecté, donc le mapping matériel sur un vrai contrôleur reste
+non qualifié. Cette entrée ne fournit pas le rendu 3D/WebGPU ni le multijoueur.

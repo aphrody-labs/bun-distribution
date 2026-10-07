@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { test, expect } from "bun:test";
 import { createGame, step } from "./engine.js";
+import { readGamepadInput } from "./gamepad.js";
 test("energy, transformation, cooldown and expiry", () => {
   const g = createGame();
   g.player.energy = 80;
@@ -59,4 +60,28 @@ test("jump, arena bounds and character differences", () => {
   expect(b.player.x).toBeGreaterThan(a.player.x);
   for (let i = 0; i < 1000; i++) step(b, { right: true }, 0.05);
   expect(b.player.x).toBeLessThanOrEqual(936);
+});
+
+test("gamepad axes, buttons, start and disconnect map to game actions", () => {
+  const buttons = Array.from({ length: 16 }, () => ({ pressed: false }));
+  buttons[0].pressed = true;
+  buttons[1].pressed = true;
+  buttons[2].pressed = true;
+  buttons[3].pressed = true;
+  buttons[4].pressed = true;
+  buttons[9].pressed = true;
+  buttons[14].pressed = true;
+  const state = readGamepadInput({ axes: [-0.8], buttons });
+  expect(state.input).toEqual({
+    left: true,
+    right: false,
+    jump: true,
+    punch: true,
+    blast: true,
+    charge: true,
+    transform: true,
+  });
+  expect(state.startPressed).toBe(true);
+  expect(readGamepadInput({ axes: [0.8], buttons: [] }).input.right).toBe(true);
+  expect(readGamepadInput(null)).toEqual({ input: {}, startPressed: false });
 });
