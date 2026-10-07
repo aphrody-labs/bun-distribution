@@ -3,8 +3,8 @@
 The ownership tables below describe the former split-repository deployment
 design. On 2026-10-02, the root production topology marked Aphrody Web and AI
 planes retired; the active host observation found RG and Shenron releases on
-VPS. Consult the dated [VPS status](../../operations/infra/VPS-STATUS-2026-10-02.md),
-[topology observation](../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md),
+VPS. Consult the dated VPS status,
+topology observation,
 and root `config/` catalogs before operational use. This page remains a
 historical description of control-plane capabilities.
 

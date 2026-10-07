@@ -144,7 +144,7 @@ pending SHA for each repository. Restart adoption requires a fresh response from
 the matching worker; an ambiguous launch holds the queue for reconciliation.
 Worker lifecycle receipts remain owned by their worker. Rollback acceptance
 additionally requires a previous compatible
-artifact. See [the synchronization receipt](commit-sync-2026-10-04.json).
+artifact. See the synchronization receipt.
 
 The following describes the older full-engine `ship` pipeline. Its unlimited
 job count and resource settings still require separate qualification before use.
@@ -206,5 +206,5 @@ Bun frozen/without scripts, uv locked/without Python downloads, and serialized
 Cargo fetch under the installed ABI 1.4 supervisor. No engine compilation is
 performed. Missing/stale locks and failures remain explicit. The full manager
 milestone stays open beyond this Linux x64 dependency-acquisition tranche.
-See [qualification](package-manager-2026-10-04.json) and
+See qualification and
 [core API](../packages/engine/core/README.md).

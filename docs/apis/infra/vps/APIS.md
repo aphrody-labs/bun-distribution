@@ -4,7 +4,7 @@
 > **Historical snapshot:** this document describes the retired Aphrody public
 > API plane and is not a current VPS deployment inventory. The active
 > production allocation marks `aphrody-web` and `aphrody-ai` retired. Use the
-> dated [VPS observation](../../../operations/infra/VPS-STATUS-2026-10-02.md),
+> dated VPS observation,
 > [`service-catalog.json`](../../../../config/service-catalog.json), and
 > `yolo/config/host/nginx/routes.json` for current
 > deployment and route state. The API details below are retained as migration

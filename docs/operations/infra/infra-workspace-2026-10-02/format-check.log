@@ -1,6 +1,0 @@
-$ bun run format:check
-Checking formatting...
-
-All matched files use the correct format.
-Finished in 12ms on 105 files using 20 threads.
-$ oxfmt --check src test package.json tsconfig.json

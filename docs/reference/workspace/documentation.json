@@ -76,8 +76,8 @@
     {
       "path": "TODO.md",
       "title": "Livraison en cours",
-      "sha256": "958d0a5ab4124097ef65903e9461c10dfe657adfc1c62a6d7a9799fe03fd99dc",
-      "bytes": 2892,
+      "sha256": "274abb1f1b23a8056f42b265ae560b5520584d7fb8218e5ae5fa89743b1058f7",
+      "bytes": 2801,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3076,8 +3076,8 @@
     {
       "path": "docs/CORE-MODULE-BOUNDARIES.md",
       "title": "Cœur Yolo, modules Bun et fournisseurs natifs",
-      "sha256": "aad0c822a43e0f6f2e202d1526cb257663fa71a379caac426a456f5a1b1711fa",
-      "bytes": 13252,
+      "sha256": "c546d073fa1bad8f5842a952a640f436d3eb095aaeade6fcc9e951fad8332cd3",
+      "bytes": 13163,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3094,16 +3094,6 @@
       "canonical": "docs/CRATES.md"
     },
     {
-      "path": "docs/CRITICAL-ISSUES-2026-10-04.md",
-      "title": "Yolo — critical issues, 2026-10-04",
-      "sha256": "ed98c33bc02fbb511ff0d44973886903b8dcc62ff867455e9263cb3177bc0578",
-      "bytes": 6994,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/CRITICAL-ISSUES-2026-10-04.md"
-    },
-    {
       "path": "docs/DECISIONS.md",
       "title": "Runtime decisions",
       "sha256": "bb2a10feb3a2bee2736f343c07761dda64098f09153c8d02e22399226512abce",
@@ -3116,22 +3106,12 @@
     {
       "path": "docs/DISTRIBUTION.md",
       "title": "Distribution: one command to install, one archive to deploy",
-      "sha256": "0486acc18a0420b9f3e55783af764f6bdd0bd5b32e331f0bb2c8e9d34ede6a33",
-      "bytes": 5780,
+      "sha256": "26bd46095e12603b5464342810f8dfabcdd44c0a104775e6c63b7f86a3eb6e4c",
+      "bytes": 5750,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/DISTRIBUTION.md"
-    },
-    {
-      "path": "docs/FACT-CHECK-2026-10-04.md",
-      "title": "Fact-check du 2026-10-04",
-      "sha256": "135aff960a3a5df309f6c408410ef8a6e0873aa3717c8d94b6d60dfcfb2f7d09",
-      "bytes": 3657,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/FACT-CHECK-2026-10-04.md"
     },
     {
       "path": "docs/JS-TS-TOOLING.md",
@@ -3156,8 +3136,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "de8a9a4b444072a985b61560e4ccdc2043c51ce0ad4fe752d4594797ccaafbee",
-      "bytes": 8009,
+      "sha256": "0ed3f4f8215ab4195c780885b6cf9729b22dfa1df1f845e41d89e90dff3de5f2",
+      "bytes": 7898,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3194,16 +3174,6 @@
       "canonical": "docs/SERVER.md"
     },
     {
-      "path": "docs/SESSION-LEDGER-2026-10-04.md",
-      "title": "Fact-Checked Session & Autonomous Training Ledger",
-      "sha256": "ac9c18731d0950bae098cc59cdd5a7865a473635b4ab008f1170c7f3252db580",
-      "bytes": 2756,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/SESSION-LEDGER-2026-10-04.md"
-    },
-    {
       "path": "docs/STACK-DECISION.md",
       "title": "Architecture Agent-First & Maturation de la Stack",
       "sha256": "5d0d7897bd6043ce23e57f9be318b8648a90b8a139c0696fbd6534c507d37fbb",
@@ -3226,8 +3196,8 @@
     {
       "path": "docs/SUMMARY.md",
       "title": "Summary",
-      "sha256": "38be07bee36bb8cb3db05270b144cc19144a0f17ad05425807a5351fd4382a23",
-      "bytes": 942,
+      "sha256": "a8bd8fec039a33852d3fd61a58677b9a9930cb69d8287adf9dbcb091305c66f6",
+      "bytes": 881,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3236,8 +3206,8 @@
     {
       "path": "docs/TOOLING.md",
       "title": "Tooling",
-      "sha256": "56634242598699dcbaf138fa79e52e99bde30cb47d31388b092e35bb8582801a",
-      "bytes": 14405,
+      "sha256": "c3daf281cfc1283d35ba1ebec81880f1a5d4cfb6226801bd39051941c46e4755",
+      "bytes": 14339,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3252,26 +3222,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/VENDORING.md"
-    },
-    {
-      "path": "docs/ai/shared-adapters-2026-10-05.md",
-      "title": "Shared AI, CLI and MCP owners — 2026-10-05",
-      "sha256": "bb175079b8df43cfa35c65539324f6632434e63922aa67f585b65b599252ec3a",
-      "bytes": 1966,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/ai/shared-adapters-2026-10-05.md"
-    },
-    {
-      "path": "docs/ai/vector-owner-2026-10-05.md",
-      "title": "Pure vector owner — 2026-10-05",
-      "sha256": "26859dc00298f223d7cba1be3b0de456e77e400a5d56a6120943e2f683343c94",
-      "bytes": 1571,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/ai/vector-owner-2026-10-05.md"
     },
     {
       "path": "docs/apis/ai/api-unified-pattern.md",
@@ -3344,106 +3294,6 @@
       "canonical": "docs/apis/contracts/API.md"
     },
     {
-      "path": "docs/apis/discord/apps/guide/content/docs/legacy/additional-info/rest-api.mdx",
-      "title": "REST APIs",
-      "sha256": "bfb4d8daa2f18ba4c049dc2172eddcdedbed4453157343eee39f43d3c1d5cd79",
-      "bytes": 7339,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/discord/apps/guide/content/docs/legacy/additional-info/rest-api.mdx"
-    },
-    {
-      "path": "docs/apis/discord/apps/guide/content/docs/legacy/popular-topics/formatters.mdx",
-      "title": "Formatters",
-      "sha256": "d8078a5b845229e2c36512e98287c9478b83f203d428cab49261169a58a85245",
-      "bytes": 2149,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/discord/apps/guide/content/docs/legacy/popular-topics/formatters.mdx"
-    },
-    {
-      "path": "docs/apis/discord/apps/guide/content/docs/legacy/sharding/additional-information.mdx",
-      "title": "Additional Information",
-      "sha256": "61d77785b1ae45cd264f02a08958b452f461a3726f0e7c819f01c0edafc47376",
-      "bytes": 4333,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/discord/apps/guide/content/docs/legacy/sharding/additional-information.mdx"
-    },
-    {
-      "path": "docs/apis/discord/packages/api-extractor-model/CHANGELOG.md",
-      "title": "Change Log - @microsoft/api-extractor-model",
-      "sha256": "c3779b4363a33b5f0d36b1c267f8054088c5799d2924c87d034d32165ec9e17d",
-      "bytes": 14953,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/discord/packages/api-extractor-model/CHANGELOG.md"
-    },
-    {
-      "path": "docs/apis/discord/packages/api-extractor-model/README.md",
-      "title": "@discordjs/api-extractor-model",
-      "sha256": "70b72fbf85e53f2232608a52d805ddc829edfe6762dd98bee9dfa92797dedaa8",
-      "bytes": 2834,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/discord/packages/api-extractor-model/README.md"
-    },
-    {
-      "path": "docs/apis/discord/packages/api-extractor-utils/README.md",
-      "title": "Links",
-      "sha256": "d09de5cede17e8f91e881d23ee254963845b44558ebfe6405cdb505cef4e7f41",
-      "bytes": 2526,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/discord/packages/api-extractor-utils/README.md"
-    },
-    {
-      "path": "docs/apis/discord/packages/api-extractor/CHANGELOG.md",
-      "title": "Change Log - @microsoft/api-extractor",
-      "sha256": "730d8a308de774bf7874ff942fbb4c57bef99ff646bf6ed3f58b5a55c493b0ea",
-      "bytes": 52513,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/discord/packages/api-extractor/CHANGELOG.md"
-    },
-    {
-      "path": "docs/apis/discord/packages/api-extractor/README.md",
-      "title": "@discordjs/api-extractor",
-      "sha256": "f8f27ed2154f7a04fbf75a9ac6216740120a255463c49950e648ce241d45324e",
-      "bytes": 4533,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/discord/packages/api-extractor/README.md"
-    },
-    {
-      "path": "docs/apis/discord/packages/formatters/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "a81c4a19a5f446852c1a8cab3a84c41e5560ff44443b0b358a1fd56b1e1e7bf5",
-      "bytes": 5527,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/discord/packages/formatters/CHANGELOG.md"
-    },
-    {
-      "path": "docs/apis/discord/packages/formatters/README.md",
-      "title": "About",
-      "sha256": "b08572f8cfd2defbc1a50a55f4dd75d927422f510d5fc655bdd6198e17a41e7a",
-      "bytes": 4103,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/discord/packages/formatters/README.md"
-    },
-    {
       "path": "docs/apis/generated/infra-rust.md",
       "title": "Source reference: infra-rust",
       "sha256": "a5f0dc1e7713a1f98beb1095a6084ac5f3190d1dc275692c9eb149ee25b5cdd2",
@@ -3476,8 +3326,8 @@
     {
       "path": "docs/apis/infra/vps/APIS.md",
       "title": "VPS REST and GraphQL APIs — historical inventory",
-      "sha256": "80ba0ba7cb4ee71cf14d817ff09a7b30f6b89e06ff08471a5e00ed7449f4b87d",
-      "bytes": 5045,
+      "sha256": "117686b19ebac7243e3b8c3898a6b601c91cc9b88c477f6e2ea38948434a674f",
+      "bytes": 4991,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -3966,8 +3816,8 @@
     {
       "path": "docs/architecture/os/ARCHITECTURE-GAPS.md",
       "title": "Architecture gap audit",
-      "sha256": "9aef388a04a3ca0605d879d147983444d63a8ba17a95b68375065dff70ef1ca5",
-      "bytes": 11050,
+      "sha256": "4ce364aa6aef659f37c00406a5aac920390e4d7785790f9b987c87656650f7fa",
+      "bytes": 11009,
       "domain": "os",
       "status": "historical",
       "visibility": "private",
@@ -4342,666 +4192,6 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/guides/discord/.github/CONTRIBUTING.md"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/CONTRIBUTING.md",
-      "title": "Contributing",
-      "sha256": "f819c92b4542173a96c60c0d296ea74a89cc549c3aac211dce454917875e54e0",
-      "bytes": 6400,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/CONTRIBUTING.md"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/README.md",
-      "title": "Links",
-      "sha256": "48b4053e387741fb398ab54a52023c3d47ee36fd2f551d59a19fc411fa66e861",
-      "bytes": 2503,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/README.md"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/additional-features/cooldowns.mdx",
-      "title": "Cooldowns",
-      "sha256": "073ca880a546369c6a7c930a660c74160f5cd6b33ae485d01be705ba8e7251cb",
-      "bytes": 4556,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/additional-features/cooldowns.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/additional-features/reloading-commands.mdx",
-      "title": "Reloading Commands",
-      "sha256": "479527100ad4d72600a8af28b107ef88c3dd069be5bc79475734fb8fdfadcf59",
-      "bytes": 3241,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/additional-features/reloading-commands.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/async-await.mdx",
-      "title": "Understanding async/await",
-      "sha256": "6176a9564deb04655d5c9a4709054fb55b906d680d98e76e8a6016c72f226ba3",
-      "bytes": 8730,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/async-await.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/changes-in-v14.mdx",
-      "title": "Updating to v14",
-      "sha256": "0bbaebd4051afe7685782c09b504ed831888f16c892fe361faba4f90a78af3c1",
-      "bytes": 23488,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/changes-in-v14.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/collections.mdx",
-      "title": "Collections",
-      "sha256": "1096e5683a046e6a17160937c60139f3bc9456bbfdd9e34146109b4aff077197",
-      "bytes": 4029,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/collections.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/es6-syntax.mdx",
-      "title": "ES6 Syntax",
-      "sha256": "cfbd1f840086803087c06ef59d3edd27509c1dadb3cd1355f9bf8f82a0448199",
-      "bytes": 11813,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/es6-syntax.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/notation.mdx",
-      "title": "Understanding Notation",
-      "sha256": "c9b68cd907f71b6485a2837a33ad7ffddaacc7f0ceef7c9c3992e669de3cefef",
-      "bytes": 4754,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/notation.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/proxy.mdx",
-      "title": "Using a Proxy",
-      "sha256": "e4dbf7b2a90154906916138af344ba232b6a247fe70da193b7957f80752b41ef",
-      "bytes": 2116,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/additional-info/proxy.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/creating-commands.mdx",
-      "title": "Creating Slash Commands",
-      "sha256": "d83c458dc632a379785e5bfb4ebb77fff05423cfd3f043b4d77eedffe7a07e71",
-      "bytes": 6121,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/creating-commands.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/deploying-commands.mdx",
-      "title": "Registering Commands",
-      "sha256": "539299eb2b5096e067bf10fa1c849d553c0a5b0f4d9605c66cd8be394dcdbb6d",
-      "bytes": 6660,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/deploying-commands.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/handling-commands.mdx",
-      "title": "Command Handling",
-      "sha256": "968849cca092978a98deebb019f226a1651cb43d53753fb90b4ff468a6ae867e",
-      "bytes": 8140,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/handling-commands.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/handling-events.mdx",
-      "title": "Event Handling",
-      "sha256": "dcbf1eb4e7ff0e878417316cf2cbc70d485e8d64ea028b55b2c51d06b1d9dd2d",
-      "bytes": 8909,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/handling-events.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/main-file.mdx",
-      "title": "The Main File",
-      "sha256": "2c4d54a55ead8ba5624e07d14f356e33afbc226872fc8f90f1dd4bd03c72b2da",
-      "bytes": 2492,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/main-file.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/project-setup.mdx",
-      "title": "Project Setup",
-      "sha256": "8dc282b9f3ad260b844cbe119c36eaacb82866a992c670f28f80fc03080e5593",
-      "bytes": 5089,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/app-creation/project-setup.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/improving-dev-environment/package-json-scripts.mdx",
-      "title": "Package Scripts",
-      "sha256": "469da9ba18ec7e1ebdee22a991e46f93ae01e08315f2691356cc3b3b8c1e5443",
-      "bytes": 4311,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/improving-dev-environment/package-json-scripts.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/improving-dev-environment/pm2.mdx",
-      "title": "PM2",
-      "sha256": "599555faa1c1feb59b836d789473558e8ca13949f85faec8eb991c8af43f35b8",
-      "bytes": 3603,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/improving-dev-environment/pm2.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/index.mdx",
-      "title": "Introduction",
-      "sha256": "cbfd7ade8c1a648fd2016ad66ba3df01b6a9dc8f758997f36d36020d8a53d6a8",
-      "bytes": 2419,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/index.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/interactions/context-menus.mdx",
-      "title": "Context Menus",
-      "sha256": "2d860ee510f745a3e84bd1c2adabfd079d7ba4c0ec5589b01c29b0e784b83703",
-      "bytes": 2340,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/interactions/context-menus.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/interactions/modals.mdx",
-      "title": "Modals",
-      "sha256": "08ebb2265e46a9f36dcde13a115c105ead5571ba12a5ed024f7465bce4883f7f",
-      "bytes": 19174,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/interactions/modals.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/interactive-components/action-rows.mdx",
-      "title": "Action Rows",
-      "sha256": "a13e4c033ec09e9d6cadc43d98525900fe4ba30fa4f992176196545f63d14895",
-      "bytes": 1714,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/interactive-components/action-rows.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/interactive-components/buttons.mdx",
-      "title": "Buttons",
-      "sha256": "9a1d3bbc75ac9d9c08d1fd0df4076183e0d06f24bcbf6f7b5f912f21af4dc83d",
-      "bytes": 5426,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/interactive-components/buttons.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/interactive-components/interactions.mdx",
-      "title": "Interactions",
-      "sha256": "4538ac69a863d05fde6f34a4c239a3b8e4a596f04d3ead4e89474261d34c8692",
-      "bytes": 9405,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/interactive-components/interactions.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/interactive-components/select-menus.mdx",
-      "title": "Select Menus",
-      "sha256": "1f3ac8b204731cb6b1d212fc46993accd16e86bc7f82c7d4b9878699f64a114f",
-      "bytes": 6145,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/interactive-components/select-menus.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/keyv/keyv.mdx",
-      "title": "Keyv",
-      "sha256": "11dcd231c7522c6954de9aa796c2697758df170c01defb9fc4c903c8437a6a50",
-      "bytes": 6191,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/keyv/keyv.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/miscellaneous/cache-customization.mdx",
-      "title": "Cache Customization",
-      "sha256": "5fb76b40f3138a5d779056f44a24bdebb152e7f47e90503b100a78a067ec335e",
-      "bytes": 3737,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/miscellaneous/cache-customization.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/miscellaneous/useful-packages.mdx",
-      "title": "Useful Packages",
-      "sha256": "70ff2d97e73830315e3a4c16e6755cb9eab5dc9e358e486feec5d6902fc987c1",
-      "bytes": 9437,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/miscellaneous/useful-packages.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/oauth2/oauth2.mdx",
-      "title": "OAuth2",
-      "sha256": "da7daa6be214cbb8945bb3f4b7ad4cee69f3b440a0aac37d242c8bb82d412144",
-      "bytes": 9902,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/oauth2/oauth2.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/audit-logs.mdx",
-      "title": "Audit Logs",
-      "sha256": "b8a5c5f07a472d2c1afb0e5c81fb124583912bbb9cb302c5c52d03d410e2cd2d",
-      "bytes": 4290,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/audit-logs.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/canvas.mdx",
-      "title": "Canvas",
-      "sha256": "f339aa19aeeb8a4def31ce9542643be7d74c3232ba6eaa2ac8720683f53408de",
-      "bytes": 11478,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/canvas.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/collectors.mdx",
-      "title": "Collectors",
-      "sha256": "d8921b1fbe732b0cd0a46880ce80634f9416a7b202ab9ab9d25b4cd68b573236",
-      "bytes": 9901,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/collectors.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/display-components.mdx",
-      "title": "Display Components",
-      "sha256": "c7be07782e12dc22390f5216fcb1e262d2a99943bf0351c417986258e4c10e65",
-      "bytes": 11155,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/display-components.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/embeds.mdx",
-      "title": "Message Embeds",
-      "sha256": "1f5c2d26bf5c063b31020cb6d77bdc06f9dc1c200adb3530296ea052a2b8cc09",
-      "bytes": 7844,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/embeds.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/errors.mdx",
-      "title": "Common Errors",
-      "sha256": "3d79e54d6be3b8378a8403b8b967f6f7490b3566aadff487fc0a0f18448c8e6b",
-      "bytes": 12185,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/errors.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/faq.mdx",
-      "title": "FAQ",
-      "sha256": "1b1cb1b37a19de25e76be0b5140e1331f2900d96e6e2d0519586cdfabdccf87e",
-      "bytes": 12351,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/faq.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/intents.mdx",
-      "title": "Gateway Intents",
-      "sha256": "0419dcbca514960382c19b97830cb9656fc9af1571fc4fc559ff9756f421d305",
-      "bytes": 6704,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/intents.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/partials.mdx",
-      "title": "Partials",
-      "sha256": "a834d298eb667fed9dff7a6eea663938a9d3c27baf7ed9ace23b19b34210baa2",
-      "bytes": 4048,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/partials.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/permissions-extended.mdx",
-      "title": "Permissions (extended)",
-      "sha256": "b6ff77f5123d34c0a75f63bcd9a53eeb97f680b44b9e7eee34fb3c8063f9bb2f",
-      "bytes": 7098,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/permissions-extended.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/permissions.mdx",
-      "title": "Permissions",
-      "sha256": "285af2908a732e378b4d70d52ef87e9c8bef14026083ff11138d7371257c6730",
-      "bytes": 15522,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/permissions.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/reactions.mdx",
-      "title": "Reactions",
-      "sha256": "af1bbb31a712c2724eaf72f83de84e73ea65396cd4c1c2e14e05e94128114896",
-      "bytes": 13501,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/reactions.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/threads.mdx",
-      "title": "Threads",
-      "sha256": "e916fe864d479990cb15f2539d86fad12cb9dacb4cd4d7ffed7ffcb7219348d2",
-      "bytes": 6638,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/threads.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/webhooks.mdx",
-      "title": "Webhooks",
-      "sha256": "e472fa65c92cfe8ad8bf0e8ee3d55439ac20cad7930b7d917589910b16bfbaf1",
-      "bytes": 7511,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/popular-topics/webhooks.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/preparations/adding-your-app.mdx",
-      "title": "Adding Your App",
-      "sha256": "b5edd32eb87c27659b944b4050c72d3be3c59bf79da96c14e89c322dfd5c035c",
-      "bytes": 2552,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/preparations/adding-your-app.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/preparations/app-setup.mdx",
-      "title": "Application Setup",
-      "sha256": "1fc845c22f66f6c0127cd531a395816e07963625f6ff76b4322356ed07510390",
-      "bytes": 3413,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/preparations/app-setup.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/preparations/installation.mdx",
-      "title": "Installing Node.js and discord.js",
-      "sha256": "479022d86ae7bb7fe5e7148c8ef12d7d7c6b2e97256de3d94da49b52d0953570",
-      "bytes": 4317,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/preparations/installation.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/preparations/linter.mdx",
-      "title": "Linters",
-      "sha256": "cbe18f6aa1dab356b0c611a3084ab21b3fc36bab846706652273cb13828a107a",
-      "bytes": 5536,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/preparations/linter.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/sequelize/currency.mdx",
-      "title": "Making a Currency System",
-      "sha256": "8141cfc13700c64ec98bec99d539994cf4d1f049e43d132765df693f1bd2bed2",
-      "bytes": 18139,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/sequelize/currency.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/sequelize/index.mdx",
-      "title": "Sequelize",
-      "sha256": "265d463de9e980763b36bcaf51968f2aa493c8c42b1675a59e458f182fbd99cc",
-      "bytes": 15587,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/sequelize/index.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/sharding/extended.mdx",
-      "title": "Advanced Sharding",
-      "sha256": "7662908f566f86669e3dff6e8645f220bbd26cb3fab1b8f0849c05408cd6e474",
-      "bytes": 6610,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/sharding/extended.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/sharding/index.mdx",
-      "title": "App Sharding",
-      "sha256": "2f6794300b28c186a9df70cfeb06092b6ce2e63e3f2f19009a67b994eac41e57",
-      "bytes": 10861,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/sharding/index.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/advanced-creation.mdx",
-      "title": "Advanced Command Creation",
-      "sha256": "1f44da87887f8d4bf1ea971f011b389f20996c8858ddbe61c36e94cbbaca4941",
-      "bytes": 10384,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/advanced-creation.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/autocomplete.mdx",
-      "title": "Autocomplete",
-      "sha256": "3512d5b94a746c3c2d060620e149e1010fb741e358b11eff1a37e829da4a02bc",
-      "bytes": 8491,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/autocomplete.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/deleting-commands.mdx",
-      "title": "Deleting Commands",
-      "sha256": "42e2cdf55b74058845cfd8ba071e4605984e8ff0311999d1de35d25cda1c4142",
-      "bytes": 2733,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/deleting-commands.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/parsing-options.mdx",
-      "title": "Parsing Options",
-      "sha256": "fc2067e795bd476168fefa6b420a06a24207d789278ac3b9875a8982d8779f89",
-      "bytes": 5057,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/parsing-options.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/permissions.mdx",
-      "title": "Slash Command Permissions",
-      "sha256": "bc4476063196b18a873736abccd3b69a4db902dc2b30e419b73765081aab7c36",
-      "bytes": 4404,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/permissions.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/response-methods.mdx",
-      "title": "Command Responses",
-      "sha256": "2c6cb4c186d5b88de7fc235dc3d8e8c093937a453a9e26ebf27cdfd96437a81e",
-      "bytes": 7426,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/legacy/slash-commands/response-methods.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/rpc/app-setup.mdx",
-      "title": "Application Setup",
-      "sha256": "d4c18528765f866ad95615efe6d585b52dd3b5c7ee3608df23007db1e86cd513",
-      "bytes": 1043,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/rpc/app-setup.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/rpc/index.mdx",
-      "title": "Usage",
-      "sha256": "a2425e722ed724edffd7ceee9eb30fc0f57f91574df7a75c9337b2494835168e",
-      "bytes": 1213,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/rpc/index.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/v15/index.mdx",
-      "title": "Updating to v15",
-      "sha256": "3521f068b83dbf3acc54a496b141d5f6102179d04d9258e778d74b8c2b2835ae",
-      "bytes": 13202,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/v15/index.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/voice/audio-player.mdx",
-      "title": "Audio Player",
-      "sha256": "e7b2fa71eb2d901db5c00df837c62f8809477cfebe6f685563c1d23480c7e37c",
-      "bytes": 5023,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/voice/audio-player.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/voice/audio-resources.mdx",
-      "title": "Audio Resources",
-      "sha256": "3a0e60f093351a9d568f657849fb627218f1022b0061cdfc3eab0eb0b0a5d7ee",
-      "bytes": 6118,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/voice/audio-resources.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/voice/index.mdx",
-      "title": "Installation",
-      "sha256": "60671431e3541cbf38ba6980ceb4beaf72685bb8894ed7010341d9ed260a2eac",
-      "bytes": 4606,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/voice/index.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/voice/life-cycles.mdx",
-      "title": "Life Cycles",
-      "sha256": "6b9398c5c4f27b6a2ed73b5beb6590be98e02ab57bf14a54fb13b27b7dbe90ae",
-      "bytes": 2642,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/voice/life-cycles.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/voice/seeking.mdx",
-      "title": "Seeking",
-      "sha256": "de3bf32bad2722df46aca4711a2e1cc9f0177b76391a7c36493d83bd198db26a",
-      "bytes": 1720,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/voice/seeking.mdx"
-    },
-    {
-      "path": "docs/guides/discord/apps/guide/content/docs/voice/voice-connections.mdx",
-      "title": "Voice Connections",
-      "sha256": "3d011e362be601ab3c6e7804f3a6077b59a34ec31675bcdb68b6fd216172fe26",
-      "bytes": 6254,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/guides/discord/apps/guide/content/docs/voice/voice-connections.mdx"
     },
     {
       "path": "docs/guides/upstream-bun/CONTRIBUTING.md",
@@ -7116,8 +6306,8 @@
     {
       "path": "docs/operations/ai/RELEASE-CHECKLIST.md",
       "title": "Release Checklist",
-      "sha256": "d5bcf96cf529e1389bf5a2c1a770ca5736b4efe3dcab2e4484ee7b218e74cf34",
-      "bytes": 5280,
+      "sha256": "84d0e8c3c07fc4449a44018700557f8ef3aa86b5943ebb4726e9aa9baaadc1d8",
+      "bytes": 5251,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -7144,16 +6334,6 @@
       "canonical": "docs/operations/ai/automation_and_deployment.md"
     },
     {
-      "path": "docs/operations/ai/cli-mcp-gates-2026-10-03.md",
-      "title": "Reprise des gates CLI/MCP — 2026-10-03",
-      "sha256": "d8c765d85b8793e48c9312e0e75ba3a9088bb20a9a30e969e43fbe5cf037b9da",
-      "bytes": 2364,
-      "domain": "ai",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/ai/cli-mcp-gates-2026-10-03.md"
-    },
-    {
       "path": "docs/operations/ai/google-drive-sync.md",
       "title": "Shenron Agent Home ↔ Google Drive",
       "sha256": "0c4007d64562a9c484f0e2921d7d5dcffeba9ef803b2defeb8b3f3ba17354fc5",
@@ -7162,16 +6342,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/ai/google-drive-sync.md"
-    },
-    {
-      "path": "docs/operations/ai/shenron-live-rag-2026-10-03.md",
-      "title": "Qualification du RAG Shenron — 2026-10-03",
-      "sha256": "90c1aee481fb0933517c321b09806f0256c8f541362f4ab7525353b82de9c765",
-      "bytes": 12221,
-      "domain": "ai",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/ai/shenron-live-rag-2026-10-03.md"
     },
     {
       "path": "docs/operations/ai/shenron-local-bridge.md",
@@ -7294,36 +6464,6 @@
       "canonical": "docs/operations/infra/CREATOR.md"
     },
     {
-      "path": "docs/operations/infra/DBFR-BUILD-HOST-2026-10-05.md",
-      "title": "DBFR as a secondary Rust build host — 2026-10-05",
-      "sha256": "1665905a038c48c2ab833e8e35497bc8b29c850aa0ddf14e78c9b5f967a63584",
-      "bytes": 3962,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/DBFR-BUILD-HOST-2026-10-05.md"
-    },
-    {
-      "path": "docs/operations/infra/DBFR-CACHE-RECLAIM-2026-10-03.md",
-      "title": "DBFR cache reclamation — 2026-10-03",
-      "sha256": "1d566424b681d8ece8b37ead30aabdff53de683ca77e1e958b9719a6f2a70923",
-      "bytes": 1755,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/DBFR-CACHE-RECLAIM-2026-10-03.md"
-    },
-    {
-      "path": "docs/operations/infra/DELIVERY-METADATA-2026-10-04.md",
-      "title": "Métadonnées de livraison Yolo — 2026-10-04",
-      "sha256": "e0f890adaa2803a3bbe64c869fb5e4c915a4f09203b5c5edbcff085d835e46fd",
-      "bytes": 2431,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/DELIVERY-METADATA-2026-10-04.md"
-    },
-    {
       "path": "docs/operations/infra/DOWNLOADS.md",
       "title": "Aphrody downloads: site, publisher and GitHub releases",
       "sha256": "89d3706e1e1a25aee5fc9c8b09b9f0671442bc16bd6e0d8d2f6f2a0a2fa9f7c7",
@@ -7332,16 +6472,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/DOWNLOADS.md"
-    },
-    {
-      "path": "docs/operations/infra/DRIVE-CLIENT-QUALIFICATION-2026-10-02.md",
-      "title": "Drive client qualification — 2026-10-02",
-      "sha256": "82c897875760c8c553b291aee773184794b405b9ce4857f7b513b6bc9d4b84e9",
-      "bytes": 1308,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/DRIVE-CLIENT-QUALIFICATION-2026-10-02.md"
     },
     {
       "path": "docs/operations/infra/GCP-OPERATIONS.md",
@@ -7366,22 +6496,12 @@
     {
       "path": "docs/operations/infra/INFRA-MONITORING.md",
       "title": "Infrastructure monitoring",
-      "sha256": "a16a5cfb6631d809763b73222706713bc8e55fa411e1c80042b0d4b95c84523c",
-      "bytes": 2400,
+      "sha256": "3e968f3082f033333097e3072fc033b1d74be19649f360659aae4f1db541850f",
+      "bytes": 2370,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/INFRA-MONITORING.md"
-    },
-    {
-      "path": "docs/operations/infra/INFRA-PACKAGES-QUALIFICATION-2026-10-02.md",
-      "title": "Infra Bun package qualification — 2026-10-02",
-      "sha256": "57ac7e4189db3294cc023e2a404195cf99f6910d539118bbd416f043ff919cb1",
-      "bytes": 1184,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/INFRA-PACKAGES-QUALIFICATION-2026-10-02.md"
     },
     {
       "path": "docs/operations/infra/INFRA-UNIFICATION.md",
@@ -7392,26 +6512,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/INFRA-UNIFICATION.md"
-    },
-    {
-      "path": "docs/operations/infra/INFRA-WORKSPACE-QUALIFICATION-2026-10-02.md",
-      "title": "Infra workspace qualification — 2026-10-02",
-      "sha256": "63fc78cd8a4671ac0dc4c4ccaa12d37a6865bb22c7d78c83e46ad3ddf73b99d1",
-      "bytes": 1165,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/INFRA-WORKSPACE-QUALIFICATION-2026-10-02.md"
-    },
-    {
-      "path": "docs/operations/infra/LIVE-AUDIT-QUALIFICATION-2026-10-02.md",
-      "title": "Native Web live audit qualification — 2026-10-02",
-      "sha256": "d249cbb4df10524521321f6d7d6b1fb608b7ae9e104ce5f3399f0d6ea270b8cc",
-      "bytes": 1180,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/LIVE-AUDIT-QUALIFICATION-2026-10-02.md"
     },
     {
       "path": "docs/operations/infra/LLAMA-MODELS.md",
@@ -7432,46 +6532,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/MCP-A2A.md"
-    },
-    {
-      "path": "docs/operations/infra/MONOREPO-LAYERING-QUALIFICATION-2026-10-02.md",
-      "title": "Monorepo Cargo graph qualification — 2026-10-02",
-      "sha256": "bc73ea58e5d11d3dc0cc9fc4eec076122dabd125b4162eeee8dfa4939327fb75",
-      "bytes": 1317,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/MONOREPO-LAYERING-QUALIFICATION-2026-10-02.md"
-    },
-    {
-      "path": "docs/operations/infra/NATIVE-OWNER-STAGES-2026-10-02.md",
-      "title": "Native Shell, OS, and Infra owner stages — 2026-10-02",
-      "sha256": "77d36996bf91c442b90b64e1dae84891555c05a15245e212bb976b27a5157ff8",
-      "bytes": 900,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/NATIVE-OWNER-STAGES-2026-10-02.md"
-    },
-    {
-      "path": "docs/operations/infra/NATIVE-PIPELINE-QUALIFICATION-2026-10-02.md",
-      "title": "Native Infra pipeline qualification — 2026-10-02",
-      "sha256": "1de6f862cd34cb60fba5d510e2d24fdc2edb722659f9d9a993e4fa7b8eec4538",
-      "bytes": 1141,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/NATIVE-PIPELINE-QUALIFICATION-2026-10-02.md"
-    },
-    {
-      "path": "docs/operations/infra/OS-CLIENT-QUALIFICATION-2026-10-02.md",
-      "title": "OS client qualification — 2026-10-02",
-      "sha256": "4a32ccb3ac94d9111801a567609d7c3097f293bac8efc2c7bc1bc602abe91849",
-      "bytes": 1356,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/OS-CLIENT-QUALIFICATION-2026-10-02.md"
     },
     {
       "path": "docs/operations/infra/OVH-VPS-INTEGRATION-TESTING.md",
@@ -7534,26 +6594,6 @@
       "canonical": "docs/operations/infra/SHELL-OPERATIONS.md"
     },
     {
-      "path": "docs/operations/infra/SHELL-PIPELINE-QUALIFICATION-2026-10-02.md",
-      "title": "Shell pipeline qualification — 2026-10-02",
-      "sha256": "79b89fc712222c4457c5711c4e95befe26fddd16d16ab246618ac8b3389726b1",
-      "bytes": 1689,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/SHELL-PIPELINE-QUALIFICATION-2026-10-02.md"
-    },
-    {
-      "path": "docs/operations/infra/SOURCE-SYNC-QUALIFICATION-2026-10-02.md",
-      "title": "Source sync and WSL qualification — 2026-10-02",
-      "sha256": "5dfcb00f945779ad7af37ab4cca134e594cb970202ba6317b0bed6fdbc6a32bf",
-      "bytes": 2157,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/SOURCE-SYNC-QUALIFICATION-2026-10-02.md"
-    },
-    {
       "path": "docs/operations/infra/TOOLCHAIN-SYNC.md",
       "title": "Toolchain sync (WSL, Windows, vps, dbfr)",
       "sha256": "9dc54f88e6e45d8c7eca51a97beec83c7198bfa688d76fce53ac47f883ac7ed0",
@@ -7564,16 +6604,6 @@
       "canonical": "docs/operations/infra/TOOLCHAIN-SYNC.md"
     },
     {
-      "path": "docs/operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md",
-      "title": "Topology observation — 2026-10-02",
-      "sha256": "3a146c8debc8e1ec96549600e01e53306ecf63adc6266492a0175df44c7b8eab",
-      "bytes": 6267,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md"
-    },
-    {
       "path": "docs/operations/infra/UPDATE.md",
       "title": "Update pipeline (yolo update)",
       "sha256": "f47400b2cadae63f34abb612bcf57d2a66ccd3548810064b4aaaeef3b7460555",
@@ -7582,16 +6612,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/UPDATE.md"
-    },
-    {
-      "path": "docs/operations/infra/VPS-STATUS-2026-10-02.md",
-      "title": "VPS observation — 2026-10-02",
-      "sha256": "1530855ac9d4ee1055cc9efbe32b334f91ba849a556b3baaaa21336d6a318944",
-      "bytes": 3469,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/VPS-STATUS-2026-10-02.md"
     },
     {
       "path": "docs/operations/infra/supabase-wsl-docker.md",
@@ -8236,8 +7256,8 @@
     {
       "path": "docs/plans/infra/PLAN.md",
       "title": "Aphrody Infra plan",
-      "sha256": "12e765eda24bb6c267c8506ac0dd138163904ab92bbb11ebb95eb35f24d8853b",
-      "bytes": 29973,
+      "sha256": "c05284ad377d740afebe62583cd562b2c5bcf6d0b8bec2ce9b3dff5ce530350b",
+      "bytes": 29853,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -8276,8 +7296,8 @@
     {
       "path": "docs/plans/runtime/history/PLAN-before-unified-runtime-2026-10-03.md",
       "title": "Plan du monorepo Aphrody — 2026-10-01",
-      "sha256": "a92b028eb880b1f2874716fb7effeaae85d58c61b45a2bc4922285617bf377ae",
-      "bytes": 146815,
+      "sha256": "460e2c4b481d5e6ad3eb61522e2fe649af9da16c391b4afe25f3f4d313e27709",
+      "bytes": 146755,
       "domain": "runtime",
       "status": "historical",
       "visibility": "private",
@@ -8316,8 +7336,8 @@
     {
       "path": "docs/plans/tauri-cef/INVENTORY.md",
       "title": "Single CEF runtime: inventory of wry, tao, GTK3 and WebKitGTK references",
-      "sha256": "1a4a6b2573bb9e4d015b0a2159c6bde081d39e319fb0dd4da8fbff3b2a3e702d",
-      "bytes": 16005,
+      "sha256": "3a4a474f49cf3a33d461613fc7b536eda31d2ee0c063859170ba496984827912",
+      "bytes": 15925,
       "domain": "tauri-cef",
       "status": "canonical",
       "visibility": "private",
@@ -8476,8 +7496,8 @@
     {
       "path": "docs/products/ai/agent-stack/README.md",
       "title": "Unified agent stack (VPS snapshot)",
-      "sha256": "89c46082726602857668e199549c3f31d86428dbb40cdea6697d921455e29b1e",
-      "bytes": 5958,
+      "sha256": "e74f80dcad6522f1bc62bb06d5da7d22560e6137033587a5cafcf29c8b30ab47",
+      "bytes": 5904,
       "domain": "ai",
       "status": "historical",
       "visibility": "private",
@@ -8844,36 +7864,6 @@
       "canonical": "docs/products/discord/README.md"
     },
     {
-      "path": "docs/products/discord/apps/proxy-container/README.md",
-      "title": "About",
-      "sha256": "01d1b046dc5312253a0747bd5459c430a6b30be3900c365884b0a26b098480ba",
-      "bytes": 3618,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/apps/proxy-container/README.md"
-    },
-    {
-      "path": "docs/products/discord/apps/website/README.md",
-      "title": "Links",
-      "sha256": "f52304f54a99ec8717fee5e5d9e1b01a3523d155017600295156d85f17910ea2",
-      "bytes": 2641,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/apps/website/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/actions/README.md",
-      "title": "Links",
-      "sha256": "76a38c448008b9b754a3bf36c5a08a70ca644e6b71a39f5f8ac0a3e83dc28903",
-      "bytes": 2514,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/actions/README.md"
-    },
-    {
       "path": "docs/products/discord/packages/aphrody-messaging/README.md",
       "title": "@aphrody/messaging",
       "sha256": "bff047f1dd35b93941862f433eda967e6f64e96be7b659dc312d1db7e46e0cdd",
@@ -8884,310 +7874,10 @@
       "canonical": "docs/products/discord/packages/aphrody-messaging/README.md"
     },
     {
-      "path": "docs/products/discord/packages/brokers/README.md",
-      "title": "About",
-      "sha256": "80599a98a9d9af7e97854541db9ffbbd69db67e2848b8d341715eb59f402f815",
-      "bytes": 5652,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/brokers/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/builders/README.md",
-      "title": "About",
-      "sha256": "bcc2344295cb6ea060437006abfb32c81e8029a109ccc2b19cc1c157e0391a00",
-      "bytes": 3994,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/builders/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/collection/README.md",
-      "title": "About",
-      "sha256": "a141ade1544d59561d4831e6bd1fcb481d99f99006b538f02d88ea76c11c0d7a",
-      "bytes": 3779,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/collection/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/core/README.md",
-      "title": "About",
-      "sha256": "6b1c0773436144727a6283490e8d80e6e6b3508f1c13046be46ee5e0b04176bc",
-      "bytes": 5538,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/core/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/create-discord-bot/README.md",
-      "title": "About",
-      "sha256": "31cb7718506af13c98169d094716ef8c1d93c18625d286fb2e1968075df86810",
-      "bytes": 2790,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/create-discord-bot/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/create-discordx/README.md",
-      "title": "📖 Introduction",
-      "sha256": "0e582a55dfac54172a6cf7b6f00bb18c4b6e2e1b4e2c553979e5c30971e9c5b7",
-      "bytes": 2162,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/create-discordx/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/di/README.md",
-      "title": "📖 Introduction",
-      "sha256": "1b0505eca92bb4fc3bd345286a03394508aa197b91cab1860562df67f0fd510d",
-      "bytes": 2014,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/di/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/discord.js/README.md",
-      "title": "About",
-      "sha256": "67611ccb0cb98285c18a9dc74a360e36539d770136041138e0f431a0d3478ba2",
-      "bytes": 5689,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/discord.js/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/discordx/README.md",
-      "title": "📖 Introduction",
-      "sha256": "7fbfd1db3b333931d0570bc6c6da292d171b60a476a5c2e1de61af574c2a4b40",
-      "bytes": 15381,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/discordx/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/docgen/README.md",
-      "title": "Links",
-      "sha256": "3c2e0905a662b5e29335665ab43519f8dd670a16a3a601e5da1f23fc4843a537",
-      "bytes": 2581,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/docgen/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/importer/README.md",
-      "title": "📖 Introduction",
-      "sha256": "bea4e81190784c4a7f3d12b73590c834bfa250dfb3f34e5db33f7ad26f8f2d0b",
-      "bytes": 3576,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/importer/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/internal/README.md",
-      "title": "📖 Introduction",
-      "sha256": "30ed855f19918647da7ab85f5a159e88214ffcc2f243571d29cb5835a1e9d615",
-      "bytes": 2024,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/internal/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/lava-player/README.md",
-      "title": "📖 Introduction",
-      "sha256": "9a777c6531ca3b44f524e5c264a45fe5ef3fa0d5d26a05cf6f0248240a8fa0cf",
-      "bytes": 4525,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/lava-player/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/lava-player/src/README.md",
-      "title": "@discordx/lava-player",
-      "sha256": "3d4c775aeddd0a8221e76bb0f5ae6f2b0909bc974eea321ffc45a51d09c6c335",
-      "bytes": 310,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/lava-player/src/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/lava-queue/README.md",
-      "title": "📖 Introduction",
-      "sha256": "23aaee131e17b0b42075449eb69402e08c58d8bb223796a750a64d71df95f3b5",
-      "bytes": 2359,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/lava-queue/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/music/README.md",
-      "title": "📖 Introduction",
-      "sha256": "5f8c8a7049df00a70af491efc2049b2dd7a7f5c4e217474e721ea464053e9d02",
-      "bytes": 4172,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/music/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/next/README.md",
-      "title": "Installation",
-      "sha256": "5d2c99180424fb2c53a19b04aa2d796c556125a722cd5f82f99961bc1458cec7",
-      "bytes": 3101,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/next/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/pagination/README.md",
-      "title": "📖 Introduction",
-      "sha256": "a72bb93bef7448063c5b48c53f9c46851d4695e21308899f58b7b28c484d744b",
-      "bytes": 9872,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/pagination/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/plugin-lava-player/README.md",
-      "title": "📖 Introduction",
-      "sha256": "84b94bacecb0f9d7619213bfdca977fcde4cb4823ea987e8df83efbd71415f71",
-      "bytes": 2783,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/plugin-lava-player/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/plugin-ytdl-player/README.md",
-      "title": "📖 Introduction",
-      "sha256": "a1f5874d0941a582a79135ae1b43982dc98747ba999b2450ee08c2c6e419dad9",
-      "bytes": 2066,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/plugin-ytdl-player/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/proxy/README.md",
-      "title": "About",
-      "sha256": "ba1b9b08b1e7c7703e0442c681c67eb2c9b8212cb9d32d7716f28e48af086343",
-      "bytes": 3777,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/proxy/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/rest/README.md",
-      "title": "About",
-      "sha256": "1572eb312313de37bb4510f2e4c5b4bdf465226a8e84a4a5578c9ce0522d1dd5",
-      "bytes": 5140,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/rest/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/rpc/README.md",
-      "title": "About",
-      "sha256": "e437538ed1f1c243f21e20266c23fd6e60cb2f94ee45a2d17e8628c8fdaceab6",
-      "bytes": 3909,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/rpc/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/scripts/README.md",
-      "title": "Links",
-      "sha256": "25a5cef0fddc02c327b4c05bfe6dfcd004bb1c0b900e5755e11a4d98c01fdddb",
-      "bytes": 2514,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/scripts/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/structures/README.md",
-      "title": "About",
-      "sha256": "0e0b6da536cfb2915b57305a8406e0accc358f2c81f878d93160f3d567aa4fb3",
-      "bytes": 3870,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/structures/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/ui/README.md",
-      "title": "Links",
-      "sha256": "bc805ba96a71e7ce2ca4aa309f06484250f7676da8c2e8ebf7c5c6bf25230763",
-      "bytes": 2509,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/ui/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/util/README.md",
-      "title": "About",
-      "sha256": "c78e200fa2db2747ccff007acb0f18d2eddf9dbca7af510103561345c13ecdb0",
-      "bytes": 3225,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/util/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/utilities/README.md",
-      "title": "Content",
-      "sha256": "972f9de5797c419aa9fd493aad68c3b596ce837e3a476612b2d113c558d59c41",
-      "bytes": 10750,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/utilities/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/voice/README.md",
-      "title": "About",
-      "sha256": "309c8646c9855f186b53f09aed728e475e36ca6f066ab6dea7060de787bfcccd",
-      "bytes": 5566,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/voice/README.md"
-    },
-    {
-      "path": "docs/products/discord/packages/ws/README.md",
-      "title": "About",
-      "sha256": "03a4ec15a66ced83cce47d1540e904b8174c89207479c68baf743f956ca6be79",
-      "bytes": 8034,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/products/discord/packages/ws/README.md"
-    },
-    {
       "path": "docs/products/infra/PRODUCTION-ALLOCATION.md",
       "title": "Allocation production",
-      "sha256": "567e9a8cd0ef185ec7ca8b20c2141267fe5363c8b2f79d7423cedde6c14c56ee",
-      "bytes": 2863,
+      "sha256": "917319c37f56c994b3cafdedb73e14ca87a854f8d5d1f800bfe35eea7a854478",
+      "bytes": 2751,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -9226,8 +7916,8 @@
     {
       "path": "docs/products/infra/vps/README.md",
       "title": "VPS architecture and topology",
-      "sha256": "1f7d42939d5c3f99263fcc262655edb5edfbad4ffcb24edd5cfe2a9c7fe926a5",
-      "bytes": 5393,
+      "sha256": "444aaec780df0d2016bfabfd4c9e963eb2a9cabeac65f6ef5245a85f419ec5e0",
+      "bytes": 5339,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -10346,8 +9036,8 @@
     {
       "path": "docs/reference/ai/PERFORMANCE-HISTORY.md",
       "title": "Performance History — aphrody Bench Ledger",
-      "sha256": "683750f57953a8d598df1002cefaded638345d6beac0e8863b701a73f58f118f",
-      "bytes": 8509,
+      "sha256": "ad9a28b59ab5f6d317f96a1c98f0e108656903e738b2676bc40ed2fe88099bda",
+      "bytes": 8451,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -11736,8 +10426,8 @@
     {
       "path": "docs/reference/compat/N2B-OXC-MAP.md",
       "title": "N2B and Oxc map (Rust and Bun)",
-      "sha256": "303cb03ebd45f98a9dcb833868ea4954acfcd6f13a252561d21a3446d4e9e291",
-      "bytes": 14902,
+      "sha256": "226971bcd3d20babe71c9013b2c4e7ddb6d59986e3222808c55fd0909a8b4f62",
+      "bytes": 14877,
       "domain": "compat",
       "status": "historical",
       "visibility": "private",
@@ -12794,546 +11484,6 @@
       "canonical": "docs/reference/discord/carbon-oauth.md"
     },
     {
-      "path": "docs/reference/discord/docs/discordx/basics/args-of.md",
-      "title": "ArgsOf",
-      "sha256": "0465615017077b5c7cbf5a4a7a615086bb75f5315a503ee036bc88ef879f1c15",
-      "bytes": 760,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/basics/args-of.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/basics/client.md",
-      "title": "Client",
-      "sha256": "24ebdc2a00ae3b7f88647d5a8df8975da74ba52f15aaa348fcac5092f31fc3f1",
-      "bytes": 2739,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/basics/client.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/basics/debugging.md",
-      "title": "Debugging",
-      "sha256": "c6d59fa621b4fc280664456913fa3315f19f9cbe1f70d0ad9beb8651bf41a93f",
-      "bytes": 979,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/basics/debugging.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/basics/dependency-injection.md",
-      "title": "IOC support via DI",
-      "sha256": "fb93a1fb65251fbdebb002c407c6e8edef50d75195c0e68a4b3803907402343f",
-      "bytes": 8631,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/basics/dependency-injection.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/basics/metadatastorage.md",
-      "title": "MetadataStorage",
-      "sha256": "9b64f7c5185cc0f6e259c1fef864ca1ca262caa8895e0e556a466caf4422227b",
-      "bytes": 619,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/basics/metadatastorage.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/basics/rest-args-of.md",
-      "title": "RestArgsOf",
-      "sha256": "c5e6ddcd00840f2dc55a320e9dfca377deccf6641e17fa8cfd75c2ab96def88d",
-      "bytes": 324,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/basics/rest-args-of.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/basics/sharding.md",
-      "title": "Sharding",
-      "sha256": "a177eb26361cb535bdedcb8a63e3065ff8a7c799ed21ee525a331773114b7955",
-      "bytes": 4275,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/basics/sharding.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/command/simple-command-option.md",
-      "title": "@SimpleCommandOption",
-      "sha256": "d26ac780caef51d47e4d05bc61238ea4359ed9162bb17e4a5f7c9fdcdc415c27",
-      "bytes": 1706,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/command/simple-command-option.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/command/simple-command.md",
-      "title": "@SimpleCommand",
-      "sha256": "28301590f0aebe79dccd2864a055425f09371095100902e519db0897e12e25c6",
-      "bytes": 1979,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/command/simple-command.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/command/slash-choice.md",
-      "title": "@SlashChoice",
-      "sha256": "7a4820eb691c998940b01284331a6f2b3204b67b3fffd90d53ec8c1fe4acd0ba",
-      "bytes": 2092,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/command/slash-choice.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/command/slash-group.md",
-      "title": "@SlashGroup",
-      "sha256": "13db32e95f42232ce59558e6a13ae5fbc59da3e112743a0707a8e25b1ae4e497",
-      "bytes": 5301,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/command/slash-group.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/command/slash-option.md",
-      "title": "@SlashOption",
-      "sha256": "afda8e3dcf12d012dd9df3e4bbada7fda14cb0707db01d8de5ef44e875c8045f",
-      "bytes": 7437,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/command/slash-option.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/command/slash.md",
-      "title": "@Slash",
-      "sha256": "c605c5ca099a3ee154ae65c1c5ae33e11b94fae941fbabc3a75efb2a6a8d929c",
-      "bytes": 4360,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/command/slash.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/general/bot.md",
-      "title": "@Bot",
-      "sha256": "ad7c317e59273a48a890c3471b62f8f464e31e016336efc5971934ce3a843f84",
-      "bytes": 1433,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/general/bot.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/general/discord.md",
-      "title": "@Discord",
-      "sha256": "ecf4d0532bcb22b86a50ce30f37a6266c550e4489976ac67d83020e68c70ea3b",
-      "bytes": 587,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/general/discord.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/general/guard.md",
-      "title": "@Guard",
-      "sha256": "d53bdeac122b1aa99683f56274b8542359748bed54f086561b321c8a8a2edf84",
-      "bytes": 6965,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/general/guard.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/general/guild.md",
-      "title": "@Guild",
-      "sha256": "d3ad6737587c2960e4df264996a1ef72109ee551cd7634342078925303a3b47f",
-      "bytes": 1702,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/general/guild.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/general/on.md",
-      "title": "@On",
-      "sha256": "97887b0545ddfc3a34697ffa3792176f3783a5be49b1f76410285d225bf78a55",
-      "bytes": 1448,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/general/on.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/general/once.md",
-      "title": "@Once",
-      "sha256": "85771acc07cde58c8a5388670072c8579075565ff1569121ffcfa0ca385cfac2",
-      "bytes": 1158,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/general/once.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/general/reaction.md",
-      "title": "@Reaction",
-      "sha256": "b975f1f4a66652c1202be02ec58aabd719dbeeca4d8d233aac577d408c161f7a",
-      "bytes": 1588,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/general/reaction.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/gui/button-component.md",
-      "title": "@ButtonComponent",
-      "sha256": "21b614eca28820eb60786b44b00f63f127f35a571b96ef5a138fa47f599428ef",
-      "bytes": 1019,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/gui/button-component.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/gui/context-menu.md",
-      "title": "@ContextMenu",
-      "sha256": "23e359ebda3228d614007bac1e4b4b47fd755abeffff62d5fe079ad959507b5f",
-      "bytes": 1012,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/gui/context-menu.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/gui/modal-component.md",
-      "title": "@ModalComponent",
-      "sha256": "c995c124bd749c14547e736eb30c3be51a6ed5275f38165a21768f3ad281806c",
-      "bytes": 1643,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/gui/modal-component.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/gui/select-menu-component.md",
-      "title": "@SelectMenuComponent",
-      "sha256": "d5a7656f4b1823d85301e2fb57b9232763bb7945ae5e360150175d2ad82c1e50",
-      "bytes": 1605,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/gui/select-menu-component.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/decorators/index.md",
-      "title": "Decorators",
-      "sha256": "b1d9317da39de774183cefc77345905f909adf5ba8f2b5423bdf4738e5254775",
-      "bytes": 707,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/decorators/index.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/discordx/getting-started.mdx",
-      "title": "Getting Started",
-      "sha256": "3f084eaa0d80f96e219859fb961336a7eb62868bfcaf328876a436b5e8075237",
-      "bytes": 5248,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/discordx/getting-started.mdx"
-    },
-    {
-      "path": "docs/reference/discord/docs/faq/ESM vs CJS.md",
-      "title": "ECMAScript (ESM) vs CommonJS (CJS)",
-      "sha256": "a9c5992da1caf74140da53a0f11f68ab81bfccaf95afe1b4c1d9f974f25e440b",
-      "bytes": 1446,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/faq/ESM vs CJS.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/faq/Errors/Common.md",
-      "title": "Common Errors",
-      "sha256": "91678a2b93af2f35a8c0cd7716f553e86dbe64581ace4509f945b928c2f4fb02",
-      "bytes": 1594,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/faq/Errors/Common.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/faq/Errors/Pagination.md",
-      "title": "Pagination",
-      "sha256": "4172949e62f205029fba0b4bc00cad4af6dd250b38933cf7c0e4cba0cb138220",
-      "bytes": 195,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/faq/Errors/Pagination.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/faq/index.md",
-      "title": "F.A.Q",
-      "sha256": "15e41ea2a9e0a7572d40bf3643e17cf736cd67cc784966a2950793a80e91a0ee",
-      "bytes": 201,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/faq/index.md"
-    },
-    {
-      "path": "docs/reference/discord/docs/packages.md",
-      "title": "🧮 Packages",
-      "sha256": "543d6ddd5a551db16ccc1b81ead578bead6880f1d4fda138037ab207a983d89d",
-      "bytes": 1988,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/docs/packages.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/brokers/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "6d0c1d06aab69a3b31c66af95b9ab96156cedb2ab5429d5818b86b9046ed0c56",
-      "bytes": 4507,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/brokers/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/builders/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "53daa3a0b8101b419bada38b2e4b294b8da3cce2be6a9936066960eddfc0ee0d",
-      "bytes": 25094,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/builders/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/collection/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "b63f7e831f15d2d7b839e7f3a4e700411ad0136d73bce9bf7bff0c67a34df208",
-      "bytes": 11981,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/collection/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/core/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "0e31160e26868a58d813cfd4a574608745b6be647d0260219b87cae9bc8b65d0",
-      "bytes": 13818,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/core/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/create-discord-bot/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "ae89fac2fb6b8214b60ace68e8422287c9ebc5498e95b05e6667c919e462b2ea",
-      "bytes": 7837,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/create-discord-bot/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/create-discordx/CHANGELOG.md",
-      "title": "create-discordx",
-      "sha256": "ed0467359becb7d115ec6e1c5fdf215353400b3cf1b5e3caf84ca87e9d46d10d",
-      "bytes": 423,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/create-discordx/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/di/CHANGELOG.md",
-      "title": "@discordx/di",
-      "sha256": "cc6f6ba5b11657c36f4dd472698218c79d5f43b3abbd1715d88aaee426c35fdf",
-      "bytes": 403,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/di/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/discord.js/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "0b352d5673babf49ec92666d3a229fd1ac102766ccdb80915f776c992a269600",
-      "bytes": 139899,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/discord.js/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/discordx/CHANGELOG.md",
-      "title": "discordx",
-      "sha256": "b3e54bb98b264f93ee962f84eb2772dcd2faf225336ffafcee3b0b1131752ceb",
-      "bytes": 2468,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/discordx/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/importer/CHANGELOG.md",
-      "title": "@discordx/importer",
-      "sha256": "bf0e39fe645e5da002a53a321796f15342d0aab450101d3b9716eb50cb2cf95a",
-      "bytes": 209,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/importer/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/internal/CHANGELOG.md",
-      "title": "@discordx/internal",
-      "sha256": "81615cee6e983dcf0dbb0eb663bf673a7490de7ce99ad2d88c336f9fa606f161",
-      "bytes": 411,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/internal/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/lava-player/CHANGELOG.md",
-      "title": "@discordx/lava-player",
-      "sha256": "8efd3ea0ff68384392fb986ba698a68ea1089c04b6da29b2b0633d3000b048d3",
-      "bytes": 979,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/lava-player/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/lava-queue/CHANGELOG.md",
-      "title": "@discordx/lava-queue",
-      "sha256": "e3d450a3923de137071bef358f5823d5ff829d3cf1a4ca005cf6f46565a861be",
-      "bytes": 1550,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/lava-queue/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/music/CHANGELOG.md",
-      "title": "@discordx/music",
-      "sha256": "e55837e8566fd5f7f077be0a771db66e079397ab802c9701f8910fb6f732daf5",
-      "bytes": 702,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/music/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/pagination/CHANGELOG.md",
-      "title": "@discordx/pagination",
-      "sha256": "6c4be2b590a0b1e33a4f5d4ee167c49f3f2b5f2abffa7f6525c2ee58f69c9e35",
-      "bytes": 1259,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/pagination/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/plugin-lava-player/CHANGELOG.md",
-      "title": "@discordx/plugin-lava-player",
-      "sha256": "ffe4bd87872ed5d84341e14a337af5085e5f506040441f7fcb41e9484098be93",
-      "bytes": 3359,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/plugin-lava-player/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/plugin-ytdl-player/CHANGELOG.md",
-      "title": "@discordx/plugin-ytdl-player",
-      "sha256": "df45306a8f694f4fdb4390f29c89d2d67fe1fb3793adffb17337bdfdc329cf9f",
-      "bytes": 2592,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/plugin-ytdl-player/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/proxy/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "5c2020fe76f7a08e0c09b17dafc2bdf97369e149276020cdf96bf5afbc379696",
-      "bytes": 9043,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/proxy/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/rest/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "e5d779cbaf39774485ca87376032cb291d0121ffc3ec593cd205f65afb220d04",
-      "bytes": 21112,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/rest/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/util/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "4d9f5ab1a7d7874356cdd8a3a5bae667ca743250cb097eeb5cbc9b0461a98c87",
-      "bytes": 5006,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/util/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/utilities/CHANGELOG.md",
-      "title": "@discordx/utilities",
-      "sha256": "f941e408eb09ddf72beedd4dcdfbe36701747bba7785fe1039a0cc43047d6c92",
-      "bytes": 2281,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/utilities/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/voice/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "3abbb735863f78fecf82de9fedb87ae9f19501fc9a9673fa2892ace64c2558c2",
-      "bytes": 15549,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/voice/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/discord/packages/ws/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "67f882791353e39840b94299504c539f4e6d8f198d58b961d1717d434e18b551",
-      "bytes": 16904,
-      "domain": "discord",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/discord/packages/ws/CHANGELOG.md"
-    },
-    {
       "path": "docs/reference/infra/AGENTS.md",
       "title": "aphrody-infra: agent rules",
       "sha256": "fb19a657b3ece8dcec73e49c77b169a9facc9fbd5a1792ac45294e42c9cf42c5",
@@ -13456,8 +11606,8 @@
     {
       "path": "docs/reference/infra/ORCHESTRATOR.md",
       "title": "aphrody-infra orchestrator",
-      "sha256": "adbe8be06293f721722fd956cb106dc0c873ca933c245a5390a01fefb012747c",
-      "bytes": 3989,
+      "sha256": "c9c16518a4dc701da6e639d7cb803721c0718c3dd80dcb0c27caedce85c682ad",
+      "bytes": 3877,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -13546,8 +11696,8 @@
     {
       "path": "docs/reference/infra/TOPOLOGY.md",
       "title": "Aphrody topology — historical architecture snapshot",
-      "sha256": "5c28fadd3aa498f11225b801bbe086c0d18981a0d9532b565d9a69625cb4a767",
-      "bytes": 4380,
+      "sha256": "b522e4407302e92440046b61262c107ee73ee49af5b4c8cc0848d7aff6c45dc6",
+      "bytes": 4268,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -13646,8 +11796,8 @@
     {
       "path": "docs/reference/infra/vps/DATABASES.md",
       "title": "VPS databases and storage",
-      "sha256": "33a93d07ef8dbdff03f80758e435a3870c47229101ecf63e5072f3871a2181ba",
-      "bytes": 4496,
+      "sha256": "473fac999c777dc257f772be05e764b30ad3195c8f418ec6e790945e1d521a95",
+      "bytes": 4432,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -13656,8 +11806,8 @@
     {
       "path": "docs/reference/infra/vps/RAG.md",
       "title": "VPS RAG and inference engines",
-      "sha256": "4a54ec414623c065b1b3b50e6b94ce4aea5c09f4e3a92e6fcf11c57b752e91a9",
-      "bytes": 4261,
+      "sha256": "ced5240a063a5a87115521396f57c4d2c52f13c8415bd35d28c55c64ecce9269",
+      "bytes": 4197,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -33454,16 +31604,6 @@
       "canonical": "docs/reference/web/APHRODY-WEB-AUDIT.md"
     },
     {
-      "path": "docs/reference/web/BENCHMARKS-AND-REPAIR-2026-10-03.md",
-      "title": "Validation en conditions réelles, benchmarks et réparations (2026-10-03)",
-      "sha256": "931df072c2f1ee36e64a470fa8a80f92227c69ce6e9f9e657ba23751411fef61",
-      "bytes": 5973,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/BENCHMARKS-AND-REPAIR-2026-10-03.md"
-    },
-    {
       "path": "docs/reference/web/CURL-IMPERSONATE-INTEGRATION.md",
       "title": "curl-impersonate et Aphrody OS",
       "sha256": "40f45bec26334dd634e9e1bc9a40bcdf43ad2eb3542a74e1822d583dca4feb93",
@@ -33942,16 +32082,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/reference/workspace/DEPS-INVENTORY.md"
-    },
-    {
-      "path": "docs/reference/workspace/DUPLICATES-QUALIFICATION.md",
-      "title": "Qualification des doublons exacts — 2026-10-03",
-      "sha256": "d6f7aaa67e90a7b34f55cf2cb0454b5e0e23dde99cb2abf263a1142702e7e4ab",
-      "bytes": 3405,
-      "domain": "workspace",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/workspace/DUPLICATES-QUALIFICATION.md"
     },
     {
       "path": "docs/reference/workspace/INDEX.md",
@@ -34686,8 +32816,8 @@
     {
       "path": "docs/research/os/wsl-audits/wsl-kernel-build.md",
       "title": "WSL kernel source build audit",
-      "sha256": "28bbf5ff031a39aa13f207142b5cd01514d2d158c8315ba8dc9a86c000aa7380",
-      "bytes": 5284,
+      "sha256": "d1967833f40d11581b7e5c1b75461e726d5119d810c248728d200deadd9995f7",
+      "bytes": 5245,
       "domain": "os",
       "status": "canonical",
       "visibility": "private",
@@ -34706,8 +32836,8 @@
     {
       "path": "docs/research/os/wsl-audits/wslg-build.md",
       "title": "WSLg source build audit — 2026-10-01",
-      "sha256": "3603a98db24f85a197796de000869a12c64f460a46857f851c9c2e4595df0190",
-      "bytes": 6505,
+      "sha256": "30c19ec429778f9119659b2a69d20240d8d25434f6645d757d0ed0f7911d48ef",
+      "bytes": 6419,
       "domain": "os",
       "status": "canonical",
       "visibility": "private",

@@ -1,5 +1,0 @@
-$ bun run lint
-src/vps.ts:92:24: warning eslint(no-await-in-loop): Unexpected `await` inside a loop. help: Collect all promises into an array and use `Promise.all()` to run them in parallel, rather than awaiting each one sequentially inside the loop.
-src/dns.ts:134:21: warning eslint(no-await-in-loop): Unexpected `await` inside a loop. help: Collect all promises into an array and use `Promise.all()` to run them in parallel, rather than awaiting each one sequentially inside the loop.
-src/dns.ts:243:11: warning eslint(no-await-in-loop): Unexpected `await` inside a loop. help: Collect all promises into an array and use `Promise.all()` to run them in parallel, rather than awaiting each one sequentially inside the loop.
-$ oxlint src test

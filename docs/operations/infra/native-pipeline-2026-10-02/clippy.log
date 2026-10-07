@@ -1,2 +1,0 @@
-$ scripts/build/rust/cargo-serial.sh clippy -p aphrody-infra --all-targets --locked -- -D warnings
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.74s

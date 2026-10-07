@@ -1,2 +1,0 @@
-$ bun run lint
-$ oxlint src test

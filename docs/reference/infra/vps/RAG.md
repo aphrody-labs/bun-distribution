@@ -8,7 +8,7 @@
 > active VPS capability. For current placement and dated runtime evidence, see
 > [`production-topology.json`](../../../../config/production-topology.json),
 > [`service-catalog.json`](../../../../config/service-catalog.json), and the
-> [2026-10-02 topology observation](../../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md).
+> 2026-10-02 topology observation.
 
 Retrieval, embedding and synthesis engines that run on or are reached from the production VPS.
 Model names, dimensions, services and environment names are owned by

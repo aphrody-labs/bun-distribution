@@ -1,2 +1,0 @@
-$ bun scripts/tools/workspace/ecosystem.ts --check
-repos=3 aphrodyRepos=3 experimentRepos=0 sharedRepos=0 crates=266 binaries=89 bunPackages=102 pythonPackages=9 cliBinaries=63 cliCommands=1280 mcpServers=21 mcpTools=440 mcpUniqueToolNames=423

@@ -3,8 +3,8 @@
 > **Historical snapshot:** the deployment state below predates the 2026-10-02
 > VPS observation. The active allocation declares `aphrody-web` and
 > `aphrody-ai` retired; use the root `config/` catalogues and the dated
-> [VPS observation](../../operations/infra/VPS-STATUS-2026-10-02.md) and
-> [topology observation](../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md)
+> VPS observation and
+> topology observation
 > for current deployment and host state. This page is retained to preserve
 > migration and architecture history; it is not a live service inventory.
 

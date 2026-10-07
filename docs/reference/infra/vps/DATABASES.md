@@ -7,7 +7,7 @@
 > active on DBFR, the declared data/backup host. The root topology describes
 > host-role policy; it does not catalog database names or prove their integrity.
 > The old Aphrody databases and paths below must not be assumed to exist. For
-> dated evidence, see [`TOPOLOGY-OBSERVATION-2026-10-02.md`](../../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md)
+> dated evidence, see `TOPOLOGY-OBSERVATION-2026-10-02.md`
 > and [`db-dedup-2026-10-01.md`](../../../operations/workspace/HISTORY.md).
 
 The VPS combines PostgreSQL (primary relational store), Redis (in-memory cache) and embedded

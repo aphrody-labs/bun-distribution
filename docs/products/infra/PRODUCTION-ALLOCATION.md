@@ -10,12 +10,12 @@ Le VPS héberge les allocations actives RG, Shenron et Nginx ; les allocations
 Aphrody Web/AI et NIE sont marquées retired dans le catalogue. La pile Aphrody
 ne doit donc pas être décrite comme redéployée par le bundle sans nouvelle
 observation et activation vérifiables. Le point-in-time du 2026-10-02 se trouve
-dans le [rapport VPS](../../operations/infra/VPS-STATUS-2026-10-02.md).
+dans le rapport VPS.
 
 DBFR est déclaré nœud de données et sauvegardes secondaire : PostgreSQL, Redis,
 CDN d’assets, sauvegardes et un slot de rollback. La politique lui interdit les
 sites, bots, serveurs Next, crawlers et Nginx public. L’état runtime observé est
-séparé de cette déclaration dans le [rapport de topologie](../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md).
+séparé de cette déclaration dans le rapport de topologie.
 
 IECode quitte les VPS : le checkout, les assets lourds et les outils desktop
 restent dans Windows et WSL. Le VPS ne reçoit que les artefacts explicitement

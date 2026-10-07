@@ -1,1 +1,0 @@
-$ rustfmt --edition 2024 --check crates/infra/infra/src/main.rs crates/infra/infra/src/pipeline.rs

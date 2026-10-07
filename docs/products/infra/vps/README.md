@@ -16,7 +16,7 @@ catalogs of this repository.
 | Kernel, sysctl and journald tuning | `yolo/config/host/aphrody-os/VPS-TUNING.md` (reference proposal, not an installed configuration) |
 | Release layout and activation | [`docs/operations/infra/IMMUTABLE-RELEASES.md`](../../../operations/infra/IMMUTABLE-RELEASES.md), [`iecode/docs/rg/operations/RG-IMMUTABLE-RELEASES.md`](https://github.com/aphrody-labs/iecode/blob/main/docs/rg/operations/RG-IMMUTABLE-RELEASES.md) |
 
-The 2026-10-02 [VPS observation](../../../operations/infra/VPS-STATUS-2026-10-02.md)
+The 2026-10-02 VPS observation
 is the latest host snapshot represented here. A unit present in a catalogue is
 declared intent, not proof that it is installed or running. Re-observe host
 units and active releases before making a current operational claim.

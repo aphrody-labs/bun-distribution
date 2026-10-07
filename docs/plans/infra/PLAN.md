@@ -52,7 +52,7 @@ and its behavior in
 For the current operational references, start with the root
 [`README.md`](../../../README.md), the
 [immutable-release runbook](../../operations/infra/IMMUTABLE-RELEASES.md),
-the [2026-10-02 WSL/DBFR topology observation](../../operations/infra/TOPOLOGY-OBSERVATION-2026-10-02.md),
+the 2026-10-02 WSL/DBFR topology observation,
 and [monitoring runbook](../../operations/infra/INFRA-MONITORING.md). Older
 observations in the append-only ledger retain their original dates and scope.
 
@@ -516,4 +516,4 @@ trash on DBFR. The command measured 4.34 GiB across those paths; free filesystem
 space rose by 531,767,296 bytes (from 89% to 88% use). PostgreSQL, Redis and
 Nginx remain active, with databases, `/srv` releases/data and `/tmp` preserved.
 DBFR still has an 88% disk warning and is not designated as the build factory.
-See the [cleanup observation](../../operations/infra/DBFR-CACHE-RECLAIM-2026-10-03.md).
+See the cleanup observation.

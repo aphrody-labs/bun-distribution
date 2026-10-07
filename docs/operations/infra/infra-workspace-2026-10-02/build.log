@@ -1,9 +1,0 @@
-$ bun run build
-Bundled 98 modules in 222ms
-
-  cli.js      4.38 KB   (entry point)
-  ops.js      9.81 MB   (entry point)
-  cli.js.map  4.89 KB   (source map)
-  ops.js.map  15.85 MB  (source map)
-
-$ bun build ./src/cli.ts ./src/ops.ts --target=bun --outdir dist --sourcemap=linked

@@ -1,2 +1,0 @@
-$ bun run typecheck
-$ bunx --bun tsc --noEmit --target esnext --module preserve --moduleResolution bundler --allowImportingTsExtensions --types bun src/index.ts src/cli.ts

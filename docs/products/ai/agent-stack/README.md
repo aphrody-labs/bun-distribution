@@ -104,7 +104,7 @@ Curated memory: `~/.aphrody/workspace/MEMORY.md`.
 
 | Doc | Contents |
 | --- | --- |
-| `aphrody-infra` | Deploy authority; see the [2026-10-02 VPS observation](../../../operations/infra/VPS-STATUS-2026-10-02.md) for the limited current host and unit evidence. |
+| `aphrody-infra` | Deploy authority; see the 2026-10-02 VPS observation for the limited current host and unit evidence. |
 
 ## Related trees
 

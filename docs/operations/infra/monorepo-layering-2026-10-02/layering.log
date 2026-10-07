@@ -1,3 +1,0 @@
-$ bun run layering:check
-crates=192 edges=502 externalPaths=1 cycles=0 errors=0
-$ bun scripts/tools/workspace/repo-layering.ts

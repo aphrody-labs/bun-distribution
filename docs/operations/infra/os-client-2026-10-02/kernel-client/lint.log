@@ -1,7 +1,0 @@
-$ bun run lint
-test/kernel.test.ts:27:8: warning eslint(no-await-in-loop): Unexpected `await` inside a loop. help: Collect all promises into an array and use `Promise.all()` to run them in parallel, rather than awaiting each one sequentially inside the loop.
-test/kernel.test.ts:30:7: warning eslint(no-await-in-loop): Unexpected `await` inside a loop. help: Collect all promises into an array and use `Promise.all()` to run them in parallel, rather than awaiting each one sequentially inside the loop.
-test/kernel.test.ts:52:46: warning unicorn(no-array-reverse): Use `Array#toReversed()` instead of `Array#reverse()`. help: `Array#reverse()` mutates the original array. Use `Array#toReversed()` to return a new reversed array without modifying the original.
-test/kernel.test.ts:73:20: warning eslint(no-await-in-loop): Unexpected `await` inside a loop. help: Collect all promises into an array and use `Promise.all()` to run them in parallel, rather than awaiting each one sequentially inside the loop.
-test/kernel.test.ts:75:5: warning eslint(no-await-in-loop): Unexpected `await` inside a loop. help: Collect all promises into an array and use `Promise.all()` to run them in parallel, rather than awaiting each one sequentially inside the loop.
-$ oxlint src test

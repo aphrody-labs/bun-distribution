@@ -8,11 +8,11 @@ The complete system-distro recipe builds DirectX-Headers, Mesa (swrast and d3d12
 
 Five vendor clones use the official contributing recipe. Exact URLs/commits are recorded in `.cache/upstream/build/aphrody/wslg/sources.json`; there are no local patches. Azure Linux image `mcr.microsoft.com/azurelinux/base/core:3.0` pulled successfully, manifest digest `sha256:1324a2cf7ed34e5f48a1022816b205782b86c7305651658e611dcd3d30756751`.
 
-Existing Podman 4.9.3/Buildah 1.33.7 uses rootless overlay storage. The Dockerfile runs with `podman build --format docker --network host`, keeping its compiler/dependency installation isolated in the build container. Native Debian/Ubuntu packages `golang-go` and `debootstrap` installed successfully; `.cache/upstream/build/aphrody/wslg/host-dependencies.log` records the transaction. hcsshim v0.13.0 requires Go >= 1.23, so the system Go 1.22 installer automatically downloads the official Go 1.26.8 toolchain, recorded in `tar2ext4-build.log`.
+Existing Podman 4.9.3/Buildah 1.33.7 uses rootless overlay storage. The Dockerfile runs with `podman build --format docker --network host`, keeping its compiler/dependency installation isolated in the build container. Native Debian/Ubuntu packages `golang-go` and `debootstrap` installed successfully; (removed) records the transaction. hcsshim v0.13.0 requires Go >= 1.23, so the system Go 1.22 installer automatically downloads the official Go 1.26.8 toolchain, recorded in `tar2ext4-build.log`.
 
 ## Actual build
 
-Build started, exact argv: `.cache/upstream/build/aphrody/wslg/build-command.json`; complete persistent log: `.cache/upstream/build/aphrody/wslg/build.log`. Seven version/vendor arguments are explicit, avoiding the Dockerfile placeholder gate. Version is `dev`, architecture `x86_64`.
+Build started, exact argv: `.cache/upstream/build/aphrody/wslg/build-command.json`; complete persistent log: (removed). Seven version/vendor arguments are explicit, avoiding the Dockerfile placeholder gate. Version is `dev`, architecture `x86_64`.
 
 Output image tag: `localhost/aphrody-wslg:x64`. Intended exports: `system_x64.tar`, `system_x64.vhd` in `.cache/upstream/build/aphrody/wslg`.
 

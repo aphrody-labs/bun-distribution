@@ -1,4 +1,0 @@
-$ bun run build
-$ bun run build:wasm
-$ bash ../../../scripts/build/shell/build-wasm.sh
-    Finished `release` profile [optimized] target(s) in 0.47s

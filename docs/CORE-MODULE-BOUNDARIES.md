@@ -8,7 +8,7 @@ restent des fournisseurs optionnels précompilés, exposés par quelques modules
 Bun. Aphrody conserve le produit.** Cette décision précise D5/D6 et remplace le
 comptage historique de D15 dans [DECISIONS](DECISIONS.md).
 
-Le [recensement exhaustif](core-module-boundaries-2026-10-04.json) couvre les
+Le recensement exhaustif couvre les
 117 manifestes directement sous `crates/`, les huit sous-modules `vendor/` et
 deux sous-modules hors moteurs. Les 113 imports se répartissent en 54 desktop
 et 59 compilateur. Ce comptage décrit les sources, pas une résolution Cargo
@@ -19,7 +19,7 @@ Mise en œuvre du 2026-10-05 : les racines Cargo par défaut sont réduites aux 
 crates cœur ; les recettes, la CI et le format Rust distinguent le cœur des
 fournisseurs. Le recensement du 4 octobre reste une preuve de l’état précédent.
 La qualification et les limites courantes sont dans
-[le reçu d’implémentation](core-modules-implementation-2026-10-05.json).
+le reçu d’implémentation.
 
 ## Précision propriétaire : absorption dans le fork Bun
 

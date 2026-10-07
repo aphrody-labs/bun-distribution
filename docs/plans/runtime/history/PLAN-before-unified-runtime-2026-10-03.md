@@ -162,7 +162,7 @@ Recherche : [pratiques documentaires](../../../research/workspace/documentation-
   déjà ignorées par `.gitignore` et recopiées par `build.rs` depuis
   `ui-dist.manifest` avant l’embarquement Tauri : retirées de l’index (≈ 20 Mo),
   fichiers conservés sur disque. Chaque groupe restant est qualifié dans
-  [DUPLICATES-QUALIFICATION.md](../../../reference/workspace/DUPLICATES-QUALIFICATION.md) :
+  DUPLICATES-QUALIFICATION.md :
   conservés par rôle (URL publiques, bundles, licences, gabarits, sorties de
   build), ou copies documentaires UI/OS/Web à consolider par `docs-consolidate`.
   UI : consolidation exacte effectuée le 2026-10-03 (32 copies supprimées avec

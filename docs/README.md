@@ -36,7 +36,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | apis | [ai](apis/ai/) | 5 | - |
 | apis | [compat](apis/compat/) | 2 | - |
 | apis | [contracts](apis/contracts/) | 1 | - |
-| apis | [discord](apis/discord/) | 10 | - |
 | apis | [generated](apis/generated/) | 3 | - |
 | apis | [infra](apis/infra/) | 1 | - |
 | apis | [shell](apis/shell/) | 1 | - |
@@ -47,16 +46,16 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | decisions | [shell](decisions/shell/) | 2 | - |
 | guides | [ai](guides/ai/) | 9 | - |
 | guides | [compat](guides/compat/) | 5 | - |
-| guides | [discord](guides/discord/) | 67 | - |
+| guides | [discord](guides/discord/) | 1 | - |
 | guides | [upstream-bun](guides/upstream-bun/) vendored upstream copy | 203 | - |
 | guides | [web](guides/web/) | 4 | - |
 | guides | [workspace](guides/workspace/) | 4 | [Parcours Workspace Aphrody](guides/workspace/README.md) |
 | operations | [(files)](operations/) | 2 | - |
-| operations | [ai](operations/ai/) | 9 | - |
+| operations | [ai](operations/ai/) | 7 | - |
 | operations | [cloud](operations/cloud/) | 4 | - |
 | operations | [container](operations/container/) | 1 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
-| operations | [infra](operations/infra/) | 116 | - |
+| operations | [infra](operations/infra/) | 23 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
 | operations | [web](operations/web/) | 1 | - |
@@ -83,7 +82,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [ai](products/ai/) | 29 | [Aphrody AI](products/ai/README.md) |
 | products | [compat](products/compat/) | 5 | [Aphrody Compat](products/compat/README.md) |
 | products | [contracts](products/contracts/) | 5 | [Aphrody Contracts](products/contracts/README.md) |
-| products | [discord](products/discord/) | 36 | [Aphrody Discord Ecosystem](products/discord/README.md) |
+| products | [discord](products/discord/) | 3 | [Aphrody Discord Ecosystem](products/discord/README.md) |
 | products | [infra](products/infra/) | 5 | [Aphrody Infra](products/infra/README.md) |
 | products | [native](products/native/) | 1 | [Aphrody Native](products/native/README.md) |
 | products | [os](products/os/) | 5 | [Aphrody OS](products/os/README.md) |
@@ -94,15 +93,15 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [ai](reference/ai/) | 240 | - |
 | reference | [compat](reference/compat/) | 102 | - |
 | reference | [contracts](reference/contracts/) | 2 | - |
-| reference | [discord](reference/discord/) | 100 | - |
+| reference | [discord](reference/discord/) | 41 | - |
 | reference | [infra](reference/infra/) | 33 | - |
 | reference | [interop](reference/interop/) | 1 | - |
 | reference | [native](reference/native/) | 2 | - |
 | reference | [os](reference/os/) | 29 | - |
 | reference | [shell](reference/shell/) | 10 | - |
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 2045 | - |
-| reference | [web](reference/web/) | 49 | - |
-| reference | [workspace](reference/workspace/) | 14 | [Workspace documentation](reference/workspace/INDEX.md) |
+| reference | [web](reference/web/) | 48 | - |
+| reference | [workspace](reference/workspace/) | 13 | [Workspace documentation](reference/workspace/INDEX.md) |
 | reference | [yolo](reference/yolo/) | 1 | - |
 | research | [ai](research/ai/) | 50 | - |
 | research | [compat](research/compat/) | 11 | - |
@@ -113,9 +112,8 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | research | [upstream-bun](research/upstream-bun/) vendored upstream copy | 5 | - |
 | research | [web](research/web/) | 3 | - |
 | research | [workspace](research/workspace/) | 3 | - |
-| (root) (outside the category layout) | [(files)](./) | 41 | - |
-| ai (outside the category layout) | [(files)](ai/) | 2 | - |
+| (root) (outside the category layout) | [(files)](./) | 23 | - |
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 3546 files.
+Total: 3261 files.

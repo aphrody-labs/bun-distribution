@@ -1,5 +1,0 @@
-$ bunx oxfmt --check packages/infra/ovh/package.json packages/infra/paths/package.json packages/infra/paths/test/paths.test.ts packages/infra/sql/package.json packages/infra/update/package.json packages/infra/update/src/deps/inventory.ts packages/infra/update/src/ecosystems/rust.ts packages/infra/update/src/ecosystems/bun.ts packages/infra/update/src/deps/sync.ts packages/infra/update/test/bun.test.ts packages/infra/update/src/ecosystems/uv.ts packages/infra/update/src/ecosystems/rust-doctor.ts
-Checking formatting...
-
-All matched files use the correct format.
-Finished in 10ms on 12 files using 20 threads.

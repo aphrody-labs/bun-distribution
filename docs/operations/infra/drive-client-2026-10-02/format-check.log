@@ -1,5 +1,0 @@
-$ bunx oxfmt --check packages/os/drive-client/package.json packages/os/drive-client/src/hooks/__tests__/eventReplay.ts packages/os/drive-client/src/hooks/__tests__/useNormalizedQuery.test.tsx packages/os/drive-client/src/stores/viewPreferences.ts packages/os/drive-client/tests/integration/ephemeral-streaming.test.ts
-Checking formatting...
-
-All matched files use the correct format.
-Finished in 2ms on 5 files using 20 threads.

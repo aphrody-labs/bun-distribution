@@ -1,2 +1,0 @@
-$ scripts/build/rust/cargo-serial.sh build -p aphrody-kernel --bin aphrody-kernel --locked
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.79s
