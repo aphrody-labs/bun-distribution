@@ -329,3 +329,23 @@ obtenu des métadonnées positives pour `ch1315` à `ch1329` (410 pages), puis l
 renvoyé HTTP 429 avec sa limite de 60 requêtes/minute à partir de `ch1330`; l'audit
 détaillé s'est arrêté là. Aucune nouvelle extraction OCR n'a été faite. Ces nombres
 décrivent le catalogue, pas la complétude éditoriale ni les droits de reproduction.
+
+## Reprise des contrôles locaux — 2026-10-07
+
+Contrôles refaits sur l'hôte de build `vps-203bea89` : la suite navigateur passe
+(8 tests, 40 assertions), Oxlint strict et Oxfmt passent, et `bun build
+--target browser apps/community/crystal-universe/game.js` regroupe 6 modules
+(35,13 Ko). Le serveur local sert le titre Dragon Pixel et son proxy RAG répond
+HTTP 200 à `q=Goku Namek&sourceId=manga`, avec 8 résultats dont des URL HTTPS.
+Le binaire local du serveur de salles répond `{"service":"dragon-pixel","status":"ok"}`
+sur `/health`.
+
+La compilation Rust n'a pas été relancée : le verrou partagé
+`/srv/aphrody-build/locks/heavy.lock` était détenu par plusieurs tâches de build
+au contrôle `lslocks`. Les tests Rust et la production WASM mentionnés dans les
+sections précédentes restent les dernières validations compilées ; ce contrôle
+de santé n'est pas un test de WebSocket ni une validation Bevy. Aucun changement
+de code ni paquet généré n'a été ajouté par cette reprise. L'objectif complet
+reste ouvert : le moteur Xenoverse 2 et ses assets propriétaires sont absents,
+Bevy n'est pas intégré, et les métadonnées RAG ne prouvent pas la transcription
+exhaustive de chaque page.
