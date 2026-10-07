@@ -142,6 +142,14 @@ nouveaux documents et 598 chunks. Total sur la sortie privée : 50 documents
 est `completed:false`; cette passe a couvert les sources déclarées, mais pas toute
 la frontier des articles pertinents.
 
+Contrôle de métadonnées du corpus manga via `dragonball.manga_tomes` (profil source
+Shenron, sans conserver ni citer le texte renvoyé) : DB `vol1` indique 221 pages,
+DB `vol42` 234 pages, un chapitre DBS `ch1370` 45 pages. Cela confirme des entrées
+OCR aux deux extrémités de la série et dans DBS, mais pas l’existence/complétude de
+chaque volume intermédiaire, la complétude de DBS, ni les droits de réutilisation.
+Les réponses de détail incluent des transcriptions; aucun passage de manga n’a été
+copié dans le dépôt ou affiché dans le jeu au cours de ce contrôle.
+
 ## 2026-10-07 — Commandes manette
 
 Dragon Pixel lit maintenant l'API Gamepad du navigateur : stick gauche/croix pour
