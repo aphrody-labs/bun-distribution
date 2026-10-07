@@ -34,6 +34,7 @@ Environment="APHRODY_YOLO_TOOL_HOST=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/y
 Environment="APHRODY_M3_TOOL_HOST=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/m3-tool-host.mjs"
 EnvironmentFile=/etc/aphrody/aphrody-mcp-http.env
 EnvironmentFile=/etc/aphrody/aphrody-a2a.env
+EnvironmentFile=/etc/aphrody/discord-debate-rag.env
 ExecStart=/home/ubuntu/.local/bin/aphrody-mcp http --bind 127.0.0.1:8793
 Restart=on-failure
 RestartSec=5

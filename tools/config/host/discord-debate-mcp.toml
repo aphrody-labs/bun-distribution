@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Canonical existing VPS MCP; the token remains in its protected host environment.
+[mcp_servers.shenron-rag]
+url = "http://127.0.0.1:8793/mcp"
+bearer_token_env_var = "APHRODY_MCP_HTTP_TOKEN"
