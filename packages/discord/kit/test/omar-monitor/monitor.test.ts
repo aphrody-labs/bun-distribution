@@ -268,3 +268,46 @@ for await(const line of createInterface({input:process.stdin})){const m=JSON.par
     await rm(dir, { recursive: true, force: true });
   }
 });
+test("multi-channel configuration admits and routes messages across multiple declared channels", async () => {
+  const multiPolicy: Policy = {
+    ...policy,
+    channelId: "c1",
+    channelIds: ["c1", "c2", "c3"],
+    ownerId: "yoyo",
+  };
+  expect(isOmar(message("1", { channel_id: "c1" }), multiPolicy)).toBe(true);
+  expect(isOmar(message("2", { channel_id: "c2" }), multiPolicy)).toBe(true);
+  expect(isOmar(message("3", { channel_id: "c3" }), multiPolicy)).toBe(true);
+  expect(isOmar(message("4", { channel_id: "c4" }), multiPolicy)).toBe(false);
+
+  const dir = await mkdtemp(join(tmpdir(), "omar-multichannel-test-"));
+  const q = new Queue(join(dir, "queue.sqlite"));
+  try {
+    q.ingest(message("101", { channel_id: "c1" }), multiPolicy);
+    q.ingest(message("102", { channel_id: "c2" }), multiPolicy);
+    q.post("nonce-101", "101", "Reply 1", "c1");
+    q.post("nonce-102", "102", "Reply 2", "c2");
+
+    const posts = q.posts();
+    expect(posts).toHaveLength(2);
+    expect(posts.find((p) => p.nonce === "nonce-101")).toEqual({
+      nonce: "nonce-101",
+      source: "101",
+      text: "Reply 1",
+      channel_id: "c1",
+    });
+    expect(posts.find((p) => p.nonce === "nonce-102")).toEqual({
+      nonce: "nonce-102",
+      source: "102",
+      text: "Reply 2",
+      channel_id: "c2",
+    });
+
+    const job102 = q.db.query<{ id: string; channel_id: string }, [string]>("SELECT id, channel_id FROM jobs WHERE id=?").get("102");
+    expect(job102?.channel_id).toBe("c2");
+  } finally {
+    q.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+

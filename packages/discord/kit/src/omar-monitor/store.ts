@@ -12,6 +12,7 @@ export interface SourceMessage {
 export interface Policy {
   guildId: string;
   channelId: string;
+  channelIds?: string[];
   omarUserIds: string[];
   ownerId: string;
   envFile: string;
@@ -20,14 +21,18 @@ export interface Policy {
   codex: string;
   cwd: string;
   nativeMcp: string;
+  shenronMcp?: string;
+  fleetMcp?: string;
   profile: string;
   reconcileSeconds: number;
   historyPageBudget: number;
+  documentation?: string;
 }
 export interface Job {
   id: string;
   text: string;
   state: string;
+  channel_id?: string;
   monitor_thread: string | null;
   worker_thread: string | null;
   goals: string | null;
@@ -36,8 +41,9 @@ export interface Job {
 export function isAuthorizedUser(message: SourceMessage, policy: Policy): boolean {
   const isOwner = !!policy.ownerId && message.author.id === policy.ownerId;
   const isOmarUser = Array.isArray(policy.omarUserIds) && policy.omarUserIds.includes(message.author.id);
+  const allowedChannels = policy.channelIds && policy.channelIds.length > 0 ? policy.channelIds : [policy.channelId];
   return (
-    message.channel_id === policy.channelId &&
+    allowedChannels.includes(message.channel_id) &&
     (!message.guild_id || message.guild_id === policy.guildId) &&
     !message.author.bot &&
     !message.webhook_id &&
@@ -51,32 +57,37 @@ export class Queue {
   constructor(path: string) {
     this.db = new Database(path, { create: true, strict: true });
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
-      CREATE TABLE IF NOT EXISTS messages(id TEXT PRIMARY KEY, author TEXT NOT NULL, text TEXT NOT NULL, received INTEGER NOT NULL);
-      CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY REFERENCES messages(id),text TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'pending',monitor_thread TEXT,worker_thread TEXT,goals TEXT,evidence TEXT);
-      CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL);`);
+      CREATE TABLE IF NOT EXISTS messages(id TEXT PRIMARY KEY, author TEXT NOT NULL, text TEXT NOT NULL, received INTEGER NOT NULL, via TEXT NOT NULL DEFAULT 'rest', channel_id TEXT NOT NULL DEFAULT '');
+      CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY REFERENCES messages(id), text TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'pending', monitor_thread TEXT, worker_thread TEXT, goals TEXT, evidence TEXT, channel_id TEXT NOT NULL DEFAULT '');
+      CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY, value TEXT NOT NULL);`);
     this.db.exec(
-      "CREATE TABLE IF NOT EXISTS outbox(nonce TEXT PRIMARY KEY,source TEXT NOT NULL,text TEXT NOT NULL)",
+      "CREATE TABLE IF NOT EXISTS outbox(nonce TEXT PRIMARY KEY, source TEXT NOT NULL, text TEXT NOT NULL, channel_id TEXT NOT NULL DEFAULT '')",
     );
-    if (
-      !this.db
-        .query<{ name: string }, []>("PRAGMA table_info(messages)")
-        .all()
-        .some((column) => column.name === "via")
-    )
+    const msgCols = this.db.query<{ name: string }, []>("PRAGMA table_info(messages)").all();
+    if (!msgCols.some((col) => col.name === "via"))
       this.db.exec("ALTER TABLE messages ADD COLUMN via TEXT NOT NULL DEFAULT 'rest'");
+    if (!msgCols.some((col) => col.name === "channel_id"))
+      this.db.exec("ALTER TABLE messages ADD COLUMN channel_id TEXT NOT NULL DEFAULT ''");
+    const jobCols = this.db.query<{ name: string }, []>("PRAGMA table_info(jobs)").all();
+    if (!jobCols.some((col) => col.name === "channel_id"))
+      this.db.exec("ALTER TABLE jobs ADD COLUMN channel_id TEXT NOT NULL DEFAULT ''");
+    const outboxCols = this.db.query<{ name: string }, []>("PRAGMA table_info(outbox)").all();
+    if (!outboxCols.some((col) => col.name === "channel_id"))
+      this.db.exec("ALTER TABLE outbox ADD COLUMN channel_id TEXT NOT NULL DEFAULT ''");
   }
   ingest(message: SourceMessage, policy: Policy, via: "rest" | "gateway" = "rest") {
+    const allowedChannels = policy.channelIds && policy.channelIds.length > 0 ? policy.channelIds : [policy.channelId];
     if (
-      message.channel_id !== policy.channelId ||
+      !allowedChannels.includes(message.channel_id) ||
       (message.guild_id && message.guild_id !== policy.guildId)
     )
       return;
     this.db.transaction(() => {
       const added = this.db
-        .query("INSERT OR IGNORE INTO messages(id,author,text,received,via) VALUES(?,?,?,?,?)")
-        .run(message.id, message.author.id, message.content, Date.now(), via);
+        .query("INSERT OR IGNORE INTO messages(id,author,text,received,via,channel_id) VALUES(?,?,?,?,?,?)")
+        .run(message.id, message.author.id, message.content, Date.now(), via, message.channel_id);
       if (added.changes && isOmar(message, policy))
-        this.db.query("INSERT INTO jobs(id,text) VALUES(?,?)").run(message.id, message.content);
+        this.db.query("INSERT INTO jobs(id,text,channel_id) VALUES(?,?,?)").run(message.id, message.content, message.channel_id);
     })();
   }
   next(): Job | null {
@@ -88,7 +99,7 @@ export class Queue {
   }
   update(id: string, fields: Partial<Omit<Job, "id" | "text">>) {
     for (const [key, value] of Object.entries(fields)) {
-      if (!["state", "monitor_thread", "worker_thread", "goals", "evidence"].includes(key))
+      if (!["state", "monitor_thread", "worker_thread", "goals", "evidence", "channel_id"].includes(key))
         throw new Error("Invalid queue field");
       this.db.query(`UPDATE jobs SET ${key}=? WHERE id=?`).run(value, id);
     }
@@ -111,13 +122,16 @@ export class Queue {
       )
       .all();
   }
-  post(nonce: string, source: string, text: string) {
-    this.db.query("INSERT OR IGNORE INTO outbox VALUES(?,?,?)").run(nonce, source, text);
+  post(nonce: string, source: string, text: string, channelId = "") {
+    this.db.query("INSERT OR IGNORE INTO outbox VALUES(?,?,?,?)").run(nonce, source, text, channelId);
   }
-  posts() {
+  posts(): { nonce: string; source: string; text: string; channel_id?: string }[] {
     return this.db
-      .query<{ nonce: string; source: string; text: string }, []>("SELECT * FROM outbox LIMIT 20")
-      .all();
+      .query<{ nonce: string; source: string; text: string; channel_id: string }, []>(
+        "SELECT nonce, source, text, channel_id FROM outbox LIMIT 20",
+      )
+      .all()
+      .map((row) => (row.channel_id ? row : { nonce: row.nonce, source: row.source, text: row.text }));
   }
   posted(nonce: string) {
     this.db.query("DELETE FROM outbox WHERE nonce=?").run(nonce);

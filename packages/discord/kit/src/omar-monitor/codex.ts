@@ -108,13 +108,22 @@ export class Codex {
     this.send({ method: "initialized", params: {} });
   }
   async thread(policy: Policy, mode: "monitor" | "worker", instructions: string): Promise<string> {
+    const mcpServers: Record<string, { command: string; args?: string[] }> = {
+      aphrody: { command: policy.nativeMcp },
+    };
+    if (policy.shenronMcp) {
+      mcpServers.shenron = { command: policy.shenronMcp };
+    }
+    if (policy.fleetMcp) {
+      mcpServers["aphrody-fleet"] = { command: policy.fleetMcp };
+    }
     const response = await this.request<{ thread: { id: string } }>("thread/start", {
       cwd: policy.cwd,
       approvalPolicy: "never",
       sandbox: mode === "monitor" ? "read-only" : "danger-full-access",
       developerInstructions: instructions,
       config: {
-        mcp_servers: { aphrody: { command: policy.nativeMcp } },
+        mcp_servers: mcpServers,
         features: { multi_agent: true },
       },
     });
