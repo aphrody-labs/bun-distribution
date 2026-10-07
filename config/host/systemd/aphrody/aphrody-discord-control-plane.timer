@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Refresh Drive and network evidence in the Discord hub
+
+[Timer]
+OnBootSec=90
+OnUnitActiveSec=120
+AccuracySec=10
+Unit=aphrody-discord-control-plane.service
+
+[Install]
+WantedBy=timers.target

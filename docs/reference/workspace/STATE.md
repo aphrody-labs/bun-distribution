@@ -458,7 +458,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-obscura` | [crates/web/obscura](../../../crates/web/obscura) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-05 |
 | `obscura-browser` | [crates/web/obscura-browser](../../../crates/web/obscura-browser) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-05 |
 | `obscura-cdp` | [crates/web/obscura-cdp](../../../crates/web/obscura-cdp) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-05 |
-| `obscura-dom` | [crates/web/obscura-dom](../../../crates/web/obscura-dom) | rust crate | 0.1.1 | lib | yes | 0 | 2026-10-05 |
+| `obscura-dom` | [crates/web/obscura-dom](../../../crates/web/obscura-dom) | rust crate | 0.1.1 | lib | yes | 0 | 2026-10-07 |
 | `obscura-js` | [crates/web/obscura-js](../../../crates/web/obscura-js) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-07 |
 | `obscura-mcp` | [crates/web/obscura-mcp](../../../crates/web/obscura-mcp) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-05 |
 | `obscura-net` | [crates/web/obscura-net](../../../crates/web/obscura-net) | rust crate | 0.1.1 | lib | yes | 0 | 2026-10-05 |

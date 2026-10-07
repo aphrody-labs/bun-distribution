@@ -6496,8 +6496,8 @@
     {
       "path": "docs/operations/infra/DISCORD-SHENRON-AI.md",
       "title": "Discord Aphrody et Shenron : raccordement IA",
-      "sha256": "0c6cf88ac17c4d3bb5b72df258cfbde227de1177429b641f6f0d31ad09f14808",
-      "bytes": 3775,
+      "sha256": "982856800ae8b1a99c93a16ac698dda8e682b8b4a94a8390b5df271d42813d5c",
+      "bytes": 7065,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -31876,7 +31876,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "a7bd692d20a809acfddded5e2f0f920292152c4271647276dc25273cb2dacbb5",
+      "sha256": "63b9700f4c8ec4a13360939f7f36893e3e368a460946aeccaa44e54e77cde938",
       "bytes": 50037,
       "domain": "workspace",
       "status": "generated",

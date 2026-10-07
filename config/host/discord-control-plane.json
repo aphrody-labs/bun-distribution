@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "guildId": "1554189180030947338",
+  "channels": {
+    "general": "1554189195201740803",
+    "drive": "1557358565155676210",
+    "chat": "1557358568523571225",
+    "network": "1557354148637315212"
+  },
+  "drive": {
+    "folderId": "1RTkDa77DQBH-zpQLmjPSngksrcJznkxa",
+    "profile": "dbfr",
+    "reportPath": "/srv/aphrody-lab/state/drive-sync.json",
+    "agentReportPath": "/srv/aphrody-lab/state/agent-sync.json",
+    "dbfrHome": "/home/ubuntu/.aphrody/workspaces/dbfr",
+    "shenronHome": "/srv/shenron/shared/agent-home",
+    "policy": "Preserve native document structure and both sides of conflicts; private files remain in protected stores."
+  },
+  "wireguard": {
+    "interface": "wg1",
+    "peers": [
+      {
+        "id": "wsl"
+      },
+      {
+        "id": "dbfr"
+      },
+      {
+        "id": "aphro-pc"
+      },
+      {
+        "id": "omar"
+      }
+    ],
+    "reportPath": "/srv/aphrody-lab/state/network.json"
+  },
+  "codingAgents": {
+    "owners": ["yoyo", "omar"],
+    "adapters": ["codex", "agy", "claude"],
+    "domainProfiles": ["aphrody", "dbfr"],
+    "transport": "authenticated A2A over WireGuard or SSH forwards",
+    "codexProtocol": "app-server JSON-RPC initialize/initialized; completion requires turn/completed",
+    "nativeMcp": "aphrody-mcp",
+    "status": "device-endpoints-and-authentication-not-yet-qualified"
+  }
+}

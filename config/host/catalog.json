@@ -52,7 +52,9 @@
     ],
     "toolchain": "toolchain.json"
   },
-  "wireguard": { "declaration": "wireguard/aphrody-tunnel.json" },
+  "wireguard": {
+    "declaration": "wireguard/aphrody-tunnel.json"
+  },
   "accounts": [
     {
       "user": "omar",
@@ -604,6 +606,22 @@
       "ownerRepo": "aphrody",
       "targetHost": "dbfr",
       "pairs": "shenron-sqlite-replica-backup.service"
+    },
+    {
+      "service": "aphrody-discord-control-plane",
+      "unit": "aphrody-discord-control-plane.service",
+      "path": "systemd/aphrody/aphrody-discord-control-plane.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-discord-control-plane-timer",
+      "unit": "aphrody-discord-control-plane.timer",
+      "path": "systemd/aphrody/aphrody-discord-control-plane.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
     }
   ],
   "nginx": [

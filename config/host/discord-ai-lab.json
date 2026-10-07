@@ -32,7 +32,10 @@
           "topic": "Une expérience = objectif, hypothèse, protocole, version, résultat et limites.",
           "guide": "**Fiche d'expérience**\nObjectif :\nHypothèse :\nModèle et version :\nJeu d'évaluation (référence protégée) :\nParamètres :\nMétriques et comparaison :\nRésultat / limites :\nDécision et prochaine étape :"
         },
-        { "name": "prompts", "topic": "Prompts versionnés, exemples et variantes à comparer." },
+        {
+          "name": "prompts",
+          "topic": "Prompts versionnés, exemples et variantes à comparer."
+        },
         {
           "name": "evaluations",
           "topic": "Benchmarks, régressions, qualité, latence et coût mesurés."
@@ -67,6 +70,19 @@
         {
           "name": "ops-alerts",
           "topic": "Incidents, diagnostics et état des services, sans credentials."
+        }
+      ]
+    },
+    {
+      "name": "05 · Synchronisation et agents",
+      "channels": [
+        {
+          "name": "drive",
+          "topic": "Dossier Drive dbfr et synchronisation des agent homes DBFR/Shenron. État, références et conflits ; credentials conservés dans les stores protégés."
+        },
+        {
+          "name": "chat",
+          "topic": "Coordination A2A entre Shenron, Aphrody et les agents Codex/AGY/Claude des PC de Yoyo et Omar. Échanges bornés et authentifiés."
         }
       ]
     }

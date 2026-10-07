@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Publish private Drive and WireGuard synchronization evidence to Discord
+After=network-online.target aphrody-discord-lab-telemetry.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+# The native Infra CLI keeps its run receipts under the working directory.
+WorkingDirectory=/srv/aphrody-lab/state
+ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/control-plane.mjs --declaration /srv/aphrody-lab/control-plane.json --env-file /etc/aphrody-discord.env --receipt /srv/aphrody-lab/state/control-plane.json --apply
+TimeoutStartSec=60
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/srv/aphrody-lab/state
+PrivateTmp=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0077
