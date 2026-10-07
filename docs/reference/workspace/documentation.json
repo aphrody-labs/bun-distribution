@@ -44,16 +44,6 @@
       "canonical": "GOAL.md"
     },
     {
-      "path": "GRAPH_REPORT.md",
-      "title": "Graph Report - graph:aphrody",
-      "sha256": "6f77af4e874d686438ccdcf2d3d80126474862d7a74ef88079ded68a40e9e915",
-      "bytes": 1551,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "GRAPH_REPORT.md"
-    },
-    {
       "path": "PLAN.md",
       "title": "Plan",
       "sha256": "4fbffec7b7d2fdba6a55288df4a83b46560c2760d4f9aa1e8c02641bbc6fc417",
@@ -2916,8 +2906,8 @@
     {
       "path": "docs/BUN_FORK.md",
       "title": "Aphrody Bun Fork — Architecture, Synchronization & Optimization Hub",
-      "sha256": "2ad1aac949eb0b965f876f33060ae6255b7f4326ea8bb3a74cdf4904bef85bd6",
-      "bytes": 10506,
+      "sha256": "50eb5ef05550f91b48907c3e917485c3d2a9c629ee44c7c209738b785015c5f7",
+      "bytes": 15552,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -2926,8 +2916,8 @@
     {
       "path": "docs/BUN_UPSTREAM_TRACKER.md",
       "title": "Bun Upstream Optimization & Intelligence Tracker",
-      "sha256": "d02746738f91f633c38a690d2de7065e80957e03fdc8f7aff7ef0cecf37a86d2",
-      "bytes": 11448,
+      "sha256": "71696a0093c3ef12feba56494d3c351e1d9451687490f94c4738f2ba78872731",
+      "bytes": 11452,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -31826,8 +31816,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "321b8d0d449309de8d1649fa86135a3686a84fdf0d414b05e3d06d911766459f",
-      "bytes": 49346,
+      "sha256": "ddd454cc9b7bd054732f4126a624b615e73ef15f331e8992b7a06df4d4f99e8d",
+      "bytes": 49324,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

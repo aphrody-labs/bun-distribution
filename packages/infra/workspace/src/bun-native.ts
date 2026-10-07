@@ -180,7 +180,8 @@ export async function runBunNative(
         existingArtifact = arg.slice(17);
       else if (arg.startsWith("--artifact-sha256=") && /^[a-f0-9]{64}$/.test(arg.slice(18)))
         expectedHash = arg.slice(18);
-      else if (["--unlocked", "--gpu", "--jobs", "--debug", "--offline"].includes(arg)) flags.add(arg);
+      else if (["--unlocked", "--gpu", "--jobs", "--debug", "--offline"].includes(arg))
+        flags.add(arg);
       else {
         console.error(`bun-native: unknown argument ${arg}`);
         console.error(
