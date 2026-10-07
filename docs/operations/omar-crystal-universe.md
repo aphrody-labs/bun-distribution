@@ -81,7 +81,7 @@ Tests moteur : 5 réussis, 20 assertions ; oxlint strict, oxfmt et
 
 ### État des annonces (vérifié le 2026-10-07)
 
-- Toei Animation annonce **Dragon Ball Super: Beerus** comme édition *enhanced* de l’anime Dragon Ball Super, pour l’automne 2026 ; la page officielle renvoie à une bande-annonce de lancement et un visuel. Le même communiqué annonce la production de **Dragon Ball Super: The Galactic Patrol**. Aucune image sous copyright n’est reprise dans le prototype.
+- Toei Animation annonce **Dragon Ball Super: Beerus** comme édition _enhanced_ de l’anime Dragon Ball Super, pour l’automne 2026 ; la page officielle renvoie à une bande-annonce de lancement et un visuel. Le même communiqué annonce la production de **Dragon Ball Super: The Galactic Patrol**. Aucune image sous copyright n’est reprise dans le prototype.
 - Bandai Namco annonce Xenoverse 3 sur PS5, Xbox Series et PC/Steam pour 2027. Les descriptions officielles présentent West City en AGE 1000, son université et ses quartiers, le Great Saiya Squad, un accès d’expédition vers un glacier, la création de héros, la coopération, Soul Assist/Soul Switch/Awoken et des styles de combat. Les captures officielles sont descriptives, non incorporées.
 - La carte complète des zones et leurs connexions n’a pas été publiée dans les sources examinées. Le plan livré est une proposition de prototype original, pas une reconstruction fidèle ni une carte officielle. Les fonctionnalités et visuels annoncés peuvent changer avant la sortie.
 
@@ -128,7 +128,7 @@ domaines. Résultat : 25 requêtes, 25 documents FR, 988 chunks indexés dans le
 confirme `completed:false`, `documents:25`, `network_requests:25`.
 
 Vérification : `aphrody home query ... --profile shenron` retrouve l’article Dragon
-Ball et l’information des 42 volumes/519 chapitres, une fiche *Dragon Ball Super*
+Ball et l’information des 42 volumes/519 chapitres, une fiche _Dragon Ball Super_
 et des extraits de l’arc Moro, en français et en anglais. Le corpus est documentaire
 et partiel : il ne contient pas les pages intégrales ni les images des 42 tomes; il
 ne prouve pas l’exhaustivité de DBS. Aucun profil aphrody/dbfr/ie n’a été utilisé
@@ -314,3 +314,18 @@ Le clic droit de la souris déclenche aussi un tir d'énergie; le clic gauche re
 le déplacement vers le point visé. Le Canvas capture le pointeur pendant le tir et
 libère l'action sur relâchement, annulation ou perte de capture pour éviter un tir
 resté bloqué. Le menu contextuel est désactivé uniquement sur l'arène.
+
+## 2026-10-07 — Audit métadonnées de la collection manga
+
+Nouvel audit MCP sans copie de transcription : les 42 identifiants DB `vol1` à
+`vol42` ont tous retourné un `pageCount` positif, soit 7 844 pages déclarées
+(minimum 168, maximum 234 par volume). Les réponses de détail incluent le texte OCR
+et sont tronquées par l'API à 90 000 caractères; ce contrôle de `pageCount` ne
+prouve donc pas que chaque page possède une transcription complète.
+
+Pour DBS, le catalogue précédemment relevé contient 103 identifiants contigus,
+`ch1315` à `ch1417`, et 4 355 pages déclarées. La vérification détaillée fraîche a
+obtenu des métadonnées positives pour `ch1315` à `ch1329` (410 pages), puis l'API a
+renvoyé HTTP 429 avec sa limite de 60 requêtes/minute à partir de `ch1330`; l'audit
+détaillé s'est arrêté là. Aucune nouvelle extraction OCR n'a été faite. Ces nombres
+décrivent le catalogue, pas la complétude éditoriale ni les droits de reproduction.
