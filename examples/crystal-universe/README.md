@@ -16,7 +16,7 @@ ne sont pas intégrés. Aucun graphisme, personnage ou code de ces jeux n'est co
 Depuis la racine du checkout :
 
 ```sh
-bun apps/community/crystal-universe/serve.js
+bun examples/crystal-universe/serve.js
 ```
 
 Ouvrir `http://127.0.0.1:4317/`, choisir le style, puis **Jouer / Recommencer**.
@@ -27,10 +27,10 @@ L : charge ; T : transformation ; P : pause. Les commandes sont aussi affichées
 dans le jeu. Une perte de focus ou le passage en arrière-plan met en pause.
 
 ```sh
-bun test apps/community/crystal-universe/engine.test.js
-oxlint --deny-warnings apps/community/crystal-universe/*.js
-oxfmt --check apps/community/crystal-universe
+bun test examples/crystal-universe/engine.test.js
+oxlint --deny-warnings examples/crystal-universe/*.js
+oxfmt --check examples/crystal-universe
 ```
 
 Téléchargements Android, preuves et limites :
-[rapport d'exécution](../../../docs/operations/omar-crystal-universe.md).
+[rapport d'exécution](../../docs/operations/omar-crystal-universe.md).

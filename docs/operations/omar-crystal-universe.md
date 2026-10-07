@@ -31,15 +31,15 @@ Aucune comparaison des certificats éditeur ni analyse antimalware locale n'est 
 
 ## Implémentation et proposition
 
-[Dragon Pixel](../../apps/community/crystal-universe/README.md) est la proposition
+[Dragon Pixel](../../examples/crystal-universe/README.md) est la proposition
 jouable : styles/couleur personnalisables, combos, sauts, projectiles, charge,
 transformation, cinq vagues IA, score, victoire/défaite, pause et reprise.
 Graphismes originaux dessinés sur Canvas ; aucune dépendance ajoutée.
 
 Contrôles actuels :
 
-- `bun test apps/community/crystal-universe/engine.test.js` : 5 réussis, 20 assertions ; énergie/transformation, dégâts/coûts/cooldown, cinq vagues/victoire/score, mort/arrêt, saut/bornes/styles.
-- `oxlint --deny-warnings apps/community/crystal-universe/*.js` : vert.
+- `bun test examples/crystal-universe/engine.test.js` : 5 réussis, 20 assertions ; énergie/transformation, dégâts/coûts/cooldown, cinq vagues/victoire/score, mort/arrêt, saut/bornes/styles.
+- `oxlint --deny-warnings examples/crystal-universe/*.js` : vert.
 - Serveur Bun sur `127.0.0.1:4317` : HTML, JS et CSS HTTP 200 avec types corrects ; accès à `GOAL.md` HTTP 404.
 - CDP natif local sur `127.0.0.1:9222` : titre, canvas, neuf boutons ; démarrage avec vague 1 et énergie qui évolue ; pause `aria-pressed=true` ; aucune exception JavaScript.
 - Vue mobile 390 × 844 : largeur du contenu 390, sept commandes tactiles, capture inspectée.
@@ -68,8 +68,8 @@ Ce volet demeure ouvert ; l'achèvement global n'est pas revendiqué.
 
 Demande authentifiée : [nommer le jeu « Dragon Pixel »](https://discord.com/channels/1554189180030947338/1557354118710829117/1557386591985602601).
 Le titre HTML, le titre visible, le README et le message du serveur portent
-désormais ce nom. Le chemin technique `apps/community/crystal-universe/`
-reste compatible avec les commandes et liens existants. Les noms des jeux
+désormais ce nom. Le chemin technique `examples/crystal-universe/`
+a été migré avec ses commandes et liens locaux. Les noms des jeux
 ayant inspiré ses mécaniques conservent leur attribution.
 
 Vérification actuelle du renommage : serveur Bun lancé sur `127.0.0.1:4318`,
@@ -78,3 +78,23 @@ et texte du `<h1>` égal à `Dragon Pixel` ; ancien nom absent du HTML servi.
 Sortie du serveur : `Dragon Pixel: http://127.0.0.1:4318/`.
 Tests moteur : 5 réussis, 20 assertions ; oxlint strict, oxfmt et
 `git diff --check` réussis. Aucun déploiement public effectué.
+
+## Consolidation de la racine — 2026-10-07
+
+Le prototype autonome Bun est maintenant sous `examples/crystal-universe/`.
+Les commandes de validation ci-dessus décrivent leur chemin historique ; pour
+les relancer, utiliser `bun test examples/crystal-universe/engine.test.js` et
+`oxlint --deny-warnings examples/crystal-universe/*.js`. Le serveur se lance par
+`bun examples/crystal-universe/serve.js`. Les imports relatifs et les ressources
+restent dans le même dossier ; aucune copie de moteur ni dépendance ajoutée.
+
+Validation du déplacement : les six fichiers de code/ressources sont identiques
+octet par octet à leur version Git avant migration. Les cinq tests moteur passent
+(20 assertions). oxlint strict et oxfmt passent avec les règles du dépôt et
+l'exclusion globale des exemples désactivée dans des configurations temporaires.
+Le serveur Bun sur un port loopback éphémère sert les quatre ressources avec un
+contenu identique au disque ; trois chemins non autorisés retournent 404.
+Le serveur est arrêté après les sondes. `yolo ops docs check --skip-ecosystem`
+passe ; le contrôle global des liens ne trouve aucun lien local cassé mais
+relève quatre chemins morts préexistants hors du lot. Aucun build moteur,
+rendu navigateur ou activation du fork n'est revendiqué par ce déplacement.

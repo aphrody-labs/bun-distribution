@@ -73,3 +73,9 @@ restent dans le plan global ; ce lot ne les déclare pas terminées.
 - [x] Rapprocher les sept contrats Drive : quatre Docs modifiés, trois promotions locales, structure et sauvegardes vérifiées.
 - [x] Activer le rapprochement Drive récurrent : quatre jobs réussis, sept références vérifiées, 45 fichiers copiés et deux homes DBFR/Shenron indexés ; 37 tests ciblés.
 - [x] Livrer les seuls chemins/hunks possédés avec leurs preuves et les deux blocages externes documentés.
+
+## Consolidation racine — exemple Bun (2026-10-07)
+
+- [x] Déplacer le dernier prototype suivi de `apps/` vers `examples/`.
+- [x] Qualifier tests, lint, format et serveur HTTP ; liens locaux migrés, quatre chemins morts globaux préexistants.
+- [x] Préparer la livraison des chemins possédés ; fusions runtime, SDK et racine restantes dans le plan global.

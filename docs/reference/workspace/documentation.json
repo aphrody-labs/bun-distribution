@@ -76,8 +76,8 @@
     {
       "path": "TODO.md",
       "title": "Livraison en cours",
-      "sha256": "deae1565afa08dca9256013858da7b2cfaa9e03133c20a957aa8dc2473966f91",
-      "bytes": 4743,
+      "sha256": "1263df1fea8b4e13e2c19605e7186f0a9046346abf742ec9b60fb101bfb57068",
+      "bytes": 5106,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -92,16 +92,6 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "agy.md"
-    },
-    {
-      "path": "apps/community/crystal-universe/README.md",
-      "title": "Dragon Pixel — proposition pour Omar",
-      "sha256": "30c7c226d4e8e11a003270e36a954fc5ba5111579e10acc68286bb56dff67ae4",
-      "bytes": 1577,
-      "domain": "community",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "apps/community/crystal-universe/README.md"
     },
     {
       "path": "config/container/desktop/README.md",
@@ -6696,8 +6686,8 @@
     {
       "path": "docs/operations/omar-crystal-universe.md",
       "title": "Objectifs d'Omar — Dragon Pixel",
-      "sha256": "eeec56d40c298229ccc4bbba085cf1b798c65d9a684d9e6f4ee05230cb4e1c36",
-      "bytes": 5515,
+      "sha256": "a5e2058d03fba2e23825704d1848a97bac3e511d0f28a78e3e22a68d666a1709",
+      "bytes": 6806,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -32722,6 +32712,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/research/workspace/documentation-practices.md"
+    },
+    {
+      "path": "examples/crystal-universe/README.md",
+      "title": "Dragon Pixel — proposition pour Omar",
+      "sha256": "1f0f9cc4bfba6857f53564a73bdb47623f5100dd04b8e30b744893eab6ff948e",
+      "bytes": 1550,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "examples/crystal-universe/README.md"
     },
     {
       "path": "m3/AGENTS.md",
