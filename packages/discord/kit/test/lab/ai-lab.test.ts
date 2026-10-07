@@ -12,7 +12,7 @@ const policy: LabPolicy = {
     { name: "Ops", adminOnly: true, channels: [{ name: "ops", topic: "Admin" }] },
   ],
   assistant: {
-    modelBaseUrl: "http://127.0.0.1/v1",
+    profile: "aphrody",
     model: "model",
     pollSeconds: 5,
     maxTokens: 384,

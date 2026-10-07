@@ -4,6 +4,7 @@
 import { mkdir, chmod } from "node:fs/promises";
 import { dirname } from "node:path";
 import { discordFetch } from "../rest.ts";
+import type { LocalAISelection } from "./local-ai.ts";
 
 export interface LabPolicy {
   guildId: string;
@@ -16,13 +17,12 @@ export interface LabPolicy {
     adminOnly?: boolean;
     channels: { name: string; topic: string; guide?: string }[];
   }[];
-  assistant: {
+  assistant: LocalAISelection & {
     channelId?: string;
-    modelBaseUrl: string;
-    model: string;
     pollSeconds: number;
     maxTokens: number;
     systemPrompt: string;
+    timeoutMs?: number;
   };
 }
 export interface Channel {

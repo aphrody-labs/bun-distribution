@@ -7,6 +7,7 @@ import {
   type LabPolicy,
   type LabState,
 } from "./ai-lab.ts";
+import { localAI, type NativeLocalAI } from "./local-ai.ts";
 
 export interface LabMessage {
   id: string;
@@ -41,32 +42,16 @@ export function eligiblePrompt(
 export async function askModel(
   policy: LabPolicy,
   prompt: string,
-  transport: typeof fetch = fetch,
+  inference: Pick<NativeLocalAI, "chat"> = localAI,
 ): Promise<string> {
-  const url = new URL(policy.assistant.modelBaseUrl);
-  if (url.protocol !== "http:" || url.hostname !== "127.0.0.1")
-    throw new Error("Local inference endpoint required");
-  const response = await transport(`${url.href.replace(/\/$/, "")}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: policy.assistant.model,
-      messages: [
-        { role: "system", content: policy.assistant.systemPrompt },
-        { role: "user", content: prompt },
-      ],
-      max_tokens: policy.assistant.maxTokens,
-      temperature: 0.3,
-      stream: false,
-    }),
-    signal: AbortSignal.timeout(45000),
-    redirect: "error",
+  const answer = await inference.chat(policy.assistant, {
+    system: policy.assistant.systemPrompt,
+    messages: [{ role: "user", content: prompt }],
+    maxTokens: policy.assistant.maxTokens,
+    temperature: 0.3,
+    timeoutMs: policy.assistant.timeoutMs,
   });
-  if (!response.ok) throw new Error(`Inference HTTP ${response.status}`);
-  const body = (await response.json()) as { choices?: { message?: { content?: string } }[] };
-  const answer = body.choices?.[0]?.message?.content?.trim();
-  if (!answer) throw new Error("Empty inference response");
-  return answer;
+  return answer.text.trim();
 }
 export async function processMessage(
   message: LabMessage,
@@ -190,4 +175,5 @@ if (import.meta.main) {
     }
     if (!stopping) await Bun.sleep(policy.assistant.pollSeconds * 1000);
   }
+  await localAI.close();
 }

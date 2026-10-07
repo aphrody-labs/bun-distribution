@@ -6,6 +6,7 @@ import {
   type LabMessage,
 } from "../../src/lab/assistant.ts";
 import type { LabApi, LabPolicy, LabState } from "../../src/lab/ai-lab.ts";
+import type { LocalAIInput, LocalAISelection } from "../../src/lab/local-ai.ts";
 
 const state: LabState = {
   guildId: "guild",
@@ -24,8 +25,8 @@ const message: LabMessage = {
 const policy = {
   ownerId: "owner",
   assistant: {
-    modelBaseUrl: "http://127.0.0.1:8798/v1",
-    model: "gemma4-e2b",
+    model: "gemma-4-e2b-it-q4km",
+    profile: "aphrody",
     systemPrompt: "Lab",
     maxTokens: 384,
   },
@@ -95,23 +96,31 @@ describe("laboratory assistant boundary", () => {
     expect(payload!.allowed_mentions).toEqual({ parse: [], replied_user: false });
     expect(payload!.enforce_nonce).toBe(true);
   });
-  test("model uses declared local backend only", async () => {
-    let body: Record<string, unknown> | undefined;
-    const transport = (async (_url, init) => {
-      body = JSON.parse(init!.body as string);
-      return Response.json({ choices: [{ message: { content: "LAB_OK" } }] });
-    }) as typeof fetch;
-    expect(await askModel(policy, "test", transport)).toBe("LAB_OK");
-    expect(body!.model).toBe("gemma4-e2b");
+  test("assistant preserves selected model/profile and system instructions through native adapter", async () => {
+    let selection: LocalAISelection | undefined;
+    let input: LocalAIInput | undefined;
+    const inference = {
+      async chat(selected: LocalAISelection, request: LocalAIInput) {
+        selection = selected;
+        input = request;
+        return {
+          text: " LAB_OK ",
+          model: selected.model,
+          profile: selected.profile,
+          usage: null,
+          finishReason: null,
+        };
+      },
+    };
+    expect(await askModel(policy, "test", inference)).toBe("LAB_OK");
+    expect(selection).toMatchObject({ model: "gemma-4-e2b-it-q4km", profile: "aphrody" });
+    expect(input).toMatchObject({ system: "Lab", messages: [{ role: "user", content: "test" }] });
     await expect(
-      askModel(
-        {
-          ...policy,
-          assistant: { ...policy.assistant, modelBaseUrl: "https://external.invalid/v1" },
+      askModel(policy, "test", {
+        async chat() {
+          throw new Error("Missing native inference ABI");
         },
-        "test",
-        transport,
-      ),
-    ).rejects.toThrow("Local inference");
+      }),
+    ).rejects.toThrow("Missing native inference ABI");
   });
 });
