@@ -43,7 +43,7 @@ enfants imprimés par les fixtures ne sont pas additionnés en un total global.
 
 L'audit d'assets relève deux chemins morts dans le showcase :
 
-- `packages/ui/app-ui/showcase/scripts/browser-contract.ts` : chemin relatif
+- « packages/ui/app-ui/showcase/scripts/browser-contract.ts » : chemin relatif
   erroné du répertoire de résultats « .coord/runs/m3-prod/ ».
 - `packages/ui/app-ui/showcase/src/styles.css` : chemin relatif de
   `GoogleSansFlex-latin.woff2`.
@@ -52,6 +52,10 @@ Le README du showcase a été corrigé pour pointer vers `crates/ui/app/Cargo.to
 Cette correction reste avec les fichiers déplacés du propriétaire de migration.
 Les chemins sources concurrents n'ont pas été modifiés pour rendre les gates verts.
 
+Les références entre guillemets décrivent les chemins observés lors de ces essais,
+y compris les cibles absentes. Elles ne constituent pas des liens documentaires.
+Les chemins canoniques actuels de l'interface sont sous `packages/ui/`.
+
 ## Reprise et preuves
 
 Avant intégration de la migration, corriger les racines du scaffold et du catalogue,
@@ -59,6 +63,19 @@ les références de polices et les fixtures générées, puis relancer les suite
 entières et l'audit d'assets. La présence des fichiers de polices ne prouve pas
 leur inclusion dans la bibliothèque native installée : celle-ci nécessite sa
 propre qualification et un build sur la fabrique.
+
+Un essai natif séparé a demandé `cargo test -p aphrody-m3-tokens -p aphrody-svg
+--all-features --locked`, via le tunnel Cargo sérialisé. Le job
+`2026-10-07T19-34-57-953Z-c6d9b4e8840a` s'est arrêté avec le code 101
+au chargement des manifestes : le manifeste concurrent
+`crates/compat/oxc-bridge/Cargo.toml` hérite de `oxc_formatter`, absent des
+dépendances du workspace. Aucun test de ces deux crates n'a été exécuté.
+Le claim `oxc-bun-ffi-wasm-20261007` couvre ce manifeste et les dépendances Oxc.
+Le journal est conservé dans `.coord/proofs/m3-native-gates-20261007/test.log`.
+Les gates natifs restent à relancer sur un snapshot cohérent.
+La régénération documentaire s'arrête ensuite sur la même erreur de
+`cargo metadata`, même avec `--skip-ecosystem` ; les liens du reçu passent.
+Le gate documentaire acquis plus tôt ne qualifie pas ce nouvel état concurrent.
 
 Les journaux locaux sont dans `.coord/proofs/config-consumers-20261007/` :
 `m3-runner-test.log`, `m3-packages-test.log`, `m3-fonts-check.json`,
