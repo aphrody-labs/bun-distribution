@@ -32,6 +32,7 @@ export interface DiscordDeployment {
   stateDirectory: string;
   stateOwner: string;
   runtime: string;
+  runtimeSha256: string;
   plan: Plan;
 }
 
@@ -54,9 +55,14 @@ export function discordDeployment(
     },
     stateDirectory: "/srv/aphrody-lab/state/omar-monitor",
     stateOwner: "ubuntu",
-    runtime: "/home/ubuntu/.bun/bin/bun",
+    runtime: "/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo",
+    runtimeSha256: "c886d124e1389167b0f1424b91bfc2902cc750c481d61fef6e97cd605493bf0b",
     plan: hostPlan([unit], { target, root: join(root, "tools/config/host") }),
   };
+}
+
+function discordRuntime(deployment: DiscordDeployment): string {
+  return `env BUN_BE_BUN=1 ${quote(deployment.runtime)}`;
 }
 
 export interface DiscordDeploymentTransport {
@@ -72,7 +78,13 @@ export async function quiesceDiscord(
   transport: DiscordDeploymentTransport,
   attempts = 30,
 ): Promise<string | null> {
-  const worker = `${quote(deployment.runtime)} ${quote(deployment.bundle)}`;
+  const runtime = await transport.run(
+    deployment.target,
+    `printf '%s  %s\\n' ${quote(deployment.runtimeSha256)} ${quote(deployment.runtime)} | sha256sum -c --quiet -`,
+  );
+  if (runtime.code !== 0)
+    throw new Error("Declared Yolo fork is absent or its SHA-256 differs; deployment deferred");
+  const worker = `${discordRuntime(deployment)} ${quote(deployment.bundle)}`;
   const installed = await transport.run(deployment.target, `test -f ${quote(deployment.bundle)}`);
   if (installed.code === 1) {
     const active = await transport.run(
@@ -256,12 +268,12 @@ export async function deployDiscord(
         `printf '%s  %s\\n' ${quote(hashes[file.name]!)} ${quote(`${remoteStage}/${file.name}`)} | sha256sum -c --quiet -`,
       );
     }
-    const worker = `${quote(deployment.runtime)} ${quote(`${remoteStage}/omar-monitor.mjs`)} --policy ${quote(`${remoteStage}/omar-monitor-policy.json`)}`;
+    const worker = `${discordRuntime(deployment)} ${quote(`${remoteStage}/omar-monitor.mjs`)} --policy ${quote(`${remoteStage}/omar-monitor-policy.json`)}`;
     await exec(`${worker} --probe`);
     // Recheck after the build/upload/probe, before any installed code changes.
     if (draining) {
       await exec(
-        `${quote(deployment.runtime)} ${quote(deployment.bundle)} --policy ${quote(deployment.policy.target)} --upgrade-check --expect-pid ${draining}`,
+        `${discordRuntime(deployment)} ${quote(deployment.bundle)} --policy ${quote(deployment.policy.target)} --upgrade-check --expect-pid ${draining}`,
       );
     } else {
       await exec(`${worker} --upgrade-check`);

@@ -178,6 +178,19 @@ de drainage achevé et a repris le même PID ; aucune tâche active n’a été 
 Ces gates qualifient les sources ; la nouvelle politique de routage et le
 nouveau bundle ne sont pas déclarés activés par cette seule qualification.
 
+La directive suivante du propriétaire impose le fork Yolo comme interpréteur.
+La déclaration du moniteur et ses probes utilisent directement le pin
+`/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo`, avec `BUN_BE_BUN=1`.
+Son SHA-256 attendu est
+`c886d124e1389167b0f1424b91bfc2902cc750c481d61fef6e97cd605493bf0b` :
+le workflow le vérifie avant tout signal de drainage, build ou upload.
+Ce binaire contient le moteur `1.4.3-canary.1`, révision `a4d88d124` ;
+il ne qualifie pas une révision plus récente des sources du fork.
+Les 13 tests de livraison, TypeScript, oxlint strict et oxfmt passent avec ce
+même interpréteur sur WSL. La syntaxe systemd passe avec le chemin local
+de cet exécutable ; la vérification du chemin VPS attend l'installation du pin.
+L'ancienne instance active conserve son runtime jusqu'au drainage qualifié.
+
 Le gate documentaire global reste en échec sur les index générés concurrents
 STATE/ecosystem/documentation et sur le manifeste IECODE absent de l’inventaire.
 Les 2444 liens locaux et 2071 chemins de code contrôlés restent valides ; aucun

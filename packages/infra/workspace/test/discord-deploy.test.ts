@@ -32,7 +32,7 @@ beforeAll(async () => {
   );
   await Bun.write(
     join(host, "systemd/aphrody/aphrody-discord-omar-monitor.service"),
-    "[Service]\nUser=ubuntu\nExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/omar-monitor.mjs\n",
+    "[Service]\nUser=ubuntu\nEnvironment=BUN_BE_BUN=1\nExecStart=/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo /srv/aphrody-lab/omar-monitor.mjs\n",
   );
   await Bun.write(join(host, "discord-omar-monitor.json"), '{"schemaVersion":1}\n');
 });
@@ -70,6 +70,29 @@ function fixture(fail: (command: string) => boolean = () => false, native = true
   return { commands, uploads, builds, transport };
 }
 const quiet = () => {};
+
+test("an absent or changed Yolo fork cannot signal, build or upload a monitor release", async () => {
+  const f = fixture((command) => command.includes("sha256sum -c"));
+  await expect(
+    deployDiscord(discordDeployment("omar-monitor", "vps", root), f.transport, quiet),
+  ).rejects.toThrow("Declared Yolo fork");
+  expect(f.builds).toEqual([]);
+  expect(f.uploads).toEqual([]);
+  expect(f.commands.some((command) => /--signal|restart|install/.test(command))).toBe(false);
+});
+
+test("monitor probes execute the pinned fork in interpreter mode", async () => {
+  const f = fixture();
+  await quiesceDiscord(discordDeployment("omar-monitor", "vps", root), f.transport);
+  const probes = f.commands.filter((command) =>
+    /--capabilities|--ready-check|--upgrade-check/.test(command),
+  );
+  expect(probes.length).toBeGreaterThan(0);
+  for (const command of probes)
+    expect(command).toStartWith(
+      "env BUN_BE_BUN=1 '/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo'",
+    );
+});
 
 test("release resolves product source and the declared target; foreign targets fail", () => {
   expect(discordDeployment("omar-monitor", "vps", root).entrypoint).toBe(
@@ -184,7 +207,8 @@ test("release verifies uploaded bytes, installs the declared unit, and preserves
   expect(f.uploads).toHaveLength(2);
   expect(f.uploads.join("\n")).not.toMatch(/queue\.sqlite|\.env|auth/);
   const checks = f.commands.filter((command) => command.includes("sha256sum -c --quiet"));
-  expect(checks).toHaveLength(4);
+  expect(checks).toHaveLength(5);
+  expect(checks[0]).toContain(discordDeployment("omar-monitor", "vps", root).runtimeSha256);
   expect(f.commands.findIndex((command) => command.endsWith("--probe"))).toBeLessThan(
     f.commands.findIndex((command) => command.includes(".new'")),
   );

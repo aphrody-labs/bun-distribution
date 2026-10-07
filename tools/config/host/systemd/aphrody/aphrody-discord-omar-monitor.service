@@ -9,7 +9,8 @@ Type=simple
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/srv/aphrody-lab
-ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/omar-monitor.mjs --policy /srv/aphrody-lab/omar-monitor-policy.json
+Environment=BUN_BE_BUN=1
+ExecStart=/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo /srv/aphrody-lab/omar-monitor.mjs --policy /srv/aphrody-lab/omar-monitor-policy.json
 Restart=on-failure
 RestartSec=10
 TimeoutStopSec=30
