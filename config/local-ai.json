@@ -60,7 +60,7 @@
         { "canonical": "APHRODY_AI_HTTP_URL", "kind": "url", "form": "origin", "aliases": ["APHRODY_SHENRON_API_URL"] },
         { "canonical": "APHRODY_AI_HTTP_TOKEN", "kind": "secret", "aliases": ["APHRODY_SHENRON_API_TOKEN"] }
       ],
-      "serverEnv": "The aphrody-ai-http process itself still reads APHRODY_SHENRON_API_TOKEN, APHRODY_MCP_DATABASE_URL and APHRODY_SHENRON_{EMBED,LLM,VISION}_* from /etc/aphrody/aphrody-ai-http.env; renaming the server side belongs to the aphrody-ai repository."
+      "serverEnv": "The canonical Aphrody MCP and compute service consume the private per-profile APHRODY_MCP_DATABASE_URL, including its configured search_path and authenticated host route; canonical AI environment keys and their declared compatibility aliases remain valid."
     }
   },
   "capabilities": {
@@ -180,7 +180,7 @@
     "shenron-rag": {
       "owner": "shenron",
       "readThrough": "ai-http",
-      "store": "PostgreSQL behind aphrody-ai-http (APHRODY_MCP_DATABASE_URL)",
+      "store": "Private PostgreSQL RAG store served by the canonical Aphrody MCP and compute service (per-profile APHRODY_MCP_DATABASE_URL, preserving search_path and authenticated host route)",
       "model": "multilingual-e5-small",
       "servedModel": "Xenova/multilingual-e5-small",
       "quantization": "q8",
