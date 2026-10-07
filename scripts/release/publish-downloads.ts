@@ -7,7 +7,8 @@
  *   plan                          what would be built, staged and published (no mutation)
  *   build  --revision <sha>       prepare + build the factory binaries (aphrody-ops build-factory), wait for the jobs
  *   release --revision <sha>      stage every artifact, scan for secrets, upload to the host, flip `current`
- *   assets                        publish new installers in an immutable snapshot of current artifacts
+ *   assets [--staged <dir>]       publish installers and optional prebuilt kits in an immutable snapshot
+ *                                 repeat --staged; --staged-revision <sha> records their verified source revision
  *   github --release <id>         create/refresh the GitHub release of each configured EXISTING repository
  *   verify [--release <id>]       download from the public URL, check SHA-256, run the binaries
  *   host-plan | host-apply        install the declared unit, nginx vhost and app on the host (plan by default)
@@ -18,6 +19,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -987,6 +989,115 @@ interface SnapshotManifest extends Record<string, unknown> {
   baseUrl: string;
 }
 
+export interface PrebuiltStage {
+  directory: string;
+  /** Full source commit of the qualified stage build, independently of the inherited binaries. */
+  commit: string;
+}
+
+/** Adopt only configured, qualified stage outputs; never execute a build during a snapshot refresh. */
+async function adoptPrebuiltStages(
+  cfg: DownloadsConfig,
+  inputs: PrebuiltStage[],
+  stage: string,
+): Promise<{ files: PublishedFile[]; artifacts: Record<string, unknown>[] }> {
+  const files: PublishedFile[] = [];
+  const artifacts: Record<string, unknown>[] = [];
+  const groups = new Set<string>();
+  const names = new Set<string>();
+  for (const input of inputs) {
+    if (!/^[0-9a-f]{40}$/.test(input.commit)) throw new Error("invalid staged source commit");
+    const directory = resolve(input.directory);
+    if (!lstatSync(directory).isDirectory()) throw new Error("staged directory must be regular");
+    let found = false;
+    for (const artifact of cfg.artifacts.filter((item) => item.stage)) {
+      const manifestName = artifact.stage!.manifest;
+      if (!safePayloadName(manifestName)) throw new Error("invalid staged manifest name");
+      const manifestPath = join(directory, manifestName);
+      if (!existsSync(manifestPath)) continue;
+      found = true;
+      const metadata = lstatSync(manifestPath);
+      if (!metadata.isFile() || metadata.size > 1_048_576)
+        throw new Error(`invalid staged manifest: ${manifestName}`);
+      const bytes = new Uint8Array(readFileSync(manifestPath));
+      if (scanBytes(manifestName, bytes, cfg.secrets.contentPatterns).length)
+        throw new Error(`secret scan failed for ${manifestName}`);
+      const entries: unknown = JSON.parse(new TextDecoder().decode(bytes));
+      if (!Array.isArray(entries) || !entries.length) throw new Error("empty staged manifest");
+      const platformGroups = new Set<string>();
+      for (const entry of entries as StagedEntry[]) {
+        const platform = artifact.platforms?.find(
+          (item) => item.platform === entry?.platform && item.enabled !== false,
+        );
+        if (
+          !entry ||
+          entry.name !== artifact.id ||
+          !platform ||
+          entry.target !== platform.target ||
+          typeof entry.version !== "string" ||
+          !/^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$/.test(entry.version) ||
+          !(
+            (artifact.kind === "desktop" && ["desktop", "update"].includes(entry.kind)) ||
+            (artifact.kind === "kit" && entry.kind === "kit")
+          ) ||
+          typeof entry.file !== "string" ||
+          !safePayloadName(entry.file) ||
+          names.has(entry.file) ||
+          typeof entry.sha256 !== "string" ||
+          !/^[0-9a-f]{64}$/.test(entry.sha256) ||
+          !Number.isSafeInteger(entry.size) ||
+          entry.size < 0
+        )
+          throw new Error(`invalid staged entry: ${JSON.stringify(entry)}`);
+        const source = join(directory, entry.file);
+        if (!lstatSync(source).isFile())
+          throw new Error(`staged payload must be regular: ${entry.file}`);
+        const copied = join(stage, "files", entry.file);
+        // Verify the staged copy itself so later source changes cannot alter the release bytes.
+        await run(["cp", "--", source, copied]);
+        if (statSync(copied).size !== entry.size || (await sha256File(copied)) !== entry.sha256)
+          throw new Error(`staged size or checksum mismatch: ${entry.file}`);
+        if (
+          scanName(entry.file, cfg.secrets.deniedNames).length ||
+          scanBytes(entry.file, new Uint8Array(readFileSync(copied)), cfg.secrets.contentPatterns)
+            .length
+        )
+          throw new Error(`secret scan failed for ${entry.file}`);
+        names.add(entry.file);
+        platformGroups.add(`${entry.name}/${entry.platform}`);
+        const file: PublishedFile = {
+          component: entry.name,
+          version: entry.version,
+          platform: entry.platform,
+          target: entry.target,
+          kind: entry.kind,
+          file: entry.file,
+          size: entry.size,
+          sha256: entry.sha256,
+        };
+        files.push(file);
+        artifacts.push({
+          name: file.component,
+          version: file.version,
+          platform: file.platform,
+          target: file.target,
+          kind: file.kind,
+          file: file.file,
+          size: file.size,
+          sha256: file.sha256,
+          provenance: { revision: input.commit, builder: "staged", manifest: manifestName },
+        });
+      }
+      for (const group of platformGroups) {
+        if (groups.has(group)) throw new Error(`duplicate staged component/platform: ${group}`);
+        groups.add(group);
+      }
+    }
+    if (!found) throw new Error(`no configured staged manifest in ${directory}`);
+  }
+  return { files, artifacts };
+}
+
 /** Preserve build provenance while pinning every inherited artifact to the new release. */
 export function planAssetsSnapshot(
   source: SnapshotManifest,
@@ -1073,7 +1184,13 @@ export function planAssetsSnapshot(
 /** Reuse only immutable artifact payloads; new mutable metadata is never hardlinked. */
 export async function publishAssetsSnapshot(
   cfg: DownloadsConfig,
-  options: { id: string; assetCommit: string; sourceRoot?: string; io?: ReleaseTransport },
+  options: {
+    id: string;
+    assetCommit: string;
+    sourceRoot?: string;
+    io?: ReleaseTransport;
+    staged?: PrebuiltStage[];
+  },
 ) {
   const io = options.io ?? releaseTransport;
   const sourceRoot = options.sourceRoot ?? root;
@@ -1097,7 +1214,7 @@ export async function publishAssetsSnapshot(
   ) as SnapshotManifest;
   if (source.release?.id !== oldId) throw new Error("current manifest release ID mismatch");
   const sums = await io.remote(cfg, `cat ${q(`${current}/SHA256SUMS`)}`);
-  const { manifest, files } = planAssetsSnapshot(
+  const { manifest, files: inherited } = planAssetsSnapshot(
     source,
     sums,
     options.id,
@@ -1111,6 +1228,23 @@ export async function publishAssetsSnapshot(
   const rel = `${cfg.host.root}/releases/${options.id}`;
   let reserved = false;
   try {
+    const prebuilt = await adoptPrebuiltStages(cfg, options.staged ?? [], stage);
+    const replaced = new Set(prebuilt.files.map((file) => `${file.component}/${file.platform}`));
+    const inheritedFiles = inherited.filter(
+      (file) => !replaced.has(`${file.component}/${file.platform}`),
+    );
+    const files = [...inheritedFiles, ...prebuilt.files];
+    if (new Set(files.map((file) => file.file)).size !== files.length)
+      throw new Error("staged payload collides with inherited artifact");
+    manifest.artifacts = [
+      ...manifest.artifacts.filter(
+        (artifact) => !replaced.has(`${artifact.name}/${artifact.platform}`),
+      ),
+      ...prebuilt.artifacts.map((artifact) => ({
+        ...artifact,
+        url: `${manifest.baseUrl.replace(/\/$/, "")}/releases/${options.id}/files/${artifact.file}`,
+      })),
+    ];
     const assetHashes = stageAssets(cfg, stage, sourceRoot);
     manifest.assetChecksums = assetHashes;
     // Reject aliases and linked payloads before reuse; mkdir reserves a genuinely new tree.
@@ -1124,7 +1258,7 @@ export async function publishAssetsSnapshot(
     );
     reserved = true;
     await io.remote(cfg, `mkdir ${q(`${rel}/files`)}`);
-    for (const f of files) {
+    for (const f of inheritedFiles) {
       const path = `${current}/files/${f.file}`;
       await io.remote(
         cfg,
@@ -1140,6 +1274,8 @@ export async function publishAssetsSnapshot(
         600,
       );
     }
+    for (const file of prebuilt.files)
+      await io.put(cfg, join(stage, "files", file.file), `${rel}/files/${file.file}`);
     await finalizeRelease(cfg, options.id, stage, manifest, files, io, assetHashes, current, false);
     return manifest;
   } catch (error) {
@@ -1161,9 +1297,20 @@ export async function publishAssetsSnapshot(
 /** Publish new installers with current artifact payloads, without rebuilding or uploading binaries. */
 async function assets(cfg: DownloadsConfig) {
   const assetCommit = await gitOut(root, "rev-parse", "HEAD");
+  const directories: string[] = [];
+  for (let index = 3; index < Bun.argv.length; index += 1) {
+    if (Bun.argv[index] !== "--staged") continue;
+    const directory = Bun.argv[++index];
+    if (!directory || directory.startsWith("--")) throw new Error("--staged requires a directory");
+    directories.push(directory);
+  }
+  const stagedCommit = arg("staged-revision") ?? "";
+  if (directories.length && !/^[0-9a-f]{40}$/.test(stagedCommit))
+    throw new Error("--staged requires --staged-revision with a full source commit");
   await publishAssetsSnapshot(cfg, {
     assetCommit,
     id: arg("id") ?? `${releaseId(assetCommit)}-assets-${randomUUID().slice(0, 8)}`,
+    staged: directories.map((directory) => ({ directory, commit: stagedCommit })),
   });
 }
 
@@ -1434,7 +1581,7 @@ if (import.meta.main) {
       break;
     default:
       console.error(
-        "usage: publish-downloads.ts plan|build|release|github|verify|host-plan|host-apply [--revision <sha>] [--id <release>] [--release <id>] [--apply]",
+        "usage: publish-downloads.ts plan|build|release|assets|github|verify|host-plan|host-apply [--revision <sha>] [--id <release>] [--release <id>] [--staged <dir> --staged-revision <sha>] [--apply]",
       );
       process.exit(2);
   }
