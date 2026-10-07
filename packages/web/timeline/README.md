@@ -59,6 +59,18 @@ texte ne déplace pas une entrée entre les jeux. Ses options `subject`,
 `refresh()` inclut les fiches collectées dans les passages et dans ces exemples.
 Cette préparation n'entraîne aucun modèle et ne prouve pas de gain du modèle Shenron.
 
+`trainingArtifacts(snapshot, options)` produit les entrées LoRA acceptées par
+le chargeur existant `aphrody_train.lora.load_examples` :
+`prepared/rollouts.jsonl` contient les questions et les réponses avec les rôles
+`user`/`model` et leurs parties textuelles ; `gold.jsonl` conserve les identités
+d'évaluation. Les cibles d'évaluation utilisent l'API détail, car le contrôle
+du trainer retire les fragments des URL et les repères d'Âges partagent une
+page. Chaque question commence par l'identité de sa fiche, avant les titres
+abrégés tels que « vol. », pour éviter une ambiguïté entre tomes.
+`refresh()` écrit aussi `training.json`, qui porte les compteurs et les
+SHA-256 des deux fichiers. La validation réelle sur les 716 fiches accepte
+655 exemples sans recouvrement avec les 61 cas d'évaluation.
+
 `indexRetrieval(snapshot, options)` alimente l'API RAG Aphrody existante par
 upserts idempotents. L'application fournit l'origine REST, le jeton, un espace
 `originSourceId` propre et éventuellement les textes enrichis. `requireVectors`

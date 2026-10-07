@@ -6,4 +6,5 @@
 - [x] Activer et vérifier le rafraîchissement horaire déclaré par Infra sur DBFR.
 - [x] Achever la collecte des 716 fiches liées, sans échec au 2026-10-07.
 - [x] Vérifier le chat public : HTTP 200 hybride, cinq passages de la nouvelle projection ; 716 vecteurs E5 présents.
+- [x] Produire les entrées LoRA en Bun et vérifier le chargeur réel : 655 exemples acceptés contre 61 cas gold.
 - [ ] Entraîner, évaluer et qualifier le modèle sur l’hôte Omar.

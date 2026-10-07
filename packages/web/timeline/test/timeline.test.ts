@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createTimelineHandler } from "../src/server.ts";
 import { indexRetrieval } from "../src/retrieval.ts";
+import { trainingArtifacts } from "../src/training.ts";
 
 const media = {
   source: SOURCE,
@@ -62,6 +63,47 @@ const ages = [
     orderIdx: 1,
   },
 ];
+
+test("LoRA inputs preserve provenance, exclude held-out identities and hash their actual content", () => {
+  const snapshot = normalize(
+    media,
+    Array.from({ length: 100 }, (_, i) => ({
+      ...ages[0],
+      id: i + 1,
+      title: `Repère ${i + 1}`,
+      description: `Description ${i + 1}`,
+    })),
+  );
+  const result = trainingArtifacts(snapshot);
+  const prepared = result.rolloutJsonl
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  const gold = result.goldJsonl
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  const heldOut = new Set(gold.map((row) => row.sourceId));
+  expect(result.manifest.hasBothSplits).toBe(true);
+  expect(prepared.length + gold.length).toBe(snapshot.entries.length);
+  expect(prepared.some((row) => heldOut.has(row.sourceId))).toBe(false);
+  expect(prepared[0].messages[1].role).toBe("model");
+  expect(prepared[0].messages[0].parts[0].text).toBe(prepared[0].prompt);
+  expect(prepared[0].prompt).toStartWith("Pour l’entrée movie 11,");
+  expect(prepared[0].messages[1].parts[0].text).toContain("Source : " + SOURCE);
+  const ageGold = gold.find((row) => row.sourceId.includes(":age:"));
+  expect(ageGold.expected_url).toStartWith(AGE_API + "/");
+  expect(ageGold.expected_url).not.toContain("#");
+  expect(result.manifest.prepared.sha256).toBe(
+    new Bun.CryptoHasher("sha256").update(result.rolloutJsonl).digest("hex"),
+  );
+  const changed = trainingArtifacts(snapshot, { content: (entry) => `Corrected ${entry.title}` });
+  expect(changed.manifest.prepared.sha256).not.toBe(result.manifest.prepared.sha256);
+  expect(changed.manifest.gold.sha256).not.toBe(result.manifest.gold.sha256);
+  expect(changed.examples.map((row) => [row.sourceId, row.split])).toEqual(
+    result.examples.map((row) => [row.sourceId, row.split]),
+  );
+});
 
 test("native retrieval refresh retires only its namespace after all documents and vectors are acknowledged", async () => {
   const documents = new Map<string, { originSourceId: string; syncGeneration: string }>([

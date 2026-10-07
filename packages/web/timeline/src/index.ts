@@ -11,3 +11,4 @@ export { crawlDetails, detailText } from "./crawl.ts";
 export type { CrawlState } from "./crawl.ts";
 export { indexRetrieval } from "./retrieval.ts";
 export type { RetrievalOptions } from "./retrieval.ts";
+export { trainingArtifacts } from "./training.ts";

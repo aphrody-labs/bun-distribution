@@ -41,6 +41,15 @@ source et leurs identités ne se recouvrent pas. Le rafraîchissement raccordé
 au RAG de production s'est terminé avec `Result=success`, code zéro,
 716 accusés d'indexation vectorielle et aucun retrait initial.
 
+La bibliothèque Bun produit également `prepared/rollouts.jsonl`,
+`gold.jsonl` et `training.json`, avec les empreintes SHA-256 des entrées.
+Le chargeur existant `aphrody_train.lora.load_examples`, exécuté avec
+Python 3.12.15 dans l'environnement propriétaire déjà installé, accepte
+les 655 exemples et son contrôle anti-fuite passe contre les 61 cas gold.
+Les questions commencent par l'identité de la fiche ; les cibles gold
+utilisent l'API détail pour distinguer les Âges partageant une même page.
+Le modèle, le bail GPU et l'export GGUF restent du ressort du trainer existant.
+
 Le test du chat public `/api/chat` a répondu HTTP 200 en mode hybride, avec
 cinq identités du nouvel espace et celle demandée. La réponse CPU a pris
 86,18 secondes ; le premier essai borné à 60 secondes avait expiré. Ce test
@@ -68,7 +77,11 @@ déclarées dans le [catalogue Infra](../../../config/host/catalog.json) :
 - [`shenron-timeline-api.service`](../../../config/host/systemd/shenron/shenron-timeline-api.service)
 
 Le timer est horaire, persistant, avec cinq minutes de délai aléatoire. Le
-serveur JSON/GraphQL écoute seulement sur `127.0.0.1:8813`. Aucune route publique
+premier déclenchement automatique observé le 7 octobre à 14:00:56 UTC s'est
+terminé à 14:01:35 UTC avec le code zéro : 32 fiches revérifiées sans échec,
+716 passages et vecteurs validés, ainsi que les fichiers LoRA régénérés.
+Le déclenchement suivant était programmé pour 15:04:16 UTC.
+Le serveur JSON/GraphQL écoute seulement sur `127.0.0.1:8813`. Aucune route publique
 ni règle Nginx n'a été ajoutée. Le module déployé est le build Bun du propriétaire
 Workspace, installé dans `/home/ubuntu/.local/lib/aphrody/shenron/workspace.mjs`.
 La bascule vers ce module a été qualifiée par le résultat systemd `success`,
@@ -83,10 +96,11 @@ repli arrête les deux unités persistantes et préserve tout le store privé.
 
 ## Validation et travail restant
 
-Onze tests Bun passent : ordre éditorial, intégrité de collection, pagination,
+Douze tests Bun passent : ordre éditorial, intégrité de collection, pagination,
 provenance, SQL idempotent, séparation train/évaluation, panne/récupération des
 fiches et import dans une autre application via `Bun.serve`, upserts RAG
-idempotents et retrait limité à un espace après indexation complète. Les typechecks du
+idempotents, retrait limité à un espace après indexation complète et format
+des entrées LoRA avec provenance, séparation et empreintes. Les typechecks du
 paquet et du propriétaire Workspace passent, ainsi que oxlint strict et oxfmt.
 Le catalogue global présente quatre unités Shenron non déclarées dans d'autres
 chantiers ; elles restent sous leurs propriétaires.

@@ -238,8 +238,8 @@ export function trainingRows(snapshot: Snapshot, options: TrainingOptions = {}) 
           role: "user",
           content:
             e.kind === "age"
-              ? `Que dit la chronologie de ${options.subject ?? "Dragon Ball"} au sujet de « ${e.title} » ?`
-              : `Où se situe « ${e.title} » (${e.series}, ${e.kind} ${e.id}) dans la frise officielle de ${options.subject ?? "Dragon Ball"} ?`,
+              ? `Pour l’entrée ${e.kind} ${e.id}, que dit la chronologie de ${options.subject ?? "Dragon Ball"} au sujet de « ${e.title} » ?`
+              : `Pour l’entrée ${e.kind} ${e.id}, où se situe « ${e.title} » (${e.series}, ${e.kind} ${e.id}) dans la frise officielle de ${options.subject ?? "Dragon Ball"} ?`,
         },
         { role: "assistant", content: options.content?.(e) ?? passage(e, snapshot.source) },
       ],

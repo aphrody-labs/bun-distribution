@@ -4,7 +4,6 @@ import { resolve, join } from "node:path";
 import {
   collect,
   passage,
-  trainingRows,
   type Entry,
   type Snapshot,
   type TimelineSource,
@@ -13,6 +12,7 @@ import {
 import { sqliteExport, sqlExport, redisIndex } from "./storage.ts";
 import { SDL, query } from "./graphql.ts";
 import { crawlDetails } from "./crawl.ts";
+import { trainingArtifacts } from "./training.ts";
 
 export interface RefreshOptions {
   redisUrl?: string;
@@ -55,7 +55,14 @@ export async function refresh(output: string, options: RefreshOptions = {}) {
         Bun.write(join(dir, "documents", e.key.replace(":", "-") + ".md"), content(e)),
       ),
     );
-    const rows = trainingRows(snapshot, { content, ...options.training });
+    const training = trainingArtifacts(snapshot, { content, ...options.training });
+    const rows = training.examples;
+    await mkdir(join(dir, "prepared"), { recursive: true, mode: 0o700 });
+    await Promise.all([
+      Bun.write(join(dir, "prepared", "rollouts.jsonl"), training.rolloutJsonl),
+      Bun.write(join(dir, "gold.jsonl"), training.goldJsonl),
+      Bun.write(join(dir, "training.json"), JSON.stringify(training.manifest, null, 2)),
+    ]);
     await Promise.all(
       ["train", "eval"].map((split) =>
         Bun.write(
@@ -83,6 +90,7 @@ export async function refresh(output: string, options: RefreshOptions = {}) {
       index,
       fetchedAt: snapshot.fetchedAt,
       trainingPerformed: false,
+      trainingArtifacts: training.manifest,
       crawl: crawl
         ? {
             checked: crawl.checked,
