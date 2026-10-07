@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Reconcile Aphrody and Shenron laboratory service status
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=120
+AccuracySec=10
+Unit=aphrody-discord-lab-telemetry.service
+
+[Install]
+WantedBy=timers.target

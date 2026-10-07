@@ -45,6 +45,7 @@
       "build-factory-2026-10-03.json",
       "private-tunnel-2026-10-06.json",
       "omar-admin-2026-10-07.json",
+      "discord-ai-lab-2026-10-07.json",
       "targets.json",
       "vps-source.json",
       "vps-unit-catalog.json"
@@ -81,6 +82,22 @@
     }
   ],
   "units": [
+    {
+      "service": "aphrody-discord-lab-telemetry",
+      "unit": "aphrody-discord-lab-telemetry.service",
+      "path": "systemd/aphrody/aphrody-discord-lab-telemetry.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-discord-lab-telemetry-timer",
+      "unit": "aphrody-discord-lab-telemetry.timer",
+      "path": "systemd/aphrody/aphrody-discord-lab-telemetry.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
     {
       "service": "aphrody-discord-ai-lab",
       "unit": "aphrody-discord-ai-lab.service",

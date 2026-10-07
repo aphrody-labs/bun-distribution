@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody and Shenron service telemetry to the private AI laboratory
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/aphrody-lab
+ExecStartPre=+/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/network.mjs --network /srv/aphrody-lab/network.json --receipt /srv/aphrody-lab/state/network.json
+ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/telemetry.mjs --env-file /etc/aphrody-discord.env --state /srv/aphrody-lab/state/discord.json --receipt /srv/aphrody-lab/state/telemetry.json --network /srv/aphrody-lab/state/network.json
+TimeoutStartSec=60
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/srv/aphrody-lab/state
+PrivateTmp=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0077
