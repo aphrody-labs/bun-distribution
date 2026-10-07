@@ -214,7 +214,7 @@ export function assertLocalJobsReceipt(stdout: string): void {
     throw new Error("Authenticated local native jobs control failed");
 }
 
-function ownedPrivateFile(path: string): string {
+export function ownedPrivateFile(path: string): string {
   const s = lstatSync(path);
   if (
     !s.isFile() ||
@@ -226,7 +226,7 @@ function ownedPrivateFile(path: string): string {
     throw new Error("Expected an owned private regular file");
   return readFileSync(path, "utf8");
 }
-function durablePrivateWrite(path: string, text: string) {
+export function durablePrivateWrite(path: string, text: string) {
   const temporary = `${path}.${crypto.randomUUID()}.new`;
   const descriptor = openSync(temporary, "wx", 0o600);
   try {
@@ -351,7 +351,7 @@ export async function activateLocalJobs(
   if (existsSync(config)) ownedPrivateFile(config);
   durablePrivateWrite(
     config,
-    `[mcp_servers.aphrody]\nurl = "http://127.0.0.1:8791/mcp"\nhttp_headers = { Authorization = "Bearer ${match[1]}" }\n`,
+    `[mcp_servers.aphrody]\nurl = "http://127.0.0.1:8791/mcp"\n[mcp_servers.aphrody.http_headers]\nAuthorization = "Bearer ${match[1]}"\n`,
   );
   const previous = LOCAL_JOB_UNITS.map((unit) => ({
     unit,
@@ -360,6 +360,7 @@ export async function activateLocalJobs(
     active: run("systemctl", ["--user", "is-active", "--quiet", unit]).status === 0,
     enabled: run("systemctl", ["--user", "is-enabled", "--quiet", unit]).status === 0,
   }));
+  let qualification = "unit installation";
   try {
     if (install(c, LOCAL_JOB_UNITS) !== 0) throw new Error("Local jobs unit installation failed");
     if (run("systemctl", ["--user", "daemon-reload"]).status !== 0)
@@ -371,6 +372,7 @@ export async function activateLocalJobs(
       )
         throw new Error("Local jobs unit activation failed");
     const request = options.fetch ?? fetch;
+    qualification = "MCP health";
     let ready = false;
     for (let attempt = 0; attempt < 20 && !ready; attempt++) {
       try {
@@ -382,6 +384,7 @@ export async function activateLocalJobs(
     }
     if (!ready) throw new Error("Local native MCP health failed");
     const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} });
+    qualification = "MCP authentication guard";
     for (const authorization of [undefined, "Bearer invalid-local-jobs-probe"]) {
       const response = await request("http://127.0.0.1:8791/mcp", {
         method: "POST",
@@ -395,6 +398,7 @@ export async function activateLocalJobs(
       });
       if (response.status !== 401) throw new Error("Local MCP authentication guard failed");
     }
+    qualification = "authenticated native jobs receipt";
     const status = run(native, [
       "mcp",
       "call",
@@ -407,6 +411,7 @@ export async function activateLocalJobs(
     ]);
     if (status.status !== 0) throw new Error("Authenticated local native jobs request failed");
     assertLocalJobsReceipt(status.stdout);
+    qualification = "worker activity";
     for (const unit of LOCAL_JOB_UNITS)
       if (run("systemctl", ["--user", "is-active", "--quiet", unit]).status !== 0)
         throw new Error("Local native worker is inactive");
@@ -425,7 +430,7 @@ export async function activateLocalJobs(
     for (const saved of previous)
       if (saved.active) run("systemctl", ["--user", "restart", saved.unit]);
     throw new Error(
-      "Local jobs qualification failed; prior selected user units restored, private credentials retained",
+      `Local jobs qualification failed (${qualification}); prior selected user units restored, private credentials retained`,
     );
   }
 }

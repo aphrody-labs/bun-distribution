@@ -222,6 +222,9 @@ test("successful activation retains its purpose-bound bearer and keeps client co
     expect(readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8")).toContain(
       "127.0.0.1:8791/mcp",
     );
+    expect(readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8")).toContain(
+      "[mcp_servers.aphrody.http_headers]",
+    );
     expect(f.names.every((unit) => f.active.has(unit))).toBe(true);
     expect(
       log.mock.calls.some((call) => String(call[0]).includes("workerReady remains false")),
