@@ -138,7 +138,12 @@ export function prepareNativeJobHostClients(
   durablePrivateWrite(join(directory, "hosts.json"), `${JSON.stringify(hosts, null, 2)}\n`);
   const run =
     options.run ??
-    ((command, args) => spawnSync(command, args, { cwd: context.root, timeout: 15000 }));
+    ((command, args) =>
+      spawnSync(command, args, {
+        cwd: context.root,
+        timeout: 120000,
+        env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "120" },
+      }));
   for (const host of hosts) {
     let bearer: string;
     if (host.id === "wsl") {
@@ -219,8 +224,20 @@ export async function qualifyNativeJobHostClients(
     throw new Error("Qualification requires 1-30 bounded probes");
   const directory = privateDirectory(options.home ?? homedir());
   const home = options.home ?? homedir();
-  const run = options.run ?? ((command, args) => spawnSync(command, args, { timeout: 15000 }));
+  const run =
+    options.run ??
+    ((command, args) =>
+      spawnSync(command, args, {
+        timeout: 120000,
+        env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "120" },
+      }));
   const now = options.now ?? Date.now;
+  const deadline = now() + 15 * 60 * 1000;
+  const checkDeadline = () => {
+    options.signal?.throwIfAborted();
+    if (now() >= deadline)
+      throw new Error("Native qualification global deadline expired; hosts remain unqualified");
+  };
   if (!hosts.length || new Set(hosts.map((host) => host.id)).size !== hosts.length)
     throw new Error("Unique prepared host identities required");
   for (const host of hosts) {
@@ -271,15 +288,17 @@ export async function qualifyNativeJobHostClients(
     )
       throw new Error("Job host does not match its declared placement");
     const call = async (tool: string, args: Record<string, unknown>) => {
-      options.signal?.throwIfAborted();
-      return decode(
-        await transport(
-          { config: host.config, server: host.server, tool, arguments: args },
-          { timeoutMs: 15000, signal: options.signal },
-        ),
+      checkDeadline();
+      const response = await transport(
+        { config: host.config, server: host.server, tool, arguments: args },
+        { timeoutMs: Math.min(15000, deadline - now()), signal: options.signal },
       );
+      checkDeadline();
+      return decode(response);
     };
+    checkDeadline();
     const pids = runtimeIdentity(host, options.pin, home, run);
+    checkDeadline();
     const proofPath = join(directory, `${host.id}.qualification.json`);
     const previous = existsSync(proofPath)
       ? (JSON.parse(ownedPrivateFile(proofPath)) as QualificationIntent)
@@ -359,6 +378,7 @@ export async function qualifyNativeJobHostClients(
       throw new Error("Native worker readiness probe expired; host remains unqualified");
     if (runtimeIdentity(host, options.pin, home, run) !== pids || now() - proof.createdAt >= 300000)
       throw new Error("Native worker changed or readiness proof expired during qualification");
+    checkDeadline();
     durablePrivateWrite(proofPath, `${JSON.stringify({ ...proof, completedAt: now() })}\n`);
     qualified.push({ ...host, workerReady: true });
   }

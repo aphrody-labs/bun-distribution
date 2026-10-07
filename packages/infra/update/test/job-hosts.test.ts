@@ -318,3 +318,24 @@ test("qualification rejects a foreign Host authority and revokes old readiness b
   expect(called).toBe(false);
   expect(JSON.parse(readFileSync(f.manifest, "utf8"))[0].workerReady).toBe(false);
 });
+
+test("a global qualification deadline stops stalled RPC progress without advertising readiness", async () => {
+  const f = fixture();
+  const hosts = prepareNativeJobHostClients(f.context, ["vps"], f.pin, f);
+  let time = 1000000;
+  let calls = 0;
+  await expect(
+    qualifyNativeJobHostClients(
+      hosts,
+      async (_request, options) => {
+        calls++;
+        expect(options.timeoutMs).toBeLessThanOrEqual(15000);
+        time += 15 * 60 * 1000 + 1;
+        return wrap({ count: 0, jobs: [], queue: { queued: 0, running: 0 } });
+      },
+      { ...f, now: () => time },
+    ),
+  ).rejects.toThrow("global deadline");
+  expect(calls).toBe(1);
+  expect(JSON.parse(readFileSync(f.manifest, "utf8"))[0].workerReady).toBe(false);
+});
