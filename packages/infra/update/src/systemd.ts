@@ -180,6 +180,39 @@ export function restart(c: Ctx, needles: string[]): number {
 
 const LOCAL_JOB_UNITS = ["aphrody-local-mcp.service", "aphrody-jobs-worker-wsl.service"];
 type LocalRun = (command: string, args: string[]) => SpawnSyncResult;
+const nonnegativeInteger = (value: unknown) =>
+  typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+
+/** Validate the actual queue listing DTO, including availability of its counters. */
+export function assertLocalJobsReceipt(stdout: string): void {
+  const envelope = JSON.parse(stdout) as {
+    result?: {
+      isError?: boolean;
+      structuredContent?: unknown;
+      content?: Array<{ type: string; text?: string }>;
+    };
+  };
+  const result = envelope.result;
+  const texts = result?.content?.filter((block) => block.type === "text" && block.text) ?? [];
+  if (!result || result.isError === true || (!result.structuredContent && texts.length !== 1))
+    throw new Error("Authenticated local native jobs control failed");
+  const receipt = (result.structuredContent ?? JSON.parse(texts[0]!.text!)) as {
+    error?: unknown;
+    count?: unknown;
+    jobs?: unknown;
+    queue?: { queued?: unknown; running?: unknown };
+  };
+  if (
+    !receipt ||
+    receipt.error ||
+    !Array.isArray(receipt.jobs) ||
+    !nonnegativeInteger(receipt.count) ||
+    receipt.count !== receipt.jobs.length ||
+    !nonnegativeInteger(receipt.queue?.queued) ||
+    !nonnegativeInteger(receipt.queue?.running)
+  )
+    throw new Error("Authenticated local native jobs control failed");
+}
 
 function ownedPrivateFile(path: string): string {
   const s = lstatSync(path);
@@ -373,25 +406,7 @@ export async function activateLocalJobs(
       "{}",
     ]);
     if (status.status !== 0) throw new Error("Authenticated local native jobs request failed");
-    const envelope = JSON.parse(status.stdout) as {
-      result?: { isError?: boolean; content?: Array<{ type: string; text?: string }> };
-    };
-    if (
-      envelope.result?.isError === true ||
-      !envelope.result?.content?.some((block) => {
-        if (block.type !== "text" || !block.text) return false;
-        const receipt = JSON.parse(block.text) as {
-          error?: unknown;
-          stats?: { queued?: unknown; running?: unknown };
-        };
-        return (
-          !receipt.error &&
-          typeof receipt.stats?.queued === "number" &&
-          typeof receipt.stats?.running === "number"
-        );
-      })
-    )
-      throw new Error("Authenticated local native jobs control failed");
+    assertLocalJobsReceipt(status.stdout);
     for (const unit of LOCAL_JOB_UNITS)
       if (run("systemctl", ["--user", "is-active", "--quiet", unit]).status !== 0)
         throw new Error("Local native worker is inactive");

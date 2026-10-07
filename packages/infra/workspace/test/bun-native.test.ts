@@ -84,7 +84,7 @@ test("native builder rejects legacy/unknown options without touching a source", 
   expect(await run(["--root", "/missing", "--debug"])).toEqual({
     stdout: "",
     stderr:
-      "bun-native: unknown argument --root\nusage: bun-native [--root=<monorepo>] [--package-root=<consumer>] [--debug] [--gpu] [--offline] [--unlocked] [--stage-existing=<debug-artifact>] [--artifact-sha256=<hex>]\n",
+      "bun-native: unknown argument --root\nusage: bun-native [--root=<monorepo>] [--package-root=<consumer>] [--debug] [--gpu] [--jobs] [--offline] [--unlocked] [--stage-existing=<debug-artifact>] [--artifact-sha256=<hex>]\n",
     code: 2,
   });
 });
@@ -294,6 +294,20 @@ test("native builder refuses an ABI-incomplete artifact and leaves no success ma
     await rm(root, { recursive: true, force: true });
   }
 }, 60_000);
+
+test("jobs qualification requires actual forwarding and cannot attest reused artifacts", async () => {
+  const { root } = await fixture();
+  try {
+    const missing = await run([`--root=${root}`, "--jobs", "--offline", "--unlocked"]);
+    expect(missing.code).toBe(1);
+    expect(missing.stderr).toContain("does not forward the jobs feature");
+    const reused = await run(["--debug", "--jobs", "--stage-existing=/missing"]);
+    expect(reused.code).toBe(1);
+    expect(reused.stderr).toContain("forbids --jobs");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 const nativeRoot = process.env.APHRODY_NATIVE_TEST_ROOT;
 const existingArtifact = process.env.APHRODY_NATIVE_TEST_ARTIFACT;

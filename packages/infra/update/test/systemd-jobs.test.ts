@@ -12,7 +12,11 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Ctx } from "../src/context.ts";
-import { activateLocalJobs, assertLocalJobsListener } from "../src/systemd.ts";
+import {
+  activateLocalJobs,
+  assertLocalJobsListener,
+  assertLocalJobsReceipt,
+} from "../src/systemd.ts";
 import type { SpawnSyncResult } from "../src/process.ts";
 
 const temporary: string[] = [];
@@ -76,7 +80,12 @@ function fixture(apply: boolean) {
     if (args.includes("call"))
       stdout = JSON.stringify({
         result: {
-          content: [{ type: "text", text: JSON.stringify({ stats: { queued: 0, running: 0 } }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ count: 0, jobs: [], queue: { queued: 0, running: 0 } }),
+            },
+          ],
         },
       });
     return { status, stdout, stderr: "", signal: null };
@@ -103,6 +112,43 @@ test("only the selected unit's exact loopback PID can reuse the endpoint", () =>
     ["LISTEN 127.0.0.1:8791 users:(pid=100)", "100", false],
   ] as const)
     expect(() => assertLocalJobsListener(rows, pid, active)).toThrow("foreign");
+});
+
+test("jobs qualification refuses malformed, unavailable or ambiguous queue receipts", () => {
+  const valid = { count: 0, jobs: [], queue: { queued: 0, running: 0 } };
+  assertLocalJobsReceipt(
+    JSON.stringify({ result: { content: [{ type: "text", text: JSON.stringify(valid) }] } }),
+  );
+  assertLocalJobsReceipt(JSON.stringify({ result: { structuredContent: valid } }));
+  for (const receipt of [
+    {},
+    { ...valid, count: 1 },
+    { ...valid, queue: { error: "store unavailable" } },
+    { ...valid, queue: { queued: -1, running: 0 } },
+    { ...valid, queue: { queued: 0, running: 0.5 } },
+    { ...valid, error: "JOB_STORE_ERROR" },
+  ]) {
+    expect(() =>
+      assertLocalJobsReceipt(
+        JSON.stringify({ result: { content: [{ type: "text", text: JSON.stringify(receipt) }] } }),
+      ),
+    ).toThrow();
+  }
+  expect(() =>
+    assertLocalJobsReceipt(JSON.stringify({ result: { isError: true, structuredContent: valid } })),
+  ).toThrow();
+  expect(() =>
+    assertLocalJobsReceipt(
+      JSON.stringify({
+        result: {
+          content: [
+            { type: "text", text: JSON.stringify(valid) },
+            { type: "text", text: JSON.stringify(valid) },
+          ],
+        },
+      }),
+    ),
+  ).toThrow();
 });
 
 test("dry run writes no bearer, config or units and rejects an unqualified binary", async () => {
