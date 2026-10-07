@@ -124,7 +124,10 @@
       "kind": "desktop",
       "description": "Aphrody-Setup.exe, the one-click installer for everyone (apps/community/setup): aphrody, yolo, the desktop app, the Claude plugins and the MCP declaration, optional administrator and creator roles; the « Download Aphrody » button of the site",
       "versionFrom": { "packageJson": "apps/community/setup/package.json" },
-      "stage": { "script": "scripts/release/stage-setup.ts", "manifest": "aphrody-setup.manifest.json" },
+      "stage": {
+        "script": "scripts/release/stage-setup.ts",
+        "manifest": "aphrody-setup.manifest.json"
+      },
       "platforms": [
         {
           "platform": "windows-x86_64",
@@ -139,10 +142,24 @@
       "kind": "kit",
       "description": "Aphrody-Omar.exe, the administrator kit (apps/community/omar-kit): the Windows pack zip and the flat tar.gz its updater reads; installed by Aphrody-Setup for the administrator role",
       "versionFrom": { "packageJson": "apps/community/omar-kit/package.json" },
-      "stage": { "script": "scripts/release/stage-omar-kit.ts", "manifest": "omar-kit.manifest.json" },
+      "stage": {
+        "script": "scripts/release/stage-omar-kit.ts",
+        "manifest": "omar-kit.manifest.json"
+      },
       "platforms": [
         { "platform": "windows-x86_64", "target": "x86_64-pc-windows-msvc", "enabled": true }
       ]
+    },
+    {
+      "id": "aphrody-cli-wasm",
+      "kind": "wasm",
+      "description": "Pure Rust CLI commands with the typed browser/Bun/Node facade, optimized WebAssembly, declarations, Apache license and independent build provenance",
+      "versionFrom": { "packageJson": "packages/infra/cli-wasm/package.json" },
+      "stage": {
+        "script": "scripts/release/stage-cli-wasm.ts",
+        "manifest": "aphrody-cli-wasm.manifest.json"
+      },
+      "platforms": [{ "platform": "wasm", "target": "wasm32-unknown-unknown", "enabled": true }]
     },
     {
       "id": "aphrody-app",

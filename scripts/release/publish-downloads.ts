@@ -60,7 +60,7 @@ export interface ArtifactConfig {
    * `desktop`: what the « Download Aphrody » button of the site points at (Aphrody-Setup.exe); `kit`: a Bun kit exe;
    * `desktop-app`: the Tauri installer of the desktop app, installed by Aphrody-Setup when it is published.
    */
-  kind: "factory-binary" | "bun-compile" | "plugin" | "desktop" | "kit" | "desktop-app";
+  kind: "factory-binary" | "bun-compile" | "plugin" | "desktop" | "kit" | "desktop-app" | "wasm";
   description: string;
   versionFrom?: { cargoWorkspace?: string; file?: string; packageJson?: string };
   /** Local Bun stage script (`bun <script> --out <dir>`) and the manifest of entries it writes into `<dir>`. */
@@ -1038,7 +1038,8 @@ async function adoptPrebuiltStages(
           !/^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$/.test(entry.version) ||
           !(
             (artifact.kind === "desktop" && ["desktop", "update"].includes(entry.kind)) ||
-            (artifact.kind === "kit" && entry.kind === "kit")
+            (artifact.kind === "kit" && entry.kind === "kit") ||
+            (artifact.kind === "wasm" && entry.kind === "wasm" && entry.file?.endsWith(".tar.gz"))
           ) ||
           typeof entry.file !== "string" ||
           !safePayloadName(entry.file) ||

@@ -132,6 +132,7 @@ describe("publish-downloads", () => {
       "yolo",
       "aphrody-setup",
       "omar-kit",
+      "aphrody-cli-wasm",
       "aphrody-app",
       "plugin-aphrody",
       "plugin-yolo",
@@ -262,6 +263,58 @@ function prebuiltFixture(f: ReturnType<typeof snapshotFixture>) {
 }
 
 describe("immutable installer snapshots", () => {
+  test("adopts the declared portable WASM stage while preserving native artifacts", async () => {
+    const f = snapshotFixture();
+    try {
+      const directory = join(f.work, "wasm-stage");
+      mkdirSync(directory);
+      const bytes = new TextEncoder().encode("qualified portable package");
+      const entry = {
+        name: "aphrody-cli-wasm",
+        version: "0.1.0",
+        platform: "wasm",
+        target: "wasm32-unknown-unknown",
+        kind: "wasm",
+        file: "aphrody-cli-wasm.tar.gz",
+        size: bytes.length,
+        sha256: sha256Bytes(bytes),
+      };
+      writeFileSync(join(directory, entry.file), bytes);
+      writeFileSync(join(directory, "aphrody-cli-wasm.manifest.json"), JSON.stringify([entry]));
+      const published = await publishAssetsSnapshot(f.config, {
+        id: "wasm",
+        assetCommit: "source",
+        sourceRoot: f.work,
+        io: f.io,
+        staged: [{ directory, commit: "8".repeat(40) }],
+      });
+      expect(published.artifacts).toHaveLength(2);
+      expect(published.artifacts[1]).toMatchObject({
+        ...entry,
+        provenance: { revision: "8".repeat(40) },
+      });
+      expect(statSync(join(f.host, "releases/wasm/files", f.artifact.file)).ino).toBe(
+        statSync(join(f.old, "files", f.artifact.file)).ino,
+      );
+      writeFileSync(
+        join(directory, "aphrody-cli-wasm.manifest.json"),
+        JSON.stringify([{ ...entry, kind: "desktop" }]),
+      );
+      await expect(
+        publishAssetsSnapshot(f.config, {
+          id: "bad-wasm",
+          assetCommit: "source",
+          sourceRoot: f.work,
+          io: f.io,
+          staged: [{ directory, commit: "8".repeat(40) }],
+        }),
+      ).rejects.toThrow("invalid staged entry");
+      expect(realpathSync(join(f.host, "current"))).toBe(join(f.host, "releases/wasm"));
+    } finally {
+      rmSync(f.work, { recursive: true, force: true });
+    }
+  });
+
   test("adds four qualified installer artifacts and retains nine inherited payloads and build provenance", async () => {
     const f = snapshotFixture();
     try {

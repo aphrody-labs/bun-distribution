@@ -21,6 +21,7 @@
   },
   "scripts": {
     "build:wasm": "bun ../../../scripts/build/rust/wasm-package.ts --crate aphrody-command-wasm --out packages/infra/cli-wasm/wasm",
+    "stage": "bun ../../../scripts/release/stage-cli-wasm.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
