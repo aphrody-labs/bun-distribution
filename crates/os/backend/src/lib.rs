@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+pub mod base;
+pub mod stdio_capture;
+
 use std::path::Path;
 
 use anyhow::{Result, anyhow};
-use aphrody_base::Vfs;
+use crate::base::Vfs;
 use reqwest::Client;
 use tokio::fs;
 use tracing::{error, info};

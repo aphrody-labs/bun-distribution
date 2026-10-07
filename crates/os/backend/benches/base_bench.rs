@@ -21,7 +21,7 @@
 use std::hint::black_box;
 
 use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce, aead::Aead};
-use aphrody_base::{Crypto, Vfs};
+use aphrody_backend::base::{Crypto, Vfs};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 // ---------------------------------------------------------------------------

@@ -87,7 +87,7 @@ serde_json = { workspace = true }
 serde      = { workspace = true }
 # Shared cross-platform stdout/stderr capture (dup2 on unix / SetStdHandle on
 # Windows); pulls tempfile/libc/windows-sys transitively, host-only.
-aphrody-stdio-capture = { workspace = true }
+aphrody-backend = { workspace = true }
 # Persistent multi-thread runtime that drives `aphrody_command::run_async`, so repeated
 # FFI calls amortise the worker-thread spawn cost instead of paying it per call.
 tokio      = { workspace = true }

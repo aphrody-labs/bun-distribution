@@ -13,7 +13,7 @@
 
 use std::hint::black_box;
 
-use aphrody_base::{Crypto, Vfs};
+use aphrody_backend::base::{Crypto, Vfs};
 use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
 use sha2::Digest as _;
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 use std::sync::Arc;
 
-use aphrody_base::Vfs;
+use aphrody_backend::base::Vfs;
 use async_trait::async_trait;
 use miette::Result;
 

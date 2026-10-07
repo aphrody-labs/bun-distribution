@@ -64,7 +64,6 @@ aphrody-antigravity = { path = "crates/google/antigravity", version = "1.0.0", f
 aphrody-app-protocol = { path = "crates/contracts/app-protocol", version = "1.0.0-canary", features = [] }
 aphrody-app-server = { path = "crates/ai/app-server", version = "1.0.0", features = [] }
 aphrody-backend = { path = "crates/os/backend", version = "1.0.0-canary", features = [] }
-aphrody-base = { path = "crates/os/base", version = "1.0.0-canary", features = [] }
 aphrody-boq = { path = "crates/google/boq", version = "1.0.0", features = [] }
 aphrody-capture = { path = "crates/os/capture", version = "1.0.0-canary", features = [] }
 aphrody-config = { path = "crates/ai/config", version = "1.0.0", features = [] }
@@ -121,7 +120,6 @@ aphrody-secrets = { path = "crates/os/secrets", version = "1.0.0-canary", featur
 aphrody-session = { path = "crates/ai/session", version = "1.0.0", features = [] }
 aphrody-skills = { path = "crates/ai/skills", version = "1.0.0", features = [] }
 aphrody-ssh = { path = "crates/infra/ssh", version = "0.1.0", features = [] }
-aphrody-stdio-capture = { path = "crates/os/stdio-capture", version = "1.0.0-canary", features = [] }
 aphrody-supervisor = { path = "crates/ai/supervisor", version = "1.0.0", features = [] }
 aphrody-shell-web = { path = "crates/shell/web", version = "1.0.0-canary", features = [] }
 aphrody-shell-sandbox-host = { path = "crates/shell/aphrody-shell-sandbox-host", version = "1.0.0-canary", features = [] }

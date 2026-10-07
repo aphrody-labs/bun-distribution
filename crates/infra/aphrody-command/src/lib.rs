@@ -1575,7 +1575,7 @@ pub struct CapturedRun {
 /// in-process, returning the structured [`CapturedRun`].
 ///
 /// The structured counterpart to [`run_from_args`] (which inherits stdio): it
-/// wraps the same dispatch in `aphrody_stdio_capture::with_captured_stdio`. The
+/// wraps the same dispatch in `aphrody_backend::stdio_capture::with_captured_stdio`. The
 /// Tauri app and any host that wants the output back (rather than on the
 /// terminal) use this. The redirect is process-global, so concurrent callers
 /// must serialise around it.
@@ -1586,7 +1586,7 @@ where
     I: IntoIterator<Item = T>,
     T: Into<std::ffi::OsString> + Clone,
 {
-    let (code, stdout, stderr) = aphrody_stdio_capture::with_captured_stdio(|| run_from_args(args));
+    let (code, stdout, stderr) = aphrody_backend::stdio_capture::with_captured_stdio(|| run_from_args(args));
     CapturedRun { code, stdout, stderr }
 }
 

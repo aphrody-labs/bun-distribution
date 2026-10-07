@@ -91,7 +91,6 @@ clap          = { workspace = true }
 clap_complete = { workspace = true }
 miette        = { workspace = true }
 async-trait   = { workspace = true }
-aphrody-base          = { workspace = true }
 # Pure sub-commands shared with the wasm32 targets.
 aphrody-command-pure  = { workspace = true }
 serde         = { workspace = true }
@@ -233,7 +232,6 @@ aphrody-agent-home        = { workspace = true, features = ["git"] }
 # agent session's system prompt (see exec_cmd::runtime_config).
 # In-process stdout/stderr capture backing `aphrody::run_captured` (the
 # structured entry the Tauri app + aphrody-ffi consume). Host-only.
-aphrody-stdio-capture     = { workspace = true }
 # `aphrody agent "..."` — the flagship autonomous-agent surface (Antigravity
 # rewrite, docs/VISION.md Phase 3b). aphrody-agent-runtime is the wiring/factory
 # that assembles a ready-to-run agent (model client + tool registry + engine);

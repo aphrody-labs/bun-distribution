@@ -21,13 +21,44 @@ anyhow             = { workspace = true }
 reqwest            = { workspace = true }
 tracing            = { workspace = true }
 tracing-subscriber = { workspace = true }
-aphrody-base               = { workspace = true }
+aes-gcm            = { workspace = true }
+
+# getrandom is gated to wasm32 below; machete cannot see cfg-gated deps.
+[package.metadata.cargo-machete]
+ignored = ["getrandom"]
+
+# Browser-WASM: aes-gcm pulls getrandom, which must opt into the "wasm_js" backend.
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+getrandom = { workspace = true, features = ["wasm_js"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Security_Cryptography",
+    "Win32_System_Memory",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+] }
+
+# stdio capture redirects the OS standard streams: host-only (an empty module on wasm32).
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tempfile = { workspace = true }
+
+[target.'cfg(all(not(target_arch = "wasm32"), unix))'.dependencies]
+rustix = { workspace = true, features = ["stdio"] }
+
+[target.'cfg(all(not(target_arch = "wasm32"), windows))'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Console"] }
 
 [dev-dependencies]
 criterion          = { workspace = true }
 sha2               = { workspace = true }
-aes-gcm            = { workspace = true }
 
 [[bench]]
 name    = "backend_bench"
+harness = false
+
+[[bench]]
+name    = "base_bench"
 harness = false

@@ -734,26 +734,18 @@ version = "1.0.0-canary"
 dependencies = [
  "aes-gcm 0.11.1",
  "anyhow",
- "aphrody-base",
  "criterion",
+ "getrandom 0.4.3",
  "reqwest 0.13.5",
+ "rustix 1.1.5",
  "serde_json",
  "sha2 0.11.0",
+ "tempfile",
  "tokio",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "aphrody-base"
-version = "1.0.0-canary"
-dependencies = [
- "aes-gcm 0.11.1",
- "anyhow",
- "criterion",
- "getrandom 0.4.3",
- "tracing",
  "windows 0.62.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -845,7 +837,6 @@ dependencies = [
  "aphrody-antigravity",
  "aphrody-app-server",
  "aphrody-backend",
- "aphrody-base",
  "aphrody-bindgen",
  "aphrody-code-graph",
  "aphrody-command-pure",
@@ -879,7 +870,6 @@ dependencies = [
  "aphrody-render",
  "aphrody-secrets",
  "aphrody-ssh",
- "aphrody-stdio-capture",
  "aphrody-tauri-cli",
  "aphrody-terminal-backend",
  "aphrody-toolcall",
@@ -1146,6 +1136,7 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "aphrody-agent-home",
+ "aphrody-backend",
  "aphrody-bun",
  "aphrody-command",
  "aphrody-gemini-web",
@@ -1155,7 +1146,6 @@ dependencies = [
  "aphrody-n2b-core",
  "aphrody-oxc-bridge",
  "aphrody-rag-core",
- "aphrody-stdio-capture",
  "aphrody-toolcall-repair",
  "aphrody-web-extract",
  "aphrody-web-index",
@@ -2411,15 +2401,6 @@ dependencies = [
  "sysinfo 0.39.6",
  "thiserror 2.0.21",
  "tokio",
-]
-
-[[package]]
-name = "aphrody-stdio-capture"
-version = "1.0.0-canary"
-dependencies = [
- "rustix 1.1.5",
- "tempfile",
- "windows-sys 0.61.2",
 ]
 
 [[package]]

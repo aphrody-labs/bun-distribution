@@ -118,7 +118,7 @@ mod native {
         sync::{Mutex, OnceLock},
     };
 
-    use aphrody_stdio_capture::with_captured_stdio;
+    use aphrody_backend::stdio_capture::with_captured_stdio;
 
     /// ABI version of the exported symbol set. Bump on any incompatible change.
     ///
