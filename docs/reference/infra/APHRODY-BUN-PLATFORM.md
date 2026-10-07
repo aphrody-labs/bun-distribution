@@ -13,7 +13,7 @@ The [ecosystem catalogue](../../ecosystem/ECOSYSTEM.md) is the generated invento
 | Bun runtime fork | Fork pin, private `aphrody-labs/bun` | JavaScriptCore runtime, bundler, package manager and tests. The fork is distinct from the installed upstream Bun executable. |
 | Toolchain discovery | [aphrody-toolchains](../../../crates/compat/toolchains/) | Installed executable discovery and version pins. |
 | Node-to-Bun analysis | [N2B crates](../../../crates/compat/) and [surface inventory](../compat/n2b/BUN-SURFACE.md) | Static analysis, migration rules and reports; source analysis does not execute remote JavaScript. |
-| Bun N2B consumers | [client](../../../packages/engine/n2b-client), [plugin](../../../packages/engine/n2b-plugin) | Thin bindings to the owned scanner and build-time analysis. |
+| Bun N2B consumers | [client, plugin and types](../../../packages/engine/n2b-client) | Thin bindings to the owned scanner and build-time analysis. |
 | N2B native ABI | [aphrody-n2b-native](../../../crates/compat/n2b-native/) | Versioned C ABI with owned-string release. |
 | Oxc tools | [Cargo pins](../../../Cargo.toml), private `aphrody-labs/oxc` | Parser, formatter, linter and minifier dependencies; inspect the actual pinned revisions. |
 | Offline Bun docs | [aphrody-bun-docs](../../../crates/compat/bun-docs/), [Bun reference](../upstream-bun/) | Version-matched documentation and Node compatibility lookup. |

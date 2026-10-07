@@ -5,7 +5,7 @@
 // Canonical schema and Rust types live in crates/compat/n2b-types (Yolo is part of this monorepo).
 // Produit :
 //   - crates/compat/n2b-types/src/schema.rs       via `cargo typify`
-//   - packages/engine/n2b-types/src/index.ts      via `json-schema-to-typescript --unreachableDefinitions`
+//   - packages/engine/n2b-client/src/types.ts      via `json-schema-to-typescript --unreachableDefinitions`
 //
 // Les deux fichiers sont commités. La CI échoue si drift (mode --check).
 //
@@ -31,7 +31,7 @@ export async function schemaPaths(root = REPO_ROOT) {
     schema,
     rust: join(crate, "src/schema.rs"),
     format: join(crate, "rustfmt.toml"),
-    ts: join(root, "packages/engine/n2b-types/src/index.ts"),
+    ts: join(root, "packages/engine/n2b-client/src/types.ts"),
   };
 }
 

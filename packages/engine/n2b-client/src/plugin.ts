@@ -16,8 +16,8 @@
 // onLoad/onEnd. Legacy subprocess scanning requires explicit native: "off".
 
 import type { BunPlugin } from "bun";
-import { scan, type ScanOptions } from "@aphrody/n2b-core";
-import type { Finding, N2BReport } from "@aphrody/n2b-types";
+import { scan, type ScanOptions } from "./index";
+import type { Finding, N2BReport } from "./types";
 import { resolve } from "node:path";
 
 const DIM = "\x1b[2m";
@@ -47,7 +47,7 @@ export interface N2BPluginOptions extends Pick<
 /**
  * Create the n2b Bun plugin. Usage:
  *
- *     import { n2bPlugin } from "@aphrody/n2b-plugin";
+ *     import { n2bPlugin } from "@aphrody/n2b-core/plugin";
  *     Bun.plugin(n2bPlugin({ onFindings: "warn" }));
  *
  * The plugin scans once per build through the Yolo SDK. A missing native provider

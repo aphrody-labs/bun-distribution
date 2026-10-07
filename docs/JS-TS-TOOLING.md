@@ -37,9 +37,6 @@ The four transferred Bun packages retain their names and version 0.6.2:
 | Package | Source | Behavior |
 | --- | --- | --- |
 | `@aphrody/n2b-core` | packages/n2b-client | Default scan calls the native SDK; compatibility CLI helpers are explicit |
-| `@aphrody/n2b-plugin` | packages/n2b-plugin | Bun build plugin scans once and indexes findings; it does not implement migration rules |
-| `@aphrody/n2b-shims` | packages/n2b-shims | Compatibility exports of the single Bun shim implementation |
-| `@aphrody/n2b-types` | packages/n2b-types | Type aliases to the generated SDK schema |
 
 The plugin's `auto` and `required` policies both require the native provider.
 `native: "off"` selects the historical CLI adapter explicitly. The `rules`,

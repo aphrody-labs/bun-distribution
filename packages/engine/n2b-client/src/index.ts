@@ -16,10 +16,10 @@
 //
 // Related packages:
 //   - @aphrody/n2b-core: native scan; rules/prompt/version stay CLI-backed.
-//   - @aphrody/n2b-types: canonical generated SDK schema aliases.
-//   - @aphrody/n2b-plugin: Bun.plugin() using the same native scan.
+//   - ./types: canonical generated SDK schema aliases (@aphrody/n2b-core/types).
+//   - ./plugin: Bun.plugin() using the same native scan (@aphrody/n2b-core/plugin).
 //   - @aphrody/n2b-core/shims : polyfills Bun-natifs des APIs Node détectées par n2b
-//     (source unique depuis le 2026-10-02 ; @aphrody/n2b-shims ne fait plus que ré-exporter).
+//     (source unique ; le paquet @aphrody/n2b-shims est absorbé).
 
 // Default scanning is native; these named helpers retain their explicit CLI semantics.
 export { scan } from "./native";
@@ -27,4 +27,4 @@ export { rules, promptMarkdown, binaryVersion } from "./cli";
 export type { ScanOptions } from "./native";
 export type { N2BError } from "./cli";
 
-export type { N2BReport, FileFix, Finding, Context, Mode, Severity } from "@aphrody/n2b-types";
+export type { N2BReport, FileFix, Finding, Context, Mode, Severity } from "./types";

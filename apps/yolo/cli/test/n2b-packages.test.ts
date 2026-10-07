@@ -12,8 +12,8 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { scan } from "../../../../packages/engine/n2b-client/src/index.ts";
-import { n2bPlugin } from "../../../../packages/engine/n2b-plugin/src/index.ts";
-import type { N2BReport } from "../../../../packages/engine/n2b-types/src/index.ts";
+import { n2bPlugin } from "../../../../packages/engine/n2b-client/src/plugin.ts";
+import type { N2BReport } from "../../../../packages/engine/n2b-client/src/types.ts";
 import type { N2BReport as SdkReport } from "../../../../packages/engine/runtime/src/tooling-schema.ts";
 
 const work = mkdtempSync(join(tmpdir(), "yolo-n2b-packages-"));

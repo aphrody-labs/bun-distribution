@@ -797,60 +797,6 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/n2b-plugin",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/n2b-plugin",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/n2b-shims",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/n2b-shims",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/n2b-types",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/n2b-types",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/plugins",
             "typecheck"
           ]

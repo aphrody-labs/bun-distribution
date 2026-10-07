@@ -39,9 +39,6 @@ Resolved external versions (Cargo.lock): `fastembed 5.17.3`, `octocrab 0.54.2` (
 | Package | Path | Version | Workspace deps | Scripts | Tests |
 |---|---|---|---|---|---|
 | `@aphrody/n2b-core` (dir name `n2b-client`) | `packages/engine/n2b-client` | 0.6.2 | n2b-types | build, start, dev, typecheck, test | `test/binary-resolution.test.ts`, `test/cli.test.ts`, `test/shims.test.ts` |
-| `@aphrody/n2b-plugin` | `packages/engine/n2b-plugin` | 0.6.2 | n2b-types, n2b-core | typecheck, test | `test-resolution.test.ts` |
-| `@aphrody/n2b-shims` | `packages/engine/n2b-shims` | 0.6.2 | n2b-core | build, typecheck | none (compatibility alias: every entry re-exports `@aphrody/n2b-core/shims*`) |
-| `@aphrody/n2b-types` | `packages/engine/n2b-types` | 0.6.2 | none | build, typecheck | none |
 
 No package outside `packages/compat` (not in repo) declares a dependency on `@aphrody/n2b-*`
 (grep over `apps/**`, `packages/**` package.json). None declares a `bin`.

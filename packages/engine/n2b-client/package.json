@@ -13,6 +13,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./cli": "./src/cli.ts",
+    "./types": "./src/types.ts",
+    "./plugin": "./src/plugin.ts",
     "./shims": "./src/shims/index.ts",
     "./shims/env": "./src/shims/env.ts",
     "./shims/fs": "./src/shims/fs.ts",
@@ -31,7 +33,6 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@aphrody/n2b-types": "workspace:*",
     "@aphrody/runtime-sdk": "workspace:*"
   },
   "engines": {

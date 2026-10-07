@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { NativeTooling, type ScanNodeProjectOptions } from "@aphrody/runtime-sdk/tooling";
-import type { N2BReport } from "@aphrody/n2b-types";
+import type { N2BReport } from "./types";
 import { resolve } from "node:path";
 import type { N2BError } from "./cli";
 

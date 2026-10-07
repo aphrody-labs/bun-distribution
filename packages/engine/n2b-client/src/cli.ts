@@ -17,10 +17,10 @@
 // the JSON v2 output (schema/v2.json) and returns typed results.
 //
 // This is an explicit legacy CLI adapter. Native scans use the package root; both
-// for automation scripts and for the Bun plugin (packages/n2b-plugin/src/index.ts).
+// for automation scripts and for the Bun plugin (packages/engine/n2b-client/src/plugin.ts).
 // No schema duplication: schema.ts is codegen'd from schema/v2.json.
 
-import type { N2BReport, Mode } from "@aphrody/n2b-types";
+import type { N2BReport, Mode } from "./types";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 

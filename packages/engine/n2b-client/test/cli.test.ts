@@ -22,7 +22,7 @@ import { join } from "node:path";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { scan, binaryVersion } from "../src/cli";
-import type { N2BReport } from "@aphrody/n2b-types";
+import type { N2BReport } from "../src/types";
 
 async function createFixture(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "aphrody-n2b-test-"));

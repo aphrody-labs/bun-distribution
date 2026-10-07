@@ -964,29 +964,6 @@
       "name": "@aphrody/n2b-core",
       "version": "0.6.3",
       "dependencies": {
-        "@aphrody/n2b-types": "workspace:*",
-        "@aphrody/runtime-sdk": "workspace:*",
-      },
-    },
-    "packages/engine/n2b-plugin": {
-      "name": "@aphrody/n2b-plugin",
-      "version": "0.6.3",
-      "dependencies": {
-        "@aphrody/n2b-core": "workspace:*",
-        "@aphrody/n2b-types": "workspace:*",
-      },
-    },
-    "packages/engine/n2b-shims": {
-      "name": "@aphrody/n2b-shims",
-      "version": "0.6.3",
-      "dependencies": {
-        "@aphrody/n2b-core": "workspace:*",
-      },
-    },
-    "packages/engine/n2b-types": {
-      "name": "@aphrody/n2b-types",
-      "version": "0.6.3",
-      "dependencies": {
         "@aphrody/runtime-sdk": "workspace:*",
       },
     },
@@ -1444,12 +1421,6 @@
     "@aphrody/messaging": ["@aphrody/messaging@workspace:packages/discord/aphrody-messaging"],
 
     "@aphrody/n2b-core": ["@aphrody/n2b-core@workspace:packages/engine/n2b-client"],
-
-    "@aphrody/n2b-plugin": ["@aphrody/n2b-plugin@workspace:packages/engine/n2b-plugin"],
-
-    "@aphrody/n2b-shims": ["@aphrody/n2b-shims@workspace:packages/engine/n2b-shims"],
-
-    "@aphrody/n2b-types": ["@aphrody/n2b-types@workspace:packages/engine/n2b-types"],
 
     "@aphrody/omar-kit": ["@aphrody/omar-kit@workspace:apps/community/omar-kit"],
 

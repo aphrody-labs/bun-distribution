@@ -24,7 +24,7 @@ test("schema lives in crates/contracts; Rust output in the n2b-types crate; gene
   expect(paths.schema).toBe(schema);
   expect(paths.rust).toBe(join(root, "crates/compat/n2b-types/src/schema.rs"));
   expect(paths.format).toBe(join(root, "crates/compat/n2b-types/rustfmt.toml"));
-  expect(paths.ts).toBe(join(root, "packages/engine/n2b-types/src/index.ts"));
+  expect(paths.ts).toBe(join(root, "packages/engine/n2b-client/src/types.ts"));
   expect(await Bun.file(paths.schema).json()).toEqual({ title: "N2BReport" });
 });
 
