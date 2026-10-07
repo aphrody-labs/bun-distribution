@@ -9,6 +9,7 @@ import { mkdirSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { libraryFile, Runtime } from "../../packages/engine/runtime/src/index";
 import { sha256 } from "../../packages/engine/core/src/sys/hash";
+import { peExports, runtimeCapabilities } from "./runtime-artifact-info.ts";
 
 const root = resolve(import.meta.dir, "../..");
 // A producer packages its build, independently of whichever version the user installed.
@@ -31,7 +32,8 @@ interface BuildInfo {
   abi: string;
   target: string;
   rustc: string;
-  panic_recovery: boolean;
+  panic_recovery: boolean | null;
+  git_rev?: string;
 }
 
 /**
@@ -46,13 +48,15 @@ async function crossInfo(
 ): Promise<{ info: BuildInfo; capabilities: string[] }> {
   const bytes = new Uint8Array(await Bun.file(path).arrayBuffer());
   const text = new TextDecoder("latin1").decode(bytes);
-  if (!text.startsWith("MZ")) throw new Error(`${path} is not a PE image`);
-  const header = await Bun.file(resolve(root, "crates/engine/yolo-runtime/include/yolo_runtime.h")).text();
-  for (const symbol of header.match(/\byolo_[a-z0-9_]+(?=\()/g) ?? []) {
-    if (!text.includes(symbol)) throw new Error(`${path} does not export ${symbol}`);
-  }
+  const exports = peExports(bytes, target);
+  const header = await Bun.file(
+    resolve(root, "crates/engine/yolo-runtime/include/yolo_runtime.h"),
+  ).text();
+  const capabilities = runtimeCapabilities(exports, header);
   if (!text.includes(target)) throw new Error(`${path} does not embed the target ${target}`);
-  const rustc = text.match(/rustc \d+\.\d+\.\d+(?:-[a-z]+)? \([0-9a-f]{9} \d{4}-\d{2}-\d{2}\)/)?.[0];
+  const rustc = text.match(
+    /rustc \d+\.\d+\.\d+(?:-[a-z]+)? \([0-9a-f]{9} \d{4}-\d{2}-\d{2}\)/,
+  )?.[0];
   if (!rustc) throw new Error(`${path} embeds no rustc version`);
   const lib = await Bun.file(resolve(root, "crates/engine/yolo-runtime/src/lib.rs")).text();
   const major = lib.match(/pub const ABI_MAJOR: u32 = (\d+);/)?.[1];
@@ -60,12 +64,18 @@ async function crossInfo(
   if (!major || !minor) throw new Error("ABI constants not found in yolo-runtime");
   const workspace = await Bun.file(resolve(root, "Cargo.toml")).text();
   const version = workspace.match(/\[workspace\.package\][^[]*?\nversion = "([^"]+)"/)?.[1];
-  const caps = lib.slice(lib.indexOf("fn yolo_runtime_capabilities"));
-  const block = caps.slice(caps.indexOf("&["), caps.indexOf("],"));
-  const capabilities = [...block.matchAll(/"([a-z]+\.[a-z]+)"/g)].map((m) => m[1]!);
-  if (!version || capabilities.length === 0) throw new Error("runtime version or capabilities not found");
+
+  if (!version || capabilities.length === 0)
+    throw new Error("runtime version or capabilities not found");
   return {
-    info: { name: "yolo-runtime", version, abi: `${major}.${minor}`, target, rustc, panic_recovery: true },
+    info: {
+      name: "yolo-runtime",
+      version,
+      abi: `${major}.${minor}`,
+      target,
+      rustc,
+      panic_recovery: null,
+    },
     capabilities,
   };
 }
@@ -82,7 +92,9 @@ if (crossTarget) {
   capabilities = loaded.capabilities();
   loaded.close();
 }
-const outDir = resolve(root, "dist/runtime", info.target);
+const outDir = process.env["YOLO_RUNTIME_OUT"]
+  ? resolve(root, process.env["YOLO_RUNTIME_OUT"]!)
+  : resolve(root, "dist/runtime", info.target);
 mkdirSync(outDir, { recursive: true });
 
 const headerSrc = resolve(root, "crates/engine/yolo-runtime/include/yolo_runtime.h");
@@ -91,7 +103,14 @@ const lib = new Uint8Array(await Bun.file(libraryPath).arrayBuffer());
 const header = new Uint8Array(await Bun.file(headerSrc).arrayBuffer());
 await Bun.write(resolve(outDir, libName), lib);
 await Bun.write(resolve(outDir, "yolo_runtime.h"), header);
-await Bun.write(resolve(outDir, "LICENSE"), Bun.file(resolve(root, "LICENSE")));
+// The workspace has no root LICENSE; use its canonical Apache text by default. Historical
+// artifacts may supply their original license explicitly rather than silently relabeling it.
+const licenseId = process.env["YOLO_RUNTIME_LICENSE_ID"] || "Apache-2.0";
+const licensePath =
+  process.env["YOLO_RUNTIME_LICENSE"] ||
+  resolve(root, "crates/tauri/aphrody-tauri-build/LICENSE-APACHE-2.0");
+const license = new Uint8Array(await Bun.file(licensePath).arrayBuffer());
+await Bun.write(resolve(outDir, "LICENSE"), license);
 
 const vendor = (await Bun.file(resolve(root, "vendor.lock")).json()) as {
   sources: { name: string; sha: string }[];
@@ -106,13 +125,14 @@ const manifest = {
   compatibility: { abiMajor: Number(info.abi.split(".")[0]), negotiation: "yolo_abi_version" },
   toolchain: info.rustc,
   build: {
-    command: "cargo build --profile runtime -p aphrody-ffi --features browser,tooling",
-    profile: "runtime (release + panic=unwind)",
+    command: process.env["YOLO_RUNTIME_BUILD_COMMAND"] ?? null,
+    profile: process.env["YOLO_RUNTIME_BUILD_PROFILE"] ?? null,
     panicRecovery: info.panic_recovery,
   },
   sources: {
     yolo: {
       rev: await git("rev-parse", "HEAD"),
+      artifactBuildRevision: info.git_rev ?? "unknown",
       dirty: (await git("status", "--porcelain")) !== "",
     },
     vendored: vendor.sources,
@@ -121,10 +141,11 @@ const manifest = {
   files: {
     [libName]: { sha256: sha256(lib), bytes: lib.byteLength },
     "yolo_runtime.h": { sha256: sha256(header), bytes: header.byteLength },
+    LICENSE: { sha256: sha256(license), bytes: license.byteLength },
   },
-  license: "MIT",
+  license: licenseId,
   notes:
-    "Qualification, installation and activation are separate states; this manifest only identifies the artifact.",
+    "Qualification, installation and activation are separate states; this manifest only identifies the artifact. sources.yolo.rev is the packaging checkout; artifactBuildRevision is reported by the loaded library where available. Cross-built metadata is inferred from source and PE exports, not a native execution probe; optional GPU backends require native negotiation.",
 };
 await Bun.write(resolve(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`Packaged ${info.name} ${info.version} (${info.target}, ABI ${info.abi}) -> ${outDir}`);
