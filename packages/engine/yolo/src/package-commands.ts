@@ -169,7 +169,30 @@ export function packageRoot(cwd: string = process.cwd()): string {
   );
 }
 
-type Runner = (argv: string[]) => number | Promise<number>;
+type NativeJobTransport = (
+  request: { config: string; server: string; tool: string; arguments: Record<string, unknown> },
+  options: { timeoutMs: number; signal?: AbortSignal },
+) => Promise<unknown>;
+type Runner = (
+  argv: string[],
+  ports?: { nativeJobTransport: NativeJobTransport },
+) => number | Promise<number>;
+
+/** Resolve the native owner only when qualification is explicitly applied. */
+async function nativeJobPort(root: string): Promise<{
+  nativeJobTransport: NativeJobTransport;
+  close: () => void;
+}> {
+  const pipelinePath = join(root, "packages/interop/native/src/pipeline.ts");
+  const enginePath = join(root, "packages/interop/native/src/engine.ts");
+  const pipeline = (await import(pathToFileURL(pipelinePath).href)) as {
+    mcpTool?: NativeJobTransport;
+  };
+  const engine = (await import(pathToFileURL(enginePath).href)) as { close?: () => void };
+  if (typeof pipeline.mcpTool !== "function" || typeof engine.close !== "function")
+    throw new Error("Native jobs qualification requires the canonical pipeline SDK");
+  return { nativeJobTransport: pipeline.mcpTool, close: engine.close };
+}
 
 const isHelpRequest = (args: readonly string[]): boolean =>
   args.length === 0 || (args.length === 1 && ["help", "--help", "-h"].includes(args[0]!));
@@ -202,12 +225,23 @@ export async function runPackageCommand(
     return 70;
   }
   let status: number;
+  let native: Awaited<ReturnType<typeof nativeJobPort>> | undefined;
   try {
-    const returned = await (runner as Runner)(resolved.args);
+    if (
+      name === "update" &&
+      resolved.args[0] === "systemd" &&
+      resolved.args[1] === "jobs-clients" &&
+      resolved.args.includes("--qualify") &&
+      resolved.args.includes("--apply")
+    )
+      native = await nativeJobPort(root);
+    const returned = await (runner as Runner)(resolved.args, native);
     status = typeof returned === "number" ? returned : 0;
   } catch (error) {
     console.error(`yolo ${label}: ${error instanceof Error ? error.message : String(error)}`);
     return 1;
+  } finally {
+    native?.close();
   }
   if (status === 0 && tools && isHelpRequest(resolved.args)) {
     console.log(`\nTools (yolo ${name} <tool> ...):`);

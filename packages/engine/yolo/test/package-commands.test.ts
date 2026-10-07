@@ -115,6 +115,57 @@ describe("yolo package commands", () => {
     expect(await runPackageCommand("unknown", [], root)).toBe(2);
   });
 
+  it("qualification uses the native SDK in process and closes it after the awaited owner", async () => {
+    const fixtureRoot = join(fixture, "native-jobs-qualified");
+    const modules: Record<string, string> = {
+      [PACKAGE_COMMANDS.update.module]: `export async function runUpdate(argv, ports) {
+        const result = await ports.nativeJobTransport({config:"private.toml", server:"aphrody", tool:"aphrody_job_status", arguments:{}}, {timeoutMs:15000});
+        if (result.native !== true) throw new Error("wrong transport");
+        return 19;
+      }`,
+      "packages/interop/native/src/pipeline.ts": `export async function mcpTool(request, options) {
+        globalThis.yoloNativeJobRequest = {request, options};
+        await Promise.resolve();
+        return {native:true};
+      }`,
+      "packages/interop/native/src/engine.ts": `export function close() { globalThis.yoloNativeJobClosed = true; }`,
+    };
+    for (const [path, source] of Object.entries(modules)) {
+      mkdirSync(dirname(join(fixtureRoot, path)), { recursive: true });
+      writeFileSync(join(fixtureRoot, path), source);
+    }
+    expect(
+      await runPackageCommand(
+        "update",
+        ["systemd", "jobs-clients", "--qualify", "--apply"],
+        fixtureRoot,
+      ),
+    ).toBe(19);
+    expect((globalThis as { yoloNativeJobRequest?: unknown }).yoloNativeJobRequest).toEqual({
+      request: {
+        config: "private.toml",
+        server: "aphrody",
+        tool: "aphrody_job_status",
+        arguments: {},
+      },
+      options: { timeoutMs: 15000 },
+    });
+    expect((globalThis as { yoloNativeJobClosed?: boolean }).yoloNativeJobClosed).toBe(true);
+  });
+
+  it("a dry-run qualification does not load the native library", async () => {
+    const fixtureRoot = join(fixture, "native-jobs-dry-run");
+    const path = join(fixtureRoot, PACKAGE_COMMANDS.update.module);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(
+      path,
+      "export function runUpdate(argv, ports) { if (ports !== undefined) throw new Error('native loaded during preview'); return 0; }",
+    );
+    expect(
+      await runPackageCommand("update", ["systemd", "jobs-clients", "--qualify"], fixtureRoot),
+    ).toBe(0);
+  });
+
   it("the CLI entry routes each command to its owner", () => {
     const cases: [string[], string][] = [
       [
