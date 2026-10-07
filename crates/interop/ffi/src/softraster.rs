@@ -13,36 +13,8 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss)]
 
-/// A 3D vector as plain `[x, y, z]`.
-pub type V3 = [f32; 3];
-
 /// A projected vertex: pixel `x`, pixel `y` (downwards) and view depth (`> 0`).
 pub type ScreenVertex = (f32, f32, f32);
-
-/// Component-wise `a - b`.
-#[must_use]
-pub fn sub(a: V3, b: V3) -> V3 {
-    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
-}
-
-/// Cross product `a x b`.
-#[must_use]
-pub fn cross(a: V3, b: V3) -> V3 {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
-}
-
-/// Dot product.
-#[must_use]
-pub fn dot(a: V3, b: V3) -> f32 {
-    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-}
-
-/// Normalised `a`, or `+Z` for a (near) zero vector.
-#[must_use]
-pub fn normv(a: V3) -> V3 {
-    let l = dot(a, a).sqrt();
-    if l > 1e-9 { [a[0] / l, a[1] / l, a[2] / l] } else { [0.0, 0.0, 1.0] }
-}
 
 /// Borrowed RGBA8 texture, row-major, `width * height * 4` bytes.
 #[derive(Debug, Clone, Copy)]
@@ -170,15 +142,6 @@ mod tests {
 
     fn buffers(w: u32, h: u32) -> (Vec<u8>, Vec<f32>) {
         (vec![0; (w * h * 4) as usize], vec![f32::INFINITY; (w * h) as usize])
-    }
-
-    #[test]
-    fn vector_helpers() {
-        assert_eq!(cross([1.0, 0.0, 0.0], [0.0, 1.0, 0.0]), [0.0, 0.0, 1.0]);
-        assert_eq!(dot([1.0, 2.0, 3.0], [4.0, 5.0, 6.0]), 32.0);
-        assert_eq!(sub([3.0, 2.0, 1.0], [1.0, 1.0, 1.0]), [2.0, 1.0, 0.0]);
-        assert_eq!(normv([0.0, 0.0, 0.0]), [0.0, 0.0, 1.0]);
-        assert_eq!(normv([0.0, 3.0, 0.0]), [0.0, 1.0, 0.0]);
     }
 
     #[test]

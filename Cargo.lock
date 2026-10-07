@@ -1307,6 +1307,7 @@ dependencies = [
 name = "aphrody-ffi"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
  "aphrody-agent-home",
  "aphrody-bun",
  "aphrody-command",
@@ -1314,26 +1315,25 @@ dependencies = [
  "aphrody-llama-server",
  "aphrody-model-client",
  "aphrody-models",
- "aphrody-n2b-native",
+ "aphrody-n2b-core",
  "aphrody-oxc-bridge",
- "aphrody-python-ffi",
  "aphrody-rag-core",
- "aphrody-rag-ffi",
- "aphrody-softraster",
  "aphrody-stdio-capture",
  "aphrody-toolcall-repair",
- "aphrody-web-chromium",
  "aphrody-web-extract",
  "aphrody-web-index",
  "aphrody-x",
  "async-trait",
  "base64 0.23.1",
  "futures",
+ "libc",
  "libm",
+ "memchr",
  "mimalloc",
  "obscura-dom",
  "obscura-net",
  "reqwest 0.13.5",
+ "rookie-cookies",
  "rustls",
  "serde",
  "serde_json",
@@ -2082,17 +2082,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-n2b-native"
-version = "0.2.0"
-dependencies = [
- "aphrody-n2b-core",
- "memchr",
- "serde",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
 name = "aphrody-n2b-registry"
 version = "0.6.2"
 dependencies = [
@@ -2298,13 +2287,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-python-ffi"
-version = "1.0.0"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "aphrody-rag"
 version = "1.0.0"
 dependencies = [
@@ -2372,13 +2354,6 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "aphrody-rag-ffi"
-version = "1.0.0"
-dependencies = [
- "aphrody-rag-core",
 ]
 
 [[package]]
@@ -2661,10 +2636,6 @@ dependencies = [
  "walkdir",
  "yaml_serde",
 ]
-
-[[package]]
-name = "aphrody-softraster"
-version = "1.0.0-canary"
 
 [[package]]
 name = "aphrody-sprite-sheet"
@@ -4008,16 +3979,6 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "which 8.0.6",
-]
-
-[[package]]
-name = "aphrody-web-chromium"
-version = "1.0.0-canary"
-dependencies = [
- "anyhow",
- "rookie-cookies",
- "serde",
- "serde_json",
 ]
 
 [[package]]

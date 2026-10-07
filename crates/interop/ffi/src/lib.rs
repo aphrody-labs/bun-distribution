@@ -65,6 +65,8 @@ mod glibc_compat;
 
 // Zero-copy exports (caller-owned buffers): CPU rasterizer and tool-call repair.
 #[cfg(not(target_arch = "wasm32"))]
+mod softraster;
+#[cfg(not(target_arch = "wasm32"))]
 mod zerocopy;
 #[cfg(not(target_arch = "wasm32"))]
 pub use zerocopy::*;
@@ -72,11 +74,15 @@ pub use zerocopy::*;
 // RAG call surface (aphrody_rag_*): chunking, fusion, eval and vector kernels of aphrody-rag-core. The adapter
 // crate owns only the C ABI; the capabilities live in aphrody_rag_core::api, shared with the wasm32 build.
 #[cfg(not(target_arch = "wasm32"))]
-pub use aphrody_rag_ffi::*;
+mod rag_ffi;
+#[cfg(not(target_arch = "wasm32"))]
+pub use rag_ffi::*;
 
 // Python host (aphrody_py_*): the shared libpython of vu opened RTLD_GLOBAL and bound by dlsym, never linked (plan vu D18).
 #[cfg(not(target_arch = "wasm32"))]
-pub use aphrody_python_ffi::*;
+mod python_ffi;
+#[cfg(not(target_arch = "wasm32"))]
+pub use python_ffi::*;
 
 // The historical bun_rs ABI remains available in the same native library.
 // Its implementation is an internal rlib; it no longer ships a second cdylib.
@@ -86,7 +92,9 @@ pub use bun_rs::*;
 // Preserve the native N2B and Oxc contracts inside this sole dynamic artifact.
 // Their original library owners provide implementations and destructors.
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
-pub use aphrody_n2b_native::*;
+mod n2b_native;
+#[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
+pub use n2b_native::*;
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
 pub use aphrody_oxc_bridge::*;
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]

@@ -39,7 +39,7 @@ pub unsafe extern "C" fn web_internal_get_chromium_cookies(
         };
 
         let parser =
-            aphrody_web_chromium::ChromiumParser::new(std::path::PathBuf::from(user_data_path_str));
+            crate::web::chromium::ChromiumParser::new(std::path::PathBuf::from(user_data_path_str));
         match parser.get_cookies_full(profile_str, host_key_str) {
             Ok(cookies) => {
                 let json = serde_json::to_string(&cookies).unwrap_or_else(|_| "[]".to_string());

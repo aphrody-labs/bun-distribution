@@ -2,7 +2,7 @@
 //! Integration test against the build host's real libpython (skipped, with the reason printed,
 //! when none is installed).
 
-use aphrody_python_ffi::*;
+use aphrody_ffi::*;
 use std::ffi::{CStr, CString, c_char};
 
 fn take(p: *mut c_char) -> String {

@@ -3,6 +3,7 @@
 //! The Web v4 symbols are hosted by this native library. The Rust adapters
 //! behind them remain internal to the crate.
 
+mod chromium;
 mod cookies;
 mod dom;
 mod embed;

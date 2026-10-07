@@ -25,7 +25,7 @@ workspace = true
 # `tooling` keeps the historical N2B/Oxc/yolo_tooling ABI in the default build; `inference`
 # adds the in-process llama boundary (aphrody_infer*) and is opt-in because it is heavy.
 default = ["tooling"]
-tooling = ["dep:aphrody-n2b-native", "dep:aphrody-oxc-bridge"]
+tooling = ["dep:aphrody-n2b-core", "dep:memchr", "dep:aphrody-oxc-bridge"]
 inference = ["dep:aphrody-llama-server", "dep:aphrody-model-client", "dep:aphrody-models", "dep:futures"]
 gpu = ["aphrody-bun/gpu"]
 native-stealth = ["obscura-net/stealth"]
@@ -54,7 +54,8 @@ browser   = ["yolo-runtime/browser"]
 aphrody-command = { workspace = true }
 aphrody-agent-home = { workspace = true }
 aphrody-bun = { workspace = true }
-aphrody-n2b-native = { workspace = true, optional = true }
+aphrody-n2b-core = { workspace = true, optional = true }
+memchr = { workspace = true, optional = true }
 aphrody-oxc-bridge = { workspace = true, optional = true }
 aphrody-llama-server = { workspace = true, features = ["in-process"], optional = true }
 aphrody-model-client = { workspace = true, optional = true }
@@ -63,14 +64,13 @@ futures = { workspace = true, optional = true }
 # World/VFS/formats are qualified independently of absent authentic Wiki data.
 aphrody-rag-core = { workspace = true }
 # C ABI of the RAG call surface (aphrody_rag_*), re-exported by this cdylib.
-aphrody-rag-ffi = { workspace = true }
-aphrody-python-ffi = { workspace = true }
-aphrody-softraster = { workspace = true }
+libc = { workspace = true }
+anyhow = { workspace = true }
+rookie-cookies = { workspace = true }
 aphrody-toolcall-repair = { workspace = true }
 aphrody-web-extract = { workspace = true }
 async-trait = { workspace = true }
 aphrody-web-index = { workspace = true }
-aphrody-web-chromium = { workspace = true }
 aphrody-gemini-web = { workspace = true }
 aphrody-x = { workspace = true }
 # Versioned yolo_* C ABI (docs/RUNTIME-ABI.md), re-exported by this cdylib.
