@@ -31,7 +31,7 @@ fn read_agent_config(path: &Path) -> miette::Result<DocumentMut> {
     match std::fs::read_to_string(path) {
         Ok(source) => source
             .parse::<DocumentMut>()
-            .map_err(|error| miette::miette!("parse {}: {error}", path.display())),
+            .map_err(|_| miette::miette!("parse {}: invalid TOML configuration", path.display())),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(DocumentMut::new()),
         Err(error) => Err(miette::miette!("read {}: {error}", path.display())),
     }
@@ -248,6 +248,57 @@ mod config_edit_tests {
             Err(aphrody_gemini_runtime::McpError::MissingHeaderEnvironment { .. })
         ));
     }
+
+    #[test]
+    fn inline_and_section_tables_preserve_http_auth_and_stdio_environment() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let path = directory.path().join("config.toml");
+        for source in [
+            "[mcp_servers.remote]\nurl='https://example.test/mcp'\nhttp_headers={authorization='Bearer fixture-only', X-Project='scope'}\n[mcp_servers.local]\ncommand='aphrody-mcp'\nenv={APHRODY_MCP_ENV_FILE='/fixture/profile.json', PATH='/fixture/bin'}\n",
+            "[mcp_servers.remote]\nurl='https://example.test/mcp'\n[mcp_servers.remote.http_headers]\nauthorization='Bearer fixture-only'\nX-Project='scope'\n[mcp_servers.local]\ncommand='aphrody-mcp'\n[mcp_servers.local.env]\nAPHRODY_MCP_ENV_FILE='/fixture/profile.json'\nPATH='/fixture/bin'\n",
+            "mcp_servers={remote={url='https://example.test/mcp',http_headers={authorization='Bearer fixture-only',X-Project='scope'}},local={command='aphrody-mcp',env={APHRODY_MCP_ENV_FILE='/fixture/profile.json',PATH='/fixture/bin'}}}\n",
+        ] {
+            std::fs::write(&path, source).expect("write config");
+            let config = load_toml_servers(&path).expect("load table-like config");
+            assert_eq!(config.servers.len(), 2);
+            let remote = config.servers.iter().find(|server| server.name == "remote").unwrap();
+            let McpTransportConfig::StreamableHttp { headers, .. } = &remote.transport else {
+                panic!("expected HTTP transport");
+            };
+            assert_eq!(
+                headers.get("authorization").map(String::as_str),
+                Some("Bearer fixture-only")
+            );
+            assert_eq!(headers.get("X-Project").map(String::as_str), Some("scope"));
+            let local = config.servers.iter().find(|server| server.name == "local").unwrap();
+            let McpTransportConfig::Stdio { env, .. } = &local.transport else {
+                panic!("expected stdio transport");
+            };
+            assert_eq!(
+                env.get("APHRODY_MCP_ENV_FILE").map(String::as_str),
+                Some("/fixture/profile.json")
+            );
+            assert_eq!(env.get("PATH").map(String::as_str), Some("/fixture/bin"));
+        }
+    }
+
+    #[test]
+    fn invalid_auth_and_environment_tables_fail_without_disclosing_source_values() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let path = directory.path().join("config.toml");
+        for source in [
+            "[mcp_servers.remote]\nurl='https://example.test/mcp'\nhttp_headers='fixture-private-value'\n",
+            "[mcp_servers.remote]\nurl='https://example.test/mcp'\nhttp_headers={Authorization=['fixture-private-value']}\n",
+            "[mcp_servers.local]\ncommand='aphrody-mcp'\nenv='fixture-private-value'\n",
+            "[mcp_servers.local]\ncommand='aphrody-mcp'\nenv={AUTH=['fixture-private-value']}\n",
+            "[mcp_servers.remote]\nurl='https://example.test/mcp'\nhttp_headers={Authorization='fixture-private-value'\n",
+        ] {
+            std::fs::write(&path, source).expect("write invalid config");
+            let error = load_toml_servers(&path).expect_err("malformed authentication must fail");
+            assert!(!error.to_string().contains("fixture-private-value"));
+            assert!(!format!("{error:?}").contains("fixture-private-value"));
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -461,12 +512,13 @@ fn load_toml_servers(path: &Path) -> miette::Result<McpConfig> {
     let Some(servers) = document.as_table().get("mcp_servers") else {
         return Ok(McpConfig::default());
     };
-    let servers =
-        servers.as_table().ok_or_else(|| miette::miette!("[mcp_servers] must be a TOML table"))?;
+    let servers = servers
+        .as_table_like()
+        .ok_or_else(|| miette::miette!("[mcp_servers] must be a TOML table"))?;
     let mut config = McpConfig::default();
     for (name, item) in servers.iter() {
         let entry = item
-            .as_table()
+            .as_table_like()
             .ok_or_else(|| miette::miette!("[mcp_servers.{name}] must be a TOML table"))?;
         if entry.get("enabled").and_then(Item::as_bool) == Some(false) {
             continue;
@@ -489,8 +541,10 @@ fn load_toml_servers(path: &Path) -> miette::Result<McpConfig> {
                 .unwrap_or_default();
             let env = entry
                 .get("env")
-                .and_then(Item::as_table)
-                .map(|table| {
+                .map(|item| {
+                    let table = item.as_table_like().ok_or_else(|| {
+                        miette::miette!("MCP server `{name}` requires `env` to be a TOML table")
+                    })?;
                     table
                         .iter()
                         .map(|(key, value)| {
@@ -511,8 +565,12 @@ fn load_toml_servers(path: &Path) -> miette::Result<McpConfig> {
         } else if let Some(url) = entry.get("url").and_then(Item::as_str) {
             let mut headers = entry
                 .get("http_headers")
-                .and_then(Item::as_table)
-                .map(|table| {
+                .map(|item| {
+                    let table = item.as_table_like().ok_or_else(|| {
+                        miette::miette!(
+                            "MCP server `{name}` requires `http_headers` to be a TOML table"
+                        )
+                    })?;
                     table
                         .iter()
                         .map(|(key, value)| {
