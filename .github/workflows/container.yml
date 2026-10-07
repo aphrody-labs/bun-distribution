@@ -6,6 +6,15 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish versioned images to the repository's GHCR package
+        type: boolean
+        default: false
+      release:
+        description: Immutable downloads release (empty selects the current release once)
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -24,15 +33,26 @@ jobs:
       - name: Resolve published release once
         id: release
         shell: bash
+        env:
+          REQUESTED_RELEASE: ${{ inputs.release }}
         run: |
           set -euo pipefail
-          id="$(curl --fail --silent --show-error https://downloads.aphrody.com/latest.json | jq --exit-status --raw-output '.release.id | select(test("^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"))')"
+          id="${REQUESTED_RELEASE:-}"
+          if [ -z "$id" ]; then
+            id="$(curl --fail --silent --show-error https://downloads.aphrody.com/latest.json | jq --exit-status --raw-output '.release.id')"
+          fi
+          [[ "$id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]
+          selected="$(curl --fail --silent --show-error "https://downloads.aphrody.com/releases/$id/latest.json" | jq --exit-status --raw-output '.release.id')"
+          [ "$selected" = "$id" ]
           echo "id=$id" >> "$GITHUB_OUTPUT"
 
   build:
     needs: release
     name: Build ${{ matrix.name }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -104,7 +124,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
 
-      - name: Build image (no registry push)
+      - name: Authenticate the requested image publication
+        if: github.event_name == 'workflow_dispatch' && inputs.publish && matrix.target != 'wasm-artifacts'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build or publish the versioned image
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: ${{ matrix.context }}
@@ -113,7 +141,12 @@ jobs:
           platforms: ${{ matrix.platforms || 'linux/amd64' }}
           build-args: APHRODY_RELEASE=${{ needs.release.outputs.id }}
           outputs: ${{ matrix.output || '' }}
-          push: false
+          push: ${{ github.event_name == 'workflow_dispatch' && inputs.publish && matrix.target != 'wasm-artifacts' }}
+          tags: ghcr.io/aphrody-labs/aphrody:${{ matrix.cache }}-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            com.aphrody.downloads.release=${{ needs.release.outputs.id }}
           cache-from: ${{ matrix.cache_from || format('type=gha,scope={0}', matrix.cache) }}
           cache-to: type=gha,mode=max,scope=${{ matrix.cache }}
 

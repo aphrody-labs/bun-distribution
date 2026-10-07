@@ -78,7 +78,12 @@ such as v86 only when browser-based hardware/OS compatibility is the goal.
 `APHRODY_DOWNLOAD_URL` is a Docker build argument for a release mirror. The installer resolves `latest.json` once
 (or uses `APHRODY_RELEASE`) and fetches checksums and artifacts under `/releases/<id>/`. It verifies archives before
 activation and installs Yolo without its Rust scaffold sources. The GitHub workflow selects one release for the
-whole matrix and exports the compiled WASM package as a workflow artifact. No registry publication is configured.
+whole matrix and exports the compiled WASM package as a workflow artifact. Pull requests and normal pushes build
+without publication. A manual workflow dispatch with `publish=true` publishes revision-tagged images to
+`ghcr.io/aphrody-labs/aphrody:<matrix-cache>-<git-sha>` using the job-scoped GitHub token. Its optional `release`
+input selects and verifies an explicit existing immutable downloads release. No floating image tag or package
+visibility change is performed; repository and package access remain authoritative. Registry publication still
+requires a successful workflow run, and is not established by the workflow source or Actionlint.
 
 The runtime runs as uid 1000, keeps `~/.aphrody` in a volume, and requires `YOLO_API_TOKEN` before binding the API to
 `0.0.0.0`. Compose publishes the API on host loopback and drops capabilities. The `.dockerignore` excludes `.coord`,
@@ -109,3 +114,24 @@ Cargo target/registry/git, sccache and uv caches are mounted during builds and d
   checksum-fetched factory artifact (5,597,813 bytes before `wasm-opt`). Its SHA-256 is
   `8656c5295cae81b0123b87c69f0452f3311ee00846419c4f9f3c0ce08238d977`. This qualifies the packaging path; it does
   not establish a full-workspace Docker build or the target build-time reduction.
+
+## Factory qualification — 2026-10-07
+
+Docker 29.1.3 and Buildx 0.30.1 built `runtime` and exported `wasm-artifacts` on the VPS under the factory's
+heavy-build and Cargo locks. The context was commit `41b54d557a84` with the Dockerfile's `cargo-binstall -V`
+correction; the resulting Dockerfile SHA-256 was
+`045b47e9426e27277d3f4dcf77d68cb5889c9f7f113e4130f5c398340ea90663`.
+
+- Runtime used immutable downloads release `20261007T090053Z-41b54d557a84-assets-10b78047`. Its image digest was
+  `sha256:e6ee5489b8853cd6802889afa09821349e0bd3545ca72f8780002f95cbf8b8dd`; Docker reported 199,902,869 bytes.
+  This storage metric is not directly comparable with the earlier Podman size. An actual API health probe passed
+  with a read-only root filesystem, dropped capabilities, `no-new-privileges`, and a read-only token file mount.
+  The token value was absent from Docker's configured environment. Stop completed with exit 143 (SIGTERM).
+- The Docker-built command module was 4,232,122 bytes after `wasm-opt -Oz`, from 5,598,005 bytes before optimization.
+  Its SHA-256 was `c200ead00262f165d46539f4df7d48bfb6283a6bcd30296b71773ef2a24ba0df`. Instantiation under Bun,
+  command help, JSON repair, HTML conversion using named input, invalid-input rejection, and 100 repeated calls passed.
+  The four exported files were fetched through native SFTP and their SHA-256 hashes verified locally. The existing
+  CLI-WASM, packaging, and entrypoint suites passed 26 tests with one native-parity test skipped.
+  Browser execution and the rest of the native workspace still require their own qualification.
+- GitHub Actions run `37598733049` did not start: its check annotation reports failed account payments or a spending
+  limit. Factory builds above succeeded independently; no registry publication is established by that Actions run.

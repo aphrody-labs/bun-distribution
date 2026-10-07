@@ -154,7 +154,7 @@ RUN arch="${TARGETARCH:-$(uname -m)}" \
       -o /tmp/cargo-binstall.tgz \
  && echo "${binstall_sha}  /tmp/cargo-binstall.tgz" | sha256sum -c - \
  && tar -xzf /tmp/cargo-binstall.tgz -C /usr/local/bin cargo-binstall \
- && cargo-binstall --version \
+ && cargo-binstall -V \
  && rm -f /tmp/binaryen.tar.gz /tmp/cargo-binstall.tgz
 USER aphrody
 ENV PATH=/opt/binaryen/bin:/home/aphrody/.cargo/bin:/home/aphrody/.bun/bin:/home/aphrody/.yolo/bin:/home/aphrody/.local/bin:/usr/local/bin:/usr/bin:/bin
