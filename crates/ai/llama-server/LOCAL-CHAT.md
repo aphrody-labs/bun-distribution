@@ -98,6 +98,18 @@ aphrody llama router --home <dir> --config router.json [--bind 127.0.0.1:0] \
   - openai: relayed as is, with `model` rewritten to `upstream_model`.
   - An unknown id returns 404 `model_not_found`. An unavailable backend returns 503
     `model_unavailable` with the reason.
+- `POST /v1/responses` and `POST /v1/responses/compact` use the same model selection for
+  llama and `openai` backends. `base_url` already includes `/v1`; the router appends
+  `/responses` or `/responses/compact`. Bodies are relayed intact except for the configured
+  `upstream_model` substitution: tools, call IDs, previous response IDs, opaque reasoning
+  and compaction items, usage and SSE events stay native. Upstream errors retain their
+  status and body, with request IDs and retry/rate-limit headers. A Gemini web model returns
+  400 `unsupported_endpoint` without loading its cookie session.
+- Responses and standalone compaction require the selected upstream to implement those
+  endpoints. Routing a llama model does not add compaction to a runtime that lacks it;
+  an upstream 404 remains 404. Pass the native compact response's `output` as the next
+  Responses `input`, including the opaque compaction item
+  ([OpenAI contract](https://developers.openai.com/api/docs/guides/compaction)).
 
 ## Memory
 

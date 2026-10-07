@@ -13,6 +13,9 @@
 //!   tool calls through the model's Jinja template). Gemini answers once; with `stream: true`
 //!   it is sent as SSE (one delta, then `[DONE]`). Gemini has no tool calling: `tools` are
 //!   dropped and the response carries `x-aphrody-tools-ignored: true`.
+//! - `POST /v1/responses` and `POST /v1/responses/compact` relay the native Responses
+//!   wire to llama and OpenAI backends, including opaque reasoning/compaction items.
+//!   Gemini web has no Responses contract and returns an explicit unsupported error.
 //! - `GET /health` reports every backend (`available`, `running`, `reason`).
 //!
 //! The configuration is a JSON [`RouterConfig`] (see `aphrody llama router --help`).
@@ -246,6 +249,8 @@ impl ChatRouter {
             .route("/health", get(health))
             .route("/v1/models", get(models))
             .route("/v1/chat/completions", post(chat))
+            .route("/v1/responses", post(responses))
+            .route("/v1/responses/compact", post(compact))
             .with_state(self.clone())
     }
 
@@ -435,7 +440,19 @@ async fn models(State(router): State<ChatRouter>) -> Response {
         .into_response()
 }
 
-async fn chat(State(router): State<ChatRouter>, Json(mut body): Json<Value>) -> Response {
+async fn chat(State(router): State<ChatRouter>, Json(body): Json<Value>) -> Response {
+    route_request(router, body, "chat/completions").await
+}
+
+async fn responses(State(router): State<ChatRouter>, Json(body): Json<Value>) -> Response {
+    route_request(router, body, "responses").await
+}
+
+async fn compact(State(router): State<ChatRouter>, Json(body): Json<Value>) -> Response {
+    route_request(router, body, "responses/compact").await
+}
+
+async fn route_request(router: ChatRouter, mut body: Value, endpoint: &str) -> Response {
     let Some(id) = body.get("model").and_then(Value::as_str).map(ToOwned::to_owned) else {
         return error(StatusCode::BAD_REQUEST, "invalid_request_error", "`model` is required");
     };
@@ -444,7 +461,7 @@ async fn chat(State(router): State<ChatRouter>, Json(mut body): Json<Value>) -> 
     };
     match &config {
         ModelConfig::Llama { .. } => match router.ensure_llama(&config).await {
-            Ok(base) => relay(&router.0.http, &base, None, body).await,
+            Ok(base) => relay(&router.0.http, &base, endpoint, None, body).await,
             Err(reason) => error(StatusCode::SERVICE_UNAVAILABLE, "model_unavailable", reason),
         },
         ModelConfig::Openai { base_url, upstream_model, api_key_env, .. } => {
@@ -452,9 +469,16 @@ async fn chat(State(router): State<ChatRouter>, Json(mut body): Json<Value>) -> 
                 body["model"] = json!(name);
             }
             let key = api_key_env.as_deref().and_then(|k| std::env::var(k).ok());
-            relay(&router.0.http, base_url, key.as_deref(), body).await
+            relay(&router.0.http, base_url, endpoint, key.as_deref(), body).await
         },
         ModelConfig::GeminiWeb { variant, .. } => {
+            if endpoint != "chat/completions" {
+                return error(
+                    StatusCode::BAD_REQUEST,
+                    "unsupported_endpoint",
+                    "Gemini web does not support the OpenAI Responses API",
+                );
+            }
             let client = match router.gemini_client(&config).await {
                 Ok(client) => client,
                 Err(reason) => {
@@ -492,8 +516,14 @@ async fn chat(State(router): State<ChatRouter>, Json(mut body): Json<Value>) -> 
 }
 
 /// Relay a request to an OpenAI-compatible root, streaming the answer back as is.
-async fn relay(http: &reqwest::Client, base: &str, key: Option<&str>, body: Value) -> Response {
-    let url = format!("{}/chat/completions", base.trim_end_matches('/'));
+async fn relay(
+    http: &reqwest::Client,
+    base: &str,
+    endpoint: &str,
+    key: Option<&str>,
+    body: Value,
+) -> Response {
+    let url = format!("{}/{endpoint}", base.trim_end_matches('/'));
     let mut request = http.post(url).json(&body);
     if let Some(key) = key {
         request = request.bearer_auth(key);
@@ -502,17 +532,24 @@ async fn relay(http: &reqwest::Client, base: &str, key: Option<&str>, body: Valu
         Ok(upstream) => {
             let status =
                 StatusCode::from_u16(upstream.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
-            let content_type = upstream
-                .headers()
-                .get(reqwest::header::CONTENT_TYPE)
-                .and_then(|v| v.to_str().ok())
-                .unwrap_or("application/json")
-                .to_owned();
+            // Preserve protocol metadata useful to SDK retry/tracing behavior;
+            // do not forward transport framing, cookies or authentication headers.
+            let mut headers = axum::http::HeaderMap::new();
+            for (name, value) in upstream.headers() {
+                if matches!(
+                    name.as_str(),
+                    "content-type" | "x-request-id" | "retry-after" | "openai-processing-ms"
+                ) || name.as_str().starts_with("x-ratelimit-")
+                {
+                    headers.append(name.clone(), value.clone());
+                }
+            }
+            if !headers.contains_key(header::CONTENT_TYPE) {
+                headers.insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
+            }
             let mut response = Response::new(Body::from_stream(upstream.bytes_stream()));
             *response.status_mut() = status;
-            if let Ok(value) = HeaderValue::from_str(&content_type) {
-                response.headers_mut().insert(header::CONTENT_TYPE, value);
-            }
+            *response.headers_mut() = headers;
             response
                 .headers_mut()
                 .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
@@ -737,6 +774,123 @@ mod tests {
         assert_eq!(resp.headers()["content-type"], "text/event-stream");
         let text = resp.text().await.unwrap();
         assert!(text.contains("\"model\":\"real\"") && text.ends_with("data: [DONE]\n\n"));
+    }
+
+    #[tokio::test]
+    async fn responses_and_compact_preserve_native_payloads_and_errors() {
+        let upstream = Router::new()
+            .route("/v1/responses", post(|Json(body): Json<Value>| async move {
+                assert_eq!(body["model"], "real");
+                assert_eq!(body["input"][0]["encrypted_content"], "opaque-state");
+                assert_eq!(body["tools"][0]["type"], "function");
+                assert_eq!(body["previous_response_id"], "resp_previous");
+                assert_eq!(body["store"], false);
+                (
+                    [(header::CONTENT_TYPE, "text/event-stream"),
+                     (header::HeaderName::from_static("x-request-id"), "req_native")],
+                    "event: response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_native\",\"output\":[]}}\n\n",
+                )
+            }))
+            .route("/v1/responses/compact", post(|Json(body): Json<Value>| async move {
+                if body["input"].is_null() {
+                    return (
+                        StatusCode::TOO_MANY_REQUESTS,
+                        [(header::RETRY_AFTER, "7")],
+                        Json(json!({"error":{"type":"rate_limit_error","code":"rate_limit_exceeded"}})),
+                    ).into_response();
+                }
+                assert_eq!(body["model"], "real");
+                assert_eq!(body["instructions"], "retain tool history");
+                Json(json!({
+                    "id": "cmp_native", "object": "response.compaction",
+                    "output": body["input"],
+                    "usage": {"input_tokens": 17, "output_tokens": 5, "total_tokens": 22},
+                })).into_response()
+            }));
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let up = listener.local_addr().unwrap();
+        let upstream_task = tokio::spawn(async move { axum::serve(listener, upstream).await });
+        let dir = tempfile::tempdir().unwrap();
+        let config: RouterConfig = serde_json::from_value(json!({"models":[{
+            "backend":"openai", "id":"remote", "base_url":format!("http://{up}/v1/"),
+            "upstream_model":"real",
+        }]}))
+        .unwrap();
+        let app = ChatRouter::new(config, context(dir.path())).unwrap().app();
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let router_task = tokio::spawn(async move { axum::serve(listener, app).await });
+        let http = reqwest::Client::new();
+        let input = json!([
+            {"type":"compaction", "id":"cmp_previous", "encrypted_content":"opaque-state"},
+            {"type":"function_call_output", "call_id":"call_1", "output":"工具結果"},
+        ]);
+        let response = http
+            .post(format!("http://{addr}/v1/responses"))
+            .json(&json!({
+                "model":"remote", "input":input, "stream":true, "store":false,
+                "previous_response_id":"resp_previous",
+                "tools":[{"type":"function", "name":"search", "parameters":{"type":"object"}}],
+            }))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), 200);
+        assert_eq!(response.headers()["content-type"], "text/event-stream");
+        assert_eq!(response.headers()["x-request-id"], "req_native");
+        assert_eq!(
+            response.text().await.unwrap(),
+            "event: response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_native\",\"output\":[]}}\n\n"
+        );
+        let compact: Value = http
+            .post(format!("http://{addr}/v1/responses/compact"))
+            .json(&json!({"model":"remote", "input":input, "instructions":"retain tool history"}))
+            .send()
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
+        assert_eq!(compact["output"], input);
+        assert_eq!(compact["object"], "response.compaction");
+        assert_eq!(compact["usage"]["total_tokens"], 22);
+        let failure = http
+            .post(format!("http://{addr}/v1/responses/compact"))
+            .json(&json!({"model":"remote"}))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(failure.status(), 429);
+        assert_eq!(failure.headers()["retry-after"], "7");
+        assert_eq!(failure.json::<Value>().await.unwrap()["error"]["code"], "rate_limit_exceeded");
+        router_task.abort();
+        upstream_task.abort();
+        assert!(router_task.await.unwrap_err().is_cancelled());
+        assert!(upstream_task.await.unwrap_err().is_cancelled());
+    }
+
+    #[tokio::test]
+    async fn responses_reject_unsupported_backends_without_loading_credentials() {
+        let dir = tempfile::tempdir().unwrap();
+        let config: RouterConfig = serde_json::from_value(json!({"models":[{
+            "backend":"gemini-web", "id":"web", "cookie_file":dir.path().join("missing.json"),
+        }]}))
+        .unwrap();
+        let router = ChatRouter::new(config, context(dir.path())).unwrap();
+        for endpoint in ["responses", "responses/compact"] {
+            assert_eq!(
+                route_request(router.clone(), json!({"model":"web"}), endpoint).await.status(),
+                StatusCode::BAD_REQUEST
+            );
+            assert_eq!(
+                route_request(router.clone(), json!({"model":"missing"}), endpoint).await.status(),
+                StatusCode::NOT_FOUND
+            );
+            assert_eq!(
+                route_request(router.clone(), json!({"input":[]}), endpoint).await.status(),
+                StatusCode::BAD_REQUEST
+            );
+        }
     }
 
     #[test]

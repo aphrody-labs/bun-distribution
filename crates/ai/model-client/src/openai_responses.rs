@@ -6,6 +6,11 @@
 //! `aphrody-engine`. It deliberately accepts no API key and is intended for
 //! local OpenAI-compatible runtimes such as llama.cpp or Ollama. Gemini
 //! remains available through the sibling adapter.
+//!
+//! A response succeeds only after `response.completed`. Incomplete responses,
+//! provider failures and interrupted streams are errors; closing a connection
+//! never manufactures a successful completion. HTTP chunks may split UTF-8
+//! code points without changing the text delivered to the engine.
 
 use async_trait::async_trait;
 use futures::{Stream, StreamExt};
@@ -273,7 +278,7 @@ impl ResponsesStreamParser {
                     _ => Vec::new(),
                 }
             },
-            "response.completed" | "response.incomplete" => {
+            "response.completed" => {
                 let mut events = self.flush_pending();
                 let response = value.get("response").unwrap_or(&value);
                 events.push(ModelStreamEvent::Completed {
@@ -284,6 +289,15 @@ impl ResponsesStreamParser {
                         .map(str::to_owned),
                 });
                 events
+            },
+            "response.incomplete" => {
+                let reason = value
+                    .pointer("/response/incomplete_details/reason")
+                    .and_then(Value::as_str)
+                    .unwrap_or("unspecified reason");
+                return Err(ModelError::Stream(format!(
+                    "OpenAI Responses response incomplete: {reason}"
+                )));
             },
             "response.failed" | "error" => {
                 let message = value
@@ -432,7 +446,7 @@ impl ModelClient for LocalResponsesClient {
 fn frames_to_items(
     parser: &mut ResponsesStreamParser,
     frames: &[String],
-    completed: &mut bool,
+    terminal: &mut bool,
 ) -> Vec<Result<ModelStreamEvent, ModelError>> {
     let mut items = Vec::new();
     for frame in frames {
@@ -443,14 +457,43 @@ fn frames_to_items(
         }
         match parser.feed_event(data) {
             Ok(events) => {
-                *completed |=
+                *terminal |=
                     events.iter().any(|event| matches!(event, ModelStreamEvent::Completed { .. }));
                 items.extend(events.into_iter().map(Ok));
             },
-            Err(error) => items.push(Err(error)),
+            Err(error) => {
+                *terminal = true;
+                items.push(Err(error));
+            },
+        }
+        if *terminal {
+            break;
         }
     }
     items
+}
+
+/// HTTP byte chunks may split a UTF-8 code point. Only complete code points
+/// enter the SSE text buffer; the trailing bytes await the next network chunk.
+fn append_utf8(buffer: &mut String, pending: &mut Vec<u8>, chunk: &[u8]) -> Result<(), ModelError> {
+    pending.extend_from_slice(chunk);
+    match std::str::from_utf8(pending) {
+        Ok(text) => {
+            buffer.push_str(text);
+            pending.clear();
+        },
+        Err(error) if error.error_len().is_none() => {
+            let valid = error.valid_up_to();
+            // The prefix ending at valid_up_to is guaranteed to be valid UTF-8.
+            buffer.push_str(
+                std::str::from_utf8(&pending[..valid])
+                    .map_err(|error| ModelError::Stream(format!("invalid utf-8: {error}")))?,
+            );
+            pending.drain(..valid);
+        },
+        Err(error) => return Err(ModelError::Stream(format!("invalid utf-8: {error}"))),
+    }
+    Ok(())
 }
 
 /// Decode a Responses SSE byte stream into neutral events.
@@ -462,8 +505,14 @@ where
 {
     futures::stream::once(async { Ok(ModelStreamEvent::Created) }).chain(
         futures::stream::unfold(
-            (Box::pin(bytes.fuse()), String::new(), ResponsesStreamParser::new(), false, false),
-            |(mut stream, mut buffer, mut parser, mut completed, mut ended)| async move {
+            (
+                Box::pin(bytes.fuse()),
+                String::new(),
+                Vec::new(),
+                ResponsesStreamParser::new(),
+                false,
+            ),
+            |(mut stream, mut buffer, mut pending_utf8, mut parser, mut ended)| async move {
                 if ended {
                     return None;
                 }
@@ -471,53 +520,54 @@ where
                     // Every complete frame buffered so far is decoded: one
                     // network chunk routinely carries several SSE events.
                     let frames = crate::split_sse_events(&mut buffer);
-                    let items = frames_to_items(&mut parser, &frames, &mut completed);
+                    let items = frames_to_items(&mut parser, &frames, &mut ended);
                     if !items.is_empty() {
                         return Some((
                             futures::stream::iter(items),
-                            (stream, buffer, parser, completed, ended),
+                            (stream, buffer, pending_utf8, parser, ended),
                         ));
                     }
 
                     match stream.next().await {
-                        Some(Ok(chunk)) => match std::str::from_utf8(&chunk) {
-                            Ok(text) => buffer.push_str(text),
-                            Err(error) => {
+                        Some(Ok(chunk)) => {
+                            if let Err(error) = append_utf8(&mut buffer, &mut pending_utf8, &chunk)
+                            {
+                                ended = true;
                                 return Some((
-                                    futures::stream::iter(vec![Err(ModelError::Stream(format!(
-                                        "invalid utf-8: {error}"
-                                    )))]),
-                                    (stream, buffer, parser, completed, ended),
+                                    futures::stream::iter(vec![Err(error)]),
+                                    (stream, buffer, pending_utf8, parser, ended),
                                 ));
-                            },
+                            }
                         },
                         Some(Err(error)) => {
+                            ended = true;
                             return Some((
                                 futures::stream::iter(vec![Err(error)]),
-                                (stream, buffer, parser, completed, ended),
+                                (stream, buffer, pending_utf8, parser, ended),
                             ));
                         },
                         None => {
-                            ended = true;
                             // A final frame may lack its terminating blank line.
                             let tail = std::mem::take(&mut buffer);
-                            let mut items = if tail.trim().is_empty() {
+                            let mut items = if !pending_utf8.is_empty() {
+                                ended = true;
+                                vec![Err(ModelError::Stream(
+                                    "truncated utf-8 in Responses stream".into(),
+                                ))]
+                            } else if tail.trim().is_empty() {
                                 Vec::new()
                             } else {
-                                frames_to_items(&mut parser, &[tail], &mut completed)
+                                frames_to_items(&mut parser, &[tail], &mut ended)
                             };
-                            if !completed {
-                                // The server closed without `response.completed`:
-                                // still hand over finished calls and end the turn.
-                                items.extend(parser.flush_pending().into_iter().map(Ok));
-                                items.push(Ok(ModelStreamEvent::Completed {
-                                    usage: None,
-                                    finish_reason: Some("stop".to_string()),
-                                }));
+                            if !ended {
+                                items.push(Err(ModelError::Stream(
+                                    "Responses stream closed before a terminal event".into(),
+                                )));
                             }
+                            ended = true;
                             return Some((
                                 futures::stream::iter(items),
-                                (stream, buffer, parser, completed, ended),
+                                (stream, buffer, pending_utf8, parser, ended),
                             ));
                         },
                     }
@@ -791,20 +841,110 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn stream_closed_without_completed_still_ends_the_turn() {
+    async fn stream_closed_without_terminal_event_is_an_error() {
         let chunk = "data: {\"type\":\"response.output_text.delta\",\"delta\":\"a\"}";
         let bytes = futures::stream::iter(vec![Ok::<bytes::Bytes, ModelError>(
             bytes::Bytes::from_static(chunk.as_bytes()),
         )]);
+        let events: Vec<Result<ModelStreamEvent, ModelError>> =
+            responses_sse_stream(bytes).collect().await;
+        assert_eq!(events.len(), 3);
+        assert!(matches!(events[0], Ok(ModelStreamEvent::Created)));
+        assert!(matches!(&events[1], Ok(ModelStreamEvent::TextDelta(text)) if text == "a"));
+        assert!(matches!(&events[2], Err(ModelError::Stream(message))
+            if message.contains("before a terminal event")));
+    }
+
+    #[tokio::test]
+    async fn utf8_code_points_split_across_every_byte_are_preserved() {
+        let payload = concat!(
+            "data: {\"type\":\"response.output_text.delta\",\"delta\":\"Réponse 日本語 🐉\"}\r\n\r\n",
+            "data: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\"}}\n\n",
+        );
+        let bytes = futures::stream::iter(
+            payload
+                .as_bytes()
+                .iter()
+                .map(|byte| Ok::<_, ModelError>(bytes::Bytes::copy_from_slice(&[*byte])))
+                .collect::<Vec<_>>(),
+        );
         let events: Vec<ModelStreamEvent> =
             responses_sse_stream(bytes).map(Result::unwrap).collect().await;
         assert_eq!(
             events,
             vec![
                 ModelStreamEvent::Created,
-                ModelStreamEvent::TextDelta("a".into()),
-                ModelStreamEvent::Completed { usage: None, finish_reason: Some("stop".into()) },
+                ModelStreamEvent::TextDelta("Réponse 日本語 🐉".into()),
+                ModelStreamEvent::Completed {
+                    usage: None,
+                    finish_reason: Some("completed".into())
+                },
             ]
         );
+    }
+
+    #[tokio::test]
+    async fn terminal_completion_does_not_wait_for_the_connection_to_close() {
+        let payload =
+            "data: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\"}}\n\n";
+        let bytes = futures::stream::once(async move {
+            Ok::<_, ModelError>(bytes::Bytes::from_static(payload.as_bytes()))
+        })
+        .chain(futures::stream::pending());
+        let events: Vec<_> = tokio::time::timeout(
+            std::time::Duration::from_secs(1),
+            responses_sse_stream(bytes).collect(),
+        )
+        .await
+        .expect("terminal event ends the stream");
+        assert_eq!(events.len(), 2);
+        assert!(matches!(events[1], Ok(ModelStreamEvent::Completed { .. })));
+    }
+
+    #[tokio::test]
+    async fn failure_is_terminal_even_when_followed_by_success_frames() {
+        let payload = concat!(
+            "data: {\"type\":\"response.failed\",\"response\":{\"error\":{\"message\":\"failed\"}}}\n\n",
+            "data: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\"}}\n\n",
+        );
+        let bytes = futures::stream::iter(vec![
+            Ok::<_, ModelError>(bytes::Bytes::from_static(payload.as_bytes())),
+            Ok(bytes::Bytes::from_static(
+                b"data: {\"type\":\"response.output_text.delta\",\"delta\":\"late\"}\n\n",
+            )),
+        ]);
+        let events: Vec<_> = responses_sse_stream(bytes).collect().await;
+        assert_eq!(events.len(), 2);
+        assert!(matches!(&events[1], Err(ModelError::Api { message, .. }) if message == "failed"));
+    }
+
+    #[tokio::test]
+    async fn incomplete_response_is_not_a_successful_completion() {
+        let bytes = futures::stream::iter(vec![Ok::<_, ModelError>(bytes::Bytes::from_static(
+            b"data: {\"type\":\"response.incomplete\",\"response\":{\"status\":\"incomplete\",\"incomplete_details\":{\"reason\":\"max_output_tokens\"}}}\n\n",
+        ))]);
+        let events: Vec<_> = responses_sse_stream(bytes).collect().await;
+        assert_eq!(events.len(), 2);
+        assert!(matches!(&events[1], Err(ModelError::Stream(message))
+            if message.contains("max_output_tokens")));
+    }
+
+    #[tokio::test]
+    async fn transport_and_encoding_failures_never_synthesize_completion() {
+        let sequences = [
+            vec![
+                Err(ModelError::Stream("connection reset".into())),
+                Ok(bytes::Bytes::from_static(b"data: {\"type\":\"response.completed\"}\n\n")),
+            ],
+            vec![Ok(bytes::Bytes::from_static(&[0xff]))],
+            vec![Ok(bytes::Bytes::from_static(&[0xe6, 0x97]))],
+        ];
+        for chunks in sequences {
+            let events: Vec<_> =
+                responses_sse_stream(futures::stream::iter(chunks)).collect().await;
+            assert_eq!(events.len(), 2);
+            assert!(matches!(events[0], Ok(ModelStreamEvent::Created)));
+            assert!(matches!(events[1], Err(ModelError::Stream(_))));
+        }
     }
 }
