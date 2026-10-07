@@ -277,7 +277,7 @@
       "version": "0.1.0",
       "path": "m3/packages/app-ui/package.json",
       "status": "blocked",
-      "sha256": "663cdd81cae87c856f62a6e5f4d84477f8ed210e882abd34d63373a81dbeaca2",
+      "sha256": "2adcd068c953d9d86cd1455de7321569bca4ad3c34f910d361567c07d2dbaff8",
       "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
     },
     {

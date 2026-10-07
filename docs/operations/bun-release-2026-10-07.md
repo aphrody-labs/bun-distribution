@@ -10,6 +10,7 @@ Le [catalogue](../../config/npm-packages.json) conserve versions exactes, SHA-25
 ## Validation
 
 - Doctrine Bun : 98 manifests, zéro violation ; TypeScript workspace passé.
+- Audit de dépendances : zéro avis pour le consommateur des 74 paquets et pour le dépôt après mise à jour de React Router vers 7.18.2 ; app-ui conserve 215 tests passés et un typecheck valide.
 - oxlint/oxfmt des modifications et contrôle whitespace passés ; avertissements globaux préexistants conservés.
 - Archives : 92 valides, zéro échec. Outils de release et copies des configurations canoniques : dix tests passés.
 - Routage de la fabrique : 24 tests passés ; trois identités de dépôt Shenron épinglées à DBFR.
@@ -24,7 +25,7 @@ Le [catalogue](../../config/npm-packages.json) conserve versions exactes, SHA-25
 
 ## Qualification restante
 
-18 paquets restent exclus de la publication : Yolo CLI, app-ui, m3-bun, m3-design, m3-icons, m3-next-migrate, m3-next, m3-theme, m3, web-to-tauri, xai, workspace, bindings Bun natifs, os, winclean, agent-browser, web-test et x. Leurs gates runtime natif, adaptateurs hôte, navigateur/CDP ou intégration ne sont pas tous satisfaits. La suite complète du dépôt n’est donc pas verte. La compilation FFI release avec GPU passe par la fabrique VPS ; aucun binaire natif non qualifié n’est substitué.
+18 paquets restent exclus de la publication : Yolo CLI, app-ui, m3-bun, m3-design, m3-icons, m3-next-migrate, m3-next, m3-theme, m3, web-to-tauri, xai, workspace, bindings Bun natifs, os, winclean, agent-browser, web-test et x. Leurs gates runtime natif, adaptateurs hôte, navigateur/CDP ou intégration ne sont pas tous satisfaits. La suite complète du dépôt n’est donc pas verte. La compilation FFI release avec GPU a réussi sur la fabrique VPS en 17 min 32 s ; le binaire Linux GNU a été transféré avec contrôle de checksum et charge sous glibc 2.39. Les contrats FFI passent et m3-theme compte 13 tests passés. La suite native complète compte 28 tests passés, deux contrôles de bridges historiques ignorés et deux erreurs de tests de dérive pointant encore vers le propriétaire N2B retiré (ancien crate n2b-native). Aucun binaire non qualifié n’est publié.
 
 ## Capacité et placement
 
