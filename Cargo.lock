@@ -1594,6 +1594,7 @@ dependencies = [
  "aphrody-jobs",
  "aphrody-kernel",
  "aphrody-llama-server",
+ "aphrody-mcp-client",
  "aphrody-memory",
  "aphrody-models",
  "aphrody-n2b-core",

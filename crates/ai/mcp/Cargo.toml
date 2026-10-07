@@ -111,6 +111,7 @@ rustls             = { workspace = true }
 schemars           = { workspace = true }
 axum               = { workspace = true }
 aphrody-http-error = { workspace = true }
+aphrody-mcp-client = { workspace = true }
 # Constant-time token comparison of the /mcp Bearer layer (src/http_auth.rs).
 aphrody-secrets    = { workspace = true }
 # Live Photoshop bridge: a local WebSocket server the in-app UXP plugin

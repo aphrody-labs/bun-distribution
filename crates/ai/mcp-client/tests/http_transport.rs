@@ -332,3 +332,56 @@ fn invalid_header_is_rejected_without_leaking_its_value() {
     assert!(text.contains("X-Secret"));
     assert!(!text.contains("private"), "value leaked into: {text}");
 }
+
+#[tokio::test]
+async fn event_stream_selects_the_matching_response_and_rejects_missing_ids_and_large_bodies() {
+    install_crypto_provider();
+    let bodies = [
+        "data: \n\ndata: {\"id\":9,\"result\":{}}\n\ndata: {\"id\":1,\"result\":{\"value\":42}}\n\n",
+        "data: {\"id\":9,\"result\":{}}\n\n",
+        "",
+    ];
+    for (case, body) in bodies.into_iter().enumerate() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let mut reader = accept(&listener);
+            let _ = read_request(&mut reader);
+            let bytes = if case == 2 { 32 * 1024 * 1024 + 1 } else { body.len() };
+            write!(
+                reader.get_mut(),
+                "HTTP/1.1 200 OK\r\nContent-Type: Text/Event-Stream; charset=utf-8\r\nContent-Length: {bytes}\r\nConnection: close\r\n\r\n{body}"
+            )
+            .unwrap();
+        });
+        let mut transport =
+            HttpTransport::new(format!("http://{address}/mcp"), None, None).unwrap();
+        let result = transport.call("ping", json!({}), Duration::from_secs(2)).await;
+        match case {
+            0 => assert_eq!(result.unwrap()["value"], 42),
+            1 => assert!(result.unwrap_err().to_string().contains("matching response")),
+            _ => assert!(result.unwrap_err().to_string().contains("byte limit")),
+        }
+        server.join().unwrap();
+    }
+}
+
+#[tokio::test]
+async fn event_stream_heartbeats_do_not_extend_the_request_deadline() {
+    install_crypto_provider();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = thread::spawn(move || {
+        let mut reader = accept(&listener);
+        let _ = read_request(&mut reader);
+        reader
+            .get_mut()
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: 1000\r\n\r\n: heartbeat\n\n")
+            .unwrap();
+        thread::sleep(Duration::from_millis(500));
+    });
+    let mut transport = HttpTransport::new(format!("http://{address}/mcp"), None, None).unwrap();
+    let error = transport.call("ping", json!({}), Duration::from_millis(100)).await.unwrap_err();
+    assert!(matches!(error, McpClientError::Http(ref error) if error.is_timeout()));
+    server.join().unwrap();
+}

@@ -287,10 +287,14 @@ pub(crate) async fn connect_from_config(entry: &McpServerConfig) -> Result<McpCl
         },
         McpTransportConfig::Http { url, headers }
         | McpTransportConfig::StreamableHttp { url, headers } => {
-            let bearer = headers
-                .get("Authorization")
-                .and_then(|v| v.strip_prefix("Bearer ").map(str::to_owned));
-            McpClient::from_http(url.clone(), bearer)
+            let resolved = headers
+                .iter()
+                .map(|(name, value)| {
+                    aphrody_mcp_client::expand_header_value(name, value)
+                        .map(|value| (name.clone(), value))
+                })
+                .collect::<Result<HashMap<_, _>, _>>()?;
+            McpClient::from_http_headers(url.clone(), &resolved)
                 .map_err(|e| anyhow!("http client for `{url}`: {e}"))
         },
     }
@@ -379,5 +383,97 @@ mod tests {
                 assert!(msg.contains("stdio connect to"), "unexpected error: {msg}");
             },
         }
+    }
+
+    #[tokio::test]
+    async fn missing_http_header_environment_fails_before_connecting_without_values() {
+        let entry = McpServerConfig {
+            name: "missing-env".to_owned(),
+            transport: McpTransportConfig::Http {
+                url: "http://127.0.0.1:1/mcp".to_owned(),
+                headers: HashMap::from([
+                    (
+                        "authorization".to_owned(),
+                        "Bearer ${APHRODY_MCP_FIXTURE_ABSENT_20261007}".to_owned(),
+                    ),
+                    ("X-Private".to_owned(), "fixture-never-printed".to_owned()),
+                ]),
+            },
+        };
+        let error = match connect_from_config(&entry).await {
+            Ok(_) => panic!("missing credential unexpectedly accepted"),
+            Err(error) => error.to_string(),
+        };
+        assert!(error.contains("APHRODY_MCP_FIXTURE_ABSENT_20261007"));
+        assert!(!error.contains("fixture-never-printed"));
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "jobs")]
+    async fn configured_headers_and_sessions_survive_the_actual_native_rmcp_http_service() {
+        use std::sync::{Arc, Mutex};
+
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let token = "native-fixture-token-32-bytes-only";
+        let path = std::env::var("PATH").unwrap();
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let requests = Arc::clone(&seen);
+        let app = crate::http_app(crate::http_auth::McpAuth::with_token(token)).layer(
+            axum::middleware::from_fn(
+                move |request: axum::extract::Request, next: axum::middleware::Next| {
+                    let requests = Arc::clone(&requests);
+                    async move {
+                        requests.lock().unwrap().push((
+                            request
+                                .headers()
+                                .get("authorization")
+                                .unwrap()
+                                .to_str()
+                                .unwrap()
+                                .to_owned(),
+                            request
+                                .headers()
+                                .get("x-qualification")
+                                .unwrap()
+                                .to_str()
+                                .unwrap()
+                                .to_owned(),
+                            request.headers().contains_key("mcp-session-id"),
+                        ));
+                        next.run(request).await
+                    }
+                },
+            ),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        let entry = McpServerConfig {
+            name: "native-rmcp".to_owned(),
+            transport: McpTransportConfig::StreamableHttp {
+                url: format!("http://{address}/mcp"),
+                headers: HashMap::from([
+                    ("authorization".to_owned(), format!("Bearer {token}")),
+                    ("X-Qualification".to_owned(), "${PATH}".to_owned()),
+                ]),
+            },
+        };
+        let mut client = connect_from_config(&entry).await.unwrap();
+        client.initialize().await.expect("actual rmcp initialize SSE");
+        let tools = client.list_tools().await.expect("actual rmcp tools/list SSE");
+        assert!(tools.iter().any(|tool| tool.name == "aphrody_job_cancel"));
+        let result =
+            client.call_tool("aphrody_job_cancel", serde_json::json!({"id":""})).await.unwrap();
+        assert!(result["content"][0]["text"].as_str().unwrap().contains("JOB_BAD_REQUEST"));
+        client.shutdown().await;
+        server.abort();
+        let requests = seen.lock().unwrap();
+        assert!(requests.len() >= 4);
+        for (authorization, custom, _) in requests.iter() {
+            assert_eq!(authorization, &format!("Bearer {token}"));
+            assert_eq!(custom, &path);
+        }
+        assert!(!requests[0].2);
+        assert!(requests[1..].iter().all(|request| request.2));
     }
 }

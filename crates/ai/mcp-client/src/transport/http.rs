@@ -6,7 +6,8 @@
 use std::{collections::BTreeMap, time::Duration};
 
 use async_trait::async_trait;
-use reqwest::header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderName, HeaderValue};
+use futures_util::StreamExt;
+use reqwest::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderName, HeaderValue};
 use serde_json::Value as JsonValue;
 
 use super::Transport;
@@ -23,8 +24,116 @@ const ACCEPT_VALUE: &str = "application/json, text/event-stream";
 /// Longest response body kept in an [`McpClientError::HttpStatus`] message.
 const MAX_ERROR_BODY_CHARS: usize = 1024;
 
+/// Bound decoded JSON/SSE bytes, including heartbeats and unrelated events.
+const MAX_RESPONSE_BYTES: usize = 32 * 1024 * 1024;
+
 /// Upper bound for a fire-and-forget notification round trip.
 const NOTIFY_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// HTTP framing only: JSON-RPC validation stays in the shared protocol owner.
+#[derive(Default)]
+struct SseResponse {
+    line: Vec<u8>,
+    data: String,
+    has_data: bool,
+    skip_lf: bool,
+    started: bool,
+}
+
+impl SseResponse {
+    fn push(&mut self, chunk: &[u8], expected_id: u64) -> Result<Option<String>> {
+        for &byte in chunk {
+            if self.skip_lf {
+                self.skip_lf = false;
+                if byte == b'\n' {
+                    continue;
+                }
+            }
+            if byte != b'\r' && byte != b'\n' {
+                self.line.push(byte);
+                continue;
+            }
+            self.skip_lf = byte == b'\r';
+            let line = std::mem::take(&mut self.line);
+            let line = std::str::from_utf8(&line)
+                .map_err(|_| McpClientError::Malformed("MCP SSE is not UTF-8".to_owned()))?;
+            let line = if self.started {
+                line
+            } else {
+                self.started = true;
+                line.strip_prefix('\u{feff}').unwrap_or(line)
+            };
+            if line.is_empty() {
+                self.has_data = false;
+                let data = std::mem::take(&mut self.data);
+                if data.trim().is_empty() {
+                    continue;
+                }
+                let message: JsonValue = serde_json::from_str(&data).map_err(|_| {
+                    McpClientError::Malformed("invalid JSON in MCP SSE event".to_owned())
+                })?;
+                if message.get("id") == Some(&JsonValue::from(expected_id)) {
+                    return Ok(Some(data));
+                }
+            } else if let Some(data) =
+                line.strip_prefix("data:").or_else(|| (line == "data").then_some(""))
+            {
+                if self.has_data {
+                    self.data.push('\n');
+                }
+                self.has_data = true;
+                self.data.push_str(data.strip_prefix(' ').unwrap_or(data));
+            }
+        }
+        Ok(None)
+    }
+}
+
+async fn response_text(response: reqwest::Response, expected_id: Option<u64>) -> Result<String> {
+    if response.content_length().is_some_and(|bytes| bytes > MAX_RESPONSE_BYTES as u64) {
+        return Err(McpClientError::Malformed(
+            "MCP HTTP response exceeds its byte limit".to_owned(),
+        ));
+    }
+    let sse_id = expected_id.filter(|_| {
+        response
+            .headers()
+            .get(CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.split(';').next())
+            .is_some_and(|value| value.trim().eq_ignore_ascii_case("text/event-stream"))
+    });
+    let stream = response.bytes_stream();
+    futures_util::pin_mut!(stream);
+    let mut received = 0_usize;
+    let mut body = Vec::new();
+    let mut sse = SseResponse::default();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(McpClientError::Http)?;
+        received = received.checked_add(chunk.len()).ok_or_else(|| {
+            McpClientError::Malformed("MCP HTTP response exceeds its byte limit".to_owned())
+        })?;
+        if received > MAX_RESPONSE_BYTES {
+            return Err(McpClientError::Malformed(
+                "MCP HTTP response exceeds its byte limit".to_owned(),
+            ));
+        }
+        if let Some(id) = sse_id {
+            if let Some(frame) = sse.push(&chunk, id)? {
+                return Ok(frame);
+            }
+        } else {
+            body.extend_from_slice(&chunk);
+        }
+    }
+    if sse_id.is_some() {
+        return Err(McpClientError::Malformed(
+            "MCP SSE ended before the matching response".to_owned(),
+        ));
+    }
+    String::from_utf8(body)
+        .map_err(|_| McpClientError::Malformed("MCP HTTP response is not UTF-8".to_owned()))
+}
 
 /// HTTP transport for streamable MCP endpoints.
 pub struct HttpTransport {
@@ -118,9 +227,10 @@ impl Transport for HttpTransport {
             .map_err(McpClientError::Http)?;
         let status = resp.status().as_u16();
         let session_id = resp.headers().get("mcp-session-id").cloned();
-        let text = resp.text().await.map_err(McpClientError::Http)?;
+        let successful = (200..300).contains(&status);
+        let text = response_text(resp, successful.then_some(id)).await?;
 
-        if !(200..300).contains(&status) {
+        if !successful {
             let body: String = text.chars().take(MAX_ERROR_BODY_CHARS).collect();
             return Err(McpClientError::HttpStatus { status, body });
         }
@@ -161,7 +271,7 @@ impl Transport for HttpTransport {
             .map_err(McpClientError::Http)?;
         let status = response.status().as_u16();
         if !(200..300).contains(&status) {
-            let text = response.text().await.map_err(McpClientError::Http)?;
+            let text = response_text(response, None).await?;
             let body = text.chars().take(MAX_ERROR_BODY_CHARS).collect();
             return Err(McpClientError::HttpStatus { status, body });
         }
@@ -170,5 +280,39 @@ impl Transport for HttpTransport {
 
     async fn shutdown(&mut self) -> Result<()> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sse_frames_preserve_utf8_and_multiline_data_across_every_chunk_boundary() {
+        let input = concat!(
+            "\u{feff}: heartbeat\r\nid: 0\r\nretry: 3000\r\ndata\r\n\r\n",
+            "data: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/progress\"}\r\n\r\n",
+            "data: {\"id\":99,\"result\":{}}\r\n\r\n",
+            "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":7,\r\n",
+            "data: \"result\":{\"name\":\"épisode\"}}\r\n\r\n"
+        );
+        for input in [input.to_owned(), input.replace("\r\n", "\r"), input.replace("\r\n", "\n")] {
+            let mut parser = SseResponse::default();
+            let mut response = None;
+            for byte in input.bytes() {
+                if let Some(frame) = parser.push(&[byte], 7).unwrap() {
+                    assert!(response.replace(frame).is_none());
+                }
+            }
+            let result = parse_response(&response.expect("matching response")).unwrap();
+            assert_eq!(result["name"], "épisode");
+        }
+    }
+
+    #[test]
+    fn malformed_sse_diagnostics_do_not_include_payloads() {
+        let mut parser = SseResponse::default();
+        let error = parser.push(b"data: private-invalid-payload\n\n", 1).unwrap_err();
+        assert!(!error.to_string().contains("private-invalid-payload"));
     }
 }
