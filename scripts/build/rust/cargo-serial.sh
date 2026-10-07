@@ -18,7 +18,8 @@ done
 case "$cargo_command" in
     build|b|check|c|test|t|clippy|rustdoc|doc|d|bench|run|r|install|rustc|nextest|xwin|zigbuild)
         # The Claude cloud session is itself the build host: it never routes to the factory.
-        if [[ "$help_only" == false && -f "$factory_config" && "${APHRODY_BUILD_HOST:-}" != vps && "${APHRODY_LOCAL_CARGO:-0}" != 1 && "${CLAUDE_CODE_REMOTE:-}" != true && "${APHRODY_CLOUD:-0}" != 1 ]]; then
+        # Both declared factory hosts run Cargo locally under their factory locks.
+        if [[ "$help_only" == false && -f "$factory_config" && "${APHRODY_BUILD_HOST:-}" != vps && "${APHRODY_BUILD_HOST:-}" != dbfr && "${APHRODY_LOCAL_CARGO:-0}" != 1 && "${CLAUDE_CODE_REMOTE:-}" != true && "${APHRODY_CLOUD:-0}" != 1 ]]; then
             # The Workspace build-factory owner interprets the factory contract.
             factory_route="$(bun "$source_root/packages/infra/workspace/src/build-factory.ts" status --route)"
             if [[ "$factory_route" == factory ]]; then
