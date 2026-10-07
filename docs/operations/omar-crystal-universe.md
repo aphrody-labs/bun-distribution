@@ -134,13 +134,14 @@ et partiel : il ne contient pas les pages intégrales ni les images des 42 tomes
 ne prouve pas l’exhaustivité de DBS. Aucun profil aphrody/dbfr/ie n’a été utilisé
 pour cette campagne.
 
-Reprise EN le 2026-10-07 : commande native `aphrody web dragon-ball crawl --profile
-shenron --source wikipedia-en --max-requests 25 --max-depth 2 --index --json` :
-25 tentatives, 25 documents anglais, zéro erreur; l’index incrémental rapporte 25
-nouveaux documents et 598 chunks. Total sur la sortie privée : 50 documents
-(25 FR + 25 EN). La cible anglaise conserve 173 pages en attente et le statut natif
-est `completed:false`; cette passe a couvert les sources déclarées, mais pas toute
-la frontier des articles pertinents.
+Reprises natives le 2026-10-07 : plusieurs tranches FR/EN, chacune plafonnée à 25
+requêtes et profondeur 2, sans médias. La sortie privée compte désormais 150
+documents (75 FR + 75 EN); les dernières tranches ont ajouté 25 documents et 956
+chunks FR, puis 25 documents et 1 485 chunks EN, sans erreur. Les recherches du
+profil `shenron` retrouvent la référence aux 42 tomes/519 chapitres et des entrées
+DBS/Moro en anglais et en français. La frontier conserve 168 pages FR et 179 EN en
+attente; le rapport natif reste `completed:false`. Ces références ne sont pas les
+chapitres intégraux et ne démontrent pas l’exhaustivité du RAG source.
 
 Contrôle de métadonnées du corpus manga via `dragonball.manga_tomes` (profil source
 Shenron, sans conserver ni citer le texte renvoyé) : DB `vol1` indique 221 pages,
