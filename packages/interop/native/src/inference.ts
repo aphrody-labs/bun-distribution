@@ -2,6 +2,8 @@
 import { CString, dlopen, FFIType, ptr, suffix, type Pointer } from "bun:ffi";
 import { isAbsolute } from "node:path";
 import { statePath } from "@aphrody/paths";
+import packageMetadata from "../package.json";
+import { verifyNativeArtifact } from "./native-artifact";
 
 const symbols = {
   aphrody_inference_abi_version: { args: [], returns: FFIType.u32 },
@@ -15,6 +17,7 @@ function openLibrary() {
   const filename = `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${suffix}`;
   const path = process.env.APHRODY_INFERENCE_LIBRARY ?? statePath("lib", filename);
   if (!isAbsolute(path)) throw new Error("APHRODY_INFERENCE_LIBRARY must be an absolute path");
+  verifyNativeArtifact(path, packageMetadata.version);
   const opened = dlopen(path, symbols);
   if (opened.symbols.aphrody_inference_abi_version() !== 1) {
     opened.close();
