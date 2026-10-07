@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# Crystal Universe — proposition pour Omar
+# Dragon Pixel — proposition pour Omar
 
 Mini-jeu original jouable dans un navigateur : combattant personnalisable, arène
 2D, combos, sauts, projectiles, charge d'énergie et transformation de huit secondes.

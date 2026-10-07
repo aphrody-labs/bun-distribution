@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# Objectifs d'Omar — Crystal Universe
+# Objectifs d'Omar — Dragon Pixel
 
 Preuves recueillies le 2026-10-07 UTC. Demande authentifiée :
 [message source](https://discord.com/channels/1554189180030947338/1557354118710829117/1557385939393716335).
@@ -31,7 +31,7 @@ Aucune comparaison des certificats éditeur ni analyse antimalware locale n'est 
 
 ## Implémentation et proposition
 
-[Crystal Universe](../../apps/community/crystal-universe/README.md) est la proposition
+[Dragon Pixel](../../apps/community/crystal-universe/README.md) est la proposition
 jouable : styles/couleur personnalisables, combos, sauts, projectiles, charge,
 transformation, cinq vagues IA, score, victoire/défaite, pause et reprise.
 Graphismes originaux dessinés sur Canvas ; aucune dépendance ajoutée.
@@ -63,3 +63,18 @@ Installer la capacité produit `web crawl-index` pour pouvoir indexer les fiches
 autorisées (profil aphrody, labels omar, maximum 25 requêtes et profondeur 2,
 respect robots), puis vérifier leur présence avec `aphrody home query`.
 Ce volet demeure ouvert ; l'achèvement global n'est pas revendiqué.
+
+## Nom du jeu — 2026-10-07
+
+Demande authentifiée : [nommer le jeu « Dragon Pixel »](https://discord.com/channels/1554189180030947338/1557354118710829117/1557386591985602601).
+Le titre HTML, le titre visible, le README et le message du serveur portent
+désormais ce nom. Le chemin technique `apps/community/crystal-universe/`
+reste compatible avec les commandes et liens existants. Les noms des jeux
+ayant inspiré ses mécaniques conservent leur attribution.
+
+Vérification actuelle du renommage : serveur Bun lancé sur `127.0.0.1:4318`,
+réponse HTTP 200 analysée : `<title>Dragon Pixel — mini-jeu d'Omar</title>`
+et texte du `<h1>` égal à `Dragon Pixel` ; ancien nom absent du HTML servi.
+Sortie du serveur : `Dragon Pixel: http://127.0.0.1:4318/`.
+Tests moteur : 5 réussis, 20 assertions ; oxlint strict, oxfmt et
+`git diff --check` réussis. Aucun déploiement public effectué.

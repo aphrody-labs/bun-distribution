@@ -9,4 +9,4 @@ const server = Bun.serve({
     return new Response(Bun.file(new URL(name, import.meta.url)));
   },
 });
-console.log(`Crystal Universe: ${server.url}`);
+console.log(`Dragon Pixel: ${server.url}`);
