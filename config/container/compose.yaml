@@ -10,15 +10,26 @@ name: aphrody
 x-build: &build
   context: ../..
   dockerfile: config/container/Dockerfile
+  args:
+    APHRODY_RELEASE: ${APHRODY_RELEASE:-}
+
+x-runtime: &runtime
+  build:
+    <<: *build
+    target: runtime
+  image: ${APHRODY_RUNTIME_IMAGE:-aphrody:runtime}
+  init: true
+  volumes:
+    - aphrody-home:/home/aphrody/.aphrody
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
 
 services:
   api:
-    build:
-      <<: *build
-      target: runtime
-    image: aphrody:runtime
+    <<: *runtime
     command: ["api"]
-    init: true
     environment:
       # Only the API entrypoint requires the token; other profiles can run without it.
       YOLO_API_TOKEN: ${YOLO_API_TOKEN:-}
@@ -26,34 +37,18 @@ services:
     ports:
       # Published on the host loopback only; put a reverse proxy with TLS in front for anything wider.
       - "127.0.0.1:8999:8999"
-    volumes:
-      - aphrody-home:/home/aphrody/.aphrody
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8999/health"]
       interval: 30s
       timeout: 5s
       retries: 3
     restart: unless-stopped
-    read_only: true
-    tmpfs: [/tmp]
-    cap_drop: [ALL]
-    security_opt: ["no-new-privileges:true"]
 
   mcp:
-    build:
-      <<: *build
-      target: runtime
-    image: aphrody:runtime
+    <<: *runtime
     command: ["mcp"]
-    init: true
     stdin_open: true
-    volumes:
-      - aphrody-home:/home/aphrody/.aphrody
     profiles: [tools]
-    read_only: true
-    tmpfs: [/tmp]
-    cap_drop: [ALL]
-    security_opt: ["no-new-privileges:true"]
 
   dev:
     build:

@@ -157,3 +157,30 @@ All 13 host payload checksums, the four public installer hashes/sizes and six pu
 `aphrody.com` and `downloads.aphrody.com` link their Download Aphrody button to the immutable Setup EXE. Setup and
 Omar passed PE32+/AMD64 checks and Wine 10 launch/version/simulation checks. These executables are unsigned;
 execution on native Windows and the unavailable CEF desktop installer remain separate qualification items.
+
+## Published container images — 2026-10-07
+
+The existing organization package remains private. Authenticate through the existing GitHub account before pulling.
+
+| Image                                                   | Immutable digest                                                          | Qualified scope                                                                               |
+| ------------------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `ghcr.io/aphrody-labs/aphrody:runtime-81cd80a3e`        | `sha256:9584253e39340758b4efcb1d11e86aa48f165a3e045759f75bb4a600559c3031` | GNU x86_64 Aphrody/Yolo runtime; registry pull, API health, UID 1000, secret file and SIGTERM |
+| `ghcr.io/aphrody-labs/aphrody:alpine-runtime-41b54d557` | `sha256:7506e634d1ab1acfadaaceb6a59d52629a02b62bd59ec1507c334816e7b55aad` | Official musl Bun 1.4.2 on AMD64 and ARM64; registry pulls, UID 1000, JS, WASM and SHA-256    |
+
+The Alpine manifest retains both architecture images and their attestations. ARM64 ran through Ubuntu's QEMU 10.2.1;
+existing LLVM/Python binfmt handlers were preserved. This qualifies the minimal Bun image; the Aphrody fork and Rust
+CLI still need musl/ARM64 artifacts. Registry authentication used temporary private Docker configuration that was
+removed after publication and smoke checks.
+
+Compose reuses one runtime definition for API and MCP. `APHRODY_RELEASE` pins source builds; `APHRODY_RUNTIME_IMAGE`
+selects a published image. To run the qualified GNU image without rebuilding, after preparing the private token:
+
+```sh
+bun scripts/tools/secrets/vault.ts runtime
+APHRODY_RUNTIME_IMAGE=ghcr.io/aphrody-labs/aphrody@sha256:9584253e39340758b4efcb1d11e86aa48f165a3e045759f75bb4a600559c3031 \
+  docker compose --env-file "$HOME/.aphrody/private/container-vault/compose.env" \
+  -f config/container/compose.yaml -f config/container/compose.secrets.yaml up --no-build --pull always -d api
+```
+
+The mounted token stays outside the image and repository. Compose 2.40.3 validated the selected image/release,
+read-only filesystem, init process, dropped capabilities, security option and loopback API port.
