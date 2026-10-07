@@ -121,6 +121,10 @@
       "sshAlias": "dbfr",
       "paths": [
         {
+          "path": "shenron-build/target-aphrody",
+          "reason": "regenerable Shenron Rust build output; no active Cargo/rustc process uses it and the live production release remains on vps under /srv"
+        },
+        {
           "path": "shenron-build/node_modules",
           "reason": "regenerable build dependencies; the production release carries its own runtime dependencies"
         },
