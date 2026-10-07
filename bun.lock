@@ -857,6 +857,7 @@
       "name": "@aphrody/discord-kit",
       "version": "0.1.1",
       "dependencies": {
+        "@aphrody/bun": "workspace:*",
         "@aphrody/runtime-sdk": "workspace:*",
         "@discordjs/rest": "catalog:",
         "discord-api-types": "catalog:",
