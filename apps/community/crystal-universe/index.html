@@ -88,9 +88,17 @@
         aria-label="Arène 3D WebGPU avec le combattant, les adversaires et les projectiles. Les statistiques sont affichées dans le texte adjacent."
         hidden
       ></canvas>
+      <canvas
+        id="arena-bevy"
+        width="960"
+        height="400"
+        role="img"
+        aria-label="Arène 3D rendue par Bevy et WebGPU avec les combattants et projectiles du combat en cours."
+        hidden
+      ></canvas>
       <p class="render-note">
-        Rendu 3D WebGPU si disponible; repli Canvas 2D sinon. J/K/L/T ou les boutons à l’écran
-        servent à combattre.
+        Rendu 3D Bevy/WebGPU si disponible; repli WebGPU ou Canvas 2D sinon. J/K/L/T ou les
+        boutons à l’écran servent à combattre.
       </p>
       <section class="world-map" aria-labelledby="world-map-title">
         <div>

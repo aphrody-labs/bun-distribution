@@ -109,7 +109,8 @@ canvas {
   border: 1px solid #64799e;
   border-radius: 0.8rem;
 }
-#arena-webgpu {
+#arena-webgpu,
+#arena-bevy {
   aspect-ratio: 12 / 5;
   height: auto;
 }

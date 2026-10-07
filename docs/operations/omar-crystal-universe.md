@@ -296,6 +296,35 @@ Xenoverse, contenu Xenoverse 3 ou texte de manga n'a été ajouté. Le RAG demeu
 fondé sur l'index Shenron existant; ses limites de couverture et de droits restent
 inchangées.
 
+## 2026-10-07 — Renderer Bevy/WebGPU dans le client WASM
+
+Le crate `aphrody-dragon-pixel-wasm` ajoute Bevy 0.19.1, uniquement pour la cible
+`wasm32-unknown-unknown`, avec les fonctionnalités `3d`, `web` et `webgpu`. Le
+canvas `#arena-bevy` héberge une scène procédurale 3D : plateau, lumière, caméra,
+combattant, tête/cheveux, ennemis, autres joueurs et projectiles. À chaque frame,
+le client transmet l'état du cœur de simulation Rust et l'avatar; Bevy actualise
+les modèles. Le chargement est tenté quand le navigateur expose WebGPU et un
+adaptateur; le Canvas/WebGPU JS demeure en repli pendant l'initialisation et si la
+cible WASM n'est pas construite. Le code n'importe aucune donnée ou ressource de
+Xenoverse.
+
+Contrôles du lot : `cargo check -p aphrody-dragon-pixel-wasm --target
+wasm32-unknown-unknown --locked`, Clippy WASM strict, le test natif du pont WASM
+(1/1), build WASM release et test de chargement du paquet généré dans Bun avec
+initialisation du module et ingestion d'un snapshot : verts. Le build release
+Bevy a pris 5 min 52 s. `wasm-bindgen` a produit 88 240 684 octets; le Binaryen
+installé est v120 et le script standard n'a pas optimisé car cette version ne
+reconnaît pas `--enable-bulk-memory-opt`. L'optimisation `-Oz` avec les options
+acceptées par v120 a généré un artefact WASM de 33 Mo, conservé uniquement dans
+`target/`.
+
+Oxlint strict, Oxfmt et 13 tests JS (60 assertions) passent. L'outil navigateur
+refuse les URL loopback dans cette session : l'exécution réelle de l'application,
+la création du contexte WebGPU et l'affichage Bevy dans un navigateur n'ont pas
+été vérifiés. La scène utilise des primitives originales; ce n'est pas le moteur
+commercial Xenoverse 2 ni son contenu. Le corpus RAG, les données/licences
+Xenoverse, la portée Xenoverse 3 et le netcode complet restent à réaliser.
+
 ## 2026-10-07 — Races supplémentaires pour l'éditeur d'avatar
 
 L'éditeur original ajoute les choix Freezer et Androïde aux quatre choix existants,

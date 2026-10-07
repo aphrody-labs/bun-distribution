@@ -7,15 +7,18 @@ import { createWebGpuArena } from "./webgpu.js";
 import { buildMultiplayerSocketUrl } from "./multiplayer-url.js";
 let initDragonPixelWasm = async () => {};
 let RustGameSession = null;
+let bevyApi = null;
 try {
-  ({ default: initDragonPixelWasm, Session: RustGameSession } =
-    await import("./dragon-pixel-wasm.js"));
+  const wasmModule = await import("./dragon-pixel-wasm.js");
+  ({ default: initDragonPixelWasm, Session: RustGameSession } = wasmModule);
+  bevyApi = wasmModule.start_bevy_renderer ? wasmModule : null;
 } catch {
   // The local source fallback remains available before the WASM package is built.
 }
 const canvas = document.querySelector("#arena"),
   ctx = canvas.getContext("2d");
 const webGpuCanvas = document.querySelector("#arena-webgpu");
+const bevyCanvas = document.querySelector("#arena-bevy");
 let webGpuArena = null;
 createWebGpuArena(webGpuCanvas)
   .then((renderer) => {
@@ -67,8 +70,17 @@ let game = createGame(),
   paused = false,
   last = 0;
 initDragonPixelWasm()
-  .then(() => {
+  .then(async () => {
     if (RustGameSession) rustGame = new RustGameSession("balanced");
+    if (bevyApi && navigator.gpu && (await navigator.gpu.requestAdapter())) {
+      try {
+        bevyCanvas.hidden = false;
+        bevyApi.start_bevy_renderer();
+      } catch {
+        bevyApi = null;
+        bevyCanvas.hidden = true;
+      }
+    }
     return null;
   })
   .catch(() => {
@@ -212,7 +224,7 @@ window.addEventListener("keydown", (e) => {
 window.addEventListener("keyup", (e) =>
   held.delete(keys[e.key.length === 1 ? e.key.toLowerCase() : e.key]),
 );
-for (const arenaCanvas of [canvas, webGpuCanvas]) {
+for (const arenaCanvas of [canvas, webGpuCanvas, bevyCanvas]) {
   arenaCanvas.addEventListener("pointerdown", (event) => {
     const action = pointerAction(event.button);
     if (action) {
@@ -377,8 +389,32 @@ function draw2d() {
   }
 }
 function draw() {
-  if (webGpuArena) webGpuArena.render(game, avatar, multiplayerPlayers);
-  else draw2d();
+  if (bevyApi) {
+    try {
+      bevyApi.update_bevy_renderer(
+        JSON.stringify({
+          game,
+          avatar,
+          remotes: multiplayerPlayers.map(({ x, y, avatar: remoteAvatar }) => ({
+            x,
+            y,
+            avatar: remoteAvatar,
+          })),
+        }),
+      );
+      if (bevyApi.bevy_renderer_ready()) {
+        canvas.hidden = true;
+        webGpuCanvas.hidden = true;
+        bevyCanvas.hidden = false;
+      }
+    } catch {
+      bevyApi = null;
+      bevyCanvas.hidden = true;
+      canvas.hidden = false;
+    }
+  }
+  if (!bevyApi && webGpuArena) webGpuArena.render(game, avatar, multiplayerPlayers);
+  else if (!bevyApi) draw2d();
   drawAge1000Map(mapContext, mapCanvas.width, mapCanvas.height);
 }
 function frame(now) {
@@ -418,7 +454,8 @@ function frame(now) {
     }
   }
   const p = game.player;
-  hud.textContent = `${avatar.name} · Vie ${Math.ceil(p.hp)} / 100 · Énergie ${Math.floor(p.energy)} / 100 · Vague ${game.wave} / 5 · Score ${game.score}${p.transformed ? " · Transformation active" : ""} · ${webGpuArena ? "3D WebGPU" : "Canvas 2D"}`;
+  const bevyReady = bevyApi?.bevy_renderer_ready() || false;
+  hud.textContent = `${avatar.name} · Vie ${Math.ceil(p.hp)} / 100 · Énergie ${Math.floor(p.energy)} / 100 · Vague ${game.wave} / 5 · Score ${game.score}${p.transformed ? " · Transformation active" : ""} · ${bevyReady ? "Bevy 3D WebGPU" : webGpuArena ? "3D WebGPU" : "Canvas 2D"}`;
   if (multiplayerSocket?.readyState === WebSocket.OPEN && now - lastNetworkSync >= 50) {
     multiplayerSocket.send(
       JSON.stringify({

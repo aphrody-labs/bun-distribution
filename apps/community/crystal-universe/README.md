@@ -3,7 +3,7 @@
 # Dragon Pixel — proposition pour Omar
 
 Mini-jeu original jouable dans un navigateur : combattant personnalisable, arène
-WebGPU 3D avec repli Canvas 2D, combos, sauts, projectiles, charge d'énergie et
+Bevy/WebGPU 3D compilée en WASM avec repli WebGPU JS ou Canvas 2D, combos, sauts, projectiles, charge d'énergie et
 transformation de huit secondes.
 Cinq vagues d'adversaires IA, score, victoire/défaite, pause et reprise.
 Trois styles (équilibré, vitesse, puissance) et couleur personnalisable.
@@ -40,6 +40,12 @@ Construire le cœur de combat WASM avant de lancer le navigateur :
 ```sh
 bun scripts/build/rust/wasm-package.ts --crate aphrody-dragon-pixel-wasm --out target/wasm-package-stage/aphrody-dragon-pixel-wasm --name dragon-pixel-wasm
 ```
+
+Le paquet WASM active Bevy 0.19.1 pour la cible `wasm32-unknown-unknown` avec
+`3d`, `web` et `webgpu`. Le renderer crée une arène 3D procédurale et reçoit les
+snapshots du combat Rust et les couleurs de l'avatar. Il démarre uniquement quand
+le navigateur expose WebGPU et un adaptateur; sinon le rendu WebGPU JS ou Canvas 2D
+reste disponible. Les primitives du prototype ne sont pas des modèles Xenoverse.
 
 Ouvrir `http://127.0.0.1:4317/`, choisir le style, puis **Jouer / Recommencer**.
 Le serveur de jeu écoute par défaut sur `127.0.0.1:4320`, limite les salles à
