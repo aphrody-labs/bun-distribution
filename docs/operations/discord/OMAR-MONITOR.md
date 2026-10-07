@@ -186,9 +186,11 @@ Son SHA-256 attendu est
 le workflow le vérifie avant tout signal de drainage, build ou upload.
 Ce binaire contient le moteur `1.4.3-canary.1`, révision `a4d88d124` ;
 il ne qualifie pas une révision plus récente des sources du fork.
-Les 13 tests de livraison, TypeScript, oxlint strict et oxfmt passent avec ce
-même interpréteur sur WSL. La syntaxe systemd passe avec le chemin local
-de cet exécutable ; la vérification du chemin VPS attend l'installation du pin.
+Les 13 tests de livraison et les 35 tests combinés du moniteur, du routage et
+de la livraison passent avec ce même interpréteur sur WSL, ainsi que TypeScript,
+oxlint strict et oxfmt. La syntaxe systemd passe sur WSL et, après installation
+du pin vérifié, sur le VPS avec son véritable chemin ; cette vérification
+n'installe ni ne redémarre le moniteur.
 L'ancienne instance active conserve son runtime jusqu'au drainage qualifié.
 
 Le gate documentaire global reste en échec sur les index générés concurrents
