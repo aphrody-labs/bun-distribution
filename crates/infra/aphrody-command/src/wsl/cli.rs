@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-use crate::{
+use crate::wsl::{
     Config, Result, Target, artifact, build, doctor, expected_artifacts, import, latest_kernel,
     plan, sources,
 };
@@ -156,20 +156,20 @@ pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
                 ])
                 .status()?;
             if !status.success() {
-                return Err(crate::Error::Invalid("dependency installation failed".into()));
+                return Err(crate::wsl::Error::Invalid("dependency installation failed".into()));
             }
             // Rust-for-Linux needs bindgen >= 0.71.1 (newer than older distro packages) and the rust-src component.
             let status = std::process::Command::new("cargo")
                 .args(["install", "--locked", "bindgen-cli"])
                 .status()?;
             if !status.success() {
-                return Err(crate::Error::Invalid("bindgen-cli installation failed".into()));
+                return Err(crate::wsl::Error::Invalid("bindgen-cli installation failed".into()));
             }
             let status = std::process::Command::new("rustup")
                 .args(["component", "add", "rust-src"])
                 .status()?;
             if !status.success() {
-                return Err(crate::Error::Invalid("rust-src installation failed".into()));
+                return Err(crate::wsl::Error::Invalid("rust-src installation failed".into()));
             }
             doctor(&config)?
         },

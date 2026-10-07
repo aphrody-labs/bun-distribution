@@ -76,8 +76,8 @@
     {
       "path": "TODO.md",
       "title": "Livraison en cours",
-      "sha256": "274abb1f1b23a8056f42b265ae560b5520584d7fb8218e5ae5fa89743b1058f7",
-      "bytes": 2801,
+      "sha256": "2dcc007a0339d297cb1f1a4405a310e14a5f9f42f2028f68cec8bf6d8748042f",
+      "bytes": 3571,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3136,7 +3136,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "0de3ad09746436b220b115043caa7d0a1860a8cdb18618423f03ed4962fd1a22",
+      "sha256": "6cc091d913f67bdf6c378bc544945f366d822027639d98e02208ea86f21c53bc",
       "bytes": 8177,
       "domain": "",
       "status": "generated",
@@ -4016,8 +4016,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "fe5a47c4dac2312d6632d80a725d487f0bfeefbbb34c0a35fd0e8a4d198e280f",
-      "bytes": 68376,
+      "sha256": "359031ba906b9317f4179c1a9d3b60817d823361c2c0ee57e5a27bfbb9f7d8ec",
+      "bytes": 69376,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -4026,7 +4026,7 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "b2fc3ce757f61420b5626e914af7dc8da7de1faa2206f8a46c8a5546172a3041",
+      "sha256": "f9700d11d0e8437c1d0531582a8efb247aaae525042f3b7746d251b5318429b5",
       "bytes": 61949,
       "domain": "",
       "status": "generated",
@@ -6272,6 +6272,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/INSTALL-AGENT.md"
+    },
+    {
+      "path": "docs/operations/SESSION-2026-10-07.md",
+      "title": "Session Docker, WASM et installation — 2026-10-07",
+      "sha256": "f5cc7e8d52e0baa87608a370075e931ed4a44734bc2e7e7d14d4b925484cad6c",
+      "bytes": 8236,
+      "domain": "",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/SESSION-2026-10-07.md"
     },
     {
       "path": "docs/operations/agent-tooling.md",
@@ -31826,7 +31836,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "c32acb22ab617c00a3d707710b5b2ca7d39527b7639732014c57ee35725ba6d5",
+      "sha256": "a718d295a2caa1d3b7f8826f3bc39a357540668b48292812af83df69dac8f54c",
       "bytes": 50037,
       "domain": "workspace",
       "status": "generated",

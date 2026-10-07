@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-use crate::{
+use crate::wsl::{
     Artifact, Config, Error, Result, SourceState, Target, artifact, expected_artifacts, plan,
     sources,
 };
@@ -21,7 +21,7 @@ pub struct BuildReport {
     pub started_unix_seconds: u64,
     pub elapsed_seconds: f64,
     pub sources: Vec<SourceState>,
-    pub steps: Vec<crate::Step>,
+    pub steps: Vec<crate::wsl::Step>,
     pub artifacts: Vec<Artifact>,
     pub error: Option<String>,
     pub log: PathBuf,
@@ -150,7 +150,7 @@ mod tests {
     fn invalid_sources_release_build_lock() {
         let dir = tempfile::tempdir().unwrap();
         let mut c = Config::parse(
-            include_bytes!("../../../../config/os/wsl-build.json"),
+            include_bytes!("../../../../../config/os/wsl-build.json"),
             &std::env::temp_dir().join("aphrody-workspace"),
         )
         .unwrap();

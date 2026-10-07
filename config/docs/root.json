@@ -188,6 +188,11 @@
             "2026-10-07",
             "Target kernel architecture recorded from `aphrody git ingest` of Asterinas and the GitHub tree of Linux: `docs/plans/os-kernel/PLAN.md`.",
             "Plan only; no folder regrouping done yet."
+          ],
+          [
+            "2026-10-07",
+            "WSL crate folded into `aphrody-command/src/wsl`, preserving multicall identities. Missing sha2 and moved fixture paths corrected. VPS snapshot `95c1ec042163591d98b0ddb94cf6c66ea366c5f7`: scoped check, test and strict Clippy all-targets passed; command 95 tests and code-graph 33 unit + 2 oracle tests, 130 total, zero failures or ignored.",
+            "Linux factory gates; installed full CLI not rebuilt or activated by this integration. Windows WSL execution remains to qualify."
           ]
         ]
       },
@@ -343,6 +348,11 @@
             "2026-10-06",
             "Imports after dry-run: global home 14,331 memories, 720 sessions; dbfr 421 documents, 2,362 chunks; aphrody 37 memories.",
             "Home sync is preview-first; `--apply` takes a verified backup."
+          ],
+          [
+            "2026-10-07",
+            "Native TypeScript/JavaScript extractor uses workspace-pinned OXC, resolves imports/calls and emits language identities. TypeScript fixture Graphify oracle and Rust oracle both pass on VPS snapshot `95c1ec042163591d98b0ddb94cf6c66ea366c5f7`; scoped check/test/strict Clippy passed.",
+            "Fixture parity only; whole-repository parity P1–P6 and Python extraction remain open."
           ]
         ]
       },

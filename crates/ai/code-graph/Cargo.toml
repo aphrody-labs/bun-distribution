@@ -16,6 +16,12 @@ workspace = true
 [dependencies]
 aphrody-store = { workspace = true }
 clap          = { workspace = true, features = ["derive"] }
+oxc_allocator = { workspace = true }
+oxc_ast = { workspace = true }
+oxc_ast_visit = { workspace = true }
+oxc_parser = { workspace = true }
+oxc_span = { workspace = true }
+oxc_syntax = { workspace = true }
 tree-sitter = { workspace = true }
 tree-sitter-rust = { workspace = true }
 rusqlite      = { workspace = true }

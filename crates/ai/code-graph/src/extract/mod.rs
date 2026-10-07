@@ -9,6 +9,7 @@
 pub mod ids;
 pub mod resolve;
 pub mod rust;
+pub mod typescript;
 
 use serde::{Deserialize, Serialize};
 
@@ -104,6 +105,8 @@ pub struct FileExtract {
 pub enum Language {
     /// Rust.
     Rust,
+    /// TypeScript / JavaScript.
+    TypeScript,
 }
 
 impl Language {
@@ -112,6 +115,7 @@ impl Language {
     pub fn of_path(path: &str) -> Option<Self> {
         match path.rsplit_once('.')?.1 {
             "rs" => Some(Self::Rust),
+            "js" | "jsx" | "mjs" | "cjs" | "ts" | "tsx" | "mts" | "cts" => Some(Self::TypeScript),
             _ => None,
         }
     }
@@ -122,6 +126,7 @@ impl Language {
 pub fn extract_file(rel_path: &str, source: &[u8]) -> FileExtract {
     match Language::of_path(rel_path) {
         Some(Language::Rust) => rust::extract(rel_path, source),
+        Some(Language::TypeScript) => typescript::extract(rel_path, source),
         None => FileExtract::default(),
     }
 }

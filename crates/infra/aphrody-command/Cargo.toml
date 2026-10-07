@@ -39,7 +39,7 @@ magika = ["aphrody-re/magika", "dep:ort"]
 # not wasm). The command maps + classifies + dumps schema ONLY; it never
 # emits secret values (tokens / cookie bytes / `secret://` rows). Build with:
 #   cargo build -p aphrody --features forensics
-forensics = ["dep:rusqlite", "dep:sha2", "dep:hex"]
+forensics = ["dep:rusqlite", "dep:hex"]
 
 # Persistent local-filesystem search index (`aphrody index build/search`),
 # backed by aphrody-fsindex (SQLite FTS5, bundled libsqlite3 — host-only, not
@@ -59,7 +59,7 @@ infer = ["dep:aphrody-infer"]
 # at RUNTIME under ~/.aphrody/runtimes — nothing is linked, so this feature is
 # cheap; it is opt-in only because the command is useless without a vision
 # model pulled. Build with: cargo build -p aphrody --features ocr
-ocr = ["dep:aphrody-ocr", "aphrody-ocr/sqlite", "dep:sha2", "infer"]
+ocr = ["dep:aphrody-ocr", "aphrody-ocr/sqlite", "infer"]
 
 # Persistent background job queue (`aphrody job submit/run/status/logs`),
 # backed by aphrody-jobs. Opt-in because it links `rusqlite` with the bundled
@@ -122,6 +122,7 @@ obscura-net                       = { workspace = true }
 aphrody-n2b                       = { workspace = true }
 aphrody-translate         = { workspace = true }
 aphrody-backend                   = { workspace = true }
+aphrody-proc = { workspace = true }
 rustls                    = { workspace = true }
 aphrody-native            = { workspace = true }
 aphrody-terminal-backend  = { workspace = true }
@@ -138,7 +139,6 @@ aphrody-kernel            = { workspace = true, features = ["builtins"] }
 # Former standalone binaries served in process by the multi-call dispatch (src/multicall.rs).
 aphrody-infra             = { workspace = true }
 aphrody-yolo              = { workspace = true }
-aphrody-wsl               = { workspace = true }
 aphrody-mcp               = { workspace = true }
 aphrody-web-engine        = { workspace = true }
 aphrody-m3-reproduce      = { workspace = true, features = ["cli"] }
@@ -177,11 +177,9 @@ rusqlite                  = { workspace = true, optional = true }
 # `aphrody index build/search` — persistent local-filesystem FTS5 index
 # (`--features index`). Bundled libsqlite3 via the workspace rusqlite.
 aphrody-fsindex           = { workspace = true, optional = true }
-# `aphrody forensics map` — SHA-256 of small files + hex encoding for the
-# `tree.json` map. Optional, gated by the `forensics` feature (shared with the
-# read-only SQLite schema dump). Reuses the workspace pins so no new
-# supply-chain surface is introduced.
-sha2                      = { workspace = true, optional = true }
+# SHA-256 is also required by the always-available WSL artifact checksums.
+sha2                      = { workspace = true }
+# Hex output for `aphrody forensics map` remains feature-gated.
 hex                       = { workspace = true, optional = true }
 # `aphrody logo` — canonical icon (identity/assets/logo/aphrody.webp) -> .ico / .svg / M3
 # maskable PNG + pixel-perfect terminal rendering (module `aphrody_identity::logo`).

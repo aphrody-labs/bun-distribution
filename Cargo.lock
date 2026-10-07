@@ -816,6 +816,12 @@ version = "1.0.0"
 dependencies = [
  "aphrody-store",
  "clap",
+ "oxc_allocator 0.152.0",
+ "oxc_ast 0.152.0",
+ "oxc_ast_visit",
+ "oxc_parser 0.152.0",
+ "oxc_span 0.152.0",
+ "oxc_syntax 0.152.0",
  "rusqlite",
  "serde",
  "serde_json",
@@ -864,6 +870,7 @@ dependencies = [
  "aphrody-obscura",
  "aphrody-ocr",
  "aphrody-oxc-bridge",
+ "aphrody-proc",
  "aphrody-rag",
  "aphrody-rag-eval",
  "aphrody-re",
@@ -883,7 +890,6 @@ dependencies = [
  "aphrody-web-frames",
  "aphrody-web-service",
  "aphrody-winclean",
- "aphrody-wsl",
  "aphrody-x",
  "aphrody-yolo",
  "async-trait",
@@ -3805,19 +3811,6 @@ dependencies = [
  "uiautomation",
  "vigem-rust",
  "windows 0.62.2",
-]
-
-[[package]]
-name = "aphrody-wsl"
-version = "1.0.0"
-dependencies = [
- "aphrody-proc",
- "clap",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "tempfile",
- "thiserror 2.0.21",
 ]
 
 [[package]]

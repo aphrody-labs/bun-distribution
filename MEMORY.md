@@ -10,6 +10,7 @@ Dated evidence only. Decisions and queue live in PLAN.md; rules in AGENTS.md. Hi
 | --- | --- | --- |
 | 2026-10-07 | 13 thin crates folded into owners: gcs, shell → `aphrody-kernel`; ecosystem, summary, project-doc, exec-events, ai → `aphrody-command`; softraster, web-chromium, n2b-native, rag-ffi, python-ffi → `aphrody-ffi`; everything-sdk → `fsindex` (commits e8740a668, 3bb98f70b, 61438dd98). Clippy `-D warnings` clean; command 21, kernel 8, ffi 69+2, fsindex 26+1 tests passed on the VPS. | Dead code exposed by the folds was removed; Windows-only paths (`everything_sdk::win`, `chromium` cookies) are not compiled on Linux. |
 | 2026-10-07 | Target kernel architecture recorded from `aphrody git ingest` of Asterinas and the GitHub tree of Linux: `docs/plans/os-kernel/PLAN.md`. | Plan only; no folder regrouping done yet. |
+| 2026-10-07 | WSL crate folded into `aphrody-command/src/wsl`, preserving multicall identities. Missing sha2 and moved fixture paths corrected. VPS snapshot `95c1ec042163591d98b0ddb94cf6c66ea366c5f7`: scoped check, test and strict Clippy all-targets passed; command 95 tests and code-graph 33 unit + 2 oracle tests, 130 total, zero failures or ignored. | Linux factory gates; installed full CLI not rebuilt or activated by this integration. Windows WSL execution remains to qualify. |
 
 ## Bun fork and absorption
 
@@ -61,6 +62,7 @@ Dated evidence only. Decisions and queue live in PLAN.md; rules in AGENTS.md. Hi
 | 2026-10-07 | Rust grouped `use` extraction emits each imported leaf, follows aliases to their source, and preserves wildcard module paths; code-graph tests and strict Clippy pass. | Python/TypeScript extraction and full parity criteria remain open. |
 | 2026-10-07 | `scripts/audit/ai/graph-parity.ts` compares Graphify-shaped exports with oracle snapshots by node, edge relation, and confidence agreement; scoped Bun/TS gates pass. | Native TS/JS and Python extraction and P1–P6 remain open. |
 | 2026-10-06 | Imports after dry-run: global home 14,331 memories, 720 sessions; dbfr 421 documents, 2,362 chunks; aphrody 37 memories. | Home sync is preview-first; `--apply` takes a verified backup. |
+| 2026-10-07 | Native TypeScript/JavaScript extractor uses workspace-pinned OXC, resolves imports/calls and emits language identities. TypeScript fixture Graphify oracle and Rust oracle both pass on VPS snapshot `95c1ec042163591d98b0ddb94cf6c66ea366c5f7`; scoped check/test/strict Clippy passed. | Fixture parity only; whole-repository parity P1–P6 and Python extraction remain open. |
 
 ## Infra, hosts, release
 

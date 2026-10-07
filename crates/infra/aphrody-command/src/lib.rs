@@ -69,6 +69,8 @@ mod self_cmd;
 mod train_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod winclean_cmd;
+#[cfg(not(target_arch = "wasm32"))]
+mod wsl;
 
 use std::path::PathBuf;
 

@@ -1,0 +1,28 @@
+{
+  "oracle": "Graphify 0.9.77, graphify update on code-graph/tests/fixtures/ts, 2026-10-07",
+  "nodes": [
+    "main.ts|.area()|code",
+    "main.ts|.area()|code",
+    "main.ts|.constructor()|code",
+    "main.ts|Box|code",
+    "main.ts|Length|code",
+    "main.ts|Shape|code",
+    "main.ts|area()|code",
+    "main.ts|main.ts|code",
+    "math.ts|math.ts|code",
+    "math.ts|square()|code"
+  ],
+  "edges": [
+    "calls|area()|square()|EXTRACTED",
+    "contains|main.ts|Box|EXTRACTED",
+    "contains|main.ts|Length|EXTRACTED",
+    "contains|main.ts|Shape|EXTRACTED",
+    "contains|main.ts|area()|EXTRACTED",
+    "contains|math.ts|square()|EXTRACTED",
+    "imports_from|main.ts|math.ts|EXTRACTED",
+    "imports|main.ts|square()|EXTRACTED",
+    "method|Box|.area()|EXTRACTED",
+    "method|Box|.constructor()|EXTRACTED",
+    "method|Shape|.area()|EXTRACTED"
+  ]
+}

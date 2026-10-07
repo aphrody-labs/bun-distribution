@@ -40,7 +40,7 @@ pub(crate) const TOOLS: &[Tool] = &[
         Target::Entry(aphrody_kernel::host_service_main),
     ),
     tool("ssh", &["aphrody-ssh"], Target::Command("ssh")),
-    tool("wsl", &["aphrody-wsl"], Target::Entry(aphrody_wsl::cli_main)),
+    tool("wsl", &["aphrody-wsl"], Target::Entry(crate::wsl::cli_main)),
     tool("backend", &["aphrody-backend"], Target::Entry(aphrody_backend::cli_main)),
     // MCP and Web.
     tool("mcp-server", &["aphrody-mcp"], Target::Entry(aphrody_mcp::cli_main)),

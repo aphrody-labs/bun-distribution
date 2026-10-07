@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-use crate::{Config, MAINLINE_SOURCE, Result};
+use crate::wsl::{Config, MAINLINE_SOURCE, Result};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::PathBuf};
 
@@ -96,7 +96,9 @@ pub fn plan(config: &Config, target: Target) -> Result<Vec<Step>> {
             (PathBuf::from("bash"), Some(config.script("build-wsl-kernel.sh")))
         },
         Target::Wslg => (PathBuf::from("python3"), Some(config.script("build-wslg.py"))),
-        Target::Wsl => (crate::windows_executable("WindowsPowerShell/v1.0/powershell.exe"), None),
+        Target::Wsl => {
+            (crate::wsl::windows_executable("WindowsPowerShell/v1.0/powershell.exe"), None)
+        },
         Target::Distro => (PathBuf::from("sudo"), Some(config.script("build-wsl-distro.sh"))),
     };
     let mut complete = Vec::new();

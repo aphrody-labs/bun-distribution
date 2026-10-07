@@ -7,7 +7,7 @@ mod runner;
 pub use cli::cli_main;
 
 pub use recipes::{Step, Target, plan};
-pub use runner::{BuildReport, build};
+pub use runner::build;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -513,7 +513,7 @@ mod tests {
     use super::*;
     fn config() -> Config {
         Config::parse(
-            include_bytes!("../../../../config/os/wsl-build.json"),
+            include_bytes!("../../../../../config/os/wsl-build.json"),
             &std::env::temp_dir().join("aphrody-workspace"),
         )
         .unwrap()

@@ -150,7 +150,6 @@ aphrody-web-index = { path = "crates/web/web-index", version = "0.1.0", features
 aphrody-web-service = { path = "crates/web/web-service", version = "1.0.0", features = [] }
 aphrody-x = { path = "crates/web/x", version = "0.3.1", features = [] }
 aphrody-winclean = { path = "crates/os/winclean", version = "1.0.0-canary", features = [] }
-aphrody-wsl = { path = "crates/os/aphrody-wsl", version = "1.0.0-canary", features = [] }
 aphrody-yolo = { path = "crates/infra/yolo", version = "0.1.0" }
 arc-swap = "1.9.2"
 arrow-array = { version = "58", features = [] }

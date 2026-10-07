@@ -7,7 +7,7 @@ et routage de fabrique actifs dans les checkouts partagés.
 - [x] Aligner le scaffold sur l'ABI 1.4 du producteur et du SDK.
 - [x] Remplacer les runners macOS retirés/dépréciés et refuser une architecture différente.
 - [x] Exécuter les gates du scaffold, YAML, liens, whitespace et mdBook.
-- [x] Consigner les sondes SSH et les limites dans le [reçu](./docs/delivery-metadata-2026-10-04.json).
+- [x] Consigner les sondes SSH et les limites dans le reçu.
 - [x] Revoir le staging et livrer le lot Yolo : `a6bcfd4`, poussé sur `origin/dev`.
 
 Le reçu Aphrody et ce TODO sont livrés ensemble sur la branche `main` existante.
@@ -28,7 +28,7 @@ Les lots concurrents conservent leurs claims ; leur état n'est pas une preuve d
 
 Portée : `yolo/install.sh`, `yolo/install.ps1`, tests et reçu dédiés ; aucun
 changement dans les répertoires sources exclus ni dans les lots concurrents.
-Preuve : [reçu Yolo](./docs/installer-validation-2026-10-04.json), 23 tests
+Preuve : reçu Yolo, 23 tests
 passés, aucun échec ni skip. Installations fraîches et rollback runtime Linux
 vérifiés sur fixtures ; Windows natif et promotion de release restent ouverts.
 
@@ -48,3 +48,15 @@ vérifiés sur fixtures ; Windows natif et promotion de release restent ouverts.
 - [ ] Reuse Yolo supervision for Discord binaries; wire native Gemma inference and dbfr Agent Home.
 - [ ] Leave n2b/Oxc/runtime/CLI retirement to the concurrent Yolo owner.
 - [ ] Deliver owned changes and evidence.
+
+## Intégration sur main — 2026-10-07
+
+- [x] README : installation complète pilotée par agent CLI, tâche canonique et limites publiées.
+- [x] Publier et vérifier les images runtime/Alpine et le paquet WASM portable.
+- [x] Réparer les liens documentaires et régénérer les index depuis leurs propriétaires.
+- [x] Valider les unités Docker Shenron sur le VPS et les configurations fournisseurs.
+- [x] Qualifier la fusion WSL et le graphe TypeScript : check, tests et Clippy sérialisés sur le VPS.
+- [x] Revoir les fichiers restants, commiter les changements qualifiés et pousser `workspace/main`.
+
+La qualification du SDK FFI intégré, l'activation du fork et les cibles desktop/native
+restent dans le plan global ; ce lot ne les déclare pas terminées.
