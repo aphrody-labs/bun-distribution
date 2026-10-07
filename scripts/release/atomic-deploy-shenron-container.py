@@ -335,6 +335,15 @@ def switch(root, release):
     os.replace(temporary, current)
 
 
+def compose_states(compose):
+    output = command(compose + ["ps", "--all", "--format", "json"])
+    try:
+        states = json.loads(output or "[]")
+    except json.JSONDecodeError:
+        states = [json.loads(line) for line in output.splitlines() if line.strip()]
+    return [states] if isinstance(states, dict) else states
+
+
 def restore_backup(backup, root):
     require(
         backup.parent == root / "deploy-backups",
@@ -357,7 +366,18 @@ def restore_backup(backup, root):
     if previous == target:
         print("same immutable release; current pointer preserved")
         return
-    previous_compose = verify(previous, root)[0] if previous else None
+    previous_config = verify(previous, root) if previous else None
+    previous_services = record.get("previousActiveServices")
+    if previous_services is not None:
+        require(
+            isinstance(previous_services, list)
+            and all(isinstance(name, str) for name in previous_services)
+            and len(previous_services) == len(set(previous_services))
+            and set(previous_services).issubset(
+                previous_config[1] if previous_config else {}
+            ),
+            "rollback active services differ from previous sealed release",
+        )
     compose = [
         "docker",
         "compose",
@@ -371,19 +391,25 @@ def restore_backup(backup, root):
     command(compose + ["stop"])
     if previous:
         switch(root, previous)
-        command(
-            previous_compose
-            + [
-                "up",
-                "--detach",
-                "--no-build",
-                "--pull",
-                "never",
-                "--wait",
-                "--wait-timeout",
-                "180",
-            ]
-        )
+        if previous_services is None or previous_services:
+            command(
+                previous_config[0]
+                + [
+                    "up",
+                    "--detach",
+                    "--no-build",
+                    "--pull",
+                    "never",
+                    "--wait",
+                    "--wait-timeout",
+                    "180",
+                ]
+                + (
+                    ["--no-deps", *previous_services]
+                    if previous_services is not None
+                    else []
+                )
+            )
     else:
         current.unlink()
     print("Docker rollback verified")
@@ -397,8 +423,24 @@ def activate(release, root):
         "current must be a release symlink",
     )
     previous = current.resolve() if current.is_symlink() else None
+    previous_services = []
     if previous and previous != release:
-        verify(previous, root)
+        previous_compose, previous_images = verify(previous, root)
+        states = compose_states(previous_compose)
+        require(
+            all(
+                entry.get("Service") in previous_images
+                and entry.get("State") in ("running", "exited", "created")
+                and (
+                    entry.get("State") != "running" or entry.get("Health") == "healthy"
+                )
+                for entry in states
+            ),
+            "previous release has undeclared or unqualified active containers",
+        )
+        previous_services = sorted(
+            entry["Service"] for entry in states if entry["State"] == "running"
+        )
     units = ["shenron-site.service", "shenron-bot.service", "shenron-mcp-http.service"]
     if "postgres" in expected_images:
         units.extend(["postgresql@18-main.service", "redis-server.service"])
@@ -426,6 +468,7 @@ def activate(release, root):
                 "previous": str(previous) if previous else None,
                 "target": str(release),
                 "images": expected_images,
+                "previousActiveServices": previous_services,
             }
         )
         + "\n"
@@ -448,13 +491,7 @@ def activate(release, root):
                 "180",
             ]
         )
-        output = command(compose + ["ps", "--all", "--format", "json"])
-        try:
-            states = json.loads(output)
-        except json.JSONDecodeError:
-            states = [json.loads(line) for line in output.splitlines() if line.strip()]
-        if isinstance(states, dict):
-            states = [states]
+        states = compose_states(compose)
         require(
             {entry["Service"] for entry in states} == set(expected_images)
             and all(

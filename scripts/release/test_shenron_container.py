@@ -63,6 +63,7 @@ class ContainerDeploymentTests(unittest.TestCase):
         self.inspect_drift = False
         self.gateway = False
         self.infrastructure = []
+        self.previous_stopped = set()
         patch.object(adapter, "command", side_effect=self.command).start()
         patch.object(
             adapter.subprocess, "run", return_value=subprocess.CompletedProcess([], 3)
@@ -181,8 +182,12 @@ class ContainerDeploymentTests(unittest.TestCase):
                 json.dumps(
                     {
                         "Service": name,
-                        "State": "running",
-                        "Health": "healthy",
+                        "State": "exited"
+                        if (release, name) in self.previous_stopped
+                        else "running",
+                        "Health": ""
+                        if (release, name) in self.previous_stopped
+                        else "healthy",
                         "ID": name,
                     }
                 )
@@ -375,6 +380,52 @@ class ContainerDeploymentTests(unittest.TestCase):
         with self.assertRaisesRegex(adapter.DeploymentError, "sealed image"):
             adapter.activate(release, self.root)
         self.assertFalse((self.root / "current").exists())
+
+    def test_rollback_preserves_intentionally_stopped_bot(self):
+        previous = self.release("a")
+        candidate = self.release("b")
+        (self.root / "current").symlink_to(previous)
+        self.previous_stopped.add((previous, "bot"))
+        self.fail_up = candidate
+        with self.assertRaisesRegex(adapter.DeploymentError, "readiness"):
+            adapter.activate(candidate, self.root)
+        up = [call for call in self.calls if "up" in call][-1]
+        self.assertEqual(up[-2:], ["--no-deps", "site"])
+        record = next((self.root / "deploy-backups").glob("*/ROLLBACK.json"))
+        self.assertEqual(
+            json.loads(record.read_text())["previousActiveServices"], ["site"]
+        )
+
+    def test_rollback_does_not_start_an_inactive_previous_release(self):
+        previous = self.release("a")
+        candidate = self.release("b")
+        (self.root / "current").symlink_to(previous)
+        self.previous_stopped.update({(previous, "site"), (previous, "bot")})
+        self.fail_up = candidate
+        with self.assertRaisesRegex(adapter.DeploymentError, "readiness"):
+            adapter.activate(candidate, self.root)
+        self.assertEqual((self.root / "current").resolve(), previous)
+        self.assertEqual(sum("up" in call for call in self.calls), 1)
+
+    def test_rollback_rejects_undeclared_active_service_before_stop(self):
+        previous = self.release("a")
+        candidate = self.release("b")
+        (self.root / "current").symlink_to(candidate)
+        backup = self.root / "deploy-backups/fixture"
+        backup.mkdir(parents=True)
+        (backup / "ROLLBACK.json").write_text(
+            json.dumps(
+                {
+                    "kind": "shenron-docker",
+                    "target": str(candidate),
+                    "previous": str(previous),
+                    "previousActiveServices": ["unrelated"],
+                }
+            )
+        )
+        with self.assertRaisesRegex(adapter.DeploymentError, "active services"):
+            adapter.restore_backup(backup, self.root)
+        self.assertFalse(any("stop" in call or "up" in call for call in self.calls))
 
     def test_rollback_refuses_a_newer_current(self):
         previous = self.release("a")
