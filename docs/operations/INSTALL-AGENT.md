@@ -32,7 +32,10 @@ disponibles déterminent les opérations permises.
 - Télécharge l'installateur depuis `releases/<id>/install.sh` ou `install.ps1`,
   vérifie son SHA-256 dans `manifest.assetChecksums`, puis exécute la copie
   vérifiée avec `APHRODY_RELEASE=<id>`. Sélectionne explicitement `aphrody`,
-  `yolo`, `plugin-aphrody`, `plugin-yolo` et `mcp` selon leur disponibilité.
+  `yolo`, `plugin-aphrody` et `plugin-yolo` selon leur disponibilité.
+  L'option `mcp` de l'installateur shell enregistre Claude Code : utilise-la
+  seulement si Claude est présent ; pour Codex ou un autre fournisseur,
+  enregistre le binaire installé par le gestionnaire de plugins ci-dessous.
   Vérifie les archives avec le manifeste et `SHA256SUMS` de cette même release.
 - Installe les produits dans le préfixe utilisateur. Préserve les mécanismes
   d'activation atomique et de retour à la version précédente. N'écrase pas un

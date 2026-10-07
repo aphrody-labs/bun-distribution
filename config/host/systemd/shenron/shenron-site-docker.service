@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Shenron site and integrated MCP container
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/srv/shenron/current
+EnvironmentFile=/srv/shenron/current/deploy.env
+ExecStart=/usr/bin/docker compose -f /srv/shenron/current/compose.yaml up -d --no-build site
+ExecStop=/usr/bin/docker compose -f /srv/shenron/current/compose.yaml stop site
+TimeoutStartSec=180
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target
