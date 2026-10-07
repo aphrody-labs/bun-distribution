@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-07",
+  "principal": "omar",
+  "objectiveComplete": false,
+  "discord": {
+    "guildId": "1554189180030947338",
+    "roleId": "1557350369254703104",
+    "administratorPermission": true,
+    "userIds": ["1323725494184841256", "1527405876695142620"],
+    "membershipState": "pending-guild-membership",
+    "reconciler": {
+      "host": "vps",
+      "installationRoot": "/srv/aphrody-admin",
+      "service": "aphrody-omar-admin.service",
+      "timer": "aphrody-omar-admin.timer",
+      "enabled": true,
+      "active": true,
+      "intervalSeconds": 120,
+      "lastResult": "success",
+      "lastExitStatus": 0,
+      "installedChecksumsVerified": true,
+      "planCommand": "python3 scripts/tools/install-omar-admin.py",
+      "applyCommand": "python3 scripts/tools/install-omar-admin.py --apply",
+      "replacementPolicy": "refuse a differing existing installed file; review required"
+    }
+  },
+  "github": {
+    "organization": "aphrody-labs",
+    "existingAuthorizedAccount": "KyrioFox",
+    "membershipState": "active",
+    "role": "admin",
+    "authorizationEvidence": "Historical owner request 2026-09-29 in protected home memory 11396, metadata role user",
+    "omarIdentityMapping": "unconfirmed; no permission mutation performed"
+  },
+  "validation": {
+    "policyTests": { "passed": 5, "failed": 0 },
+    "ruffCheck": "passed",
+    "ruffFormat": "passed",
+    "systemdAnalyzeVerify": "passed on VPS",
+    "globalHostCatalog": "four unlisted Shenron units remain under concurrent ownership; no Omar catalog error"
+  },
+  "pending": [
+    "Omar joins the Aphrody Discord guild; active timer then assigns and verifies the role",
+    "Confirm that the already-active GitHub administrator account KyrioFox belongs to Omar"
+  ]
+}

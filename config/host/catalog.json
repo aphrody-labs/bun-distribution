@@ -44,6 +44,7 @@
       "aphrody-discord-dev-2026-09-29.md",
       "build-factory-2026-10-03.json",
       "private-tunnel-2026-10-06.json",
+      "omar-admin-2026-10-07.json",
       "targets.json",
       "vps-source.json",
       "vps-unit-catalog.json"
@@ -80,6 +81,22 @@
     }
   ],
   "units": [
+    {
+      "service": "aphrody-omar-admin",
+      "unit": "aphrody-omar-admin.service",
+      "path": "systemd/aphrody/aphrody-omar-admin.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-omar-admin-timer",
+      "unit": "aphrody-omar-admin.timer",
+      "path": "systemd/aphrody/aphrody-omar-admin.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
     {
       "service": "shenron-site-docker",
       "unit": "shenron-site-docker.service",

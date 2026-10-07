@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Assign Omar administrator access after Discord guild membership
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=15s
+Unit=aphrody-omar-admin.service
+
+[Install]
+WantedBy=timers.target

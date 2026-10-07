@@ -15,6 +15,11 @@ from pathlib import Path
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument(
+        "--local",
+        action="store_true",
+        help="Read credentials on this host (VPS service only)",
+    )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     policy = json.loads((root / "config/host/omar-admin.json").read_text())
@@ -37,7 +42,7 @@ def call(path,method="GET",body=None):
         "Content-Type":"application/json","User-Agent":"DiscordBot (https://aphrody.com, 1)",
         "X-Audit-Log-Reason":"Owner-authorized%20Omar%20administrator%20access"})
     try:
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=10) as response:
             text=response.read()
             return response.status,json.loads(text) if text else None
     except urllib.error.HTTPError as error:
@@ -56,6 +61,7 @@ if apply:
     elif not int(role["permissions"]) & int(policy["permissions"]):
         status,role=call("guilds/"+guild+"/roles/"+role["id"],"PATCH",{"permissions":str(int(role["permissions"]) | int(policy["permissions"]))})
         if status!=200: raise SystemExit("Cannot update administrator role: "+str(status))
+    if not int(role["permissions"]) & 8: raise SystemExit("Administrator permission verification failed")
 results=[]
 for user in [policy["primaryUserId"]]+policy["alternateUserIds"]:
     status,member=call("guilds/"+guild+"/members/"+user)
@@ -77,8 +83,10 @@ print(json.dumps({"apply":apply,"guildId":guild,"roleId":role["id"] if role else
     remote = remote.replace("POLICY", repr(json.dumps(discord))).replace(
         "APPLY", "True" if args.apply else "False"
     )
-    result = subprocess.run(
-        [
+    command = (
+        ["python3", "-c", remote]
+        if args.local
+        else [
             str(Path.home() / ".local/bin/aphrody"),
             "infra",
             "ssh",
@@ -88,15 +96,21 @@ print(json.dumps({"apply":apply,"guildId":guild,"roleId":role["id"] if role else
             "--cmd",
             "python3 -c " + shlex.quote(remote),
             "--json",
-        ],
+        ]
+    )
+    result = subprocess.run(
+        command,
         check=True,
         capture_output=True,
         text=True,
     )
-    receipt = json.loads(result.stdout)
-    if receipt.get("exit_code") != 0:
-        raise SystemExit("Remote reconciliation failed")
-    print(receipt["stdout"].strip())
+    if args.local:
+        print(result.stdout.strip())
+    else:
+        receipt = json.loads(result.stdout)
+        if receipt.get("exit_code") != 0:
+            raise SystemExit("Remote reconciliation failed")
+        print(receipt["stdout"].strip())
     print(
         json.dumps(
             {

@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Reconcile owner-authorized Omar Discord administrator access
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/aphrody-admin
+ExecStart=/usr/bin/python3 /srv/aphrody-admin/scripts/tools/omar-admin-access.py --local --apply
+TimeoutStartSec=90
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0077
