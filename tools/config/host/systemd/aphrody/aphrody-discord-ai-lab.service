@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [Unit]
 Description=Aphrody private Discord laboratory assistant
-After=network-online.target aphrody-llama-gemma4.service
+After=network-online.target
 Wants=network-online.target
 
 [Service]
@@ -9,6 +9,7 @@ Type=simple
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/srv/aphrody-lab
+EnvironmentFile=/etc/aphrody-discord-native.env
 ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/assistant.mjs --policy /srv/aphrody-lab/policy.json --env-file /etc/aphrody-discord.env --state /srv/aphrody-lab/state/discord.json --cursor /srv/aphrody-lab/state/cursor.json
 Restart=on-failure
 RestartSec=5
@@ -17,6 +18,9 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
 ReadWritePaths=/srv/aphrody-lab/state
+ReadWritePaths=/home/ubuntu/.aphrody/locks
+MemoryMax=12G
+CPUQuota=400%
 PrivateTmp=true
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 UMask=0077
