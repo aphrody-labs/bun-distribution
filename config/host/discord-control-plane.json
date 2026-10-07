@@ -13,6 +13,7 @@
     "reportPath": "/srv/aphrody-lab/state/drive-sync.json",
     "agentReportPath": "/srv/aphrody-lab/state/agent-sync.json",
     "automationReportPath": "/srv/aphrody-lab/state/automation-sync.json",
+    "ragReportPath": "/srv/aphrody-lab/state/rag-sync.json",
     "dbfrHome": "/home/ubuntu/.aphrody/workspaces/dbfr",
     "shenronHome": "/srv/shenron/shared/agent-home",
     "policy": "Preserve native document structure and both sides of conflicts; private files remain in protected stores."

@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test";
-import { networkPeers, publicSyncReport, publicAutomation } from "../../src/lab/control-plane";
+import {
+  networkPeers,
+  publicSyncReport,
+  publicAutomation,
+  renderRag,
+} from "../../src/lab/control-plane";
 
 const declaration = {
   interface: "wg1",
@@ -53,4 +58,22 @@ test("automation reports reveal job states without private output", () => {
       "home-dbfr": { ok: "yes" },
     }),
   ).toEqual({ drive: "retrying", agents: "ok" });
+});
+
+test("RAG display distinguishes active-source progress from completed synchronization", () => {
+  expect(
+    renderRag({
+      available: true,
+      fresh: true,
+      running: 1,
+      indexed: 0,
+      progress_current: 10,
+      progress_total: 100,
+      token: "secret",
+    }),
+  ).toBe("en cours : 10 / 100 éléments sur la source active ; rapport final attendu");
+  expect(renderRag({ available: true, fresh: false, completed: 1 })).toBe("suivi périmé");
+  expect(renderRag({ available: true, fresh: true, completed: 0 })).toBe(
+    "rapport final actuel non vérifié",
+  );
 });

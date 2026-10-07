@@ -4,6 +4,7 @@
 import { chmod, mkdir, rename, rm, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { replicateHome, type ReplicaConfig } from "./agent-home-replica.ts";
+import { readRagStatus, type RagMonitorConfig } from "./agent-home-rag-status.ts";
 
 export interface SyncConfig {
   version: 1;
@@ -16,6 +17,7 @@ export interface SyncConfig {
   homes: { profile: "aphrody" | "dbfr"; intervalSeconds: number }[];
   retrieval?: { root: string; intervalSeconds: number };
   replica?: ReplicaConfig;
+  ragMonitor?: RagMonitorConfig;
   publication: { host: "vps"; directory: string };
 }
 export interface JobReceipt {
@@ -48,6 +50,12 @@ const numeric = [
   "verified",
   "files_copied",
   "homes_indexed",
+  "running",
+  "completed",
+  "failed",
+  "source_count",
+  "progress_current",
+  "progress_total",
 ];
 export function counters(value: Record<string, unknown>): Record<string, number> {
   return Object.fromEntries(
@@ -131,6 +139,15 @@ function jobs(config: SyncConfig) {
                 throw new Error("Drive retrieval indexing failed");
               return counters(report);
             },
+          },
+        ]
+      : []),
+    ...(config.ragMonitor
+      ? [
+          {
+            name: "rag-monitor",
+            interval: config.ragMonitor.intervalSeconds,
+            perform: (run: Runner) => readRagStatus(config.ragMonitor!, run),
           },
         ]
       : []),
@@ -221,6 +238,8 @@ async function publish(config: SyncConfig, state: SyncState, run: Runner) {
   };
   if (state.drive?.lastSuccess) reports["drive-sync.json"] = state.drive.lastSuccess;
   if (state.agents?.lastSuccess) reports["agent-sync.json"] = state.agents.lastSuccess;
+  if (state["rag-monitor"]?.lastSuccess)
+    reports["rag-sync.json"] = state["rag-monitor"].lastSuccess;
   const payload = Buffer.from(JSON.stringify(reports)).toString("base64");
   const remote = Buffer.from(config.publication.directory).toString("base64");
   const python = [

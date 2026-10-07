@@ -172,7 +172,16 @@ couverture complète des embeddings. La synchronisation RAG est relancée par
 son unité utilisateur en arrière-plan ; son succès exige un nouveau rapport
 final sans échec, et non un simple état `activating` ou un checkpoint partiel.
 
-Validation du lot automatique : 21 tests ciblés réussis, TypeScript Workspace
+Le suivi RAG lit désormais le PID et le début effectifs de
+`shenron-rag-sync.service`, ainsi que son journal privé et le rapport final.
+Un rapport d'une passe précédente ne prouve jamais la fin du travail actif.
+Les compteurs publiés dans Discord distinguent progression, échec et résultat
+final confirmé. À 12:58:49 UTC le 2026-10-07, sept tâches de synchronisation
+étaient réussies et le RAG avançait à 9 800 sur 181 636 unités ; la passe
+restait active et son rapport final était attendu. Aucun corps de document ou
+de conversation ne figure dans ce reçu.
+
+Validation du lot automatique et de ce suivi : 24 tests ciblés réussis, TypeScript Workspace
 et kit Discord sans erreur, lint des chemins modifiés propre. La suite kit
 élargie expose un échec hors chemins modifiés : `sendFile` conserve `blob` au
 lieu du nom `note.txt` avec le Bun installé. Aucun résultat global vert n'est

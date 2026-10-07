@@ -11,6 +11,7 @@ interface Declaration {
     reportPath: string;
     agentReportPath: string;
     automationReportPath?: string;
+    ragReportPath?: string;
   };
   wireguard: { interface: string; reportPath: string; peers: { id: string }[] };
 }
@@ -66,6 +67,13 @@ export function publicSyncReport(report: Record<string, unknown>) {
     "records_ingested",
     "sources_scanned",
     "sources_updated",
+    "running",
+    "completed",
+    "failed",
+    "source_count",
+    "indexed",
+    "progress_current",
+    "progress_total",
   ];
   return Object.fromEntries(
     numeric.flatMap((key) =>
@@ -76,6 +84,25 @@ export function publicSyncReport(report: Record<string, unknown>) {
         : [],
     ),
   );
+}
+
+export function renderRag(report: Record<string, unknown>) {
+  if (!report.available) return "état indisponible";
+  if (!report.fresh) return "suivi périmé";
+  if (report.running === 1) {
+    const current = report.progress_current,
+      total = report.progress_total;
+    return Number.isSafeInteger(current) &&
+      Number.isSafeInteger(total) &&
+      Number(total) > 0 &&
+      Number(current) <= Number(total)
+      ? `en cours : ${Number(current).toLocaleString("fr-FR")} / ${Number(total).toLocaleString("fr-FR")} éléments sur la source active ; rapport final attendu`
+      : "en cours ; rapport final attendu";
+  }
+  if (report.failed === 1) return "échec du dernier traitement";
+  if (report.completed === 1)
+    return `terminé : ${report.indexed} éléments indexés, ${report.source_count} sources`;
+  return "rapport final actuel non vérifié";
 }
 
 async function readReport(path: string) {
@@ -96,7 +123,9 @@ export function publicAutomation(value: Record<string, unknown>) {
   return Object.fromEntries(
     Object.entries(value)
       .filter(([name]) =>
-        /^(drive|agents|drive-retrieval|drive-replica|home-aphrody|home-dbfr)$/.test(name),
+        /^(drive|agents|drive-retrieval|drive-replica|rag-monitor|home-aphrody|home-dbfr)$/.test(
+          name,
+        ),
       )
       .flatMap(([name, job]) => {
         if (!job || typeof job !== "object" || !("ok" in job) || typeof job.ok !== "boolean")
@@ -143,11 +172,14 @@ if (import.meta.main) {
   const env = await loadCredentials(flag("--env-file"));
   if (env.DISCORD_GUILD_ID !== declaration.guildId || !env.DISCORD_BOT_TOKEN)
     throw new Error("Guild credential mismatch");
-  const [peers, drive, agents, automation] = await Promise.all([
+  const [peers, drive, agents, automation, rag] = await Promise.all([
     readNetwork(declaration.wireguard),
     readReport(declaration.drive.reportPath),
     readReport(declaration.drive.agentReportPath),
     readAutomation(declaration.drive.automationReportPath),
+    declaration.drive.ragReportPath
+      ? readReport(declaration.drive.ragReportPath)
+      : Promise.resolve({ available: false }),
   ]);
   const dbfr = await run([
     "/home/ubuntu/.local/bin/aphrody",
@@ -161,7 +193,7 @@ if (import.meta.main) {
   ])
     .then((output) => (output.trim() === "homes-present" ? "homes-present" : "unverified"))
     .catch(() => "unreachable");
-  const summary = { peers, drive, agents, automation, dbfr };
+  const summary = { peers, drive, agents, automation, rag, dbfr };
   const fingerprint = JSON.stringify(summary);
   const receiptPath = flag("--receipt");
   const previous = (await Bun.file(receiptPath).exists())
@@ -185,7 +217,7 @@ if (import.meta.main) {
   const reports = [
     [
       declaration.channels.drive,
-      `**Synchronisation DBFR**\nDossier : https://drive.google.com/drive/folders/${declaration.drive.folderId}\nAutomatisation : ${JSON.stringify(automation)}\nDrive : ${JSON.stringify(drive)}\nSessions des agents : ${JSON.stringify(agents)}\nAgent homes SSH DBFR/Shenron : ${dbfr}.\nUne mise à jour staged ou un miroir de session ne prouve pas une synchronisation complète ni une connexion A2A.`,
+      `**Synchronisation DBFR**\nDossier : https://drive.google.com/drive/folders/${declaration.drive.folderId}\nAutomatisation : ${JSON.stringify(automation)}\nDrive : ${JSON.stringify(drive)}\nSessions des agents : ${JSON.stringify(agents)}\nRAG : ${renderRag(rag)}.\nAgent homes SSH DBFR/Shenron : ${dbfr}.\nUne mise à jour staged ou un miroir de session ne prouve pas une synchronisation complète ni une connexion A2A.`,
     ],
     [
       declaration.channels.network,
