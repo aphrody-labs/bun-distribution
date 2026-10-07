@@ -1,0 +1,101 @@
+{
+  "observedAt": "2026-10-07T12:23:05.787092+00:00",
+  "ownerWindows": {
+    "address": "10.200.77.4",
+    "wireguard": {
+      "tunnel": "aphrody",
+      "service": "WireGuardTunnel$aphrody",
+      "startup": "automatic",
+      "state": "running",
+      "hubHandshakeObserved": true,
+      "driverRepair": "Verified Microsoft signature; restored disabled WireGuard kernel driver to demand start."
+    },
+    "sshServer": {
+      "bind": "10.200.77.4:22",
+      "startup": "automatic",
+      "dependsOn": "WireGuardTunnel$aphrody",
+      "passwordAuthentication": false,
+      "clientKeySources": ["10.200.77.1", "10.200.77.3"],
+      "hostKeysPinned": true
+    },
+    "sshProofs": [
+      {
+        "from": "vps",
+        "to": "owner-windows",
+        "alias": "aphro-pc",
+        "identity": "aphrody\\aphro",
+        "exitCode": 0
+      },
+      {
+        "from": "dbfr",
+        "to": "owner-windows",
+        "alias": "aphro-pc",
+        "identity": "aphrody\\aphro",
+        "exitCode": 0
+      },
+      {
+        "from": "owner-windows",
+        "to": "vps",
+        "alias": "vps",
+        "identity": "ubuntu",
+        "exitCode": 0
+      },
+      {
+        "from": "owner-windows",
+        "to": "dbfr",
+        "alias": "dbfr",
+        "identity": "ubuntu",
+        "exitCode": 0
+      }
+    ],
+    "computerUse": {
+      "from": "vps",
+      "transport": "WireGuard SSH to authenticated native Windows desktop pipe",
+      "observeVerified": true,
+      "typingVerified": true,
+      "probeScope": "Exact HWND and PID of an owned disposable test window; native click/type with activate=false after pinning that window; native close.",
+      "captureStorage": "Protected local Windows store; never sent to Discord.",
+      "requiresInteractiveSession": true
+    },
+    "authentication": {
+      "bridgeCredentialRotated": true,
+      "revokedCredentialRejectedOnBothBridges": true,
+      "replacementAcceptedOnBothBridges": true,
+      "privateKeysRemainOnOriginHosts": true
+    }
+  },
+  "omar": {
+    "address": "10.200.77.10",
+    "state": "pending-local-activation",
+    "handshake": "never",
+    "discordUserId": "1527405876695142620",
+    "activationPrompt": {
+      "channelId": "1557348890347573279",
+      "messageIds": [
+        "1557367100220112918",
+        "1557367101688254508",
+        "1557367104376807516",
+        "1557367105622380644"
+      ],
+      "containsPrivateKeys": false
+    },
+    "dedicatedVpsClientKeyPrepared": true,
+    "missing": [
+      "Local tunnel activation and matching public key",
+      "Windows account and SSH inbound setup",
+      "Authenticated native desktop bridge test",
+      "Actual authenticated Codex/AGY/Claude A2A endpoints"
+    ]
+  },
+  "limits": [
+    "No complete bidirectional Drive or agent-memory synchronization is asserted.",
+    "Gemma Bun-fork recipe and tokenizer validation do not establish completed fine-tuning; training placement remains Omar WSL.",
+    "Windows SSH server currently negotiates classical key exchange; client SSH to Linux negotiates hybrid ML-KEM."
+  ],
+  "evidence": {
+    "nativeCli": "aphrody infra ssh exec",
+    "wireguardPlan": "wireguard/aphrody-tunnel.json",
+    "dbfrReturnRule": "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.4 port 22 proto tcp",
+    "codexReference": "https://developers.openai.com/codex/mcp"
+  }
+}

@@ -117,7 +117,7 @@ test("registered peers have valid public keys after host-local generation", () =
   );
   expect(t.peers.find((p) => p.id === "omar")?.publicKeyNote).toContain("withdrawn");
   expect(t.peers.find((p) => p.id === "aphro-pc")?.publicKey).toBe(
-    "iM+MggQed48HpejJsIkhfR6yDBgwq2IkT1w6WDgWSgM=",
+    "VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=",
   );
   expect(isWgKey(t.hub.publicKey)).toBe(true);
   expect(t.peers.every((p) => isWgKey(p.publicKey))).toBe(true);
@@ -217,7 +217,7 @@ test("hub config: known keys inline, the others are apply-time inputs, no privat
   const h = hubConfig(unappliedTunnel());
   expect(h.text).toContain("ListenPort = 51821");
   expect(h.text).toContain("Address = 10.200.77.1/24");
-  expect(h.text).toContain("PublicKey = iM+MggQed48HpejJsIkhfR6yDBgwq2IkT1w6WDgWSgM=");
+  expect(h.text).toContain("PublicKey = VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=");
   expect(h.text).toContain("AllowedIPs = 10.200.77.10/32");
   expect(h.needs.map((n) => n.env)).toEqual(["WSL_PUBLIC_KEY", "DBFR_PUBLIC_KEY"]);
   expect(h.text).toContain("PublicKey = A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=");
@@ -253,9 +253,11 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
   expect(
     rules
       .filter((r) => r.kind === "route")
-      .every((r) => /to 10\.200\.77\.[23] port 22/.test(r.text)),
+      .every((r) => /to 10\.200\.77\.[234] port 22/.test(r.text)),
   ).toBe(true);
-  expect(rules.some((r) => r.peer === "dbfr")).toBe(false);
+  expect(rules.filter((r) => r.peer === "dbfr").map((r) => r.text)).toEqual([
+    "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.4 port 22 proto tcp comment 'aphrody-wg-dbfr'",
+  ]);
 });
 
 test("the plan carries no private key, names its inputs and repeats the shared ssh key findings", () => {

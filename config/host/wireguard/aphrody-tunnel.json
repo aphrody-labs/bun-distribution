@@ -53,8 +53,8 @@
       "host": "windows",
       "os": "windows",
       "address": "10.200.77.4",
-      "publicKey": "iM+MggQed48HpejJsIkhfR6yDBgwq2IkT1w6WDgWSgM=",
-      "keyOrigin": "WireGuard app on the owner's Windows PC (host of the WSL); the private key stays there",
+      "publicKey": "VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=",
+      "keyOrigin": "wg.exe generated on the owner's Windows PC on 2026-10-07; the private key stays in its protected local store",
       "udpSource": {
         "mode": "covered-by-shenron-admin",
         "note": "the WireGuard key is the authentication; the workstation public address is already an all-ports ufw source of scripts/ops/admin-access.ts (Shenron), refreshed every 15 minutes when the address changes, so no second ufw rule is declared"
@@ -100,6 +100,15 @@
       "auth": "ssh-key"
     },
     {
+      "id": "ssh-aphro-pc",
+      "host": "windows",
+      "address": "10.200.77.4",
+      "port": 22,
+      "proto": "tcp",
+      "expose": "peer-listener",
+      "auth": "ssh-key"
+    },
+    {
       "id": "mcp-http",
       "host": "vps",
       "address": "10.200.77.1",
@@ -137,7 +146,7 @@
     "omar": ["ssh-vps", "ssh-dbfr", "ssh-wsl", "mcp-http", "a2a", "training"],
     "aphro-pc": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "training"],
     "wsl": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a"],
-    "dbfr": []
+    "dbfr": ["ssh-aphro-pc"]
   },
   "firewall": {
     "marker": "aphrody-wg",
