@@ -66,6 +66,26 @@ canvas {
   border: 1px solid #64799e;
   border-radius: 0.8rem;
 }
+.world-map {
+  margin: 1.4rem 0;
+  padding: 1rem;
+  border: 1px solid #344e6a;
+  border-radius: 1rem;
+  background: linear-gradient(145deg, #111d2d, #152b39);
+}
+.world-map h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+}
+.world-map canvas {
+  display: block;
+  margin: 1rem 0 0.5rem;
+  max-height: 560px;
+  object-fit: contain;
+}
+.world-map small {
+  color: #b7c5df;
+}
 .controls {
   margin: 1rem 0;
 }

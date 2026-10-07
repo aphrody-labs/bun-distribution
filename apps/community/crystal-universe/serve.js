@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-const files = new Set(["index.html", "style.css", "game.js", "engine.js"]);
+const files = new Set(["index.html", "style.css", "game.js", "engine.js", "age1000-map.js"]);
 const server = Bun.serve({
   hostname: "127.0.0.1",
   port: Number(process.env.PORT || 4317),

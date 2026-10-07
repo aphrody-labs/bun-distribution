@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createGame, step } from "./engine.js";
+import { drawAge1000Map } from "./age1000-map.js";
 const canvas = document.querySelector("#arena"),
   ctx = canvas.getContext("2d");
 const hud = document.querySelector("#hud"),
   result = document.querySelector("#result");
+const mapCanvas = document.querySelector("#world-map");
+const mapContext = mapCanvas.getContext("2d");
 let game = createGame(),
   active = false,
   paused = false,
@@ -127,6 +130,7 @@ function draw() {
     ctx.ellipse(s.x, s.y, 15, 8, 0, 0, Math.PI * 2);
     ctx.fill();
   }
+  drawAge1000Map(mapContext, mapCanvas.width, mapCanvas.height);
 }
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.05);

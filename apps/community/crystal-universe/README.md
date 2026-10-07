@@ -26,6 +26,11 @@ Flèches ou Q/D : déplacement ; Espace : saut ; J : combo ; K : projectile ;
 L : charge ; T : transformation ; P : pause. Les commandes sont aussi affichées
 dans le jeu. Une perte de focus ou le passage en arrière-plan met en pause.
 
+La section **Carte d’expédition · AGE 1000** est un schéma Canvas original de West City
+et de ses voies d’accès. Elle utilise seulement les descriptions officielles (campus,
+quartiers urbains, complexe Capsule, esplanade et mission glaciaire) ; aucun asset ni
+capture du jeu n’est incorporé. Source structurelle : `age1000-map.js`.
+
 ```sh
 bun test apps/community/crystal-universe/engine.test.js
 oxlint --deny-warnings apps/community/crystal-universe/*.js
