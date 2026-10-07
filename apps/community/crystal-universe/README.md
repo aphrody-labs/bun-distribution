@@ -7,6 +7,8 @@ Mini-jeu original jouable dans un navigateur : combattant personnalisable, arèn
 Cinq vagues d'adversaires IA, score, victoire/défaite, pause et reprise.
 Trois styles (équilibré, vitesse, puissance) et couleur personnalisable.
 Clavier, manette Gamepad API et sept boutons tactiles avec gestion des pointeurs simultanés.
+Atelier d'avatar avec nom, race, coiffure et couleurs de peau, cheveux et tenue;
+le choix est conservé dans le stockage local du navigateur.
 
 La proposition fusionne la charge/transformation et le combat d'arène de Dragon
 Crystal avec la personnalisation et l'invasion par vagues de Warriors of the

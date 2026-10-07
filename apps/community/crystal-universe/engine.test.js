@@ -2,6 +2,7 @@
 import { test, expect } from "bun:test";
 import { createGame, step } from "./engine.js";
 import { readGamepadInput } from "./gamepad.js";
+import { DEFAULT_AVATAR, loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
 test("energy, transformation, cooldown and expiry", () => {
   const g = createGame();
   g.player.energy = 80;
@@ -84,4 +85,29 @@ test("gamepad axes, buttons, start and disconnect map to game actions", () => {
   expect(state.startPressed).toBe(true);
   expect(readGamepadInput({ axes: [0.8], buttons: [] }).input.right).toBe(true);
   expect(readGamepadInput(null)).toEqual({ input: {}, startPressed: false });
+});
+
+test("avatar creation validates and persists local character choices", () => {
+  const values = {
+    name: "  Nova  ",
+    race: "namekian",
+    skin: "#68b36a",
+    hair: "#172216",
+    outfit: "#e4a83d",
+    hairstyle: "crest",
+  };
+  const record = new Map();
+  const storage = {
+    getItem: (key) => record.get(key) || null,
+    setItem: (key, value) => record.set(key, value),
+  };
+  expect(saveAvatar(storage, values)).toEqual({ ...values, name: "Nova" });
+  expect(loadAvatar(storage)).toEqual({ ...values, name: "Nova" });
+  expect(normalizeAvatar({ ...values, name: "", race: "alien", skin: "red" })).toEqual({
+    ...DEFAULT_AVATAR,
+    hair: values.hair,
+    outfit: values.outfit,
+    hairstyle: values.hairstyle,
+  });
+  expect(loadAvatar({ getItem: () => "{" })).toEqual(DEFAULT_AVATAR);
 });

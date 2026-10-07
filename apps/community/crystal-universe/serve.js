@@ -5,6 +5,7 @@ const files = new Set([
   "game.js",
   "engine.js",
   "gamepad.js",
+  "avatar.js",
   "age1000-map.js",
 ]);
 const shenronBase = process.env.SHENRON_API_BASE || "https://bot.dragonballfr.com";

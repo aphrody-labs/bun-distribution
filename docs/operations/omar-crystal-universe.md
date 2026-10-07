@@ -115,7 +115,7 @@ L'écran Dragon Pixel expose maintenant une recherche d'archives Dragon Ball. Le
 
 Vérification réelle : serveur Bun local sur `127.0.0.1:4328`, `GET /` → 200 ; `GET /api/lore/search?q=Goku%20Namek` → 200, résultats sourcés dont « Planète Namek » et « Goku — Saga Namek » avec URLs dragonballfr.com ; entrée d'un caractère → 400. `aphrody_shenron_rag_search` confirme les mêmes corpus et extraits côté MCP. Gates du lot : `bun test apps/community/crystal-universe/engine.test.js` (5 tests, 20 assertions), `oxlint --deny-warnings apps/community/crystal-universe/*.js`, `oxfmt --check apps/community/crystal-universe`, `git diff --check` — tous verts.
 
-Cette liaison fournit une recherche du RAG, pas l'ingestion/la redistribution de toutes les planches OCR. Le catalogue MCP expose 147 volumes/tomes OCR sur plusieurs séries, mais ce décompte seul ne prouve pas que les 42 tomes d'une édition précise ou tout Dragon Ball Super soient complets. Le jeu reste un mini-jeu Canvas 2D solo : pas de moteur Xenoverse 2, rendu 3D/WebGPU, multijoueur réseau, manette, persistance ou création complète d'avatar. Les assets et les données de Xenoverse 2 restent indisponibles localement ; `vendor/dbxv2` était absent/vide selon le relevé précédent et les assets suivis du checkout ne comprennent aucun paquet Xenoverse. Leur licence d'extraction/redistribution n'est pas établie. Aucun asset de jeu, donnée privée ou scan sous droit n'a été copié ou publié. Ces dépendances maintiennent l'objectif global ouvert.
+Cette liaison fournit une recherche du RAG, pas l'ingestion/la redistribution de toutes les planches OCR. Le catalogue MCP expose 147 volumes/tomes OCR sur plusieurs séries, mais ce décompte seul ne prouve pas que les 42 tomes d'une édition précise ou tout Dragon Ball Super soient complets. Le jeu reste un mini-jeu Canvas 2D solo : pas de moteur Xenoverse 2, rendu 3D/WebGPU ni multijoueur réseau. Les assets et les données de Xenoverse 2 restent indisponibles localement ; `vendor/dbxv2` était absent/vide selon le relevé précédent et les assets suivis du checkout ne comprennent aucun paquet Xenoverse. Leur licence d'extraction/redistribution n'est pas établie. Aucun asset de jeu, donnée privée ou scan sous droit n'a été copié ou publié. Ces dépendances maintiennent l'objectif global ouvert.
 
 ## 2026-10-07 — Référence RAG Dragon Ball (profil Shenron isolé)
 
@@ -157,3 +157,15 @@ suite moteur `bun test apps/community/crystal-universe/engine.test.js` : 6 tests
 Namek` via ce serveur renvoie des résultats avec URL source. Aucun périphérique
 physique n'était connecté, donc le mapping matériel sur un vrai contrôleur reste
 non qualifié. Cette entrée ne fournit pas le rendu 3D/WebGPU ni le multijoueur.
+
+## 2026-10-07 — Atelier de création d'avatar
+
+Dragon Pixel propose maintenant un éditeur local d'avatar original : nom, race,
+coiffure, couleurs de peau, cheveux et tenue. Les choix sont normalisés et conservés
+dans le `localStorage` du navigateur; l'arène dessine ces traits sans charger d'images
+ni de personnages Xenoverse. Si le stockage est indisponible, l'avatar reste
+utilisable en mémoire.
+
+Vérification : test couvrant choix valides, normalisation de saisies invalides,
+sérialisation/relecture et JSON corrompu. L'éditeur est un prototype 2D : aucun morph
+3D, réglage avancé de proportions, équipement du jeu ou sauvegarde multijoueur.

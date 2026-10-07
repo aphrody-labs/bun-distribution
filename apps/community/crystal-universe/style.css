@@ -29,11 +29,29 @@ p {
   max-width: 80ch;
 }
 .setup,
-.controls {
+.controls,
+.avatar-creator {
   display: flex;
   gap: 0.7rem;
   align-items: center;
   flex-wrap: wrap;
+}
+.avatar-creator {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #344e6a;
+  border-radius: 1rem;
+  background: #111d2d;
+}
+.avatar-creator > div {
+  flex-basis: 100%;
+}
+.avatar-creator h2 {
+  margin: 0;
+}
+.avatar-creator input,
+.avatar-creator select {
+  max-width: 100%;
 }
 button,
 select {

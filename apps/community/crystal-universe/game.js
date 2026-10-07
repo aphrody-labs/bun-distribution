@@ -2,12 +2,22 @@
 import { createGame, step } from "./engine.js";
 import { drawAge1000Map } from "./age1000-map.js";
 import { readGamepadInput } from "./gamepad.js";
+import { loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
 const canvas = document.querySelector("#arena"),
   ctx = canvas.getContext("2d");
 const hud = document.querySelector("#hud"),
   result = document.querySelector("#result");
 const mapCanvas = document.querySelector("#world-map");
 const mapContext = mapCanvas.getContext("2d");
+const avatarFields = {
+  name: document.querySelector("#avatar-name"),
+  race: document.querySelector("#avatar-race"),
+  hairstyle: document.querySelector("#avatar-hairstyle"),
+  skin: document.querySelector("#avatar-skin"),
+  hair: document.querySelector("#avatar-hair"),
+  outfit: document.querySelector("#color"),
+};
+let avatar = loadAvatar(localStorage);
 const loreForm = document.querySelector("#lore-search");
 const loreStatus = document.querySelector("#lore-status");
 const loreResults = document.querySelector("#lore-results");
@@ -30,6 +40,20 @@ const keys = {
   l: "charge",
   t: "transform",
 };
+for (const [key, field] of Object.entries(avatarFields)) field.value = avatar[key];
+for (const field of Object.values(avatarFields)) {
+  field.addEventListener("input", () => {
+    const values = Object.fromEntries(
+      Object.entries(avatarFields).map(([key, control]) => [key, control.value]),
+    );
+    avatar = normalizeAvatar(values);
+    try {
+      avatar = saveAvatar(localStorage, avatar);
+    } catch {
+      // Keep the avatar usable if local storage is disabled or full.
+    }
+  });
+}
 function clear() {
   held.clear();
   pointers.clear();
@@ -92,8 +116,10 @@ window.addEventListener("blur", () => {
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && active) pause(true);
 });
-function fighter(x, y, color, transformed, facing = 1) {
-  ctx.fillStyle = transformed ? "#ffd475" : color;
+function fighter(x, y, color, transformed, facing = 1, customAvatar = null) {
+  const outfit = transformed ? "#ffd475" : customAvatar?.outfit || color;
+  const skin = customAvatar?.skin || outfit;
+  ctx.fillStyle = outfit;
   if (transformed) {
     ctx.strokeStyle = "#ffd475";
     ctx.lineWidth = 3;
@@ -102,10 +128,36 @@ function fighter(x, y, color, transformed, facing = 1) {
     ctx.stroke();
   }
   ctx.fillRect(x - 10, y - 32, 20, 25);
+  ctx.fillStyle = skin;
   ctx.fillRect(x - 9, y - 50, 18, 16);
   ctx.fillRect(x - 13, y - 7, 9, 15);
   ctx.fillRect(x + 4, y - 7, 9, 15);
   ctx.fillRect(x + facing * 15 - 4, y - 30, 8, 18);
+  if (customAvatar?.race === "namekian") {
+    ctx.strokeStyle = skin;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x - 5, y - 48);
+    ctx.lineTo(x - 12, y - 60);
+    ctx.moveTo(x + 5, y - 48);
+    ctx.lineTo(x + 12, y - 60);
+    ctx.stroke();
+  }
+  ctx.fillStyle = customAvatar?.hair || "#0b1020";
+  if (customAvatar?.hairstyle === "short") ctx.fillRect(x - 9, y - 53, 18, 7);
+  else if (customAvatar?.hairstyle === "crest") {
+    ctx.fillRect(x - 3, y - 62, 7, 12);
+    ctx.fillRect(x - 8, y - 55, 16, 5);
+  } else {
+    ctx.fillRect(x - 12, y - 56, 6, 10);
+    ctx.fillRect(x - 6, y - 62, 7, 16);
+    ctx.fillRect(x + 1, y - 58, 6, 12);
+    ctx.fillRect(x + 7, y - 54, 5, 8);
+  }
+  if (customAvatar?.race === "majin") {
+    ctx.fillRect(x - 2, y - 67, 4, 14);
+    ctx.fillRect(x - 4, y - 67, 8, 4);
+  }
   ctx.fillStyle = "#0b1020";
   ctx.fillRect(x + facing * 4 - 2, y - 45, 4, 4);
 }
@@ -133,7 +185,7 @@ function draw() {
   ctx.fillStyle = "#80a5b2";
   ctx.fillRect(0, 328, 960, 4);
   const p = game.player;
-  fighter(p.x, p.y, document.querySelector("#color").value, p.transformed, p.facing);
+  fighter(p.x, p.y, avatar.outfit, p.transformed, p.facing, avatar);
   for (const e of game.enemies) {
     fighter(e.x, e.y, "#fc8b9c", false, Math.sign(p.x - e.x));
     ctx.fillStyle = "#fc8b9c";
@@ -171,7 +223,7 @@ function frame(now) {
     }
   }
   const p = game.player;
-  hud.textContent = `Vie ${Math.ceil(p.hp)} / 100 · Énergie ${Math.floor(p.energy)} / 100 · Vague ${game.wave} / 5 · Score ${game.score}${p.transformed ? " · Transformation active" : ""}`;
+  hud.textContent = `${avatar.name} · Vie ${Math.ceil(p.hp)} / 100 · Énergie ${Math.floor(p.energy)} / 100 · Vague ${game.wave} / 5 · Score ${game.score}${p.transformed ? " · Transformation active" : ""}`;
   draw();
   requestAnimationFrame(frame);
 }

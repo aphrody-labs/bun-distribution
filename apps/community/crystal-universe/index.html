@@ -20,10 +20,34 @@
           <option value="balanced">Équilibré</option>
           <option value="speed">Vitesse</option>
           <option value="power">Puissance</option></select
-        ><label for="color">Couleur du guerrier</label
-        ><input id="color" type="color" value="#63e6ff" /><button id="start">
-          Jouer / Recommencer</button
+        ><button id="start">Jouer / Recommencer</button
         ><button id="pause" aria-pressed="false">Pause</button>
+      </section>
+      <section class="avatar-creator" aria-labelledby="avatar-title">
+        <div>
+          <p class="eyebrow">Atelier de personnage · sauvegarde locale</p>
+          <h2 id="avatar-title">Créer ton avatar</h2>
+          <p>Personnage original : ces choix restent dans le stockage local de ce navigateur.</p>
+        </div>
+        <label for="avatar-name">Nom</label>
+        <input id="avatar-name" maxlength="20" value="Patrouilleur" autocomplete="off" />
+        <label for="avatar-race">Race</label>
+        <select id="avatar-race">
+          <option value="saiyan">Saiyan</option>
+          <option value="earthling">Terrien</option>
+          <option value="namekian">Namek</option>
+          <option value="majin">Majin</option>
+        </select>
+        <label for="avatar-hairstyle">Coiffure</label>
+        <select id="avatar-hairstyle">
+          <option value="spiky">Ébouriffée</option>
+          <option value="short">Courte</option>
+          <option value="crest">Crête</option>
+        </select>
+        <label for="avatar-skin">Peau</label><input id="avatar-skin" type="color" value="#f0c19a" />
+        <label for="avatar-hair">Cheveux</label
+        ><input id="avatar-hair" type="color" value="#242b46" /> <label for="color">Tenue</label
+        ><input id="color" type="color" value="#63e6ff" />
       </section>
       <p id="hud">Prêt à entrer dans l'arène.</p>
       <canvas
