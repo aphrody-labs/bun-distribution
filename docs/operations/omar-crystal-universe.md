@@ -200,3 +200,21 @@ Cela connecte l'interface au RAG manga OCR des deux séries, mais les recherches
 lexicales ne prouvent pas à elles seules qu'une requête trouve chaque page; les
 pages intégrales ne sont pas importées dans l'application. Les relevés de métadonnées
 vol. 1/42 et ch1370 ci-dessus restent des échantillons, pas une matrice complète.
+
+## 2026-10-07 — Indexation officielle Dragon Ball
+
+Vérification des règles avant crawl : `en.dragon-ball-official.com/robots.txt`
+autorise les chemins publics (`Disallow:` vide). `viz.com/robots.txt` interdit
+`/manga/`; ce domaine a donc été exclu. Bandai Namco Europe réserve explicitement
+les droits de text and data mining dans son `robots.txt`; aucune page de ce domaine
+n'a été crawlée dans cette campagne.
+
+La capacité native installée `aphrody web crawl-index` a indexé la racine officielle
+Dragon Ball avec le profil privé `aphrody`, label
+`omar-dragonball-official-rag`, profondeur 2 et budget 25 requêtes. Rapport natif :
+19 pages écrites, 89 chunks, 0 erreur, 80 pages en attente, campagne incomplète.
+`aphrody home query 'site:en.dragon-ball-official.com Dragon Ball manga Super story official'
+--profile aphrody --limit 5` retrouve notamment l'actualité officielle d'octobre
+sur Saikyo Jump (`/news/01_4460`). Ces pages de site officiel apportent des références
+et actualités, pas le texte intégral des 42 tomes ni une preuve d'exhaustivité de
+Dragon Ball Super. Aucun scan ni transcription de manga n'a été copié dans le dépôt.
