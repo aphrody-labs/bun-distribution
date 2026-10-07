@@ -10,7 +10,8 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/srv/aphrody-lab
 EnvironmentFile=/etc/aphrody-discord-native.env
-ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/assistant.mjs --policy /srv/aphrody-lab/policy.json --env-file /etc/aphrody-discord.env --state /srv/aphrody-lab/state/discord.json --cursor /srv/aphrody-lab/state/cursor.json
+Environment=BUN_BE_BUN=1
+ExecStart=/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo /srv/aphrody-lab/assistant.mjs --policy /srv/aphrody-lab/policy.json --env-file /etc/aphrody-discord.env --state /srv/aphrody-lab/state/discord.json --cursor /srv/aphrody-lab/state/cursor.json
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=60
