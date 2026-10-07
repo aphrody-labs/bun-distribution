@@ -226,10 +226,14 @@ export function cargoSelection(cargoArgs: readonly string[]) {
     const arg = cargoArgs[i] as string;
     if (arg === "--") break;
     const next = cargoArgs[i + 1] ?? "";
-    if (arg === "-p" || arg === "--package") (packages.push(next), i++);
-    else if (arg.startsWith("--package=")) packages.push(arg.slice("--package=".length));
-    else if (arg === "--exclude") (excluded.push(next), i++);
-    else if (arg.startsWith("--exclude=")) excluded.push(arg.slice("--exclude=".length));
+    if (arg === "-p" || arg === "--package") {
+      packages.push(next);
+      i++;
+    } else if (arg.startsWith("--package=")) packages.push(arg.slice("--package=".length));
+    else if (arg === "--exclude") {
+      excluded.push(next);
+      i++;
+    } else if (arg.startsWith("--exclude=")) excluded.push(arg.slice("--exclude=".length));
     else if (arg === "--workspace" || arg === "--all") workspace = true;
     else if (DEV_TARGET_FLAGS.has(arg) || /^--(test|bench|example)=/.test(arg)) devTargets = true;
     else if (!subcommand && !arg.startsWith("-") && !arg.startsWith("+")) subcommand = arg;
@@ -544,6 +548,7 @@ const COLLISION_PATTERN =
 /**
  * Whether an error is a snapshot collision: git exits 128 when it cannot take a lock or update a ref that
  * another session holds (`refs/wsl/snapshot` is shared by every worktree of the repository).
+ * A rejected push can instead exit 1 when the remote ref changed during the transaction.
  */
 export function isSnapshotCollision(error: unknown): boolean {
   if (error instanceof SnapshotCollision) return true;
@@ -553,8 +558,12 @@ export function isSnapshotCollision(error: unknown): boolean {
     stderr?: unknown;
     message?: unknown;
   };
-  if (exitCode !== 128) return false;
   const text = `${stderr ?? ""} ${message ?? ""}`;
+  if (exitCode === 1)
+    return /\[remote rejected\].*\((incorrect old value provided|cannot lock ref[^)]*)\)/i.test(
+      text,
+    );
+  if (exitCode !== 128) return false;
   // Exit 128 is also git's generic fatal error: only lock and ref races are worth retrying.
   return text.trim() === "" || COLLISION_PATTERN.test(text);
 }
@@ -668,13 +677,16 @@ async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise
             cwd: root,
             env: { ...process.env, GIT_SSH_COMMAND: sshBase(config).join(" ") },
             stdout: "inherit",
-            stderr: "inherit",
+            stderr: "pipe",
           },
         );
-        const code = await push.exited;
-        if (code === 128)
-          throw new SnapshotCollision("git push of the snapshot hit a lock (exit 128)");
-        if (code !== 0) throw new Error("git push of the snapshot failed");
+        const [code, stderr] = await Promise.all([push.exited, new Response(push.stderr).text()]);
+        if (stderr) process.stderr.write(stderr);
+        if (code !== 0)
+          throw Object.assign(new Error("git push of the snapshot failed"), {
+            exitCode: code,
+            stderr,
+          });
       });
     await pushOnce();
     // A remote ref can advertise history whose objects were collected (another session's snapshot, since

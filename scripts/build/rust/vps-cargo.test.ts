@@ -158,6 +158,18 @@ describe("snapshot collisions", () => {
       false,
     );
     expect(isSnapshotCollision({ exitCode: 1, stderr: "index.lock" })).toBe(false);
+    expect(
+      isSnapshotCollision({
+        exitCode: 1,
+        stderr: " ! [remote rejected] sha -> refs/wsl/snapshot (incorrect old value provided)",
+      }),
+    ).toBe(true);
+    expect(
+      isSnapshotCollision({
+        exitCode: 1,
+        stderr: " ! [remote rejected] sha -> refs/wsl/snapshot (permission denied)",
+      }),
+    ).toBe(false);
     expect(isSnapshotCollision(new Error("boom"))).toBe(false);
     expect(isSnapshotCollision(null)).toBe(false);
   });
@@ -175,6 +187,23 @@ describe("snapshot collisions", () => {
     expect(result).toBe("sha");
     expect(calls).toBe(4);
     expect(delays).toEqual([100, 200, 400]);
+  });
+
+  test("a remote ref race retries the same pinned snapshot", async () => {
+    let calls = 0;
+    const result = await withSnapshotBackoff(
+      async () => {
+        if (++calls === 1)
+          throw Object.assign(new Error("push failed"), {
+            exitCode: 1,
+            stderr: " ! [remote rejected] sha -> refs/wsl/snapshot (incorrect old value provided)",
+          });
+        return "pinned-sha";
+      },
+      { sleep: async () => {}, random: () => 0 },
+    );
+    expect(result).toBe("pinned-sha");
+    expect(calls).toBe(2);
   });
 
   test("jitter is added and a persistent collision is rethrown after the last attempt", async () => {
