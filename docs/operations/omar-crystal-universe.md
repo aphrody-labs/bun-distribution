@@ -149,11 +149,15 @@ DB `vol42` 234 pages, un chapitre DBS `ch1370` 45 pages. Cela confirme des entr�
 OCR aux deux extrémités de la série et dans DBS. Un contrôle du listing complet
 compte 42 identifiants distincts DB (`vol1` à `vol42`), tous avec un nombre non nul
 de planches OCR dans les métadonnées. La sortie MCP est tronquée après 90 000
-caractères; le champ `count` annonce 147 entrées au total et n'est pas une preuve
-de couverture de DBS. Ce catalogue confirme la présence de métadonnées OCR, pas
-la complétude des transcriptions/planches, l'exhaustivité de DBS, ni les droits de
-réutilisation. Les réponses de détail incluent des transcriptions; aucun passage
-de manga n’a été copié dans le dépôt ou affiché dans le jeu au cours de ce contrôle.
+caractères; le champ `count` annonce 147 entrées au total. Un nouveau comptage des
+objets metadata extraits de cette sortie trouve les 42 identifiants DB contigus et
+103 identifiants DBS contigus (`ch1315` à `ch1417`), tous avec des planches non
+nulles. Les agrégats déclarés par les métadonnées sont : DB 7 844 pages, dont 3 213
+avec `pagesWithJa`; DBS 4 355 pages, dont 2 122 avec ce champ. Cela confirme un
+catalogue OCR substantiel pour les deux séries, pas la complétude des transcriptions
+de chaque planche, l'exhaustivité éditoriale de DBS, ni les droits de réutilisation.
+Les réponses de détail incluent des transcriptions; aucun passage de manga n’a été
+copié dans le dépôt ou affiché dans le jeu au cours de ce contrôle.
 
 ## 2026-10-07 — Commandes manette
 
@@ -219,8 +223,8 @@ sur Saikyo Jump (`/news/01_4460`). Ces pages de site officiel apportent des réf
 et actualités, pas le texte intégral des 42 tomes ni une preuve d'exhaustivité de
 Dragon Ball Super. Aucun scan ni transcription de manga n'a été copié dans le dépôt.
 
-Reprise de la frontier existante (même profil, label, URL autorisée, profondeur 2,
-budget 25) : rapport natif à 50 tentatives cumulées, 36 pages écrites, 115 chunks,
-0 erreur et 55 URL en attente; `complete:false`. Une nouvelle recherche `home query`
-retrouve les documents indexés sous ce label. La reprise augmente les références
-officielles disponibles, sans changer la limite de couverture documentaire ci-dessus.
+Reprises de la frontier existante (même profil, label, URL autorisée, profondeur 2,
+budget maximum 25 par passe) : campagne achevée à 105 tentatives, 60 pages écrites,
+140 chunks, zéro erreur, frontier vide et `complete:true`. `aphrody home query`
+retrouve les documents indexés sous ce label. La recherche contient des références
+officielles, sans changer la limite de couverture documentaire ci-dessus.
