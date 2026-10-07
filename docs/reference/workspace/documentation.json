@@ -6366,8 +6366,8 @@
     {
       "path": "docs/operations/bun-release-2026-10-07.md",
       "title": "Livraison Bun du 2026-10-07",
-      "sha256": "442a66f33e0d99638a6657e2494015d91525dd80c111f4e5204e74d4f91e542f",
-      "bytes": 3604,
+      "sha256": "677ba501184f2323840257b9262f2057c1558411827d73fd7a9698248d9d1d58",
+      "bytes": 3824,
       "domain": "",
       "status": "historical",
       "visibility": "private",
@@ -31856,7 +31856,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "298fc57689d8076de5ae15492b2e53afa20dd935caf792fa309bd9dbd728e6fc",
+      "sha256": "71ae4229a937a1f3721a76b56081ffc59a25c4f702e3fe25037c7b42903baa0c",
       "bytes": 50037,
       "domain": "workspace",
       "status": "generated",

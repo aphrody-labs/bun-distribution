@@ -17,6 +17,7 @@ Le [catalogue](../../config/npm-packages.json) conserve versions exactes, SHA-25
 - RAG : 14 tests passés ; WASM optimisé construit par la fabrique VPS.
 - Shell web : dix tests passés, trois contrôles plateforme/intégration ignorés ; WASM optimisé construit par la fabrique.
 - Scaffold : 23 tests passés ; Google : 16 ; workflows déplacés chez leur propriétaire : 35.
+- Workspace : 297 tests passés, 20 contrôles externes ignorés ; xAI/WinClean/web-to-tauri : 139 tests passés, deux contrôles Grok live ignorés. Leur publication reste conditionnée aux dépendances et gates hôte.
 - Tests source core passés. Catalogue hôte validé sur le snapshot suivi ; des unités de sauvegarde Infra concurrentes manquaient temporairement dans le catalogue du worktree actif.
 - Génération, fraîcheur documentaire et liens internes passés.
 - Aide CLI installée régénérée : 1 084 pages ; l’inventaire rapporte encore 27 échecs de capture, 36 commandes absentes et une entrée non résolue.
