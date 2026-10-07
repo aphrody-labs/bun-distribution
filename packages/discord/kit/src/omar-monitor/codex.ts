@@ -21,6 +21,33 @@ interface Wire {
   error?: { code: number };
 }
 
+const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
+/** Infra's bounded exec API has no streaming stdin transport; SSH owns this stdio gap. */
+export function codexCommand(policy: Policy): string[] {
+  if (!policy.codexTransport) return [policy.codex, "app-server", "--stdio"];
+  const target = policy.codexTransport.target;
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.@-]*$/.test(target))
+    throw new Error("Invalid declared Codex SSH target");
+  return [
+    "ssh",
+    "-T",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=15",
+    "-o",
+    "ServerAliveCountMax=3",
+    "-o",
+    "SendEnv=-*",
+    target,
+    `exec env APHRODY_PROFILE=${shellQuote(policy.profile)} ${shellQuote(policy.codex)} app-server --stdio`,
+  ];
+}
+
 /** Own a dedicated stdio server; never replace a running turn after an observation timeout. */
 export class Codex {
   private child: ReturnType<typeof Bun.spawn<"pipe", "pipe", "inherit">>;
@@ -37,7 +64,7 @@ export class Codex {
   private freshThreads = new Set<string>();
   onEvent: (method: string, params: Record<string, unknown>) => void = () => {};
   constructor(policy: Policy) {
-    this.child = Bun.spawn([policy.codex, "app-server", "--stdio"], {
+    this.child = Bun.spawn(codexCommand(policy), {
       stdin: "pipe",
       stdout: "pipe",
       stderr: "inherit",
@@ -132,6 +159,13 @@ export class Codex {
   }
   async resume(threadId: string) {
     await this.request("thread/resume", { threadId, excludeTurns: true });
+  }
+  async steer(threadId: string, expectedTurnId: string, input: string) {
+    return this.request("turn/steer", {
+      threadId,
+      expectedTurnId,
+      input: [{ type: "text", text: input }],
+    });
   }
   async read(threadId: string): Promise<Turn | undefined> {
     const result = await this.request<{ thread: { turns: Turn[] } }>("thread/read", {

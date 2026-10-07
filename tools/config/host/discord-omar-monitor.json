@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "guildId": "1554189180030947338",
   "channelId": "1557354118710829117",
+  "channelIds": ["1557354118710829117", "1557358568523571225"],
   "omarUserIds": ["1527405876695142620", "1323725494184841256"],
   "ownerId": "281114294152724491",
   "envFile": "/etc/aphrody-discord.env",
@@ -10,8 +11,38 @@
   "codex": "/home/ubuntu/.local/bin/codex",
   "cwd": "/srv/aphrody-build/workspaces/aphrody",
   "nativeMcp": "/home/ubuntu/.local/bin/aphrody-mcp",
+  "shenronMcp": "/home/ubuntu/.local/bin/shenron-mcp",
   "profile": "aphrody",
   "reconcileSeconds": 30,
   "historyPageBudget": 100,
+  "defaultWorkerHost": "owner-wsl",
+  "workerHosts": [
+    {
+      "id": "omar-wsl",
+      "match": ["omar", "training", "entrainement", "fine-tuning", "gpu"],
+      "unavailableReason": "Omar's WireGuard peer 10.200.77.10 is unreachable; WSL workspace, Codex authentication and native MCP endpoint are not qualified. Keep this goal blocked without moving training to another PC."
+    },
+    {
+      "id": "owner-wsl",
+      "match": [
+        "wsl",
+        "windows",
+        "desktop",
+        "bureau",
+        "pc",
+        "ordinateur",
+        "local",
+        "github",
+        "code",
+        "codex",
+        "developpement"
+      ],
+      "transport": { "type": "ssh", "target": "aphro-wsl" },
+      "codex": "/home/aphro/.local/bin/codex",
+      "cwd": "/home/aphro/aphrody",
+      "nativeMcp": "/home/aphro/.local/bin/aphrody-mcp",
+      "profile": "aphrody"
+    }
+  ],
   "documentation": "https://developers.openai.com/codex/app-server"
 }

@@ -27,6 +27,19 @@ export interface Policy {
   reconcileSeconds: number;
   historyPageBudget: number;
   documentation?: string;
+  codexTransport?: { type: "ssh"; target: string };
+  workerHosts?: WorkerHost[];
+  defaultWorkerHost?: string;
+}
+export interface WorkerHost {
+  id: string;
+  match: string[];
+  unavailableReason?: string;
+  transport?: { type: "ssh"; target: string };
+  codex?: string;
+  cwd?: string;
+  nativeMcp?: string;
+  profile?: string;
 }
 export interface Job {
   id: string;
@@ -35,13 +48,16 @@ export interface Job {
   channel_id?: string;
   monitor_thread: string | null;
   worker_thread: string | null;
+  worker_host?: string | null;
   goals: string | null;
   evidence: string | null;
 }
 export function isAuthorizedUser(message: SourceMessage, policy: Policy): boolean {
   const isOwner = !!policy.ownerId && message.author.id === policy.ownerId;
-  const isOmarUser = Array.isArray(policy.omarUserIds) && policy.omarUserIds.includes(message.author.id);
-  const allowedChannels = policy.channelIds && policy.channelIds.length > 0 ? policy.channelIds : [policy.channelId];
+  const isOmarUser =
+    Array.isArray(policy.omarUserIds) && policy.omarUserIds.includes(message.author.id);
+  const allowedChannels =
+    policy.channelIds && policy.channelIds.length > 0 ? policy.channelIds : [policy.channelId];
   return (
     allowedChannels.includes(message.channel_id) &&
     (!message.guild_id || message.guild_id === policy.guildId) &&
@@ -71,12 +87,15 @@ export class Queue {
     const jobCols = this.db.query<{ name: string }, []>("PRAGMA table_info(jobs)").all();
     if (!jobCols.some((col) => col.name === "channel_id"))
       this.db.exec("ALTER TABLE jobs ADD COLUMN channel_id TEXT NOT NULL DEFAULT ''");
+    if (!jobCols.some((col) => col.name === "worker_host"))
+      this.db.exec("ALTER TABLE jobs ADD COLUMN worker_host TEXT");
     const outboxCols = this.db.query<{ name: string }, []>("PRAGMA table_info(outbox)").all();
     if (!outboxCols.some((col) => col.name === "channel_id"))
       this.db.exec("ALTER TABLE outbox ADD COLUMN channel_id TEXT NOT NULL DEFAULT ''");
   }
   ingest(message: SourceMessage, policy: Policy, via: "rest" | "gateway" = "rest") {
-    const allowedChannels = policy.channelIds && policy.channelIds.length > 0 ? policy.channelIds : [policy.channelId];
+    const allowedChannels =
+      policy.channelIds && policy.channelIds.length > 0 ? policy.channelIds : [policy.channelId];
     if (
       !allowedChannels.includes(message.channel_id) ||
       (message.guild_id && message.guild_id !== policy.guildId)
@@ -84,10 +103,14 @@ export class Queue {
       return;
     this.db.transaction(() => {
       const added = this.db
-        .query("INSERT OR IGNORE INTO messages(id,author,text,received,via,channel_id) VALUES(?,?,?,?,?,?)")
+        .query(
+          "INSERT OR IGNORE INTO messages(id,author,text,received,via,channel_id) VALUES(?,?,?,?,?,?)",
+        )
         .run(message.id, message.author.id, message.content, Date.now(), via, message.channel_id);
       if (added.changes && isOmar(message, policy))
-        this.db.query("INSERT INTO jobs(id,text,channel_id) VALUES(?,?,?)").run(message.id, message.content, message.channel_id);
+        this.db
+          .query("INSERT INTO jobs(id,text,channel_id) VALUES(?,?,?)")
+          .run(message.id, message.content, message.channel_id);
     })();
   }
   next(): Job | null {
@@ -98,11 +121,25 @@ export class Queue {
       .get();
   }
   update(id: string, fields: Partial<Omit<Job, "id" | "text">>) {
-    for (const [key, value] of Object.entries(fields)) {
-      if (!["state", "monitor_thread", "worker_thread", "goals", "evidence", "channel_id"].includes(key))
+    const entries = Object.entries(fields);
+    for (const [key] of entries) {
+      if (
+        ![
+          "state",
+          "monitor_thread",
+          "worker_thread",
+          "worker_host",
+          "goals",
+          "evidence",
+          "channel_id",
+        ].includes(key)
+      )
         throw new Error("Invalid queue field");
-      this.db.query(`UPDATE jobs SET ${key}=? WHERE id=?`).run(value, id);
     }
+    this.db.transaction(() => {
+      for (const [key, value] of entries)
+        this.db.query(`UPDATE jobs SET ${key}=? WHERE id=?`).run(value, id);
+    })();
   }
   get(key: string): string | null {
     return (
@@ -123,7 +160,9 @@ export class Queue {
       .all();
   }
   post(nonce: string, source: string, text: string, channelId = "") {
-    this.db.query("INSERT OR IGNORE INTO outbox VALUES(?,?,?,?)").run(nonce, source, text, channelId);
+    this.db
+      .query("INSERT OR IGNORE INTO outbox VALUES(?,?,?,?)")
+      .run(nonce, source, text, channelId);
   }
   posts(): { nonce: string; source: string; text: string; channel_id?: string }[] {
     return this.db
@@ -131,7 +170,9 @@ export class Queue {
         "SELECT nonce, source, text, channel_id FROM outbox LIMIT 20",
       )
       .all()
-      .map((row) => (row.channel_id ? row : { nonce: row.nonce, source: row.source, text: row.text }));
+      .map((row) =>
+        row.channel_id ? row : { nonce: row.nonce, source: row.source, text: row.text },
+      );
   }
   posted(nonce: string) {
     this.db.query("DELETE FROM outbox WHERE nonce=?").run(nonce);
