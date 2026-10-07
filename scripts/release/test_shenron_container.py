@@ -256,6 +256,40 @@ class ContainerDeploymentTests(unittest.TestCase):
             adapter.allowed_mount("gateway", public, release, self.root, manifest)
         )
 
+    def test_gateway_maintenance_mount_requires_exact_sealed_file(self):
+        release = self.release("a")
+        public = release / "public"
+        public.mkdir()
+        page = public / "50x.html"
+        page.write_text("maintenance")
+        manifest = self.releases[-1][1]
+        mount = {
+            "source": str(page),
+            "target": "/var/www/shenron/50x.html",
+            "read_only": True,
+        }
+        self.assertFalse(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
+        manifest["files"]["public/50x.html"] = adapter.file_digest(page)
+        self.assertTrue(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
+        mount["target"] = "/var/www/shenron/arbitrary.html"
+        self.assertFalse(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
+        mount["target"] = "/var/www/shenron/50x.html"
+        mount["read_only"] = False
+        self.assertFalse(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
+        mount["read_only"] = True
+        mount["source"] = str(self.env_file)
+        self.assertFalse(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
+
     def test_gateway_nginx_mount_requires_every_file_sealed(self):
         release = self.release("a")
         nginx = release / "nginx"

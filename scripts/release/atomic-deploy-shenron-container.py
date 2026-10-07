@@ -56,6 +56,12 @@ def allowed_mount(name, volume, release, root, manifest):
     if volume.get("read_only") is not True:
         return False
     target = volume.get("target", "")
+    if target == "/var/www/shenron/50x.html":
+        return (
+            source == release / "public/50x.html"
+            and source.is_file()
+            and "public/50x.html" in manifest.get("files", {})
+        )
     if target == "/etc/letsencrypt":
         return source == pathlib.Path("/etc/aphrody/shenron-tls").resolve()
     if target == "/etc/nginx/conf.d":
