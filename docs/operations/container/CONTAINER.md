@@ -135,3 +135,25 @@ correction; the resulting Dockerfile SHA-256 was
   Browser execution and the rest of the native workspace still require their own qualification.
 - GitHub Actions run `37598733049` did not start: its check annotation reports failed account payments or a spending
   limit. Factory builds above succeeded independently; no registry publication is established by that Actions run.
+
+## Published one-click installers — 2026-10-07
+
+Downloads release `20261007T092640Z-8081351f06e8-kits-e68aaa55` contains the nine inherited native/plugin artifacts
+with unchanged hashes and four new installer artifacts built from clean commit `81cd80a3e8fdce199abae732a350578c0bc833bc`.
+The publisher's existing immutable snapshot path now accepts qualified prebuilt stages:
+
+```sh
+bun scripts/release/publish-downloads.ts assets \
+  --staged <setup-stage-directory> --staged <omar-stage-directory> \
+  --staged-revision <full-build-commit>
+```
+
+It validates configured manifests, target, regular files, sizes, hashes and secret patterns, then preserves unrelated
+artifacts and their build revision. New artifacts record their independent source revision. Installer scripts use
+`latest.json`'s `assetChecksums`; `SHA256SUMS` continues to describe artifact payloads. Snapshot publication keeps
+the existing reservation, checksum checks and atomic current-release selection.
+
+All 13 host payload checksums, the four public installer hashes/sizes and six public asset hashes passed. Both
+`aphrody.com` and `downloads.aphrody.com` link their Download Aphrody button to the immutable Setup EXE. Setup and
+Omar passed PE32+/AMD64 checks and Wine 10 launch/version/simulation checks. These executables are unsigned;
+execution on native Windows and the unavailable CEF desktop installer remain separate qualification items.
