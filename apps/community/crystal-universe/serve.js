@@ -15,15 +15,23 @@ const server = Bun.serve({
   fetch(request) {
     const name = new URL(request.url).pathname.slice(1) || "index.html";
     if (name === "api/lore/search" && request.method === "GET") {
-      const query = new URL(request.url).searchParams.get("q")?.trim() || "";
+      const params = new URL(request.url).searchParams;
+      const query = params.get("q")?.trim() || "";
+      const sourceId = params.get("sourceId")?.trim() || "";
       if (query.length < 2 || query.length > 120)
         return Response.json(
           { error: "La recherche doit contenir entre 2 et 120 caractères." },
           { status: 400 },
         );
+      if (sourceId && sourceId !== "manga")
+        return Response.json(
+          { error: "Le corpus sélectionné n'est pas disponible." },
+          { status: 400 },
+        );
       const url = new URL("/api/public/rag/search", shenronBase);
       url.searchParams.set("q", query);
       url.searchParams.set("limit", "8");
+      if (sourceId) url.searchParams.set("sourceId", sourceId);
       return fetch(url, {
         headers: { accept: "application/json" },
         signal: AbortSignal.timeout(12000),

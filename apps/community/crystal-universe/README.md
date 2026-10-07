@@ -9,6 +9,8 @@ Trois styles (équilibré, vitesse, puissance) et couleur personnalisable.
 Clavier, manette Gamepad API et sept boutons tactiles avec gestion des pointeurs simultanés.
 Atelier d'avatar avec nom, race, coiffure et couleurs de peau, cheveux et tenue;
 le choix est conservé dans le stockage local du navigateur.
+Les archives Shenron permettent de chercher soit tout le RAG, soit les passages
+OCR sourcés du manga Dragon Ball et Dragon Ball Super.
 
 La proposition fusionne la charge/transformation et le combat d'arène de Dragon
 Crystal avec la personnalisation et l'invasion par vagues de Warriors of the

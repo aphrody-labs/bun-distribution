@@ -178,3 +178,21 @@ utilisable en mémoire.
 Vérification : test couvrant choix valides, normalisation de saisies invalides,
 sérialisation/relecture et JSON corrompu. L'éditeur est un prototype 2D : aucun morph
 3D, réglage avancé de proportions, équipement du jeu ou sauvegarde multijoueur.
+
+## 2026-10-07 — Filtre de recherche OCR du manga
+
+Le formulaire d'archives peut maintenant sélectionner `sourceId=manga`; le proxy
+autorise seulement ce corpus (ou le mode RAG complet sans filtre) et refuse les
+autres identifiants. Le rendu conserve titres, type d'entrée et URL source et
+n'enregistre pas les transcriptions dans le dépôt.
+
+Vérification réelle sur le serveur local `127.0.0.1:4332` : `GET /` → 200; recherche
+`Bulma Son Goku` avec le corpus manga → 8 résultats cités dont Dragon Ball, tomes
+2–15; recherche `Moro` → 8 résultats cités Dragon Ball Super, chapitres 46–64;
+chaque résultat annonce `sourceId=manga`. `sourceId=invalid` → 400. Garde-fous
+toujours verts : 7 tests / 28 assertions, oxlint strict, oxfmt et diff-check.
+
+Cela connecte l'interface au RAG manga OCR des deux séries, mais les recherches
+lexicales ne prouvent pas à elles seules qu'une requête trouve chaque page; les
+pages intégrales ne sont pas importées dans l'application. Les relevés de métadonnées
+vol. 1/42 et ch1370 ci-dessus restent des échantillons, pas une matrice complète.

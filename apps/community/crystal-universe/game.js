@@ -240,15 +240,17 @@ function renderLoreResults(payload) {
     const item = document.createElement("li");
     const article = document.createElement("article");
     const title = document.createElement("h3");
+    const kind = document.createElement("small");
     const passage = document.createElement("p");
     const source = document.createElement("a");
     title.textContent = entry.title || entry.entity || "Passage Dragon Ball";
+    kind.textContent = entry.kind || entry.sourceId || "archive";
     passage.textContent = entry.snippet || entry.content || "Aucun extrait disponible.";
     source.href = entry.url || "https://dragonballfr.com/";
     source.textContent = "Ouvrir la source";
     source.target = "_blank";
     source.rel = "noopener noreferrer";
-    article.append(title, passage, source);
+    article.append(title, kind, passage, source);
     item.append(article);
     loreResults.append(item);
   }
@@ -257,11 +259,15 @@ function renderLoreResults(payload) {
 
 loreForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const query = new FormData(loreForm).get("q").trim();
+  const form = new FormData(loreForm);
+  const query = form.get("q").trim();
+  const sourceId = form.get("sourceId");
   loreStatus.textContent = "Recherche dans les archives…";
   loreResults.replaceChildren();
   try {
-    const response = await fetch(`/api/lore/search?q=${encodeURIComponent(query)}`);
+    const params = new URLSearchParams({ q: query });
+    if (sourceId) params.set("sourceId", sourceId);
+    const response = await fetch(`/api/lore/search?${params}`);
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || "La recherche a échoué.");
     renderLoreResults(payload);
