@@ -188,3 +188,13 @@ Elle a activé le PID `4099441` sous Yolo `c886d124e138`, avec le bundle HTTP
 `33af90fa46486522db6a2ffd0449f6c3a137fc26dc5992d491b30b299e0dd2c5`
 inchangé et les ports 8798/8799 en HTTP 200. Cette transition ne revendique
 aucune activation FFI ; l’unité précédente reste en sauvegarde privée.
+
+Le pin DBFR est également vérifié : même SHA, 324884560 octets, mode 0555,
+version 1.4.3 et exécution JavaScript réelle. Son relais Discord répond sous
+Yolo avec le vrai compte Shenron. Le worker actif est ensuite passé au PID
+`4104230` ; seul l’appel historique du relais dans le bundle a changé vers
+Yolo. Le SHA du bundle devient
+`4e6cbd36da3d543caa53edffe3e7ad11cdd212fca5f77c6047d44a2d97bb6b93`.
+L’identité du processus est vérifiée via `/proc/<pid>/exe` et son checksum ;
+le nom affiché dans les arguments peut changer au démarrage. La politique
+HTTP, les modèles et les états restent conservés pendant la qualification FFI.

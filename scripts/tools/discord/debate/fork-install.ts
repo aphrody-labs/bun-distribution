@@ -10,6 +10,14 @@ const remote = (command: string) =>
   run([cli, "infra", "ssh", "exec", "--host", host, "--cmd", command]);
 
 if (import.meta.main) {
+  const resumeIndex = process.argv.indexOf("--resume-stage");
+  const resumeStage = resumeIndex < 0 ? undefined : process.argv[resumeIndex + 1];
+  if (
+    resumeIndex >= 0 &&
+    (!resumeStage ||
+      !/^\/home\/ubuntu\/\.yolo\/transfers\/discord-c886d124e138-\d+$/.test(resumeStage))
+  )
+    throw new Error("Invalid protected transfer stage");
   console.log(
     JSON.stringify({
       plan: {
@@ -20,6 +28,7 @@ if (import.meta.main) {
         source: "existing installed Yolo native engine",
         activation: "sidepin only; no existing service or alias replacement",
         invocation: "BUN_BE_BUN=1",
+        resumeStage,
       },
     }),
   );
@@ -29,16 +38,29 @@ if (import.meta.main) {
     transportSha
   )
     throw new Error("Existing compressed Yolo artifact checksum mismatch");
-  const stage = `/home/ubuntu/.yolo/transfers/discord-c886d124e138-${Date.now()}`;
-  await remote(`install -d -m 700 ${quote(stage)}`);
-  const uploaded = `${stage}/yolo.zst`;
-  await run([cli, "infra", "ssh", "sftp", "--host", host, "--put", transport, "--path", uploaded]);
+  const stage = resumeStage ?? `/home/ubuntu/.yolo/transfers/discord-c886d124e138-${Date.now()}`;
+  if (!resumeStage) {
+    await remote(`install -d -m 700 ${quote(stage)}`);
+    const uploaded = `${stage}/yolo.zst`;
+    await run([
+      cli,
+      "infra",
+      "ssh",
+      "sftp",
+      "--host",
+      host,
+      "--put",
+      transport,
+      "--path",
+      uploaded,
+    ]);
+  }
   const install = `import pathlib,hashlib,subprocess,json,os,datetime
 stage=pathlib.Path(${JSON.stringify(stage)})
 archive=stage/'yolo.zst'
 assert hashlib.sha256(archive.read_bytes()).hexdigest()==${JSON.stringify(transportSha)}
 binary=stage/'yolo'
-subprocess.run(['zstd','--quiet','--decompress','--output',str(binary),str(archive)],check=True)
+subprocess.run(['zstd','--quiet','--decompress','-o',str(binary),str(archive)],check=True)
 assert binary.stat().st_size==324884560
 assert hashlib.sha256(binary.read_bytes()).hexdigest()==${JSON.stringify(binarySha)}
 os.chmod(binary,0o555)

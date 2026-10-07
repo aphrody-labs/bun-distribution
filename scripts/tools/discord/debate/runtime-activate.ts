@@ -14,8 +14,10 @@ if (import.meta.main) {
         unit,
         runtime: pin,
         sha256: sha,
-        change: "current qualified worker runtime only; natural turn drain before restart",
-        preserve: "existing backend, policy, bundle, credentials and private state",
+        change:
+          "qualified worker and Shenron relay runtime only; natural turn drain before restart",
+        preserve:
+          "existing backend, policy, credentials and private state; only exact relay invocation changes",
         rollback: "checksum-verified original unit; no native FFI activation",
       },
     }),
@@ -31,8 +33,24 @@ if (import.meta.main) {
     ]),
   );
   if (!process.argv.includes("--apply")) process.exit(0);
+  const status = Buffer.from(JSON.stringify({ action: "status" })).toString("base64");
+  const relay = JSON.parse(
+    await run([
+      cli,
+      "infra",
+      "ssh",
+      "exec",
+      "--host",
+      "dbfr",
+      "--cmd",
+      `sudo -n env BUN_BE_BUN=1 ${quote(pin)} /usr/local/libexec/aphrody-debate-discord.mjs ${quote(status)}`,
+    ]),
+  ) as { available?: boolean; botId?: string };
+  if (relay.available !== true || relay.botId !== "1497194276025663680")
+    throw new Error("Direct Yolo Shenron relay qualification failed");
+  console.log(JSON.stringify({ shenronRelayRuntimeVerified: true, botId: relay.botId }));
   const script = `
-import { chmod, mkdir, copyFile } from "node:fs/promises";
+import { chmod, mkdir, copyFile, readlink } from "node:fs/promises";
 const unit=${JSON.stringify(unit)}, pin=${JSON.stringify(pin)}, sha=${JSON.stringify(sha)};
 const unitPath='/etc/systemd/system/'+unit;
 const hash=async(path)=>new Bun.CryptoHasher('sha256').update(await Bun.file(path).arrayBuffer()).digest('hex');
@@ -57,6 +75,16 @@ const originalSha=await hash(unitPath);
 if(await hash(protectedBackup+'/unit')!==originalSha)throw new Error('Unit backup checksum mismatch');
 const bundleSha=await hash('/srv/aphrody-lab/debate.mjs');
 const policySha=await hash('/srv/aphrody-lab/debate-policy.json');
+const bundlePath='/srv/aphrody-lab/debate.mjs';
+const bundleText=await Bun.file(bundlePath).text();
+const oldRelay='sudo -n /home/ubuntu/.bun/bin/bun /usr/local/libexec/aphrody-debate-discord.mjs';
+const replacement='sudo -n env BUN_BE_BUN=1 '+pin+' /usr/local/libexec/aphrody-debate-discord.mjs';
+if(bundleText.split(oldRelay).length>2)throw new Error('Unexpected repeated relay invocation');
+const nextBundle=bundleText.replace(oldRelay,replacement);
+await copyFile(bundlePath,protectedBackup+'/bundle'); await chmod(protectedBackup+'/bundle',0o600);
+if(await hash(protectedBackup+'/bundle')!==bundleSha)throw new Error('Bundle backup checksum mismatch');
+await Bun.write(protectedBackup+'/qualified.mjs',nextBundle); await chmod(protectedBackup+'/qualified.mjs',0o600);
+if(!(await invoke([pin,protectedBackup+'/qualified.mjs','--help'],env)).startsWith('Debate worker:'))throw new Error('Relay-patched bundle runtime probe failed');
 let updated=before.replace(/^ExecStart=\\S+ /m,'ExecStart='+pin+' ').replace(/^TimeoutStopSec=.*$/m,'TimeoutStopSec=450');
 if(!/^Environment=BUN_BE_BUN=1$/m.test(updated))updated=updated.replace('[Service]','[Service]\\nEnvironment=BUN_BE_BUN=1');
 let activated=false;
@@ -67,11 +95,12 @@ try {
  // SIGTERM drains the active handler; no new turn starts after the signal.
  await invoke(['systemctl','stop',unit]);
  if(await hash('/srv/aphrody-lab/debate.mjs')!==bundleSha || await hash('/srv/aphrody-lab/debate-policy.json')!==policySha)throw new Error('Concurrent backend change detected');
+ await invoke(['install','-m','644',protectedBackup+'/qualified.mjs',bundlePath]);
  await invoke(['systemctl','start',unit]);
  if(await invoke(['systemctl','is-active',unit])!=='active')throw new Error('Worker not active');
  const pid=Number(await invoke(['systemctl','show',unit,'--property=MainPID','--value']));
- const executable=await Bun.file('/proc/'+pid+'/cmdline').text();
- if(!executable.startsWith(pin+'\\0'))throw new Error('Actual runtime process mismatch');
+ const executable=await readlink('/proc/'+pid+'/exe');
+ if(executable!==pin || await hash('/proc/'+pid+'/exe')!==sha)throw new Error('Actual runtime process mismatch');
  const health=[];
  for(const port of [8798,8799]){
   const response=await fetch('http://127.0.0.1:'+port+'/health',{signal:AbortSignal.timeout(5000)});
@@ -79,10 +108,12 @@ try {
   health.push({port,status:response.status});
  }
  activated=true;
- console.log(JSON.stringify({runtimeOnly:true,active:true,pid,sha256:sha,bundleSha,policySha,health,nativeFFIActivated:false,privateStatePreserved:true}));
+ console.log(JSON.stringify({runtimeOnly:true,active:true,pid,sha256:sha,previousBundleSha:bundleSha,bundleSha:await hash(bundlePath),shenronRelayRuntimeVerified:true,policySha,health,nativeFFIActivated:false,privateStatePreserved:true}));
 } finally {
  if(!activated){
   await copyFile(protectedBackup+'/unit',unitPath); await chmod(unitPath,0o644);
+  await copyFile(protectedBackup+'/bundle',bundlePath); await chmod(bundlePath,0o644);
+  if(await hash(bundlePath)!==bundleSha)throw new Error('Bundle recovery checksum mismatch');
   if(await hash(unitPath)!==originalSha)throw new Error('Unit recovery checksum mismatch');
   await invoke(['systemctl','daemon-reload']); await invoke(['systemctl','restart',unit]);
  }
