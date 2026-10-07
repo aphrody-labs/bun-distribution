@@ -250,12 +250,16 @@ pub fn run_wgsl(job: WgslJob<'_>) -> Result<Vec<u8>, HubError> {
     if size == 0 || !size.is_multiple_of(4) {
         return Err(HubError::InvalidJob("data must be a non-empty multiple of 4 bytes".into()));
     }
+    // The job allocates both a storage and a readback buffer. Check the binding
+    // limit and whole-buffer limit before creating either resource so low-limit
+    // adapters receive a stable API error rather than an uncaptured validation error.
     let binding_limit =
         usize::try_from(limits.max_storage_buffer_binding_size).unwrap_or(usize::MAX);
-    if size > MAX_JOB_BYTES.min(binding_limit) {
+    let buffer_limit = usize::try_from(limits.max_buffer_size).unwrap_or(usize::MAX);
+    let job_limit = MAX_JOB_BYTES.min(binding_limit).min(buffer_limit);
+    if size > job_limit {
         return Err(HubError::InvalidJob(format!(
-            "data is {size} bytes, the limit is {}",
-            MAX_JOB_BYTES.min(binding_limit)
+            "data is {size} bytes, the limit is {job_limit}"
         )));
     }
     let max_groups = limits.max_compute_workgroups_per_dimension;

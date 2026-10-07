@@ -119,6 +119,12 @@ pub fn surface_configuration(
     capabilities: &wgpu::SurfaceCapabilities,
     request: SurfaceRequest<'_>,
 ) -> Option<wgpu::SurfaceConfiguration> {
+    // A minimized window can report a zero-sized framebuffer. wgpu rejects such a
+    // configuration; callers should skip configure/present until the surface is restored.
+    if request.width == 0 || request.height == 0 {
+        return None;
+    }
+
     let format = match request.format {
         SurfaceFormat::Preferred => capabilities.formats.first().copied(),
         SurfaceFormat::Linear => capabilities
