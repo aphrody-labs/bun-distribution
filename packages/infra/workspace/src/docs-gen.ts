@@ -15,6 +15,7 @@
  *
  * `cargo metadata --no-deps` is read-only: it never builds.
  */
+import { loadRootDocs, renderMemory, renderPlan, renderReadme } from "./root-docs.ts";
 import { spawnSync } from "@aphrody/update/process";
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
@@ -429,6 +430,11 @@ export async function runDocsGen(args: string[]): Promise<number> {
     "docs/reference/workspace/STATE.md": renderState(units, excludes, outside),
     "docs/reference/ai/llms.txt": renderLlms(root),
   };
+  const rootDocs = loadRootDocs(root);
+  const totals = `Totals: ${units.filter((u) => u.role === "crate").length} crates, ${units.filter((u) => u.role === "package").length} packages, ${units.filter((u) => u.role === "app").length} apps.`;
+  outputs["README.md"] = renderReadme(rootDocs, totals);
+  outputs["PLAN.md"] = renderPlan(rootDocs);
+  outputs["MEMORY.md"] = renderMemory(rootDocs);
   // The index counts files, so it is rendered after the other outputs exist.
   let failures = 0;
   const apply = (path: string, text: string): void => {

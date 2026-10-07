@@ -21,6 +21,7 @@
             "infer",
             "jobs",
             "magika",
+            "mcp-toolbox",
             "memory-lancedb",
             "native",
             "ocr",
@@ -263,6 +264,7 @@
             "infer",
             "jobs",
             "magika",
+            "mcp-toolbox",
             "memory-lancedb",
             "native",
             "ocr",
@@ -5380,6 +5382,70 @@
               "children": []
             }
           ]
+        }
+      ]
+    },
+    {
+      "binary": "aphrody agent-home",
+      "crate": "aphrody-agent-home",
+      "repo": "aphrody",
+      "source": "crates/ai/agent-home/src/cli.rs#Cli",
+      "commands": [
+        {
+          "name": "roots",
+          "about": "Print the resolved homes root and the homes it holds.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "revision",
+          "about": "Print the `sha256-v1` content revision of a home.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "profile",
+          "about": "Print (and optionally update) the profile fields of a home.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "new",
+          "about": "Instantiate a new home from a template directory.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "merge",
+          "about": "Merge SOURCE into TARGET (dry run unless `--apply`).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "sync",
+          "about": "Two-way last-writer-wins sync of two homes (dry run unless `--apply`).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "restore",
+          "about": "Restore a verified merge backup into a home.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "rename",
+          "about": "Rename a home and migrate its memories and references (dry run unless `--apply`).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
         }
       ]
     },
@@ -11772,8 +11838,8 @@
     "binaries": 9,
     "bunPackages": 134,
     "pythonPackages": 8,
-    "cliBinaries": 19,
-    "cliCommands": 870,
+    "cliBinaries": 20,
+    "cliCommands": 878,
     "mcpServers": 20,
     "mcpTools": 379,
     "mcpUniqueToolNames": 377

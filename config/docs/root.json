@@ -1,0 +1,139 @@
+{
+  "readme": {
+    "summary": "Private Rust/Bun monorepo: the Bun fork runtime (`yolo`), the Python runtime (`vu`), the `aphrody` CLI/MCP/FFI and the M3 UI framework.",
+    "layout": [
+      ["apps/<domain>/<app>", "Applications"],
+      ["packages/<domain>/<package>", "Bun packages"],
+      ["crates/<domain>/<crate>", "Rust crates"],
+      ["m3/", "UI framework, `m3/packages/app-ui`"],
+      ["py/", "Python packages"],
+      ["config/", "Build, product, host and deployment declarations"],
+      ["scripts/", "audit, build, dev, migration, release, tools"],
+      ["docs/", "Guides, contracts, generated references"],
+      [".coord/", "Claims and receipts"]
+    ],
+    "links": [
+      ["PLAN.md", "Architecture, contracts, open queue"],
+      ["MEMORY.md", "Dated evidence and limits"],
+      ["AGENTS.md", "Working rules"],
+      ["docs/README.md", "Documentation index"],
+      ["docs/reference/workspace/STATE.md", "Workspace inventory"]
+    ]
+  },
+  "plan": {
+    "owners": [
+      ["Aphrody", "Products, workflows, UI, integrations"],
+      ["Yolo", "Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`)"],
+      ["Workspace/Infra", "Orchestration, inventories, factories, release, hosts"],
+      ["`m3/packages/app-ui`, `crates/ui/*`", "Canonical UI"],
+      ["`crates/ai/rag-python`", "Sole owner of the `aphrody-rust` Python binding"],
+      ["IECODE", "Separate repository, store and authority"]
+    ],
+    "targets": [
+      ["Rust CLI", "`aphrody` multicall binary (`apps/cli`, `crates/infra/aphrody-command`); former tool names are links"],
+      ["Bun CLI", "`yolo` (`apps/yolo/cli`)"],
+      ["FFI", "`aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate"],
+      ["MCP", "`aphrody-mcp` (`crates/ai/mcp`); `aphrody kernel mcp` attaches `yolo mcp` and `m3-mcp`"],
+      ["Desktop", "`aphrody-app` on `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4); routes `admin`, `creator`"],
+      ["Python", "`vu` runtime (uv + ruff + PyO3 + shared CPython), plan in `docs/plans/vu/PLAN.md`"]
+    ],
+    "contracts": [
+      "Versioned SDK and C ABI: opaque handles, sized structs, ABI/capability negotiation, length-carrying buffers, allocator-side release, explicit errors, cancellation, threading and lifetime rules.",
+      "Internal Rust types and engine rlibs are not the application ABI; a standard extension builds without rebuilding engines.",
+      "Every context, operation and resource has an owner. Bounded queues, explicit saturation; stop and join workers before unload; respect UI and JS-object threads.",
+      "Permissions, origin and isolation are enforced natively. Remote pages get no implicit Bun/host privilege; cookies and profiles stay isolated.",
+      "Preserve unwind/recovery at real artifact boundaries; isolate work that can fault memory.",
+      "Bun keeps JSC/WebKit, Obscura supplies V8/headless; V8 stays until Obscura/JSC parity. Qualify DOM, GC, exceptions, promises, microtasks, modules, workers, timers, interrupts and teardown.",
+      "Keep API/CLI/permission identities, licences, provenance, features and lockfiles. Remove a replaced path in the batch that qualifies its replacement.",
+      "Engines build per version/target; refuse an incompatible ABI before any native call.",
+      "npm `@aphrody` is the only package channel outside the monorepo; `workspace:*` inside it."
+    ],
+    "queue": [
+      ["Release downloads", "Publish `aphrody-setup` and `omar-kit` (`bun run downloads:publish plan|build|release|verify`)"],
+      ["yolo Windows", "Cross-build `aphrody-ffi` (profile `runtime`), package, enable the artifact in `config/downloads.json`"],
+      ["Runtime activation", "Point `bun`/`yolo`/`vu` on PATH to the fork binary; Windows; embed `libaphrody_ffi`; `bun:ffi` binding"],
+      ["Native runtime acquisition", "Verified artifact on a fresh machine without engine rebuild; install, upgrade, rollback"],
+      ["Desktop", "Windows installer for `aphrody-app`; real Windows run; rendering in the real CEF app"],
+      ["Shenron production", "Restart `shenron-site`/`shenron-bot` after the release; measure `/api/chat`; verify the agent card"],
+      ["MCP HTTP auth", "Finish `workspace/wip/infra-mcp-auth` (bearer, free port, `infra validate` fix), gate, rebase, push"],
+      ["agent-home", "Land `workspace/wip/agent-home-gaps`; gate `aphrody-agent-home`, `aphrody-config`"],
+      ["code-graph", "Python/TS extractors and `scripts/audit/ai/graph-parity.ts`; Graphify stays the parity oracle"],
+      ["Publication", "npm `@aphrody/*`, crates.io (316 crates: metadata, `publish = false`, path versions, 14 taken names), PyPI"],
+      ["Repository hygiene", "Archive absorbed GitHub repos and integrated forks; deprecate absorbed npm packages; prune stale worktrees"],
+      ["Known failures", "`web:verify`, 4 `apps/yolo/cli` tests (`libaphrody_ffi` absent), `aphrody infra validate`, global typecheck"]
+    ],
+    "success": [
+      "Changing a workflow, screen or integration does not rebuild engines.",
+      "A standard Rust extension builds against the light SDK.",
+      "Every native resource has an owner and a verified teardown; cancellation leaves no leak or dangling callback.",
+      "Page and extension rights are enforced natively.",
+      "Runtime and app compatibility, upgrade and rollback are qualified; heavy artifacts are precompiled per supported target.",
+      "Build, size and memory gains are measured separately; replaced paths are removed after qualification."
+    ],
+    "receipts": "Each closure cites revisions, target, commands, results, artifact and limits, and separates source, tests, packaging, installation and activation."
+  },
+  "memory": {
+    "intro": "Dated evidence only. Decisions and queue live in PLAN.md; rules in AGENTS.md. History: `git log -- MEMORY.md`.",
+    "sections": [
+      {
+        "title": "Bun fork and absorption",
+        "rows": [
+          ["2026-10-05", "Contract `config/bun-absorb.json` + ratchet `scripts/audit/workspace/bun-absorb.ts`; 50 dead catalog entries removed. Fork resolves `picocolors`, `tiny-invariant`, `dotenv`, `uuid` natively (670 differential assertions identical).", "At that date no fork build; installed Bun was official 1.4.2."],
+          ["2026-10-05", "`aphrody-labs/bun` has one branch, `main` (upstream + Aphrody fixes); monorepo branches merged and deleted, only `main` remains.", "Fork keeps 12,458 inherited remote branches (not deleted)."],
+          ["2026-10-06", "`main` `41a2ff302d` (upstream `3f1765a6de`): factory build 546 s, 156 `first_party` tests green, Bun 1.4.3; libm symbols rewritten to glibc 2.39 (`apps/yolo/forge/src/glibc.ts`), `elf-glibc-imports.ts --max 2.39` clean.", "`/srv` on the factory was full; build ran with `BUN_FORGE_HOME` on the system disk."],
+          ["2026-10-06", "Absorbed natively: `postgres`/`pg` → `Bun.SQL`, `vitest` → `bun:test`, `date-fns` → `Intl`, `fuse.js` → `@aphrody/fuzzy` (312 reference queries identical), `qrcode` → `@aphrody/qr` (208 symbols identical), `playwright-core` → `@aphrody/webview-page` (16 tests). Ratchet baseline `{}`.", "No Kanji QR mode; fuzzy lacks extended search, logical queries, diacritic folding."],
+          ["2026-10-06", "Single runtime `yolo` (fork `a4d88d124`: `argv0` aliases `bun`/`vu`, `dlopen(..., { global: true })`); `bun-forge --yolo-root` receipt green (569 s, 157 tests, sha256 `7c6b4c6e…5aa6`).", "PATH links, Windows and embedded native tooling not activated."]
+        ]
+      },
+      {
+        "title": "Python runtime `vu`",
+        "rows": [
+          ["2026-10-05", "`py/` merged; `crates/ai/rag-python` sole owner of `aphrody-rust`; wheel 788,600 B, 514 tests passed, 31 skipped; 42 duplicate files removed.", "PyO3 pinned by the workspace lock (0.29.3)."],
+          ["2026-10-05", "Forks `aphrody-labs/{uv,ruff,pyo3}` pinned (`vu-pin-*`), `scripts/audit/workspace/vu-pins.ts` (6 tests, `--online` green).", "No Aphrody patches; `uv-*`/`ruff_*` crates are internal."],
+          ["2026-10-06", "`vu` artifact `0.1.0-cf385dd2` built and activated under `~/.vu` (cargo test 18, clippy `-D warnings`, glibc ≤ 2.39); Python version manager and `add|sync|run|lint|format|hf|compile` verbs; `yolo py` delegates. Peak memory: uv release 6.08 GiB / 20 min 38, ruff 2.72 GiB, vu 535 MiB.", "No GPU validation; ×2 goal missed (python startup ×1.5, imports ×1.12, uv ×1.06, `uv sync` ×0.7)."],
+          ["2026-10-06", "Shared libpython: fork `a4d88d124` passes Bun → libpython → Rust extension; stock Bun fails (`undefined symbol: _Py_DecRef`).", "Windows `python-ffi` open."]
+        ]
+      },
+      {
+        "title": "Single binary, FFI, MCP",
+        "rows": [
+          ["2026-10-05", "`aphrody-mcp` serves 164 tools; `aphrody kernel mcp` 329; `yolo mcp` 14; `aphrody plugins validate` 0 issues.", "Plugin repos kept on their remotes."],
+          ["2026-10-06", "`bxc`, `bxc-mcp`, `n2b` are multicall names of `aphrody`; `aphrody-web-bridge` removed; `crates/web/x` is the sole X implementation (Web ABI 5).", "Parity doc: `docs/migration/bxc-n2b-unification-2026-10-05.md`."],
+          ["2026-10-06", "`aphrody` release installed (`--locked`, VPS, 3 min), `aphrody package doctor` 34/34 links.", "Binary 370 MB unstripped vs 129 MB published."],
+          ["2026-10-06", "Dedup: removed `aphrody-search`, `aphrody-settings`, `packages/compat/tsconfig.base.json`; 21 orphan Rust files (2,962 lines) and 20 uncalled scripts removed; `docs:check-links` green (was 149 broken links).", "`aphrody-tools`/`aphrody-chat` deprecated but still called; `@aphrody/ovh` duplicates `aphrody-ovh`."],
+          ["2026-10-07", "Removed 17 unreferenced one-off scripts (graph leaves, no inbound reference) and one duplicate docs mirror.", "Only text references checked; no gate run."]
+        ]
+      },
+      {
+        "title": "Desktop and UI",
+        "rows": [
+          ["2026-10-05", "`m3/` replaces `design/aphrody-m3/`; app-ui 216 tests / 991 assertions, build 641 files / 63,030,159 B; web server uses real app-server RPC/SSE.", "Native Tauri rendering and full backend activation open."],
+          ["2026-10-06", "CEF only: `aphrody-wry`, `-tao`, `-tauri-runtime-wry`, `-tauri-driver` removed (243 files); `gtk`, `webkit2gtk`, `wry`, `tao` absent from the graph. Linux #16189 busy loop: main thread 99.8% → 2.2–2.8% with fix.", "Xvfb software rendering; remaining ≈24% tree CPU is animated UI."],
+          ["2026-10-06", "Wry → CEF (release, Xvfb): processes 7 → 15, PSS 887–952 → 531–543 MiB, window mapped 182–231 → 435–443 ms; binary 217,085,720 → 225,646,408 B; CEF payload ≈548 MB; cold build 17 min 11 s → 22 min 26 s.", "No deb/rpm measured."],
+          ["2026-10-06", "One app: kit bridge `aphrody.kit/1`, routes `admin`/`creator`, `m3/apps/web` merged into showcase, `apps/yolo/web` into Studio › Engine; `Aphrody-Setup.exe`; app-ui 215 tests.", "Unsigned exes; nothing run on physical Windows."]
+        ]
+      },
+      {
+        "title": "Agent home and code graph",
+        "rows": [
+          ["2026-10-06", "`aphrody-store` (one SQLite per home, migrations 0001–0006), `aphrody-code-graph` (Rust tree-sitter, Louvain, query/path/explain), unified `aphrody home query` (chunks, nodes, memories, one RRF).", "Lexical search only; no vector channel."],
+          ["2026-10-06", "Graph parity vs Graphify on this repo: 105,977 nodes, 234,039 edges, 3,674 communities; node Jaccard 0.935; 1 of 55,000 functions missing.", "Graphify remains the oracle until criteria P1–P6 pass."],
+          ["2026-10-06", "Imports after dry-run: global home 14,331 memories, 720 sessions; dbfr 421 documents, 2,362 chunks; aphrody 37 memories.", "Home sync is preview-first; `--apply` takes a verified backup."]
+        ]
+      },
+      {
+        "title": "Infra, hosts, release",
+        "rows": [
+          ["2026-10-05", "Shenron/Koharu extracted to `aphrody-labs/shenron` (169 commits, 4,325 files); private state moved to `~/shenron` (6,181 files, SHA-256 verified). Host plan and `/api/v1/shenron/*` gateway stay in Infra.", "Public opening pending audit of the local corpus."],
+          ["2026-10-05", "vps CDN for dragonballfr.com: vhosts, hourly `shenron-cdn-sync.timer` from dbfr (21,067 + 66,690 + 286 files), HTTP/3 and TLS 1.3 `X25519MLKEM768` verified; lossless optimizer `scripts/release/cdn-optimize.ts` (PNG −13…−20%, br text −95%).", "dbfr disk at 93%; `shenron-cdn` on dbfr has no pull."],
+          ["2026-10-05", "Factory builds are installed atomically with SHA-256 and `--version` probe; VPS glibc 2.43 binaries are refused by WSL (2.39).", "A glibc 2.39 target is still to declare."],
+          ["2026-10-06", "Downloads published at downloads.aphrody.com; current release `20261006T191420Z-5bf7eed5a42c` (aphrody Linux+Windows, yolo Linux, plugins).", "yolo Windows disabled."],
+          ["2026-10-06", "Declared, not applied: `aphrody-mcp-http` (127.0.0.1:8789) and `aphrody-a2a` (127.0.0.1:8788) units; WireGuard `wg1` `10.200.77.0/24` and account `omar`.", "Port 8789 is taken by sshd on the vps."],
+          ["2026-10-06", "`@aphrody/a2a`: A2A 1.0.0 client (JSON-RPC, HTTP+JSON, SSE), 110 tests; Rust server spec gaps fixed in source (143 tests, clippy clean).", "Installed binary unchanged."],
+          ["2026-10-05", "Cloud session host: 4 CPU, 15 GB RAM, ~30 GB disk; scoped `-p <crate>` gates only.", "Full workspace, V8, Tauri, WebKit builds go to the VPS."],
+          ["2026-10-05", "CI jobs do not start (account billing).", "Owner-side."]
+        ]
+      }
+    ]
+  }
+}

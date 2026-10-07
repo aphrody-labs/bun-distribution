@@ -6,7 +6,7 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 19 binaries with a clap surface, 870 commands.
+Totals: 20 binaries with a clap surface, 878 commands.
 
 ## aphrody
 
@@ -324,6 +324,19 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 310 comma
   - `aphrody winclean call` — Invoke any tool.
   - `aphrody winclean observe` — Observe a window (metadata + UI Automation tree + PNG) — `computer_observe`.
   - `aphrody winclean screenshot` — Capture the primary desktop — `computer_capture_screen`.
+
+### `aphrody agent-home`
+
+Crate `aphrody-agent-home`, parser `crates/ai/agent-home/src/cli.rs#Cli`, 8 commands.
+
+- `aphrody agent-home roots` — Print the resolved homes root and the homes it holds.
+- `aphrody agent-home revision` — Print the `sha256-v1` content revision of a home.
+- `aphrody agent-home profile` — Print (and optionally update) the profile fields of a home.
+- `aphrody agent-home new` — Instantiate a new home from a template directory.
+- `aphrody agent-home merge` — Merge SOURCE into TARGET (dry run unless `--apply`).
+- `aphrody agent-home sync` — Two-way last-writer-wins sync of two homes (dry run unless `--apply`).
+- `aphrody agent-home restore` — Restore a verified merge backup into a home.
+- `aphrody agent-home rename` — Rename a home and migrate its memories and references (dry run unless `--apply`).
 
 ### `aphrody bindgen`
 

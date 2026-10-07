@@ -61,7 +61,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [workspace](guides/workspace/) | 4 | [Parcours Workspace Aphrody](guides/workspace/README.md) |
 | operations | [(files)](operations/) | 2 | - |
 | operations | [ai](operations/ai/) | 9 | - |
-| operations | [cloud](operations/cloud/) | 3 | - |
+| operations | [cloud](operations/cloud/) | 4 | - |
 | operations | [container](operations/container/) | 1 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
 | operations | [infra](operations/infra/) | 116 | - |
@@ -115,7 +115,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [infra](reference/infra/) | 33 | - |
 | reference | [interop](reference/interop/) | 1 | - |
 | reference | [native](reference/native/) | 2 | - |
-| reference | [os](reference/os/) | 30 | - |
+| reference | [os](reference/os/) | 29 | - |
 | reference | [shell](reference/shell/) | 10 | - |
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 2045 | - |
 | reference | [upstream-jan](reference/upstream-jan/) vendored upstream copy | 13 | - |
