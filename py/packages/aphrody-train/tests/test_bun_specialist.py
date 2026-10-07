@@ -5,7 +5,16 @@ import subprocess
 
 import pytest
 
+from aphrody_train.bun_finetune import supervised_labels
 from aphrody_train.bun_specialist import build, examples
+
+
+def test_loss_masking_excludes_boundary_spanning_bpe_and_special_tokens():
+    assert supervised_labels(
+        [10, 11, 12, 13], [(0, 0), (0, 3), (3, 7), (7, 11)], "prompt", "prompt code"
+    ) == [-100, -100, -100, 13]
+    with pytest.raises(ValueError, match="prefix mismatch"):
+        supervised_labels([10], [(0, 3)], "other", "text")
 
 
 def test_corpus_excludes_node_and_third_party_replacements():

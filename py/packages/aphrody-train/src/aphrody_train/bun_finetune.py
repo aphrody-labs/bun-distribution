@@ -7,6 +7,22 @@ import json
 from pathlib import Path
 
 
+def supervised_labels(
+    tokens: list[int], offsets: list[tuple[int, int]], prefix: str, full: str
+) -> list[int]:
+    """Mask prompt and boundary-spanning BPE tokens using full-text offsets."""
+    if not full.startswith(prefix):
+        raise ValueError(
+            "Chat template prefix mismatch; refusing incorrect loss masking"
+        )
+    if len(tokens) != len(offsets):
+        raise ValueError("Token offsets must match input IDs")
+    return [
+        token if start >= len(prefix) and end > start else -100
+        for token, (start, end) in zip(tokens, offsets, strict=True)
+    ]
+
+
 def train(base: Path, corpus: Path, output: Path, steps: int) -> dict:
     if steps < 1:
         raise ValueError("Training steps must be positive")
@@ -51,13 +67,20 @@ def train(base: Path, corpus: Path, output: Path, steps: int) -> dict:
         attn_implementation="sdpa",
     )
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    # Gemma4 clips some projections through a wrapper; adapt its actual linear leaf.
+    targets = []
+    for name, module in model.named_modules():
+        if name.endswith((".q_proj", ".v_proj")):
+            targets.append(name + ".linear" if hasattr(module, "linear") else name)
+    if not targets:
+        raise RuntimeError("No Gemma query/value projection targets found")
     model = get_peft_model(
         model,
         LoraConfig(
             r=8,
             lora_alpha=16,
             lora_dropout=0.05,
-            target_modules=["q_proj", "v_proj"],
+            target_modules=targets,
             task_type="CAUSAL_LM",
         ),
     )
@@ -69,28 +92,27 @@ def train(base: Path, corpus: Path, output: Path, steps: int) -> dict:
         for raw in (corpus / f"{split}.jsonl").read_text().splitlines():
             messages = json.loads(raw)["messages"]
             prefix = tokenizer.apply_chat_template(
-                messages[:-1], tokenize=True, add_generation_prompt=True
+                messages[:-1], tokenize=False, add_generation_prompt=True
             )
-            tokens = tokenizer.apply_chat_template(
-                messages, tokenize=True, add_generation_prompt=False
+            full = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=False
             )
-            if tokens[: len(prefix)] != prefix:
-                raise ValueError(
-                    "Chat template prefix mismatch; refusing incorrect loss masking"
-                )
-            if len(prefix) >= maximum - 16:
-                continue
+            encoded = tokenizer(
+                full, add_special_tokens=False, return_offsets_mapping=True
+            )
+            tokens = encoded["input_ids"]
+            labels = supervised_labels(tokens, encoded["offset_mapping"], prefix, full)
             # A truncated answer teaches incomplete code; preserve complete targets.
             if len(tokens) > maximum:
+                continue
+            if not any(label != -100 for label in labels):
                 continue
             padding = maximum - len(tokens)
             rows.append(
                 {
                     "input_ids": tokens + [tokenizer.pad_token_id] * padding,
                     "attention_mask": [1] * len(tokens) + [0] * padding,
-                    "labels": [-100] * len(prefix)
-                    + tokens[len(prefix) :]
-                    + [-100] * padding,
+                    "labels": labels + [-100] * padding,
                 }
             )
         if not rows:
