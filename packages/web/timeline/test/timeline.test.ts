@@ -9,6 +9,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createTimelineHandler } from "../src/server.ts";
+import { indexRetrieval } from "../src/retrieval.ts";
 
 const media = {
   source: SOURCE,
@@ -62,6 +63,108 @@ const ages = [
   },
 ];
 
+test("native retrieval refresh retires only its namespace after all documents and vectors are acknowledged", async () => {
+  const documents = new Map<string, { originSourceId: string; syncGeneration: string }>([
+    ["obsolete", { originSourceId: "application:timeline", syncGeneration: "old" }],
+    ["other-corpus", { originSourceId: "application:wiki", syncGeneration: "old" }],
+  ]);
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    async fetch(request) {
+      expect(request.headers.get("Authorization")).toBe("Bearer test-token");
+      const body = await request.json();
+      if (new URL(request.url).pathname.endsWith("/ingest")) {
+        expect(body.content).toContain("Source : " + SOURCE);
+        documents.set(body.sourceId, body);
+        return Response.json({ sourceId: body.sourceId, indexed: true, vectorIndexed: true });
+      }
+      expect(body.expectedCount).toBe(3);
+      let retired = 0;
+      for (const [key, document] of documents)
+        if (
+          document.originSourceId === body.originSourceId &&
+          document.syncGeneration !== body.syncGeneration
+        ) {
+          documents.delete(key);
+          retired++;
+        }
+      return Response.json({ status: "complete", active: 3, retired });
+    },
+  });
+  try {
+    const options = {
+      url: server.url.origin,
+      token: "test-token",
+      originSourceId: "application:timeline",
+      requireVectors: true,
+    };
+    const snapshot = normalize(media, ages);
+    expect(await indexRetrieval(snapshot, options)).toEqual({
+      indexed: 3,
+      vectors: 3,
+      retired: 1,
+      originSourceId: "application:timeline",
+    });
+    expect((await indexRetrieval(snapshot, options)).retired).toBe(0);
+    expect(documents.size).toBe(4);
+    expect(documents.has("other-corpus")).toBe(true);
+  } finally {
+    await server.stop(true);
+  }
+});
+
+test("an incomplete or vectorless retrieval pass cannot retire the previous corpus", async () => {
+  for (const failure of ["http", "vector", "acknowledgement"]) {
+    const calls: string[] = [];
+    const snapshot = normalize(media, ages);
+    // eslint-disable-next-line no-await-in-loop -- Each failure scenario owns an independent transport.
+    await expect(
+      indexRetrieval(snapshot, {
+        url: "https://backend.example.org",
+        token: "protected-token",
+        originSourceId: "application:timeline",
+        requireVectors: true,
+        fetcher: async (input, init) => {
+          calls.push(new URL(String(input)).pathname);
+          const body = JSON.parse(init!.body as string);
+          if (calls.length === 1)
+            return Response.json({ sourceId: body.sourceId, indexed: true, vectorIndexed: true });
+          return failure === "http"
+            ? new Response("private error details", { status: 503 })
+            : Response.json({
+                sourceId: failure === "acknowledgement" ? "different" : body.sourceId,
+                indexed: true,
+                vectorIndexed: false,
+              });
+        },
+      }),
+    ).rejects.toThrow(/retrieval/);
+    expect(calls).toHaveLength(2);
+    expect(calls.every((path) => path.endsWith("/ingest"))).toBe(true);
+  }
+});
+
+test("retrieval count mismatches and absent credentials fail without exposing protected response data", async () => {
+  const options = {
+    url: "https://backend.example.org",
+    token: "protected-token",
+    originSourceId: "application:timeline",
+    fetcher: async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(init!.body as string);
+      return Response.json(
+        body.sourceId
+          ? { sourceId: body.sourceId, indexed: true }
+          : { status: "complete", active: 2, retired: 0 },
+      );
+    },
+  };
+  await expect(indexRetrieval(normalize(media, ages), options)).rejects.toThrow("count mismatch");
+  await expect(indexRetrieval(normalize(media, ages), { ...options, token: "" })).rejects.toThrow(
+    "configuration",
+  );
+});
+
 test("linked crawl indexes editorial fields and excludes streaming/config payloads", () => {
   expect(
     detailText({
@@ -97,6 +200,14 @@ test("the same native package supports another application source and mounts int
   );
   expect(s.source).toBe(source.source);
   expect(s.entries[2]!.api).toBe(source.ageApi + "/2");
+  const rows = trainingRows(s, {
+    subject: "Example",
+    originSourceId: "example:timeline",
+    content: (entry) => `Verified detail: ${entry.title}`,
+  });
+  expect(rows[0]!.sourceId).toBe("example:timeline:movie:11");
+  expect(rows[0]!.messages[0]!.content).toContain("Example");
+  expect(rows[0]!.messages[1]!.content).toBe("Verified detail: Bardock's story");
   const handler = createTimelineHandler(() => s);
   const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: handler });
   try {

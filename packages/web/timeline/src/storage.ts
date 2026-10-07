@@ -39,9 +39,14 @@ export function sqliteExport(snapshot: Snapshot, path: string): void {
 }
 
 /** One immutable Redis hash + sorted sets; publish only after cardinality checks. */
-export async function redisIndex(snapshot: Snapshot, url: string): Promise<void> {
+export async function redisIndex(
+  snapshot: Snapshot,
+  url: string,
+  namespace = "shenron:timeline",
+): Promise<void> {
+  if (!/^[a-zA-Z0-9:_-]{1,200}$/.test(namespace)) throw new Error("invalid Redis namespace");
   const client = new RedisClient(url, { connectionTimeout: 10_000 });
-  const base = `shenron:timeline:${snapshot.generation}`;
+  const base = `${namespace}:${snapshot.generation}`;
   try {
     const pairs = snapshot.entries.flatMap((e) => [e.key, JSON.stringify(e)]);
     await client.send("HSET", [`${base}:entries`, ...pairs]);
@@ -79,7 +84,7 @@ export async function redisIndex(snapshot: Snapshot, url: string): Promise<void>
         client.send("EXPIRE", [`${base}:${suffix}`, "604800"]),
       ),
     );
-    await client.send("SET", ["shenron:timeline:current", snapshot.generation]);
+    await client.send("SET", [`${namespace}:current`, snapshot.generation]);
   } finally {
     client.close();
   }

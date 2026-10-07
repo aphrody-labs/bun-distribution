@@ -30,11 +30,12 @@ export async function runShenron(args: string[]): Promise<number> {
       return 0;
     }
     if (!values.output) throw new Error("--output required");
-    const { refresh, load, query, createTimelineHandler } = await import("@aphrody/timeline");
+    const { refresh, load, query, createTimelineHandler, indexRetrieval } =
+      await import("@aphrody/timeline");
     if (operation === "refresh") {
       process.umask(0o077);
       const indexDocuments = values.index
-        ? async (directory: string) => {
+        ? async (directory: string, snapshot: import("@aphrody/timeline").Snapshot) => {
             const binary = Bun.which("aphrody");
             if (!binary) throw new Error("native Aphrody home owner required");
             const child = Bun.spawn(
@@ -61,7 +62,19 @@ export async function runShenron(args: string[]): Promise<number> {
               if (code !== 0) throw new Error(`home indexing failed (${code})`);
               const result = JSON.parse(stdout);
               if (result.errors?.length) throw new Error("home indexing reported errors");
-              return result;
+              const url = process.env.APHRODY_AI_HTTP_URL;
+              const retrieval = url
+                ? await indexRetrieval(snapshot, {
+                    url,
+                    token: process.env.APHRODY_AI_HTTP_TOKEN ?? "",
+                    originSourceId: "shenron:timeline",
+                    lang: "fr",
+                    requireVectors: true,
+                    content: (entry) =>
+                      Bun.file(`${directory}/${entry.key.replace(":", "-")}.md`).text(),
+                  })
+                : null;
+              return { home: result, retrieval };
             } finally {
               clearTimeout(timeout);
               clearTimeout(killTimeout);

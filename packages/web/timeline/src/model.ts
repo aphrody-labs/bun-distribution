@@ -216,7 +216,12 @@ export function passage(e: Entry, source = SOURCE): string {
       : `Rang éditorial : ${e.rank}. Nature : ${e.kind}. Série : ${e.series}. Ère : ${e.eraLabel}. Numéro : ${e.number ?? "non renseigné"}. Diffusion/sortie : ${e.date ?? "non renseignée"}.`;
   return `# ${e.title}\n\n${body}\nTitre japonais : ${e.titleJa ?? "non renseigné"}.\nSource : ${source}\nFiche : ${e.href}\nAPI : ${e.api}\n`;
 }
-export function trainingRows(snapshot: Snapshot) {
+export interface TrainingOptions {
+  subject?: string;
+  originSourceId?: string;
+  content?: (entry: Entry) => string;
+}
+export function trainingRows(snapshot: Snapshot, options: TrainingOptions = {}) {
   return snapshot.entries.map((e) => {
     const split =
       parseInt(new Bun.CryptoHasher("sha256").update(e.key).digest("hex").slice(0, 8), 16) % 10 ===
@@ -225,7 +230,7 @@ export function trainingRows(snapshot: Snapshot) {
         : "train";
     return {
       split,
-      sourceId: `shenron:timeline:${e.key}`,
+      sourceId: `${options.originSourceId ?? "shenron:timeline"}:${e.key}`,
       generation: snapshot.generation,
       source: e.href,
       messages: [
@@ -233,10 +238,10 @@ export function trainingRows(snapshot: Snapshot) {
           role: "user",
           content:
             e.kind === "age"
-              ? `Que dit la chronologie de Dragon Ball au sujet de « ${e.title} » ?`
-              : `Où se situe « ${e.title} » (${e.series}, ${e.kind} ${e.id}) dans la frise officielle de Dragon Ball ?`,
+              ? `Que dit la chronologie de ${options.subject ?? "Dragon Ball"} au sujet de « ${e.title} » ?`
+              : `Où se situe « ${e.title} » (${e.series}, ${e.kind} ${e.id}) dans la frise officielle de ${options.subject ?? "Dragon Ball"} ?`,
         },
-        { role: "assistant", content: passage(e, snapshot.source) },
+        { role: "assistant", content: options.content?.(e) ?? passage(e, snapshot.source) },
       ],
     };
   });

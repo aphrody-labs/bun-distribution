@@ -1,9 +1,9 @@
 {
-  "observedAt": "2026-10-07T13:21:08.121Z",
+  "observedAt": "2026-10-07T13:47:03.018Z",
   "host": "dbfr",
   "ownerPackage": "@aphrody/timeline",
   "runtimeOwner": "@aphrody/workspace",
-  "runtimeSha256": "8a156b6a76d8503cf031a589e7e2222126e926282b166e119c6155dfc7b5353c",
+  "runtimeSha256": "0d0410438d50083d76abfa1e352fa49784aab65d0feef5131edcd535cc9a9d8f",
   "generation": "435e3bf03ac7869aea706a78f03918d4a5a66ea25195b2008eeb76a2bc5a5101",
   "media": 684,
   "ages": 32,
@@ -26,7 +26,9 @@
     "searchVerified": true
   },
   "linkedCrawl": {
-    "known": 64,
+    "known": 716,
+    "fullChecked": 716,
+    "fullFailed": 0,
     "lastChecked": 32,
     "lastFailed": 0,
     "budgetPerHourlyPass": 32
@@ -37,7 +39,11 @@
     "weightsTrained": false,
     "host": "omar-wsl",
     "hostProbe": "10.200.77.10 unreachable from vps on 2026-10-07",
-    "cliFeatureAvailable": false
+    "cliFeatureAvailable": false,
+    "enrichedTrainExamples": 655,
+    "enrichedEvalExamples": 61,
+    "identityOverlap": 0,
+    "omarLatestHandshakeUnix": 0
   },
   "services": {
     "refreshResult": "success",
@@ -48,7 +54,7 @@
     "graphqlHttpVerified": true
   },
   "validation": {
-    "bunTestsPassed": 8,
+    "bunTestsPassed": 11,
     "packageTypecheck": true,
     "workspaceTypecheck": true,
     "strictOxlint": true,
@@ -56,9 +62,27 @@
     "globalCatalogUnlistedConcurrentUnits": 4
   },
   "limits": [
-    "Chat production consumption and embeddings remain unqualified",
-    "All linked source pages have not yet completed their initial crawl",
-    "No model training or promotion performed",
+    "No model weight training, evaluation gain or promotion performed; Omar authenticated bridge unavailable",
+    "Public CPU chat took 86.18 seconds; first 60-second test timed out",
     "Windows and macOS execution not qualified"
-  ]
+  ],
+  "productionRetrieval": {
+    "namespace": "shenron:timeline",
+    "documents": 716,
+    "vectors": 716,
+    "embeddingModel": "Xenova/multilingual-e5-small",
+    "mode": "hybrid",
+    "retired": 0,
+    "siteConfigured": true,
+    "botConfigured": true
+  },
+  "publicChat": {
+    "httpStatus": 200,
+    "mode": "hybrid",
+    "ownTimelineHits": 5,
+    "expectedIdentityFound": true,
+    "answerPresent": true,
+    "latencyMs": 86180,
+    "firstAttemptTimeoutMs": 60000
+  }
 }

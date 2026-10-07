@@ -49,11 +49,23 @@ aux passages ; les lecteurs vidéo et leur configuration sont exclus.
 `sqliteExport()` l'applique avec `bun:sqlite`. Redis utilise `RedisClient` natif,
 un hash d'entrées et deux ensembles triés ; le pointeur courant change après
 vérification des compteurs. Les projections Redis expirent après sept jours,
-renouvelés à chaque rafraîchissement.
+renouvelés à chaque rafraîchissement. Le troisième argument `namespace`, ou
+`refresh()` avec `redisNamespace`, isole les pointeurs de plusieurs applications
+sur une même instance Redis.
 
 `trainingRows()` sépare train/évaluation par identité stable. Une correction de
-texte ne déplace pas une entrée entre les jeux. Cette préparation n'entraîne
-aucun modèle et ne prouve pas de gain du modèle Shenron.
+texte ne déplace pas une entrée entre les jeux. Ses options `subject`,
+`originSourceId` et `content` adaptent les exemples à une autre application.
+`refresh()` inclut les fiches collectées dans les passages et dans ces exemples.
+Cette préparation n'entraîne aucun modèle et ne prouve pas de gain du modèle Shenron.
+
+`indexRetrieval(snapshot, options)` alimente l'API RAG Aphrody existante par
+upserts idempotents. L'application fournit l'origine REST, le jeton, un espace
+`originSourceId` propre et éventuellement les textes enrichis. `requireVectors`
+exige l'accusé d'indexation vectorielle pour chaque document. La synchronisation
+finale vérifie le nombre exact d'entrées et retire logiquement les anciens
+documents du seul espace choisi ; une erreur intermédiaire empêche ce retrait.
+Le jeton et les réponses privées ne sont jamais inclus dans les erreurs.
 
 Le raccordement aux opérations et au foyer natif existants vit dans
 [`@aphrody/workspace`](../../infra/workspace/src/shenron.ts). Le produit peut

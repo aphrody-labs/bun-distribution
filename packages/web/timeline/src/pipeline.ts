@@ -1,15 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
 import { mkdir, rename, rm } from "node:fs/promises";
 import { resolve, join } from "node:path";
-import { collect, passage, trainingRows, type Snapshot, type TimelineSource } from "./model.ts";
+import {
+  collect,
+  passage,
+  trainingRows,
+  type Entry,
+  type Snapshot,
+  type TimelineSource,
+  type TrainingOptions,
+} from "./model.ts";
 import { sqliteExport, sqlExport, redisIndex } from "./storage.ts";
 import { SDL, query } from "./graphql.ts";
 import { crawlDetails } from "./crawl.ts";
 
 export interface RefreshOptions {
   redisUrl?: string;
+  redisNamespace?: string;
   crawlBudget?: number;
   source?: TimelineSource;
+  training?: TrainingOptions;
   /** Existing application indexer; the library never spawns a CLI or selects a domain home. */
   indexDocuments?: (directory: string, snapshot: Snapshot) => Promise<unknown>;
 }
@@ -35,18 +45,17 @@ export async function refresh(output: string, options: RefreshOptions = {}) {
     await Bun.write(join(dir, "timeline.sql"), sqlExport(snapshot));
     sqliteExport(snapshot, join(dir, "timeline.sqlite"));
     await Bun.write(join(dir, "timeline.graphql"), SDL);
+    const content = (entry: Entry) =>
+      passage(entry, snapshot.source) +
+      (crawl?.state.entries[entry.key]?.text
+        ? `\n## Fiche source\n${crawl.state.entries[entry.key]!.text}\n`
+        : "");
     await Promise.all(
       snapshot.entries.map((e) =>
-        Bun.write(
-          join(dir, "documents", e.key.replace(":", "-") + ".md"),
-          passage(e, snapshot.source) +
-            (crawl?.state.entries[e.key]?.text
-              ? `\n## Fiche source\n${crawl.state.entries[e.key]!.text}\n`
-              : ""),
-        ),
+        Bun.write(join(dir, "documents", e.key.replace(":", "-") + ".md"), content(e)),
       ),
     );
-    const rows = trainingRows(snapshot);
+    const rows = trainingRows(snapshot, { content, ...options.training });
     await Promise.all(
       ["train", "eval"].map((split) =>
         Bun.write(
@@ -63,7 +72,7 @@ export async function refresh(output: string, options: RefreshOptions = {}) {
     let index: unknown = null;
     if (options.indexDocuments)
       index = await options.indexDocuments(join(dir, "documents"), snapshot);
-    if (options.redisUrl) await redisIndex(snapshot, options.redisUrl);
+    if (options.redisUrl) await redisIndex(snapshot, options.redisUrl, options.redisNamespace);
     const report = {
       generation: snapshot.generation,
       mediaTotal: snapshot.mediaTotal,

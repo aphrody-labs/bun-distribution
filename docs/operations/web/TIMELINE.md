@@ -3,8 +3,8 @@
 # Chronologie Shenron : code Bun et rafraîchissement
 
 La collecte et les projections appartiennent au paquet
-[`@aphrody/timeline`](../../../packages/web/timeline/README.md). Les anciens
-scripts `scripts/tools/web/timeline/` ont été retirés. Le raccordement au foyer
+[`@aphrody/timeline`](../../../packages/web/timeline/README.md). La collecte
+précédente sous scripts/tools/web/timeline/ a été retirée. Le raccordement au foyer
 DBFR est dans le propriétaire existant
 [`@aphrody/workspace`](../../../packages/infra/workspace/src/shenron.ts), appelé
 par `yolo ops shenron timeline`. La bibliothèque ne lance aucun sous-processus ;
@@ -24,6 +24,8 @@ viennent de <https://dragonballfr.com/api/public/wiki/timeline_events>.
 | Redis                           | Hash : 716 ; ensemble médias : 684 ; ensemble Âges : 32                      |
 | GraphQL                         | Requête HTTP réelle ; référence au Daizenshuu 7 et Âge −4237 retrouvés       |
 | Foyer DBFR                      | 716 passages ajoutés ; recherche native retrouve « Naissance des Kaïōshins » |
+| RAG de production               | 716 passages et 716 vecteurs E5, dans l'espace `shenron:timeline`              |
+| Chat public                     | HTTP 200 hybride ; cinq passages de cette projection, dont l'identité attendue |
 | Données de formation            | 655 exemples train et 61 évaluation ; aucun entraînement exécuté             |
 
 Le corpus et les exports vivent dans le store protégé
@@ -31,8 +33,19 @@ Le corpus et les exports vivent dans le store protégé
 fiches vérifiées des 16 tomes publiés répondent HTTP 200. Le crawl incrémental
 revisite 32 fiches par passage à une requête par seconde, conserve les derniers
 textes valides en cas de panne et renouvelle les projections.
-Deux passages ont vérifié 64 fiches sans échec. Le dernier passage a actualisé
-32 documents du foyer DBFR, sans erreur d'indexation.
+Le passage complet a vérifié les 716 fiches sans échec, puis actualisé les
+652 documents restants du foyer DBFR, sans erreur d'indexation. Les exemples
+train/évaluation reçoivent également ces textes enrichis au rafraîchissement.
+Les 655 exemples train et les 61 exemples d'évaluation ont tous une fiche
+source et leurs identités ne se recouvrent pas. Le rafraîchissement raccordé
+au RAG de production s'est terminé avec `Result=success`, code zéro,
+716 accusés d'indexation vectorielle et aucun retrait initial.
+
+Le test du chat public `/api/chat` a répondu HTTP 200 en mode hybride, avec
+cinq identités du nouvel espace et celle demandée. La réponse CPU a pris
+86,18 secondes ; le premier essai borné à 60 secondes avait expiré. Ce test
+confirme le raccordement des passages, sans qualifier la précision générale
+du modèle ni une latence acceptable pour tous les utilisateurs.
 
 ## Exécution et installation
 
@@ -41,7 +54,13 @@ yolo ops shenron timeline refresh --output /chemin/prive/timeline --index --craw
 yolo ops shenron timeline query --output /chemin/prive/timeline
 ```
 
-`SHENRON_TIMELINE_REDIS_URL` sélectionne l'instance Redis. Les unités sont
+`SHENRON_TIMELINE_REDIS_URL` sélectionne l'instance Redis. L'unité de
+rafraîchissement charge le fichier protégé existant
+`/etc/aphrody/shenron-compute-client.env` : `APHRODY_AI_HTTP_URL` et
+`APHRODY_AI_HTTP_TOKEN` raccordent les passages à l'API RAG utilisée par le
+site et le bot. Le code Bun exige l'accusé d'indexation E5 de chaque document,
+puis termine une synchronisation limitée à l'espace `shenron:timeline`.
+Une erreur empêche le retrait des anciens passages de cet espace. Les unités sont
 déclarées dans le [catalogue Infra](../../../config/host/catalog.json) :
 
 - [`shenron-timeline-refresh.service`](../../../config/host/systemd/shenron/shenron-timeline-refresh.service)
@@ -64,17 +83,18 @@ repli arrête les deux unités persistantes et préserve tout le store privé.
 
 ## Validation et travail restant
 
-Huit tests Bun passent : ordre éditorial, intégrité de collection, pagination,
+Onze tests Bun passent : ordre éditorial, intégrité de collection, pagination,
 provenance, SQL idempotent, séparation train/évaluation, panne/récupération des
-fiches et import dans une autre application via `Bun.serve`. Les typechecks du
+fiches et import dans une autre application via `Bun.serve`, upserts RAG
+idempotents et retrait limité à un espace après indexation complète. Les typechecks du
 paquet et du propriétaire Workspace passent, ainsi que oxlint strict et oxfmt.
 Le catalogue global présente quatre unités Shenron non déclarées dans d'autres
 chantiers ; elles restent sous leurs propriétaires.
 
 L'entraînement des poids, son évaluation et la promotion restent ouverts. Le
 placement propriétaire est le WSL d'Omar ; l'inventaire actuel indique son accès
-authentifié non activé. Les binaires Aphrody inspectés sur le poste et DBFR ne
-portent pas la fonctionnalité `train`. L'indexation du foyer ne prouve pas que
-le chat de production consomme déjà ces passages, ni que des vecteurs ont été
-calculés. La collecte complète des fiches liées, la correction de leurs pannes
-éventuelles et la qualification du modèle restent à vérifier.
+authentifié non activé : aucun handshake WireGuard sur le VPS, et les sondes
+ICMP et TCP SSH vers `10.200.77.10` échouent. Les binaires Aphrody inspectés
+sur le poste et DBFR ne portent pas la fonctionnalité `train`. La collecte,
+les vecteurs E5 et le raccordement au chat sont vérifiés ; aucun entraînement
+des poids, gain de précision ou promotion n'est revendiqué.
