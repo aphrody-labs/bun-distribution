@@ -88,7 +88,7 @@
     }
   ],
   "assistant": {
-    "channelId": "1554189195201740803",
+    "channelId": "1557354124318736426",
     "model": "gemma-4-e2b-it-q4km",
     "profile": "aphrody",
     "context": 4096,
