@@ -99,13 +99,13 @@ Indexation native effectuée le 2026-10-07 :
 
 ### Livrable carte
 
-`apps/community/crystal-universe/age1000-map.js` définit un plan de cinq secteurs originaux ; `game.js` le dessine sur Canvas dans le mini-jeu local. Shenron rend un schéma original sur `/games/dragon-pixel` et possède maintenant la source canonique Rust à `crates/shenron-re/src/world/xenoverse3.rs` (six zones, huit repères et sept routes), ainsi que `wasm_get_xenoverse3_prototype_map` et le wrapper Bun/TS `getXenoverse3PrototypeMap()`. Le mini-jeu standalone et la page Shenron n’ont pas encore été reliés à l’export Rust. Il s’agit d’un prototype jouable/consultable, non d’un « full game AAA » ; contenu réseau, monde ouvert, assets licenciés et progression persistante ne sont pas présents.
+`apps/community/crystal-universe/age1000-map.js` définit un plan de cinq secteurs originaux ; `game.js` le dessine sur Canvas dans le mini-jeu local. Shenron rend un schéma original sur `/games/dragon-pixel` et possède maintenant la source canonique Rust de la branche Shenron `omar/xenoverse3-map-20261007` (six zones, huit repères et sept routes), ainsi que `wasm_get_xenoverse3_prototype_map` et le wrapper Bun/TS `getXenoverse3PrototypeMap()`. Le mini-jeu standalone et la page Shenron n’ont pas encore été reliés à l’export Rust. Il s’agit d’un prototype jouable/consultable, non d’un « full game AAA » ; contenu réseau, monde ouvert, assets licenciés et progression persistante ne sont pas présents.
 
 Le graphe Rust et les tests natifs ont été commités dans la branche locale Shenron `omar/xenoverse3-map-20261007`, commits `8db6c0f1` et `030b797e`, créée depuis `origin/main` `4c45010c`. 24 tests Rust, 10 tests Bun/TS (49 assertions), Clippy `-D warnings`, `cargo check` wasm32, génération `wasm-bindgen 0.2.129`, lint, format et diff-check passent. Le push Shenron a été réessayé et refusé par GitHub (« Write access to repository not granted »); ces commits restent locaux à la branche et ne sont pas revendiqués comme publiés. Le prototype reste non déployé.
 
 ### Périmètre dbxv2, actifs et Steam
 
-`docs/reference/root/PLAN.md` de Shenron marque la fusion dbxv2 incomplète. `vendor/dbxv2` est un sous-module vers `aphrody-code/dbxv2`, épinglé à `fabc19c0021e3e992786dc2a093a749c8a1c26f0`; le plan l’identifie comme propriétaire/sous licence Proprietary. Le checkout du sous-module est actuellement vide, et aucun checkout/asset dbxv2 correspondant n’a été trouvé au chemin local attendu. Le commit Shenron `10fdd60c` apporte un moteur de formats en Rust, crate `shenron-re`, scan des seuls manifests d’installation Steam et wrappers WASM; cela ne prouve ni portage complet Bun/Rust, ni extraction de ressources.
+Le plan de fusion dbxv2 de Shenron marque cette intégration incomplète. Le sous-module attendu vers `aphrody-code/dbxv2`, épinglé à `fabc19c0021e3e992786dc2a093a749c8a1c26f0`, est identifié comme propriétaire/sous licence Proprietary. Son checkout est actuellement vide, et aucun checkout/asset dbxv2 correspondant n’a été trouvé au chemin local attendu. Le commit Shenron `10fdd60c` apporte un moteur de formats en Rust, un scan des seuls manifests d’installation Steam et des wrappers WASM; cela ne prouve ni portage complet Bun/Rust, ni extraction de ressources.
 
 Le scanner Steam existant lit `steamapps/appmanifest_*.acf`, sans jetons ni profils privés ; aucun flux de données de compte, dépôt d'assets de jeu, copie vers le PC/VPS/DBFR ou production CDN n'a été effectué. La licence et l'inventaire complet des assets du jeu/du toolkit ne permettent pas une redistribution publique dans la carte/CDN. Le contenu du jeu reste dans les stores du propriétaire ; aucun résultat d'extraction/données privées n'est ajouté à Git.
 
@@ -115,7 +115,7 @@ L'écran Dragon Pixel expose maintenant une recherche d'archives Dragon Ball. Le
 
 Vérification réelle : serveur Bun local sur `127.0.0.1:4328`, `GET /` → 200 ; `GET /api/lore/search?q=Goku%20Namek` → 200, résultats sourcés dont « Planète Namek » et « Goku — Saga Namek » avec URLs dragonballfr.com ; entrée d'un caractère → 400. `aphrody_shenron_rag_search` confirme les mêmes corpus et extraits côté MCP. Gates du lot : `bun test apps/community/crystal-universe/engine.test.js` (5 tests, 20 assertions), `oxlint --deny-warnings apps/community/crystal-universe/*.js`, `oxfmt --check apps/community/crystal-universe`, `git diff --check` — tous verts.
 
-Cette liaison fournit une recherche du RAG, pas l'ingestion/la redistribution de toutes les planches OCR. Le catalogue MCP expose 147 volumes/tomes OCR sur plusieurs séries, mais ce décompte seul ne prouve pas que les 42 tomes d'une édition précise ou tout Dragon Ball Super soient complets. Le jeu reste un mini-jeu Canvas 2D solo : pas de moteur Xenoverse 2, rendu 3D/WebGPU ni multijoueur réseau. Les assets et les données de Xenoverse 2 restent indisponibles localement ; `vendor/dbxv2` était absent/vide selon le relevé précédent et les assets suivis du checkout ne comprennent aucun paquet Xenoverse. Leur licence d'extraction/redistribution n'est pas établie. Aucun asset de jeu, donnée privée ou scan sous droit n'a été copié ou publié. Ces dépendances maintiennent l'objectif global ouvert.
+Cette liaison fournit une recherche du RAG, pas l'ingestion/la redistribution de toutes les planches OCR. Le catalogue MCP expose 147 volumes/tomes OCR sur plusieurs séries, mais ce décompte seul ne prouve pas que les 42 tomes d'une édition précise ou tout Dragon Ball Super soient complets. Le jeu reste un mini-jeu Canvas 2D solo : pas de moteur Xenoverse 2, rendu 3D/WebGPU ni multijoueur réseau. Les assets et les données de Xenoverse 2 restent indisponibles localement ; le sous-module attendu était absent/vide selon le relevé précédent et les assets suivis du checkout ne comprennent aucun paquet Xenoverse. Leur licence d'extraction/redistribution n'est pas établie. Aucun asset de jeu, donnée privée ou scan sous droit n'a été copié ou publié. Ces dépendances maintiennent l'objectif global ouvert.
 
 ## 2026-10-07 — Référence RAG Dragon Ball (profil Shenron isolé)
 
@@ -295,3 +295,17 @@ session et l'adaptateur GPU réel reste non testé. Aucun moteur Bevy, asset/dat
 Xenoverse, contenu Xenoverse 3 ou texte de manga n'a été ajouté. Le RAG demeure
 fondé sur l'index Shenron existant; ses limites de couverture et de droits restent
 inchangées.
+
+## 2026-10-07 — Races supplémentaires pour l'éditeur d'avatar
+
+L'éditeur original ajoute les choix Freezer et Androïde aux quatre choix existants,
+avec des détails géométriques distincts en Canvas 2D/WebGPU et validation dans le
+service Rust. Source de vérification des six familles annoncées : [présentation
+officielle Xenoverse 3](https://en.bandainamcoent.eu/dragon-ball/news/fight-your-own-way-dragon-ball-xenoverse-3).
+Le `robots.txt` de Bandai Namco Europe réserve les droits de text/data mining; le
+site n'a pas été crawlé et aucun visuel, asset ou texte du jeu n'a été repris.
+
+Vérification : test d'avatar couvre les six valeurs, test serveur valide Freezer et
+Androïde; suites Rust/JS et les gates ciblées sont relancées dans ce lot. Il s'agit
+de formes de substitution originales, sans représentation canonique ou équipement
+du jeu.

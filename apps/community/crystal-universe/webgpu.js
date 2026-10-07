@@ -187,6 +187,12 @@ function addFighter(
   if (race === "namekian") {
     cube(vertices, [x - 0.11, feet + 1.73, 0], [0.055, 0.3, 0.055], flesh);
     cube(vertices, [x + 0.11, feet + 1.73, 0], [0.055, 0.3, 0.055], flesh);
+  } else if (race === "frieza") {
+    cube(vertices, [x - 0.11, feet + 1.68, 0], [0.06, 0.28, 0.06], flesh);
+    cube(vertices, [x + 0.11, feet + 1.68, 0], [0.06, 0.28, 0.06], flesh);
+  } else if (race === "android") {
+    cube(vertices, [x - 0.22, feet + 1.39, 0], [0.1, 0.14, 0.12], rgb("#98efff"));
+    cube(vertices, [x + 0.22, feet + 1.39, 0], [0.1, 0.14, 0.12], rgb("#98efff"));
   } else if (race === "majin") {
     cube(vertices, [x, feet + 1.75, 0], [0.08, 0.4, 0.08], flesh);
   } else if (hairstyle === "crest") {

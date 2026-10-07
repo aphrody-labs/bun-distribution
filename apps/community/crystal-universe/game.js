@@ -261,6 +261,20 @@ function fighter(x, y, color, transformed, facing = 1, customAvatar = null) {
     ctx.moveTo(x + 5, y - 48);
     ctx.lineTo(x + 12, y - 60);
     ctx.stroke();
+  } else if (customAvatar?.race === "frieza") {
+    ctx.fillStyle = customAvatar.skin;
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y - 49);
+    ctx.lineTo(x - 14, y - 62);
+    ctx.lineTo(x - 3, y - 50);
+    ctx.moveTo(x + 8, y - 49);
+    ctx.lineTo(x + 14, y - 62);
+    ctx.lineTo(x + 3, y - 50);
+    ctx.fill();
+  } else if (customAvatar?.race === "android") {
+    ctx.fillStyle = "#98efff";
+    ctx.fillRect(x - 13, y - 45, 4, 9);
+    ctx.fillRect(x + 9, y - 45, 4, 9);
   }
   ctx.fillStyle = customAvatar?.hair || "#0b1020";
   if (customAvatar?.hairstyle === "short") ctx.fillRect(x - 9, y - 53, 18, 7);

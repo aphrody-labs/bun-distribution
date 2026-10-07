@@ -8,7 +8,7 @@ export const DEFAULT_AVATAR = {
   hairstyle: "spiky",
 };
 
-const races = new Set(["saiyan", "earthling", "namekian", "majin"]);
+const races = new Set(["saiyan", "earthling", "namekian", "majin", "frieza", "android"]);
 const hairstyles = new Set(["spiky", "short", "crest"]);
 const colorPattern = /^#[0-9a-f]{6}$/i;
 

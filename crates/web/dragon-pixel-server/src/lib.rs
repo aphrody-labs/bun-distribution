@@ -41,7 +41,8 @@ impl Avatar {
         !self.name.trim().is_empty()
             && self.name.chars().count() <= 20
             && !self.name.chars().any(char::is_control)
-            && ["saiyan", "earthling", "namekian", "majin"].contains(&self.race.as_str())
+            && ["saiyan", "earthling", "namekian", "majin", "frieza", "android"]
+                .contains(&self.race.as_str())
             && ["spiky", "short", "crest"].contains(&self.hairstyle.as_str())
             && [&self.skin, &self.hair, &self.outfit].iter().all(|color| valid_color(color))
     }
@@ -383,6 +384,11 @@ mod tests {
         hub.update(&room, "p1", valid).await;
         let snapshot = room.snapshot().await;
         assert_eq!((snapshot[0].x, snapshot[0].y), (700.0, 120.0));
+        for race in ["frieza", "android"] {
+            let mut avatar = default_avatar();
+            avatar.race = race.to_owned();
+            assert!(avatar.is_valid());
+        }
     }
 
     #[tokio::test]

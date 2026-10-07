@@ -117,4 +117,6 @@ test("avatar creation validates and persists local character choices", () => {
     hairstyle: values.hairstyle,
   });
   expect(loadAvatar({ getItem: () => "{" })).toEqual(DEFAULT_AVATAR);
+  for (const race of ["saiyan", "earthling", "namekian", "majin", "frieza", "android"])
+    expect(normalizeAvatar({ ...values, race }).race).toBe(race);
 });
