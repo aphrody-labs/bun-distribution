@@ -83,7 +83,7 @@ aphrody-models     = { workspace = true }
 # it forwards to, replacing hardcoded `127.0.0.1:8080` fallbacks.
 aphrody-config     = { workspace = true }
 aphrody-agent-home = { workspace = true }
-aphrody-kernel     = { workspace = true }
+aphrody-kernel     = { workspace = true, features = ["builtins"] }
 aphrody-web-extract = { workspace = true }
 aphrody-web-detect = { workspace = true }
 aphrody-web-crawl = { workspace = true }
