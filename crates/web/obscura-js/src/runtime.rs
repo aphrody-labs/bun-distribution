@@ -7089,6 +7089,35 @@ mod tests {
     }
 
     #[test]
+    fn parsed_svg_xmlns_matches_client_attributes_without_an_empty_prefix() {
+        let mut rt = setup_runtime(
+            r#"<html><body><svg xmlns="http://www.w3.org/2000/svg"></svg></body></html>"#,
+        );
+        let value = rt.evaluate(
+            "(()=>{const svg=document.querySelector('svg');return {value:svg.getAttribute('xmlns'),names:svg.getAttributeNames(),has:svg.hasAttribute('xmlns'),wrong:svg.hasAttribute(':xmlns'),html:svg.outerHTML}})()"
+        ).unwrap();
+        assert_eq!(
+            value,
+            serde_json::json!({
+                "value": "http://www.w3.org/2000/svg",
+                "names": ["xmlns"],
+                "has": true,
+                "wrong": false,
+                "html": "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>"
+            })
+        );
+        let value = rt.evaluate(
+            "(()=>{const svg=document.querySelector('svg');svg.setAttribute('xmlns','urn:updated');const updated=[svg.getAttributeNS('http://www.w3.org/2000/xmlns/','xmlns'),svg.getAttributeNames()];svg.removeAttribute('xmlns');return {updated,removed:svg.getAttributeNS('http://www.w3.org/2000/xmlns/','xmlns'),names:svg.getAttributeNames()}})()"
+        ).unwrap();
+        assert_eq!(
+            value,
+            serde_json::json!({
+                "updated": ["urn:updated", ["xmlns"]], "removed": null, "names": []
+            })
+        );
+    }
+
+    #[test]
     fn parsed_xlink_attribute_is_available_through_both_apis() {
         let mut rt = setup_runtime(
             r##"<html><body><svg><use id="u" xlink:href="#icon"></use></svg></body></html>"##,

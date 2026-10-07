@@ -92,7 +92,9 @@ impl DomTree {
                         buf.push_str(tag);
                         for attr in attrs {
                             buf.push(' ');
-                            if let Some(prefix) = &attr.name.prefix {
+                            if let Some(prefix) =
+                                attr.name.prefix.as_ref().filter(|prefix| !prefix.is_empty())
+                            {
                                 buf.push_str(prefix);
                                 buf.push(':');
                             }
@@ -223,6 +225,34 @@ mod tests {
         tree::{NodeData, ShadowRootMode},
         tree_sink::parse_html,
     };
+
+    #[test]
+    fn svg_namespace_attributes_keep_their_qualified_names() {
+        let tree = parse_html(
+            r##"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#icon"></use></svg>"##,
+        );
+        let svg = tree.query_selector("svg").unwrap().unwrap();
+        tree.with_node(svg, |node| {
+            assert_eq!(node.get_attribute("xmlns"), Some("http://www.w3.org/2000/svg"));
+            assert_eq!(node.get_attribute(":xmlns"), None);
+            assert_eq!(
+                node.get_attribute_ns("http://www.w3.org/2000/xmlns/", "xmlns"),
+                Some("http://www.w3.org/2000/svg")
+            );
+            assert!(node.attrs().unwrap().iter().any(|attr| attr.qualified_name() == "xmlns"));
+            assert_eq!(node.get_attribute("xmlns:xlink"), Some("http://www.w3.org/1999/xlink"));
+        });
+        let use_node = tree.query_selector("use").unwrap().unwrap();
+        tree.with_node(use_node, |node| {
+            assert_eq!(node.get_attribute("xlink:href"), Some("#icon"));
+            assert_eq!(node.get_attribute("href"), None);
+        });
+        let html = tree.outer_html(svg);
+        assert!(html.contains(r#" xmlns="http://www.w3.org/2000/svg""#));
+        assert!(html.contains(r#" xmlns:xlink="http://www.w3.org/1999/xlink""#));
+        assert!(html.contains(r##" xlink:href="#icon""##));
+        assert!(!html.contains(" :xmlns="));
+    }
 
     #[test]
     fn test_outer_html() {
