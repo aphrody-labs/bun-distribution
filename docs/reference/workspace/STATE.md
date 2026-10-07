@@ -169,7 +169,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `@aphrody/creator-kit` | [apps/community/creator-kit](../../../apps/community/creator-kit) | bun app | 0.2.4 | bin | yes | 0 | 2026-10-06 |
 | `@aphrody/omar-kit` | [apps/community/omar-kit](../../../apps/community/omar-kit) | bun app | 0.1.0 | bin | yes | 0 | 2026-10-06 |
-| `@aphrody/setup` | [apps/community/setup](../../../apps/community/setup) | bun app | 0.1.0 | bin | yes | 0 | 2026-10-06 |
+| `@aphrody/setup` | [apps/community/setup](../../../apps/community/setup) | bun app | 0.1.0 | bin | yes | 0 | 2026-10-07 |
 
 ## compat
 
@@ -250,7 +250,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/paths` | [packages/infra/paths](../../../packages/infra/paths) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-05 |
 | `@aphrody/sql` | [packages/infra/sql](../../../packages/infra/sql) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-05 |
 | `@aphrody/update` | [packages/infra/update](../../../packages/infra/update) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-06 |
-| `@aphrody/workspace` | [packages/infra/workspace](../../../packages/infra/workspace) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-06 |
+| `@aphrody/workspace` | [packages/infra/workspace](../../../packages/infra/workspace) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-07 |
 
 ## interop
 

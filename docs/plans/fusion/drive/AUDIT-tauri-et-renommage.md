@@ -382,7 +382,7 @@ une description qui cite `aphrody-labs/bun`.
 **Historique** (ne pas réécrire) :
 
 - `config/host/inventory/2026-09-30-bun-transfer.json` ;
-- `docs/migration/BUN-FORK-UNIFIED-NATIVE.md` (liens PR 1 et run Actions, redirigés après renommage) ;
+- (removed import receipt) (liens PR 1 et run Actions, redirigés après renommage) ;
 - `docs/research/infra/github-mirrors-audit-2026-10-02.md:65`.
 
 **Erreurs préexistantes à corriger dans le lot.**

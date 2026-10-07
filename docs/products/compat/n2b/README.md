@@ -8,7 +8,7 @@ Bun supports, what Node exposes, what n2b must detect and rewrite.
 
 | Folder | Source | Pinned version |
 |---|---|---|
-| `docs/<category>/upstream-bun/` (canonical) | `oven-sh/bun` · `docs/` | HEAD `a2671046` (2026-09-29), see `docs/migration/UPSTREAM-BUN-DOCS-COMMIT.md` |
+| `docs/<category>/upstream-bun/` (canonical) | `oven-sh/bun` · `docs/` | HEAD `a2671046` (2026-09-29), see (removed import receipt) |
 | `docs/<category>/compat/n2b/bun/` (residual) | `oven-sh/bun` · `docs/` | main `d316760e` (2026-09-06): only the 26 files that differ from the canonical copy remain |
 | `docs/<category>/compat/n2b/node/` | `nodejs/node` · `doc/api/` | LTS v24.15.1 (`9fe7634c`) |
 | `docs/<category>/compat/n2b/plugin/n2b/` | n2b plugin documentation (changelog, structure, research, WASM reports) | — |
@@ -16,7 +16,7 @@ Bun supports, what Node exposes, what n2b must detect and rewrite.
 On 2026-10-02 the 309 files of the older n2b Bun mirror that were identical to
 `docs/<category>/upstream-bun/` after CRLF to LF normalisation were removed; the
 removed-to-canonical aliases and both SHA-256 values are recorded in
-`docs/migration/n2b-dedup-2026-10-02.json`. Read the Bun docs from `upstream-bun`
+(removed import receipt). Read the Bun docs from `upstream-bun`
 (also served offline by the `bun_docs_*` MCP tools of `crates/compat/bun-docs`).
 
 Only markdown is kept here; binary assets (images, icons, logos) are stripped.

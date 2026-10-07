@@ -45,7 +45,7 @@ aux tailles ou aux temps est **statique (manifests/lockfile)** et doit être con
    (h4ckf0r0day/obscura @ `1a3169da276d7720732c7b20535474942917fb83`), qui affirme « Upstream code otherwise
    unmodified » et « every obscura crate is `publish = false` ». Les deux affirmations sont fausses aujourd'hui :
    19 commits locaux touchent `crates/web/obscura*`, des versions de dépendances ont été portées
-   (`docs/migration/stack-dedup/obscura-deps.json`), et `5bde43dad` a rendu les crates publiables.
+   ((removed import receipt)), et `5bde43dad` a rendu les crates publiables.
    Polices Liberation/DejaVu sans provenance (`crates/web/obscura-render/assets/FONT-PROVENANCE.md` ne couvre que Noto).
 7. **Directive JSC/V8 orpheline** : `AGENTS.md:19` renvoie aux contrats de PLAN, mais la directive du
    2026-10-05 (« Bun conserve JSC/WebKit, Obscura apporte le fournisseur V8/headless… Qualifier : DOM, GC,

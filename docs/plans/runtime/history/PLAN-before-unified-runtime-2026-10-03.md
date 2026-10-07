@@ -837,10 +837,10 @@ migration non entreprise). Détails : `design/aphrody-m3/docs/operations/tauri-u
 
 - FAIT : 159 copies byte-identiques de `docs/` supprimées au profit de la copie propriétaire
   (README de packages et crates UI, docs Material Web, docs Koharu, références de permissions).
-  159 alias enregistrés dans `docs/migration/source-map.json` (`duplicateOf`), index régénéré,
+  159 alias enregistrés dans (removed import receipt) (`duplicateOf`), index régénéré,
   14 fichiers de liens entrants corrigés. 7 hubs README créés sous `docs/*/ui`. Six documents
   Tauri 2 marqués historiques avec renvoi vers la ligne Tauri 3 ; broche wgpu corrigée (30.0.1).
-  Rapport : `docs/migration/ui-docs-consolidation-2026-10-01.json` ; outil
+  Rapport : (removed import receipt) ; outil
   `aphrody-ops docs-consolidate` (23 tests), option `--include` pour `docs-overlaps`.
 - Mesures : liens non résolus globaux 2052 -> 2009 (périmètre UI 300 -> 287) ; 914 -> 765
   documents ; 172 -> 15 clusters exacts ; `docs-index` 216 cibles manquantes inchangées (iecode).
@@ -893,7 +893,7 @@ migration non entreprise). Détails : `design/aphrody-m3/docs/operations/tauri-u
 
 ### Dédup UI/web : crates, assets, dépendances — 2026-10-01
 
-Alias source vers cible et éléments conservés : `docs/migration/stack-dedup/ALIASES.json` (détail et
+Alias source vers cible et éléments conservés : (removed import receipt) (détail et
 empreintes par lot dans les sept fragments voisins). Mesure reproductible : `bun run stack:dedup`.
 
 - FAIT, crates mortes : `aphrody-tauri-m3` supprimée (zéro dépendant, zéro appel, zéro capability ; le
@@ -929,7 +929,7 @@ empreintes par lot dans les sept fragments voisins). Mesure reproductible : `bun
   x 110, workspace 114, web-verify et crawlabilité 17 ; typecheck de 8 paquets ; `tauri:apps:check`,
   `tauri:sync:check`, `monorepo:layout`, `pipeline-catalog`, `ui:browser-audit` verts ; catalogue
   `docs/ecosystem/*` régénéré. Références obsolètes réécrites dans les docs, plans, skills du plugin et
-  commentaires de paquets Bun ; `docs/migration/*` (provenance) laissé intact.
+  commentaires de paquets Bun ; (removed import receipt) (provenance) laissé intact.
 - INCOMPLET / NON PROUVÉ : `tsc` du workspace échoue sur `packages/infra/workspace/src/rg.ts:550` (not in repo)
   (modification d'une autre session) ; `docs:check-links` signale 2 008 liens cassés, tous dans des documents
   importés (aucun vers une crate supprimée) ; aucune fenêtre lancée pour `bundle` et `sidecar` ; la
@@ -1706,7 +1706,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
 - CONSTAT : `crates/ui/render-tools` (crate `aphrody-render3d`, binaire
   `aphrody-render3d-mcp`) est supprimé dans l’index Git (`D `) et absent du
   working tree, comme `crates/ui/model-view`. Le lot de dédup UI/web l’avait
-  conservé (`docs/migration/stack-dedup/render-merge.json`) ; l’auteur de la
+  conservé ((removed import receipt)) ; l’auteur de la
   suppression n’est pas établi (`.coord/shared/LIVE.md` ne l’établit pas).
 - Liens actifs vers ce chemin, donc cassés tant que la suppression tient :
   `design/aphrody-m3/docs/architecture/README.md:25-26`, `docs/ecosystem/ECOSYSTEM.md:125`,
@@ -1858,7 +1858,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   Update owner: 163 tests and typecheck pass. Locked all-features Cargo metadata
   requires no sibling source directory. Original external copies removed only
   after a complete private archive was verified against every recorded hash.
-  Provenance and validation: `docs/migration/native-source-integration-2026-10-03.json`.
+  Provenance and validation: (removed import receipt).
 
 - 2026-10-03: repaired only the existing IECODE Rust publication adapter
   `scripts/iecode/publish-rust-crates.sh`. Its qualified allowlist is

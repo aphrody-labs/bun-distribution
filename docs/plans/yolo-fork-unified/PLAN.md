@@ -4,7 +4,7 @@ Directive propriétaire du 2026-10-06 : le CLI `yolo` et le fork Bun (`aphrody-l
 runtime. Le binaire fusionné s'appelle **`yolo`** ; **`bun`** reste un alias compatible (lien, même fichier,
 `argv0` `bun`). Les identités publiques existantes (noms de commande, paquets `@aphrody/*`, schémas) ne changent pas.
 
-Rattachement : [PLAN.md §6](../../../PLAN.md), [BUN-FORK-UNIFIED-NATIVE](../../migration/BUN-FORK-UNIFIED-NATIVE.md).
+Rattachement : [PLAN.md §6](../../../PLAN.md), BUN-FORK-UNIFIED-NATIVE.
 
 ## Cible
 

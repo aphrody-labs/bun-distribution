@@ -29,7 +29,7 @@
 
 ## Config dedup phase 1 (2026-10-04)
 
-- Audit: tracked config-file counts before/after recorded in aphrody `docs/migration/CONFIG-DEDUP-2026-10-04.md`.
+- Audit: tracked config-file counts before/after recorded in aphrody (removed import receipt).
 - yolo: -19 rustfmt.toml (identical to root), -20 plugin android/ios .gitignore merged into root; 276 pass, 0 fail.
 - aphrody: -6 retired systemd examples, -1 verifier script, -6 `config/shenron` mirror configs. iecode: -7 inactive upstream CI files.
 

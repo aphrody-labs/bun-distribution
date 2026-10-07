@@ -16,7 +16,7 @@ prove the result. The pipeline overview is [UPDATE.md](../UPDATE.md). The Python
 | `packages/ai/py/aphrody-train/uv.lock` (not in repo) | the training package on its own, Python 3.12, CUDA torch from `download.pytorch.org/whl/cu129` | standalone training environment |
 
 All three move together: `apply` runs `uv lock --upgrade` in each directory and `verify` runs `uv lock --check` in each.
-`docs/migration/locks/**` holds archived migration snapshots; the module never reads or edits them. Lock revision is
+(removed import receipt) holds archived migration snapshots; the module never reads or edits them. Lock revision is
 whatever the installed uv writes (revision 5 since uv 0.12.22).
 
 Two environment facts that bite: `uv run` inside `packages/ai/py/aphrody` (not in repo) or `aphrody-train` uses that package's own
@@ -135,7 +135,7 @@ shared with `deps inventory`, plus one OSV batch). They belong in the weekly `ap
 - Ruff: 24 legacy diagnostics (BLE001 and S110 in the retained Drive adapters and four AI scripts) are fixed by
   narrowing the handlers to the exceptions each call raises (`OSError` for file copies, `OSError` and `ValueError` for HTTP
   and JSON, `gdown` and `google-genai` error classes for the SDK scripts); the gmail "message deleted" branch now logs a
-  warning instead of `pass`. Hashes and transformation notes in `docs/migration/python-import-manifest.json` (not in repo) were updated.
+  warning instead of `pass`. Hashes and transformation notes in (removed import receipt) (not in repo) were updated.
   `ruff check .` reports zero. The Drive adapters were not run against a real Spacedrive runtime.
 - Gates: `uv lock --check` on the three locks, `ruff check .`, pytest: SDK 490 passed and 18 skipped, training 44 passed,
   OCR 2, embedding fixtures 5, Koharu tools 5.

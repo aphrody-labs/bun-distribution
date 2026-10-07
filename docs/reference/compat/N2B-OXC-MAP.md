@@ -159,15 +159,15 @@ Current docs that still describe the forks as live:
 | `docs/products/upstream-bun/README.md:5` | fork README |
 | `docs/products/upstream-oxc/apps/aphrody-oxc/README.md:3` | fork cdylib README |
 | `crates/compat/oxc-bridge/README.md:4` | origin `oxc/apps/aphrody-oxc` (provenance; correct as history) |
-| `docs/migration/BUN-FORK-UNIFIED-NATIVE.md:8,12,13,17,51,99` | fork commits, PR, CI run |
+| (removed import receipt) | fork commits, PR, CI run |
 
 Already updated to say the fork was deleted: `docs/operations/infra/update/BUN.md:7,102`,
 `docs/operations/infra/UPDATE.md:93`, `docs/research/infra/github-mirrors-audit-2026-10-02.md:65`.
 
 Historical evidence (dated logs/JSON, keep as record): `inventory/2026-09-30-{bun,oxc}-transfer.json`,
 `docs/operations/**/2026-10-01*/*.{log,json}` (rev `31d5266e...` on `aphrody-code/oxc`),
-`docs/migration/n2b-qualification-2026-10-01/*.log`, `docs/migration/source-map.json`,
-`docs/migration/{unified-ui-ffi,native-rust-extraction}.json`, `docs/migration/IMPORTED-DOCS-INDEX.md`,
+(removed import receipt), (removed import receipt),
+(removed import receipt), (removed import receipt),
 `docs/plans/2026-09-29-consolidation-initial-archive.md` (not in repo),
 `docs/research/os/low-level-audit-2026-10-01/{bun-chaine,abi}.md`,
 `shenron:apps/bot/dist/shenron.map` (build output).
@@ -199,7 +199,7 @@ Nothing below was compiled: Cargo is run only by the integrating agent. Bun gate
 | `aphrody_n2b_report::render_json` in `crates/ai/mcp/src/main.rs` (not in repo) | `aphrody_n2b_core::report::render_json` | MCP tool `n2b` unchanged |
 | private `write` + `which` copies in `n2b/src/{app,linux,wasm,win32}_cmd.rs` | `crates/compat/n2b/src/scaffold_fs.rs` (`write_tagged`, `which`) | output and log tags unchanged |
 | `@aphrody/n2b-shims` sources | `@aphrody/n2b-core/shims{,/env,/fs,/path,/shell}` (`packages/engine/n2b-client/src/shims/`) | `@aphrody/n2b-shims` 0.6.2 is published on npm: the package stays as a re-export alias |
-| 309 Bun doc files in `docs/*/compat/n2b/bun/` | `docs/*/upstream-bun/` | per-file aliases + SHA-256 in `docs/migration/n2b-dedup-2026-10-02.json` |
+| 309 Bun doc files in `docs/*/compat/n2b/bun/` | `docs/*/upstream-bun/` | per-file aliases + SHA-256 in (removed import receipt) |
 | `docs/apis/contracts/v2.json` (not in repo) | `crates/contracts/schema/v2.json` | `include_str!` in mcp repointed; alias recorded in the same JSON |
 | Node-to-Bun mapping list in `plugins/aphrody/skills/n2b/SKILL.md` | pointer to `crates/compat/n2b-registry/registry/*.toml`, `aphrody n2b rules`, MCP `bun_node_equivalent` | skill name and triggers unchanged |
 | `update-bun-docs.{sh,ps1}`, `n2b-env.{sh,ps1}`, `refactor-{start,state}.{sh,ps1}` | deleted | `yolo ops bun-upstream-docs` remains the Bun-docs entry point |

@@ -98,7 +98,7 @@ Each worker reports in its own files; check them, do not assume success.
    owner of inagle, inagle-cross, azalee, zukan/NIE scripts and IEVR docs; Aphrody
    consumes `../iecode/packages/{inagle,inagle-cross,azalee}` as Bun workspace
    members (`iecode/docs/rg/decisions/ievr-packages-from-iecode.md`, map
-   `docs/migration/ievr-to-iecode-2026-10-01.json`). RG website production build
+   (removed import receipt)). RG website production build
    passes; bot 1 264 tests pass; IECODE inagle 136 + azalee 282 tests pass.
    Follow-ups: `iecode/scripts/rg/assemble-vps-release.sh` must bundle IECODE packages at
    a pinned revision; dangling doc links (plugin skills nie-*,

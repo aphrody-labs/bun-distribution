@@ -6,7 +6,7 @@ Yolo produces the precompiled native runtime and lightweight SDK. Aphrody keeps
 application behavior and consumes pinned archives; sibling repositories are not
 Bun workspace members. The current Web consumer is delivered in Aphrody commit
 `22f0c8f06`, with evidence in
-[its receipt](migration/runtime-web-consumer-2026-10-03.json).
+its receipt.
 
 ## Current Web contract
 

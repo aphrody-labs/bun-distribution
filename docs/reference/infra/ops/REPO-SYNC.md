@@ -117,7 +117,7 @@ Le 2026-10-04, le VPS catalogué rapporte `LoadState=not-found` et
 `ActiveState=inactive`. Ses fichiers service/timer liés aux anciens checkouts
 ont été supprimés ; ne pas les réinstaller. Le contrôle utilise le propriétaire
 Infra (`aphrody-infra git --help`) avec les dépôts explicitement configurés.
-[Preuves de qualification hôte](../../../migration/host-portability-qualification-2026-10-04.json).
+Preuves de qualification hôte.
 Pour un checkpoint volontaire,
 lancer directement `bun scripts/ops/repo-sync.ts --repo all --commit` après
 vérification de l'arbre ; aucune unité ou variable d'environnement ne l'active

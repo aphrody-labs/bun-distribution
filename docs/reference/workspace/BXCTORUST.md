@@ -50,7 +50,7 @@ Supprimer la dépendance externe à l'environnement Bun/Zig/Chromium de BXC en t
   - `aphrody_web_extract::media::streaming` implémente l'extraction native des embeds et players vidéo (VoirAnime, AnimeSama, Sendvid, Vidmoly, Sibnet) en Rust pur sans FFI.
 
 ### Chantier 4 : Dépréciation et Retrait de `web-bridge` (supprimé le 2026-10-05)
-- **Réalisé** : l'ancien crate `aphrody-web-bridge` a été déprécié puis supprimé (le reste en processus est repris par `aphrody_web_service::{fetch, session}`, [migration](../../migration/bxc-n2b-unification-2026-10-05.md)), avec réorientation vers les crates souveraines (`aphrody_web_extract`, `obscura_net`, `aphrody_web_crawl`, `aphrody_web_service`).
+- **Réalisé** : l'ancien crate `aphrody-web-bridge` a été déprécié puis supprimé (le reste en processus est repris par `aphrody_web_service::{fetch, session}`, migration), avec réorientation vers les crates souveraines (`aphrody_web_extract`, `obscura_net`, `aphrody_web_crawl`, `aphrody_web_service`).
 
 ---
 

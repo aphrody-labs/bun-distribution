@@ -228,7 +228,7 @@ Aucun commit de `main` ne fixe encore de patron de **module intégré natif** (`
 - commits `94a34b49d4` → `0ba45879b0` (2026-09-28/30), `bun:aphrody` :
   - `src/js/bun/aphrody.ts` (117 lignes) : `require("./ffi")`, `dlopen` d'une lib désignée par `APHRODY_FFI_LIB` ou cherchée à côté de `process.execPath`, contrôle `*_abi_version`, chaînes possédées libérées par `*_string_free` ;
   - `HardcodedModule.rs` (+4), `packages/bun-types/aphrody.d.ts`, `test/js/bun/resolve/aphrody.test.ts` ;
-  - qualifié le 2026-09-30 : 14 tests passés en `bun bd test` (`docs/migration/BUN-FORK-UNIFIED-NATIVE.md:42-51`).
+  - qualifié le 2026-09-30 : 14 tests passés en `bun bd test` ((removed import receipt)).
 - `git merge-base --is-ancestor 0ba45879b c439b6fbd` → **absent de `main`**.
 
 ### 5.2 Autres faits sur le dépôt distant

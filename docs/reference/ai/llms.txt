@@ -20,8 +20,6 @@
 - [Frontière runtime Yolo / produit Aphrody](../../architecture/runtime-native/README.md)
 - [Shell and terminal layers](../../architecture/shell/README.md)
 - [Parcours Workspace Aphrody](../../guides/workspace/README.md)
-- [Migration records](../../migration/README.md)
-- [Jan absorption evidence](../../migration/jan-absorption/README.md)
 - [Discord Operations Runbooks & Guides](../../operations/discord/README.md)
 - [Agent home, one database, one pipeline, one RAG](../../plans/agent-home-pipeline/PLAN.md)
 - [Delivery plan](../../plans/ai/PLAN.md)

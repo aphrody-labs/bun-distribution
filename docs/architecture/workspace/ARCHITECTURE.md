@@ -8,7 +8,7 @@ ownership and migration safety. Source presence does not establish runtime,
 packaging or deployment readiness.
 
 The previous superproject architecture is retained as an unmodified
-[historical snapshot](../../migration/workspace-architecture-before-monorepo-2026-10-01.md).
+historical snapshot.
 Its sibling-checkout paths and deployment statements describe the earlier
 layout; they are not current checkout instructions.
 

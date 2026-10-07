@@ -142,18 +142,5 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | ai (outside the category layout) | [(files)](ai/) | 2 | - |
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
-| migration (outside the category layout) | [(files)](migration/) | 137 | [Migration records](migration/README.md) |
-| migration (outside the category layout) | [a2a-os-move-2026-10-01](migration/a2a-os-move-2026-10-01/) | 4 | - |
-| migration (outside the category layout) | [contracts-clean-clone-2026-10-01](migration/contracts-clean-clone-2026-10-01/) | 4 | - |
-| migration (outside the category layout) | [contracts-qualification-2026-10-01](migration/contracts-qualification-2026-10-01/) | 6 | - |
-| migration (outside the category layout) | [huggingface-native](migration/huggingface-native/) | 7 | - |
-| migration (outside the category layout) | [jan-absorption](migration/jan-absorption/) | 6 | [Jan absorption evidence](migration/jan-absorption/README.md) |
-| migration (outside the category layout) | [kernel-clean-clone-2026-10-01](migration/kernel-clean-clone-2026-10-01/) | 4 | - |
-| migration (outside the category layout) | [kernel-qualification-2026-10-01](migration/kernel-qualification-2026-10-01/) | 3 | - |
-| migration (outside the category layout) | [kernel-source-optin-2026-10-01](migration/kernel-source-optin-2026-10-01/) | 3 | - |
-| migration (outside the category layout) | [n2b-qualification-2026-10-01](migration/n2b-qualification-2026-10-01/) | 6 | - |
-| migration (outside the category layout) | [python](migration/python/) | 2 | - |
-| migration (outside the category layout) | [source-licenses](migration/source-licenses/) | 8 | - |
-| migration (outside the category layout) | [stack-dedup](migration/stack-dedup/) | 8 | - |
 
-Total: 4420 files.
+Total: 4222 files.

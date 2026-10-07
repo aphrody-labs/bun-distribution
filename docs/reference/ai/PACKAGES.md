@@ -5,7 +5,7 @@ ancien binaire (`aphrody-infra`, `aphrody-kernel`, ...) sont des noms de ce bina
 `aphrody self install-path` et résolus à l'invocation (multi-call, `crates/infra/aphrody-command/src/multicall.rs`).
 `aphrody package` ne clone, ne construit et ne met rien à jour : il rapporte et répare ces liens.
 Décisions et table de parité de `bxc` :
-[bxc-n2b-unification-2026-10-05](../../migration/bxc-n2b-unification-2026-10-05.md).
+bxc-n2b-unification-2026-10-05.
 
 ```bash
 aphrody package catalog

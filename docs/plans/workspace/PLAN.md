@@ -100,7 +100,7 @@ Infra `@aphrody/workspace` fournit maintenant `consolidation inventory`,
 du 2026-09-29 porte sur 19 worktrees directs, 77 859 chemins suivis/non ignorés
 et 7 040 documents candidats. La cible `<repo>` indexe 6 538
 documents importables, dont 202 alias de documents identiques. 454 scripts
-classés ont été copiés. Le rapport `docs/migration/document-import.json`
+classés ont été copiés. Le rapport (removed import receipt)
 compte 1 297 liens locaux non résolus (notamment code, assets, chemins exclus ou
 références historiques) ; l'absence de collision de copie ne ferme pas ces
 références.
@@ -274,7 +274,7 @@ L'inventaire généré par `@aphrody/workspace consolidation inventory` observe
 le checkout propre Aphrody Web à `bbeb5ef4c497f7d27f546ad2cc15a250dcc93c83`
 (1 653 chemins). Les noms Cargo et Bun extraits des seuls manifests de cette
 carte sont consignés dans
-[`APHRODY-WEB-INVENTORY-2026-09-29.md`](../../migration/APHRODY-WEB-INVENTORY-2026-09-29.md).
+`APHRODY-WEB-INVENTORY-2026-09-29.md`.
 La cible comprend 22 crates Rust de produit, l'app BXC, quatre packages Bun
 et le manifest workspace privé. Quatre autres manifests Cargo sont des
 frontières distinctes (workspace, serveur Drive, scanner embarqué et Taffy
@@ -321,14 +321,14 @@ copie ou le succès de compilation d'une crate ne ferme aucun de ces gates.
 
 État d'exécution : l'extracteur Rust complet et son DOM Obscura requis sont
 importés avec hashes et tests de la tranche portable dans
-[`aphrody-web-extract-import.json`](../../migration/aphrody-web-extract-import.json).
+`aphrody-web-extract-import.json`.
 Le bridge Rust est importé avec ses méthodes publiques, et sa conversion
 Markdown HTTP directe appelle l'extracteur local ; le test HTTP local et les
 gates de l'archive propre sont dans
-[`aphrody-web-bridge-import.json`](../../migration/aphrody-web-bridge-import.json).
+`aphrody-web-bridge-import.json`.
 L'index HNSW Rust de BXC est importé avec son format de persistance et ses
 tests de rappel dans
-[`aphrody-web-index-import.json`](../../migration/aphrody-web-index-import.json).
+`aphrody-web-index-import.json`.
 `aphrody-memory` reste sur une recherche exacte et un fichier JSONL ; une
 migration de format et un contrat de classement sont requis avant toute fusion
 de ces deux surfaces.
@@ -726,13 +726,13 @@ estimations de mémoire GPU ne prouvent pas la capacité de l'hôte courant.
 ### Import documentaire des dépôts upstream — 2026-10-01
 
 Les références Git de `config/upstream-sources.json` sont maintenant incluses
-dans `docs/migration/source-map.json` sous `upstream-<id>`, avec HEAD observé,
+dans (removed import receipt) sous `upstream-<id>`, avec HEAD observé,
 état du checkout, hash par fichier et note de licence. Les docs retenues sont
 copiées directement sous `docs/<catégorie>/upstream-<id>/`; les doublons SHA
 exacts pointent vers une seule copie. La liste est dans
-[`IMPORTED-DOCS-INDEX.md`](../../migration/IMPORTED-DOCS-INDEX.md), les hashes et
-destinations dans [`source-map.json`](../../migration/source-map.json), et le
-bilan de lien dans [`document-import.json`](../../migration/document-import.json).
+`IMPORTED-DOCS-INDEX.md`, les hashes et
+destinations dans `source-map.json`, et le
+bilan de lien dans `document-import.json`.
 
 - 18 checkouts Git inventoriés; 11 042 entrées documentaires candidates,
   dont la documentation reStructuredText du noyau WSL2.

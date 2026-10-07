@@ -26,7 +26,7 @@ inventing targets or rewriting upstream text, which `CLAUDE.md` forbids
   `material-web/migration`).
 - First-party documents are checked in full. `docs-links` also flags inline
   code spans naming a repository path (first segment exists at the root, no
-  whitespace, globs or placeholders) that does not exist. `docs/migration/**`
+  whitespace, globs or placeholders) that does not exist. (removed import receipt)
   and `docs/plans/**/archive/**` are historical evidence and are exempt from
   that path check only.
 

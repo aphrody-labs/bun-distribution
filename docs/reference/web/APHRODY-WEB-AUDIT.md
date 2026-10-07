@@ -123,7 +123,7 @@ Dead code:
   so the 40 tools are declared once. Nothing removed, no aliases needed.
 - drive-server: retired 2026-10-02. Zero consumers (excluded crate, no member/dep lines, no tests); the 9 tracked files were
   removed from `crates/web/drive-server` (not in repo), dropped from root `Cargo.toml` `exclude` and from the owner-duplicate roots in
-  `docs-consolidation.ts`; `docs/migration/drive-rust-extraction.json` keeps the record marked `retired` (recoverable from git).
+  `docs-consolidation.ts`; (removed import receipt) keeps the record marked `retired` (recoverable from git).
 - `web-engine` `dump_links` now calls `aphrody_web_crawl::extract_links_opts` (same `url\ttext` lines; now de-duplicated,
   http(s)-only and fragment-normalised like every other extractor; a page with no URL yields no links).
 - FFI `web/cookies.rs` is not a jar: it reads Chromium profile cookies through `aphrody-web-chromium` (like `web-chromium`), so

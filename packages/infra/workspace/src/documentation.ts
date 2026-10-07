@@ -21,7 +21,6 @@ import {
   type Status,
 } from "./docs-consolidation.ts";
 import { runDocsGen } from "./docs-gen.ts";
-import { renderDocumentationIndex } from "./consolidation.ts";
 import { importedUpstreamMatcher, runDocsLinks } from "./docs-links.ts";
 import { runDocsOverlaps } from "./docs-overlaps.ts";
 import { generateSourceReference, type SourceReferenceTarget } from "./docs-source.ts";
@@ -254,15 +253,6 @@ export async function generateDocumentation(
   extra: string[] = [],
 ): Promise<number> {
   let failures = 0;
-  if (
-    !generatedOutput(
-      root,
-      "docs/migration/IMPORTED-DOCS-INDEX.md",
-      renderDocumentationIndex([], root),
-      check,
-    )
-  )
-    failures++;
   for (const target of config.sources) {
     // Sibling repositories (../iecode) are not checked out on every host.
     if (!existsSync(resolve(root, target.root))) {

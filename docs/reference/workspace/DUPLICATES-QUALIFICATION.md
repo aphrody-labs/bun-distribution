@@ -14,7 +14,7 @@ qu'après mise à jour des consommateurs (règle du plan, section 0).
 | `iecode/packages/rg/assets/public` (police Humane, `noise.svg`, portrait/notfound) | paquet d'assets RG, chemins publics | Conservés (chemins publics). |
 | `Gemini.ico` (`assets/ui/chrome-web-apps` ↔ `crates/ui/app/icons`) | icône de l'app Tauri | Conservé (ressource embarquée par Tauri). |
 | Portraits XV2 identiques sous deux codes (Shenron bot) | table code → image du bot | Conservés (clés distinctes). |
-| Licences (`LICENSE*` par paquet, `docs/migration/source-licenses`) | obligation de redistribution par paquet et preuve d'import | Conservées volontairement. |
+| Licences (`LICENSE*` par paquet, (removed import receipt)) | obligation de redistribution par paquet et preuve d'import | Conservées volontairement. |
 | Schémas Tauri générés (`gen/schemas`, `permissions/schemas`) | générés par `tauri-build` dans chaque crate | Conservés (sortie de build par crate). |
 | Configs par paquet (`.oxlintrc`, `.oxfmtrc`, `tsconfig.build.json`), fixtures de tests, `.cargo-ok` des patches | convention par paquet / sources amont patchées | Conservés. |
 | `crates/ai/agent-home/templates/*` ↔ `plugins/aphrody/home/*` | gabarits du crate et home installé du plugin | Conservés : le plugin est un artefact distribué séparément. |

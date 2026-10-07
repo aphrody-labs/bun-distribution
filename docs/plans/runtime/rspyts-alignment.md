@@ -15,5 +15,5 @@ l'absence de négociation ABI/erreurs structurées ou le rebuild moteur consomma
 Aucune mesure Rspyts de performance ou zero-copy reproduite.
 
 Preuve du premier lot :
-[cycle de vie engine](../../migration/rspyts-native-engine-lifecycle-2026-10-03.json).
+cycle de vie engine.
 Les contrats et propriétaires Aphrody/Yolo restent l'autorité.

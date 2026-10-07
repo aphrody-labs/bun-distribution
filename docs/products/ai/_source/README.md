@@ -47,7 +47,7 @@ A guide or a generated crate description does not prove runtime readiness.
 
 ## Historical evidence
 
-The [original imported index](../../../migration/ai-documentation-index-before-monorepo-2026-10-01.md)
+The original imported index
 is preserved byte for byte. Its relative links retain the historical base
 `docs/products/ai/_source/`; it is a snapshot rather than navigation to repair.
 Domain guides below retain their original scope and may contain old paths.

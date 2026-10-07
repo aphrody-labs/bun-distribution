@@ -243,7 +243,7 @@ results apply to their named revisions and dates, not current host health.
   copied into the new Cargo workspace, hash-compared with its source and
   checked via `cargo check --all-targets --locked --offline`. Its provenance
   and license boundary are recorded in
-  `docs/migration/ievr-iecode-extraction.json`. The Bun
+  (removed import receipt). The Bun
   binding/plugin and the NIE MCP child-process bridge remain unintegrated; no
   API parity is claimed. Nested submodules and missing checkouts remain open.
   The workspace package now resolves compiler TypeScript 7.0.2 and the explicit

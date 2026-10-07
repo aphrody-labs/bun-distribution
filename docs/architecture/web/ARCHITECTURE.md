@@ -72,7 +72,7 @@ only `crates/interop/ffi` needs them; no `crates/web` crate that has other depen
 it without giving them 40 to 71 extra packages).
 
 2026-10-05, `bxc` and `n2b` absorbed (one binary, see
-[bxc-n2b-unification-2026-10-05](../../migration/bxc-n2b-unification-2026-10-05.md)):
+bxc-n2b-unification-2026-10-05):
 `aphrody-web-bridge` was removed. Its executable client, resolvers and Actor driver are gone (`bxc` is a
 name of the `aphrody` binary), its DOM facade was inlined into its only consumer, and what remained, page
 `fetch` and the shared browser `session`, moved into `aphrody-web-service`. The merge that was refused on

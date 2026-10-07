@@ -145,4 +145,4 @@ cookie reader (`aphrody-web-chromium`) redacts values from `Debug` output.
   `aphrody bxc <subcommand>` run the unified commands (`aphrody web ...`, `aphrody x`,
   `aphrody google`, `aphrody kernel mcp`) or fail with their replacement; no legacy bridge
   binary is called. The parity table is in
-  [bxc-n2b-unification-2026-10-05](../../migration/bxc-n2b-unification-2026-10-05.md).
+  bxc-n2b-unification-2026-10-05.

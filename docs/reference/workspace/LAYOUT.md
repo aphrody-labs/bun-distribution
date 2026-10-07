@@ -19,4 +19,4 @@ actuel. Les archives de migration documentent une histoire et ne définissent
 pas les chemins actifs.
 
 Sources : `Cargo.toml`, `package.json`, `PLAN.md` à la racine ; provenance des
-renommages dans `docs/migration/*reorganization*` et `short-paths-2026-10-01.json`.
+renommages dans (removed import receipt) et `short-paths-2026-10-01.json`.

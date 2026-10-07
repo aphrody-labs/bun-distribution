@@ -123,7 +123,7 @@ Bun `1.4.2`, uv `0.12.22`, Rust/Cargo `1.98.1`, Oxc `oxlint 1.86.0` /
 Les cibles Rust installées incluent Linux, Windows MSVC/GNU, macOS Intel/ARM,
 WASM navigateur, WASI et Emscripten ; cela ne prouve pas leurs SDK externes.
 La qualification des outils MSVC est enregistrée séparément dans le rapport
-[setup toolchain](../../../docs/migration/toolchain-setup-2026-10-01.json).
+setup toolchain.
 
 ```bash
 scripts/build/rust/cargo-serial.sh check -p <crate> --all-targets
