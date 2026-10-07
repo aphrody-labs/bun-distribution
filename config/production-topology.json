@@ -214,5 +214,11 @@
     "requestedAt": "2026-10-07",
     "action": "reclaim substantially when capacity blocks work",
     "safety": "Use Infra plans, protect active work and credentials, verify retained copies before deleting replaced protected stores."
+  },
+  "trainingPlacement": {
+    "requestedAt": "2026-10-07",
+    "host": "omar-wsl",
+    "ownerLocalWsl": "retirement-planned; do not install or run Shenron training here",
+    "activation": "requires authenticated access to Omar host and hardware qualification"
   }
 }

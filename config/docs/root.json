@@ -417,7 +417,7 @@
           ],
           [
             "2026-10-07",
-            "Owner directive: all Shenron belongs on DBFR; VPS is reserved for Aphrody. Reclaim substantial disk space when capacity blocks execution.",
+            "Owner directive: all Shenron belongs on DBFR; VPS is reserved for Aphrody. Reclaim substantial disk space when capacity blocks execution. Training belongs on Omar’s WSL; the owner plans to uninstall their own WSL.",
             "Placement and reclamation policy in config/production-topology.json; preserve active work and authentication, verify retained protected-data copies before source deletion. Migration completion requires live cutover evidence."
           ]
         ]
