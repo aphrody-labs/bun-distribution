@@ -50,6 +50,7 @@ export interface Turn {
   text: string;
   sources: Source[];
   approvedBy?: string;
+  messageId?: string;
 }
 export interface DebateState {
   guildId: string;
@@ -175,6 +176,9 @@ export function approvedRollouts(state: DebateState): unknown[] {
         debate: {
           turnId: turn.id,
           approvedBy: turn.approvedBy,
+          messageId: turn.messageId,
+          candidate: true,
+          groundTruth: false,
           sources: turn.sources,
           guildId: state.guildId,
         },
@@ -347,6 +351,7 @@ export async function handleMessage(
   for (const agent of ["shenron", "gemma"] as const) {
     const id = `${message.id}:${agent}`;
     let turn = session.turns.find((t) => t.id === id);
+    if (turn?.messageId) continue;
     if (!turn) {
       const role = agent === "shenron" ? policy.rivalry.shenronRole : policy.rivalry.aphrodyRole;
       const stance =
@@ -395,10 +400,16 @@ export async function handleMessage(
           .join("\n")
           .slice(0, 520)
       : "Citations absentes ou invalides : réponse exclue du dataset.";
-    await post(
+    const delivered = await post(
       `**${agent === "shenron" ? (state.shenronAvailable ? "Shenron" : "Shenron · modèle relayé par Aphrody") : "Aphrody/Gemma · développeur de Shenron"}**${spontaneous ? " · initiative spontanée" : ""} · ID ${id}\n${sourceBasis}${turn.text}\n${footer}`,
       agent,
     );
+    const receipt = delivered as { id?: unknown; messageId?: unknown } | null;
+    const messageId = receipt?.messageId ?? receipt?.id;
+    if (typeof messageId !== "string" || !/^\d{1,22}$/.test(messageId))
+      throw new Error("Invalid Discord delivery receipt");
+    turn.messageId = messageId;
+    await persist();
   }
   return true;
 }

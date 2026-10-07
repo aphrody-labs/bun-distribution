@@ -64,7 +64,7 @@ function fixture(roles = ["researcher"]) {
   const api = (async (path: string, method?: string, body?: unknown) => {
     if (method === "POST") {
       posts.push(body as (typeof posts)[number]);
-      return { id: "reply" };
+      return { id: String(900000000000000001n + BigInt(posts.length)) };
     }
     if (path.includes("/members/")) return { roles };
     throw new Error("Unexpected route");
@@ -279,7 +279,51 @@ test("does not regenerate existing argument turns during a delivery retry", asyn
   await f.processMessage(f.message("11", "!argument Une hypothèse"));
   expect(f.inferences()).toBe(4);
   expect(f.state.session?.rounds).toBe(2);
-  expect(f.posts.at(-1)?.nonce).toBe(f.posts.at(-3)?.nonce);
+  expect(f.posts).toHaveLength(4);
+  expect(f.state.session?.turns.filter((turn) => turn.messageId)).toHaveLength(4);
+});
+test("restart after the second delivery fails preserves the first real message receipt", async () => {
+  const f = fixture();
+  let saved = structuredClone(f.state);
+  let failed = false;
+  const flakyApi = (async (path: string, method?: string, body?: unknown) => {
+    if (
+      method === "POST" &&
+      !failed &&
+      (body as { content: string }).content.includes("développeur de Shenron")
+    ) {
+      failed = true;
+      throw new Error("Temporary Discord delivery failure");
+    }
+    return f.api(path, method, body);
+  }) as LabApi;
+  await expect(
+    handleMessage(
+      f.message("10", "!debat Goku"),
+      f.state,
+      policy,
+      flakyApi,
+      f.backend,
+      async () => {
+        saved = structuredClone(f.state);
+      },
+    ),
+  ).rejects.toThrow("Temporary Discord delivery failure");
+  expect(saved.session?.turns.find((turn) => turn.speaker === "shenron")?.messageId).toMatch(
+    /^\d+$/,
+  );
+  expect(saved.session?.turns.find((turn) => turn.speaker === "gemma")?.messageId).toBeUndefined();
+  await handleMessage(
+    f.message("10", "!debat Goku"),
+    saved,
+    policy,
+    flakyApi,
+    f.backend,
+    async () => {},
+  );
+  expect(f.posts).toHaveLength(2);
+  expect(f.inferences()).toBe(2);
+  expect(saved.session?.turns.filter((turn) => turn.messageId)).toHaveLength(2);
 });
 test("bounds rounds, prevents replacement and restricts closure", async () => {
   const f = fixture();
@@ -380,6 +424,7 @@ test("sends Shenron answers through his real bot transport when available", asyn
   f.backend.sendShenron = async (channelId, body) => {
     expect(channelId).toBe("debate");
     nativeMessages.push(body);
+    return { messageId: "900000000000000100" };
   };
   await f.processMessage(f.message("10", "Shenron, Goku"));
   expect(nativeMessages).toHaveLength(1);

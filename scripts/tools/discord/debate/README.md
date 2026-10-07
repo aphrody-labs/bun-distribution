@@ -198,3 +198,11 @@ Yolo. Le SHA du bundle devient
 L’identité du processus est vérifiée via `/proc/<pid>/exe` et son checksum ;
 le nom affiché dans les arguments peut changer au démarrage. La politique
 HTTP, les modèles et les états restent conservés pendant la qualification FFI.
+
+Les tours enregistrent désormais leur véritable identifiant de message Discord
+après publication. Une reprise réutilise le texte généré et ne republie pas
+un tour déjà livré, même hors de la fenêtre courte de nonce. Le test de panne
+sur la deuxième publication puis de redémarrage vérifie cette transition ;
+28 tests et 130 assertions passent sous Yolo. Les rollouts annotés conservent
+ce reçu comme provenance et restent explicitement candidats, sans statut de
+vérité de référence. Cette source sera installée avec le worker qualifié.
