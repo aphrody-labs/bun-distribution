@@ -241,5 +241,58 @@
     "oldSystemUnitsDisabled": ["aphrody-privileged-kernel.service"],
     "windowsBrokerScope": "Native Windows system and interactive brokers retain their separate sessions",
     "retiredDuplicatedToolExposure": "Privileged bridge names are replaced by native root calls; separate Bun tool hosts are disabled in this daemon"
+  },
+  "computerUseRequalification": {
+    "observedAt": "2026-10-07T14:36:17Z",
+    "service": {
+      "unit": "aphrody-pc-agent.service",
+      "pid": 3386674,
+      "active": true,
+      "automaticRestarts": 0
+    },
+    "remoteClients": ["vps", "dbfr"],
+    "mcp": {
+      "tools": 644,
+      "desktopTools": 166,
+      "windowsTools": 166,
+      "linuxUid": 0,
+      "windowsAdministrator": true,
+      "unauthenticatedStatus": 401
+    },
+    "computerUse": {
+      "transport": "Authenticated MCP over persistent WireGuard SSH forwarding",
+      "probe": {
+        "pid": 13732,
+        "hwnd": 4195136,
+        "ownedTemporaryWindow": true,
+        "visible": true,
+        "closed": true,
+        "processTerminated": true
+      },
+      "observation": {
+        "pngMcpContent": true,
+        "pngBytes": 14368,
+        "exactWindowIdentityVerified": true,
+        "includeUiTree": false
+      },
+      "typing": {
+        "acceptedCharacters": 32,
+        "allMarkerCharactersReadBack": true,
+        "exactFieldEquality": false,
+        "additionalCharactersObserved": 7
+      },
+      "afterInputObservationVerified": true,
+      "hiddenWindowObservationQualified": false,
+      "capturesPublished": false
+    },
+    "omar": {
+      "wireguardAddress": "10.200.77.10",
+      "handshakeTimestamp": 0,
+      "setupPromptPresent": true,
+      "activationConfirmationObserved": false,
+      "windowsSshAccountAndEndpointQualified": false,
+      "wslEndpointQualified": false,
+      "codingAgentEndpointsQualified": false
+    }
   }
 }
