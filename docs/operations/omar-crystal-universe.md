@@ -129,9 +129,18 @@ confirme `completed:false`, `documents:25`, `network_requests:25`.
 
 Vérification : `aphrody home query ... --profile shenron` retrouve l’article Dragon
 Ball et l’information des 42 volumes/519 chapitres, une fiche *Dragon Ball Super*
-et des extraits de l’arc Moro. Le corpus est documentaire et partiel : il ne contient
-pas les pages intégrales ni les images des 42 tomes; il ne prouve pas l’exhaustivité
-de DBS. Aucun profil aphrody/dbfr/ie n’a été utilisé pour cette campagne.
+et des extraits de l’arc Moro, en français et en anglais. Le corpus est documentaire
+et partiel : il ne contient pas les pages intégrales ni les images des 42 tomes; il
+ne prouve pas l’exhaustivité de DBS. Aucun profil aphrody/dbfr/ie n’a été utilisé
+pour cette campagne.
+
+Reprise EN le 2026-10-07 : commande native `aphrody web dragon-ball crawl --profile
+shenron --source wikipedia-en --max-requests 25 --max-depth 2 --index --json` :
+25 tentatives, 25 documents anglais, zéro erreur; l’index incrémental rapporte 25
+nouveaux documents et 598 chunks. Total sur la sortie privée : 50 documents
+(25 FR + 25 EN). La cible anglaise conserve 173 pages en attente et le statut natif
+est `completed:false`; cette passe a couvert les sources déclarées, mais pas toute
+la frontier des articles pertinents.
 
 ## 2026-10-07 — Commandes manette
 
