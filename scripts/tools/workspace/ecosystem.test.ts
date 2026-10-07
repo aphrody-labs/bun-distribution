@@ -192,7 +192,67 @@ describe.skipIf(!activeRootsPresent)("ecosystem catalog", () => {
   }, 180_000);
 });
 
+test.skipIf(!existsSync(join(root, "aphrody/crates/infra/aphrody-command/src/wsl/cli.rs")))(
+  "current folded WSL source preserves every public subcommand in the catalog",
+  () => {
+    const wsl = collect(root).cli.find((bin) => bin.binary === "aphrody wsl");
+    expect(wsl?.crate).toBe("aphrody-command");
+    expect(wsl?.source).toBe("crates/infra/aphrody-command/src/wsl/cli.rs#Args");
+    expect(wsl?.commands.map((command) => command.name)).toEqual([
+      "doctor",
+      "sources",
+      "plan",
+      "dependencies",
+      "build",
+      "all",
+      "latest",
+      "status",
+      "verify",
+      "import",
+    ]);
+  },
+  180_000,
+);
+
 describe("multicallTools", () => {
+  test("resolves folded crate modules and their named entry reexports", () => {
+    const dir = mkdtempSync(join(tmpdir(), "eco-folded-"));
+    try {
+      const src = join(dir, "crates/infra/aphrody-command/src");
+      mkdirSync(join(src, "wsl"), { recursive: true });
+      writeFileSync(
+        join(src, "multicall.rs"),
+        [
+          `tool("wsl", &["aphrody-wsl"], Target::Entry(crate::wsl::cli_main)),`,
+          `tool("missing", &[], Target::Entry(crate::missing::cli_main)),`,
+          `tool("direct", &[], Target::Entry(crate::direct::cli_main)),`,
+          `tool("unresolved", &[], Target::Entry(crate::unresolved::cli_main)),`,
+        ].join("\n"),
+      );
+      writeFileSync(join(src, "wsl/mod.rs"), "pub mod cli; pub use cli::cli_main;");
+      writeFileSync(join(src, "wsl/cli.rs"), "pub fn cli_main() {}");
+      writeFileSync(join(src, "direct.rs"), "pub fn cli_main() {}");
+      writeFileSync(join(src, "unresolved.rs"), "pub mod cli; pub use cli::cli_main;");
+      const targets = multicallTools(dir, "aphrody", [
+        {
+          name: "aphrody-command",
+          description: null,
+          manifest_path: join(src, "../Cargo.toml"),
+          features: {},
+          targets: [{ name: "aphrody_command", kind: ["lib"], src_path: join(src, "lib.rs") }],
+          dependencies: [{ name: "clap" }],
+        },
+      ]);
+      expect(targets.map((t) => [t.binary, t.crate, t.src])).toEqual([
+        ["aphrody wsl", "aphrody-command", join(src, "wsl/cli.rs")],
+        ["aphrody direct", "aphrody-command", join(src, "direct.rs")],
+      ]);
+      expect(targets.every((t) => t.usesClap)).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test("indexes former binaries under their aphrody multi-call name", () => {
     const dir = mkdtempSync(join(tmpdir(), "eco-multicall-"));
     try {

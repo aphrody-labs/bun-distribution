@@ -6,7 +6,7 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 15 binaries with a clap surface, 666 commands.
+Totals: 16 binaries with a clap surface, 676 commands.
 
 ## aphrody
 
@@ -624,6 +624,21 @@ Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/lib.rs#Args`, 6 co
 - `aphrody web-worker scrape`
 - `aphrody web-worker crawl` — Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.
 - `aphrody web-worker chrome-path`
+
+### `aphrody wsl`
+
+Crate `aphrody-command`, parser `crates/infra/aphrody-command/src/wsl/cli.rs#Args`, 10 commands.
+
+- `aphrody wsl doctor` — Verify source pins and installed build tools.
+- `aphrody wsl sources` — Inspect source revisions and dirtiness.
+- `aphrody wsl plan` — Show exact build commands without executing them.
+- `aphrody wsl dependencies` — Install host Linux dependencies (Windows prerequisites use native setup).
+- `aphrody wsl build` — Compile an upstream component or assemble the guest root filesystem.
+- `aphrody wsl all` — Build both kernels, WSLg, Windows WSL and the Aphrody OS guest in sequence.
+- `aphrody wsl latest` — Resolve the newest kernel.org stable tag; --apply moves the linux-stable pin to it.
+- `aphrody wsl status` — Read build evidence; missing and failed reports remain visible.
+- `aphrody wsl verify` — Hash and validate expected nonempty artifacts.
+- `aphrody wsl import` — Import a new distro, preserving every existing distribution.
 
 ### `aphrody x`
 

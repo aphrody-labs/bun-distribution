@@ -7014,6 +7014,84 @@
       ]
     },
     {
+      "binary": "aphrody wsl",
+      "crate": "aphrody-command",
+      "repo": "aphrody",
+      "source": "crates/infra/aphrody-command/src/wsl/cli.rs#Args",
+      "commands": [
+        {
+          "name": "doctor",
+          "about": "Verify source pins and installed build tools.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "sources",
+          "about": "Inspect source revisions and dirtiness.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "plan",
+          "about": "Show exact build commands without executing them.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "dependencies",
+          "about": "Install host Linux dependencies (Windows prerequisites use native setup).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "build",
+          "about": "Compile an upstream component or assemble the guest root filesystem.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "all",
+          "about": "Build both kernels, WSLg, Windows WSL and the Aphrody OS guest in sequence.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "latest",
+          "about": "Resolve the newest kernel.org stable tag; --apply moves the linux-stable pin to it.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "status",
+          "about": "Read build evidence; missing and failed reports remain visible.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "verify",
+          "about": "Hash and validate expected nonempty artifacts.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "import",
+          "about": "Import a new distro, preserving every existing distribution.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
       "binary": "aphrody x",
       "crate": "aphrody-x",
       "repo": "aphrody",
@@ -9857,8 +9935,8 @@
     "binaries": 9,
     "bunPackages": 130,
     "pythonPackages": 8,
-    "cliBinaries": 15,
-    "cliCommands": 666,
+    "cliBinaries": 16,
+    "cliCommands": 676,
     "mcpServers": 19,
     "mcpTools": 369,
     "mcpUniqueToolNames": 367

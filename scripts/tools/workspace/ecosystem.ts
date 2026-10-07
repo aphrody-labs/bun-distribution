@@ -12,7 +12,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { loadCargoMetadata } from "./repo-layering.ts";
 
 /** The two active roots; retired category repositories remain migration history. */
@@ -861,17 +861,38 @@ export function multicallTools(
   const crates = new Map(packages.map((pkg) => [pkg.name.replaceAll("-", "_"), pkg]));
   const out = [];
   for (const m of read(table).matchAll(
-    /tool\(\s*"([^"]+)",\s*&\[[^\]]*\],\s*Target::Entry\(([a-z0-9_]+)::/g,
+    /tool\(\s*"([^"]+)",\s*&\[[^\]]*\],\s*Target::Entry\(([a-z0-9_]+)::([a-z0-9_:]+)\)/g,
   )) {
-    const pkg = crates.get(m[2] as string);
+    const local = m[2] === "crate";
+    const pkg = crates.get(local ? "aphrody_command" : (m[2] as string));
     const lib = pkg?.targets.find((t) => t.kind.some((k) => k === "lib" || k === "rlib"));
     if (pkg === undefined || lib === undefined) continue;
+    let entry = lib.src_path;
+    if (local) {
+      const segments = (m[3] as string).split("::");
+      const fn = segments.pop();
+      if (fn === undefined || segments.length === 0) continue;
+      const module = join(dirname(lib.src_path), ...segments);
+      entry = [module + ".rs", join(module, "mod.rs")].find(existsSync) ?? "";
+      if (!entry) continue;
+      // Follow a named local reexport to its actual function owner, rather than
+      // selecting an unrelated Parser from the merged command crate.
+      const source = read(entry);
+      if (!new RegExp(`\\bfn\\s+${fn}\\s*\\(`).test(source)) {
+        const reexport = new RegExp(`pub\\s+use\\s+([a-z0-9_]+)::${fn}\\s*;`).exec(source);
+        if (reexport === null) continue;
+        const moduleDir = basename(entry) === "mod.rs" ? dirname(entry) : entry.slice(0, -3);
+        const child = join(moduleDir, reexport[1] as string);
+        entry = [child + ".rs", join(child, "mod.rs")].find(existsSync) ?? "";
+        if (!entry || !new RegExp(`\\bfn\\s+${fn}\\s*\\(`).test(read(entry))) continue;
+      }
+    }
     out.push({
       binary: `aphrody ${m[1]}`,
       crate: pkg.name,
       repo,
-      src: lib.src_path,
-      libSrc: lib.src_path,
+      src: entry,
+      libSrc: entry,
       usesClap: pkg.dependencies.some((d) => d.name === "clap"),
     });
   }

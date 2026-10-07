@@ -5,10 +5,10 @@ import { join } from "node:path";
 
 const root = join(import.meta.dir, "../..");
 const home = process.env.HOME ?? "";
-const out = (cmd: string[]) => {
+const out = (cmd: string[]): string | null => {
   try {
     const r = Bun.spawnSync(cmd, { cwd: root, stdout: "pipe", stderr: "pipe" });
-    return r.exitCode === 0 ? r.stdout.toString().trim().split("\n")[0] : null;
+    return r.exitCode === 0 ? (r.stdout.toString().trim().split("\n")[0] ?? null) : null;
   } catch {
     return null;
   }
