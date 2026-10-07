@@ -8,7 +8,7 @@ canonical files in `config/host/nginx/shenron/`; it does not contain a second ro
 implementation.
 
 Mount the selected, checksum-sealed route files under `/etc/nginx/conf.d` read-only.
-Mount the existing certificate store read-only at `/etc/letsencrypt`; certificate
+Mount the dedicated `/etc/aphrody/shenron-tls` store read-only at `/etc/letsencrypt`; certificate
 private keys never enter the context, image or release archive. Bind only the
 public wiki, bot assets and public extra stores under `/srv/shenron-cdn`, and the
 canonical maintenance page at `/var/www/shenron/50x.html`. Never mount home,
@@ -16,8 +16,13 @@ conversation, database, backup or model directories as public content.
 
 Use a read-only root filesystem, `no-new-privileges`, `cap_drop: [ALL]`, and grant
 only `NET_BIND_SERVICE`, `SETUID`, `SETGID` for the root TLS master and unprivileged
-workers. Supply writable tmpfs mounts at `/run` and `/var/lib/nginx` (UID/GID 33
-for nginx temporary data). SIGQUIT provides graceful shutdown. Logs go to the
+workers. Supply writable tmpfs mounts at `/run`, `/var/lib/nginx` and
+`/var/cache/nginx`. Add UID/GID 33 tmpfs submounts at
+`/var/lib/nginx/{body,proxy,fastcgi,uwsgi,scgi}` and
+`/var/cache/nginx/{shenron_images,shenron_hls}`: nginx must find these directories
+already owned by its workers because the TLS master has no `CHOWN` capability.
+Set the open-file limit to 65535 for the configured worker connections.
+SIGQUIT provides graceful shutdown. Logs go to the
 container streams; the health check verifies the apex TLS certificate and the
 site health endpoint.
 
