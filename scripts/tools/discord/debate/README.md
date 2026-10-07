@@ -180,3 +180,11 @@ l’activation FFI restante. Le worker HTTP actuellement qualifié a servi
 l’échange `1557492036876107777`, avec Shenron `1557492315059257515`,
 Aphrody/Gemma `1557492471590555844` et le bilan d’arbitrage
 `1557493043006021652`. Les limites de logique et de source restent explicites.
+
+La transition du runtime seul utilise `runtime-activate.ts` : plan Infra,
+checksum du pin et de la sauvegarde d’unité, sonde `--help` du bundle existant,
+drain du handler, vérification du processus réel et santé des deux modèles.
+Elle a activé le PID `4099441` sous Yolo `c886d124e138`, avec le bundle HTTP
+`33af90fa46486522db6a2ffd0449f6c3a137fc26dc5992d491b30b299e0dd2c5`
+inchangé et les ports 8798/8799 en HTTP 200. Cette transition ne revendique
+aucune activation FFI ; l’unité précédente reste en sauvegarde privée.
