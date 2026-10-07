@@ -20,6 +20,7 @@ pub use dialog::{
 };
 pub use environment::DebugEnvironment;
 mod frame_navigation;
+mod initial_navigation;
 /// The languages the user asked their operating system for.
 mod locale;
 mod macros;
