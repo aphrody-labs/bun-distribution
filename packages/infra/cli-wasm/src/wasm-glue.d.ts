@@ -9,4 +9,8 @@ declare module "#cli-wasm-glue" {
   export function initSync(input: { module: BufferSource | WebAssembly.Module }): unknown;
   export function run(args: string[], stdin: string, filesJson: string): string;
   export function version(): string;
+  export function abiVersion(): number;
+  export function manifest(): string;
+  export function callJson(op: string, input: string): string;
+  export function callVec(op: string, params: string, a: Uint8Array, b: Uint8Array): Uint8Array;
 }

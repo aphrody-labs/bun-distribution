@@ -17,7 +17,10 @@ cli.run(["--help"]).stdout;
 
 Groups: `rag` (the RAG call surface of `aphrody-rag-core`), `toolcall` (repair, validate, extract),
 `html` (extract, markdown, simhash), `text` (comments, scrub, aphrodify, is-japanese).
-For typed RAG calls and dense-vector kernels, use `@aphrody/rag-core` (same Rust source of truth).
+The single module also exposes the structured RAG transport and dense-vector kernels through
+`cli.rag` (`abiVersion`, `manifest`, `callJson`, `callVec`). The typed loaders in
+`@aphrody/rag-core/wasm` use this same loader, module instance and linear memory.
+No separate RAG WASM binary is built or shipped.
 
 Build (`wasm/`, git-ignored): `bun run build:wasm`. Plan: `docs/plans/ai/shenron-targets.md`.
 

@@ -84,6 +84,10 @@
         "`aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate"
       ],
       [
+        "WASM",
+        "`aphrody-command-wasm` (`crates/infra/aphrody-command-wasm`), exposed by `@aphrody/cli-wasm`: pure commands and RAG JSON/vector operations share one module, loader and linear memory. `@aphrody/rag-core/wasm` uses the same loader."
+      ],
+      [
         "MCP",
         "`aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `aphrody kernel mcp`, `yolo mcp` and `m3-mcp` are deprecated aliases (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers"
       ],
@@ -217,6 +221,11 @@
             "2026-10-07",
             "Consolidated Bun capabilities: `@aphrody/messaging` implementation and test-DOM package removed; Discord messaging now belongs to `@aphrody/discord-kit/messaging`, shared test DOM to `scripts/test-dom.ts`, inference to `@aphrody/bun`, HTTP transport to `@aphrody/bun`, and paths to Workspace. Compatibility facades remain for published `@aphrody/inference`, `@aphrody/paths` and `@aphrody/http`. Discord 65 tests and Google 34 tests passed; Workspace typecheck, targeted package contracts (17 tests), frozen Bun lock and docs generation/check passed.",
             "The full Workspace suite had 377 passes, 20 skips and 3 fixture timeouts in `build-factory-source`; its isolated rerun had 8 passes and 2 Git pack fixture failures. Services were not activated and no remote Drive writes were executed. Full source-level consolidation does not imply package publication or host deployment."
+          ],
+          [
+            "2026-10-07",
+            "RAG WASM folded into the canonical aphrody-command-wasm adapter; the dedicated rag-wasm crate, glue declaration and generated output directory removed. @aphrody/rag-core/wasm loads the CLI module and shares its instance/linear memory; typed loader names retained. RAG 15 tests, CLI 8 tests (including native/WASM output parity), packaging 15 tests, scoped TypeScript/lint/format passed. VPS release WASM build, 3 Rust unit tests, strict Clippy and MSVC cross-check via cargo-xwin passed. Two module payloads (4,496,394 + 2,979,023 bytes) replaced by one 4,498,468-byte optimized module. Rebuilt native CLI snapshot f2d8480fe4ea fetched with verified SHA-256 e57f2c32184763672e4ae6ca565b2a8a68780f4b690ee62600c9f236d21cc946 and executed on WSL.",
+            "Raw rag-core wasm/* resource paths migrate to @aphrody/cli-wasm/wasm/*. Source, packaging fixtures and local artifacts qualified; package publication, real browser execution and native Windows execution remain open. Installed PATH CLI remains unchanged; parity uses the rebuilt debug CLI. Other monorepo consolidation work remains open."
           ]
         ]
       },

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! The language-neutral call surface of `aphrody-rag-core`: the single source of truth for
-//! every binding (WebAssembly in `aphrody-rag-wasm`, C ABI in `aphrody-rag-ffi`, and any
+//! every binding (WebAssembly in `aphrody-command-wasm`, C ABI in `aphrody-rag-ffi`, and any
 //! future host).
 //!
 //! A binding never re-declares a capability. It forwards three entry points:

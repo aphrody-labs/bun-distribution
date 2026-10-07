@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { createRagCore, type RagCore } from "../src/core";
 
 const root = join(import.meta.dir, "..");
-const wasmFile = join(root, "wasm/aphrody_rag_wasm_bg.wasm");
+const wasmFile = join(root, "../../infra/cli-wasm/wasm/aphrody_command_wasm_bg.wasm");
 const ffiPath = process.env.APHRODY_RAG_LIBRARY;
 
 const backends: [string, () => Promise<RagCore>][] = [];

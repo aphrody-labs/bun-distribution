@@ -26,6 +26,10 @@ export default async function init(source) { await WebAssembly.instantiate(sourc
 export function initSync(source) { new WebAssembly.Instance(new WebAssembly.Module(source.module)); }
 export function version() { return "fixture"; }
 export function run() { return JSON.stringify({code:0,stdout:"toolcall fixture",stderr:""}); }
+export function abiVersion() { return 1; }
+export function manifest() { return JSON.stringify({abi:1,json:[],vec:[]}); }
+export function callJson(op,input) { return input; }
+export function callVec(op,params,a,b) { return a; }
 `,
   );
   await writeFile(
@@ -36,6 +40,10 @@ export default function init(source?: {module_or_path: InitInput | Promise<InitI
 export function initSync(source: {module: BufferSource | WebAssembly.Module}): unknown;
 export function run(args:string[],stdin:string,files:string):string;
 export function version():string;
+export function abiVersion():number;
+export function manifest():string;
+export function callJson(op:string,input:string):string;
+export function callVec(op:string,params:string,a:Uint8Array,b:Uint8Array):Uint8Array;
 `,
   );
   await writeFile(join(input, "aphrody_command_wasm_bg.wasm.d.ts"), "export {};\n");
@@ -93,14 +101,20 @@ test("portable stage bundles the existing facade, emits usable declarations and 
     const cli = await portable.loadCliWasm(wasm);
     expect(cli.version).toBe("fixture");
     expect(cli.run(["--help"]).code).toBe(0);
+    expect(cli.rag.abiVersion).toBe(1);
+    expect(JSON.parse(cli.rag.manifest()).abi).toBe(1);
     await writeFile(
       join(pack, "consumer.ts"),
       `import {loadCliWasm, type Cli, type Outcome} from "./index.js";
 const cli: Cli = await loadCliWasm(new Uint8Array());
 const outcome: Outcome = cli.run(["--help"], {stdin:"text",files:{"file":"text"}});
+const ragAbi: number = cli.rag.abiVersion;
+const vector: Uint8Array = cli.rag.callVec("normalize_f32", "{}", new Uint8Array(), new Uint8Array());
 // @ts-expect-error readonly string arguments are required
 cli.run([1]);
 void outcome;
+void ragAbi;
+void vector;
 `,
     );
     await run([

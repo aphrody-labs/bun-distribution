@@ -1,6 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
 // Typed facade over crates/infra/aphrody-command-wasm: `aphrody pure ...` in WebAssembly.
-import init, { initSync, run, version, type InitInput } from "#cli-wasm-glue";
+import init, {
+  abiVersion,
+  callJson,
+  callVec,
+  initSync,
+  manifest,
+  run,
+  version,
+  type InitInput,
+} from "#cli-wasm-glue";
+
+export type WasmInput = InitInput;
+
+/** RAG operations share the command module's instance and memory. */
+export interface WasmRagTransport {
+  readonly abiVersion: number;
+  manifest(): string;
+  callJson(op: string, input: string): string;
+  callVec(op: string, params: string, a: Uint8Array, b: Uint8Array): Uint8Array;
+}
 
 export interface RunOptions {
   /** Text read by `-` arguments. */
@@ -31,6 +50,7 @@ export interface DragonBallProjectionOptions {
 }
 
 export interface Cli {
+  readonly rag: WasmRagTransport;
   /** Package version of the pure command crate. */
   readonly version: string;
   /** Run `aphrody pure <args...>`; never throws for a failing command, see `code`. */
@@ -54,6 +74,7 @@ function open(): Cli {
     return out.stdout;
   };
   return {
+    rag: { abiVersion: abiVersion(), manifest, callJson, callVec },
     version: version(),
     run: exec,
     text,

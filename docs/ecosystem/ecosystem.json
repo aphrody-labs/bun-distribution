@@ -852,13 +852,6 @@
           "features": []
         },
         {
-          "name": "aphrody-rag-wasm",
-          "path": "crates/ai/rag-wasm",
-          "description": "wasm-bindgen adapter of aphrody-rag-core for the browser: three entry points over the shared call surface, no logic of its own.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-re",
           "path": "crates/os/re",
           "description": "Reverse engineering primitives for aphrody — PE/ELF/Mach-O triage, sections + entropy + hash, ASCII/UTF-16 strings extraction. Pure Rust, no C bindings, no GPL.",
@@ -10123,7 +10116,7 @@
     "aphrodyRepos": 1,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 205,
+    "crates": 204,
     "binaries": 9,
     "bunPackages": 126,
     "pythonPackages": 8,

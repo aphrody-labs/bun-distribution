@@ -942,6 +942,7 @@ name = "aphrody-command-wasm"
 version = "1.0.0"
 dependencies = [
  "aphrody-command-pure",
+ "aphrody-rag-core",
  "serde_json",
  "wasm-bindgen",
 ]
@@ -2108,14 +2109,6 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "aphrody-rag-wasm"
-version = "1.0.0"
-dependencies = [
- "aphrody-rag-core",
- "wasm-bindgen",
 ]
 
 [[package]]

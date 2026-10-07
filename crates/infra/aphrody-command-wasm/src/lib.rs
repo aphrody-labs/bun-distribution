@@ -10,6 +10,9 @@
 use aphrody_command_pure::{MemoryIo, run_args};
 use wasm_bindgen::prelude::*;
 
+mod rag;
+pub use rag::{abi_version, call_json, call_vec, manifest};
+
 /// Run `aphrody pure <args...>`; `files_json` is a JSON object `{ "name": "text", ... }`.
 ///
 /// # Errors

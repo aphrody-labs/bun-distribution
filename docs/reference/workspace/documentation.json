@@ -46,8 +46,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan",
-      "sha256": "0044d950763649579dc4602a5982dd013c6970a6a6a6c528e2390e89b0b2cfc9",
-      "bytes": 6152,
+      "sha256": "1b460d17024c3bd9dd3c26146d1e122228f40272a1ac04cabda7b65b4b416ffd",
+      "bytes": 6393,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -56,7 +56,7 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "8be8de8e2f551cc60dcb7ddda5ee46ad9967ab9a73beea2cf3e9505ef945c4bc",
+      "sha256": "a7ab9d7d4ae72bacf0ce67e05ac38a9d71b918dc2810f50d00af67c5647ede28",
       "bytes": 3399,
       "domain": "",
       "status": "generated",
@@ -3956,8 +3956,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "1b8a2ec73c143695efcdb08bc137acc10df6f4c11452326306d2fc855f1eb82f",
-      "bytes": 61194,
+      "sha256": "95114319e34df92267ce3836e48cebf1c5e58f8d103dfa358299b479446bb1cb",
+      "bytes": 61014,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -6466,10 +6466,10 @@
     {
       "path": "docs/operations/infra/DRIVE-RECONCILIATION-WORKER.md",
       "title": "Rapprochement privé des Agent Homes Drive",
-      "sha256": "9a3bcd072ad860ca01bfd402d28f6ca26d5bf8c039de1381673d9679bd9242b8",
-      "bytes": 2761,
+      "sha256": "027edd98c7a0fe0444070ade51eb720d29df8243fe0e6bdd3acdb69c595a7bef",
+      "bytes": 8344,
       "domain": "infra",
-      "status": "historical",
+      "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/DRIVE-RECONCILIATION-WORKER.md"
     },
@@ -7056,8 +7056,8 @@
     {
       "path": "docs/plans/ai/shenron-targets.md",
       "title": "Shenron : trois cibles RAG (WASM web, natif desktop, FFI Bun)",
-      "sha256": "e555ee3e59acb7dc6327c023d6ca09722c3109ea5b8d0b8c4fae82739ba8a2b2",
-      "bytes": 8675,
+      "sha256": "f27a52935554639138de394d3c2ca3e0442ebdb70ff5e5680a1682d10c146dcf",
+      "bytes": 8755,
       "domain": "ai",
       "status": "historical",
       "visibility": "private",
@@ -31866,8 +31866,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "7c2d71b923a926052cf9cc82aa9feebf641480cfc4f03656b43a9e320cd65f0b",
-      "bytes": 48689,
+      "sha256": "31e79fabf5cf0d3e6560bc34ba1e32f1c15b211b36c56a048e3bd7dae8a2d23c",
+      "bytes": 48555,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -36796,8 +36796,8 @@
     {
       "path": "packages/ai/rag-core/README.md",
       "title": "@aphrody/rag-core",
-      "sha256": "00acd0dea7cfb6b1d90d8bb439dd3e67dd76998e5dde78fc5e929a4e896104e5",
-      "bytes": 1575,
+      "sha256": "95cb2cdf9267f43f216d6e5388f6e53be1638b6c86b1a857a3a606339933555a",
+      "bytes": 1897,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -36876,8 +36876,8 @@
     {
       "path": "packages/infra/cli-wasm/README.md",
       "title": "@aphrody/cli-wasm",
-      "sha256": "0d86b07e4ead7c30c08349b89dcf63ec81dc6363e3e60a94e430ec4ebc859fb4",
-      "bytes": 2568,
+      "sha256": "fe992a30ad2b342ac7151e7a6c8ce62326db0f3c5726b07b6e7aed14664bc575",
+      "bytes": 2775,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",

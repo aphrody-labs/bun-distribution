@@ -23,6 +23,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | Rust CLI | `aphrody` multicall binary (`crates/infra/aphrody`, `crates/infra/aphrody-command`); former tool names are links |
 | Bun CLI | `yolo` (`packages/engine/yolo`) |
 | FFI | `aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate |
+| WASM | `aphrody-command-wasm` (`crates/infra/aphrody-command-wasm`), exposed by `@aphrody/cli-wasm`: pure commands and RAG JSON/vector operations share one module, loader and linear memory. `@aphrody/rag-core/wasm` uses the same loader. |
 | MCP | `aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `aphrody kernel mcp`, `yolo mcp` and `m3-mcp` are deprecated aliases (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers |
 | Desktop | `aphrody-app` on `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4); routes `admin`, `creator` |
 | Python | `vu` runtime (uv + ruff + PyO3 + shared CPython), plan in `docs/plans/vu/PLAN.md` |

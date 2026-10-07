@@ -15,7 +15,7 @@ ligne de table. Les bindings sont des adaptateurs sans logique :
 
 | Cible | Crate / package | Forme |
 | :-- | :-- | :-- |
-| Web | `crates/ai/rag-wasm` (wasm-bindgen `--target web`) + `@aphrody/rag-core/wasm` | ESM, `loadRagWasm()` |
+| Web | `crates/infra/aphrody-command-wasm` (wasm-bindgen `--target web`) + `@aphrody/rag-core/wasm` | ESM, `loadRagWasm()`; module, chargeur et mémoire partagés avec `@aphrody/cli-wasm` |
 | `cargo check -p aphrody-ffi` (re-export `aphrody_rag_*`) | ok ; `cargo build --release -p aphrody-ffi` (VPS, 5 min 39 s) : `nm -D` montre les 6 symboles `aphrody_rag_*` ; les 23 tests Bun FFI passent contre ce cdylib complet (395 Mo, non strippé), top-10 cosinus 20 000 x 384 en 3,2 ms |
 | `cargo clippy -D warnings` (3 crates, `--all-targets`) | ok |
 | `nextest run -p aphrody-command` après ajout de `Commands::Pure` | 195 tests ok sur 195 |

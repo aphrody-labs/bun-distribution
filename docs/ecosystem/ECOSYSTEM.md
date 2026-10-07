@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 1 repositories (1 aphrody, 0 shared, 0 experiments), 205 crates, 9 binaries, 126 Bun packages, 8 uv packages, 706 CLI commands, 370 MCP tools.
+Totals: 1 repositories (1 aphrody, 0 shared, 0 experiments), 204 crates, 9 binaries, 126 Bun packages, 8 uv packages, 706 CLI commands, 370 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -17,7 +17,7 @@ Totals: 1 repositories (1 aphrody, 0 shared, 0 experiments), 205 crates, 9 binar
 
 Canonical Rust/Bun monorepo
 
-### Crates (205)
+### Crates (204)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -114,7 +114,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-rag` | crates/ai/rag | Unified RAG storage, embedding, vector scan, hybrid search, and agent tools for aphrody (P8). |  | default, native, ort |
 | `aphrody-rag-core` | crates/ai/rag-core | Pure, wasm32-safe core of the aphrody RAG layer: source-aware chunkers (Rust/JS-TS/Markdown/structural/prose), reciprocal-rank-fusion + MMR + vector helpers, and a bit-for-bit port of shenron's retrieval eval harness. |  | default, oxc |
 | `aphrody-rag-eval` | crates/ai/rag-eval | RAG retrieval evaluation harness (Recall@k, MRR, nDCG) over HTTP, MCP or a local index. |  |  |
-| `aphrody-rag-wasm` | crates/ai/rag-wasm | wasm-bindgen adapter of aphrody-rag-core for the browser: three entry points over the shared call surface, no logic of its own. |  |  |
 | `aphrody-re` | crates/os/re | Reverse engineering primitives for aphrody — PE/ELF/Mach-O triage, sections + entropy + hash, ASCII/UTF-16 strings extraction. Pure Rust, no C bindings, no GPL. |  | leveldb, magika, yara |
 | `aphrody-render` | crates/ui/render | Unified Aphrody native renderer contract: M3 layout, 2D GPU backends and CPU fallback. |  | all-gpu, cpu, default, dx12, gpu, metal, parallel, vulkan, webgl, webgpu |
 | `aphrody-restart` | crates/tauri/aphrody-restart | Aphrody platform crate aphrody-restart. | `restart` | process-relaunch-dangerous-allow-symlink-macos |
