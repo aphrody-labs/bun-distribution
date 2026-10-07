@@ -686,7 +686,7 @@ dependencies = [
  "aphrody-identity",
  "aphrody-kernel",
  "aphrody-llama-server",
- "aphrody-local-ai",
+ "aphrody-models",
  "aphrody-native",
  "aphrody-shell-tauri",
  "aphrody-sprite-sheet",
@@ -712,6 +712,7 @@ dependencies = [
  "aphrody-tauri-wrap",
  "async-trait",
  "base64 0.23.1",
+ "futures-util",
  "log",
  "mimalloc",
  "reqwest 0.13.5",
@@ -719,6 +720,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "thiserror 2.0.21",
  "tokio",
  "url",
  "yolo-core",
@@ -922,7 +924,6 @@ dependencies = [
  "aphrody-config",
  "aphrody-create-tauri-app",
  "aphrody-diagnostics",
- "aphrody-discord-compiler",
  "aphrody-embed",
  "aphrody-engine",
  "aphrody-firefly",
@@ -952,6 +953,7 @@ dependencies = [
  "aphrody-notebooklm",
  "aphrody-obscura",
  "aphrody-ocr",
+ "aphrody-oxc-bridge",
  "aphrody-prompts",
  "aphrody-rag",
  "aphrody-rag-eval",
@@ -1138,21 +1140,6 @@ dependencies = [
  "aphrody-bindgen",
  "libc",
  "libloading 0.9.0",
-]
-
-[[package]]
-name = "aphrody-discord-compiler"
-version = "1.0.0"
-dependencies = [
- "aphrody-oxc-bridge",
- "colored 3.1.1",
- "miette 7.6.0",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
- "which 8.0.6",
 ]
 
 [[package]]
@@ -1436,19 +1423,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-google-mcp"
-version = "1.0.0"
-dependencies = [
- "aphrody-gemini-web",
- "base64 0.23.1",
- "dirs 7.0.0",
- "rmcp",
- "serde_json",
- "tempfile",
- "tokio",
-]
-
-[[package]]
 name = "aphrody-gpu-backend"
 version = "1.0.0-canary"
 dependencies = [
@@ -1691,17 +1665,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-local-ai"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-models",
- "futures-util",
- "serde_json",
- "tempfile",
- "thiserror 2.0.21",
-]
-
-[[package]]
 name = "aphrody-m3-reproduce"
 version = "1.0.0-canary"
 dependencies = [
@@ -1741,7 +1704,6 @@ dependencies = [
  "aphrody-gemini-web",
  "aphrody-git",
  "aphrody-google",
- "aphrody-google-mcp",
  "aphrody-http-error",
  "aphrody-infer",
  "aphrody-jev",

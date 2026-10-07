@@ -146,7 +146,6 @@ aphrody-re         = { workspace = true }
 dirs               = { workspace = true }
 aphrody-gemini-web         = { workspace = true }
 aphrody-llama-server = { workspace = true, optional = true }
-aphrody-google-mcp         = { workspace = true }
 # Direct fetch + in-process HTML→Markdown (`universal_web_fetch`, `coding_style_guide`; retires the
 # `https://r.jina.ai/` proxy) and, with `native-browser`, the Obscura browser tools.
 aphrody-web-service = { workspace = true }

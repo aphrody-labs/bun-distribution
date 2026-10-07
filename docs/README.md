@@ -70,6 +70,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [infra](plans/infra/) | 4 | [Aphrody Infra plan](plans/infra/PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
+| plans | [os-kernel](plans/os-kernel/) | 1 | [Architecture cible de aphrody-kernel](plans/os-kernel/PLAN.md) |
 | plans | [runtime](plans/runtime/) | 3 | - |
 | plans | [shell](plans/shell/) | 1 | - |
 | plans | [tauri-cef](plans/tauri-cef/) | 2 | [One desktop runtime: `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4)](plans/tauri-cef/PLAN.md) |
@@ -96,6 +97,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [discord](reference/discord/) | 41 | - |
 | reference | [infra](reference/infra/) | 33 | - |
 | reference | [interop](reference/interop/) | 1 | - |
+| reference | [licenses](reference/licenses/) | 1 | - |
 | reference | [native](reference/native/) | 2 | - |
 | reference | [os](reference/os/) | 29 | - |
 | reference | [shell](reference/shell/) | 10 | - |
@@ -116,4 +118,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 3261 files.
+Total: 3263 files.

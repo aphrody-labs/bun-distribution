@@ -23,6 +23,7 @@ pub mod identity;
 pub mod integration;
 pub mod kits;
 pub mod llama_daemon;
+pub mod local_ai;
 pub mod models;
 pub mod parking;
 pub mod quickbar;

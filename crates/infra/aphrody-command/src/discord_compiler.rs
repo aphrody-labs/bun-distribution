@@ -155,12 +155,6 @@ impl DiscordCompiler {
         Ok(Self { root, bun_bin })
     }
 
-    /// Explicitly provide the monorepo root.
-    pub fn with_root(root: PathBuf) -> Result<Self> {
-        let bun_bin = Self::resolve_bun_bin()?;
-        Ok(Self { root, bun_bin })
-    }
-
     fn find_repo_root() -> Result<PathBuf> {
         let mut cur = std::env::current_dir().into_diagnostic()?;
         loop {
@@ -190,14 +184,6 @@ impl DiscordCompiler {
             return Ok(system_bun);
         }
         bail!("Could not resolve `bun` executable in PATH or ~/.bun/bin/bun");
-    }
-
-    pub fn repo_root(&self) -> &Path {
-        &self.root
-    }
-
-    pub fn bun_path(&self) -> &Path {
-        &self.bun_bin
     }
 
     /// Inspect a bot's directory, checking configuration, decorators, and syntax with Oxc.

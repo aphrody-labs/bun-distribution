@@ -4,7 +4,7 @@
 
 use std::path::PathBuf;
 
-use aphrody_discord_compiler::{BotTarget, CompilerOptions, DiscordCompiler};
+use crate::discord_compiler::{BotTarget, CompilerOptions, DiscordCompiler};
 use clap::Subcommand;
 use colored::Colorize;
 use miette::Result;

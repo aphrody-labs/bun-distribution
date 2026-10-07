@@ -57,7 +57,9 @@ aphrody-kernel = { workspace = true }
 # The `__llama-daemon` entry (src/llama_daemon.rs) hosts `aphrody_llama_server::daemon::run`.
 aphrody-llama-server = { workspace = true }
 # Toolkit-free, in-process model hub (replaces the `aphrody model` CLI child process).
-aphrody-local-ai = { workspace = true }
+aphrody-models = { workspace = true }
+futures-util = { workspace = true }
+thiserror = { workspace = true }
 aphrody-native = { workspace = true }
 aphrody-sprite-sheet = { workspace = true }
 aphrody-subsystem = { workspace = true }

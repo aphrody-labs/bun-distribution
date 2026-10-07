@@ -49,6 +49,8 @@ mod design_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod discord_cmd;
 #[cfg(not(target_arch = "wasm32"))]
+mod discord_compiler;
+#[cfg(not(target_arch = "wasm32"))]
 mod docs_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod exec_cmd;

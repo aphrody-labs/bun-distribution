@@ -6,14 +6,14 @@
 //! `aphrody mcp-server` subcommand).
 mod client_cmd;
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) use aphrody_google_mcp::gemini_tools;
+mod gemini_tools;
 mod http_rest;
 mod native_crawl_tools;
 mod public_web_tools;
 #[cfg(not(target_arch = "wasm32"))]
 mod search_tools;
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) use aphrody_google_mcp::shenron_gemini_web;
+mod shenron_gemini_web;
 #[cfg(not(target_arch = "wasm32"))]
 mod shenron_llm_backend;
 mod shenron_vector;

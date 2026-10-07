@@ -7,7 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 20 servers, 379 tool registrations, 377 unique tool names.
+Totals: 19 servers, 379 tool registrations, 377 unique tool names.
 
 ## aphrody — @aphrody/m3-mcp
 
@@ -128,16 +128,6 @@ Kind: kernel-subsystem. 5 tools.
 | `uutils_catalog` | List supported pinned uutils companion utilities and their availability |
 | `uutils_run` | Run a pinned uutils companion utility (find, grep, sed, diff, or tar) without a shell |
 
-## aphrody — aphrody-google-mcp
-
-Kind: json-catalog. 3 tools.
-
-| Tool | Description |
-| --- | --- |
-| `aphrody_gemini_ask` | Query Google Gemini directly with automatic engine selection (Rust Bridge -> Web) using signed-in cookies. |
-| `aphrody_gemini_chat` | Chat with Gemini keeping continuous conversation context across multi-turn exchanges. |
-| `aphrody_gemini_rust` | Execute a one-shot Gemini Web query directly in the shared Rust runtime. |
-
 ## aphrody — aphrody-kernel subsystem `cloud`
 
 Kind: kernel-subsystem. 6 tools.
@@ -173,7 +163,7 @@ Kind: kernel-subsystem. 1 tools.
 
 ## aphrody — aphrody-mcp
 
-Kind: json-catalog. 15 tools.
+Kind: json-catalog. 18 tools.
 
 | Tool | Description |
 | --- | --- |
@@ -182,6 +172,9 @@ Kind: json-catalog. 15 tools.
 | `aphrody_archive_wayback` | List public Wayback Machine captures through the CDX API; no archived content is downloaded. |
 | `aphrody_capabilities` | List the native Aphrody Web tools available in this build. |
 | `aphrody_detect_frameworks` | Detect web technologies, CDN and challenge evidence from a bounded HTTP response and DNS lookup. |
+| `aphrody_gemini_ask` | Query Google Gemini directly with automatic engine selection (Rust Bridge -> Web) using signed-in cookies. |
+| `aphrody_gemini_chat` | Chat with Gemini keeping continuous conversation context across multi-turn exchanges. |
+| `aphrody_gemini_rust` | Execute a one-shot Gemini Web query directly in the shared Rust runtime. |
 | `aphrody_google_calendar_public` | Fetch and parse events from any public Google iCalendar feed by ID. |
 | `aphrody_google_dns` | Query Google Public DNS-over-HTTPS (DoH) for any domain and record type (A, AAAA, MX, TXT, etc.). |
 | `aphrody_google_doc_export` | Export a publicly shared Google Document to plain text. |

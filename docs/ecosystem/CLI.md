@@ -1003,7 +1003,6 @@ Crate `aphrody-store`, parser `crates/ai/store/src/cli.rs#Cli`, 8 commands.
 - `aphrody jev` (aphrody / `aphrody-jev`)
 - `aphrody llama` (aphrody / `aphrody-llama-server`)
 - `aphrody llama-daemon` (aphrody / `aphrody-llama-server`)
-- `aphrody summary` (aphrody / `aphrody-summary`)
 - `aphrody-app` (aphrody / `aphrody-app`)
 - `aphrody-fake-llama-server` (aphrody / `aphrody-llama-server`)
 - `aphrody-llama-daemon` (aphrody / `aphrody-llama-server`)

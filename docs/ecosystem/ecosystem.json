@@ -136,13 +136,6 @@
           "features": []
         },
         {
-          "name": "aphrody-ai",
-          "path": "crates/ai/ai",
-          "description": "Canonical Aphrody pure AI logic: models, inference, providers, RAG, agents, MCP client and sessions.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-antigravity",
           "path": "crates/google/antigravity",
           "description": "Native Rust SDK for Antigravity (Google AI Ultra / Gemini) — token extraction from Windows Credential Manager, OAuth refresh, typed HTTP client.",
@@ -361,23 +354,9 @@
           "features": []
         },
         {
-          "name": "aphrody-discord-compiler",
-          "path": "crates/discord/aphrody-discord-compiler",
-          "description": "Native Rust + Bun compiler and AST orchestrator for Discord bots in Aphrody.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-drive",
           "path": "crates/ui/drive",
           "description": "Aphrody Drive, the Aphrody OS file explorer: Tauri 3 plugin that supervises the sd-daemon core and bridges it to the explorer webview.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-ecosystem",
-          "path": "crates/ai/ecosystem",
-          "description": "Dependency-free ownership and local surface discovery for Aphrody AI, OS and infra.",
           "bins": [],
           "features": []
         },
@@ -423,20 +402,6 @@
           "name": "aphrody-events",
           "path": "crates/os/events",
           "description": "In-process async event bus for aphrody — broadcast + topic filtering + NDJSON audit sink, no external broker required.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-everything-sdk",
-          "path": "crates/os/everything-sdk",
-          "description": "Low-level dynamic binding to the voidtools Everything SDK (Everything64.dll): DLL loading, raw symbols, serialised queries. No business logic.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-exec-events",
-          "path": "crates/ai/exec-events",
-          "description": "Top-level JSONL thread and item events emitted by aphrody exec (--experimental-json) and EventTranslator for Codex TS SDK contract parity.",
           "bins": [],
           "features": []
         },
@@ -491,13 +456,6 @@
           "features": []
         },
         {
-          "name": "aphrody-gcs",
-          "path": "crates/google/gcs",
-          "description": "Google Cloud Storage listing over the GCS JSON API with Application Default Credentials refresh (no gcloud subprocess).",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-gemini-runtime",
           "path": "crates/google/gemini-runtime",
           "description": "Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming, plus the mcp.json loader and the legacy MCP client facade over aphrody-mcp-client.",
@@ -522,13 +480,6 @@
           "name": "aphrody-google",
           "path": "crates/google/google",
           "description": "Canonical Rust facade for Aphrody Google Cloud, Gemini, Web and Antigravity integrations.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-google-mcp",
-          "path": "crates/google/mcp",
-          "description": "Gemini tools of the Aphrody MCP server (Gemini Web chat and image tools) and the Shenron Gemini Web chat backend.",
           "bins": [],
           "features": []
         },
@@ -662,13 +613,6 @@
           "name": "aphrody-llm-infra",
           "path": "crates/ai/llm-infra",
           "description": "LLM runtime infrastructure: cost tracking, rate limiting, retry primitives, two-tier caching.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-local-ai",
-          "path": "crates/ui/local-ai",
-          "description": "Toolkit-free local-AI model hub for Aphrody GUIs: typed, in-process access to the model catalog, store, hardware profile and resumable pulls.",
           "bins": [],
           "features": []
         },
@@ -810,13 +754,6 @@
           ]
         },
         {
-          "name": "aphrody-n2b-native",
-          "path": "crates/compat/n2b-native",
-          "description": "N2B C ABI helpers for Bun (bun:ffi), such as UTF-16 newline indexing.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-n2b-registry",
           "path": "crates/compat/n2b-registry",
           "description": "N2B data-driven Node-to-Bun migration rule registry, embedded TOML validated at first use.",
@@ -929,13 +866,6 @@
           "features": []
         },
         {
-          "name": "aphrody-project-doc",
-          "path": "crates/ai/project-doc",
-          "description": "Codex-compatible AGENTS.md discovery: root->cwd walk with .git project-root detection, AGENTS.override.md precedence, a global (home-scoped) override, a total byte budget with UTF-8-boundary truncation, and honest reporting of every skipped file. Mirrors openai/codex codex-rs/core/src/agents_md.rs.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-prompts",
           "path": "crates/ai/prompts",
           "description": "Prompt template engine: minijinja-backed registry, typed variable validation, reusable partials, and PII-scrubbing pipeline.",
@@ -946,13 +876,6 @@
           "name": "aphrody-providers",
           "path": "crates/ai/providers",
           "description": "Single-source-of-truth `Provider` enum for the aphrody three-only LLM whitelist (anthropic, gemini, antigravity).",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-python-ffi",
-          "path": "crates/interop/python-ffi",
-          "description": "C ABI that hosts the shared CPython (the libpython of the vu runtime) inside the single aphrody-ffi cdylib: no libpython linked, the C API is bound by dlsym.",
           "bins": [],
           "features": []
         },
@@ -981,13 +904,6 @@
           "name": "aphrody-rag-eval",
           "path": "crates/ai/rag-eval",
           "description": "RAG retrieval evaluation harness (Recall@k, MRR, nDCG) over HTTP, MCP or a local index.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-rag-ffi",
-          "path": "crates/ai/rag-ffi",
-          "description": "C ABI adapter of aphrody-rag-core for bun:ffi: re-exported by the single aphrody-ffi cdylib, no logic of its own.",
           "bins": [],
           "features": []
         },
@@ -1091,13 +1007,6 @@
           ]
         },
         {
-          "name": "aphrody-shell",
-          "path": "crates/shell/shell",
-          "description": "Canonical Aphrody shell surface: Nushell, native PTY/WebSocket transport and Ratatui UI.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-shell-sandbox-host",
           "path": "crates/shell/aphrody-shell-sandbox-host",
           "description": "Transport-neutral sandbox host contract and local shell host adapters.",
@@ -1168,13 +1077,6 @@
           "features": []
         },
         {
-          "name": "aphrody-softraster",
-          "path": "crates/ui/softraster",
-          "description": "Dependency-free deterministic CPU triangle rasterizer (z-buffer, perspective-correct nearest texturing, alpha cutout): the GPU-less fallback shared by aphrody-render and nie.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-sprite-sheet",
           "path": "crates/ui/sprite-sheet",
           "description": "Sprite atlas to web sheet (CSS image/mask classes, standalone SVG symbols, JSON manifest); no_std + alloc, no input format.",
@@ -1223,13 +1125,6 @@
           "name": "aphrody-subsystem",
           "path": "crates/os/subsystem",
           "description": "The Aphrody subsystem contract: MCP tools, skills (parameterised tool sequences), a sub-agent routine and the shared event bus.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-summary",
-          "path": "crates/ai/summary",
-          "description": "aphrody — the ultimate cross-platform CLI (Linux/Windows/WASM).",
           "bins": [],
           "features": []
         },
@@ -1908,13 +1803,6 @@
           "name": "aphrody-vpn",
           "path": "crates/infra/vpn",
           "description": "Native Mullvad VPN controller and auto-proxy/geo-unblock driver for Aphrody and agy.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-web-chromium",
-          "path": "crates/web/web-chromium",
-          "description": "Aphrody Web Chromium profile reader: cookie store parsing and decryption.",
           "bins": [],
           "features": []
         },
@@ -9757,11 +9645,6 @@
       "repo": "aphrody"
     },
     {
-      "binary": "aphrody summary",
-      "crate": "aphrody-summary",
-      "repo": "aphrody"
-    },
-    {
       "binary": "aphrody-app",
       "crate": "aphrody-app",
       "repo": "aphrody"
@@ -10165,28 +10048,6 @@
       ]
     },
     {
-      "server": "aphrody-google-mcp",
-      "repo": "aphrody",
-      "kind": "json-catalog",
-      "tools": [
-        {
-          "name": "aphrody_gemini_ask",
-          "description": "Query Google Gemini directly with automatic engine selection (Rust Bridge -> Web) using signed-in cookies.",
-          "file": "crates/google/mcp/src/gemini_tools.rs"
-        },
-        {
-          "name": "aphrody_gemini_chat",
-          "description": "Chat with Gemini keeping continuous conversation context across multi-turn exchanges.",
-          "file": "crates/google/mcp/src/gemini_tools.rs"
-        },
-        {
-          "name": "aphrody_gemini_rust",
-          "description": "Execute a one-shot Gemini Web query directly in the shared Rust runtime.",
-          "file": "crates/google/mcp/src/gemini_tools.rs"
-        }
-      ]
-    },
-    {
       "server": "aphrody-kernel subsystem `cloud`",
       "repo": "aphrody",
       "kind": "kernel-subsystem",
@@ -10296,6 +10157,21 @@
           "name": "aphrody_detect_frameworks",
           "description": "Detect web technologies, CDN and challenge evidence from a bounded HTTP response and DNS lookup.",
           "file": "crates/ai/mcp/src/public_web_tools.rs"
+        },
+        {
+          "name": "aphrody_gemini_ask",
+          "description": "Query Google Gemini directly with automatic engine selection (Rust Bridge -> Web) using signed-in cookies.",
+          "file": "crates/ai/mcp/src/gemini_tools.rs"
+        },
+        {
+          "name": "aphrody_gemini_chat",
+          "description": "Chat with Gemini keeping continuous conversation context across multi-turn exchanges.",
+          "file": "crates/ai/mcp/src/gemini_tools.rs"
+        },
+        {
+          "name": "aphrody_gemini_rust",
+          "description": "Execute a one-shot Gemini Web query directly in the shared Rust runtime.",
+          "file": "crates/ai/mcp/src/gemini_tools.rs"
         },
         {
           "name": "aphrody_google_calendar_public",
@@ -11834,13 +11710,13 @@
     "aphrodyRepos": 1,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 236,
+    "crates": 220,
     "binaries": 9,
     "bunPackages": 134,
     "pythonPackages": 8,
     "cliBinaries": 20,
     "cliCommands": 878,
-    "mcpServers": 20,
+    "mcpServers": 19,
     "mcpTools": 379,
     "mcpUniqueToolNames": 377
   }

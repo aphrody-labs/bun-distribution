@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/ml/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "apps/cli", "crates/web/*", "crates/discord/*", "crates/engine/*", "crates/tauri/*"]
+members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/ml/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "apps/cli", "crates/web/*", "crates/engine/*", "crates/tauri/*"]
 exclude = [
   "crates/contracts/schema",
   "crates/os/drive",
@@ -30,7 +30,6 @@ oxc_codegen = { version = "0.152.0", default-features = false }
 oxc_minifier = { version = "0.152.0" }
 oxc_semantic = { version = "0.152.0" }
 aphrody-bun = { path = "crates/ui/bun", version = "1.0.0-canary" }
-aphrody-discord-compiler = { path = "crates/discord/aphrody-discord-compiler", version = "1.0.0" }
 tokio-postgres-rustls = { version = "0.14", default-features = false, features = ["ring", "native-certs"] }
 deadpool-postgres = "0.14"
 pgvector = { version = "0.4", features = ["postgres", "halfvec"] }
@@ -83,7 +82,6 @@ aphrody-gemini-runtime = { path = "crates/google/gemini-runtime", version = "1.0
 aphrody-gemini-web = { path = "crates/google/gemini-web", version = "0.2.1", features = [] }
 aphrody-git = { path = "crates/infra/git", version = "0.1.0", features = [] }
 aphrody-google = { path = "crates/google/google", version = "1.0.0", features = [] }
-aphrody-google-mcp = { path = "crates/google/mcp", version = "1.0.0", features = [] }
 aphrody-gpu-backend = { path = "crates/native/gpu-backend", version = "1.0.0-canary" }
 aphrody-guard = { path = "crates/os/guard", version = "1.0.0-canary", features = [] }
 aphrody-http-error = { path = "crates/ai/http-error", version = "1.0.0", features = [] }
@@ -94,7 +92,6 @@ aphrody-jobs = { path = "crates/os/jobs", version = "1.0.0-canary", features = [
 aphrody-kernel = { path = "crates/os/kernel", version = "1.0.0-canary", default-features = false, features = [] }
 aphrody-llama-server = { path = "crates/ai/llama-server", version = "1.0.0", features = [] }
 aphrody-llm-infra = { path = "crates/ai/llm-infra", version = "1.0.0", features = [] }
-aphrody-local-ai = { path = "crates/ui/local-ai", version = "1.0.0-canary" }
 aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.0.0-canary", features = [] }
 aphrody-mcp = { path = "crates/ai/mcp", version = "1.0.0" }
 aphrody-mcp-client = { path = "crates/ai/mcp-client", version = "1.0.0", features = [] }

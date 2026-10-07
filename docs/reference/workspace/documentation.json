@@ -46,8 +46,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan",
-      "sha256": "ec0724b18651f939bd95dda93e8340d01fe00a5abc4900ac512e3c3e52aef203",
-      "bytes": 4828,
+      "sha256": "030eddc92b4dcebc03e8f76dd2d36be2f432733bdc7da7c8af944a7240fe6708",
+      "bytes": 5793,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -56,7 +56,7 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "eefb2d41174fae61bf19f7da383b439f0f584769cd550615749d4fe54c97a2a6",
+      "sha256": "f6a76e405473c9a3c9914bd78f89083dba1c731c02cf1d2d2de5779177e62a2e",
       "bytes": 1145,
       "domain": "",
       "status": "generated",
@@ -602,16 +602,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "crates/interop/ffi/bun/README-agent.md"
-    },
-    {
-      "path": "crates/interop/python-ffi/README.md",
-      "title": "aphrody-python-ffi",
-      "sha256": "8c293ae7184eefff20fc1f32cdb2a1cfcc2f09be473c7a45455d96e9f3c8a993",
-      "bytes": 1006,
-      "domain": "interop",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/interop/python-ffi/README.md"
     },
     {
       "path": "crates/ml/UPSTREAM-README.md",
@@ -3136,8 +3126,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "0ed3f4f8215ab4195c780885b6cf9729b22dfa1df1f845e41d89e90dff3de5f2",
-      "bytes": 7898,
+      "sha256": "be02e4d6dbf929e46be35205636bf42bf94b9a991e5a7f9540ab372736fa50f5",
+      "bytes": 8066,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -4026,8 +4016,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "993d62a49ddf23d85e20b039f1b47d59e093986299ef089f78a00b46d6ad750e",
-      "bytes": 93454,
+      "sha256": "237c541a4abfb3d6028e69841a0244af20f69126266dca075c72af6fad91640d",
+      "bytes": 93404,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -4036,8 +4026,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "b488e6fb3a50b3d0dfc5a29dc8abc0b88c2f0890cebd76b5bf3e2bc696705a0f",
-      "bytes": 68176,
+      "sha256": "35a36e8013485cdc31a5240243f3f319d4ce41d3453e0d16ee8d1451e18d6dfe",
+      "bytes": 65317,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -4046,8 +4036,8 @@
     {
       "path": "docs/ecosystem/MCP-TOOLS.md",
       "title": "MCP tools",
-      "sha256": "ce18c380702aeabfa0cd12092de1f89edcfb4700800a579f1042915739f4c80a",
-      "bytes": 63464,
+      "sha256": "5d57d5c3d7b94032a96e45c8acacda4f07ccfebfcdcf66c249c6b192740c29e1",
+      "bytes": 63361,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -7282,6 +7272,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/native/PLAN.md"
+    },
+    {
+      "path": "docs/plans/os-kernel/PLAN.md",
+      "title": "Architecture cible de aphrody-kernel",
+      "sha256": "b871912d95dd90dbc635cb47d339ad3fb2682e7a09d372502d40379ebcea2d7c",
+      "bytes": 1915,
+      "domain": "os-kernel",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/os-kernel/PLAN.md"
     },
     {
       "path": "docs/plans/os/native-runtime-yolo.md",
@@ -32126,8 +32126,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "1482c916e9b5428e87968cc7b8c5d18974a367842d1dff0e90e791d959cf151f",
-      "bytes": 54775,
+      "sha256": "8210bfdb9eba95d312447245c02aa5ce19050c88150437a6853daf77fc3357da",
+      "bytes": 52634,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

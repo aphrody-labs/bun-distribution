@@ -14,6 +14,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | `m3/packages/app-ui`, `crates/ui/*` | Canonical UI |
 | `crates/ai/rag-python` | Sole owner of the `aphrody-rust` Python binding |
 | IECODE | Separate repository, store and authority |
+| Kernel | `aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest |
 
 ## Single surfaces
 
@@ -42,6 +43,10 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 
 | Item | Closure |
 | --- | --- |
+| Monorepo consolidation | Fold thin crates/packages into their owner (gates: clippy `-D warnings`, scoped tests on the VPS); root layout aligned on Tauri `dev`, Obscura and Bun `main` (`crates/ packages/ docs/ scripts/ tools/ vendor/ assets/ examples/ bench/ test/ patches/`); absorb `apps/ config/ data/ bin/ m3/ plugins/ py/` |
+| Single MCP | `aphrody-mcp` is the only MCP server; `yolo mcp`, `m3-mcp` and kernel MCP become aliases; same-purpose tools merged |
+| Kernel and shell | Target in `docs/plans/os-kernel/PLAN.md` (Asterinas `ostd`/`kernel/{core,comps,libs}`, Linux subsystems); replace hand-made coreutils/Nushell by `uutils`, `eza`, `sudo-rs` or Bun Shell |
+| CLI purge | Remove agent-delegating commands (agy, antigravity, hermes, notebooklm…) and every command needing another executable; add maintained crates from crates.io to shrink the build |
 | Release downloads | Publish `aphrody-setup` and `omar-kit` (`bun run downloads:publish plan\|build\|release\|verify`) |
 | yolo Windows | Cross-build `aphrody-ffi` (profile `runtime`), package, enable the artifact in `config/downloads.json` |
 | Runtime activation | Point `bun`/`yolo`/`vu` on PATH to the fork binary; Windows; embed `libaphrody_ffi`; `bun:ffi` binding |

@@ -4,6 +4,13 @@
 
 Dated evidence only. Decisions and queue live in PLAN.md; rules in AGENTS.md. History: `git log -- MEMORY.md`.
 
+## Monorepo consolidation
+
+| Date | Evidence | Limit |
+| --- | --- | --- |
+| 2026-10-07 | 13 thin crates folded into owners: gcs, shell → `aphrody-kernel`; ecosystem, summary, project-doc, exec-events, ai → `aphrody-command`; softraster, web-chromium, n2b-native, rag-ffi, python-ffi → `aphrody-ffi`; everything-sdk → `fsindex` (commits e8740a668, 3bb98f70b, 61438dd98). Clippy `-D warnings` clean; command 21, kernel 8, ffi 69+2, fsindex 26+1 tests passed on the VPS. | Dead code exposed by the folds was removed; Windows-only paths (`everything_sdk::win`, `chromium` cookies) are not compiled on Linux. |
+| 2026-10-07 | Target kernel architecture recorded from `aphrody git ingest` of Asterinas and the GitHub tree of Linux: `docs/plans/os-kernel/PLAN.md`. | Plan only; no folder regrouping done yet. |
+
 ## Bun fork and absorption
 
 | Date | Evidence | Limit |

@@ -4,7 +4,7 @@
 
 Private Rust/Bun monorepo: the Bun fork runtime (`yolo`), the Python runtime (`vu`), the `aphrody` CLI/MCP/FFI and the M3 UI framework.
 
-Totals: 235 crates, 98 packages, 6 apps.
+Totals: 219 crates, 98 packages, 6 apps.
 
 | Path | Content |
 | --- | --- |

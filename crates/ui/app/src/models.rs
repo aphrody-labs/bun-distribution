@@ -14,7 +14,7 @@
 
 use std::{collections::HashMap, path::PathBuf};
 
-use aphrody_local_ai::{HubError, ModelHub};
+use crate::local_ai::{HubError, ModelHub};
 use serde_json::{Value, json};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::oneshot;

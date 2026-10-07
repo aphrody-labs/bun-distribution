@@ -28,6 +28,7 @@
 - [Aphrody Discord plan](../../plans/discord/PLAN.md)
 - [Aphrody Infra plan](../../plans/infra/PLAN.md)
 - [PLAN — aphrody-native](../../plans/native/PLAN.md)
+- [Architecture cible de aphrody-kernel](../../plans/os-kernel/PLAN.md)
 - [One desktop runtime: `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4)](../../plans/tauri-cef/PLAN.md)
 - [`vu`: the Aphrody Python runtime](../../plans/vu/PLAN.md)
 - [Aphrody — FFI unique et consolidation Rust, Python, Bun](../../plans/workspace/PLAN.md)
