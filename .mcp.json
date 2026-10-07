@@ -1,12 +1,8 @@
 {
   "mcpServers": {
-    "yolo": {
-      "command": "bun",
-      "args": ["apps/yolo/cli/src/index.ts", "mcp"]
-    },
-    "aphrody-m3": {
-      "command": "bun",
-      "args": ["m3/packages/m3-mcp/src/server.ts"]
+    "aphrody": {
+      "command": "aphrody",
+      "args": ["mcp-server"]
     }
   }
 }

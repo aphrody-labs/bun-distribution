@@ -7,6 +7,8 @@
 mod client_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod gemini_tools;
+#[cfg(not(target_arch = "wasm32"))]
+mod kernel_tools;
 mod http_rest;
 mod native_crawl_tools;
 mod public_web_tools;
@@ -2709,6 +2711,12 @@ impl GoogleMcpServer {
                 tools.iter().map(|tool| tool.name.to_string()).collect();
             tools.extend(tauri_tools::list(|name| taken.contains(name)).await);
         }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let taken: std::collections::HashSet<String> =
+                tools.iter().map(|tool| tool.name.to_string()).collect();
+            tools.extend(kernel_tools::list(|name| taken.contains(name)).await);
+        }
         tools.iter_mut().for_each(protocol::annotate);
         tools
     }
@@ -2812,6 +2820,12 @@ impl ServerHandler for GoogleMcpServer {
         {
             return Ok(tauri_tools::call(&request).await.into());
         }
+        #[cfg(not(target_arch = "wasm32"))]
+        if router.get(request.name.as_ref()).is_none()
+            && kernel_tools::owns(request.name.as_ref()).await
+        {
+            return Ok(kernel_tools::call(&request).await.into());
+        }
         let tcc = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
         // rmcp 3 returns `CallToolResponse` (MRTR/Tasks): only a completed
         // result carries content to mirror into `structuredContent`.
@@ -2847,6 +2861,10 @@ impl ServerHandler for GoogleMcpServer {
         #[cfg(not(target_arch = "wasm32"))]
         if tool.is_none() {
             tool = tauri_tools::get(name);
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        if tool.is_none() {
+            tool = kernel_tools::get(name);
         }
         let mut tool = tool?;
         protocol::annotate(&mut tool);

@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "n
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createApiServer } from "../../../../packages/engine/core/src/server/http";
-import { handleMcpMessage } from "../src/mcp";
+import { callTool } from "../../../../packages/engine/core/src/tools/host";
 
 const root = mkdtempSync(join(tmpdir(), "yolo-tooling-transport-"));
 const outside = mkdtempSync(join(tmpdir(), "yolo-tooling-outside-"));
@@ -36,20 +36,11 @@ test("HTTP native scan contains both traversal and symlink roots", async () => {
   expect((await post({ path: "escape" })).status).toBe(400);
 });
 test.skipIf(!process.env["YOLO_TOOLING_LIB"])(
-  "MCP and HTTP use the same read-only native report",
+  "The tool host and HTTP use the same read-only native report",
   async () => {
-    const raw = await handleMcpMessage(
-      JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: { name: "yolo_n2b_scan", arguments: { path: root, jobs: 2 } },
-      }),
-      root,
-    );
-    const mcp = JSON.parse(raw!);
-    expect(mcp.result.isError).not.toBe(true);
-    const report = JSON.parse(mcp.result.content[0].text);
+    const host = await callTool("yolo_n2b_scan", { path: root, jobs: 2 }, root);
+    expect(host.isError).not.toBe(true);
+    const report = JSON.parse(host.content[0]!.text);
     const response = await post({ jobs: 2 });
     expect(response.status).toBe(200);
     const http = await response.json();

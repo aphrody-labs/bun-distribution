@@ -9,7 +9,7 @@
 //
 // Groups (all but `build` run by default; `--cold-cache` adds a registry download to `install`):
 //   yolo       `bun $YOLO_ROOT/apps/cli/src/index.ts version`, 20 runs after 3 warm-ups
-//   mcp        m3-mcp cold start: spawn to the `initialize` response over stdio
+//   mcp        m3 tool host cold start: spawn to the `list` answer (served through aphrody-mcp)
 //   themes     m3-os-themes: CLI wall time, and in-process import / first / warm generation
 //   install    `bun install --frozen-lockfile` in a manifest-only copy of the workspace (cold node_modules, warm no-op)
 //   test       `bun run test` per workspace package
@@ -103,92 +103,44 @@ async function yolo(ctx: Ctx): Promise<void> {
   ctx.gates["yolo.plugin_check"] = `${check.code} ${digest(check.out)}`;
 }
 
-// ---------------------------------------------------------------- mcp
+// ---------------------------------------------------------------- mcp (tool host)
 
-const MCP_SERVER = process.env["BENCH_MCP_SERVER"] ?? join(REPO, "packages/m3-mcp/src/server.ts");
-const rpc = (id: number, method: string, params: unknown = {}): string =>
-  `${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`;
-const INIT = rpc(1, "initialize", {
-  protocolVersion: "2024-11-05",
-  capabilities: {},
-  clientInfo: { name: "m3-bench", version: "0" },
-});
+const TOOL_HOST = process.env["BENCH_TOOL_HOST"] ?? join(REPO, "packages/m3-mcp/src/tool-host.ts");
 
-/** Send a handshake and `calls` to the server and return every JSON-RPC response by id. */
-async function mcpSession(
-  server: string,
-  calls: { id: number; method: string; params?: unknown }[],
-): Promise<Map<number, unknown>> {
-  const proc = Bun.spawn(["bun", server], { stdin: "pipe", stdout: "pipe", stderr: "ignore" });
-  proc.stdin.write(
-    INIT + `${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`,
-  );
-  for (const c of calls) proc.stdin.write(rpc(c.id, c.method, c.params ?? {}));
-  proc.stdin.flush();
-  const responses = new Map<number, unknown>();
-  const reader = proc.stdout.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  while (responses.size < calls.length + 1) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const lines = buf.split("\n");
-    buf = lines.pop() ?? "";
-    for (const line of lines) {
-      if (!line.startsWith("{")) continue;
-      const msg = JSON.parse(line) as { id?: number };
-      if (msg.id !== undefined) responses.set(msg.id, msg);
-    }
+/** One `tool-host.ts call` round trip: the parsed MCP-shaped result, or "missing". */
+function hostCall(name: string, args: unknown): unknown {
+  const run = spawnTimed(["bun", TOOL_HOST, "call", name, JSON.stringify(args)]);
+  try {
+    return JSON.parse(run.out);
+  } catch {
+    return "missing";
   }
-  proc.kill();
-  await proc.exited;
-  return responses;
 }
-
-const mcpToolCall = (id: number, name: string, args: unknown) => ({
-  id,
-  method: "tools/call",
-  params: { name, arguments: args },
-});
 
 async function mcp(ctx: Ctx): Promise<void> {
   const samples = await sample(
-    async () => (await timeToFirstLine(["bun", MCP_SERVER], { stdin: INIT })).ms,
+    async () => spawnTimed(["bun", TOOL_HOST, "list"]).ms,
     runsOf(ctx, 10),
     2,
   );
   ctx.metrics["mcp.cold"] = summarize(samples);
   // Gates: the same tools, and the same answers from the tools that load their module on demand.
-
-  const out = await mcpSession(MCP_SERVER, [
-    { id: 2, method: "tools/list" },
-    mcpToolCall(3, "m3_os_themes_list", { seed: "#6750a4", target: "all", name: "Aphrody" }),
-    mcpToolCall(4, "m3_os_themes_generate", {
-      seed: "#6750a4",
-      target: "gnome",
-      name: "Aphrody",
-      path: "gnome/install-gnome.sh",
-    }),
-    mcpToolCall(5, "m3_symbol_search", { query: "home", limit: 20 }),
-    mcpToolCall(6, "m3_symbol_svg", {
-      name: "home",
-      style: "outlined",
-      weight: 400,
-      filled: false,
-    }),
-    mcpToolCall(7, "m3_token_lookup", { query: "primary", limit: 10 }),
-  ]);
-  const names = (
-    (out.get(2) as { result?: { tools?: { name: string }[] } } | undefined)?.result?.tools ?? []
-  )
-    .map((t) => t.name)
-    .toSorted();
+  const listed = JSON.parse(spawnTimed(["bun", TOOL_HOST, "list"]).out) as { name: string }[];
+  const names = listed.map((t) => t.name).toSorted();
   ctx.gates["mcp.tools"] = `${names.length} ${digest(names.join(","))}`;
-  for (const id of [3, 4, 5, 6, 7])
-    ctx.gates[`mcp.call.${id}`] = digest(
-      JSON.stringify((out.get(id) as { result?: unknown } | undefined)?.result ?? "missing"),
-    );
+  const calls: [number, string, unknown][] = [
+    [3, "m3_os_themes_list", { seed: "#6750a4", target: "all", name: "Aphrody" }],
+    [
+      4,
+      "m3_os_themes_generate",
+      { seed: "#6750a4", target: "gnome", name: "Aphrody", path: "gnome/install-gnome.sh" },
+    ],
+    [5, "m3_symbol_search", { query: "home", limit: 20 }],
+    [6, "m3_symbol_svg", { name: "home", style: "outlined", weight: 400, filled: false }],
+    [7, "m3_token_lookup", { query: "primary", limit: 10 }],
+  ];
+  for (const [id, name, args] of calls)
+    ctx.gates[`mcp.call.${id}`] = digest(JSON.stringify(hostCall(name, args)));
 }
 
 // ---------------------------------------------------------------- themes

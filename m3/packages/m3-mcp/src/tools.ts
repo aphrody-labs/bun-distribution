@@ -1,6 +1,6 @@
-#!/usr/bin/env bun
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+// SPDX-License-Identifier: Apache-2.0
+// The M3 design tool table. It is hosted by the single Aphrody MCP server (`aphrody-mcp`) through
+// `tool-host.ts` (`list` / `call`); this package no longer speaks MCP itself.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
@@ -16,54 +16,68 @@ import {
 } from "./catalog";
 
 // The theme generators (16 ms with m3-tokens) and the symbol catalogue are loaded by the tools that use them, not at
-// start-up: the handshake with the client no longer waits for them.
+// start-up: listing the tools never waits for them.
 const osThemes = () => import("@aphrody/m3-os-themes");
 const symbols = () => import("@aphrody/material-design-icons");
 
-const text = (t: string) => ({ content: [{ type: "text" as const, text: t || "(no result)" }] });
+export interface ToolResult {
+  content: { type: "text"; text: string }[];
+  isError?: boolean;
+}
 
-/** Construct the design server without connecting or taking ownership of stdin. */
-export function createM3McpServer(): McpServer {
-  const server = new McpServer({ name: "aphrody-m3", version: "1.1.0" });
+export interface M3Tool {
+  name: string;
+  description: string;
+  shape: z.ZodRawShape;
+  run(args: never, signal?: AbortSignal): Promise<ToolResult> | ToolResult;
+}
 
-  server.tool(
-    "m3_list_packages",
-    "List the aphrody-m3 workspace packages with versions.",
-    {},
-    async () => text(listPackages().join("\n")),
-  );
+const text = (t: string): ToolResult => ({ content: [{ type: "text", text: t || "(no result)" }] });
 
-  server.tool(
+const themeInput = {
+  seed: z.string().describe("Seed colour #rrggbb"),
+  target: z.enum(["windows", "gnome", "cosmic", "chromium", "all"]).default("all"),
+  name: z.string().default("Aphrody"),
+};
+
+const limit = (fallback: number) => z.number().int().min(1).max(500).default(fallback);
+
+function tool<S extends z.ZodRawShape>(
+  name: string,
+  description: string,
+  shape: S,
+  run: (args: z.infer<z.ZodObject<S>>, signal?: AbortSignal) => Promise<ToolResult> | ToolResult,
+): M3Tool {
+  return { name, description, shape, run: run as M3Tool["run"] };
+}
+
+export const M3_TOOLS: M3Tool[] = [
+  tool("m3_list_packages", "List the aphrody-m3 workspace packages with versions.", {}, () =>
+    text(listPackages().join("\n")),
+  ),
+  tool(
     "m3_token_lookup",
     "Look up Material 3 design tokens (--md-*) by name or value fragment in m3-tokens.",
-    { query: z.string(), limit: z.number().int().min(1).max(500).default(50) },
-    async ({ query, limit }) =>
+    { query: z.string(), limit: limit(50) },
+    ({ query, limit }) =>
       text(
         lookupTokens(query, limit)
           .map((t) => `${t.name}: ${t.value}  [${t.source}]`)
           .join("\n"),
       ),
-  );
-
-  server.tool(
+  ),
+  tool(
     "m3_token_validate",
     "Validate that every --md-* custom property in a CSS snippet or name list exists in m3-tokens.",
     { css: z.string() },
-    async ({ css }) => {
+    ({ css }) => {
       const r = validateTokens(css);
       return text(
         `checked ${r.checked.length}, unknown ${r.unknown.length}${r.unknown.length ? `\n${r.unknown.join("\n")}` : ""}`,
       );
     },
-  );
-
-  const themeInput = {
-    seed: z.string().describe("Seed colour #rrggbb"),
-    target: z.enum(["windows", "gnome", "cosmic", "chromium", "all"]).default("all"),
-    name: z.string().default("Aphrody"),
-  };
-
-  server.tool(
+  ),
+  tool(
     "m3_os_themes_list",
     "List the files m3-os-themes would generate for a seed colour and target (nothing is written).",
     themeInput,
@@ -76,9 +90,8 @@ export function createM3McpServer(): McpServer {
           .join("\n"),
       );
     },
-  );
-
-  server.tool(
+  ),
+  tool(
     "m3_os_themes_generate",
     "Return the text content of one generated OS theme file (path from m3_os_themes_list). Never writes to disk or the system.",
     { ...themeInput, path: z.string() },
@@ -91,33 +104,26 @@ export function createM3McpServer(): McpServer {
         typeof file.content === "string" ? file.content : `(binary, ${file.content.length} bytes)`,
       );
     },
-  );
-
-  server.tool(
+  ),
+  tool(
     "m3_docs_search",
     "Case-insensitive line search over aphrody-m3 docs/ (md, mdx); returns path:line hits.",
-    { query: z.string(), limit: z.number().int().min(1).max(500).default(20) },
-    async ({ query, limit }) => text(searchDocs(query, limit).join("\n")),
-  );
-
-  server.tool(
+    { query: z.string(), limit: limit(20) },
+    ({ query, limit }) => text(searchDocs(query, limit).join("\n")),
+  ),
+  tool(
     "m3_research_links",
     "List docs/research files and the curated dated Google design/research link index.",
     {},
-    async () => {
+    () => {
       const r = researchLinks();
       return text(`${r.files.join("\n")}\n\n${r.links.join("\n")}`);
     },
-  );
-
-  server.tool(
-    "m3_list_templates",
-    "List UI templates, examples and Tauri example apps.",
-    {},
-    async () => text(listTemplates().join("\n")),
-  );
-
-  server.tool(
+  ),
+  tool("m3_list_templates", "List UI templates, examples and Tauri example apps.", {}, () =>
+    text(listTemplates().join("\n")),
+  ),
+  tool(
     "m3_symbol_svg",
     "Return path and SVG source of a Material Symbol from the forked catalogue.",
     {
@@ -141,12 +147,11 @@ export function createM3McpServer(): McpServer {
       const p = symbolSvgPath(name, style, weight, filled);
       return existsSync(p) ? text(`${p}\n${readFileSync(p, "utf8")}`) : text(`not found: ${p}`);
     },
-  );
-
-  server.tool(
+  ),
+  tool(
     "m3_symbol_search",
     "Search the full Material Symbols catalogue (4150 names) by substring; returns matching symbol names.",
-    { query: z.string(), limit: z.number().int().min(1).max(500).default(50) },
+    { query: z.string(), limit: limit(50) },
     async ({ query, limit }) => {
       const { searchSymbols, symbolNames } = await symbols();
       const hits = searchSymbols(query, limit);
@@ -154,9 +159,8 @@ export function createM3McpServer(): McpServer {
         hits.length > 0 ? hits.join("\n") : `no match among ${symbolNames().length} symbols`,
       );
     },
-  );
-
-  server.tool(
+  ),
+  tool(
     "m3_svg_to_ico",
     "Generate Tauri desktop icons (ico, icns, png) from a symbol name or SVG file.",
     {
@@ -165,7 +169,7 @@ export function createM3McpServer(): McpServer {
       style: z.enum(["outlined", "rounded", "sharp"]).default("outlined"),
       fill: z.string().optional(),
     },
-    async ({ input, out, style, fill }, { signal }) => {
+    async ({ input, out, style, fill }, signal) => {
       const args = [
         "bun",
         join(ROOT, "packages/material-design-icons/scripts/svg-to-ico.ts"),
@@ -192,16 +196,31 @@ export function createM3McpServer(): McpServer {
       ]);
       return { ...text(`${code}\n${stdout}${stderr}`), ...(code !== 0 ? { isError: true } : {}) };
     },
-  );
+  ),
+];
 
-  return server;
+/** JSON Schema definitions in the shape every MCP client expects from `tools/list`. */
+export function listM3Tools(): { name: string; description: string; inputSchema: unknown }[] {
+  return M3_TOOLS.map((t) => ({
+    name: t.name,
+    description: t.description,
+    inputSchema: z.toJSONSchema(z.object(t.shape)),
+  }));
 }
 
-if (import.meta.main) {
-  void createM3McpServer()
-    .connect(new StdioServerTransport())
-    .catch((error: unknown) => {
-      console.error(error);
-      process.exitCode = 1;
-    });
+/** Validate the arguments with the tool's schema, then run it; failures are `isError` results. */
+export async function callM3Tool(
+  name: string,
+  args: unknown,
+  signal?: AbortSignal,
+): Promise<ToolResult> {
+  const found = M3_TOOLS.find((t) => t.name === name);
+  if (!found) return { ...text(`unknown tool ${name}`), isError: true };
+  const parsed = z.object(found.shape).safeParse(args ?? {});
+  if (!parsed.success) return { ...text(parsed.error.message), isError: true };
+  try {
+    return await found.run(parsed.data as never, signal);
+  } catch (error) {
+    return { ...text(error instanceof Error ? error.message : String(error)), isError: true };
+  }
 }

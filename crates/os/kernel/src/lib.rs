@@ -38,6 +38,7 @@ pub mod host_service;
 pub mod hvsock;
 pub mod infra;
 pub mod mcp_proxy;
+pub mod tool_host;
 pub mod paths;
 mod policy;
 mod remote;
@@ -451,6 +452,11 @@ impl Kernel {
                 .ok_or_else(|| SubsystemError::UnknownTool(tool.to_owned()))?
         };
         subsystem.call(tool, arguments).await
+    }
+
+    /// Route one tool call and return the MCP `CallToolResult` (failures are `isError` results).
+    pub async fn call_tool_result(&self, tool: &str, arguments: Value) -> Value {
+        crate::rpc::call_result(self.call(tool, arguments).await)
     }
 
     /// Dispatch to a specific registered peer, retaining its handle across

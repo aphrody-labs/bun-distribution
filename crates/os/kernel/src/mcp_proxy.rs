@@ -136,44 +136,6 @@ impl McpProxySubsystem {
         self.tools.retain(|tool| is_web_provider_tool(&tool.name));
     }
 
-    /// Expose the AI-owned MCP catalog through the local OS kernel. The AI
-    /// server remains a separate process, so this repository never links it.
-    pub async fn configured_ai_provider(
-        occupied: &HashSet<String>,
-    ) -> Result<Option<Arc<dyn SystemSubsystem>>, String> {
-        let explicit = std::env::var("APHRODY_AI_MCP_BIN").ok();
-        if explicit.as_deref().is_some_and(|value| value.trim().is_empty()) {
-            return Ok(None);
-        }
-        let path = match explicit.as_ref() {
-            Some(command) => PathBuf::from(command),
-            None => match installed_binary("aphrody-mcp") {
-                Some(path) => path,
-                None => return Ok(None),
-            },
-        };
-        let command = path.to_string_lossy();
-        let args = ["server".to_owned()];
-        let discovery = tokio::time::timeout(AUTO_DISCOVERY_TIMEOUT, Self::spawn(&command, &args))
-            .await
-            .map_err(|_| "Aphrody AI MCP discovery timed out".to_owned())
-            .and_then(|result| result);
-        let mut provider = match discovery {
-            Ok(provider) => provider,
-            Err(error) if explicit.is_none() => {
-                eprintln!("aphrody-kernel: optional Aphrody AI MCP unavailable: {error}");
-                return Ok(None);
-            },
-            Err(error) => return Err(error),
-        };
-        provider.name = "aphrody-ai".into();
-        provider.description = "Aphrody AI MCP tools from the separate agent process.".into();
-        provider
-            .tools
-            .retain(|tool| !is_web_provider_tool(&tool.name) && !occupied.contains(&tool.name));
-        Ok((!provider.tools.is_empty()).then_some(Arc::new(provider) as Arc<dyn SystemSubsystem>))
-    }
-
     /// Host a subsystem plugin: the MCP server binary a higher-layer repository ships for a
     /// subsystem this kernel must not link (aphrody-web's `aphrody-browser-mcp`, aphrody-ui's
     /// `aphrody-render3d-mcp`; see docs/REPO-LAYERING.md).
@@ -383,7 +345,7 @@ impl McpProxySubsystem {
     }
 }
 
-fn provider_tool(tool: &Value) -> Result<ToolDefinition, String> {
+pub(crate) fn provider_tool(tool: &Value) -> Result<ToolDefinition, String> {
     let name = tool
         .get("name")
         .and_then(Value::as_str)
@@ -419,7 +381,7 @@ fn is_web_provider_tool(name: &str) -> bool {
 
 /// An installed provider binary, searched in the order of
 /// [`crate::paths::binary_search_directories`].
-fn installed_binary(name: &str) -> Option<PathBuf> {
+pub(crate) fn installed_binary(name: &str) -> Option<PathBuf> {
     let executable = format!("{name}{}", std::env::consts::EXE_SUFFIX);
     let kernel = std::env::current_exe().ok();
     let home = crate::paths::home_dir();

@@ -7,7 +7,7 @@ use std::{collections::HashSet, sync::Arc, time::Duration};
 use crate::{
     Kernel, SystemSubsystem,
     client::Client,
-    transport::{default_endpoint, serve_endpoint, serve_stdio},
+    transport::{default_endpoint, serve_endpoint},
 };
 use clap::{Parser, Subcommand};
 use serde_json::{Value, json};
@@ -51,8 +51,6 @@ enum Command {
         #[arg(long, env = "APHRODY_KERNEL_AUDIT_LOG")]
         audit_log: Option<std::path::PathBuf>,
     },
-    /// MCP over stdio: relay to the running kernel, or run one in-process.
-    Mcp,
     /// List tools as JSON.
     Tools,
     /// List skills as JSON.
@@ -81,6 +79,15 @@ enum Command {
         #[arg(default_value = "{}")]
         arguments: String,
     },
+}
+
+/// The kernel hosted inside the single MCP server (`aphrody-mcp`): every built-in subsystem, the
+/// browser plugin and the Bun tool hosts.
+///
+/// # Errors
+/// A subsystem that fails to register, or an explicit plugin command that fails.
+pub async fn embedded_kernel() -> anyhow::Result<Kernel> {
+    builtin_kernel(true, true, None, None, None).await
 }
 
 async fn builtin_kernel(
@@ -140,25 +147,6 @@ async fn builtin_kernel(
             child_env,
         });
     }
-    // One MCP endpoint: the yolo Bun runtime tools and the M3 tools are proxied subsystems.
-    plugins.push(PluginEntry {
-        name: "yolo",
-        description: "Yolo Bun runtime tools (`yolo mcp` plugin process).",
-        env: "APHRODY_YOLO_MCP_BIN",
-        binary: "yolo",
-        args: vec!["mcp".to_owned()],
-        child_env: Vec::new(),
-    });
-    if let Some(server) = m3_mcp_server() {
-        plugins.push(PluginEntry {
-            name: "m3",
-            description: "Material 3 tokens, themes, symbols and docs (aphrody-m3 plugin process).",
-            env: "APHRODY_M3_MCP_BIN",
-            binary: "bun",
-            args: vec![server.to_string_lossy().into_owned()],
-            child_env: Vec::new(),
-        });
-    }
     for entry in plugins {
         if let Some(plugin) = crate::mcp_proxy::McpProxySubsystem::configured_plugin(
             crate::mcp_proxy::PluginSpec {
@@ -178,11 +166,36 @@ async fn builtin_kernel(
             kernel.register(plugin).await?;
         }
     }
-    if let Some(provider) = crate::mcp_proxy::McpProxySubsystem::configured_ai_provider(&occupied)
+    // Bun tool tables served through this one endpoint: no second MCP server (`yolo tool`, `m3 tool-host`).
+    let m3_args = m3_tool_host().map(|script| vec![script.to_string_lossy().into_owned()]);
+    let hosts = [
+        (
+            "yolo",
+            "Yolo Bun runtime tools (`yolo tool` host).",
+            "APHRODY_YOLO_TOOL_HOST",
+            "yolo",
+            Some(vec!["tool".to_owned()]),
+        ),
+        (
+            "m3",
+            "Material 3 tokens, themes, symbols and docs (aphrody-m3 tool host).",
+            "APHRODY_M3_TOOL_HOST",
+            "bun",
+            m3_args,
+        ),
+    ];
+    for (name, description, env, binary, args) in hosts {
+        let Some(args) = args else { continue };
+        if let Some(host) = crate::tool_host::ToolHostSubsystem::configured(
+            crate::tool_host::ToolHostSpec { name, description, env, binary, args: &args },
+            &occupied,
+        )
         .await
         .map_err(anyhow::Error::msg)?
-    {
-        kernel.register(provider).await?;
+        {
+            occupied.extend(host.tools().into_iter().map(|tool| tool.name));
+            kernel.register(host).await?;
+        }
     }
     Ok(kernel)
 }
@@ -198,8 +211,8 @@ struct PluginEntry {
     child_env: Vec<(String, String)>,
 }
 
-/// The M3 MCP server script: `$APHRODY_M3_ROOT`, then `./m3`, then `~/aphrody/m3`.
-fn m3_mcp_server() -> Option<std::path::PathBuf> {
+/// The M3 tool host script: `$APHRODY_M3_ROOT`, then `./m3`, then `~/aphrody/m3`.
+fn m3_tool_host() -> Option<std::path::PathBuf> {
     let roots = [
         std::env::var_os("APHRODY_M3_ROOT").map(std::path::PathBuf::from),
         std::env::current_dir().ok().map(|dir| dir.join("m3")),
@@ -208,7 +221,7 @@ fn m3_mcp_server() -> Option<std::path::PathBuf> {
     roots
         .into_iter()
         .flatten()
-        .map(|root| root.join("packages/m3-mcp/src/server.ts"))
+        .map(|root| root.join("packages/m3-mcp/src/tool-host.ts"))
         .find(|server| server.is_file())
 }
 
@@ -292,18 +305,6 @@ async fn run(cli: Cli) -> anyhow::Result<i32> {
             }
             eprintln!("aphrody-kernel: serving {endpoint}");
             serve_endpoint(kernel, endpoint).await?;
-        },
-        Command::Mcp => {
-            if let Ok(stream) = crate::transport::connect(&endpoint).await {
-                let (mut reader, mut writer) = tokio::io::split(stream);
-                let upstream = tokio::spawn(async move {
-                    tokio::io::copy(&mut tokio::io::stdin(), &mut writer).await
-                });
-                tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await?;
-                upstream.abort();
-            } else {
-                serve_stdio(builtin_kernel(true, true, None, auth_file, exec_policy).await?).await;
-            }
         },
         Command::Tools => {
             print(&request(&endpoint, "tools/list", json!({}), auth_file, exec_policy).await?)?

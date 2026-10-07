@@ -97,31 +97,9 @@ function targetsFor(url: URL): readonly Target[] {
   return [target as Target];
 }
 
-let toolsPromise: Promise<unknown[]> | undefined;
 async function discoverMcpTools(): Promise<unknown[]> {
-  if (!toolsPromise)
-    toolsPromise = (async () => {
-      const [{ createM3McpServer }, { Client }, { InMemoryTransport }] = await Promise.all([
-        import("@aphrody/m3-mcp"),
-        import("@modelcontextprotocol/sdk/client/index.js"),
-        import("@modelcontextprotocol/sdk/inMemory.js"),
-      ]);
-      const server = createM3McpServer();
-      const client = new Client({ name: "m3-showcase", version: ownerM3Version() });
-      const [serverTransport, clientTransport] = InMemoryTransport.createLinkedPair();
-      try {
-        await server.connect(serverTransport);
-        await client.connect(clientTransport);
-        return (await client.listTools()).tools;
-      } finally {
-        await client.close();
-        await server.close();
-      }
-    })().catch((error: unknown) => {
-      toolsPromise = undefined;
-      throw error;
-    });
-  return toolsPromise;
+  const { listM3Tools } = await import("@aphrody/m3-mcp");
+  return listM3Tools();
 }
 
 const fonts: Readonly<Record<string, string>> = {
@@ -282,7 +260,11 @@ export default defineM3Api({
   "/api/system": guarded(async (request) => {
     const url = new URL(request.url);
     const files = generate(themeInput(url), targetsFor(url));
-    const sample = renderTemplate({ template: "web", name: "m3-demo", m3Version: ownerM3Version() });
+    const sample = renderTemplate({
+      template: "web",
+      name: "m3-demo",
+      m3Version: ownerM3Version(),
+    });
     return json({
       themeFiles: files.map((file) => ({
         target: file.target,

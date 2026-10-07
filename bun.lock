@@ -283,7 +283,6 @@
         "@aphrody/material-design-icons": "workspace:*",
         "@aphrody/scaffold": "workspace:*",
         "@aphrody/webview-page": "workspace:*",
-        "@modelcontextprotocol/sdk": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
         "react-hook-form": "catalog:",
@@ -621,7 +620,6 @@
       "dependencies": {
         "@aphrody/m3-os-themes": "workspace:*",
         "@aphrody/material-design-icons": "workspace:*",
-        "@modelcontextprotocol/sdk": "catalog:",
         "zod": "catalog:",
       },
     },

@@ -2,12 +2,8 @@ import { describe, expect, it } from "bun:test";
 import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  executeTool,
-  handleMcpMessage,
-  ToolExecutionContext,
-  TOOLS,
-} from "../../core/src/mcp/server";
+import { executeTool, ToolExecutionContext, TOOLS } from "../../core/src/tools/registry";
+import { callTool } from "../../core/src/tools/host";
 import { NativeRedisClient } from "../../core/src/redis/client";
 import { createApiServer } from "../../core/src/server/http";
 import { buildOpenApiSpec } from "../../core/src/server/openapi";
@@ -41,22 +37,13 @@ describe("shared native tool transports", () => {
       await f.context
         .trainDb("examples")
         .addInstruction({ id: "one", instruction: "hello", output: "world", split: "val" });
-      const response = JSON.parse(
-        (await handleMcpMessage(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "tools/call",
-            params: {
-              name: "yolo_vector_search",
-              arguments: { namespace: "docs", queryVector: [1, 0], filter: { category: "bun" } },
-            },
-          }),
-          f.root,
-          f.context,
-        ))!,
+      const response = await callTool(
+        "yolo_vector_search",
+        { namespace: "docs", queryVector: [1, 0], filter: { category: "bun" } },
+        f.root,
+        f.context,
       );
-      expect(JSON.parse(response.result.content[0].text).results).toEqual([
+      expect(JSON.parse(response.content[0]!.text).results).toEqual([
         { id: "native", score: 1, metadata: { category: "bun" } },
       ]);
       const stats = await fetch(`http://127.0.0.1:${server.port}/api/tools/call`, {
@@ -103,18 +90,9 @@ describe("shared native tool transports", () => {
     }
   });
 
-  it("rejects malformed JSON-RPC and invalid tool arguments", async () => {
+  it("rejects invalid tool arguments", async () => {
     const f = fixture();
     try {
-      for (const input of [
-        "null",
-        "[]",
-        "1",
-        '{"jsonrpc":"2.0","id":1,"method":"ping","params":[]}',
-      ]) {
-        const result = JSON.parse((await handleMcpMessage(input, f.root, f.context))!);
-        expect(result.error.code).toBe(-32600);
-      }
       for (const args of [
         { parallel: 0 },
         { parallel: 1.5 },
@@ -127,19 +105,8 @@ describe("shared native tool transports", () => {
       await expect(
         executeTool("yolo_verify", { only: "missing-gate" }, f.root, f.context),
       ).rejects.toThrow("Unknown gates");
-      const result = JSON.parse(
-        (await handleMcpMessage(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "tools/call",
-            params: { name: "yolo_status", arguments: null },
-          }),
-          f.root,
-          f.context,
-        ))!,
-      );
-      expect(result.result.isError).toBe(true);
+      const result = await callTool("yolo_status", { unknown: true }, f.root, f.context);
+      expect(result.isError).toBe(true);
     } finally {
       f.cleanup();
     }

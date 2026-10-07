@@ -8,7 +8,7 @@
  * - runtime: Native C ABI 1.4 bridge, process supervisor, readiness probes
  * - verify: Parallel quality gate graph scheduler and timing engine
  * - server: Native Bun.serve HTTP / REST / OpenAPI 3.1 micro-server
- * - mcp: Model Context Protocol (MCP 2024-11-05) JSON-RPC 2.0 stdio server
+ * - tools: shared tool registry and host (served through the single aphrody-mcp)
  * - fleet: Remote host management, hardlink space deduplication, command safety engine
  * - scaffold: Stack project scaffolder, template substitution, feature injection
  * - curation: Awesome repository curation, mass identifier renaming
@@ -25,7 +25,8 @@ export * as vendor from "./vendor";
 export * as runtime from "./runtime";
 export * as verify from "./verify";
 export * as server from "./server";
-export * as mcp from "./mcp";
+export * as mcp from "./tools/registry";
+export { callTool, listTools, runToolHost, type HostResult } from "./tools/host";
 export * as fleet from "./fleet";
 export * as scaffold from "./scaffold";
 export * as curation from "./curation";
@@ -136,10 +137,6 @@ export {
 export { createApiServer, buildOpenApiSpec, type ApiServerOptions } from "./server";
 
 export {
-  DEFAULT_MCP_PROTOCOL_VERSION,
-  SUPPORTED_MCP_PROTOCOL_VERSIONS,
-  SERVER_NAME,
-  SERVER_VERSION,
   TOOLS,
   executeTool,
   ToolExecutionContext,
@@ -147,9 +144,8 @@ export {
   validateToolArguments,
   type ToolExecutionContextOptions,
   type ToolCallOptions,
-  handleMcpMessage,
   type ToolDefinition,
-} from "./mcp";
+} from "./tools/registry";
 
 export {
   parseFindLinks,

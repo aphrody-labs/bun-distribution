@@ -20,7 +20,6 @@ import {
   parseTsSource,
   buildOpenApiSpec,
   createApiServer,
-  handleMcpMessage,
   TOOLS,
   GATES,
 } from "../../core/src/index";
@@ -243,31 +242,6 @@ describe("YOLO Core Library (@aphrody/yolo-core)", () => {
       expect(toolNames).toContain("yolo_status");
       expect(toolNames).toContain("yolo_scan");
       expect(toolNames).toContain("yolo_bench");
-    });
-
-    it("should handle MCP initialize and ping requests", async () => {
-      const initRaw = await handleMcpMessage(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "initialize",
-          params: { protocolVersion: mcp.DEFAULT_MCP_PROTOCOL_VERSION },
-        }),
-        rootDir,
-      );
-      expect(initRaw).not.toBeNull();
-      const initResp = JSON.parse(initRaw!) as {
-        result?: { protocolVersion?: string };
-      };
-      expect(initResp.result?.protocolVersion).toBeDefined();
-
-      const pingRaw = await handleMcpMessage(
-        JSON.stringify({ jsonrpc: "2.0", id: 2, method: "ping" }),
-        rootDir,
-      );
-      expect(pingRaw).not.toBeNull();
-      const pingResp = JSON.parse(pingRaw!) as { result?: Record<string, unknown> };
-      expect(pingResp.result).toEqual({});
     });
   });
 

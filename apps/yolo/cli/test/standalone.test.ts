@@ -181,44 +181,26 @@ describe("compiled CLI without an installed Bun", () => {
     expect(report.cargo.resolver).toBe("2");
   });
 
-  it("serves MCP initialization, tools and relative parsing from the caller's workspace", () => {
-    const messages = [
-      { id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } },
-      { id: 2, method: "tools/list" },
-      {
-        id: 3,
-        method: "tools/call",
-        params: { name: "yolo_parse", arguments: { path: "sample.ts" } },
-      },
-      { id: 4, method: "tools/call", params: { name: "yolo_scan", arguments: {} } },
-    ].map((message) => JSON.stringify({ jsonrpc: "2.0", ...message }));
-    const result = run(["mcp"], project, `${messages.join("\n")}\n`);
-    expect(result.exitCode).toBe(0);
-    const replies = result.stdout
-      .toString()
-      .trim()
-      .split("\n")
-      .map((line) => JSON.parse(line));
-    expect(replies).toHaveLength(4);
-    expect(replies[0].result.protocolVersion).toBe("2025-06-18");
-    expect(replies[1].result.tools.map((tool: { name: string }) => tool.name)).toContain(
+  it("hosts the tools and relative parsing from the caller's workspace", () => {
+    const list = run(["tool", "list"], project);
+    expect(list.exitCode).toBe(0);
+    expect(JSON.parse(list.stdout.toString()).map((tool: { name: string }) => tool.name)).toContain(
       "yolo_scan",
     );
-    expect(JSON.parse(replies[2].result.content[0].text).exports).toEqual(["portable"]);
-    expect(JSON.parse(replies[3].result.content[0].text).target).toBe(project);
-
-    const status = run(
-      ["mcp"],
-      join(checkout, "apps"),
-      `${JSON.stringify({
-        jsonrpc: "2.0",
-        id: 5,
-        method: "tools/call",
-        params: { name: "yolo_status", arguments: {} },
-      })}\n`,
+    const parse = run(
+      ["tool", "call", "yolo_parse", JSON.stringify({ path: "sample.ts" })],
+      project,
     );
+    expect(parse.exitCode).toBe(0);
+    expect(JSON.parse(JSON.parse(parse.stdout.toString()).content[0].text).exports).toEqual([
+      "portable",
+    ]);
+    const scan = run(["tool", "call", "yolo_scan", "{}"], project);
+    expect(JSON.parse(JSON.parse(scan.stdout.toString()).content[0].text).target).toBe(project);
+
+    const status = run(["tool", "call", "yolo_status", "{}"], join(checkout, "apps"));
     expect(status.exitCode).toBe(0);
-    const report = JSON.parse(JSON.parse(status.stdout.toString()).result.content[0].text);
+    const report = JSON.parse(JSON.parse(status.stdout.toString()).content[0].text);
     expect(report.root).toBe(checkout);
     expect(report.cargo.resolver).toBe("2");
   });

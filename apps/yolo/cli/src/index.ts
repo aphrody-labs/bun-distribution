@@ -102,7 +102,7 @@ ${header}
   \x1b[32mtrain <args>\x1b[0m     Delegate to 'aphrody train' (datasets, jobs, promotion)
   \x1b[32mn2b [dir] [--jobs N] [--fix|--aggressive] [--dry-run] [--json]\x1b[0m Native recursive Node-to-Bun migration
   \x1b[32mai list|call <tool> <json>\x1b[0m Shared AI capabilities (same schemas and owner as MCP/API)
-  \x1b[32mmcp\x1b[0m                 Model Context Protocol (MCP 2024-11-05) stdio server for AI agents
+  \x1b[32mmcp\x1b[0m                 Alias of the single MCP server (aphrody mcp-server); \x1b[32mtool list|call\x1b[0m hosts the yolo_* tools
   \x1b[32mapi [--port N]\x1b[0m      Serve local HTTP / REST / OpenAPI micro-server (Bun.serve)
   \x1b[32mweb [build|dev]\x1b[0m     Manage and build the zero-overhead Web & Desktop frontend
   \x1b[32mgenerate [--json]\x1b[0m   Autonomously scan upstream Bun and generate code & capability catalogs
@@ -451,8 +451,19 @@ async function main(): Promise<void> {
     }
 
     case "mcp": {
-      const { runMcpServer } = await import("./mcp");
-      await runMcpServer(workspaceRoot());
+      // Alias of the single MCP server: `yolo mcp` runs `aphrody mcp-server` (deprecated alias, 2026-10-07).
+      const child = Bun.spawn(["aphrody", "mcp-server", ...args.slice(1)], {
+        stdin: "inherit",
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      process.exitCode = await child.exited;
+      break;
+    }
+
+    case "tool": {
+      const { runToolHost } = await import("../../../../packages/engine/core/src/tools/host");
+      process.exitCode = await runToolHost(args.slice(1), workspaceRoot());
       break;
     }
 

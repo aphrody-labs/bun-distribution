@@ -1,7 +1,7 @@
 # YOLO Core Library (`@aphrody/yolo-core`)
 
 Native Bun owners shared by the Yolo CLI, MCP server and HTTP API. Public subpaths
-cover `sys`, `vfs`, `vendor`, `runtime`, `verify`, `server`, `mcp`, `fleet`,
+cover `sys`, `vfs`, `vendor`, `runtime`, `verify`, `server`, `tools` (alias `mcp`), `fleet`,
 `scaffold`, `curation`, `coord`, `distribution`, `host`, `units`, `ledger`,
 `monitor`, `redis`, `gemma4` and `pm`.
 
@@ -26,7 +26,7 @@ const result = await syncPackages({
 });
 ```
 
-The same operation is available through `yolo mcp` as `yolo_package_sync` and
+The same operation is available through the single `aphrody-mcp` (hosting `yolo tool`) as `yolo_package_sync` and
 through `POST /api/tools/call` on `yolo api`:
 
 ```json

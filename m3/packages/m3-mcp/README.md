@@ -1,10 +1,12 @@
 # @aphrody/m3-mcp
 
-The design/UI MCP server of aphrody-m3 (stdio): packages, M3 tokens, docs, research links,
-templates, Material Symbols and desktop icons, served from this repository's files.
+The design/UI tool host of aphrody-m3: packages, M3 tokens, docs, research links, templates,
+Material Symbols and desktop icons, served from this repository's files. It is not an MCP server:
+the single `aphrody-mcp` hosts these tools (`aphrody mcp-server`, alias `m3-mcp`).
 
 ```sh
-bun run start          # bun src/server.ts (stdio transport)
+bun src/tool-host.ts list                          # tool definitions (JSON)
+bun src/tool-host.ts call m3_token_lookup '{"query":"primary"}'  # one MCP-shaped result
 ```
 
 | Tool | Does |
@@ -17,6 +19,6 @@ bun run start          # bun src/server.ts (stdio transport)
 | `m3_symbol_svg`, `m3_symbol_search` | Material Symbols SVG and catalogue search (`@aphrody/material-design-icons`) |
 | `m3_svg_to_ico` | SVG to Tauri desktop icons |
 
-Sources: `src/server.ts` (tool registration), `src/catalog.ts` (file-backed lookups). Tests:
+Sources: `src/tools.ts` (tool table), `src/tool-host.ts` (`list` / `call`), `src/catalog.ts` (file-backed lookups). Tests:
 `bun test`; typecheck: `bun run typecheck`. Registered in the aphrody-labs plugins marketplace as
 the `aphrody-m3` plugin.

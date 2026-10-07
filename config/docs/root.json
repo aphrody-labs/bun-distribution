@@ -108,7 +108,7 @@
       ],
       [
         "MCP",
-        "`aphrody-mcp` (`crates/ai/mcp`); `aphrody kernel mcp` attaches `yolo mcp` and `m3-mcp`"
+        "`aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `aphrody kernel mcp`, `yolo mcp` and `m3-mcp` are deprecated aliases (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers"
       ],
       [
         "Desktop",

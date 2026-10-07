@@ -7,10 +7,7 @@ import {
   TOOLS,
   ToolExecutionContext,
 } from "../../../../packages/engine/core/src/tools/registry";
-import {
-  handleMcpMessage,
-  TOOLS as compatibilityTools,
-} from "../../../../packages/engine/core/src/mcp/server";
+import { callTool } from "../../../../packages/engine/core/src/tools/host";
 import { NativeRedisClient } from "../../../../packages/engine/core/src/redis/client";
 import { createApiServer } from "../../../../packages/engine/core/src/server/http";
 
@@ -42,22 +39,11 @@ test("SDK, CLI, MCP and HTTP use the same provider contract and schema", async (
     history: [{ role: "assistant" as const, content: "previous" }],
   };
   try {
-    expect(compatibilityTools).toBe(TOOLS);
+    expect(TOOLS.length).toBeGreaterThan(0);
     const direct = await engine.infer(args);
     const core = await executeTool("yolo_ai_infer", args, root, context);
-    const mcp = JSON.parse(
-      (await handleMcpMessage(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "tools/call",
-          params: { name: "yolo_ai_infer", arguments: args },
-        }),
-        root,
-        context,
-      ))!,
-    );
-    const fromMcp = JSON.parse(mcp.result.content[0].text);
+    const host = await callTool("yolo_ai_infer", args, root, context);
+    const fromMcp = JSON.parse(host.content[0]!.text);
     const response = await fetch(`http://127.0.0.1:${api.port}/api/tools/call`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -116,7 +102,7 @@ test("AI CLI lists the owner schemas and rejects invalid input without a provide
   expect(await new Response(invalid.stderr).text()).toContain("outside the allowed range");
 });
 
-test("HTTP capability adapter bundles without the MCP JSON-RPC implementation", async () => {
+test("HTTP capability adapter bundles without the tool host", async () => {
   const result = await Bun.build({
     entrypoints: [resolve(root, "packages/engine/core/src/server/http.ts")],
     target: "bun",
@@ -126,5 +112,5 @@ test("HTTP capability adapter bundles without the MCP JSON-RPC implementation", 
   const map = result.outputs.find((output) => output.path.endsWith(".map"));
   const sources = (await map!.json()).sources as string[];
   expect(sources.some((path) => path.endsWith("tools/registry.ts"))).toBe(true);
-  expect(sources.some((path) => path.endsWith("mcp/server.ts"))).toBe(false);
+  expect(sources.some((path) => path.endsWith("tools/host.ts"))).toBe(false);
 });
