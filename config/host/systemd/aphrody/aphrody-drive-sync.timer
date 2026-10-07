@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Run private Drive sync on the VPS without an interactive session
+
+[Timer]
+OnBootSec=30
+OnUnitInactiveSec=60
+AccuracySec=5
+Unit=aphrody-drive-sync.service
+
+[Install]
+WantedBy=timers.target

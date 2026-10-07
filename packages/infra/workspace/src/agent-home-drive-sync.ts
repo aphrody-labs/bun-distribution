@@ -13,13 +13,22 @@ export interface SyncConfig {
   yolo: string;
   receiptRoot: string;
   drive: { home: string; folderId: string; intervalSeconds: number };
-  agents: { intervalSeconds: number };
-  homes: { profile: "aphrody" | "dbfr"; intervalSeconds: number }[];
+  agents?: { intervalSeconds: number };
+  homes?: { profile: "aphrody" | "dbfr"; intervalSeconds: number }[];
+  jobs?: SyncJobName[];
   retrieval?: { root: string; intervalSeconds: number };
   replica?: ReplicaConfig;
   ragMonitor?: RagMonitorConfig;
-  publication: { host: "vps"; directory: string };
+  publication: { host: "vps" | "local"; directory: string; receiptName?: string };
 }
+export type SyncJobName =
+  | "drive"
+  | "agents"
+  | "home-dbfr"
+  | "home-aphrody"
+  | "drive-retrieval"
+  | "drive-replica"
+  | "rag-monitor";
 export interface JobReceipt {
   observedAt: string;
   report: Record<string, number>;
@@ -83,7 +92,7 @@ export function nativeAgentReport(text: string): Record<string, number> {
   return counters(report);
 }
 function jobs(config: SyncConfig) {
-  return [
+  const available = [
     {
       name: "drive",
       interval: config.drive.intervalSeconds,
@@ -94,21 +103,25 @@ function jobs(config: SyncConfig) {
       },
       parse: (text: string) => counters(JSON.parse(text)),
     },
-    {
-      name: "agents",
-      interval: config.agents.intervalSeconds,
-      argv: [
-        config.aphrody,
-        "mcp",
-        "call",
-        "aphrody",
-        "sync_external_agents",
-        "--args",
-        JSON.stringify({ live: true, memory: false }),
-      ],
-      parse: nativeAgentReport,
-    },
-    ...config.homes.map((home) => ({
+    ...(config.agents
+      ? [
+          {
+            name: "agents",
+            interval: config.agents.intervalSeconds,
+            argv: [
+              config.aphrody,
+              "mcp",
+              "call",
+              "aphrody",
+              "sync_external_agents",
+              "--args",
+              JSON.stringify({ live: true, memory: false }),
+            ],
+            parse: nativeAgentReport,
+          },
+        ]
+      : []),
+    ...(config.homes ?? []).map((home) => ({
       name: `home-${home.profile}`,
       interval: home.intervalSeconds,
       argv: [config.aphrody, "home", "sync", "--profile", home.profile, "--apply"],
@@ -168,6 +181,17 @@ function jobs(config: SyncConfig) {
         ]
       : []),
   ];
+  if (config.jobs === undefined) return available;
+  if (
+    !Array.isArray(config.jobs) ||
+    config.jobs.length === 0 ||
+    new Set(config.jobs).size !== config.jobs.length ||
+    config.jobs.some((name) => !available.some((job) => job.name === name))
+  )
+    throw new Error("Selected sync jobs must be unique configured capabilities");
+  const wanted = new Set<string>(config.jobs);
+  // Keep download before retrieval even when the selection lists retrieval first.
+  return available.filter((job) => wanted.has(job.name));
 }
 /** A failed capability does not block other due jobs; failures retry with bounded backoff. */
 export async function syncPass(
@@ -177,8 +201,15 @@ export async function syncPass(
   now = Date.now(),
   persist: (state: SyncState) => Promise<void> = async () => {},
 ) {
-  const state = structuredClone(previous);
-  for (const job of jobs(config)) {
+  const selected = jobs(config);
+  const state = structuredClone(
+    config.jobs === undefined
+      ? previous
+      : Object.fromEntries(
+          Object.entries(previous).filter(([name]) => selected.some((job) => job.name === name)),
+        ),
+  );
+  for (const job of selected) {
     if ((state[job.name]?.nextAt ?? 0) > now) continue;
     const old = state[job.name];
     try {
@@ -231,15 +262,34 @@ function runner(config: SyncConfig): Runner {
     }
   };
 }
-async function publish(config: SyncConfig, state: SyncState, run: Runner) {
+function validatePublication(config: SyncConfig) {
+  const { host, receiptName } = config.publication;
+  if (
+    !["vps", "local"].includes(host) ||
+    (receiptName !== undefined &&
+      (typeof receiptName !== "string" ||
+        !/^[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.json$/.test(receiptName)))
+  )
+    throw new Error("Invalid sync publication destination or receipt basename");
+}
+export async function publishSyncReceipts(config: SyncConfig, state: SyncState, run: Runner) {
+  validatePublication(config);
   // Only counters travel; raw provider output and authentication remain in protected stores.
+  const automation = { observedAt: new Date().toISOString(), jobs: state };
   const reports: Record<string, unknown> = {
-    "automation-sync.json": { observedAt: new Date().toISOString(), jobs: state },
+    [config.publication.receiptName ?? "automation-sync.json"]: automation,
   };
-  if (state.drive?.lastSuccess) reports["drive-sync.json"] = state.drive.lastSuccess;
-  if (state.agents?.lastSuccess) reports["agent-sync.json"] = state.agents.lastSuccess;
-  if (state["rag-monitor"]?.lastSuccess)
-    reports["rag-sync.json"] = state["rag-monitor"].lastSuccess;
+  if (config.publication.receiptName === undefined) {
+    if (state.drive?.lastSuccess) reports["drive-sync.json"] = state.drive.lastSuccess;
+    if (state.agents?.lastSuccess) reports["agent-sync.json"] = state.agents.lastSuccess;
+    if (state["rag-monitor"]?.lastSuccess)
+      reports["rag-sync.json"] = state["rag-monitor"].lastSuccess;
+  }
+  if (config.publication.host === "local") {
+    for (const [name, report] of Object.entries(reports))
+      await save(join(config.publication.directory, name), report);
+    return;
+  }
   const payload = Buffer.from(JSON.stringify(reports)).toString("base64");
   const remote = Buffer.from(config.publication.directory).toString("base64");
   const python = [
@@ -300,15 +350,16 @@ if (import.meta.main) {
   ).json()) as SyncConfig;
   if (
     config.version !== 1 ||
-    config.publication.host !== "vps" ||
-    config.homes.some((home) => !["dbfr", "aphrody"].includes(home.profile))
+    (config.homes ?? []).some((home) => !["dbfr", "aphrody"].includes(home.profile))
   )
     throw new Error("Invalid sync scope");
+  validatePublication(config);
+  const selected = jobs(config);
   if (!process.argv.includes("--apply")) {
     console.log(
       JSON.stringify({
         planned: true,
-        jobs: jobs(config).map((job) => ({ name: job.name, intervalSeconds: job.interval })),
+        jobs: selected.map((job) => ({ name: job.name, intervalSeconds: job.interval })),
       }),
     );
     process.exit(0);
@@ -325,7 +376,7 @@ if (import.meta.main) {
     const state = await syncPass(config, previous, run, Date.now(), (next) => save(path, next));
     let published = false;
     try {
-      await publish(config, state, run);
+      await publishSyncReceipts(config, state, run);
       published = true;
     } catch {
       /* Retry publication on the next tick without rerunning successful jobs. */

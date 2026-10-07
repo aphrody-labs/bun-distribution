@@ -44,5 +44,8 @@
     "codexProtocol": "app-server JSON-RPC initialize/initialized; completion requires turn/completed",
     "nativeMcp": "aphrody-mcp",
     "status": "device-endpoints-and-authentication-not-yet-qualified"
+  },
+  "sync": {
+    "cloudAutomationReportPath": "/srv/aphrody-lab/state/agent-sync-vps-status.json"
   }
 }

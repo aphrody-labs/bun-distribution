@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
+import { mkdtemp, open, readdir, rm, stat, symlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { projectRetrievalCandidate } from "../src/drive-sync.ts";
 import {
   nativeMarkdown,
   normalizeMarkdown,
@@ -157,5 +161,83 @@ describe("read-only native Google Docs Markdown projection", () => {
     expect(() =>
       nativeMarkdown({ body: { content: [{ paragraph: { elements: [{}] } }] } }),
     ).toThrow("Unsupported native element");
+  });
+});
+
+const temporary: string[] = [];
+const snapshot = `USER.md-${"a".repeat(16)}-${"b".repeat(16)}`;
+async function directory() {
+  const path = await mkdtemp(join(tmpdir(), "aphrody-drive-candidate-"));
+  temporary.push(path);
+  return path;
+}
+afterEach(async () => {
+  await Promise.all(temporary.splice(0).map((path) => rm(path, { recursive: true, force: true })));
+});
+describe("private candidate retrieval projection", () => {
+  test("copies only the remote candidate and leaves its source evidence unchanged", async () => {
+    const root = await directory(),
+      incoming = join(root, "incoming-markdown", snapshot);
+    const source = {
+      "remote.candidate.md": "Remote candidate\n",
+      "local.md": "Local private version\n",
+      "reviewed-baseline.md": "Reviewed private baseline\n",
+      "remote.native.json": '{"native":"private"}',
+      "evidence.json": '{"reason":"private review"}',
+    };
+    await Promise.all(
+      Object.entries(source).map(([name, text]) => Bun.write(join(incoming, name), text)),
+    );
+    await projectRetrievalCandidate(root, snapshot, source["remote.candidate.md"]);
+    const retrieval = join(root, "retrieval-markdown"),
+      projected = join(retrieval, snapshot);
+    expect(await readdir(retrieval)).toEqual([snapshot]);
+    expect(await readdir(projected)).toEqual(["remote.candidate.md"]);
+    expect(await Bun.file(join(projected, "remote.candidate.md")).text()).toBe(
+      "Remote candidate\n",
+    );
+    expect((await stat(retrieval)).mode & 0o777).toBe(0o700);
+    expect((await stat(projected)).mode & 0o777).toBe(0o700);
+    expect((await stat(join(projected, "remote.candidate.md"))).mode & 0o777).toBe(0o600);
+    await Promise.all(
+      Object.entries(source).map(async ([name, text]) =>
+        expect(await Bun.file(join(incoming, name)).text()).toBe(text),
+      ),
+    );
+  });
+  test("unchanged candidates preserve their fingerprint while changed content is replaced atomically", async () => {
+    const root = await directory();
+    await projectRetrievalCandidate(root, snapshot, "First candidate\n");
+    const path = join(root, "retrieval-markdown", snapshot, "remote.candidate.md"),
+      before = await stat(path);
+    await projectRetrievalCandidate(root, snapshot, "First candidate\n");
+    const repeated = await stat(path);
+    expect(repeated.ino).toBe(before.ino);
+    expect(repeated.mtimeMs).toBe(before.mtimeMs);
+    const reader = await open(path, "r");
+    try {
+      await projectRetrievalCandidate(root, snapshot, "Updated candidate\n");
+      expect(await reader.readFile("utf8")).toBe("First candidate\n");
+      expect(await Bun.file(path).text()).toBe("Updated candidate\n");
+      expect(await readdir(join(path, ".."))).toEqual(["remote.candidate.md"]);
+    } finally {
+      await reader.close();
+    }
+  });
+  test("unsafe snapshot paths and symlinked candidate files cannot write outside the projection", async () => {
+    const root = await directory();
+    await expect(projectRetrievalCandidate(root, "../escape", "candidate")).rejects.toThrow(
+      "snapshot name",
+    );
+    await projectRetrievalCandidate(root, snapshot, "Initial candidate\n");
+    const projected = join(root, "retrieval-markdown", snapshot, "remote.candidate.md"),
+      outside = join(root, "local.md");
+    await Bun.write(outside, "Protected local\n");
+    await rm(projected);
+    await symlink(outside, projected);
+    await expect(projectRetrievalCandidate(root, snapshot, "Replacement\n")).rejects.toThrow(
+      "projection file",
+    );
+    expect(await Bun.file(outside).text()).toBe("Protected local\n");
   });
 });

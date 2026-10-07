@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable no-await-in-loop -- Seven native documents and their evidence are reconciled sequentially. */
 import { createHash } from "node:crypto";
-import { chmod, mkdir, readdir, rename, rm } from "node:fs/promises";
+import { chmod, lstat, mkdir, readdir, rename, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import type { drive_v3 } from "googleapis";
@@ -46,6 +46,37 @@ async function save(path: string, data: string): Promise<void> {
   await Bun.write(temp, data, { mode: 0o600 });
   await chmod(temp, 0o600);
   await rename(temp, path);
+}
+async function privateDirectory(path: string): Promise<void> {
+  await mkdir(path, { recursive: true, mode: 0o700 });
+  const info = await lstat(path);
+  if (!info.isDirectory() || info.isSymbolicLink())
+    throw new Error("Unsafe retrieval projection directory");
+  await chmod(path, 0o700);
+}
+/** Index candidates separately from their private local/baseline/native evidence. */
+export async function projectRetrievalCandidate(
+  privateRoot: string,
+  snapshot: string,
+  markdown: string,
+): Promise<void> {
+  const match = /^([A-Z][A-Z0-9_-]*\.md)-[a-f0-9]{16}-[a-f0-9]{16}$/.exec(snapshot);
+  if (!match || !DEFAULT_DOCS.has(match[1]!)) throw new Error("Unsafe retrieval snapshot name");
+  const root = join(privateRoot, "retrieval-markdown"),
+    directory = join(root, snapshot),
+    path = join(directory, "remote.candidate.md");
+  for (const folder of [root, directory]) await privateDirectory(folder);
+  const previous = await lstat(path).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== "ENOENT") throw error;
+    return undefined;
+  });
+  if (previous && (!previous.isFile() || previous.isSymbolicLink()))
+    throw new Error("Unsafe retrieval projection file");
+  if (previous && (await Bun.file(path).text()) === markdown) {
+    await chmod(path, 0o600);
+    return;
+  }
+  await save(path, markdown);
 }
 async function remoteDocs(drive: drive_v3.Drive, rootId: string): Promise<Map<string, RemoteDoc>> {
   const docs = new Map<string, RemoteDoc>();
@@ -102,6 +133,8 @@ export async function syncAgentHome(
   }
   await Bun.write(join(lock, "pid"), `${process.pid}\n`, { mode: 0o600 });
   try {
+    // A fresh worker may have no staged differences; its retrieval root is still indexable.
+    if (!options.dryRun) await privateDirectory(join(privateRoot, "retrieval-markdown"));
     const state: State = (await Bun.file(statePath).exists())
       ? await Bun.file(statePath).json()
       : { version: 1, kind: "native-markdown-download-only", rootFolderId, files: {} };
@@ -208,16 +241,11 @@ export async function syncAgentHome(
       }
       summary.staged++;
       if (!options.dryRun) {
-        const directory = join(
-          privateRoot,
-          "incoming-markdown",
-          `${name}-${remoteHash.slice(0, 16)}-${localHash.slice(0, 16)}`,
-        );
+        const snapshot = `${name}-${remoteHash.slice(0, 16)}-${localHash.slice(0, 16)}`,
+          directory = join(privateRoot, "incoming-markdown", snapshot);
+        const candidate = projectionMarkdown(native as NativeDocument, localText);
         await save(join(directory, "remote.native.json"), nativeJson + "\n");
-        await save(
-          join(directory, "remote.candidate.md"),
-          projectionMarkdown(native as NativeDocument, localText),
-        );
+        await save(join(directory, "remote.candidate.md"), candidate);
         await save(join(directory, "local.md"), localText);
         const baseline = Bun.file(join(privateRoot, "markdown-reviewed-baseline", name));
         if (await baseline.exists())
@@ -240,6 +268,7 @@ export async function syncAgentHome(
             2,
           ) + "\n",
         );
+        await projectRetrievalCandidate(privateRoot, snapshot, candidate);
       }
     }
     if (!options.dryRun) await save(statePath, JSON.stringify(state, null, 2) + "\n");

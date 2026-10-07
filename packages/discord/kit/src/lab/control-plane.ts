@@ -13,6 +13,7 @@ interface Declaration {
     automationReportPath?: string;
     ragReportPath?: string;
   };
+  sync?: { cloudAutomationReportPath?: string };
   wireguard: { interface: string; reportPath: string; peers: { id: string }[] };
 }
 export interface NetworkPeer {
@@ -134,18 +135,34 @@ export function publicAutomation(value: Record<string, unknown>) {
       }),
   );
 }
-async function readAutomation(path?: string) {
-  if (!path || !(await Bun.file(path).exists())) return { available: false };
-  const receipt = (await Bun.file(path).json()) as {
-    observedAt?: string;
-    jobs?: Record<string, unknown>;
-  };
-  const age = Date.now() - Date.parse(receipt.observedAt ?? "");
-  return {
-    available: true,
-    fresh: Number.isFinite(age) && age >= 0 && age <= 180_000,
-    jobs: publicAutomation(receipt.jobs ?? {}),
-  };
+export async function readAutomation(path?: string) {
+  try {
+    if (!path || !(await Bun.file(path).exists())) return { available: false };
+    const receipt = (await Bun.file(path).json()) as {
+      observedAt?: string;
+      jobs?: Record<string, unknown>;
+    };
+    const age = Date.now() - Date.parse(receipt.observedAt ?? "");
+    return {
+      available: true,
+      fresh: Number.isFinite(age) && age >= 0 && age <= 180_000,
+      jobs: publicAutomation(receipt.jobs ?? {}),
+    };
+  } catch {
+    return { available: false };
+  }
+}
+
+export function renderAutomation(report: Awaited<ReturnType<typeof readAutomation>>) {
+  if (!report.available) return "état indisponible";
+  if (!report.fresh) return "suivi périmé";
+  const jobs = Object.entries(report.jobs ?? {});
+  if (!jobs.length) return "rapport récent sans état vérifié";
+  return jobs
+    .map(([name, status]) =>
+      status === "ok" ? `${name} : ok` : `${name} : échec ; nouvelle tentative attendue`,
+    )
+    .join(" | ");
 }
 async function run(argv: string[]): Promise<string> {
   const child = Bun.spawn(argv, { stdout: "pipe", stderr: "ignore" });
@@ -172,11 +189,12 @@ if (import.meta.main) {
   const env = await loadCredentials(flag("--env-file"));
   if (env.DISCORD_GUILD_ID !== declaration.guildId || !env.DISCORD_BOT_TOKEN)
     throw new Error("Guild credential mismatch");
-  const [peers, drive, agents, automation, rag] = await Promise.all([
+  const [peers, drive, agents, automation, cloudAutomation, rag] = await Promise.all([
     readNetwork(declaration.wireguard),
     readReport(declaration.drive.reportPath),
     readReport(declaration.drive.agentReportPath),
     readAutomation(declaration.drive.automationReportPath),
+    readAutomation(declaration.sync?.cloudAutomationReportPath),
     declaration.drive.ragReportPath
       ? readReport(declaration.drive.ragReportPath)
       : Promise.resolve({ available: false }),
@@ -193,7 +211,7 @@ if (import.meta.main) {
   ])
     .then((output) => (output.trim() === "homes-present" ? "homes-present" : "unverified"))
     .catch(() => "unreachable");
-  const summary = { peers, drive, agents, automation, rag, dbfr };
+  const summary = { peers, drive, agents, automation, cloudAutomation, rag, dbfr };
   const fingerprint = JSON.stringify(summary);
   const receiptPath = flag("--receipt");
   const previous = (await Bun.file(receiptPath).exists())
@@ -217,7 +235,7 @@ if (import.meta.main) {
   const reports = [
     [
       declaration.channels.drive,
-      `**Synchronisation DBFR**\nDossier : https://drive.google.com/drive/folders/${declaration.drive.folderId}\nAutomatisation : ${JSON.stringify(automation)}\nDrive : ${JSON.stringify(drive)}\nSessions des agents : ${JSON.stringify(agents)}\nRAG : ${renderRag(rag)}.\nAgent homes SSH DBFR/Shenron : ${dbfr}.\nUne mise à jour staged ou un miroir de session ne prouve pas une synchronisation complète ni une connexion A2A.`,
+      `**Synchronisation DBFR**\nDossier : https://drive.google.com/drive/folders/${declaration.drive.folderId}\nAutomatisation : ${JSON.stringify(automation)}\nDrive VPS : ${renderAutomation(cloudAutomation)}\nDrive : ${JSON.stringify(drive)}\nSessions des agents : ${JSON.stringify(agents)}\nRAG : ${renderRag(rag)}.\nAgent homes SSH DBFR/Shenron : ${dbfr}.\nUne mise à jour staged ou un miroir de session ne prouve pas une synchronisation complète ni une connexion A2A.`,
     ],
     [
       declaration.channels.network,

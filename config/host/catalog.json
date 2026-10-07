@@ -693,6 +693,22 @@
       "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "wsl"
+    },
+    {
+      "service": "aphrody-drive-sync",
+      "unit": "aphrody-drive-sync.service",
+      "path": "systemd/aphrody/aphrody-drive-sync.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-drive-sync",
+      "unit": "aphrody-drive-sync.timer",
+      "path": "systemd/aphrody/aphrody-drive-sync.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
     }
   ],
   "nginx": [

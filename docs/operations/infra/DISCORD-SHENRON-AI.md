@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Discord Aphrody et Shenron : raccordement IA
 
 Le serveur privé cible est `1554189180030947338`. Le salon général textuel
@@ -146,9 +147,38 @@ DBFR ; une copie de documents ne synchronise pas les mémoires des fournisseurs.
 L'artefact CLI déployé a l'empreinte
 `4e51190ca80efab50df4b3f351c2be60b41815c2566a6a9e456d4077a761c296`.
 
-Le poste WSL détient actuellement l'authentification Drive. Sa suppression ou
-son arrêt suspendrait ces collecteurs : une migration authentifiée vers le
-successeur doit précéder son retrait. Aucun jeton Google n'a été copié au VPS.
+Les collecteurs de sessions locaux dépendent encore du poste WSL. Le connecteur
+Drive a été migré séparément vers le VPS le 2026-10-07 ; son fonctionnement
+persistant et son authentification sont décrits ci-dessous.
+
+## Connecteur Drive Bun sur le VPS — 2026-10-07
+
+La [politique cloud](../../../config/host/agent-sync-vps.json) sélectionne
+uniquement `drive` et `drive-retrieval`, à partir du même propriétaire Google
+et du même worker Workspace Bun. Un unique credential service-account existant,
+déjà qualifié en lecture sur le dossier DBFR, a été transféré par SSH avec clé
+d'hôte vérifiée dans le store privé du VPS : répertoire `0700`, fichier `0600`.
+Sa valeur ne figure ni dans le dépôt ni dans les rapports Discord.
+
+Le [service](../../../config/host/systemd/aphrody/aphrody-drive-sync.service)
+est un oneshot ; son [minuteur](../../../config/host/systemd/aphrody/aphrody-drive-sync.timer)
+est activé au démarrage et déclenche une passe chaque minute. Les intervalles
+de chaque capacité et les reprises après erreur restent contrôlés par les
+checkpoints privés. Un service `inactive/dead` après `Result=success` est normal
+entre deux passes. La fermeture de la session WSL ne suspend plus ce connecteur.
+
+Le passage réussi de 14:01 UTC a récupéré sept documents natifs, sans upload.
+Les projections candidates sont désormais séparées des preuves locales dans
+`retrieval-markdown`. Après sauvegarde native et réindexation du même label
+`drive-dbfr-staged`, le home DBFR du VPS contient sept documents et 89 chunks,
+avec zéro vecteur ; les sept copies locales de comparaison ont été retirées
+de cette source. Les preuves complètes restent privées dans `incoming-markdown`.
+Le reçu cloud `agent-sync-vps-status.json` publie uniquement les compteurs ; le
+salon Drive le distingue explicitement du reçu WSL. Les écritures Google Docs
+et la fusion bidirectionnelle restent à implémenter.
+
+Validation : 48 tests ciblés Workspace, Google, Discord et plan d'hôte réussis ;
+TypeScript, lint strict et format des chemins modifiés passent.
 
 ## Compute et RAG DBFR
 
@@ -185,7 +215,9 @@ Validation du lot automatique et de ce suivi : 24 tests ciblés réussis, TypeSc
 et kit Discord sans erreur, lint des chemins modifiés propre. La suite kit
 élargie expose un échec hors chemins modifiés : `sendFile` conserve `blob` au
 lieu du nom `note.txt` avec le Bun installé. Aucun résultat global vert n'est
-revendiqué. A2A reste à qualifier : la présence de `APHRODY_A2A_DRY_RUN`, même
+revendiqué. À ce stade historique, A2A restait à qualifier : la présence de `APHRODY_A2A_DRY_RUN`, même
 avec la valeur `0`, active le dry-run ; le jeton de coordination ne protège pas
 tous les endpoints du listener actuel. Ne pas exposer l'exécution de code avant
-qualification de cette authentification et des endpoints PC.
+qualification de cette authentification et des endpoints PC. L'activation
+authentifiée ultérieure du hub et sa vérification Codex après fermeture du
+client sont consignées dans [MCP-A2A](MCP-A2A.md).
