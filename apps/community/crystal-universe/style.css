@@ -207,7 +207,8 @@ details {
 #lore-results a {
   color: #93eaff;
 }
-.lore-catalog {
+.lore-catalog,
+.lore-coverage {
   margin-block-start: 1.5rem;
 }
 .lore-catalog h3 {

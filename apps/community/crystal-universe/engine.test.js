@@ -4,7 +4,11 @@ import { createGame, pointerAction, pointerDirection, step } from "./engine.js";
 import { readGamepadInput } from "./gamepad.js";
 import { DEFAULT_AVATAR, loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
 import { buildLoreSearchRequest, filterLoreSearchPayload } from "./lore-search.js";
-import { buildLoreCatalogRequest, normalizeLoreCatalogPayload } from "./lore-catalog.js";
+import {
+  buildLoreCatalogRequest,
+  normalizeLoreCatalogPayload,
+  normalizeLoreCoveragePayload,
+} from "./lore-catalog.js";
 import { buildMultiplayerSocketUrl } from "./multiplayer-url.js";
 test("energy, transformation, cooldown and expiry", () => {
   const g = createGame();
@@ -181,6 +185,14 @@ test("manga catalogue exposes the 42 standard volumes and keeps the count explic
     series: "DB",
     declaredCount: 44,
     omittedCount: 2,
+    coverage: {
+      observedCount: 2,
+      firstNumber: 1,
+      lastNumber: 42,
+      missingNumbers: Array.from({ length: 40 }, (_, index) => index + 2),
+      completeStandardSet: false,
+      contiguousObservedRange: false,
+    },
     records: [
       { id: "vol1", number: 1, pages: 221, pagesWithJa: 113 },
       { id: "vol42", number: 42, pages: 234, pagesWithJa: 71 },
@@ -202,7 +214,34 @@ test("Super catalogue sorts chapter IDs and rejects malformed entries", () => {
   );
   expect(catalog.records.map(({ id }) => id)).toEqual(["ch1315", "ch1417"]);
   expect(catalog.omittedCount).toBe(1);
+  expect(catalog.coverage).toEqual({
+    observedCount: 2,
+    firstNumber: 1315,
+    lastNumber: 1417,
+    missingNumbers: Array.from({ length: 101 }, (_, index) => index + 1316),
+    completeStandardSet: false,
+    contiguousObservedRange: false,
+  });
   expect(() => normalizeLoreCatalogPayload({ volumes: [] }, "invalid")).toThrow();
+});
+
+test("RAG coverage reports global manga passage counts without inventing missing data", () => {
+  expect(
+    normalizeLoreCoveragePayload({
+      index: { chunks: 256161, builtAt: null },
+      sources: [
+        { source_id: "manga", kind: "manga_page", n: 10030 },
+        { source_id: "db_manga_chapters", kind: "manga_chapter", n: 922 },
+      ],
+    }),
+  ).toEqual({
+    chunks: 256161,
+    builtAt: null,
+    mangaPagePassages: 10030,
+    mangaChapterPassages: 922,
+    mangaVolumePassages: null,
+  });
+  expect(() => normalizeLoreCoveragePayload({})).toThrow();
 });
 
 test("multiplayer uses the local port in development and same-origin TLS in production", () => {

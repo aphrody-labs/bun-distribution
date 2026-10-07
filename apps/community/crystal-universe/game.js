@@ -8,6 +8,8 @@ import { buildMultiplayerSocketUrl } from "./multiplayer-url.js";
 let initDragonPixelWasm = async () => {};
 let RustGameSession = null;
 let bevyApi = null;
+const formatCoverageCount = (value) =>
+  Number.isSafeInteger(value) ? value.toLocaleString("fr-FR") : "non fourni";
 try {
   const wasmModule = await import("./dragon-pixel-wasm.js");
   ({ default: initDragonPixelWasm, Session: RustGameSession } = wasmModule);
@@ -58,6 +60,7 @@ const loreResults = document.querySelector("#lore-results");
 const loreCatalogForm = document.querySelector("#lore-catalog-form");
 const loreCatalogStatus = document.querySelector("#lore-catalog-status");
 const loreCatalogRows = document.querySelector("#lore-catalog-rows");
+const loreCoverageStatus = document.querySelector("#lore-coverage-status");
 const multiplayerStatus = document.querySelector("#multiplayer-status");
 const roomName = document.querySelector("#room-name");
 let multiplayerSocket = null,
@@ -549,10 +552,33 @@ loreCatalogForm.addEventListener("submit", async (event) => {
     const omitted = catalog.omittedCount
       ? ` ${catalog.omittedCount} fiche(s) hors série ou hors numérotation standard masquée(s).`
       : "";
-    loreCatalogStatus.textContent = `${catalog.records.length} ${label} · ${pages.toLocaleString("fr-FR")} pages déclarées · ${pagesWithJa.toLocaleString("fr-FR")} avec japonais.${omitted} Ces nombres viennent des métadonnées, pas d’un contrôle de transcription page par page.`;
+    const coverage = catalog.coverage;
+    const audit =
+      series === "DB"
+        ? `${coverage.observedCount}/42 tomes standards présents${coverage.missingNumbers.length ? ` · manquants : ${coverage.missingNumbers.join(", ")}` : ""}.`
+        : coverage.observedCount === 0
+          ? "Aucun identifiant de chapitre n’est présent dans le catalogue."
+          : `${coverage.observedCount} identifiants OCR observés${coverage.firstNumber === null ? "" : ` sur ch${coverage.firstNumber}–ch${coverage.lastNumber}`} · ${coverage.missingNumbers.length} trou(s) dans cette plage${coverage.missingNumbers.length ? ` : ${coverage.missingNumbers.join(", ")}` : ""}.`;
+    loreCatalogStatus.textContent = `${audit} ${catalog.records.length} ${label} · ${pages.toLocaleString("fr-FR")} pages déclarées · ${pagesWithJa.toLocaleString("fr-FR")} avec japonais.${omitted} Ce contrôle porte sur les identifiants et métadonnées du catalogue; il ne certifie pas une transcription OCR complète ni l’exhaustivité éditoriale.`;
   } catch (error) {
     loreCatalogRows.replaceChildren();
     loreCatalogStatus.textContent =
       error.message || "Le catalogue Shenron est momentanément indisponible.";
+  }
+});
+
+document.querySelector("#lore-coverage-check").addEventListener("click", async () => {
+  loreCoverageStatus.textContent = "Lecture des compteurs globaux du RAG…";
+  try {
+    const response = await fetch("/api/lore/coverage", { cache: "no-store" });
+    const coverage = await response.json();
+    if (!response.ok) throw new Error(coverage.error || "La couverture n’a pas pu être chargée.");
+    if (!Number.isSafeInteger(coverage.chunks))
+      throw new Error("La réponse de couverture est invalide.");
+    const builtAt = coverage.builtAt ? ` · index daté ${coverage.builtAt}` : "";
+    loreCoverageStatus.textContent = `${formatCoverageCount(coverage.chunks)} passages au total · ${formatCoverageCount(coverage.mangaPagePassages)} pages manga · ${formatCoverageCount(coverage.mangaChapterPassages)} entrées chapitre · ${formatCoverageCount(coverage.mangaVolumePassages)} entrées volume${builtAt}. Compteurs globaux, non ventilés par série et non équivalents à une vérification OCR page par page.`;
+  } catch (error) {
+    loreCoverageStatus.textContent =
+      error.message || "La couverture du RAG est momentanément indisponible.";
   }
 });

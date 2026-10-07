@@ -38,10 +38,46 @@ export function normalizeLoreCatalogPayload(payload, series) {
     })
     .filter(Boolean)
     .toSorted((a, b) => a.number - b.number);
+  const observedNumbers = [...new Set(records.map(({ number }) => number))];
+  const firstNumber = observedNumbers[0] ?? null;
+  const lastNumber = observedNumbers.at(-1) ?? null;
+  const expectedNumbers =
+    series === "DB"
+      ? Array.from({ length: 42 }, (_, index) => index + 1)
+      : firstNumber === null
+        ? []
+        : Array.from({ length: lastNumber - firstNumber + 1 }, (_, index) => firstNumber + index);
+  const missingNumbers = expectedNumbers.filter((number) => !observedNumbers.includes(number));
   return {
     series,
     declaredCount: Number.isSafeInteger(payload.count) ? payload.count : payload.volumes.length,
     omittedCount: payload.volumes.length - records.length,
+    coverage: {
+      observedCount: observedNumbers.length,
+      firstNumber,
+      lastNumber,
+      missingNumbers,
+      completeStandardSet: series === "DB" && missingNumbers.length === 0,
+      contiguousObservedRange: firstNumber !== null && missingNumbers.length === 0,
+    },
     records,
+  };
+}
+
+export function normalizeLoreCoveragePayload(payload) {
+  if (!Number.isSafeInteger(payload?.index?.chunks) || !Array.isArray(payload?.sources))
+    throw new TypeError("Réponse de couverture RAG invalide.");
+  const sourceCount = (sourceId, kind) => {
+    const entry = payload.sources.find(
+      (source) => source?.source_id === sourceId && source?.kind === kind,
+    );
+    return Number.isSafeInteger(entry?.n) ? entry.n : null;
+  };
+  return {
+    chunks: payload.index.chunks,
+    builtAt: typeof payload.index.builtAt === "string" ? payload.index.builtAt : null,
+    mangaPagePassages: sourceCount("manga", "manga_page"),
+    mangaChapterPassages: sourceCount("db_manga_chapters", "manga_chapter"),
+    mangaVolumePassages: sourceCount("db_manga_volumes", "manga_volume"),
   };
 }

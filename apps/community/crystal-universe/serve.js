@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { buildLoreSearchRequest, filterLoreSearchPayload } from "./lore-search.js";
-import { buildLoreCatalogRequest, normalizeLoreCatalogPayload } from "./lore-catalog.js";
+import {
+  buildLoreCatalogRequest,
+  normalizeLoreCatalogPayload,
+  normalizeLoreCoveragePayload,
+} from "./lore-catalog.js";
 
 const files = new Set([
   "index.html",
@@ -149,6 +153,35 @@ const server = Bun.serve({
           Response.json(
             { error: "Le catalogue Shenron est momentanément indisponible." },
             { status: 502 },
+          ),
+        );
+    }
+    if (name === "api/lore/coverage" && request.method === "GET") {
+      return fetch(new URL("/api/public/data/coverage", shenronBase), {
+        headers: { accept: "application/json" },
+        signal: AbortSignal.timeout(12000),
+      })
+        .then(async (response) => {
+          if (!response.ok)
+            return Response.json(
+              { error: "La couverture publique du RAG est indisponible." },
+              { status: 502, headers: { "cache-control": "no-store" } },
+            );
+          try {
+            return Response.json(normalizeLoreCoveragePayload(await response.json()), {
+              headers: { "cache-control": "no-store" },
+            });
+          } catch {
+            return Response.json(
+              { error: "La réponse de couverture RAG est illisible." },
+              { status: 502, headers: { "cache-control": "no-store" } },
+            );
+          }
+        })
+        .catch(() =>
+          Response.json(
+            { error: "La couverture publique du RAG est momentanément indisponible." },
+            { status: 502, headers: { "cache-control": "no-store" } },
           ),
         );
     }

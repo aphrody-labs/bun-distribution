@@ -421,6 +421,37 @@ Vérification réelle sur Bun local `127.0.0.1:4335` contre Shenron : recherche
 charge → HTTP 400. Les tests unitaires, lint strict, format et diff-check sont
 relancés pour cette modification; aucun texte OCR n'est conservé dans le dépôt.
 
+## 2026-10-07 — Audit de continuité du catalogue OCR
+
+Le normaliseur retourne maintenant un audit calculé des identifiants reçus. Pour
+DB, il compare le catalogue aux identifiants attendus `vol1`–`vol42` et liste les
+tomes absents. Pour DBS, il signale les trous dans la plage OCR observée sans
+présumer que cette plage couvre l'intégralité éditoriale de la série. L'écran
+affiche ces résultats à côté des compteurs déclarés et précise qu'ils ne vérifient
+pas la transcription de chaque page.
+
+Contrôle réel du proxy local `127.0.0.1:4343` : `DB` → HTTP 200, 42/42 identifiants
+standards, 7 844 pages déclarées (3 213 avec japonais), deux fiches auxiliaires
+omises; `DBS` → HTTP 200, 103 identifiants consécutifs `ch1315`–`ch1417`, 4 355
+pages déclarées (2 122 avec japonais). Recherches live également vérifiées :
+`Goku`/DB et `Moro`/DBS renvoient chacune huit extraits dont tous les titres
+correspondent à la série demandée. Les nouvelles assertions de trous de catalogue
+et les contrôles JS locaux passent : 13 tests, 61 assertions, Oxlint strict,
+Oxfmt et `git diff --check`.
+
+La couverture publiée par `dragonball_data_coverage` indique 256 161 passages
+agrégés, dont 10 030 de type `manga_page`; ce total regroupe les corpus et n'établit
+pas le nombre de transcriptions complètes pour chaque volume. L'inventaire DBS
+reste un constat de catalogue OCR, sans certification éditoriale ou page-par-page.
+
+L'interface permet aussi de demander ces compteurs via `GET /api/lore/coverage`.
+Contrôle local `127.0.0.1:4344` → HTTP 200 : 256 161 passages, 10 030
+`manga_page`, 922 `manga_chapter` et 254 `manga_volume`; la date d'index n'est pas
+fournie par Shenron. Le proxy n'expose aucun extrait ou secret et marque ces
+chiffres comme agrégés, non ventilés par série. Après cet ajout, bundle navigateur
+(7 modules, 42,46 Ko), 14 tests JS (63 assertions), Oxlint strict, Oxfmt et
+`git diff --check` passent.
+
 ## 2026-10-07 — URL WebSocket configurable pour l'hébergement
 
 Le navigateur choisit maintenant `ws://localhost:4320` en développement local,
