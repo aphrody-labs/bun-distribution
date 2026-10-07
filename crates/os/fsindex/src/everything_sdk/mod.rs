@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Low-level binding to the voidtools **Everything** SDK (`Everything64.dll`).
 //!
-//! This crate only owns the FFI plumbing used by `aphrody-fsindex` (the single Everything
+//! This module only owns the FFI plumbing used by `aphrody-fsindex` (the single Everything
 //! search owner): dynamic DLL loading, the raw SDK symbols, a process-wide
 //! lock (the SDK keeps global query state) and a typed [`Query`] / [`Entry`]
 //! pair. Result shaping and domain helpers live in the callers.
@@ -12,6 +12,9 @@
 //! DLL resolution order ([`dll_candidates`]): `APHRODY_EVERYTHING_DLL`,
 //! `EVERYTHING_DLL`, the standard DLL search path, then the
 //! `%ProgramFiles%` / `%ProgramFiles(x86)%` `Everything` folders.
+
+// The SDK constant table and the non-Windows stub are the full binding; only Windows consumes all of it.
+#![cfg_attr(not(windows), allow(dead_code))]
 
 use std::{path::PathBuf, sync::OnceLock};
 

@@ -22,6 +22,7 @@ sans clone. Ce plan ordonne le travail ; ses cases ouvertes ne décrivent pas un
 
 ## File
 
-- [ ] `everything-sdk` dans `fsindex` ; `base` + `backend` ; `stdio-capture` dans `base`.
+- [x] `everything-sdk` dans `fsindex` (fait).
+- [ ] `base` + `backend` ; `stdio-capture` dans `base`.
 - [ ] Regrouper `ostd` (base, subsystem, events, guard, proc, secrets) sous un dossier unique.
 - [ ] Regrouper les composants sous `kernel/comps`.

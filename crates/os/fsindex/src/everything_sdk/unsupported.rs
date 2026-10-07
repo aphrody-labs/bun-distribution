@@ -3,7 +3,7 @@
 
 use std::path::Path;
 
-use crate::{Entry, EverythingError, Query};
+use crate::everything_sdk::{Entry, EverythingError, Query};
 
 /// Placeholder for the loaded SDK; cannot be constructed on this host.
 #[derive(Debug)]

@@ -77,7 +77,6 @@ aphrody-engine = { path = "crates/ai/engine", version = "1.0.0", features = [] }
 aphrody-engine-mistralrs = { path = "crates/ai/engine-mistralrs", version = "1.0.0" }
 aphrody-events = { path = "crates/os/events", version = "1.0.0-canary", features = [] }
 aphrody-firefly = { path = "crates/ai/firefly", version = "1.0.0", features = [] }
-aphrody-everything-sdk = { path = "crates/os/everything-sdk", version = "1.0.0-canary" }
 aphrody-fsindex = { path = "crates/os/fsindex", version = "1.0.0-canary", features = [] }
 aphrody-gateway = { path = "crates/ai/gateway", version = "1.0.0", features = [] }
 aphrody-gemini-runtime = { path = "crates/google/gemini-runtime", version = "1.0.0", features = [] }

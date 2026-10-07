@@ -14,7 +14,6 @@ description            = "Persistent local-filesystem search index (SQLite FTS5)
 workspace = true
 
 [dependencies]
-aphrody-everything-sdk = { workspace = true }
 serde      = { workspace = true, features = ["derive"] }
 thiserror  = { workspace = true }
 walkdir    = { workspace = true }
@@ -23,8 +22,8 @@ walkdir    = { workspace = true }
 rusqlite   = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-# NTFS MFT/USN controls (`ntfs_win`); the Everything SDK binding lives in aphrody-everything-sdk.
-windows    = { workspace = true, features = ["Win32_Foundation", "Win32_System_Ioctl", "Win32_Storage_FileSystem", "Win32_System_IO"] }
+# NTFS MFT/USN controls (`ntfs_win`); the Everything SDK binding lives in `everything_sdk`.
+windows    = { workspace = true, features = ["Win32_Foundation", "Win32_System_Ioctl", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_LibraryLoader"] }
 
 [dev-dependencies]
 tempfile   = { workspace = true }

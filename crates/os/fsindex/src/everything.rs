@@ -13,7 +13,7 @@
 //! standard DLL search path (`Everything64.dll`), then
 //! `%ProgramFiles%\Everything\Everything64.dll`.
 
-use aphrody_everything_sdk::{
+use crate::everything_sdk::{
     self as sdk, EVERYTHING_REQUEST_DATE_MODIFIED, EVERYTHING_REQUEST_FILE_NAME,
     EVERYTHING_REQUEST_FULL_PATH_AND_FILE_NAME, EVERYTHING_REQUEST_SIZE, Query,
 };
@@ -22,7 +22,7 @@ use thiserror::Error;
 
 use crate::{FileHit, FsIndex, FsIndexError};
 
-pub use aphrody_everything_sdk::{DLL_ENV, describe_error, filetime_to_unix};
+pub use crate::everything_sdk::{DLL_ENV, describe_error, filetime_to_unix};
 
 /// Result ordering, with the SDK's `EVERYTHING_SORT_*` values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]

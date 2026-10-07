@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Windows implementation: dynamic loading of `Everything64.dll` and raw calls.
+#![allow(unsafe_code)]
 
 use std::{
     ffi::CString,
@@ -16,12 +17,12 @@ use windows::{
     core::{PCSTR, PCWSTR},
 };
 
-use crate::{Entry, EverythingError, Query, dll_candidates};
+use crate::everything_sdk::{Entry, EverythingError, Query, dll_candidates};
 
 type Bool = i32;
 
 /// Everything error code reported when a call fails without a recorded error.
-const ERROR_INVALID_CALL: u32 = crate::EVERYTHING_ERROR_INVALIDCALL;
+const ERROR_INVALID_CALL: u32 = crate::everything_sdk::EVERYTHING_ERROR_INVALIDCALL;
 
 /// The SDK keeps global query state, so every call in the process is serialised.
 static LOCK: Mutex<()> = Mutex::new(());

@@ -1287,14 +1287,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-everything-sdk"
-version = "1.0.0-canary"
-dependencies = [
- "thiserror 2.0.21",
- "windows 0.62.2",
-]
-
-[[package]]
 name = "aphrody-execpolicy"
 version = "1.0.0-canary"
 dependencies = [
@@ -1361,7 +1353,6 @@ dependencies = [
 name = "aphrody-fsindex"
 version = "1.0.0-canary"
 dependencies = [
- "aphrody-everything-sdk",
  "rusqlite",
  "serde",
  "tempfile",
