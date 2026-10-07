@@ -157,3 +157,4 @@ npm-debug.log*
 # Tauri permission JSON schema: written by tauri-plugin/tauri-build at compile time (one identical copy per plugin).
 **/permissions/schemas/schema.json
 graphify-out/
+apps/community/creator-kit/site/dist/

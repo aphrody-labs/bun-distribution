@@ -3,15 +3,15 @@
 /**
  * Build the creator.aphrody.com page from the Aphrody M3 sources: static tokens (m3-tokens.css), the colour scheme
  * generated from the logo seed by m3-tokens (material-color-utilities), the Google Sans Flex brand face of m3-fonts.
- * Output: apps/web/creator/dist (build output, not versioned).
+ * Output: apps/community/creator-kit/site/dist (build output, not versioned).
  */
 import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 
-import { cssFromSeed } from "../../../m3/packages/m3-tokens/src/dynamic-color.ts";
+import { cssFromSeed } from "../../../../m3/packages/m3-tokens/src/dynamic-color.ts";
 
 const here = import.meta.dir;
-const m3 = join(here, "../../../m3/packages");
+const m3 = join(here, "../../../../m3/packages");
 /** Source colour of the logo (QuantizerCelebi + Score of material-color-utilities on assets/icon-256.png). */
 export const SEED = "#951ae2";
 

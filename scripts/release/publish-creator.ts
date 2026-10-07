@@ -28,7 +28,7 @@ export const SITE = {
 
 const repo = resolve(import.meta.dir, "../..");
 const appDir = join(repo, "apps/community/creator-kit");
-import { build as buildPage, SEED } from "../../apps/web/creator/build.ts";
+import { build as buildPage, SEED } from "../../apps/community/creator-kit/site/build.ts";
 import { brandExe } from "./windows-exe.ts";
 const TARGET = {
   platform: "windows-x64",

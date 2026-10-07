@@ -7,7 +7,7 @@ Owner order of 2026-10-06: a minimal Material 3 page with one download button an
 
 | Path                           | Content                                                                                                                               |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                            | page (Aphrody M3 tokens, Google Sans Flex, MAKIT logo and favicons), built by `apps/web/creator/build.ts`                             |
+| `/`                            | page (Aphrody M3 tokens, Google Sans Flex, MAKIT logo and favicons), built by `apps/community/creator-kit/site/build.ts`                             |
 | `/download/windows`            | current Windows pack (`.zip`, stable name, never cached)                                                                              |
 | `/latest.json`                 | manifest read by the page and by `creator-kit self-update`: `version`, `artifacts[]` (`kind` pack or update, `url`, `sha256`, `size`) |
 | `/SHA256SUMS`, `/files/<file>` | checksums and immutable versioned archives                                                                                            |
